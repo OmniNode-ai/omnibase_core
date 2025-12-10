@@ -89,6 +89,16 @@ class ModelContractReducer(MixinNodeTypeValidator, ModelContractBase):
           thread safety for concurrent access and preventing accidental mutation
           of contract state during validation or serialization.
 
+    Note:
+        While this model uses ``frozen=True`` for immutability, instances containing
+        nested mutable objects (such as lists, dicts, or non-frozen Pydantic models)
+        are **not hashable**. This is expected Pydantic behavior: the ``frozen=True``
+        configuration prevents field modification but does not make nested mutable
+        objects hashable. Attempting to call ``hash()`` on such instances will raise
+        ``TypeError: unhashable type``. See tests in
+        ``tests/unit/models/contracts/test_model_contract_reducer_v150.py`` for
+        detailed documentation of this behavior.
+
     Strict typing is enforced: No Any types allowed in implementation.
     """
 
@@ -431,6 +441,22 @@ class ModelContractReducer(MixinNodeTypeValidator, ModelContractBase):
         Validate FSM subcontract configuration for reducer nodes.
 
         Contract-driven validation - validates what's in the FSM definition.
+
+        Defense-in-Depth Pattern:
+            This validation intentionally duplicates some checks that ModelFSMSubcontract
+            performs via its @model_validator. This is deliberate:
+
+            1. FSM validators run during FSM construction (ModelFSMSubcontract instantiation)
+            2. Contract validators run during contract validation (ModelContractReducer validation)
+            3. These are separate validation phases that may execute independently
+
+            By duplicating critical checks here, we:
+            - Protect against changes in FSM validation behavior
+            - Ensure contract-level invariants hold regardless of FSM implementation details
+            - Provide clearer error messages in the contract validation context
+            - Enable contracts to enforce stricter requirements than the base FSM model
+
+            This follows the principle: "validate at trust boundaries, not just at the source."
         """
         fsm = self.state_machine
         if fsm is None:

@@ -307,6 +307,115 @@ class TestModelContractReducerStateMachineAlias:
             == contract2.state_machine.state_machine_name
         )
 
+    def test_both_state_machine_and_state_transitions_provided(self) -> None:
+        """Test behavior when both field name and alias are provided simultaneously.
+
+        Documents Pydantic's behavior when both state_machine (field name)
+        and state_transitions (alias) are provided in the same dict/YAML input.
+
+        Expected Behavior (Pydantic v2 with extra='forbid'):
+        - When both the field name AND the alias are present in input data,
+          Pydantic raises a ValidationError with "Extra inputs are not permitted".
+        - This occurs because the model has extra='forbid' configured, which
+          rejects any fields not defined in the model schema.
+        - When both state_machine (field) and state_transitions (alias) are
+          provided, Pydantic maps state_transitions to state_machine via the
+          alias, then sees state_machine as an "extra" undeclared field.
+
+        IMPORTANT: This behavior ensures YAML contracts cannot accidentally
+        specify both keys with different values, which would create ambiguity.
+        Contracts MUST use either state_machine OR state_transitions, not both.
+        """
+        # Create two different FSM subcontracts to test the rejection
+        model_version = ModelSemVer(major=1, minor=0, patch=0)
+
+        # FSM for field name (state_machine)
+        fsm_field_name = ModelFSMSubcontract(
+            version=model_version,
+            state_machine_name="fsm_via_field_name",
+            state_machine_version=model_version,
+            description="FSM provided via state_machine field name",
+            states=[
+                ModelFSMStateDefinition(
+                    version=model_version,
+                    state_name="field_initial",
+                    state_type="operational",
+                    description="Initial state from field name FSM",
+                ),
+                ModelFSMStateDefinition(
+                    version=model_version,
+                    state_name="field_terminal",
+                    state_type="terminal",
+                    description="Terminal state from field name FSM",
+                    is_terminal=True,
+                ),
+            ],
+            initial_state="field_initial",
+            terminal_states=["field_terminal"],
+            transitions=[
+                ModelFSMStateTransition(
+                    version=model_version,
+                    transition_name="field_transition",
+                    from_state="field_initial",
+                    to_state="field_terminal",
+                    trigger="complete",
+                ),
+            ],
+        )
+
+        # FSM for alias (state_transitions)
+        fsm_alias = ModelFSMSubcontract(
+            version=model_version,
+            state_machine_name="fsm_via_alias",
+            state_machine_version=model_version,
+            description="FSM provided via state_transitions alias",
+            states=[
+                ModelFSMStateDefinition(
+                    version=model_version,
+                    state_name="alias_initial",
+                    state_type="operational",
+                    description="Initial state from alias FSM",
+                ),
+                ModelFSMStateDefinition(
+                    version=model_version,
+                    state_name="alias_terminal",
+                    state_type="terminal",
+                    description="Terminal state from alias FSM",
+                    is_terminal=True,
+                ),
+            ],
+            initial_state="alias_initial",
+            terminal_states=["alias_terminal"],
+            transitions=[
+                ModelFSMStateTransition(
+                    version=model_version,
+                    transition_name="alias_transition",
+                    from_state="alias_initial",
+                    to_state="alias_terminal",
+                    trigger="complete",
+                ),
+            ],
+        )
+
+        # Create contract data with BOTH keys present
+        contract_data = get_minimal_reducer_contract_data()
+        contract_data["state_machine"] = fsm_field_name.model_dump()
+        contract_data["state_transitions"] = fsm_alias.model_dump()
+
+        # Pydantic should raise ValidationError due to extra='forbid'
+        # when both field name and alias are provided simultaneously
+        with pytest.raises(ValidationError) as exc_info:
+            ModelContractReducer.model_validate(contract_data)
+
+        # Verify the error is about extra inputs not being permitted
+        error_str = str(exc_info.value).lower()
+        assert "extra" in error_str or "not permitted" in error_str, (
+            "Error should indicate extra inputs are not permitted. "
+            "When both state_machine (field) and state_transitions (alias) "
+            "are provided, Pydantic sees one as an extra field and rejects it "
+            "because extra='forbid' is configured on ModelContractReducer."
+        )
+
 
 @pytest.mark.timeout(30)
 @pytest.mark.unit

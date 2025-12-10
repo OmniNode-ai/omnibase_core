@@ -323,13 +323,9 @@ class ModelFSMSubcontract(BaseModel):
                 )
         return self
 
-    # Note: validate_assignment is intentionally omitted here because:
-    # 1. frozen=True already prevents all attribute modifications (raises ValidationError)
-    # 2. validate_assignment would be redundant - any assignment attempt fails immediately
-    # 3. This differs from ModelContractReducer which includes validate_assignment=True
-    #    for explicit documentation purposes, but the behavior is identical
     model_config = ConfigDict(
         extra="ignore",  # Allow extra fields from YAML contracts
         frozen=True,  # Immutability after creation for thread safety
         use_enum_values=False,  # Keep enum objects, don't convert to strings
+        validate_assignment=True,  # Explicit for documentation - redundant with frozen=True but kept for clarity
     )
