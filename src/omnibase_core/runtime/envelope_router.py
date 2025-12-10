@@ -526,6 +526,13 @@ class EnvelopeRouter(ProtocolNodeRuntime):
                 envelope_operation=envelope.operation,
             )
 
+        if not isinstance(handler_type, EnumHandlerType):
+            raise ModelOnexError(
+                message=f"Envelope handler_type must be EnumHandlerType, got {type(handler_type).__name__}",
+                error_code=EnumCoreErrorCode.INVALID_PARAMETER,
+                envelope_operation=envelope.operation,
+            )
+
         if handler_type not in self._handlers:
             raise ModelOnexError(
                 message=f"No handler registered for handler_type '{handler_type.value}'. "
