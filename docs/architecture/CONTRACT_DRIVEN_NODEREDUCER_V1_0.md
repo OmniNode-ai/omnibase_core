@@ -1,7 +1,7 @@
 # Contract-Driven NodeReducer v1.0 Specification
 
-> **Version**: 1.0.0
-> **Date**: 2025-12-09
+> **Version**: 1.0.3
+> **Date**: 2025-12-10
 > **Status**: DRAFT - Ready for Implementation
 > **Ticket**: [OMN-495](https://linear.app/omninode/issue/OMN-495)
 > **Full Roadmap**: NODEREDUCER_VERSIONING_ROADMAP.md (to be created)
@@ -26,18 +26,118 @@ All side effects are emitted as Intents for Effect nodes to execute. This mainta
 
 ## Table of Contents
 
-1. [Design Principles](#design-principles)
-2. [v1.0 Scope](#v10-scope)
-3. [Core Models](#core-models)
-4. [Enums](#enums)
-5. [FSM Subcontract Models](#fsm-subcontract-models)
-6. [Execution Model](#execution-model)
-7. [Intent Pattern](#intent-pattern)
-8. [Error Model](#error-model-v10)
-9. [NodeReducer Behavior](#v10-nodereducer-behavior)
-10. [Example Contracts](#example-contracts)
-11. [Implementation Plan](#implementation-plan)
-12. [Acceptance Criteria](#acceptance-criteria)
+1. [Conceptual Modes](#conceptual-modes)
+2. [Design Principles](#design-principles)
+3. [v1.0 Scope](#v10-scope)
+4. [Core Models](#core-models)
+5. [Enums](#enums)
+6. [FSM Subcontract Models](#fsm-subcontract-models)
+7. [Contract Validation Invariants](#contract-validation-invariants)
+8. [Execution Model](#execution-model)
+9. [Intent Pattern](#intent-pattern)
+10. [FSM Metadata Contract](#fsm-metadata-contract)
+11. [Error Model](#error-model-v10)
+12. [NodeReducer Behavior](#v10-nodereducer-behavior)
+13. [Example Contracts](#example-contracts)
+14. [Implementation Plan](#implementation-plan)
+15. [Acceptance Criteria](#acceptance-criteria)
+
+---
+
+## Conceptual Modes
+
+NodeReducer supports two conceptual modes. **v1.0 implements FSM mode only.**
+
+### Mode 1: FSM-Driven State Transitions (v1.0 Implemented)
+
+The primary v1.0 use case. NodeReducer acts as a **finite state machine engine**:
+
+```text
+delta(state, trigger, context) -> (new_state, intents[])
+```
+
+- **Input**: Current state + trigger event + context data
+- **Output**: New state + list of Intents for side effects
+- **Data Flow**: `metadata["trigger"]` drives FSM, `context` provides guard data
+- **Reduction Type**: Use `EnumReductionType.TRANSFORM` (other values reserved)
+
+### Mode 2: Data Reduction Pipelines (Reserved - Not in v1.0)
+
+Future use case for collection-oriented data processing:
+
+```text
+reduce(data[], reduction_type) -> aggregated_result
+```
+
+- **Input**: Collection of items + reduction operation
+- **Output**: Aggregated/transformed result
+- **Reduction Types**: `FOLD`, `AGGREGATE`, `DEDUPLICATE`, `MERGE`, etc.
+- **Status**: Fields present in models but **execution not implemented in v1.0**
+
+### v1.0 Enforcement
+
+When using FSM mode in v1.0:
+
+- `reduction_type` **SHOULD** be `EnumReductionType.TRANSFORM`
+  - Other values are accepted but emit a warning log Intent at process time
+  - Future versions may assign specific semantics to other reduction types
+- `streaming_mode`, `batch_size`, `window_size_ms` are **ignored** (reserved for data-reduction mode)
+
+### Context Construction
+
+The FSM executor builds `context` from `ModelReducerInput` as follows:
+
+```python
+def _build_fsm_context(input_data: ModelReducerInput) -> dict[str, Any]:
+    """
+    Build FSM context from reducer input.
+
+    Context keys:
+        - All keys from input_data.metadata (shallow copy)
+        - "data": The input data list (for condition evaluation)
+        - "operation_id": The operation ID as string
+    """
+    context = dict(input_data.metadata)  # Shallow copy
+    context["data"] = input_data.data
+    context["operation_id"] = str(input_data.operation_id)
+    return context
+```
+
+**Reserved Context Keys**:
+
+| Key | Source | Type |
+|-----|--------|------|
+| `data` | `input_data.data` | `list[T_Input]` |
+| `operation_id` | `input_data.operation_id` | `str` |
+| `trigger` | `input_data.metadata["trigger"]` | `str` (required for FSM) |
+
+Reserved keys (`data`, `operation_id`) in metadata MUST NOT override system-assigned context keys. If conflict occurs, system keys take precedence.
+
+**Trigger Extraction**:
+
+The FSM trigger is extracted from `input_data.metadata["trigger"]`. If not present, defaults to `"process"`.
+
+```python
+trigger = input_data.metadata.get("trigger", "process")
+```
+
+### Non-TRANSFORM Warning
+
+When `reduction_type != EnumReductionType.TRANSFORM` in FSM mode, the executor emits a warning Intent:
+
+```python
+ModelIntent(
+    intent_type="log_event",
+    target="logging_service",
+    payload={
+        "level": "warning",
+        "message": "Non-TRANSFORM reduction_type used in FSM mode",
+        "reduction_type": str(input_data.reduction_type),
+        "fsm_name": fsm.state_machine_name,
+        "note": "Behavior reserved for future versions",
+    },
+)
+```
 
 ---
 
@@ -97,6 +197,52 @@ The FSM executor functions are designed to be **pure and stateless**:
 | **Rollback Execution** | v1.2 | Rollback fields defined but execution deferred |
 | **Custom Condition Evaluators** | v1.2 | Pluggable condition evaluation |
 | **Real-time State Sync** | v1.3 | Multi-instance state synchronization |
+
+### Reserved Fields (v1.0)
+
+The following fields are **defined in models for forward-compatibility** but are **ignored by the v1.0 executor**. Do not rely on their behavior until the specified version.
+
+#### ModelFSMSubcontract Reserved Fields
+
+| Field | Type | Default | Implemented In |
+|-------|------|---------|----------------|
+| `rollback_enabled` | `bool` | `True` | v1.2 |
+| `recovery_enabled` | `bool` | `True` | v1.2 |
+| `concurrent_transitions_allowed` | `bool` | `False` | v1.1 |
+| `max_checkpoints` | `int` | `10` | v1.1 |
+| `conflict_resolution_strategy` | `str` | `"priority_based"` | v1.1 |
+
+#### ModelFSMStateDefinition Reserved Fields
+
+| Field | Type | Default | Implemented In |
+|-------|------|---------|----------------|
+| `timeout_ms` | `int \| None` | `None` | v1.1 |
+
+#### ModelFSMStateTransition Reserved Fields
+
+| Field | Type | Default | Implemented In |
+|-------|------|---------|----------------|
+| `retry_enabled` | `bool` | `False` | v1.1 |
+| `max_retries` | `int` | `0` | v1.1 |
+| `retry_delay_ms` | `int` | `1000` | v1.1 |
+| `rollback_transitions` | `list[str]` | `[]` | v1.2 |
+
+#### ModelFSMTransitionCondition Reserved Fields
+
+| Field | Type | Default | Implemented In |
+|-------|------|---------|----------------|
+| `retry_count` | `int` | `0` | v1.1 |
+| `timeout_ms` | `int \| None` | `None` | v1.1 |
+
+#### ModelReducerInput Reserved Fields (Data Reduction Mode)
+
+| Field | Type | Default | Implemented In |
+|-------|------|---------|----------------|
+| `streaming_mode` | `EnumStreamingMode` | `BATCH` | v1.2+ |
+| `batch_size` | `int` | `1000` | v1.2+ |
+| `window_size_ms` | `int` | `5000` | v1.2+ |
+
+**Implementation Note**: These fields are present to allow contracts to be written with future capabilities in mind. The v1.0 executor will accept contracts containing these fields but will not execute their associated logic.
 
 ---
 
@@ -287,37 +433,37 @@ class ModelIntent(BaseModel):
 ### ModelFSMTransitionResult
 
 ```python
-from datetime import datetime
+from dataclasses import dataclass, field
+from datetime import datetime, UTC
 from typing import Any
 
 from omnibase_core.models.reducer.model_intent import ModelIntent
 
 
+@dataclass
 class ModelFSMTransitionResult:
     """
     Result of FSM transition execution.
 
     Pure data structure containing transition outcome and intents for side effects.
+    Not frozen because timestamp is set at construction time.
+
+    This structure is the canonical wire and execution representation. All implementations
+    must match field names and invariant semantics exactly.
+
+    Thread Safety:
+        Instances should be treated as effectively immutable after creation.
+        Do not modify fields after construction.
     """
 
-    def __init__(
-        self,
-        success: bool,
-        new_state: str,
-        old_state: str,
-        transition_name: str | None,
-        intents: list[ModelIntent],
-        metadata: dict[str, Any] | None = None,
-        error: str | None = None,
-    ):
-        self.success = success
-        self.new_state = new_state
-        self.old_state = old_state
-        self.transition_name = transition_name
-        self.intents = intents
-        self.metadata = metadata or {}
-        self.error = error
-        self.timestamp = datetime.now().isoformat()
+    success: bool
+    new_state: str
+    old_state: str
+    transition_name: str | None
+    intents: list[ModelIntent]
+    metadata: dict[str, Any] = field(default_factory=dict)
+    error: str | None = None
+    timestamp: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
 ```
 
 ### ModelFSMStateSnapshot
@@ -880,6 +1026,186 @@ class ModelFSMTransitionAction(BaseModel):
     }
 ```
 
+### ModelFSMOperation
+
+```python
+from pydantic import BaseModel, Field
+
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+
+class ModelFSMOperation(BaseModel):
+    """
+    FSM operation definition.
+
+    RESERVED FOR v1.1+: This model is defined for forward compatibility
+    but operations are not used in v1.0 execution.
+
+    Future versions may use operations for:
+    - Complex multi-step transitions
+    - Transactional state changes
+    - Conditional branching logic
+    """
+
+    version: ModelSemVer = Field(
+        ...,  # REQUIRED
+        description="Model version",
+    )
+
+    operation_name: str = Field(
+        default=...,
+        description="Unique name for the operation",
+        min_length=1,
+    )
+
+    operation_type: str = Field(
+        default=...,
+        description="Type of operation",
+        min_length=1,
+    )
+
+    description: str = Field(
+        default="",
+        description="Human-readable operation description",
+    )
+
+    model_config = {
+        "extra": "ignore",
+        "use_enum_values": False,
+        "validate_assignment": True,
+    }
+```
+
+---
+
+## Contract Validation Invariants
+
+The following invariants are **enforced at contract load time**. If any invariant is violated, the node **MUST NOT start** and MUST raise `ModelOnexError`.
+
+### State Invariants
+
+| Invariant | Description | Error Code |
+|-----------|-------------|------------|
+| `initial_state ∈ states` | Initial state must be a declared state | `VALIDATION_ERROR` |
+| `terminal_states ⊆ states` | All terminal states must be declared states | `VALIDATION_ERROR` |
+| `error_states ⊆ states` | All error states must be declared states | `VALIDATION_ERROR` |
+| `len(states) >= 1` | At least one state must be defined | `VALIDATION_ERROR` |
+| `initial_state != ""` | Initial state must be non-empty | `VALIDATION_ERROR` |
+
+### Transition Invariants
+
+| Invariant | Description | Error Code |
+|-----------|-------------|------------|
+| `transition.from_state ∈ states ∪ {"*"}` | Source state must exist or be wildcard | `VALIDATION_ERROR` |
+| `transition.to_state ∈ states` | Target state must be a declared state | `VALIDATION_ERROR` |
+| `transition.transition_name` is unique | No duplicate transition names | `VALIDATION_ERROR` |
+| `transition.trigger != ""` | Trigger must be non-empty | `VALIDATION_ERROR` |
+| `len(transitions) >= 1` | At least one transition must be defined | `VALIDATION_ERROR` |
+
+### Rollback Invariants (v1.2+, validated but not executed in v1.0)
+
+| Invariant | Description | Error Code |
+|-----------|-------------|------------|
+| `rollback_transition ∈ transition_names` | Rollback must reference existing transition | `VALIDATION_ERROR` |
+
+### Validation Implementation
+
+```python
+def validate_fsm_contract(fsm: ModelFSMSubcontract) -> None:
+    """
+    Validate FSM contract invariants at load time.
+
+    This function enforces ALL invariants from the State Invariants,
+    Transition Invariants, and Rollback Invariants tables.
+
+    Raises:
+        ModelOnexError: If any invariant is violated.
+    """
+    # Structural invariants
+    if len(fsm.states) < 1:
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message="At least one state must be defined",
+        )
+
+    if len(fsm.transitions) < 1:
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message="At least one transition must be defined",
+        )
+
+    if not fsm.initial_state or fsm.initial_state == "":
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message="initial_state must be non-empty",
+        )
+
+    state_names = {s.state_name for s in fsm.states}
+
+    # State membership invariants
+    if fsm.initial_state not in state_names:
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"initial_state '{fsm.initial_state}' not in declared states",
+            context={"declared_states": list(state_names)},
+        )
+
+    for terminal in fsm.terminal_states:
+        if terminal not in state_names:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"terminal_state '{terminal}' not in declared states",
+            )
+
+    for error_state in fsm.error_states:
+        if error_state not in state_names:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"error_state '{error_state}' not in declared states",
+            )
+
+    # Transition invariants
+    transition_names: set[str] = set()
+    for t in fsm.transitions:
+        # Uniqueness check
+        if t.transition_name in transition_names:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Duplicate transition name: '{t.transition_name}'",
+            )
+        transition_names.add(t.transition_name)
+
+        # Trigger non-empty check
+        if not t.trigger or t.trigger == "":
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Transition '{t.transition_name}' has empty trigger",
+            )
+
+        # from_state membership (wildcard allowed)
+        if t.from_state != "*" and t.from_state not in state_names:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Transition '{t.transition_name}' from_state '{t.from_state}' not in declared states",
+            )
+
+        # to_state membership (wildcard NOT allowed)
+        if t.to_state not in state_names:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Transition '{t.transition_name}' to_state '{t.to_state}' not in declared states",
+            )
+
+    # Rollback invariants (validated but not executed in v1.0)
+    for t in fsm.transitions:
+        for rollback_name in t.rollback_transitions:
+            if rollback_name not in transition_names:
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=f"Transition '{t.transition_name}' references unknown rollback '{rollback_name}'",
+                )
+```
+
 ---
 
 ## Execution Model
@@ -893,17 +1219,17 @@ v1.0 uses **pure function FSM execution**:
        │
        ▼
 ┌─────────────────┐
-│ Validate State  │──▶ Error if invalid
+│ Validate State  │──▶ Raise ModelOnexError if invalid
 └────────┬────────┘
          │
          ▼
 ┌─────────────────┐
-│ Find Transition │──▶ Error if none found
+│ Find Transition │──▶ Raise ModelOnexError if none found
 └────────┬────────┘
          │
          ▼
 ┌─────────────────┐
-│Evaluate Guards  │──▶ Fail silently if conditions not met
+│Evaluate Guards  │──▶ Return failed result + log Intent
 └────────┬────────┘
          │ Conditions Met
          ▼
@@ -935,10 +1261,61 @@ v1.0 uses **pure function FSM execution**:
 
 1. **Pure Function**: `execute_transition(fsm, state, trigger, context)` returns result and intents
 2. **No Side Effects**: All side effects emitted as Intents
-3. **Abort on Invalid State**: Invalid current state throws `ModelOnexError`
-4. **Abort on No Transition**: No matching transition throws `ModelOnexError`
-5. **Silent Fail on Conditions**: Unmet conditions return failed result (no exception)
+3. **Abort on Invalid State**: Invalid current state raises `ModelOnexError`
+4. **Abort on No Transition**: No matching transition raises `ModelOnexError`
+5. **Structured Failure on Conditions**: Unmet conditions return `ModelFSMTransitionResult(success=False)` with failure metadata and log Intent
 6. **Action Order**: Exit actions -> Transition actions -> Entry actions
+
+### Transition Selection Algorithm
+
+When multiple transitions match the current state and trigger, FSM executors MUST follow this deterministic ordering:
+
+1. Filter transitions by matching trigger
+2. Sort by specificity: exact state match > wildcard ("*")
+3. Sort by priority (descending)
+4. Stable sort by definition order (first defined wins)
+
+Condition evaluation occurs only on the selected transition; v1.0 does not attempt fallback transition resolution.
+
+### Transition Failure Reasons
+
+When a transition fails due to unmet conditions, the `ModelFSMTransitionResult` includes structured failure information.
+
+**Failure Reason Values** (in `metadata["failure_reason"]`):
+
+| Value | Meaning |
+|-------|---------|
+| `"conditions_not_met"` | One or more guard conditions evaluated to false |
+| `"condition_evaluation_error"` | Error occurred during condition evaluation |
+
+**Example Failed Result**:
+
+```python
+ModelFSMTransitionResult(
+    success=False,
+    new_state="pending",        # Unchanged from old_state
+    old_state="pending",
+    transition_name="start_payment",
+    intents=[
+        ModelIntent(
+            intent_type="log_event",
+            target="logging_service",
+            payload={
+                "level": "warning",
+                "message": "Transition conditions not met",
+                "fsm": "order_processing_fsm",
+                "transition": "start_payment",
+                "failed_conditions": ["has_items", "has_customer"],
+            },
+        )
+    ],
+    metadata={
+        "failure_reason": "conditions_not_met",
+        "failed_conditions": ["has_items", "has_customer"],
+    },
+    error="Conditions not met: has_items, has_customer",
+)
+```
 
 ### Condition Evaluation
 
@@ -954,32 +1331,86 @@ conditions:
 
 **v1.0 Expression Format**: `field_name operator expected_value`
 
-**Supported Operators**:
+### Tokenization Rules
 
-| Operator | Description | Example |
-|----------|-------------|---------|
-| `equals` | String equality (type-coerced) | `status equals active` |
-| `not_equals` | String inequality (type-coerced) | `status not_equals error` |
-| `min_length` | Minimum collection length | `items min_length 1` |
-| `max_length` | Maximum collection length | `items max_length 100` |
-| `greater_than` | Numeric comparison | `count greater_than 0` |
-| `less_than` | Numeric comparison | `count less_than 1000` |
-| `exists` | Field exists in context | `user_id exists` |
-| `not_exists` | Field does not exist | `error_code not_exists` |
+Expressions are tokenized by **splitting on whitespace**. v1.0 uses strict 3-token parsing:
 
-**Type Coercion Behavior**:
+```python
+def parse_expression(expression: str) -> tuple[str, str, str]:
+    """
+    Parse condition expression into (field, operator, value).
 
-The `equals` and `not_equals` operators perform **string-based comparison** by casting both sides to `str` before evaluation. This is intentional for YAML/JSON config compatibility.
+    Raises:
+        ValueError: If expression does not have exactly 3 tokens.
+    """
+    tokens = expression.split()
+    if len(tokens) != 3:
+        raise ValueError(
+            f"Expression must have exactly 3 tokens: 'field operator value', got {len(tokens)}"
+        )
+    return tokens[0], tokens[1], tokens[2]
+```
+
+**Implications**:
+
+- ✅ `status equals active` → `("status", "equals", "active")`
+- ✅ `count greater_than 10` → `("count", "greater_than", "10")`
+- ❌ `plan_name equals enterprise plus` → **Error**: 4 tokens
+- ❌ `status equals` → **Error**: 2 tokens
+
+**Values with spaces are NOT supported in v1.0**. If you need to match values containing spaces:
+- Use a different encoding (e.g., `enterprise_plus`)
+- Preprocess context to use space-free keys
+
+For `exists` and `not_exists`, the third token is ignored but must be present:
+
+```yaml
+# Correct
+expression: "user_id exists _"
+
+# Also correct (any placeholder)
+expression: "user_id exists true"
+```
+
+**Expression Grammar Design Philosophy**:
+
+v1.0 intentionally restricts expression grammar to eliminate ambiguity and reduce implementation surface area. Complex conditions must be encoded as precomputed fields in context.
+
+### Supported Operators
+
+| Operator | Description | Value Type | Example |
+|----------|-------------|------------|---------|
+| `equals` | String equality (type-coerced) | Any (coerced to str) | `status equals active` |
+| `not_equals` | String inequality (type-coerced) | Any (coerced to str) | `status not_equals error` |
+| `min_length` | Minimum collection length | Integer | `items min_length 1` |
+| `max_length` | Maximum collection length | Integer | `items max_length 100` |
+| `greater_than` | Numeric comparison | Numeric | `count greater_than 0` |
+| `less_than` | Numeric comparison | Numeric | `count less_than 1000` |
+| `exists` | Field exists in context | Ignored | `user_id exists _` |
+| `not_exists` | Field does not exist | Ignored | `error_code not_exists _` |
+
+### Type Coercion Behavior
+
+The `equals` and `not_equals` operators perform **string-based comparison** by casting both sides to `str` before evaluation. This is intentional for YAML/JSON config compatibility but is a known limitation.
 
 ```text
 10 == "10"           -> True  (both become "10")
 True == "True"       -> True  (both become "True")
 None == "None"       -> True  (both become "None")
+3.14 == "3.14"       -> True  (both become "3.14")
+3.0 == "3"           -> FALSE (becomes "3.0" vs "3")  # Footgun!
 ```
+
+**v1.0 Design Decision**: `equals` and `not_equals` are intended for **string equality only**. For numeric comparisons, use `greater_than` and `less_than`. For boolean checks, encode as strings (`"true"`, `"false"`) or use existence checks.
+
+**Normative Warning for Equals with Numbers**:
+
+Contracts relying on numeric equality MUST NOT use `equals` in v1.0.
 
 **Workarounds for strict typing**:
 - Use `greater_than`/`less_than` for numeric comparison
 - Preprocess context values before FSM execution
+- Encode booleans as strings in context
 
 ### Wildcard Transitions
 
@@ -994,6 +1425,64 @@ transitions:
 ```
 
 **Matching Priority**: Exact state match takes precedence over wildcard.
+
+### Wildcard Priority Resolution
+
+When multiple transitions match the same trigger, v1.0 uses this resolution order:
+
+1. **Exact state match** over wildcard match
+2. **Higher priority value** (descending sort)
+3. **First defined in contract** (stable sort)
+
+**Example Conflict**:
+
+```yaml
+transitions:
+  # Transition A: exact match, priority 1
+  - transition_name: pending_cancel
+    from_state: pending
+    to_state: cancelled
+    trigger: cancel
+    priority: 1
+
+  # Transition B: wildcard match, priority 10
+  - transition_name: global_cancel
+    from_state: "*"
+    to_state: force_cancelled
+    trigger: cancel
+    priority: 10
+```
+
+**Resolution**: When in state `pending` with trigger `cancel`:
+- Transition A matches (exact state: `pending`)
+- Transition B matches (wildcard: `*`)
+- **Winner: Transition A** (exact match beats wildcard, regardless of priority)
+
+**Priority Only Matters Within Same Specificity**:
+
+```yaml
+transitions:
+  # Both are wildcards, priority determines winner
+  - transition_name: soft_cancel
+    from_state: "*"
+    to_state: soft_cancelled
+    trigger: cancel
+    priority: 1
+
+  - transition_name: hard_cancel
+    from_state: "*"
+    to_state: hard_cancelled
+    trigger: cancel
+    priority: 10
+```
+
+**Resolution**: For trigger `cancel` from any state:
+- Both transitions are wildcards (same specificity)
+- **Winner: hard_cancel** (higher priority: 10 > 1)
+
+**Edge Case - Same Priority**:
+
+If two transitions have equal specificity and equal priority, the **first defined in the contract** wins. This is a stable sort property, but relying on definition order is discouraged. Always use explicit priorities to avoid ambiguity.
 
 ### State Persistence
 
@@ -1061,6 +1550,74 @@ def delta(state: S, action: A) -> tuple[S, list[Intent]]:
 └─────────────┘
 ```
 
+### Intent Routing Contract
+
+The boundary between NodeReducer and NodeEffect is defined by the **Intent Routing Contract**:
+
+**NodeReducer Responsibilities** (Producer):
+- Emit `ModelIntent` objects describing desired side effects
+- Set `intent_type` to identify the category of side effect
+- Set `target` to identify the destination service/topic/channel
+- Populate `payload` with data needed to execute the side effect
+- **Never** execute side effects directly
+- **Never** import or reference Effect node implementations
+
+**NodeEffect Responsibilities** (Consumer):
+- Subscribe to Intents via `intent_type` and/or `target`
+- Execute side effects based on Intent payload
+- Handle failures and retries for side effect execution
+- Report execution results (success/failure) if needed
+
+**Target Interpretation**:
+
+| Target Pattern | Interpretation | Example |
+|----------------|----------------|---------|
+| `service_name` | Direct service call | `state_persistence`, `metrics_service` |
+| `topic:name` | Event bus topic | `topic:order_events` |
+| `channel:name` | Message channel | `channel:notifications` |
+| `action_executor` | FSM action handler | Built-in action execution |
+
+**v1.0 Built-in Intent Types**:
+
+```python
+# Emitted by FSM executor
+"persist_state"          # State persistence service
+"log_event"              # Logging service
+"record_metric"          # Metrics service
+"fsm_state_action"       # Entry/exit action handler
+"fsm_transition_action"  # Transition action handler
+```
+
+**Custom Intent Types**:
+
+Contracts may define custom intent types for domain-specific side effects:
+
+```yaml
+# Example: Order processing FSM emits custom intents
+entry_actions:
+  - send_order_confirmation  # Results in fsm_state_action intent
+  - notify_warehouse         # Results in fsm_state_action intent
+```
+
+The Effect node responsible for `action_executor` target interprets these action names and routes to appropriate handlers.
+
+**Action Semantics**:
+
+In v1.0, FSM actions are opaque identifiers. Reducers emit action intents containing the action name. Effect nodes interpret these names using their own action registry.
+
+**Decoupling Guarantee**:
+
+NodeReducer has **zero knowledge** of:
+- How intents are routed to Effect nodes
+- Which Effect node handles which intent type
+- Whether the side effect succeeds or fails
+- What happens after the intent is emitted
+
+This decoupling enables:
+- Testing reducers without Effect infrastructure
+- Swapping Effect implementations without changing Reducer contracts
+- Parallel development of Reducer and Effect nodes
+
 ---
 
 ## Error Model (v1.0)
@@ -1092,13 +1649,82 @@ raise ModelOnexError(
 
 ### Error Handling Strategy
 
-| Scenario | Behavior |
-|----------|----------|
-| Invalid current state | Raise `ModelOnexError` |
-| No matching transition | Raise `ModelOnexError` |
-| Conditions not met | Return failed result, emit log Intent |
-| Action execution fails | Emit failure Intent (v1.0 actions are non-blocking) |
-| Invalid target state | Raise `ModelOnexError` |
+| Scenario | Behavior | Result |
+|----------|----------|--------|
+| Invalid current state | Raise `ModelOnexError` | Exception (caller must handle) |
+| No matching transition | Raise `ModelOnexError` | Exception (caller must handle) |
+| Conditions not met | Return `ModelFSMTransitionResult(success=False)` | `failure_reason: "conditions_not_met"` + log Intent |
+| Condition evaluation error | Return `ModelFSMTransitionResult(success=False)` | `failure_reason: "condition_evaluation_error"` + log Intent |
+| Action execution fails | Emit failure Intent | Non-blocking (v1.0 actions are advisory) |
+| Invalid target state | Raise `ModelOnexError` | Exception (contract validation should prevent) |
+
+**Distinguishing Failure Types**:
+
+```python
+result = await reducer.process(input_data)
+
+if not result.metadata.get("fsm_transition_success", True):
+    failure_reason = result.metadata.get("failure_reason")
+
+    if failure_reason == "conditions_not_met":
+        # Expected: guard conditions failed, inspect failed_conditions
+        failed = result.metadata.get("failed_conditions", [])
+        logger.info(f"Transition blocked by conditions: {failed}")
+
+    elif failure_reason == "condition_evaluation_error":
+        # Unexpected: error during condition evaluation
+        logger.error(f"Condition evaluation failed: {result.metadata.get('error')}")
+```
+
+---
+
+## FSM Metadata Contract
+
+This section defines the **required metadata keys** in `ModelReducerOutput.metadata` when using FSM mode. These keys form a stable contract for consumers.
+
+### Output Metadata Keys
+
+| Key | Type | When Present | Description |
+|-----|------|--------------|-------------|
+| `fsm_state` | `str` | Always | FSM state after transition attempt |
+| `fsm_previous_state` | `str` | Always | FSM state before transition attempt |
+| `fsm_transition_success` | `bool` | Always | `True` if state changed, `False` otherwise |
+| `fsm_transition_name` | `str \| None` | Always | Name of executed transition, or `None` if none matched |
+| `failure_reason` | `str` | On failure | One of: `"conditions_not_met"`, `"condition_evaluation_error"` |
+| `failed_conditions` | `list[str]` | When `failure_reason == "conditions_not_met"` | Names of conditions that evaluated to false |
+| `error` | `str` | On failure | Human-readable error message |
+
+### Mapping from ModelFSMTransitionResult to ModelReducerOutput
+
+The NodeReducer maps `ModelFSMTransitionResult` to `ModelReducerOutput` as follows:
+
+All metadata fields in the FSM Metadata Contract must be present to guarantee schema stability.
+
+```python
+def _build_reducer_output(
+    self,
+    input_data: ModelReducerInput,
+    fsm_result: ModelFSMTransitionResult,
+    processing_time_ms: float,
+) -> ModelReducerOutput:
+    return ModelReducerOutput(
+        result=fsm_result.new_state,
+        operation_id=input_data.operation_id,
+        reduction_type=input_data.reduction_type,
+        processing_time_ms=processing_time_ms,
+        items_processed=len(input_data.data),
+        intents=fsm_result.intents,
+        metadata={
+            "fsm_state": fsm_result.new_state,
+            "fsm_previous_state": fsm_result.old_state,
+            "fsm_transition_success": fsm_result.success,
+            "fsm_transition_name": fsm_result.transition_name,
+            "failure_reason": fsm_result.metadata.get("failure_reason"),
+            "failed_conditions": fsm_result.metadata.get("failed_conditions"),
+            "error": fsm_result.error,
+        },
+    )
+```
 
 ---
 
@@ -1146,6 +1772,10 @@ When `process(ModelReducerInput)` is called:
 └─────────────────┘
 ```
 
+### FSM State Mutation Protection
+
+Subclasses MUST NOT modify internal FSM state. FSM state transitions must occur exclusively through `execute_transition`.
+
 ### Usage
 
 ```python
@@ -1189,6 +1819,7 @@ for intent in result.intents:
 
 ```yaml
 # examples/contracts/reducer/order_processor_fsm.yaml
+# NOTE: Fields marked "RESERVED v1.0" are parsed but not executed in v1.0
 node_type: REDUCER
 node_name: order_processor
 node_version: "1.0.0"
@@ -1229,7 +1860,7 @@ state_transitions:
       state_name: payment_processing
       state_type: operational
       description: "Payment is being processed"
-      timeout_ms: 30000
+      timeout_ms: 30000  # RESERVED v1.0: parsed but ignored until v1.1
       entry_actions:
         - initiate_payment
       exit_actions:
@@ -1323,7 +1954,7 @@ state_transitions:
         - version: { major: 1, minor: 0, patch: 0 }
           condition_name: has_customer
           condition_type: validation
-          expression: "customer_id exists"
+          expression: "customer_id exists _"
           required: true
       actions:
         - version: { major: 1, minor: 0, patch: 0 }
@@ -1340,7 +1971,7 @@ state_transitions:
         - version: { major: 1, minor: 0, patch: 0 }
           condition_name: has_transaction_id
           condition_type: validation
-          expression: "transaction_id exists"
+          expression: "transaction_id exists _"
           required: true
 
     - version: { major: 1, minor: 0, patch: 0 }
@@ -1364,7 +1995,7 @@ state_transitions:
         - version: { major: 1, minor: 0, patch: 0 }
           condition_name: has_tracking
           condition_type: validation
-          expression: "tracking_number exists"
+          expression: "tracking_number exists _"
           required: true
 
     - version: { major: 1, minor: 0, patch: 0 }
@@ -1402,9 +2033,9 @@ state_transitions:
 
   persistence_enabled: true
   checkpoint_interval_ms: 30000
-  max_checkpoints: 10
-  recovery_enabled: true
-  rollback_enabled: true
+  max_checkpoints: 10          # RESERVED v1.0: parsed but ignored until v1.1
+  recovery_enabled: true       # RESERVED v1.0: parsed but ignored until v1.2
+  rollback_enabled: true       # RESERVED v1.0: parsed but ignored until v1.2
   transition_timeout_ms: 5000
   strict_validation_enabled: true
   state_monitoring_enabled: true
@@ -1415,6 +2046,7 @@ state_transitions:
 
 ```yaml
 # examples/contracts/reducer/metrics_aggregation_fsm.yaml
+# NOTE: Fields marked "RESERVED v1.0" are parsed but not executed in v1.0
 node_type: REDUCER
 node_name: metrics_aggregator
 node_version: "1.0.0"
@@ -1548,7 +2180,7 @@ state_transitions:
 | ModelFSMStateDefinition | `models/contracts/subcontracts/model_fsm_state_definition.py` | P0 |
 | ModelFSMStateTransition | `models/contracts/subcontracts/model_fsm_state_transition.py` | P0 |
 | ModelFSMTransitionCondition | `models/contracts/subcontracts/model_fsm_transition_condition.py` | P0 |
-| ModelFSMTransitionAction | `models/contracts/subcontracts/model_fsmtransitionaction.py` | P0 |
+| ModelFSMTransitionAction | `models/contracts/subcontracts/model_fsm_transition_action.py` | P0 |
 | ModelFSMOperation | `models/contracts/subcontracts/model_fsm_operation.py` | P0 |
 
 ### Phase 3: Execution & Node (~3 days)
@@ -1607,6 +2239,8 @@ state_transitions:
 - [ ] Unit tests for each model
 - [ ] Unit tests for FSM executor functions
 - [ ] Unit tests for condition evaluation
+- [ ] Unit test for wildcard transition precedence (exact state > wildcard)
+- [ ] Unit test for metadata stability (all fields always present)
 - [ ] Integration test with example FSM contract
 - [ ] 90%+ code coverage
 
@@ -1630,6 +2264,9 @@ state_transitions:
 
 ---
 
-**Last Updated**: 2025-12-09
-**Version**: 1.0.0
+**Last Updated**: 2025-12-10
+**Version**: 1.0.3
 **Status**: DRAFT - Ready for Implementation
+**Changelog**:
+- v1.0.3: Added canonical representation statement, fixed 3-token rule violations, added normative transition algorithm, condition-no-fallback statement, reserved context key protection, metadata stability guarantee, FSM state mutation protection, action semantics clarification, expression grammar design philosophy, numeric equality warning, ModelFSMOperation documentation, wildcard/metadata test acceptance criteria
+- v1.0.2: Initial specification draft
