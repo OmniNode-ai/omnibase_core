@@ -5,10 +5,12 @@ Tests cover:
 - TransportViolation dataclass
 - TransportImportAnalyzer AST visitor
 - analyze_file function
+- find_python_files function
+- get_changed_files function
 - Banned import detection (kafka, redis, httpx, requests, asyncpg, etc.)
 - Allowed imports (typing, pydantic, omnibase_core, standard library)
 - Edge cases (empty files, syntax errors, nested imports, comments, strings)
-- CLI arguments (--verbose, --json)
+- CLI arguments (--verbose, --json, --changed-files)
 - Exit codes (0 for success, 1 for violations)
 - Output formats (text, JSON)
 
@@ -45,6 +47,7 @@ TransportImportAnalyzer: Any = None
 TransportCheckResult: Any = None
 analyze_file: Any = None
 find_python_files: Any = None
+get_changed_files: Any = None
 main: Any = None
 BANNED_TRANSPORT_MODULES: Any = None
 ViolationType: Any = None
@@ -58,8 +61,8 @@ def _load_module() -> bool:
         True if module loaded successfully, False otherwise.
     """
     global _module_loaded, TransportViolation, TransportImportAnalyzer
-    global TransportCheckResult, analyze_file, find_python_files, main
-    global BANNED_TRANSPORT_MODULES, ViolationType, Severity
+    global TransportCheckResult, analyze_file, find_python_files, get_changed_files
+    global main, BANNED_TRANSPORT_MODULES, ViolationType, Severity
 
     if _module_loaded:
         return True
@@ -87,6 +90,7 @@ def _load_module() -> bool:
     TransportCheckResult = _module.TransportCheckResult
     analyze_file = _module.analyze_file
     find_python_files = _module.find_python_files
+    get_changed_files = _module.get_changed_files
     main = _module.main
     BANNED_TRANSPORT_MODULES = _module.BANNED_TRANSPORT_MODULES
     ViolationType = _module.ViolationType
@@ -772,6 +776,40 @@ if tp.TYPE_CHECKING:
         # Imports inside tp-aliased TYPE_CHECKING should be allowed
         assert len(analyzer.violations) == 0
 
+    def test_aliased_type_checking_constant_not_handled(self) -> None:
+        """Document known limitation: aliased TYPE_CHECKING constant not detected.
+
+        The pattern `from typing import TYPE_CHECKING as TC; if TC:` is NOT
+        recognized as a type-checking block. This is a known limitation that
+        is acceptable because:
+        1. This pattern is extremely rare in practice
+        2. Supporting it would require tracking import aliases across the AST
+        3. The complexity cost outweighs the benefit
+
+        This test documents the limitation rather than testing for correct handling.
+        """
+        skip_if_module_not_loaded()
+
+        code = """
+from typing import TYPE_CHECKING as TC
+
+if TC:
+    import kafka
+"""
+        source_lines = code.splitlines()
+        tree = ast.parse(code)
+
+        analyzer = TransportImportAnalyzer(
+            file_path=Path("/test.py"),
+            source_lines=source_lines,
+        )
+        analyzer.visit(tree)
+
+        # KNOWN LIMITATION: This WILL report a violation because we don't track
+        # aliased TYPE_CHECKING constants. The import is inside a TC block but
+        # we don't recognize TC as TYPE_CHECKING.
+        assert len(analyzer.violations) == 1
+
     def test_allows_nested_type_checking_blocks(self) -> None:
         """Test that nested conditions inside TYPE_CHECKING blocks are handled.
 
@@ -1220,6 +1258,187 @@ from redis import Redis as R
         analyzer.visit(tree)
 
         assert len(analyzer.violations) == 1
+
+
+class TestChangedFilesFlag:
+    """Tests for --changed-files CLI flag behavior."""
+
+    def test_changed_files_flag_with_no_changes(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Test --changed-files with no changed files falls back to all files."""
+        skip_if_module_not_loaded()
+
+        test_dir = tmp_path / "src" / "omnibase_core"
+        test_dir.mkdir(parents=True)
+        (test_dir / "clean.py").write_text("import os")
+
+        with patch.object(
+            sys,
+            "argv",
+            [
+                "check_transport_imports.py",
+                "--changed-files",
+                "--src-dir",
+                str(test_dir),
+            ],
+        ):
+            # Mock get_changed_files to return empty list (simulates no git changes)
+            with patch("check_transport_imports.get_changed_files", return_value=[]):
+                result = main()
+                assert result == 0
+
+    def test_changed_files_flag_filters_files(self, tmp_path: Path) -> None:
+        """Test --changed-files only checks changed files."""
+        skip_if_module_not_loaded()
+
+        test_dir = tmp_path / "src" / "omnibase_core"
+        test_dir.mkdir(parents=True)
+        clean_file = test_dir / "clean.py"
+        bad_file = test_dir / "bad.py"
+        clean_file.write_text("import os")
+        bad_file.write_text("import kafka")
+
+        with patch.object(
+            sys,
+            "argv",
+            [
+                "check_transport_imports.py",
+                "--changed-files",
+                "--src-dir",
+                str(test_dir),
+            ],
+        ):
+            # Mock get_changed_files to only return clean file (resolved path)
+            with patch(
+                "check_transport_imports.get_changed_files",
+                return_value=[clean_file.resolve()],
+            ):
+                result = main()
+                # Should pass because bad.py is not in changed files
+                assert result == 0
+
+    def test_changed_files_flag_detects_violations_in_changed_files(
+        self, tmp_path: Path
+    ) -> None:
+        """Test --changed-files detects violations in changed files."""
+        skip_if_module_not_loaded()
+
+        test_dir = tmp_path / "src" / "omnibase_core"
+        test_dir.mkdir(parents=True)
+        clean_file = test_dir / "clean.py"
+        bad_file = test_dir / "bad.py"
+        clean_file.write_text("import os")
+        bad_file.write_text("import kafka")
+
+        with patch.object(
+            sys,
+            "argv",
+            [
+                "check_transport_imports.py",
+                "--changed-files",
+                "--src-dir",
+                str(test_dir),
+            ],
+        ):
+            # Mock get_changed_files to return the bad file (resolved path)
+            with patch(
+                "check_transport_imports.get_changed_files",
+                return_value=[bad_file.resolve()],
+            ):
+                result = main()
+                # Should fail because bad.py has violations
+                assert result == 1
+
+    def test_changed_files_verbose_output(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Test --changed-files with --verbose shows mode information."""
+        skip_if_module_not_loaded()
+
+        test_dir = tmp_path / "src" / "omnibase_core"
+        test_dir.mkdir(parents=True)
+        clean_file = test_dir / "clean.py"
+        clean_file.write_text("import os")
+
+        with patch.object(
+            sys,
+            "argv",
+            [
+                "check_transport_imports.py",
+                "--changed-files",
+                "--verbose",
+                "--src-dir",
+                str(test_dir),
+            ],
+        ):
+            # Mock get_changed_files to return the clean file
+            with patch(
+                "check_transport_imports.get_changed_files",
+                return_value=[clean_file.resolve()],
+            ):
+                result = main()
+                assert result == 0
+
+        captured = capsys.readouterr()
+        # Verbose mode should indicate changed-files mode
+        assert (
+            "--changed-files mode" in captured.out
+            or "changed file" in captured.out.lower()
+        )
+
+    def test_changed_files_verbose_fallback_message(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Test --changed-files with --verbose shows fallback message when no changes."""
+        skip_if_module_not_loaded()
+
+        test_dir = tmp_path / "src" / "omnibase_core"
+        test_dir.mkdir(parents=True)
+        (test_dir / "clean.py").write_text("import os")
+
+        with patch.object(
+            sys,
+            "argv",
+            [
+                "check_transport_imports.py",
+                "--changed-files",
+                "--verbose",
+                "--src-dir",
+                str(test_dir),
+            ],
+        ):
+            # Mock get_changed_files to return empty list
+            with patch("check_transport_imports.get_changed_files", return_value=[]):
+                result = main()
+                assert result == 0
+
+        captured = capsys.readouterr()
+        # Verbose mode should indicate fallback to all files
+        assert (
+            "checking all files" in captured.out.lower()
+            or "no changed" in captured.out.lower()
+        )
+
+
+class TestGetChangedFilesFunction:
+    """Tests for the get_changed_files() function."""
+
+    def test_get_changed_files_returns_empty_on_git_error(self, tmp_path: Path) -> None:
+        """Test get_changed_files returns empty list when git is not available."""
+        skip_if_module_not_loaded()
+
+        # Import the function from the loaded module
+        import check_transport_imports
+
+        # Create a directory that's not a git repo
+        test_dir = tmp_path / "not_a_git_repo" / "src" / "omnibase_core"
+        test_dir.mkdir(parents=True)
+
+        # Should return empty list when git fails
+        result = check_transport_imports.get_changed_files(test_dir)
+        assert result == []
+        assert isinstance(result, list)
 
 
 class TestSubmoduleImports:

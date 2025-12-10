@@ -47,7 +47,7 @@ import ast
 import json
 import sys
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import UTC, date, datetime
 from enum import Enum
 from pathlib import Path
 from typing import NamedTuple
@@ -272,6 +272,11 @@ class TransportImportAnalyzer(ast.NodeVisitor):
         - `if TYPE_CHECKING:` (direct import)
         - `if typing.TYPE_CHECKING:` (qualified access)
         - `if t.TYPE_CHECKING:` (aliased import like `import typing as t`)
+
+        Known limitation: Does not handle aliased TYPE_CHECKING imports like
+        `from typing import TYPE_CHECKING as TC; if TC:`. This pattern is
+        extremely rare in practice and would require tracking import aliases
+        across the AST, which adds significant complexity for minimal benefit.
 
         Args:
             test: AST expression to check.
@@ -572,8 +577,6 @@ def check_allowlist_expiration() -> tuple[bool, str]:
         Tuple of (is_warning, message). is_warning is True if expiration
         is approaching or passed.
     """
-    from datetime import UTC, datetime
-
     today = datetime.now(tz=UTC).date()
     days_until_expiration = (ALLOWLIST_EXPIRATION_DATE - today).days
 
@@ -597,9 +600,10 @@ def get_changed_files(src_dir: Path) -> list[Path]:
 
     Uses git diff to find changed .py files. Returns empty list if:
     - git is not available (FileNotFoundError)
-    - Not in a git repository
+    - Not in a git repository (git rev-parse fails)
     - Neither origin/main nor origin/master exists
     - No Python files changed
+    - File was deleted in the branch (exists check fails)
 
     The caller should handle empty list by falling back to checking all files.
 
@@ -608,13 +612,28 @@ def get_changed_files(src_dir: Path) -> list[Path]:
 
     Returns:
         List of resolved changed Python file paths within src_dir,
-        or empty list if git operations fail.
+        or empty list if git operations fail or no files changed.
     """
     import subprocess
 
     try:
-        # Get files changed compared to main/master branch
-        # Use a loop to avoid running two git commands in repos using master
+        # First, detect repo root using git rev-parse (more robust than path assumptions)
+        repo_root_result = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            capture_output=True,
+            text=True,
+            check=False,
+            cwd=src_dir,
+        )
+        if repo_root_result.returncode != 0:
+            # Not in a git repository
+            return []
+
+        repo_root = Path(repo_root_result.stdout.strip()).resolve()
+
+        # Get files changed compared to main/master branch.
+        # Try origin/main first (modern convention), then origin/master (legacy).
+        # This handles repos that use either naming convention.
         result = None
         for branch in ["origin/main", "origin/master"]:
             result = subprocess.run(
@@ -622,34 +641,58 @@ def get_changed_files(src_dir: Path) -> list[Path]:
                 capture_output=True,
                 text=True,
                 check=False,
-                cwd=src_dir.parent.parent,  # Run from repo root for correct paths
+                cwd=repo_root,
             )
             if result.returncode == 0:
-                break  # Found a valid branch, no need to try others
+                break  # Found a valid branch, use its results
 
-        if result is not None and result.returncode == 0 and result.stdout.strip():
-            changed_files = []
-            src_dir_resolved = src_dir.resolve()
-            repo_root = src_dir.parent.parent.resolve()
-            for line in result.stdout.strip().split("\n"):
-                # Git returns paths relative to repo root
-                file_path = repo_root / line
-                # Only include files within src_dir using proper path comparison
-                # (avoids false positives from string containment)
-                if file_path.exists():
-                    resolved = file_path.resolve()
-                    try:
-                        resolved.relative_to(src_dir_resolved)
-                        changed_files.append(resolved)
-                    except ValueError:
-                        pass  # File is not within src_dir
-            return sorted(changed_files)
+        # Handle git diff failures (branch not found, etc.)
+        if result is None or result.returncode != 0:
+            return []
+
+        # Handle empty output (no changed files)
+        output = result.stdout.strip()
+        if not output:
+            return []
+
+        changed_files = []
+        src_dir_resolved = src_dir.resolve()
+
+        for line in output.split("\n"):
+            if not line:
+                continue  # Skip empty lines
+
+            # Git returns paths relative to repo root
+            file_path = repo_root / line
+
+            # Skip deleted files (file was removed in the branch)
+            if not file_path.exists():
+                continue
+
+            resolved = file_path.resolve()
+
+            # Only include files within src_dir using proper Path comparison.
+            # relative_to() raises ValueError if resolved is not under src_dir_resolved,
+            # which correctly excludes files outside our target directory.
+            # This is more reliable than string containment checks like
+            # "src_dir in str(file_path)" which could match partial path segments.
+            try:
+                resolved.relative_to(src_dir_resolved)
+                changed_files.append(resolved)
+            except ValueError:
+                pass  # File is not within src_dir, skip it
+
+        return sorted(changed_files)
+
     except FileNotFoundError:
-        pass  # git not available
+        # git command not available on system
+        return []
     except OSError:
-        pass  # Not in a git repository or other OS error
-
-    return []  # Return empty list if git fails
+        # Other OS-level errors (permissions, etc.)
+        return []
+    except (subprocess.SubprocessError, UnicodeDecodeError):
+        # Subprocess failures or encoding issues in git output
+        return []
 
 
 def main() -> int:
@@ -730,11 +773,16 @@ def main() -> int:
     else:
         python_files = find_python_files(src_dir)
 
+    # Store total files before filtering for summary output
+    all_python_files_count = len(python_files)
+    changed_files_mode_active = False
+
     # Filter to only changed files if --changed-files flag is set
     if args.changed_files:
         changed = get_changed_files(src_dir)
         if changed:
             python_files = [f for f in python_files if f in changed]
+            changed_files_mode_active = True
             if args.verbose and not args.json:
                 print(
                     f"Checking {len(python_files)} changed files (--changed-files mode)"
@@ -799,7 +847,9 @@ def main() -> int:
     if args.json:
         output: dict[str, object] = {
             "summary": {
-                "total_files": total_files,
+                "total_files_in_src": all_python_files_count,
+                "files_checked": total_files,
+                "changed_files_mode": changed_files_mode_active,
                 "clean_files": clean_files,
                 "files_with_violations": files_with_violations,
                 "total_violations": total_violations,
@@ -846,7 +896,12 @@ def main() -> int:
     print("=" * 60)
     print("Transport Import Check Summary")
     print("=" * 60)
-    print(f"  Total files scanned: {total_files}")
+    if changed_files_mode_active:
+        print("  Mode: --changed-files (checking only modified files)")
+        print(f"  Total files in src/: {all_python_files_count}")
+        print(f"  Changed files checked: {total_files}")
+    else:
+        print(f"  Total files scanned: {total_files}")
     print(f"  Clean files: {clean_files}")
     print(f"  Files with violations: {files_with_violations}")
     print(f"  Total violations: {total_violations}")
