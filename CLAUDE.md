@@ -894,8 +894,9 @@ poetry install
 pre-commit install
 
 # Cleanup
-python3 scripts/cleanup.py                  # Clean tmp/, cache files
-python3 scripts/cleanup.py --remove-from-git # Also remove tracked tmp files
+python3 scripts/cleanup.py --tmp-only       # Clean tmp/ only (preserves caches) - USE THIS!
+python3 scripts/cleanup.py                  # FULL cleanup (deletes ALL caches - slow rebuild!)
+python3 scripts/cleanup.py --remove-from-git --tmp-only  # Remove tracked tmp files from git
 python3 scripts/cleanup.py --dry-run        # Preview what would be cleaned
 python3 scripts/cleanup.py --verbose        # Detailed output
 
