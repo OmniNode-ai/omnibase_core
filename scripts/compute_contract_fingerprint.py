@@ -283,7 +283,10 @@ def load_contract_from_yaml(file_path: Path) -> BaseModel:
 
     try:
         return model_class.model_validate(contract_data)
-    except Exception as e:
+    except ModelOnexError:
+        raise
+    except ValueError as e:
+        # Pydantic ValidationError inherits from ValueError
         raise ModelOnexError(
             message=f"Contract validation failed: {e}",
             error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
@@ -322,7 +325,6 @@ def compute_fingerprint_for_file(
 
 
 def validate_existing_fingerprint(
-    file_path: Path,
     contract: BaseModel,
     computed: ModelContractFingerprint,
 ) -> tuple[bool, str | None]:
@@ -332,7 +334,6 @@ def validate_existing_fingerprint(
     to the computed fingerprint.
 
     Args:
-        file_path: Path to the contract file (for error messages).
         contract: Validated contract model.
         computed: Computed fingerprint.
 
@@ -476,7 +477,6 @@ def process_single_file(
 
         if validate:
             validation_result = validate_existing_fingerprint(
-                file_path,
                 contract,
                 fingerprint,
             )

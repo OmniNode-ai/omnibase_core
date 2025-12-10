@@ -185,14 +185,14 @@ def _detect_contract_type(data: dict[str, Any]) -> str | None:
         "service": "compute",
         # Effect types
         "effect_generic": "effect",
+        "gateway": "effect",
+        "validator": "effect",
         "tool": "effect",
         "agent": "effect",
         # Reducer types
         "reducer_generic": "reducer",
         # Orchestrator types
         "orchestrator_generic": "orchestrator",
-        "gateway": "orchestrator",
-        "validator": "orchestrator",
         "workflow": "orchestrator",
     }
 
@@ -550,8 +550,9 @@ def lint_fingerprint(
                                 )
                             )
 
-        except Exception as e:
+        except (ValueError, TypeError, ModelOnexError) as e:
             # Schema validation failed - can't compute fingerprint
+            # Pydantic ValidationError inherits from ValueError
             issues.append(
                 LintIssue(
                     file_path=file_path,
@@ -866,8 +867,13 @@ Examples:
                     data = yaml.safe_load(content)
                     contract_name = data.get("name", result.file_path.stem)
                     registry.register(contract_name, result.computed_fingerprint)
-                except Exception:
-                    pass  # Skip files that can't be parsed
+                except (OSError, yaml.YAMLError) as e:
+                    # Log warning for files that can't be parsed during baseline update
+                    if not args.json:
+                        print(
+                            f"Warning: Skipped {result.file_path} during baseline update: {e}",
+                            file=sys.stderr,
+                        )
 
         try:
             save_baseline_registry(registry, args.baseline)
