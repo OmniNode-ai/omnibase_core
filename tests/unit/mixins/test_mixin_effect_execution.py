@@ -1173,59 +1173,86 @@ class TestExtractResponseFields:
 
         assert "must be primitive" in str(exc_info.value)
 
-    def test_extract_with_jsonpath_engine_not_installed(
-        self, test_node: TestNode
-    ) -> None:
-        """Test that jsonpath engine without jsonpath-ng package raises error.
+    def test_extract_with_jsonpath_engine(self, test_node: TestNode) -> None:
+        """Test jsonpath engine behavior based on jsonpath-ng availability.
 
-        WARNING: This test assumes jsonpath-ng is NOT installed as a dependency.
-        If jsonpath-ng is added to pyproject.toml dependencies in the future,
-        this test will fail and should be updated to test successful extraction
-        instead of dependency error handling.
+        This test handles both scenarios:
+        - If jsonpath-ng is installed: extraction should succeed
+        - If jsonpath-ng is NOT installed: should raise dependency error
+
+        The test dynamically detects whether the library is available and
+        validates the appropriate behavior.
         """
+        # Check if jsonpath-ng is available
+        try:
+            import jsonpath_ng
+
+            jsonpath_available = True
+        except ImportError:
+            jsonpath_available = False
+
         response = {"data": {"user": {"id": 123}}}
         response_handling = {
             "extraction_engine": "jsonpath",  # Uses jsonpath which requires jsonpath-ng
             "extract_fields": {"user_id": "$.data.user.id"},
         }
 
-        # jsonpath-ng is not installed, so this should raise dependency error
-        # or parse error depending on environment
-        with pytest.raises(ModelOnexError) as exc_info:
-            test_node._extract_response_fields(response, response_handling)
+        if jsonpath_available:
+            # jsonpath-ng IS installed - extraction should succeed
+            result = test_node._extract_response_fields(response, response_handling)
+            assert result["user_id"] == 123
+        else:
+            # jsonpath-ng is NOT installed - should raise dependency error
+            with pytest.raises(ModelOnexError) as exc_info:
+                test_node._extract_response_fields(response, response_handling)
 
-        # Either dependency not available or some parsing error
-        error_str = str(exc_info.value)
-        assert (
-            "jsonpath-ng" in error_str
-            or "DEPENDENCY_UNAVAILABLE" in error_str
-            or "Field extraction failed" in error_str
-        )
+            # Either dependency not available or some parsing error
+            error_str = str(exc_info.value)
+            assert (
+                "jsonpath-ng" in error_str
+                or "DEPENDENCY_UNAVAILABLE" in error_str
+                or "Field extraction failed" in error_str
+            )
 
     def test_extract_default_engine_is_jsonpath(self, test_node: TestNode) -> None:
         """Test that default extraction engine is jsonpath.
 
-        WARNING: This test assumes jsonpath-ng is NOT installed as a dependency.
-        If jsonpath-ng is added to pyproject.toml dependencies in the future,
-        this test will fail and should be updated to test successful extraction
-        instead of dependency error handling.
+        This test handles both scenarios:
+        - If jsonpath-ng is installed: extraction should succeed with default engine
+        - If jsonpath-ng is NOT installed: should raise dependency error
+
+        The test dynamically detects whether the library is available and
+        validates the appropriate behavior.
         """
+        # Check if jsonpath-ng is available
+        try:
+            import jsonpath_ng
+
+            jsonpath_available = True
+        except ImportError:
+            jsonpath_available = False
+
         response = {"data": "value"}
         # No extraction_engine specified - should default to jsonpath
         response_handling: dict[str, Any] = {
             "extract_fields": {"key": "$.data"},
         }
 
-        # Since jsonpath-ng is not installed, this should fail with dependency error
-        with pytest.raises(ModelOnexError) as exc_info:
-            test_node._extract_response_fields(response, response_handling)
+        if jsonpath_available:
+            # jsonpath-ng IS installed - default engine should work
+            result = test_node._extract_response_fields(response, response_handling)
+            assert result["key"] == "value"
+        else:
+            # jsonpath-ng is NOT installed - should fail with dependency error
+            with pytest.raises(ModelOnexError) as exc_info:
+                test_node._extract_response_fields(response, response_handling)
 
-        error_str = str(exc_info.value)
-        assert (
-            "jsonpath-ng" in error_str
-            or "DEPENDENCY_UNAVAILABLE" in error_str
-            or "Field extraction failed" in error_str
-        )
+            error_str = str(exc_info.value)
+            assert (
+                "jsonpath-ng" in error_str
+                or "DEPENDENCY_UNAVAILABLE" in error_str
+                or "Field extraction failed" in error_str
+            )
 
 
 class TestExecuteOperation:

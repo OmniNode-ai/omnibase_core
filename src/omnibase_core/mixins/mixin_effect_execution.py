@@ -283,16 +283,24 @@ class MixinEffectExecution:
         It orchestrates sequential operations with abort-on-first-failure
         semantics, retry policies, circuit breakers, and transaction management.
 
-        Operation Data Population (IMPORTANT - Contract Binding):
-            This method expects operations to be provided in input_data.operation_data
-            under the "operations" key. The calling code (typically NodeEffect.process())
-            is responsible for populating this from the effect_subcontract:
+        Operation Source Priority (IMPORTANT - Contract Binding):
+            Operations can be provided via two mechanisms, checked in priority order:
 
-            REQUIRED: The node MUST transform effect_subcontract.operations into
-            operation_data["operations"] before calling this method. Example:
+            1. **effect_subcontract key** (PREFERRED): Pass the full effect_subcontract
+               object in operation_data["effect_subcontract"]. The mixin extracts
+               operations automatically, preserving response_handling, retry_policy,
+               and circuit_breaker configs from each operation.
 
-                # In NodeEffect.process():
+                # Preferred pattern - pass subcontract directly:
                 effect_subcontract = self.get_effect_subcontract()
+                input_data.operation_data["effect_subcontract"] = effect_subcontract
+                result = await self.execute_effect(input_data)
+
+            2. **operations key** (LEGACY): Direct operations list in
+               operation_data["operations"]. Use when manual control over
+               operation serialization is needed.
+
+                # Legacy pattern - manual operation list:
                 input_data.operation_data["operations"] = [
                     {
                         "io_config": op.io_config.model_dump(),
@@ -303,10 +311,16 @@ class MixinEffectExecution:
                 result = await self.execute_effect(input_data)
 
             This design separates the MIXIN (execution logic) from the NODE (contract
-            binding). The mixin is contract-agnostic and works with raw operation_data,
-            while the node handles the contract-to-data transformation.
+            binding). The mixin handles operation extraction from either source,
+            while the node controls which source to use.
 
-            Expected operation_data structure:
+            Expected operation_data structure (with effect_subcontract):
+                {
+                    "effect_subcontract": ModelEffectSubcontract(...),  # Preferred
+                    ... # Additional context for template resolution
+                }
+
+            Expected operation_data structure (with operations list):
                 {
                     "operations": [
                         {
@@ -315,7 +329,10 @@ class MixinEffectExecution:
                                 "url_template": "...",
                                 ...
                             },
-                            "operation_timeout_ms": 30000
+                            "operation_timeout_ms": 30000,
+                            "response_handling": {...},  # Optional
+                            "retry_policy": {...},       # Optional
+                            "circuit_breaker": {...}     # Optional
                         }
                     ],
                     ... # Additional context for template resolution
@@ -326,11 +343,10 @@ class MixinEffectExecution:
             thread or with explicit synchronization.
 
         Args:
-            input_data: Effect input containing operation configuration in
-                operation_data["operations"], retry policies, circuit breaker
-                settings, and transaction configuration. The caller is
-                responsible for populating operation_data from effect_subcontract
-                or other sources.
+            input_data: Effect input containing operation configuration. Operations
+                can be provided via operation_data["effect_subcontract"] (preferred)
+                or operation_data["operations"] (legacy). Also includes retry policies,
+                circuit breaker settings, and transaction configuration.
 
         Returns:
             ModelEffectOutput containing operation result, transaction state,
@@ -342,13 +358,11 @@ class MixinEffectExecution:
                 error codes and context.
 
         Example:
+            >>> # Preferred: Pass effect_subcontract directly
             >>> input_data = ModelEffectInput(
             ...     effect_type=EnumEffectType.API_CALL,
             ...     operation_data={
-            ...         "operations": [{
-            ...             "io_config": {"handler_type": "http", "url_template": "..."},
-            ...             "operation_timeout_ms": 30000
-            ...         }]
+            ...         "effect_subcontract": effect_subcontract,  # Extracted automatically
             ...     },
             ...     retry_enabled=True,
             ...     max_retries=3,

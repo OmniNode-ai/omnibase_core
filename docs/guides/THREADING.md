@@ -726,6 +726,7 @@ thread.join()
 ```
 
 Error output:
+
 ```text
 ModelOnexError: Thread safety violation: node instance accessed from different thread
   error_code: ONEX_CORE_261_THREAD_SAFETY_VIOLATION
@@ -961,9 +962,7 @@ class TestNodeComputeThreadSafety:
 - [asyncio thread safety](https://docs.python.org/3/library/asyncio-dev.html#concurrency-and-multithreading)
 - [Pydantic model immutability](https://docs.pydantic.dev/latest/concepts/models/#frozen-models)
 
-## Summary
-
-### Thread Safety Quick Reference
+## Thread Safety Quick Reference
 
 | Component | Thread-Safe? | Mitigation |
 |-----------|-------------|------------|
@@ -989,7 +988,7 @@ class TestNodeComputeThreadSafety:
 | MixinNodeLifecycle | Yes | Stateless methods |
 | MixinDiscoveryResponder | Yes | Stateless methods |
 
-### Design Rationale
+## Design Rationale
 
 ONEX nodes are intentionally NOT thread-safe by default for several reasons:
 
@@ -1000,7 +999,7 @@ ONEX nodes are intentionally NOT thread-safe by default for several reasons:
 
 **Default Assumption**: Unless explicitly documented as thread-safe, assume components require synchronization for concurrent use.
 
-### Key References
+## Key References
 
 - NodeEffect: [node_effect.py](../../src/omnibase_core/nodes/node_effect.py)
 - NodeCompute: [node_compute.py](../../src/omnibase_core/nodes/node_compute.py)

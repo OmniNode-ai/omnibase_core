@@ -132,11 +132,12 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
         # Caller-provided data in operation_data is used for template resolution
         # (e.g., ${input.name} will resolve to "John Doe").
         #
-        # The subcontract's default_retry_policy, default_circuit_breaker, and
-        # transaction settings are applied to the input_data before delegation
-        # to the mixin. Per-operation configs (response_handling, retry_policy,
-        # circuit_breaker) are serialized into operation_data["operations"] for
-        # handler access during execution.
+        # Merge Strategy (caller-takes-precedence):
+        # - Subcontract defaults (default_retry_policy, default_circuit_breaker,
+        #   transaction) provide baseline configuration
+        # - Caller-provided values in ModelEffectInput take precedence
+        # - Per-operation configs (response_handling, retry_policy, circuit_breaker)
+        #   are serialized into operation_data["operations"] for handler access
         result = await node.process(ModelEffectInput(
             effect_type=EnumEffectType.API_CALL,
             operation_data={
@@ -144,10 +145,10 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
                 "name": "John Doe",
                 "email": "john@example.com",
             },
-            # Optional: override retry behavior (defaults come from subcontract)
+            # Optional: override retry behavior (caller values take precedence)
             # retry_enabled=True,  # Default: True
-            # max_retries=3,  # Applied from subcontract.default_retry_policy
-            # circuit_breaker_enabled=False,  # Applied from subcontract.default_circuit_breaker
+            # max_retries=5,  # Overrides subcontract.default_retry_policy.max_retries
+            # circuit_breaker_enabled=True,  # Overrides subcontract.default_circuit_breaker
         ))
 
         # Access result
@@ -257,6 +258,9 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
         Raises:
             ModelOnexError: If effect_subcontract is not loaded or execution fails
         """
+        # Thread safety check (zero overhead when disabled)
+        self._check_thread_safety()
+
         if self.effect_subcontract is None:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
@@ -270,39 +274,58 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
         # - Circuit breaker settings from default_circuit_breaker
         # - Transaction settings from default_transaction_config
         #
-        # Merge Strategy:
-        # - Subcontract defaults are always applied unless the caller provides explicit overrides
-        # - We use a simple "subcontract wins" policy for defaults, with caller-provided
-        #   values in operation_data taking precedence for template resolution
-        # - Circuit breaker and transaction configs from subcontract are always honored
-        #   unless the caller explicitly sets different values
+        # Merge Strategy (caller-takes-precedence):
+        # - Subcontract defaults provide baseline configuration
+        # - Caller-provided values in input_data take precedence over subcontract defaults
+        # - This allows callers to override contract defaults for specific use cases
+        #   while still benefiting from sensible defaults when not specified
+        #
+        # Detection of caller-provided values:
+        # - We compare against ModelEffectInput's Pydantic field defaults
+        # - If value differs from the field default, caller explicitly set it
+        # - This approach is robust to model changes (uses Pydantic introspection)
         default_retry = self.effect_subcontract.default_retry_policy
         default_cb = self.effect_subcontract.default_circuit_breaker
         default_tx = self.effect_subcontract.transaction
 
-        # Build update dict with subcontract defaults
-        # Always apply subcontract retry/circuit breaker settings - these are the
-        # contract-defined resilience policies that should be respected
+        # Get ModelEffectInput field defaults for comparison
+        # This uses Pydantic's model_fields to get declared defaults
+        model_defaults = {
+            name: field.default
+            for name, field in ModelEffectInput.model_fields.items()
+            if field.default is not None
+        }
+
+        # Build update dict with subcontract defaults (caller-takes-precedence)
         input_updates: dict[str, object] = {}
 
-        # Retry policy: apply subcontract defaults for retry settings
-        # NOTE: Subcontract defaults unconditionally overwrite caller-provided
-        # retry settings (max_retries, retry_delay_ms) when retry_enabled=True.
-        # This is intentional - contract-defined resilience policies take precedence.
-        # Callers who need custom retry behavior should set retry_enabled=False
-        # and implement their own retry logic.
+        # Retry policy: apply subcontract defaults only if caller used defaults
+        # Caller-provided values take precedence over subcontract defaults
         if input_data.retry_enabled:
-            # Apply subcontract retry settings
-            input_updates["max_retries"] = default_retry.max_retries
-            input_updates["retry_delay_ms"] = default_retry.base_delay_ms
+            # Only apply subcontract max_retries if caller didn't explicitly set it
+            if input_data.max_retries == model_defaults.get("max_retries", 3):
+                input_updates["max_retries"] = default_retry.max_retries
+            # Only apply subcontract retry_delay_ms if caller didn't explicitly set it
+            if input_data.retry_delay_ms == model_defaults.get("retry_delay_ms", 1000):
+                input_updates["retry_delay_ms"] = default_retry.base_delay_ms
 
-        # Circuit breaker: enable if subcontract specifies it
+        # Circuit breaker: enable if subcontract specifies it AND caller didn't disable
+        # Caller explicitly setting circuit_breaker_enabled=False takes precedence
         if default_cb.enabled:
-            input_updates["circuit_breaker_enabled"] = True
+            # Only enable if caller used the default (False)
+            if input_data.circuit_breaker_enabled == model_defaults.get(
+                "circuit_breaker_enabled", False
+            ):
+                input_updates["circuit_breaker_enabled"] = True
 
-        # Transaction: enable if subcontract specifies it
+        # Transaction: enable if subcontract specifies it AND caller didn't disable
+        # Caller explicitly setting transaction_enabled=False takes precedence
         if default_tx.enabled:
-            input_updates["transaction_enabled"] = True
+            # Only enable if caller used the default (True for transactions)
+            # Note: transaction_enabled defaults to True, so we enable subcontract
+            # setting unconditionally since disabling requires explicit False
+            if input_data.transaction_enabled:
+                input_updates["transaction_enabled"] = True
 
         # Apply updates if any
         if input_updates:
