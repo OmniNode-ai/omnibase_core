@@ -4,9 +4,9 @@ TypedDict for handler metadata.
 This TypedDict defines the structure returned by ProtocolHandler.describe(),
 providing typed access to handler registration and discovery metadata.
 
-The TypedDict uses `total=False` with explicit `Required[]` markers to
-distinguish between mandatory fields (name, version) and optional fields
-(description, capabilities).
+The TypedDict uses `total=False` with explicit `Required[]` and `NotRequired[]`
+markers to distinguish between mandatory fields (name, version) and optional
+fields (description, capabilities).
 
 Related:
     - OMN-226: ProtocolHandler protocol
@@ -17,7 +17,7 @@ Related:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Required, TypedDict
+from typing import TYPE_CHECKING, NotRequired, Required, TypedDict
 
 if TYPE_CHECKING:
     from omnibase_core.models.primitives.model_semver import ModelSemVer
@@ -49,5 +49,5 @@ class TypedDictHandlerMetadata(TypedDict, total=False):
 
     name: Required[str]
     version: Required[ModelSemVer]
-    description: str
-    capabilities: list[str]
+    description: NotRequired[str]
+    capabilities: NotRequired[list[str]]

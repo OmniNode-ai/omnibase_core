@@ -114,8 +114,8 @@ class TestEnvelopeRouterRegisterHandler:
         # Register handler
         result = runtime.register_handler(mock_handler)
 
-        # Result should be None or runtime for chaining
-        assert result is None or result is runtime
+        # register_handler returns None (no chaining)
+        assert result is None
 
         # Verify handler is registered
         assert len(runtime._handlers) == 1
@@ -344,8 +344,8 @@ class TestEnvelopeRouterRegisterNode:
 
         result = runtime.register_node(instance)
 
-        # Result should be None or runtime for chaining
-        assert result is None or result is runtime
+        # register_node returns None (no chaining)
+        assert result is None
 
         # Verify node was registered with correct slug key
         assert len(runtime._nodes) == 1

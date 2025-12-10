@@ -36,6 +36,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from typing import TYPE_CHECKING
 
 from omnibase_core.decorators.error_handling import standard_error_handling
@@ -639,8 +640,16 @@ class EnvelopeRouter(ProtocolNodeRuntime):
         #
         # fallback-ok: Handler exceptions (except cancellation signals) are intentionally
         # caught and converted to error envelopes per the EnvelopeRouter contract.
+        start_time = time.perf_counter()
         try:
             response = await handler.execute(envelope)
+            duration_ms = (time.perf_counter() - start_time) * 1000
+            logger.debug(
+                "Handler execution completed in %.2fms for envelope %s (handler_type=%s)",
+                duration_ms,
+                envelope.envelope_id,
+                routing_info["handler_type"].value,
+            )
             return response
         except (SystemExit, KeyboardInterrupt, GeneratorExit):
             # Never catch cancellation/exit signals - they must propagate
@@ -649,12 +658,14 @@ class EnvelopeRouter(ProtocolNodeRuntime):
             # Never suppress async cancellation - required for proper task cleanup
             raise
         except Exception as e:
+            duration_ms = (time.perf_counter() - start_time) * 1000
             # Log the error for observability before converting to error envelope
             logger.warning(
-                "Handler execution failed for envelope %s with handler type %s: %s",
+                "Handler execution failed for envelope %s with handler type %s: %s (duration: %.2fms)",
                 envelope.envelope_id,
                 routing_info["handler_type"].value,
                 str(e),
+                duration_ms,
                 exc_info=True,
             )
             # Convert exception to error envelope - this is intentional behavior
