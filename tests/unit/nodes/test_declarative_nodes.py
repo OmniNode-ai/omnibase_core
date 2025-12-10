@@ -468,7 +468,8 @@ class TestDeclarativeNodesIntegration:
 
     Note: These tests are in tests/unit/ for convenience but test integration
     of multiple node components together (reducer workflows, orchestrator steps).
-    They are marked ``@pytest.mark.slow`` as they test multi-component workflows.
+    They test multi-component workflows but run fast with mocked dependencies,
+    so they are marked ``@pytest.mark.unit`` rather than ``@pytest.mark.slow``.
     """
 
     @pytest.mark.asyncio

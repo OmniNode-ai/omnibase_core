@@ -1176,7 +1176,13 @@ class TestExtractResponseFields:
     def test_extract_with_jsonpath_engine_not_installed(
         self, test_node: TestNode
     ) -> None:
-        """Test that jsonpath engine without jsonpath-ng package raises error."""
+        """Test that jsonpath engine without jsonpath-ng package raises error.
+
+        WARNING: This test assumes jsonpath-ng is NOT installed as a dependency.
+        If jsonpath-ng is added to pyproject.toml dependencies in the future,
+        this test will fail and should be updated to test successful extraction
+        instead of dependency error handling.
+        """
         response = {"data": {"user": {"id": 123}}}
         response_handling = {
             "extraction_engine": "jsonpath",  # Uses jsonpath which requires jsonpath-ng
@@ -1197,7 +1203,13 @@ class TestExtractResponseFields:
         )
 
     def test_extract_default_engine_is_jsonpath(self, test_node: TestNode) -> None:
-        """Test that default extraction engine is jsonpath."""
+        """Test that default extraction engine is jsonpath.
+
+        WARNING: This test assumes jsonpath-ng is NOT installed as a dependency.
+        If jsonpath-ng is added to pyproject.toml dependencies in the future,
+        this test will fail and should be updated to test successful extraction
+        instead of dependency error handling.
+        """
         response = {"data": "value"}
         # No extraction_engine specified - should default to jsonpath
         response_handling: dict[str, Any] = {

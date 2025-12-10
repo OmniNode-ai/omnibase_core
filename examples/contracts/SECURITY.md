@@ -549,14 +549,28 @@ return {"result": data}
 
 #### 3. Clear Secrets After Use
 
-```python
-# For highly sensitive operations, clear from memory
-import ctypes
+**Important Security Note**: Python's memory management (string interning, garbage collection) makes reliable secret clearing extremely difficult. The example below is provided for awareness but **should NOT be relied upon** in production. For truly sensitive secrets, consider:
 
-def secure_clear(secret: str) -> None:
-    """Overwrite string memory (best effort in Python)."""
-    if secret:
-        ctypes.memset(id(secret) + 48, 0, len(secret))
+- Using `bytearray` instead of `str` (mutable, can be zeroed)
+- Dedicated secret handling libraries (e.g., `SecretStr` from Pydantic)
+- Short-lived process isolation for secret operations
+- Hardware security modules (HSMs) for critical secrets
+
+```python
+# WARNING: This technique is NOT reliable in Python due to string interning
+# and memory management. Use bytearray or dedicated secret handling instead.
+from typing import Union
+
+def secure_clear_bytearray(secret: bytearray) -> None:
+    """Clear a bytearray secret (more reliable than str)."""
+    for i in range(len(secret)):
+        secret[i] = 0
+
+# Better approach: Use Pydantic's SecretStr
+from pydantic import SecretStr
+
+class SecureConfig:
+    api_key: SecretStr  # Automatically masked in logs/repr
 ```
 
 #### 4. Validate Secret Names
@@ -651,7 +665,7 @@ Migration steps:
 If you discover a security vulnerability in these examples or the ONEX framework:
 
 1. **Do not** open a public issue
-2. Contact the security team at security@onex.ai
+2. Contact the security team at [security@onex.ai](mailto:security@onex.ai)
 3. Include detailed reproduction steps
 4. Allow 90 days for remediation before disclosure
 

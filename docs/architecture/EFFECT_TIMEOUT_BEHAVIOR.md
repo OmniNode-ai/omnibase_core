@@ -327,8 +327,7 @@ Result: TIMEOUT_EXCEEDED (after 2 attempts, retry_count=2)
 Timeout is resolved from multiple sources in priority order:
 
 1. **Operation-specific**: `operation_config["operation_timeout_ms"]`
-2. **Subcontract default**: `subcontract.defaults.default_timeout_ms`
-3. **System constant**: `DEFAULT_OPERATION_TIMEOUT_MS` (30000ms fallback)
+2. **System constant**: `DEFAULT_OPERATION_TIMEOUT_MS` (30000ms fallback)
 
 ```python
 # Resolution logic in MixinEffectExecution.execute_effect()
@@ -337,6 +336,8 @@ operation_timeout_ms = (
     or DEFAULT_OPERATION_TIMEOUT_MS  # 30000ms
 )
 ```
+
+**Note**: Subcontract-level defaults may be implemented in future versions. Currently, timeout resolution uses operation-specific configuration with system constant fallback.
 
 ### Constants
 

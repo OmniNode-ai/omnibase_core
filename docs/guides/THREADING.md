@@ -358,7 +358,7 @@ class ThreadLocalCircuitBreakerManager:
             self._thread_local.breakers = {}
 
         if service_name not in self._thread_local.breakers:
-            self._thread_local.breakers[service_name] = ModelCircuitBreaker()
+            self._thread_local.breakers[service_name] = ModelCircuitBreaker.create_resilient()
 
         return self._thread_local.breakers[service_name]
 ```

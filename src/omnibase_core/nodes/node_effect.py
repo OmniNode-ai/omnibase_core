@@ -286,7 +286,11 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
         input_updates: dict[str, object] = {}
 
         # Retry policy: apply subcontract defaults for retry settings
-        # Note: caller can override by setting different values in input_data
+        # NOTE: Subcontract defaults unconditionally overwrite caller-provided
+        # retry settings (max_retries, retry_delay_ms) when retry_enabled=True.
+        # This is intentional - contract-defined resilience policies take precedence.
+        # Callers who need custom retry behavior should set retry_enabled=False
+        # and implement their own retry logic.
         if input_data.retry_enabled:
             # Apply subcontract retry settings
             input_updates["max_retries"] = default_retry.max_retries
@@ -352,6 +356,10 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
                         op_tx.model_dump() if hasattr(op_tx, "model_dump") else {}
                     ),
                 }
+                # TODO (v2.0): Per-operation configs (response_handling, retry_policy,
+                # circuit_breaker) are serialized into operation_data but NOT YET
+                # wired to the execution pipeline. Only subcontract-level defaults
+                # are honored. See process() docstring "v1.0 Limitation" note.
                 operations.append(op_dict)
 
             # Create new input_data with operations populated
@@ -366,10 +374,13 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
         # Delegate to mixin's execute_effect which handles:
         # - Sequential operation execution
         # - Template resolution
-        # - Retry with idempotency awareness
-        # - Circuit breaker management
-        # - Transaction boundaries
-        # - Response field extraction
+        # - Retry with idempotency awareness (using subcontract defaults)
+        # - Circuit breaker management (using subcontract defaults)
+        #
+        # NOTE: Transaction boundaries and response field extraction are NOT
+        # automatically handled by the mixin. Callers must implement these
+        # if needed. See MixinEffectExecution._extract_response_fields() for
+        # field extraction utility.
         return await self.execute_effect(input_data)
 
     def get_circuit_breaker(self, operation_id: UUID) -> ModelCircuitBreaker:

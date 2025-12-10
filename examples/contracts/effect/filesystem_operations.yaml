@@ -145,9 +145,12 @@ effect_operations:
           marker_path: "$.path"
           # Size of marker file
           size_bytes: "$.size_bytes"
-          # Whether marker was created or already existed
+          # Whether marker file was created or already existed
           created: "$.created"
+
+        # Fail operation if response is empty (marker file creation should always return)
         fail_on_empty: false
+
         extraction_engine: jsonpath
 
 
@@ -380,12 +383,15 @@ effect_operations:
       response_handling:
         # NOTE: extract_fields only supports extracting primitive values (strings, numbers, booleans).
         # Complex nested arrays like "files" must be accessed from the full response object
-        # in the operation result, not through extract_fields.
+        # in the operation result (response_data), not through extract_fields.
+        # To get the file list, access: result.result_data["operations"]["list_user_documents"]["response_data"]["files"]
         extract_fields:
           directory_path: "$.directory_path"
           file_count: "$.file_count"
           total_size_bytes: "$.total_size_bytes"
+
         fail_on_empty: false
+
         extraction_engine: jsonpath
 
 

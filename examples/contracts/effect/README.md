@@ -266,11 +266,8 @@ effect_operations:
   # Schema version (ModelSemVer format)
   version: {major: 1, minor: 0, patch: 0}
 
-  # Required: Unique operation set name
-  operation_name: "example_effect"
-
-  # Operation implementation version
-  operation_version: {major: 1, minor: 0, patch: 0}
+  # Required: Unique subcontract name (matches ModelEffectSubcontract.subcontract_name)
+  subcontract_name: "example_effect"
 
   # How operations are executed (see execution_mode in ModelEffectSubcontract)
   # "sequential_abort" (default): Stop on first failure, raise error
@@ -450,18 +447,22 @@ The `base_delay_ms` and `max_delay_ms` define the delay bounds.
 Timeout configuration at different levels:
 
 ```yaml
-# Operation-level timeout (in ModelEffectOperation)
-operation_timeout_ms: 60000      # Overall timeout including all retries
+operations:
+  - operation_name: example_operation
+    # Operation-level timeout (in ModelEffectOperation)
+    # Guards against retry stacking by setting overall time limit
+    operation_timeout_ms: 60000    # Overall timeout including all retries (default: 60000ms)
 
-# Handler-level timeout (in io_config for each handler type)
-io_config:
-  handler_type: http
-  timeout_ms: 15000              # Individual request/query timeout (default: 30000ms)
+    # Handler-level timeout (in io_config for each handler type)
+    io_config:
+      handler_type: http
+      timeout_ms: 15000            # Individual request timeout (default: 30000ms)
 ```
 
 **Note**: Each IO config type (HTTP, DB, Kafka, Filesystem) has its own `timeout_ms` field
-that controls the individual operation timeout. The `operation_timeout_ms` at the operation
+that controls the individual request/query timeout. The `operation_timeout_ms` at the operation
 level guards against retry stacking by setting an overall time limit including all retries.
+The operation_timeout_ms should be greater than io_config.timeout_ms to allow for retries.
 
 ### Observability
 
