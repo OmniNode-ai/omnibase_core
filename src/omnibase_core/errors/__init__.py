@@ -124,7 +124,14 @@ def __getattr__(name: str) -> Any:
         )
 
         return ComputePipelineError
+    # -------------------------------------------------------------------------
     # Declarative node errors (OMN-177)
+    # Canonical error classes for declarative node validation:
+    # - AdapterBindingError: Adapter binding failures
+    # - PurityViolationError: Pure function constraint violations
+    # - NodeExecutionError: Node execution failures
+    # - UnsupportedCapabilityError: Unsupported capability requests
+    # -------------------------------------------------------------------------
     if name == "AdapterBindingError":
         from omnibase_core.errors.declarative_errors import AdapterBindingError
 

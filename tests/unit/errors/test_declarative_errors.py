@@ -19,6 +19,19 @@ Error Code Mapping (from EnumCoreErrorCode):
 - PURITY_VIOLATION_ERROR = "ONEX_CORE_272_PURITY_VIOLATION_ERROR"
 - NODE_EXECUTION_ERROR = "ONEX_CORE_273_NODE_EXECUTION_ERROR"
 - UNSUPPORTED_CAPABILITY_ERROR = "ONEX_CORE_274_UNSUPPORTED_CAPABILITY_ERROR"
+
+Test Timeout Configuration:
+    All test classes use @pytest.mark.timeout(10) for defensive testing:
+
+    - CI stability: Prevents test hangs from blocking the CI pipeline. A stuck
+      test will fail after 10 seconds rather than hanging indefinitely.
+    - Generous threshold: 10 seconds is intentionally generous for unit tests,
+      which typically complete in <100ms. This accounts for CI environment
+      variability (resource contention, cold starts) while still catching
+      infinite loops or deadlocks.
+    - pytest-timeout best practice: Using class-level markers ensures all
+      methods in a test class inherit the timeout, providing consistent
+      defensive coverage without per-test boilerplate.
 """
 
 import json
