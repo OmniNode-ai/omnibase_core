@@ -629,8 +629,14 @@ class ModelTest{i}(BaseModel):
 
 
 @pytest.mark.integration
+@pytest.mark.slow
 class TestValidationPerformance:
-    """Test performance characteristics of validation suite."""
+    """Test performance characteristics of validation suite.
+
+    Markers:
+        @pytest.mark.integration: Tests validation against filesystem operations.
+        @pytest.mark.slow: Performance tests create many files and may take longer.
+    """
 
     def test_large_repository_validation_performance(self, temp_repo):
         """Test validation performance on larger repository."""

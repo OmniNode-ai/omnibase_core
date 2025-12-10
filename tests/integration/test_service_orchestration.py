@@ -230,8 +230,14 @@ class TestServiceSecurityAnalysis:
 
 
 @pytest.mark.integration
+@pytest.mark.slow
 class TestServicePerformanceAnalysis:
-    """Test service performance analysis features."""
+    """Test service performance analysis features.
+
+    Markers:
+        @pytest.mark.integration: Tests service health model behavior.
+        @pytest.mark.slow: Performance analysis tests may involve timing-sensitive operations.
+    """
 
     def test_performance_category_classification(self):
         """Test performance categorization based on response time."""

@@ -1077,7 +1077,6 @@ class MixinEffectExecution:
 
         start_time = time.time()
         retry_count = 0
-        last_error: Exception | None = None
 
         for attempt in range(max_retries + 1):
             # Check overall timeout
@@ -1115,7 +1114,6 @@ class MixinEffectExecution:
                 return result, retry_count
 
             except Exception as e:
-                last_error = e
                 # Increment retry_count to track failed attempts
                 # retry_count represents "number of failed attempts before success or final failure"
                 # - First attempt fails: retry_count becomes 1

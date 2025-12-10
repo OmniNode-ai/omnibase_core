@@ -292,9 +292,15 @@ async def worker_2():
 
 ### Mitigation Options
 
-#### Option 1: Single-Threaded Effects (Recommended)
+**Choosing Between Options**:
+- **Option 1 (Sequential Execution)**: Best for asyncio-based applications where you want a single shared node instance with serialized access. Simpler setup but creates a bottleneck under high concurrency.
+- **Option 2 (Thread-Local Instances)**: Best for multi-threaded applications (e.g., using `ThreadPoolExecutor`). Each thread gets independent state with no coordination overhead, enabling true parallelism.
 
-Design effects to run sequentially using semaphores or queues:
+For most production use cases, **Option 2 is preferred** as it provides better throughput under concurrent load.
+
+#### Option 1: Sequential Execution (Asyncio)
+
+Design effects to run sequentially using an asyncio lock. Best for single-threaded async contexts where serialization is acceptable:
 
 ```python
 import asyncio
@@ -313,9 +319,9 @@ class SingleThreadedEffectNode(NodeEffect):
             return await super().process(input_data)
 ```
 
-#### Option 2: Per-Thread NodeEffect Instances (Recommended)
+#### Option 2: Per-Thread NodeEffect Instances (Recommended for Multi-Threading)
 
-Use thread-local storage to ensure each thread has its own NodeEffect:
+Use thread-local storage to ensure each thread has its own NodeEffect. Best for `ThreadPoolExecutor` or multi-threaded scenarios:
 
 ```python
 import threading
@@ -787,6 +793,10 @@ In addition to the built-in debug mode, you can add custom runtime checks to det
 
 ### Thread Affinity Enforcement
 
+**Performance Warning**: The `__getattribute__` override in `ThreadAffinityMixin` adds overhead to every attribute access on the class. This is intended for **development and debugging only**. Do not use in production without careful profiling, as it can significantly impact performance for attribute-heavy operations.
+
+**Recursion Safety**: The implementation below uses `object.__getattribute__` directly within the override to avoid infinite recursion when accessing internal attributes like `_owner_thread`.
+
 ```python
 import threading
 from typing import Any
@@ -796,6 +806,9 @@ class ThreadAffinityMixin:
 
     Use this mixin to detect accidental multi-threaded access to
     components that are not thread-safe (e.g., NodeCompute, NodeEffect).
+
+    WARNING: This mixin adds overhead to EVERY attribute access.
+    Use only for debugging and development, not in production.
     """
 
     _owner_thread: int | None = None
@@ -807,22 +820,31 @@ class ThreadAffinityMixin:
             RuntimeError: If called from a different thread than the creator.
         """
         current_thread = threading.current_thread().ident
-        if self._owner_thread is None:
-            self._owner_thread = current_thread
-        elif self._owner_thread != current_thread:
+        # Use object.__getattribute__ to avoid recursion
+        owner = object.__getattribute__(self, '_owner_thread')
+        if owner is None:
+            object.__setattr__(self, '_owner_thread', current_thread)
+        elif owner != current_thread:
             raise RuntimeError(
                 f"Thread safety violation: {self.__class__.__name__} "
-                f"created on thread {self._owner_thread} but accessed "
+                f"created on thread {owner} but accessed "
                 f"from thread {current_thread}. Use thread-local instances."
             )
 
     def __getattribute__(self, name: str) -> Any:
-        """Check thread affinity on all attribute access."""
-        # Skip check for internal attributes and the check method itself
-        if name.startswith('_') or name == '_check_thread_affinity':
-            return super().__getattribute__(name)
-        self._check_thread_affinity()
-        return super().__getattribute__(name)
+        """Check thread affinity on all attribute access.
+
+        WARNING: Potential recursion risk if not implemented carefully.
+        This implementation uses object.__getattribute__ directly to
+        access internal state without triggering this override.
+        """
+        # Skip check for internal attributes to avoid recursion and reduce overhead
+        if name.startswith('_'):
+            return object.__getattribute__(self, name)
+        # Use object.__getattribute__ to call the check method safely
+        check_method = object.__getattribute__(self, '_check_thread_affinity')
+        check_method()
+        return object.__getattribute__(self, name)
 ```
 
 ### Debug Mode Thread Safety Wrapper
@@ -964,26 +986,39 @@ class TestNodeComputeThreadSafety:
 
 ## Thread Safety Quick Reference
 
+### Models (Input/Output)
+
 | Component | Thread-Safe? | Mitigation |
 |-----------|-------------|------------|
-| **Models (Input/Output)** | | |
 | Pydantic Models | Yes (immutable) | None needed |
 | ModelComputeInput/Output | Yes (frozen=True) | None needed |
 | ModelReducerInput/Output | Yes (frozen=True) | None needed |
 | ModelEffectInput/Output | Yes (frozen=True) | None needed |
 | ModelOrchestratorInput/Output | Yes (frozen=True) | None needed |
 | EffectIOConfig models | Yes (frozen=True) | None needed |
-| **Infrastructure** | | |
+
+### Infrastructure
+
+| Component | Thread-Safe? | Mitigation |
+|-----------|-------------|------------|
 | ModelONEXContainer | Yes (read-only) | None needed after init |
 | ModelComputeCache | No | Use locks or thread-local instances |
 | ModelCircuitBreaker | No | Use locks or thread-local instances |
 | ModelEffectTransaction | No | Never share across threads |
-| **Node Instances** | | |
+
+### Node Instances
+
+| Component | Thread-Safe? | Mitigation |
+|-----------|-------------|------------|
 | NodeCompute | No | Thread-local instances or locked cache |
 | NodeEffect | No | Thread-local instances (recommended) |
 | NodeReducer | No | Thread-local instances (FSM state is mutable) |
 | NodeOrchestrator | No | Thread-local instances (workflow state is mutable) |
-| **Mixins** | | |
+
+### Mixins
+
+| Component | Thread-Safe? | Mitigation |
+|-----------|-------------|------------|
 | MixinEffectExecution | No | _circuit_breakers dict is not synchronized |
 | MixinNodeLifecycle | Yes | Stateless methods |
 | MixinDiscoveryResponder | Yes | Stateless methods |

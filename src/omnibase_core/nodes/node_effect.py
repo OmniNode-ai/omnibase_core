@@ -156,6 +156,12 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
             print(f"Success: {result.result}")
         else:
             print(f"Failed: {result.metadata}")
+
+        # Example with minimal required fields:
+        result = await node.process(ModelEffectInput(
+            effect_type=EnumEffectType.FILE_OPERATION,
+            operation_data={"path": "/data/output.json"},
+        ))
         ```
 
     Thread Safety:
@@ -210,6 +216,18 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
 
         REQUIRED: This method implements the NodeEffect interface for contract-driven
         effect execution. All effect logic is driven by the effect_subcontract.
+
+        Operation Source:
+            Operations are sourced from self.effect_subcontract.operations and
+            transformed into operation_data["operations"] format before delegation
+            to the mixin. This transformation:
+            1. Serializes each ModelEffectOperation to dict format
+            2. Merges per-operation retry_policy/circuit_breaker with subcontract defaults
+            3. Includes response_handling, timeout, and other operation configs
+            4. Preserves all operation metadata for handler access
+
+            Callers can also pre-populate operation_data["operations"] directly to
+            bypass this transformation (advanced usage for custom operation sources).
 
         Timeout Behavior:
             Timeouts are checked at the start of each retry attempt, not during
@@ -283,7 +301,7 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
         # Detection of caller-provided values:
         # - We compare against ModelEffectInput's Pydantic field defaults
         # - If value differs from the field default, caller explicitly set it
-        # - This approach is robust to model changes (uses Pydantic introspection)
+        # - This approach uses Pydantic introspection to avoid hardcoded defaults
         #
         # IMPORTANT LIMITATION: If caller explicitly sets a value that equals the
         # model default (e.g., max_retries=3), the subcontract default will be applied
@@ -325,14 +343,13 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
             ):
                 input_updates["circuit_breaker_enabled"] = True
 
-        # Transaction: enable if subcontract specifies it AND caller didn't disable
-        # Caller explicitly setting transaction_enabled=False takes precedence
-        if default_tx.enabled:
-            # Only enable if caller used the default (True for transactions)
-            # Note: transaction_enabled defaults to True, so we enable subcontract
-            # setting unconditionally since disabling requires explicit False
-            if input_data.transaction_enabled:
-                input_updates["transaction_enabled"] = True
+        # Transaction: enable if subcontract specifies AND caller hasn't explicitly disabled
+        # Note: transaction_enabled defaults to True in ModelEffectInput, so this check
+        # effectively validates the caller hasn't set transaction_enabled=False.
+        # We don't need to apply an update if both agree (True), but we include it
+        # for consistency with the pattern and to support future default changes.
+        if default_tx.enabled and input_data.transaction_enabled:
+            input_updates["transaction_enabled"] = True
 
         # Apply updates if any
         if input_updates:

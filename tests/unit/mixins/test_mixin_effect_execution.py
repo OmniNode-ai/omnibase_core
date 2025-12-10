@@ -607,8 +607,12 @@ class TestExtractField:
                 test_node._extract_field(data, unsafe_path)
             assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
             assert "Invalid field path characters" in str(exc_info.value)
-            # Context is stored in model.context for additional (non-standard) keys
-            assert "allowed_pattern" in exc_info.value.model.context
+            # Context is stored in model.context["context"] for additional keys
+            # (source code uses context={...} kwarg which nests under "context" key)
+            inner_context = exc_info.value.model.context.get(
+                "context", exc_info.value.model.context
+            )
+            assert "allowed_pattern" in inner_context
 
     def test_extract_field_accepts_safe_paths(self, test_node: TestNode) -> None:
         """Test that _extract_field accepts valid safe paths."""
@@ -1595,17 +1599,24 @@ class TestFilesystemContentResolution:
 
 
 @pytest.mark.slow
+@pytest.mark.integration
 class TestMixinEffectExecutionIntegration:
     """Integration-style tests for MixinEffectExecution.
 
     These tests verify the full execution path including handler dispatch,
     retry logic, and circuit breaker behavior working together.
 
+    Markers:
+        @pytest.mark.integration: Indicates this tests multi-component interactions
+            (handler dispatch + retry logic + circuit breaker) even though external
+            services are mocked. This marker makes the integration testing intent clear.
+        @pytest.mark.slow: Indicates these tests may take longer due to retry delays
+            and multi-step execution flows.
+
     Note:
-        These tests are marked @pytest.mark.slow rather than @pytest.mark.integration
-        because they test mixin behavior in isolation with mocked dependencies (no real
-        external services). They exercise multi-component interactions but don't require
-        external infrastructure. The module-level pytestmark = pytest.mark.unit applies.
+        These tests use mocked dependencies (no real external services) but exercise
+        integration patterns between components. The module-level pytestmark =
+        pytest.mark.unit still applies for test discovery purposes.
     """
 
     @pytest.mark.asyncio
@@ -1695,8 +1706,14 @@ class TestMixinEffectExecutionIntegration:
         assert cb.total_requests >= 1
 
 
+@pytest.mark.slow
 class TestTimeoutBehavior:
     """Test timeout behavior in effect execution.
+
+    Markers:
+        @pytest.mark.slow: Timeout tests involve asyncio.sleep() delays to simulate
+            timing behavior, which may cause these tests to run longer than typical
+            unit tests.
 
     Timeout Behavior Note:
         The operation_timeout_ms is checked at the START of each retry attempt,
@@ -1709,6 +1726,11 @@ class TestTimeoutBehavior:
         This design is intentional - it guards against cumulative retry time
         exceeding limits, not individual operation duration. Handler-level
         timeouts should be set via io_config.timeout_ms for per-operation limits.
+
+    Determinism:
+        Tests use fixed delays (e.g., 50ms) greater than fixed timeouts (e.g., 30ms)
+        to ensure deterministic behavior. The margin is sufficient to avoid CI flakiness
+        from scheduling jitter.
     """
 
     @pytest.mark.asyncio

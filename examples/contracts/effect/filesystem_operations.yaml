@@ -541,12 +541,15 @@ effect_operations:
 # node.effect_subcontract = ModelEffectSubcontract(**contract_data["effect_operations"])
 #
 # # Execute filesystem operations
+# # NOTE: directory_marker_content is required for create_user_directory operation
+# # file_content is required for write_document operation
 # input_data = ModelEffectInput(
 #     operation_data={
 #         "tenant_id": "tenant_001",
 #         "user_id": "usr_12345",
 #         "document_id": "doc_abc123",
-#         "document_content": "This is the document content..."
+#         "directory_marker_content": "{\"created_at\": \"2024-12-08T12:00:00Z\"}",
+#         "file_content": "This is the document content..."
 #     }
 # )
 #

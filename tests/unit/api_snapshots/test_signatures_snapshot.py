@@ -103,8 +103,9 @@ class TestNodeEffectSignatureSnapshot:
     .. versionchanged:: 0.4.0
         NodeEffect refactored to contract-driven implementation.
         Removed on_rollback_failure parameter (now handled via YAML contracts).
-        The legacy code-driven implementation was replaced by the contract-driven
-        approach - there is no separate legacy class.
+        The implementation was replaced in-place rather than preserved alongside
+        a new version - there is no ``NodeEffectLegacy`` class (it was considered
+        during planning but ultimately not created).
         All effect nodes now use declarative YAML contracts for rollback handling.
 
     See Also:
@@ -619,9 +620,10 @@ class TestSignatureComprehensiveSummary:
         Rollback handling is now declarative via effect subcontracts in YAML.
 
         Note:
-            The legacy code-driven NodeEffect was removed entirely in v0.4.0.
-            There is no ``NodeEffectLegacy`` class - the old implementation was
-            replaced, not preserved alongside the new one.
+            In v0.4.0, NodeEffect was refactored from code-driven to contract-driven.
+            There is no ``NodeEffectLegacy`` class - the implementation was replaced
+            in-place rather than preserved alongside a new version. The legacy class
+            was considered during planning but ultimately not created.
 
         .. versionchanged:: 0.4.0
             NodeEffect refactored to contract-driven; ``on_rollback_failure`` removed.

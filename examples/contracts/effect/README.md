@@ -290,6 +290,7 @@ effect_operations:
 
       # Retry configuration matching ModelEffectRetryPolicy schema
       retry_policy:
+        enabled: true                 # Whether retry is enabled (default: true)
         max_retries: 3
         backoff_strategy: exponential
         base_delay_ms: 1000
@@ -302,7 +303,7 @@ effect_operations:
         failure_threshold: 5
         success_threshold: 2
         timeout_ms: 60000
-        half_open_requests: 1
+        half_open_requests: 3         # Default: 3 (range: 1-10)
 
       # Response handling matching ModelEffectResponseHandling schema
       response_handling:
@@ -413,10 +414,11 @@ Prevents cascading failures by "opening" when failure threshold is reached:
 
 ```yaml
 circuit_breaker:
-  failure_threshold: 5      # Open after 5 failures
-  success_threshold: 2      # Close after 2 successes
-  timeout_ms: 30000         # Wait 30s before retry
-  half_open_requests: 2     # Allow 2 requests in half-open state
+  enabled: true             # Whether circuit breaker is active (default: false)
+  failure_threshold: 5      # Open after 5 failures (default: 5)
+  success_threshold: 2      # Close after 2 successes (default: 2)
+  timeout_ms: 30000         # Wait 30s before retry (default: 60000ms)
+  half_open_requests: 3     # Allow 3 requests in half-open state (default: 3)
 ```
 
 **States**: CLOSED (normal) → OPEN (failing) → HALF_OPEN (testing) → CLOSED
@@ -427,6 +429,7 @@ Automatic retries with configurable backoff strategies (matching ModelEffectRetr
 
 ```yaml
 retry_policy:
+  enabled: true                   # Whether retry is enabled (default: true)
   max_retries: 3                  # Maximum retry attempts (0-10)
   backoff_strategy: exponential   # or linear, fixed
   base_delay_ms: 1000             # Initial delay between retries

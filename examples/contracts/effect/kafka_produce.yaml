@@ -60,6 +60,23 @@ effect_operations:
   # Unique subcontract name (required by ModelEffectSubcontract)
   subcontract_name: "kafka_produce_effect"
 
+  # Human-readable description of the subcontract
+  description: |
+    Contract-driven Kafka message production for event-driven architecture.
+    Demonstrates registration events, activity tracking, and audit logs.
+
+  # Contract metadata (matches ModelEffectContractMetadata schema)
+  metadata:
+    revision: 1
+    author: "ONEX Framework Team"
+    tags:
+      - effect
+      - kafka
+      - event-driven
+      - messaging
+      - audit
+      - example
+
   # Execution mode: sequential_continue to attempt all operations
   # NOTE: v1.0 supports sequential execution only. Parallel is planned for v2.0.
   execution_mode: sequential_continue
@@ -433,8 +450,11 @@ effect_operations:
 # print(result.result_data["operations"]["publish_user_registration"]["extracted_fields"]["offset"])
 
 # ---------------------------------------------------------------------------
-# CONTRACT METADATA
+# CONTRACT METADATA (Top-Level)
 # ---------------------------------------------------------------------------
+# NOTE: This top-level metadata section is for documentation/tooling purposes.
+# The ModelEffectSubcontract.metadata field uses ModelEffectContractMetadata schema,
+# which is configured in the effect_operations.metadata section above.
 
 metadata:
   version: {major: 1, minor: 0, patch: 0}
