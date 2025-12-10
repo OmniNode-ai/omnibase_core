@@ -3,6 +3,20 @@ Unit tests for explicit rollback failure handling.
 
 Tests ModelEffectTransaction and NodeEffect rollback failure detection,
 logging, and callback invocation per PR #59 follow-up requirements.
+
+NOTE: TestNodeEffectRollbackFailures tests are skipped due to NodeEffect v0.4.0
+refactor from code-driven to contract-driven architecture. The old API used:
+- NodeEffect(container, on_rollback_failure=callback)
+- node.effect_handlers[EnumEffectType.X] for handler registration
+- node.transaction_context() context manager
+
+The new API uses:
+- NodeEffect(container) - only accepts container
+- node.effect_subcontract = ModelEffectSubcontract(...) for contract configuration
+- Transaction management via MixinEffectExecution, not context manager
+
+TestModelEffectTransactionRollbackFailures tests are NOT skipped as they test
+ModelEffectTransaction directly, which still functions correctly.
 """
 
 import asyncio
@@ -18,6 +32,13 @@ from omnibase_core.models.infrastructure.model_effect_transaction import (
     ModelEffectTransaction,
 )
 from omnibase_core.nodes.node_effect import NodeEffect
+
+# Skip reason for TestNodeEffectRollbackFailures tests
+_SKIP_REASON = (
+    "NodeEffect v0.4.0 refactor - contract-driven architecture. "
+    "Tests use old API (effect_handlers, on_rollback_failure callback, "
+    "transaction_context) which no longer exist. See module docstring for details."
+)
 
 
 @pytest.mark.unit
@@ -159,13 +180,18 @@ class TestModelEffectTransactionRollbackFailures:
 @pytest.mark.unit
 @pytest.mark.timeout(60)
 class TestNodeEffectRollbackFailures:
-    """Test NodeEffect rollback failure handling and callbacks."""
+    """Test NodeEffect rollback failure handling and callbacks.
+
+    NOTE: All tests in this class are skipped due to NodeEffect v0.4.0 refactor.
+    The tests document intended behavior for future contract-driven implementation.
+    """
 
     @pytest.fixture
     def container(self):
         """Create a minimal container for testing."""
         return ModelONEXContainer()
 
+    @pytest.mark.skip(reason=_SKIP_REASON)
     @pytest.mark.asyncio
     async def test_process_raises_special_error_on_rollback_failure(self, container):
         """Test process() raises ModelOnexError with rollback context on failure."""
@@ -207,6 +233,7 @@ class TestNodeEffectRollbackFailures:
         assert "rollback_errors" in error.context
         assert len(error.context["rollback_errors"]) > 0
 
+    @pytest.mark.skip(reason=_SKIP_REASON)
     @pytest.mark.asyncio
     async def test_rollback_failure_callback_invoked(self, container):
         """Test on_rollback_failure callback is invoked when rollback fails."""
@@ -255,6 +282,7 @@ class TestNodeEffectRollbackFailures:
         assert len(callback_invocations) == 1
         assert callback_invocations[0]["error_count"] == 1
 
+    @pytest.mark.skip(reason=_SKIP_REASON)
     @pytest.mark.asyncio
     async def test_callback_exception_is_caught_and_logged(self, container):
         """Test that exceptions in callback are caught and don't propagate."""
@@ -293,6 +321,7 @@ class TestNodeEffectRollbackFailures:
         assert "rollback failed" in str(exc_info.value).lower()
         assert "Callback intentionally failed" not in str(exc_info.value)
 
+    @pytest.mark.skip(reason=_SKIP_REASON)
     @pytest.mark.asyncio
     async def test_rollback_failure_metrics_are_updated(self, container):
         """Test that rollback failure metrics are tracked."""
@@ -332,6 +361,7 @@ class TestNodeEffectRollbackFailures:
         # are part of the specification but not yet implemented in NodeEffect
         # This test documents the expected behavior for future implementation
 
+    @pytest.mark.skip(reason=_SKIP_REASON)
     @pytest.mark.asyncio
     async def test_transaction_context_manager_handles_rollback_failures(
         self, container

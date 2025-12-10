@@ -8,11 +8,25 @@ Tests cover:
 - Computation type extraction from various sources
 - Optional fields extraction (cache_enabled, parallel_enabled)
 
+NOTE: ENTIRE MODULE SKIPPED as of v0.4.0.
+The execute_compute() and _contract_to_input() methods were removed from
+NodeCompute during the contract-driven architecture refactor. NodeCompute
+now uses process() with ModelComputeInput directly. Tests are preserved
+as documentation of intended behavior for potential future re-implementation.
+
 Author: ONEX Framework Team
 Version: 1.0.0
 """
 
 from __future__ import annotations
+
+import pytest
+
+# Skip entire module - execute_compute() and _contract_to_input() removed in v0.4.0
+pytestmark = pytest.mark.skip(
+    reason="NodeCompute v0.4.0 refactor - execute_compute() and _contract_to_input() "
+    "methods removed during contract-driven architecture migration"
+)
 
 from collections.abc import Callable
 from typing import Any
