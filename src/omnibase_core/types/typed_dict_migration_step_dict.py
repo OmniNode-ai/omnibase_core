@@ -26,3 +26,6 @@ class TypedDictMigrationStepDict(TypedDict, total=False):
     source_file: str
     target_category: str
     target_path: str
+
+
+__all__ = ["TypedDictMigrationStepDict"]

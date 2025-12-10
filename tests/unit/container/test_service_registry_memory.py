@@ -8,9 +8,6 @@ from uuid import UUID
 import pytest
 
 from omnibase_core.container.service_registry import ServiceRegistry
-from omnibase_core.models.container.model_registry_config import (
-    create_default_registry_config,
-)
 
 
 # Test Protocol Interface
@@ -38,14 +35,13 @@ class MockServiceImplementation(ITestService):
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(60)
 class TestServiceRegistryMemory:
-    """Test suite for ServiceRegistry memory management."""
+    """Test suite for ServiceRegistry memory management.
 
-    @pytest.fixture
-    def registry(self) -> ServiceRegistry:
-        """Create a test registry instance."""
-        config = create_default_registry_config()
-        return ServiceRegistry(config)
+    Note:
+        Registry fixture is provided by conftest.py to avoid duplication.
+    """
 
     @pytest.mark.asyncio
     async def test_registration_unregistration_cycle_no_leak(
@@ -401,10 +397,17 @@ class TestServiceRegistryMemory:
         assert weak_ref() is None
 
     @pytest.mark.asyncio
+    @pytest.mark.slow
+    @pytest.mark.timeout(120)
     async def test_stress_test_memory_stability(
         self, registry: ServiceRegistry
     ) -> None:
-        """Stress test: rapid register/unregister cycles with multiple services."""
+        """Stress test: rapid register/unregister cycles with multiple services.
+
+        Note:
+        - Marked as @slow due to 1000 iterations of register/unregister cycles
+        - Extended timeout (120s) for CI environments
+        """
         # Baseline
         initial_registrations = len(registry._registrations)
         initial_instances = len(registry._instances)

@@ -15,3 +15,6 @@ class TypedDictCollectionFromItemsKwargs(TypedDict, total=False):
     items: list[object]  # ONEX compliance - use object instead of Any
     collection_display_name: str
     collection_id: UUID
+
+
+__all__ = ["TypedDictCollectionFromItemsKwargs"]

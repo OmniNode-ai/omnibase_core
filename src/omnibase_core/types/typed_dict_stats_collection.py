@@ -19,3 +19,6 @@ class TypedDictStatsCollection(TypedDict):
     health_status: TypedDictHealthStatus
     resource_usage: TypedDictResourceUsage
     last_updated: datetime
+
+
+__all__ = ["TypedDictStatsCollection"]

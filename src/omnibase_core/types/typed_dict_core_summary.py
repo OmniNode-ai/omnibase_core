@@ -26,3 +26,6 @@ class TypedDictCoreSummary(TypedDict):
     is_healthy: bool
     has_description: bool
     has_author: bool
+
+
+__all__ = ["TypedDictCoreSummary"]

@@ -23,3 +23,6 @@ class TypedDictFieldValue(TypedDict, total=False):
     float_value: float
     bool_value: bool
     list_value: list[str]
+
+
+__all__ = ["TypedDictFieldValue"]

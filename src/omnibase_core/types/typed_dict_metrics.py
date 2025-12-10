@@ -16,3 +16,6 @@ class TypedDictMetrics(TypedDict):
     metric_value: float
     metric_unit: str
     tags: dict[str, str]
+
+
+__all__ = ["TypedDictMetrics"]

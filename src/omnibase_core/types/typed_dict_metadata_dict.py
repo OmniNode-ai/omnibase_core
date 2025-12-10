@@ -18,3 +18,6 @@ class TypedDictMetadataDict(TypedDict, total=False):
     version: "ModelSemVer"
     tags: list[str]
     metadata: dict[str, Any]
+
+
+__all__ = ["TypedDictMetadataDict"]

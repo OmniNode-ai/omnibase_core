@@ -38,7 +38,7 @@ import asyncio
 import logging
 import threading
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 from omnibase_core.decorators.error_handling import standard_error_handling
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -83,6 +83,14 @@ class EnvelopeRouter(ProtocolNodeRuntime):
         |               |                   |                   | routing, config     |
         +---------------+-------------------+-------------------+---------------------+
 
+        **Why Different Semantics?**
+            - **Handlers** represent *capabilities* (how to handle HTTP, Kafka, etc.)
+              Multiple handlers with the same capability is a configuration choice
+              (e.g., upgrading HTTP handler v1 to v2), so replacement is allowed.
+            - **Nodes** represent *identities* (specific service instances)
+              Node slugs are used for routing and must be unique. Allowing replacement
+              could silently break routing rules and cause hard-to-debug issues.
+
         **Handlers** (Replaceable by Default):
             - Keyed by ``handler_type`` (EnumHandlerType enum value)
             - Default behavior: Silent replacement (last-write-wins)
@@ -117,6 +125,9 @@ class EnvelopeRouter(ProtocolNodeRuntime):
         EnvelopeRouter uses a hybrid thread safety model optimized for the
         "freeze after init" pattern:
 
+        **CRITICAL**: Registration MUST complete before any concurrent access.
+        The router is designed for sequential setup followed by concurrent reads.
+
         **Registration Phase** (single-threaded):
             Registration methods (``register_handler``, ``register_node``, ``freeze``)
             are protected by an internal ``threading.Lock``. This ensures:
@@ -127,6 +138,10 @@ class EnvelopeRouter(ProtocolNodeRuntime):
 
             However, the **recommended pattern** is single-threaded registration
             during application startup, followed by ``freeze()``.
+
+            **Requirement**: All ``register_handler()`` and ``register_node()`` calls
+            MUST complete before calling ``freeze()``. Once frozen, the router
+            transitions to read-only mode and can be safely shared across threads.
 
         **Read Phase** (multi-threaded safe after freeze):
             After ``freeze()`` is called, the router becomes read-only. Read operations
@@ -206,6 +221,8 @@ class EnvelopeRouter(ProtocolNodeRuntime):
             explicitly designed for the "register all, then freeze, then route" pattern.
 
     Example:
+        Basic usage:
+
         .. code-block:: python
 
             from omnibase_core.runtime import EnvelopeRouter, NodeInstance
@@ -215,6 +232,64 @@ class EnvelopeRouter(ProtocolNodeRuntime):
             runtime.register_node(my_node_instance)
 
             response = await runtime.execute_with_handler(envelope, my_node_instance)
+
+    Integration Example (EnvelopeRouter + RuntimeNodeInstance):
+        Complete workflow showing handler registration, node setup, and execution:
+
+        .. code-block:: python
+
+            from omnibase_core.runtime import EnvelopeRouter, RuntimeNodeInstance
+            from omnibase_core.enums import EnumNodeType, EnumHandlerType
+            from omnibase_core.models.core.model_onex_envelope import ModelOnexEnvelope
+
+            # 1. Create router and register handlers
+            router = EnvelopeRouter()
+            router.register_handler(http_handler)   # handler_type=HTTP
+            router.register_handler(db_handler)     # handler_type=DATABASE
+
+            # 2. Create and register node instance
+            instance = RuntimeNodeInstance(
+                slug="my-compute-node",
+                node_type=EnumNodeType.COMPUTE_GENERIC,
+                contract=my_contract,
+            )
+            router.register_node(instance)
+
+            # 3. CRITICAL: Freeze BEFORE any concurrent access
+            #    Registration MUST complete before sharing the router
+            router.freeze()
+
+            # 4. Connect instance to router (after freeze is safe)
+            instance.set_runtime(router)
+            await instance.initialize()
+
+            # 5. Execute (thread-safe after freeze)
+            envelope = ModelOnexEnvelope(
+                envelope_id=uuid4(),
+                envelope_version=version,
+                correlation_id=uuid4(),
+                source_node="client",
+                target_node=instance.slug,
+                operation="PROCESS_DATA",
+                payload={"data": "value"},
+                handler_type=EnumHandlerType.HTTP,
+                timestamp=datetime.now(UTC),
+            )
+
+            # Option A: Via instance (recommended for application code)
+            response = await instance.handle(envelope)
+
+            # Option B: Via router directly (for advanced use cases)
+            response = await router.execute_with_handler(envelope, instance)
+
+            # 6. Check response
+            if response.success:
+                print(f"Result: {response.payload}")
+            else:
+                print(f"Error: {response.error}")
+
+            # 7. Cleanup
+            await instance.shutdown()
 
     Attributes:
         _handlers: Registry of handlers by EnumHandlerType key.
@@ -747,6 +822,32 @@ class EnvelopeRouter(ProtocolNodeRuntime):
         try:
             response = await handler.execute(envelope)
             duration_ms = (time.perf_counter() - start_time) * 1000
+
+            # Validate handler return type to harden against misbehaving handlers.
+            # Handlers MUST return ModelOnexEnvelope per ProtocolHandler contract.
+            # Note: We cast to Any for runtime validation because mypy knows
+            # ProtocolHandler.execute() is typed to return ModelOnexEnvelope.
+            # However, runtime validation is essential for defensive programming
+            # against misbehaving handler implementations that violate the contract.
+            response_unchecked: Any = cast(Any, response)
+            if not isinstance(response_unchecked, ModelOnexEnvelope):
+                logger.warning(
+                    "Handler returned invalid type %s instead of ModelOnexEnvelope "
+                    "for envelope %s (handler_type=%s, duration=%.2fms)",
+                    type(response_unchecked).__name__,
+                    envelope.envelope_id,
+                    routing_info["handler_type"].value,
+                    duration_ms,
+                )
+                # Convert invalid return to error envelope for observability
+                return ModelOnexEnvelope.create_response(
+                    request=envelope,
+                    payload={},
+                    success=False,
+                    error=f"Handler returned invalid type {type(response_unchecked).__name__}, "
+                    f"expected ModelOnexEnvelope",
+                )
+
             logger.debug(
                 "Handler execution completed in %.2fms for envelope %s (handler_type=%s)",
                 duration_ms,

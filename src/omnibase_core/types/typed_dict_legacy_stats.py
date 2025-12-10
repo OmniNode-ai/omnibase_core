@@ -17,3 +17,6 @@ class TypedDictLegacyStats(TypedDict, total=False):
     average_duration_ms: str | None
     last_execution: datetime | None
     total_duration_ms: str | None
+
+
+__all__ = ["TypedDictLegacyStats"]

@@ -17,9 +17,6 @@ from uuid import UUID
 import pytest
 
 from omnibase_core.container.service_registry import ServiceRegistry
-from omnibase_core.models.container.model_registry_config import (
-    create_default_registry_config,
-)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
@@ -111,24 +108,15 @@ class MockServiceC(IServiceC):
 
 @pytest.mark.unit
 @pytest.mark.asyncio
+@pytest.mark.slow
+@pytest.mark.timeout(120)
 class TestServiceRegistryConcurrency:
-    """Test suite for concurrent ServiceRegistry operations."""
+    """Test suite for concurrent ServiceRegistry operations.
 
-    @pytest.fixture
-    def registry(self) -> ServiceRegistry:
-        """Create a test registry instance."""
-        config = create_default_registry_config()
-        return ServiceRegistry(config)
-
-    @pytest.fixture
-    def barrier_10(self) -> threading.Barrier:
-        """Create a barrier for 10 threads."""
-        return threading.Barrier(10)
-
-    @pytest.fixture
-    def barrier_20(self) -> threading.Barrier:
-        """Create a barrier for 20 threads."""
-        return threading.Barrier(20)
+    Note:
+        Registry and barrier fixtures are provided by conftest.py to avoid
+        duplication across test files.
+    """
 
     async def test_concurrent_registration_same_interface(
         self, registry: ServiceRegistry, barrier_10: threading.Barrier

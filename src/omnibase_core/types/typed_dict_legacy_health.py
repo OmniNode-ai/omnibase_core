@@ -18,3 +18,6 @@ class TypedDictLegacyHealth(TypedDict, total=False):
     warning_count: str | None
     checks_passed: str | None
     checks_total: str | None
+
+
+__all__ = ["TypedDictLegacyHealth"]

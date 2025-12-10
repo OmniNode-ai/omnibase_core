@@ -17,3 +17,6 @@ class TypedDictSSLContextOptions(TypedDict, total=False):
     cert: Path | None
     key: Path | None
     ca_certs: Path | None
+
+
+__all__ = ["TypedDictSSLContextOptions"]

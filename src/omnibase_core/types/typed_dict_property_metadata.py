@@ -13,3 +13,6 @@ class TypedDictPropertyMetadata(TypedDict, total=False):
 
     description: str
     source: str
+
+
+__all__ = ["TypedDictPropertyMetadata"]

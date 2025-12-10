@@ -19,3 +19,6 @@ class TypedDictWorkflowState(TypedDict):
     status: str  # "pending", "running", "completed", "failed"
     created_at: datetime
     updated_at: datetime
+
+
+__all__ = ["TypedDictWorkflowState"]

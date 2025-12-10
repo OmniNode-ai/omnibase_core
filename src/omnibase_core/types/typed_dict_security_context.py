@@ -19,3 +19,6 @@ class TypedDictSecurityContext(TypedDict):
     roles: list[str]
     authenticated_at: datetime
     expires_at: NotRequired[datetime]
+
+
+__all__ = ["TypedDictSecurityContext"]

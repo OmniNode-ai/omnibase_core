@@ -17,3 +17,6 @@ class TypedDictCacheInfo(TypedDict):
     miss_count: int
     eviction_count: int
     hit_rate: float
+
+
+__all__ = ["TypedDictCacheInfo"]

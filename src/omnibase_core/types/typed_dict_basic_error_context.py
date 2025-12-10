@@ -39,3 +39,6 @@ class TypedDictBasicErrorContext(TypedDict, total=False):
     stack_trace: str
     rollback_errors: list[str]
     additional_context: dict[str, Any]
+
+
+__all__ = ["TypedDictBasicErrorContext"]

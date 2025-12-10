@@ -11,9 +11,6 @@ from uuid import UUID
 import pytest
 
 from omnibase_core.container.service_registry import ServiceRegistry
-from omnibase_core.models.container.model_registry_config import (
-    create_default_registry_config,
-)
 
 # ===== Dynamic Interface and Implementation Factories =====
 
@@ -77,14 +74,14 @@ def create_test_implementation(interface: type, name: str) -> Any:
 
 @pytest.mark.unit
 @pytest.mark.performance
+@pytest.mark.slow
+@pytest.mark.timeout(60)
 class TestServiceRegistryPerformance:
-    """Performance test suite for ServiceRegistry with large-scale registrations."""
+    """Performance test suite for ServiceRegistry with large-scale registrations.
 
-    @pytest.fixture
-    def registry(self) -> ServiceRegistry:
-        """Create a test registry instance."""
-        config = create_default_registry_config()
-        return ServiceRegistry(config)
+    Note:
+        Registry fixture is provided by conftest.py to avoid duplication.
+    """
 
     @pytest.mark.asyncio
     async def test_register_1000_services(self, registry: ServiceRegistry) -> None:
@@ -138,6 +135,8 @@ class TestServiceRegistryPerformance:
         )
 
     @pytest.mark.asyncio
+    @pytest.mark.slow
+    @pytest.mark.timeout(120)
     async def test_register_5000_services(self, registry: ServiceRegistry) -> None:
         """Test registry scalability with 5000 services.
 
@@ -149,6 +148,10 @@ class TestServiceRegistryPerformance:
         Performance Threshold:
         - Average registration time < 2ms per service
         - Total registration time < 10 seconds
+
+        Note:
+        - Marked as @slow due to 5000-service scale
+        - Extended timeout (120s) for CI environments
         """
         num_services = 5000
         registration_ids: list[UUID] = []
@@ -490,14 +493,14 @@ class TestServiceRegistryPerformance:
 
 @pytest.mark.unit
 @pytest.mark.performance
+@pytest.mark.slow
+@pytest.mark.timeout(60)
 class TestServiceRegistryMemoryUsage:
-    """Memory usage tests for ServiceRegistry with large-scale registrations."""
+    """Memory usage tests for ServiceRegistry with large-scale registrations.
 
-    @pytest.fixture
-    def registry(self) -> ServiceRegistry:
-        """Create a test registry instance."""
-        config = create_default_registry_config()
-        return ServiceRegistry(config)
+    Note:
+        Registry fixture is provided by conftest.py to avoid duplication.
+    """
 
     @pytest.mark.asyncio
     async def test_memory_pattern_with_1000_services(

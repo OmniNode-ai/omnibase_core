@@ -22,3 +22,6 @@ class TypedDictRefParts(TypedDict):
     file: str | None
     path: str | None
     name: str | None
+
+
+__all__ = ["TypedDictRefParts"]

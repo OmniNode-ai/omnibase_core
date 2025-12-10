@@ -20,3 +20,6 @@ class TypedDictBatchProcessingInfo(TypedDict):
     failed_items: int
     started_at: datetime
     estimated_completion: NotRequired[datetime]
+
+
+__all__ = ["TypedDictBatchProcessingInfo"]

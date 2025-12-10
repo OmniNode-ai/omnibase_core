@@ -17,3 +17,6 @@ class TypedDictExecutionStats(TypedDict):
     average_duration_ms: float
     last_execution: datetime
     total_duration_ms: int
+
+
+__all__ = ["TypedDictExecutionStats"]

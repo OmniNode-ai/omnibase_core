@@ -19,3 +19,6 @@ class TypedDictDependencyInfo(TypedDict):
     required_version: TypedDictSemVer
     status: str  # "satisfied", "missing", "outdated", "conflict"
     installed_at: NotRequired[datetime]
+
+
+__all__ = ["TypedDictDependencyInfo"]

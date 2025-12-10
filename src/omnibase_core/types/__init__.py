@@ -1,8 +1,3 @@
-from datetime import datetime
-from typing import Any, TypedDict
-
-from pydantic import Field
-
 """
 ONEX Types Module.
 
@@ -27,8 +22,6 @@ error_codes → types.__init__ → constraints → (circular back to error_codes
 
 Solution: Use TYPE_CHECKING and __getattr__ for lazy loading, similar to ModelBaseCollection.
 """
-
-from typing import TYPE_CHECKING
 
 # All constraint imports are now lazy-loaded via __getattr__ to prevent circular imports
 # Core types for breaking circular dependencies

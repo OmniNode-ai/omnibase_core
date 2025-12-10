@@ -19,3 +19,6 @@ class TypedDictEventInfo(TypedDict):
     source: str
     correlation_id: NotRequired[UUID]
     sequence_number: NotRequired[int]
+
+
+__all__ = ["TypedDictEventInfo"]

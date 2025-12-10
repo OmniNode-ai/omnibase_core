@@ -19,3 +19,6 @@ class TypedDictOperationResult(TypedDict):
     execution_time_ms: int
     timestamp: datetime
     error_details: NotRequired[TypedDictErrorDetails]
+
+
+__all__ = ["TypedDictOperationResult"]

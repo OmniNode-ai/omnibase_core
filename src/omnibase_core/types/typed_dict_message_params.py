@@ -12,3 +12,6 @@ class TypedDictMessageParams(TypedDict, total=False):
 
     message: str
     severity: EnumSeverityLevel
+
+
+__all__ = ["TypedDictMessageParams"]

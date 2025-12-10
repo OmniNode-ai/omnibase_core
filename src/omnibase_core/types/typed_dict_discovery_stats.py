@@ -26,3 +26,6 @@ class TypedDictDiscoveryStats(TypedDict):
     filtered_requests: int
     last_request_time: float | None
     error_count: int
+
+
+__all__ = ["TypedDictDiscoveryStats"]

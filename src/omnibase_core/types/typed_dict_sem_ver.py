@@ -13,3 +13,6 @@ class TypedDictSemVer(TypedDict):
     major: int
     minor: int
     patch: int
+
+
+__all__ = ["TypedDictSemVer"]

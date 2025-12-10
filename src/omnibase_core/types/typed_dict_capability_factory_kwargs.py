@@ -17,3 +17,6 @@ class TypedDictCapabilityFactoryKwargs(TypedDict, total=False):
     deprecated: bool
     experimental: bool
     enabled: bool
+
+
+__all__ = ["TypedDictCapabilityFactoryKwargs"]

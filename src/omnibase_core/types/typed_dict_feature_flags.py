@@ -18,3 +18,6 @@ class TypedDictFeatureFlags(TypedDict):
     updated_at: datetime
     updated_by: str
     description: NotRequired[str]
+
+
+__all__ = ["TypedDictFeatureFlags"]

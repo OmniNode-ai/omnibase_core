@@ -612,6 +612,7 @@ class TestEnvelopeRouterRouteEnvelope:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestEnvelopeRouterExecuteWithHandler:
     """Tests for EnvelopeRouter execute_with_handler() method."""
 
@@ -821,6 +822,7 @@ class TestEnvelopeRouterExecuteWithHandler:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestEnvelopeRouterEdgeCases:
     """Tests for EnvelopeRouter edge cases and error conditions."""
 
@@ -1207,12 +1209,18 @@ class TestEnvelopeRouterStringRepresentation:
         runtime = EnvelopeRouter()
         runtime.register_handler(mock_handler)
 
+        # Verify handler registration before proceeding
+        assert len(runtime._handlers) == 1
+
         instance = NodeInstance(
             slug=sample_slug,
             node_type=sample_node_type,
             contract=mock_contract,
         )
         runtime.register_node(instance)
+
+        # Verify node registration before checking string representation
+        assert len(runtime._nodes) == 1
 
         str_repr = str(runtime)
 
@@ -1255,6 +1263,10 @@ class TestEnvelopeRouterStringRepresentation:
         runtime = EnvelopeRouter()
         runtime.register_handler(mock_handler)
 
+        # Verify handler registration before checking repr
+        assert len(runtime._handlers) == 1
+        assert mock_handler.handler_type in runtime._handlers
+
         repr_str = repr(runtime)
 
         assert "EnvelopeRouter" in repr_str
@@ -1281,12 +1293,19 @@ class TestEnvelopeRouterStringRepresentation:
         runtime = EnvelopeRouter()
         runtime.register_handler(mock_handler)
 
+        # Verify handler registration before node registration
+        assert len(runtime._handlers) == 1
+
         instance = NodeInstance(
             slug=sample_slug,
             node_type=sample_node_type,
             contract=mock_contract,
         )
         runtime.register_node(instance)
+
+        # Verify both handler and node registrations
+        assert len(runtime._handlers) == 1
+        assert len(runtime._nodes) == 1
 
         repr_str = repr(runtime)
 
@@ -1314,6 +1333,12 @@ class TestEnvelopeRouterStringRepresentation:
         runtime.register_handler(mock_handler_database)
         runtime.register_handler(mock_handler_kafka)
 
+        # Verify all 3 handlers are registered with correct count
+        assert len(runtime._handlers) == 3
+        assert EnumHandlerType.HTTP in runtime._handlers
+        assert EnumHandlerType.DATABASE in runtime._handlers
+        assert EnumHandlerType.KAFKA in runtime._handlers
+
         repr_str = repr(runtime)
 
         assert "EnvelopeRouter" in repr_str
@@ -1329,6 +1354,7 @@ class TestEnvelopeRouterStringRepresentation:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestEnvelopeRouterIntegrationPatterns:
     """Tests for common EnvelopeRouter usage patterns."""
 
