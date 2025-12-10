@@ -25,6 +25,9 @@ from pathlib import Path
 
 import pytest
 
+# Module-level pytest marker for all tests in this file
+pytestmark = pytest.mark.unit
+
 
 class TestNodeComputeSignatureSnapshot:
     """Signature snapshot tests for NodeCompute.__init__."""
@@ -95,20 +98,36 @@ class TestNodeComputeSignatureSnapshot:
 
 
 class TestNodeEffectSignatureSnapshot:
-    """Signature snapshot tests for NodeEffect.__init__."""
+    """Signature snapshot tests for NodeEffect.__init__.
+
+    .. versionchanged:: 0.4.0
+        NodeEffect refactored to contract-driven implementation.
+        Removed on_rollback_failure parameter (now handled via YAML contracts).
+        The implementation was replaced in-place rather than preserved alongside
+        a new version - there is no ``NodeEffectLegacy`` class (it was considered
+        during planning but ultimately not created).
+        All effect nodes now use declarative YAML contracts for rollback handling.
+
+    See Also:
+        - :class:`omnibase_core.nodes.NodeEffect`: The contract-driven implementation
+        - :mod:`omnibase_core.models.contracts.subcontracts.model_effect_subcontract`: Effect contracts
+    """
 
     @pytest.mark.unit
     def test_node_effect_init_signature_params(self) -> None:
         """Verify NodeEffect.__init__ parameter names.
 
-        Pre-refactor snapshot: ['self', 'container', 'on_rollback_failure']
+        v0.4.0 snapshot: ['self', 'container']
+
+        Note: on_rollback_failure removed in v0.4.0 refactor.
+        Rollback handling is now declarative via effect subcontracts.
         """
         from omnibase_core.nodes import NodeEffect
 
         sig = inspect.signature(NodeEffect.__init__)
         params = list(sig.parameters.keys())
 
-        expected_params = ["self", "container", "on_rollback_failure"]
+        expected_params = ["self", "container"]
         assert params == expected_params, (
             f"NodeEffect.__init__ signature changed. "
             f"Expected params: {expected_params}, Got: {params}"
@@ -128,22 +147,6 @@ class TestNodeEffectSignatureSnapshot:
         assert container_param.default is inspect.Parameter.empty, (
             "NodeEffect.__init__ container parameter should be required (no default). "
             f"Got default: {container_param.default}"
-        )
-
-    @pytest.mark.unit
-    def test_node_effect_init_on_rollback_failure_optional(self) -> None:
-        """Verify on_rollback_failure parameter is optional with None default.
-
-        Pre-refactor: on_rollback_failure defaults to None.
-        """
-        from omnibase_core.nodes import NodeEffect
-
-        sig = inspect.signature(NodeEffect.__init__)
-        callback_param = sig.parameters["on_rollback_failure"]
-
-        assert callback_param.default is None, (
-            "NodeEffect.__init__ on_rollback_failure should default to None. "
-            f"Got default: {callback_param.default}"
         )
 
     @pytest.mark.unit
@@ -608,10 +611,23 @@ class TestSignatureComprehensiveSummary:
             )
 
     @pytest.mark.unit
-    def test_node_effect_is_only_node_with_callback_param(self) -> None:
-        """Verify only NodeEffect has on_rollback_failure callback parameter.
+    def test_no_node_has_callback_param(self) -> None:
+        """Verify no node class has on_rollback_failure callback parameter.
 
-        NodeEffect is unique in accepting an optional callback for rollback failures.
+        As of v0.4.0, NodeEffect was refactored from code-driven to contract-driven.
+        The current ``NodeEffect`` (from ``omnibase_core.nodes``) does NOT have the
+        ``on_rollback_failure`` callback parameter that existed in pre-v0.4.0 versions.
+        Rollback handling is now declarative via effect subcontracts in YAML.
+
+        Note:
+            In v0.4.0, NodeEffect was refactored from code-driven to contract-driven.
+            There is no ``NodeEffectLegacy`` class - the implementation was replaced
+            in-place rather than preserved alongside a new version. The legacy class
+            was considered during planning but ultimately not created.
+
+        .. versionchanged:: 0.4.0
+            NodeEffect refactored to contract-driven; ``on_rollback_failure`` removed.
+            All nodes now use declarative YAML contracts.
         """
         from omnibase_core.nodes import (
             NodeCompute,
@@ -620,33 +636,30 @@ class TestSignatureComprehensiveSummary:
             NodeReducer,
         )
 
-        # NodeEffect should have on_rollback_failure
-        effect_sig = inspect.signature(NodeEffect.__init__)
-        assert "on_rollback_failure" in effect_sig.parameters, (
-            "NodeEffect.__init__ must have 'on_rollback_failure' parameter"
-        )
-
-        # Other nodes should NOT have it
-        other_classes = [NodeCompute, NodeOrchestrator, NodeReducer]
-        for node_class in other_classes:
+        # All nodes should NOT have on_rollback_failure (contract-driven)
+        all_node_classes = [NodeEffect, NodeCompute, NodeOrchestrator, NodeReducer]
+        for node_class in all_node_classes:
             sig = inspect.signature(node_class.__init__)
             assert "on_rollback_failure" not in sig.parameters, (
                 f"{node_class.__name__}.__init__ should not have 'on_rollback_failure' "
-                "parameter (only NodeEffect should)"
+                "parameter (v0.4.0+: rollback handling is declarative via contracts)"
             )
 
     @pytest.mark.unit
     def test_signature_param_counts(self) -> None:
         """Verify expected parameter counts for each node class.
 
-        Pre-refactor counts:
+        v0.4.0 counts:
         - NodeCompute: 2 params (self, container)
-        - NodeEffect: 3 params (self, container, on_rollback_failure)
+        - NodeEffect: 2 params (self, container) - on_rollback_failure removed in v0.4.0
         - NodeReducer: 2 params (self, container)
         - NodeOrchestrator: 2 params (self, container)
         - NodeCoreBase: 2 params (self, container)
         - NodeBase: 8 params (self, contract_path, node_id, event_bus,
                               container, workflow_id, session_id, kwargs)
+
+        .. versionchanged:: 0.4.0
+            NodeEffect reduced from 3 to 2 params (on_rollback_failure removed).
         """
         from omnibase_core.infrastructure.node_base import NodeBase
         from omnibase_core.infrastructure.node_core_base import NodeCoreBase
@@ -659,7 +672,7 @@ class TestSignatureComprehensiveSummary:
 
         expected_counts = {
             "NodeCompute": 2,
-            "NodeEffect": 3,
+            "NodeEffect": 2,  # v0.4.0: on_rollback_failure removed (contract-driven)
             "NodeReducer": 2,
             "NodeOrchestrator": 2,
             "NodeCoreBase": 2,

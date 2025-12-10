@@ -80,6 +80,9 @@ from .converter_health_to_typed_dict import convert_health_to_typed_dict
 from .converter_stats_to_typed_dict import convert_stats_to_typed_dict
 from .core_types import ProtocolSchemaValue, TypedDictBasicErrorContext
 
+# Effect result type aliases (centralized to avoid primitive soup unions)
+from .type_effect_result import DbParamType, EffectResultType
+
 # TypedDict classes
 from .typed_dict_analytics_summary_data import TypedDictAnalyticsSummaryData
 from .typed_dict_audit_info import TypedDictAuditInfo
@@ -191,6 +194,9 @@ __all__ = [
     "TypedDictBasicErrorContext",
     "ProtocolSchemaValue",
     "TypedDictCoreSummary",
+    # Effect result type aliases
+    "EffectResultType",
+    "DbParamType",
     # Type constraints and protocols
     "ModelBaseCollection",
     "ModelBaseFactory",

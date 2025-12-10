@@ -135,6 +135,9 @@ class EnumCoreErrorCode(EnumOnexErrorCode):
     DISCOVERY_INVALID_NODE = "ONEX_CORE_253_DISCOVERY_INVALID_NODE"
     DISCOVERY_INVALID_REQUEST = "ONEX_CORE_254_DISCOVERY_INVALID_REQUEST"
 
+    # Thread safety and concurrency errors (261-270)
+    THREAD_SAFETY_VIOLATION = "ONEX_CORE_261_THREAD_SAFETY_VIOLATION"
+
     def get_component(self) -> str:
         """Get the component identifier for this error code."""
         return "CORE"
@@ -242,6 +245,8 @@ CORE_ERROR_CODE_TO_EXIT_CODE: dict[EnumCoreErrorCode, EnumCLIExitCode] = {
     EnumCoreErrorCode.METADATA_LOAD_FAILED: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.DISCOVERY_INVALID_NODE: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.DISCOVERY_INVALID_REQUEST: EnumCLIExitCode.ERROR,
+    # Thread safety/concurrency errors -> ERROR
+    EnumCoreErrorCode.THREAD_SAFETY_VIOLATION: EnumCLIExitCode.ERROR,
 }
 
 
@@ -354,5 +359,6 @@ def get_core_error_description(error_code: EnumCoreErrorCode) -> str:
         EnumCoreErrorCode.METADATA_LOAD_FAILED: "Metadata loading failed",
         EnumCoreErrorCode.DISCOVERY_INVALID_NODE: "Discovery invalid node configuration",
         EnumCoreErrorCode.DISCOVERY_INVALID_REQUEST: "Discovery invalid request format",
+        EnumCoreErrorCode.THREAD_SAFETY_VIOLATION: "Thread safety violation detected",
     }
     return descriptions.get(error_code, "Unknown error")

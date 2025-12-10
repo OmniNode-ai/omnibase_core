@@ -130,4 +130,5 @@ class ModelIntent(BaseModel):
         extra="forbid",
         frozen=True,
         use_enum_values=False,
+        validate_assignment=True,
     )

@@ -70,6 +70,7 @@ def git_repo(temp_repo):
     return temp_repo
 
 
+@pytest.mark.integration
 class TestValidationIntegration:
     """Test integration of multiple validation scripts."""
 
@@ -346,6 +347,7 @@ description: "Invalid contract"
             assert result.returncode != 0  # Should detect contract issues
 
 
+@pytest.mark.integration
 class TestPreCommitIntegration:
     """Test pre-commit hook integration scenarios."""
 
@@ -463,6 +465,7 @@ class ModelProblem(BaseModel):
             assert result.returncode in [0, 1]  # May skip or report no Python files
 
 
+@pytest.mark.integration
 class TestContinuousIntegration:
     """Test CI/CD integration scenarios."""
 
@@ -625,8 +628,15 @@ class ModelTest{i}(BaseModel):
             assert duration < 30.0  # Should complete within reasonable time
 
 
+@pytest.mark.integration
+@pytest.mark.slow
 class TestValidationPerformance:
-    """Test performance characteristics of validation suite."""
+    """Test performance characteristics of validation suite.
+
+    Markers:
+        @pytest.mark.integration: Tests validation against filesystem operations.
+        @pytest.mark.slow: Performance tests create many files and may take longer.
+    """
 
     def test_large_repository_validation_performance(self, temp_repo):
         """Test validation performance on larger repository."""
@@ -724,6 +734,7 @@ class ModelLarge{i:03d}(BaseModel):
             assert result.returncode == 0
 
 
+@pytest.mark.integration
 class TestEndToEndWorkflows:
     """Test complete end-to-end validation workflows."""
 

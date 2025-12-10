@@ -1,0 +1,481 @@
+---
+# ===========================================================================
+# WARNING: v1.0 PER-OPERATION CONFIG LIMITATION
+# ===========================================================================
+# Per-operation configs (retry_policy, circuit_breaker, response_handling)
+# are PARSED but NOT HONORED in v1.0. Only NODE-LEVEL/SUBCONTRACT-LEVEL
+# defaults are applied during execution.
+#
+# What this means for you:
+# - retry_policy defined per-operation: IGNORED (uses default_retry_policy)
+# - circuit_breaker defined per-operation: IGNORED (uses default_circuit_breaker)
+# - response_handling.extract_fields: PARSED but NOT automatically applied
+#
+# Workarounds:
+# 1. Set your desired defaults at subcontract level (default_retry_policy, etc.)
+# 2. Implement custom response processing in your handler
+#
+# This will be fully implemented in v2.0. Tracking: OMN-467
+# ===========================================================================
+
+# Example: Contract-Driven NodeEffect - HTTP REST API Calls
+#
+# This example demonstrates the v1.0 NodeEffect contract-driven HTTP handler
+# for making REST API calls with retries, response extraction, and error handling.
+#
+# USE CASE: User Management API Integration
+# - Create new users via POST request
+# - Read user data via GET request
+# - Extract specific fields from responses
+# - Handle API errors gracefully with retries
+# - Use exponential backoff for rate limiting
+#
+# Node Implementation (minimal code needed):
+#   class NodeUserApiEffectNode(NodeEffect):
+#       pass  # All I/O logic driven by this YAML contract
+#
+# Features Demonstrated:
+# - HTTP POST with JSON payload
+# - HTTP GET with path parameters
+# - Retry policy with exponential backoff and jitter
+# - Response field extraction using JSONPath
+# - Success code validation
+# - Operation timeout configuration
+# - Request/response observability
+#
+# DATA PROTECTION NOTE:
+# This example includes fields that may contain Personally Identifiable Information (PII)
+# such as email and auth_token. When implementing in production:
+# - Ensure compliance with applicable data protection regulations (GDPR, CCPA, etc.)
+# - Never log authentication tokens or sensitive user data
+# - Consider data masking for sensitive fields in observability outputs
+# - Review and follow your organization's data handling policies
+#
+# 📚 For comprehensive security guidance, see: SECURITY.md in this directory
+#
+# v1.0 Contract Schema Version
+# ============================================================================
+
+# ---------------------------------------------------------------------------
+# CONTRACT IDENTIFICATION
+# ---------------------------------------------------------------------------
+
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+
+node_type: effect
+
+# ---------------------------------------------------------------------------
+# EFFECT SUBCONTRACT: Defines external I/O operations
+# ---------------------------------------------------------------------------
+# The effect subcontract specifies sequential or concurrent external operations
+# that the NodeEffect will execute. Operations interact with external systems
+# like APIs, databases, message queues, or filesystems.
+
+effect_operations:
+  # Schema version for forward compatibility - must use dict format for ModelSemVer
+  version: {major: 1, minor: 0, patch: 0}
+
+  # Unique subcontract name (required by ModelEffectSubcontract)
+  subcontract_name: "http_api_call_effect"
+
+  # Execution mode: sequential_abort (stop on first failure) or sequential_continue
+  execution_mode: sequential_abort
+
+  # ---------------------------------------------------------------------------
+  # OPERATIONS: Sequential list of I/O operations
+  # ---------------------------------------------------------------------------
+  # Each operation represents a single interaction with an external system.
+  # Operations are executed according to execution_order.
+  #
+  # V1.0 LIMITATION: Per-operation configs (retry_policy, circuit_breaker,
+  # response_handling) are PARSED but use SUBCONTRACT-LEVEL DEFAULTS only.
+  # Per-operation overrides will be honored in v2.0. See: OMN-467
+  # ---------------------------------------------------------------------------
+
+  operations:
+    # =========================================================================
+    # OPERATION 1: CREATE USER (HTTP POST)
+    # =========================================================================
+    # Creates a new user via REST API POST request with JSON payload.
+    # Demonstrates request body templating and response extraction.
+    #
+    # Handler Type: HTTP
+    # HTTP Method: POST
+    # Purpose: Create new user resource
+    # Input: User data from operation_data
+    # Output: Created user with ID
+
+    - operation_name: create_user
+      description: "Creates a new user account via API POST request"
+
+      # Mark as idempotent: we use X-Idempotency-Key header for request deduplication
+      idempotent: true
+
+      # I/O configuration for HTTP handler
+      # NOTE: Uses flat structure matching ModelHttpIOConfig schema
+      # Fields are direct children of io_config (no http_config wrapper)
+      io_config:
+        handler_type: http
+
+        # HTTP method for this operation
+        method: POST
+
+        # Target URL with ${} placeholders for variable substitution
+        url_template: "https://api.example.com/v1/users"
+
+        # Request headers with optional ${} placeholders
+        headers:
+          Content-Type: "application/json"
+          Accept: "application/json"
+          # Authorization header can be templated from input
+          # NOTE: Use obviously fake tokens in examples - never commit real credentials
+          Authorization: "Bearer ${input.auth_token}"  # Runtime: use secure token management
+          # Custom correlation header for request tracing
+          X-Correlation-ID: "${input.correlation_id}"
+
+        # Request body template (JSON) - required for POST/PUT/PATCH
+        # Fields can reference input data using ${input.field_name} syntax
+        body_template: |
+          {
+            "email": "${input.email}",
+            "display_name": "${input.display_name}",
+            "role": "${input.role}",
+            "metadata": {
+              "source": "api_integration",
+              "created_by": "${input.created_by}"
+            }
+          }
+
+        # Query parameters with optional ${} placeholders
+        query_params:
+          # Include audit info in response
+          include_audit: "true"
+          # API version override
+          api_version: "2024-01"
+
+        # Request timeout in milliseconds (1s - 10min)
+        timeout_ms: 5000
+
+        # Follow redirects (default: true)
+        follow_redirects: true
+
+        # Verify SSL certificates (default: true)
+        # WARNING: Setting to false is insecure for production
+        verify_ssl: true
+
+      # Retry policy matching ModelEffectRetryPolicy schema
+      # NOTE: Exponential backoff uses base_delay_ms as the initial delay
+      # and doubles on each retry up to max_delay_ms
+      retry_policy:
+        enabled: true
+        max_retries: 3
+        backoff_strategy: exponential
+        base_delay_ms: 1000
+        max_delay_ms: 30000
+        jitter_factor: 0.1
+
+      # Response handling configuration
+      response_handling:
+        # HTTP status codes considered successful
+        success_codes:
+          - 200  # OK
+          - 201  # Created
+          - 202  # Accepted
+
+        # Extract specific fields from response using JSONPath
+        # These fields will be available in the operation result
+        extract_fields:
+          # Extract the created user's ID
+          user_id: "$.id"
+          # Extract the created user's email
+          user_email: "$.email"
+          # Extract creation timestamp
+          created_at: "$.metadata.created_at"
+          # Extract nested field
+          audit_user: "$.audit.created_by"
+
+        # Fail if response is empty
+        fail_on_empty: false
+
+        # Extraction engine for path-based extraction
+        extraction_engine: jsonpath
+
+      # Circuit breaker configuration (optional)
+      circuit_breaker:
+        enabled: false
+        failure_threshold: 5
+        success_threshold: 2
+        timeout_ms: 60000
+        half_open_requests: 1
+
+    # =========================================================================
+    # OPERATION 2: GET USER (HTTP GET)
+    # =========================================================================
+    # Retrieves user data via REST API GET request.
+    # Demonstrates path parameter templating and response validation.
+    #
+    # Handler Type: HTTP
+    # HTTP Method: GET
+    # Purpose: Read existing user resource
+    # Input: User ID from previous operation or input
+    # Output: Complete user object
+
+    - operation_name: get_user
+      description: "Retrieves user details by ID via API GET request"
+
+      # NOTE: Uses flat structure matching ModelHttpIOConfig schema
+      io_config:
+        handler_type: http
+
+        method: GET
+
+        # URL with path parameter templating
+        # ${input.user_id} will be replaced with actual value from input
+        url_template: "https://api.example.com/v1/users/${input.user_id}"
+
+        headers:
+          Accept: "application/json"
+          Authorization: "Bearer ${input.auth_token}"
+          X-Correlation-ID: "${input.correlation_id}"
+
+        # No body_template for GET requests (not required)
+
+        query_params:
+          # Request additional related data
+          include: "profile,preferences,metadata"
+          # Fields to return (projection)
+          fields: "id,email,display_name,role,created_at"
+
+        timeout_ms: 3000
+
+        follow_redirects: true
+
+        verify_ssl: true
+
+      # Different retry policy for GET (can be more aggressive)
+      # Retry policy matching ModelEffectRetryPolicy schema
+      retry_policy:
+        enabled: true
+        max_retries: 5
+        backoff_strategy: exponential
+        base_delay_ms: 1000
+        max_delay_ms: 10000
+        jitter_factor: 0.1
+
+      response_handling:
+        success_codes:
+          - 200  # OK
+          - 304  # Not Modified (cached)
+
+        extract_fields:
+          # Extract all relevant user fields
+          user_id: "$.id"
+          email: "$.email"
+          display_name: "$.display_name"
+          role: "$.role"
+          created_at: "$.metadata.created_at"
+          updated_at: "$.metadata.updated_at"
+          # Extract nested preferences
+          theme: "$.preferences.theme"
+          notifications_enabled: "$.preferences.notifications.enabled"
+
+        fail_on_empty: false
+
+        extraction_engine: jsonpath
+
+
+    # =========================================================================
+    # OPERATION 3: UPDATE USER STATUS (HTTP PATCH)
+    # =========================================================================
+    # Updates user status via REST API PATCH request.
+    # Demonstrates partial updates and idempotency.
+    #
+    # Handler Type: HTTP
+    # HTTP Method: PATCH
+    # Purpose: Update specific user fields
+    # Input: User ID and new status
+    # Output: Updated user object
+
+    - operation_name: update_user_status
+      description: "Updates user status field via API PATCH request"
+
+      # Mark as idempotent: we use X-Idempotency-Key header for request deduplication
+      idempotent: true
+
+      # NOTE: Uses flat structure matching ModelHttpIOConfig schema
+      io_config:
+        handler_type: http
+
+        method: PATCH
+
+        url_template: "https://api.example.com/v1/users/${input.user_id}"
+
+        headers:
+          Content-Type: "application/json"
+          Accept: "application/json"
+          Authorization: "Bearer ${input.auth_token}"
+          X-Correlation-ID: "${input.correlation_id}"
+          # Idempotency key to prevent duplicate updates
+          X-Idempotency-Key: "${input.idempotency_key}"
+
+        # Partial update payload - required for PATCH
+        body_template: |
+          {
+            "status": "${input.new_status}",
+            "updated_by": "${input.updated_by}",
+            "updated_reason": "${input.update_reason}"
+          }
+
+        timeout_ms: 5000
+
+        follow_redirects: true
+
+        verify_ssl: true
+
+      # Conservative retry policy for mutations
+      # Retry policy matching ModelEffectRetryPolicy schema
+      # NOTE: Fewer retries for mutations to prevent duplicates
+      retry_policy:
+        enabled: true
+        max_retries: 2
+        backoff_strategy: exponential
+        base_delay_ms: 2000
+        max_delay_ms: 30000
+        jitter_factor: 0.1
+
+      response_handling:
+        success_codes:
+          - 200  # OK
+          - 204  # No Content
+
+        extract_fields:
+          user_id: "$.id"
+          status: "$.status"
+          updated_at: "$.metadata.updated_at"
+
+        fail_on_empty: false
+
+        extraction_engine: jsonpath
+
+
+# ---------------------------------------------------------------------------
+# EXAMPLE INPUT/OUTPUT
+# ---------------------------------------------------------------------------
+# This section shows what input the effect operations expect and what output
+# they produce. Not part of the contract schema - just documentation.
+
+# Example Input (ModelEffectInput.operation_data):
+# NOTE: All values below are PLACEHOLDER/TEST DATA only.
+# In production, use actual values from your environment and
+# never commit real tokens, credentials, or PII to version control.
+# {
+#   "email": "john.smith@example.com",       # PLACEHOLDER - use real email
+#   "display_name": "John Smith",            # PLACEHOLDER - use real name
+#   "role": "developer",
+#   "created_by": "admin_user",
+#   "auth_token": "FAKE_TOKEN_DO_NOT_USE_abc123xyz789",  # PLACEHOLDER - use secure token mgmt
+#   "correlation_id": "req_abc123xyz",
+#   "user_id": "usr_12345",                  # PLACEHOLDER - use real user ID
+#   "new_status": "active",
+#   "updated_by": "admin_user",
+#   "update_reason": "Account verification completed",
+#   "idempotency_key": "idem_xyz789"
+# }
+
+# Example Output (ModelEffectOutput.result_data):
+# {
+#   "operations": {
+#     "create_user": {
+#       "success": true,
+#       "status_code": 201,
+#       "extracted_fields": {
+#         "user_id": "usr_12345",
+#         "user_email": "john.smith@example.com",
+#         "created_at": "2024-12-08T12:00:00Z",
+#         "audit_user": "admin_user"
+#       },
+#       "full_response": { /* complete API response */ }
+#     },
+#     "get_user": {
+#       "success": true,
+#       "status_code": 200,
+#       "extracted_fields": {
+#         "user_id": "usr_12345",
+#         "email": "john.smith@example.com",
+#         "display_name": "John Smith",
+#         "role": "developer",
+#         "theme": "dark",
+#         "notifications_enabled": true
+#       }
+#     },
+#     "update_user_status": {
+#       "success": true,
+#       "status_code": 200,
+#       "extracted_fields": {
+#         "user_id": "usr_12345",
+#         "status": "active",
+#         "updated_at": "2024-12-08T12:01:00Z"
+#       }
+#     }
+#   }
+# }
+
+# ---------------------------------------------------------------------------
+# USAGE EXAMPLE
+# ---------------------------------------------------------------------------
+# How to use this contract with NodeEffect:
+#
+# import os
+# import yaml
+# from omnibase_core.nodes import NodeEffect
+# from omnibase_core.models import ModelEffectInput
+# from omnibase_core.models.contracts.subcontracts import ModelEffectSubcontract
+#
+# # Load contract
+# with open("http_api_call.yaml") as f:
+#     contract_data = yaml.safe_load(f)
+#
+# # Create node (contract drives all I/O logic)
+# class NodeUserApiEffect(NodeEffect):
+#     pass
+#
+# # Instantiate node with container, then inject the contract
+# node = NodeUserApiEffect(container)
+# node.effect_subcontract = ModelEffectSubcontract(**contract_data["effect_operations"])
+#
+# # Execute operations
+# # NOTE: auth_token should be loaded from secure environment, never hardcoded
+# input_data = ModelEffectInput(
+#     operation_data={
+#         "email": "john.smith@example.com",
+#         "display_name": "John Smith",
+#         "role": "developer",
+#         "created_by": "admin_user",
+#         "auth_token": os.environ.get("API_AUTH_TOKEN"),  # Load from environment
+#         "correlation_id": "req_abc123"
+#     }
+# )
+#
+# result = await node.process(input_data)
+# print(result.result_data["operations"]["create_user"]["extracted_fields"]["user_id"])
+
+# ---------------------------------------------------------------------------
+# CONTRACT METADATA
+# ---------------------------------------------------------------------------
+
+metadata:
+  version: {major: 1, minor: 0, patch: 0}
+  author: "ONEX Framework Team"
+  description: |
+    Contract-driven effect operations for HTTP REST API integration.
+    Demonstrates POST/GET/PATCH methods with retries and response extraction.
+  tags:
+    - effect
+    - http
+    - rest-api
+    - user-management
+    - example
+  documentation_url: "https://docs.onex.ai/effect/http-api-call"

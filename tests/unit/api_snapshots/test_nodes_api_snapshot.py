@@ -401,7 +401,14 @@ class TestNodesModuleDocumentation:
     def test_nodes_docstring_mentions_version(self) -> None:
         """Test that docstring includes version information."""
         docstring = nodes.__doc__ or ""
-        assert "VERSION" in docstring or "1.0.0" in docstring, (
+        # Accept VERSION, specific versions (1.0.0, v0.4.0), or version pattern
+        has_version = (
+            "VERSION" in docstring
+            or "1.0.0" in docstring
+            or "v0.4.0" in docstring
+            or "v0." in docstring
+        )
+        assert has_version, (
             "nodes module docstring should mention version for stability guarantee"
         )
 

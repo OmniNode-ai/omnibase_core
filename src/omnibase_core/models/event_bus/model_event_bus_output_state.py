@@ -127,12 +127,6 @@ class ModelEventBusOutputState(BaseModel):
         msg = "version must be a string, dict[str, Any], or ModelSemVer"
         raise ModelOnexError(error_code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg)
 
-    @field_validator("status")
-    @classmethod
-    def validate_status(cls, v: EnumOnexStatus) -> EnumOnexStatus:
-        """Validate status value."""
-        return v
-
     @field_validator("message")
     @classmethod
     def validate_message(cls, v: str) -> str:

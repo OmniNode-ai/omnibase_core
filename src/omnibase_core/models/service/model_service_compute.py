@@ -60,7 +60,7 @@ from omnibase_core.nodes.node_compute import NodeCompute
 
 class ModelServiceCompute[T_Input, T_Output](
     MixinNodeService,
-    NodeCompute[T_Input, T_Output],
+    NodeCompute,
     MixinHealthCheck,
     MixinCaching,
     MixinMetrics,

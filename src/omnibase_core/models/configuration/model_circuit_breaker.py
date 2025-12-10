@@ -16,10 +16,40 @@ from .model_circuit_breaker_metadata import ModelCircuitBreakerMetadata
 
 class ModelCircuitBreaker(BaseModel):
     """
-    Circuit breaker configuration for load balancing fault tolerance
+    Circuit breaker configuration for load balancing fault tolerance.
 
     This model implements the circuit breaker pattern to prevent cascade
     failures by monitoring node health and temporarily disabling failing nodes.
+
+    Thread Safety:
+        This class is NOT thread-safe. Mutable state includes:
+        - failure_count, success_count, total_requests, half_open_requests
+        - state, last_failure_time, last_state_change
+
+        Concurrent access from multiple threads may cause:
+        - Counter corruption (missed increments)
+        - Incorrect state transitions (race between check and update)
+        - False circuit trips or resets
+
+        Mitigation Options:
+        1. **Thread-local instances** (recommended): Each thread gets its own
+           circuit breaker via threading.local()
+        2. **Synchronized wrapper**: Wrap all methods with threading.Lock
+        3. **Single-threaded access**: Ensure only one thread accesses the instance
+
+        See docs/guides/THREADING.md for detailed examples of thread-safe
+        circuit breaker patterns including ThreadSafeCircuitBreaker wrapper.
+
+    Example (thread-safe usage):
+        >>> import threading
+        >>> thread_local = threading.local()
+        >>>
+        >>> def get_circuit_breaker(service_name: str) -> ModelCircuitBreaker:
+        ...     if not hasattr(thread_local, 'breakers'):
+        ...         thread_local.breakers = {}
+        ...     if service_name not in thread_local.breakers:
+        ...         thread_local.breakers[service_name] = ModelCircuitBreaker()
+        ...     return thread_local.breakers[service_name]
     """
 
     enabled: bool = Field(

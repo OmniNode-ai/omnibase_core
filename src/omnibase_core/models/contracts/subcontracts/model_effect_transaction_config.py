@@ -21,6 +21,13 @@ class ModelEffectTransactionConfig(BaseModel):
     using the same connection_name - HTTP, Kafka, and Filesystem operations
     do not support transactions.
 
+    Note:
+        This model stores configuration only. It does NOT validate constraints
+        like "all operations must be DB type" - that validation happens in
+        ModelEffectSubcontract.validate_transaction_scope() when the full
+        subcontract is available. Setting enabled=True here is always valid;
+        the constraint validation occurs at the subcontract level.
+
     Isolation Levels:
         - read_uncommitted: Lowest isolation, allows dirty reads. Rarely used.
         - read_committed: Default. Each query sees only committed data at query time.

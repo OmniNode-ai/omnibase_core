@@ -19,6 +19,7 @@ from omnibase_core.models.container.model_onex_container import (
 from omnibase_core.nodes.node_compute import NodeCompute
 
 
+@pytest.mark.integration
 class TestCacheConfigIntegration:
     """Integration tests for cache configuration wiring."""
 

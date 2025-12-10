@@ -1,0 +1,490 @@
+---
+# ===========================================================================
+# WARNING: v1.0 PER-OPERATION CONFIG LIMITATION
+# ===========================================================================
+# Per-operation configs (retry_policy, circuit_breaker, response_handling)
+# are PARSED but NOT HONORED in v1.0. Only NODE-LEVEL/SUBCONTRACT-LEVEL
+# defaults are applied during execution.
+#
+# What this means for you:
+# - retry_policy defined per-operation: IGNORED (uses default_retry_policy)
+# - circuit_breaker defined per-operation: IGNORED (uses default_circuit_breaker)
+# - response_handling.extract_fields: PARSED but NOT automatically applied
+#
+# Workarounds:
+# 1. Set your desired defaults at subcontract level (default_retry_policy, etc.)
+# 2. Implement custom response processing in your handler
+#
+# This will be fully implemented in v2.0. Tracking: OMN-467
+# ===========================================================================
+
+# Example: Contract-Driven NodeEffect - Database Operations
+#
+# This example demonstrates the v1.0 NodeEffect contract-driven database handler
+# for executing SQL queries with transactions, parameterization, and error handling.
+#
+# USE CASE: User Profile Database Operations
+# - Query user data with parameterized SELECT
+# - Insert new user records with transaction support
+# - Update existing records with optimistic locking
+# - Handle database errors and deadlocks with retries
+#
+# Node Implementation (minimal code needed):
+#   class NodeUserDbEffect(NodeEffect):
+#       pass  # All database logic driven by this YAML contract
+#
+# Features Demonstrated:
+# - Parameterized SELECT queries (SQL injection prevention)
+# - INSERT with transaction support and RETURNING clause
+# - UPDATE with WHERE conditions and version checking
+# - Query parameter templating from input data
+# - Deadlock retry handling
+# - Result row extraction
+#
+# DATA PROTECTION NOTE:
+# This example includes fields that may contain Personally Identifiable Information (PII)
+# such as email, password_hash, and display_name. When implementing in production:
+# - Ensure compliance with applicable data protection regulations (GDPR, CCPA, etc.)
+# - Never log sensitive data like password_hash (note: log_parameters: false is set)
+# - Implement appropriate database access controls and encryption at rest
+# - Consider data retention and right-to-deletion requirements
+# - Review and follow your organization's data handling policies
+#
+# 📚 For comprehensive security guidance, see: SECURITY.md in this directory
+#
+# v1.0 Contract Schema Version
+# ============================================================================
+
+# ---------------------------------------------------------------------------
+# CONTRACT IDENTIFICATION
+# ---------------------------------------------------------------------------
+
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+
+node_type: effect
+
+# ---------------------------------------------------------------------------
+# EFFECT SUBCONTRACT: Defines database operations
+# ---------------------------------------------------------------------------
+
+effect_operations:
+  # Schema version for forward compatibility - must use dict format for ModelSemVer
+  version: {major: 1, minor: 0, patch: 0}
+
+  # Unique subcontract name (required by ModelEffectSubcontract)
+  subcontract_name: "db_query_effect"
+
+  # Execution mode: sequential_abort (stop on first failure) or sequential_continue (run all)
+  execution_mode: sequential_abort
+
+  # NOTE: Timeouts are configured per-operation in the io_config.timeout_ms field
+  # There is no global operation_timeout_ms in ModelEffectSubcontract
+
+  # ---------------------------------------------------------------------------
+  # OPERATIONS: Sequential list of database operations
+  # ---------------------------------------------------------------------------
+  # V1.0 LIMITATION: Per-operation configs (retry_policy, circuit_breaker,
+  # response_handling) are PARSED but use SUBCONTRACT-LEVEL DEFAULTS only.
+  # Per-operation overrides will be honored in v2.0. See: OMN-467
+  # ---------------------------------------------------------------------------
+
+  operations:
+    # =========================================================================
+    # OPERATION 1: SELECT USER BY EMAIL (Parameterized Query)
+    # =========================================================================
+    # Retrieves user data using parameterized query to prevent SQL injection.
+    # Demonstrates safe parameter binding and result extraction.
+    #
+    # Handler Type: DB
+    # SQL Operation: SELECT
+    # Purpose: Read user by email with safe parameterization
+    # Input: Email address from operation_data
+    # Output: User record or null if not found
+
+    - operation_name: select_user_by_email
+      description: "Retrieves user by email using parameterized SELECT query"
+
+      # I/O configuration for database handler
+      # NOTE: Uses flat structure matching ModelDbIOConfig schema
+      # Fields are direct children of io_config (no db_config wrapper)
+      io_config:
+        handler_type: db
+
+        # Database operation type: select, insert, update, delete, upsert, raw
+        operation: select
+
+        # Named connection reference from connection pool
+        connection_name: "user_db_pool"
+
+        # SQL query with $1, $2, ... positional parameters
+        # Use positional placeholders for SQL injection prevention
+        query_template: |
+          SELECT
+            id,
+            email,
+            display_name,
+            role,
+            status,
+            created_at,
+            updated_at,
+            version
+          FROM users
+          WHERE email = $1
+            AND deleted_at IS NULL
+          LIMIT 1
+
+        # Query parameters (bound safely to placeholders)
+        # Parameters are extracted from input data and bound in order
+        # Each entry is a template string that maps to $1, $2, etc.
+        query_params:
+          - "${input.email}"
+
+        # Query timeout in milliseconds (1s - 10min)
+        timeout_ms: 5000
+
+        # Enable read-only mode for SELECT queries (enables DB optimizations)
+        read_only: true
+
+      # Retry policy matching ModelEffectRetryPolicy schema
+      # NOTE: Uses max_retries (not max_attempts) and jitter_factor (not jitter_enabled)
+      retry_policy:
+        enabled: true
+        max_retries: 3
+        backoff_strategy: exponential
+        base_delay_ms: 1000
+        max_delay_ms: 10000
+        jitter_factor: 0.1
+
+      # Response handling
+      response_handling:
+        # Extract specific fields from query result
+        extract_fields:
+          user_id: "$.id"
+          email: "$.email"
+          display_name: "$.display_name"
+          role: "$.role"
+          status: "$.status"
+          version: "$.version"
+
+        # Don't fail if query returns no rows (user may not exist)
+        fail_on_empty: false
+
+        # Extraction engine for path-based extraction
+        extraction_engine: jsonpath
+
+    # =========================================================================
+    # OPERATION 2: INSERT NEW USER (Transactional Insert)
+    # =========================================================================
+    # Inserts a new user record with transaction support and RETURNING clause.
+    # Demonstrates safe parameter binding for INSERT and result extraction.
+    #
+    # Handler Type: DB
+    # SQL Operation: INSERT
+    # Purpose: Create new user record with transaction
+    # Input: User data from operation_data
+    # Output: Inserted user ID and metadata
+
+    - operation_name: insert_user
+      description: "Inserts new user with transaction support"
+
+      # Mark as idempotent because we use ON CONFLICT or application-level deduplication
+      # This allows retry on transient failures (deadlocks, connection drops)
+      idempotent: true
+
+      # NOTE: Uses flat structure matching ModelDbIOConfig schema
+      io_config:
+        handler_type: db
+
+        operation: insert
+
+        connection_name: "user_db_pool"
+
+        # INSERT query with RETURNING clause to get generated values
+        query_template: |
+          INSERT INTO users (
+            email,
+            display_name,
+            role,
+            status,
+            password_hash,
+            created_at,
+            updated_at,
+            version
+          ) VALUES (
+            $1, $2, $3, $4, $5, NOW(), NOW(), 1
+          )
+          RETURNING id, created_at, version
+
+        # Multiple parameters for INSERT
+        # Parameters bound in order: $1=email, $2=display_name, etc.
+        query_params:
+          - "${input.email}"
+          - "${input.display_name}"
+          - "${input.role}"
+          - "${input.status}"
+          - "${input.password_hash}"
+
+        timeout_ms: 10000
+
+        # INSERT must NOT be read-only
+        read_only: false
+
+      # Conservative retry for mutations
+      # NOTE: Retry policy matching ModelEffectRetryPolicy schema
+      retry_policy:
+        enabled: true
+        max_retries: 2  # Fewer retries for mutations
+        backoff_strategy: exponential
+        base_delay_ms: 1000
+        max_delay_ms: 10000
+        jitter_factor: 0.1
+
+      response_handling:
+        # Extract values from RETURNING clause
+        extract_fields:
+          user_id: "$.id"
+          created_at: "$.created_at"
+          version: "$.version"
+
+        # INSERT should return at least one row
+        fail_on_empty: true
+
+        # Extraction engine for path-based extraction
+        extraction_engine: jsonpath
+
+    # =========================================================================
+    # OPERATION 3: UPDATE USER STATUS (Optimistic Locking)
+    # =========================================================================
+    # Updates user status with version-based optimistic locking.
+    # Demonstrates conditional UPDATE with WHERE clause and version checking.
+    #
+    # Handler Type: DB
+    # SQL Operation: UPDATE
+    # Purpose: Update user status with concurrency control
+    # Input: User ID, new status, current version
+    # Output: Updated version number
+
+    - operation_name: update_user_status
+      description: "Updates user status with optimistic locking"
+
+      # NOTE: Uses flat structure matching ModelDbIOConfig schema
+      io_config:
+        handler_type: db
+
+        operation: update
+
+        connection_name: "user_db_pool"
+
+        # UPDATE with version check for optimistic locking
+        query_template: |
+          UPDATE users
+          SET
+            status = $1,
+            updated_at = NOW(),
+            version = version + 1
+          WHERE id = $2
+            AND version = $3
+            AND deleted_at IS NULL
+          RETURNING id, status, version, updated_at
+
+        query_params:
+          - "${input.new_status}"
+          - "${input.user_id}"
+          - "${input.current_version}"
+
+        timeout_ms: 10000
+
+        read_only: false
+
+      # Retry policy matching ModelEffectRetryPolicy schema
+      retry_policy:
+        enabled: true
+        max_retries: 2
+        backoff_strategy: exponential
+        base_delay_ms: 1000
+        max_delay_ms: 10000
+        jitter_factor: 0.1
+
+      response_handling:
+        extract_fields:
+          user_id: "$.id"
+          status: "$.status"
+          version: "$.version"
+          updated_at: "$.updated_at"
+
+        # If no rows updated, version mismatch occurred (optimistic lock failure)
+        fail_on_empty: true
+
+        # Extraction engine for path-based extraction
+        extraction_engine: jsonpath
+
+    # =========================================================================
+    # OPERATION 4: DELETE USER (Soft Delete)
+    # =========================================================================
+    # Soft deletes a user by setting deleted_at timestamp.
+    # Demonstrates DELETE-like operation using UPDATE.
+    #
+    # Handler Type: DB
+    # SQL Operation: UPDATE (soft delete)
+    # Purpose: Mark user as deleted without removing data
+    # Input: User ID
+    # Output: Deletion timestamp
+
+    - operation_name: soft_delete_user
+      description: "Soft deletes user by setting deleted_at timestamp"
+
+      # NOTE: Uses flat structure matching ModelDbIOConfig schema
+      io_config:
+        handler_type: db
+
+        operation: update
+
+        connection_name: "user_db_pool"
+
+        query_template: |
+          UPDATE users
+          SET
+            deleted_at = NOW(),
+            status = 'deleted',
+            updated_at = NOW(),
+            version = version + 1
+          WHERE id = $1
+            AND deleted_at IS NULL
+          RETURNING id, deleted_at, version
+
+        query_params:
+          - "${input.user_id}"
+
+        timeout_ms: 10000
+
+        read_only: false
+
+      # Retry policy matching ModelEffectRetryPolicy schema
+      retry_policy:
+        enabled: true
+        max_retries: 2
+        backoff_strategy: exponential
+        base_delay_ms: 1000
+        max_delay_ms: 10000
+        jitter_factor: 0.1
+
+      response_handling:
+        extract_fields:
+          user_id: "$.id"
+          deleted_at: "$.deleted_at"
+          version: "$.version"
+
+        # Don't fail if no rows affected - user may already be deleted
+        fail_on_empty: false
+
+        # Extraction engine for path-based extraction
+        extraction_engine: jsonpath
+
+# ---------------------------------------------------------------------------
+# EXAMPLE INPUT/OUTPUT
+# ---------------------------------------------------------------------------
+
+# Example Input (ModelEffectInput.operation_data):
+# {
+#   "email": "john.smith@example.com",
+#   "display_name": "John Smith",
+#   "role": "developer",
+#   "status": "active",
+#   "password_hash": "$2b$12$...",
+#   "user_id": "550e8400-e29b-41d4-a716-446655440000",
+#   "new_status": "suspended",
+#   "current_version": 5
+# }
+
+# Example Output (ModelEffectOutput.result_data):
+# {
+#   "operations": {
+#     "select_user_by_email": {
+#       "success": true,
+#       "rows_affected": 1,
+#       "extracted_fields": {
+#         "user_id": "550e8400-e29b-41d4-a716-446655440000",
+#         "email": "john.smith@example.com",
+#         "display_name": "John Smith",
+#         "role": "developer",
+#         "status": "active",
+#         "version": 5
+#       }
+#     },
+#     "insert_user": {
+#       "success": true,
+#       "rows_affected": 1,
+#       "extracted_fields": {
+#         "user_id": "660e8400-e29b-41d4-a716-446655440000",
+#         "created_at": "2024-12-08T12:00:00Z",
+#         "version": 1
+#       }
+#     },
+#     "update_user_status": {
+#       "success": true,
+#       "rows_affected": 1,
+#       "extracted_fields": {
+#         "user_id": "550e8400-e29b-41d4-a716-446655440000",
+#         "status": "suspended",
+#         "version": 6,
+#         "updated_at": "2024-12-08T12:01:00Z"
+#       }
+#     }
+#   }
+# }
+
+# ---------------------------------------------------------------------------
+# USAGE EXAMPLE
+# ---------------------------------------------------------------------------
+
+# import yaml
+# from omnibase_core.nodes import NodeEffect
+# from omnibase_core.models import ModelEffectInput
+# from omnibase_core.models.contracts.subcontracts import ModelEffectSubcontract
+#
+# # Load contract
+# with open("db_query.yaml") as f:
+#     contract_data = yaml.safe_load(f)
+#
+# # Create node
+# class NodeUserDbEffect(NodeEffect):
+#     pass
+#
+# # Instantiate node with container, then inject the contract
+# node = NodeUserDbEffect(container)
+# node.effect_subcontract = ModelEffectSubcontract(**contract_data["effect_operations"])
+#
+# # Execute database operations
+# input_data = ModelEffectInput(
+#     operation_data={
+#         "email": "john.smith@example.com",
+#         "display_name": "John Smith",
+#         "role": "developer",
+#         "password_hash": "$2b$12$..."
+#     }
+# )
+#
+# result = await node.process(input_data)
+# print(result.result_data["operations"]["insert_user"]["extracted_fields"]["user_id"])
+
+# ---------------------------------------------------------------------------
+# CONTRACT METADATA
+# ---------------------------------------------------------------------------
+
+metadata:
+  version: {major: 1, minor: 0, patch: 0}
+  author: "ONEX Framework Team"
+  description: |
+    Contract-driven database operations for user management.
+    Demonstrates SELECT/INSERT/UPDATE with transactions and optimistic locking.
+  tags:
+    - effect
+    - database
+    - sql
+    - postgresql
+    - user-management
+    - example
+  documentation_url: "https://docs.onex.ai/effect/db-query"
