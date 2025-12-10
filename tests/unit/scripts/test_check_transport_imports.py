@@ -28,7 +28,10 @@ from unittest.mock import patch
 import pytest
 
 # Import the validation script components
-# We need to add the scripts directory to path for testing
+# We need to add the scripts directory to path for testing.
+# The defensive check prevents duplicate entries when the test module is
+# reloaded (e.g., during pytest-xdist parallel execution or when running
+# tests multiple times in the same Python process).
 SCRIPTS_DIR = Path(__file__).parent.parent.parent.parent / "scripts"
 scripts_dir = str(SCRIPTS_DIR)
 if scripts_dir not in sys.path:
@@ -669,6 +672,33 @@ if typing.TYPE_CHECKING:
         # Imports inside TYPE_CHECKING should be allowed
         assert len(analyzer.violations) == 0
 
+    def test_allows_aliased_typing_type_checking_block(self) -> None:
+        """Test that aliased typing.TYPE_CHECKING blocks are recognized.
+
+        Some codebases use `import typing as t` for brevity, and we should
+        still recognize `if t.TYPE_CHECKING:` blocks as type-checking guards.
+        """
+        skip_if_module_not_loaded()
+
+        code = """
+import typing as t
+
+if t.TYPE_CHECKING:
+    import kafka
+    from redis import Redis
+"""
+        source_lines = code.splitlines()
+        tree = ast.parse(code)
+
+        analyzer = TransportImportAnalyzer(
+            file_path=Path("/test.py"),
+            source_lines=source_lines,
+        )
+        analyzer.visit(tree)
+
+        # Imports inside aliased TYPE_CHECKING should be allowed
+        assert len(analyzer.violations) == 0
+
 
 class TestEdgeCases:
     """Tests edge cases and error handling scenarios."""
@@ -690,9 +720,11 @@ class TestEdgeCases:
         skip_if_module_not_loaded()
 
         syntax_error_file = tmp_path / "syntax_error.py"
-        syntax_error_file.write_text("""
+        syntax_error_file.write_text(
+            """
 def incomplete_function(
-""")
+"""
+        )
 
         result = analyze_file(syntax_error_file)
 
@@ -865,11 +897,13 @@ class TestAnalyzeFileFunction:
         skip_if_module_not_loaded()
 
         test_file = tmp_path / "clean.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 import typing
 from pydantic import BaseModel
 import json
-""")
+"""
+        )
 
         result = analyze_file(test_file)
 
@@ -882,9 +916,11 @@ import json
         skip_if_module_not_loaded()
 
         test_file = tmp_path / "bad.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 import kafka
-""")
+"""
+        )
 
         result = analyze_file(test_file)
 

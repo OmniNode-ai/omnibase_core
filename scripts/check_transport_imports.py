@@ -36,7 +36,7 @@ Exit Codes:
 
 Related:
     - Linear Ticket: OMN-220
-    - Architecture: docs/architecture/DEPENDENCY_INVERSION.md
+    - Architecture: docs/architecture/PROTOCOL_ARCHITECTURE.md
 """
 
 from __future__ import annotations
@@ -56,6 +56,7 @@ class ViolationType(Enum):
 
     BANNED_TRANSPORT_IMPORT = "banned_transport_import"
     SYNTAX_ERROR = "syntax_error"
+    ANALYSIS_ERROR = "analysis_error"
 
 
 class Severity(Enum):
@@ -157,12 +158,14 @@ TRANSPORT_ALTERNATIVES: dict[str, str] = {
 # These should be fixed and removed from this list
 # Each entry is a relative path from src/omnibase_core/
 #
-# EXPIRATION: Review and remove allowlisted items by 2025-03-01
-# TODO: Create separate tickets to fix these and remove from allowlist
+# EXPIRATION: Review and remove allowlisted items by 2026-06-10
+# NOTE: This date is for tracking purposes - set to 6 months from last review
+# TODO [OMN-220]: Create separate tickets to fix these and remove from allowlist
 TEMPORARY_ALLOWLIST: frozenset[str] = frozenset(
     {
-        # TODO: Create ticket - mixin_health_check.py uses aiohttp directly for HTTP
+        # TODO [OMN-220]: mixin_health_check.py uses aiohttp directly for HTTP
         # health checks. Should use ProtocolHttpClient instead.
+        # Action: Create child ticket to refactor health check to use protocol abstraction
         "mixins/mixin_health_check.py",
     }
 )
@@ -213,6 +216,9 @@ class TransportImportAnalyzer(ast.NodeVisitor):
             for child in node.orelse:
                 self.visit(child)
         else:
+            # Not a TYPE_CHECKING block - use generic_visit to recursively
+            # visit all child nodes (including nested if statements, function
+            # bodies, class definitions, etc.) for import detection
             self.generic_visit(node)
 
     def visit_Import(self, node: ast.Import) -> None:
@@ -249,6 +255,11 @@ class TransportImportAnalyzer(ast.NodeVisitor):
     def _is_type_checking_condition(self, test: ast.expr) -> bool:
         """Check if condition is TYPE_CHECKING or typing.TYPE_CHECKING.
 
+        Handles the following patterns:
+        - `if TYPE_CHECKING:` (direct import)
+        - `if typing.TYPE_CHECKING:` (qualified access)
+        - `if t.TYPE_CHECKING:` (aliased import like `import typing as t`)
+
         Args:
             test: AST expression to check.
 
@@ -258,11 +269,14 @@ class TransportImportAnalyzer(ast.NodeVisitor):
         # Check for `if TYPE_CHECKING:`
         if isinstance(test, ast.Name) and test.id == "TYPE_CHECKING":
             return True
-        # Check for `if typing.TYPE_CHECKING:`
+        # Check for `if typing.TYPE_CHECKING:` or `if <alias>.TYPE_CHECKING:`
+        # This handles both `typing.TYPE_CHECKING` and aliased imports like
+        # `import typing as t; if t.TYPE_CHECKING:`
         if isinstance(test, ast.Attribute):
-            if test.attr == "TYPE_CHECKING":
-                if isinstance(test.value, ast.Name) and test.value.id == "typing":
-                    return True
+            if test.attr == "TYPE_CHECKING" and isinstance(test.value, ast.Name):
+                # Accept any module alias accessing TYPE_CHECKING attribute
+                # Common patterns: typing.TYPE_CHECKING, t.TYPE_CHECKING, tp.TYPE_CHECKING
+                return True
         return False
 
     def _check_banned_module(self, node: ast.AST, module_name: str) -> None:
@@ -381,9 +395,23 @@ def analyze_file(file_path: Path) -> TransportCheckResult:
             skip_reason=f"Syntax error: {e.msg}",
         )
     except Exception as e:
+        # Create a proper violation for unexpected errors rather than masking them
+        # with an empty violations list. This ensures errors are visible in reports
+        # and prevents silent failures during CI checks.
         return TransportCheckResult(
             file_path=file_path,
-            violations=[],
+            violations=[
+                TransportViolation(
+                    file_path=file_path,
+                    line_number=0,
+                    column=0,
+                    violation_type=ViolationType.ANALYSIS_ERROR,
+                    severity=Severity.ERROR,
+                    message=f"Unexpected error during analysis: {type(e).__name__}: {e}",
+                    suggestion="Investigate the error - file may have encoding issues "
+                    "or unexpected content that prevents AST parsing",
+                )
+            ],
             is_clean=False,
             skip_reason=f"Error analyzing file: {e}",
         )
