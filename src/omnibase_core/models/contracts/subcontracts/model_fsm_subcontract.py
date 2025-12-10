@@ -1,7 +1,7 @@
 """
 FSM (Finite State Machine) Subcontract Model.
 
-
+Schema version: v1.5.0
 
 Dedicated subcontract model for finite state machine functionality providing:
 - State definitions with entry/exit actions and validation rules
@@ -9,9 +9,13 @@ Dedicated subcontract model for finite state machine functionality providing:
 - Operation definitions with permissions and atomic guarantees
 - FSM configuration and management settings
 - State lifecycle and transition validation
+- Thread-safe immutability via frozen=True
 
 This model is composed into node contracts that require FSM functionality,
 providing clean separation between node logic and state machine behavior.
+
+Instances are immutable after creation (frozen=True), enabling safe sharing
+across threads without synchronization.
 
 Strict typing is enforced: No Any types allowed in implementation.
 """
@@ -39,6 +43,19 @@ class ModelFSMSubcontract(BaseModel):
     Comprehensive state machine subcontract providing state definitions,
     transitions, operations, validation, and recovery mechanisms.
     Designed for composition into node contracts requiring FSM functionality.
+
+    Schema Version:
+        v1.5.0 - Added frozen=True for immutability after creation.
+
+    Immutability and Thread Safety:
+        This model uses frozen=True (Pydantic ConfigDict), making instances
+        immutable after creation. This provides thread safety guarantees:
+        once an instance is created and validated, its state cannot be
+        modified, allowing safe sharing across threads without locks.
+
+        Model validators (validate_initial_state_exists, etc.) run during
+        construction before the instance is frozen. After validation
+        completes, the instance becomes immutable.
 
     Strict typing is enforced: No Any types allowed in implementation.
     """
@@ -175,7 +192,17 @@ class ModelFSMSubcontract(BaseModel):
 
     @model_validator(mode="after")
     def validate_initial_state_exists(self) -> "ModelFSMSubcontract":
-        """Validate that initial state is defined in states list[Any]."""
+        """Validate that initial state is defined in states list.
+
+        Runs during construction before the instance is frozen. Ensures the
+        initial_state field references a valid state from the states list.
+
+        Returns:
+            The validated instance (self).
+
+        Raises:
+            ModelOnexError: If initial_state is not found in states list.
+        """
         state_names = [state.state_name for state in self.states]
         if self.initial_state not in state_names:
             msg = f"Initial state '{self.initial_state}' not found in states list[Any]"
@@ -195,7 +222,19 @@ class ModelFSMSubcontract(BaseModel):
 
     @model_validator(mode="after")
     def validate_special_states_exist(self) -> "ModelFSMSubcontract":
-        """Validate that terminal and error states are defined in states list[Any]."""
+        """Validate that terminal and error states are defined in states list.
+
+        Runs during construction before the instance is frozen. Ensures all
+        states listed in terminal_states and error_states reference valid
+        states from the states list.
+
+        Returns:
+            The validated instance (self).
+
+        Raises:
+            ModelOnexError: If any terminal or error state is not found in
+                states list.
+        """
         state_names = [state.state_name for state in self.states]
 
         # Validate terminal states
@@ -235,7 +274,19 @@ class ModelFSMSubcontract(BaseModel):
 
     @model_validator(mode="after")
     def validate_transition_states_exist(self) -> "ModelFSMSubcontract":
-        """Validate that all transition source and target states exist."""
+        """Validate that all transition source and target states exist.
+
+        Runs during construction before the instance is frozen. Ensures all
+        from_state and to_state values in transitions reference valid states.
+        Supports wildcard transitions where from_state can be '*' to match
+        any source state.
+
+        Returns:
+            The validated instance (self).
+
+        Raises:
+            ModelOnexError: If any transition references a non-existent state.
+        """
         state_names = [state.state_name for state in self.states]
         # Add wildcard state to supported states for global transitions
         state_names_with_wildcard = [*state_names, "*"]
