@@ -620,16 +620,21 @@ class TestExtractField:
             "user_id": "123",
             "UserName": "John",
             "item0": {"sub_field": "value"},
-            "__init__": "allowed",  # Double underscore IS allowed by the pattern
             "a": {"b": {"c": "deep"}},
+            # Note: "__init__" is now on the deny-list (see TestDeniedBuiltins)
+            "my_field": "test",
+            "_private": "allowed",  # Single underscore prefixes are allowed
+            "__custom__": "value",  # Custom dunder not in deny-list - allowed by pattern
         }
 
         # These should all work without raising
         assert test_node._extract_field(data, "user_id") == "123"
         assert test_node._extract_field(data, "UserName") == "John"
         assert test_node._extract_field(data, "item0.sub_field") == "value"
-        assert test_node._extract_field(data, "__init__") == "allowed"
         assert test_node._extract_field(data, "a.b.c") == "deep"
+        assert test_node._extract_field(data, "my_field") == "test"
+        assert test_node._extract_field(data, "_private") == "allowed"
+        assert test_node._extract_field(data, "__custom__") == "value"
 
     def test_extract_field_rejects_empty_path(self, test_node: TestNode) -> None:
         """Test that _extract_field rejects empty paths."""
@@ -660,6 +665,227 @@ class TestExtractField:
         assert exc_info.value.model.context["operation_id"] == str(op_id)
         assert exc_info.value.model.context["field_path"] == "eval()"
         assert exc_info.value.model.context["allowed_pattern"] == "[a-zA-Z0-9_.]"
+
+
+class TestDeniedBuiltins:
+    """Test denied Python built-ins validation for template injection protection.
+
+    These tests verify the defense-in-depth security mechanism that blocks
+    access to Python built-ins and special attributes via field paths, even
+    when those paths pass the character pattern validation (SAFE_FIELD_PATTERN).
+
+    The DENIED_BUILTINS set blocks dangerous identifiers like:
+    - Code execution: import, __import__, eval, exec, compile
+    - Introspection: globals, locals, vars, dir
+    - Attribute manipulation: getattr, setattr, delattr, hasattr
+    - Special attributes: __class__, __bases__, __builtins__, etc.
+    """
+
+    def test_denied_code_execution_builtins(self, test_node: TestNode) -> None:
+        """Test that code execution built-ins are denied."""
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
+        # Code execution functions that could enable arbitrary code execution
+        denied_paths = [
+            "import",
+            "__import__",
+            "eval",
+            "exec",
+            "compile",
+        ]
+        data = {"foo": "bar"}
+
+        for path in denied_paths:
+            with pytest.raises(ModelOnexError) as exc_info:
+                test_node._extract_field(data, path)
+            assert exc_info.value.error_code == EnumCoreErrorCode.SECURITY_VIOLATION
+            assert "denied" in exc_info.value.message.lower()
+            assert path in exc_info.value.model.context.get("denied_builtin", "")
+
+    def test_denied_introspection_builtins(self, test_node: TestNode) -> None:
+        """Test that introspection built-ins are denied."""
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
+        # Introspection functions that could leak sensitive information
+        denied_paths = [
+            "globals",
+            "locals",
+            "vars",
+            "dir",
+        ]
+        data = {"foo": "bar"}
+
+        for path in denied_paths:
+            with pytest.raises(ModelOnexError) as exc_info:
+                test_node._extract_field(data, path)
+            assert exc_info.value.error_code == EnumCoreErrorCode.SECURITY_VIOLATION
+            assert "denied" in exc_info.value.message.lower()
+
+    def test_denied_attribute_manipulation_builtins(self, test_node: TestNode) -> None:
+        """Test that attribute manipulation built-ins are denied."""
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
+        # Attribute manipulation functions that could modify objects
+        denied_paths = [
+            "getattr",
+            "setattr",
+            "delattr",
+            "hasattr",
+        ]
+        data = {"foo": "bar"}
+
+        for path in denied_paths:
+            with pytest.raises(ModelOnexError) as exc_info:
+                test_node._extract_field(data, path)
+            assert exc_info.value.error_code == EnumCoreErrorCode.SECURITY_VIOLATION
+            assert "denied" in exc_info.value.message.lower()
+
+    def test_denied_special_attributes(self, test_node: TestNode) -> None:
+        """Test that Python special attributes (dunder) are denied."""
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
+        # Special attributes used in prototype pollution / class manipulation attacks
+        denied_paths = [
+            "__builtins__",
+            "__class__",
+            "__bases__",
+            "__mro__",
+            "__subclasses__",
+            "__dict__",
+            "__globals__",
+            "__code__",
+            "__init__",
+            "__call__",
+            "__getattr__",
+            "__setattr__",
+        ]
+        data = {"foo": "bar"}
+
+        for path in denied_paths:
+            with pytest.raises(ModelOnexError) as exc_info:
+                test_node._extract_field(data, path)
+            assert exc_info.value.error_code == EnumCoreErrorCode.SECURITY_VIOLATION
+            assert "denied" in exc_info.value.message.lower()
+
+    def test_denied_builtins_in_nested_path(self, test_node: TestNode) -> None:
+        """Test that denied built-ins are caught in nested paths."""
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
+        # Attacks often try to access special attributes through nested paths
+        nested_attack_paths = [
+            "user.__class__",
+            "data.__class__.name",
+            "config.eval",
+            "obj.__bases__",
+            "item.__subclasses__",
+            "user.profile.__dict__",
+            "request.__globals__",
+            "module.__import__",
+            "nested.path.to.__builtins__",
+        ]
+        data = {"user": {"profile": {"name": "test"}}}
+
+        for path in nested_attack_paths:
+            with pytest.raises(ModelOnexError) as exc_info:
+                test_node._extract_field(data, path)
+            assert exc_info.value.error_code == EnumCoreErrorCode.SECURITY_VIOLATION
+
+    def test_denied_other_dangerous_builtins(self, test_node: TestNode) -> None:
+        """Test that other potentially dangerous built-ins are denied."""
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
+        # Additional dangerous builtins for defense in depth
+        denied_paths = [
+            "open",
+            "input",
+            "breakpoint",
+            "exit",
+            "quit",
+        ]
+        data = {"foo": "bar"}
+
+        for path in denied_paths:
+            with pytest.raises(ModelOnexError) as exc_info:
+                test_node._extract_field(data, path)
+            assert exc_info.value.error_code == EnumCoreErrorCode.SECURITY_VIOLATION
+
+    def test_legitimate_field_names_still_work(self, test_node: TestNode) -> None:
+        """Test that legitimate field names with underscores still work."""
+        data = {
+            "user_id": "123",
+            "first_name": "John",
+            "_private_field": "private",
+            "__custom_dunder__": "custom",  # Not in deny-list
+            "evaluator": "allowed",  # Contains 'eval' but not exact match
+            "compiler_version": "1.0",  # Contains 'compile' but not exact match
+            "global_config": "config",  # Contains 'global' but not exact match
+            "nested": {
+                "importer_id": "imp123",  # Contains 'import' but not exact match
+                "classname": "MyClass",  # Contains 'class' but not exact match
+            },
+        }
+
+        # These should all work - they contain denied words as substrings but
+        # are not exact matches to denied built-in names
+        assert test_node._extract_field(data, "user_id") == "123"
+        assert test_node._extract_field(data, "first_name") == "John"
+        assert test_node._extract_field(data, "_private_field") == "private"
+        assert test_node._extract_field(data, "__custom_dunder__") == "custom"
+        assert test_node._extract_field(data, "evaluator") == "allowed"
+        assert test_node._extract_field(data, "compiler_version") == "1.0"
+        assert test_node._extract_field(data, "global_config") == "config"
+        assert test_node._extract_field(data, "nested.importer_id") == "imp123"
+        assert test_node._extract_field(data, "nested.classname") == "MyClass"
+
+    def test_denied_builtin_error_includes_context(self, test_node: TestNode) -> None:
+        """Test that denied builtin error includes helpful context."""
+        from uuid import uuid4
+
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
+        data = {"foo": "bar"}
+        op_id = uuid4()
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            test_node._extract_field(data, "user.__class__", operation_id=op_id)
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.SECURITY_VIOLATION
+        context = exc_info.value.model.context
+        assert context["operation_id"] == str(op_id)
+        assert context["field_path"] == "user.__class__"
+        assert context["denied_builtin"] == "__class__"
+
+    def test_case_sensitivity_of_denied_builtins(self, test_node: TestNode) -> None:
+        """Test that denied built-in check is case-sensitive (Python is case-sensitive)."""
+        data = {
+            "Eval": "uppercase_allowed",  # Not the same as 'eval'
+            "IMPORT": "uppercase_allowed",  # Not the same as 'import'
+            "Globals": "uppercase_allowed",  # Not the same as 'globals'
+        }
+
+        # These should work because Python identifiers are case-sensitive
+        # and our deny-list uses exact lowercase matches
+        assert test_node._extract_field(data, "Eval") == "uppercase_allowed"
+        assert test_node._extract_field(data, "IMPORT") == "uppercase_allowed"
+        assert test_node._extract_field(data, "Globals") == "uppercase_allowed"
+
+    def test_pattern_validation_runs_before_denylist(self, test_node: TestNode) -> None:
+        """Test that character pattern validation runs before deny-list check.
+
+        This ensures we fail fast on invalid characters before checking the deny-list.
+        Both checks are important for defense-in-depth, but the pattern check
+        catches more obvious attacks immediately.
+        """
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
+        data = {"foo": "bar"}
+
+        # eval() has parentheses - pattern should reject first
+        with pytest.raises(ModelOnexError) as exc_info:
+            test_node._extract_field(data, "eval()")
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        # Should mention pattern, not deny-list
+        assert "Invalid field path characters" in exc_info.value.message
 
 
 class TestCoerceParamValue:

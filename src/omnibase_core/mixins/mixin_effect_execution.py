@@ -98,6 +98,7 @@ from omnibase_core.constants.constants_effect import (
     DEFAULT_OPERATION_TIMEOUT_MS,
     DEFAULT_RETRY_JITTER_FACTOR,
     SAFE_FIELD_PATTERN,
+    contains_denied_builtin,
 )
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_effect_types import EnumTransactionState
@@ -874,6 +875,8 @@ class MixinEffectExecution:
         Security:
             - Validates field_path characters against SAFE_FIELD_PATTERN to prevent
               injection attacks via malicious paths like __import__, eval(), etc.
+            - Validates field_path segments against DENIED_BUILTINS to prevent
+              access to Python built-ins and special attributes (defense-in-depth).
             - Enforces a maximum traversal depth to prevent denial-of-service
               attacks via deeply nested or maliciously crafted field paths.
 
@@ -883,10 +886,18 @@ class MixinEffectExecution:
                 - _: Underscore for snake_case field names
                 - .: Dot separator for nested field access
 
+            Denied field names (explicit deny-list):
+                - Code execution: import, __import__, eval, exec, compile
+                - Introspection: globals, locals, vars, dir
+                - Attribute manipulation: getattr, setattr, delattr, hasattr
+                - Special attributes: __class__, __bases__, __builtins__, etc.
+                - See DENIED_BUILTINS in constants_effect.py for full list
+
         Args:
             data: Source data dictionary.
             field_path: Dotted path like "user.id" or "config.timeout_ms".
                 Must contain only alphanumeric characters, underscores, and dots.
+                Must not contain any denied Python built-in names.
             max_depth: Maximum allowed path depth. Defaults to
                 DEFAULT_MAX_FIELD_EXTRACTION_DEPTH (10). Paths deeper than
                 this limit will return None.
@@ -897,7 +908,8 @@ class MixinEffectExecution:
 
         Raises:
             ModelOnexError: If field_path contains invalid characters
-                (VALIDATION_ERROR code).
+                (VALIDATION_ERROR code) or contains denied built-in names
+                (SECURITY_VIOLATION code).
         """
         # Security: Validate field path characters to prevent injection attacks
         if not SAFE_FIELD_PATTERN.match(field_path):
@@ -906,6 +918,19 @@ class MixinEffectExecution:
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 field_path=field_path,
                 allowed_pattern="[a-zA-Z0-9_.]",
+                operation_id=str(operation_id) if operation_id else None,
+            )
+
+        # Security: Check for denied Python built-ins (defense-in-depth)
+        # This catches dangerous identifiers like __class__, eval, etc.
+        # that pass the character pattern but could enable template injection
+        denied_builtin = contains_denied_builtin(field_path)
+        if denied_builtin is not None:
+            raise ModelOnexError(
+                message=f"Access to Python built-in or special attribute denied: {denied_builtin}",
+                error_code=EnumCoreErrorCode.SECURITY_VIOLATION,
+                field_path=field_path,
+                denied_builtin=denied_builtin,
                 operation_id=str(operation_id) if operation_id else None,
             )
 

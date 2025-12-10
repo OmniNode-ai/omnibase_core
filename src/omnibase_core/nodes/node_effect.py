@@ -21,6 +21,7 @@ Key Capabilities:
 Author: ONEX Framework Team
 """
 
+import warnings
 from uuid import UUID
 
 from omnibase_core.constants.constants_effect import DEFAULT_OPERATION_TIMEOUT_MS
@@ -39,6 +40,13 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Error messages
 _ERR_EFFECT_SUBCONTRACT_NOT_LOADED = "Effect subcontract not loaded"
+
+# Warning messages for v1.0 limitations
+_WARN_PER_OP_CONFIG_NOT_HONORED = (
+    "v1.0 LIMITATION: Per-operation '{config_name}' detected for operation "
+    "'{operation_name}' but will NOT be applied. Only subcontract-level defaults "
+    "are honored in v1.0. This will be fully implemented in v2.0. See: OMN-467"
+)
 
 
 class NodeEffect(NodeCoreBase, MixinEffectExecution):
@@ -383,6 +391,37 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
                 op_retry = op.retry_policy or default_retry
                 op_cb = op.circuit_breaker or default_cb
                 op_tx = default_tx
+
+                # v1.0 LIMITATION: Emit runtime warnings when per-operation configs
+                # are detected. These configs are parsed but NOT honored in v1.0.
+                # Only subcontract-level defaults are applied during execution.
+                if op.retry_policy is not None:
+                    warnings.warn(
+                        _WARN_PER_OP_CONFIG_NOT_HONORED.format(
+                            config_name="retry_policy",
+                            operation_name=op.operation_name,
+                        ),
+                        UserWarning,
+                        stacklevel=2,
+                    )
+                if op.circuit_breaker is not None:
+                    warnings.warn(
+                        _WARN_PER_OP_CONFIG_NOT_HONORED.format(
+                            config_name="circuit_breaker",
+                            operation_name=op.operation_name,
+                        ),
+                        UserWarning,
+                        stacklevel=2,
+                    )
+                if op.response_handling is not None:
+                    warnings.warn(
+                        _WARN_PER_OP_CONFIG_NOT_HONORED.format(
+                            config_name="response_handling",
+                            operation_name=op.operation_name,
+                        ),
+                        UserWarning,
+                        stacklevel=2,
+                    )
 
                 op_dict: dict[str, object] = {
                     "operation_name": op.operation_name,

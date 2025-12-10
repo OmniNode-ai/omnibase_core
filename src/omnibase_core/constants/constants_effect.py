@@ -64,6 +64,171 @@ DEFAULT_MAX_FIELD_EXTRACTION_DEPTH: int = 10
 SAFE_FIELD_PATTERN: re.Pattern[str] = re.compile(r"^[a-zA-Z0-9_.]+$")
 
 # ==============================================================================
+# Security: Denied Built-ins for Template Injection Protection
+# ==============================================================================
+
+# Python built-ins and special attributes that should NEVER be accessible
+# via template field paths. This provides defense-in-depth against template
+# injection attacks, complementing SAFE_FIELD_PATTERN character validation.
+#
+# While SAFE_FIELD_PATTERN blocks special characters (parentheses, brackets, etc.),
+# this deny-list explicitly blocks dangerous Python identifiers that only contain
+# allowed characters (alphanumeric + underscore).
+#
+# Categories of denied items:
+#   1. Code execution: __import__, eval, exec, compile
+#   2. Introspection: globals, locals, vars, dir
+#   3. Attribute manipulation: getattr, setattr, delattr, hasattr
+#   4. Class/type introspection: __class__, __bases__, __mro__, __subclasses__
+#   5. Special attributes: __builtins__, __dict__, __globals__, __code__
+#   6. Module access: __loader__, __spec__, __file__, __name__
+#   7. Callable access: __call__, __init__, __new__
+#
+# Security Note: This deny-list is intentionally comprehensive. Some items
+# (like __init__) may seem harmless in isolation, but can be chained in
+# sophisticated attacks (e.g., accessing __class__.__bases__[0].__subclasses__()).
+DENIED_BUILTINS: frozenset[str] = frozenset(
+    {
+        # Code execution functions
+        "import",
+        "__import__",
+        "eval",
+        "exec",
+        "compile",
+        "execfile",  # Python 2 compatibility (defense in depth)
+        # Introspection functions
+        "globals",
+        "locals",
+        "vars",
+        "dir",
+        # Attribute manipulation
+        "getattr",
+        "setattr",
+        "delattr",
+        "hasattr",
+        # Special attributes - class/type introspection
+        "__builtins__",
+        "__class__",
+        "__bases__",
+        "__mro__",
+        "__subclasses__",
+        # Special attributes - object internals
+        "__dict__",
+        "__globals__",
+        "__code__",
+        "__func__",
+        "__self__",
+        "__closure__",
+        "__annotations__",
+        "__kwdefaults__",
+        "__defaults__",
+        # Module-level special attributes
+        "__loader__",
+        "__spec__",
+        "__file__",
+        "__name__",
+        "__package__",
+        "__path__",
+        "__cached__",
+        "__doc__",
+        # Callable special methods
+        "__call__",
+        "__init__",
+        "__new__",
+        "__del__",
+        # Descriptor protocol
+        "__get__",
+        "__set__",
+        "__delete__",
+        # Context managers
+        "__enter__",
+        "__exit__",
+        # Attribute access protocol
+        "__getattr__",
+        "__setattr__",
+        "__delattr__",
+        "__getattribute__",
+        # String conversion (potential for code injection in some contexts)
+        "__repr__",
+        "__str__",
+        "__format__",
+        # Iteration protocol
+        "__iter__",
+        "__next__",
+        # Container protocol
+        "__getitem__",
+        "__setitem__",
+        "__delitem__",
+        "__contains__",
+        # Rich comparison
+        "__eq__",
+        "__ne__",
+        "__lt__",
+        "__le__",
+        "__gt__",
+        "__ge__",
+        # Numeric operations (can be exploited in some template engines)
+        "__add__",
+        "__sub__",
+        "__mul__",
+        "__truediv__",
+        "__floordiv__",
+        "__mod__",
+        "__pow__",
+        # Other potentially dangerous builtins
+        "open",
+        "input",
+        "breakpoint",
+        "help",
+        "license",
+        "credits",
+        "copyright",
+        "quit",
+        "exit",
+    }
+)
+
+
+def contains_denied_builtin(field_path: str) -> str | None:
+    """
+    Check if a field path contains any denied Python built-in or special attribute.
+
+    This function provides defense-in-depth security by checking each segment
+    of a dotted field path against the DENIED_BUILTINS set. It complements
+    SAFE_FIELD_PATTERN which validates character sets.
+
+    Security Design:
+        - Checks EACH segment individually (not just exact match on full path)
+        - Handles nested paths like "user.__class__.name" by checking each part
+        - Case-sensitive matching (Python identifiers are case-sensitive)
+        - Returns the first denied item found for clear error messaging
+
+    Args:
+        field_path: The dotted field path to validate (e.g., "user.profile.name").
+            Expected to already pass SAFE_FIELD_PATTERN validation.
+
+    Returns:
+        The first denied built-in found, or None if the path is safe.
+
+    Examples:
+        >>> contains_denied_builtin("user.profile.name")
+        None
+        >>> contains_denied_builtin("user.__class__")
+        "__class__"
+        >>> contains_denied_builtin("__import__")
+        "__import__"
+        >>> contains_denied_builtin("data.eval")
+        "eval"
+    """
+    # Split path into segments and check each one
+    segments = field_path.split(".")
+    for segment in segments:
+        if segment in DENIED_BUILTINS:
+            return segment
+    return None
+
+
+# ==============================================================================
 # Retry Constants
 # ==============================================================================
 
