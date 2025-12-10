@@ -232,6 +232,56 @@ class EnvelopeRouter(ProtocolNodeRuntime):
         As per coding guidelines: "Never share node instances across threads
         without explicit synchronization."
 
+        What NOT to Do:
+
+        1. **Do NOT share an unfrozen router across threads**:
+           Registration and routing operations can race, leading to undefined behavior.
+
+           .. code-block:: python
+
+               # WRONG - unfrozen router shared across threads
+               router = EnvelopeRouter()  # Not frozen!
+               threading.Thread(target=lambda: router.register_handler(h)).start()
+               await router.route_envelope(envelope)  # Race condition!
+
+        2. **Do NOT call register_handler/register_node after freeze()**:
+           This will raise ModelOnexError(INVALID_STATE). Plan all registrations
+           before freezing.
+
+           .. code-block:: python
+
+               # WRONG - registration after freeze
+               router.freeze()
+               router.register_handler(late_handler)  # Raises INVALID_STATE!
+
+        3. **Do NOT skip the freeze() call before concurrent access**:
+           Without freeze(), the router provides NO thread safety guarantees for
+           routing operations. Always freeze before sharing across threads.
+
+           .. code-block:: python
+
+               # WRONG - no freeze before concurrent access
+               router = EnvelopeRouter()
+               router.register_handler(handler)
+               # Missing: router.freeze()
+               executor.map(lambda e: router.route_envelope(e), envelopes)  # Unsafe!
+
+        Mitigation Strategies Summary:
+
+        +---------------------------+----------------------------------------------+-------------------+
+        | Strategy                  | When to Use                                  | Trade-offs        |
+        +===========================+==============================================+===================+
+        | **Freeze After Init**     | Default for most applications. Register all  | Cannot add new    |
+        | (Recommended)             | handlers/nodes at startup, then freeze.      | handlers at       |
+        |                           |                                              | runtime.          |
+        +---------------------------+----------------------------------------------+-------------------+
+        | **Per-Thread Instances**  | When threads need isolated routing state.    | Memory overhead,  |
+        |                           | Each thread creates its own router.          | handler duplication|
+        +---------------------------+----------------------------------------------+-------------------+
+        | **Async Locking**         | When dynamic registration is required in     | Performance cost, |
+        |                           | async code with concurrent routing.          | complexity.       |
+        +---------------------------+----------------------------------------------+-------------------+
+
         TOCTOU Consideration:
             After ``freeze()``, read methods (``route_envelope``, ``execute_with_handler``)
             access ``self._handlers`` and ``self._nodes`` without locking for performance.
@@ -330,6 +380,9 @@ class EnvelopeRouter(ProtocolNodeRuntime):
           Protocol for handler implementations
         - :class:`~omnibase_core.runtime.runtime_node_instance.RuntimeNodeInstance`:
           Node instance wrapper
+        - :doc:`/docs/guides/THREADING`: Comprehensive thread safety guidelines
+          including production checklists, synchronization patterns, and the
+          thread safety matrix for all ONEX components.
 
     .. versionadded:: 0.4.0
     """
@@ -628,11 +681,17 @@ class EnvelopeRouter(ProtocolNodeRuntime):
 
         .. warning::
 
-            **Freeze Contract Required (TOCTOU Safety)**
+            **Freeze Contract Enforced at Runtime**
 
-            This method reads ``self._handlers`` WITHOUT holding a lock. This is
-            intentional for performance - acquiring a lock on every routing operation
-            would be prohibitively expensive in high-throughput scenarios.
+            This method enforces the freeze contract at runtime by raising
+            ``ModelOnexError(INVALID_STATE)`` if called before ``freeze()``.
+            This prevents TOCTOU (Time-of-Check-Time-of-Use) race conditions
+            where handlers could be modified between lookup and use.
+
+            After ``freeze()``, this method reads ``self._handlers`` WITHOUT
+            holding a lock. This is intentional for performance - acquiring a
+            lock on every routing operation would be prohibitively expensive
+            in high-throughput scenarios.
 
             **This is safe ONLY because the router MUST be frozen before use.**
 
@@ -641,16 +700,6 @@ class EnvelopeRouter(ProtocolNodeRuntime):
             1. After ``freeze()`` is called, the handler registry becomes immutable
             2. No concurrent registration can occur after freeze
             3. Python dict reads are atomic under the GIL
-
-            **Calling ``route_envelope()`` before ``freeze()`` is UNDEFINED BEHAVIOR.**
-
-            If the freeze contract is violated (i.e., ``register_handler()`` is called
-            concurrently with ``route_envelope()``), the behavior is undefined and
-            may result in:
-
-            - KeyError if handler is removed during lookup
-            - Stale handler reference if handler is replaced mid-routing
-            - Inconsistent state between routing check and handler retrieval
 
             **Required Pattern**::
 
@@ -671,14 +720,18 @@ class EnvelopeRouter(ProtocolNodeRuntime):
                 - "handler_type": The EnumHandlerType used for routing
 
         Raises:
-            ModelOnexError: If envelope.handler_type is None.
-            ModelOnexError: If no handler is registered for the handler_type.
+            ModelOnexError: If the router is not frozen (INVALID_STATE).
+            ModelOnexError: If envelope is None (INVALID_PARAMETER).
+            ModelOnexError: If envelope.handler_type is None (INVALID_PARAMETER).
+            ModelOnexError: If no handler is registered for the handler_type
+                (ITEM_NOT_REGISTERED).
 
         Example:
             .. code-block:: python
 
                 runtime = EnvelopeRouter()
                 runtime.register_handler(http_handler)
+                runtime.freeze()  # REQUIRED before routing
 
                 routing_info = runtime.route_envelope(envelope)
                 handler = routing_info["handler"]
@@ -689,6 +742,17 @@ class EnvelopeRouter(ProtocolNodeRuntime):
             additional routing metadata (e.g., routing version, timestamp,
             fallback handlers) without breaking existing code.
         """
+        # Freeze contract enforcement - route_envelope() requires frozen state
+        # This MUST be checked BEFORE any access to self._handlers to prevent
+        # TOCTOU race conditions where handlers could be modified during routing.
+        if not self._frozen:
+            raise ModelOnexError(
+                message="route_envelope() called before freeze(). "
+                "Registration MUST complete and freeze() MUST be called before routing. "
+                "This is required for thread safety.",
+                error_code=EnumCoreErrorCode.INVALID_STATE,
+            )
+
         if envelope is None:
             raise ModelOnexError(
                 message="Cannot route None envelope. Envelope is required.",

@@ -195,6 +195,9 @@ class TestEnvelopeRouterRegisterHandler:
         # Verify the NEW handler IS in the registry
         assert mock_handler_alternate in runtime._handlers.values()
 
+        # CRITICAL: freeze before routing
+        runtime.freeze()
+
         # Verify replacement by routing and checking which handler is returned
         envelope = ModelOnexEnvelope(
             envelope_id=uuid4(),
@@ -506,6 +509,9 @@ class TestEnvelopeRouterRouteEnvelope:
         assert len(runtime._handlers) == 1
         assert mock_handler.handler_type in runtime._handlers
 
+        # CRITICAL: freeze before routing
+        runtime.freeze()
+
         # Create envelope with handler_type matching mock_handler
         envelope = ModelOnexEnvelope(
             envelope_id=uuid4(),
@@ -542,6 +548,9 @@ class TestEnvelopeRouterRouteEnvelope:
         from omnibase_core.runtime import EnvelopeRouter
 
         runtime = EnvelopeRouter()
+
+        # CRITICAL: freeze before routing (even with no handlers)
+        runtime.freeze()
 
         # Create envelope with handler_type but no handler registered
         envelope = ModelOnexEnvelope(
@@ -583,6 +592,9 @@ class TestEnvelopeRouterRouteEnvelope:
         assert len(runtime._handlers) == 1
         assert mock_handler.handler_type in runtime._handlers
         assert runtime._handlers[mock_handler.handler_type] is mock_handler
+
+        # CRITICAL: freeze before routing
+        runtime.freeze()
 
         # Envelope explicitly specifies handler_type
         envelope = ModelOnexEnvelope(
@@ -629,6 +641,9 @@ class TestEnvelopeRouterRouteEnvelope:
         assert len(runtime._handlers) == 1
         assert mock_handler.handler_type in runtime._handlers
         assert runtime._handlers[mock_handler.handler_type] is mock_handler
+
+        # CRITICAL: freeze before routing
+        runtime.freeze()
 
         # Create envelope with handler_type set correctly, then mutate to invalid type
         envelope = ModelOnexEnvelope(
@@ -678,6 +693,9 @@ class TestEnvelopeRouterRouteEnvelope:
         assert mock_handler.handler_type in runtime._handlers
         assert runtime._handlers[mock_handler.handler_type] is mock_handler
 
+        # CRITICAL: freeze before routing
+        runtime.freeze()
+
         # Create envelope without handler_type (defaults to None)
         envelope = ModelOnexEnvelope(
             envelope_id=uuid4(),
@@ -721,6 +739,9 @@ class TestEnvelopeRouterRouteEnvelope:
         assert len(runtime._handlers) == 1
         assert mock_handler.handler_type in runtime._handlers
         assert runtime._handlers[mock_handler.handler_type] is mock_handler
+
+        # CRITICAL: freeze before routing
+        runtime.freeze()
 
         # Create envelope with valid handler_type, then mutate to invalid type
         envelope = ModelOnexEnvelope(
@@ -791,6 +812,9 @@ class TestEnvelopeRouterExecuteWithHandler:
             contract=mock_contract,
         )
 
+        # CRITICAL: freeze before execution
+        runtime.freeze()
+
         # Create envelope with handler_type
         envelope = ModelOnexEnvelope(
             envelope_id=uuid4(),
@@ -842,6 +866,9 @@ class TestEnvelopeRouterExecuteWithHandler:
             node_type=sample_node_type,
             contract=mock_contract,
         )
+
+        # CRITICAL: freeze before execution
+        runtime.freeze()
 
         envelope = ModelOnexEnvelope(
             envelope_id=uuid4(),
@@ -900,6 +927,9 @@ class TestEnvelopeRouterExecuteWithHandler:
             contract=mock_contract,
         )
 
+        # CRITICAL: freeze before execution
+        runtime.freeze()
+
         correlation_id = uuid4()
         envelope = ModelOnexEnvelope(
             envelope_id=uuid4(),
@@ -955,6 +985,9 @@ class TestEnvelopeRouterExecuteWithHandler:
             node_type=sample_node_type,
             contract=mock_contract,
         )
+
+        # CRITICAL: freeze before execution
+        runtime.freeze()
 
         # Envelope without handler_type
         envelope = ModelOnexEnvelope(
@@ -1060,6 +1093,9 @@ class TestEnvelopeRouterEdgeCases:
         assert EnumHandlerType.DATABASE in runtime._handlers
         assert EnumHandlerType.KAFKA in runtime._handlers
 
+        # CRITICAL: freeze before routing
+        runtime.freeze()
+
         # Verify each handler type can be routed
         for handler in [mock_handler, mock_handler_database, mock_handler_kafka]:
             envelope = ModelOnexEnvelope(
@@ -1110,6 +1146,9 @@ class TestEnvelopeRouterEdgeCases:
             node_type=sample_node_type,
             contract=mock_contract,
         )
+
+        # CRITICAL: freeze before execution
+        runtime.freeze()
 
         envelope = ModelOnexEnvelope(
             envelope_id=uuid4(),
@@ -1590,6 +1629,9 @@ class TestEnvelopeRouterIntegrationPatterns:
         assert sample_slug in runtime._nodes
         assert runtime._nodes[sample_slug] is instance
 
+        # CRITICAL: freeze before execution
+        runtime.freeze()
+
         # Create envelope
         correlation_id = uuid4()
         envelope = ModelOnexEnvelope(
@@ -1645,6 +1687,9 @@ class TestEnvelopeRouterIntegrationPatterns:
             node_type=sample_node_type,
             contract=mock_contract,
         )
+
+        # CRITICAL: freeze before execution
+        runtime.freeze()
 
         # Execute multiple times
         for i in range(3):
@@ -2081,6 +2126,93 @@ class TestEnvelopeRouterFreeze:
         assert "original-node" in runtime._nodes
         assert runtime._nodes["original-node"] is instance1
 
+    def test_route_envelope_before_freeze_raises_invalid_state(
+        self,
+        mock_handler: MagicMock,
+        default_version: ModelSemVer,
+    ) -> None:
+        """
+        Test that route_envelope() raises INVALID_STATE when called before freeze().
+
+        EXPECTED BEHAVIOR:
+        - Calling route_envelope() before freeze() raises ModelOnexError
+        - Error code is INVALID_STATE
+        - Error message mentions freeze requirement
+        - This enforces the freeze contract for thread safety
+
+        This test addresses PR #145 review feedback to verify the freeze contract
+        is properly enforced at runtime.
+        """
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+        from omnibase_core.runtime import EnvelopeRouter
+
+        runtime = EnvelopeRouter()
+        runtime.register_handler(mock_handler)
+
+        # Create envelope with valid handler_type
+        envelope = ModelOnexEnvelope(
+            envelope_id=uuid4(),
+            envelope_version=default_version,
+            correlation_id=uuid4(),
+            source_node="test_source",
+            operation="TEST_OPERATION",
+            payload={"test": "data"},
+            timestamp=datetime.now(UTC),
+            handler_type=mock_handler.handler_type,
+        )
+
+        # Attempting to route before freeze should raise INVALID_STATE
+        with pytest.raises(ModelOnexError) as exc_info:
+            runtime.route_envelope(envelope)
+
+        error = exc_info.value
+        assert error.error_code == EnumCoreErrorCode.INVALID_STATE
+        error_msg = str(error).lower()
+        assert "freeze" in error_msg
+
+    def test_route_envelope_after_freeze_succeeds(
+        self,
+        mock_handler: MagicMock,
+        default_version: ModelSemVer,
+    ) -> None:
+        """
+        Test that route_envelope() succeeds when called after freeze().
+
+        EXPECTED BEHAVIOR:
+        - Calling freeze() enables route_envelope() to work
+        - Routing returns the correct handler and handler_type
+        - The freeze contract allows read operations after freezing
+
+        This is the positive case complementing test_route_envelope_before_freeze_raises_invalid_state.
+        """
+        from omnibase_core.runtime import EnvelopeRouter
+
+        runtime = EnvelopeRouter()
+        runtime.register_handler(mock_handler)
+        runtime.freeze()  # CRITICAL: freeze before routing
+
+        # Create envelope with valid handler_type
+        envelope = ModelOnexEnvelope(
+            envelope_id=uuid4(),
+            envelope_version=default_version,
+            correlation_id=uuid4(),
+            source_node="test_source",
+            operation="TEST_OPERATION",
+            payload={"test": "data"},
+            timestamp=datetime.now(UTC),
+            handler_type=mock_handler.handler_type,
+        )
+
+        # Should succeed after freeze
+        result = runtime.route_envelope(envelope)
+
+        assert result is not None
+        assert "handler" in result
+        assert result["handler"] is mock_handler
+        assert "handler_type" in result
+        assert result["handler_type"] == mock_handler.handler_type
+
 
 # =============================================================================
 # TEST CLASS: Large Registry Repr Behavior
@@ -2504,6 +2636,9 @@ class TestEnvelopeRouterHandlerTimeout:
             contract=mock_contract,
         )
 
+        # CRITICAL: freeze before execution
+        runtime.freeze()
+
         envelope = ModelOnexEnvelope(
             envelope_id=uuid4(),
             envelope_version=default_version,
@@ -2567,6 +2702,9 @@ class TestEnvelopeRouterHandlerTimeout:
             node_type=sample_node_type,
             contract=mock_contract,
         )
+
+        # CRITICAL: freeze before execution
+        runtime.freeze()
 
         envelope = ModelOnexEnvelope(
             envelope_id=uuid4(),
@@ -2634,6 +2772,9 @@ class TestEnvelopeRouterHandlerTimeout:
             contract=mock_contract,
         )
 
+        # CRITICAL: freeze before execution
+        runtime.freeze()
+
         envelope = ModelOnexEnvelope(
             envelope_id=uuid4(),
             envelope_version=default_version,
@@ -2688,14 +2829,32 @@ class TestEnvelopeRouterHandlerTimeout:
         error_handler.execute = error_execute
         error_handler.describe = MagicMock(return_value={})
 
+        # Define slow handler for timeout test
+        async def slow_execute(envelope: ModelOnexEnvelope) -> ModelOnexEnvelope:
+            await asyncio.sleep(2.0)
+            return ModelOnexEnvelope.create_response(
+                request=envelope,
+                payload={},
+                success=True,
+            )
+
+        slow_handler = MagicMock()
+        slow_handler.handler_type = EnumHandlerType.DATABASE  # Different type
+        slow_handler.execute = slow_execute
+        slow_handler.describe = MagicMock(return_value={})
+
         runtime = EnvelopeRouter()
         runtime.register_handler(error_handler)
+        runtime.register_handler(slow_handler)
 
         instance = NodeInstance(
             slug=sample_slug,
             node_type=sample_node_type,
             contract=mock_contract,
         )
+
+        # CRITICAL: freeze before execution
+        runtime.freeze()
 
         envelope = ModelOnexEnvelope(
             envelope_id=uuid4(),
@@ -2715,21 +2874,6 @@ class TestEnvelopeRouterHandlerTimeout:
         assert "Simulated handler failure" in result.error
 
         # Now test with a slow handler wrapped in wait_for - timeout RAISES
-        async def slow_execute(envelope: ModelOnexEnvelope) -> ModelOnexEnvelope:
-            await asyncio.sleep(2.0)
-            return ModelOnexEnvelope.create_response(
-                request=envelope,
-                payload={},
-                success=True,
-            )
-
-        slow_handler = MagicMock()
-        slow_handler.handler_type = EnumHandlerType.DATABASE  # Different type
-        slow_handler.execute = slow_execute
-        slow_handler.describe = MagicMock(return_value={})
-
-        runtime.register_handler(slow_handler)
-
         timeout_envelope = ModelOnexEnvelope(
             envelope_id=uuid4(),
             envelope_version=default_version,

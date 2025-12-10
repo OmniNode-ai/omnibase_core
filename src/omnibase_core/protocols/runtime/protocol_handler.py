@@ -148,9 +148,22 @@ class ProtocolHandler(Protocol):
             - **Execution**: After registration, handlers are invoked concurrently.
               The handler instance is shared across all executions for that handler_type.
 
+        What NOT to Do:
+            - **Do NOT share stateful handlers across threads without synchronization**:
+              If a handler maintains mutable state (caches, counters, connections),
+              sharing it across threads without proper locking will cause race conditions.
+            - **Do NOT modify handler state during execute() without locking**:
+              If your handler needs to update instance variables during execution,
+              use asyncio.Lock (for async state) or threading.Lock (for sync state).
+            - **Do NOT assume envelope processing is serialized**:
+              Multiple coroutines may call the same handler instance concurrently.
+              Design for concurrent access from the start.
+
         See Also:
-            :class:`~omnibase_core.runtime.envelope_router.EnvelopeRouter` for
-            registration semantics and runtime thread safety considerations.
+            - :class:`~omnibase_core.runtime.envelope_router.EnvelopeRouter` for
+              registration semantics and runtime thread safety considerations.
+            - :doc:`/docs/guides/THREADING` for comprehensive thread safety guidelines
+              including production checklists and synchronization patterns.
 
     Error Handling:
         Handlers should catch internal exceptions and return error envelopes
