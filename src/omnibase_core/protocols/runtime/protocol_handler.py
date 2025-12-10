@@ -291,11 +291,13 @@ class ProtocolHandler(Protocol):
         - Documentation generation
 
         Returns:
-            TypedDictHandlerMetadata: Handler metadata TypedDict. Common fields:
-                - name (str): Human-readable handler name
-                - version (ModelSemVer): Handler version
-                - capabilities (list[str]): Supported operations/features
-                - description (str): Brief handler description
+            TypedDictHandlerMetadata: Handler metadata TypedDict with:
+                Required fields:
+                    - name (str): Human-readable handler name
+                    - version (ModelSemVer): Handler version
+                Optional fields:
+                    - description (str): Brief handler description
+                    - capabilities (list[str]): Supported operations/features
 
         Example:
             .. code-block:: python

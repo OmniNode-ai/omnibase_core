@@ -182,6 +182,12 @@ class EnvelopeRouter(ProtocolNodeRuntime):
     .. versionadded:: 0.4.0
     """
 
+    # Performance threshold for __repr__ output.
+    # Show detailed handler types and node slugs when registry size is at or below
+    # this threshold. Above this threshold, show abbreviated count-only output
+    # to avoid expensive dict iteration in large registries.
+    _REPR_ITEM_THRESHOLD: int = 10
+
     def __init__(self) -> None:
         """
         Initialize EnvelopeRouter with empty registries.
@@ -491,7 +497,7 @@ class EnvelopeRouter(ProtocolNodeRuntime):
         try:
             response = await handler.execute(envelope)
             return response
-        except Exception as e:  # fallback-ok: intentional - convert to error envelope
+        except Exception as e:
             # Log the error for observability before converting to error envelope
             logger.warning(
                 "Handler execution failed for envelope %s with handler type %s: %s",
@@ -533,18 +539,16 @@ class EnvelopeRouter(ProtocolNodeRuntime):
         Returns:
             str: Detailed format including handler types and node slugs (or counts)
         """
-        _REPR_THRESHOLD = 10  # Show details below this, counts above
-
         # Optimize handler representation for large registries
         handler_count = len(self._handlers)
-        if handler_count <= _REPR_THRESHOLD:
+        if handler_count <= self._REPR_ITEM_THRESHOLD:
             handler_repr = repr([ht.value for ht in self._handlers])
         else:
             handler_repr = f"<{handler_count} handlers>"
 
         # Optimize node representation for large registries
         node_count = len(self._nodes)
-        if node_count <= _REPR_THRESHOLD:
+        if node_count <= self._REPR_ITEM_THRESHOLD:
             node_repr = repr(list(self._nodes.keys()))
         else:
             node_repr = f"<{node_count} nodes>"

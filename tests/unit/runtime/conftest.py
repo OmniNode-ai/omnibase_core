@@ -66,7 +66,12 @@ class MockTestContract(ModelContractBase):
 
 @pytest.fixture
 def default_version() -> ModelSemVer:
-    """Provide default SemVer version for tests."""
+    """
+    Provide default SemVer version for tests.
+
+    Returns:
+        ModelSemVer: Version 1.0.0 for use in envelope and contract fixtures.
+    """
     return ModelSemVer(major=1, minor=0, patch=0)
 
 
@@ -166,13 +171,25 @@ def mock_runtime() -> MagicMock:
 
 @pytest.fixture
 def sample_slug() -> str:
-    """Provide a sample node slug for tests."""
+    """
+    Provide a sample node slug for tests.
+
+    Returns:
+        str: A generic node slug identifier ("test-node-instance-slug")
+            for use in NodeInstance construction.
+    """
     return "test-node-instance-slug"
 
 
 @pytest.fixture
 def sample_node_type() -> EnumNodeType:
-    """Provide a sample node type for tests."""
+    """
+    Provide a sample node type for tests.
+
+    Returns:
+        EnumNodeType: COMPUTE_GENERIC for use in NodeInstance and contract
+            fixtures representing a generic computation node.
+    """
     return EnumNodeType.COMPUTE_GENERIC
 
 

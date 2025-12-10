@@ -133,6 +133,7 @@ class TestEnvelopeRouterRegisterHandler:
         - Handler with handler_type property is accepted
         - Handler with execute method is accepted
         - Handler with describe method is accepted
+        - Exactly ONE handler is registered after registration
         """
         from omnibase_core.runtime import EnvelopeRouter
 
@@ -146,8 +147,9 @@ class TestEnvelopeRouterRegisterHandler:
         # Should not raise
         runtime.register_handler(mock_handler)
 
-        # Verify handler was registered with correct handler_type key
+        # Verify exactly ONE handler was registered (explicit count assertion)
         assert len(runtime._handlers) == 1
+        # Verify handler is registered with correct handler_type key
         assert mock_handler.handler_type in runtime._handlers
         # Verify the actual handler instance is stored (not a copy or different object)
         assert runtime._handlers[mock_handler.handler_type] is mock_handler
@@ -164,6 +166,7 @@ class TestEnvelopeRouterRegisterHandler:
         - Second handler registration with same type replaces first
         - Only one handler per handler_type is stored
         - No error raised on replacement
+        - Old handler is completely removed from registry
         """
         from omnibase_core.runtime import EnvelopeRouter
 
@@ -172,8 +175,25 @@ class TestEnvelopeRouterRegisterHandler:
         # Register first handler
         runtime.register_handler(mock_handler)
 
+        # Verify first handler is registered before replacement
+        assert len(runtime._handlers) == 1
+        assert mock_handler.handler_type in runtime._handlers
+        assert runtime._handlers[mock_handler.handler_type] is mock_handler
+
         # Register second handler with same type (should replace)
         runtime.register_handler(mock_handler_alternate)
+
+        # Verify only ONE handler is registered (replacement, not addition)
+        assert len(runtime._handlers) == 1
+
+        # Verify the NEW handler is in the registry
+        assert mock_handler.handler_type in runtime._handlers
+        assert runtime._handlers[mock_handler.handler_type] is mock_handler_alternate
+
+        # Verify the OLD handler is NO LONGER in the registry
+        assert mock_handler not in runtime._handlers.values()
+        # Verify the NEW handler IS in the registry
+        assert mock_handler_alternate in runtime._handlers.values()
 
         # Verify replacement by routing and checking which handler is returned
         envelope = ModelOnexEnvelope(
@@ -189,13 +209,9 @@ class TestEnvelopeRouterRegisterHandler:
         result = runtime.route_envelope(envelope)
         # Alternate handler should have 'alternate' key in describe()
         assert result["handler"].describe().get("alternate") is True
-
-        # Verify only one handler is registered (replacement, not addition)
-        assert len(runtime._handlers) == 1
-
-        # Verify the original handler is no longer in the registry
-        assert mock_handler not in runtime._handlers.values()
-        assert mock_handler_alternate in runtime._handlers.values()
+        # Verify the returned handler is the NEW handler (not the old one)
+        assert result["handler"] is mock_handler_alternate
+        assert result["handler"] is not mock_handler
 
     def test_register_handler_replace_false_raises_on_duplicate(
         self,
