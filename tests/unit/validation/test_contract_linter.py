@@ -245,12 +245,51 @@ class TestWarnDuplicateStepNames:
 class TestWarnUnreachableSteps:
     """Test warnings for unreachable steps."""
 
-    def test_warn_unreachable_steps(self, linter: WorkflowLinter) -> None:
+    def test_warn_unreachable_steps_with_missing_dependency(
+        self, linter: WorkflowLinter
+    ) -> None:
         """
-        Test that unreachable steps trigger warnings.
+        Test that steps depending on non-existent steps trigger warnings.
 
-        Unreachable steps have no incoming edges and are not root steps.
-        Note: Current implementation is conservative and may not warn in all cases.
+        A step is unreachable if it depends on a step_id that doesn't exist
+        in the workflow, creating a broken dependency chain.
+        """
+        step_a_id = uuid4()
+        step_b_id = uuid4()
+        missing_dep_id = uuid4()  # This step doesn't exist in the workflow
+
+        steps = [
+            ModelWorkflowStep(
+                step_id=step_a_id,
+                step_name="root_step",
+                step_type="compute",
+                # No dependencies - root step
+            ),
+            ModelWorkflowStep(
+                step_id=step_b_id,
+                step_name="unreachable_step",
+                step_type="compute",
+                depends_on=[missing_dep_id],  # Depends on non-existent step
+            ),
+        ]
+
+        warnings = linter.warn_unreachable_steps(steps)
+
+        assert len(warnings) == 1
+        assert warnings[0].code == "W003"
+        assert "unreachable_step" in warnings[0].message
+        assert "not in the workflow" in warnings[0].message
+        assert warnings[0].step_reference == str(step_b_id)
+
+    def test_warn_unreachable_steps_multiple_roots_no_warning(
+        self, linter: WorkflowLinter
+    ) -> None:
+        """
+        Test that multiple root steps (no dependencies) do NOT trigger warnings.
+
+        Steps with no dependencies are considered root steps and are reachable
+        by definition. This is different from isolated steps (which have no
+        incoming AND no outgoing edges).
         """
         step_a_id = uuid4()
         step_b_id = uuid4()
@@ -271,17 +310,16 @@ class TestWarnUnreachableSteps:
             ),
             ModelWorkflowStep(
                 step_id=step_orphan_id,
-                step_name="orphan_step",
+                step_name="another_root_step",
                 step_type="compute",
-                depends_on=[],  # No dependencies, but also no dependents
+                depends_on=[],  # No dependencies - also a root step
             ),
         ]
 
         warnings = linter.warn_unreachable_steps(steps)
 
-        # Current implementation may not detect all unreachable steps
-        # This test documents expected behavior
-        assert isinstance(warnings, list)
+        # All steps are reachable: two are roots, one depends on a root
+        assert len(warnings) == 0
 
     def test_no_warn_fully_connected_dag(self, linter: WorkflowLinter) -> None:
         """

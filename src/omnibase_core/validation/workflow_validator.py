@@ -46,6 +46,12 @@ type StepIdToName = Mapping[UUID, str]
 type AdjacencyList = dict[UUID, list[UUID]]
 type InDegreeMap = dict[UUID, int]
 
+# Resource exhaustion protection constant
+# Prevents malicious or malformed inputs from causing infinite loops in DFS
+# Value of 10,000 is sufficient for workflows with up to ~5,000 steps
+# (worst case: each step visited twice during DFS traversal)
+MAX_DFS_ITERATIONS = 10_000
+
 __all__ = [
     "WorkflowValidator",
     # Re-export result models for convenience
@@ -59,6 +65,8 @@ __all__ = [
     "validate_unique_step_ids",
     "validate_dag_with_disabled_steps",
     "validate_execution_mode",
+    # Constants
+    "MAX_DFS_ITERATIONS",
 ]
 
 
@@ -187,10 +195,26 @@ class WorkflowValidator:
         visited: set[UUID] = set()
         rec_stack: set[UUID] = set()
         cycle_path: list[UUID] = []
+        iterations = 0  # Track iterations for resource exhaustion protection
 
         def find_cycle_dfs(node: UUID, path: list[UUID]) -> bool:
             """DFS to find cycle, tracking the path."""
-            nonlocal cycle_path
+            nonlocal cycle_path, iterations
+            iterations += 1
+
+            # Resource exhaustion protection - prevent malicious/malformed inputs
+            if iterations > MAX_DFS_ITERATIONS:
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=(
+                        f"Cycle detection exceeded {MAX_DFS_ITERATIONS} iterations - "
+                        "possible malicious input or malformed workflow"
+                    ),
+                    step_count=len(steps),
+                    max_iterations=MAX_DFS_ITERATIONS,
+                    last_node=str(node),
+                )
+
             visited.add(node)
             rec_stack.add(node)
             path.append(node)
@@ -248,20 +272,26 @@ class WorkflowValidator:
 
         valid_step_ids: set[UUID] = {step.step_id for step in steps}
         missing_deps: list[UUID] = []
-        steps_with_missing: list[str] = []
+        # Track which step has which missing dependencies for detailed error context
+        step_to_missing_deps: dict[str, list[str]] = {}
 
         for step in steps:
+            step_missing: list[str] = []
             for dep_id in step.depends_on:
                 if dep_id not in valid_step_ids:
                     if dep_id not in missing_deps:
                         missing_deps.append(dep_id)
-                    if step.step_name not in steps_with_missing:
-                        steps_with_missing.append(step.step_name)
+                    step_missing.append(str(dep_id))
+            if step_missing:
+                step_to_missing_deps[step.step_name] = step_missing
 
         if missing_deps:
-            error_message = (
-                f"Steps with missing dependencies: {', '.join(steps_with_missing)}"
-            )
+            # Build detailed error message showing each step and its missing deps
+            details = [
+                f"'{name}' -> [{', '.join(deps)}]"
+                for name, deps in step_to_missing_deps.items()
+            ]
+            error_message = f"Steps with missing dependencies: {'; '.join(details)}"
             return ModelDependencyValidationResult(
                 is_valid=False,
                 missing_dependencies=missing_deps,
@@ -573,13 +603,13 @@ def validate_workflow_definition(
         )
 
     # Compute topological order if no cycles
+    # Note: If cycle detection passed, topological_sort should succeed since both
+    # use the same underlying graph structure. We remove the defensive try/except
+    # as it silently hides potential issues - if topological_sort fails after
+    # detect_cycles passes, that indicates a bug in the validator itself.
     topological_order: list[UUID] = []
     if not cycle_result.has_cycle:
-        try:
-            topological_order = validator.topological_sort(steps)
-        except ModelOnexError:
-            # Should not happen since we already checked for cycles
-            pass
+        topological_order = validator.topological_sort(steps)
 
     return ModelWorkflowValidationResult(
         is_valid=len(errors) == 0,

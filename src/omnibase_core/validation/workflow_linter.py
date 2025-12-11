@@ -13,8 +13,8 @@ Linting Checks:
       execution_mode is SEQUENTIAL
     - ``warn_duplicate_step_names``: Warns if step_name (not step_id) is
       duplicated across multiple steps
-    - ``warn_unreachable_steps``: Warns if a step has no incoming edges and
-      is not a root step
+    - ``warn_unreachable_steps``: Warns if a step depends on non-existent
+      steps, creating a broken dependency chain
     - ``warn_priority_clamping``: Warns if priority values will be clamped
       (>1000 or <1). Defensive check for bypassed Pydantic validation.
     - ``warn_isolated_steps``: Warns if a step has no incoming AND no
@@ -353,12 +353,13 @@ class WorkflowLinter:
                     # dep_id has an outgoing edge to step.step_id
                     forward_edges[dep_id].append(step.step_id)
 
-        # Find root steps (no dependencies or dependencies all outside workflow)
+        # Find root steps (no dependencies at all - truly starting points)
+        # A step is a root ONLY if it has no dependencies whatsoever
+        # Steps with dependencies on missing steps are NOT roots - they're unreachable
         root_step_ids: set[UUID] = set()
         for step in steps:
-            # A step is a root if it has no dependencies within the workflow
-            deps_in_workflow = [d for d in step.depends_on if d in all_step_ids]
-            if not deps_in_workflow:
+            if not step.depends_on:
+                # No dependencies at all - this is a true root step
                 root_step_ids.add(step.step_id)
 
         # BFS from all root steps to find reachable steps
