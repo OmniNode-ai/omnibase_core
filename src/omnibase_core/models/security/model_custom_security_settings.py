@@ -1,14 +1,23 @@
-from typing import Any
-
-from pydantic import Field
-
 """
 ModelCustomSecuritySettings: Custom security settings model.
 
 This model provides structured custom security settings without using Any types.
 """
 
-from pydantic import BaseModel
+from typing import Any
+
+from pydantic import BaseModel, Field
+
+# Type alias for security setting values stored in this model.
+# Intentionally constrained to exactly the types this model stores:
+# - str, int, bool: Basic setting types
+# - list[str]: List of strings (e.g., allowed origins, permissions)
+# - None: For missing settings (default return)
+#
+# This is more precise than JsonPrimitive (excludes float) or
+# ToolParameterValue (excludes None, includes dict[str, str]).
+# union-ok: domain-specific type alias for security settings
+SecuritySettingValue = str | int | bool | list[str] | None
 
 
 class ModelCustomSecuritySettings(BaseModel):
@@ -46,9 +55,19 @@ class ModelCustomSecuritySettings(BaseModel):
             self.string_settings[key] = str(value)
 
     def get_setting(
-        self, key: str, default: Any = None
-    ) -> str | int | bool | list[str] | None:
-        """Get a custom security setting."""
+        self, key: str, default: SecuritySettingValue = None
+    ) -> SecuritySettingValue:
+        """Get a custom security setting.
+
+        Args:
+            key: The setting key to retrieve.
+            default: Default value if setting not found. Must be a valid
+                SecuritySettingValue (str, int, bool, list[str], or None).
+
+        Returns:
+            The setting value from the appropriate typed dictionary,
+            or the default value if not found.
+        """
         if key in self.string_settings:
             return self.string_settings[key]
         if key in self.integer_settings:
