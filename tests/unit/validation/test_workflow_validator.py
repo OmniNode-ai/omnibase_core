@@ -7,18 +7,22 @@ TDD-first tests for workflow DAG validation per OMN-176 acceptance criteria:
 - Dependency validation (missing dependencies)
 - Isolated step detection
 - Unique step name validation
+- Resource exhaustion protection (PR #158)
 
 Tests are written FIRST before implementation (TDD red phase).
 """
 
+from unittest.mock import patch
 from uuid import UUID, uuid4
 
 import pytest
 
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Import from target location - will fail until implementation exists (TDD)
 from omnibase_core.validation.workflow_validator import (
+    MAX_DFS_ITERATIONS,
     ModelWorkflowValidationResult,
     WorkflowValidator,
 )
@@ -665,8 +669,17 @@ class TestWorkflowValidatorIntegration:
     """Integration tests for complete workflow validation."""
 
     @pytest.mark.unit
-    def test_validate_workflow_returns_result_model(self) -> None:
-        """Test that validate_workflow returns ModelWorkflowValidationResult."""
+    def test_valid_dag_validation_returns_success_with_correct_topology(self) -> None:
+        """
+        Test that valid DAG passes all validation checks.
+
+        Verifies:
+        - Result type is ModelWorkflowValidationResult
+        - is_valid is True for valid DAGs
+        - No cycles detected
+        - Topological order contains all steps
+        - Dependency ordering is correct (A before B)
+        """
         validator = WorkflowValidator()
 
         step_a_id = uuid4()
@@ -677,7 +690,20 @@ class TestWorkflowValidatorIntegration:
 
         result = validator.validate_workflow(steps)
 
+        # Verify result type
         assert isinstance(result, ModelWorkflowValidationResult)
+        # For a valid workflow, is_valid should be True
+        assert result.is_valid is True
+        # Should have no cycles in a valid DAG
+        assert result.has_cycles is False
+        # Should have correct topological order with all steps
+        assert len(result.topological_order) == 2
+        assert step_a_id in result.topological_order
+        assert step_b_id in result.topological_order
+        # Verify dependency order: step_a must come before step_b
+        assert result.topological_order.index(
+            step_a_id
+        ) < result.topological_order.index(step_b_id)
 
     @pytest.mark.unit
     def test_valid_workflow_passes_all_checks(self) -> None:
@@ -751,21 +777,30 @@ class TestWorkflowValidatorIntegration:
         assert len(result.errors) > 0
 
     @pytest.mark.unit
-    def test_malformed_workflow_with_multiple_issues(self) -> None:
-        """Test workflow with multiple validation issues reports all of them."""
-        validator = WorkflowValidator()
+    def test_malformed_workflow_reports_all_validation_issues(self) -> None:
+        """
+        Test workflow with multiple validation issues reports all of them.
 
-        # Create workflow with multiple issues:
-        # 1. Cycle between step_a and step_b
-        # 2. Missing dependency (non_existent_id)
-        # 3. Duplicate names
-        # 4. Isolated step
+        Creates workflow with 4 intentional issues:
+        1. Cycle between step_a and step_b (cycle error)
+        2. Duplicate names: step_a and step_b both named "cycle_step" (name error)
+        3. Missing dependency (dependency error)
+        4. Isolated step (warning, not error)
+
+        Expected errors (3 total):
+        - Duplicate step names error
+        - Missing dependency error
+        - Cycle detection error
+
+        Note: Isolated steps generate warnings, not errors.
+        """
+        validator = WorkflowValidator()
 
         step_a_id = uuid4()
         step_b_id = uuid4()
         non_existent_id = uuid4()
 
-        # Cycle
+        # Cycle + Duplicate names
         step_a = create_step("cycle_step", step_id=step_a_id, depends_on=[step_b_id])
         step_b = create_step(
             "cycle_step",
@@ -784,8 +819,16 @@ class TestWorkflowValidatorIntegration:
         result = validator.validate_workflow(steps)
 
         assert not result.is_valid
-        # Should report multiple error types
-        assert len(result.errors) >= 2
+        # Verify specific errors detected
+        assert result.has_cycles is True
+        assert len(result.duplicate_names) > 0
+        assert len(result.missing_dependencies) > 0
+        # Should have at least 3 errors: duplicate names, missing dep, cycle
+        expected_min_errors = 3
+        assert len(result.errors) >= expected_min_errors
+        # Isolated step should be reported as warning, not error
+        assert len(result.isolated_steps) > 0
+        assert len(result.warnings) > 0
 
     @pytest.mark.unit
     def test_validation_result_contains_topological_order_for_valid_dag(self) -> None:
@@ -860,15 +903,23 @@ class TestWorkflowValidatorEdgeCases:
         assert result.has_cycle is True
 
     @pytest.mark.unit
-    def test_large_workflow_performance(self) -> None:
-        """Test that validation handles large workflows efficiently."""
+    def test_large_linear_chain_validates_with_correct_order(self) -> None:
+        """
+        Test validation of a large 100-step linear chain workflow.
+
+        Verifies:
+        - Large workflows validate successfully
+        - Topological order contains all 100 steps
+        - Order respects linear dependency chain
+        """
         validator = WorkflowValidator()
 
         # Create a large linear chain: step_0 -> step_1 -> ... -> step_99
+        num_steps = 100
         steps: list[ModelWorkflowStep] = []
         prev_id: UUID | None = None
 
-        for i in range(100):
+        for i in range(num_steps):
             step_id = uuid4()
             depends = [prev_id] if prev_id else []
             step = create_step(f"step_{i}", step_id=step_id, depends_on=depends)
@@ -878,19 +929,35 @@ class TestWorkflowValidatorEdgeCases:
         result = validator.validate_workflow(steps)
 
         assert result.is_valid
-        assert len(result.topological_order) == 100
+        assert len(result.topological_order) == num_steps
+        # Verify linear chain order: first step must be first, last must be last
+        assert result.topological_order[0] == steps[0].step_id
+        assert result.topological_order[-1] == steps[-1].step_id
+        # Verify no cycles, no missing deps, no duplicates
+        assert result.has_cycles is False
+        assert len(result.missing_dependencies) == 0
+        assert len(result.duplicate_names) == 0
 
     @pytest.mark.unit
-    def test_workflow_with_parallel_branches(self) -> None:
-        """Test workflow with multiple parallel execution branches."""
-        validator = WorkflowValidator()
+    def test_parallel_branches_validates_with_correct_constraints(self) -> None:
+        """
+        Test workflow with multiple parallel execution branches.
 
-        # Create parallel structure:
-        #     start
-        #    /  |  \
-        #   a   b   c
-        #    \  |  /
-        #     end
+        Validates fan-out/fan-in pattern:
+            start
+           /  |  \\
+          a   b   c
+           \\  |  /
+            end
+
+        Verifies:
+        - Valid workflow passes
+        - All 5 steps in topological order
+        - start comes before all branches
+        - All branches come before end
+        - No cycles, missing deps, or isolated steps
+        """
+        validator = WorkflowValidator()
 
         start_id = uuid4()
         a_id = uuid4()
@@ -904,16 +971,165 @@ class TestWorkflowValidatorEdgeCases:
         c = create_step("branch_c", step_id=c_id, depends_on=[start_id])
         end = create_step("end", step_id=end_id, depends_on=[a_id, b_id, c_id])
 
+        num_steps = 5
         steps = [start, a, b, c, end]
 
         result = validator.validate_workflow(steps)
 
         assert result.is_valid
-        assert len(result.topological_order) == 5
-        # start must be first
+        assert len(result.topological_order) == num_steps
+        # start must be first (has no dependencies)
         assert result.topological_order[0] == start_id
-        # end must be last
+        # end must be last (depends on all branches)
         assert result.topological_order[-1] == end_id
+        # All branches must come after start and before end
+        start_idx = result.topological_order.index(start_id)
+        end_idx = result.topological_order.index(end_id)
+        for branch_id in [a_id, b_id, c_id]:
+            branch_idx = result.topological_order.index(branch_id)
+            assert start_idx < branch_idx < end_idx
+        # Verify no validation issues
+        assert result.has_cycles is False
+        assert len(result.missing_dependencies) == 0
+        assert len(result.isolated_steps) == 0
+
+
+# =============================================================================
+# Resource Exhaustion Protection Tests (PR #158)
+# =============================================================================
+
+
+class TestWorkflowValidatorResourceExhaustion:
+    """Tests for resource exhaustion protection in cycle detection."""
+
+    @pytest.mark.unit
+    def test_max_dfs_iterations_constant_is_exported(self) -> None:
+        """Test that MAX_DFS_ITERATIONS constant is exported and has reasonable value."""
+        # Verify the constant is exported and accessible
+        assert MAX_DFS_ITERATIONS == 10_000
+        # Value should be reasonable for typical workflows
+        assert MAX_DFS_ITERATIONS > 1000  # Enough for normal workflows
+        assert MAX_DFS_ITERATIONS < 1_000_000  # Not too high to cause real issues
+
+    @pytest.mark.unit
+    def test_iteration_limit_raises_on_excessive_iterations(self) -> None:
+        """
+        Test that cycle detection raises ModelOnexError when iteration limit exceeded.
+
+        This test uses mocking to simulate exceeding the iteration limit without
+        creating an actual malicious workflow, which would be slow and memory-intensive.
+        """
+        validator = WorkflowValidator()
+
+        # Create a simple valid workflow
+        step_a_id = uuid4()
+        step_a = create_step("step_a", step_id=step_a_id)
+        steps = [step_a]
+
+        # Mock MAX_DFS_ITERATIONS to a very low value to trigger the limit
+        with patch("omnibase_core.validation.workflow_validator.MAX_DFS_ITERATIONS", 0):
+            with pytest.raises(ModelOnexError) as exc_info:
+                validator.detect_cycles(steps)
+
+            # Verify error message includes key information
+            error = exc_info.value
+            assert "exceeded" in error.message.lower()
+            assert "iterations" in error.message.lower()
+
+    @pytest.mark.unit
+    def test_error_context_includes_step_count(self) -> None:
+        """
+        Test that resource exhaustion error includes step count context.
+
+        The error context should include:
+        - step_count: number of steps in the workflow
+        - max_iterations: the iteration limit that was exceeded
+        - last_node: the node being processed when limit was hit
+        """
+        validator = WorkflowValidator()
+
+        # Create a workflow with multiple steps
+        step_ids = [uuid4() for _ in range(5)]
+        steps = [create_step(f"step_{i}", step_id=step_ids[i]) for i in range(5)]
+
+        # Mock MAX_DFS_ITERATIONS to a very low value
+        with patch("omnibase_core.validation.workflow_validator.MAX_DFS_ITERATIONS", 0):
+            with pytest.raises(ModelOnexError) as exc_info:
+                validator.detect_cycles(steps)
+
+            # Verify error context contains expected fields
+            error = exc_info.value
+            # Access context through the underlying model
+            assert hasattr(error, "model")
+            context = error.model.context
+            assert context is not None
+            assert "step_count" in context
+            assert context["step_count"] == 5
+            assert "max_iterations" in context
+            assert "last_node" in context
+
+    @pytest.mark.unit
+    def test_normal_workflow_does_not_trigger_limit(self) -> None:
+        """
+        Test that normal workflows don't trigger the iteration limit.
+
+        A workflow with 100 steps in a linear chain should validate successfully
+        without hitting the 10,000 iteration limit.
+        """
+        validator = WorkflowValidator()
+
+        # Create a 100-step linear chain (well under 10,000 iterations)
+        steps: list[ModelWorkflowStep] = []
+        prev_id: UUID | None = None
+
+        for i in range(100):
+            step_id = uuid4()
+            depends = [prev_id] if prev_id else []
+            step = create_step(f"step_{i}", step_id=step_id, depends_on=depends)
+            steps.append(step)
+            prev_id = step_id
+
+        # Should complete without raising
+        result = validator.detect_cycles(steps)
+        assert result.has_cycle is False
+
+    @pytest.mark.unit
+    def test_complex_dag_does_not_trigger_limit(self) -> None:
+        """
+        Test that complex DAG structures don't trigger the iteration limit.
+
+        A diamond pattern DAG with fan-out and fan-in should validate
+        successfully without hitting resource limits.
+        """
+        validator = WorkflowValidator()
+
+        # Create a complex fan-out / fan-in pattern
+        # Start -> [A, B, C, D, E] -> [X, Y, Z] -> End
+        start_id = uuid4()
+        middle_ids = [uuid4() for _ in range(5)]
+        merge_ids = [uuid4() for _ in range(3)]
+        end_id = uuid4()
+
+        steps = [create_step("start", step_id=start_id)]
+
+        # Fan-out: 5 parallel steps depending on start
+        for i, mid_id in enumerate(middle_ids):
+            steps.append(
+                create_step(f"middle_{i}", step_id=mid_id, depends_on=[start_id])
+            )
+
+        # Merge: 3 steps depending on all middle steps
+        for i, merge_id in enumerate(merge_ids):
+            steps.append(
+                create_step(f"merge_{i}", step_id=merge_id, depends_on=middle_ids)
+            )
+
+        # End: depends on all merge steps
+        steps.append(create_step("end", step_id=end_id, depends_on=merge_ids))
+
+        # Should complete without raising
+        result = validator.detect_cycles(steps)
+        assert result.has_cycle is False
 
 
 if __name__ == "__main__":

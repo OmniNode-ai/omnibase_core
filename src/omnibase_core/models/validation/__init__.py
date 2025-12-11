@@ -15,6 +15,7 @@ Import validation models directly when needed:
 from .model_cycle_detection_result import ModelCycleDetectionResult
 from .model_dependency_validation_result import ModelDependencyValidationResult
 from .model_isolated_step_result import ModelIsolatedStepResult
+from .model_lint_statistics import ModelLintStatistics
 from .model_migration_conflict_union import ModelMigrationConflictUnion
 from .model_unique_name_result import ModelUniqueNameResult
 from .model_validation_base import ModelValidationBase
@@ -28,6 +29,7 @@ from .model_workflow_validation_result import ModelWorkflowValidationResult
 
 __all__ = [
     # Pydantic models (safe to import)
+    "ModelLintStatistics",
     "ModelMigrationConflictUnion",
     "ModelValidationBase",
     "ModelValidationContainer",

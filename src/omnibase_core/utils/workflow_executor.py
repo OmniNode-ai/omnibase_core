@@ -54,6 +54,7 @@ from omnibase_core.models.workflow.execution.model_declarative_workflow_step_con
     ModelDeclarativeWorkflowStepContext as WorkflowStepExecutionContext,
 )
 from omnibase_core.types.typed_dict_workflow_context import TypedDictWorkflowContext
+from omnibase_core.validation.reserved_enum_validator import validate_execution_mode
 
 
 async def execute_workflow(
@@ -147,6 +148,9 @@ async def execute_workflow(
 
     # Determine execution mode
     mode = execution_mode or _get_execution_mode(workflow_definition)
+
+    # Validate execution mode (reject reserved modes per v1.0 contract)
+    validate_execution_mode(mode)
 
     # Execute based on mode
     if mode == EnumExecutionMode.SEQUENTIAL:
