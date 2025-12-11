@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 Execution Graph Model.
 
 Model for execution graphs in workflows for the ONEX workflow coordination system.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
