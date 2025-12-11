@@ -1,7 +1,7 @@
 ---
 node_type: REDUCER_GENERIC
 contract_version: {major: 1, minor: 1, patch: 0}
-fingerprint: "0.0.0:30605ad37d29"
+fingerprint: "1.1.0:30605ad37d29"
 profile_tags:
   - metrics
   - aggregation

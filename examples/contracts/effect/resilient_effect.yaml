@@ -73,7 +73,7 @@ contract_version:
   patch: 0
 
 # Contract fingerprint for drift detection (format: version:hash-prefix)
-# Hash computed from normalized contract content: node_type + contract_version
+# Hash prefix derived from contract content for integrity verification
 fingerprint: "1.1.0:66346191a6a6"
 
 node_type: effect
