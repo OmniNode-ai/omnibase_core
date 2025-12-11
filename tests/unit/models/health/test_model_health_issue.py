@@ -102,6 +102,7 @@ class TestModelHealthIssueValidation:
             "resource",
             "configuration",
             "security",
+            "validation",
             "other",
         ]:
             ModelHealthIssue(
@@ -332,6 +333,56 @@ class TestModelHealthIssueFactoryMethods:
 
         assert issue.severity == "high"
         assert issue.category == "resource"
+
+    def test_create_configuration_issue(self):
+        """Test configuration issue factory."""
+        issue = ModelHealthIssue.create_configuration_issue(
+            message="Missing HTTP client", severity="high"
+        )
+
+        assert isinstance(issue.issue_id, UUID)
+        assert issue.severity == "high"
+        assert issue.category == "configuration"
+        assert issue.message == "Missing HTTP client"
+        assert issue.count == 1
+
+    def test_create_configuration_issue_default_severity(self):
+        """Test configuration issue with default severity.
+
+        Configuration issues default to 'critical' because they typically
+        indicate setup or dependency problems that prevent proper operation.
+        """
+        issue = ModelHealthIssue.create_configuration_issue(
+            message="No protocol client provided"
+        )
+
+        assert issue.severity == "critical"
+        assert issue.category == "configuration"
+
+    def test_create_validation_issue(self):
+        """Test validation issue factory."""
+        issue = ModelHealthIssue.create_validation_issue(
+            message="Invalid URL format", severity="high"
+        )
+
+        assert isinstance(issue.issue_id, UUID)
+        assert issue.severity == "high"
+        assert issue.category == "validation"
+        assert issue.message == "Invalid URL format"
+        assert issue.count == 1
+
+    def test_create_validation_issue_default_severity(self):
+        """Test validation issue with default severity.
+
+        Validation issues default to 'critical' because they often indicate
+        security-related input validation failures (e.g., SSRF prevention).
+        """
+        issue = ModelHealthIssue.create_validation_issue(
+            message="Invalid service URL - SSRF prevention"
+        )
+
+        assert issue.severity == "critical"
+        assert issue.category == "validation"
 
 
 class TestModelHealthIssueRecovery:

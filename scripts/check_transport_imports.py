@@ -160,17 +160,48 @@ TRANSPORT_ALTERNATIVES: dict[str, str] = {
 # These should be fixed and removed from this list
 # Each entry is a relative path from src/omnibase_core/
 #
+# ALLOWLIST PATTERN FOR FUTURE MAINTAINERS:
+# ==========================================
+# This allowlist exists to manage the incremental migration from direct transport
+# library imports to protocol-based abstractions. When you need to add a file:
+#
+#   1. Add the relative path (from src/omnibase_core/) to TEMPORARY_ALLOWLIST
+#   2. Set ALLOWLIST_EXPIRATION_DATE to 6 months from the date you add the item
+#   3. Create a Linear ticket (e.g., OMN-XXX) to track the refactoring work
+#   4. Add a comment with the ticket number and brief description
+#
+# When the allowlist is empty (like now), ALLOWLIST_EXPIRATION_DATE is set to None
+# to avoid unnecessary expiration warnings. The conditional expression handles this
+# automatically - you only need to add items and set the date when needed.
+#
+# Example with items:
+#   TEMPORARY_ALLOWLIST: frozenset[str] = frozenset({
+#       # TODO [OMN-XXX]: Refactor to use ProtocolHttpClient
+#       "services/my_service.py",
+#   })
+#   ALLOWLIST_EXPIRATION_DATE: date | None = date(2026, 6, 10)
+#
 # OMN-566 (2025-12-11): Removed mixin_health_check.py - refactored to use ProtocolHttpClient
 TEMPORARY_ALLOWLIST: frozenset[str] = frozenset(
     {
         # No pre-existing violations - all items have been fixed!
+        # This is the ideal state - protocol abstractions are fully adopted.
     }
 )
 
-# Allowlist expiration tracking - only relevant when TEMPORARY_ALLOWLIST has items
-# When adding items to the allowlist:
-#   1. Set ALLOWLIST_EXPIRATION_DATE to 6 months from addition date
-#   2. Add TODO [OMN-220] comment noting items need tickets for removal
+# Allowlist expiration tracking
+# =============================
+# Purpose: Prevents allowlisted violations from becoming permanent technical debt.
+# When items are in the allowlist, this date triggers warnings as it approaches,
+# encouraging timely refactoring.
+#
+# Behavior:
+# - When TEMPORARY_ALLOWLIST is empty: Set to None (no expiration warnings)
+# - When TEMPORARY_ALLOWLIST has items: Set to 6 months from when items were added
+#
+# The check_allowlist_expiration() function uses this date to:
+# - Warn when expiration is within ALLOWLIST_WARNING_DAYS (30 days)
+# - Error when expiration has passed
 ALLOWLIST_EXPIRATION_DATE: date | None = (
     None if not TEMPORARY_ALLOWLIST else date(2026, 6, 10)
 )

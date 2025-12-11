@@ -30,7 +30,7 @@ class ModelHealthIssue(BaseModel):
     category: str = Field(
         default=...,
         description="Issue category",
-        pattern="^(performance|connectivity|resource|configuration|security|other)$",
+        pattern="^(performance|connectivity|resource|configuration|security|validation|other)$",
     )
 
     message: str = Field(default=..., description="Human-readable issue description")
@@ -112,6 +112,50 @@ class ModelHealthIssue(BaseModel):
             issue_id=uuid4(),
             severity=severity,
             category="resource",
+            message=message,
+            first_detected=datetime.now(UTC),
+            last_seen=datetime.now(UTC),
+        )
+
+    @classmethod
+    def create_configuration_issue(
+        cls,
+        message: str,
+        severity: str = "critical",
+    ) -> "ModelHealthIssue":
+        """Create a configuration-related health issue.
+
+        Configuration issues typically indicate missing dependencies,
+        invalid settings, or incomplete setup that prevents proper operation.
+        Default severity is 'critical' since configuration problems usually
+        prevent the system from functioning correctly.
+        """
+        return cls(
+            issue_id=uuid4(),
+            severity=severity,
+            category="configuration",
+            message=message,
+            first_detected=datetime.now(UTC),
+            last_seen=datetime.now(UTC),
+        )
+
+    @classmethod
+    def create_validation_issue(
+        cls,
+        message: str,
+        severity: str = "critical",
+    ) -> "ModelHealthIssue":
+        """Create a validation-related health issue.
+
+        Validation issues typically indicate invalid input data, malformed URLs,
+        or security-related input validation failures (e.g., SSRF prevention).
+        Default severity is 'critical' since validation failures often indicate
+        potential security issues or data integrity problems.
+        """
+        return cls(
+            issue_id=uuid4(),
+            severity=severity,
+            category="validation",
             message=message,
             first_detected=datetime.now(UTC),
             last_seen=datetime.now(UTC),
