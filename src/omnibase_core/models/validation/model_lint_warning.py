@@ -11,6 +11,16 @@ Note on naming:
     prefix clearly indicates this is for static analysis/linting, not runtime
     validation errors.
 
+    Why "LintWarning" and not "ValidationError":
+        1. pydantic.ValidationError is a standard exception in the Pydantic ecosystem
+           that users expect to represent model validation failures at runtime
+        2. Using a similar name (e.g., "ValidationWarning") could cause import
+           confusion and cognitive overhead when debugging
+        3. "Lint" is industry-standard terminology (ESLint, pylint, flake8) that
+           clearly signals static analysis rather than runtime validation
+        4. This separation allows ModelOnexError to be used for actual validation
+           failures while ModelLintWarning remains purely informational
+
 Example:
     Basic usage for creating lint warnings::
 

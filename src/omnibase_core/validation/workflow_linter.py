@@ -66,10 +66,45 @@ StepTypeLiteral = Literal[
     "compute", "effect", "reducer", "orchestrator", "conditional", "parallel", "custom"
 ]
 
-__all__ = ["WorkflowLinter"]
+__all__ = [
+    "WorkflowLinter",
+    "MAX_BFS_ITERATIONS",
+    "STEP_TYPE_MAPPING",
+]
 
 # Default maximum warnings per code before aggregation
 DEFAULT_MAX_WARNINGS_PER_CODE = 10
+
+# Maximum BFS iterations for reachability analysis
+# Prevents malicious or malformed inputs from causing infinite loops in BFS
+# Value of 10,000 is sufficient for workflows with up to ~5,000 steps
+# (worst case: each step visited once plus queue operations)
+MAX_BFS_ITERATIONS = 10_000
+
+# Step type mapping from EnumNodeType values to workflow step type literals
+# Extracted to module level to avoid recreating dict for each node during extraction
+# Maps node_type.value.lower() strings to valid StepTypeLiteral values
+STEP_TYPE_MAPPING: dict[str, StepTypeLiteral] = {
+    "compute_generic": "compute",
+    "effect_generic": "effect",
+    "reducer_generic": "reducer",
+    "orchestrator_generic": "orchestrator",
+    "transformer": "compute",
+    "aggregator": "compute",
+    "function": "compute",
+    "model": "compute",
+    "tool": "effect",
+    "agent": "effect",
+    "gateway": "orchestrator",
+    "validator": "orchestrator",
+    "workflow": "orchestrator",
+    "runtime_host_generic": "custom",
+    "plugin": "custom",
+    "schema": "custom",
+    "node": "custom",
+    "service": "custom",
+    "unknown": "custom",
+}
 
 
 class WorkflowLinter:
@@ -203,6 +238,13 @@ class WorkflowLinter:
         the limit, a summary warning is added indicating how many warnings
         were suppressed.
 
+        Severity Inheritance:
+            Summary warnings inherit the most severe severity from the
+            aggregated group. If ANY warning in the group has severity
+            "warning", the summary uses "warning"; otherwise "info" is used.
+            This ensures the summary accurately reflects the highest severity
+            level of the suppressed warnings.
+
         Args:
             warnings: List of warnings to aggregate.
 
@@ -281,36 +323,22 @@ class WorkflowLinter:
             - node_type -> step_type (mapped to valid step_type literal)
             - dependencies -> depends_on
             - node_requirements may contain: step_name, priority, parallel_group
+
+        Complexity:
+            Time: O(N) where N = number of nodes in the execution graph
+            Space: O(N) for the resulting list of steps
         """
         steps: list[ModelWorkflowStep] = []
 
         for node in workflow.execution_graph.nodes:
-            # Map node_type to step_type
+            # Map node_type to step_type using module-level constant
             # Valid step_types: compute, effect, reducer, orchestrator,
             #                   conditional, parallel, custom
-            node_type_value = node.node_type.value.lower()
-            step_type_mapping: dict[str, StepTypeLiteral] = {
-                "compute_generic": "compute",
-                "effect_generic": "effect",
-                "reducer_generic": "reducer",
-                "orchestrator_generic": "orchestrator",
-                "transformer": "compute",
-                "aggregator": "compute",
-                "function": "compute",
-                "model": "compute",
-                "tool": "effect",
-                "agent": "effect",
-                "gateway": "orchestrator",
-                "validator": "orchestrator",
-                "workflow": "orchestrator",
-                "runtime_host_generic": "custom",
-                "plugin": "custom",
-                "schema": "custom",
-                "node": "custom",
-                "service": "custom",
-                "unknown": "custom",
-            }
-            step_type: StepTypeLiteral = step_type_mapping.get(
+            # Handle None node_type gracefully - defaults to "custom" step type
+            node_type_value = (
+                node.node_type.value.lower() if node.node_type else "custom"
+            )
+            step_type: StepTypeLiteral = STEP_TYPE_MAPPING.get(
                 node_type_value, "custom"
             )
 
@@ -415,8 +443,10 @@ class WorkflowLinter:
                 if all step names are unique.
 
         Complexity:
-            Time: O(S) where S = number of steps
-            Space: O(U) where U = number of unique step names
+            Time: O(S) where S = number of steps. Uses collections.Counter which
+                iterates once over all step names to build frequency counts in O(S),
+                then filters duplicates in O(U) where U <= S.
+            Space: O(U) where U = number of unique step names (Counter storage)
         """
         warnings: list[ModelLintWarning] = []
 
@@ -467,6 +497,10 @@ class WorkflowLinter:
         depend on steps that don't exist in the workflow, creating a broken
         dependency chain.
 
+        Uses iterative tracking to prevent resource exhaustion from malicious
+        or malformed inputs. If iteration count exceeds MAX_BFS_ITERATIONS,
+        a ModelOnexError is raised with detailed context.
+
         Args:
             steps: List of workflow steps to validate
 
@@ -474,9 +508,15 @@ class WorkflowLinter:
             list[ModelLintWarning]: Warnings for unreachable steps. Empty list
                 if all steps are reachable from roots.
 
+        Raises:
+            ModelOnexError: If BFS exceeds MAX_BFS_ITERATIONS, indicating
+                possible malicious input or malformed workflow. Error context
+                includes step_count, max_iterations, and last_node.
+
         Complexity:
             Time: O(S + E) where S = steps, E = dependency edges
             Space: O(S) for tracking reachable steps and adjacency list
+            Protected by MAX_BFS_ITERATIONS (10,000) to prevent resource exhaustion
         """
         warnings: list[ModelLintWarning] = []
 
@@ -511,13 +551,38 @@ class WorkflowLinter:
                 root_step_ids.add(step.step_id)
 
         # BFS from all root steps to find reachable steps
-        # Using deque for O(1) popleft() instead of list.pop(0) which is O(n)
+        # Using collections.deque for O(1) popleft() - lists use O(n) for pop(0)
+        # because they must shift all remaining elements. deque uses a doubly-linked
+        # list structure enabling constant-time operations at both ends.
         reachable: set[UUID] = set()
         queue: deque[UUID] = deque(root_step_ids)
         reachable.update(root_step_ids)
 
+        # Track iterations for defensive programming - prevents infinite loops
+        # from malicious or malformed inputs (e.g., corrupted adjacency data)
+        iterations = 0
+        last_node: UUID | None = None
+
         while queue:
+            iterations += 1
+
+            # Resource exhaustion protection - prevent malicious/malformed inputs
+            if iterations > MAX_BFS_ITERATIONS:
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=(
+                        f"BFS reachability analysis exceeded {MAX_BFS_ITERATIONS} "
+                        "iterations - possible malicious input or malformed workflow"
+                    ),
+                    context={
+                        "step_count": len(steps),
+                        "max_iterations": MAX_BFS_ITERATIONS,
+                        "last_node": str(last_node) if last_node else "None",
+                    },
+                )
+
             current_id = queue.popleft()
+            last_node = current_id
             for next_id in forward_edges.get(current_id, []):
                 if next_id not in reachable:
                     reachable.add(next_id)

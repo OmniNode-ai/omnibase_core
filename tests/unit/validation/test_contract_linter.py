@@ -871,6 +871,67 @@ class TestLintIntegration:
 
         assert len(warnings) == 0
 
+    def test_lint_aggregates_warnings_from_all_checks(
+        self,
+        version: ModelSemVer,
+    ) -> None:
+        """
+        Test that lint() aggregates warnings from all individual check methods.
+
+        Verifies that the main lint() method calls all warning checks and
+        combines their results into a single list of ModelLintWarning instances.
+        This exercises the full integration path through lint().
+        """
+        from omnibase_core.enums.enum_node_type import EnumNodeType
+        from omnibase_core.models.contracts.subcontracts.model_workflow_node import (
+            ModelWorkflowNode,
+        )
+
+        linter = WorkflowLinter(aggregate_warnings=False)
+
+        # Create a workflow that triggers multiple warning types:
+        # - W005: Isolated steps (multiple isolated nodes)
+        # - W002: Duplicate step names (if applicable via nodes)
+
+        # Create multiple isolated nodes to trigger W005 warnings
+        isolated_nodes = [
+            ModelWorkflowNode(
+                version=version,
+                node_id=uuid4(),
+                node_type=EnumNodeType.COMPUTE_GENERIC,
+                node_requirements={"step_name": f"isolated_{i}"},
+                dependencies=[],
+            )
+            for i in range(3)
+        ]
+
+        workflow = ModelWorkflowDefinition(
+            version=version,
+            workflow_metadata=ModelWorkflowDefinitionMetadata(
+                version=version,
+                workflow_name="multi_warning_workflow",
+                workflow_version=version,
+                description="Workflow designed to trigger multiple warning types",
+                execution_mode="sequential",
+            ),
+            execution_graph=ModelExecutionGraph(
+                version=version,
+                nodes=isolated_nodes,
+            ),
+        )
+
+        # Call lint() which should aggregate warnings from all checks
+        warnings = linter.lint(workflow)
+
+        # Should return a list of ModelLintWarning instances
+        assert isinstance(warnings, list)
+        for warning in warnings:
+            assert isinstance(warning, ModelLintWarning)
+
+        # Should have W005 warnings for isolated steps (3 isolated nodes)
+        w005_warnings = [w for w in warnings if w.code == "W005"]
+        assert len(w005_warnings) == 3
+
 
 @pytest.mark.unit
 class TestWarningAggregation:

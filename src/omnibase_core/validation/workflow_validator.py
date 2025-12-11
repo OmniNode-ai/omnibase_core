@@ -22,6 +22,21 @@ Thread Safety:
     All functions and the WorkflowValidator class in this module are stateless
     and thread-safe. Each method call operates independently on its input
     parameters without maintaining any shared state between calls.
+
+Security Considerations:
+    Resource Exhaustion Protection:
+        The MAX_DFS_ITERATIONS constant (10,000) protects against denial-of-service
+        attacks from maliciously crafted workflow graphs. Without this limit, an
+        attacker could submit workflows designed to cause infinite loops or excessive
+        CPU consumption during cycle detection.
+
+        If cycle detection exceeds MAX_DFS_ITERATIONS, a ModelOnexError is raised
+        with detailed context including step_count, max_iterations, and last_node
+        for debugging and audit logging.
+
+        The value of 10,000 iterations is calibrated to support legitimate workflows
+        with up to ~5,000 steps (worst case: each step visited twice during DFS
+        traversal) while providing protection against resource exhaustion attacks.
 """
 
 from collections import Counter, deque
@@ -56,11 +71,25 @@ type StepIdToName = Mapping[UUID, str]
 type AdjacencyList = dict[UUID, list[UUID]]
 type InDegreeMap = dict[UUID, int]
 
+# =============================================================================
+# Module-Level Constants
+# =============================================================================
+
 # Resource exhaustion protection constant
 # Prevents malicious or malformed inputs from causing infinite loops in DFS
 # Value of 10,000 is sufficient for workflows with up to ~5,000 steps
 # (worst case: each step visited twice during DFS traversal)
+# See module docstring "Security Considerations" for full documentation.
 MAX_DFS_ITERATIONS = 10_000
+
+# Reserved execution modes that are not yet implemented per ONEX v1.0 contract.
+# These modes will raise ModelOnexError when used in validate_execution_mode_string.
+# Using frozenset for immutability and O(1) membership testing.
+RESERVED_EXECUTION_MODES: frozenset[str] = frozenset({"conditional", "streaming"})
+
+# Accepted execution modes that are currently supported.
+# Using tuple for immutability and ordered iteration (for consistent error messages).
+ACCEPTED_EXECUTION_MODES: tuple[str, ...] = ("sequential", "parallel", "batch")
 
 __all__ = [
     "WorkflowValidator",
@@ -77,6 +106,8 @@ __all__ = [
     "validate_execution_mode_string",
     # Constants
     "MAX_DFS_ITERATIONS",
+    "RESERVED_EXECUTION_MODES",
+    "ACCEPTED_EXECUTION_MODES",
 ]
 
 
@@ -952,6 +983,22 @@ def validate_execution_mode_string(mode: str) -> None:
     Allowed modes: sequential, parallel, batch
     Reserved modes: conditional, streaming
 
+    Reserved Mode Rationale:
+        CONDITIONAL and STREAMING are reserved for future ONEX versions because they
+        require additional infrastructure not yet implemented:
+
+        - **CONDITIONAL**: Requires runtime expression evaluation, branching logic,
+          and conditional step skipping based on workflow state. The current
+          sequential/parallel/batch modes do not support dynamic flow control.
+
+        - **STREAMING**: Requires continuous data flow handling, backpressure
+          management, and stream-oriented step execution. The current implementation
+          assumes discrete step boundaries with complete inputs/outputs.
+
+        These modes are defined in the ONEX v1.0 contract as placeholders for
+        future capability expansion. See CONTRACT_DRIVEN_NODEORCHESTRATOR_V1_0.md
+        for the full specification.
+
     Thread Safety:
         This function is stateless and thread-safe. It performs only read operations
         on constant data (reserved_modes set) and has no shared mutable state.
@@ -999,18 +1046,16 @@ def validate_execution_mode_string(mode: str) -> None:
     """
     mode_lower = mode.lower()
 
-    # Reserved modes that are not yet implemented
-    reserved_modes = {"conditional", "streaming"}
-    accepted_modes = ["sequential", "parallel", "batch"]
-
-    if mode_lower in reserved_modes:
+    # Use module-level constants for reserved and accepted modes
+    # This ensures consistency across the module and enables external access
+    if mode_lower in RESERVED_EXECUTION_MODES:
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=(
                 f"Execution mode '{mode}' is reserved for future implementation. "
-                f"Currently supported modes: {', '.join(accepted_modes)}"
+                f"Currently supported modes: {', '.join(ACCEPTED_EXECUTION_MODES)}"
             ),
             mode=mode,
-            reserved_modes=list(reserved_modes),
-            accepted_modes=accepted_modes,
+            reserved_modes=list(RESERVED_EXECUTION_MODES),
+            accepted_modes=list(ACCEPTED_EXECUTION_MODES),
         )
