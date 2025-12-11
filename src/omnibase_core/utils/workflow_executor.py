@@ -28,7 +28,6 @@ Priority Clamping (Step Priority vs Action Priority):
 """
 
 import asyncio
-import hashlib
 import heapq
 import json
 import logging
@@ -1046,8 +1045,10 @@ def _compute_workflow_hash(workflow_definition: ModelWorkflowDefinition) -> str:
     """
     Compute SHA-256 hash of workflow definition for integrity verification.
 
-    Uses deterministic JSON serialization to ensure consistent hashes
-    across different execution contexts.
+    Delegates to ModelWorkflowDefinition.compute_workflow_hash() for consistency.
+    The model's method excludes the workflow_hash field from computation to:
+    - Prevent circular dependency (setting hash doesn't change the hash)
+    - Support idempotent hash computation for persistence/caching
 
     Args:
         workflow_definition: Workflow definition to hash
@@ -1062,15 +1063,7 @@ def _compute_workflow_hash(workflow_definition: ModelWorkflowDefinition) -> str:
             hash_value = _compute_workflow_hash(workflow_def)
             # Store hash_value with contract for later verification
     """
-    # Get deterministic dict representation
-    workflow_dict = workflow_definition.model_dump()
-
-    # Serialize with sorted keys for deterministic output
-    # Use default=str to handle UUIDs, datetimes, and other non-JSON types
-    serialized = json.dumps(workflow_dict, sort_keys=True, default=str)
-
-    # Compute SHA-256 hash
-    return hashlib.sha256(serialized.encode()).hexdigest()
+    return workflow_definition.compute_workflow_hash()
 
 
 def verify_workflow_integrity(

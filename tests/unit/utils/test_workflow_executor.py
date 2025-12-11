@@ -2627,3 +2627,417 @@ class TestWorkflowExecutorPerformance:
             f"Parallel ({par_time:.3f}s) should not be significantly slower "
             f"than sequential ({seq_time:.3f}s)"
         )
+
+
+@pytest.mark.unit
+class TestWorkflowSizeLimits:
+    """Tests for workflow size limits and DoS prevention.
+
+    These tests verify that the workflow executor handles large workflows
+    gracefully without hanging, excessive memory usage, or causing denial
+    of service conditions. The focus is on correctness and graceful handling
+    rather than raw performance (see TestWorkflowExecutorPerformance for that).
+
+    Test Scenarios:
+        - Large number of workflow steps (up to 100 steps)
+        - Deep sequential dependency chains
+        - Wide fan-in dependencies (many deps per step)
+        - Execution order determinism
+    """
+
+    @pytest.mark.asyncio
+    async def test_large_workflow_step_count(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test workflow with large number of steps completes or fails gracefully.
+
+        This tests that the system can handle workflows with many steps
+        without hanging or causing memory issues. All steps are independent
+        (no dependencies) to test maximum parallel processing.
+        """
+        num_steps = 100  # Reasonable upper bound for unit tests
+
+        steps = [
+            ModelWorkflowStep(
+                step_id=uuid4(),
+                step_name=f"step_{i}",
+                step_type="compute",
+                enabled=True,
+                depends_on=[],
+                priority=1,
+            )
+            for i in range(num_steps)
+        ]
+
+        workflow_id = uuid4()
+
+        # Should complete without timeout or memory issues
+        result = await execute_workflow(
+            workflow_definition=simple_workflow_definition,
+            workflow_steps=steps,
+            workflow_id=workflow_id,
+        )
+
+        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert len(result.completed_steps) == num_steps
+        assert len(result.actions_emitted) == num_steps
+        assert len(result.failed_steps) == 0
+
+    @pytest.mark.asyncio
+    async def test_workflow_with_deep_dependency_chain(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test workflow with deep dependency chain (sequential dependencies).
+
+        Tests that linear dependency chains don't cause stack overflow
+        or excessive recursion. Each step depends on the previous one,
+        creating a chain of 50 sequential steps.
+        """
+        num_steps = 50  # Deep chain
+
+        step_ids = [uuid4() for _ in range(num_steps)]
+        steps = []
+
+        for i, step_id in enumerate(step_ids):
+            depends_on = [step_ids[i - 1]] if i > 0 else []
+            steps.append(
+                ModelWorkflowStep(
+                    step_id=step_id,
+                    step_name=f"step_{i}",
+                    step_type="compute",
+                    enabled=True,
+                    depends_on=depends_on,
+                    priority=1,
+                )
+            )
+
+        workflow_id = uuid4()
+
+        result = await execute_workflow(
+            workflow_definition=simple_workflow_definition,
+            workflow_steps=steps,
+            workflow_id=workflow_id,
+        )
+
+        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert len(result.completed_steps) == num_steps
+        assert len(result.actions_emitted) == num_steps
+
+        # Verify execution order respects dependencies
+        completed_step_ids = [UUID(s) for s in result.completed_steps]
+        for i in range(1, num_steps):
+            prev_index = completed_step_ids.index(step_ids[i - 1])
+            curr_index = completed_step_ids.index(step_ids[i])
+            assert prev_index < curr_index, (
+                f"Step {i - 1} should complete before step {i}"
+            )
+
+    @pytest.mark.asyncio
+    async def test_workflow_with_many_dependencies_per_step(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test workflow where a step depends on many other steps.
+
+        Tests fan-in pattern where one step waits for many predecessors.
+        This verifies the executor handles wide dependency graphs without
+        issues.
+        """
+        num_predecessors = 20
+
+        # Create predecessor steps (no dependencies)
+        predecessor_ids = [uuid4() for _ in range(num_predecessors)]
+        predecessor_steps = [
+            ModelWorkflowStep(
+                step_id=step_id,
+                step_name=f"predecessor_{i}",
+                step_type="compute",
+                enabled=True,
+                depends_on=[],
+                priority=1,
+            )
+            for i, step_id in enumerate(predecessor_ids)
+        ]
+
+        # Create final step that depends on all predecessors
+        final_step_id = uuid4()
+        final_step = ModelWorkflowStep(
+            step_id=final_step_id,
+            step_name="final_step",
+            step_type="compute",
+            enabled=True,
+            depends_on=predecessor_ids,
+            priority=1,
+        )
+
+        steps = predecessor_steps + [final_step]
+        workflow_id = uuid4()
+
+        result = await execute_workflow(
+            workflow_definition=simple_workflow_definition,
+            workflow_steps=steps,
+            workflow_id=workflow_id,
+        )
+
+        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert len(result.completed_steps) == num_predecessors + 1
+        assert len(result.actions_emitted) == num_predecessors + 1
+
+        # Verify final step completed last
+        completed_step_ids = [UUID(s) for s in result.completed_steps]
+        final_index = completed_step_ids.index(final_step_id)
+
+        # All predecessors should have completed before final step
+        for pred_id in predecessor_ids:
+            pred_index = completed_step_ids.index(pred_id)
+            assert pred_index < final_index, (
+                f"Predecessor {pred_id} should complete before final step"
+            )
+
+    @pytest.mark.asyncio
+    async def test_execution_order_determinism_with_large_workflow(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test that execution order is deterministic for large workflows.
+
+        Important for debugging and reproducibility. When running the same
+        workflow twice with the same steps (using fixed step IDs), the
+        execution order should be identical.
+        """
+        num_steps = 30
+
+        # Create fixed step IDs for reproducibility
+        step_ids = [uuid4() for _ in range(num_steps)]
+
+        def create_steps() -> list[ModelWorkflowStep]:
+            return [
+                ModelWorkflowStep(
+                    step_id=step_ids[i],
+                    step_name=f"step_{i}",
+                    step_type="compute",
+                    enabled=True,
+                    depends_on=[],
+                    priority=(i % 10) + 1,  # Varying priorities 1-10
+                )
+                for i in range(num_steps)
+            ]
+
+        # Execute twice with same workflow steps
+        result1 = await execute_workflow(
+            workflow_definition=simple_workflow_definition,
+            workflow_steps=create_steps(),
+            workflow_id=uuid4(),
+        )
+
+        result2 = await execute_workflow(
+            workflow_definition=simple_workflow_definition,
+            workflow_steps=create_steps(),
+            workflow_id=uuid4(),
+        )
+
+        # Both should complete successfully
+        assert result1.execution_status == EnumWorkflowState.COMPLETED
+        assert result2.execution_status == EnumWorkflowState.COMPLETED
+
+        # Completed steps should be in same order (deterministic)
+        assert result1.completed_steps == result2.completed_steps, (
+            "Execution order should be deterministic for same workflow"
+        )
+
+    @pytest.mark.asyncio
+    async def test_workflow_with_multiple_fan_in_points(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test workflow with multiple fan-in convergence points.
+
+        Creates a complex dependency graph with multiple layers:
+        Layer 1: Independent roots (A, B, C, D)
+        Layer 2: Fan-in points (E depends on A,B; F depends on C,D)
+        Layer 3: Final fan-in (G depends on E,F)
+
+        This tests the executor's ability to handle complex DAGs.
+        """
+        # Layer 1: Roots
+        step_a_id = uuid4()
+        step_b_id = uuid4()
+        step_c_id = uuid4()
+        step_d_id = uuid4()
+
+        # Layer 2: Fan-in points
+        step_e_id = uuid4()
+        step_f_id = uuid4()
+
+        # Layer 3: Final fan-in
+        step_g_id = uuid4()
+
+        steps = [
+            # Layer 1
+            ModelWorkflowStep(
+                step_id=step_a_id,
+                step_name="root_a",
+                step_type="effect",
+                enabled=True,
+                depends_on=[],
+            ),
+            ModelWorkflowStep(
+                step_id=step_b_id,
+                step_name="root_b",
+                step_type="effect",
+                enabled=True,
+                depends_on=[],
+            ),
+            ModelWorkflowStep(
+                step_id=step_c_id,
+                step_name="root_c",
+                step_type="effect",
+                enabled=True,
+                depends_on=[],
+            ),
+            ModelWorkflowStep(
+                step_id=step_d_id,
+                step_name="root_d",
+                step_type="effect",
+                enabled=True,
+                depends_on=[],
+            ),
+            # Layer 2
+            ModelWorkflowStep(
+                step_id=step_e_id,
+                step_name="fanin_e",
+                step_type="compute",
+                enabled=True,
+                depends_on=[step_a_id, step_b_id],
+            ),
+            ModelWorkflowStep(
+                step_id=step_f_id,
+                step_name="fanin_f",
+                step_type="compute",
+                enabled=True,
+                depends_on=[step_c_id, step_d_id],
+            ),
+            # Layer 3
+            ModelWorkflowStep(
+                step_id=step_g_id,
+                step_name="final_g",
+                step_type="reducer",
+                enabled=True,
+                depends_on=[step_e_id, step_f_id],
+            ),
+        ]
+
+        result = await execute_workflow(
+            workflow_definition=simple_workflow_definition,
+            workflow_steps=steps,
+            workflow_id=uuid4(),
+        )
+
+        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert len(result.completed_steps) == 7
+        assert len(result.failed_steps) == 0
+
+        # Verify layer ordering
+        completed_step_ids = [UUID(s) for s in result.completed_steps]
+
+        # Layer 2 steps should complete after their Layer 1 dependencies
+        e_index = completed_step_ids.index(step_e_id)
+        a_index = completed_step_ids.index(step_a_id)
+        b_index = completed_step_ids.index(step_b_id)
+        assert e_index > a_index
+        assert e_index > b_index
+
+        f_index = completed_step_ids.index(step_f_id)
+        c_index = completed_step_ids.index(step_c_id)
+        d_index = completed_step_ids.index(step_d_id)
+        assert f_index > c_index
+        assert f_index > d_index
+
+        # Layer 3 step should complete last
+        g_index = completed_step_ids.index(step_g_id)
+        assert g_index > e_index
+        assert g_index > f_index
+
+    @pytest.mark.asyncio
+    async def test_workflow_graceful_validation_failure(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test that large workflows with validation errors fail gracefully.
+
+        Verifies the executor properly validates and rejects workflows
+        with issues (like missing dependencies) without crashing.
+        """
+        num_steps = 50
+        nonexistent_dep_id = uuid4()  # Dependency that doesn't exist
+
+        steps = [
+            ModelWorkflowStep(
+                step_id=uuid4(),
+                step_name=f"step_{i}",
+                step_type="compute",
+                enabled=True,
+                # First step depends on non-existent step
+                depends_on=[nonexistent_dep_id] if i == 0 else [],
+                priority=1,
+            )
+            for i in range(num_steps)
+        ]
+
+        # Should raise validation error, not hang
+        with pytest.raises(ModelOnexError) as exc_info:
+            await execute_workflow(
+                workflow_definition=simple_workflow_definition,
+                workflow_steps=steps,
+                workflow_id=uuid4(),
+            )
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "non-existent" in exc_info.value.message.lower()
+
+    @pytest.mark.asyncio
+    async def test_workflow_with_varying_step_types(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test large workflow with mix of step types.
+
+        Verifies that the executor correctly handles workflows with
+        different step types (effect, compute, reducer, orchestrator)
+        without type-specific issues at scale.
+        """
+        num_steps = 40
+        step_types = ["effect", "compute", "reducer", "orchestrator"]
+
+        steps = [
+            ModelWorkflowStep(
+                step_id=uuid4(),
+                step_name=f"step_{i}",
+                step_type=step_types[i % len(step_types)],
+                enabled=True,
+                depends_on=[],
+                priority=1,
+            )
+            for i in range(num_steps)
+        ]
+
+        result = await execute_workflow(
+            workflow_definition=simple_workflow_definition,
+            workflow_steps=steps,
+            workflow_id=uuid4(),
+        )
+
+        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert len(result.completed_steps) == num_steps
+        assert len(result.actions_emitted) == num_steps
+
+        # Verify action types are correctly mapped
+        from omnibase_core.enums.enum_workflow_execution import EnumActionType
+
+        action_types_found = {action.action_type for action in result.actions_emitted}
+        assert EnumActionType.EFFECT in action_types_found
+        assert EnumActionType.COMPUTE in action_types_found
+        assert EnumActionType.REDUCE in action_types_found
+        assert EnumActionType.ORCHESTRATE in action_types_found

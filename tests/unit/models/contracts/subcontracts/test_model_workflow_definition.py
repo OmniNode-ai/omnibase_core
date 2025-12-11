@@ -432,3 +432,72 @@ class TestWorkflowHashIntegrationWithExecutor:
 
         # Same content should produce same hash for deduplication
         assert hash1 == hash2
+
+
+@pytest.mark.unit
+class TestModelWorkflowDefinitionFrozenBehavior:
+    """Tests for with_computed_hash on frozen Pydantic models."""
+
+    def test_with_computed_hash_works_with_model_copy(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test that with_computed_hash works via model_copy for immutability.
+
+        Even though ModelWorkflowDefinition doesn't use frozen=True config,
+        with_computed_hash() uses model_copy() which ensures immutability
+        by creating new instances rather than mutating existing ones.
+        """
+        original = simple_workflow_definition
+        original_hash = original.workflow_metadata.workflow_hash
+
+        # Call with_computed_hash
+        result = original.with_computed_hash()
+
+        # Original should be unchanged
+        assert original.workflow_metadata.workflow_hash == original_hash
+        assert original.workflow_metadata.workflow_hash is None
+
+        # Result should have hash set
+        assert result.workflow_metadata.workflow_hash is not None
+        assert len(result.workflow_metadata.workflow_hash) == 64
+
+        # Should be different objects
+        assert result is not original
+        assert result.workflow_metadata is not original.workflow_metadata
+
+    def test_with_computed_hash_preserves_immutability_semantics(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test that with_computed_hash preserves immutability semantics.
+
+        The method should:
+        1. Not modify the original instance
+        2. Return a new instance with the hash set
+        3. Allow multiple calls without side effects
+        """
+        original = simple_workflow_definition
+
+        # Multiple calls should produce independent results
+        result1 = original.with_computed_hash()
+        result2 = original.with_computed_hash()
+        result3 = result1.with_computed_hash()
+
+        # All should have the same hash (deterministic)
+        assert (
+            result1.workflow_metadata.workflow_hash
+            == result2.workflow_metadata.workflow_hash
+        )
+        assert (
+            result2.workflow_metadata.workflow_hash
+            == result3.workflow_metadata.workflow_hash
+        )
+
+        # But should be different object instances
+        assert result1 is not result2
+        assert result2 is not result3
+        assert result1.workflow_metadata is not result2.workflow_metadata
+
+        # Original should still be unchanged
+        assert original.workflow_metadata.workflow_hash is None
