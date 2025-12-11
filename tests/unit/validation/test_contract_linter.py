@@ -999,6 +999,7 @@ class TestWarningAggregation:
 
         # Create workflow with many isolated nodes (will trigger W005 warnings)
         # We need 5+ isolated nodes to exceed the threshold of 2
+        # Convert to dicts to avoid Pydantic validation issues with frozen models
         isolated_nodes = [
             ModelWorkflowNode(
                 version=version_dict,
@@ -1006,7 +1007,7 @@ class TestWarningAggregation:
                 node_type=EnumNodeType.COMPUTE_GENERIC,
                 node_requirements={"step_name": f"isolated_step_{i}"},
                 dependencies=[],
-            )
+            ).model_dump()
             for i in range(5)
         ]
 
