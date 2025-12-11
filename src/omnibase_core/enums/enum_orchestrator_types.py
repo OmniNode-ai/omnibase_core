@@ -12,7 +12,7 @@ class EnumWorkflowState(Enum):
 
     PENDING = "pending"
     RUNNING = "running"
-    PAUSED = "paused"
+    PAUSED = "paused"  # RESERVED - v1.1
     COMPLETED = "completed"
     FAILED = "failed"
     CANCELLED = "cancelled"
@@ -23,9 +23,9 @@ class EnumExecutionMode(Enum):
 
     SEQUENTIAL = "sequential"
     PARALLEL = "parallel"
-    CONDITIONAL = "conditional"
+    CONDITIONAL = "conditional"  # RESERVED - v1.1
     BATCH = "batch"
-    STREAMING = "streaming"
+    STREAMING = "streaming"  # RESERVED - v1.2
 
 
 class EnumActionType(Enum):

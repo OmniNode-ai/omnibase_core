@@ -41,6 +41,6 @@ class EnumFailureRecoveryStrategy(str, Enum):
     """Failure recovery strategies."""
 
     RETRY = "RETRY"
-    ROLLBACK = "ROLLBACK"
-    COMPENSATE = "COMPENSATE"
+    ROLLBACK = "ROLLBACK"  # RESERVED - v2.0
+    COMPENSATE = "COMPENSATE"  # RESERVED - v2.0
     ABORT = "ABORT"

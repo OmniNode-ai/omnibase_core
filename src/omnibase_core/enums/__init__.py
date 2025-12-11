@@ -220,6 +220,7 @@ from .enum_value_type import EnumValueType
 from .enum_version_status import EnumVersionStatus
 
 # Workflow-related enums
+from .enum_workflow_coordination import EnumFailureRecoveryStrategy
 from .enum_workflow_dependency_type import EnumWorkflowDependencyType
 
 # NOTE: ModelEnumStatusMigrator is defined in models.core.model_status_migrator
@@ -314,6 +315,7 @@ __all__ = [
     # URI domain
     "EnumUriType",
     # Workflow domain
+    "EnumFailureRecoveryStrategy",
     "EnumWorkflowDependencyType",
     # Infrastructure domain
     "EnumAuthType",
