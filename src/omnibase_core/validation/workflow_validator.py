@@ -64,7 +64,7 @@ __all__ = [
     "validate_workflow_definition",
     "validate_unique_step_ids",
     "validate_dag_with_disabled_steps",
-    "validate_execution_mode",
+    "validate_execution_mode_string",
     # Constants
     "MAX_DFS_ITERATIONS",
 ]
@@ -85,7 +85,7 @@ class WorkflowValidator:
     def _build_step_id_to_name_map(
         self, steps: list[ModelWorkflowStep]
     ) -> dict[UUID, str]:
-        """Build a mapping from step IDs to step names."""
+        """Build a mapping from step IDs to step names. O(n) time and space."""
         return {step.step_id: step.step_name for step in steps}
 
     def _build_adjacency_list_and_in_degree(
@@ -102,6 +102,10 @@ class WorkflowValidator:
 
         Returns:
             Tuple of (adjacency_list, in_degree_map, step_ids_set)
+
+        Complexity:
+            Time: O(V + E) where V = steps and E = total dependency edges
+            Space: O(V + E) for adjacency list and in-degree map
         """
         step_ids: set[UUID] = {step.step_id for step in steps}
         edges: AdjacencyList = {step_id: [] for step_id in step_ids}
@@ -127,7 +131,12 @@ class WorkflowValidator:
             List of step IDs in valid topological order
 
         Raises:
-            ModelOnexError: If the workflow contains cycles
+            ModelOnexError: If the workflow contains cycles. Error context includes
+                step_count, sorted_count, and unsorted_step_ids.
+
+        Complexity:
+            Time: O(V + E) where V = number of steps and E = number of edges
+            Space: O(V) for queue and result list
         """
         if not steps:
             return []
@@ -151,9 +160,19 @@ class WorkflowValidator:
 
         # If result doesn't contain all steps, there's a cycle
         if len(result) != len(step_ids):
+            # Find which steps couldn't be sorted (involved in cycles)
+            unsorted_ids = step_ids - set(result)
+            step_id_to_name = self._build_step_id_to_name_map(steps)
+            unsorted_names = [step_id_to_name[sid] for sid in unsorted_ids]
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="Workflow contains cycles - cannot perform topological sort",
+                message=(
+                    f"Workflow contains cycles - cannot perform topological sort. "
+                    f"Steps involved in cycles: {', '.join(sorted(unsorted_names))}"
+                ),
+                step_count=len(steps),
+                sorted_count=len(result),
+                unsorted_step_names=sorted(unsorted_names),
             )
 
         return result
@@ -166,11 +185,25 @@ class WorkflowValidator:
 
         CRITICAL: Error messages include step names, not just IDs.
 
+        Uses iterative tracking to prevent resource exhaustion from malicious
+        or malformed inputs. If iteration count exceeds MAX_DFS_ITERATIONS,
+        a ModelOnexError is raised with detailed context.
+
         Args:
             steps: List of workflow steps to check
 
         Returns:
             ModelCycleDetectionResult with cycle information including step names
+
+        Raises:
+            ModelOnexError: If cycle detection exceeds MAX_DFS_ITERATIONS,
+                indicating possible malicious input or malformed workflow.
+                Error context includes step_count, max_iterations, and last_node.
+
+        Complexity:
+            Time: O(V + E) where V = number of steps and E = number of edges
+            Space: O(V) for visited sets and recursion stack
+            Protected by MAX_DFS_ITERATIONS (10,000) to prevent resource exhaustion
         """
         if not steps:
             return ModelCycleDetectionResult(
@@ -262,6 +295,11 @@ class WorkflowValidator:
 
         Returns:
             ModelDependencyValidationResult with missing dependency information
+            including error_message with step names for debugging
+
+        Complexity:
+            Time: O(n * d) where n = steps and d = avg dependencies per step
+            Space: O(n) for tracking missing dependencies
         """
         if not steps:
             return ModelDependencyValidationResult(
@@ -317,6 +355,10 @@ class WorkflowValidator:
 
         Returns:
             ModelIsolatedStepResult with isolated step information
+
+        Complexity:
+            Time: O(n * d) where n = steps and d = avg dependencies per step
+            Space: O(n) for tracking edge connectivity
         """
         # Single-step or empty workflows are exempt
         if len(steps) <= 1:
@@ -365,6 +407,10 @@ class WorkflowValidator:
 
         Returns:
             ModelUniqueNameResult with duplicate name information
+
+        Complexity:
+            Time: O(n) for counting names
+            Space: O(n) for Counter storage
         """
         if not steps:
             return ModelUniqueNameResult(
@@ -386,18 +432,35 @@ class WorkflowValidator:
         """
         Perform complete workflow validation.
 
-        Runs all validation checks:
-        1. Unique name validation
-        2. Dependency validation
-        3. Cycle detection
-        4. Isolated step detection
-        5. Topological sort (if no cycles)
+        Runs all validation checks in deterministic priority order:
+        1. Structural errors (unique name validation) - catches basic data issues
+        2. Dependency errors (missing step references) - catches reference issues
+        3. Graph errors (cycle detection) - catches circular dependencies
+        4. Warnings (isolated step detection) - non-blocking issues
+        5. Topological sort (if no cycles) - compute execution order
+
+        IMPORTANT: Errors are returned in the order they are detected. This allows
+        callers to address the most fundamental issues first (structural), then
+        reference issues (dependencies), then graph issues (cycles).
+
+        Note: Unlike validate_workflow_definition(), this method does NOT validate
+        execution mode (reserved mode check). Use validate_workflow_definition()
+        for complete ModelWorkflowDefinition validation including mode validation.
 
         Args:
             steps: List of workflow steps to validate
 
         Returns:
-            ModelWorkflowValidationResult with complete validation results
+            ModelWorkflowValidationResult with complete validation results including:
+            - is_valid: True if no errors (warnings don't affect validity)
+            - errors: Ordered list of error messages
+            - warnings: Non-critical issues (isolated steps)
+            - has_cycles: True if circular dependencies detected
+            - topological_order: Valid execution order (empty if cycles)
+
+        Complexity:
+            Time: O(V + E) dominated by cycle detection and topological sort
+            Space: O(V + E) for adjacency lists and result structures
         """
         errors: list[str] = []
         warnings: list[str] = []
@@ -531,7 +594,7 @@ def validate_workflow_definition(
     # Priority 1: Execution mode validation (raises exception for reserved modes)
     # This is done FIRST because reserved modes should fail fast before any other
     # validation occurs
-    validate_execution_mode(workflow.workflow_metadata.execution_mode)
+    validate_execution_mode_string(workflow.workflow_metadata.execution_mode)
 
     # Priority 2: Structural validation
     if not workflow.workflow_metadata.workflow_name:
@@ -751,36 +814,59 @@ def validate_dag_with_disabled_steps(steps: list[ModelWorkflowStep]) -> list[str
     if not enabled_steps:
         return errors
 
-    # Create validator and run comprehensive validation on enabled steps only
-    validator = WorkflowValidator()
+    # Build ID sets for categorizing dependencies
+    enabled_step_ids = {step.step_id for step in enabled_steps}
+    all_step_ids = {step.step_id for step in steps}
+    disabled_step_ids = all_step_ids - enabled_step_ids
 
-    # Priority 2: Dependency validation (enabled steps only)
-    dep_result = validator.validate_dependencies(enabled_steps)
+    # Priority 2: Check dependencies on disabled steps (before general dep validation)
+    # This is separate from "missing" dependencies - disabled deps exist but are not active
+    disabled_dep_errors: set[str] = set()  # Use set to prevent duplicates
+    for step in enabled_steps:
+        for dep_id in step.depends_on:
+            if dep_id in disabled_step_ids:
+                disabled_dep_errors.add(
+                    f"Step '{step.step_name}' depends on disabled step: {dep_id}"
+                )
+    errors.extend(sorted(disabled_dep_errors))
+
+    # Priority 3: Dependency validation for truly missing dependencies
+    # Filter out disabled deps from each step before validation to avoid duplicate errors
+    steps_with_filtered_deps: list[ModelWorkflowStep] = []
+    for step in enabled_steps:
+        filtered_deps = [d for d in step.depends_on if d not in disabled_step_ids]
+        # Create new step with filtered dependencies for validation
+        # This prevents "missing dependency" errors for deps on disabled steps
+        # (which are already reported above as a different error category)
+        step_copy = ModelWorkflowStep(
+            step_id=step.step_id,
+            step_name=step.step_name,
+            step_type=step.step_type,
+            depends_on=filtered_deps,
+            enabled=step.enabled,
+        )
+        steps_with_filtered_deps.append(step_copy)
+
+    validator = WorkflowValidator()
+    dep_result = validator.validate_dependencies(steps_with_filtered_deps)
     if not dep_result.is_valid:
         errors.append(dep_result.error_message)
 
-    # Priority 3: Cycle detection (enabled steps only)
+    # Priority 4: Cycle detection (enabled steps only, with original deps)
     cycle_result = validator.detect_cycles(enabled_steps)
     if cycle_result.has_cycle:
         errors.append(cycle_result.cycle_description)
 
-    # Check if any enabled step depends on a disabled step
-    enabled_step_ids = {step.step_id for step in enabled_steps}
-    all_step_ids = {step.step_id for step in steps}
-
-    for step in enabled_steps:
-        for dep_id in step.depends_on:
-            if dep_id in all_step_ids and dep_id not in enabled_step_ids:
-                errors.append(
-                    f"Step '{step.step_name}' depends on disabled step: {dep_id}"
-                )
-
     return sorted(errors)
 
 
-def validate_execution_mode(mode: str) -> None:
+def validate_execution_mode_string(mode: str) -> None:
     """
-    Validate execution mode and reject reserved modes.
+    Validate execution mode string and reject reserved modes.
+
+    NOTE: This function validates string-based execution modes. For type-safe
+    validation with EnumExecutionMode, use validate_reserved_execution_mode
+    from omnibase_core.validation.reserved_enum_validator.
 
     Validates that the execution mode is not a reserved/unimplemented mode.
     Currently, CONDITIONAL and STREAMING modes are reserved for future
@@ -796,23 +882,31 @@ def validate_execution_mode(mode: str) -> None:
         ModelOnexError: If the execution mode is CONDITIONAL or STREAMING.
             The error uses EnumCoreErrorCode.VALIDATION_ERROR and includes
             a clear message indicating which reserved mode was used.
+            Error context includes:
+            - mode: The invalid mode that was provided
+            - reserved_modes: List of reserved mode names
+            - accepted_modes: List of accepted mode names
+
+    Complexity:
+        Time: O(1) - set lookup
+        Space: O(1) - constant storage
 
     Example:
         Valid modes::
 
-            validate_execution_mode("sequential")  # OK
-            validate_execution_mode("parallel")    # OK
-            validate_execution_mode("batch")       # OK
+            validate_execution_mode_string("sequential")  # OK
+            validate_execution_mode_string("parallel")    # OK
+            validate_execution_mode_string("batch")       # OK
 
         Reserved modes::
 
-            validate_execution_mode("conditional")  # Raises ModelOnexError
-            validate_execution_mode("streaming")    # Raises ModelOnexError
+            validate_execution_mode_string("conditional")  # Raises ModelOnexError
+            validate_execution_mode_string("streaming")    # Raises ModelOnexError
 
         Handling reserved mode errors::
 
             try:
-                validate_execution_mode(workflow.execution_mode)
+                validate_execution_mode_string(workflow.execution_mode)
             except ModelOnexError as e:
                 print(f"Error: {e.message}")
                 # Output: "Execution mode 'conditional' is reserved..."
@@ -821,12 +915,16 @@ def validate_execution_mode(mode: str) -> None:
 
     # Reserved modes that are not yet implemented
     reserved_modes = {"conditional", "streaming"}
+    accepted_modes = ["sequential", "parallel", "batch"]
 
     if mode_lower in reserved_modes:
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=(
                 f"Execution mode '{mode}' is reserved for future implementation. "
-                f"Currently supported modes: sequential, parallel, batch"
+                f"Currently supported modes: {', '.join(accepted_modes)}"
             ),
+            mode=mode,
+            reserved_modes=list(reserved_modes),
+            accepted_modes=accepted_modes,
         )

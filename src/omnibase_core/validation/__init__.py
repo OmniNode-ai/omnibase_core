@@ -92,7 +92,7 @@ from .workflow_validator import (
     ModelWorkflowValidationResult,
     WorkflowValidator,
     validate_dag_with_disabled_steps,
-    validate_execution_mode,
+    validate_execution_mode_string,
     validate_unique_step_ids,
     validate_workflow_definition,
 )
@@ -190,10 +190,12 @@ __all__ = [
     "ModelWorkflowValidationResult",
     "WorkflowValidator",
     "validate_dag_with_disabled_steps",
-    "validate_execution_mode",
+    "validate_execution_mode_string",
     "validate_unique_step_ids",
     "validate_workflow_definition",
     # Reserved enum validation (OMN-669)
+    # NOTE: validate_reserved_execution_mode takes EnumExecutionMode (type-safe)
+    # while validate_execution_mode_string takes str (for YAML/config parsing)
     "RESERVED_EXECUTION_MODES",
     "validate_reserved_execution_mode",
 ]

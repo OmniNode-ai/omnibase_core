@@ -9,16 +9,24 @@ This linter is designed to catch common workflow definition issues that are
 technically valid but may indicate mistakes or suboptimal patterns.
 
 Linting Checks:
-    - ``warn_unused_parallel_group``: Warns if parallel_group is set but
+    - ``warn_unused_parallel_group`` (W001): Warns if parallel_group is set but
       execution_mode is SEQUENTIAL
-    - ``warn_duplicate_step_names``: Warns if step_name (not step_id) is
+    - ``warn_duplicate_step_names`` (W002): Warns if step_name (not step_id) is
       duplicated across multiple steps
-    - ``warn_unreachable_steps``: Warns if a step depends on non-existent
-      steps, creating a broken dependency chain
-    - ``warn_priority_clamping``: Warns if priority values will be clamped
+    - ``warn_unreachable_steps`` (W003): Warns if a step cannot be reached from
+      any root step. This includes steps that depend on non-existent steps
+      (broken dependency chain) or steps in disconnected subgraphs.
+    - ``warn_priority_clamping`` (W004): Warns if priority values will be clamped
       (>1000 or <1). Defensive check for bypassed Pydantic validation.
-    - ``warn_isolated_steps``: Warns if a step has no incoming AND no
-      outgoing edges
+    - ``warn_isolated_steps`` (W005): Warns if a step has no incoming AND no
+      outgoing edges (completely disconnected from the workflow)
+
+Warning Overlap Notes:
+    W003 (unreachable) and W005 (isolated) may both fire for the same step
+    when that step has no dependencies AND no dependents. This is intentional:
+    - W003 focuses on reachability from roots (graph connectivity)
+    - W005 focuses on isolation (no edges at all)
+    Both warnings provide complementary diagnostic information.
 
 Result Model:
     All warnings are returned via ModelLintWarning, which provides:
@@ -40,7 +48,7 @@ Example:
 
 from __future__ import annotations
 
-from collections import Counter
+from collections import Counter, deque
 from typing import Literal
 from uuid import UUID
 
@@ -363,12 +371,13 @@ class WorkflowLinter:
                 root_step_ids.add(step.step_id)
 
         # BFS from all root steps to find reachable steps
+        # Using deque for O(1) popleft() instead of list.pop(0) which is O(n)
         reachable: set[UUID] = set()
-        queue: list[UUID] = list(root_step_ids)
+        queue: deque[UUID] = deque(root_step_ids)
         reachable.update(root_step_ids)
 
         while queue:
-            current_id = queue.pop(0)
+            current_id = queue.popleft()
             for next_id in forward_edges.get(current_id, []):
                 if next_id not in reachable:
                     reachable.add(next_id)
