@@ -63,6 +63,7 @@ def simple_fsm() -> ModelFSMSubcontract:
                 state_type="terminal",
                 description="Completed state - processing finished",
                 is_terminal=True,
+                is_recoverable=False,  # Terminal states cannot be recoverable
                 entry_actions=["log_completion"],
                 exit_actions=[],
                 version=ModelSemVer(major=1, minor=0, patch=0),
@@ -340,6 +341,7 @@ class TestFSMValidation:
                         state_type="terminal",
                         description="Completed state",
                         is_terminal=True,
+                        is_recoverable=False,  # Terminal states cannot be recoverable
                         version=ModelSemVer(major=1, minor=0, patch=0),
                     ),
                 ],
@@ -467,69 +469,73 @@ class TestFSMValidation:
         Terminal states should not have ANY explicit outgoing transitions,
         even to error states. Wildcard transitions (from_state="*") are
         naturally exempt as they don't originate from a specific terminal state.
-        """
-        fsm = ModelFSMSubcontract(
-            state_machine_name="terminal_with_transition",
-            state_machine_version=ModelSemVer(major=1, minor=0, patch=0),
-            description="FSM with terminal state having explicit outgoing transition",
-            version=ModelSemVer(major=1, minor=0, patch=0),
-            states=[
-                ModelFSMStateDefinition(
-                    state_name="idle",
-                    state_type="operational",
-                    description="Idle state",
-                    is_terminal=False,
-                    version=ModelSemVer(major=1, minor=0, patch=0),
-                ),
-                ModelFSMStateDefinition(
-                    state_name="completed",
-                    state_type="terminal",
-                    description="Completed state - should be terminal",
-                    is_terminal=True,
-                    version=ModelSemVer(major=1, minor=0, patch=0),
-                ),
-                ModelFSMStateDefinition(
-                    state_name="error",
-                    state_type="error",
-                    description="Error state",
-                    is_terminal=True,
-                    version=ModelSemVer(major=1, minor=0, patch=0),
-                ),
-            ],
-            initial_state="idle",
-            terminal_states=["completed"],
-            error_states=["error"],
-            transitions=[
-                ModelFSMStateTransition(
-                    transition_name="complete",
-                    from_state="idle",
-                    to_state="completed",
-                    trigger="complete",
-                    priority=1,
-                    version=ModelSemVer(major=1, minor=0, patch=0),
-                ),
-                ModelFSMStateTransition(
-                    transition_name="error_from_terminal",
-                    from_state="completed",  # Explicit transition from terminal state
-                    to_state="error",
-                    trigger="error",
-                    priority=1,
-                    version=ModelSemVer(major=1, minor=0, patch=0),
-                ),
-            ],
-            operations=[],
-            persistence_enabled=False,
-            recovery_enabled=False,
-        )
 
-        errors = await validate_fsm_contract(fsm)
-        assert len(errors) > 0
-        assert any(
-            "Terminal state" in error
-            and "completed" in error
-            and "explicit outgoing transition" in error
-            for error in errors
-        )
+        Note: This validation is now enforced at FSM construction time via
+        Pydantic model validators, so we expect an exception to be raised
+        when trying to create an FSM with transitions from terminal states.
+        """
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelFSMSubcontract(
+                state_machine_name="terminal_with_transition",
+                state_machine_version=ModelSemVer(major=1, minor=0, patch=0),
+                description="FSM with terminal state having explicit outgoing transition",
+                version=ModelSemVer(major=1, minor=0, patch=0),
+                states=[
+                    ModelFSMStateDefinition(
+                        state_name="idle",
+                        state_type="operational",
+                        description="Idle state",
+                        is_terminal=False,
+                        version=ModelSemVer(major=1, minor=0, patch=0),
+                    ),
+                    ModelFSMStateDefinition(
+                        state_name="completed",
+                        state_type="terminal",
+                        description="Completed state - should be terminal",
+                        is_terminal=True,
+                        is_recoverable=False,  # Terminal states cannot be recoverable
+                        version=ModelSemVer(major=1, minor=0, patch=0),
+                    ),
+                    ModelFSMStateDefinition(
+                        state_name="error",
+                        state_type="error",
+                        description="Error state",
+                        is_terminal=True,
+                        is_recoverable=False,  # Terminal states cannot be recoverable
+                        version=ModelSemVer(major=1, minor=0, patch=0),
+                    ),
+                ],
+                initial_state="idle",
+                terminal_states=["completed"],
+                error_states=["error"],
+                transitions=[
+                    ModelFSMStateTransition(
+                        transition_name="complete",
+                        from_state="idle",
+                        to_state="completed",
+                        trigger="complete",
+                        priority=1,
+                        version=ModelSemVer(major=1, minor=0, patch=0),
+                    ),
+                    ModelFSMStateTransition(
+                        transition_name="error_from_terminal",
+                        from_state="completed",  # Explicit transition from terminal state
+                        to_state="error",
+                        trigger="error",
+                        priority=1,
+                        version=ModelSemVer(major=1, minor=0, patch=0),
+                    ),
+                ],
+                operations=[],
+                persistence_enabled=False,
+                recovery_enabled=False,
+            )
+
+        # Verify the error message mentions terminal state transitions
+        error_message = str(exc_info.value)
+        assert "terminal" in error_message.lower() or "completed" in error_message
 
     @pytest.mark.asyncio
     async def test_wildcard_transitions_allowed_from_terminal(self):
@@ -557,6 +563,7 @@ class TestFSMValidation:
                     state_type="terminal",
                     description="Completed state - terminal",
                     is_terminal=True,
+                    is_recoverable=False,  # Terminal states cannot be recoverable
                     version=ModelSemVer(major=1, minor=0, patch=0),
                 ),
                 ModelFSMStateDefinition(
@@ -564,6 +571,7 @@ class TestFSMValidation:
                     state_type="error",
                     description="Error state",
                     is_terminal=True,
+                    is_recoverable=False,  # Terminal states cannot be recoverable
                     version=ModelSemVer(major=1, minor=0, patch=0),
                 ),
             ],
@@ -715,6 +723,7 @@ class TestWildcardTransitions:
                     state_type="error",
                     description="Error state - terminal",
                     is_terminal=True,
+                    is_recoverable=False,  # Terminal states cannot be recoverable
                     version=ModelSemVer(major=1, minor=0, patch=0),
                 ),
             ],

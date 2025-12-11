@@ -92,6 +92,7 @@ def simple_fsm() -> ModelFSMSubcontract:
                 description="Terminal state",
                 version=ModelSemVer(major=1, minor=0, patch=0),
                 is_terminal=True,
+                is_recoverable=False,  # Terminal states cannot be recoverable
             ),
         ],
         transitions=[
