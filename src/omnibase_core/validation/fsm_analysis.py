@@ -412,6 +412,19 @@ def _find_ambiguous_transitions(
         Space: O(T) for the transition_groups dictionary storing all
             transitions grouped by (from_state, trigger, priority).
 
+    Note:
+        This function uses conservative validation for wildcard-to-wildcard
+        transitions. Transitions from '*' with the same trigger and priority
+        are flagged as ambiguous even if they have different conditions,
+        because condition satisfiability cannot be statically analyzed.
+        This fail-safe approach may reject some valid FSMs where runtime
+        conditions would provide deterministic resolution.
+
+        This is intentional behavior, not a bug. Static analysis cannot
+        determine whether conditions are mutually exclusive without evaluating
+        them at runtime with actual context data. The conservative approach
+        ensures that potentially ambiguous FSMs are flagged for human review.
+
     Example:
         >>> ambiguous = _find_ambiguous_transitions(fsm)
         >>> for amb in ambiguous:
