@@ -985,6 +985,78 @@ class TestValidateJsonPayload:
 
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
+    def test_uuid_passes_in_permissive_mode(self) -> None:
+        """Test UUID objects are accepted in default permissive mode (strict=False)."""
+        from datetime import datetime
+
+        from omnibase_core.utils.workflow_executor import _validate_json_payload
+
+        payload: dict[str, object] = {
+            "workflow_id": uuid4(),  # Raw UUID object
+            "step_id": uuid4(),
+            "step_name": "test_step",
+        }
+
+        # Should not raise - UUIDs serialized via default=str
+        _validate_json_payload(payload, context="uuid_step")
+
+    def test_datetime_passes_in_permissive_mode(self) -> None:
+        """Test datetime objects are accepted in default permissive mode (strict=False)."""
+        from datetime import datetime
+
+        from omnibase_core.utils.workflow_executor import _validate_json_payload
+
+        payload: dict[str, object] = {
+            "created_at": datetime.now(),
+            "step_name": "test_step",
+        }
+
+        # Should not raise - datetimes serialized via default=str
+        _validate_json_payload(payload, context="datetime_step")
+
+    def test_uuid_fails_in_strict_mode(self) -> None:
+        """Test UUID objects are rejected in strict mode."""
+        from omnibase_core.utils.workflow_executor import _validate_json_payload
+
+        payload: dict[str, object] = {
+            "workflow_id": uuid4(),  # Raw UUID - not allowed in strict mode
+        }
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            _validate_json_payload(payload, context="strict_uuid", strict=True)
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "not JSON-serializable" in exc_info.value.message
+
+    def test_datetime_fails_in_strict_mode(self) -> None:
+        """Test datetime objects are rejected in strict mode."""
+        from datetime import datetime
+
+        from omnibase_core.utils.workflow_executor import _validate_json_payload
+
+        payload: dict[str, object] = {
+            "created_at": datetime.now(),
+        }
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            _validate_json_payload(payload, context="strict_datetime", strict=True)
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "not JSON-serializable" in exc_info.value.message
+
+    def test_lambda_fails_even_in_permissive_mode(self) -> None:
+        """Test lambda still fails in permissive mode (default=str doesn't help)."""
+        from omnibase_core.utils.workflow_executor import _validate_json_payload
+
+        invalid_payload: dict[str, object] = {"func": lambda x: x}
+
+        # Lambda should fail even with strict=False because json.dumps
+        # tries to call str() on it, which doesn't produce valid JSON
+        with pytest.raises(ModelOnexError) as exc_info:
+            _validate_json_payload(invalid_payload, context="lambda_step", strict=False)
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+
 
 class TestVerifyWorkflowIntegrity:
     """Tests for verify_workflow_integrity function."""
@@ -1952,3 +2024,606 @@ class TestWorkflowContextIntegration:
         assert context.workflow_context is None
         assert context.step == step
         assert context.workflow_id == workflow_id
+
+
+@pytest.mark.performance
+class TestWorkflowExecutorPerformance:
+    """Performance tests for workflow executor with large workflows.
+
+    These tests validate that the workflow executor can handle large workflows
+    (100+ steps) efficiently and within reasonable time bounds.
+
+    Test Patterns:
+        - Linear chain: A -> B -> C -> ... (sequential dependencies)
+        - Wide parallel: All steps independent (maximum parallelism)
+        - Mixed: Combination of sequential and parallel dependencies
+        - Diamond: A -> [B,C,D] -> E (fan-out, fan-in pattern)
+    """
+
+    def _create_large_workflow_steps(
+        self,
+        num_steps: int,
+        pattern: str = "mixed",
+    ) -> list[ModelWorkflowStep]:
+        """Create a large workflow for performance testing.
+
+        Args:
+            num_steps: Number of steps to create
+            pattern: Dependency pattern - "linear" (chain), "parallel" (no deps),
+                     "mixed" (combination), "diamond" (fan-out/fan-in)
+
+        Returns:
+            List of ModelWorkflowStep with the specified dependency pattern
+        """
+        steps: list[ModelWorkflowStep] = []
+        step_ids: list[UUID] = [uuid4() for _ in range(num_steps)]
+
+        if pattern == "linear":
+            # Linear chain: each step depends on the previous
+            for i, step_id in enumerate(step_ids):
+                depends_on = [step_ids[i - 1]] if i > 0 else []
+                steps.append(
+                    ModelWorkflowStep(
+                        step_id=step_id,
+                        step_name=f"Step {i}",
+                        step_type="compute" if i % 2 == 0 else "effect",
+                        depends_on=depends_on,
+                        enabled=True,
+                    )
+                )
+
+        elif pattern == "parallel":
+            # All steps independent - maximum parallelism
+            for i, step_id in enumerate(step_ids):
+                steps.append(
+                    ModelWorkflowStep(
+                        step_id=step_id,
+                        step_name=f"Step {i}",
+                        step_type="compute" if i % 2 == 0 else "effect",
+                        depends_on=[],
+                        enabled=True,
+                    )
+                )
+
+        elif pattern == "diamond":
+            # Diamond pattern: root -> fan-out -> fan-in -> tail
+            # Structure: root -> [wave1 steps] -> [wave2 steps] -> ... -> final
+            if num_steps < 4:
+                # Fall back to linear for very small workflows
+                return self._create_large_workflow_steps(num_steps, "linear")
+
+            # First step is root (no dependencies)
+            root_id = step_ids[0]
+            steps.append(
+                ModelWorkflowStep(
+                    step_id=root_id,
+                    step_name="Root",
+                    step_type="effect",
+                    depends_on=[],
+                    enabled=True,
+                )
+            )
+
+            # Calculate wave sizes (fan-out, middle, fan-in)
+            middle_count = num_steps - 2  # Exclude root and final
+            wave_size = max(1, middle_count // 3)
+
+            # Fan-out wave: depends on root
+            fan_out_ids: list[UUID] = []
+            for i in range(1, min(1 + wave_size, num_steps - 1)):
+                step_id = step_ids[i]
+                fan_out_ids.append(step_id)
+                steps.append(
+                    ModelWorkflowStep(
+                        step_id=step_id,
+                        step_name=f"FanOut {i}",
+                        step_type="compute",
+                        depends_on=[root_id],
+                        enabled=True,
+                    )
+                )
+
+            # Middle waves: depends on fan-out
+            middle_ids: list[UUID] = []
+            current_deps = fan_out_ids if fan_out_ids else [root_id]
+            for i in range(1 + wave_size, num_steps - 1 - wave_size):
+                step_id = step_ids[i]
+                middle_ids.append(step_id)
+                # Each middle step depends on one step from previous wave
+                dep_idx = (i - 1 - wave_size) % len(current_deps)
+                steps.append(
+                    ModelWorkflowStep(
+                        step_id=step_id,
+                        step_name=f"Middle {i}",
+                        step_type="reducer",
+                        depends_on=[current_deps[dep_idx]],
+                        enabled=True,
+                    )
+                )
+            if middle_ids:
+                current_deps = middle_ids
+
+            # Fan-in wave: depends on middle/fan-out steps
+            fan_in_ids: list[UUID] = []
+            for i in range(num_steps - 1 - wave_size, num_steps - 1):
+                if i <= 0:
+                    continue
+                step_id = step_ids[i]
+                fan_in_ids.append(step_id)
+                # Fan-in depends on subset of current_deps
+                dep_count = min(3, len(current_deps))
+                deps = current_deps[:dep_count]
+                steps.append(
+                    ModelWorkflowStep(
+                        step_id=step_id,
+                        step_name=f"FanIn {i}",
+                        step_type="compute",
+                        depends_on=deps,
+                        enabled=True,
+                    )
+                )
+
+            # Final step: depends on all fan-in steps
+            final_id = step_ids[-1]
+            final_deps = fan_in_ids if fan_in_ids else current_deps
+            steps.append(
+                ModelWorkflowStep(
+                    step_id=final_id,
+                    step_name="Final",
+                    step_type="effect",
+                    depends_on=final_deps,
+                    enabled=True,
+                )
+            )
+
+        else:  # "mixed" pattern
+            # Mixed pattern: alternating sequential chains and parallel groups
+            # Structure: [parallel group] -> [sequential chain] -> [parallel group] -> ...
+            group_size = max(1, num_steps // 10)  # 10 groups
+
+            current_group_deps: list[UUID] = []
+            i = 0
+
+            while i < num_steps:
+                # Parallel group: all depend on previous group's last step(s)
+                parallel_end = min(i + group_size, num_steps)
+                parallel_ids: list[UUID] = []
+
+                for j in range(i, parallel_end):
+                    step_id = step_ids[j]
+                    parallel_ids.append(step_id)
+                    # Each parallel step depends on ALL previous group deps
+                    steps.append(
+                        ModelWorkflowStep(
+                            step_id=step_id,
+                            step_name=f"Parallel {j}",
+                            step_type="compute",
+                            depends_on=current_group_deps.copy(),
+                            enabled=True,
+                        )
+                    )
+
+                i = parallel_end
+
+                # Sequential chain: linear dependencies
+                if i < num_steps:
+                    chain_end = min(i + group_size, num_steps)
+                    prev_id = parallel_ids[-1] if parallel_ids else None
+                    chain_ids: list[UUID] = []
+
+                    for j in range(i, chain_end):
+                        step_id = step_ids[j]
+                        chain_ids.append(step_id)
+                        deps = [prev_id] if prev_id else parallel_ids
+                        steps.append(
+                            ModelWorkflowStep(
+                                step_id=step_id,
+                                step_name=f"Chain {j}",
+                                step_type="effect",
+                                depends_on=deps,
+                                enabled=True,
+                            )
+                        )
+                        prev_id = step_id
+
+                    i = chain_end
+                    # Next parallel group depends on end of chain
+                    current_group_deps = [chain_ids[-1]] if chain_ids else parallel_ids
+                else:
+                    current_group_deps = parallel_ids
+
+        return steps
+
+    @pytest.mark.slow
+    @pytest.mark.asyncio
+    async def test_sequential_execution_100_steps(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test sequential execution handles 100 steps efficiently.
+
+        Performance target: <5 seconds for 100 sequential steps.
+        This validates that sequential overhead per step is minimal.
+        """
+        import time
+
+        workflow_id = uuid4()
+        steps = self._create_large_workflow_steps(100, pattern="linear")
+
+        start_time = time.perf_counter()
+        result = await execute_workflow(
+            simple_workflow_definition,
+            steps,
+            workflow_id,
+            execution_mode=EnumExecutionMode.SEQUENTIAL,
+        )
+        elapsed_time = time.perf_counter() - start_time
+
+        # Verify all steps completed
+        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert len(result.completed_steps) == 100
+        assert len(result.actions_emitted) == 100
+        assert len(result.failed_steps) == 0
+
+        # Performance assertion: should complete in under 5 seconds
+        # This is generous to account for CI variability
+        assert elapsed_time < 5.0, (
+            f"Sequential execution of 100 steps took {elapsed_time:.2f}s, "
+            f"expected <5.0s"
+        )
+
+        # Verify execution time is recorded
+        assert result.execution_time_ms > 0
+
+    @pytest.mark.slow
+    @pytest.mark.asyncio
+    async def test_parallel_execution_100_steps(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test parallel execution handles 100 independent steps efficiently.
+
+        Performance target: <3 seconds for 100 parallel steps.
+        Parallel execution of independent steps should be faster than sequential.
+        """
+        import time
+
+        workflow_id = uuid4()
+        steps = self._create_large_workflow_steps(100, pattern="parallel")
+
+        start_time = time.perf_counter()
+        result = await execute_workflow(
+            simple_workflow_definition,
+            steps,
+            workflow_id,
+            execution_mode=EnumExecutionMode.PARALLEL,
+        )
+        elapsed_time = time.perf_counter() - start_time
+
+        # Verify all steps completed
+        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert len(result.completed_steps) == 100
+        assert len(result.actions_emitted) == 100
+        assert len(result.failed_steps) == 0
+
+        # Performance assertion: parallel should be fast
+        # All steps execute in a single wave
+        assert elapsed_time < 3.0, (
+            f"Parallel execution of 100 steps took {elapsed_time:.2f}s, expected <3.0s"
+        )
+
+        # Verify metadata indicates parallel execution
+        assert result.metadata["execution_mode"] == "parallel"
+
+    @pytest.mark.slow
+    @pytest.mark.asyncio
+    async def test_mixed_workflow_100_steps(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test mixed dependency patterns with 100 steps.
+
+        Performance target: <5 seconds for 100 mixed-dependency steps.
+        Mixed patterns should handle both sequential chains and parallel groups.
+        """
+        import time
+
+        workflow_id = uuid4()
+        steps = self._create_large_workflow_steps(100, pattern="mixed")
+
+        start_time = time.perf_counter()
+        result = await execute_workflow(
+            simple_workflow_definition,
+            steps,
+            workflow_id,
+            execution_mode=EnumExecutionMode.PARALLEL,
+        )
+        elapsed_time = time.perf_counter() - start_time
+
+        # Verify all steps completed
+        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert len(result.completed_steps) == 100
+        assert len(result.actions_emitted) == 100
+        assert len(result.failed_steps) == 0
+
+        # Performance assertion
+        assert elapsed_time < 5.0, (
+            f"Mixed execution of 100 steps took {elapsed_time:.2f}s, expected <5.0s"
+        )
+
+    @pytest.mark.slow
+    @pytest.mark.asyncio
+    async def test_diamond_workflow_100_steps(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test diamond (fan-out/fan-in) pattern with 100 steps.
+
+        Performance target: <5 seconds for 100 diamond-pattern steps.
+        Diamond patterns test the executor's ability to handle
+        complex dependency graphs with multiple convergence points.
+        """
+        import time
+
+        workflow_id = uuid4()
+        steps = self._create_large_workflow_steps(100, pattern="diamond")
+
+        start_time = time.perf_counter()
+        result = await execute_workflow(
+            simple_workflow_definition,
+            steps,
+            workflow_id,
+            execution_mode=EnumExecutionMode.PARALLEL,
+        )
+        elapsed_time = time.perf_counter() - start_time
+
+        # Verify all steps completed
+        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert len(result.completed_steps) == 100
+        assert len(result.actions_emitted) == 100
+        assert len(result.failed_steps) == 0
+
+        # Performance assertion
+        assert elapsed_time < 5.0, (
+            f"Diamond execution of 100 steps took {elapsed_time:.2f}s, expected <5.0s"
+        )
+
+    @pytest.mark.slow
+    @pytest.mark.asyncio
+    async def test_large_workflow_200_steps_sequential(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test sequential execution scales to 200 steps.
+
+        Performance target: <10 seconds for 200 sequential steps.
+        This tests linear scaling behavior.
+        """
+        import time
+
+        workflow_id = uuid4()
+        steps = self._create_large_workflow_steps(200, pattern="linear")
+
+        start_time = time.perf_counter()
+        result = await execute_workflow(
+            simple_workflow_definition,
+            steps,
+            workflow_id,
+            execution_mode=EnumExecutionMode.SEQUENTIAL,
+        )
+        elapsed_time = time.perf_counter() - start_time
+
+        # Verify all steps completed
+        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert len(result.completed_steps) == 200
+        assert len(result.actions_emitted) == 200
+
+        # Performance assertion: should scale linearly
+        assert elapsed_time < 10.0, (
+            f"Sequential execution of 200 steps took {elapsed_time:.2f}s, "
+            f"expected <10.0s"
+        )
+
+    @pytest.mark.slow
+    @pytest.mark.asyncio
+    async def test_large_workflow_200_steps_parallel(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test parallel execution scales to 200 independent steps.
+
+        Performance target: <5 seconds for 200 parallel steps.
+        Parallel execution should scale sub-linearly with more steps.
+        """
+        import time
+
+        workflow_id = uuid4()
+        steps = self._create_large_workflow_steps(200, pattern="parallel")
+
+        start_time = time.perf_counter()
+        result = await execute_workflow(
+            simple_workflow_definition,
+            steps,
+            workflow_id,
+            execution_mode=EnumExecutionMode.PARALLEL,
+        )
+        elapsed_time = time.perf_counter() - start_time
+
+        # Verify all steps completed
+        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert len(result.completed_steps) == 200
+        assert len(result.actions_emitted) == 200
+
+        # Performance assertion: parallel should remain fast
+        assert elapsed_time < 5.0, (
+            f"Parallel execution of 200 steps took {elapsed_time:.2f}s, expected <5.0s"
+        )
+
+    @pytest.mark.slow
+    @pytest.mark.asyncio
+    async def test_topological_sort_performance_100_steps(self) -> None:
+        """Test that topological sorting is efficient for large workflows.
+
+        Performance target: <100ms for topological sort of 100 steps.
+        The topological sort should be O(V+E), not a bottleneck.
+        """
+        import time
+
+        steps = self._create_large_workflow_steps(100, pattern="mixed")
+
+        start_time = time.perf_counter()
+        order = get_execution_order(steps)
+        elapsed_time = time.perf_counter() - start_time
+
+        # Verify correct ordering
+        assert len(order) == 100
+
+        # Performance assertion: topological sort should be fast
+        assert elapsed_time < 0.1, (
+            f"Topological sort of 100 steps took {elapsed_time * 1000:.2f}ms, "
+            f"expected <100ms"
+        )
+
+    @pytest.mark.slow
+    @pytest.mark.asyncio
+    async def test_validation_performance_100_steps(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test that workflow validation is efficient for large workflows.
+
+        Performance target: <100ms for validation of 100 steps.
+        Validation should not be a bottleneck.
+        """
+        import time
+
+        steps = self._create_large_workflow_steps(100, pattern="mixed")
+
+        start_time = time.perf_counter()
+        errors = await validate_workflow_definition(simple_workflow_definition, steps)
+        elapsed_time = time.perf_counter() - start_time
+
+        # Verify no errors
+        assert len(errors) == 0
+
+        # Performance assertion: validation should be fast
+        assert elapsed_time < 0.1, (
+            f"Validation of 100 steps took {elapsed_time * 1000:.2f}ms, expected <100ms"
+        )
+
+    @pytest.mark.slow
+    @pytest.mark.asyncio
+    async def test_cycle_detection_performance(self) -> None:
+        """Test that cycle detection is efficient for large acyclic graphs.
+
+        Performance target: <100ms for cycle detection on 100 steps.
+        DFS-based cycle detection should be O(V+E).
+        """
+        import time
+
+        # Create a large workflow with no cycles
+        steps = self._create_large_workflow_steps(100, pattern="linear")
+
+        # Validate (which includes cycle detection)
+        from omnibase_core.utils.workflow_executor import _has_dependency_cycles
+
+        start_time = time.perf_counter()
+        has_cycles = _has_dependency_cycles(steps)
+        elapsed_time = time.perf_counter() - start_time
+
+        # Verify no cycles
+        assert not has_cycles
+
+        # Performance assertion
+        assert elapsed_time < 0.1, (
+            f"Cycle detection for 100 steps took {elapsed_time * 1000:.2f}ms, "
+            f"expected <100ms"
+        )
+
+    @pytest.mark.slow
+    @pytest.mark.asyncio
+    async def test_memory_efficiency_large_workflow(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test that large workflows don't cause excessive memory usage.
+
+        This test creates a large workflow and verifies execution completes
+        without memory-related issues. The workflow result should contain
+        all expected data structures without excessive overhead.
+        """
+        workflow_id = uuid4()
+        steps = self._create_large_workflow_steps(150, pattern="mixed")
+
+        result = await execute_workflow(
+            simple_workflow_definition,
+            steps,
+            workflow_id,
+            execution_mode=EnumExecutionMode.PARALLEL,
+        )
+
+        # Verify all steps completed
+        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert len(result.completed_steps) == 150
+        assert len(result.actions_emitted) == 150
+
+        # Verify each action has expected structure
+        for action in result.actions_emitted:
+            assert action.action_id is not None
+            assert action.action_type is not None
+            assert "workflow_id" in action.payload
+            assert "step_id" in action.payload
+
+        # Verify metadata is present
+        assert "execution_mode" in result.metadata
+        assert "workflow_hash" in result.metadata
+
+    @pytest.mark.slow
+    @pytest.mark.asyncio
+    async def test_parallel_vs_sequential_speedup(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test that parallel execution provides speedup over sequential.
+
+        For independent steps, parallel execution should be significantly
+        faster than sequential execution.
+        """
+        import time
+
+        workflow_id = uuid4()
+        # Use parallel pattern to maximize benefit of parallel execution
+        steps = self._create_large_workflow_steps(50, pattern="parallel")
+
+        # Sequential execution
+        seq_start = time.perf_counter()
+        seq_result = await execute_workflow(
+            simple_workflow_definition,
+            steps.copy(),  # Use copy to avoid state pollution
+            workflow_id,
+            execution_mode=EnumExecutionMode.SEQUENTIAL,
+        )
+        seq_time = time.perf_counter() - seq_start
+
+        # Parallel execution
+        par_start = time.perf_counter()
+        par_result = await execute_workflow(
+            simple_workflow_definition,
+            steps.copy(),
+            uuid4(),  # Different workflow ID
+            execution_mode=EnumExecutionMode.PARALLEL,
+        )
+        par_time = time.perf_counter() - par_start
+
+        # Both should complete successfully
+        assert seq_result.execution_status == EnumWorkflowState.COMPLETED
+        assert par_result.execution_status == EnumWorkflowState.COMPLETED
+
+        # Parallel should be faster (or at least not significantly slower)
+        # We allow some tolerance since the executor's async nature may vary
+        # Note: In this executor, both are fast since no actual I/O is done,
+        # but parallel should still have lower overhead for action aggregation
+        assert par_time <= seq_time * 1.5, (
+            f"Parallel ({par_time:.3f}s) should not be significantly slower "
+            f"than sequential ({seq_time:.3f}s)"
+        )

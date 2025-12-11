@@ -5,6 +5,26 @@ Pure functions for executing workflows from ModelWorkflowDefinition.
 No side effects - returns results and actions.
 
 Typing: Strongly typed with strategic Any usage where runtime flexibility required.
+
+Priority Clamping (Step Priority vs Action Priority):
+    ModelWorkflowStep.priority allows 1-1000 for authoring-time flexibility, enabling
+    fine-grained ordering hints when defining workflows. However, ModelAction.priority
+    is constrained to 1-10 for execution-time scheduling by target nodes.
+
+    This clamping is by design:
+    - Step priority (1-1000): Authoring-time hint for workflow authors to express
+      relative importance and ordering preferences among steps in the same wave.
+    - Action priority (1-10): Execution-time constraint that target nodes use for
+      scheduling decisions during actual workflow execution.
+
+    The conversion rule is: action_priority = min(step.priority, 10)
+
+    This is EXPECTED behavior, not an error condition. No warnings are emitted.
+
+    See Also:
+        - ModelAction.priority constraint: models/orchestrator/model_action.py
+        - Architecture rationale: docs/architecture/CONTRACT_DRIVEN_NODEORCHESTRATOR_V1_0.md
+          (Section: "Step Priority vs Action Priority")
 """
 
 import asyncio
@@ -527,8 +547,13 @@ async def _execute_parallel(
         """
         try:
             # Create step execution context with workflow context for data access
-            # Note: context is created but not used for action creation currently
-            # It's available for future step execution logic that needs prior outputs
+            # TODO(OMN-656): Use _context for step execution logic that needs prior outputs.
+            # Currently scaffolded for future use cases:
+            # - Accessing prior wave outputs via _context.workflow_context
+            # - Tracking step timing via _context.started_at/_context.completed_at
+            # - Error context via _context.error
+            # The sequential execution path uses context.completed_at; parallel path
+            # will need similar integration when step execution becomes more complex.
             _context = WorkflowStepExecutionContext(
                 step, workflow_id, completed_step_ids, wave_context
             )
@@ -722,7 +747,36 @@ def _build_workflow_context(
     )
 
 
-def _validate_json_payload(payload: dict[str, object], context: str = "") -> None:
+def _json_default_for_workflow(obj: object) -> str:
+    """
+    Custom JSON default handler for workflow payloads.
+
+    Only allows specific types commonly used in workflows:
+    - UUID: Serialized to string representation
+    - datetime: Serialized to ISO format string
+
+    All other non-JSON-native types raise TypeError to catch programming errors.
+
+    Args:
+        obj: The object to serialize
+
+    Returns:
+        String representation for allowed types
+
+    Raises:
+        TypeError: For unsupported types (caught by json.dumps)
+    """
+    if isinstance(obj, UUID):
+        return str(obj)
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    # error-ok: TypeError is required by json.dumps default= contract
+    raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+
+
+def _validate_json_payload(
+    payload: dict[str, object], context: str = "", *, strict: bool = False
+) -> None:
     """
     Validate that payload is JSON-serializable.
 
@@ -730,12 +784,27 @@ def _validate_json_payload(payload: dict[str, object], context: str = "") -> Non
     in JSON-based persistence layers. Called during action creation to fail
     fast if payload contains non-serializable objects.
 
+    Serialization Behavior:
+        By default (strict=False), allows common workflow types (UUID, datetime)
+        to be serialized automatically. This is the recommended mode for workflow
+        payloads where these types are common.
+
+        In strict mode (strict=True), no default serializer is used. Only native
+        JSON types (dict, list, str, int, float, bool, None) are accepted. Use
+        strict mode when you need to ensure the payload contains only primitive types.
+
+        Note: Other non-JSON types (lambdas, custom objects, etc.) will fail
+        validation in both modes, which is the desired behavior to catch
+        programming errors early.
+
     Used by:
         _create_action_for_step: Validates action payloads before ModelAction creation
 
     Args:
         payload: The payload dict to validate
         context: Optional context for error messages (e.g., step name)
+        strict: If True, use strict JSON validation (no default serializer).
+                If False (default), allow UUID/datetime via custom handler.
 
     Raises:
         ModelOnexError: If payload is not JSON-serializable
@@ -743,21 +812,34 @@ def _validate_json_payload(payload: dict[str, object], context: str = "") -> Non
     Example:
         Validate a payload before action creation::
 
+            from uuid import uuid4
+            from datetime import datetime
+
+            # With strict=False (default), UUIDs and datetimes are allowed
             payload = {
-                "workflow_id": str(uuid4()),
-                "step_id": str(uuid4()),
+                "workflow_id": uuid4(),  # UUID object - serialized via str()
+                "timestamp": datetime.now(),  # datetime - serialized to ISO format
                 "step_name": "process_data",
             }
+            _validate_json_payload(payload, context="process_data")  # passes
 
-            # This will pass
-            _validate_json_payload(payload, context="process_data")
+            # With strict=True, only native JSON types allowed
+            strict_payload = {
+                "workflow_id": str(uuid4()),  # Must be string
+                "step_name": "process_data",
+            }
+            _validate_json_payload(strict_payload, context="strict_step", strict=True)
 
-            # This will raise ModelOnexError
+            # This will raise ModelOnexError in both modes
             invalid_payload = {"lambda": lambda x: x}  # Not JSON-serializable
             _validate_json_payload(invalid_payload, context="bad_step")
     """
     try:
-        json.dumps(payload)
+        if strict:
+            json.dumps(payload)
+        else:
+            # Use custom handler for UUID/datetime, reject all other non-JSON types
+            json.dumps(payload, default=_json_default_for_workflow)
     except (TypeError, ValueError) as e:
         context_suffix = f" for step '{context}'" if context else ""
         raise ModelOnexError(
@@ -805,8 +887,9 @@ def _create_action_for_step(
     }
     target_node_type = target_node_type_map.get(step.step_type, "NodeCustom")
 
-    # Cap priority to ModelAction's max value of 10
-    # ModelWorkflowStep allows 1-1000, but ModelAction only allows 1-10
+    # Priority clamping: step priority (1-1000, authoring-time hint) -> action priority (1-10, execution-time constraint)
+    # This is expected schema boundary conversion, not an error. See module docstring and
+    # docs/architecture/CONTRACT_DRIVEN_NODEORCHESTRATOR_V1_0.md (Section: "Step Priority vs Action Priority")
     action_priority = min(step.priority, 10) if step.priority else 1
 
     # Build payload
@@ -864,10 +947,11 @@ def _get_topological_order(
         List of step IDs in topological order, respecting both dependencies
         and priority/declaration order for steps with equal dependencies.
     """
-    # Build step_id to (clamped_priority, declaration_index) mapping
-    # Lower values = higher priority in heap, so we use priority directly
-    # Priority is clamped from 1-1000 range to 1-10 range
-    # Default to 1 if priority is None
+    # Build step_id to (clamped_priority, declaration_index) mapping for heap ordering.
+    # Lower values = higher priority in heap, so we use priority directly.
+    # Priority clamping: step priority (1-1000, authoring-time hint) -> clamped (1-10) for consistent
+    # ordering with action priority (1-10, execution-time constraint). Default to 1 if None.
+    # See: docs/architecture/CONTRACT_DRIVEN_NODEORCHESTRATOR_V1_0.md (Section: "Step Priority vs Action Priority")
     step_order_key: dict[UUID, tuple[int, int]] = {}
     for idx, step in enumerate(workflow_steps):
         clamped_priority = min(step.priority, 10) if step.priority is not None else 1

@@ -40,6 +40,15 @@ class ModelWorkflowDefinitionMetadata(BaseModel):
         ge=1000,
     )
 
+    workflow_hash: str | None = Field(
+        default=None,
+        description=(
+            "SHA-256 hash of workflow definition for persistence and caching. "
+            "Computed from workflow steps and metadata (excluding runtime data). "
+            "Used for workflow identification and deduplication before execution."
+        ),
+    )
+
     model_config = {
         "extra": "ignore",
         "use_enum_values": False,
