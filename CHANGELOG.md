@@ -7,6 +7,155 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### ⚠️ BREAKING CHANGES
+
+#### Workflow Contract Model Hardening [OMN-654]
+
+The following workflow contract models now enforce **immutability** (`frozen=True`) and **strict field validation** (`extra="forbid"`):
+
+| Model | Changes Applied |
+|-------|-----------------|
+| `ModelWorkflowDefinition` | Added `frozen=True`, `extra="forbid"` |
+| `ModelWorkflowDefinitionMetadata` | Added `frozen=True`, `extra="forbid"` |
+| `ModelWorkflowStep` | Added `extra="forbid"` (already had `frozen=True`) |
+| `ModelCoordinationRules` | Added `frozen=True`, `extra="forbid"` |
+| `ModelExecutionGraph` | Added `frozen=True`, `extra="forbid"` |
+| `ModelWorkflowNode` | Added `frozen=True`, `extra="forbid"` |
+
+**Impact**:
+- Code that **mutates these models after creation** will now raise `pydantic.ValidationError`
+- Code that **passes unknown fields** to these models will now raise `pydantic.ValidationError`
+
+**Thread Safety Benefits**:
+
+Since these models are now `frozen=True`, they are **inherently thread-safe for reads**:
+
+| Operation | Thread-Safe? | Notes |
+|-----------|-------------|-------|
+| Reading model attributes | Yes | No mutation possible after creation |
+| Sharing models across threads | Yes | Immutable objects are safe to share |
+| Creating modified copies with `model_copy()` | Yes | Creates new instance, no shared mutable state |
+| Passing models between async tasks | Yes | No race conditions on immutable data |
+
+This aligns with the ONEX thread safety model documented in [docs/guides/THREADING.md](docs/guides/THREADING.md). Workflow contract models now join other frozen models (like `ModelComputeInput`, `ModelReducerInput`, etc.) in being safe for concurrent access without synchronization.
+
+**Migration Guide**:
+
+**1. Direct Mutation to Immutable Copies**
+
+```python
+# Before (v0.3.x) - Direct mutation was possible
+workflow = ModelWorkflowDefinition(...)
+workflow.version = new_version  # ❌ Now raises pydantic.ValidationError
+
+# After (v0.4.0+) - Use model_copy() for modifications
+workflow = ModelWorkflowDefinition(...)
+updated_workflow = workflow.model_copy(update={"version": new_version})  # ✅ Correct
+
+# Multiple field updates in one call
+updated = original.model_copy(update={
+    "version": new_version,
+    "workflow_metadata": new_metadata,
+})
+```
+
+**2. Handling Extra Fields**
+
+```python
+# Before (v0.3.x) - Extra fields might have been silently ignored
+definition = ModelWorkflowDefinition(
+    version=version,
+    workflow_metadata=metadata,
+    execution_graph=graph,
+    custom_field="value"  # ❌ Now raises pydantic.ValidationError
+)
+
+# After (v0.4.0+) - Only declared fields allowed
+definition = ModelWorkflowDefinition(
+    version=version,
+    workflow_metadata=metadata,
+    execution_graph=graph,
+    # custom_field removed - use proper extension mechanisms instead
+)
+
+# If you need custom metadata, use designated fields:
+metadata = ModelWorkflowDefinitionMetadata(
+    version=version,
+    workflow_name="my-workflow",
+    workflow_version=workflow_version,
+    description="Description with any custom info you need",
+)
+```
+
+**3. Nested Model Updates**
+
+```python
+# For deeply nested updates, rebuild from the inside out:
+original = ModelWorkflowDefinition(...)
+
+# Update nested metadata
+new_metadata = original.workflow_metadata.model_copy(
+    update={"description": "Updated description"}
+)
+
+# Create new definition with updated metadata
+updated = original.model_copy(update={"workflow_metadata": new_metadata})
+```
+
+**4. Pattern for Workflow Builders**
+
+```python
+# If you have a builder pattern that relied on mutation, convert to accumulation:
+
+# Before (v0.3.x) - Mutable builder
+class WorkflowBuilder:
+    def __init__(self):
+        self.workflow = ModelWorkflowDefinition(...)
+
+    def set_timeout(self, ms: int):
+        self.workflow.timeout_ms = ms  # ❌ No longer works
+
+# After (v0.4.0+) - Immutable builder with accumulated state
+class WorkflowBuilder:
+    def __init__(self):
+        self._updates: dict[str, Any] = {}
+        self._base_config = {...}
+
+    def set_timeout(self, ms: int) -> "WorkflowBuilder":
+        self._updates["timeout_ms"] = ms
+        return self
+
+    def build(self) -> ModelWorkflowDefinition:
+        return ModelWorkflowDefinition(**{**self._base_config, **self._updates})
+```
+
+**5. Testing Code Updates**
+
+```python
+# Tests that mutated models need updating:
+
+# Before (v0.3.x)
+def test_workflow_processing():
+    workflow = create_workflow()
+    workflow.status = "completed"  # ❌ No longer works
+    assert workflow.status == "completed"
+
+# After (v0.4.0+)
+def test_workflow_processing():
+    workflow = create_workflow()
+    completed_workflow = workflow.model_copy(update={"status": "completed"})
+    assert completed_workflow.status == "completed"
+```
+
+**Quick Migration Checklist**:
+
+- [ ] Search codebase for direct attribute assignment to workflow contract models
+- [ ] Replace direct mutations with `model_copy(update={...})` calls
+- [ ] Remove any extra fields being passed to model constructors
+- [ ] Update builder patterns to accumulate state rather than mutate
+- [ ] Run tests to verify `pydantic.ValidationError` is not raised unexpectedly
+- [ ] Verify thread safety requirements are met (frozen models are now safe to share)
+
 ### Changed
 - Renamed `ModelOnexEnvelopeV1` to `ModelOnexEnvelope` ()
 - Renamed fields: `event_id`→`envelope_id`, `source_service`→`source_node`, `event_type`→`operation`
