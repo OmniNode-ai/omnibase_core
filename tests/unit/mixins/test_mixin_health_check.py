@@ -481,6 +481,7 @@ class MockHttpClient:
         self._exception = exception
         self.called_url: str | None = None
         self.called_timeout: float | None = None
+        self.called_headers: dict[str, str] | None = None
 
     async def get(
         self,
@@ -491,6 +492,7 @@ class MockHttpClient:
         """Perform mock HTTP GET request."""
         self.called_url = url
         self.called_timeout = timeout
+        self.called_headers = headers
         if self._exception:
             raise self._exception
         if self._response is None:
@@ -664,3 +666,40 @@ class TestCheckHttpServiceHealth:
 
         assert result.status == "healthy"
         assert result.health_score == 1.0
+
+    @pytest.mark.asyncio
+    @pytest.mark.timeout(90)
+    async def test_check_http_service_health_passes_headers(self) -> None:
+        """Test that headers parameter is passed to the HTTP client."""
+        from omnibase_core.mixins.mixin_health_check import check_http_service_health
+
+        mock_response = MockHttpResponse(status=200)
+        mock_client = MockHttpClient(response=mock_response)
+        test_headers = {
+            "Authorization": "Bearer test-token",
+            "X-Custom-Header": "value",
+        }
+
+        await check_http_service_health(
+            "http://test.com",
+            http_client=mock_client,
+            headers=test_headers,
+        )
+
+        assert mock_client.called_headers == test_headers
+
+    @pytest.mark.asyncio
+    @pytest.mark.timeout(90)
+    async def test_check_http_service_health_no_headers_passes_none(self) -> None:
+        """Test that not passing headers results in None being passed to client."""
+        from omnibase_core.mixins.mixin_health_check import check_http_service_health
+
+        mock_response = MockHttpResponse(status=200)
+        mock_client = MockHttpClient(response=mock_response)
+
+        await check_http_service_health(
+            "http://test.com",
+            http_client=mock_client,
+        )
+
+        assert mock_client.called_headers is None

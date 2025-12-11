@@ -105,6 +105,12 @@ class ProtocolHttpClient(Protocol):
     - Swapping HTTP libraries without code changes
     - Consistent interface across different HTTP backends
 
+    Lifecycle Management:
+        Implementations MAY be long-lived (e.g., connection pooling).
+        Callers MUST NOT assume ownership - cleanup is implementation-defined.
+        For ONEX Core, implementations are typically registered in the
+        container and managed by the container's lifecycle hooks.
+
     Example implementation wrapper for aiohttp:
         class AioHttpClientAdapter:
             def __init__(self, session: aiohttp.ClientSession):
@@ -121,6 +127,15 @@ class ProtocolHttpClient(Protocol):
                     url, timeout=client_timeout, headers=headers
                 ) as response:
                     return AioHttpResponseAdapter(response)
+
+    Example with proper lifecycle:
+        # Container registration (typical ONEX pattern)
+        session = aiohttp.ClientSession()
+        client = AioHttpClientAdapter(session)
+        container.register_service("ProtocolHttpClient", client)
+
+        # Later, during shutdown:
+        await session.close()
     """
 
     async def get(

@@ -36,6 +36,7 @@ from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.health.model_health_status import ModelHealthStatus
 from omnibase_core.protocols.http import ProtocolHttpClient
+from omnibase_core.types.typed_dict_health_status import TypedDictHealthStatus
 
 
 class MixinHealthCheck:
@@ -411,7 +412,7 @@ class MixinHealthCheck:
             issues=all_issues,
         )
 
-    def get_health_status(self) -> dict[str, str | bool | float | list[str]]:
+    def get_health_status(self) -> TypedDictHealthStatus:
         """
         Get health status as a dictionary.
 
@@ -785,6 +786,7 @@ async def check_http_service_health(
     timeout_seconds: float = 3.0,
     expected_status: int = 200,
     http_client: ProtocolHttpClient | None = None,
+    headers: dict[str, str] | None = None,
 ) -> ModelHealthStatus:
     """
     Check HTTP service health via health endpoint.
@@ -798,6 +800,7 @@ async def check_http_service_health(
         expected_status: Expected HTTP status code (default: 200)
         http_client: HTTP client implementing ProtocolHttpClient protocol.
                      If None, returns UNHEALTHY status indicating no client available.
+        headers: Optional HTTP headers to include in the request (e.g., for authentication)
 
     Returns:
         ModelHealthStatus with connectivity details
@@ -810,6 +813,7 @@ async def check_http_service_health(
                 "http://metadata-stamping:8057",
                 timeout_seconds=2.0,
                 http_client=http_client,
+                headers={"Authorization": "Bearer token"},
             )
     """
     from omnibase_core.models.health.model_health_issue import ModelHealthIssue
@@ -838,7 +842,9 @@ async def check_http_service_health(
             service_url if service_url.endswith("/health") else f"{service_url}/health"
         )
 
-        response = await http_client.get(health_url, timeout=timeout_seconds)
+        response = await http_client.get(
+            health_url, timeout=timeout_seconds, headers=headers
+        )
 
         if response.status == expected_status:
             return ModelHealthStatus.create_healthy(score=1.0)
