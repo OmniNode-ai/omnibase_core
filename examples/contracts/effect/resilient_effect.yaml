@@ -72,8 +72,9 @@ contract_version:
   minor: 1
   patch: 0
 
-# Contract fingerprint for drift detection (format: version:hash-prefix)
-# Regenerate when contract content changes
+# Contract fingerprint for drift detection (format: version:12-char-hash)
+# The 12-character hash is a truncated SHA256 of normalized contract content
+# Regenerate when contract content changes using: poetry run python scripts/compute_contract_fingerprint.py
 fingerprint: "1.1.0:bf6e50f7086f"
 
 node_type: effect

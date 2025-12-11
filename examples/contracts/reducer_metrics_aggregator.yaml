@@ -2,9 +2,9 @@
 node_type: REDUCER_GENERIC
 contract_version: {major: 1, minor: 1, patch: 0}
 
-# Contract fingerprint for drift detection (format: version:hash-prefix)
-# Hash is computed from normalized contract content (all fields)
-# Regenerate when contract content changes using: scripts/compute_contract_fingerprint.py
+# Contract fingerprint for drift detection (format: version:12-char-hash)
+# The 12-character hash is a truncated SHA256 of normalized contract content
+# Regenerate when contract content changes using: poetry run python scripts/compute_contract_fingerprint.py
 fingerprint: "1.1.0:1af36171af17"
 profile_tags:
   - metrics
@@ -15,7 +15,7 @@ handlers:
   required: []  # Reducers are pure state machines - no external I/O handlers
   optional: []
 state_transitions:
-  version: {major: 1, minor: 0, patch: 0}
+  version: {major: 1, minor: 1, patch: 0}
   state_machine_version: {major: 1, minor: 0, patch: 0}
   state_machine_name: metrics_aggregation_fsm
   description: Aggregates metrics from multiple data sources with validation

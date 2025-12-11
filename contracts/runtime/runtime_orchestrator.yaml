@@ -51,8 +51,9 @@
 node_type: ORCHESTRATOR_GENERIC
 contract_version: {major: 1, minor: 1, patch: 0}
 
-# Contract fingerprint for drift detection (format: version:hash-prefix)
-# Regenerate when contract content changes
+# Contract fingerprint for drift detection (format: version:12-char-hash)
+# The 12-character hash is a truncated SHA256 of normalized contract content
+# Regenerate when contract content changes using: poetry run python scripts/compute_contract_fingerprint.py
 fingerprint: "1.1.0:3e52c90d2a6f"
 
 # Profile tags for runtime orchestrator classification
@@ -71,8 +72,8 @@ handlers:
 
 # Workflow Coordination Subcontract
 workflow_coordination:
-  version: {major: 1, minor: 0, patch: 0}
-  subcontract_version: {major: 1, minor: 0, patch: 0}
+  version: {major: 1, minor: 1, patch: 0}
+  subcontract_version: {major: 1, minor: 1, patch: 0}
 
   # Workflow Steps: Required step definitions for runtime orchestration
   workflow_steps:

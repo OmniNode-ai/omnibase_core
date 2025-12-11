@@ -344,8 +344,10 @@ class TestContractHandlersField:
         optional = handlers.get("optional", [])
 
         for i, handler in enumerate(required):
-            if not isinstance(handler, dict):
-                continue
+            assert isinstance(handler, dict), (
+                f"{contract_name}: handlers.required[{i}] should be a dict, "
+                f"got {type(handler).__name__}: {handler}"
+            )
             assert "type" in handler, (
                 f"{contract_name}: handlers.required[{i}] missing 'type' field"
             )
@@ -354,8 +356,10 @@ class TestContractHandlersField:
             )
 
         for i, handler in enumerate(optional):
-            if not isinstance(handler, dict):
-                continue
+            assert isinstance(handler, dict), (
+                f"{contract_name}: handlers.optional[{i}] should be a dict, "
+                f"got {type(handler).__name__}: {handler}"
+            )
             assert "type" in handler, (
                 f"{contract_name}: handlers.optional[{i}] missing 'type' field"
             )
