@@ -4,7 +4,7 @@ Unit tests for workflow execution utilities.
 Tests the pure functions in utils/workflow_executor.py for workflow execution.
 """
 
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 
@@ -742,3 +742,479 @@ class TestMetadata:
 
         assert "execution_mode" in result.metadata
         assert result.metadata["execution_mode"] == "parallel"
+
+
+class TestBuildWorkflowContext:
+    """Tests for _build_workflow_context function."""
+
+    def test_empty_completed_steps(self) -> None:
+        """Test context with no completed steps."""
+        from omnibase_core.utils.workflow_executor import _build_workflow_context
+
+        workflow_id = uuid4()
+        completed_step_ids: set[UUID] = set()
+        step_outputs: dict[UUID, object] = {}
+
+        context = _build_workflow_context(workflow_id, completed_step_ids, step_outputs)
+
+        assert context["workflow_uuid_str"] == str(workflow_id)
+        assert context["completed_steps"] == []
+        assert context["step_outputs"] == {}
+        assert context["step_count"] == 0
+
+    def test_single_completed_step(self) -> None:
+        """Test context with single completed step and output."""
+        from omnibase_core.utils.workflow_executor import _build_workflow_context
+
+        workflow_id = uuid4()
+        step1_id = uuid4()
+        completed_step_ids = {step1_id}
+        step_outputs = {step1_id: {"data": [1, 2, 3]}}
+
+        context = _build_workflow_context(workflow_id, completed_step_ids, step_outputs)
+
+        assert context["workflow_uuid_str"] == str(workflow_id)
+        assert str(step1_id) in context["completed_steps"]
+        assert len(context["completed_steps"]) == 1
+        assert context["step_outputs"][str(step1_id)] == {"data": [1, 2, 3]}
+        assert context["step_count"] == 1
+
+    def test_multiple_completed_steps(self) -> None:
+        """Test context with multiple completed steps and outputs."""
+        from omnibase_core.utils.workflow_executor import _build_workflow_context
+
+        workflow_id = uuid4()
+        step1_id = uuid4()
+        step2_id = uuid4()
+        step3_id = uuid4()
+
+        completed_step_ids = {step1_id, step2_id, step3_id}
+        step_outputs: dict[UUID, object] = {
+            step1_id: {"extracted": "value1"},
+            step2_id: {"processed": True, "count": 42},
+            step3_id: None,
+        }
+
+        context = _build_workflow_context(workflow_id, completed_step_ids, step_outputs)
+
+        assert context["workflow_uuid_str"] == str(workflow_id)
+        assert len(context["completed_steps"]) == 3
+        assert str(step1_id) in context["completed_steps"]
+        assert str(step2_id) in context["completed_steps"]
+        assert str(step3_id) in context["completed_steps"]
+        assert context["step_outputs"][str(step1_id)] == {"extracted": "value1"}
+        assert context["step_outputs"][str(step2_id)] == {
+            "processed": True,
+            "count": 42,
+        }
+        assert context["step_outputs"][str(step3_id)] is None
+        assert context["step_count"] == 3
+
+    def test_step_outputs_without_all_completed_steps(self) -> None:
+        """Test context handles partial outputs (not all steps have outputs)."""
+        from omnibase_core.utils.workflow_executor import _build_workflow_context
+
+        workflow_id = uuid4()
+        step1_id = uuid4()
+        step2_id = uuid4()
+
+        # Step 2 completed but has no output in step_outputs dict
+        completed_step_ids = {step1_id, step2_id}
+        step_outputs: dict[UUID, object] = {step1_id: {"result": "success"}}
+
+        context = _build_workflow_context(workflow_id, completed_step_ids, step_outputs)
+
+        assert context["step_count"] == 2
+        assert len(context["completed_steps"]) == 2
+        # Only step1 has output
+        assert len(context["step_outputs"]) == 1
+        assert str(step1_id) in context["step_outputs"]
+
+
+class TestValidateJsonPayload:
+    """Tests for _validate_json_payload function."""
+
+    def test_valid_payload_passes(self) -> None:
+        """Test valid JSON payload does not raise."""
+        from omnibase_core.utils.workflow_executor import _validate_json_payload
+
+        payload = {
+            "workflow_id": str(uuid4()),
+            "step_id": str(uuid4()),
+            "step_name": "process_data",
+            "count": 42,
+            "enabled": True,
+            "tags": ["a", "b", "c"],
+            "nested": {"key": "value"},
+        }
+
+        # Should not raise
+        _validate_json_payload(payload, context="test_step")
+
+    def test_empty_payload_passes(self) -> None:
+        """Test empty payload is valid."""
+        from omnibase_core.utils.workflow_executor import _validate_json_payload
+
+        _validate_json_payload({}, context="empty_step")
+
+    def test_invalid_lambda_raises_error(self) -> None:
+        """Test lambda in payload raises ModelOnexError."""
+        from omnibase_core.utils.workflow_executor import _validate_json_payload
+
+        invalid_payload: dict[str, object] = {"func": lambda x: x}
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            _validate_json_payload(invalid_payload, context="bad_step")
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "not JSON-serializable" in exc_info.value.message
+        assert "bad_step" in exc_info.value.message
+        # Context is nested in additional_context due to ModelOnexError's **context pattern
+        assert exc_info.value.context is not None
+        additional_ctx = exc_info.value.context.get("additional_context", {})
+        inner_ctx = additional_ctx.get("context", {})
+        assert "func" in inner_ctx.get("payload_keys", [])
+        assert inner_ctx.get("step_context") == "bad_step"
+
+    def test_invalid_custom_object_raises_error(self) -> None:
+        """Test non-serializable custom object raises ModelOnexError."""
+        from omnibase_core.utils.workflow_executor import _validate_json_payload
+
+        class CustomClass:
+            pass
+
+        invalid_payload: dict[str, object] = {"obj": CustomClass()}
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            _validate_json_payload(invalid_payload, context="custom_obj_step")
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "not JSON-serializable" in exc_info.value.message
+        assert "custom_obj_step" in exc_info.value.message
+
+    def test_error_message_without_context(self) -> None:
+        """Test error message when no context is provided."""
+        from omnibase_core.utils.workflow_executor import _validate_json_payload
+
+        invalid_payload: dict[str, object] = {"func": lambda x: x}
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            _validate_json_payload(invalid_payload, context="")
+
+        # Should not include "for step" when context is empty
+        assert "for step" not in exc_info.value.message
+        assert "not JSON-serializable" in exc_info.value.message
+
+    def test_nested_invalid_object_raises_error(self) -> None:
+        """Test deeply nested non-serializable object is detected."""
+        from omnibase_core.utils.workflow_executor import _validate_json_payload
+
+        invalid_payload: dict[str, object] = {
+            "level1": {
+                "level2": {
+                    "level3": lambda x: x,
+                }
+            }
+        }
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            _validate_json_payload(invalid_payload, context="nested_step")
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+
+
+class TestVerifyWorkflowIntegrity:
+    """Tests for verify_workflow_integrity function."""
+
+    def test_none_hash_skips_verification(
+        self, simple_workflow_definition: ModelWorkflowDefinition
+    ) -> None:
+        """Test that None expected_hash skips verification."""
+        from omnibase_core.utils.workflow_executor import verify_workflow_integrity
+
+        # Should not raise - verification is skipped
+        verify_workflow_integrity(simple_workflow_definition, expected_hash=None)
+
+    def test_matching_hash_passes(
+        self, simple_workflow_definition: ModelWorkflowDefinition
+    ) -> None:
+        """Test that matching hash passes verification."""
+        from omnibase_core.utils.workflow_executor import (
+            _compute_workflow_hash,
+            verify_workflow_integrity,
+        )
+
+        # Compute the actual hash first
+        actual_hash = _compute_workflow_hash(simple_workflow_definition)
+
+        # Should not raise - hashes match
+        verify_workflow_integrity(simple_workflow_definition, expected_hash=actual_hash)
+
+    def test_mismatched_hash_raises_error(
+        self, simple_workflow_definition: ModelWorkflowDefinition
+    ) -> None:
+        """Test that mismatched hash raises ModelOnexError with proper context."""
+        from omnibase_core.utils.workflow_executor import verify_workflow_integrity
+
+        wrong_hash = "invalid_hash_that_does_not_match"
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            verify_workflow_integrity(
+                simple_workflow_definition, expected_hash=wrong_hash
+            )
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "hash mismatch" in exc_info.value.message.lower()
+        # Context is nested: additional_context -> context -> {expected_hash, actual_hash, ...}
+        # due to ModelOnexError's **context pattern
+        assert exc_info.value.context is not None
+        additional_ctx = exc_info.value.context.get("additional_context", {})
+        inner_ctx = additional_ctx.get("context", {})
+        assert inner_ctx.get("expected_hash") == wrong_hash
+        assert "actual_hash" in inner_ctx
+        assert (
+            inner_ctx.get("workflow_name")
+            == simple_workflow_definition.workflow_metadata.workflow_name
+        )
+
+
+class TestComputeWorkflowHash:
+    """Tests for _compute_workflow_hash function."""
+
+    def test_hash_is_deterministic(
+        self, simple_workflow_definition: ModelWorkflowDefinition
+    ) -> None:
+        """Test that hash computation is deterministic."""
+        from omnibase_core.utils.workflow_executor import _compute_workflow_hash
+
+        hash1 = _compute_workflow_hash(simple_workflow_definition)
+        hash2 = _compute_workflow_hash(simple_workflow_definition)
+
+        assert hash1 == hash2
+
+    def test_hash_is_sha256_format(
+        self, simple_workflow_definition: ModelWorkflowDefinition
+    ) -> None:
+        """Test that hash is a valid SHA-256 hex string."""
+        from omnibase_core.utils.workflow_executor import _compute_workflow_hash
+
+        hash_value = _compute_workflow_hash(simple_workflow_definition)
+
+        # SHA-256 produces 64 hex characters
+        assert len(hash_value) == 64
+        # Should only contain hex characters
+        assert all(c in "0123456789abcdef" for c in hash_value)
+
+    def test_different_definitions_produce_different_hashes(
+        self, simple_workflow_definition: ModelWorkflowDefinition
+    ) -> None:
+        """Test that different workflow definitions produce different hashes."""
+        from omnibase_core.models.primitives.model_semver import ModelSemVer
+        from omnibase_core.utils.workflow_executor import _compute_workflow_hash
+
+        hash1 = _compute_workflow_hash(simple_workflow_definition)
+
+        # Create a different workflow definition
+        different_definition = ModelWorkflowDefinition(
+            workflow_metadata=ModelWorkflowDefinitionMetadata(
+                workflow_name="different_workflow",  # Different name
+                workflow_version=ModelSemVer(major=1, minor=0, patch=0),
+                version=ModelSemVer(major=1, minor=0, patch=0),
+                description="Different workflow description",
+                execution_mode="parallel",  # Different mode
+            ),
+            execution_graph=ModelExecutionGraph(
+                nodes=[],
+                version=ModelSemVer(major=1, minor=0, patch=0),
+            ),
+            coordination_rules=ModelCoordinationRules(
+                parallel_execution_allowed=True,
+                failure_recovery_strategy=EnumFailureRecoveryStrategy.RETRY,
+                version=ModelSemVer(major=1, minor=0, patch=0),
+            ),
+            version=ModelSemVer(major=1, minor=0, patch=0),
+        )
+
+        hash2 = _compute_workflow_hash(different_definition)
+
+        assert hash1 != hash2
+
+
+class TestPriorityOrdering:
+    """Tests for priority-aware topological ordering in _get_topological_order."""
+
+    def test_equal_priority_ordered_by_declaration_order(self) -> None:
+        """Test steps with equal priority are ordered by declaration order."""
+        from omnibase_core.utils.workflow_executor import _get_topological_order
+
+        step1_id = uuid4()
+        step2_id = uuid4()
+        step3_id = uuid4()
+
+        # All steps have same priority (default 1) and no dependencies
+        # Should be ordered by declaration order: step1, step2, step3
+        steps = [
+            ModelWorkflowStep(
+                step_id=step1_id,
+                step_name="Step 1",
+                step_type="effect",
+                priority=5,  # Same priority
+            ),
+            ModelWorkflowStep(
+                step_id=step2_id,
+                step_name="Step 2",
+                step_type="compute",
+                priority=5,  # Same priority
+            ),
+            ModelWorkflowStep(
+                step_id=step3_id,
+                step_name="Step 3",
+                step_type="reducer",
+                priority=5,  # Same priority
+            ),
+        ]
+
+        order = _get_topological_order(steps)
+
+        # All at same priority, so declaration order should be preserved
+        assert order[0] == step1_id
+        assert order[1] == step2_id
+        assert order[2] == step3_id
+
+    def test_different_priorities_ordered_by_priority(self) -> None:
+        """Test steps with different priorities are ordered by priority (lower first)."""
+        from omnibase_core.utils.workflow_executor import _get_topological_order
+
+        low_priority_id = uuid4()
+        medium_priority_id = uuid4()
+        high_priority_id = uuid4()
+
+        # Different priorities, no dependencies
+        # Lower priority value = higher importance, should be first
+        steps = [
+            ModelWorkflowStep(
+                step_id=low_priority_id,
+                step_name="Low Priority",
+                step_type="effect",
+                priority=10,  # Lowest importance (highest number)
+            ),
+            ModelWorkflowStep(
+                step_id=medium_priority_id,
+                step_name="Medium Priority",
+                step_type="compute",
+                priority=5,
+            ),
+            ModelWorkflowStep(
+                step_id=high_priority_id,
+                step_name="High Priority",
+                step_type="reducer",
+                priority=1,  # Highest importance (lowest number)
+            ),
+        ]
+
+        order = _get_topological_order(steps)
+
+        # Should be ordered: high (1), medium (5), low (10)
+        assert order[0] == high_priority_id
+        assert order[1] == medium_priority_id
+        assert order[2] == low_priority_id
+
+    def test_priority_clamped_to_10(self) -> None:
+        """Test that priority values over 10 are clamped to 10."""
+        from omnibase_core.utils.workflow_executor import _get_topological_order
+
+        step1_id = uuid4()
+        step2_id = uuid4()
+
+        # Both have priority > 10, should be clamped to 10
+        # Then ordered by declaration order
+        steps = [
+            ModelWorkflowStep(
+                step_id=step1_id,
+                step_name="Step 1",
+                step_type="effect",
+                priority=100,  # Clamped to 10
+            ),
+            ModelWorkflowStep(
+                step_id=step2_id,
+                step_name="Step 2",
+                step_type="compute",
+                priority=1000,  # Also clamped to 10
+            ),
+        ]
+
+        order = _get_topological_order(steps)
+
+        # Both clamped to 10, so declaration order: step1, step2
+        assert order[0] == step1_id
+        assert order[1] == step2_id
+
+    def test_priority_with_dependencies(self) -> None:
+        """Test that dependencies take precedence over priority."""
+        from omnibase_core.utils.workflow_executor import _get_topological_order
+
+        first_step_id = uuid4()
+        second_step_id = uuid4()
+
+        # second_step has higher priority but depends on first_step
+        # first_step must come first regardless of priority
+        steps = [
+            ModelWorkflowStep(
+                step_id=second_step_id,
+                step_name="Second (High Priority)",
+                step_type="compute",
+                priority=1,  # Highest priority
+                depends_on=[first_step_id],  # But depends on first
+            ),
+            ModelWorkflowStep(
+                step_id=first_step_id,
+                step_name="First (Low Priority)",
+                step_type="effect",
+                priority=10,  # Lower priority
+            ),
+        ]
+
+        order = _get_topological_order(steps)
+
+        # first_step must come before second_step due to dependency
+        assert order.index(first_step_id) < order.index(second_step_id)
+
+    def test_priority_ordering_among_independent_steps_with_shared_dependency(
+        self,
+    ) -> None:
+        """Test priority ordering for independent steps that share a dependency."""
+        from omnibase_core.utils.workflow_executor import _get_topological_order
+
+        parent_id = uuid4()
+        high_priority_child_id = uuid4()
+        low_priority_child_id = uuid4()
+
+        steps = [
+            ModelWorkflowStep(
+                step_id=parent_id,
+                step_name="Parent",
+                step_type="effect",
+                priority=1,
+            ),
+            ModelWorkflowStep(
+                step_id=low_priority_child_id,
+                step_name="Low Priority Child",
+                step_type="compute",
+                priority=10,
+                depends_on=[parent_id],
+            ),
+            ModelWorkflowStep(
+                step_id=high_priority_child_id,
+                step_name="High Priority Child",
+                step_type="reducer",
+                priority=1,
+                depends_on=[parent_id],
+            ),
+        ]
+
+        order = _get_topological_order(steps)
+
+        # Parent first (due to dependency)
+        assert order[0] == parent_id
+        # High priority child (1) before low priority child (10)
+        assert order.index(high_priority_child_id) < order.index(low_priority_child_id)

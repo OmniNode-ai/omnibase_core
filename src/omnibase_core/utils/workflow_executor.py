@@ -768,15 +768,21 @@ def _create_action_for_step(
     # ModelWorkflowStep allows 1-1000, but ModelAction only allows 1-10
     action_priority = min(step.priority, 10) if step.priority else 1
 
+    # Build payload
+    payload: dict[str, object] = {
+        "workflow_id": str(workflow_id),
+        "step_id": str(step.step_id),
+        "step_name": step.step_name,
+    }
+
+    # Validate payload is JSON-serializable (fail fast)
+    _validate_json_payload(payload, context=step.step_name)
+
     return ModelAction(
         action_id=uuid4(),
         action_type=action_type,
         target_node_type=target_node_type,
-        payload={
-            "workflow_id": str(workflow_id),
-            "step_id": str(step.step_id),
-            "step_name": step.step_name,
-        },
+        payload=payload,
         dependencies=step.depends_on,
         priority=action_priority,
         timeout_ms=step.timeout_ms,
