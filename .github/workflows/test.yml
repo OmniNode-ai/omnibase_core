@@ -72,22 +72,22 @@ jobs:
             -x \
             --tb=short
 
-  # Parallel test execution - split into 24 groups for speed and memory management
+  # Parallel test execution - split into 20 groups for speed and memory management
   # Split strategy rationale:
-  #   - 15,624 total tests ÷ 24 splits = ~651 tests/split
+  #   - 12,198 total tests ÷ 20 splits = ~610 tests/split
   #   - Target: 1.5-3 minutes per split (prevents runner timeouts/cancellations)
-  #   - 24x parallelization speedup vs sequential execution
-  #   - Increased from 20 to 24 splits (Dec 2025) due to test count growth (12k → 15k+)
+  #   - 20x parallelization speedup vs sequential execution
+  #   - Increased from 16 to 20 splits to eliminate Split 10 timeout issues
   #   - Shorter per-split runtime reduces probability of external runner shutdown
   test-parallel:
-    name: Tests (Split ${{ matrix.split }}/24)
+    name: Tests (Split ${{ matrix.split }}/20)
     needs: smoke-test
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        split: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24]
+        split: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 
     steps:
       - name: Checkout code
@@ -137,10 +137,10 @@ jobs:
             exit 1
           }
 
-      - name: Run test split ${{ matrix.split }}/24
+      - name: Run test split ${{ matrix.split }}/20
         run: |
           poetry run pytest tests/ \
-            --splits 24 \
+            --splits 20 \
             --group ${{ matrix.split }} \
             -n auto \
             --timeout=60 \
@@ -415,7 +415,7 @@ jobs:
              [[ "$docs" == "success" ]]; then
             echo "✅ All tests passed successfully"
             echo "Smoke Tests: ✅ Passed"
-            echo "Parallel Tests (24 splits): ✅ Passed"
+            echo "Parallel Tests (20 splits): ✅ Passed"
             echo "Code Quality: ✅ Passed"
             echo "Mypy Validation Scripts: ✅ Passed"
             echo "Documentation: ✅ Passed"

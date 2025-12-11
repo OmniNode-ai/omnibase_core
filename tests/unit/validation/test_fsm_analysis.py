@@ -27,7 +27,6 @@ from omnibase_core.models.contracts.subcontracts.model_fsm_state_transition impo
 from omnibase_core.models.contracts.subcontracts.model_fsm_subcontract import (
     ModelFSMSubcontract,
 )
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 # Import the module under test
@@ -1842,6 +1841,8 @@ class TestFSMAnalysisInitialStateValidation:
         This is structural validation - Pydantic raises ModelOnexError
         when initial_state is not in states list.
         """
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
         states = [
             ModelFSMStateDefinition(
                 version=base_version,
