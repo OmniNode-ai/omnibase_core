@@ -198,6 +198,7 @@ class TestModelContractReducerStateMachineAlias:
                     state_type="terminal",
                     description="Terminal completed state",
                     is_terminal=True,
+                    is_recoverable=False,  # Terminal states cannot be recoverable
                 ),
             ],
             initial_state="idle",
@@ -348,6 +349,7 @@ class TestModelContractReducerStateMachineAlias:
                     state_type="terminal",
                     description="Terminal state from field name FSM",
                     is_terminal=True,
+                    is_recoverable=False,  # Terminal states cannot be recoverable
                 ),
             ],
             initial_state="field_initial",
@@ -382,6 +384,7 @@ class TestModelContractReducerStateMachineAlias:
                     state_type="terminal",
                     description="Terminal state from alias FSM",
                     is_terminal=True,
+                    is_recoverable=False,  # Terminal states cannot be recoverable
                 ),
             ],
             initial_state="alias_initial",
