@@ -60,9 +60,11 @@ class ModelFSMOperation(BaseModel):
     """
 
     operation_name: str = Field(
+        min_length=1,
         description="Unique operation identifier",
     )
     operation_type: str = Field(
+        min_length=1,
         description="Type of operation (e.g., synchronous, asynchronous, batch)",
     )
     description: str | None = Field(
@@ -73,7 +75,6 @@ class ModelFSMOperation(BaseModel):
     model_config = {
         "extra": "ignore",
         "use_enum_values": False,
-        "validate_assignment": True,
         "frozen": True,
     }
 
@@ -119,7 +120,14 @@ class ModelFSMOperation(BaseModel):
         """Validate instance integrity (ProtocolValidatable protocol).
 
         Performs validation to ensure required fields have valid values.
-        Checks that operation_name and operation_type are non-empty strings.
+        Checks that operation_name and operation_type are non-empty and
+        non-whitespace-only strings.
+
+        Note:
+            Empty strings are now rejected at Pydantic validation level
+            (min_length=1). This method provides additional validation for
+            whitespace-only strings which pass Pydantic validation but are
+            semantically invalid.
 
         Returns:
             bool: True if validation passed, False otherwise
@@ -128,8 +136,8 @@ class ModelFSMOperation(BaseModel):
             >>> op = ModelFSMOperation(operation_name="test", operation_type="sync")
             >>> op.validate_instance()
             True
-            >>> op2 = ModelFSMOperation(operation_name="", operation_type="sync")
-            >>> op2.validate_instance()
+            >>> op2 = ModelFSMOperation(operation_name="  ", operation_type="sync")
+            >>> op2.validate_instance()  # Whitespace-only fails validate_instance
             False
         """
         # Validate operation_name is non-empty

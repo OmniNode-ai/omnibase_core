@@ -19,6 +19,7 @@ from pydantic import ValidationError
 from omnibase_core.models.fsm.model_fsm_operation import ModelFSMOperation
 
 
+@pytest.mark.unit
 class TestModelFSMOperationInstantiation:
     """Test cases for ModelFSMOperation instantiation."""
 
@@ -58,6 +59,7 @@ class TestModelFSMOperationInstantiation:
         assert operation.description == ""
 
 
+@pytest.mark.unit
 class TestModelFSMOperationDefaultValues:
     """Test default value handling for ModelFSMOperation."""
 
@@ -90,6 +92,7 @@ class TestModelFSMOperationDefaultValues:
         assert "operation_type" in error_str
 
 
+@pytest.mark.unit
 class TestModelFSMOperationValidation:
     """Test validation rules for ModelFSMOperation."""
 
@@ -155,6 +158,94 @@ class TestModelFSMOperationValidation:
             )
 
 
+@pytest.mark.unit
+class TestModelFSMOperationValidateInstanceFalse:
+    """Test validate_instance returning False for invalid states.
+
+    Note: Empty strings are now rejected at Pydantic validation level (min_length=1).
+    To test validate_instance() behavior for empty strings, we use model_construct()
+    to bypass Pydantic construction validation. Whitespace-only strings pass Pydantic
+    validation but fail validate_instance().
+    """
+
+    def test_validate_instance_empty_operation_name_returns_false(self):
+        """Test validate_instance returns False for empty operation_name.
+
+        Note: Uses model_construct to bypass min_length=1 Pydantic validation.
+        """
+        op = ModelFSMOperation.model_construct(
+            operation_name="",
+            operation_type="sync",
+            description=None,
+        )
+        assert op.validate_instance() is False
+
+    def test_validate_instance_whitespace_operation_name_returns_false(self):
+        """Test validate_instance returns False for whitespace-only operation_name."""
+        op = ModelFSMOperation(operation_name="   ", operation_type="sync")
+        assert op.validate_instance() is False
+
+    def test_validate_instance_tab_only_operation_name_returns_false(self):
+        """Test validate_instance returns False for tab-only operation_name."""
+        op = ModelFSMOperation(operation_name="\t\t", operation_type="sync")
+        assert op.validate_instance() is False
+
+    def test_validate_instance_newline_only_operation_name_returns_false(self):
+        """Test validate_instance returns False for newline-only operation_name."""
+        op = ModelFSMOperation(operation_name="\n\n", operation_type="sync")
+        assert op.validate_instance() is False
+
+    def test_validate_instance_empty_operation_type_returns_false(self):
+        """Test validate_instance returns False for empty operation_type.
+
+        Note: Uses model_construct to bypass min_length=1 Pydantic validation.
+        """
+        op = ModelFSMOperation.model_construct(
+            operation_name="test",
+            operation_type="",
+            description=None,
+        )
+        assert op.validate_instance() is False
+
+    def test_validate_instance_whitespace_operation_type_returns_false(self):
+        """Test validate_instance returns False for whitespace-only operation_type."""
+        op = ModelFSMOperation(operation_name="test", operation_type="   ")
+        assert op.validate_instance() is False
+
+    def test_validate_instance_tab_only_operation_type_returns_false(self):
+        """Test validate_instance returns False for tab-only operation_type."""
+        op = ModelFSMOperation(operation_name="test", operation_type="\t\t")
+        assert op.validate_instance() is False
+
+    def test_validate_instance_newline_only_operation_type_returns_false(self):
+        """Test validate_instance returns False for newline-only operation_type."""
+        op = ModelFSMOperation(operation_name="test", operation_type="\n\n")
+        assert op.validate_instance() is False
+
+    def test_validate_instance_both_empty_returns_false(self):
+        """Test validate_instance returns False when both fields are empty.
+
+        Note: Uses model_construct to bypass min_length=1 Pydantic validation.
+        """
+        op = ModelFSMOperation.model_construct(
+            operation_name="",
+            operation_type="",
+            description=None,
+        )
+        assert op.validate_instance() is False
+
+    def test_validate_instance_both_whitespace_returns_false(self):
+        """Test validate_instance returns False when both fields are whitespace."""
+        op = ModelFSMOperation(operation_name="   ", operation_type="   ")
+        assert op.validate_instance() is False
+
+    def test_validate_instance_mixed_whitespace_returns_false(self):
+        """Test validate_instance returns False with mixed whitespace characters."""
+        op = ModelFSMOperation(operation_name=" \t\n ", operation_type="sync")
+        assert op.validate_instance() is False
+
+
+@pytest.mark.unit
 class TestModelFSMOperationProtocols:
     """Test protocol implementations for ModelFSMOperation."""
 
@@ -249,6 +340,7 @@ class TestModelFSMOperationProtocols:
         assert result is True
 
 
+@pytest.mark.unit
 class TestModelFSMOperationSerialization:
     """Test serialization and deserialization for ModelFSMOperation."""
 
@@ -345,24 +437,27 @@ class TestModelFSMOperationSerialization:
         assert restored.description == original.description
 
 
+@pytest.mark.unit
 class TestModelFSMOperationEdgeCases:
     """Test edge cases for ModelFSMOperation."""
 
     def test_empty_string_operation_name(self):
-        """Test operation with empty string name."""
-        operation = ModelFSMOperation(
-            operation_name="",
-            operation_type="sync",
-        )
-        assert operation.operation_name == ""
+        """Test operation with empty string name raises ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelFSMOperation(
+                operation_name="",
+                operation_type="sync",
+            )
+        assert "operation_name" in str(exc_info.value)
 
     def test_empty_string_operation_type(self):
-        """Test operation with empty string type."""
-        operation = ModelFSMOperation(
-            operation_name="test",
-            operation_type="",
-        )
-        assert operation.operation_type == ""
+        """Test operation with empty string type raises ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelFSMOperation(
+                operation_name="test",
+                operation_type="",
+            )
+        assert "operation_type" in str(exc_info.value)
 
     def test_very_long_operation_name(self):
         """Test operation with very long name."""
@@ -514,6 +609,7 @@ Line 3"""
         assert "Line 3" in operation.description
 
 
+@pytest.mark.unit
 class TestModelFSMOperationReservedForV11:
     """Tests verifying the model's reserved status for v1.1+."""
 

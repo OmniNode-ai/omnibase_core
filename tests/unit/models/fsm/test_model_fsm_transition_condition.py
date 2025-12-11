@@ -19,6 +19,7 @@ from omnibase_core.models.fsm.model_fsm_transition_condition import (
 )
 
 
+@pytest.mark.unit
 class TestModelFSMTransitionConditionInstantiation:
     """Test cases for ModelFSMTransitionCondition instantiation."""
 
@@ -125,6 +126,7 @@ class TestModelFSMTransitionConditionInstantiation:
         assert condition.timeout_ms == 10000
 
 
+@pytest.mark.unit
 class TestModelFSMTransitionConditionValidation:
     """Test validation rules for ModelFSMTransitionCondition."""
 
@@ -307,6 +309,281 @@ class TestModelFSMTransitionConditionValidation:
             )
 
 
+@pytest.mark.unit
+class TestModelFSMTransitionConditionValidateInstanceBehavior:
+    """Test validate_instance() edge cases for cast operations and whitespace handling.
+
+    These tests verify the runtime behavior of cast operations in validate_instance(),
+    specifically testing how Python handles type coercion for length checks and
+    string comparisons with various whitespace characters.
+
+    PR #165 Review Context:
+    - Verifies runtime behavior of cast operations for length checks
+    - Verifies runtime behavior of cast operations for numeric comparisons (token count)
+    """
+
+    def test_validate_instance_whitespace_only_condition_name_returns_false(self):
+        """Test validate_instance returns False for whitespace-only condition_name.
+
+        Runtime behavior: str.strip() removes whitespace, resulting in empty string
+        which is falsy. The check `not x.strip()` catches this.
+        """
+        condition = ModelFSMTransitionCondition(
+            condition_name="   ",
+            condition_type="expression",
+            expression="value > 0",
+            required=False,  # Use False to get False return instead of exception
+        )
+        assert condition.validate_instance() is False
+
+    def test_validate_instance_tab_only_condition_name_returns_false(self):
+        """Test validate_instance returns False for tab-only condition_name.
+
+        Runtime behavior: Tab characters are stripped by str.strip(), resulting
+        in an empty string which is falsy.
+        """
+        condition = ModelFSMTransitionCondition(
+            condition_name="\t\t",
+            condition_type="expression",
+            expression="value > 0",
+            required=False,
+        )
+        assert condition.validate_instance() is False
+
+    def test_validate_instance_newline_only_condition_name_returns_false(self):
+        """Test validate_instance returns False for newline-only condition_name.
+
+        Runtime behavior: Newline characters are stripped by str.strip(), resulting
+        in an empty string which is falsy.
+        """
+        condition = ModelFSMTransitionCondition(
+            condition_name="\n\n",
+            condition_type="expression",
+            expression="value > 0",
+            required=False,
+        )
+        assert condition.validate_instance() is False
+
+    def test_validate_instance_whitespace_only_condition_type_returns_false(self):
+        """Test validate_instance returns False for whitespace-only condition_type."""
+        condition = ModelFSMTransitionCondition(
+            condition_name="check",
+            condition_type="   ",
+            expression="value > 0",
+            required=False,
+        )
+        assert condition.validate_instance() is False
+
+    def test_validate_instance_tab_only_condition_type_returns_false(self):
+        """Test validate_instance returns False for tab-only condition_type."""
+        condition = ModelFSMTransitionCondition(
+            condition_name="check",
+            condition_type="\t\t",
+            expression="value > 0",
+            required=False,
+        )
+        assert condition.validate_instance() is False
+
+    def test_validate_instance_newline_only_condition_type_returns_false(self):
+        """Test validate_instance returns False for newline-only condition_type."""
+        condition = ModelFSMTransitionCondition(
+            condition_name="check",
+            condition_type="\n\n",
+            expression="value > 0",
+            required=False,
+        )
+        assert condition.validate_instance() is False
+
+    def test_validate_instance_whitespace_only_condition_name_raises_when_required(
+        self,
+    ):
+        """Test validate_instance raises ModelOnexError for whitespace-only name when required=True."""
+        condition = ModelFSMTransitionCondition(
+            condition_name="   ",
+            condition_type="expression",
+            expression="value > 0",
+            required=True,
+        )
+        with pytest.raises(ModelOnexError) as exc_info:
+            condition.validate_instance()
+        assert "condition_name cannot be empty" in str(exc_info.value)
+
+    def test_validate_instance_whitespace_only_condition_type_raises_when_required(
+        self,
+    ):
+        """Test validate_instance raises ModelOnexError for whitespace-only type when required=True."""
+        condition = ModelFSMTransitionCondition(
+            condition_name="check",
+            condition_type="   ",
+            expression="value > 0",
+            required=True,
+        )
+        with pytest.raises(ModelOnexError) as exc_info:
+            condition.validate_instance()
+        assert "condition_type cannot be empty" in str(exc_info.value)
+
+    def test_validate_instance_expression_with_multiple_spaces_between_tokens(self):
+        """Test expression with multiple spaces between tokens.
+
+        Runtime behavior: str.split() without args splits on any whitespace and
+        removes empty strings from result. So "a  ==  b" still produces
+        ["a", "==", "b"] (3 tokens).
+        """
+        condition = ModelFSMTransitionCondition(
+            condition_name="check",
+            condition_type="expression",
+            expression="value    ==    expected",  # Multiple spaces
+        )
+        # Should still be valid - split() handles multiple spaces correctly
+        assert condition.validate_instance() is True
+
+    def test_validate_instance_expression_with_tabs_between_tokens(self):
+        """Test expression with tab characters between tokens.
+
+        Runtime behavior: str.split() treats tabs as whitespace separators,
+        so "a\\t==\\tb" produces ["a", "==", "b"] (3 tokens).
+        """
+        condition = ModelFSMTransitionCondition(
+            condition_name="check",
+            condition_type="expression",
+            expression="value\t==\texpected",  # Tab separated
+        )
+        # Should still be valid - split() handles tabs correctly
+        assert condition.validate_instance() is True
+
+    def test_validate_instance_expression_with_mixed_whitespace_between_tokens(self):
+        """Test expression with mixed whitespace between tokens.
+
+        Runtime behavior: str.split() handles all Unicode whitespace characters
+        uniformly, splitting on any of them.
+        """
+        condition = ModelFSMTransitionCondition(
+            condition_name="check",
+            condition_type="expression",
+            expression="value \t\n ==  \t expected",  # Mixed whitespace
+        )
+        # Should still be valid - split() handles mixed whitespace correctly
+        assert condition.validate_instance() is True
+
+    def test_validate_instance_expression_with_leading_trailing_whitespace(self):
+        """Test expression with leading/trailing whitespace.
+
+        Runtime behavior: str.split() without args ignores leading/trailing
+        whitespace, so "  a == b  " produces ["a", "==", "b"] (3 tokens).
+        """
+        condition = ModelFSMTransitionCondition(
+            condition_name="check",
+            condition_type="expression",
+            expression="  value == expected  ",  # Leading/trailing spaces
+        )
+        # Should still be valid
+        assert condition.validate_instance() is True
+
+    def test_validate_instance_len_tokens_comparison_2_tokens(self):
+        """Test len(tokens) != 3 comparison with 2 tokens.
+
+        Runtime behavior: len() returns int, comparison with != 3 is
+        straightforward integer comparison. 2 != 3 is True.
+        """
+        # Cannot test directly due to model_validator catching this first
+        # But we can use model_construct to bypass it
+        condition = ModelFSMTransitionCondition.model_construct(
+            condition_name="check",
+            condition_type="expression",
+            expression="value ==",  # Only 2 tokens
+            required=False,
+            error_message=None,
+            retry_count=None,
+            timeout_ms=None,
+        )
+        assert condition.validate_instance() is False
+
+    def test_validate_instance_len_tokens_comparison_4_tokens(self):
+        """Test len(tokens) != 3 comparison with 4 tokens.
+
+        Runtime behavior: len() returns int, comparison with != 3 is
+        straightforward integer comparison. 4 != 3 is True.
+        """
+        # Cannot test directly due to model_validator catching this first
+        # But we can use model_construct to bypass it
+        condition = ModelFSMTransitionCondition.model_construct(
+            condition_name="check",
+            condition_type="expression",
+            expression="value == expected extra",  # 4 tokens
+            required=False,
+            error_message=None,
+            retry_count=None,
+            timeout_ms=None,
+        )
+        assert condition.validate_instance() is False
+
+    def test_validate_instance_len_tokens_comparison_raises_when_required(self):
+        """Test validate_instance raises ModelOnexError for wrong token count when required=True."""
+        # Use model_construct to bypass the model_validator
+        condition = ModelFSMTransitionCondition.model_construct(
+            condition_name="check",
+            condition_type="expression",
+            expression="value == expected extra",  # 4 tokens
+            required=True,
+            error_message=None,
+            retry_count=None,
+            timeout_ms=None,
+        )
+        with pytest.raises(ModelOnexError) as exc_info:
+            condition.validate_instance()
+        assert "Expression must have exactly 3 tokens" in str(exc_info.value)
+        assert "got 4" in str(exc_info.value)
+
+    def test_validate_instance_empty_condition_name_returns_false(self):
+        """Test validate_instance returns False for empty condition_name when required=False.
+
+        Runtime behavior: Empty string "" is falsy in Python. The check
+        `if not self.condition_name` catches this before strip() is called.
+        """
+        condition = ModelFSMTransitionCondition(
+            condition_name="",
+            condition_type="expression",
+            expression="value > 0",
+            required=False,
+        )
+        assert condition.validate_instance() is False
+
+    def test_validate_instance_empty_condition_type_returns_false(self):
+        """Test validate_instance returns False for empty condition_type when required=False."""
+        condition = ModelFSMTransitionCondition(
+            condition_name="check",
+            condition_type="",
+            expression="value > 0",
+            required=False,
+        )
+        assert condition.validate_instance() is False
+
+    def test_validate_instance_mixed_whitespace_condition_name_returns_false(self):
+        """Test validate_instance returns False with mixed whitespace characters."""
+        condition = ModelFSMTransitionCondition(
+            condition_name=" \t\n\r ",
+            condition_type="expression",
+            expression="value > 0",
+            required=False,
+        )
+        assert condition.validate_instance() is False
+
+    def test_validate_instance_valid_name_surrounded_by_whitespace_passes(self):
+        """Test validate_instance passes when valid content is surrounded by whitespace.
+
+        Runtime behavior: str.strip() removes leading/trailing whitespace but
+        leaves the middle content intact. Since "valid" is not empty after
+        stripping, validate_instance() returns True.
+        """
+        condition = ModelFSMTransitionCondition(
+            condition_name="  valid  ",
+            condition_type="\texpression\t",
+            expression="value > 0",
+        )
+        assert condition.validate_instance() is True
+
+
+@pytest.mark.unit
 class TestModelFSMTransitionConditionProtocols:
     """Test protocol implementations for ModelFSMTransitionCondition."""
 
@@ -422,6 +699,7 @@ class TestModelFSMTransitionConditionProtocols:
         assert result is True
 
 
+@pytest.mark.unit
 class TestModelFSMTransitionConditionSerialization:
     """Test serialization and deserialization for ModelFSMTransitionCondition."""
 
@@ -516,6 +794,7 @@ class TestModelFSMTransitionConditionSerialization:
         assert restored_from_json == original
 
 
+@pytest.mark.unit
 class TestModelFSMTransitionConditionEdgeCases:
     """Test edge cases for ModelFSMTransitionCondition."""
 
@@ -770,6 +1049,7 @@ class TestModelFSMTransitionConditionEdgeCases:
         assert "timeout_ms" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestModelFSMTransitionConditionImport:
     """Test that the model can be imported from the fsm module."""
 

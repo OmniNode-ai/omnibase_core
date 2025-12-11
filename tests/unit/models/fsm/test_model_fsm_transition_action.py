@@ -20,6 +20,7 @@ from omnibase_core.models.fsm.model_fsm_transition_action import (
 )
 
 
+@pytest.mark.unit
 class TestModelFSMTransitionActionInstantiation:
     """Test cases for ModelFSMTransitionAction instantiation."""
 
@@ -175,6 +176,7 @@ class TestModelFSMTransitionActionInstantiation:
         assert action.timeout_ms == 30000
 
 
+@pytest.mark.unit
 class TestModelFSMTransitionActionValidation:
     """Test validation rules for ModelFSMTransitionAction."""
 
@@ -325,6 +327,122 @@ class TestModelFSMTransitionActionValidation:
             )
 
 
+@pytest.mark.unit
+class TestModelFSMTransitionActionValidateInstanceFalse:
+    """Test validate_instance returning False for invalid states."""
+
+    def test_validate_instance_empty_action_name_returns_false(self):
+        """Test validate_instance returns False for empty action_name."""
+        action = ModelFSMTransitionAction(action_name="", action_type="log")
+        assert action.validate_instance() is False
+
+    def test_validate_instance_whitespace_action_name_returns_false(self):
+        """Test validate_instance returns False for whitespace-only action_name."""
+        action = ModelFSMTransitionAction(action_name="   ", action_type="log")
+        assert action.validate_instance() is False
+
+    def test_validate_instance_tab_only_action_name_returns_false(self):
+        """Test validate_instance returns False for tab-only action_name."""
+        action = ModelFSMTransitionAction(action_name="\t\t", action_type="log")
+        assert action.validate_instance() is False
+
+    def test_validate_instance_newline_only_action_name_returns_false(self):
+        """Test validate_instance returns False for newline-only action_name."""
+        action = ModelFSMTransitionAction(action_name="\n\n", action_type="log")
+        assert action.validate_instance() is False
+
+    def test_validate_instance_empty_action_type_returns_false(self):
+        """Test validate_instance returns False for empty action_type."""
+        action = ModelFSMTransitionAction(action_name="test", action_type="")
+        assert action.validate_instance() is False
+
+    def test_validate_instance_whitespace_action_type_returns_false(self):
+        """Test validate_instance returns False for whitespace-only action_type."""
+        action = ModelFSMTransitionAction(action_name="test", action_type="   ")
+        assert action.validate_instance() is False
+
+    def test_validate_instance_tab_only_action_type_returns_false(self):
+        """Test validate_instance returns False for tab-only action_type."""
+        action = ModelFSMTransitionAction(action_name="test", action_type="\t\t")
+        assert action.validate_instance() is False
+
+    def test_validate_instance_newline_only_action_type_returns_false(self):
+        """Test validate_instance returns False for newline-only action_type."""
+        action = ModelFSMTransitionAction(action_name="test", action_type="\n\n")
+        assert action.validate_instance() is False
+
+    def test_validate_instance_both_empty_returns_false(self):
+        """Test validate_instance returns False when both fields are empty."""
+        action = ModelFSMTransitionAction(action_name="", action_type="")
+        assert action.validate_instance() is False
+
+    def test_validate_instance_both_whitespace_returns_false(self):
+        """Test validate_instance returns False when both fields are whitespace."""
+        action = ModelFSMTransitionAction(action_name="   ", action_type="   ")
+        assert action.validate_instance() is False
+
+    def test_validate_instance_mixed_whitespace_returns_false(self):
+        """Test validate_instance returns False with mixed whitespace characters."""
+        action = ModelFSMTransitionAction(action_name=" \t\n ", action_type="log")
+        assert action.validate_instance() is False
+
+    def test_validate_instance_action_config_with_invalid_list_returns_false(self):
+        """Test validate_instance returns False when action_config has non-string list.
+
+        Note: This test requires bypassing Pydantic's type validation.
+        The validate_instance() method has runtime validation for list contents.
+        We use model_construct to bypass construction validation.
+        """
+        # Use model_construct to bypass Pydantic validation during construction
+        action = ModelFSMTransitionAction.model_construct(
+            action_name="test",
+            action_type="log",
+            action_config={"invalid_list": [1, 2, 3]},  # list[int] not allowed
+            execution_order=0,
+            is_critical=False,
+            rollback_action=None,
+            timeout_ms=None,
+        )
+        assert action.validate_instance() is False
+
+    def test_validate_instance_action_config_with_mixed_list_returns_false(self):
+        """Test validate_instance returns False when list has mixed types.
+
+        Note: This tests the runtime validation in validate_instance() that
+        checks list contents are all strings.
+        """
+        # Use model_construct to bypass Pydantic validation during construction
+        action = ModelFSMTransitionAction.model_construct(
+            action_name="test",
+            action_type="log",
+            action_config={"mixed_list": ["valid", 123, "also_valid"]},
+            execution_order=0,
+            is_critical=False,
+            rollback_action=None,
+            timeout_ms=None,
+        )
+        assert action.validate_instance() is False
+
+    def test_validate_instance_action_config_with_nested_list_returns_false(self):
+        """Test validate_instance returns False when list contains non-strings.
+
+        Note: Lists nested in action_config must contain only strings per
+        ActionConfigValue type definition.
+        """
+        # Use model_construct to bypass Pydantic validation during construction
+        action = ModelFSMTransitionAction.model_construct(
+            action_name="test",
+            action_type="log",
+            action_config={"nested": [[1, 2], [3, 4]]},  # list of lists
+            execution_order=0,
+            is_critical=False,
+            rollback_action=None,
+            timeout_ms=None,
+        )
+        assert action.validate_instance() is False
+
+
+@pytest.mark.unit
 class TestModelFSMTransitionActionProtocols:
     """Test protocol implementations for ModelFSMTransitionAction."""
 
@@ -461,6 +579,7 @@ class TestModelFSMTransitionActionProtocols:
         assert result is True
 
 
+@pytest.mark.unit
 class TestModelFSMTransitionActionSerialization:
     """Test serialization and deserialization for ModelFSMTransitionAction."""
 
@@ -554,6 +673,7 @@ class TestModelFSMTransitionActionSerialization:
         assert restored_from_json == original
 
 
+@pytest.mark.unit
 class TestModelFSMTransitionActionEdgeCases:
     """Test edge cases for ModelFSMTransitionAction."""
 
@@ -834,6 +954,7 @@ class TestModelFSMTransitionActionEdgeCases:
         assert len(action.action_name) > 10000
 
 
+@pytest.mark.unit
 class TestModelFSMTransitionActionReservedFields:
     """Test reserved fields for v1.1+ compatibility."""
 
@@ -858,6 +979,7 @@ class TestModelFSMTransitionActionReservedFields:
         assert action.rollback_action is None
 
 
+@pytest.mark.unit
 class TestModelFSMTransitionActionImport:
     """Test that the model can be imported from the fsm module."""
 
@@ -888,6 +1010,7 @@ class TestModelFSMTransitionActionImport:
         assert action.action_name == "direct_import"
 
 
+@pytest.mark.unit
 class TestModelFSMTransitionActionDocstrings:
     """Test model documentation and field descriptions."""
 

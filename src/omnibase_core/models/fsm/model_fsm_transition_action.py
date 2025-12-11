@@ -110,7 +110,6 @@ class ModelFSMTransitionAction(BaseModel):
         "extra": "ignore",
         "frozen": True,
         "use_enum_values": False,
-        "validate_assignment": True,
     }
 
     # Protocol method implementations
