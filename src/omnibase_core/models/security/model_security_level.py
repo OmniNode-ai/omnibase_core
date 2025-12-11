@@ -1,5 +1,3 @@
-from typing import Any
-
 from pydantic import Field
 
 "\nSecurity Level Model\n\nExtensible security configuration model that replaces hardcoded\nsecurity enums with flexible, nuanced security settings.\n"
@@ -8,6 +6,7 @@ from pydantic import BaseModel
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.security.model_custom_security_settings import (
     ModelCustomSecuritySettings,
+    SecuritySettingValue,
 )
 from omnibase_core.models.security.model_network_restrictions import (
     ModelNetworkRestrictions,
@@ -152,13 +151,13 @@ class ModelSecurityLevel(BaseModel):
         """Add a security header."""
         self.security_headers[header] = value
 
-    def add_custom_setting(self, key: str, value: Any) -> None:
+    def add_custom_setting(self, key: str, value: SecuritySettingValue) -> None:
         """Add a custom security setting."""
         self.custom_security_settings.add_setting(key, value)
 
     def get_custom_setting(
-        self, key: str, default: Any = None
-    ) -> str | int | bool | list[str] | None:
+        self, key: str, default: SecuritySettingValue = None
+    ) -> SecuritySettingValue:
         """Get a custom security setting."""
         return self.custom_security_settings.get_setting(key, default)
 

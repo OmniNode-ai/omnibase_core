@@ -36,9 +36,14 @@ class ModelToolParameters(BaseModel):
             elif isinstance(value, float):
                 param_type = "float"
             elif isinstance(value, list):
-                param_type = "list[Any]"
+                param_type = "list[str]"
             elif isinstance(value, dict):
-                param_type = "dict[str, Any]"
+                param_type = "dict[str, str]"
+            else:  # pragma: no cover
+                # Fallback for unexpected types - defensive code for runtime safety
+                # Type system guarantees this is unreachable, but runtime values may differ
+                param_type = "string"  # type: ignore[unreachable]
+                value = str(value)
 
             parameters.append(
                 ModelToolParameter(name=name, value=value, parameter_type=param_type),

@@ -36,6 +36,11 @@ class ModelCustomMetrics(BaseModel):
                 metric_type = "integer"
             elif isinstance(value, float):
                 metric_type = "float"
+            else:
+                # Defensive fallback for unexpected types at runtime
+                # Type annotation guarantees exhaustiveness, but runtime may differ
+                metric_type = "string"  # type: ignore[unreachable]
+                value = str(value)
 
             metrics.append(
                 ModelMetricValue(name=name, value=value, metric_type=metric_type),
