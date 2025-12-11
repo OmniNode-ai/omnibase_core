@@ -11,7 +11,7 @@ Strict typing is enforced: No Any types allowed in public interface.
 
 See Also:
     - docs/specs/CONTRACT_DRIVEN_NODEREDUCER_V1_0.md: NodeReducer contract specification
-    - ModelFSMTransitionAction: Uses ModelMvpActionConfigParameter for action parameters
+    - ModelFSMTransitionAction: Uses ModelActionConfigParameter for action parameters
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Type alias for supported parameter types
-MvpParameterType = Literal["string", "int", "bool", "float", "list", "dict"]
+ParameterType = Literal["string", "int", "bool", "float", "list", "dict"]
 
 # Mapping from type string to Python types for validation
 _TYPE_MAPPING: dict[str, tuple[type, ...]] = {
@@ -39,7 +39,7 @@ _TYPE_MAPPING: dict[str, tuple[type, ...]] = {
 }
 
 
-class ModelMvpActionConfigParameter(BaseModel):
+class ModelActionConfigParameter(BaseModel):
     """
     Strongly-typed parameter definition for action configuration.
 
@@ -61,7 +61,7 @@ class ModelMvpActionConfigParameter(BaseModel):
         description: Human-readable description of the parameter's purpose.
 
     Example:
-        >>> param = ModelMvpActionConfigParameter(
+        >>> param = ModelActionConfigParameter(
         ...     name="timeout_seconds",
         ...     type="int",
         ...     required=False,
@@ -86,7 +86,7 @@ class ModelMvpActionConfigParameter(BaseModel):
         min_length=1,
     )
 
-    type: MvpParameterType = Field(
+    type: ParameterType = Field(
         ...,
         description="Parameter type: string, int, bool, float, list, or dict",
     )
@@ -107,7 +107,7 @@ class ModelMvpActionConfigParameter(BaseModel):
     )
 
     @model_validator(mode="after")
-    def validate_default_matches_type(self) -> ModelMvpActionConfigParameter:
+    def validate_default_matches_type(self) -> ModelActionConfigParameter:
         """Validate that the default value matches the declared type when provided.
 
         This validator ensures type safety by checking that when a default value
@@ -198,4 +198,4 @@ class ModelMvpActionConfigParameter(BaseModel):
     }
 
 
-__all__ = ["ModelMvpActionConfigParameter", "MvpParameterType"]
+__all__ = ["ModelActionConfigParameter", "ParameterType"]

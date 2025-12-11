@@ -1,5 +1,5 @@
 """
-Unit tests for ModelMvpFSMTransitionAction.
+Unit tests for ModelFSMTransitionAction.
 
 Tests all aspects of the FSM transition action model including:
 - Model instantiation and validation
@@ -15,17 +15,17 @@ Specification Reference: docs/architecture/CONTRACT_DRIVEN_NODEREDUCER_V1_0.md
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.models.fsm.model_mvp_fsm_transition_action import (
-    ModelMvpFSMTransitionAction,
+from omnibase_core.models.fsm.model_fsm_transition_action import (
+    ModelFSMTransitionAction,
 )
 
 
-class TestModelMvpFSMTransitionActionInstantiation:
-    """Test cases for ModelMvpFSMTransitionAction instantiation."""
+class TestModelFSMTransitionActionInstantiation:
+    """Test cases for ModelFSMTransitionAction instantiation."""
 
     def test_model_instantiation_minimal(self):
         """Test that model can be instantiated with minimal required data."""
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="log_entry",
             action_type="log",
         )
@@ -40,7 +40,7 @@ class TestModelMvpFSMTransitionActionInstantiation:
 
     def test_model_instantiation_full(self):
         """Test model instantiation with all fields populated."""
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="emit_event",
             action_type="emit_intent",
             action_config={
@@ -66,7 +66,7 @@ class TestModelMvpFSMTransitionActionInstantiation:
 
     def test_execution_order_default_zero(self):
         """Test that execution_order defaults to 0."""
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="test",
             action_type="log",
         )
@@ -75,7 +75,7 @@ class TestModelMvpFSMTransitionActionInstantiation:
 
     def test_execution_order_explicit_value(self):
         """Test setting execution_order explicitly."""
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="ordered_action",
             action_type="validate",
             execution_order=10,
@@ -85,7 +85,7 @@ class TestModelMvpFSMTransitionActionInstantiation:
 
     def test_is_critical_default_false(self):
         """Test that is_critical defaults to False."""
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="non_critical",
             action_type="log",
         )
@@ -94,7 +94,7 @@ class TestModelMvpFSMTransitionActionInstantiation:
 
     def test_is_critical_explicit_true(self):
         """Test setting is_critical to True explicitly."""
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="critical_action",
             action_type="validate",
             is_critical=True,
@@ -104,7 +104,7 @@ class TestModelMvpFSMTransitionActionInstantiation:
 
     def test_action_config_default_empty_dict(self):
         """Test that action_config defaults to empty dict."""
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="test",
             action_type="log",
         )
@@ -125,7 +125,7 @@ class TestModelMvpFSMTransitionActionInstantiation:
             "bool_key": True,
             "list_key": ["item1", "item2", "item3"],  # list[str], not list[int]
         }
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="configured",
             action_type="custom",
             action_config=config,
@@ -138,7 +138,7 @@ class TestModelMvpFSMTransitionActionInstantiation:
 
     def test_rollback_action_optional(self):
         """Test that rollback_action is optional and defaults to None."""
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="test",
             action_type="log",
         )
@@ -147,7 +147,7 @@ class TestModelMvpFSMTransitionActionInstantiation:
 
     def test_rollback_action_provided(self):
         """Test providing a rollback action."""
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="reversible_action",
             action_type="modify",
             rollback_action="undo_modify",
@@ -157,7 +157,7 @@ class TestModelMvpFSMTransitionActionInstantiation:
 
     def test_timeout_ms_optional(self):
         """Test that timeout_ms is optional and defaults to None."""
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="test",
             action_type="log",
         )
@@ -166,7 +166,7 @@ class TestModelMvpFSMTransitionActionInstantiation:
 
     def test_timeout_ms_provided(self):
         """Test providing timeout_ms."""
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="timed_action",
             action_type="api_call",
             timeout_ms=30000,
@@ -175,14 +175,14 @@ class TestModelMvpFSMTransitionActionInstantiation:
         assert action.timeout_ms == 30000
 
 
-class TestModelMvpFSMTransitionActionValidation:
-    """Test validation rules for ModelMvpFSMTransitionAction."""
+class TestModelFSMTransitionActionValidation:
+    """Test validation rules for ModelFSMTransitionAction."""
 
     def test_required_fields_validation(self):
         """Test that required fields are properly validated."""
         # Missing all required fields
         with pytest.raises(ValidationError) as exc_info:
-            ModelMvpFSMTransitionAction()
+            ModelFSMTransitionAction()
         error_str = str(exc_info.value)
         assert "action_name" in error_str
         assert "action_type" in error_str
@@ -190,7 +190,7 @@ class TestModelMvpFSMTransitionActionValidation:
     def test_missing_action_name(self):
         """Test that missing action_name raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
-            ModelMvpFSMTransitionAction(
+            ModelFSMTransitionAction(
                 action_type="log",
             )
         assert "action_name" in str(exc_info.value)
@@ -198,7 +198,7 @@ class TestModelMvpFSMTransitionActionValidation:
     def test_missing_action_type(self):
         """Test that missing action_type raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
-            ModelMvpFSMTransitionAction(
+            ModelFSMTransitionAction(
                 action_name="test",
             )
         assert "action_type" in str(exc_info.value)
@@ -206,19 +206,19 @@ class TestModelMvpFSMTransitionActionValidation:
     def test_action_name_type_validation(self):
         """Test that action_name must be a string."""
         with pytest.raises(ValidationError):
-            ModelMvpFSMTransitionAction(
+            ModelFSMTransitionAction(
                 action_name=123,
                 action_type="log",
             )
 
         with pytest.raises(ValidationError):
-            ModelMvpFSMTransitionAction(
+            ModelFSMTransitionAction(
                 action_name=None,
                 action_type="log",
             )
 
         with pytest.raises(ValidationError):
-            ModelMvpFSMTransitionAction(
+            ModelFSMTransitionAction(
                 action_name=["action"],
                 action_type="log",
             )
@@ -226,13 +226,13 @@ class TestModelMvpFSMTransitionActionValidation:
     def test_action_type_type_validation(self):
         """Test that action_type must be a string."""
         with pytest.raises(ValidationError):
-            ModelMvpFSMTransitionAction(
+            ModelFSMTransitionAction(
                 action_name="test",
                 action_type=123,
             )
 
         with pytest.raises(ValidationError):
-            ModelMvpFSMTransitionAction(
+            ModelFSMTransitionAction(
                 action_name="test",
                 action_type=None,
             )
@@ -241,7 +241,7 @@ class TestModelMvpFSMTransitionActionValidation:
         """Test that action_config must be a dict."""
         # String should fail
         with pytest.raises(ValidationError):
-            ModelMvpFSMTransitionAction(
+            ModelFSMTransitionAction(
                 action_name="test",
                 action_type="log",
                 action_config="not_a_dict",
@@ -249,7 +249,7 @@ class TestModelMvpFSMTransitionActionValidation:
 
         # List should fail
         with pytest.raises(ValidationError):
-            ModelMvpFSMTransitionAction(
+            ModelFSMTransitionAction(
                 action_name="test",
                 action_type="log",
                 action_config=[1, 2, 3],
@@ -258,7 +258,7 @@ class TestModelMvpFSMTransitionActionValidation:
     def test_execution_order_type_validation(self):
         """Test that execution_order must be an integer."""
         # Valid integer
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="test",
             action_type="log",
             execution_order=5,
@@ -267,7 +267,7 @@ class TestModelMvpFSMTransitionActionValidation:
 
         # Invalid type
         with pytest.raises(ValidationError):
-            ModelMvpFSMTransitionAction(
+            ModelFSMTransitionAction(
                 action_name="test",
                 action_type="log",
                 execution_order="not_an_int",
@@ -276,14 +276,14 @@ class TestModelMvpFSMTransitionActionValidation:
     def test_is_critical_type_validation(self):
         """Test that is_critical accepts proper boolean types."""
         # Valid boolean values
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="test",
             action_type="log",
             is_critical=True,
         )
         assert action.is_critical is True
 
-        action2 = ModelMvpFSMTransitionAction(
+        action2 = ModelFSMTransitionAction(
             action_name="test",
             action_type="log",
             is_critical=False,
@@ -292,7 +292,7 @@ class TestModelMvpFSMTransitionActionValidation:
 
         # Test invalid boolean values that Pydantic cannot coerce
         with pytest.raises(ValidationError):
-            ModelMvpFSMTransitionAction(
+            ModelFSMTransitionAction(
                 action_name="test",
                 action_type="log",
                 is_critical=["not_a_bool"],
@@ -301,7 +301,7 @@ class TestModelMvpFSMTransitionActionValidation:
     def test_timeout_ms_type_validation(self):
         """Test that timeout_ms must be an integer or None."""
         # Valid integer
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="test",
             action_type="log",
             timeout_ms=5000,
@@ -309,7 +309,7 @@ class TestModelMvpFSMTransitionActionValidation:
         assert action.timeout_ms == 5000
 
         # None is valid
-        action2 = ModelMvpFSMTransitionAction(
+        action2 = ModelFSMTransitionAction(
             action_name="test",
             action_type="log",
             timeout_ms=None,
@@ -318,19 +318,19 @@ class TestModelMvpFSMTransitionActionValidation:
 
         # Invalid type
         with pytest.raises(ValidationError):
-            ModelMvpFSMTransitionAction(
+            ModelFSMTransitionAction(
                 action_name="test",
                 action_type="log",
                 timeout_ms="not_an_int",
             )
 
 
-class TestModelMvpFSMTransitionActionProtocols:
-    """Test protocol implementations for ModelMvpFSMTransitionAction."""
+class TestModelFSMTransitionActionProtocols:
+    """Test protocol implementations for ModelFSMTransitionAction."""
 
     def test_execute_protocol_basic(self):
         """Test execute protocol method."""
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="test",
             action_type="log",
         )
@@ -341,7 +341,7 @@ class TestModelMvpFSMTransitionActionProtocols:
 
     def test_execute_protocol_with_updates(self):
         """Test execute protocol with field updates."""
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="test",
             action_type="log",
             execution_order=1,
@@ -354,7 +354,7 @@ class TestModelMvpFSMTransitionActionProtocols:
 
     def test_execute_protocol_update_is_critical(self):
         """Test execute protocol updating is_critical."""
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="test",
             action_type="log",
             is_critical=False,
@@ -366,7 +366,7 @@ class TestModelMvpFSMTransitionActionProtocols:
 
     def test_execute_protocol_invalid_field(self):
         """Test execute protocol with invalid field updates."""
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="test",
             action_type="log",
         )
@@ -377,7 +377,7 @@ class TestModelMvpFSMTransitionActionProtocols:
 
     def test_serialize_protocol(self):
         """Test serialize protocol method."""
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="emit_event",
             action_type="emit_intent",
             action_config={"target": "service"},
@@ -400,7 +400,7 @@ class TestModelMvpFSMTransitionActionProtocols:
 
     def test_serialize_protocol_minimal(self):
         """Test serialize protocol with minimal action."""
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="simple",
             action_type="log",
         )
@@ -418,7 +418,7 @@ class TestModelMvpFSMTransitionActionProtocols:
 
     def test_validate_instance_protocol(self):
         """Test validate_instance protocol method."""
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="test",
             action_type="log",
         )
@@ -432,7 +432,7 @@ class TestModelMvpFSMTransitionActionProtocols:
 
         Note: action_config values are flat (no nested dicts) per ONEX typing standards.
         """
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="complex_action",
             action_type="emit_intent",
             action_config={
@@ -450,12 +450,12 @@ class TestModelMvpFSMTransitionActionProtocols:
         assert result is True
 
 
-class TestModelMvpFSMTransitionActionSerialization:
-    """Test serialization and deserialization for ModelMvpFSMTransitionAction."""
+class TestModelFSMTransitionActionSerialization:
+    """Test serialization and deserialization for ModelFSMTransitionAction."""
 
     def test_model_dump(self):
         """Test model_dump method."""
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="test",
             action_type="log",
             action_config={"level": "info"},
@@ -484,7 +484,7 @@ class TestModelMvpFSMTransitionActionSerialization:
             "timeout_ms": 5000,
         }
 
-        action = ModelMvpFSMTransitionAction.model_validate(data)
+        action = ModelFSMTransitionAction.model_validate(data)
 
         assert action.action_name == "validated_action"
         assert action.action_type == "emit_intent"
@@ -496,7 +496,7 @@ class TestModelMvpFSMTransitionActionSerialization:
 
     def test_model_dump_json(self):
         """Test JSON serialization."""
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="json_test",
             action_type="log",
             action_config={"key": "value"},
@@ -511,7 +511,7 @@ class TestModelMvpFSMTransitionActionSerialization:
         """Test JSON deserialization."""
         json_str = '{"action_name": "from_json", "action_type": "custom", "action_config": {"param": "value"}, "execution_order": 2}'
 
-        action = ModelMvpFSMTransitionAction.model_validate_json(json_str)
+        action = ModelFSMTransitionAction.model_validate_json(json_str)
 
         assert action.action_name == "from_json"
         assert action.action_type == "custom"
@@ -520,7 +520,7 @@ class TestModelMvpFSMTransitionActionSerialization:
 
     def test_roundtrip_serialization(self):
         """Test full roundtrip serialization/deserialization."""
-        original = ModelMvpFSMTransitionAction(
+        original = ModelFSMTransitionAction(
             action_name="roundtrip_test",
             action_type="emit_intent",
             action_config={"target": "service", "data": ["item1", "item2", "item3"]},
@@ -532,23 +532,23 @@ class TestModelMvpFSMTransitionActionSerialization:
 
         # Serialize to dict and back
         data = original.model_dump()
-        restored = ModelMvpFSMTransitionAction.model_validate(data)
+        restored = ModelFSMTransitionAction.model_validate(data)
 
         assert restored == original
 
         # Serialize to JSON and back
         json_str = original.model_dump_json()
-        restored_from_json = ModelMvpFSMTransitionAction.model_validate_json(json_str)
+        restored_from_json = ModelFSMTransitionAction.model_validate_json(json_str)
 
         assert restored_from_json == original
 
 
-class TestModelMvpFSMTransitionActionEdgeCases:
-    """Test edge cases for ModelMvpFSMTransitionAction."""
+class TestModelFSMTransitionActionEdgeCases:
+    """Test edge cases for ModelFSMTransitionAction."""
 
     def test_empty_string_action_name(self):
         """Test action with empty string action_name."""
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="",
             action_type="log",
         )
@@ -556,7 +556,7 @@ class TestModelMvpFSMTransitionActionEdgeCases:
 
     def test_empty_string_action_type(self):
         """Test action with empty string action_type."""
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="test",
             action_type="",
         )
@@ -576,7 +576,7 @@ class TestModelMvpFSMTransitionActionEdgeCases:
         ]
 
         for name in special_names:
-            action = ModelMvpFSMTransitionAction(
+            action = ModelFSMTransitionAction(
                 action_name=name,
                 action_type="log",
             )
@@ -596,7 +596,7 @@ class TestModelMvpFSMTransitionActionEdgeCases:
         ]
 
         for atype in action_types:
-            action = ModelMvpFSMTransitionAction(
+            action = ModelFSMTransitionAction(
                 action_name="test",
                 action_type=atype,
             )
@@ -604,7 +604,7 @@ class TestModelMvpFSMTransitionActionEdgeCases:
 
     def test_negative_execution_order(self):
         """Test that negative execution_order is accepted."""
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="test",
             action_type="log",
             execution_order=-5,
@@ -613,7 +613,7 @@ class TestModelMvpFSMTransitionActionEdgeCases:
 
     def test_zero_execution_order(self):
         """Test execution_order with zero value (default)."""
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="test",
             action_type="log",
             execution_order=0,
@@ -622,7 +622,7 @@ class TestModelMvpFSMTransitionActionEdgeCases:
 
     def test_large_execution_order(self):
         """Test with large execution_order value."""
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="test",
             action_type="log",
             execution_order=1000000,
@@ -631,7 +631,7 @@ class TestModelMvpFSMTransitionActionEdgeCases:
 
     def test_timeout_ms_zero(self):
         """Test timeout_ms with zero value."""
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="test",
             action_type="log",
             timeout_ms=0,
@@ -640,7 +640,7 @@ class TestModelMvpFSMTransitionActionEdgeCases:
 
     def test_negative_timeout_ms(self):
         """Test that negative timeout_ms is accepted (no constraint in spec)."""
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="test",
             action_type="log",
             timeout_ms=-1000,
@@ -649,7 +649,7 @@ class TestModelMvpFSMTransitionActionEdgeCases:
 
     def test_large_timeout_ms(self):
         """Test with large timeout_ms value (24 hours)."""
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="test",
             action_type="log",
             timeout_ms=86400000,  # 24 hours in ms
@@ -658,7 +658,7 @@ class TestModelMvpFSMTransitionActionEdgeCases:
 
     def test_action_config_empty_dict(self):
         """Test action_config with explicitly empty dict."""
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="test",
             action_type="log",
             action_config={},
@@ -678,7 +678,7 @@ class TestModelMvpFSMTransitionActionEdgeCases:
             "enabled": True,
             "tags": ["tag1", "tag2"],
         }
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="test",
             action_type="log",
             action_config=flat_config,
@@ -694,7 +694,7 @@ class TestModelMvpFSMTransitionActionEdgeCases:
             "key2": None,
             "key3": 123,
         }
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="test",
             action_type="log",
             action_config=config,
@@ -710,7 +710,7 @@ class TestModelMvpFSMTransitionActionEdgeCases:
             "targets": ["service1", "service2"],
             "tags": ["high", "medium", "low"],  # list[str], not list[int]
         }
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="test",
             action_type="emit_intent",
             action_config=config,
@@ -720,7 +720,7 @@ class TestModelMvpFSMTransitionActionEdgeCases:
 
     def test_rollback_action_with_special_characters(self):
         """Test rollback_action with special characters."""
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="test",
             action_type="log",
             rollback_action="undo-action_name.v2",
@@ -729,17 +729,17 @@ class TestModelMvpFSMTransitionActionEdgeCases:
 
     def test_model_equality(self):
         """Test model equality comparison."""
-        action1 = ModelMvpFSMTransitionAction(
+        action1 = ModelFSMTransitionAction(
             action_name="equal",
             action_type="log",
             execution_order=1,
         )
-        action2 = ModelMvpFSMTransitionAction(
+        action2 = ModelFSMTransitionAction(
             action_name="equal",
             action_type="log",
             execution_order=1,
         )
-        action3 = ModelMvpFSMTransitionAction(
+        action3 = ModelFSMTransitionAction(
             action_name="different",
             action_type="log",
             execution_order=1,
@@ -750,7 +750,7 @@ class TestModelMvpFSMTransitionActionEdgeCases:
 
     def test_validate_assignment_config(self):
         """Test that validate_assignment config works."""
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="test",
             action_type="log",
         )
@@ -772,18 +772,18 @@ class TestModelMvpFSMTransitionActionEdgeCases:
             "another_extra": 123,
         }
 
-        action = ModelMvpFSMTransitionAction.model_validate(data)
+        action = ModelFSMTransitionAction.model_validate(data)
         assert action.action_name == "test"
         assert not hasattr(action, "extra_field")
         assert not hasattr(action, "another_extra")
 
     def test_action_config_default_factory_isolation(self):
         """Test that default_factory creates new dicts for each instance."""
-        action1 = ModelMvpFSMTransitionAction(
+        action1 = ModelFSMTransitionAction(
             action_name="test1",
             action_type="log",
         )
-        action2 = ModelMvpFSMTransitionAction(
+        action2 = ModelFSMTransitionAction(
             action_name="test2",
             action_type="log",
         )
@@ -797,19 +797,19 @@ class TestModelMvpFSMTransitionActionEdgeCases:
     def test_very_long_action_name(self):
         """Test action with very long action_name."""
         long_name = "action_" + "x" * 10000
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name=long_name,
             action_type="log",
         )
         assert len(action.action_name) > 10000
 
 
-class TestModelMvpFSMTransitionActionReservedFields:
+class TestModelFSMTransitionActionReservedFields:
     """Test reserved fields for v1.1+ compatibility."""
 
     def test_rollback_action_reserved_note(self):
         """Test that rollback_action can be set (reserved for v1.1+)."""
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="test",
             action_type="log",
             rollback_action="undo_action",
@@ -820,7 +820,7 @@ class TestModelMvpFSMTransitionActionReservedFields:
 
     def test_rollback_action_none_default(self):
         """Test that rollback_action defaults to None."""
-        action = ModelMvpFSMTransitionAction(
+        action = ModelFSMTransitionAction(
             action_name="test",
             action_type="log",
         )
@@ -828,13 +828,13 @@ class TestModelMvpFSMTransitionActionReservedFields:
         assert action.rollback_action is None
 
 
-class TestModelMvpFSMTransitionActionImport:
+class TestModelFSMTransitionActionImport:
     """Test that the model can be imported from the fsm module."""
 
     def test_import_from_fsm_module(self):
         """Test importing from the fsm package."""
         from omnibase_core.models.fsm import (
-            ModelMvpFSMTransitionAction as ImportedModel,
+            ModelFSMTransitionAction as ImportedModel,
         )
 
         action = ImportedModel(
@@ -846,8 +846,8 @@ class TestModelMvpFSMTransitionActionImport:
 
     def test_import_from_direct_module(self):
         """Test importing directly from the model file."""
-        from omnibase_core.models.fsm.model_mvp_fsm_transition_action import (
-            ModelMvpFSMTransitionAction as DirectModel,
+        from omnibase_core.models.fsm.model_fsm_transition_action import (
+            ModelFSMTransitionAction as DirectModel,
         )
 
         action = DirectModel(
@@ -858,20 +858,20 @@ class TestModelMvpFSMTransitionActionImport:
         assert action.action_name == "direct_import"
 
 
-class TestModelMvpFSMTransitionActionDocstrings:
+class TestModelFSMTransitionActionDocstrings:
     """Test model documentation and field descriptions."""
 
     def test_model_has_docstring(self):
         """Test that the model has a proper docstring."""
-        assert ModelMvpFSMTransitionAction.__doc__ is not None
+        assert ModelFSMTransitionAction.__doc__ is not None
         assert (
             "Action specification for FSM state transitions"
-            in ModelMvpFSMTransitionAction.__doc__
+            in ModelFSMTransitionAction.__doc__
         )
 
     def test_field_descriptions_present(self):
         """Test that all fields have descriptions."""
-        fields = ModelMvpFSMTransitionAction.model_fields
+        fields = ModelFSMTransitionAction.model_fields
 
         assert fields["action_name"].description is not None
         assert fields["action_type"].description is not None

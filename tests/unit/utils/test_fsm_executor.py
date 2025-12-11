@@ -15,13 +15,13 @@ from omnibase_core.models.contracts.subcontracts.model_fsm_state_transition impo
 from omnibase_core.models.contracts.subcontracts.model_fsm_subcontract import (
     ModelFSMSubcontract,
 )
-from omnibase_core.models.contracts.subcontracts.model_fsm_transition_condition import (
-    ModelFSMTransitionCondition,
-)
 from omnibase_core.models.contracts.subcontracts.model_fsmtransitionaction import (
     ModelFSMTransitionAction,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.fsm.model_fsm_transition_condition import (
+    ModelFSMTransitionCondition,
+)
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.utils.fsm_executor import (
     FSMState,

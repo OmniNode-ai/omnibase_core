@@ -21,7 +21,7 @@ from pydantic import BaseModel, Field
 ActionConfigValue = str | int | float | bool | list[str] | None
 
 
-class ModelMvpFSMTransitionAction(BaseModel):
+class ModelFSMTransitionAction(BaseModel):
     """
     Action specification for FSM state transitions.
 
@@ -51,7 +51,7 @@ class ModelMvpFSMTransitionAction(BaseModel):
         timeout_ms: Optional timeout for action execution in milliseconds
 
     Example:
-        >>> action = ModelMvpFSMTransitionAction(
+        >>> action = ModelFSMTransitionAction(
         ...     action_name="log_transition",
         ...     action_type="log",
         ...     action_config={"level": "info", "message": "State changed"},
@@ -152,4 +152,4 @@ class ModelMvpFSMTransitionAction(BaseModel):
 
 
 # Export for use
-__all__ = ["ActionConfigValue", "ModelMvpFSMTransitionAction"]
+__all__ = ["ActionConfigValue", "ModelFSMTransitionAction"]

@@ -4,12 +4,14 @@ FSM execution utilities for declarative state machines.
 Pure functions for executing FSM transitions from ModelFSMSubcontract.
 No side effects - returns results and intents.
 
-Typing: Strongly typed with strategic Any usage for runtime context flexibility.
-Context dictionaries use dict[str, Any] as they contain dynamic execution data.
+Typing: Strongly typed with dict[str, object] for runtime context flexibility.
+Context dictionaries use dict[str, object] to allow dynamic execution data
+while maintaining strong typing (object is the base of all Python types).
 """
 
+from collections.abc import Sized
 from datetime import UTC, datetime
-from typing import Any
+from typing import SupportsFloat, cast
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.contracts.subcontracts.model_fsm_state_definition import (
@@ -21,12 +23,12 @@ from omnibase_core.models.contracts.subcontracts.model_fsm_state_transition impo
 from omnibase_core.models.contracts.subcontracts.model_fsm_subcontract import (
     ModelFSMSubcontract,
 )
-from omnibase_core.models.contracts.subcontracts.model_fsm_transition_condition import (
-    ModelFSMTransitionCondition,
-)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.fsm.model_fsm_state_snapshot import (
     ModelFSMStateSnapshot as FSMState,
+)
+from omnibase_core.models.fsm.model_fsm_transition_condition import (
+    ModelFSMTransitionCondition,
 )
 from omnibase_core.models.fsm.model_fsm_transition_result import (
     ModelFSMTransitionResult as FSMTransitionResult,
@@ -38,7 +40,7 @@ async def execute_transition(
     fsm: ModelFSMSubcontract,
     current_state: str,
     trigger: str,
-    context: dict[str, Any],
+    context: dict[str, object],
 ) -> FSMTransitionResult:
     """
     Execute FSM transition declaratively from YAML contract.
@@ -375,7 +377,7 @@ def _find_transition(
 
 async def _evaluate_conditions(
     transition: ModelFSMStateTransition,
-    context: dict[str, Any],
+    context: dict[str, object],
 ) -> bool:
     """
     Evaluate all transition conditions.
@@ -406,7 +408,7 @@ async def _evaluate_conditions(
 
 async def _evaluate_single_condition(
     condition: ModelFSMTransitionCondition,
-    context: dict[str, Any],
+    context: dict[str, object],
 ) -> bool:
     """
     Evaluate a single transition condition.
@@ -483,24 +485,32 @@ async def _evaluate_single_condition(
         if not field_value:
             return False
         try:
-            return len(field_value) >= int(expected_value or "0")
+            # Cast to Sized for len() - TypeError caught if not actually Sized
+            return len(cast(Sized, field_value)) >= int(expected_value or "0")
         except (TypeError, ValueError):
             return False
     elif operator == "max_length":
         if not field_value:
             return True
         try:
-            return len(field_value) <= int(expected_value or "0")
+            # Cast to Sized for len() - TypeError caught if not actually Sized
+            return len(cast(Sized, field_value)) <= int(expected_value or "0")
         except (TypeError, ValueError):
             return False
     elif operator == "greater_than":
         try:
-            return float(field_value or 0) > float(expected_value or "0")
+            # Cast to SupportsFloat - TypeError caught if not actually numeric
+            return float(cast(SupportsFloat, field_value) or 0) > float(
+                expected_value or "0"
+            )
         except (TypeError, ValueError):
             return False
     elif operator == "less_than":
         try:
-            return float(field_value or 0) < float(expected_value or "0")
+            # Cast to SupportsFloat - TypeError caught if not actually numeric
+            return float(cast(SupportsFloat, field_value) or 0) < float(
+                expected_value or "0"
+            )
         except (TypeError, ValueError):
             return False
     elif operator == "exists":
@@ -516,7 +526,7 @@ async def _execute_state_actions(
     fsm: ModelFSMSubcontract,
     state: ModelFSMStateDefinition,
     action_type: str,  # "entry" or "exit"
-    context: dict[str, Any],
+    context: dict[str, object],
 ) -> list[ModelIntent]:
     """
     Execute state entry/exit actions, returning intents.
@@ -560,7 +570,7 @@ async def _execute_state_actions(
 
 async def _execute_transition_actions(
     transition: ModelFSMStateTransition,
-    context: dict[str, Any],
+    context: dict[str, object],
 ) -> list[ModelIntent]:
     """
     Execute transition actions, returning intents.

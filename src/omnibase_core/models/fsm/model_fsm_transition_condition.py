@@ -13,7 +13,7 @@ Specification Reference: docs/architecture/CONTRACT_DRIVEN_NODEREDUCER_V1_0.md
 from pydantic import BaseModel, Field
 
 
-class ModelMvpFSMTransitionCondition(BaseModel):
+class ModelFSMTransitionCondition(BaseModel):
     """
     Condition specification for FSM state transitions.
 
@@ -106,4 +106,4 @@ class ModelMvpFSMTransitionCondition(BaseModel):
 
 
 # Export for use
-__all__ = ["ModelMvpFSMTransitionCondition"]
+__all__ = ["ModelFSMTransitionCondition"]

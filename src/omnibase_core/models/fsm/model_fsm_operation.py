@@ -20,7 +20,7 @@ from typing import Optional
 from pydantic import BaseModel, Field
 
 
-class ModelMvpFSMOperation(BaseModel):
+class ModelFSMOperation(BaseModel):
     """
     Reserved FSM operation model for v1.1+ operation definitions.
 
@@ -43,7 +43,7 @@ class ModelMvpFSMOperation(BaseModel):
         description: Human-readable description (optional)
 
     Example:
-        >>> operation = ModelMvpFSMOperation(
+        >>> operation = ModelFSMOperation(
         ...     operation_name="validate_input",
         ...     operation_type="synchronous",
         ...     description="Validates input data before processing"
@@ -123,4 +123,4 @@ class ModelMvpFSMOperation(BaseModel):
 
 
 # Export for use
-__all__ = ["ModelMvpFSMOperation"]
+__all__ = ["ModelFSMOperation"]

@@ -69,6 +69,10 @@ from omnibase_core.models.service.model_external_service_config import (
 )
 
 from . import subcontracts
+from .model_action_config_parameter import (
+    ModelActionConfigParameter,
+    ParameterType,
+)
 from .model_action_emission_config import ModelActionEmissionConfig
 from .model_algorithm_config import ModelAlgorithmConfig
 from .model_algorithm_factor_config import ModelAlgorithmFactorConfig
@@ -106,10 +110,6 @@ from .model_input_validation_config import ModelInputValidationConfig
 from .model_io_operation_config import ModelIOOperationConfig
 from .model_lifecycle_config import ModelLifecycleConfig
 from .model_memory_management_config import ModelMemoryManagementConfig
-from .model_mvp_action_config_parameter import (
-    ModelMvpActionConfigParameter,
-    MvpParameterType,
-)
 from .model_node_extensions import ModelNodeExtensions
 from .model_node_ref import ModelNodeRef
 from .model_output_transformation_config import ModelOutputTransformationConfig
@@ -154,8 +154,8 @@ __all__ = [
     # Runtime Host Contract models
     "ModelRuntimeHostContract",
     # Configuration models
-    "ModelMvpActionConfigParameter",
-    "MvpParameterType",
+    "ModelActionConfigParameter",
+    "ParameterType",
     "ModelAlgorithmConfig",
     "ModelAlgorithmFactorConfig",
     "ModelBackupConfig",

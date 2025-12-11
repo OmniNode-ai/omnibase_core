@@ -5,27 +5,20 @@ This module provides typed models to replace dict[str, Any] usage in FSM operati
 """
 
 from .model_fsm_data import ModelFsmData, ModelFsmState, ModelFsmTransition
+from .model_fsm_operation import ModelFSMOperation
 from .model_fsm_state_snapshot import ModelFSMStateSnapshot
+from .model_fsm_transition_action import ActionConfigValue, ModelFSMTransitionAction
+from .model_fsm_transition_condition import ModelFSMTransitionCondition
 from .model_fsm_transition_result import ModelFSMTransitionResult
 
-# MVP FSM Contract Models (OMN-578, OMN-579, OMN-580)
-from .model_mvp_fsm_operation import ModelMvpFSMOperation
-from .model_mvp_fsm_transition_action import (
-    ActionConfigValue,
-    ModelMvpFSMTransitionAction,
-)
-from .model_mvp_fsm_transition_condition import ModelMvpFSMTransitionCondition
-
 __all__ = [
-    # Core FSM models
+    "ActionConfigValue",
     "ModelFsmData",
     "ModelFsmState",
     "ModelFsmTransition",
+    "ModelFSMOperation",
     "ModelFSMStateSnapshot",
+    "ModelFSMTransitionAction",
+    "ModelFSMTransitionCondition",
     "ModelFSMTransitionResult",
-    # MVP FSM Contract Models
-    "ActionConfigValue",
-    "ModelMvpFSMOperation",
-    "ModelMvpFSMTransitionAction",
-    "ModelMvpFSMTransitionCondition",
 ]

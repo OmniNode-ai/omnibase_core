@@ -1,7 +1,7 @@
 """
-Comprehensive unit tests for ModelMvpActionConfigParameter.
+Comprehensive unit tests for ModelActionConfigParameter.
 
-Tests the ModelMvpActionConfigParameter model which defines strongly-typed
+Tests the ModelActionConfigParameter model which defines strongly-typed
 parameters for action configuration in FSM transitions. This model is
 a key component of the NodeReducer FSM contract system.
 
@@ -17,7 +17,7 @@ Test Categories:
 
 See Also:
     - docs/specs/CONTRACT_DRIVEN_NODEREDUCER_V1_0.md: NodeReducer contract specification
-    - ModelFSMTransitionAction: Uses ModelMvpActionConfigParameter for action parameters
+    - ModelFSMTransitionAction: Uses ModelActionConfigParameter for action parameters
 """
 
 from typing import Any
@@ -25,9 +25,9 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.models.contracts.model_mvp_action_config_parameter import (
-    ModelMvpActionConfigParameter,
-    MvpParameterType,
+from omnibase_core.models.contracts.model_action_config_parameter import (
+    ModelActionConfigParameter,
+    ParameterType,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -38,12 +38,12 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 @pytest.mark.timeout(30)
 @pytest.mark.unit
-class TestModelMvpActionConfigParameterMinimal:
+class TestModelActionConfigParameterMinimal:
     """Tests for minimal instantiation with required fields only."""
 
     def test_minimal_instantiation_required_true(self) -> None:
         """Test minimal instantiation with required=True."""
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="test_param",
             type="string",
             required=True,
@@ -56,7 +56,7 @@ class TestModelMvpActionConfigParameterMinimal:
 
     def test_minimal_instantiation_required_false(self) -> None:
         """Test minimal instantiation with required=False."""
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="optional_param",
             type="int",
             required=False,
@@ -70,7 +70,7 @@ class TestModelMvpActionConfigParameterMinimal:
     def test_minimal_missing_name_fails(self) -> None:
         """Test that missing name field raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
-            ModelMvpActionConfigParameter(
+            ModelActionConfigParameter(
                 type="string",
                 required=True,
             )  # type: ignore[call-arg]
@@ -79,7 +79,7 @@ class TestModelMvpActionConfigParameterMinimal:
     def test_minimal_missing_type_fails(self) -> None:
         """Test that missing type field raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
-            ModelMvpActionConfigParameter(
+            ModelActionConfigParameter(
                 name="test_param",
                 required=True,
             )  # type: ignore[call-arg]
@@ -88,7 +88,7 @@ class TestModelMvpActionConfigParameterMinimal:
     def test_minimal_missing_required_fails(self) -> None:
         """Test that missing required field raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
-            ModelMvpActionConfigParameter(
+            ModelActionConfigParameter(
                 name="test_param",
                 type="string",
             )  # type: ignore[call-arg]
@@ -102,12 +102,12 @@ class TestModelMvpActionConfigParameterMinimal:
 
 @pytest.mark.timeout(30)
 @pytest.mark.unit
-class TestModelMvpActionConfigParameterFull:
+class TestModelActionConfigParameterFull:
     """Tests for full instantiation with all fields populated."""
 
     def test_full_instantiation_string_type(self) -> None:
         """Test full instantiation with string type and all fields."""
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="message",
             type="string",
             required=False,
@@ -122,7 +122,7 @@ class TestModelMvpActionConfigParameterFull:
 
     def test_full_instantiation_int_type(self) -> None:
         """Test full instantiation with int type and all fields."""
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="timeout_seconds",
             type="int",
             required=False,
@@ -137,7 +137,7 @@ class TestModelMvpActionConfigParameterFull:
 
     def test_full_instantiation_bool_type(self) -> None:
         """Test full instantiation with bool type and all fields."""
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="enable_logging",
             type="bool",
             required=False,
@@ -152,7 +152,7 @@ class TestModelMvpActionConfigParameterFull:
 
     def test_full_instantiation_float_type(self) -> None:
         """Test full instantiation with float type and all fields."""
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="threshold",
             type="float",
             required=False,
@@ -167,7 +167,7 @@ class TestModelMvpActionConfigParameterFull:
 
     def test_full_instantiation_list_type(self) -> None:
         """Test full instantiation with list type and all fields."""
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="tags",
             type="list",
             required=False,
@@ -182,7 +182,7 @@ class TestModelMvpActionConfigParameterFull:
 
     def test_full_instantiation_dict_type(self) -> None:
         """Test full instantiation with dict type and all fields."""
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="metadata",
             type="dict",
             required=False,
@@ -203,16 +203,16 @@ class TestModelMvpActionConfigParameterFull:
 
 @pytest.mark.timeout(30)
 @pytest.mark.unit
-class TestModelMvpActionConfigMvpParameterTypes:
+class TestModelMvpActionConfigParameterTypes:
     """Tests for each supported parameter type."""
 
     @pytest.mark.parametrize(
         "param_type",
         ["string", "int", "bool", "float", "list", "dict"],
     )
-    def test_valid_parameter_types(self, param_type: MvpParameterType) -> None:
+    def test_valid_parameter_types(self, param_type: ParameterType) -> None:
         """Test that all valid parameter types are accepted."""
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="test_param",
             type=param_type,
             required=True,
@@ -222,7 +222,7 @@ class TestModelMvpActionConfigMvpParameterTypes:
     def test_invalid_parameter_type_fails(self) -> None:
         """Test that invalid parameter type raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
-            ModelMvpActionConfigParameter(
+            ModelActionConfigParameter(
                 name="test_param",
                 type="invalid_type",  # type: ignore[arg-type]
                 required=True,
@@ -232,7 +232,7 @@ class TestModelMvpActionConfigMvpParameterTypes:
     def test_parameter_type_case_sensitive(self) -> None:
         """Test that parameter types are case-sensitive."""
         with pytest.raises(ValidationError):
-            ModelMvpActionConfigParameter(
+            ModelActionConfigParameter(
                 name="test_param",
                 type="String",  # type: ignore[arg-type]
                 required=True,
@@ -241,7 +241,7 @@ class TestModelMvpActionConfigMvpParameterTypes:
     def test_parameter_type_empty_string_fails(self) -> None:
         """Test that empty string type fails."""
         with pytest.raises(ValidationError):
-            ModelMvpActionConfigParameter(
+            ModelActionConfigParameter(
                 name="test_param",
                 type="",  # type: ignore[arg-type]
                 required=True,
@@ -255,12 +255,12 @@ class TestModelMvpActionConfigMvpParameterTypes:
 
 @pytest.mark.timeout(30)
 @pytest.mark.unit
-class TestModelMvpActionConfigMvpParameterTypeValidation:
+class TestModelMvpActionConfigParameterTypeValidation:
     """Tests for default value type validation."""
 
     def test_string_default_matches_string_type(self) -> None:
         """Test that string default matches string type."""
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="test",
             type="string",
             required=False,
@@ -270,7 +270,7 @@ class TestModelMvpActionConfigMvpParameterTypeValidation:
 
     def test_int_default_matches_int_type(self) -> None:
         """Test that int default matches int type."""
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="test",
             type="int",
             required=False,
@@ -280,7 +280,7 @@ class TestModelMvpActionConfigMvpParameterTypeValidation:
 
     def test_bool_default_matches_bool_type(self) -> None:
         """Test that bool default matches bool type."""
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="test",
             type="bool",
             required=False,
@@ -290,7 +290,7 @@ class TestModelMvpActionConfigMvpParameterTypeValidation:
 
     def test_float_default_matches_float_type(self) -> None:
         """Test that float default matches float type."""
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="test",
             type="float",
             required=False,
@@ -300,7 +300,7 @@ class TestModelMvpActionConfigMvpParameterTypeValidation:
 
     def test_int_default_acceptable_for_float_type(self) -> None:
         """Test that int default is acceptable for float type."""
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="test",
             type="float",
             required=False,
@@ -310,7 +310,7 @@ class TestModelMvpActionConfigMvpParameterTypeValidation:
 
     def test_list_default_matches_list_type(self) -> None:
         """Test that list default matches list type."""
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="test",
             type="list",
             required=False,
@@ -320,7 +320,7 @@ class TestModelMvpActionConfigMvpParameterTypeValidation:
 
     def test_dict_default_matches_dict_type(self) -> None:
         """Test that dict default matches dict type."""
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="test",
             type="dict",
             required=False,
@@ -331,7 +331,7 @@ class TestModelMvpActionConfigMvpParameterTypeValidation:
     def test_string_default_mismatch_int_type_fails(self) -> None:
         """Test that string default with int type raises error."""
         with pytest.raises(ModelOnexError) as exc_info:
-            ModelMvpActionConfigParameter(
+            ModelActionConfigParameter(
                 name="test",
                 type="int",
                 required=False,
@@ -346,7 +346,7 @@ class TestModelMvpActionConfigMvpParameterTypeValidation:
     def test_int_default_mismatch_string_type_fails(self) -> None:
         """Test that int default with string type raises error."""
         with pytest.raises(ModelOnexError) as exc_info:
-            ModelMvpActionConfigParameter(
+            ModelActionConfigParameter(
                 name="test",
                 type="string",
                 required=False,
@@ -360,7 +360,7 @@ class TestModelMvpActionConfigMvpParameterTypeValidation:
         This tests the special case where bool is a subclass of int in Python.
         """
         with pytest.raises(ModelOnexError) as exc_info:
-            ModelMvpActionConfigParameter(
+            ModelActionConfigParameter(
                 name="test",
                 type="int",
                 required=False,
@@ -371,7 +371,7 @@ class TestModelMvpActionConfigMvpParameterTypeValidation:
     def test_string_default_mismatch_bool_type_fails(self) -> None:
         """Test that string default with bool type raises error."""
         with pytest.raises(ModelOnexError) as exc_info:
-            ModelMvpActionConfigParameter(
+            ModelActionConfigParameter(
                 name="test",
                 type="bool",
                 required=False,
@@ -382,7 +382,7 @@ class TestModelMvpActionConfigMvpParameterTypeValidation:
     def test_string_default_mismatch_list_type_fails(self) -> None:
         """Test that string default with list type raises error."""
         with pytest.raises(ModelOnexError) as exc_info:
-            ModelMvpActionConfigParameter(
+            ModelActionConfigParameter(
                 name="test",
                 type="list",
                 required=False,
@@ -393,7 +393,7 @@ class TestModelMvpActionConfigMvpParameterTypeValidation:
     def test_list_default_mismatch_dict_type_fails(self) -> None:
         """Test that list default with dict type raises error."""
         with pytest.raises(ModelOnexError) as exc_info:
-            ModelMvpActionConfigParameter(
+            ModelActionConfigParameter(
                 name="test",
                 type="dict",
                 required=False,
@@ -409,12 +409,12 @@ class TestModelMvpActionConfigMvpParameterTypeValidation:
 
 @pytest.mark.timeout(30)
 @pytest.mark.unit
-class TestModelMvpActionConfigParameterRequired:
+class TestModelActionConfigParameterRequired:
     """Tests for required vs optional parameter semantics."""
 
     def test_required_true_no_default(self) -> None:
         """Test required parameter without default value."""
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="required_param",
             type="string",
             required=True,
@@ -424,7 +424,7 @@ class TestModelMvpActionConfigParameterRequired:
 
     def test_required_false_with_default(self) -> None:
         """Test optional parameter with default value."""
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="optional_param",
             type="int",
             required=False,
@@ -439,7 +439,7 @@ class TestModelMvpActionConfigParameterRequired:
         This is a valid scenario - the default provides documentation
         of a typical value, but the caller must still provide a value.
         """
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="required_with_default",
             type="string",
             required=True,
@@ -450,7 +450,7 @@ class TestModelMvpActionConfigParameterRequired:
 
     def test_required_false_no_default(self) -> None:
         """Test optional parameter without default value."""
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="optional_no_default",
             type="bool",
             required=False,
@@ -466,12 +466,12 @@ class TestModelMvpActionConfigParameterRequired:
 
 @pytest.mark.timeout(30)
 @pytest.mark.unit
-class TestModelMvpActionConfigParameterSerialization:
+class TestModelActionConfigParameterSerialization:
     """Tests for serialization and deserialization."""
 
     def test_model_dump_minimal(self) -> None:
         """Test model_dump with minimal instantiation."""
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="test",
             type="string",
             required=True,
@@ -485,7 +485,7 @@ class TestModelMvpActionConfigParameterSerialization:
 
     def test_model_dump_full(self) -> None:
         """Test model_dump with all fields."""
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="count",
             type="int",
             required=False,
@@ -508,7 +508,7 @@ class TestModelMvpActionConfigParameterSerialization:
             "default": True,
             "description": "Enable feature",
         }
-        param = ModelMvpActionConfigParameter.model_validate(data)
+        param = ModelActionConfigParameter.model_validate(data)
         assert param.name == "enabled"
         assert param.type == "bool"
         assert param.required is False
@@ -517,7 +517,7 @@ class TestModelMvpActionConfigParameterSerialization:
 
     def test_roundtrip_serialization_string(self) -> None:
         """Test roundtrip serialization for string type."""
-        original = ModelMvpActionConfigParameter(
+        original = ModelActionConfigParameter(
             name="message",
             type="string",
             required=False,
@@ -525,7 +525,7 @@ class TestModelMvpActionConfigParameterSerialization:
             description="A message",
         )
         dumped = original.model_dump()
-        restored = ModelMvpActionConfigParameter.model_validate(dumped)
+        restored = ModelActionConfigParameter.model_validate(dumped)
         assert restored.name == original.name
         assert restored.type == original.type
         assert restored.required == original.required
@@ -534,7 +534,7 @@ class TestModelMvpActionConfigParameterSerialization:
 
     def test_roundtrip_serialization_complex_default(self) -> None:
         """Test roundtrip serialization with complex default values."""
-        original = ModelMvpActionConfigParameter(
+        original = ModelActionConfigParameter(
             name="config",
             type="dict",
             required=False,
@@ -542,12 +542,12 @@ class TestModelMvpActionConfigParameterSerialization:
             description="Complex config",
         )
         dumped = original.model_dump()
-        restored = ModelMvpActionConfigParameter.model_validate(dumped)
+        restored = ModelActionConfigParameter.model_validate(dumped)
         assert restored.default == original.default
 
     def test_model_dump_json_mode(self) -> None:
         """Test model_dump with mode='json' for JSON-compatible output."""
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="items",
             type="list",
             required=False,
@@ -568,13 +568,13 @@ class TestModelMvpActionConfigParameterSerialization:
 
 @pytest.mark.timeout(30)
 @pytest.mark.unit
-class TestModelMvpActionConfigParameterEdgeCases:
+class TestModelActionConfigParameterEdgeCases:
     """Tests for edge cases and boundary conditions."""
 
     def test_empty_name_fails(self) -> None:
         """Test that empty name fails validation."""
         with pytest.raises(ValidationError) as exc_info:
-            ModelMvpActionConfigParameter(
+            ModelActionConfigParameter(
                 name="",
                 type="string",
                 required=True,
@@ -583,7 +583,7 @@ class TestModelMvpActionConfigParameterEdgeCases:
 
     def test_single_char_name_valid(self) -> None:
         """Test that single character name is valid."""
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="x",
             type="int",
             required=True,
@@ -593,7 +593,7 @@ class TestModelMvpActionConfigParameterEdgeCases:
     def test_long_name_valid(self) -> None:
         """Test that long name is valid."""
         long_name = "a" * 1000
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name=long_name,
             type="string",
             required=True,
@@ -602,7 +602,7 @@ class TestModelMvpActionConfigParameterEdgeCases:
 
     def test_name_with_special_chars(self) -> None:
         """Test name with special characters."""
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="my_param-name.v2",
             type="string",
             required=True,
@@ -611,7 +611,7 @@ class TestModelMvpActionConfigParameterEdgeCases:
 
     def test_name_with_unicode(self) -> None:
         """Test name with unicode characters."""
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="param_name",
             type="string",
             required=True,
@@ -620,7 +620,7 @@ class TestModelMvpActionConfigParameterEdgeCases:
 
     def test_default_empty_string(self) -> None:
         """Test default value as empty string."""
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="test",
             type="string",
             required=False,
@@ -630,7 +630,7 @@ class TestModelMvpActionConfigParameterEdgeCases:
 
     def test_default_zero_int(self) -> None:
         """Test default value as zero."""
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="test",
             type="int",
             required=False,
@@ -640,7 +640,7 @@ class TestModelMvpActionConfigParameterEdgeCases:
 
     def test_default_zero_float(self) -> None:
         """Test default value as zero float."""
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="test",
             type="float",
             required=False,
@@ -650,7 +650,7 @@ class TestModelMvpActionConfigParameterEdgeCases:
 
     def test_default_false_bool(self) -> None:
         """Test default value as False."""
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="test",
             type="bool",
             required=False,
@@ -660,7 +660,7 @@ class TestModelMvpActionConfigParameterEdgeCases:
 
     def test_default_empty_list(self) -> None:
         """Test default value as empty list."""
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="test",
             type="list",
             required=False,
@@ -670,7 +670,7 @@ class TestModelMvpActionConfigParameterEdgeCases:
 
     def test_default_empty_dict(self) -> None:
         """Test default value as empty dict."""
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="test",
             type="dict",
             required=False,
@@ -680,7 +680,7 @@ class TestModelMvpActionConfigParameterEdgeCases:
 
     def test_default_negative_int(self) -> None:
         """Test default value as negative int."""
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="test",
             type="int",
             required=False,
@@ -690,7 +690,7 @@ class TestModelMvpActionConfigParameterEdgeCases:
 
     def test_default_negative_float(self) -> None:
         """Test default value as negative float."""
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="test",
             type="float",
             required=False,
@@ -700,7 +700,7 @@ class TestModelMvpActionConfigParameterEdgeCases:
 
     def test_default_large_int(self) -> None:
         """Test default value as large int."""
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="test",
             type="int",
             required=False,
@@ -710,7 +710,7 @@ class TestModelMvpActionConfigParameterEdgeCases:
 
     def test_default_nested_list(self) -> None:
         """Test default value as nested list."""
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="test",
             type="list",
             required=False,
@@ -720,7 +720,7 @@ class TestModelMvpActionConfigParameterEdgeCases:
 
     def test_default_nested_dict(self) -> None:
         """Test default value as nested dict."""
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="test",
             type="dict",
             required=False,
@@ -736,12 +736,12 @@ class TestModelMvpActionConfigParameterEdgeCases:
 
 @pytest.mark.timeout(30)
 @pytest.mark.unit
-class TestModelMvpActionConfigParameterModelConfig:
+class TestModelActionConfigParameterModelConfig:
     """Tests for model configuration settings."""
 
     def test_extra_fields_ignored(self) -> None:
         """Test that extra fields are ignored (extra='ignore')."""
-        param = ModelMvpActionConfigParameter.model_validate(
+        param = ModelActionConfigParameter.model_validate(
             {
                 "name": "test",
                 "type": "string",
@@ -754,7 +754,7 @@ class TestModelMvpActionConfigParameterModelConfig:
 
     def test_validate_assignment_enabled(self) -> None:
         """Test that assignment validation is enabled."""
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="test",
             type="string",
             required=True,
@@ -765,7 +765,7 @@ class TestModelMvpActionConfigParameterModelConfig:
 
     def test_enum_values_not_converted(self) -> None:
         """Test that use_enum_values=False keeps type as string."""
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="test",
             type="string",
             required=True,
@@ -782,14 +782,14 @@ class TestModelMvpActionConfigParameterModelConfig:
 
 @pytest.mark.timeout(30)
 @pytest.mark.unit
-class TestModelMvpActionConfigParameterExports:
+class TestModelActionConfigParameterExports:
     """Tests for module exports."""
 
     def test_import_from_contracts_package(self) -> None:
         """Test that model can be imported from contracts package."""
-        from omnibase_core.models.contracts import ModelMvpActionConfigParameter
+        from omnibase_core.models.contracts import ModelActionConfigParameter
 
-        param = ModelMvpActionConfigParameter(
+        param = ModelActionConfigParameter(
             name="test",
             type="string",
             required=True,
@@ -797,23 +797,23 @@ class TestModelMvpActionConfigParameterExports:
         assert param.name == "test"
 
     def test_import_parameter_type_from_contracts_package(self) -> None:
-        """Test that MvpParameterType can be imported from contracts package."""
-        from omnibase_core.models.contracts import MvpParameterType
+        """Test that ParameterType can be imported from contracts package."""
+        from omnibase_core.models.contracts import ParameterType
 
-        # MvpParameterType should be a type alias for Literal
-        assert MvpParameterType is not None
+        # ParameterType should be a type alias for Literal
+        assert ParameterType is not None
 
     def test_model_in_all_exports(self) -> None:
-        """Test that ModelMvpActionConfigParameter is in __all__."""
+        """Test that ModelActionConfigParameter is in __all__."""
         from omnibase_core.models.contracts import __all__
 
-        assert "ModelMvpActionConfigParameter" in __all__
+        assert "ModelActionConfigParameter" in __all__
 
     def test_parameter_type_in_all_exports(self) -> None:
-        """Test that MvpParameterType is in __all__."""
+        """Test that ParameterType is in __all__."""
         from omnibase_core.models.contracts import __all__
 
-        assert "MvpParameterType" in __all__
+        assert "ParameterType" in __all__
 
 
 # =============================================================================
@@ -823,13 +823,13 @@ class TestModelMvpActionConfigParameterExports:
 
 @pytest.mark.timeout(30)
 @pytest.mark.unit
-class TestModelMvpActionConfigParameterErrorMessages:
+class TestModelActionConfigParameterErrorMessages:
     """Tests for error message quality and content."""
 
     def test_type_mismatch_error_includes_parameter_name(self) -> None:
         """Test that type mismatch error includes parameter name."""
         with pytest.raises(ModelOnexError) as exc_info:
-            ModelMvpActionConfigParameter(
+            ModelActionConfigParameter(
                 name="my_special_param",
                 type="int",
                 required=False,
@@ -841,7 +841,7 @@ class TestModelMvpActionConfigParameterErrorMessages:
     def test_type_mismatch_error_includes_expected_type(self) -> None:
         """Test that type mismatch error includes expected type."""
         with pytest.raises(ModelOnexError) as exc_info:
-            ModelMvpActionConfigParameter(
+            ModelActionConfigParameter(
                 name="test",
                 type="int",
                 required=False,
@@ -853,7 +853,7 @@ class TestModelMvpActionConfigParameterErrorMessages:
     def test_type_mismatch_error_includes_actual_type(self) -> None:
         """Test that type mismatch error includes actual type."""
         with pytest.raises(ModelOnexError) as exc_info:
-            ModelMvpActionConfigParameter(
+            ModelActionConfigParameter(
                 name="test",
                 type="int",
                 required=False,
@@ -865,7 +865,7 @@ class TestModelMvpActionConfigParameterErrorMessages:
     def test_bool_int_mismatch_error_is_clear(self) -> None:
         """Test that bool/int mismatch error is clear about the issue."""
         with pytest.raises(ModelOnexError) as exc_info:
-            ModelMvpActionConfigParameter(
+            ModelActionConfigParameter(
                 name="count",
                 type="int",
                 required=False,
