@@ -1,3 +1,5 @@
+import logging
+
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.discovery.model_metric_value import (
@@ -5,6 +7,8 @@ from omnibase_core.models.discovery.model_metric_value import (
     ModelMetricValue,
 )
 from omnibase_core.types.json_types import PrimitiveValue
+
+logger = logging.getLogger(__name__)
 
 
 class ModelCustomMetrics(BaseModel):
@@ -39,7 +43,12 @@ class ModelCustomMetrics(BaseModel):
             else:
                 # Defensive fallback for unexpected types at runtime
                 # Type annotation guarantees exhaustiveness, but runtime may differ
-                metric_type = "string"  # type: ignore[unreachable]
+                logger.warning(  # type: ignore[unreachable]
+                    "Unexpected metric type %s for metric '%s', converting to string",
+                    type(value).__name__,
+                    name,
+                )
+                metric_type = "string"
                 value = str(value)
 
             metrics.append(
