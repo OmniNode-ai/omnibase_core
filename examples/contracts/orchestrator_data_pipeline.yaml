@@ -20,7 +20,10 @@
 # Contract Metadata
 node_type: ORCHESTRATOR_GENERIC
 contract_version: {major: 1, minor: 1, patch: 0}
-fingerprint: "1.1.0:8d00f09e22ec"
+
+# Contract fingerprint for drift detection (format: version:hash-prefix)
+# Regenerate when contract content changes
+fingerprint: "1.1.0:0460b8943604"
 
 # Profile tags for orchestrator classification
 profile_tags:

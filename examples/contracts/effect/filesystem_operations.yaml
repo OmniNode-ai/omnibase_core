@@ -54,7 +54,7 @@
 # - Implement proper backup and retention policies
 # - Review and follow your organization's data handling policies
 #
-# v1.0 Contract Schema Version
+# v1.1.0 Contract Schema Version
 # ============================================================================
 
 # ---------------------------------------------------------------------------
@@ -67,8 +67,8 @@ contract_version:
   patch: 0
 
 # Contract fingerprint for drift detection (format: version:hash-prefix)
-# Hash computed from normalized contract content: node_type + contract_version
-fingerprint: "1.1.0:66346191a6a6"
+# Regenerate when contract content changes
+fingerprint: "1.1.0:1e8106221a03"
 
 node_type: effect
 

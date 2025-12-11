@@ -53,7 +53,7 @@
 #
 # 📚 For comprehensive security guidance, see: SECURITY.md in this directory
 #
-# v1.0 Contract Schema Version
+# v1.1.0 Contract Schema Version
 # ============================================================================
 
 # ---------------------------------------------------------------------------
@@ -66,8 +66,8 @@ contract_version:
   patch: 0
 
 # Contract fingerprint for drift detection (format: version:hash-prefix)
-# Hash computed from normalized contract content: node_type + contract_version
-fingerprint: "1.1.0:66346191a6a6"
+# Regenerate when contract content changes
+fingerprint: "1.1.0:601d59a4df02"
 
 node_type: effect
 

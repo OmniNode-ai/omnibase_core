@@ -1,7 +1,10 @@
 ---
 node_type: REDUCER_GENERIC
 contract_version: {major: 1, minor: 1, patch: 0}
-fingerprint: "1.1.0:30605ad37d29"
+
+# Contract fingerprint for drift detection (format: version:hash-prefix)
+# Regenerate when contract content changes
+fingerprint: "1.1.0:1af36171af17"
 profile_tags:
   - metrics
   - aggregation

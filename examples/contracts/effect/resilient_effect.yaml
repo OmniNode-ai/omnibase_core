@@ -60,7 +60,7 @@
 #
 # 📚 For comprehensive security guidance, see: SECURITY.md in this directory
 #
-# v1.0 Contract Schema Version
+# v1.1.0 Contract Schema Version
 # ============================================================================
 
 # ---------------------------------------------------------------------------
@@ -73,19 +73,24 @@ contract_version:
   patch: 0
 
 # Contract fingerprint for drift detection (format: version:hash-prefix)
-# Hash prefix derived from contract content for integrity verification
-fingerprint: "1.1.0:66346191a6a6"
+# Hash computed from contract identity: path + node_type + subcontract_name
+# Regenerate this fingerprint when contract content changes
+fingerprint: "1.1.0:bf6e50f7086f"
 
 node_type: effect
 
 # Handler requirements for this effect contract
+# Effects perform external I/O and require handlers for their operations
 handlers:
   required:
+    # HTTP handler required for payment gateway API calls
     - type: http
       version: ">=1.0.0"
   optional:
+    # Database handler optional for payment transaction persistence
     - type: db
       version: ">=1.0.0"
+    # Kafka handler optional for publishing payment events
     - type: kafka
       version: ">=1.0.0"
 

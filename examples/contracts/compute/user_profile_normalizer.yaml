@@ -23,13 +23,16 @@
 # - Sequential execution with abort-on-first-failure semantics
 # - Pipeline-level timeout configuration
 #
-# v1.0 Contract Schema Version
+# v1.1.0 Contract Schema Version
 # ============================================================================
 
 # Contract required fields
 node_type: COMPUTE_GENERIC
 contract_version: {major: 1, minor: 1, patch: 0}
-fingerprint: "1.1.0:18699bda82af"
+
+# Contract fingerprint for drift detection (format: version:hash-prefix)
+# Regenerate when contract content changes
+fingerprint: "1.1.0:15c395cb78d1"
 concurrency: parallelizable
 profile_tags:
   - compute

@@ -20,12 +20,14 @@ node_type: EFFECT_GENERIC
 contract_version: {major: 1, minor: 1, patch: 0}
 
 # Contract fingerprint for drift detection (format: version:hash-prefix)
-# Hash computed from normalized contract content: node_type + contract_version
-fingerprint: "1.1.0:66346191a6a6"
+# Regenerate when contract content changes
+fingerprint: "1.1.0:5686d9c0320d"
 
 # Handler requirements for this effect contract
+# Effects perform external I/O and require handlers for their operations
 handlers:
   required:
+    # Filesystem handler required for directory scanning and file reading operations
     - type: filesystem
       version: ">=1.0.0"
   optional: []

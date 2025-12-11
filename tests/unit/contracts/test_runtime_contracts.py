@@ -810,15 +810,15 @@ class TestEventBusWiringEffectContract:
 class TestAllRuntimeContractsValidation:
     """Cross-contract validation tests for all runtime contracts."""
 
-    def test_all_contracts_have_version_1_0_0(
+    def test_all_contracts_have_version_1_1_0(
         self, all_contracts: dict[str, dict]
     ) -> None:
-        """Test that all runtime contracts have version 1.0.0."""
+        """Test that all runtime contracts have version 1.1.0."""
         for name, data in all_contracts.items():
             version = data.get("contract_version", {})
             if isinstance(version, dict):
                 assert version.get("major") == 1, f"{name}: Expected major version 1"
-                assert version.get("minor") == 0, f"{name}: Expected minor version 0"
+                assert version.get("minor") == 1, f"{name}: Expected minor version 1"
                 assert version.get("patch") == 0, f"{name}: Expected patch version 0"
 
     def test_all_contracts_pass_minimal_validation(
