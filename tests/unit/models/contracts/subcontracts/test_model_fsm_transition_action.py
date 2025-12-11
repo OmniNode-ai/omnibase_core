@@ -6,21 +6,20 @@ uniqueness constraints on parameter names.
 """
 
 import pytest
-from pydantic import ValidationError
-
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
-# Default version for test instances - required field after removing default_factory
-DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
-
 from omnibase_core.models.contracts.subcontracts.model_action_config_parameter import (
     ModelActionConfigParameter,
 )
+from pydantic import ValidationError
+
 from omnibase_core.models.contracts.subcontracts.model_fsmtransitionaction import (
     ModelFSMTransitionAction,
 )
 from omnibase_core.models.core.model_action_config_value import from_int, from_string
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
 class TestModelFSMTransitionActionValidation:

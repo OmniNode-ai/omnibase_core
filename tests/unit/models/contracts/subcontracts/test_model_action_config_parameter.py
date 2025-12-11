@@ -13,17 +13,13 @@ Comprehensive test coverage including:
 """
 
 import pytest
-from pydantic import ValidationError
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
-# Default version for test instances - required field after removing default_factory
-DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
-from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 from omnibase_core.models.contracts.subcontracts.model_action_config_parameter import (
     ModelActionConfigParameter,
 )
+from pydantic import ValidationError
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 from omnibase_core.models.core.model_action_config_value import (
     ModelActionConfigBooleanValue,
     ModelActionConfigNumericValue,
@@ -37,6 +33,10 @@ from omnibase_core.models.core.model_action_config_value import (
     get_action_config_discriminator_value,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Default version for test instances - required field after removing default_factory
+DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
 class TestModelActionConfigParameterBasics:
