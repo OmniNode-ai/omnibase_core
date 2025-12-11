@@ -24,7 +24,7 @@ Reference:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 from uuid import UUID, uuid4
 
 import pytest
@@ -53,6 +53,31 @@ from omnibase_core.utils.workflow_executor import (
 
 # ============================================================================
 # Fixtures
+# ============================================================================
+#
+# Fixture Design Rationale (PR #160 Review):
+# ------------------------------------------
+# The current fixture set is intentionally minimal and well-scoped:
+#
+# 1. base_workflow_definition / parallel_workflow_definition:
+#    Cover the two primary workflow types (sequential, parallel) used across tests.
+#
+# 2. create_step() helper:
+#    Factory function with sensible defaults - preferred over multiple fixtures
+#    because it allows tests to specify only the parameters they care about.
+#
+# 3. Inline test data (UUIDs, step configurations):
+#    Kept inline deliberately because:
+#    - Makes each test self-documenting (shows exactly what's being tested)
+#    - Prevents hidden coupling between tests
+#    - UUIDs should be unique per test for proper isolation
+#
+# Patterns NOT extracted to fixtures (by design):
+# - Cycle patterns: Test-specific configurations are clearer inline
+# - Execution modes: Use parameterization when needed, not fixtures
+# - Complex graphs: Single-use patterns don't benefit from extraction
+#
+# If adding new test patterns that repeat 3+ times, consider adding a fixture.
 # ============================================================================
 
 
@@ -109,7 +134,15 @@ def parallel_workflow_definition() -> ModelWorkflowDefinition:
 def create_step(
     step_id: UUID | None = None,
     step_name: str = "Test Step",
-    step_type: str = "compute",
+    step_type: Literal[
+        "compute",
+        "effect",
+        "reducer",
+        "orchestrator",
+        "conditional",
+        "parallel",
+        "custom",
+    ] = "compute",
     depends_on: list[UUID] | None = None,
     enabled: bool = True,
 ) -> ModelWorkflowStep:
@@ -551,7 +584,8 @@ class TestDuplicateStepValidation:
     @pytest.mark.asyncio
     @pytest.mark.xfail(
         reason="Duplicate step ID validation not yet implemented in workflow_executor. "
-        "ModelWorkflowStep uses frozen=True so uniqueness must be validated at runtime.",
+        "validate_workflow_definition() does not currently check for duplicate step IDs. "
+        "When implemented, it should return an error when two steps share the same step_id.",
         strict=True,
     )
     async def test_duplicate_step_ids_detected(
@@ -559,12 +593,32 @@ class TestDuplicateStepValidation:
     ) -> None:
         """Test that duplicate step IDs are detected during validation.
 
-        Note: This test documents expected behavior. The validation should detect
-        when two steps share the same step_id, as this violates workflow invariants.
-        Currently, validate_workflow_definition does not check for duplicate IDs.
+        Expected Behavior (Not Yet Implemented):
+        -----------------------------------------
+        When two or more workflow steps share the same step_id, the validation
+        function should detect this and return an error. Duplicate step IDs violate
+        workflow invariants because:
+        1. Step IDs are used to track execution state and results
+        2. Duplicate IDs cause ambiguity in step lookup and routing
+        3. Workflow graphs rely on unique step IDs for dependency resolution
+
+        Current Behavior:
+        -----------------
+        validate_workflow_definition() does not check for duplicate step IDs.
+        ModelWorkflowStep uses frozen=True, so uniqueness cannot be enforced
+        at the model level and must be validated at runtime.
+
+        Implementation Notes:
+        ---------------------
+        To fix this, validate_workflow_definition() should:
+        1. Collect all step_id values from the steps list
+        2. Check for duplicates (e.g., len(ids) != len(set(ids)))
+        3. Return an error message identifying the duplicate ID(s)
         """
         duplicate_id = uuid4()
 
+        # SETUP: Create two steps with the SAME step_id but different names
+        # This should be invalid - step IDs must be unique within a workflow
         steps = [
             create_step(step_id=duplicate_id, step_name="Step A"),
             create_step(step_id=duplicate_id, step_name="Step B"),  # Same ID!
@@ -572,8 +626,10 @@ class TestDuplicateStepValidation:
 
         errors = await validate_workflow_definition(base_workflow_definition, steps)
 
-        # Should detect duplicate step IDs
+        # EXPECTED ASSERTIONS (will pass once validation is implemented):
+        # 1. At least one error should be returned for the duplicate ID
         assert len(errors) > 0, "Should detect duplicate step IDs"
+        # 2. The error message should clearly indicate a duplicate was found
         assert any("duplicate" in error.lower() for error in errors), (
             f"Error should mention 'duplicate': {errors}"
         )
@@ -865,6 +921,7 @@ class TestEdgeCases:
         ]
         assert len(structural_errors) == 0, f"Single step should be valid: {errors}"
 
+    @pytest.mark.slow
     @pytest.mark.asyncio
     @pytest.mark.timeout(30)
     async def test_large_workflow_valid(
