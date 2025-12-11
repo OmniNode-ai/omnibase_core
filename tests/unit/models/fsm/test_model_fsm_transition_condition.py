@@ -13,6 +13,7 @@ Tests all aspects of the FSM transition condition model including:
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.fsm.model_fsm_transition_condition import (
     ModelFSMTransitionCondition,
 )
@@ -322,7 +323,11 @@ class TestModelFSMTransitionConditionProtocols:
         assert result is True
 
     def test_execute_protocol_with_updates(self):
-        """Test execute protocol with field updates."""
+        """Test execute protocol ignores kwargs (model is frozen).
+
+        Note: Since models are now frozen (immutable), execute() cannot
+        modify the model. It returns True but does not mutate fields.
+        """
         condition = ModelFSMTransitionCondition(
             condition_name="check",
             condition_type="expression",
@@ -330,10 +335,11 @@ class TestModelFSMTransitionConditionProtocols:
             error_message="Original message",
         )
 
-        # Execute with updates
+        # Execute with updates - model is frozen, so no mutation occurs
         result = condition.execute(error_message="Updated message")
         assert result is True
-        assert condition.error_message == "Updated message"
+        # Model is frozen, so error_message should NOT be updated
+        assert condition.error_message == "Original message"
 
     def test_execute_protocol_invalid_field(self):
         """Test execute protocol with invalid field updates."""
@@ -533,13 +539,19 @@ class TestModelFSMTransitionConditionEdgeCases:
         assert condition.condition_type == ""
 
     def test_empty_string_expression(self):
-        """Test condition with empty string expression."""
-        condition = ModelFSMTransitionCondition(
-            condition_name="check",
-            condition_type="expression",
-            expression="",
-        )
-        assert condition.expression == ""
+        """Test condition with empty string expression raises ModelOnexError.
+
+        Note: Expression validation now requires exactly 3 tokens.
+        Empty string has 0 tokens, so it fails validation.
+        """
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelFSMTransitionCondition(
+                condition_name="check",
+                condition_type="expression",
+                expression="",
+            )
+        assert "Expression must have exactly 3 tokens" in str(exc_info.value)
+        assert "got 0 tokens" in str(exc_info.value)
 
     def test_very_long_expression(self):
         """Test condition with very long expression."""
@@ -634,7 +646,7 @@ class TestModelFSMTransitionConditionEdgeCases:
             assert condition.error_message == msg
 
     def test_retry_count_zero(self):
-        """Test retry_count with zero value."""
+        """Test retry_count with zero value (allowed by ge=0 constraint)."""
         condition = ModelFSMTransitionCondition(
             condition_name="check",
             condition_type="expression",
@@ -644,7 +656,7 @@ class TestModelFSMTransitionConditionEdgeCases:
         assert condition.retry_count == 0
 
     def test_timeout_ms_zero(self):
-        """Test timeout_ms with zero value."""
+        """Test timeout_ms with zero value (allowed by ge=0 constraint)."""
         condition = ModelFSMTransitionCondition(
             condition_name="check",
             condition_type="expression",
@@ -698,20 +710,21 @@ class TestModelFSMTransitionConditionEdgeCases:
         assert condition1 != condition3
 
     def test_validate_assignment_config(self):
-        """Test that validate_assignment config works."""
+        """Test that frozen model prevents assignment.
+
+        Note: Model is now frozen (immutable). Any attempt to assign
+        to a field will raise ValidationError with frozen_instance error.
+        """
         condition = ModelFSMTransitionCondition(
             condition_name="check",
             condition_type="expression",
             expression="value > 0",
         )
 
-        # Should allow assignment
-        condition.error_message = "Updated error"
-        assert condition.error_message == "Updated error"
-
-        # Invalid assignment should raise error
-        with pytest.raises(ValidationError):
-            condition.required = "not_a_boolean"
+        # Model is frozen, so assignment should raise ValidationError
+        with pytest.raises(ValidationError) as exc_info:
+            condition.error_message = "Updated error"
+        assert "frozen" in str(exc_info.value).lower()
 
     def test_extra_fields_ignored(self):
         """Test that extra fields are ignored per config."""
@@ -729,26 +742,32 @@ class TestModelFSMTransitionConditionEdgeCases:
         assert not hasattr(condition, "another_extra")
 
     def test_negative_retry_count(self):
-        """Test that negative retry_count is accepted (no constraint in task spec)."""
-        # Note: The spec has ge=0 but task doesn't specify constraints
-        condition = ModelFSMTransitionCondition(
-            condition_name="check",
-            condition_type="expression",
-            expression="value > 0",
-            retry_count=-1,
-        )
-        assert condition.retry_count == -1
+        """Test that negative retry_count raises ValidationError.
+
+        Note: retry_count has ge=0 constraint, so negative values are rejected.
+        """
+        with pytest.raises(ValidationError) as exc_info:
+            ModelFSMTransitionCondition(
+                condition_name="check",
+                condition_type="expression",
+                expression="value > 0",
+                retry_count=-1,
+            )
+        assert "retry_count" in str(exc_info.value)
 
     def test_negative_timeout_ms(self):
-        """Test that negative timeout_ms is accepted (no constraint in task spec)."""
-        # Note: The spec has ge=1 but task doesn't specify constraints
-        condition = ModelFSMTransitionCondition(
-            condition_name="check",
-            condition_type="expression",
-            expression="value > 0",
-            timeout_ms=-1000,
-        )
-        assert condition.timeout_ms == -1000
+        """Test that negative timeout_ms raises ValidationError.
+
+        Note: timeout_ms has ge=0 constraint, so negative values are rejected.
+        """
+        with pytest.raises(ValidationError) as exc_info:
+            ModelFSMTransitionCondition(
+                condition_name="check",
+                condition_type="expression",
+                expression="value > 0",
+                timeout_ms=-1000,
+            )
+        assert "timeout_ms" in str(exc_info.value)
 
 
 class TestModelFSMTransitionConditionImport:

@@ -15,8 +15,6 @@ Spec Reference:
 
 from __future__ import annotations
 
-from typing import Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -38,9 +36,15 @@ class ModelFSMOperation(BaseModel):
         until the v1.1 release.
 
     Attributes:
-        operation_name: Unique operation identifier (required)
-        operation_type: Type of operation (required)
-        description: Human-readable description (optional)
+        operation_name: Unique operation identifier (required). Must be non-empty.
+        operation_type: Type of operation (required). Must be non-empty.
+            Common values: "synchronous", "asynchronous", "batch".
+        description: Human-readable description (optional).
+
+    Reserved Fields (v1.1+):
+        retry_count: Number of retry attempts for failed operations.
+        timeout_ms: Operation timeout in milliseconds.
+        rollback_action: Action to execute on operation failure.
 
     Example:
         >>> operation = ModelFSMOperation(
@@ -56,11 +60,9 @@ class ModelFSMOperation(BaseModel):
     """
 
     operation_name: str = Field(
-        default=...,
         description="Unique operation identifier",
     )
     operation_type: str = Field(
-        default=...,
         description="Type of operation (e.g., synchronous, asynchronous, batch)",
     )
     description: str | None = Field(
@@ -72,29 +74,37 @@ class ModelFSMOperation(BaseModel):
         "extra": "ignore",
         "use_enum_values": False,
         "validate_assignment": True,
+        "frozen": True,
     }
 
     # Protocol method implementations
 
     def execute(self, **kwargs: object) -> bool:
-        """Execute or update execution status (Executable protocol).
+        """Execute the operation (Executable protocol).
 
-        Updates any relevant execution fields based on provided kwargs.
+        Reserved for v1.1+ implementation. This method is a placeholder
+        for future operation execution logic that will handle retry,
+        timeout, and rollback behaviors.
+
+        Note:
+            This model is frozen (immutable). Execution in v1.1+ will
+            return a new model instance with updated state rather than
+            modifying this instance in place.
 
         Args:
-            **kwargs: Field updates to apply during execution
+            **kwargs: Reserved for v1.1+ execution parameters
 
         Returns:
-            bool: True if execution succeeded
+            bool: Always returns True (placeholder behavior)
 
-        Raises:
-            AttributeError: If setting an attribute fails
-            Exception: If execution logic fails
+        Future (v1.1+):
+            - Implement actual execution logic
+            - Add retry handling based on retry_count
+            - Add timeout handling based on timeout_ms
+            - Add rollback handling based on rollback_action
         """
-        # Update any relevant execution fields
-        for key, value in kwargs.items():
-            if hasattr(self, key):
-                setattr(self, key, value)
+        # v1.1+ reserved: actual execution logic will be implemented here
+        # Model is frozen, so no in-place mutation is possible
         return True
 
     def serialize(self) -> dict[str, object]:
@@ -108,17 +118,28 @@ class ModelFSMOperation(BaseModel):
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol).
 
-        Performs basic validation to ensure required fields exist and
-        have valid values.
+        Performs validation to ensure required fields have valid values.
+        Checks that operation_name and operation_type are non-empty strings.
 
         Returns:
-            bool: True if validation passed
+            bool: True if validation passed, False otherwise
 
-        Raises:
-            Exception: If validation logic fails
+        Example:
+            >>> op = ModelFSMOperation(operation_name="test", operation_type="sync")
+            >>> op.validate_instance()
+            True
+            >>> op2 = ModelFSMOperation(operation_name="", operation_type="sync")
+            >>> op2.validate_instance()
+            False
         """
-        # Basic validation - ensure required fields exist
-        # Override in specific models for custom validation
+        # Validate operation_name is non-empty
+        if not self.operation_name or not self.operation_name.strip():
+            return False
+
+        # Validate operation_type is non-empty
+        if not self.operation_type or not self.operation_type.strip():
+            return False
+
         return True
 
 

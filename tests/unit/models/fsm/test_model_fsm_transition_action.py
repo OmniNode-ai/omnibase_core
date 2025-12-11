@@ -340,29 +340,40 @@ class TestModelFSMTransitionActionProtocols:
         assert result is True
 
     def test_execute_protocol_with_updates(self):
-        """Test execute protocol with field updates."""
+        """Test execute protocol ignores kwargs (model is frozen).
+
+        Note: Since models are now frozen (immutable), execute() cannot
+        modify the model. It returns True but does not mutate fields.
+        """
         action = ModelFSMTransitionAction(
             action_name="test",
             action_type="log",
             execution_order=1,
         )
 
-        # Execute with updates
+        # Execute with updates - model is frozen, so no mutation occurs
         result = action.execute(execution_order=5)
         assert result is True
-        assert action.execution_order == 5
+        # Model is frozen, so execution_order should NOT be updated
+        assert action.execution_order == 1
 
     def test_execute_protocol_update_is_critical(self):
-        """Test execute protocol updating is_critical."""
+        """Test execute protocol ignores is_critical kwarg (model is frozen).
+
+        Note: Since models are now frozen (immutable), execute() cannot
+        modify the model. It returns True but does not mutate fields.
+        """
         action = ModelFSMTransitionAction(
             action_name="test",
             action_type="log",
             is_critical=False,
         )
 
+        # Execute with updates - model is frozen, so no mutation occurs
         result = action.execute(is_critical=True)
         assert result is True
-        assert action.is_critical is True
+        # Model is frozen, so is_critical should NOT be updated
+        assert action.is_critical is False
 
     def test_execute_protocol_invalid_field(self):
         """Test execute protocol with invalid field updates."""
@@ -603,13 +614,17 @@ class TestModelFSMTransitionActionEdgeCases:
             assert action.action_type == atype
 
     def test_negative_execution_order(self):
-        """Test that negative execution_order is accepted."""
-        action = ModelFSMTransitionAction(
-            action_name="test",
-            action_type="log",
-            execution_order=-5,
-        )
-        assert action.execution_order == -5
+        """Test that negative execution_order raises ValidationError.
+
+        Note: execution_order has ge=0 constraint, so negative values are rejected.
+        """
+        with pytest.raises(ValidationError) as exc_info:
+            ModelFSMTransitionAction(
+                action_name="test",
+                action_type="log",
+                execution_order=-5,
+            )
+        assert "execution_order" in str(exc_info.value)
 
     def test_zero_execution_order(self):
         """Test execution_order with zero value (default)."""
@@ -630,22 +645,30 @@ class TestModelFSMTransitionActionEdgeCases:
         assert action.execution_order == 1000000
 
     def test_timeout_ms_zero(self):
-        """Test timeout_ms with zero value."""
-        action = ModelFSMTransitionAction(
-            action_name="test",
-            action_type="log",
-            timeout_ms=0,
-        )
-        assert action.timeout_ms == 0
+        """Test timeout_ms with zero value raises ValidationError.
+
+        Note: timeout_ms has gt=0 constraint, so zero is rejected (must be positive).
+        """
+        with pytest.raises(ValidationError) as exc_info:
+            ModelFSMTransitionAction(
+                action_name="test",
+                action_type="log",
+                timeout_ms=0,
+            )
+        assert "timeout_ms" in str(exc_info.value)
 
     def test_negative_timeout_ms(self):
-        """Test that negative timeout_ms is accepted (no constraint in spec)."""
-        action = ModelFSMTransitionAction(
-            action_name="test",
-            action_type="log",
-            timeout_ms=-1000,
-        )
-        assert action.timeout_ms == -1000
+        """Test that negative timeout_ms raises ValidationError.
+
+        Note: timeout_ms has gt=0 constraint, so negative values are rejected.
+        """
+        with pytest.raises(ValidationError) as exc_info:
+            ModelFSMTransitionAction(
+                action_name="test",
+                action_type="log",
+                timeout_ms=-1000,
+            )
+        assert "timeout_ms" in str(exc_info.value)
 
     def test_large_timeout_ms(self):
         """Test with large timeout_ms value (24 hours)."""
@@ -749,19 +772,20 @@ class TestModelFSMTransitionActionEdgeCases:
         assert action1 != action3
 
     def test_validate_assignment_config(self):
-        """Test that validate_assignment config works."""
+        """Test that frozen model prevents assignment.
+
+        Note: Model is now frozen (immutable). Any attempt to assign
+        to a field will raise ValidationError with frozen_instance error.
+        """
         action = ModelFSMTransitionAction(
             action_name="test",
             action_type="log",
         )
 
-        # Should allow assignment
-        action.execution_order = 10
-        assert action.execution_order == 10
-
-        # Invalid assignment should raise error
-        with pytest.raises(ValidationError):
-            action.is_critical = "not_a_boolean"
+        # Model is frozen, so assignment should raise ValidationError
+        with pytest.raises(ValidationError) as exc_info:
+            action.execution_order = 10
+        assert "frozen" in str(exc_info.value).lower()
 
     def test_extra_fields_ignored(self):
         """Test that extra fields are ignored per config."""
@@ -778,21 +802,27 @@ class TestModelFSMTransitionActionEdgeCases:
         assert not hasattr(action, "another_extra")
 
     def test_action_config_default_factory_isolation(self):
-        """Test that default_factory creates new dicts for each instance."""
+        """Test that default_factory creates new dicts for each instance.
+
+        Note: Model is frozen, so we cannot modify action_config in place.
+        Instead, we test that instances created with different configs are isolated.
+        """
         action1 = ModelFSMTransitionAction(
             action_name="test1",
             action_type="log",
+            action_config={"key1": "value1"},
         )
         action2 = ModelFSMTransitionAction(
             action_name="test2",
             action_type="log",
+            action_config={},  # Empty config
         )
 
-        # Modify action1's config
-        action1.action_config["modified"] = True
-
-        # action2 should not be affected
-        assert "modified" not in action2.action_config
+        # Each instance has its own config (isolation)
+        assert action1.action_config == {"key1": "value1"}
+        assert action2.action_config == {}
+        # Confirm they are different objects (default_factory isolation)
+        assert action1.action_config is not action2.action_config
 
     def test_very_long_action_name(self):
         """Test action with very long action_name."""

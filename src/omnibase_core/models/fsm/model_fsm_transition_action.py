@@ -7,9 +7,16 @@ actions to execute during state transitions.
 
 Specification Reference: docs/architecture/CONTRACT_DRIVEN_NODEREDUCER_V1_0.md
 
+Type Aliases:
+    ActionConfigValue: Union type for action configuration values.
+        Supports primitive types (str, int, float, bool), lists of strings,
+        and None for FSM action configuration parameters.
+
 Note:
-    This model is part of the FSM v1.0 implementation. The rollback_action
-    field is reserved for v1.1+ and has no effect in v1.0.
+    This model is part of the FSM v1.0 implementation. The following fields
+    are reserved for future versions and have no effect in v1.0:
+    - rollback_action: Reserved for v1.1+ (rollback NOT executed)
+    - execute() method: Reserved for v1.1+ (always returns True in v1.0)
 """
 
 from __future__ import annotations
@@ -79,6 +86,7 @@ class ModelFSMTransitionAction(BaseModel):
 
     execution_order: int = Field(
         default=0,
+        ge=0,
         description="Order of execution within the phase (lower executes first)",
     )
 
@@ -94,11 +102,13 @@ class ModelFSMTransitionAction(BaseModel):
 
     timeout_ms: int | None = Field(
         default=None,
-        description="Action timeout in milliseconds",
+        gt=0,
+        description="Action timeout in milliseconds (must be positive if set)",
     )
 
     model_config = {
         "extra": "ignore",
+        "frozen": True,
         "use_enum_values": False,
         "validate_assignment": True,
     }
@@ -106,24 +116,27 @@ class ModelFSMTransitionAction(BaseModel):
     # Protocol method implementations
 
     def execute(self, **kwargs: object) -> bool:
-        """Execute or update execution status (Executable protocol).
+        """Execute action (Executable protocol).
 
-        Updates any relevant execution fields based on provided kwargs.
+        Reserved for v1.1+ implementation. In v1.0, this method is a no-op
+        that always returns True. Actual action execution will be implemented
+        in v1.1+ when the FSM runtime supports action execution hooks.
+
+        Note:
+            This model is frozen (immutable) for thread safety. The v1.1+
+            implementation will use external state management rather than
+            modifying the model instance.
 
         Args:
-            **kwargs: Field updates to apply during execution
+            **kwargs: Reserved for v1.1+ - execution parameters (currently ignored)
 
         Returns:
-            bool: True if execution succeeded
-
-        Raises:
-            AttributeError: If setting an attribute fails
-            Exception: If execution logic fails
+            bool: Always True in v1.0 (reserved for v1.1+ implementation)
         """
-        # Update any relevant execution fields
-        for key, value in kwargs.items():
-            if hasattr(self, key):
-                setattr(self, key, value)
+        # v1.1+ reserved: Implement action execution with external state management
+        # The model is frozen for thread safety, so execution state must be
+        # tracked externally (e.g., in the FSM runtime context)
+        _ = kwargs  # Explicitly mark as unused for v1.0
         return True
 
     def serialize(self) -> dict[str, object]:
@@ -137,17 +150,33 @@ class ModelFSMTransitionAction(BaseModel):
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol).
 
-        Performs basic validation to ensure required fields exist and
-        have valid values.
+        Performs validation to ensure required fields exist and have valid values:
+        - action_name must be a non-empty string
+        - action_type must be a non-empty string
+        - action_config values must be valid ActionConfigValue types
 
         Returns:
-            bool: True if validation passed
-
-        Raises:
-            Exception: If validation logic fails
+            bool: True if validation passed, False otherwise
         """
-        # Basic validation - ensure required fields exist
-        # Override in specific models for custom validation
+        # Validate action_name is non-empty
+        if not self.action_name or not self.action_name.strip():
+            return False
+
+        # Validate action_type is non-empty
+        if not self.action_type or not self.action_type.strip():
+            return False
+
+        # Validate action_config values are valid ActionConfigValue types
+        # Note: The dict[str, ActionConfigValue] type annotation ensures type safety
+        # at compile time. This runtime check validates list contents specifically
+        # since list[str] can't be validated at runtime without iteration.
+        for value in self.action_config.values():
+            # Check list type - must be list of strings (runtime validation)
+            if isinstance(value, list) and not all(
+                isinstance(item, str) for item in value
+            ):
+                return False
+
         return True
 
 

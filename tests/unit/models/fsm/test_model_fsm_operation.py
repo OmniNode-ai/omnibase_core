@@ -169,16 +169,22 @@ class TestModelFSMOperationProtocols:
         assert result is True
 
     def test_execute_protocol_with_updates(self):
-        """Test execute protocol with field updates."""
+        """Test execute protocol ignores kwargs (model is frozen).
+
+        Note: Since models are now frozen (immutable), execute() cannot
+        modify the model. It returns True but does not mutate fields.
+        """
         operation = ModelFSMOperation(
             operation_name="test",
             operation_type="sync",
             description="original",
         )
 
+        # Execute with updates - model is frozen, so no mutation occurs
         result = operation.execute(description="updated description")
         assert result is True
-        assert operation.description == "updated description"
+        # Model is frozen, so description should NOT be updated
+        assert operation.description == "original"
 
     def test_execute_protocol_with_invalid_field(self):
         """Test execute protocol ignores non-existent fields."""
@@ -450,19 +456,20 @@ class TestModelFSMOperationEdgeCases:
         assert op1 == op2
 
     def test_validate_assignment_config(self):
-        """Test that validate_assignment config works."""
+        """Test that frozen model prevents assignment.
+
+        Note: Model is now frozen (immutable). Any attempt to assign
+        to a field will raise ValidationError with frozen_instance error.
+        """
         operation = ModelFSMOperation(
             operation_name="test",
             operation_type="sync",
         )
 
-        # Should allow valid assignment
-        operation.description = "updated"
-        assert operation.description == "updated"
-
-        # Invalid assignment should raise error
-        with pytest.raises(ValidationError):
-            operation.operation_name = 123
+        # Model is frozen, so assignment should raise ValidationError
+        with pytest.raises(ValidationError) as exc_info:
+            operation.description = "updated"
+        assert "frozen" in str(exc_info.value).lower()
 
     def test_extra_fields_ignored(self):
         """Test that extra fields are ignored per config."""
