@@ -27,6 +27,18 @@ class ModelOrchestratorOutput(BaseModel):
         The start_time and end_time fields currently both represent the workflow
         completion timestamp (when the result was created), not an actual execution
         time range. For the actual execution duration, use execution_time_ms instead.
+
+    Example:
+        >>> # Create output result
+        >>> result = ModelOrchestratorOutput(
+        ...     execution_status="completed",
+        ...     execution_time_ms=1500,
+        ...     start_time="2025-01-01T00:00:00Z",
+        ...     end_time="2025-01-01T00:00:01Z",
+        ... )
+        >>>
+        >>> # To "update" a frozen model, use model_copy
+        >>> updated = result.model_copy(update={"metrics": {"step_count": 5}})
     """
 
     model_config = ConfigDict(

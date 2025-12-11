@@ -98,6 +98,10 @@ class ModelOrchestratorInput(BaseModel):
         ...     ],
         ...     dependency_resolution_enabled=True,
         ... )
+        >>>
+        >>> # To "update" a frozen model, use model_copy
+        >>> original = ModelOrchestratorInput(workflow_id=uuid4(), steps=[], metadata={})
+        >>> updated = original.model_copy(update={"metadata": {"key": "value"}})
     """
 
     workflow_id: UUID = Field(..., description="Unique workflow identifier")
