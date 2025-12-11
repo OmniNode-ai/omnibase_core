@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 from omnibase_core.models.discovery.model_tool_discovery_response import (
     ModelDiscoveredTool,
 )
+from omnibase_core.types.json_types import PrimitiveValue
 
 
 class ModelDiscoveryResponse(BaseModel):
@@ -90,7 +91,7 @@ class ModelDiscoveryResponse(BaseModel):
     # Client information
     client_id: UUID | None = Field(default=None, description="Client identifier")
 
-    client_stats: dict[str, str | int | float | bool] = Field(
+    client_stats: dict[str, PrimitiveValue] = Field(
         default_factory=dict,
         description="Client statistics and status",
     )
@@ -102,7 +103,7 @@ class ModelDiscoveryResponse(BaseModel):
     )
 
     # Additional metadata
-    metadata: dict[str, str | int | float | bool] = Field(
+    metadata: dict[str, PrimitiveValue] = Field(
         default_factory=dict,
         description="Additional response metadata",
     )
@@ -207,7 +208,7 @@ class ModelDiscoveryResponse(BaseModel):
     def create_status_response(
         cls,
         client_id: str,
-        client_stats: dict[str, str | int | float | bool],
+        client_stats: dict[str, PrimitiveValue],
         **kwargs: Any,
     ) -> "ModelDiscoveryResponse":
         """

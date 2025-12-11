@@ -67,6 +67,7 @@ class ModelNodeAction(ModelActionBase):
         default_factory=list,
         description="Optional parameter names",
     )
+    # union-ok: nested_schema - Complex nested dict structure for JSON Schema representation
     parameter_schemas: dict[str, dict[str, str | list[str] | bool | int | float]] = (
         Field(
             default_factory=dict,
@@ -199,6 +200,7 @@ class ModelNodeAction(ModelActionBase):
             },
         )
 
+    # union-ok: service_metadata - Complex return type for service discovery metadata
     def to_service_metadata(
         self,
     ) -> dict[str, str | bool | list[str] | int | None | dict[str, Any]]:

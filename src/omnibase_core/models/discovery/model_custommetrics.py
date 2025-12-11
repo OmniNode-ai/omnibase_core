@@ -1,9 +1,14 @@
+import logging
+
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.discovery.model_metric_value import (
     AnyMetricValue,
     ModelMetricValue,
 )
+from omnibase_core.types.json_types import PrimitiveValue
+
+logger = logging.getLogger(__name__)
 
 
 class ModelCustomMetrics(BaseModel):
@@ -14,14 +19,14 @@ class ModelCustomMetrics(BaseModel):
         description="List of typed custom metrics",
     )
 
-    def get_metrics_dict(self) -> dict[str, str | int | float | bool]:
+    def get_metrics_dict(self) -> dict[str, PrimitiveValue]:
         """Convert to dictionary format."""
         return {metric.name: metric.value for metric in self.metrics}
 
     @classmethod
     def from_dict(
         cls,
-        metrics_dict: dict[str, str | int | float | bool],
+        metrics_dict: dict[str, PrimitiveValue],
     ) -> "ModelCustomMetrics":
         """Create from dictionary with type inference."""
         metrics: list[AnyMetricValue] = []
@@ -35,6 +40,16 @@ class ModelCustomMetrics(BaseModel):
                 metric_type = "integer"
             elif isinstance(value, float):
                 metric_type = "float"
+            else:
+                # Defensive fallback for unexpected types at runtime
+                # Type annotation guarantees exhaustiveness, but runtime may differ
+                logger.warning(  # type: ignore[unreachable]
+                    "Unexpected metric type %s for metric '%s', converting to string",
+                    type(value).__name__,
+                    name,
+                )
+                metric_type = "string"
+                value = str(value)
 
             metrics.append(
                 ModelMetricValue(name=name, value=value, metric_type=metric_type),

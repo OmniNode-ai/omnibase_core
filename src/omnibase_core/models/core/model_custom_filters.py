@@ -12,6 +12,7 @@ from .model_numeric_filter import ModelNumericFilter
 from .model_status_filter import ModelStatusFilter
 from .model_string_filter import ModelStringFilter
 
+# union-ok: discriminated_model_union - All filter types share filter_type discriminator field
 # Type alias for the filter union
 FilterType = Union[
     ModelStringFilter,
