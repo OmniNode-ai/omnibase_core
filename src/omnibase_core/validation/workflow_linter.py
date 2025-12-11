@@ -16,7 +16,7 @@ Linting Checks:
     - ``warn_unreachable_steps``: Warns if a step has no incoming edges and
       is not a root step
     - ``warn_priority_clamping``: Warns if priority values will be clamped
-      (>1000 or <1)
+      (>1000 or <1). Defensive check for bypassed Pydantic validation.
     - ``warn_isolated_steps``: Warns if a step has no incoming AND no
       outgoing edges
 
@@ -30,9 +30,9 @@ Result Model:
 Example:
     Basic usage for workflow linting::
 
-        from omnibase_core.validation.contract_linter import WorkflowContractLinter
+        from omnibase_core.validation.workflow_linter import WorkflowLinter
 
-        linter = WorkflowContractLinter()
+        linter = WorkflowLinter()
         warnings = linter.lint(workflow_definition)
         for warning in warnings:
             print(f"[{warning.code}] {warning.message}")
@@ -41,9 +41,15 @@ Example:
 from __future__ import annotations
 
 from collections import Counter
+from typing import Literal
 from uuid import UUID
 
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
+
+# Type alias for valid step types
+StepTypeLiteral = Literal[
+    "compute", "effect", "reducer", "orchestrator", "conditional", "parallel", "custom"
+]
 from omnibase_core.models.contracts.subcontracts.model_workflow_definition import (
     ModelWorkflowDefinition,
 )
@@ -86,7 +92,7 @@ class WorkflowLinter:
                 Empty list if no issues found.
 
         Example:
-            >>> linter = WorkflowContractLinter()
+            >>> linter = WorkflowLinter()
             >>> warnings = linter.lint(workflow)
             >>> for warning in warnings:
             ...     print(f"[{warning.code}] {warning.message}")
@@ -111,21 +117,89 @@ class WorkflowLinter:
         """
         Extract workflow steps from the workflow definition.
 
+        Converts ModelWorkflowNode objects from the execution graph into
+        ModelWorkflowStep objects for linting purposes.
+
         Args:
             workflow: The workflow definition to extract steps from
 
         Returns:
             list[ModelWorkflowStep]: List of workflow steps extracted from
-                the execution graph nodes
+                the execution graph nodes. Each node is converted to a step
+                with appropriate field mappings.
+
+        Mapping Rules:
+            - node_id -> step_id
+            - node_type -> step_type (mapped to valid step_type literal)
+            - dependencies -> depends_on
+            - node_requirements may contain: step_name, priority, parallel_group
         """
         steps: list[ModelWorkflowStep] = []
 
-        # Extract steps from execution graph nodes
-        # Each node may contain step-like data that we need to validate
         for node in workflow.execution_graph.nodes:
-            # For now, nodes don't directly contain ModelWorkflowStep instances
-            # This is a placeholder for when the workflow structure is finalized
-            pass
+            # Map node_type to step_type
+            # Valid step_types: compute, effect, reducer, orchestrator,
+            #                   conditional, parallel, custom
+            node_type_value = node.node_type.value.lower()
+            step_type_mapping: dict[str, StepTypeLiteral] = {
+                "compute_generic": "compute",
+                "effect_generic": "effect",
+                "reducer_generic": "reducer",
+                "orchestrator_generic": "orchestrator",
+                "transformer": "compute",
+                "aggregator": "compute",
+                "function": "compute",
+                "model": "compute",
+                "tool": "effect",
+                "agent": "effect",
+                "gateway": "orchestrator",
+                "validator": "orchestrator",
+                "workflow": "orchestrator",
+                "runtime_host_generic": "custom",
+                "plugin": "custom",
+                "schema": "custom",
+                "node": "custom",
+                "service": "custom",
+                "unknown": "custom",
+            }
+            step_type: StepTypeLiteral = step_type_mapping.get(
+                node_type_value, "custom"
+            )
+
+            # Extract optional fields from node_requirements
+            requirements = node.node_requirements
+            step_name = str(requirements.get("step_name", f"node_{node.node_id}"))
+            priority_raw = requirements.get("priority", 100)
+            priority = (
+                int(priority_raw) if isinstance(priority_raw, (int, float)) else 100
+            )
+            parallel_group_raw = requirements.get("parallel_group")
+            parallel_group = (
+                str(parallel_group_raw) if parallel_group_raw is not None else None
+            )
+
+            # Create ModelWorkflowStep from node data
+            # Pydantic will validate and clamp priority values as needed
+            step = ModelWorkflowStep(
+                step_id=node.node_id,
+                step_name=step_name,
+                step_type=step_type,
+                depends_on=list(node.dependencies),
+                priority=priority,
+                parallel_group=parallel_group,
+                correlation_id=node.node_id,
+                timeout_ms=30000,
+                retry_count=3,
+                enabled=True,
+                skip_on_failure=False,
+                continue_on_error=False,
+                error_action="stop",
+                max_memory_mb=None,
+                max_cpu_percent=None,
+                order_index=0,
+                max_parallel_instances=1,
+            )
+            steps.append(step)
 
         return steps
 
@@ -234,54 +308,108 @@ class WorkflowLinter:
         self, steps: list[ModelWorkflowStep]
     ) -> list[ModelLintWarning]:
         """
-        Warn if a step has no incoming edges and is not a root step.
+        Warn if a step cannot be reached from any root step.
 
-        A step with no dependencies (no incoming edges) and no steps depending
-        on it might be orphaned or incorrectly configured, unless it's
-        intentionally a root step.
+        This performs a reachability analysis using BFS from all root steps
+        (steps with no dependencies). Any step that cannot be reached from
+        at least one root step is considered unreachable.
 
         Note: This is different from isolated steps (which have no incoming
-        AND no outgoing edges). Unreachable steps are those that are not
-        reachable from any root step via dependency chains.
+        AND no outgoing edges). Unreachable steps specifically are those that
+        depend on steps that don't exist in the workflow, creating a broken
+        dependency chain.
 
         Args:
             steps: List of workflow steps to validate
 
         Returns:
             list[ModelLintWarning]: Warnings for unreachable steps. Empty list
-                if all steps are reachable.
+                if all steps are reachable from roots.
 
         Complexity:
-            Time: O(S) where S = number of steps
-            Space: O(S) for tracking step dependencies
+            Time: O(S + E) where S = steps, E = dependency edges
+            Space: O(S) for tracking reachable steps and adjacency list
         """
         warnings: list[ModelLintWarning] = []
 
         if not steps:
             return warnings
 
-        # Build set of all step IDs that are dependencies of other steps
-        step_ids_with_dependents: set[UUID] = set()
+        # Build step lookup and adjacency list for forward traversal
+        # step_id -> step for quick lookup
+        step_by_id: dict[UUID, ModelWorkflowStep] = {
+            step.step_id: step for step in steps
+        }
+        all_step_ids: set[UUID] = set(step_by_id.keys())
+
+        # Build forward adjacency: step_id -> list of steps that depend on it
+        # This allows BFS traversal from roots to descendants
+        forward_edges: dict[UUID, list[UUID]] = {
+            step_id: [] for step_id in all_step_ids
+        }
         for step in steps:
             for dep_id in step.depends_on:
-                step_ids_with_dependents.add(dep_id)
+                if dep_id in forward_edges:
+                    # dep_id has an outgoing edge to step.step_id
+                    forward_edges[dep_id].append(step.step_id)
 
-        # Find root steps (no dependencies)
-        root_steps = [step for step in steps if not step.depends_on]
+        # Find root steps (no dependencies or dependencies all outside workflow)
+        root_step_ids: set[UUID] = set()
+        for step in steps:
+            # A step is a root if it has no dependencies within the workflow
+            deps_in_workflow = [d for d in step.depends_on if d in all_step_ids]
+            if not deps_in_workflow:
+                root_step_ids.add(step.step_id)
 
-        # If there are multiple root steps, warn about potential unreachability
-        if len(root_steps) > 1:
-            for step in steps:
-                # Skip if this is a root step
-                if not step.depends_on:
-                    continue
+        # BFS from all root steps to find reachable steps
+        reachable: set[UUID] = set()
+        queue: list[UUID] = list(root_step_ids)
+        reachable.update(root_step_ids)
 
-                # Warn if step has dependencies but might be in a disconnected graph
-                # This is a conservative check - full graph connectivity would require BFS
-                if step.step_id not in step_ids_with_dependents:
-                    # This step depends on others but nothing depends on it
-                    # AND it's not a root step - might be a terminal step (not unreachable)
-                    pass
+        while queue:
+            current_id = queue.pop(0)
+            for next_id in forward_edges.get(current_id, []):
+                if next_id not in reachable:
+                    reachable.add(next_id)
+                    queue.append(next_id)
+
+        # Find unreachable steps (not roots and not reachable from roots)
+        for step in steps:
+            if step.step_id not in reachable:
+                # This step is not reachable from any root
+                # Determine why - check if it depends on missing steps
+                missing_deps = [d for d in step.depends_on if d not in all_step_ids]
+                if missing_deps:
+                    warnings.append(
+                        ModelLintWarning(
+                            code="W003",
+                            message=(
+                                f"Step '{step.step_name}' is unreachable - it depends on "
+                                f"{len(missing_deps)} step(s) not in the workflow: "
+                                f"{', '.join(str(d) for d in missing_deps[:3])}"
+                                + (
+                                    f" and {len(missing_deps) - 3} more"
+                                    if len(missing_deps) > 3
+                                    else ""
+                                )
+                            ),
+                            step_reference=str(step.step_id),
+                            severity="warning",
+                        )
+                    )
+                else:
+                    # Unreachable due to being in a disconnected subgraph
+                    warnings.append(
+                        ModelLintWarning(
+                            code="W003",
+                            message=(
+                                f"Step '{step.step_name}' is unreachable - it is not "
+                                f"connected to any root step in the workflow"
+                            ),
+                            step_reference=str(step.step_id),
+                            severity="warning",
+                        )
+                    )
 
         return warnings
 
@@ -293,6 +421,18 @@ class WorkflowLinter:
 
         Priority values outside the valid range [1, 1000] will be clamped
         at runtime, which may lead to unexpected execution order.
+
+        Note:
+            This check exists as defensive validation for edge cases where
+            Pydantic field constraints (ge=1, le=1000) may be bypassed, such as:
+
+            - Use of model_construct() to skip validation
+            - Deserialization from untrusted sources with validate=False
+            - Future model changes that relax constraints
+
+            Under normal usage with validated ModelWorkflowStep instances,
+            this check will never produce warnings because Pydantic enforces
+            priority bounds at model creation time.
 
         Args:
             steps: List of workflow steps to validate

@@ -401,9 +401,10 @@ class WorkflowValidator:
         if not cycle_result.has_cycle:
             try:
                 topological_order = self.topological_sort(steps)
-            except ModelOnexError:
-                # Should not happen since we already checked for cycles
-                pass
+            except ModelOnexError as e:
+                # Defensive: This should not happen since we already checked for cycles.
+                # If it does occur, record it as an unexpected validation error.
+                errors.append(f"Unexpected topological sort error: {e.message}")
 
         # Determine overall validity
         # Valid = no cycles, no missing dependencies, no duplicate names
@@ -446,11 +447,10 @@ def validate_workflow_definition(
     - Cycle detection
 
     All errors are returned in a deterministic priority order:
-    1. Structural errors (missing required fields)
-    2. Dependency errors (missing step references)
-    3. Cycle errors (circular dependencies)
-    4. Mode errors (reserved execution modes)
-    5. Reserved field errors
+    1. Mode errors (reserved execution modes - raises exception)
+    2. Structural errors (missing required fields)
+    3. Dependency errors (missing step references)
+    4. Cycle errors (circular dependencies)
 
     Args:
         workflow: The workflow definition to validate. Must be a valid
@@ -498,11 +498,12 @@ def validate_workflow_definition(
     errors: list[str] = []
     warnings: list[str] = []
 
-    # Priority 4: Execution mode validation (raises exception for reserved modes)
-    # This is done FIRST because reserved modes should fail fast
+    # Priority 1: Execution mode validation (raises exception for reserved modes)
+    # This is done FIRST because reserved modes should fail fast before any other
+    # validation occurs
     validate_execution_mode(workflow.workflow_metadata.execution_mode)
 
-    # Priority 1: Structural validation
+    # Priority 2: Structural validation
     if not workflow.workflow_metadata.workflow_name:
         errors.append("Workflow name is required")
 
@@ -511,13 +512,10 @@ def validate_workflow_definition(
             f"Workflow timeout must be positive, got: {workflow.workflow_metadata.timeout_ms}"
         )
 
-    # Extract steps from execution graph nodes
-    steps: list[ModelWorkflowStep] = []
-    # NOTE: ModelExecutionGraph contains ModelWorkflowNode objects
-    # For now, we check if nodes exist and are valid
+    # Check if nodes exist in execution graph
     if not workflow.execution_graph.nodes:
         errors.append("Workflow has no nodes defined in execution graph")
-        # Return early - no steps to validate
+        # Return early - no nodes to validate
         return ModelWorkflowValidationResult(
             is_valid=False,
             has_cycles=False,
@@ -529,28 +527,67 @@ def validate_workflow_definition(
             warnings=warnings,
         )
 
-    # If we have ModelWorkflowStep objects, perform full validation
-    # For now, we validate the execution graph structure
+    # Convert ModelWorkflowNode objects to ModelWorkflowStep for validation
+    # ModelWorkflowNode has: node_id, node_type, dependencies
+    # ModelWorkflowStep needs: step_id, step_name, step_type, depends_on
+    steps: list[ModelWorkflowStep] = []
+    for node in workflow.execution_graph.nodes:
+        # Convert node_type enum to step_type string
+        node_type_str = node.node_type.value if node.node_type else "custom"
+        # Map node types to valid step types
+        step_type_map: dict[str, str] = {
+            "compute": "compute",
+            "effect": "effect",
+            "reducer": "reducer",
+            "orchestrator": "orchestrator",
+        }
+        step_type = step_type_map.get(node_type_str.lower(), "custom")
+
+        step = ModelWorkflowStep(
+            step_id=node.node_id,
+            step_name=f"node_{node.node_id}",  # Generate name from node_id
+            step_type=step_type,  # type: ignore[arg-type]
+            depends_on=node.dependencies,
+            enabled=True,  # ModelWorkflowNode doesn't have enabled field
+        )
+        steps.append(step)
+
+    # Use WorkflowValidator to perform comprehensive validation
     validator = WorkflowValidator()
 
-    # Since we're working with ModelWorkflowNode (not ModelWorkflowStep),
-    # we need to extract the relevant information for validation
-    # This is a placeholder - actual implementation depends on your data model
+    # Priority 3: Dependency validation (missing dependencies)
+    dep_result = validator.validate_dependencies(steps)
+    if not dep_result.is_valid:
+        errors.append(dep_result.error_message)
 
-    # Priority 2 & 3: Dependency and cycle validation
-    # NOTE: This requires converting ModelWorkflowNode to ModelWorkflowStep
-    # or implementing similar validation logic for ModelWorkflowNode
+    # Priority 4: Cycle detection
+    cycle_result = validator.detect_cycles(steps)
+    if cycle_result.has_cycle:
+        errors.append(cycle_result.cycle_description)
 
-    # For comprehensive validation, we rely on the existing WorkflowValidator
-    # which works with ModelWorkflowStep objects
+    # Additional validation: isolated nodes (as warnings)
+    isolated_result = validator.detect_isolated_steps(steps)
+    if isolated_result.isolated_steps:
+        warnings.append(
+            f"Isolated nodes detected: {isolated_result.isolated_step_names}"
+        )
+
+    # Compute topological order if no cycles
+    topological_order: list[UUID] = []
+    if not cycle_result.has_cycle:
+        try:
+            topological_order = validator.topological_sort(steps)
+        except ModelOnexError:
+            # Should not happen since we already checked for cycles
+            pass
 
     return ModelWorkflowValidationResult(
         is_valid=len(errors) == 0,
-        has_cycles=False,
-        topological_order=[],
-        missing_dependencies=[],
-        isolated_steps=[],
-        duplicate_names=[],
+        has_cycles=cycle_result.has_cycle,
+        topological_order=topological_order,
+        missing_dependencies=dep_result.missing_dependencies,
+        isolated_steps=isolated_result.isolated_steps,
+        duplicate_names=[],  # Node IDs are UUIDs, no duplicate name check needed
         errors=errors,
         warnings=warnings,
     )

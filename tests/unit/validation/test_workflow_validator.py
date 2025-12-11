@@ -665,8 +665,8 @@ class TestWorkflowValidatorIntegration:
     """Integration tests for complete workflow validation."""
 
     @pytest.mark.unit
-    def test_validate_workflow_returns_result_model(self) -> None:
-        """Test that validate_workflow returns ModelWorkflowValidationResult."""
+    def test_validate_workflow_returns_valid_result_with_expected_fields(self) -> None:
+        """Test that validate_workflow returns a valid result with all expected fields populated."""
         validator = WorkflowValidator()
 
         step_a_id = uuid4()
@@ -677,7 +677,16 @@ class TestWorkflowValidatorIntegration:
 
         result = validator.validate_workflow(steps)
 
+        # Verify result type and behavioral expectations
         assert isinstance(result, ModelWorkflowValidationResult)
+        # For a valid workflow, is_valid should be True
+        assert result.is_valid is True
+        # Should have no cycles in a valid DAG
+        assert result.has_cycles is False
+        # Should have correct topological order
+        assert len(result.topological_order) == 2
+        assert step_a_id in result.topological_order
+        assert step_b_id in result.topological_order
 
     @pytest.mark.unit
     def test_valid_workflow_passes_all_checks(self) -> None:
