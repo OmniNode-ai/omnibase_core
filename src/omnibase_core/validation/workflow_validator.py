@@ -45,6 +45,7 @@ from collections.abc import Set as AbstractSet
 from uuid import UUID
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_workflow_execution import EnumExecutionMode
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.contracts.subcontracts.model_workflow_definition import (
     ModelWorkflowDefinition,
@@ -64,6 +65,9 @@ from omnibase_core.models.validation.model_unique_name_result import (
 )
 from omnibase_core.models.validation.model_workflow_validation_result import (
     ModelWorkflowValidationResult,
+)
+from omnibase_core.validation.reserved_enum_validator import (
+    validate_execution_mode as validate_execution_mode_enum,
 )
 
 # Type aliases for clarity (Python 3.12+ syntax)
@@ -1046,16 +1050,23 @@ def validate_execution_mode_string(mode: str) -> None:
     """
     mode_lower = mode.lower()
 
-    # Use module-level constants for reserved and accepted modes
-    # This ensures consistency across the module and enables external access
-    if mode_lower in RESERVED_EXECUTION_MODES:
+    # Step 1: Validate that the string is a valid EnumExecutionMode value
+    try:
+        mode_enum = EnumExecutionMode(mode_lower)
+    except ValueError:
+        # Invalid mode string - not a recognized execution mode
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=(
-                f"Execution mode '{mode}' is reserved for future implementation. "
-                f"Currently supported modes: {', '.join(ACCEPTED_EXECUTION_MODES)}"
+                f"Invalid execution mode '{mode}'. "
+                f"Valid modes: {', '.join(ACCEPTED_EXECUTION_MODES)}, "
+                f"{', '.join(RESERVED_EXECUTION_MODES)}"
             ),
             mode=mode,
             reserved_modes=list(RESERVED_EXECUTION_MODES),
             accepted_modes=list(ACCEPTED_EXECUTION_MODES),
         )
+
+    # Step 2: Delegate to the enum-based validator for reserved mode validation
+    # This follows DRY principle - single source of truth for reserved mode logic
+    validate_execution_mode_enum(mode_enum)
