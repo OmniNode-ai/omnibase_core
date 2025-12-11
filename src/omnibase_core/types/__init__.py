@@ -76,6 +76,11 @@ from .core_types import ProtocolSchemaValue, TypedDictBasicErrorContext
 # Effect result type aliases (centralized to avoid primitive soup unions)
 from .type_effect_result import DbParamType, EffectResultType
 
+# Serializable value types (for JSON-compatible data)
+from .type_serializable_value import SerializedDict
+from .typed_dict_additional_fields import TypedDictAdditionalFields
+from .typed_dict_serialized_model import TypedDictSerializedModel
+
 # TypedDict classes
 from .typed_dict_analytics_summary_data import TypedDictAnalyticsSummaryData
 from .typed_dict_audit_info import TypedDictAuditInfo
@@ -182,6 +187,30 @@ from .typed_dict_validator_info import TypedDictValidatorInfo
 from .typed_dict_workflow_context import TypedDictWorkflowContext
 from .typed_dict_workflow_state import TypedDictWorkflowState
 
+# Mixin-specific TypedDict definitions
+from .typed_dict_mixin_types import (
+    TypedDictCacheStats,
+    TypedDictDiscoveryExtendedStats,
+    TypedDictDiscoveryStats as TypedDictMixinDiscoveryStats,
+    TypedDictEventMetadata,
+    TypedDictExecutorHealth,
+    TypedDictFilterCriteria,
+    TypedDictFSMContext,
+    TypedDictIntrospectionData,
+    TypedDictLazyCacheStats,
+    TypedDictMetricEntry,
+    TypedDictNodeExecutorHealth,
+    TypedDictPerformanceProfile,
+    TypedDictRedactedData,
+    TypedDictReducerFSMContext,
+    TypedDictRegistryStats,
+    TypedDictSerializedResult,
+    TypedDictServiceHealth,
+    TypedDictToolExecutionResponse,
+    TypedDictToolExecutionResult,
+    TypedDictWorkflowStepConfig,
+)
+
 # Utility functions
 from .util_datetime_parser import parse_datetime
 
@@ -193,6 +222,11 @@ __all__ = [
     # Effect result type aliases
     "EffectResultType",
     "DbParamType",
+    # Serializable value types
+    "SerializableValue",
+    "SerializedDict",
+    "TypedDictAdditionalFields",
+    "TypedDictSerializedModel",
     # Type constraints and protocols
     "ModelBaseCollection",
     "ModelBaseFactory",
@@ -328,6 +362,27 @@ __all__ = [
     "convert_error_details_to_typed_dict",
     # Utility functions
     "parse_datetime",
+    # Mixin-specific TypedDict definitions
+    "TypedDictCacheStats",
+    "TypedDictDiscoveryExtendedStats",
+    "TypedDictMixinDiscoveryStats",
+    "TypedDictEventMetadata",
+    "TypedDictExecutorHealth",
+    "TypedDictFilterCriteria",
+    "TypedDictFSMContext",
+    "TypedDictIntrospectionData",
+    "TypedDictLazyCacheStats",
+    "TypedDictMetricEntry",
+    "TypedDictNodeExecutorHealth",
+    "TypedDictPerformanceProfile",
+    "TypedDictRedactedData",
+    "TypedDictReducerFSMContext",
+    "TypedDictRegistryStats",
+    "TypedDictSerializedResult",
+    "TypedDictServiceHealth",
+    "TypedDictToolExecutionResponse",
+    "TypedDictToolExecutionResult",
+    "TypedDictWorkflowStepConfig",
 ]
 
 

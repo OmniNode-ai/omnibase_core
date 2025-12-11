@@ -15,7 +15,6 @@ excessive string fields in a single large model.
 """
 
 
-from typing import Any
 
 from pydantic import BaseModel
 
@@ -29,6 +28,7 @@ from .model_function_node_core import ModelFunctionNodeCore
 from .model_function_node_metadata import ModelFunctionNodeMetadata
 from .model_function_node_performance import ModelFunctionNodePerformance
 from .model_function_node_summary import ModelFunctionNodeSummary
+from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
 
 class ModelFunctionNode(BaseModel):
@@ -364,7 +364,7 @@ class ModelFunctionNode(BaseModel):
             f"Cannot generate stable ID without UUID field.",
         )
 
-    def get_metadata(self) -> dict[str, Any]:
+    def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
@@ -377,7 +377,7 @@ class ModelFunctionNode(BaseModel):
                     )
         return metadata
 
-    def set_metadata(self, metadata: dict[str, Any]) -> bool:
+    def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
@@ -387,7 +387,7 @@ class ModelFunctionNode(BaseModel):
         except Exception:  # fallback-ok: Protocol method - graceful fallback for optional implementation
             return False
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> TypedDictSerializedModel:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

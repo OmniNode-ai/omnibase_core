@@ -17,6 +17,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 if TYPE_CHECKING:
     from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+    from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class MixinToolExecution:
@@ -134,8 +135,8 @@ class MixinToolExecution:
         # Get input state class
         input_state_class = self._get_input_state_class()
 
-        # Convert parameter list to dict
-        param_dict: dict[str, Any] = {}
+        # Convert parameter list to dict - values can be any serializable type
+        param_dict: dict[str, object] = {}
         for param in parameters:
             if isinstance(param, dict):
                 param_dict[param.get("name", "")] = param.get("value")
@@ -165,23 +166,25 @@ class MixinToolExecution:
             # Fallback to dict[str, Any]if typed creation fails
             return param_dict
 
-    def _output_state_to_dict(self, output_state: Any) -> dict[str, Any]:
+    def _output_state_to_dict(self, output_state: Any) -> "SerializedDict":
         """
         Convert output state to dictionary for response.
 
         Override this method to customize output conversion for your tool.
         """
+        from omnibase_core.types.type_serializable_value import SerializedDict
+
         if hasattr(output_state, "model_dump"):
             # Pydantic model
-            result: dict[str, Any] = output_state.model_dump()
+            result: SerializedDict = output_state.model_dump()
             return result
         if hasattr(output_state, "__dict__"):
-            # Regular object
-            obj_dict: dict[str, Any] = output_state.__dict__
+            # Regular object - cast to SerializedDict
+            obj_dict: SerializedDict = output_state.__dict__  # type: ignore[assignment]
             return obj_dict
         if isinstance(output_state, dict):
             # Already a dict
-            return output_state
+            return output_state  # type: ignore[return-value]
         # Fallback
         return {"result": str(output_state)}
 
@@ -189,7 +192,7 @@ class MixinToolExecution:
         self,
         correlation_id: UUID | None,
         success: bool,
-        result: dict[str, Any] | None,
+        result: "SerializedDict | None",
         execution_time: float,
         error: str | None,
     ) -> None:

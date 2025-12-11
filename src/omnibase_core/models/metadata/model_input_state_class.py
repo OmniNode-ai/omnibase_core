@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.types import TypedDictAdditionalFields, TypedDictMetadataDict, TypedDictSerializedModel
 
 
 class ModelInputState(BaseModel):
@@ -32,7 +33,7 @@ class ModelInputState(BaseModel):
     )
 
     # Additional fields that might be present in input state
-    additional_fields: dict[str, Any] = Field(
+    additional_fields: TypedDictAdditionalFields = Field(
         default_factory=dict,
         description="Additional fields in the input state",
     )
@@ -53,7 +54,7 @@ class ModelInputState(BaseModel):
 
     # Protocol method implementations
 
-    def get_metadata(self) -> dict[str, Any]:
+    def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
@@ -66,7 +67,7 @@ class ModelInputState(BaseModel):
                     )
         return metadata
 
-    def set_metadata(self, metadata: dict[str, Any]) -> bool:
+    def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
@@ -79,7 +80,7 @@ class ModelInputState(BaseModel):
                 message=f"Operation failed: {e}",
             ) from e
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> TypedDictSerializedModel:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

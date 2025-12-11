@@ -4,13 +4,14 @@ Numeric Computation Output Model.
 Numeric computation output data with precision tracking and error handling.
 """
 
-from typing import Any
-
 from pydantic import Field
 
 from omnibase_core.enums.enum_computation_type import EnumComputationType
 from omnibase_core.models.operations.model_computation_output_base import (
     ModelComputationOutputBase,
+)
+from omnibase_core.models.operations.model_summary_types import (
+    NumericPrecisionSummaryDict,
 )
 
 
@@ -73,11 +74,11 @@ class ModelNumericComputationOutput(ModelComputationOutputBase):
             return abs(convergence_value) < tolerance
         return False
 
-    def get_precision_summary(self) -> dict[str, Any]:
+    def get_precision_summary(self) -> NumericPrecisionSummaryDict:
         """Get precision-related summary."""
-        return {
-            "precision_achieved": self.precision_achieved,
-            "result_count": len(self.numeric_results),
-            "has_errors": self.has_calculation_errors(),
-            "convergence_status": self.is_converged(),
-        }
+        return NumericPrecisionSummaryDict(
+            precision_achieved=self.precision_achieved,
+            result_count=len(self.numeric_results),
+            has_errors=self.has_calculation_errors(),
+            convergence_status=self.is_converged(),
+        )

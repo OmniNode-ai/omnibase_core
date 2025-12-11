@@ -48,10 +48,15 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_effect_types import EnumEffectType, EnumTransactionState
 from omnibase_core.types.type_effect_result import EffectResultType
+from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 __all__ = ["ModelEffectOutput"]
 
 
+@allow_dict_str_any(
+    "Effect outputs require flexible metadata for operation-specific results "
+    "(database row counts, API response codes, file paths, etc.)."
+)
 class ModelEffectOutput(BaseModel):
     """
     Output model for NodeEffect operations.

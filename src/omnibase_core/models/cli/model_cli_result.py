@@ -13,8 +13,9 @@ outcome of CLI command execution with proper typing.
 
 
 from datetime import UTC
-from typing import Any
 from uuid import uuid4
+
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 from pydantic import BaseModel
 
@@ -499,7 +500,7 @@ class ModelCliResult(BaseModel):
 
     # Protocol method implementations
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

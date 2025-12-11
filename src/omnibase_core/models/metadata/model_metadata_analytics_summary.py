@@ -31,6 +31,7 @@ from .analytics.model_analytics_performance_metrics import (
     ModelAnalyticsPerformanceMetrics,
 )
 from .analytics.model_analytics_quality_metrics import ModelAnalyticsQualityMetrics
+from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
 
 class ModelMetadataAnalyticsSummary(BaseModel):
@@ -377,7 +378,7 @@ class ModelMetadataAnalyticsSummary(BaseModel):
 
     # Protocol method implementations
 
-    def get_metadata(self) -> dict[str, Any]:
+    def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
@@ -390,7 +391,7 @@ class ModelMetadataAnalyticsSummary(BaseModel):
                     )
         return metadata
 
-    def set_metadata(self, metadata: dict[str, Any]) -> bool:
+    def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
@@ -403,7 +404,7 @@ class ModelMetadataAnalyticsSummary(BaseModel):
                 message=f"Operation failed: {e}",
             ) from e
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> TypedDictSerializedModel:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

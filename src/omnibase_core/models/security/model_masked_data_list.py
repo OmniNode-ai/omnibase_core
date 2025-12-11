@@ -3,15 +3,15 @@
 List container for masked data.
 """
 
-from typing import TYPE_CHECKING, Any
-
 from pydantic import BaseModel, Field
 
-# Recursive data structure without Any usage
-ModelMaskedDataValue = dict[str, Any] | list[Any] | str | int | float | bool | None
+from omnibase_core.models.common.model_typed_value import ModelTypedValue
 
 
 class ModelMaskedDataList(BaseModel):
-    """List container for masked data."""
+    """List container for masked data.
 
-    items: list[ModelMaskedDataValue] = Field(default_factory=list)
+    Uses ModelTypedValue for type-safe storage of heterogeneous list items.
+    """
+
+    items: list[ModelTypedValue] = Field(default_factory=list)

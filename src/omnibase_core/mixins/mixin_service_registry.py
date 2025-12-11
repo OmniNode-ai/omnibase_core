@@ -18,6 +18,7 @@ from uuid import uuid4
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
+from omnibase_core.types.typed_dict_mixin_types import TypedDictRegistryStats
 
 logger = logging.getLogger(__name__)
 
@@ -579,7 +580,7 @@ class MixinServiceRegistry:
             if self.registry_started:
                 self._schedule_cleanup()
 
-    def get_registry_stats(self) -> dict[str, Any]:
+    def get_registry_stats(self) -> TypedDictRegistryStats:
         """Get registry statistics."""
         online_count = len(
             [e for e in self.service_registry.values() if e.status == "online"],
@@ -588,10 +589,10 @@ class MixinServiceRegistry:
             [e for e in self.service_registry.values() if e.status == "offline"],
         )
 
-        return {
-            "total_services": len(self.service_registry),
-            "online_services": online_count,
-            "offline_services": offline_count,
-            "domain_filter": getattr(self, "domain_filter", None),
-            "registry_started": self.registry_started,
-        }
+        return TypedDictRegistryStats(
+            total_services=len(self.service_registry),
+            online_services=online_count,
+            offline_services=offline_count,
+            domain_filter=getattr(self, "domain_filter", None),
+            registry_started=self.registry_started,
+        )

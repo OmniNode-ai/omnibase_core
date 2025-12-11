@@ -4,9 +4,11 @@ Authorization Evaluation Model.
 Authorization evaluation result model for security access control validation.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field
+
+from omnibase_core.models.security.model_security_summaries import (
+    ModelAuthorizationEvaluationSummary,
+)
 
 
 class ModelAuthorizationEvaluation(BaseModel):
@@ -45,11 +47,11 @@ class ModelAuthorizationEvaluation(BaseModel):
         """Check if authorization requirements are met (no violations)."""
         return self.meets_requirements and len(self.violations) == 0
 
-    def get_summary(self) -> dict[str, Any]:
+    def get_summary(self) -> ModelAuthorizationEvaluationSummary:
         """Get authorization evaluation summary."""
-        return {
-            "meets_requirements": self.meets_requirements,
-            "violation_count": len(self.violations),
-            "warning_count": len(self.warnings),
-            "is_authorized": self.is_authorized(),
-        }
+        return ModelAuthorizationEvaluationSummary(
+            meets_requirements=self.meets_requirements,
+            violation_count=len(self.violations),
+            warning_count=len(self.warnings),
+            is_authorized=self.is_authorized(),
+        )

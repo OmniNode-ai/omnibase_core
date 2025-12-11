@@ -38,7 +38,7 @@ async def execute_transition(
     fsm: ModelFSMSubcontract,
     current_state: str,
     trigger: str,
-    context: dict[str, Any],
+    context: dict[str, object],
 ) -> FSMTransitionResult:
     """
     Execute FSM transition declaratively from YAML contract.
@@ -375,7 +375,7 @@ def _find_transition(
 
 async def _evaluate_conditions(
     transition: ModelFSMStateTransition,
-    context: dict[str, Any],
+    context: dict[str, object],
 ) -> bool:
     """
     Evaluate all transition conditions.
@@ -406,7 +406,7 @@ async def _evaluate_conditions(
 
 async def _evaluate_single_condition(
     condition: ModelFSMTransitionCondition,
-    context: dict[str, Any],
+    context: dict[str, object],
 ) -> bool:
     """
     Evaluate a single transition condition.
@@ -516,7 +516,7 @@ async def _execute_state_actions(
     fsm: ModelFSMSubcontract,
     state: ModelFSMStateDefinition,
     action_type: str,  # "entry" or "exit"
-    context: dict[str, Any],
+    context: dict[str, object],
 ) -> list[ModelIntent]:
     """
     Execute state entry/exit actions, returning intents.
@@ -560,7 +560,7 @@ async def _execute_state_actions(
 
 async def _execute_transition_actions(
     transition: ModelFSMStateTransition,
-    context: dict[str, Any],
+    context: dict[str, object],
 ) -> list[ModelIntent]:
     """
     Execute transition actions, returning intents.

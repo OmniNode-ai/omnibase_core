@@ -1,7 +1,3 @@
-from typing import Any, cast
-
-from pydantic import BaseModel, Field
-
 """
 ModelSecurityPolicyData: Security policy data container.
 
@@ -9,7 +5,12 @@ This model represents the serialized data structure for security policies.
 Now uses strongly-typed values instead of Union types for better type safety.
 """
 
+from typing import cast
+
+from pydantic import BaseModel, Field
+
 from omnibase_core.models.common.model_typed_value import ModelTypedMapping
+from omnibase_core.types.type_serializable_value import SerializableValue, SerializedDict
 
 
 class ModelSecurityPolicyData(BaseModel):
@@ -26,17 +27,17 @@ class ModelSecurityPolicyData(BaseModel):
     @property
     def data(
         self,
-    ) -> dict[str, str | int | float | bool | list[Any] | dict[str, Any] | None]:
+    ) -> SerializedDict:
         """Get policy data as a regular dictionary for current standards."""
         return cast(
-            "dict[str, str | int | float | bool | list[Any] | dict[str, Any] | None]",
+            SerializedDict,
             self.typed_data.to_python_dict(),
         )
 
     def set_policy_value(
         self,
         key: str,
-        value: str | int | float | bool | list[Any] | dict[str, Any] | None,
+        value: SerializableValue,
     ) -> None:
         """
         Set a policy value with automatic type conversion.
@@ -50,8 +51,8 @@ class ModelSecurityPolicyData(BaseModel):
     def get_policy_value(
         self,
         key: str,
-        default: str | int | float | bool | list[Any] | dict[str, Any] | None = None,
-    ) -> str | int | float | bool | list[Any] | dict[str, Any] | None:
+        default: SerializableValue = None,
+    ) -> SerializableValue:
         """
         Get a policy value.
 
@@ -64,14 +65,14 @@ class ModelSecurityPolicyData(BaseModel):
         """
 
         return cast(
-            "str | int | float | bool | list[Any] | dict[str, Any] | None",
+            SerializableValue,
             self.typed_data.get_value(key, default),
         )
 
     @classmethod
     def from_dict(
         cls,
-        data: dict[str, str | int | float | bool | list[Any] | dict[str, Any] | None],
+        data: SerializedDict,
     ) -> "ModelSecurityPolicyData":
         """
         Create from a regular dictionary using ONEX-compatible patterns.

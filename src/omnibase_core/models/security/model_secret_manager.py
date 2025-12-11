@@ -203,8 +203,8 @@ class ModelSecretManager(BaseModel):
             return "***MASKED***"
 
         def mask_recursive(
-            obj: str | int | bool | list[Any] | dict[str, Any] | ModelMaskData,
-        ) -> str | int | bool | list[Any] | dict[str, Any] | ModelMaskData:
+            obj: str | int | bool | list[object] | SerializedDict | ModelMaskData,
+        ) -> str | int | bool | list[object] | SerializedDict | ModelMaskData:
             if isinstance(obj, dict):
                 return {
                     key: (

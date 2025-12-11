@@ -55,7 +55,7 @@ class MixinFSMExecution:
         self,
         fsm_contract: ModelFSMSubcontract,
         trigger: str,
-        context: dict[str, Any],
+        context: "SerializedDict",
     ) -> FSMTransitionResult:
         """
         Execute FSM transition from YAML contract.

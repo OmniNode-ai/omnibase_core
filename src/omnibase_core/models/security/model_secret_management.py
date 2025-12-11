@@ -1,7 +1,6 @@
-from typing import Any
-
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 """
 ONEX Secret Management Models and Utilities.
@@ -67,7 +66,7 @@ def create_secret_manager_for_environment(
     )
 
 
-def validate_secret_configuration(config_type: str, **kwargs: Any) -> dict[str, Any]:
+def validate_secret_configuration(config_type: str, **kwargs: object) -> SerializedDict:
     """
     Validate secret configuration for specific type.
 
@@ -96,7 +95,7 @@ def validate_secret_configuration(config_type: str, **kwargs: Any) -> dict[str, 
     elif config_type == "backend":
         try:
             backend = ModelSecretBackend(**kwargs)
-            return {"is_valid": True, "backend": backend}
+            return {"is_valid": True, "backend": backend.model_dump()}
         except (
             Exception
         ) as e:  # fallback-ok: validation returns structured error dict, caller handles
@@ -107,8 +106,8 @@ def validate_secret_configuration(config_type: str, **kwargs: Any) -> dict[str, 
 
 
 def get_security_recommendations(
-    config_type: str, config_dict: dict[str, Any]
-) -> list[Any]:
+    config_type: str, config_dict: SerializedDict
+) -> list[str]:
     """
     Get security recommendations for configuration.
 
@@ -127,7 +126,7 @@ def get_security_recommendations(
 
             config = ModelDatabaseSecureConfig(**config_dict)
             assessment = config.get_security_assessment()
-            recommendations: list[Any] = assessment.get("recommendations", [])
+            recommendations: list[str] = assessment.get("recommendations", [])
             return recommendations
 
         if config_type == "backend":

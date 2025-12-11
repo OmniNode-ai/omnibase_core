@@ -12,12 +12,12 @@ Follows ONEX one-model-per-file naming conventions.
 """
 
 
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel
 
 from omnibase_core.types.constraints import SimpleValueType
+from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
 # Use consolidated SimpleValueType instead of redundant TypeVar
 
@@ -142,7 +142,7 @@ class ModelTypedMetrics[SimpleValueType](BaseModel):
 
     # Protocol method implementations
 
-    def get_metadata(self) -> dict[str, Any]:
+    def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
@@ -155,7 +155,7 @@ class ModelTypedMetrics[SimpleValueType](BaseModel):
                     )
         return metadata
 
-    def set_metadata(self, metadata: dict[str, Any]) -> bool:
+    def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
@@ -165,7 +165,7 @@ class ModelTypedMetrics[SimpleValueType](BaseModel):
         except Exception:  # fallback-ok: protocol method contract requires bool return - False indicates metadata update failed safely
             return False
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> TypedDictSerializedModel:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

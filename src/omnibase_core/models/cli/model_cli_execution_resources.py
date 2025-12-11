@@ -10,10 +10,11 @@ Part of the ModelCliExecution restructuring to reduce excessive string fields.
 """
 
 
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel
+
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelCliExecutionResources(BaseModel):
@@ -106,7 +107,7 @@ class ModelCliExecutionResources(BaseModel):
 
     # Protocol method implementations
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

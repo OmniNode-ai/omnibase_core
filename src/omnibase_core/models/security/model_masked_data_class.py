@@ -3,18 +3,18 @@
 Masked data structure container.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
-# Recursive data structure without Any usage
-ModelMaskedDataValue = dict[str, Any] | list[Any] | str | int | float | bool | None
+from omnibase_core.models.common.model_typed_value import ModelTypedMapping
 
 
 class ModelMaskedData(BaseModel):
-    """Masked data structure container."""
+    """Masked data structure container.
 
-    data: dict[str, ModelMaskedDataValue] = Field(
-        default_factory=dict,
+    Uses ModelTypedMapping for type-safe storage of heterogeneous data.
+    """
+
+    data: ModelTypedMapping = Field(
+        default_factory=ModelTypedMapping,
         description="The masked data structure",
     )

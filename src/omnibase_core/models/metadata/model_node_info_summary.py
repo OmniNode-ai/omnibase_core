@@ -44,6 +44,7 @@ from .node_info.model_node_core import ModelNodeCore
 from .node_info.model_node_performance_metrics import ModelNodePerformanceMetrics
 from .node_info.model_node_quality_indicators import ModelNodeQualityIndicators
 from .node_info.model_node_timestamps import ModelNodeTimestamps
+from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
 
 class ModelNodeInfoSummary(BaseModel):
@@ -571,7 +572,7 @@ class ModelNodeInfoSummary(BaseModel):
 
     # Protocol method implementations
 
-    def get_metadata(self) -> dict[str, Any]:
+    def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
@@ -584,7 +585,7 @@ class ModelNodeInfoSummary(BaseModel):
                     )
         return metadata
 
-    def set_metadata(self, metadata: dict[str, Any]) -> bool:
+    def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol).
 
         Raises:
@@ -596,7 +597,7 @@ class ModelNodeInfoSummary(BaseModel):
                 setattr(self, key, value)
         return True
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> TypedDictSerializedModel:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

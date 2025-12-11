@@ -6,14 +6,13 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 YAML-serializable data structures model with discriminated union.
 """
 
-from typing import Any
-
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_yaml_value_type import EnumYamlValueType
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 # Remove Any import - using object for YAML-serializable data types
 
@@ -103,7 +102,7 @@ class ModelYamlValue(BaseModel):
 
     # Protocol method implementations
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

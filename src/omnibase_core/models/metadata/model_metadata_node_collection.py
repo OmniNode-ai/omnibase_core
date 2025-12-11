@@ -17,6 +17,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 from .model_metadata_node_analytics import ModelMetadataNodeAnalytics
 from .model_node_info_container import ModelNodeInfoContainer
+from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
 
 class ModelMetadataNodeCollection(RootModel[dict[str, Any]]):
@@ -83,7 +84,7 @@ class ModelMetadataNodeCollection(RootModel[dict[str, Any]]):
 
     # Protocol method implementations
 
-    def get_metadata(self) -> dict[str, Any]:
+    def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
@@ -96,7 +97,7 @@ class ModelMetadataNodeCollection(RootModel[dict[str, Any]]):
                     )
         return metadata
 
-    def set_metadata(self, metadata: dict[str, Any]) -> bool:
+    def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
@@ -107,7 +108,7 @@ class ModelMetadataNodeCollection(RootModel[dict[str, Any]]):
             # fallback-ok: ProtocolMetadataProvider contract expects bool, not exceptions
             return False
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> TypedDictSerializedModel:
         """Serialize to dictionary (Serializable protocol)."""
         result: dict[str, Any] = self.model_dump(exclude_none=False, by_alias=True)
         return result

@@ -8,7 +8,11 @@ Domain: Infrastructure configuration management
 """
 
 import os
-from typing import Any
+
+from omnibase_core.models.configuration.model_node_config_value import (
+    ConfigValue,
+    ModelNodeConfigSchema,
+)
 
 
 class NodeConfigProvider:
@@ -63,7 +67,7 @@ class NodeConfigProvider:
     """
 
     # Default configuration values
-    _DEFAULTS: dict[str, Any] = {
+    _DEFAULTS: dict[str, ConfigValue] = {
         # Compute node defaults
         "compute.max_parallel_workers": 4,
         "compute.cache_ttl_minutes": 30,
@@ -84,7 +88,7 @@ class NodeConfigProvider:
 
     def __init__(self) -> None:
         """Initialize configuration provider."""
-        self._config_cache: dict[str, Any] = {}
+        self._config_cache: dict[str, ConfigValue] = {}
         self._load_environment_config()
 
     def _load_environment_config(self) -> None:
@@ -113,7 +117,9 @@ class NodeConfigProvider:
                 # Use default value
                 self._config_cache[key] = default_value
 
-    async def get_config_value(self, key: str, default: Any | None = None) -> Any:
+    async def get_config_value(
+        self, key: str, default: ConfigValue | None = None
+    ) -> ConfigValue | None:
         """
         Get configuration value by key.
 
@@ -159,7 +165,9 @@ class NodeConfigProvider:
             return default_ms
         return 30000  # Default 30 seconds
 
-    async def get_security_config(self, key: str, default: Any | None = None) -> Any:
+    async def get_security_config(
+        self, key: str, default: ConfigValue | None = None
+    ) -> ConfigValue | None:
         """
         Get security-related configuration.
 
@@ -173,8 +181,8 @@ class NodeConfigProvider:
         return await self.get_config_value(key, default)
 
     async def get_business_logic_config(
-        self, key: str, default: Any | None = None
-    ) -> Any:
+        self, key: str, default: ConfigValue | None = None
+    ) -> ConfigValue | None:
         """
         Get business logic configuration.
 
@@ -187,7 +195,9 @@ class NodeConfigProvider:
         """
         return await self.get_config_value(key, default)
 
-    async def get_performance_config(self, key: str, default: Any | None = None) -> Any:
+    async def get_performance_config(
+        self, key: str, default: ConfigValue | None = None
+    ) -> ConfigValue | None:
         """
         Get performance-related configuration.
 

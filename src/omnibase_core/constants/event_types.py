@@ -8,7 +8,18 @@ All constants follow ONEX naming convention: module-level UPPER_SNAKE_CASE.
 
 # env-var-ok: constant definitions for event types, not environment variables
 
-from typing import Any
+from typing import TypedDict
+
+
+class EventTypeDict(TypedDict, total=False):
+    """
+    TypedDict for event type dictionary representation.
+
+    Used in normalize_legacy_event_type when handling dict-based event types.
+    """
+
+    value: str
+    event_type: str
 
 # Tool-related events
 TOOL_INVOCATION = "tool_invocation"
@@ -39,7 +50,7 @@ LOGGING_AUDIT_EVENT = "omninode.logging.audit.v1"
 LOGGING_SECURITY_EVENT = "omninode.logging.security.v1"
 
 
-def normalize_legacy_event_type(event_type: str | dict[str, Any] | object) -> str:
+def normalize_legacy_event_type(event_type: str | EventTypeDict | object) -> str:
     """Normalize legacy event types to consistent string format.
 
     This function handles compatibility by converting various
@@ -47,7 +58,7 @@ def normalize_legacy_event_type(event_type: str | dict[str, Any] | object) -> st
     standardized string values.
 
     Args:
-        event_type: Event type in various formats (str, ModelEventType, etc.)
+        event_type: Event type in various formats (str, ModelEventType, EventTypeDict)
 
     Returns:
         Normalized event type as string
@@ -68,7 +79,7 @@ def normalize_legacy_event_type(event_type: str | dict[str, Any] | object) -> st
     if hasattr(event_type, "value"):
         return str(event_type.value)
 
-    # Handle dict[str, Any]-like objects
+    # Handle EventTypeDict-like objects
     if isinstance(event_type, dict):
         if "value" in event_type:
             return str(event_type["value"])

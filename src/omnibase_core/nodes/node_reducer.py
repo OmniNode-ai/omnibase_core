@@ -196,8 +196,8 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
         # Extract trigger from metadata (default to generic 'process' trigger)
         trigger = input_data.metadata.get("trigger", "process")
 
-        # Build context from input data
-        context: dict[str, Any] = {
+        # Build context from input data - context contains serializable values
+        context: dict[str, object] = {
             "input_data": input_data.data,
             "reduction_type": input_data.reduction_type.value,
             "operation_id": str(input_data.operation_id),

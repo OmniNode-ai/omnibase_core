@@ -592,9 +592,9 @@ class ModelONEXContainer:
             f"Cache warming completed: {warmed_count}/{len(common_services)} services warmed",
         )
 
-    def get_performance_stats(self) -> dict[str, Any]:
+    def get_performance_stats(self) -> SerializedDict:
         """Get comprehensive performance statistics."""
-        stats = {
+        stats: SerializedDict = {
             "container_type": "ModelONEXContainer",
             "cache_enabled": self.enable_performance_cache,
             "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),

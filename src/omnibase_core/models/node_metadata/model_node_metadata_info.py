@@ -12,7 +12,6 @@ Simple model for node metadata information used in CLI output.
 """
 
 
-from typing import Any
 from uuid import UUID, uuid4
 
 # Import SPI protocol directly - no fallback pattern per ONEX standards
@@ -31,6 +30,7 @@ from omnibase_core.types.typed_dict_node_metadata_summary import (
 
 from .model_node_core_metadata import ModelNodeCoreMetadata
 from .model_node_organization_metadata import ModelNodeOrganizationMetadata
+from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
 
 class ModelNodeMetadataInfo(BaseModel):
@@ -327,7 +327,7 @@ class ModelNodeMetadataInfo(BaseModel):
         )
 
     @classmethod
-    def from_node_info(cls, node_info: dict[str, Any]) -> ModelNodeMetadataInfo:
+    def from_node_info(cls, node_info: TypedDictSerializedModel) -> ModelNodeMetadataInfo:
         """Create from node info object."""
         # Extract basic information and distribute to sub-models
         core = ModelNodeCoreMetadata(
@@ -389,7 +389,7 @@ class ModelNodeMetadataInfo(BaseModel):
             f"Cannot generate stable ID without UUID field.",
         )
 
-    def get_metadata(self) -> dict[str, Any]:
+    def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
@@ -402,7 +402,7 @@ class ModelNodeMetadataInfo(BaseModel):
                     )
         return metadata
 
-    def set_metadata(self, metadata: dict[str, Any]) -> bool:
+    def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
@@ -412,7 +412,7 @@ class ModelNodeMetadataInfo(BaseModel):
         except Exception:  # fallback-ok: Protocol method - graceful fallback for optional implementation
             return False
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> TypedDictSerializedModel:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

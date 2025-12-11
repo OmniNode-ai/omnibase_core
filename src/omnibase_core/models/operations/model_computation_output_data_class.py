@@ -4,12 +4,15 @@ Computation Output Data Model.
 Strongly-typed output data for computation operations with discriminated unions.
 """
 
-from typing import TYPE_CHECKING, Annotated, Any, Union
+from typing import TYPE_CHECKING, Annotated, Union
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.operations.model_summary_types import (
+    ComputationOutputDataSummaryDict,
+)
 
 if TYPE_CHECKING:
     from omnibase_core.enums.enum_computation_type import EnumComputationType
@@ -186,14 +189,17 @@ class ModelComputationOutputData(BaseModel):
         """Get processing information by key."""
         return self.processing_info.get(key)
 
-    def get_output_summary(self) -> dict[str, Any]:
+    def get_output_summary(self) -> ComputationOutputDataSummaryDict:
         """Get a comprehensive summary of the computation output."""
         base_summary = self.output_data.get_summary()
-        return {
-            **base_summary,
-            "processing_info_count": len(self.processing_info),
-            "computation_type": self.computation_type.value,
-        }
+        return ComputationOutputDataSummaryDict(
+            computation_type=self.computation_type.value,
+            computed_values_count=base_summary["computed_values_count"],
+            metrics_count=base_summary["metrics_count"],
+            status_flags_count=base_summary["status_flags_count"],
+            metadata_count=base_summary["metadata_count"],
+            processing_info_count=len(self.processing_info),
+        )
 
     def is_successful(self) -> bool:
         """Check if computation was successful."""

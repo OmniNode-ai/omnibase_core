@@ -1,23 +1,23 @@
-from pydantic import Field
-
 """
 Matrix strategy model.
 """
 
-from typing import Any
+from pydantic import BaseModel, Field
 
-from pydantic import BaseModel
+from omnibase_core.types import SerializableValue
 
 
 class ModelMatrixStrategy(BaseModel):
     """Matrix strategy configuration."""
 
-    matrix: dict[str, list[Any]] = Field(default=..., description="Matrix dimensions")
-    include: list[dict[str, Any]] | None = Field(
+    matrix: dict[str, list[SerializableValue]] = Field(
+        default=..., description="Matrix dimensions"
+    )
+    include: list[dict[str, SerializableValue]] | None = Field(
         default=None,
         description="Matrix inclusions",
     )
-    exclude: list[dict[str, Any]] | None = Field(
+    exclude: list[dict[str, SerializableValue]] | None = Field(
         default=None,
         description="Matrix exclusions",
     )

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated, Any
+from typing import Annotated
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -25,7 +25,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 # Discriminator function for message content union
-def get_message_content_discriminator(v: dict[str, Any] | BaseModel) -> str:
+def get_message_content_discriminator(v: dict[str, object] | BaseModel) -> str:
     """Discriminator function for message content types."""
     if isinstance(v, dict):
         return str(v.get("message_type", "data"))
@@ -87,7 +87,7 @@ class ModelMessagePayload(BaseModel):
 
     # Protocol method implementations
 
-    def execute(self, **kwargs: Any) -> bool:
+    def execute(self, **kwargs: object) -> bool:
         """Execute or update execution status (Executable protocol)."""
         try:
             # Update any relevant execution fields
@@ -121,7 +121,7 @@ class ModelMessagePayload(BaseModel):
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
         )
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> dict[str, object]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

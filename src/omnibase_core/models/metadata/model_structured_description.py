@@ -12,7 +12,6 @@ Reduces reliance on free-form description strings with standardized templates.
 """
 
 
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -20,6 +19,7 @@ from pydantic import BaseModel
 from omnibase_core.enums.enum_standard_category import EnumStandardCategory
 from omnibase_core.enums.enum_standard_tag import EnumStandardTag
 from omnibase_core.utils.util_uuid_utilities import uuid_from_string
+from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
 
 class ModelStructuredDescription(BaseModel):
@@ -381,7 +381,7 @@ class ModelStructuredDescription(BaseModel):
 
     # Protocol method implementations
 
-    def get_metadata(self) -> dict[str, Any]:
+    def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
@@ -394,7 +394,7 @@ class ModelStructuredDescription(BaseModel):
                     )
         return metadata
 
-    def set_metadata(self, metadata: dict[str, Any]) -> bool:
+    def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol).
 
         Raises:
@@ -406,7 +406,7 @@ class ModelStructuredDescription(BaseModel):
                 setattr(self, key, value)
         return True
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> TypedDictSerializedModel:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

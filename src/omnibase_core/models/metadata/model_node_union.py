@@ -11,7 +11,6 @@ Discriminated union for function node types following ONEX one-model-per-file ar
 """
 
 
-from typing import Any
 
 from pydantic import BaseModel
 
@@ -20,6 +19,7 @@ from omnibase_core.enums.enum_node_union_type import EnumNodeUnionType
 from omnibase_core.models.node_metadata.model_function_node import ModelFunctionNode
 
 from .model_function_node_data import ModelFunctionNodeData
+from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
 
 class ModelNodeUnion(BaseModel):
@@ -135,7 +135,7 @@ class ModelNodeUnion(BaseModel):
 
     # Protocol method implementations
 
-    def get_metadata(self) -> dict[str, Any]:
+    def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
@@ -148,7 +148,7 @@ class ModelNodeUnion(BaseModel):
                     )
         return metadata
 
-    def set_metadata(self, metadata: dict[str, Any]) -> bool:
+    def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol).
 
         Raises:
@@ -160,7 +160,7 @@ class ModelNodeUnion(BaseModel):
                 setattr(self, key, value)
         return True
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> TypedDictSerializedModel:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

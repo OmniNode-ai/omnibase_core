@@ -6,7 +6,8 @@ Follows ONEX one-model-per-file architecture.
 """
 
 from dataclasses import dataclass, field
-from typing import Any
+
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 @dataclass(frozen=True)
@@ -22,7 +23,7 @@ class ModelFSMStateSnapshot:
     """
 
     current_state: str
-    context: dict[str, Any]
+    context: SerializedDict
     history: list[str] = field(default_factory=list)
 
 

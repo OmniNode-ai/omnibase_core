@@ -57,8 +57,13 @@ from omnibase_core.enums.enum_reducer_types import (
     EnumReductionType,
     EnumStreamingMode,
 )
+from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 
+@allow_dict_str_any(
+    "Reducer metadata requires flexible dict for operation-specific tracking "
+    "and correlation context across reduction pipelines."
+)
 class ModelReducerInput[T_Input](BaseModel):
     """
     Input model for NodeReducer operations.

@@ -10,13 +10,13 @@ Follows ONEX one-model-per-file naming conventions.
 """
 
 
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_config_type import EnumConfigType
 from omnibase_core.models.infrastructure.model_value import ModelValue
+from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
 
 class ModelNestedConfiguration(BaseModel):
@@ -54,7 +54,7 @@ class ModelNestedConfiguration(BaseModel):
 
     # Protocol method implementations
 
-    def get_metadata(self) -> dict[str, Any]:
+    def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
@@ -67,7 +67,7 @@ class ModelNestedConfiguration(BaseModel):
                     )
         return metadata
 
-    def set_metadata(self, metadata: dict[str, Any]) -> bool:
+    def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol).
 
         Raises:
@@ -79,7 +79,7 @@ class ModelNestedConfiguration(BaseModel):
                 setattr(self, key, value)
         return True
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> TypedDictSerializedModel:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
