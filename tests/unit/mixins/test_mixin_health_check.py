@@ -5,6 +5,7 @@ Tests health check capabilities, dependency checking, and async support.
 """
 
 import asyncio
+from typing import Any
 
 import pytest
 
@@ -459,6 +460,14 @@ class MockHttpResponse:
         """HTTP status code of the response."""
         return self._status
 
+    async def text(self) -> str:
+        """Get the response body as text."""
+        return ""
+
+    async def json(self) -> dict[str, Any]:
+        """Parse the response body as JSON."""
+        return {}
+
 
 class MockHttpClient:
     """Mock HTTP client implementing ProtocolHttpClient."""
@@ -477,6 +486,7 @@ class MockHttpClient:
         self,
         url: str,
         timeout: float | None = None,
+        headers: dict[str, str] | None = None,
     ) -> MockHttpResponse:
         """Perform mock HTTP GET request."""
         self.called_url = url

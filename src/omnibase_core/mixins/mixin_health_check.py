@@ -29,7 +29,7 @@ from types.core_types (not from models or types.constraints).
 import asyncio
 from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any, Union
+from typing import Any, Union
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
@@ -838,10 +838,7 @@ async def check_http_service_health(
             service_url if service_url.endswith("/health") else f"{service_url}/health"
         )
 
-        start_time = datetime.now(UTC)
-
         response = await http_client.get(health_url, timeout=timeout_seconds)
-        duration_ms = (datetime.now(UTC) - start_time).total_seconds() * 1000
 
         if response.status == expected_status:
             return ModelHealthStatus.create_healthy(score=1.0)
