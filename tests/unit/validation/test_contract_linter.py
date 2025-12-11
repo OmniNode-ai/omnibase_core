@@ -110,7 +110,6 @@ class TestWarnUnusedParallelGroup:
             execution_graph=ModelExecutionGraph(
                 version=version,
                 nodes=[],
-                edges=[],
             ),
         )
 
@@ -152,7 +151,6 @@ class TestWarnUnusedParallelGroup:
             execution_graph=ModelExecutionGraph(
                 version=version,
                 nodes=[],
-                edges=[],
             ),
         )
 
@@ -814,7 +812,6 @@ class TestLintIntegration:
             execution_graph=ModelExecutionGraph(
                 version=version,
                 nodes=[],
-                edges=[],
             ),
         )
 
