@@ -167,6 +167,10 @@ JsonType = dict[str, "JsonType"] | list["JsonType"] | str | int | float | bool |
 # - list[PrimitiveValue]: Flat list of primitives
 # - dict[str, PrimitiveValue]: Flat dict mapping to primitives
 #
+# NOTE: None is NOT included (unlike JsonPrimitive/JsonValue).
+# This type is for contexts where values must be present and non-null.
+# Use JsonValue if you need to allow None in containers.
+#
 # Use cases:
 # - Simple configuration values
 # - Flat metadata structures
@@ -176,6 +180,7 @@ JsonType = dict[str, "JsonType"] | list["JsonType"] | str | int | float | bool |
 #     >>> settings: PrimitiveContainer = {"timeout": 30, "enabled": True}
 #     >>> tags: PrimitiveContainer = ["prod", "critical"]
 #     >>> count: PrimitiveContainer = 42
+#     >>> invalid: PrimitiveContainer = None  # Type error - None not allowed
 PrimitiveContainer = PrimitiveValue | list[PrimitiveValue] | dict[str, PrimitiveValue]
 
 

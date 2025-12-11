@@ -179,7 +179,7 @@ config: JsonType = {
 
 #### PrimitiveContainer
 
-Primitives or flat collections of primitives. No deep nesting.
+Primitives or flat collections of primitives. No deep nesting, no `None` values.
 
 ```python
 # Definition
@@ -196,7 +196,8 @@ settings: PrimitiveContainer = {"timeout": 30, "enabled": True}
 tags: PrimitiveContainer = ["prod", "critical", "v2"]
 count: PrimitiveContainer = 42
 
-# Note: No None allowed, no nested containers
+# Note: None is EXCLUDED (uses PrimitiveValue, not JsonPrimitive)
+# This is intentional - use JsonValue if you need nullable containers
 ```
 
 #### ToolParameterValue
@@ -233,7 +234,7 @@ params: dict[str, ToolParameterValue] = {
 
 Use this decision tree to select the appropriate type alias:
 
-```
+```text
 Is the value JSON-compatible?
 |
 +-- NO --> Keep specific union or use Any with suppression comment
@@ -520,9 +521,9 @@ class ModelPermission(BaseModel):
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 1.0.0 | 2024-12-11 | Initial guide for PR #163 |
+| 1.0.0 | 2025-12-11 | Initial guide for PR #163 |
 
 ---
 
-**Last Updated**: 2024-12-11
+**Last Updated**: 2025-12-11
 **Related PR**: #163 - Reduce union type tech debt with centralized JSON type aliases

@@ -4,8 +4,6 @@ ModelCustomSecuritySettings: Custom security settings model.
 This model provides structured custom security settings without using Any types.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 # Type alias for security setting values stored in this model.
@@ -40,19 +38,22 @@ class ModelCustomSecuritySettings(BaseModel):
         description="List security settings",
     )
 
-    def add_setting(self, key: str, value: Any) -> None:
-        """Add a custom security setting with automatic type detection."""
-        if isinstance(value, str):
+    def add_setting(self, key: str, value: SecuritySettingValue) -> None:
+        """Add a custom security setting with automatic type detection.
+
+        Note: bool check must come before int check because bool is a subclass of int.
+        """
+        if value is None:
+            # None values are valid but not stored - use get_setting's default
+            return
+        if isinstance(value, bool):
+            self.boolean_settings[key] = value
+        elif isinstance(value, str):
             self.string_settings[key] = value
         elif isinstance(value, int):
             self.integer_settings[key] = value
-        elif isinstance(value, bool):
-            self.boolean_settings[key] = value
-        elif isinstance(value, list) and all(isinstance(item, str) for item in value):
+        elif isinstance(value, list):
             self.list_settings[key] = value
-        else:
-            # Default to string representation for unknown types
-            self.string_settings[key] = str(value)
 
     def get_setting(
         self, key: str, default: SecuritySettingValue = None
@@ -89,10 +90,9 @@ class ModelCustomSecuritySettings(BaseModel):
 
     def to_dict(self) -> dict[str, object]:
         """Convert to dictionary for current standards."""
-        # Custom flattening logic for security settings
-        result: dict[str, object] = {}
-        result.update(dict(self.string_settings.items()))
-        result.update(dict(self.integer_settings.items()))
-        result.update(dict(self.boolean_settings.items()))
-        result.update(dict(self.list_settings.items()))
-        return result
+        return {
+            **self.string_settings,
+            **self.integer_settings,
+            **self.boolean_settings,
+            **self.list_settings,
+        }
