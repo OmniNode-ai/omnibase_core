@@ -180,6 +180,7 @@ from .typed_dict_usage_metadata import TypedDictUsageMetadata
 from .typed_dict_validation_metadata_type import TypedDictValidationMetadataType
 from .typed_dict_validation_result import TypedDictValidationResult
 from .typed_dict_validator_info import TypedDictValidatorInfo
+from .typed_dict_workflow_context import TypedDictWorkflowContext
 from .typed_dict_workflow_state import TypedDictWorkflowState
 
 # Utility functions
@@ -296,6 +297,7 @@ __all__ = [
     "TypedDictErrorData",
     "TypedDictErrorDetails",
     "TypedDictOperationResult",
+    "TypedDictWorkflowContext",
     "TypedDictWorkflowState",
     "TypedDictValidatorInfo",
     "TypedDictEventInfo",
