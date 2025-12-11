@@ -36,6 +36,12 @@ from omnibase_core.errors.exceptions import (
     ExceptionValidationFrameworkError,
 )
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
+from omnibase_core.models.validation.model_ambiguous_transition import (
+    ModelAmbiguousTransition,
+)
+from omnibase_core.models.validation.model_fsm_analysis_result import (
+    ModelFSMAnalysisResult,
+)
 
 # Import BOTH validation result classes (different purposes!)
 # - ModelValidationResult (from models/) is for circular import validation
@@ -60,6 +66,9 @@ from .contracts import (
     validate_no_manual_yaml,
     validate_yaml_file,
 )
+
+# Import FSM analysis
+from .fsm_analysis import analyze_fsm
 from .patterns import validate_patterns_directory, validate_patterns_file
 from .types import validate_union_usage_directory, validate_union_usage_file
 from .validation_utils import ModelProtocolInfo
@@ -135,6 +144,10 @@ __all__ = [
     "ExceptionValidationFrameworkError",
     "ModelValidationSuite",
     "validate_all",
+    # FSM analysis
+    "ModelAmbiguousTransition",
+    "ModelFSMAnalysisResult",
+    "analyze_fsm",
     # Main validation functions (recommended)
     "validate_architecture",
     # Individual module functions
