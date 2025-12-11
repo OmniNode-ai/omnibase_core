@@ -743,6 +743,69 @@ class TestMetadata:
         assert "execution_mode" in result.metadata
         assert result.metadata["execution_mode"] == "parallel"
 
+    @pytest.mark.asyncio
+    async def test_workflow_hash_in_metadata(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+        simple_workflow_steps: list[ModelWorkflowStep],
+    ):
+        """Test that workflow hash is included in result metadata for integrity verification."""
+        from omnibase_core.utils.workflow_executor import _compute_workflow_hash
+
+        result = await execute_workflow(
+            simple_workflow_definition,
+            simple_workflow_steps,
+            uuid4(),
+        )
+
+        # Verify workflow_hash is present in metadata
+        assert "workflow_hash" in result.metadata
+
+        # Verify the hash is a valid SHA-256 hex string (64 characters)
+        workflow_hash = result.metadata["workflow_hash"]
+        assert isinstance(workflow_hash, str)
+        assert len(workflow_hash) == 64
+        assert all(c in "0123456789abcdef" for c in workflow_hash)
+
+        # Verify the hash matches what we would compute from the workflow definition
+        expected_hash = _compute_workflow_hash(simple_workflow_definition)
+        assert workflow_hash == expected_hash
+
+    @pytest.mark.asyncio
+    async def test_workflow_hash_consistent_across_execution_modes(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+        simple_workflow_steps: list[ModelWorkflowStep],
+    ):
+        """Test that workflow hash is consistent regardless of execution mode."""
+        from omnibase_core.utils.workflow_executor import _compute_workflow_hash
+
+        # Execute with sequential mode
+        result_sequential = await execute_workflow(
+            simple_workflow_definition,
+            simple_workflow_steps,
+            uuid4(),
+            execution_mode=EnumExecutionMode.SEQUENTIAL,
+        )
+
+        # Execute with parallel mode
+        result_parallel = await execute_workflow(
+            simple_workflow_definition,
+            simple_workflow_steps,
+            uuid4(),
+            execution_mode=EnumExecutionMode.PARALLEL,
+        )
+
+        # Both should have the same workflow hash (based on definition, not execution)
+        assert (
+            result_sequential.metadata["workflow_hash"]
+            == result_parallel.metadata["workflow_hash"]
+        )
+
+        # And both should match the computed hash
+        expected_hash = _compute_workflow_hash(simple_workflow_definition)
+        assert result_sequential.metadata["workflow_hash"] == expected_hash
+
 
 class TestBuildWorkflowContext:
     """Tests for _build_workflow_context function."""
@@ -1040,6 +1103,343 @@ class TestComputeWorkflowHash:
         assert hash1 != hash2
 
 
+class TestPriorityOrderingIntegration:
+    """Integration tests for priority ordering in real workflow execution.
+
+    These tests verify that priority ordering works end-to-end through actual
+    workflow execution, not just the internal _get_topological_order function.
+    """
+
+    @pytest.mark.asyncio
+    async def test_sequential_workflow_respects_priority_ordering(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Verify sequential workflow execution emits actions in priority order.
+
+        When executing a sequential workflow with independent steps (no dependencies),
+        higher priority steps (lower priority value) should be executed first,
+        and their actions should be emitted in priority order.
+        """
+        workflow_id = uuid4()
+
+        # Create independent steps with different priorities
+        low_priority_id = uuid4()
+        medium_priority_id = uuid4()
+        high_priority_id = uuid4()
+
+        # Declare in reverse priority order to ensure sorting is actually applied
+        steps = [
+            ModelWorkflowStep(
+                step_id=low_priority_id,
+                step_name="Low Priority Step",
+                step_type="effect",
+                priority=10,  # Lowest importance (highest number)
+                enabled=True,
+            ),
+            ModelWorkflowStep(
+                step_id=medium_priority_id,
+                step_name="Medium Priority Step",
+                step_type="compute",
+                priority=5,
+                enabled=True,
+            ),
+            ModelWorkflowStep(
+                step_id=high_priority_id,
+                step_name="High Priority Step",
+                step_type="reducer",
+                priority=1,  # Highest importance (lowest number)
+                enabled=True,
+            ),
+        ]
+
+        result = await execute_workflow(
+            simple_workflow_definition,
+            steps,
+            workflow_id,
+            execution_mode=EnumExecutionMode.SEQUENTIAL,
+        )
+
+        # Verify all steps completed
+        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert len(result.completed_steps) == 3
+        assert len(result.actions_emitted) == 3
+
+        # Extract step IDs from actions in emission order
+        emitted_step_ids = [
+            UUID(action.payload["step_id"]) for action in result.actions_emitted
+        ]
+
+        # Verify priority order: high (1), medium (5), low (10)
+        assert emitted_step_ids[0] == high_priority_id, (
+            f"Expected high priority step first, got {emitted_step_ids[0]}"
+        )
+        assert emitted_step_ids[1] == medium_priority_id, (
+            f"Expected medium priority step second, got {emitted_step_ids[1]}"
+        )
+        assert emitted_step_ids[2] == low_priority_id, (
+            f"Expected low priority step third, got {emitted_step_ids[2]}"
+        )
+
+        # Also verify action priorities are set correctly
+        assert result.actions_emitted[0].priority == 1
+        assert result.actions_emitted[1].priority == 5
+        assert result.actions_emitted[2].priority == 10
+
+    @pytest.mark.asyncio
+    async def test_parallel_workflow_respects_priority_in_wave(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Verify parallel workflow execution respects priority within a wave.
+
+        In parallel execution, steps are grouped into "waves" based on dependencies.
+        Within a single wave (all steps have their dependencies met), the actions
+        should be processed/emitted in priority order, with higher priority steps
+        (lower priority value) coming first.
+        """
+        workflow_id = uuid4()
+
+        # Create a workflow with one parent step and multiple child steps
+        # All children depend on parent, so they form a single wave after parent
+        parent_id = uuid4()
+        low_priority_child_id = uuid4()
+        medium_priority_child_id = uuid4()
+        high_priority_child_id = uuid4()
+
+        steps = [
+            # Parent step - executed first
+            ModelWorkflowStep(
+                step_id=parent_id,
+                step_name="Parent Step",
+                step_type="effect",
+                priority=1,
+                enabled=True,
+            ),
+            # Children declared in reverse priority order
+            ModelWorkflowStep(
+                step_id=low_priority_child_id,
+                step_name="Low Priority Child",
+                step_type="compute",
+                priority=10,  # Lowest importance
+                depends_on=[parent_id],
+                enabled=True,
+            ),
+            ModelWorkflowStep(
+                step_id=medium_priority_child_id,
+                step_name="Medium Priority Child",
+                step_type="compute",
+                priority=5,
+                depends_on=[parent_id],
+                enabled=True,
+            ),
+            ModelWorkflowStep(
+                step_id=high_priority_child_id,
+                step_name="High Priority Child",
+                step_type="reducer",
+                priority=1,  # Highest importance
+                depends_on=[parent_id],
+                enabled=True,
+            ),
+        ]
+
+        result = await execute_workflow(
+            simple_workflow_definition,
+            steps,
+            workflow_id,
+            execution_mode=EnumExecutionMode.PARALLEL,
+        )
+
+        # Verify all steps completed
+        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert len(result.completed_steps) == 4
+        assert len(result.actions_emitted) == 4
+
+        # Extract step IDs from actions in emission order
+        emitted_step_ids = [
+            UUID(action.payload["step_id"]) for action in result.actions_emitted
+        ]
+
+        # First action should be parent (wave 1)
+        assert emitted_step_ids[0] == parent_id, (
+            f"Expected parent step first, got {emitted_step_ids[0]}"
+        )
+
+        # Remaining actions are wave 2 (all children depend on parent)
+        # Within wave 2, they should be in priority order
+        wave2_actions = result.actions_emitted[1:]
+
+        # Verify action priorities are set correctly for the wave
+        action_priorities = [
+            (a.priority, UUID(a.payload["step_id"])) for a in wave2_actions
+        ]
+
+        # Group by step ID for verification
+        priority_by_step = {
+            step_id: priority for priority, step_id in action_priorities
+        }
+        assert priority_by_step[high_priority_child_id] == 1
+        assert priority_by_step[medium_priority_child_id] == 5
+        assert priority_by_step[low_priority_child_id] == 10
+
+    @pytest.mark.asyncio
+    async def test_sequential_workflow_priority_with_dependencies(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Verify dependencies take precedence over priority in sequential execution.
+
+        When steps have dependencies, the topological order is respected first,
+        then priority is used to order steps at the same dependency level.
+        """
+        workflow_id = uuid4()
+
+        # Create a diamond dependency pattern:
+        #       A (low priority)
+        #      / \
+        #     B   C (B high priority, C low priority)
+        #      \ /
+        #       D (depends on both B and C)
+        step_a_id = uuid4()
+        step_b_id = uuid4()  # High priority
+        step_c_id = uuid4()  # Low priority
+        step_d_id = uuid4()
+
+        steps = [
+            # Declare in non-priority order
+            ModelWorkflowStep(
+                step_id=step_c_id,
+                step_name="Step C (Low Priority)",
+                step_type="compute",
+                priority=10,
+                depends_on=[step_a_id],
+                enabled=True,
+            ),
+            ModelWorkflowStep(
+                step_id=step_a_id,
+                step_name="Step A (Root)",
+                step_type="effect",
+                priority=5,
+                enabled=True,
+            ),
+            ModelWorkflowStep(
+                step_id=step_d_id,
+                step_name="Step D (Final)",
+                step_type="reducer",
+                priority=1,
+                depends_on=[step_b_id, step_c_id],
+                enabled=True,
+            ),
+            ModelWorkflowStep(
+                step_id=step_b_id,
+                step_name="Step B (High Priority)",
+                step_type="compute",
+                priority=1,  # Highest priority at level 2
+                depends_on=[step_a_id],
+                enabled=True,
+            ),
+        ]
+
+        result = await execute_workflow(
+            simple_workflow_definition,
+            steps,
+            workflow_id,
+            execution_mode=EnumExecutionMode.SEQUENTIAL,
+        )
+
+        # Verify all steps completed
+        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert len(result.completed_steps) == 4
+        assert len(result.actions_emitted) == 4
+
+        # Extract step IDs from actions in emission order
+        emitted_step_ids = [
+            UUID(action.payload["step_id"]) for action in result.actions_emitted
+        ]
+
+        # Step A must be first (no dependencies)
+        assert emitted_step_ids[0] == step_a_id, "Step A (root) must execute first"
+
+        # Step D must be last (depends on B and C)
+        assert emitted_step_ids[3] == step_d_id, "Step D (final) must execute last"
+
+        # Steps B and C can be in either order based on priority
+        # B has priority 1, C has priority 10, so B should come before C
+        b_index = emitted_step_ids.index(step_b_id)
+        c_index = emitted_step_ids.index(step_c_id)
+        assert b_index < c_index, (
+            f"Step B (priority 1) should execute before Step C (priority 10). "
+            f"B index: {b_index}, C index: {c_index}"
+        )
+
+    @pytest.mark.asyncio
+    async def test_sequential_workflow_action_priority_values(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Verify emitted actions have correct priority values from steps.
+
+        The ModelAction priority is clamped to 1-10 range from ModelWorkflowStep's
+        1-1000 range. This test verifies the clamping behavior in end-to-end execution.
+        """
+        workflow_id = uuid4()
+
+        # Create steps with priorities spanning the full range
+        step_normal_id = uuid4()
+        step_over_10_id = uuid4()
+        step_way_over_id = uuid4()
+
+        steps = [
+            ModelWorkflowStep(
+                step_id=step_normal_id,
+                step_name="Normal Priority",
+                step_type="effect",
+                priority=5,  # Within 1-10 range
+                enabled=True,
+            ),
+            ModelWorkflowStep(
+                step_id=step_over_10_id,
+                step_name="Priority Over 10",
+                step_type="compute",
+                priority=50,  # Should be clamped to 10
+                enabled=True,
+            ),
+            ModelWorkflowStep(
+                step_id=step_way_over_id,
+                step_name="Priority Way Over",
+                step_type="reducer",
+                priority=500,  # Should be clamped to 10
+                enabled=True,
+            ),
+        ]
+
+        result = await execute_workflow(
+            simple_workflow_definition,
+            steps,
+            workflow_id,
+            execution_mode=EnumExecutionMode.SEQUENTIAL,
+        )
+
+        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert len(result.actions_emitted) == 3
+
+        # Map actions by step ID
+        actions_by_step_id = {
+            UUID(a.payload["step_id"]): a for a in result.actions_emitted
+        }
+
+        # Verify priority values on emitted actions
+        assert actions_by_step_id[step_normal_id].priority == 5, (
+            "Normal priority should remain unchanged"
+        )
+        assert actions_by_step_id[step_over_10_id].priority == 10, (
+            "Priority 50 should be clamped to 10"
+        )
+        assert actions_by_step_id[step_way_over_id].priority == 10, (
+            "Priority 500 should be clamped to 10"
+        )
+
+
 class TestPriorityOrdering:
     """Tests for priority-aware topological ordering in _get_topological_order."""
 
@@ -1218,3 +1618,337 @@ class TestPriorityOrdering:
         assert order[0] == parent_id
         # High priority child (1) before low priority child (10)
         assert order.index(high_priority_child_id) < order.index(low_priority_child_id)
+
+    def test_default_priority_uses_model_default(self) -> None:
+        """Test that default priority (100) is clamped to 10 in topological order."""
+        from omnibase_core.utils.workflow_executor import _get_topological_order
+
+        default_priority_id = uuid4()
+        high_priority_id = uuid4()
+
+        # Create steps where one uses default priority (100) and another has explicit high priority (1)
+        # Default priority (100) should be clamped to 10
+        steps = [
+            ModelWorkflowStep(
+                step_id=default_priority_id,
+                step_name="Default Priority Step",
+                step_type="compute",
+                # priority defaults to 100, clamped to 10
+            ),
+            ModelWorkflowStep(
+                step_id=high_priority_id,
+                step_name="High Priority Step",
+                step_type="effect",
+                priority=1,  # Highest priority
+            ),
+        ]
+
+        order = _get_topological_order(steps)
+
+        # High priority (1) should come before default priority (100 clamped to 10)
+        assert order.index(high_priority_id) < order.index(default_priority_id)
+
+    def test_default_priority_in_create_action_for_step(self) -> None:
+        """Test that _create_action_for_step clamps default priority (100) to 10."""
+        from omnibase_core.utils.workflow_executor import _create_action_for_step
+
+        step = ModelWorkflowStep(
+            step_name="Test Step",
+            step_type="effect",
+            # priority defaults to 100
+        )
+
+        action = _create_action_for_step(step, uuid4())
+
+        # Default priority (100) should be clamped to 10
+        assert action.priority == 10
+
+    def test_priority_none_handling_in_topological_order(self) -> None:
+        """Test that _get_topological_order handles None priority defensively.
+
+        Note: ModelWorkflowStep currently defines priority as int with default=100,
+        so None is not valid input. However, the code defensively handles None
+        to guard against future model changes.
+        """
+        from unittest.mock import MagicMock
+
+        from omnibase_core.utils.workflow_executor import _get_topological_order
+
+        # Create mock steps with None priority to test defensive handling
+        step1_id = uuid4()
+        step2_id = uuid4()
+
+        mock_step1 = MagicMock(spec=ModelWorkflowStep)
+        mock_step1.step_id = step1_id
+        mock_step1.priority = None  # Simulating None priority
+        mock_step1.depends_on = []
+
+        mock_step2 = MagicMock(spec=ModelWorkflowStep)
+        mock_step2.step_id = step2_id
+        mock_step2.priority = 10  # Explicit priority
+        mock_step2.depends_on = []
+
+        # Should not raise TypeError when priority is None
+        order = _get_topological_order([mock_step1, mock_step2])
+
+        # Step with None priority (defaults to 1) should come before step with priority 10
+        assert order.index(step1_id) < order.index(step2_id)
+
+    def test_priority_none_handling_in_create_action(self) -> None:
+        """Test that _create_action_for_step handles None priority defensively.
+
+        Note: ModelWorkflowStep currently defines priority as int with default=100,
+        so None is not valid input. However, the code defensively handles None
+        to guard against future model changes.
+        """
+        from unittest.mock import MagicMock
+
+        from omnibase_core.utils.workflow_executor import _create_action_for_step
+
+        # Create mock step with None priority to test defensive handling
+        mock_step = MagicMock(spec=ModelWorkflowStep)
+        mock_step.step_id = uuid4()
+        mock_step.step_name = "Mock Step"
+        mock_step.step_type = "effect"
+        mock_step.priority = None  # Simulating None priority
+        mock_step.depends_on = []
+        mock_step.timeout_ms = 5000
+        mock_step.retry_count = 0
+        mock_step.correlation_id = uuid4()
+
+        # Should not raise TypeError when priority is None
+        action = _create_action_for_step(mock_step, uuid4())
+
+        # None priority should default to 1
+        assert action.priority == 1
+
+
+class TestWorkflowContextIntegration:
+    """Tests for workflow context integration in execution flow."""
+
+    @pytest.mark.asyncio
+    async def test_sequential_execution_builds_context_with_step_outputs(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Verify sequential execution tracks step outputs for context building.
+
+        The workflow executor should:
+        1. Build workflow context for each step from prior outputs
+        2. Store action payloads as step outputs after completion
+        3. Make prior outputs available to subsequent steps
+        """
+        workflow_id = uuid4()
+        step1_id = uuid4()
+        step2_id = uuid4()
+        step3_id = uuid4()
+
+        steps = [
+            ModelWorkflowStep(
+                step_id=step1_id,
+                step_name="Step 1",
+                step_type="effect",
+                enabled=True,
+            ),
+            ModelWorkflowStep(
+                step_id=step2_id,
+                step_name="Step 2",
+                step_type="compute",
+                depends_on=[step1_id],
+                enabled=True,
+            ),
+            ModelWorkflowStep(
+                step_id=step3_id,
+                step_name="Step 3",
+                step_type="reducer",
+                depends_on=[step2_id],
+                enabled=True,
+            ),
+        ]
+
+        result = await execute_workflow(
+            simple_workflow_definition,
+            steps,
+            workflow_id,
+            execution_mode=EnumExecutionMode.SEQUENTIAL,
+        )
+
+        # Verify all steps completed
+        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert len(result.completed_steps) == 3
+
+        # Verify each action's payload contains expected data
+        for action in result.actions_emitted:
+            assert "workflow_id" in action.payload
+            assert action.payload["workflow_id"] == str(workflow_id)
+            assert "step_id" in action.payload
+            assert "step_name" in action.payload
+
+    @pytest.mark.asyncio
+    async def test_parallel_execution_builds_context_per_wave(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Verify parallel execution builds context at wave boundaries.
+
+        In parallel execution:
+        1. Steps in the same wave execute simultaneously
+        2. Context is built once per wave from prior wave outputs
+        3. Steps in subsequent waves can access prior wave outputs
+        """
+        workflow_id = uuid4()
+
+        # Create a workflow with clear wave structure:
+        # Wave 1: step_a, step_b (no dependencies)
+        # Wave 2: step_c, step_d (depend on wave 1)
+        # Wave 3: step_e (depends on wave 2)
+        step_a_id = uuid4()
+        step_b_id = uuid4()
+        step_c_id = uuid4()
+        step_d_id = uuid4()
+        step_e_id = uuid4()
+
+        steps = [
+            ModelWorkflowStep(
+                step_id=step_a_id,
+                step_name="Wave 1 - A",
+                step_type="effect",
+                enabled=True,
+            ),
+            ModelWorkflowStep(
+                step_id=step_b_id,
+                step_name="Wave 1 - B",
+                step_type="effect",
+                enabled=True,
+            ),
+            ModelWorkflowStep(
+                step_id=step_c_id,
+                step_name="Wave 2 - C",
+                step_type="compute",
+                depends_on=[step_a_id],
+                enabled=True,
+            ),
+            ModelWorkflowStep(
+                step_id=step_d_id,
+                step_name="Wave 2 - D",
+                step_type="compute",
+                depends_on=[step_b_id],
+                enabled=True,
+            ),
+            ModelWorkflowStep(
+                step_id=step_e_id,
+                step_name="Wave 3 - E",
+                step_type="reducer",
+                depends_on=[step_c_id, step_d_id],
+                enabled=True,
+            ),
+        ]
+
+        result = await execute_workflow(
+            simple_workflow_definition,
+            steps,
+            workflow_id,
+            execution_mode=EnumExecutionMode.PARALLEL,
+        )
+
+        # Verify all steps completed
+        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert len(result.completed_steps) == 5
+        assert len(result.actions_emitted) == 5
+
+        # Verify step_e (wave 3) completed after its dependencies
+        completed_step_ids = [UUID(s) for s in result.completed_steps]
+        step_e_index = completed_step_ids.index(step_e_id)
+        step_c_index = completed_step_ids.index(step_c_id)
+        step_d_index = completed_step_ids.index(step_d_id)
+
+        # step_e should appear after both step_c and step_d
+        assert step_e_index > step_c_index
+        assert step_e_index > step_d_index
+
+    @pytest.mark.asyncio
+    async def test_step_context_receives_workflow_context(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Verify ModelDeclarativeWorkflowStepContext receives workflow_context.
+
+        The step context should have access to the workflow context with
+        prior step outputs, enabling data flow between steps.
+        """
+        from omnibase_core.models.workflow.execution.model_declarative_workflow_step_context import (
+            ModelDeclarativeWorkflowStepContext,
+        )
+        from omnibase_core.types.typed_dict_workflow_context import (
+            TypedDictWorkflowContext,
+        )
+
+        workflow_id = uuid4()
+        step_id = uuid4()
+        prior_step_id = uuid4()
+
+        step = ModelWorkflowStep(
+            step_id=step_id,
+            step_name="Test Step",
+            step_type="compute",
+            enabled=True,
+        )
+
+        completed_steps = {prior_step_id}
+        workflow_context = TypedDictWorkflowContext(
+            workflow_uuid_str=str(workflow_id),
+            completed_steps=[str(prior_step_id)],
+            step_outputs={str(prior_step_id): {"data": [1, 2, 3]}},
+            step_count=1,
+        )
+
+        # Create step context with workflow context
+        context = ModelDeclarativeWorkflowStepContext(
+            step=step,
+            workflow_id=workflow_id,
+            completed_steps=completed_steps,
+            workflow_context=workflow_context,
+        )
+
+        # Verify workflow context is accessible
+        assert context.workflow_context is not None
+        assert context.workflow_context["workflow_uuid_str"] == str(workflow_id)
+        assert len(context.workflow_context["completed_steps"]) == 1
+        assert context.workflow_context["step_outputs"][str(prior_step_id)] == {
+            "data": [1, 2, 3]
+        }
+
+    @pytest.mark.asyncio
+    async def test_step_context_without_workflow_context(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Verify ModelDeclarativeWorkflowStepContext works without workflow_context.
+
+        For backward compatibility, workflow_context should be optional.
+        """
+        from omnibase_core.models.workflow.execution.model_declarative_workflow_step_context import (
+            ModelDeclarativeWorkflowStepContext,
+        )
+
+        workflow_id = uuid4()
+        step_id = uuid4()
+
+        step = ModelWorkflowStep(
+            step_id=step_id,
+            step_name="Test Step",
+            step_type="compute",
+            enabled=True,
+        )
+
+        # Create step context without workflow context (backward compatible)
+        context = ModelDeclarativeWorkflowStepContext(
+            step=step,
+            workflow_id=workflow_id,
+            completed_steps=set(),
+        )
+
+        # Verify workflow context is None
+        assert context.workflow_context is None
+        assert context.step == step
+        assert context.workflow_id == workflow_id

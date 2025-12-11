@@ -123,6 +123,9 @@ async def execute_workflow(
             context={"workflow_id": str(workflow_id), "errors": validation_errors},
         )
 
+    # Compute workflow hash for integrity verification after validation passes
+    workflow_hash = _compute_workflow_hash(workflow_definition)
+
     # Determine execution mode
     mode = execution_mode or _get_execution_mode(workflow_definition)
 
@@ -148,6 +151,9 @@ async def execute_workflow(
     end_time = time.perf_counter()
     execution_time_ms = max(1, int((end_time - start_time) * 1000))
     result.execution_time_ms = execution_time_ms
+
+    # Add workflow hash to metadata for integrity verification
+    result.metadata["workflow_hash"] = workflow_hash
 
     return result
 
@@ -355,6 +361,7 @@ async def _execute_sequential(
     failed_steps: list[str] = []
     all_actions: list[ModelAction] = []
     completed_step_ids: set[UUID] = set()
+    step_outputs: dict[UUID, object] = {}
 
     # Log workflow execution start
     logging.info(
@@ -382,9 +389,14 @@ async def _execute_sequential(
             continue
 
         try:
-            # Create context
+            # Build workflow context from prior step outputs for data flow
+            workflow_context = _build_workflow_context(
+                workflow_id, completed_step_ids, step_outputs
+            )
+
+            # Create context with workflow context for inter-step data access
             context = WorkflowStepExecutionContext(
-                step, workflow_id, completed_step_ids
+                step, workflow_id, completed_step_ids, workflow_context
             )
 
             # Emit action for this step
@@ -395,6 +407,9 @@ async def _execute_sequential(
             context.completed_at = datetime.now()
             completed_steps.append(str(step.step_id))
             completed_step_ids.add(step.step_id)
+
+            # Store step output for subsequent steps (action payload serves as output)
+            step_outputs[step.step_id] = action.payload
 
         except ModelOnexError as e:
             # Handle expected ONEX errors
@@ -467,6 +482,7 @@ async def _execute_parallel(
     failed_steps: list[str] = []
     all_actions: list[ModelAction] = []
     completed_step_ids: set[UUID] = set()
+    step_outputs: dict[UUID, object] = {}
     should_stop = False
 
     # Log workflow execution start
@@ -476,6 +492,7 @@ async def _execute_parallel(
 
     async def execute_step(
         step: ModelWorkflowStep,
+        wave_context: TypedDictWorkflowContext,
     ) -> tuple[ModelWorkflowStep, ModelAction | None, Exception | None]:
         """
         Execute a single workflow step asynchronously.
@@ -487,6 +504,8 @@ async def _execute_parallel(
         Args:
             step: The workflow step to execute, containing step metadata,
                 configuration, and dependency information.
+            wave_context: Workflow context with outputs from prior waves,
+                enabling data flow between steps across wave boundaries.
 
         Returns:
             A 3-tuple of (step, action, error) where:
@@ -504,8 +523,16 @@ async def _execute_parallel(
             - Prevents one failing step from canceling other parallel steps
             - Allows batch processing of all results after gather completes
             - Caller is responsible for logging and handling returned errors
+            - wave_context provides read-only access to prior wave outputs
         """
         try:
+            # Create step execution context with workflow context for data access
+            # Note: context is created but not used for action creation currently
+            # It's available for future step execution logic that needs prior outputs
+            _context = WorkflowStepExecutionContext(
+                step, workflow_id, completed_step_ids, wave_context
+            )
+
             # Create action for this step
             action = _create_action_for_step(step, workflow_id)
             return (step, action, None)
@@ -530,8 +557,17 @@ async def _execute_parallel(
                 failed_steps.append(str(step.step_id))
             break
 
+        # Build workflow context for this wave from prior wave outputs
+        # Steps in the same wave cannot see each other's outputs (they run in parallel)
+        wave_context = _build_workflow_context(
+            workflow_id, completed_step_ids, step_outputs
+        )
+
         # Execute all ready steps in parallel using asyncio.gather
-        tasks = [asyncio.create_task(execute_step(step)) for step in ready_steps]
+        tasks = [
+            asyncio.create_task(execute_step(step, wave_context))
+            for step in ready_steps
+        ]
         results = await asyncio.gather(*tasks)
 
         # Process results from parallel execution
@@ -541,6 +577,8 @@ async def _execute_parallel(
                 all_actions.append(action)
                 completed_steps.append(str(step.step_id))
                 completed_step_ids.add(step.step_id)
+                # Store step output for subsequent waves (action payload serves as output)
+                step_outputs[step.step_id] = action.payload
             else:
                 # Step failed
                 failed_steps.append(str(step.step_id))
@@ -692,6 +730,9 @@ def _validate_json_payload(payload: dict[str, object], context: str = "") -> Non
     in JSON-based persistence layers. Called during action creation to fail
     fast if payload contains non-serializable objects.
 
+    Used by:
+        _create_action_for_step: Validates action payloads before ModelAction creation
+
     Args:
         payload: The payload dict to validate
         context: Optional context for error messages (e.g., step name)
@@ -826,9 +867,10 @@ def _get_topological_order(
     # Build step_id to (clamped_priority, declaration_index) mapping
     # Lower values = higher priority in heap, so we use priority directly
     # Priority is clamped from 1-1000 range to 1-10 range
+    # Default to 1 if priority is None
     step_order_key: dict[UUID, tuple[int, int]] = {}
     for idx, step in enumerate(workflow_steps):
-        clamped_priority = min(step.priority, 10)
+        clamped_priority = min(step.priority, 10) if step.priority is not None else 1
         step_order_key[step.step_id] = (clamped_priority, idx)
 
     # Build adjacency list and in-degree map
