@@ -5,12 +5,33 @@ Pure functions for executing workflows from ModelWorkflowDefinition.
 No side effects - returns results and actions.
 
 Typing: Strongly typed with strategic Any usage where runtime flexibility required.
+
+Priority Clamping (Step Priority vs Action Priority):
+    ModelWorkflowStep.priority allows 1-1000 for authoring-time flexibility, enabling
+    fine-grained ordering hints when defining workflows. However, ModelAction.priority
+    is constrained to 1-10 for execution-time scheduling by target nodes.
+
+    This clamping is by design:
+    - Step priority (1-1000): Authoring-time hint for workflow authors to express
+      relative importance and ordering preferences among steps in the same wave.
+    - Action priority (1-10): Execution-time constraint that target nodes use for
+      scheduling decisions during actual workflow execution.
+
+    The conversion rule is: action_priority = min(step.priority, 10)
+
+    This is EXPECTED behavior, not an error condition. No warnings are emitted.
+
+    See Also:
+        - ModelAction.priority constraint: models/orchestrator/model_action.py
+        - Architecture rationale: docs/architecture/CONTRACT_DRIVEN_NODEORCHESTRATOR_V1_0.md
+          (Section: "Step Priority vs Action Priority")
 """
 
 import asyncio
+import heapq
+import json
 import logging
 import time
-from collections import deque
 from datetime import datetime
 from uuid import UUID, uuid4
 
@@ -32,6 +53,7 @@ from omnibase_core.models.workflow.execution.model_declarative_workflow_result i
 from omnibase_core.models.workflow.execution.model_declarative_workflow_step_context import (
     ModelDeclarativeWorkflowStepContext as WorkflowStepExecutionContext,
 )
+from omnibase_core.types.typed_dict_workflow_context import TypedDictWorkflowContext
 from omnibase_core.validation.reserved_enum_validator import validate_execution_mode
 
 
@@ -121,6 +143,9 @@ async def execute_workflow(
             context={"workflow_id": str(workflow_id), "errors": validation_errors},
         )
 
+    # Compute workflow hash for integrity verification after validation passes
+    workflow_hash = _compute_workflow_hash(workflow_definition)
+
     # Determine execution mode
     mode = execution_mode or _get_execution_mode(workflow_definition)
 
@@ -149,6 +174,9 @@ async def execute_workflow(
     end_time = time.perf_counter()
     execution_time_ms = max(1, int((end_time - start_time) * 1000))
     result.execution_time_ms = execution_time_ms
+
+    # Add workflow hash to metadata for integrity verification
+    result.metadata["workflow_hash"] = workflow_hash
 
     return result
 
@@ -356,6 +384,7 @@ async def _execute_sequential(
     failed_steps: list[str] = []
     all_actions: list[ModelAction] = []
     completed_step_ids: set[UUID] = set()
+    step_outputs: dict[UUID, object] = {}
 
     # Log workflow execution start
     logging.info(
@@ -383,9 +412,14 @@ async def _execute_sequential(
             continue
 
         try:
-            # Create context
+            # Build workflow context from prior step outputs for data flow
+            workflow_context = _build_workflow_context(
+                workflow_id, completed_step_ids, step_outputs
+            )
+
+            # Create context with workflow context for inter-step data access
             context = WorkflowStepExecutionContext(
-                step, workflow_id, completed_step_ids
+                step, workflow_id, completed_step_ids, workflow_context
             )
 
             # Emit action for this step
@@ -396,6 +430,9 @@ async def _execute_sequential(
             context.completed_at = datetime.now()
             completed_steps.append(str(step.step_id))
             completed_step_ids.add(step.step_id)
+
+            # Store step output for subsequent steps (action payload serves as output)
+            step_outputs[step.step_id] = action.payload
 
         except ModelOnexError as e:
             # Handle expected ONEX errors
@@ -468,6 +505,7 @@ async def _execute_parallel(
     failed_steps: list[str] = []
     all_actions: list[ModelAction] = []
     completed_step_ids: set[UUID] = set()
+    step_outputs: dict[UUID, object] = {}
     should_stop = False
 
     # Log workflow execution start
@@ -477,6 +515,7 @@ async def _execute_parallel(
 
     async def execute_step(
         step: ModelWorkflowStep,
+        wave_context: TypedDictWorkflowContext,
     ) -> tuple[ModelWorkflowStep, ModelAction | None, Exception | None]:
         """
         Execute a single workflow step asynchronously.
@@ -488,6 +527,8 @@ async def _execute_parallel(
         Args:
             step: The workflow step to execute, containing step metadata,
                 configuration, and dependency information.
+            wave_context: Workflow context with outputs from prior waves,
+                enabling data flow between steps across wave boundaries.
 
         Returns:
             A 3-tuple of (step, action, error) where:
@@ -505,8 +546,21 @@ async def _execute_parallel(
             - Prevents one failing step from canceling other parallel steps
             - Allows batch processing of all results after gather completes
             - Caller is responsible for logging and handling returned errors
+            - wave_context provides read-only access to prior wave outputs
         """
         try:
+            # Create step execution context with workflow context for data access
+            # TODO(OMN-656): Use _context for step execution logic that needs prior outputs.
+            # Currently scaffolded for future use cases:
+            # - Accessing prior wave outputs via _context.workflow_context
+            # - Tracking step timing via _context.started_at/_context.completed_at
+            # - Error context via _context.error
+            # The sequential execution path uses context.completed_at; parallel path
+            # will need similar integration when step execution becomes more complex.
+            _context = WorkflowStepExecutionContext(
+                step, workflow_id, completed_step_ids, wave_context
+            )
+
             # Create action for this step
             action = _create_action_for_step(step, workflow_id)
             return (step, action, None)
@@ -531,8 +585,17 @@ async def _execute_parallel(
                 failed_steps.append(str(step.step_id))
             break
 
+        # Build workflow context for this wave from prior wave outputs
+        # Steps in the same wave cannot see each other's outputs (they run in parallel)
+        wave_context = _build_workflow_context(
+            workflow_id, completed_step_ids, step_outputs
+        )
+
         # Execute all ready steps in parallel using asyncio.gather
-        tasks = [asyncio.create_task(execute_step(step)) for step in ready_steps]
+        tasks = [
+            asyncio.create_task(execute_step(step, wave_context))
+            for step in ready_steps
+        ]
         results = await asyncio.gather(*tasks)
 
         # Process results from parallel execution
@@ -542,6 +605,8 @@ async def _execute_parallel(
                 all_actions.append(action)
                 completed_steps.append(str(step.step_id))
                 completed_step_ids.add(step.step_id)
+                # Store step output for subsequent waves (action payload serves as output)
+                step_outputs[step.step_id] = action.payload
             else:
                 # Step failed
                 failed_steps.append(str(step.step_id))
@@ -611,6 +676,182 @@ async def _execute_batch(
     return result
 
 
+def _build_workflow_context(
+    workflow_id: UUID,
+    completed_step_ids: set[UUID],
+    step_outputs: dict[UUID, object],
+) -> TypedDictWorkflowContext:
+    """
+    Build workflow execution context for subsequent steps.
+
+    Aggregates outputs from completed steps and provides workflow-level
+    metadata for step execution context. This context is passed to steps
+    during sequential/parallel execution to enable data flow between steps.
+
+    Args:
+        workflow_id: Unique workflow execution ID
+        completed_step_ids: Set of step IDs that have completed successfully
+        step_outputs: Dict mapping step IDs to their outputs
+
+    Returns:
+        TypedDictWorkflowContext with workflow metadata and step outputs containing:
+        - workflow_id: String representation of workflow ID
+        - completed_steps: List of completed step IDs as strings
+        - step_outputs: Dict of step outputs keyed by step ID strings
+        - step_count: Number of completed steps
+
+    Example:
+        Build context for a step that depends on previous outputs::
+
+            from uuid import uuid4
+
+            workflow_id = uuid4()
+            step1_id = uuid4()
+            step2_id = uuid4()
+
+            # After step1 and step2 complete
+            completed_step_ids = {step1_id, step2_id}
+            step_outputs = {
+                step1_id: {"data": [1, 2, 3]},
+                step2_id: {"processed": True},
+            }
+
+            # Build context for step3
+            context = _build_workflow_context(
+                workflow_id=workflow_id,
+                completed_step_ids=completed_step_ids,
+                step_outputs=step_outputs,
+            )
+
+            # context contains:
+            # {
+            #     "workflow_uuid_str": "<workflow UUID as string>",
+            #     "completed_steps": ["<step1 UUID>", "<step2 UUID>"],
+            #     "step_outputs": {
+            #         "<step1 UUID>": {"data": [1, 2, 3]},
+            #         "<step2 UUID>": {"processed": True},
+            #     },
+            #     "step_count": 2,
+            # }
+    """
+    # Convert step IDs to strings for JSON compatibility
+    completed_steps_list = [str(step_id) for step_id in completed_step_ids]
+
+    # Convert step outputs dict keys to strings for JSON compatibility
+    outputs_with_str_keys: dict[str, object] = {
+        str(step_id): output for step_id, output in step_outputs.items()
+    }
+
+    return TypedDictWorkflowContext(
+        workflow_uuid_str=str(workflow_id),
+        completed_steps=completed_steps_list,
+        step_outputs=outputs_with_str_keys,
+        step_count=len(completed_step_ids),
+    )
+
+
+def _json_default_for_workflow(obj: object) -> str:
+    """
+    Custom JSON default handler for workflow payloads.
+
+    Only allows specific types commonly used in workflows:
+    - UUID: Serialized to string representation
+    - datetime: Serialized to ISO format string
+
+    All other non-JSON-native types raise TypeError to catch programming errors.
+
+    Args:
+        obj: The object to serialize
+
+    Returns:
+        String representation for allowed types
+
+    Raises:
+        TypeError: For unsupported types (caught by json.dumps)
+    """
+    if isinstance(obj, UUID):
+        return str(obj)
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    # error-ok: TypeError is required by json.dumps default= contract
+    raise TypeError(f"Object of type {type(obj).__name__} is not JSON serializable")
+
+
+def _validate_json_payload(
+    payload: dict[str, object], context: str = "", *, strict: bool = False
+) -> None:
+    """
+    Validate that payload is JSON-serializable.
+
+    Ensures payloads can be safely transmitted over event systems and stored
+    in JSON-based persistence layers. Called during action creation to fail
+    fast if payload contains non-serializable objects.
+
+    Serialization Behavior:
+        By default (strict=False), allows common workflow types (UUID, datetime)
+        to be serialized automatically. This is the recommended mode for workflow
+        payloads where these types are common.
+
+        In strict mode (strict=True), no default serializer is used. Only native
+        JSON types (dict, list, str, int, float, bool, None) are accepted. Use
+        strict mode when you need to ensure the payload contains only primitive types.
+
+        Note: Other non-JSON types (lambdas, custom objects, etc.) will fail
+        validation in both modes, which is the desired behavior to catch
+        programming errors early.
+
+    Used by:
+        _create_action_for_step: Validates action payloads before ModelAction creation
+
+    Args:
+        payload: The payload dict to validate
+        context: Optional context for error messages (e.g., step name)
+        strict: If True, use strict JSON validation (no default serializer).
+                If False (default), allow UUID/datetime via custom handler.
+
+    Raises:
+        ModelOnexError: If payload is not JSON-serializable
+
+    Example:
+        Validate a payload before action creation::
+
+            from uuid import uuid4
+            from datetime import datetime
+
+            # With strict=False (default), UUIDs and datetimes are allowed
+            payload = {
+                "workflow_id": uuid4(),  # UUID object - serialized via str()
+                "timestamp": datetime.now(),  # datetime - serialized to ISO format
+                "step_name": "process_data",
+            }
+            _validate_json_payload(payload, context="process_data")  # passes
+
+            # With strict=True, only native JSON types allowed
+            strict_payload = {
+                "workflow_id": str(uuid4()),  # Must be string
+                "step_name": "process_data",
+            }
+            _validate_json_payload(strict_payload, context="strict_step", strict=True)
+
+            # This will raise ModelOnexError in both modes
+            invalid_payload = {"lambda": lambda x: x}  # Not JSON-serializable
+            _validate_json_payload(invalid_payload, context="bad_step")
+    """
+    try:
+        if strict:
+            json.dumps(payload)
+        else:
+            # Use custom handler for UUID/datetime, reject all other non-JSON types
+            json.dumps(payload, default=_json_default_for_workflow)
+    except (TypeError, ValueError) as e:
+        context_suffix = f" for step '{context}'" if context else ""
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"Payload is not JSON-serializable{context_suffix}: {e}",
+            context={"payload_keys": list(payload.keys()), "step_context": context},
+        ) from e
+
+
 def _create_action_for_step(
     step: ModelWorkflowStep,
     workflow_id: UUID,
@@ -624,6 +865,9 @@ def _create_action_for_step(
 
     Returns:
         ModelAction for step execution
+
+    Raises:
+        ModelOnexError: If payload is not JSON-serializable
     """
     # Map step type to action type
     action_type_map = {
@@ -646,19 +890,26 @@ def _create_action_for_step(
     }
     target_node_type = target_node_type_map.get(step.step_type, "NodeCustom")
 
-    # Cap priority to ModelAction's max value of 10
-    # ModelWorkflowStep allows 1-1000, but ModelAction only allows 1-10
+    # Priority clamping: step priority (1-1000, authoring-time hint) -> action priority (1-10, execution-time constraint)
+    # This is expected schema boundary conversion, not an error. See module docstring and
+    # docs/architecture/CONTRACT_DRIVEN_NODEORCHESTRATOR_V1_0.md (Section: "Step Priority vs Action Priority")
     action_priority = min(step.priority, 10) if step.priority else 1
+
+    # Build payload
+    payload: dict[str, object] = {
+        "workflow_id": str(workflow_id),
+        "step_id": str(step.step_id),
+        "step_name": step.step_name,
+    }
+
+    # Validate payload is JSON-serializable (fail fast)
+    _validate_json_payload(payload, context=step.step_name)
 
     return ModelAction(
         action_id=uuid4(),
         action_type=action_type,
         target_node_type=target_node_type,
-        payload={
-            "workflow_id": str(workflow_id),
-            "step_id": str(step.step_id),
-            "step_name": step.step_name,
-        },
+        payload=payload,
         dependencies=step.depends_on,
         priority=action_priority,
         timeout_ms=step.timeout_ms,
@@ -687,14 +938,28 @@ def _get_topological_order(
     """
     Get topological ordering of steps based on dependencies.
 
-    Uses Kahn's algorithm for topological sorting.
+    Uses Kahn's algorithm for topological sorting with priority-aware ordering.
+    When multiple steps have zero in-degree (ready to execute), they are ordered by:
+    1. Clamped priority (min(priority, 10)) - lower value = higher priority
+    2. Declaration order (index in workflow_steps list) - earlier = first
 
     Args:
         workflow_steps: Workflow steps to order
 
     Returns:
-        List of step IDs in topological order
+        List of step IDs in topological order, respecting both dependencies
+        and priority/declaration order for steps with equal dependencies.
     """
+    # Build step_id to (clamped_priority, declaration_index) mapping for heap ordering.
+    # Lower values = higher priority in heap, so we use priority directly.
+    # Priority clamping: step priority (1-1000, authoring-time hint) -> clamped (1-10) for consistent
+    # ordering with action priority (1-10, execution-time constraint). Default to 1 if None.
+    # See: docs/architecture/CONTRACT_DRIVEN_NODEORCHESTRATOR_V1_0.md (Section: "Step Priority vs Action Priority")
+    step_order_key: dict[UUID, tuple[int, int]] = {}
+    for idx, step in enumerate(workflow_steps):
+        clamped_priority = min(step.priority, 10) if step.priority is not None else 1
+        step_order_key[step.step_id] = (clamped_priority, idx)
+
     # Build adjacency list and in-degree map
     step_ids = {step.step_id for step in workflow_steps}
     edges: dict[UUID, list[UUID]] = {step_id: [] for step_id in step_ids}
@@ -706,20 +971,26 @@ def _get_topological_order(
                 edges[dep_id].append(step.step_id)
                 in_degree[step.step_id] += 1
 
-    # Kahn's algorithm - use deque for O(1) queue operations
-    queue: deque[UUID] = deque(
-        step_id for step_id, degree in in_degree.items() if degree == 0
-    )
+    # Kahn's algorithm with priority queue for ordering
+    # Heap entries: (clamped_priority, declaration_index, step_id)
+    # Using tuple comparison: lower priority value first, then lower index first
+    heap: list[tuple[int, int, UUID]] = []
+    for step_id, degree in in_degree.items():
+        if degree == 0:
+            priority, idx = step_order_key[step_id]
+            heapq.heappush(heap, (priority, idx, step_id))
+
     result: list[UUID] = []
 
-    while queue:
-        node = queue.popleft()
+    while heap:
+        _, _, node = heapq.heappop(heap)
         result.append(node)
 
         for neighbor in edges.get(node, []):
             in_degree[neighbor] -= 1
             if in_degree[neighbor] == 0:
-                queue.append(neighbor)
+                priority, idx = step_order_key[neighbor]
+                heapq.heappush(heap, (priority, idx, neighbor))
 
     return result
 
@@ -774,10 +1045,83 @@ def _has_dependency_cycles(
     return False
 
 
+def _compute_workflow_hash(workflow_definition: ModelWorkflowDefinition) -> str:
+    """
+    Compute SHA-256 hash of workflow definition for integrity verification.
+
+    Delegates to ModelWorkflowDefinition.compute_workflow_hash() for consistency.
+    The model's method excludes the workflow_hash field from computation to:
+    - Prevent circular dependency (setting hash doesn't change the hash)
+    - Support idempotent hash computation for persistence/caching
+
+    Args:
+        workflow_definition: Workflow definition to hash
+
+    Returns:
+        Hex string of SHA-256 hash
+
+    Example:
+        Compute hash for integrity verification::
+
+            workflow_def = ModelWorkflowDefinition(...)
+            hash_value = _compute_workflow_hash(workflow_def)
+            # Store hash_value with contract for later verification
+    """
+    return workflow_definition.compute_workflow_hash()
+
+
+def verify_workflow_integrity(
+    workflow_definition: ModelWorkflowDefinition,
+    expected_hash: str | None,
+) -> None:
+    """
+    Verify workflow definition integrity against expected hash.
+
+    Compares computed hash with expected hash to detect tampering.
+    If expected_hash is None, verification is skipped to support
+    contracts that don't include hash metadata.
+
+    Args:
+        workflow_definition: Workflow definition to verify
+        expected_hash: Expected hash (if None, skip verification)
+
+    Raises:
+        ModelOnexError: If hash mismatch detected (tamper detection)
+
+    Example:
+        Verify contract integrity before execution::
+
+            workflow_def = ModelWorkflowDefinition(...)
+            stored_hash = "abc123..."  # From contract metadata
+
+            # This will raise if tampered
+            verify_workflow_integrity(workflow_def, stored_hash)
+    """
+    # Skip verification when no expected hash is provided
+    if expected_hash is None:
+        return
+
+    # Compute actual hash
+    actual_hash = _compute_workflow_hash(workflow_definition)
+
+    # Compare hashes
+    if actual_hash != expected_hash:
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message="Workflow integrity check failed: hash mismatch detected",
+            context={
+                "expected_hash": expected_hash,
+                "actual_hash": actual_hash,
+                "workflow_name": workflow_definition.workflow_metadata.workflow_name,
+            },
+        )
+
+
 # Public API
 __all__ = [
     "WorkflowExecutionResult",
     "execute_workflow",
     "get_execution_order",
     "validate_workflow_definition",
+    "verify_workflow_integrity",
 ]

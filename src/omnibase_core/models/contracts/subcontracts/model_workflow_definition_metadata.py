@@ -1,14 +1,12 @@
-from pydantic import Field
-
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Workflow Metadata Model.
 
 Model for workflow metadata in the ONEX workflow coordination system.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelWorkflowDefinitionMetadata(BaseModel):
@@ -40,9 +38,19 @@ class ModelWorkflowDefinitionMetadata(BaseModel):
         ge=1000,
     )
 
+    workflow_hash: str | None = Field(
+        default=None,
+        description=(
+            "SHA-256 hash of workflow definition for persistence and caching. "
+            "Computed from workflow steps and metadata (excluding runtime data). "
+            "Used for workflow identification and deduplication before execution."
+        ),
+    )
+
     model_config = {
-        "extra": "ignore",
+        "extra": "forbid",
         "use_enum_values": False,
         "validate_assignment": True,
         "from_attributes": True,
+        "frozen": True,
     }

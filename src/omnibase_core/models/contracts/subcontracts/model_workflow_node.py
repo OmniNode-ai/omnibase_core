@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Workflow Node Model.
 
@@ -8,7 +6,7 @@ Model for node definitions in workflow graphs for the ONEX workflow coordination
 
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_node_type import EnumNodeType
 from omnibase_core.models.primitives.model_semver import ModelSemVer
@@ -47,7 +45,8 @@ class ModelWorkflowNode(BaseModel):
     )
 
     model_config = {
-        "extra": "ignore",
+        "extra": "forbid",
         "use_enum_values": False,
         "validate_assignment": True,
+        "frozen": True,
     }

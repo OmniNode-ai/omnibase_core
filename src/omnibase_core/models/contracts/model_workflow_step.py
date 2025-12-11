@@ -26,7 +26,7 @@ class ModelWorkflowStep(BaseModel):
     """
 
     model_config = {
-        "extra": "ignore",
+        "extra": "forbid",
         "use_enum_values": False,
         "validate_assignment": True,
         "frozen": True,

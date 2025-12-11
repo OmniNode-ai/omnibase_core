@@ -526,12 +526,22 @@ class TestDeclarativeNodesIntegration:
         simple_workflow_definition: ModelWorkflowDefinition,
     ):
         """Test parallel workflow execution."""
-        # Update definition to allow parallel execution
-        simple_workflow_definition.workflow_metadata.execution_mode = "parallel"
-        simple_workflow_definition.coordination_rules.parallel_execution_allowed = True
+        # Update definition to allow parallel execution using model_copy (frozen models)
+        updated_metadata = simple_workflow_definition.workflow_metadata.model_copy(
+            update={"execution_mode": "parallel"}
+        )
+        updated_coordination = simple_workflow_definition.coordination_rules.model_copy(
+            update={"parallel_execution_allowed": True}
+        )
+        parallel_workflow_definition = simple_workflow_definition.model_copy(
+            update={
+                "workflow_metadata": updated_metadata,
+                "coordination_rules": updated_coordination,
+            }
+        )
 
         node = NodeOrchestrator(test_container)
-        node.workflow_definition = simple_workflow_definition
+        node.workflow_definition = parallel_workflow_definition
 
         # Create parallel steps
         fetch_id = uuid4()
