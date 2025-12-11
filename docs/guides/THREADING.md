@@ -29,6 +29,7 @@ This section consolidates all critical thread safety warnings for quick referenc
 | `ModelONEXContainer` | Read-only after initialization |
 | Pydantic Models | Immutable after creation |
 | Input/Output Models | Frozen via Pydantic |
+| Workflow Contract Models | Frozen via Pydantic (v0.4.0+) - see [Workflow Contract Models](#workflow-contract-models-v040) |
 | Stateless Mixin Methods | Safe if inputs are thread-safe |
 
 ### Quick Decision Guide
@@ -996,6 +997,19 @@ class TestNodeComputeThreadSafety:
 | ModelEffectInput/Output | Yes (frozen=True) | None needed |
 | ModelOrchestratorInput/Output | Yes (frozen=True) | None needed |
 | EffectIOConfig models | Yes (frozen=True) | None needed |
+
+### Workflow Contract Models (v0.4.0+)
+
+| Component | Thread-Safe? | Mitigation |
+|-----------|-------------|------------|
+| ModelWorkflowDefinition | Yes (frozen=True) | None needed |
+| ModelWorkflowDefinitionMetadata | Yes (frozen=True) | None needed |
+| ModelWorkflowStep | Yes (frozen=True) | None needed |
+| ModelCoordinationRules | Yes (frozen=True) | None needed |
+| ModelExecutionGraph | Yes (frozen=True) | None needed |
+| ModelWorkflowNode | Yes (frozen=True) | None needed |
+
+**Note**: As of v0.4.0, all workflow contract models are frozen (`frozen=True`) and forbid extra fields (`extra="forbid"`). This makes them inherently thread-safe for reads and safe to share across threads without synchronization. Use `model_copy(update={...})` to create modified copies. See the [CHANGELOG.md](../../CHANGELOG.md) migration guide for details.
 
 ### Infrastructure
 

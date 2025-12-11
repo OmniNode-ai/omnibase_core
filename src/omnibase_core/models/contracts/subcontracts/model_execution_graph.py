@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 Execution Graph Model.
 
 Model for execution graphs in workflows for the ONEX workflow coordination system.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -28,7 +26,8 @@ class ModelExecutionGraph(BaseModel):
     )
 
     model_config = {
-        "extra": "ignore",
+        "extra": "forbid",
         "use_enum_values": False,
         "validate_assignment": True,
+        "frozen": True,
     }

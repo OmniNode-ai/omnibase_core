@@ -75,14 +75,13 @@ repos:
 
       - id: mypy-type-check
         name: mypy (type checking - strict)
-        entry: poetry run mypy
+        entry: bash -c 'poetry run mypy "$@" --show-error-codes --no-error-summary' --
         language: system
         types: [python]
-        args: [--show-error-codes, --no-error-summary]
         files: ^src/omnibase_core/.*\.py$
         exclude: ^(tests/|src/omnibase_core/examples|archive/|archived/).*\.py$
         pass_filenames: true  # Only check changed files, not entire codebase
-        stages: [pre-push]  # Moved to pre-push: ~5-10s
+        stages: [pre-push]  # Moved to pre-push: ~1-5s for changed files only
 
       # Cleanup: Clear tmp/ directory before commits
       # Prevents accumulation of temporary files from custom commands
