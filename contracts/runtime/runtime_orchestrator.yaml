@@ -502,7 +502,7 @@ performance_benchmarks:
 
 # Metadata
 metadata:
-  version: {major: 1, minor: 0, patch: 0}
+  version: {major: 1, minor: 1, patch: 0}
   author: ONEX Framework
   description: Self-hosted ONEX runtime orchestrator using 4-node architecture
   tags:

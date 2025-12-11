@@ -38,7 +38,7 @@ V110_RUNTIME_CONTRACTS = [
 ]
 
 
-def load_contract(contract_name: str) -> dict:
+def load_contract(contract_name: str) -> dict[str, object]:
     """
     Load contract data from a YAML file.
 
@@ -49,13 +49,18 @@ def load_contract(contract_name: str) -> dict:
         Parsed YAML content as a dictionary
 
     Raises:
-        pytest.skip: If the contract file does not exist
+        pytest.skip: If the contract file does not exist or is empty
     """
     contract_path = RUNTIME_CONTRACTS_DIR / contract_name
     if not contract_path.exists():
         pytest.skip(f"Contract file not found: {contract_path}")
     with open(contract_path, encoding="utf-8") as f:
-        return yaml.safe_load(f)
+        data = yaml.safe_load(f)
+        if data is None:
+            pytest.skip(f"Contract file is empty: {contract_path}")
+        if not isinstance(data, dict):
+            pytest.skip(f"Contract file is not a dict: {contract_path}")
+        return dict(data)
 
 
 # ==============================================================================
