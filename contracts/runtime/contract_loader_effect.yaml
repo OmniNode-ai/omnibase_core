@@ -17,7 +17,30 @@
 
 # Contract Metadata
 node_type: EFFECT_GENERIC
-contract_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 1, patch: 0}
+
+# Contract fingerprint for drift detection (format: version:hash-prefix)
+# Hash computed from normalized contract content: node_type + contract_version
+fingerprint: "1.1.0:66346191a6a6"
+
+# Handler requirements for this effect contract
+handlers:
+  required:
+    - type: filesystem
+      version: ">=1.0.0"
+  optional: []
+
+# Kafka topic subscriptions (none for this effect)
+subscriptions:
+  topics: []
+
+# Profile tags for categorization
+profile_tags:
+  - filesystem
+  - contracts
+  - discovery
+  - runtime
+  - loader
 
 # Effect Subcontract
 # NOTE: This contract uses `effect_operations` (multi-operation schema) rather than
@@ -203,7 +226,7 @@ effect_operations:
 
 # Metadata
 metadata:
-  version: {major: 1, minor: 0, patch: 0}
+  version: {major: 1, minor: 1, patch: 0}
   author: ONEX Framework Team
   description: Contract loader effect node for scanning and discovering ONEX contract YAML files from
     the filesystem

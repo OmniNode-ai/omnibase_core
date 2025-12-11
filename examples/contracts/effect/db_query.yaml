@@ -61,10 +61,32 @@
 
 contract_version:
   major: 1
-  minor: 0
+  minor: 1
   patch: 0
 
+# Contract fingerprint for drift detection (format: version:hash-prefix)
+# Hash computed from normalized contract content: node_type + contract_version
+fingerprint: "1.1.0:66346191a6a6"
+
 node_type: effect
+
+# Handler requirements for this effect contract
+handlers:
+  required:
+    - type: db
+      version: ">=1.0.0"
+  optional: []
+
+# Kafka topic subscriptions (none for this effect)
+subscriptions:
+  topics: []
+
+# Profile tags for categorization
+profile_tags:
+  - database
+  - sql
+  - postgresql
+  - user-management
 
 # ---------------------------------------------------------------------------
 # EFFECT SUBCONTRACT: Defines database operations
@@ -475,7 +497,7 @@ effect_operations:
 # ---------------------------------------------------------------------------
 
 metadata:
-  version: {major: 1, minor: 0, patch: 0}
+  version: {major: 1, minor: 1, patch: 0}
   author: "ONEX Framework Team"
   description: |
     Contract-driven database operations for user management.

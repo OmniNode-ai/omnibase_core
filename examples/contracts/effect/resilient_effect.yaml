@@ -69,10 +69,36 @@
 
 contract_version:
   major: 1
-  minor: 0
+  minor: 1
   patch: 0
 
+# Contract fingerprint for drift detection (format: version:hash-prefix)
+# Hash computed from normalized contract content: node_type + contract_version
+fingerprint: "1.1.0:66346191a6a6"
+
 node_type: effect
+
+# Handler requirements for this effect contract
+handlers:
+  required:
+    - type: http
+      version: ">=1.0.0"
+  optional:
+    - type: db
+      version: ">=1.0.0"
+    - type: kafka
+      version: ">=1.0.0"
+
+# Kafka topic subscriptions (none for this effect)
+subscriptions:
+  topics: []
+
+# Profile tags for categorization
+profile_tags:
+  - resilience
+  - circuit-breaker
+  - payment-processing
+  - production-ready
 
 # ---------------------------------------------------------------------------
 # EFFECT SUBCONTRACT: Defines resilient external operations
@@ -471,7 +497,7 @@ effect_operations:
 # ---------------------------------------------------------------------------
 
 metadata:
-  version: {major: 1, minor: 0, patch: 0}
+  version: {major: 1, minor: 1, patch: 0}
   author: "ONEX Framework Team"
   description: |
     Comprehensive resilience pattern for payment processing.

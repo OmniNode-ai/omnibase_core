@@ -1,6 +1,15 @@
 ---
 node_type: REDUCER_GENERIC
-contract_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 1, patch: 0}
+fingerprint: "0.0.0:30605ad37d29"
+profile_tags:
+  - metrics
+  - aggregation
+  - observability
+  - time-series
+handlers:
+  required: []  # Reducers are pure state machines - no external I/O handlers
+  optional: []
 state_transitions:
   version: {major: 1, minor: 0, patch: 0}
   state_machine_version: {major: 1, minor: 0, patch: 0}

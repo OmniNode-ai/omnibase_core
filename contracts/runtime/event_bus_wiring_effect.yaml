@@ -31,7 +31,35 @@
 
 # Contract Metadata
 node_type: EFFECT_GENERIC
-contract_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 1, patch: 0}
+
+# Contract fingerprint for drift detection (format: version:hash-prefix)
+# Hash computed from normalized contract content: node_type + contract_version
+fingerprint: "1.1.0:66346191a6a6"
+
+# Handler requirements for this effect contract
+handlers:
+  required:
+    - type: local
+      version: ">=1.0.0"
+  optional:
+    - type: kafka
+      version: ">=1.0.0"
+
+# Kafka topic subscriptions for this effect
+subscriptions:
+  topics:
+    - onex.runtime.node_graph.ready
+    - onex.runtime.node.registered
+    - onex.runtime.node.unregistered
+
+# Profile tags for categorization
+profile_tags:
+  - runtime
+  - event-bus
+  - subscriptions
+  - self-hosted
+  - wiring
 
 # Effect Subcontract
 # NOTE: This contract uses `effect` (single-operation schema) rather than
@@ -235,7 +263,7 @@ publications:
 
 # Metadata
 metadata:
-  version: {major: 1, minor: 0, patch: 0}
+  version: {major: 1, minor: 1, patch: 0}
   author: ONEX Framework
   description: |
     Event bus wiring effect node for ONEX runtime self-hosting architecture.

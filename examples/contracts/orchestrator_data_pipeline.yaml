@@ -19,12 +19,58 @@
 
 # Contract Metadata
 node_type: ORCHESTRATOR_GENERIC
-contract_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 1, patch: 0}
+fingerprint: "1.1.0:8d00f09e22ec"
+
+# Profile tags for orchestrator classification
+profile_tags:
+  - data-processing
+  - etl-pipeline
+  - parallel-execution
+  - multi-stage
+
+# Handlers configuration
+handlers:
+  required: []  # Orchestrators coordinate, may not need direct handlers
+  optional:
+    - type: local
+      version: ">=1.0.0"
 
 # Workflow Coordination Subcontract
 workflow_coordination:
   version: {major: 1, minor: 0, patch: 0}
   subcontract_version: {major: 1, minor: 0, patch: 0}
+
+  # Workflow Steps: Required step definitions for orchestration
+  workflow_steps:
+    - step_id: "fetch_raw_data"
+      step_name: "Fetch Raw Data"
+      step_type: "effect"
+      depends_on: []
+    - step_id: "validate_schema"
+      step_name: "Validate Schema"
+      step_type: "compute"
+      depends_on: ["fetch_raw_data"]
+    - step_id: "enrich_data"
+      step_name: "Enrich Data"
+      step_type: "compute"
+      depends_on: ["fetch_raw_data"]
+    - step_id: "aggregate_metrics"
+      step_name: "Aggregate Metrics"
+      step_type: "reducer"
+      depends_on: ["validate_schema", "enrich_data"]
+    - step_id: "quality_check"
+      step_name: "Quality Check"
+      step_type: "compute"
+      depends_on: ["aggregate_metrics"]
+    - step_id: "persist_results"
+      step_name: "Persist Results"
+      step_type: "effect"
+      depends_on: ["quality_check"]
+    - step_id: "send_notification"
+      step_name: "Send Notification"
+      step_type: "effect"
+      depends_on: ["quality_check"]
 
   # Workflow Definition: Complete workflow specification
   workflow_definition:

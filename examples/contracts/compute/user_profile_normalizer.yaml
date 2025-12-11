@@ -28,7 +28,13 @@
 
 # Contract required fields
 node_type: COMPUTE_GENERIC
-contract_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 1, patch: 0}
+fingerprint: "1.1.0:18699bda82af"
+concurrency: parallelizable
+profile_tags:
+  - compute
+  - transformation
+  - user-data
 
 # ---------------------------------------------------------------------------
 # COMPUTE SUBCONTRACT: Defines the transformation pipeline

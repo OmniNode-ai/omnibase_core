@@ -49,12 +49,46 @@
 
 # Contract Metadata
 node_type: ORCHESTRATOR_GENERIC
-contract_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 1, patch: 0}
+fingerprint: "1.1.0:8d00f09e22ec"
+
+# Profile tags for runtime orchestrator classification
+profile_tags:
+  - runtime
+  - kernel
+  - self-hosted
+  - lifecycle-management
+
+# Handlers configuration
+handlers:
+  required: []  # Orchestrators coordinate, may not need direct handlers
+  optional:
+    - type: local
+      version: ">=1.0.0"
 
 # Workflow Coordination Subcontract
 workflow_coordination:
   version: {major: 1, minor: 0, patch: 0}
   subcontract_version: {major: 1, minor: 0, patch: 0}
+
+  # Workflow Steps: Required step definitions for runtime orchestration
+  workflow_steps:
+    - step_id: "contract_loader"
+      step_name: "Contract Loader"
+      step_type: "effect"
+      depends_on: []
+    - step_id: "contract_registry"
+      step_name: "Contract Registry"
+      step_type: "reducer"
+      depends_on: ["contract_loader"]
+    - step_id: "node_graph"
+      step_name: "Node Graph Manager"
+      step_type: "reducer"
+      depends_on: ["contract_registry"]
+    - step_id: "event_bus_wiring"
+      step_name: "Event Bus Wiring"
+      step_type: "effect"
+      depends_on: ["node_graph"]
 
   # Workflow Definition: Runtime lifecycle management
   workflow_definition:
