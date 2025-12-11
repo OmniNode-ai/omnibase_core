@@ -73,8 +73,7 @@ contract_version:
   patch: 0
 
 # Contract fingerprint for drift detection (format: version:hash-prefix)
-# Hash computed from contract identity: path + node_type + subcontract_name
-# Regenerate this fingerprint when contract content changes
+# Regenerate when contract content changes
 fingerprint: "1.1.0:bf6e50f7086f"
 
 node_type: effect
