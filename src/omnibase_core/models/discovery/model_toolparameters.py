@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.discovery.model_tool_parameters import ModelToolParameter
+from omnibase_core.types.json_types import ToolParameterValue
 
 
 class ModelToolParameters(BaseModel):
@@ -13,14 +14,14 @@ class ModelToolParameters(BaseModel):
 
     def get_parameter_dict(
         self,
-    ) -> dict[str, str | int | float | bool | list[str] | dict[str, str]]:
+    ) -> dict[str, ToolParameterValue]:
         """Convert to dictionary format for current standards."""
         return {param.name: param.value for param in self.parameters}
 
     @classmethod
     def from_dict(
         cls,
-        param_dict: dict[str, str | int | float | bool | list[str] | dict[str, str]],
+        param_dict: dict[str, ToolParameterValue],
     ) -> "ModelToolParameters":
         """Create from dictionary with type inference."""
         parameters = []

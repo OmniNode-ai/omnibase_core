@@ -73,6 +73,16 @@ from .converter_health_to_typed_dict import convert_health_to_typed_dict
 from .converter_stats_to_typed_dict import convert_stats_to_typed_dict
 from .core_types import ProtocolSchemaValue, TypedDictBasicErrorContext
 
+# JSON type aliases (centralized to avoid primitive soup unions)
+from .json_types import (
+    JsonPrimitive,
+    JsonType,
+    JsonValue,
+    PrimitiveContainer,
+    PrimitiveValue,
+    ToolParameterValue,
+)
+
 # Effect result type aliases (centralized to avoid primitive soup unions)
 from .type_effect_result import DbParamType, EffectResultType
 
@@ -193,6 +203,13 @@ __all__ = [
     # Effect result type aliases
     "EffectResultType",
     "DbParamType",
+    # JSON type aliases
+    "JsonPrimitive",
+    "JsonValue",
+    "JsonType",
+    "PrimitiveValue",
+    "PrimitiveContainer",
+    "ToolParameterValue",
     # Type constraints and protocols
     "ModelBaseCollection",
     "ModelBaseFactory",

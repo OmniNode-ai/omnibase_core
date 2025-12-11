@@ -4,6 +4,7 @@ from omnibase_core.models.discovery.model_metric_value import (
     AnyMetricValue,
     ModelMetricValue,
 )
+from omnibase_core.types.json_types import PrimitiveValue
 
 
 class ModelCustomMetrics(BaseModel):
@@ -14,14 +15,14 @@ class ModelCustomMetrics(BaseModel):
         description="List of typed custom metrics",
     )
 
-    def get_metrics_dict(self) -> dict[str, str | int | float | bool]:
+    def get_metrics_dict(self) -> dict[str, PrimitiveValue]:
         """Convert to dictionary format."""
         return {metric.name: metric.value for metric in self.metrics}
 
     @classmethod
     def from_dict(
         cls,
-        metrics_dict: dict[str, str | int | float | bool],
+        metrics_dict: dict[str, PrimitiveValue],
     ) -> "ModelCustomMetrics":
         """Create from dictionary with type inference."""
         metrics: list[AnyMetricValue] = []

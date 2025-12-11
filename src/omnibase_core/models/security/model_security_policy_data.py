@@ -1,4 +1,4 @@
-from typing import Any, cast
+from typing import cast
 
 from pydantic import BaseModel, Field
 
@@ -10,6 +10,7 @@ Now uses strongly-typed values instead of Union types for better type safety.
 """
 
 from omnibase_core.models.common.model_typed_value import ModelTypedMapping
+from omnibase_core.types.json_types import JsonValue
 
 
 class ModelSecurityPolicyData(BaseModel):
@@ -22,21 +23,18 @@ class ModelSecurityPolicyData(BaseModel):
     )
 
     # Current standards property
-    # union-ok: json_value - standard JSON-compatible value types for policy data
     @property
-    def data(
-        self,
-    ) -> dict[str, str | int | float | bool | list[Any] | dict[str, Any] | None]:
+    def data(self) -> dict[str, JsonValue]:
         """Get policy data as a regular dictionary for current standards."""
         return cast(
-            "dict[str, str | int | float | bool | list[Any] | dict[str, Any] | None]",
+            "dict[str, JsonValue]",
             self.typed_data.to_python_dict(),
         )
 
     def set_policy_value(
         self,
         key: str,
-        value: str | int | float | bool | list[Any] | dict[str, Any] | None,
+        value: JsonValue,
     ) -> None:
         """
         Set a policy value with automatic type conversion.
@@ -50,8 +48,8 @@ class ModelSecurityPolicyData(BaseModel):
     def get_policy_value(
         self,
         key: str,
-        default: str | int | float | bool | list[Any] | dict[str, Any] | None = None,
-    ) -> str | int | float | bool | list[Any] | dict[str, Any] | None:
+        default: JsonValue = None,
+    ) -> JsonValue:
         """
         Get a policy value.
 
@@ -64,14 +62,14 @@ class ModelSecurityPolicyData(BaseModel):
         """
 
         return cast(
-            "str | int | float | bool | list[Any] | dict[str, Any] | None",
+            JsonValue,
             self.typed_data.get_value(key, default),
         )
 
     @classmethod
     def from_dict(
         cls,
-        data: dict[str, str | int | float | bool | list[Any] | dict[str, Any] | None],
+        data: dict[str, JsonValue],
     ) -> "ModelSecurityPolicyData":
         """
         Create from a regular dictionary using ONEX-compatible patterns.

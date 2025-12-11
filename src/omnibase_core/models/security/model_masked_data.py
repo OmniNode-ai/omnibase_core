@@ -8,11 +8,10 @@ from omnibase_core.models.security.model_masked_data_class import ModelMaskedDat
 from omnibase_core.models.security.model_masked_data_config import ModelConfig
 from omnibase_core.models.security.model_masked_data_dict import ModelMaskedDataDict
 from omnibase_core.models.security.model_masked_data_list import ModelMaskedDataList
+from omnibase_core.types.json_types import JsonValue
 
-# Export the type alias for convenience
-ModelMaskedDataValue = (
-    dict[str, object] | list[object] | str | int | float | bool | None
-)
+# Type alias for masked data values - uses centralized JsonValue definition
+ModelMaskedDataValue = JsonValue
 
 __all__ = [
     "ModelMaskedDataDict",

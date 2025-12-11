@@ -47,7 +47,7 @@ class ModelCustomSecuritySettings(BaseModel):
 
     def get_setting(
         self, key: str, default: Any = None
-    ) -> str | int | bool | list[str] | Any:
+    ) -> str | int | bool | list[str] | None:
         """Get a custom security setting."""
         if key in self.string_settings:
             return self.string_settings[key]

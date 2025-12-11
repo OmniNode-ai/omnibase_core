@@ -154,7 +154,7 @@ class ModelExamplesCollection(BaseModel):
         return cls(examples=[example])
 
     @classmethod
-    def _create_example_from_data(cls, data: dict[str, Any] | Any) -> ModelExample:
+    def _create_example_from_data(cls, data: Any) -> ModelExample:
         """Create ModelExample from various data formats."""
         from omnibase_core.models.examples.model_example_context_data import (
             ModelExampleContextData,

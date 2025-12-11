@@ -1,14 +1,12 @@
 from typing import Any
 
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 """
 ModelMaskData: Structured data model for masking operations.
 
 This model provides strongly typed data masking without using Any types.
 """
-
-from pydantic import BaseModel
 
 
 class ModelMaskData(BaseModel):
@@ -35,6 +33,7 @@ class ModelMaskData(BaseModel):
         description="Nested data structures",
     )
 
+    # union-ok: mask_value - domain-specific masking types (no float/None, list[str] not list[Any])
     def to_dict(self) -> dict[str, str | int | bool | list[str] | dict[str, Any]]:
         """Convert to a dictionary representation."""
         # Custom flattening logic with recursive nested data handling
@@ -47,6 +46,7 @@ class ModelMaskData(BaseModel):
             result[key] = nested.to_dict()
         return result
 
+    # union-ok: mask_value - domain-specific masking types (no float/None, list[str] not list[Any])
     @classmethod
     def from_dict(
         cls,

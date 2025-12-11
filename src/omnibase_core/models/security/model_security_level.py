@@ -158,7 +158,7 @@ class ModelSecurityLevel(BaseModel):
 
     def get_custom_setting(
         self, key: str, default: Any = None
-    ) -> str | int | bool | list[str] | Any:
+    ) -> str | int | bool | list[str] | None:
         """Get a custom security setting."""
         return self.custom_security_settings.get_setting(key, default)
 
