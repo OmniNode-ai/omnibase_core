@@ -41,8 +41,9 @@ class ModelWorkflowDefinitionMetadata(BaseModel):
     )
 
     model_config = {
-        "extra": "ignore",
+        "extra": "forbid",
         "use_enum_values": False,
         "validate_assignment": True,
         "from_attributes": True,
+        "frozen": True,
     }
