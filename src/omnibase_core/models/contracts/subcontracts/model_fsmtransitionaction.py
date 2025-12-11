@@ -1,6 +1,16 @@
+"""
+ModelFSMTransitionAction - Action specification for FSM state transitions.
+
+Schema version: v1.5.0
+Thread-safe: Yes (frozen=True)
+
+This model defines actions to execute during state transitions,
+including logging, validation, and state modifications.
+"""
+
 from __future__ import annotations
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -15,6 +25,10 @@ class ModelFSMTransitionAction(BaseModel):
 
     Defines actions to execute during state transitions,
     including logging, validation, and state modifications.
+
+    Thread Safety:
+        This model is immutable (frozen=True) and safe for concurrent access
+        across multiple threads without synchronization.
     """
 
     # Model version for instance tracking
@@ -78,8 +92,9 @@ class ModelFSMTransitionAction(BaseModel):
             )
         return self
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",  # Allow extra fields from YAML contracts
+        frozen=True,  # Immutability after creation for thread safety
+        use_enum_values=False,  # Keep enum objects, don't convert to strings
+        validate_assignment=True,  # Explicit - redundant with frozen=True but kept for clarity
+    )
