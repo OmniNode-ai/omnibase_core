@@ -12,6 +12,16 @@ Validates workflow DAGs using Kahn's algorithm for topological sorting with:
 
 This module provides comprehensive workflow validation utilities following
 the patterns established in fsm_analysis.py and dag_validator.py.
+
+ONEX Compliance:
+    This module follows ONEX v1.0 workflow validation patterns as defined in
+    CONTRACT_DRIVEN_NODEORCHESTRATOR_V1_0.md. Reserved execution modes
+    (CONDITIONAL, STREAMING) are validated and rejected per the v1.0 contract.
+
+Thread Safety:
+    All functions and the WorkflowValidator class in this module are stateless
+    and thread-safe. Each method call operates independently on its input
+    parameters without maintaining any shared state between calls.
 """
 
 from collections import Counter, deque
@@ -80,12 +90,42 @@ class WorkflowValidator:
     - Missing dependency validation
     - Isolated step detection
     - Unique step name validation
+
+    Thread Safety:
+        This class is stateless and thread-safe. Multiple threads can safely
+        use the same instance concurrently since all methods operate only on
+        their input parameters without maintaining any shared state.
+
+    ONEX Compliance:
+        Implements validation patterns as specified in ONEX v1.0 workflow
+        coordination contracts.
+
+    Example:
+        Basic usage::
+
+            validator = WorkflowValidator()
+            result = validator.validate_workflow(steps)
+            if not result.is_valid:
+                for error in result.errors:
+                    print(f"Error: {error}")
     """
 
     def _build_step_id_to_name_map(
         self, steps: list[ModelWorkflowStep]
     ) -> dict[UUID, str]:
-        """Build a mapping from step IDs to step names. O(n) time and space."""
+        """
+        Build a mapping from step IDs to step names.
+
+        Args:
+            steps: List of workflow steps to process
+
+        Returns:
+            dict[UUID, str]: Mapping from step ID to step name
+
+        Complexity:
+            Time: O(n) where n = number of steps
+            Space: O(n) for the resulting dictionary
+        """
         return {step.step_id: step.step_name for step in steps}
 
     def _build_adjacency_list_and_in_degree(

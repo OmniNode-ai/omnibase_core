@@ -27,21 +27,28 @@ def validate_execution_mode(mode: EnumExecutionMode) -> None:
     """
     Validate execution mode is not reserved for future versions.
 
+    Use this function when you have an EnumExecutionMode instance (type-safe).
+    For raw string input (e.g., from YAML config), use validate_execution_mode_string
+    from workflow_validator instead.
+
     Per NodeOrchestrator v1.0 contract:
     - SEQUENTIAL, PARALLEL, BATCH are accepted
     - CONDITIONAL is reserved for v1.1 (NOT accepted in v1.0)
     - STREAMING is reserved for v1.2 (NOT accepted in v1.0)
 
     Args:
-        mode: The execution mode to validate
+        mode: The execution mode to validate (EnumExecutionMode instance)
 
     Raises:
         ModelOnexError: If mode is CONDITIONAL or STREAMING (reserved in v1.0)
             - error_code: EnumCoreErrorCode.VALIDATION_ERROR
             - context: {"mode": mode.value, "reserved_modes": [...]}
 
+    See Also:
+        validate_execution_mode_string: For raw string input validation
+
     Example:
-        >>> from omnibase_core.enums.enum_orchestrator_types import EnumExecutionMode
+        >>> from omnibase_core.enums.enum_workflow_execution import EnumExecutionMode
         >>> validate_execution_mode(EnumExecutionMode.SEQUENTIAL)  # OK
         >>> validate_execution_mode(EnumExecutionMode.PARALLEL)    # OK
         >>> validate_execution_mode(EnumExecutionMode.BATCH)       # OK
