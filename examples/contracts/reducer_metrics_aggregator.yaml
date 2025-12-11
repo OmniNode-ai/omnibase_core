@@ -238,7 +238,7 @@ state_transitions:
       version: {major: 1, minor: 0, patch: 0}
       operation_type: administrative
 metadata:
-  version: {major: 1, minor: 0, patch: 0}
+  version: {major: 1, minor: 1, patch: 0}
   author: ONEX Framework Team
   description: Declarative metrics aggregation reducer using FSM pattern
   tags:

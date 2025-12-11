@@ -327,7 +327,7 @@ workflow_coordination:
 
 # Metadata
 metadata:
-  version: {major: 1, minor: 0, patch: 0}
+  version: {major: 1, minor: 1, patch: 0}
   author: ONEX Framework Team
   description: Data processing pipeline orchestrator using workflow pattern
   tags:

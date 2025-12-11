@@ -73,8 +73,7 @@ contract_version:
   patch: 0
 
 # Contract fingerprint for drift detection (format: version:hash-prefix)
-# Hash is computed from normalized contract content (all fields)
-# Regenerate when contract content changes using: scripts/compute_contract_fingerprint.py
+# Regenerate when contract content changes
 fingerprint: "1.1.0:bf6e50f7086f"
 
 node_type: effect

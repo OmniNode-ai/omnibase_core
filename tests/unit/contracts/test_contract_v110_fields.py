@@ -219,7 +219,7 @@ class TestFingerprintUniqueness:
             for yaml_file in self.RUNTIME_CONTRACTS_DIR.glob("*.yaml"):
                 with open(yaml_file, encoding="utf-8") as f:
                     data = yaml.safe_load(f)
-                    if data and "fingerprint" in data:
+                    if isinstance(data, dict) and "fingerprint" in data:
                         fp = data["fingerprint"]
                         fingerprints.setdefault(fp, []).append(str(yaml_file.name))
 
@@ -228,7 +228,7 @@ class TestFingerprintUniqueness:
             for yaml_file in self.EXAMPLES_CONTRACTS_DIR.rglob("*.yaml"):
                 with open(yaml_file, encoding="utf-8") as f:
                     data = yaml.safe_load(f)
-                    if data and "fingerprint" in data:
+                    if isinstance(data, dict) and "fingerprint" in data:
                         fp = data["fingerprint"]
                         rel_path = yaml_file.relative_to(self.EXAMPLES_CONTRACTS_DIR)
                         fingerprints.setdefault(fp, []).append(f"examples/{rel_path}")
