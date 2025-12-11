@@ -164,12 +164,11 @@ TRANSPORT_ALTERNATIVES: dict[str, str] = {
 # NOTE: This date is 6 months from initial implementation (2025-12-10).
 #       Update this date when reviewing allowlisted items.
 # TODO [OMN-220]: Create separate tickets to fix these and remove from allowlist
+#
+# OMN-566 (2025-12-11): Removed mixin_health_check.py - refactored to use ProtocolHttpClient
 TEMPORARY_ALLOWLIST: frozenset[str] = frozenset(
     {
-        # TODO [OMN-220]: mixin_health_check.py uses aiohttp directly for HTTP
-        # health checks. Should use ProtocolHttpClient instead.
-        # Action: Create child ticket to refactor health check to use protocol abstraction
-        "mixins/mixin_health_check.py",
+        # No pre-existing violations - all items have been fixed!
     }
 )
 
