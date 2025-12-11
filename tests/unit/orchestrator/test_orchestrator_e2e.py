@@ -31,10 +31,7 @@ from uuid import UUID, uuid4
 import pytest
 import yaml
 
-from omnibase_core.contracts import (
-    compute_contract_fingerprint,
-    normalize_contract,
-)
+from omnibase_core.contracts import compute_contract_fingerprint, normalize_contract
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_node_type import EnumNodeType
 from omnibase_core.enums.enum_workflow_coordination import EnumFailureRecoveryStrategy
@@ -1480,8 +1477,8 @@ class TestPerformanceE2E:
         assert elapsed < 5.0, f"50-step workflow took {elapsed:.2f}s (limit: 5s)"
 
     @pytest.mark.asyncio
-    async def test_parallel_execution_faster_than_sequential(self) -> None:
-        """Test parallel execution is faster than sequential for independent steps."""
+    async def test_parallel_execution_completes_with_independent_steps(self) -> None:
+        """Test parallel execution completes successfully with independent steps."""
         # Create workflow with multiple independent steps after initial step
         root_id = uuid4()
         parallel_ids = [uuid4() for _ in range(10)]

@@ -1,10 +1,25 @@
+# SPDX-FileCopyrightText: 2025 OmniNode AI
+# SPDX-License-Identifier: Apache-2.0
+
 """
-Comprehensive validation tests for NodeOrchestrator workflow validation.
+MVP Conformance Tests: NodeOrchestrator Workflow Validation [OMN-657].
 
-Tests for OMN-657: Workflow validation including cycle detection, dependency
-validation, duplicate step ID detection, and invariant enforcement.
+This module provides comprehensive validation tests for the workflow validation
+functions in `omnibase_core.utils.workflow_executor`. These tests ensure the
+NodeOrchestrator correctly validates workflow definitions before execution.
 
-These tests validate the pure validation functions in utils/workflow_executor.py.
+Test Categories:
+    - Cycle Detection: Validates detection of circular dependencies in workflow graphs
+    - Dependency Validation: Ensures all step dependencies reference existing steps
+    - Duplicate Step Validation: Tests uniqueness constraints on step IDs
+    - Invariant Enforcement: Validates execution mode and workflow constraints
+    - Error Message Quality: Ensures validation errors contain useful debugging info
+    - Edge Cases: Tests boundary conditions and large workflow handling
+
+Reference:
+    - Source module: omnibase_core.utils.workflow_executor
+    - Architecture: docs/architecture/CONTRACT_DRIVEN_NODEORCHESTRATOR_V1_0.md
+    - Ticket: OMN-657 (MVP Conformance Tests)
 """
 
 from __future__ import annotations
@@ -533,6 +548,36 @@ class TestDuplicateStepValidation:
         ]
         assert len(name_errors) == 0, f"Duplicate names should be allowed: {errors}"
 
+    @pytest.mark.asyncio
+    @pytest.mark.xfail(
+        reason="Duplicate step ID validation not yet implemented in workflow_executor. "
+        "ModelWorkflowStep uses frozen=True so uniqueness must be validated at runtime.",
+        strict=True,
+    )
+    async def test_duplicate_step_ids_detected(
+        self, base_workflow_definition: ModelWorkflowDefinition
+    ) -> None:
+        """Test that duplicate step IDs are detected during validation.
+
+        Note: This test documents expected behavior. The validation should detect
+        when two steps share the same step_id, as this violates workflow invariants.
+        Currently, validate_workflow_definition does not check for duplicate IDs.
+        """
+        duplicate_id = uuid4()
+
+        steps = [
+            create_step(step_id=duplicate_id, step_name="Step A"),
+            create_step(step_id=duplicate_id, step_name="Step B"),  # Same ID!
+        ]
+
+        errors = await validate_workflow_definition(base_workflow_definition, steps)
+
+        # Should detect duplicate step IDs
+        assert len(errors) > 0, "Should detect duplicate step IDs"
+        assert any("duplicate" in error.lower() for error in errors), (
+            f"Error should mention 'duplicate': {errors}"
+        )
+
 
 # ============================================================================
 # Invariant Enforcement Tests
@@ -821,6 +866,7 @@ class TestEdgeCases:
         assert len(structural_errors) == 0, f"Single step should be valid: {errors}"
 
     @pytest.mark.asyncio
+    @pytest.mark.timeout(30)
     async def test_large_workflow_valid(
         self, parallel_workflow_definition: ModelWorkflowDefinition
     ) -> None:
@@ -880,7 +926,11 @@ class TestEdgeCases:
         assert len(cycle_errors) == 0, f"Complex valid graph should pass: {errors}"
 
     def test_execution_order_respects_priority(self) -> None:
-        """Test that execution order respects step priority for independent steps."""
+        """Test that execution order respects step priority for independent steps.
+
+        Note: Priority uses lower value = higher priority (executes first).
+        This follows heap/queue semantics where priority=1 executes before priority=100.
+        """
         # Two independent steps with different priorities
         step_high_priority = uuid4()
         step_low_priority = uuid4()
@@ -890,24 +940,24 @@ class TestEdgeCases:
                 step_id=step_low_priority,
                 step_name="Low Priority",
                 step_type="compute",
-                priority=100,  # Lower priority
+                priority=100,  # Lower urgency (higher number = executes later)
                 depends_on=[],
             ),
             ModelWorkflowStep(
                 step_id=step_high_priority,
                 step_name="High Priority",
                 step_type="compute",
-                priority=1,  # Higher priority (lower number)
+                priority=1,  # Higher urgency (lower number = executes first)
                 depends_on=[],
             ),
         ]
 
         order = get_execution_order(steps)
 
-        # High priority (1) should come before low priority (100)
+        # Lower priority number should execute first (priority=1 before priority=100)
         high_idx = order.index(step_high_priority)
         low_idx = order.index(step_low_priority)
-        assert high_idx < low_idx, f"High priority should execute first: order={order}"
+        assert high_idx < low_idx, "Lower priority number should execute first"
 
     @pytest.mark.asyncio
     async def test_disabled_steps_not_validated_for_cycles(
