@@ -49,6 +49,7 @@ from omnibase_core.models.validation.model_fsm_analysis_result import (
 from omnibase_core.models.validation.model_import_validation_result import (
     ModelValidationResult as CircularImportValidationResult,
 )
+from omnibase_core.models.validation.model_lint_warning import ModelLintWarning
 from omnibase_core.models.validation.model_module_import_result import (
     ModelModuleImportResult,
 )
@@ -70,8 +71,19 @@ from .contracts import (
 # Import FSM analysis
 from .fsm_analysis import analyze_fsm
 from .patterns import validate_patterns_directory, validate_patterns_file
+
+# Import reserved enum validator (OMN-669)
+from .reserved_enum_validator import (
+    RESERVED_EXECUTION_MODES,
+)
+from .reserved_enum_validator import (
+    validate_execution_mode as validate_reserved_execution_mode,
+)
 from .types import validate_union_usage_directory, validate_union_usage_file
 from .validation_utils import ModelProtocolInfo
+
+# Import workflow linter
+from .workflow_linter import WorkflowLinter
 from .workflow_validator import (
     ModelCycleDetectionResult,
     ModelDependencyValidationResult,
@@ -79,6 +91,10 @@ from .workflow_validator import (
     ModelUniqueNameResult,
     ModelWorkflowValidationResult,
     WorkflowValidator,
+    validate_dag_with_disabled_steps,
+    validate_execution_mode,
+    validate_unique_step_ids,
+    validate_workflow_definition,
 )
 
 
@@ -144,6 +160,9 @@ __all__ = [
     "ExceptionValidationFrameworkError",
     "ModelValidationSuite",
     "validate_all",
+    # Workflow linter (OMN-655)
+    "ModelLintWarning",
+    "WorkflowLinter",
     # FSM analysis
     "ModelAmbiguousTransition",
     "ModelFSMAnalysisResult",
@@ -163,11 +182,18 @@ __all__ = [
     "validate_union_usage_directory",
     "validate_union_usage_file",
     "validate_yaml_file",
-    # Workflow validation (OMN-176)
+    # Workflow validation (OMN-176, OMN-655)
     "ModelCycleDetectionResult",
     "ModelDependencyValidationResult",
     "ModelIsolatedStepResult",
     "ModelUniqueNameResult",
     "ModelWorkflowValidationResult",
     "WorkflowValidator",
+    "validate_dag_with_disabled_steps",
+    "validate_execution_mode",
+    "validate_unique_step_ids",
+    "validate_workflow_definition",
+    # Reserved enum validation (OMN-669)
+    "RESERVED_EXECUTION_MODES",
+    "validate_reserved_execution_mode",
 ]
