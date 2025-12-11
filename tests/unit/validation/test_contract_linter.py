@@ -893,10 +893,15 @@ class TestLintIntegration:
         # - W005: Isolated steps (multiple isolated nodes)
         # - W002: Duplicate step names (if applicable via nodes)
 
+        # Use dict for version to avoid Pydantic model class identity issues
+        # in parallel test execution (pytest-xdist). The dict is coerced by
+        # Pydantic into the correct ModelSemVer type during validation.
+        version_dict = version.model_dump()
+
         # Create multiple isolated nodes to trigger W005 warnings
         isolated_nodes = [
             ModelWorkflowNode(
-                version=version,
+                version=version_dict,
                 node_id=uuid4(),
                 node_type=EnumNodeType.COMPUTE_GENERIC,
                 node_requirements={"step_name": f"isolated_{i}"},
@@ -906,16 +911,16 @@ class TestLintIntegration:
         ]
 
         workflow = ModelWorkflowDefinition(
-            version=version,
+            version=version_dict,
             workflow_metadata=ModelWorkflowDefinitionMetadata(
-                version=version,
+                version=version_dict,
                 workflow_name="multi_warning_workflow",
-                workflow_version=version,
+                workflow_version=version_dict,
                 description="Workflow designed to trigger multiple warning types",
                 execution_mode="sequential",
             ),
             execution_graph=ModelExecutionGraph(
-                version=version,
+                version=version_dict,
                 nodes=isolated_nodes,
             ),
         )
@@ -987,13 +992,16 @@ class TestWarningAggregation:
             max_warnings_per_code=2, aggregate_warnings=False
         )
 
-        version = ModelSemVer(major=1, minor=0, patch=0)
+        # Use dict for version to avoid Pydantic model class identity issues
+        # in parallel test execution (pytest-xdist). The dict is coerced by
+        # Pydantic into the correct ModelSemVer type during validation.
+        version_dict = {"major": 1, "minor": 0, "patch": 0}
 
         # Create workflow with many isolated nodes (will trigger W005 warnings)
         # We need 5+ isolated nodes to exceed the threshold of 2
         isolated_nodes = [
             ModelWorkflowNode(
-                version=version,
+                version=version_dict,
                 node_id=uuid4(),
                 node_type=EnumNodeType.COMPUTE_GENERIC,
                 node_requirements={"step_name": f"isolated_step_{i}"},
@@ -1003,16 +1011,16 @@ class TestWarningAggregation:
         ]
 
         workflow = ModelWorkflowDefinition(
-            version=version,
+            version=version_dict,
             workflow_metadata=ModelWorkflowDefinitionMetadata(
-                version=version,
+                version=version_dict,
                 workflow_name="test_workflow",
-                workflow_version=version,
+                workflow_version=version_dict,
                 description="Test workflow with isolated steps",
                 execution_mode="sequential",
             ),
             execution_graph=ModelExecutionGraph(
-                version=version,
+                version=version_dict,
                 nodes=isolated_nodes,
             ),
         )
