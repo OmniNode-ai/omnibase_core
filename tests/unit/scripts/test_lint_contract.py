@@ -619,7 +619,7 @@ class TestFingerprintValidation:
             "fingerprint": 12345,  # Not a string
         }
 
-        issues, _computed_fp, _declared_fp = lint_fingerprint(file_path, data, None)
+        issues, _computed_fp, _declared_fp, _ = lint_fingerprint(file_path, data, None)
 
         # Should have type error
         fp_errors = [
