@@ -36,7 +36,7 @@
 - **Zero Boilerplate**: Base classes eliminate 80+ lines of initialization code per node
 - **Structured Errors**: ModelOnexError with Pydantic models for consistent error handling
 - **Event-Driven**: ModelEventEnvelope for inter-service communication
-- **Comprehensive Testing**: 15,000+ tests (15,624 collected) with 60%+ coverage requirement
+- **Comprehensive Testing**: 12,000+ tests (12,198 collected) with 60%+ coverage requirement
 - **Strict Type Checking**: 100% mypy strict mode compliance (0 errors across 1865 source files)
 
 ### Dependencies
@@ -427,7 +427,7 @@ poetry run mypy src/omnibase_core/
 
 ### Test Categories
 
-- **Unit Tests**: 15,000+ tests (15,624 collected) in `tests/unit/` - test individual components in isolation
+- **Unit Tests**: 12,000+ tests (12,198 collected) in `tests/unit/` - test individual components in isolation
 - **Integration Tests**: `tests/integration/` - test multiple components together
 - **Coverage Requirement**: Minimum 60% (configured in pyproject.toml)
 
@@ -482,22 +482,21 @@ poetry run pytest tests/ --timeout=60
 
 ### Expected Runtime Per Split
 
-**Configuration**: 24 parallel splits running on GitHub Actions runners
+**Configuration**: 20 parallel splits running on GitHub Actions runners
 
-**Split Strategy**:
-- 15,624 total tests ÷ 24 splits = ~651 tests/split
-- Target: 2-3 minutes per split
-- Increased from 20 to 24 splits (Dec 2025) due to test count growth (12k → 15k+)
+**Benchmark Data** (from CI run [#18997947041](https://github.com/OmniNode-ai/omnibase_core/actions/runs/18997947041)):
 
-| Metric | Expected Value |
-|--------|----------------|
-| **Tests per Split** | ~651 |
-| **Target Runtime** | 2m30s - 3m30s per split |
-| **Total CI Time** | ~3-4 minutes (parallel execution) |
+| Metric | Value |
+|--------|-------|
+| **Average Runtime** | 2m58s per split |
+| **Fastest Split** | 2m35s (Split 6/20) |
+| **Slowest Split** | 3m35s (Split 12/20) |
+| **Runtime Range** | 60s variation |
+| **Total CI Time** | ~3 minutes (parallel execution) |
 
-### Historical Split Timings (20-split baseline)
+### Full Split Timings (Baseline)
 
-Previous benchmark from CI run [#18997947041](https://github.com/OmniNode-ai/omnibase_core/actions/runs/18997947041) with 20 splits:
+Actual runtimes from successful CI run on 2025-11-01:
 
 ```
 Split  1/20: 2m49s    Split 11/20: 2m52s
@@ -511,8 +510,6 @@ Split  8/20: 2m58s    Split 18/20: 2m56s
 Split  9/20: 3m5s     Split 19/20: 3m1s
 Split 10/20: 2m56s    Split 20/20: 2m58s
 ```
-
-**Note**: With 24 splits, individual runtimes should be ~10-15% faster than these baselines.
 
 ### Performance Thresholds
 
@@ -529,13 +526,13 @@ If a split exceeds expected thresholds:
 1. **Check Split Distribution**
    ```bash
    # View which tests are in the slow split
-   poetry run pytest --collect-only --split-splits=24 --split-group=<split-number>
+   poetry run pytest --collect-only --split-splits=20 --split-group=<split-number>
    ```
 
 2. **Profile Slow Tests**
    ```bash
    # Run the slow split with duration reporting
-   poetry run pytest --durations=10 --split-splits=24 --split-group=<split-number>
+   poetry run pytest --durations=10 --split-splits=20 --split-group=<split-number>
    ```
 
 3. **Common Causes**:
@@ -571,11 +568,12 @@ If a split exceeds expected thresholds:
 
 - **Initial Configuration**: 10 splits (Nov 2024)
 - **First Optimization**: 12 splits (Dec 2024)
-- **Second Optimization**: 20 splits (Jan 2025)
-- **Current Configuration**: 24 splits (Dec 2025) - test count grew from 12k to 15k+
+- **Current Configuration**: 20 splits (Jan 2025)
 - **Next Review**: When average runtime exceeds 4 minutes
 
-**Last Updated**: 2025-12-11
+**Benchmark Source**: [CI Run #18997947041](https://github.com/OmniNode-ai/omnibase_core/actions/runs/18997947041)
+**Last Updated**: 2025-12-04
+**Correlation ID**: `95cac850-05a3-43e2-9e57-ccbbef683f43`
 
 ### Operational Monitoring
 
@@ -949,8 +947,8 @@ poetry show                                 # List dependencies
 - ✅ **Removed omnibase_spi dependency** - v0.3.6 transition to dependency inversion (SPI now depends on Core)
 - ✅ Added container types documentation (ModelContainer vs ModelONEXContainer)
 - ✅ Fixed formatter conflicts (isort/ruff) with --filter-files flag
-- ✅ Comprehensive test suite with 15,000+ tests (15,624 collected)
-- ✅ Increased CI splits from 10 → 12 → 20 → 24 for better resource management
+- ✅ Comprehensive test suite with 12,000+ tests (12,198 collected)
+- ✅ Increased CI splits from 10 to 12 to 20 for better resource management
 - ✅ Fixed event loop hangs in CI
 - ✅ Updated security dependencies (pypdf 6.0+, starlette 0.48.0+)
 - ✅ Reorganized documentation structure

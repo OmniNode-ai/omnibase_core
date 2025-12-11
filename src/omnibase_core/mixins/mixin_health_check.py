@@ -30,15 +30,11 @@ import asyncio
 from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import Any, Union
-from urllib.parse import urlparse
-from uuid import uuid4
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.health.model_health_status import ModelHealthStatus
-from omnibase_core.protocols.http import ProtocolHttpClient
-from omnibase_core.types.typed_dict_health_status import TypedDictHealthStatus
 
 
 class MixinHealthCheck:
@@ -414,7 +410,7 @@ class MixinHealthCheck:
             issues=all_issues,
         )
 
-    def get_health_status(self) -> TypedDictHealthStatus:
+    def get_health_status(self) -> dict[str, Any]:
         """
         Get health status as a dictionary.
 
@@ -431,7 +427,7 @@ class MixinHealthCheck:
 
         # Convert to dictionary format expected by tests
         return {
-            "node_id": str(getattr(self, "node_id", "unknown")),
+            "node_id": getattr(self, "node_id", "unknown"),
             "is_healthy": health.status == "healthy",
             "status": health.status,
             "health_score": health.health_score,
@@ -787,8 +783,6 @@ async def check_http_service_health(
     service_url: str,
     timeout_seconds: float = 3.0,
     expected_status: int = 200,
-    http_client: ProtocolHttpClient | None = None,
-    headers: dict[str, str] | None = None,
 ) -> ModelHealthStatus:
     """
     Check HTTP service health via health endpoint.
@@ -800,116 +794,48 @@ async def check_http_service_health(
         service_url: Base URL of the service or full health endpoint URL
         timeout_seconds: Request timeout
         expected_status: Expected HTTP status code (default: 200)
-        http_client: HTTP client implementing ProtocolHttpClient protocol.
-                     If None, returns UNHEALTHY status indicating no client available.
-        headers: Optional HTTP headers to include in the request (e.g., for authentication)
 
     Returns:
         ModelHealthStatus with connectivity details
 
-    Note:
-        This function catches all exceptions internally and returns appropriate
-        ModelHealthStatus objects. It never raises exceptions to the caller.
-
     Example:
         async def _check_metadata_service(self) -> ModelHealthStatus:
-            # Inject http_client from container or create implementation
-            http_client = container.get_service("ProtocolHttpClient")
             return await check_http_service_health(
                 "http://metadata-stamping:8057",
-                timeout_seconds=2.0,
-                http_client=http_client,
-                headers={"Authorization": "Bearer token"},
+                timeout_seconds=2.0
             )
     """
     from omnibase_core.models.health.model_health_issue import ModelHealthIssue
 
-    # Return unhealthy if no HTTP client is provided
-    if http_client is None:
-        return ModelHealthStatus.create_unhealthy(
-            score=0.0,
-            issues=[
-                ModelHealthIssue(
-                    issue_id=uuid4(),
-                    severity="critical",
-                    category="configuration",
-                    message="No HTTP client provided - inject ProtocolHttpClient implementation",
-                    first_detected=datetime.now(UTC),
-                    last_seen=datetime.now(UTC),
-                )
-            ],
-        )
-
-    # Validate URL format before making request
     try:
-        parsed = urlparse(service_url)
-        if not parsed.scheme or not parsed.netloc:
-            return ModelHealthStatus.create_unhealthy(
-                score=0.0,
-                issues=[
-                    ModelHealthIssue(
-                        issue_id=uuid4(),
-                        severity="critical",
-                        category="configuration",
-                        message=f"Invalid service URL: {service_url}",
-                        first_detected=datetime.now(UTC),
-                        last_seen=datetime.now(UTC),
-                    )
-                ],
-            )
-        if parsed.scheme not in ("http", "https"):
-            return ModelHealthStatus.create_unhealthy(
-                score=0.0,
-                issues=[
-                    ModelHealthIssue(
-                        issue_id=uuid4(),
-                        severity="critical",
-                        category="configuration",
-                        message=f"Invalid URL scheme '{parsed.scheme}' - must be http or https",
-                        first_detected=datetime.now(UTC),
-                        last_seen=datetime.now(UTC),
-                    )
-                ],
-            )
-    except (
-        Exception
-    ) as e:  # fallback-ok: URL parsing should return UNHEALTHY status, not crash
-        return ModelHealthStatus.create_unhealthy(
-            score=0.0,
-            issues=[
-                ModelHealthIssue(
-                    issue_id=uuid4(),
-                    severity="critical",
-                    category="configuration",
-                    message=f"Failed to parse service URL: {e}",
-                    first_detected=datetime.now(UTC),
-                    last_seen=datetime.now(UTC),
-                )
-            ],
-        )
+        import aiohttp
 
-    try:
         # Append /health if not already present
         health_url = (
             service_url if service_url.endswith("/health") else f"{service_url}/health"
         )
 
-        response = await http_client.get(
-            health_url, timeout=timeout_seconds, headers=headers
-        )
+        start_time = datetime.now(UTC)
 
-        if response.status == expected_status:
-            return ModelHealthStatus.create_healthy(score=1.0)
-        else:
-            return ModelHealthStatus.create_degraded(
-                score=0.5,
-                issues=[
-                    ModelHealthIssue.create_connectivity_issue(
-                        message=f"HTTP service returned {response.status}, expected {expected_status}",
-                        severity="medium",
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                health_url,
+                timeout=aiohttp.ClientTimeout(total=timeout_seconds),
+            ) as response:
+                duration_ms = (datetime.now(UTC) - start_time).total_seconds() * 1000
+
+                if response.status == expected_status:
+                    return ModelHealthStatus.create_healthy(score=1.0)
+                else:
+                    return ModelHealthStatus.create_degraded(
+                        score=0.5,
+                        issues=[
+                            ModelHealthIssue.create_connectivity_issue(
+                                message=f"HTTP service returned {response.status}, expected {expected_status}",
+                                severity="medium",
+                            )
+                        ],
                     )
-                ],
-            )
 
     except TimeoutError:
         return ModelHealthStatus.create_degraded(
@@ -935,7 +861,7 @@ async def check_http_service_health(
             score=0.0,
             issues=[
                 ModelHealthIssue.create_connectivity_issue(
-                    message=f"HTTP health check failed for {service_url}: {type(e).__name__}: {e!s}",
+                    message=f"HTTP service check failed: {e!s}",
                     severity="critical",
                 )
             ],

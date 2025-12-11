@@ -1,31 +1,23 @@
-"""TypedDict for health status dictionary returned by get_health_status().
+from __future__ import annotations
 
-Provides better type information for consumers than a generic dict type,
-enabling IDE autocomplete and stricter type checking.
+"""
+TypedDict for health status information.
 """
 
+from datetime import datetime
 from typing import TypedDict
 
 
 class TypedDictHealthStatus(TypedDict):
-    """TypedDict for health status dictionary.
+    """TypedDict for health status information."""
 
-    Used by MixinHealthCheck.get_health_status() to provide precise typing
-    for the returned health status dictionary.
-
-    Attributes:
-        node_id: Node identifier string
-        is_healthy: Boolean health status
-        status: Health status string ("healthy", "degraded", "unhealthy")
-        health_score: Numeric health score (0.0 to 1.0)
-        issues: List of issue message strings
-    """
-
-    node_id: str
-    is_healthy: bool
-    status: str
-    health_score: float
-    issues: list[str]
+    status: str  # "healthy", "degraded", "unhealthy"
+    uptime_seconds: int
+    last_check: datetime
+    error_count: int
+    warning_count: int
+    checks_passed: int
+    checks_total: int
 
 
 __all__ = ["TypedDictHealthStatus"]

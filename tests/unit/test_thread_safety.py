@@ -222,6 +222,9 @@ class TestCircuitBreakerRaceConditions:
     - Timeout (60s) to prevent CI hangs
     """
 
+    @pytest.mark.xfail(
+        reason="Lost updates under races expected without sync", strict=False
+    )
     def test_circuit_breaker_failure_count_race(self):
         """
         Demonstrate failure count race conditions.

@@ -160,20 +160,21 @@ TRANSPORT_ALTERNATIVES: dict[str, str] = {
 # These should be fixed and removed from this list
 # Each entry is a relative path from src/omnibase_core/
 #
-# OMN-566 (2025-12-11): Removed mixin_health_check.py - refactored to use ProtocolHttpClient
+# EXPIRATION: Review and remove allowlisted items by 2026-06-10
+# NOTE: This date is 6 months from initial implementation (2025-12-10).
+#       Update this date when reviewing allowlisted items.
+# TODO [OMN-220]: Create separate tickets to fix these and remove from allowlist
 TEMPORARY_ALLOWLIST: frozenset[str] = frozenset(
     {
-        # No pre-existing violations - all items have been fixed!
+        # TODO [OMN-220]: mixin_health_check.py uses aiohttp directly for HTTP
+        # health checks. Should use ProtocolHttpClient instead.
+        # Action: Create child ticket to refactor health check to use protocol abstraction
+        "mixins/mixin_health_check.py",
     }
 )
 
-# Allowlist expiration tracking - only relevant when TEMPORARY_ALLOWLIST has items
-# When adding items to the allowlist:
-#   1. Set ALLOWLIST_EXPIRATION_DATE to 6 months from addition date
-#   2. Add TODO [OMN-220] comment noting items need tickets for removal
-ALLOWLIST_EXPIRATION_DATE: date | None = (
-    None if not TEMPORARY_ALLOWLIST else date(2026, 6, 10)
-)
+# Allowlist expiration date - CI should warn when this approaches
+ALLOWLIST_EXPIRATION_DATE: date = date(2026, 6, 10)
 ALLOWLIST_WARNING_DAYS: int = 30  # Warn this many days before expiration
 
 
@@ -574,13 +575,8 @@ def check_allowlist_expiration() -> tuple[bool, str]:
 
     Returns:
         Tuple of (is_warning, message). is_warning is True if expiration
-        is approaching or passed. Returns (False, "") if allowlist is empty
-        or no expiration date is set.
+        is approaching or passed.
     """
-    # No expiration tracking needed when allowlist is empty
-    if ALLOWLIST_EXPIRATION_DATE is None:
-        return False, ""
-
     today = datetime.now(tz=UTC).date()
     days_until_expiration = (ALLOWLIST_EXPIRATION_DATE - today).days
 
