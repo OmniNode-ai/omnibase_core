@@ -84,13 +84,15 @@ Basic JSON scalar values including null.
 ```python
 # Definition
 JsonPrimitive = str | int | float | bool | None
+```
 
-# Use cases
+**Use cases:**
 - JSON property values
 - Configuration settings that may be null
 - Optional metadata fields
 - Default/fallback values
 
+```python
 # Examples
 value: JsonPrimitive = "hello"
 value: JsonPrimitive = 42
@@ -106,13 +108,15 @@ Non-nullable primitive values. Use when `None` is not a valid value.
 ```python
 # Definition
 PrimitiveValue = str | int | float | bool
+```
 
-# Use cases
+**Use cases:**
 - Required configuration fields
 - Non-optional function parameters
 - Values that must have meaningful content
 - Dictionary values where None would be invalid
 
+```python
 # Examples
 setting: PrimitiveValue = "production"  # Valid
 setting: PrimitiveValue = None          # Type error!
@@ -128,13 +132,15 @@ Any JSON-compatible value including containers. Uses `Any` for container content
 ```python
 # Definition
 JsonValue = str | int | float | bool | list[Any] | dict[str, Any] | None
+```
 
-# Use cases
+**Use cases:**
 - General JSON data handling
 - API request/response bodies
 - Configuration file parsing
 - Data transformation pipelines
 
+```python
 # Examples
 data: JsonValue = {"users": [{"name": "Alice", "age": 30}]}
 data: JsonValue = [1, 2, 3, "mixed", True]
@@ -152,13 +158,15 @@ Full recursive JSON structure with proper nested type definitions.
 ```python
 # Definition
 JsonType = dict[str, "JsonType"] | list["JsonType"] | str | int | float | bool | None
+```
 
-# Use cases
+**Use cases:**
 - JSON schema validation contexts
 - Deep nested configuration parsing
 - Full type coverage for JSON documents
 - When type checker must validate nested structure
 
+```python
 # Examples
 config: JsonType = {
     "database": {
@@ -179,25 +187,31 @@ config: JsonType = {
 
 #### PrimitiveContainer
 
-Primitives or flat collections of primitives. No deep nesting, no `None` values.
+Primitives or flat collections of primitives. **None is NOT allowed** - this type uses `PrimitiveValue` (which excludes `None`) rather than `JsonPrimitive`. No deep nesting permitted.
 
 ```python
 # Definition
 PrimitiveContainer = PrimitiveValue | list[PrimitiveValue] | dict[str, PrimitiveValue]
+```
 
-# Use cases
+**Use cases:**
 - Simple configuration values
 - Flat metadata structures
 - Parameters that don't need deep nesting
 - Environment variable representations
 
+**Important:** `None` is explicitly excluded from this type. Since `PrimitiveContainer` is built on `PrimitiveValue` (not `JsonPrimitive`), null values are not permitted. Use `JsonValue` if you need nullable containers.
+
+```python
 # Examples
 settings: PrimitiveContainer = {"timeout": 30, "enabled": True}
 tags: PrimitiveContainer = ["prod", "critical", "v2"]
 count: PrimitiveContainer = 42
 
-# Note: None is EXCLUDED (uses PrimitiveValue, not JsonPrimitive)
-# This is intentional - use JsonValue if you need nullable containers
+# These would be type errors:
+# invalid: PrimitiveContainer = None           # None not allowed
+# invalid: PrimitiveContainer = [1, None, 3]   # None not allowed in lists
+# invalid: PrimitiveContainer = {"key": None}  # None not allowed in dicts
 ```
 
 #### ToolParameterValue
@@ -207,13 +221,15 @@ Constrained types for tool/API parameters with string-only containers.
 ```python
 # Definition
 ToolParameterValue = str | int | float | bool | list[str] | dict[str, str]
+```
 
-# Use cases
+**Use cases:**
 - MCP tool parameters
 - CLI argument values
 - API request parameters
 - HTTP headers and query parameters
 
+```python
 # Examples
 params: dict[str, ToolParameterValue] = {
     "url": "https://example.com",
@@ -223,12 +239,12 @@ params: dict[str, ToolParameterValue] = {
     "headers": {"Authorization": "Bearer token", "Accept": "application/json"},
     "tags": ["api", "external", "v2"]
 }
-
-# Note: More constrained than JsonValue
-# - No None (parameters should be explicit)
-# - No arbitrary nested structures
-# - List/dict values are strings only
 ```
+
+**Constraints** (more restrictive than `JsonValue`):
+- No `None` - parameters should be explicit
+- No arbitrary nested structures
+- List/dict values are strings only
 
 ## Decision Tree: Choosing the Right Type Alias
 
