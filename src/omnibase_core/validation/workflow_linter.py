@@ -52,6 +52,7 @@ from collections import Counter, deque
 from typing import Literal
 from uuid import UUID
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 
 # Type alias for valid step types
@@ -61,9 +62,14 @@ StepTypeLiteral = Literal[
 from omnibase_core.models.contracts.subcontracts.model_workflow_definition import (
     ModelWorkflowDefinition,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.validation.model_lint_statistics import ModelLintStatistics
 from omnibase_core.models.validation.model_lint_warning import ModelLintWarning
 
 __all__ = ["WorkflowLinter"]
+
+# Default maximum warnings per code before aggregation
+DEFAULT_MAX_WARNINGS_PER_CODE = 10
 
 
 class WorkflowLinter:
@@ -82,7 +88,58 @@ class WorkflowLinter:
     - Unreachable steps (steps with no incoming edges and not root steps)
     - Priority clamping (priority values outside valid range)
     - Isolated steps (steps with no connections)
+
+    Warning Aggregation:
+        For large workflows, the linter can aggregate warnings to prevent
+        output explosion. When enabled (default), warnings are grouped by
+        code and only the first N warnings per code are kept, with a summary
+        warning indicating how many additional warnings were suppressed.
+
+        Example:
+            linter = WorkflowLinter(max_warnings_per_code=5, aggregate_warnings=True)
+            warnings = linter.lint(large_workflow)
+            # If 20 W001 warnings exist, only 5 are returned plus a summary
+
+    Telemetry:
+        Use get_statistics() to obtain telemetry data about a linting run,
+        including warning counts by code and severity, timing, and step counts.
+
+    Args:
+        max_warnings_per_code: Maximum number of warnings to keep per warning
+            code before aggregation. Must be >= 1. Defaults to 10.
+        aggregate_warnings: Whether to aggregate warnings when they exceed
+            max_warnings_per_code. Defaults to True.
+
+    Raises:
+        ModelOnexError: If max_warnings_per_code is less than 1.
     """
+
+    def __init__(
+        self,
+        max_warnings_per_code: int = DEFAULT_MAX_WARNINGS_PER_CODE,
+        aggregate_warnings: bool = True,
+    ) -> None:
+        """
+        Initialize the WorkflowLinter with optional aggregation settings.
+
+        Args:
+            max_warnings_per_code: Maximum number of warnings to keep per warning
+                code before aggregation. Must be >= 1. Defaults to 10.
+            aggregate_warnings: Whether to aggregate warnings when they exceed
+                max_warnings_per_code. Defaults to True.
+
+        Raises:
+            ModelOnexError: If max_warnings_per_code is less than 1.
+        """
+        if max_warnings_per_code < 1:
+            raise ModelOnexError(
+                message=(
+                    f"max_warnings_per_code must be >= 1, got {max_warnings_per_code}"
+                ),
+                error_code=EnumCoreErrorCode.INVALID_PARAMETER,
+            )
+        self._max_warnings_per_code = max_warnings_per_code
+        self._aggregate_warnings = aggregate_warnings
 
     def lint(self, workflow: ModelWorkflowDefinition) -> list[ModelLintWarning]:
         """
@@ -91,13 +148,18 @@ class WorkflowLinter:
         This is the main entry point for workflow linting. It runs all
         linting checks and aggregates warnings into a single list.
 
+        If warning aggregation is enabled (default), warnings are grouped by
+        code and limited to max_warnings_per_code per code, with a summary
+        warning for any suppressed warnings.
+
         Args:
             workflow: The workflow definition to lint. Must be a valid
                 ModelWorkflowDefinition instance.
 
         Returns:
             list[ModelLintWarning]: List of all warnings detected during linting.
-                Empty list if no issues found.
+                Empty list if no issues found. If aggregation is enabled,
+                may include summary warnings for suppressed warnings.
 
         Example:
             >>> linter = WorkflowLinter()
@@ -117,7 +179,78 @@ class WorkflowLinter:
         warnings.extend(self.warn_priority_clamping(steps))
         warnings.extend(self.warn_isolated_steps(steps))
 
+        # Apply warning aggregation if enabled
+        if self._aggregate_warnings:
+            warnings = self._aggregate_warnings_by_code(warnings)
+
         return warnings
+
+    def _aggregate_warnings_by_code(
+        self, warnings: list[ModelLintWarning]
+    ) -> list[ModelLintWarning]:
+        """
+        Aggregate warnings by code to prevent output explosion.
+
+        Groups warnings by their code and keeps only the first N warnings
+        per code (where N is max_warnings_per_code). For codes that exceed
+        the limit, a summary warning is added indicating how many warnings
+        were suppressed.
+
+        Args:
+            warnings: List of warnings to aggregate.
+
+        Returns:
+            list[ModelLintWarning]: Aggregated warnings with optional summaries.
+
+        Complexity:
+            Time: O(W) where W = number of warnings
+            Space: O(W) for grouping warnings by code
+        """
+        if not warnings:
+            return warnings
+
+        # Group warnings by code
+        warnings_by_code: dict[str, list[ModelLintWarning]] = {}
+        for warning in warnings:
+            if warning.code not in warnings_by_code:
+                warnings_by_code[warning.code] = []
+            warnings_by_code[warning.code].append(warning)
+
+        # Build aggregated result
+        aggregated: list[ModelLintWarning] = []
+
+        for code in sorted(warnings_by_code.keys()):
+            code_warnings = warnings_by_code[code]
+            total_count = len(code_warnings)
+
+            # Keep first N warnings
+            kept_warnings = code_warnings[: self._max_warnings_per_code]
+            aggregated.extend(kept_warnings)
+
+            # Add summary if warnings were suppressed
+            suppressed_count = total_count - len(kept_warnings)
+            if suppressed_count > 0:
+                # Determine severity from the original warnings (use most severe)
+                has_warning_severity = any(
+                    w.severity == "warning" for w in code_warnings
+                )
+                summary_severity: Literal["info", "warning"] = (
+                    "warning" if has_warning_severity else "info"
+                )
+
+                aggregated.append(
+                    ModelLintWarning(
+                        code=code,
+                        message=(
+                            f"... and {suppressed_count} more similar warnings "
+                            f"({total_count} total)"
+                        ),
+                        step_reference=None,
+                        severity=summary_severity,
+                    )
+                )
+
+        return aggregated
 
     def _extract_steps(
         self, workflow: ModelWorkflowDefinition
@@ -542,3 +675,58 @@ class WorkflowLinter:
                 )
 
         return warnings
+
+    def get_statistics(
+        self,
+        workflow: ModelWorkflowDefinition,
+        warnings: list[ModelLintWarning],
+        duration_ms: float,
+    ) -> ModelLintStatistics:
+        """
+        Generate telemetry statistics for a linting run.
+
+        Creates a ModelLintStatistics instance with counts by warning code
+        and severity, workflow metrics, and timing information.
+
+        Args:
+            workflow: The workflow definition that was linted.
+            warnings: List of warnings produced by linting.
+            duration_ms: Time taken to lint the workflow in milliseconds.
+
+        Returns:
+            ModelLintStatistics: Statistics about the linting run.
+
+        Example:
+            >>> import time
+            >>> linter = WorkflowLinter()
+            >>> start = time.perf_counter()
+            >>> warnings = linter.lint(workflow)
+            >>> duration = (time.perf_counter() - start) * 1000
+            >>> stats = linter.get_statistics(workflow, warnings, duration)
+            >>> print(f"Found {stats.total_warnings} warnings in {stats.lint_duration_ms}ms")
+        """
+        # Count warnings by code
+        warnings_by_code: dict[str, int] = {}
+        for warning in warnings:
+            warnings_by_code[warning.code] = warnings_by_code.get(warning.code, 0) + 1
+
+        # Count warnings by severity
+        warnings_by_severity: dict[str, int] = {
+            "warning": 0,
+            "info": 0,
+        }
+        for warning in warnings:
+            if warning.severity in warnings_by_severity:
+                warnings_by_severity[warning.severity] += 1
+
+        # Get step count from execution graph
+        step_count = len(workflow.execution_graph.nodes)
+
+        return ModelLintStatistics(
+            workflow_name=workflow.workflow_metadata.workflow_name,
+            total_warnings=len(warnings),
+            warnings_by_code=warnings_by_code,
+            warnings_by_severity=warnings_by_severity,
+            step_count=step_count,
+            lint_duration_ms=duration_ms,
+        )

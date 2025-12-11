@@ -49,6 +49,7 @@ from omnibase_core.models.validation.model_fsm_analysis_result import (
 from omnibase_core.models.validation.model_import_validation_result import (
     ModelValidationResult as CircularImportValidationResult,
 )
+from omnibase_core.models.validation.model_lint_statistics import ModelLintStatistics
 from omnibase_core.models.validation.model_lint_warning import ModelLintWarning
 from omnibase_core.models.validation.model_module_import_result import (
     ModelModuleImportResult,
@@ -161,6 +162,7 @@ __all__ = [
     "ModelValidationSuite",
     "validate_all",
     # Workflow linter (OMN-655)
+    "ModelLintStatistics",
     "ModelLintWarning",
     "WorkflowLinter",
     # FSM analysis
