@@ -54,17 +54,17 @@ from uuid import UUID
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
-
-# Type alias for valid step types
-StepTypeLiteral = Literal[
-    "compute", "effect", "reducer", "orchestrator", "conditional", "parallel", "custom"
-]
 from omnibase_core.models.contracts.subcontracts.model_workflow_definition import (
     ModelWorkflowDefinition,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_lint_statistics import ModelLintStatistics
 from omnibase_core.models.validation.model_lint_warning import ModelLintWarning
+
+# Type alias for valid step types (placed after imports per PEP 8)
+StepTypeLiteral = Literal[
+    "compute", "effect", "reducer", "orchestrator", "conditional", "parallel", "custom"
+]
 
 __all__ = ["WorkflowLinter"]
 
@@ -103,6 +103,13 @@ class WorkflowLinter:
     Telemetry:
         Use get_statistics() to obtain telemetry data about a linting run,
         including warning counts by code and severity, timing, and step counts.
+
+    Thread Safety:
+        This class is thread-safe. All instance attributes are set during
+        __init__ and are read-only thereafter. All methods are stateless
+        and do not modify instance state, making concurrent calls from
+        multiple threads safe. Each lint() call operates on its own local
+        data structures.
 
     Args:
         max_warnings_per_code: Maximum number of warnings to keep per warning

@@ -585,6 +585,11 @@ def validate_workflow_definition(
     3. Dependency errors (missing step references)
     4. Cycle errors (circular dependencies)
 
+    Thread Safety:
+        This function is stateless and thread-safe. It creates a new
+        WorkflowValidator instance for each call and operates only on
+        the provided workflow parameter without any shared mutable state.
+
     Args:
         workflow: The workflow definition to validate. Must be a valid
             ModelWorkflowDefinition instance with metadata and execution graph.
@@ -733,6 +738,10 @@ def validate_unique_step_ids(steps: list[ModelWorkflowStep]) -> list[str]:
     Validates that all step IDs are unique within the workflow. Duplicate
     step IDs create ambiguity and are not allowed.
 
+    Thread Safety:
+        This function is stateless and thread-safe. It operates only on
+        the provided steps parameter without any shared mutable state.
+
     Args:
         steps: List of workflow steps to validate. Each step must have a
             valid step_id UUID field.
@@ -783,22 +792,33 @@ def validate_dag_with_disabled_steps(steps: list[ModelWorkflowStep]) -> list[str
     validation, allowing workflows to contain disabled steps without breaking
     the DAG structure.
 
-    This function performs:
-    1. Filter out disabled steps (enabled=False)
-    2. Validate remaining steps form a valid DAG
-    3. Check for dependency cycles
-    4. Validate all dependencies reference enabled steps
+    This function performs validation in deterministic priority order:
+    1. Structural errors: Duplicate step IDs (validate_unique_step_ids)
+    2. Disabled dependency errors: Dependencies on disabled steps
+    3. Missing dependency errors: Dependencies on non-existent steps
+    4. Cycle errors: Circular dependencies in enabled steps
+
+    IMPORTANT: Errors are returned in priority order (not alphabetically sorted).
+    This allows callers to address the most fundamental issues first (structural),
+    then dependency issues, then graph issues (cycles). Within each priority level,
+    errors may be sorted for deterministic output.
+
+    Thread Safety:
+        This function is stateless and thread-safe. It creates a new
+        WorkflowValidator instance for each call and operates only on
+        the provided steps parameter without any shared mutable state.
 
     Args:
         steps: List of all workflow steps, including both enabled and disabled.
             Each step must have an 'enabled' boolean field.
 
     Returns:
-        list[str]: Sorted list of validation error messages. Empty list if
-            the enabled steps form a valid DAG. Error messages include:
-            - Cycle detection errors with step names
-            - Missing dependency errors (dependencies on non-existent or disabled steps)
-            - Duplicate step ID errors
+        list[str]: Priority-ordered list of validation error messages. Empty list
+            if the enabled steps form a valid DAG. Error messages include:
+            - Priority 1: Duplicate step ID errors (structural)
+            - Priority 2: Dependencies on disabled steps
+            - Priority 3: Missing dependency errors (references to non-existent steps)
+            - Priority 4: Cycle detection errors with step names
 
     Complexity:
         Time: O(V + E) where V = number of enabled steps and E = number of edges.
@@ -897,23 +917,44 @@ def validate_dag_with_disabled_steps(steps: list[ModelWorkflowStep]) -> list[str
     if cycle_result.has_cycle:
         errors.append(cycle_result.cycle_description)
 
-    return sorted(errors)
+    # Return errors in priority order (NOT alphabetically sorted)
+    # Priority ordering is maintained by the append order above:
+    # 1. Duplicate step IDs (structural)
+    # 2. Dependencies on disabled steps
+    # 3. Missing dependencies
+    # 4. Cycle detection
+    return errors
 
 
 def validate_execution_mode_string(mode: str) -> None:
     """
     Validate execution mode string and reject reserved modes.
 
-    NOTE: This function validates string-based execution modes. For type-safe
-    validation with EnumExecutionMode, use validate_reserved_execution_mode
-    from omnibase_core.validation.reserved_enum_validator.
+    This function validates raw string execution modes, typically from YAML configs
+    or user input. For type-safe validation when you already have an EnumExecutionMode
+    instance, use validate_reserved_execution_mode (aliased from validate_execution_mode
+    in reserved_enum_validator) instead.
 
-    Validates that the execution mode is not a reserved/unimplemented mode.
-    Currently, CONDITIONAL and STREAMING modes are reserved for future
-    implementation and will raise a validation error.
+    **When to use which function:**
+
+    - ``validate_execution_mode_string(mode: str)``: Use when parsing YAML configs,
+      JSON payloads, or any string-based input where the mode hasn't been converted
+      to an enum yet. This is the appropriate choice for ModelWorkflowDefinition
+      validation where execution_mode is stored as a string.
+
+    - ``validate_reserved_execution_mode(mode: EnumExecutionMode)``: Use when you
+      already have a typed EnumExecutionMode value (e.g., from a Pydantic model
+      with enum field). Provides compile-time type safety.
+
+    Both functions enforce the same validation rules (reject CONDITIONAL and STREAMING)
+    but operate on different input types.
 
     Allowed modes: sequential, parallel, batch
     Reserved modes: conditional, streaming
+
+    Thread Safety:
+        This function is stateless and thread-safe. It performs only read operations
+        on constant data (reserved_modes set) and has no shared mutable state.
 
     Args:
         mode: The execution mode string to validate. Case-insensitive.
@@ -930,6 +971,11 @@ def validate_execution_mode_string(mode: str) -> None:
     Complexity:
         Time: O(1) - set lookup
         Space: O(1) - constant storage
+
+    See Also:
+        validate_reserved_execution_mode: Type-safe validation for EnumExecutionMode.
+            Located in omnibase_core.validation.reserved_enum_validator and re-exported
+            from omnibase_core.validation as validate_reserved_execution_mode.
 
     Example:
         Valid modes::

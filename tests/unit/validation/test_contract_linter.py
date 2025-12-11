@@ -1,5 +1,5 @@
 """
-Unit tests for contract_linter.py.
+Unit tests for WorkflowLinter (workflow_linter.py).
 
 Tests comprehensive workflow contract linting functionality including:
 - Warning on unused parallel_group with SEQUENTIAL mode
@@ -33,28 +33,6 @@ from omnibase_core.validation.workflow_linter import (
     DEFAULT_MAX_WARNINGS_PER_CODE,
     WorkflowLinter,
 )
-
-
-@pytest.fixture
-def sample_steps() -> list[ModelWorkflowStep]:
-    """Create sample workflow steps for testing."""
-    from uuid import uuid4
-
-    step_a_id = uuid4()
-    step_b_id = uuid4()
-    return [
-        ModelWorkflowStep(
-            step_id=step_a_id,
-            step_name="step_a",
-            step_type="compute",
-        ),
-        ModelWorkflowStep(
-            step_id=step_b_id,
-            step_name="step_b",
-            step_type="compute",
-            depends_on=[step_a_id],
-        ),
-    ]
 
 
 @pytest.fixture
@@ -830,16 +808,16 @@ class TestLintIntegration:
         for warning in warnings:
             assert isinstance(warning, ModelLintWarning)
 
-    def test_lint_aggregates_warnings_from_all_checks(
+    def test_warn_isolated_steps_detects_isolation(
         self,
         linter: WorkflowLinter,
     ) -> None:
         """
-        Test that lint() aggregates warnings from all linting checks.
+        Test that warn_isolated_steps detects isolated steps in a workflow.
 
-        Should run all linting checks and combine results into a single list.
+        An isolated step has no incoming dependencies and no outgoing edges.
         """
-        # Create steps with multiple linting issues using model_construct
+        # Create steps with one isolated step
         step_a_id = uuid4()
         step_b_id = uuid4()
         isolated_id = uuid4()
@@ -930,60 +908,68 @@ class TestWarningAggregation:
 
     def test_aggregation_disabled(self) -> None:
         """
-        Test that aggregation can be disabled.
+        Test that aggregation can be disabled via lint() method.
 
-        Should return all warnings without aggregation.
+        When aggregate_warnings=False, lint() should return all warnings
+        without calling _aggregate_warnings_by_code, preserving full count.
         """
-        linter = WorkflowLinter(max_warnings_per_code=3, aggregate_warnings=False)
+        from omnibase_core.enums.enum_node_type import EnumNodeType
+        from omnibase_core.models.contracts.subcontracts.model_workflow_node import (
+            ModelWorkflowNode,
+        )
 
-        # Create 5 warnings with same code
-        warnings = [
-            ModelLintWarning(
-                code="W001",
-                message=f"Warning {i}",
-                severity="warning",
+        # Create two linters: one with aggregation, one without
+        linter_with_agg = WorkflowLinter(
+            max_warnings_per_code=2, aggregate_warnings=True
+        )
+        linter_without_agg = WorkflowLinter(
+            max_warnings_per_code=2, aggregate_warnings=False
+        )
+
+        version = ModelSemVer(major=1, minor=0, patch=0)
+
+        # Create workflow with many isolated nodes (will trigger W005 warnings)
+        # We need 5+ isolated nodes to exceed the threshold of 2
+        isolated_nodes = [
+            ModelWorkflowNode(
+                version=version,
+                node_id=uuid4(),
+                node_type=EnumNodeType.COMPUTE_GENERIC,
+                node_requirements={"step_name": f"isolated_step_{i}"},
+                dependencies=[],
             )
             for i in range(5)
         ]
 
-        # Call lint() which should NOT aggregate
-        # For direct testing, call the method directly
-        # Since aggregation is disabled, _aggregate_warnings_by_code won't be called
-        # We need to verify lint() behavior
-        # For this test, we verify that with aggregation disabled,
-        # the original warnings are preserved
-
-        # Actually test the internal method anyway to verify behavior
-        aggregated = linter._aggregate_warnings_by_code(warnings)
-
-        # Even when called directly, the method aggregates (by design)
-        # The toggle only controls whether lint() calls it
-        # So we verify that lint() doesn't call it when disabled
-        # For this, we use a mock or verify the output count
-
-        # Since we're testing the flag effect, let's verify via lint()
-        # with a workflow that produces many warnings
-        version = ModelSemVer(major=1, minor=0, patch=0)
-
-        # Create workflow with many duplicate names
         workflow = ModelWorkflowDefinition(
             version=version,
             workflow_metadata=ModelWorkflowDefinitionMetadata(
                 version=version,
                 workflow_name="test_workflow",
                 workflow_version=version,
-                description="Test workflow",
+                description="Test workflow with isolated steps",
                 execution_mode="sequential",
             ),
             execution_graph=ModelExecutionGraph(
                 version=version,
-                nodes=[],
+                nodes=isolated_nodes,
             ),
         )
 
-        # Empty workflow, just verify no crash
-        result = linter.lint(workflow)
-        assert isinstance(result, list)
+        # Lint with both linters
+        warnings_with_agg = linter_with_agg.lint(workflow)
+        warnings_without_agg = linter_without_agg.lint(workflow)
+
+        # With aggregation enabled: should have fewer warnings (aggregated)
+        # 5 isolated steps -> 5 W005 warnings, aggregated to 2 + 1 summary = 3
+        w005_with_agg = [w for w in warnings_with_agg if w.code == "W005"]
+        assert len(w005_with_agg) == 3  # 2 kept + 1 summary
+        assert any("more similar warnings" in w.message for w in w005_with_agg)
+
+        # Without aggregation: should have all 5 original warnings
+        w005_without_agg = [w for w in warnings_without_agg if w.code == "W005"]
+        assert len(w005_without_agg) == 5  # All original warnings preserved
+        assert not any("more similar warnings" in w.message for w in w005_without_agg)
 
     def test_aggregation_with_multiple_codes(self) -> None:
         """
