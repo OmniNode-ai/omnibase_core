@@ -30,6 +30,8 @@ import asyncio
 from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import Any, Union
+from urllib.parse import urlparse
+from uuid import uuid4
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
@@ -805,6 +807,10 @@ async def check_http_service_health(
     Returns:
         ModelHealthStatus with connectivity details
 
+    Note:
+        This function catches all exceptions internally and returns appropriate
+        ModelHealthStatus objects. It never raises exceptions to the caller.
+
     Example:
         async def _check_metadata_service(self) -> ModelHealthStatus:
             # Inject http_client from container or create implementation
@@ -820,8 +826,6 @@ async def check_http_service_health(
 
     # Return unhealthy if no HTTP client is provided
     if http_client is None:
-        from uuid import uuid4
-
         return ModelHealthStatus.create_unhealthy(
             score=0.0,
             issues=[
@@ -830,6 +834,54 @@ async def check_http_service_health(
                     severity="critical",
                     category="configuration",
                     message="No HTTP client provided - inject ProtocolHttpClient implementation",
+                    first_detected=datetime.now(UTC),
+                    last_seen=datetime.now(UTC),
+                )
+            ],
+        )
+
+    # Validate URL format before making request
+    try:
+        parsed = urlparse(service_url)
+        if not parsed.scheme or not parsed.netloc:
+            return ModelHealthStatus.create_unhealthy(
+                score=0.0,
+                issues=[
+                    ModelHealthIssue(
+                        issue_id=uuid4(),
+                        severity="critical",
+                        category="configuration",
+                        message=f"Invalid service URL: {service_url}",
+                        first_detected=datetime.now(UTC),
+                        last_seen=datetime.now(UTC),
+                    )
+                ],
+            )
+        if parsed.scheme not in ("http", "https"):
+            return ModelHealthStatus.create_unhealthy(
+                score=0.0,
+                issues=[
+                    ModelHealthIssue(
+                        issue_id=uuid4(),
+                        severity="critical",
+                        category="configuration",
+                        message=f"Invalid URL scheme '{parsed.scheme}' - must be http or https",
+                        first_detected=datetime.now(UTC),
+                        last_seen=datetime.now(UTC),
+                    )
+                ],
+            )
+    except (
+        Exception
+    ) as e:  # fallback-ok: URL parsing should return UNHEALTHY status, not crash
+        return ModelHealthStatus.create_unhealthy(
+            score=0.0,
+            issues=[
+                ModelHealthIssue(
+                    issue_id=uuid4(),
+                    severity="critical",
+                    category="configuration",
+                    message=f"Failed to parse service URL: {e}",
                     first_detected=datetime.now(UTC),
                     last_seen=datetime.now(UTC),
                 )
@@ -883,7 +935,7 @@ async def check_http_service_health(
             score=0.0,
             issues=[
                 ModelHealthIssue.create_connectivity_issue(
-                    message=f"HTTP service check failed: {e!s}",
+                    message=f"HTTP health check failed for {service_url}: {type(e).__name__}: {e!s}",
                     severity="critical",
                 )
             ],

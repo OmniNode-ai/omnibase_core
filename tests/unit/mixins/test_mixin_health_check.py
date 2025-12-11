@@ -483,6 +483,23 @@ class MockHttpClient:
         self.called_timeout: float | None = None
         self.called_headers: dict[str, str] | None = None
 
+    @classmethod
+    def create_success(cls, status: int = 200) -> "MockHttpClient":
+        """Factory for successful responses."""
+        return cls(response=MockHttpResponse(status=status))
+
+    @classmethod
+    def create_timeout(cls) -> "MockHttpClient":
+        """Factory for timeout scenarios."""
+        return cls(exception=TimeoutError("Connection timed out"))
+
+    @classmethod
+    def create_connection_error(
+        cls, message: str = "Connection refused"
+    ) -> "MockHttpClient":
+        """Factory for connection error scenarios."""
+        return cls(exception=ConnectionError(message))
+
     async def get(
         self,
         url: str,
@@ -529,8 +546,8 @@ class TestCheckHttpServiceHealth:
         """Test successful health check with mock HTTP client."""
         from omnibase_core.mixins.mixin_health_check import check_http_service_health
 
-        mock_response = MockHttpResponse(status=200)
-        mock_client = MockHttpClient(response=mock_response)
+        # Using factory method for cleaner test setup
+        mock_client = MockHttpClient.create_success()
 
         result = await check_http_service_health(
             "http://test.com",
@@ -703,3 +720,87 @@ class TestCheckHttpServiceHealth:
         )
 
         assert mock_client.called_headers is None
+
+
+# =============================================================================
+# Tests for check_http_service_health URL validation
+# =============================================================================
+
+
+class TestCheckHttpServiceHealthInputValidation:
+    """Test input validation for check_http_service_health."""
+
+    @pytest.mark.asyncio
+    @pytest.mark.timeout(90)
+    async def test_invalid_url_no_scheme(self) -> None:
+        """Test that URLs without scheme return UNHEALTHY."""
+        from omnibase_core.mixins.mixin_health_check import check_http_service_health
+
+        mock_client = MockHttpClient(response=MockHttpResponse(status=200))
+        result = await check_http_service_health(
+            "test.com/health",  # Missing http://
+            http_client=mock_client,
+        )
+
+        assert result.status == "unhealthy"
+        assert any("Invalid" in issue.message for issue in result.issues)
+
+    @pytest.mark.asyncio
+    @pytest.mark.timeout(90)
+    async def test_invalid_url_no_host(self) -> None:
+        """Test that URLs without host return UNHEALTHY."""
+        from omnibase_core.mixins.mixin_health_check import check_http_service_health
+
+        mock_client = MockHttpClient(response=MockHttpResponse(status=200))
+        result = await check_http_service_health(
+            "http:///path",  # Missing host
+            http_client=mock_client,
+        )
+
+        assert result.status == "unhealthy"
+        assert any("Invalid" in issue.message for issue in result.issues)
+
+    @pytest.mark.asyncio
+    @pytest.mark.timeout(90)
+    async def test_invalid_url_scheme_ftp(self) -> None:
+        """Test that non-HTTP schemes return UNHEALTHY."""
+        from omnibase_core.mixins.mixin_health_check import check_http_service_health
+
+        mock_client = MockHttpClient(response=MockHttpResponse(status=200))
+        result = await check_http_service_health(
+            "ftp://test.com/health",  # FTP not allowed
+            http_client=mock_client,
+        )
+
+        assert result.status == "unhealthy"
+        assert any("scheme" in issue.message.lower() for issue in result.issues)
+
+    @pytest.mark.asyncio
+    @pytest.mark.timeout(90)
+    async def test_valid_https_url(self) -> None:
+        """Test that HTTPS URLs are accepted."""
+        from omnibase_core.mixins.mixin_health_check import check_http_service_health
+
+        mock_response = MockHttpResponse(status=200)
+        mock_client = MockHttpClient(response=mock_response)
+
+        result = await check_http_service_health(
+            "https://secure.test.com",
+            http_client=mock_client,
+        )
+
+        assert result.status == "healthy"
+
+    @pytest.mark.asyncio
+    @pytest.mark.timeout(90)
+    async def test_empty_url(self) -> None:
+        """Test that empty URL returns UNHEALTHY."""
+        from omnibase_core.mixins.mixin_health_check import check_http_service_health
+
+        mock_client = MockHttpClient(response=MockHttpResponse(status=200))
+        result = await check_http_service_health(
+            "",
+            http_client=mock_client,
+        )
+
+        assert result.status == "unhealthy"
