@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Orchestrator Output Model
 
@@ -9,7 +7,7 @@ in orchestrator results.
 
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.service.model_custom_fields import ModelCustomFields
 
@@ -21,11 +19,32 @@ class ModelOrchestratorOutput(BaseModel):
     Provides structured output storage for orchestrator execution
     results with type safety and validation.
 
+    This model is immutable (frozen=True) and thread-safe. Once created,
+    instances cannot be modified. This ensures safe sharing across threads
+    and prevents accidental mutation of execution results.
+
     Important:
         The start_time and end_time fields currently both represent the workflow
         completion timestamp (when the result was created), not an actual execution
         time range. For the actual execution duration, use execution_time_ms instead.
+
+    Example:
+        >>> # Create output result
+        >>> result = ModelOrchestratorOutput(
+        ...     execution_status="completed",
+        ...     execution_time_ms=1500,
+        ...     start_time="2025-01-01T00:00:00Z",
+        ...     end_time="2025-01-01T00:00:01Z",
+        ... )
+        >>>
+        >>> # To "update" a frozen model, use model_copy
+        >>> updated = result.model_copy(update={"metrics": {"step_count": 5}})
     """
+
+    model_config = ConfigDict(
+        frozen=True,
+        extra="forbid",
+    )
 
     # Execution summary
     execution_status: str = Field(default=..., description="Overall execution status")
