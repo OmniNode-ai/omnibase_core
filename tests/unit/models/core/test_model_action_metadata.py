@@ -11,6 +11,14 @@ from uuid import UUID, uuid4
 import pytest
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
+# Resolve forward references before importing ModelActionMetadata
+from omnibase_core.models.configuration.model_resource_limits import ModelResourceLimits
+from omnibase_core.models.core.model_environment import ModelEnvironment
+from omnibase_core.models.security.model_security_level import ModelSecurityLevel
+
+ModelEnvironment.model_rebuild()
+
 from omnibase_core.models.core.model_action_category import ModelActionCategory
 from omnibase_core.models.core.model_action_metadata import ModelActionMetadata
 from omnibase_core.models.core.model_core_performance_metrics import (
@@ -53,7 +61,7 @@ class TestModelActionMetadata:
         assert isinstance(metadata.security_context, ModelSecurityContext)
         assert isinstance(metadata.performance_metrics, ModelPerformanceMetrics)
         assert metadata.parameters == {}
-        assert metadata.execution_context == {}
+        assert metadata.execution_context is None  # Default is None, not {}
 
     def test_initialization_with_custom_values(self):
         """Test initialization with custom values."""

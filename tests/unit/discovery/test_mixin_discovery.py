@@ -11,6 +11,10 @@ import pytest
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.mixins.mixin_discovery import MixinDiscovery
+from omnibase_core.models.common.model_typed_metadata import (
+    ModelConfigSchemaProperty,
+    ModelMixinConfigSchema,
+)
 from omnibase_core.models.discovery.model_mixin_info import ModelMixinInfo
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
@@ -37,7 +41,7 @@ class TestModelMixinInfo:
         assert mixin.requires == []
         assert mixin.compatible_with == []
         assert mixin.incompatible_with == []
-        assert mixin.config_schema == {}
+        assert mixin.config_schema.properties == {}
         assert mixin.usage_examples == []
 
     def test_mixin_info_creation_with_all_fields(self) -> None:
@@ -50,14 +54,16 @@ class TestModelMixinInfo:
             requires=["omnibase_core.models.infrastructure", "pydantic"],
             compatible_with=["MixinEventBus", "MixinLogging"],
             incompatible_with=["MixinSynchronous"],
-            config_schema={
-                "max_retries": {
-                    "type": "integer",
-                    "minimum": 0,
-                    "maximum": 10,
-                    "default": 3,
+            config_schema=ModelMixinConfigSchema(
+                properties={
+                    "max_retries": ModelConfigSchemaProperty(
+                        type="integer",
+                        min_value=0,
+                        max_value=10,
+                        default="3",
+                    )
                 }
-            },
+            ),
             usage_examples=["HTTP API retries", "Database connection retries"],
         )
 
@@ -65,7 +71,7 @@ class TestModelMixinInfo:
         assert len(mixin.requires) == 2
         assert len(mixin.compatible_with) == 2
         assert len(mixin.incompatible_with) == 1
-        assert "max_retries" in mixin.config_schema
+        assert "max_retries" in mixin.config_schema.properties
         assert len(mixin.usage_examples) == 2
 
 
