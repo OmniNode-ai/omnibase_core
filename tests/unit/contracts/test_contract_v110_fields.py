@@ -215,6 +215,14 @@ class TestFingerprintUniqueness:
 
     Fingerprints must be unique to enable drift detection. Duplicate
     fingerprints defeat the purpose of the fingerprint field.
+
+    SCOPE CLARIFICATION:
+        These tests validate fingerprint uniqueness within this codebase only.
+        The v1.1.0 specification does NOT mandate global uniqueness across all
+        ONEX deployments - fingerprints are content-based hashes that may
+        legitimately collide if two independent projects happen to have
+        identical contract content. Within a single codebase/deployment,
+        fingerprint uniqueness is a practical requirement for drift detection.
     """
 
     # Class-level references to module-level constants
@@ -774,67 +782,84 @@ class TestContractSubscriptionsTopicsFormat:
     def test_event_bus_wiring_effect_subscriptions_has_topics(self) -> None:
         """Test event_bus_wiring_effect has subscriptions with topics.
 
-        This contract can have subscriptions in two formats:
-        1. Dict format with 'topics' key containing list of topic dicts
-        2. List format with subscription objects directly
+        This contract uses dict format with 'topics' key containing list of topic dicts.
+        Each topic entry must have: topic, description, handler fields.
 
         Topics should follow the 'onex.*' naming convention.
+
+        This test is intentionally strict to catch regressions in the
+        event_bus_wiring_effect.yaml contract structure.
         """
         contract_data = load_contract("event_bus_wiring_effect.yaml")
-        subscriptions = contract_data.get("subscriptions", {})
+        subscriptions = contract_data.get("subscriptions")
 
-        # Determine the topics list based on format
-        topics: list[Any] = []
-        if isinstance(subscriptions, dict):
-            topics = subscriptions.get("topics", [])
-            assert isinstance(topics, list), (
-                "event_bus_wiring_effect: subscriptions.topics should be a list"
-            )
-        elif isinstance(subscriptions, list):
-            # List format - subscriptions is directly a list of topic entries
-            topics = subscriptions
-        else:
+        # event_bus_wiring_effect MUST use dict format with 'topics' key
+        if not isinstance(subscriptions, dict):
             pytest.fail(
-                f"event_bus_wiring_effect: subscriptions should be dict or list, "
+                f"event_bus_wiring_effect: subscriptions should be dict, "
                 f"got {type(subscriptions).__name__}"
             )
 
-        # This contract should have actual topic subscriptions
-        assert len(topics) > 0, (
-            "event_bus_wiring_effect: subscriptions.topics should not be empty"
+        topics = subscriptions.get("topics")
+        if not isinstance(topics, list):
+            pytest.fail(
+                f"event_bus_wiring_effect: subscriptions.topics should be a list, "
+                f"got {type(topics).__name__ if topics is not None else 'None'}"
+            )
+
+        # This contract MUST have at least 3 subscriptions (node_graph.ready,
+        # node.registered, node.unregistered) per the architecture spec
+        MINIMUM_SUBSCRIPTIONS = 3
+        assert len(topics) >= MINIMUM_SUBSCRIPTIONS, (
+            f"event_bus_wiring_effect: expected at least {MINIMUM_SUBSCRIPTIONS} "
+            f"subscriptions, found {len(topics)}. This contract requires subscriptions "
+            f"for node_graph.ready, node.registered, and node.unregistered events."
         )
 
-        # Validate each topic entry
+        # Validate each topic entry has required fields
         for i, topic in enumerate(topics):
-            if isinstance(topic, str):
-                # String topics should not be empty and follow naming convention
-                assert topic.strip(), (
-                    f"event_bus_wiring_effect: subscriptions.topics[{i}] "
-                    f"is empty string"
-                )
-                assert topic.startswith("onex."), (
-                    f"event_bus_wiring_effect: subscriptions.topics[{i}] "
-                    f"should follow 'onex.*' naming convention, got '{topic}'"
-                )
-            elif isinstance(topic, dict):
-                # Dict topics should have a topic identifier
-                topic_name = topic.get("topic", topic.get("name", ""))
-                assert topic_name, (
-                    f"event_bus_wiring_effect: subscriptions.topics[{i}] "
-                    f"dict entry missing 'topic' or 'name' field"
-                )
-                assert isinstance(topic_name, str), (
-                    f"event_bus_wiring_effect: subscriptions.topics[{i}].topic "
-                    f"should be a string, got {type(topic_name).__name__}"
-                )
-                assert topic_name.startswith("onex."), (
-                    f"event_bus_wiring_effect: subscriptions.topics[{i}] "
-                    f"should follow 'onex.*' naming convention, got '{topic_name}'"
-                )
-            else:
+            if not isinstance(topic, dict):
                 pytest.fail(
                     f"event_bus_wiring_effect: subscriptions.topics[{i}] "
-                    f"should be str or dict, got {type(topic).__name__}"
+                    f"should be dict, got {type(topic).__name__}"
+                )
+
+            # Required fields for event_bus_wiring_effect subscription entries
+            required_fields = ["topic", "description", "handler"]
+            missing = [f for f in required_fields if f not in topic]
+            if missing:
+                pytest.fail(
+                    f"event_bus_wiring_effect: subscriptions.topics[{i}] "
+                    f"missing required fields: {missing}"
+                )
+
+            # Validate topic name
+            topic_name = topic.get("topic")
+            if not isinstance(topic_name, str) or not topic_name.strip():
+                pytest.fail(
+                    f"event_bus_wiring_effect: subscriptions.topics[{i}].topic "
+                    f"should be non-empty string, got {topic_name!r}"
+                )
+            if not topic_name.startswith("onex."):
+                pytest.fail(
+                    f"event_bus_wiring_effect: subscriptions.topics[{i}].topic "
+                    f"should follow 'onex.*' naming convention, got '{topic_name}'"
+                )
+
+            # Validate description is non-empty string
+            description = topic.get("description")
+            if not isinstance(description, str) or not description.strip():
+                pytest.fail(
+                    f"event_bus_wiring_effect: subscriptions.topics[{i}].description "
+                    f"should be non-empty string, got {description!r}"
+                )
+
+            # Validate handler is non-empty string
+            handler = topic.get("handler")
+            if not isinstance(handler, str) or not handler.strip():
+                pytest.fail(
+                    f"event_bus_wiring_effect: subscriptions.topics[{i}].handler "
+                    f"should be non-empty string, got {handler!r}"
                 )
 
 
@@ -1148,19 +1173,39 @@ class TestExampleContractsV110Compliance:
     EXAMPLES_DIR = Path(__file__).parent.parent.parent.parent / "examples" / "contracts"
 
     def test_examples_directory_exists(self) -> None:
-        """Test that examples/contracts directory exists."""
-        # This is informational - examples may not always exist
+        """Test that examples/contracts directory exists.
+
+        This is a hard requirement - example contracts are part of the project's
+        documentation and validation test suite. Missing examples indicates
+        a structural issue that should fail, not be silently skipped.
+        """
         if not self.EXAMPLES_DIR.exists():
-            pytest.skip("examples/contracts directory does not exist")
+            pytest.fail(
+                f"examples/contracts directory does not exist at {self.EXAMPLES_DIR}. "
+                f"This directory is required for v1.1.0 contract examples."
+            )
 
     def test_example_contracts_have_valid_yaml(self) -> None:
-        """Test that example contracts are valid YAML."""
+        """Test that example contracts are valid YAML.
+
+        Validates that all YAML files in examples/contracts are:
+        1. Parseable as valid YAML
+        2. Non-empty (contain actual contract data)
+
+        Fails (not skips) on missing directory or no contracts to ensure
+        test coverage is not silently degraded.
+        """
         if not self.EXAMPLES_DIR.exists():
-            pytest.skip("examples/contracts directory does not exist")
+            pytest.fail(
+                f"examples/contracts directory does not exist at {self.EXAMPLES_DIR}"
+            )
 
         yaml_files = list(self.EXAMPLES_DIR.rglob("*.yaml"))
         if not yaml_files:
-            pytest.skip("No example contracts found")
+            pytest.fail(
+                f"No example contracts found in {self.EXAMPLES_DIR}. "
+                f"At least one example contract is required for v1.1.0 compliance testing."
+            )
 
         for yaml_file in yaml_files:
             with open(yaml_file, encoding="utf-8") as f:

@@ -35,7 +35,32 @@ contract_version: {major: 1, minor: 1, patch: 0}
 # (excluding the fingerprint field itself to avoid circular dependency)
 # Regenerate when contract content changes using: poetry run python scripts/compute_contract_fingerprint.py
 fingerprint: "v1.1.0:15c395cb78d1"
+
+# ---------------------------------------------------------------------------
+# CONCURRENCY SEMANTICS
+# ---------------------------------------------------------------------------
+# concurrency: parallelizable | sequential
+#
+# "parallelizable" means this COMPUTE node instance can be safely executed
+# in parallel with OTHER node instances (horizontal scaling). The runtime
+# may spawn multiple instances of this node to process different inputs
+# concurrently. This is safe because COMPUTE nodes are pure transformations
+# with no shared mutable state or external I/O.
+#
+# This is DIFFERENT from pipeline step execution:
+# - Pipeline steps within this contract ALWAYS execute sequentially
+#   (abort-on-first-failure semantics, see compute.pipeline below)
+# - "parallelizable" refers to node-level parallelism, not step-level
+#
+# Use "sequential" if the node has singleton constraints or requires
+# exclusive access to in-memory caches that cannot be shared.
+#
+# For most COMPUTE nodes, "parallelizable" is the correct choice because:
+# 1. No external I/O (handled by EFFECT nodes)
+# 2. No shared mutable state (pure transformations)
+# 3. Deterministic output for given input
 concurrency: parallelizable
+
 profile_tags:
   - compute
   - transformation

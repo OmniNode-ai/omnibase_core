@@ -155,16 +155,20 @@ class MixinIntrospectionPublisher:
                 f"Failed to gather full introspection data for node {node_id}, using fallback: {e}",
                 context=context,
             )
+            # Import typed metadata model for proper Pydantic usage
+            from omnibase_core.models.common.model_typed_metadata import (
+                ModelNodeCapabilitiesMetadata,
+            )
+
             return MixinNodeIntrospectionData(
                 node_name=self.__class__.__name__.lower(),
                 version=ModelSemVer(major=1, minor=0, patch=0),
                 capabilities=ModelNodeCapabilities(
                     actions=["health_check"],
                     protocols=["event_bus"],
-                    metadata={  # type: ignore[arg-type]
-                        "description": "Event-driven ONEX node",
-                        "author": DEFAULT_AUTHOR,
-                    },
+                    metadata=ModelNodeCapabilitiesMetadata(
+                        author=DEFAULT_AUTHOR,
+                    ),
                 ),
                 tags=["event_driven"],
                 health_endpoint=None,

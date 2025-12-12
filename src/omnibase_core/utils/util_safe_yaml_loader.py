@@ -453,6 +453,36 @@ def extract_example_from_schema(
 
     except ModelOnexError:
         raise
+    except FileNotFoundError as e:
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.NOT_FOUND,
+            message=f"Schema file not found: {schema_path}",
+            details=ModelErrorContext.with_context(
+                {
+                    "operation": ModelSchemaValue.from_value(
+                        "extract_example_from_schema",
+                    ),
+                    "path": ModelSchemaValue.from_value(str(schema_path)),
+                    "example_index": ModelSchemaValue.from_value(example_index),
+                },
+            ),
+            cause=e,
+        )
+    except yaml.YAMLError as e:
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.CONVERSION_ERROR,
+            message=f"YAML parsing error in schema file: {schema_path}: {e}",
+            details=ModelErrorContext.with_context(
+                {
+                    "operation": ModelSchemaValue.from_value(
+                        "extract_example_from_schema",
+                    ),
+                    "path": ModelSchemaValue.from_value(str(schema_path)),
+                    "example_index": ModelSchemaValue.from_value(example_index),
+                },
+            ),
+            cause=e,
+        )
     except Exception as e:
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.INTERNAL_ERROR,

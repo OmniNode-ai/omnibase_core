@@ -79,7 +79,7 @@ poetry run python scripts/compute_contract_fingerprint.py path/to/your_contract.
 ```
 
 This outputs something like:
-```
+```text
 File: path/to/your_contract.yaml
 Fingerprint: v1.1.0:a1b2c3d4e5f6
 ```
@@ -233,6 +233,15 @@ handlers:
     - type: <handler_type>
       version: "<semver_constraint>"
 ```
+
+**Handler Requirements by Node Type**:
+
+| Node Type | Handler Requirements | Rationale |
+|-----------|---------------------|-----------|
+| **COMPUTE** | `required: []` (none) | Pure transformations with no external I/O. All data comes from input, all results go to output. No filesystem, database, or network access. |
+| **EFFECT** | External I/O handlers required | Handles all external interactions: filesystem, database, HTTP, message queues. Declare handlers for each I/O type used. |
+| **REDUCER** | `required: []` (FSM-driven) | State transitions driven by FSM, no direct I/O. State persistence is handled by the runtime, not the node itself. |
+| **ORCHESTRATOR** | Usually `required: []` | Coordinates other nodes via workflow definitions. May optionally use `local` handler for internal coordination, but most orchestration is declarative. |
 
 **When to Use Required vs Optional Handlers**:
 
