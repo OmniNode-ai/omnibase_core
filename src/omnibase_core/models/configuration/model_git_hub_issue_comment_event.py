@@ -9,6 +9,12 @@ from .model_git_hub_issue_comment_changes import ModelGitHubIssueCommentChanges
 from .model_git_hub_repository import ModelGitHubRepository
 from .model_git_hub_user import ModelGitHubUser
 
+__all__ = [
+    "ModelGitHubCommentChange",
+    "ModelGitHubIssueCommentChanges",
+    "ModelGitHubIssueCommentEvent",
+]
+
 
 class ModelGitHubIssueCommentEvent(BaseModel):
     """
@@ -31,11 +37,6 @@ class ModelGitHubIssueCommentEvent(BaseModel):
         default=None,
         description="Changes made (for edited action)",
     )
-
-
-__all__ = [
-    "ModelGitHubIssueCommentEvent",
-]
 
 
 # ONEX compliance remediation complete - factory method eliminated

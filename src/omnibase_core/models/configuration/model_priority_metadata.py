@@ -4,7 +4,7 @@ Additional metadata for execution priorities with ONEX compliance and validation
 """
 
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Self
+from typing import Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -19,6 +19,8 @@ from omnibase_core.models.configuration.model_priority_metadata_summary import (
     ModelPriorityMetadataSummary,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
+__all__ = ["ModelPriorityMetadata", "ModelPriorityMetadataSummary"]
 
 
 class ModelPriorityMetadata(BaseModel):
@@ -456,7 +458,7 @@ class ModelPriorityMetadata(BaseModel):
 
     # === Utility Methods ===
 
-    def get_summary(self) -> ModelPriorityMetadataSummary:
+    def get_summary(self) -> "ModelPriorityMetadataSummary":
         """Get a summary of priority metadata."""
         return ModelPriorityMetadataSummary(
             owner=self.owner,

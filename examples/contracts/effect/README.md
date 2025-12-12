@@ -1,6 +1,6 @@
 # NodeEffect Contract Examples
 
-This directory contains comprehensive example YAML contracts for NodeEffect operations in the ONEX framework. These examples demonstrate how to define external I/O operations declaratively using the v1.0 contract schema.
+This directory contains comprehensive example YAML contracts for NodeEffect operations in the ONEX framework. These examples demonstrate how to define external I/O operations declaratively using the v1.1.0 contract schema.
 
 ## Overview
 

@@ -1,9 +1,6 @@
-"""Model for node configuration values - re-exports for module compatibility."""
+"""Model for node configuration values - re-exports from split files."""
 
-from omnibase_core.models.configuration.model_config_types import (
-    VALID_VALUE_TYPES,
-    ConfigValue,
-)
+from omnibase_core.models.configuration.model_config_types import ConfigValue
 from omnibase_core.models.configuration.model_node_config_entry import (
     ModelNodeConfigEntry,
 )
@@ -15,5 +12,4 @@ __all__ = [
     "ConfigValue",
     "ModelNodeConfigEntry",
     "ModelNodeConfigSchema",
-    "VALID_VALUE_TYPES",
 ]

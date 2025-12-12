@@ -54,7 +54,7 @@
 #
 # 📚 For comprehensive security guidance, see: SECURITY.md in this directory
 #
-# v1.0 Contract Schema Version
+# v1.1.0 Contract Schema Version
 # ============================================================================
 
 # ---------------------------------------------------------------------------
@@ -63,10 +63,34 @@
 
 contract_version:
   major: 1
-  minor: 0
+  minor: 1
   patch: 0
 
+# Contract fingerprint for drift detection (format: v{version}:{12-char-hash})
+# The 12-character hash is a truncated SHA256 of the normalized contract content
+# (excluding the fingerprint field itself to avoid circular dependency)
+# Regenerate when contract content changes using: poetry run python scripts/compute_contract_fingerprint.py
+fingerprint: "v1.1.0:3d57f5429cbc"
+
 node_type: effect
+
+# Handler requirements for this effect contract
+handlers:
+  required:
+    - type: kafka
+      version: ">=1.0.0"
+  optional: []
+
+# Kafka topic subscriptions (this is a producer, no consumption)
+subscriptions:
+  topics: []
+
+# Profile tags for categorization
+profile_tags:
+  - kafka
+  - event-driven
+  - messaging
+  - audit
 
 # ---------------------------------------------------------------------------
 # EFFECT SUBCONTRACT: Defines Kafka message production operations
@@ -480,7 +504,7 @@ effect_operations:
 # which is configured in the effect_operations.metadata section above.
 
 metadata:
-  version: {major: 1, minor: 0, patch: 0}
+  version: {major: 1, minor: 1, patch: 0}
   author: "ONEX Framework Team"
   description: |
     Contract-driven Kafka message production for event-driven architecture.

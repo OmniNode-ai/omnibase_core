@@ -6,9 +6,22 @@ Service integration configuration for tool with deployment settings.
 
 from pydantic import BaseModel, Field
 
-from .model_tool_integration_summary import ModelToolIntegrationSummary
-from .model_tool_resource_requirements import ModelToolResourceRequirements
-from .model_tool_timeout_settings import ModelToolTimeoutSettings
+from omnibase_core.models.core.model_tool_integration_summary import (
+    ModelToolIntegrationSummary,
+)
+from omnibase_core.models.core.model_tool_resource_requirements import (
+    ModelToolResourceRequirements,
+)
+from omnibase_core.models.core.model_tool_timeout_settings import (
+    ModelToolTimeoutSettings,
+)
+
+__all__ = [
+    "ModelToolIntegration",
+    "ModelToolIntegrationSummary",
+    "ModelToolResourceRequirements",
+    "ModelToolTimeoutSettings",
+]
 
 
 class ModelToolIntegration(BaseModel):

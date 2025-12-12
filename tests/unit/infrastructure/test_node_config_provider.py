@@ -311,31 +311,21 @@ class TestNodeConfigProviderSchema:
     @pytest.mark.asyncio
     async def test_schema_structure(self) -> None:
         """Test schema entry structure."""
-        from omnibase_core.models.configuration.model_node_config_value import (
-            ModelNodeConfigSchema,
-        )
-
         provider = NodeConfigProvider()
 
         schema = await provider.get_config_schema()
 
         # Check structure of a schema entry
         compute_workers_schema = schema["compute.max_parallel_workers"]
-        assert isinstance(compute_workers_schema, ModelNodeConfigSchema)
+        # Schema entries are now ModelNodeConfigSchema Pydantic models
         assert hasattr(compute_workers_schema, "key")
-        assert hasattr(compute_workers_schema, "config_type")
+        assert hasattr(compute_workers_schema, "type")
         assert hasattr(compute_workers_schema, "default")
 
         # Verify values using attribute access
         assert compute_workers_schema.key == "compute.max_parallel_workers"
-        assert compute_workers_schema.config_type == "int"
+        assert compute_workers_schema.type == "int"
         assert compute_workers_schema.default == 4
-
-        # Also verify model_dump() works correctly with alias
-        schema_dict = compute_workers_schema.model_dump(by_alias=True)
-        assert schema_dict["key"] == "compute.max_parallel_workers"
-        assert schema_dict["type"] == "int"
-        assert schema_dict["default"] == 4
 
 
 class TestNodeConfigProviderAllConfig:

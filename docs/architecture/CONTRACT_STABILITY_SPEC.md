@@ -145,6 +145,68 @@ The fingerprint uses 12 hexadecimal characters (48 bits) from SHA-256:
 - **Practical safety**: For typical deployments with <100,000 contracts, collision probability is negligible (<0.000002%)
 - **Mitigation**: Version prefix ensures collisions only matter within same semver, further reducing practical risk
 
+#### Detailed Collision Probability Table
+
+| Contract Count | Collision Probability | Risk Level |
+|----------------|----------------------|------------|
+| 1,000 | 0.00000018% | Negligible |
+| 10,000 | 0.000018% | Negligible |
+| 100,000 | 0.0018% | Very Low |
+| 1,000,000 | 0.18% | Low |
+| 17,000,000 | 50% | Birthday paradox threshold |
+
+### Security Considerations
+
+#### Hash Truncation Trade-offs
+
+The 12-character (48-bit) hash truncation balances:
+
+1. **Human readability**: Short enough for display in logs and UIs
+2. **Collision resistance**: Sufficient for typical deployment sizes
+3. **Space efficiency**: Compact for storage in metadata fields
+
+#### When Full Hash is Recommended
+
+For high-security scenarios, use `--verbose` flag to access the complete 64-character SHA256:
+
+```bash
+poetry run python scripts/compute_contract_fingerprint.py contract.yaml --verbose
+```
+
+**Recommended for**:
+- Cross-repository contract synchronization
+- Long-term archival and auditing
+- Compliance environments requiring cryptographic verification
+- Environments with >100,000 contracts
+
+#### What Fingerprints Are NOT Suitable For
+
+Fingerprints are designed for **drift detection**, not cryptographic security:
+
+| Use Case | Fingerprint Suitable? | Alternative |
+|----------|----------------------|-------------|
+| Drift detection | Yes | - |
+| Cache invalidation | Yes | - |
+| Debugging contract changes | Yes | - |
+| Cryptographic signatures | **No** | Use GPG/PGP signing |
+| Authentication/authorization | **No** | Use proper auth tokens |
+| Tamper-proof verification | **No** | Use digital signatures |
+
+### Fingerprint Regeneration
+
+When contract content changes, fingerprints MUST be regenerated:
+
+```bash
+# Compute new fingerprint
+poetry run python scripts/compute_contract_fingerprint.py path/to/contract.yaml
+
+# Update contract YAML with new fingerprint value
+# Then validate
+poetry run python scripts/compute_contract_fingerprint.py path/to/contract.yaml --validate
+```
+
+See [scripts/README.md](../../scripts/README.md) for detailed regeneration procedures.
+
 ### Fingerprint Location
 
 Fingerprints appear in:
@@ -269,6 +331,7 @@ CONTRACT_UNSUPPORTED_CAPABILITY: Capability not available (capabilities[0])
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0.0 | 2025-12-03 | Initial specification |
+| 1.0.1 | 2025-12-12 | Added security considerations, collision probability table, regeneration procedures |
 
 ---
 
@@ -276,3 +339,4 @@ CONTRACT_UNSUPPORTED_CAPABILITY: Capability not available (capabilities[0])
 
 - [MVP Plan](../MVP_PLAN.md) - Comprehensive refactoring plan including contract stability work
 - [ONEX Four-Node Architecture](./ONEX_FOUR_NODE_ARCHITECTURE.md)
+- [scripts/README.md](../../scripts/README.md) - CLI documentation for fingerprint tools

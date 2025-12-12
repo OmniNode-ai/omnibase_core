@@ -42,6 +42,7 @@ class TestModelMixinInfo:
         assert mixin.compatible_with == []
         assert mixin.incompatible_with == []
         assert mixin.config_schema.properties == {}
+        assert mixin.config_schema.required_properties == []
         assert mixin.usage_examples == []
 
     def test_mixin_info_creation_with_all_fields(self) -> None:
