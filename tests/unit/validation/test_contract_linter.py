@@ -899,6 +899,9 @@ class TestLintIntegration:
         version_dict = version.model_dump()
 
         # Create multiple isolated nodes to trigger W005 warnings
+        # Use dict representation to avoid Pydantic model class identity issues
+        # in parallel test execution (pytest-xdist). The dicts are coerced by
+        # Pydantic into the correct ModelWorkflowNode type during validation.
         isolated_nodes = [
             ModelWorkflowNode(
                 version=version_dict,
@@ -906,7 +909,7 @@ class TestLintIntegration:
                 node_type=EnumNodeType.COMPUTE_GENERIC,
                 node_requirements={"step_name": f"isolated_{i}"},
                 dependencies=[],
-            )
+            ).model_dump()
             for i in range(3)
         ]
 
@@ -999,6 +1002,9 @@ class TestWarningAggregation:
 
         # Create workflow with many isolated nodes (will trigger W005 warnings)
         # We need 5+ isolated nodes to exceed the threshold of 2
+        # Use dict representation to avoid Pydantic model class identity issues
+        # in parallel test execution (pytest-xdist). The dicts are coerced by
+        # Pydantic into the correct ModelWorkflowNode type during validation.
         isolated_nodes = [
             ModelWorkflowNode(
                 version=version_dict,
@@ -1006,7 +1012,7 @@ class TestWarningAggregation:
                 node_type=EnumNodeType.COMPUTE_GENERIC,
                 node_requirements={"step_name": f"isolated_step_{i}"},
                 dependencies=[],
-            )
+            ).model_dump()
             for i in range(5)
         ]
 

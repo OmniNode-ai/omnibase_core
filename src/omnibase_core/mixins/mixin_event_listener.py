@@ -143,9 +143,9 @@ class MixinEventListener[InputStateT, OutputStateT]:
                     event_subscriptions = contract.get("event_subscriptions", [])
                     if event_subscriptions:
                         event_types = [
-                            sub.get("event_type")
+                            sub.get("event_pattern")
                             for sub in event_subscriptions
-                            if sub.get("event_type")
+                            if sub.get("event_pattern")
                         ]
                         if event_types:
                             emit_log_event(
