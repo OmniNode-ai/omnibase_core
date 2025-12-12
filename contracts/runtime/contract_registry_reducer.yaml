@@ -1,6 +1,8 @@
 ---
 node_type: REDUCER_GENERIC
-contract_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 1, patch: 0}
+# Fingerprint: SHA-256 hash of canonical contract content (node_type, state_transitions, metadata.description)
+fingerprint: "1.1.0:30605ad37d29"
 state_transitions:
   version: {major: 1, minor: 0, patch: 0}
   state_machine_version: {major: 1, minor: 0, patch: 0}
@@ -281,7 +283,7 @@ state_transitions:
       version: {major: 1, minor: 0, patch: 0}
       operation_type: administrative
 metadata:
-  version: {major: 1, minor: 0, patch: 0}
+  version: {major: 1, minor: 1, patch: 0}
   author: ONEX Framework Team
   description: Declarative contract registry reducer using FSM pattern for managing loaded and compiled
     ONEX contracts

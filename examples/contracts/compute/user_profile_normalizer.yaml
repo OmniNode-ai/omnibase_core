@@ -28,8 +28,9 @@
 
 # Contract required fields
 node_type: COMPUTE_GENERIC
-contract_version: {major: 1, minor: 0, patch: 0}
-
+contract_version: {major: 1, minor: 1, patch: 0}
+# Fingerprint: SHA-256 hash of canonical contract content (node_type, compute, metadata.description)
+fingerprint: "1.1.0:18699bda82af"
 # ---------------------------------------------------------------------------
 # COMPUTE SUBCONTRACT: Defines the transformation pipeline
 # ---------------------------------------------------------------------------
@@ -39,11 +40,11 @@ contract_version: {major: 1, minor: 0, patch: 0}
 
 compute:
   # Schema version for forward compatibility
-  version: {major: 1, minor: 0, patch: 0}
+  version: {major: 1, minor: 1, patch: 0}
 
   # Operation identification
   operation_name: user_profile_normalizer
-  operation_version: {major: 1, minor: 0, patch: 0}
+  operation_version: {major: 1, minor: 1, patch: 0}
   description: |
     Normalizes user profile data for consistent storage and processing.
     Handles unicode normalization, whitespace trimming, email standardization,
@@ -349,7 +350,7 @@ compute:
 # ---------------------------------------------------------------------------
 
 metadata:
-  version: {major: 1, minor: 0, patch: 0}
+  version: {major: 1, minor: 1, patch: 0}
   author: ONEX Framework Team
   description: |
     Contract-driven compute pipeline for user profile normalization.

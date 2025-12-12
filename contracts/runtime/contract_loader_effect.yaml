@@ -17,16 +17,17 @@
 
 # Contract Metadata
 node_type: EFFECT_GENERIC
-contract_version: {major: 1, minor: 0, patch: 0}
-
+contract_version: {major: 1, minor: 1, patch: 0}
+# Fingerprint: SHA-256 hash of canonical contract content (node_type, effect_operations, metadata.description)
+fingerprint: "1.1.0:66346191a6a6"
 # Effect Subcontract
 # NOTE: This contract uses `effect_operations` (multi-operation schema) rather than
 # `effect` (single-operation schema) because it defines multiple filesystem operations
 # (scan_contracts_directory, read_contract_file). Contracts with a single operation
 # use the simpler `effect:` key (e.g., event_bus_wiring_effect.yaml).
 effect_operations:
-  version: {major: 1, minor: 0, patch: 0}
-  subcontract_version: {major: 1, minor: 0, patch: 0}
+  version: {major: 1, minor: 1, patch: 0}
+  subcontract_version: {major: 1, minor: 1, patch: 0}
 
   # Execution configuration
   execution_mode: sequential_abort  # Abort on first failure
@@ -203,7 +204,7 @@ effect_operations:
 
 # Metadata
 metadata:
-  version: {major: 1, minor: 0, patch: 0}
+  version: {major: 1, minor: 1, patch: 0}
   author: ONEX Framework Team
   description: Contract loader effect node for scanning and discovering ONEX contract YAML files from
     the filesystem

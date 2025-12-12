@@ -1,34 +1,28 @@
-from __future__ import annotations
-
-from typing import TypeVar
-
-from pydantic import Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Environment Properties Model
 
 Type-safe custom environment properties with access methods.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
-from typing import cast, get_origin
+from typing import TypeVar, cast, get_origin
 
-from pydantic import BaseModel
-
-from omnibase_core.types.type_serializable_value import SerializedDict
-
-# Type variable for generic property handling
-T = TypeVar("T")
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.types.type_serializable_value import SerializedDict
 from omnibase_core.types.typed_dict_property_metadata import TypedDictPropertyMetadata
 
 from .model_environment_properties_collection import (
     ModelEnvironmentPropertiesCollection,
 )
 from .model_property_value import ModelPropertyValue
+
+# Type variable for generic property handling
+T = TypeVar("T")
 
 
 class ModelEnvironmentProperties(BaseModel):
@@ -218,14 +212,14 @@ class ModelEnvironmentProperties(BaseModel):
         """Configure instance with provided parameters (Configurable protocol).
 
         Raises:
-            ModelOnexError: If configuration fails with details about the failure
+            ModelOnexError: If configuration fails due to attribute or type errors
         """
         try:
             for key, value in kwargs.items():
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception as e:
+        except (AttributeError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Configuration failed: {e}",
@@ -238,18 +232,15 @@ class ModelEnvironmentProperties(BaseModel):
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol).
 
-        Raises:
-            ModelOnexError: If validation fails with details about the failure
+        Returns:
+            True if validation passes
+
+        Note:
+            Override in subclasses for custom validation logic.
         """
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception as e:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Instance validation failed: {e}",
-            ) from e
+        # Basic validation - ensure required fields exist
+        # Override in specific models for custom validation
+        return True
 
 
 __all__ = ["ModelEnvironmentProperties"]

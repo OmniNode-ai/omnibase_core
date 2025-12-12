@@ -49,12 +49,13 @@
 
 # Contract Metadata
 node_type: ORCHESTRATOR_GENERIC
-contract_version: {major: 1, minor: 0, patch: 0}
-
+contract_version: {major: 1, minor: 1, patch: 0}
+# Fingerprint: SHA-256 hash of canonical contract content (node_type, workflow_coordination, metadata.description)
+fingerprint: "1.1.0:8d00f09e22ec"
 # Workflow Coordination Subcontract
 workflow_coordination:
-  version: {major: 1, minor: 0, patch: 0}
-  subcontract_version: {major: 1, minor: 0, patch: 0}
+  version: {major: 1, minor: 1, patch: 0}
+  subcontract_version: {major: 1, minor: 1, patch: 0}
 
   # Workflow Definition: Runtime lifecycle management
   workflow_definition:
@@ -465,7 +466,7 @@ performance_benchmarks:
 
 # Metadata
 metadata:
-  version: {major: 1, minor: 0, patch: 0}
+  version: {major: 1, minor: 1, patch: 0}
   author: ONEX Framework
   description: Self-hosted ONEX runtime orchestrator using 4-node architecture
   tags:

@@ -1,23 +1,18 @@
-from __future__ import annotations
-
-from pydantic import Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Fallback Strategy Model for ONEX Configuration-Driven Registry System.
 
 This module provides the ModelFallbackStrategy for defining fallback strategies
 when services are unavailable. Extracted from model_service_configuration.py
 for modular architecture compliance.
-
 """
 
+from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_fallback_strategy_type import EnumFallbackStrategyType
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 from .model_fallback_metadata import ModelFallbackMetadata
@@ -89,16 +84,20 @@ class ModelFallbackStrategy(BaseModel):
     # Protocol method implementations
 
     def configure(self, **kwargs: object) -> bool:
-        """Configure instance with provided parameters (Configurable protocol)."""
+        """Configure instance with provided parameters (Configurable protocol).
+
+        Raises:
+            ModelOnexError: If configuration fails due to attribute or type errors
+        """
         try:
             for key, value in kwargs.items():
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception as e:
+        except (AttributeError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Operation failed: {e}",
+                message=f"Configuration failed: {e}",
             ) from e
 
     def serialize(self) -> SerializedDict:
@@ -106,13 +105,14 @@ class ModelFallbackStrategy(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception as e:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Operation failed: {e}",
-            ) from e
+        """Validate instance integrity (ProtocolValidatable protocol).
+
+        Returns:
+            True if validation passes
+
+        Note:
+            Override in subclasses for custom validation logic.
+        """
+        # Basic validation - ensure required fields exist
+        # Override in specific models for custom validation
+        return True

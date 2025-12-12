@@ -1,4 +1,22 @@
-"""Service metadata model - implements ProtocolServiceRegistrationMetadata."""
+"""Service metadata model - implements ProtocolServiceRegistrationMetadata.
+
+Provides comprehensive metadata for registered services in the ONEX
+dependency injection container.
+
+Thread Safety:
+    This model uses `from_attributes=True` for ORM/dataclass compatibility.
+    While the model itself is mutable, the `from_attributes` config is safe
+    when source objects are either:
+    1. Immutable (frozen Pydantic models, NamedTuples)
+    2. Not shared across threads during model creation
+
+    For thread-safe service registration, ensure single-writer semantics
+    when creating metadata from mutable source objects.
+
+See Also:
+    docs/conventions/PYDANTIC_BEST_PRACTICES.md: Guidelines for from_attributes usage.
+    docs/architecture/CONTAINER_TYPES.md: Container and DI architecture.
+"""
 
 from datetime import datetime
 from uuid import UUID
@@ -29,10 +47,17 @@ class ModelServiceMetadata(BaseModel):
         service_implementation: Implementation class name
         version: Semantic version of the service
         description: Optional service description
-        tags: List of tags for categorization
+        tags: List of tags for categorization (see docs/conventions/NAMING_CONVENTIONS.md
+            for tag format: `<category>:<value>`)
         configuration: Additional configuration key-value pairs
         created_at: Timestamp when service was registered
         last_modified_at: Timestamp when service was last modified
+
+    Thread Safety:
+        This model uses `from_attributes=True` for ORM compatibility. When
+        creating from mutable source objects, ensure the source is not being
+        modified concurrently. The created Pydantic model is independent of
+        the source after creation.
 
     Example:
         ```python
@@ -43,12 +68,14 @@ class ModelServiceMetadata(BaseModel):
             service_interface="ProtocolLogger",
             service_implementation="EnhancedLogger",
             version=ModelSemVer(major=1, minor=0, patch=0),
-            tags=["logging", "core"],
+            tags=["env:production", "tier:core"],  # Use category:value format
         )
         ```
     """
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True,  # ORM compatibility - see module docstring for safety notes
+    )
 
     service_id: UUID = Field(description="Unique service identifier")
     service_name: str = Field(description="Human-readable service name")

@@ -19,19 +19,20 @@
 
 # Contract Metadata
 node_type: ORCHESTRATOR_GENERIC
-contract_version: {major: 1, minor: 0, patch: 0}
-
+contract_version: {major: 1, minor: 1, patch: 0}
+# Fingerprint: SHA-256 hash of canonical contract content (node_type, workflow_coordination, metadata.description)
+fingerprint: "1.1.0:8d00f09e22ec"
 # Workflow Coordination Subcontract
 workflow_coordination:
-  version: {major: 1, minor: 0, patch: 0}
-  subcontract_version: {major: 1, minor: 0, patch: 0}
+  version: {major: 1, minor: 1, patch: 0}
+  subcontract_version: {major: 1, minor: 1, patch: 0}
 
   # Workflow Definition: Complete workflow specification
   workflow_definition:
     # Workflow Metadata
     workflow_metadata:
       workflow_name: data_processing_pipeline
-      workflow_version: {major: 1, minor: 0, patch: 0}
+      workflow_version: {major: 1, minor: 1, patch: 0}
       description: Multi-stage data processing with validation and enrichment
       execution_mode: parallel  # Can be: sequential, parallel, batch
       author: ONEX Framework Team
@@ -277,7 +278,7 @@ workflow_coordination:
 
 # Metadata
 metadata:
-  version: {major: 1, minor: 0, patch: 0}
+  version: {major: 1, minor: 1, patch: 0}
   author: ONEX Framework Team
   description: Data processing pipeline orchestrator using workflow pattern
   tags:

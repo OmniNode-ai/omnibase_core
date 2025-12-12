@@ -158,13 +158,21 @@ def load_contract_data(contract_name: str) -> dict:
         Parsed YAML content as a dictionary
 
     Raises:
-        pytest.skip: If the contract file does not exist
+        pytest.fail: If the contract file does not exist (expected contracts must exist)
     """
     contract_path = RUNTIME_CONTRACTS_DIR / contract_name
     if not contract_path.exists():
-        pytest.skip(f"Contract file not found: {contract_path}")
+        pytest.fail(f"Contract file not found: {contract_path}")
     with open(contract_path, encoding="utf-8") as f:
-        return yaml.safe_load(f)
+        data = yaml.safe_load(f)
+    # Guard yaml.safe_load results - must be a non-empty dict for valid contracts
+    if data is None:
+        pytest.fail(f"Contract file is empty: {contract_path}")
+    if not isinstance(data, dict):
+        pytest.fail(
+            f"Contract file must contain a YAML mapping, got {type(data).__name__}: {contract_path}"
+        )
+    return data
 
 
 @pytest.fixture(params=EXPECTED_RUNTIME_CONTRACTS)
@@ -213,7 +221,7 @@ class TestRuntimeContractCommonValidation:
     ) -> None:
         """Test that the contract file is valid YAML."""
         if not contract_path.exists():
-            pytest.skip(f"Contract file not found: {contract_path}")
+            pytest.fail(f"Contract file not found: {contract_path}")
 
         with open(contract_path, encoding="utf-8") as f:
             content = yaml.safe_load(f)
@@ -307,7 +315,7 @@ class TestRuntimeContractsDirectoryStructure:
         test coverage of the warning emission path.
         """
         if not RUNTIME_CONTRACTS_DIR.exists():
-            pytest.skip("Runtime contracts directory does not exist")
+            pytest.fail("Runtime contracts directory does not exist")
 
         yaml_files = list(RUNTIME_CONTRACTS_DIR.glob("*.yaml"))
         unexpected_files = [
@@ -791,13 +799,32 @@ class TestEventBusWiringEffectContract:
         """Test that event_bus_wiring_effect.yaml defines subscriptions."""
         assert "subscriptions" in wiring_data, "Missing subscriptions section"
         subscriptions = wiring_data["subscriptions"]
+        assert isinstance(subscriptions, list), (
+            f"subscriptions must be a list, got {type(subscriptions).__name__}"
+        )
         assert len(subscriptions) >= 1, "Expected at least one subscription defined"
+        # Validate minimal element shape for each subscription
+        for i, sub in enumerate(subscriptions):
+            assert isinstance(sub, dict), (
+                f"subscriptions[{i}] must be a dict, got {type(sub).__name__}"
+            )
+            assert "topic" in sub, f"subscriptions[{i}] missing required 'topic' field"
 
     def test_contract_has_publications(self, wiring_data: dict) -> None:
         """Test that event_bus_wiring_effect.yaml defines publications."""
         assert "publications" in wiring_data, "Missing publications section"
         publications = wiring_data["publications"]
+        assert isinstance(publications, list), (
+            f"publications must be a list, got {type(publications).__name__}"
+        )
         assert len(publications) >= 1, "Expected at least one publication defined"
+
+        # Validate minimal element shape for each publication
+        for i, pub in enumerate(publications):
+            assert isinstance(pub, dict), (
+                f"publications[{i}] must be a dict, got {type(pub).__name__}"
+            )
+            assert "topic" in pub, f"publications[{i}] missing required 'topic' field"
 
         # Check for runtime.ready publication
         pub_topics = [p.get("topic") for p in publications]
@@ -810,15 +837,15 @@ class TestEventBusWiringEffectContract:
 class TestAllRuntimeContractsValidation:
     """Cross-contract validation tests for all runtime contracts."""
 
-    def test_all_contracts_have_version_1_0_0(
+    def test_all_contracts_have_version_1_1_0(
         self, all_contracts: dict[str, dict]
     ) -> None:
-        """Test that all runtime contracts have version 1.0.0."""
+        """Test that all runtime contracts have version 1.1.0."""
         for name, data in all_contracts.items():
             version = data.get("contract_version", {})
             if isinstance(version, dict):
                 assert version.get("major") == 1, f"{name}: Expected major version 1"
-                assert version.get("minor") == 0, f"{name}: Expected minor version 0"
+                assert version.get("minor") == 1, f"{name}: Expected minor version 1"
                 assert version.get("patch") == 0, f"{name}: Expected patch version 0"
 
     def test_all_contracts_pass_minimal_validation(

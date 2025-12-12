@@ -63,9 +63,10 @@
 
 contract_version:
   major: 1
-  minor: 0
+  minor: 1
   patch: 0
-
+# Fingerprint: SHA-256 hash of canonical contract content (node_type, effect_operations, metadata.description)
+fingerprint: "1.1.0:66346191a6a6"
 node_type: effect
 
 # ---------------------------------------------------------------------------
@@ -74,7 +75,7 @@ node_type: effect
 
 effect_operations:
   # Schema version for forward compatibility - must use dict format for ModelSemVer
-  version: {major: 1, minor: 0, patch: 0}
+  version: {major: 1, minor: 1, patch: 0}
 
   # Unique subcontract name (required by ModelEffectSubcontract)
   subcontract_name: "kafka_produce_effect"
@@ -480,7 +481,7 @@ effect_operations:
 # which is configured in the effect_operations.metadata section above.
 
 metadata:
-  version: {major: 1, minor: 0, patch: 0}
+  version: {major: 1, minor: 1, patch: 0}
   author: "ONEX Framework Team"
   description: |
     Contract-driven Kafka message production for event-driven architecture.

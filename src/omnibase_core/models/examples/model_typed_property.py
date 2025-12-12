@@ -1,9 +1,3 @@
-from __future__ import annotations
-
-from typing import TypeVar
-
-from pydantic import Field
-
 """
 Typed property model for environment properties.
 
@@ -11,10 +5,11 @@ This module provides the ModelTypedProperty class for storing a single
 typed property with validation in the environment property system.
 """
 
+from __future__ import annotations
 
-from typing import cast
+from typing import TypeVar, cast
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_property_type import EnumPropertyType
 from omnibase_core.types.type_serializable_value import SerializedDict
@@ -63,7 +58,15 @@ class ModelTypedProperty(BaseModel):
         return self
 
     def get_typed_value(self, expected_type: type[T], default: T) -> T:
-        """Get the value with specific type checking."""
+        """Get the value with specific type checking.
+
+        Args:
+            expected_type: The expected type to convert the value to
+            default: Default value to return if conversion fails
+
+        Returns:
+            The converted value or default if conversion fails
+        """
         try:
             # Use ModelPropertyValue's type-safe accessors based on expected type
             if expected_type == str:
@@ -76,7 +79,8 @@ class ModelTypedProperty(BaseModel):
                 return cast("T", self.value.as_bool())
             if isinstance(self.value.value, expected_type):
                 return self.value.value
-        except Exception:
+        except (TypeError, ValueError, AttributeError):
+            # Return default on type conversion failures
             pass
         return default
 
@@ -112,7 +116,8 @@ class ModelTypedProperty(BaseModel):
 
         Raises:
             AttributeError: If setting an attribute fails
-            Exception: If configuration logic fails
+            TypeError: If value type is incompatible
+            ValueError: If value is invalid
         """
         for key, value in kwargs.items():
             if hasattr(self, key):
@@ -126,8 +131,11 @@ class ModelTypedProperty(BaseModel):
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol).
 
-        Raises:
-            Exception: If validation logic fails
+        Returns:
+            True if validation passes
+
+        Note:
+            Override in subclasses for custom validation logic.
         """
         # Basic validation - ensure required fields exist
         # Override in specific models for custom validation

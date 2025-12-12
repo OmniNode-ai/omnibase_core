@@ -426,6 +426,72 @@ class TestFingerprintParsing:
 
         assert "Invalid hash prefix" in str(exc_info.value)
 
+    def test_parse_fingerprint_wrong_hash_length_short(self) -> None:
+        """Test that too-short hash prefix raises ModelOnexError."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelContractFingerprint.from_string("1.0.0:abc")  # Only 3 chars
+
+        assert "Invalid hash prefix" in str(exc_info.value)
+
+    def test_parse_fingerprint_multiple_colons_raises_error(self) -> None:
+        """Test that multiple colons raises ModelOnexError."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelContractFingerprint.from_string("1.0.0:abc:def123456")
+
+        # Should fail because the version part or hash part is malformed
+        assert "Invalid" in str(exc_info.value)
+
+    def test_hash_is_lowercase_hex_only_after_normalization(self) -> None:
+        """Test that hash is always normalized to lowercase hex.
+
+        This verifies case sensitivity: uppercase hex chars are normalized
+        to lowercase for consistent fingerprint comparison.
+        """
+        # Mixed case input should normalize to lowercase
+        fp_mixed = ModelContractFingerprint.from_string("1.0.0:AbCdEf123456")
+        assert fp_mixed.hash_prefix == "abcdef123456"
+        assert fp_mixed.hash_prefix.islower()
+
+        # All uppercase should normalize to lowercase
+        fp_upper = ModelContractFingerprint.from_string("1.0.0:FEDCBA987654")
+        assert fp_upper.hash_prefix == "fedcba987654"
+        assert fp_upper.hash_prefix.islower()
+
+        # All lowercase should remain lowercase
+        fp_lower = ModelContractFingerprint.from_string("1.0.0:fedcba987654")
+        assert fp_lower.hash_prefix == "fedcba987654"
+
+        # Verify equality after normalization
+        assert fp_upper.hash_prefix == fp_lower.hash_prefix
+
+    def test_fingerprint_regeneration_is_deterministic(
+        self, sample_contract: ModelTestContract
+    ) -> None:
+        """Test that same contract always produces same fingerprint.
+
+        This verifies the critical invariant: fingerprint computation
+        is deterministic and reproducible.
+        """
+        # Compute fingerprint multiple times
+        fingerprints = [
+            compute_contract_fingerprint(sample_contract) for _ in range(10)
+        ]
+
+        # All should be identical
+        first_str = str(fingerprints[0])
+        first_hash = fingerprints[0].full_hash
+
+        for i, fp in enumerate(fingerprints[1:], start=2):
+            assert str(fp) == first_str, (
+                f"Fingerprint regeneration {i} produced different string"
+            )
+            assert fp.full_hash == first_hash, (
+                f"Fingerprint regeneration {i} produced different hash"
+            )
+            assert fp.hash_prefix == fingerprints[0].hash_prefix, (
+                f"Fingerprint regeneration {i} produced different prefix"
+            )
+
 
 # =============================================================================
 # Fingerprint Model Tests
