@@ -41,10 +41,12 @@ class ModelFSMOperation(BaseModel):
             Common values: "synchronous", "asynchronous", "batch".
         description: Human-readable description (optional).
 
-    Reserved Fields (v1.1+):
-        retry_count: Number of retry attempts for failed operations.
-        timeout_ms: Operation timeout in milliseconds.
-        rollback_action: Action to execute on operation failure.
+    Planned Fields (v1.1+):
+        The following fields are planned for v1.1+ but NOT YET IMPLEMENTED
+        in this model:
+        - retry_count: Number of retry attempts for failed operations
+        - timeout_ms: Operation timeout in milliseconds
+        - rollback_action: Action to execute on operation failure
 
     Example:
         >>> operation = ModelFSMOperation(

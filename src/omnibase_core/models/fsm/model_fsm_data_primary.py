@@ -1,9 +1,5 @@
 from __future__ import annotations
 
-from pydantic import Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Strongly-typed FSM data structure model.
 
@@ -11,9 +7,7 @@ Replaces dict[str, Any] usage in FSM operations with structured typing.
 Follows ONEX strong typing principles and one-model-per-file architecture.
 """
 
-from pydantic import BaseModel
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from pydantic import BaseModel, Field
 
 from .model_fsm_state import ModelFsmState
 from .model_fsm_transition import ModelFsmTransition
@@ -93,40 +87,42 @@ class ModelFsmData(BaseModel):
     model_config = {
         "extra": "ignore",
         "use_enum_values": False,
-        "validate_assignment": True,
+        "frozen": True,
     }
 
     # Protocol method implementations
 
     def execute(self, **kwargs: object) -> bool:
-        """Execute or update execution status (Executable protocol)."""
-        try:
-            # Update any relevant execution fields
-            for key, value in kwargs.items():
-                if hasattr(self, key):
-                    setattr(self, key, value)
-            return True
-        except Exception as e:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Operation failed: {e}",
-            ) from e
+        """Execute or update execution status (Executable protocol).
+
+        Note: In v1.0, this method returns True without modification.
+        The model is frozen (immutable) for thread safety.
+        """
+        # v1.0: Model is frozen, so setattr is not allowed
+        _ = kwargs  # Explicitly mark as unused
+        return True
 
     def serialize(self) -> dict[str, object]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception as e:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Operation failed: {e}",
-            ) from e
+        """Validate instance integrity (ProtocolValidatable protocol).
+
+        Validates that required fields have valid values:
+        - state_machine_name must be a non-empty, non-whitespace string
+        - initial_state must be a non-empty, non-whitespace string
+
+        Returns:
+            bool: True if validation passed, False otherwise
+        """
+        # Validate state_machine_name is non-empty
+        if not self.state_machine_name or not self.state_machine_name.strip():
+            return False
+        # Validate initial_state is non-empty
+        if not self.initial_state or not self.initial_state.strip():
+            return False
+        return True
 
 
 # Export for use

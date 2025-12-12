@@ -203,15 +203,20 @@ class TestModelFsmTransitionProtocols:
         assert result is True
 
     def test_execute_protocol_with_updates(self):
-        """Test execute protocol with field updates."""
+        """Test execute protocol with kwargs (frozen model - no mutation).
+
+        Note: ModelFsmTransition is frozen (immutable), so execute() returns True
+        but does not modify the model. This is intentional for thread safety.
+        """
         transition = ModelFsmTransition(
             from_state="idle", to_state="active", trigger="start"
         )
 
-        # Execute with updates
+        # Execute with updates - model is frozen so no mutation occurs
         result = transition.execute(trigger="updated_trigger")
         assert result is True
-        assert transition.trigger == "updated_trigger"
+        # Model remains unchanged due to frozen=True
+        assert transition.trigger == "start"
 
     def test_execute_protocol_invalid_field(self):
         """Test execute protocol with non-existent field."""
@@ -456,15 +461,15 @@ class TestModelFsmTransitionEdgeCases:
         assert t1 == t2
         assert t1 != t3
 
-    def test_validate_assignment_config(self):
-        """Test that validate_assignment config works."""
+    def test_frozen_config(self):
+        """Test that frozen config prevents mutations."""
         transition = ModelFsmTransition(from_state="a", to_state="b", trigger="start")
 
-        # Should allow assignment
-        transition.trigger = "updated"
-        assert transition.trigger == "updated"
+        # Model is frozen - assignment raises ValidationError
+        with pytest.raises(ValidationError):
+            transition.trigger = "updated"
 
-        # Invalid assignment should raise error
+        # Invalid assignment also raises error
         with pytest.raises(ValidationError):
             transition.from_state = 123
 
@@ -502,6 +507,58 @@ class TestModelFsmTransitionEdgeCases:
         assert forward.from_state == backward.to_state
         assert forward.to_state == backward.from_state
         assert forward.trigger == backward.trigger
+
+
+@pytest.mark.unit
+class TestModelFsmTransitionValidateInstanceFalse:
+    """Test validate_instance returning False for invalid states."""
+
+    def test_validate_instance_empty_from_state_returns_false(self):
+        """Test validate_instance returns False for empty from_state."""
+        transition = ModelFsmTransition(
+            from_state="", to_state="active", trigger="start"
+        )
+        assert transition.validate_instance() is False
+
+    def test_validate_instance_whitespace_from_state_returns_false(self):
+        """Test validate_instance returns False for whitespace-only from_state."""
+        transition = ModelFsmTransition(
+            from_state="   ", to_state="active", trigger="start"
+        )
+        assert transition.validate_instance() is False
+
+    def test_validate_instance_empty_to_state_returns_false(self):
+        """Test validate_instance returns False for empty to_state."""
+        transition = ModelFsmTransition(from_state="idle", to_state="", trigger="start")
+        assert transition.validate_instance() is False
+
+    def test_validate_instance_whitespace_to_state_returns_false(self):
+        """Test validate_instance returns False for whitespace-only to_state."""
+        transition = ModelFsmTransition(
+            from_state="idle", to_state="   ", trigger="start"
+        )
+        assert transition.validate_instance() is False
+
+    def test_validate_instance_empty_trigger_returns_false(self):
+        """Test validate_instance returns False for empty trigger."""
+        transition = ModelFsmTransition(
+            from_state="idle", to_state="active", trigger=""
+        )
+        assert transition.validate_instance() is False
+
+    def test_validate_instance_whitespace_trigger_returns_false(self):
+        """Test validate_instance returns False for whitespace-only trigger."""
+        transition = ModelFsmTransition(
+            from_state="idle", to_state="active", trigger="   "
+        )
+        assert transition.validate_instance() is False
+
+    def test_validate_instance_valid_returns_true(self):
+        """Test validate_instance returns True for valid transition."""
+        transition = ModelFsmTransition(
+            from_state="idle", to_state="active", trigger="start"
+        )
+        assert transition.validate_instance() is True
 
 
 if __name__ == "__main__":

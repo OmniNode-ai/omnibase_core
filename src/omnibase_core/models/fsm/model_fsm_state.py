@@ -41,7 +41,7 @@ class ModelFsmState(BaseModel):
     model_config = {
         "extra": "ignore",
         "use_enum_values": False,
-        "validate_assignment": True,
+        "frozen": True,
     }
 
     # Protocol method implementations
@@ -49,14 +49,11 @@ class ModelFsmState(BaseModel):
     def execute(self, **kwargs: object) -> bool:
         """Execute or update execution status (Executable protocol).
 
-        Raises:
-            AttributeError: If setting an attribute fails
-            Exception: If execution logic fails
+        Note: In v1.0, this method returns True without modification.
+        The model is frozen (immutable) for thread safety.
         """
-        # Update any relevant execution fields
-        for key, value in kwargs.items():
-            if hasattr(self, key):
-                setattr(self, key, value)
+        # v1.0: Model is frozen, so setattr is not allowed
+        _ = kwargs  # Explicitly mark as unused
         return True
 
     def serialize(self) -> dict[str, object]:
@@ -66,11 +63,15 @@ class ModelFsmState(BaseModel):
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol).
 
-        Raises:
-            Exception: If validation logic fails
+        Validates that required fields have valid values:
+        - name must be a non-empty, non-whitespace string
+
+        Returns:
+            bool: True if validation passed, False otherwise
         """
-        # Basic validation - ensure required fields exist
-        # Override in specific models for custom validation
+        # Validate name is non-empty and non-whitespace
+        if not self.name or not self.name.strip():
+            return False
         return True
 
 

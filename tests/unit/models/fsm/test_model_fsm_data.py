@@ -208,8 +208,11 @@ class TestModelFsmDataStateQueries:
         assert state is None
 
     def test_get_state_by_name_empty_states(self):
-        """Test getting state when states list is empty."""
-        # This will fail validation but let's test the method logic
+        """Test getting state when states list has only unrelated states.
+
+        Note: ModelFsmData is frozen (immutable), so we test that searching
+        for a non-matching state returns None rather than testing empty list.
+        """
         states = [ModelFsmState(name="s1", is_initial=True, is_final=True)]
         transitions = []
 
@@ -220,8 +223,7 @@ class TestModelFsmDataStateQueries:
             transitions=transitions,
         )
 
-        # Clear states for test
-        fsm.states = []
+        # Model is frozen - search for a state that doesn't exist
         state = fsm.get_state_by_name("any")
         assert state is None
 
@@ -743,6 +745,61 @@ class TestModelFsmDataEdgeCases:
 
         fsm = ModelFsmData.model_validate(data)
         assert not hasattr(fsm, "extra_field")
+
+
+@pytest.mark.unit
+class TestModelFsmDataValidateInstanceFalse:
+    """Test validate_instance returning False for invalid states."""
+
+    def test_validate_instance_empty_state_machine_name_returns_false(self):
+        """Test validate_instance returns False for empty state_machine_name."""
+        data = ModelFsmData(
+            state_machine_name="",
+            initial_state="idle",
+            states=[ModelFsmState(name="idle", is_initial=True, is_final=True)],
+            transitions=[],
+        )
+        assert data.validate_instance() is False
+
+    def test_validate_instance_whitespace_state_machine_name_returns_false(self):
+        """Test validate_instance returns False for whitespace-only state_machine_name."""
+        data = ModelFsmData(
+            state_machine_name="   ",
+            initial_state="idle",
+            states=[ModelFsmState(name="idle", is_initial=True, is_final=True)],
+            transitions=[],
+        )
+        assert data.validate_instance() is False
+
+    def test_validate_instance_empty_initial_state_returns_false(self):
+        """Test validate_instance returns False for empty initial_state."""
+        data = ModelFsmData(
+            state_machine_name="test_fsm",
+            initial_state="",
+            states=[ModelFsmState(name="idle", is_initial=True, is_final=True)],
+            transitions=[],
+        )
+        assert data.validate_instance() is False
+
+    def test_validate_instance_whitespace_initial_state_returns_false(self):
+        """Test validate_instance returns False for whitespace-only initial_state."""
+        data = ModelFsmData(
+            state_machine_name="test_fsm",
+            initial_state="   ",
+            states=[ModelFsmState(name="idle", is_initial=True, is_final=True)],
+            transitions=[],
+        )
+        assert data.validate_instance() is False
+
+    def test_validate_instance_valid_returns_true(self):
+        """Test validate_instance returns True for valid data."""
+        data = ModelFsmData(
+            state_machine_name="test_fsm",
+            initial_state="idle",
+            states=[ModelFsmState(name="idle", is_initial=True, is_final=True)],
+            transitions=[],
+        )
+        assert data.validate_instance() is True
 
 
 if __name__ == "__main__":

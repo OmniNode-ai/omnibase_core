@@ -193,13 +193,18 @@ class TestModelFsmStateProtocols:
         assert result is True
 
     def test_execute_protocol_with_updates(self):
-        """Test execute protocol with field updates."""
+        """Test execute protocol with kwargs (frozen model - no mutation).
+
+        Note: ModelFsmState is frozen (immutable), so execute() returns True
+        but does not modify the model. This is intentional for thread safety.
+        """
         state = ModelFsmState(name="test", description="original")
 
-        # Execute with updates
+        # Execute with updates - model is frozen so no mutation occurs
         result = state.execute(description="updated description")
         assert result is True
-        assert state.description == "updated description"
+        # Model remains unchanged due to frozen=True
+        assert state.description == "original"
 
     def test_execute_protocol_invalid_field(self):
         """Test execute protocol with invalid field updates."""
@@ -404,15 +409,15 @@ class TestModelFsmStateEdgeCases:
         assert state1 == state2
         assert state1 != state3
 
-    def test_validate_assignment_config(self):
-        """Test that validate_assignment config works."""
+    def test_frozen_config(self):
+        """Test that frozen config prevents mutations."""
         state = ModelFsmState(name="test")
 
-        # Should allow assignment
-        state.description = "updated"
-        assert state.description == "updated"
+        # Model is frozen - assignment raises ValidationError
+        with pytest.raises(ValidationError):
+            state.description = "updated"
 
-        # Invalid assignment should raise error
+        # Invalid assignment also raises error
         with pytest.raises(ValidationError):
             state.is_initial = "not_a_boolean"
 
@@ -428,6 +433,41 @@ class TestModelFsmStateEdgeCases:
         assert state.name == "test"
         assert not hasattr(state, "extra_field")
         assert not hasattr(state, "another_extra")
+
+
+@pytest.mark.unit
+class TestModelFsmStateValidateInstanceFalse:
+    """Test validate_instance returning False for invalid states."""
+
+    def test_validate_instance_empty_name_returns_false(self):
+        """Test validate_instance returns False for empty name."""
+        state = ModelFsmState(name="", description="test")
+        assert state.validate_instance() is False
+
+    def test_validate_instance_whitespace_name_returns_false(self):
+        """Test validate_instance returns False for whitespace-only name."""
+        state = ModelFsmState(name="   ", description="test")
+        assert state.validate_instance() is False
+
+    def test_validate_instance_tab_only_name_returns_false(self):
+        """Test validate_instance returns False for tab-only name."""
+        state = ModelFsmState(name="\t\t", description="test")
+        assert state.validate_instance() is False
+
+    def test_validate_instance_newline_only_name_returns_false(self):
+        """Test validate_instance returns False for newline-only name."""
+        state = ModelFsmState(name="\n\n", description="test")
+        assert state.validate_instance() is False
+
+    def test_validate_instance_mixed_whitespace_returns_false(self):
+        """Test validate_instance returns False with mixed whitespace characters."""
+        state = ModelFsmState(name=" \t\n ", description="test")
+        assert state.validate_instance() is False
+
+    def test_validate_instance_valid_name_returns_true(self):
+        """Test validate_instance returns True for valid name."""
+        state = ModelFsmState(name="idle", description="test")
+        assert state.validate_instance() is True
 
 
 if __name__ == "__main__":
