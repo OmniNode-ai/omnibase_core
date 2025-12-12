@@ -60,7 +60,7 @@ def load_contract(contract_name: str) -> dict[str, object]:
             pytest.skip(f"Contract file is empty: {contract_path}")
         if not isinstance(data, dict):
             pytest.skip(f"Contract file is not a dict: {contract_path}")
-        return dict(data)
+        return data
 
 
 # ==============================================================================
@@ -221,7 +221,8 @@ class TestFingerprintUniqueness:
                     data = yaml.safe_load(f)
                     if isinstance(data, dict) and "fingerprint" in data:
                         fp = data["fingerprint"]
-                        fingerprints.setdefault(fp, []).append(str(yaml_file.name))
+                        if isinstance(fp, str):
+                            fingerprints.setdefault(fp, []).append(str(yaml_file.name))
 
         # Collect from example contracts (recursive)
         if self.EXAMPLES_CONTRACTS_DIR.exists():
@@ -230,8 +231,13 @@ class TestFingerprintUniqueness:
                     data = yaml.safe_load(f)
                     if isinstance(data, dict) and "fingerprint" in data:
                         fp = data["fingerprint"]
-                        rel_path = yaml_file.relative_to(self.EXAMPLES_CONTRACTS_DIR)
-                        fingerprints.setdefault(fp, []).append(f"examples/{rel_path}")
+                        if isinstance(fp, str):
+                            rel_path = yaml_file.relative_to(
+                                self.EXAMPLES_CONTRACTS_DIR
+                            )
+                            fingerprints.setdefault(fp, []).append(
+                                f"examples/{rel_path}"
+                            )
 
         return fingerprints
 
@@ -340,8 +346,28 @@ class TestContractHandlersField:
     ) -> None:
         """Test that handler entries have 'type' and 'version' fields."""
         handlers = contract_data.get("handlers", {})
+
+        # Early guard: ensure handlers is a dict before accessing .get()
+        if not isinstance(handlers, dict):
+            pytest.fail(
+                f"{contract_name}: handlers should be a dict, "
+                f"got {type(handlers).__name__}"
+            )
+
         required = handlers.get("required", [])
         optional = handlers.get("optional", [])
+
+        # Early guard: ensure required and optional are lists before iterating
+        if not isinstance(required, list):
+            pytest.fail(
+                f"{contract_name}: handlers.required should be a list, "
+                f"got {type(required).__name__}"
+            )
+        if not isinstance(optional, list):
+            pytest.fail(
+                f"{contract_name}: handlers.optional should be a list, "
+                f"got {type(optional).__name__}"
+            )
 
         for i, handler in enumerate(required):
             assert isinstance(handler, dict), (
