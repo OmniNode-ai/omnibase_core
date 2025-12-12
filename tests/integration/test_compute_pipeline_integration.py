@@ -32,9 +32,7 @@ from omnibase_core.models.contracts.subcontracts.model_compute_pipeline_step imp
 from omnibase_core.models.contracts.subcontracts.model_compute_subcontract import (
     ModelComputeSubcontract,
 )
-from omnibase_core.models.transformations.model_mapping_config import (
-    ModelMappingConfig,
-)
+from omnibase_core.models.transformations.model_mapping_config import ModelMappingConfig
 from omnibase_core.models.transformations.model_transform_case_config import (
     ModelTransformCaseConfig,
 )

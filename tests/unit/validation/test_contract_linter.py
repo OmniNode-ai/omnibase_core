@@ -364,9 +364,7 @@ class TestWarnPriorityClamping:
         Note: ModelWorkflowStep validates priority bounds at creation time,
         so this test uses model_construct to bypass validation.
         """
-        from omnibase_core.models.contracts.model_workflow_step import (
-            ModelWorkflowStep,
-        )
+        from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 
         # Use model_construct to bypass Pydantic validation
         step = ModelWorkflowStep.model_construct(
@@ -404,9 +402,7 @@ class TestWarnPriorityClamping:
         Note: ModelWorkflowStep validates priority bounds at creation time,
         so this test uses model_construct to bypass validation.
         """
-        from omnibase_core.models.contracts.model_workflow_step import (
-            ModelWorkflowStep,
-        )
+        from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 
         # Use model_construct to bypass Pydantic validation
         step_too_low = ModelWorkflowStep.model_construct(
@@ -464,9 +460,7 @@ class TestWarnPriorityClamping:
 
         Negative priorities will be clamped to 1 at runtime.
         """
-        from omnibase_core.models.contracts.model_workflow_step import (
-            ModelWorkflowStep,
-        )
+        from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 
         # Use model_construct to bypass Pydantic validation
         step_negative = ModelWorkflowStep.model_construct(
@@ -505,9 +499,7 @@ class TestWarnPriorityClamping:
         Note: ModelWorkflowStep validates priority bounds at creation time,
         so this test uses model_construct to bypass validation.
         """
-        from omnibase_core.models.contracts.model_workflow_step import (
-            ModelWorkflowStep,
-        )
+        from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 
         # Use model_construct to bypass Pydantic validation
         step_too_high = ModelWorkflowStep.model_construct(

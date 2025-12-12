@@ -24,17 +24,17 @@ from omnibase_core.mixins.mixin_canonical_serialization import (
     MixinCanonicalYAMLSerializer,
 )
 from omnibase_core.mixins.mixin_cli_handler import MixinCLIHandler
-from omnibase_core.mixins.mixin_compute_execution import MixinComputeExecution
 
 # Models and protocols extracted from mixin_event_bus
 from omnibase_core.mixins.mixin_completion_data import MixinCompletionData
-from omnibase_core.mixins.mixin_effect_execution import MixinEffectExecution
+from omnibase_core.mixins.mixin_compute_execution import MixinComputeExecution
 from omnibase_core.mixins.mixin_contract_metadata import MixinContractMetadata
 from omnibase_core.mixins.mixin_contract_state_reducer import MixinContractStateReducer
 from omnibase_core.mixins.mixin_debug_discovery_logging import (
     MixinDebugDiscoveryLogging,
 )
 from omnibase_core.mixins.mixin_discovery_responder import MixinDiscoveryResponder
+from omnibase_core.mixins.mixin_effect_execution import MixinEffectExecution
 from omnibase_core.mixins.mixin_event_bus import MixinEventBus
 from omnibase_core.mixins.mixin_event_driven_node import MixinEventDrivenNode
 from omnibase_core.mixins.mixin_event_handler import MixinEventHandler
@@ -63,8 +63,8 @@ from omnibase_core.mixins.mixin_log_data import MixinLogData
 from omnibase_core.mixins.mixin_node_executor import MixinNodeExecutor
 from omnibase_core.mixins.mixin_node_id_from_contract import MixinNodeIdFromContract
 from omnibase_core.mixins.mixin_node_lifecycle import MixinNodeLifecycle
-from omnibase_core.mixins.mixin_node_type_validator import MixinNodeTypeValidator
 from omnibase_core.mixins.mixin_node_setup import MixinNodeSetup
+from omnibase_core.mixins.mixin_node_type_validator import MixinNodeTypeValidator
 from omnibase_core.mixins.mixin_redaction import MixinSensitiveFieldRedaction
 from omnibase_core.mixins.mixin_request_response_introspection import (
     MixinRequestResponseIntrospection,

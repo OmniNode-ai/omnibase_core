@@ -555,10 +555,12 @@ class TestDirectIOValidator:
     def test_validates_clean_file(self, tmp_path: Path) -> None:
         """Test validation of a clean file with no violations."""
         test_file = tmp_path / "clean.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 def compute(x: int) -> int:
     return x * 2
-""")
+"""
+        )
         validator = DirectIOValidator(verbose=False)
         is_valid = validator.validate_file(test_file)
         assert is_valid is True
@@ -567,11 +569,13 @@ def compute(x: int) -> int:
     def test_validates_file_with_violations(self, tmp_path: Path) -> None:
         """Test validation of a file with violations."""
         test_file = tmp_path / "bad.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 def read_file():
     f = open("test.txt")
     return f.read()
-""")
+"""
+        )
         validator = DirectIOValidator(verbose=False)
         is_valid = validator.validate_file(test_file)
         assert is_valid is False
@@ -581,11 +585,13 @@ def read_file():
         """Test that allowed files are skipped."""
         # node_effect.py should be allowed
         test_file = tmp_path / "node_effect.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 def read_file():
     f = open("test.txt")
     return f.read()
-""")
+"""
+        )
         validator = DirectIOValidator(verbose=True)
         is_valid = validator.validate_file(test_file)
         assert is_valid is True
@@ -597,11 +603,13 @@ def read_file():
         test_dir = tmp_path / "tests"
         test_dir.mkdir()
         test_file = test_dir / "test_io.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 def test_read_file():
     f = open("test.txt")
     return f.read()
-""")
+"""
+        )
         validator = DirectIOValidator(verbose=True)
         is_valid = validator.validate_file(test_file)
         assert is_valid is True
@@ -612,11 +620,13 @@ def test_read_file():
         legacy_dir = tmp_path / "legacy"
         legacy_dir.mkdir()
         test_file = legacy_dir / "old_code.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 def read_file():
     f = open("test.txt")
     return f.read()
-""")
+"""
+        )
         validator = DirectIOValidator(verbose=True)
         is_valid = validator.validate_file(test_file)
         assert is_valid is True
@@ -627,11 +637,13 @@ def read_file():
         cache_dir = tmp_path / "__pycache__"
         cache_dir.mkdir()
         test_file = cache_dir / "module.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 def read_file():
     f = open("test.txt")
     return f.read()
-""")
+"""
+        )
         validator = DirectIOValidator(verbose=True)
         is_valid = validator.validate_file(test_file)
         assert is_valid is True

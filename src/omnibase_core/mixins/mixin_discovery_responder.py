@@ -8,9 +8,8 @@ import time
 from typing import TYPE_CHECKING, Any, cast
 from uuid import UUID
 
-from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.core.model_discovery_request_response import (
     ModelDiscoveryRequestModelMetadata,
@@ -21,9 +20,10 @@ from omnibase_core.models.core.model_event_type import (
     is_event_equal,
 )
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent as OnexEvent
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.types.typed_dict_discovery_stats import TypedDictDiscoveryStats
 from omnibase_core.protocols import ProtocolEventBus
+from omnibase_core.types.typed_dict_discovery_stats import TypedDictDiscoveryStats
 
 if TYPE_CHECKING:
     from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope

@@ -40,10 +40,7 @@ from omnibase_core.models.contracts.subcontracts.model_workflow_definition_metad
 )
 from omnibase_core.models.orchestrator.model_action import ModelAction
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.utils.workflow_executor import (
-    execute_workflow,
-    get_execution_order,
-)
+from omnibase_core.utils.workflow_executor import execute_workflow, get_execution_order
 
 # Default version for test instances
 DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)

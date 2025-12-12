@@ -8,9 +8,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.security.model_security_summaries import (
-    ModelChainInfoSummary,
-)
+from omnibase_core.models.security.model_security_summaries import ModelChainInfoSummary
 
 
 class ModelSignatureChainSummary(BaseModel):

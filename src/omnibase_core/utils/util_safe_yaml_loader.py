@@ -1,11 +1,11 @@
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Safe YAML loading utilities using yaml.safe_load plus Pydantic validation.
 
 This module provides type-safe YAML loading that uses yaml.safe_load for parsing
 combined with Pydantic model validation to ensure proper structure and security.
 """
+
+from __future__ import annotations
 
 from pathlib import Path
 from typing import Any, cast
@@ -17,6 +17,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.examples.model_schema_example import ModelSchemaExample
 from omnibase_core.models.utils import ModelYamlOption, ModelYamlValue
 

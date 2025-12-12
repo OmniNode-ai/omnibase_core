@@ -31,8 +31,8 @@ from omnibase_core.protocols import (
 # Alternative name for ProtocolWorkflowReducer
 WorkflowReducerInterface = ProtocolWorkflowReducer
 
-from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 
 # Deferred import to avoid circular dependency
@@ -44,7 +44,6 @@ from omnibase_core.models.infrastructure.model_node_workflow_result import (
     ModelNodeWorkflowResult,
 )
 from omnibase_core.models.infrastructure.model_state import ModelState
-
 
 # Simple stub models for reducer pattern (ONEX 2.0 minimal implementation)
 # Import from separate files: ModelAction, ModelState, ModelNodeState
@@ -729,9 +728,11 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
             LogLevel.ERROR,
             f"NodeBase initialization failed: {error!s}",
             {
-                "node_id": str(self.node_id)
-                if hasattr(self, "node_id") and self.node_id is not None
-                else "unknown",
+                "node_id": (
+                    str(self.node_id)
+                    if hasattr(self, "node_id") and self.node_id is not None
+                    else "unknown"
+                ),
                 "contract_path": str(self._contract_path),
                 "error": str(error),
                 "error_type": type(error).__name__,

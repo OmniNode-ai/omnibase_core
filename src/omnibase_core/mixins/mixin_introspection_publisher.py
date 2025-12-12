@@ -222,38 +222,43 @@ class MixinIntrospectionPublisher:
 
     def _extract_node_capabilities(self) -> ModelNodeCapabilities:
         """Extract capabilities from the node."""
-        capabilities = ModelNodeCapabilities(
-            actions=self._extract_node_actions(),
-            protocols=self._detect_supported_protocols(),
-            metadata={  # type: ignore[arg-type]
-                "description": "Event-driven ONEX node",
-                "author": DEFAULT_AUTHOR,
-            },
+        from omnibase_core.models.common.model_typed_metadata import (
+            ModelNodeCapabilitiesMetadata,
         )
+
+        # Start with default metadata values
+        author = DEFAULT_AUTHOR
+        license_str: str | None = None
+
+        # Try to extract metadata from loader using proper Pydantic attribute access
         try:
             metadata_loader = getattr(self, "metadata_loader", None)
             if metadata_loader and hasattr(metadata_loader, "metadata"):
                 loader_metadata = getattr(metadata_loader, "metadata", None)
                 if loader_metadata:
-                    if hasattr(loader_metadata, "description") and getattr(
-                        loader_metadata, "description", None
-                    ):
-                        capabilities.metadata["description"] = str(  # type: ignore[index]
-                            loader_metadata.description
-                        )
                     if hasattr(loader_metadata, "author") and getattr(
                         loader_metadata, "author", None
                     ):
-                        capabilities.metadata["author"] = str(loader_metadata.author)  # type: ignore[index]
+                        author = str(loader_metadata.author)
                     if hasattr(loader_metadata, "copyright") and getattr(
                         loader_metadata, "copyright", None
                     ):
-                        capabilities.metadata["copyright"] = str(  # type: ignore[index]
-                            loader_metadata.copyright
-                        )
+                        # Map copyright to license field in the typed model
+                        license_str = str(loader_metadata.copyright)
         except Exception:
             pass
-        return capabilities
+
+        # Create typed metadata model with extracted values
+        metadata = ModelNodeCapabilitiesMetadata(
+            author=author,
+            license=license_str,
+        )
+
+        return ModelNodeCapabilities(
+            actions=self._extract_node_actions(),
+            protocols=self._detect_supported_protocols(),
+            metadata=metadata,
+        )
 
     def _extract_node_actions(self) -> list[str]:
         """Extract actions from node's contract or state models."""
