@@ -917,13 +917,14 @@ operations: []
         yaml_file = tmp_path / "test.yaml"
         yaml_file.write_text("version: '1.0'\ncontract_id: test\noperations: []")
 
-        # Mock open to raise an exception
-        with patch("builtins.open", side_effect=RuntimeError("Read error")):
+        # Mock open to raise an OSError (realistic file read exception)
+        # Note: Real file read operations raise OSError or its subclasses
+        with patch("builtins.open", side_effect=OSError("Read error")):
             errors = validate_yaml_file(yaml_file)
 
         # Should handle exception gracefully
         assert len(errors) > 0
-        assert any("Error reading file" in error for error in errors)
+        assert any("OS error reading file" in error for error in errors)
 
 
 class TestValidateContractsCLI:

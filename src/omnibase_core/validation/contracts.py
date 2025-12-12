@@ -110,6 +110,10 @@ def validate_yaml_file(file_path: Path) -> list[str]:
         except ModelOnexError as e:
             # Collect structured validation errors
             errors.append(f"Contract validation failed: {e.message}")
+        except Exception as e:
+            # Catch any other validation errors (e.g., Pydantic ValidationError)
+            # to ensure graceful handling of malformed YAML contracts
+            errors.append(f"Contract validation failed: {e}")
 
         # All validation is now handled by Pydantic model
         # Manual validation removed for ONEX compliance
