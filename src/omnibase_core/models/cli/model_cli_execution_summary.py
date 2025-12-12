@@ -15,8 +15,6 @@ Replaces dict[str, Any] for execution summary with structured typing.
 from datetime import datetime
 from uuid import UUID
 
-from omnibase_core.types.type_serializable_value import SerializedDict
-
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -24,6 +22,7 @@ from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
 from omnibase_core.enums.enum_execution_status_v2 import (
     EnumExecutionStatusV2 as EnumExecutionStatus,
 )
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelCliExecutionSummary(BaseModel):

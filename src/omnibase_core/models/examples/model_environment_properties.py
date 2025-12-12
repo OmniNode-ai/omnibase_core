@@ -15,9 +15,9 @@ Type-safe custom environment properties with access methods.
 from datetime import datetime
 from typing import cast, get_origin
 
-from omnibase_core.types.type_serializable_value import SerializedDict
-
 from pydantic import BaseModel
+
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 # Type variable for generic property handling
 T = TypeVar("T")

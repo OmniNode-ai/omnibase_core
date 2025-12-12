@@ -2,10 +2,9 @@ from __future__ import annotations
 
 from pydantic import Field
 
-from omnibase_core.types.type_serializable_value import SerializedDict
-
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 """
 Strongly-typed operation payload structure.

@@ -12,12 +12,12 @@ Follows ONEX one-model-per-file naming conventions.
 """
 
 from datetime import datetime
-from omnibase_core.types.type_serializable_value import SerializedDict
 
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_data_format import EnumDataFormat
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 from .model_example_metadata_summary import ModelExampleMetadataSummary
 from .model_example_summary import ModelExampleSummary

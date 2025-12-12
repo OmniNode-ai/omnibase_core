@@ -11,10 +11,9 @@ Data handling declaration model.
 
 from pydantic import BaseModel
 
-from omnibase_core.types.type_serializable_value import SerializedDict
-
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_data_classification import EnumDataClassification
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelDataHandlingDeclaration(BaseModel):

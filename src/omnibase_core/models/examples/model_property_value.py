@@ -15,14 +15,13 @@ with structured validation and proper type handling.
 from datetime import datetime
 from uuid import UUID
 
-from omnibase_core.types.type_serializable_value import SerializedDict
-
 from pydantic import BaseModel, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_property_type import EnumPropertyType
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 # Use object type to avoid primitive soup union anti-pattern.
 # Type safety is ensured through discriminated union with EnumPropertyType discriminator

@@ -12,11 +12,11 @@ Part of the ModelConnectionInfo restructuring to reduce excessive string fields.
 """
 
 from pathlib import Path
-from omnibase_core.types import SerializedDict
 
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.types import SerializedDict
 from omnibase_core.types.typed_dict_ssl_context_options import (
     TypedDictSSLContextOptions,
 )

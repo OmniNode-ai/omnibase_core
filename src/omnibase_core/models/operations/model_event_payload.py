@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.types.type_serializable_value import SerializedDict
-
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_event_type import EnumEventType
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -11,6 +9,7 @@ from omnibase_core.models.operations.model_event_routing_info import (
     ModelEventRoutingInfo,
 )
 from omnibase_core.models.operations.model_types_event_data import EventDataUnion
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelEventPayload(BaseModel):

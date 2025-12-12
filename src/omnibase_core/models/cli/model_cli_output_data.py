@@ -13,13 +13,12 @@ Follows ONEX one-model-per-file naming conventions.
 
 from pydantic import BaseModel
 
-from omnibase_core.types.type_serializable_value import SerializedDict
-
 from omnibase_core.enums.enum_cli_status import EnumCliStatus
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_output_format import EnumOutputFormat
 from omnibase_core.enums.enum_output_type import EnumOutputType
 from omnibase_core.models.infrastructure.model_value import ModelValue
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelCliOutputData(BaseModel):

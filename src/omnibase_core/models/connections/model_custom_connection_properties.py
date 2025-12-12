@@ -13,8 +13,6 @@ Each sub-model handles a specific concern area.
 
 
 from typing import Any
-
-from omnibase_core.types import SerializedDict
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -22,6 +20,7 @@ from pydantic import BaseModel
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_instance_type import EnumInstanceType
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
+from omnibase_core.types import SerializedDict
 
 from .model_cloud_service_properties import ModelCloudServiceProperties
 from .model_database_properties import ModelDatabaseProperties
