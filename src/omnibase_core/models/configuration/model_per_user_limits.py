@@ -1,11 +1,14 @@
-from typing import Any
+"""
+ModelPerUserLimits - Per-user rate limiting configuration
 
-from pydantic import Field
-
-"\nModelPerUserLimits - Per-user rate limiting configuration\n\nPer-user limits model for defining user-specific rate limiting rules\nwith user tiers, quotas, and individual user overrides.\n"
+Per-user limits model for defining user-specific rate limiting rules
+with user tiers, quotas, and individual user overrides.
+"""
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from omnibase_core.types import SerializedDict
 
 
 class ModelPerUserLimits(BaseModel):
@@ -153,7 +156,7 @@ class ModelPerUserLimits(BaseModel):
         headers: dict[str, str],
         query_params: dict[str, str] | None = None,
         client_ip: str = "",
-        jwt_payload: dict[str, Any] | None = None,
+        jwt_payload: SerializedDict | None = None,
     ) -> str | None:
         """Extract user ID based on identification method"""
         query_params = query_params or {}

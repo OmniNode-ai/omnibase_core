@@ -1,15 +1,14 @@
+from datetime import datetime
 from typing import Any
+from uuid import UUID
 
-from pydantic import Field
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
+
+from omnibase_core.types import SerializedDict
 
 """
 Audit entry model to replace Dict[str, Any] usage for audit trails.
 """
-
-from datetime import datetime
-from uuid import UUID
-
-from pydantic import BaseModel, ConfigDict, field_serializer
 
 from omnibase_core.enums.enum_audit_action import EnumAuditAction
 from omnibase_core.models.core.model_audit_value import ModelAuditValue
@@ -127,7 +126,7 @@ class ModelAuditEntry(BaseModel):
     model_config = ConfigDict()
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "ModelAuditEntry":
+    def from_dict(cls, data: SerializedDict) -> "ModelAuditEntry":
         """Create from dictionary for easy migration."""
         return cls(**data)
 

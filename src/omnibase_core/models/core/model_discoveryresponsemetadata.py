@@ -1,8 +1,8 @@
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.models.core.model_introspection_data import ModelIntrospectionData
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
@@ -11,7 +11,7 @@ class ModelDiscoveryResponseModelMetadata(BaseModel):
 
     request_id: UUID = Field(default=..., description="Original request identifier")
     node_id: UUID = Field(default=..., description="Responding node identifier")
-    introspection: dict[str, Any] = Field(
+    introspection: ModelIntrospectionData = Field(
         default=..., description="Node introspection data"
     )
     health_status: str = Field(default=..., description="Current health status")

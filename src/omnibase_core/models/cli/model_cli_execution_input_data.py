@@ -12,10 +12,9 @@ Replaces dict[str, Any] for input data with structured typing.
 """
 
 from pathlib import Path
-from typing import Any
-
-# Removed Any import - using object for ONEX compliance
 from uuid import UUID
+
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 from pydantic import BaseModel
 
@@ -405,7 +404,7 @@ class ModelCliExecutionInputData(BaseModel):
 
     # Protocol method implementations
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

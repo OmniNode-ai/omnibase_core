@@ -25,7 +25,7 @@ from types.core_types (not from models or types.constraints).
 """
 
 from datetime import UTC, datetime
-from typing import Any, Self
+from typing import Self
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
@@ -33,6 +33,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validat
 from omnibase_core.models.examples.model_example import ModelExample
 from omnibase_core.models.examples.model_example_metadata import ModelExampleMetadata
 from omnibase_core.types.json_types import JsonValue
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelExamplesCollection(BaseModel):
@@ -125,7 +126,7 @@ class ModelExamplesCollection(BaseModel):
 
     # === Data Conversion Methods ===
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> SerializedDict:
         """Convert to dictionary for current standards (Serializable protocol)."""
         # Special compatibility logic for examples
         if len(self.examples) == 1:
@@ -133,7 +134,7 @@ class ModelExamplesCollection(BaseModel):
         return {"examples": [ex.model_dump(exclude_none=True) for ex in self.examples]}
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any] | None) -> Self | None:
+    def from_dict(cls, data: SerializedDict | None) -> Self | None:
         """Create from dictionary for easy migration (Migratable protocol)."""
         if data is None:
             return None
@@ -146,8 +147,8 @@ class ModelExamplesCollection(BaseModel):
             return cls(
                 examples=examples,
                 metadata=data.get("metadata"),
-                format=data.get("format", "json"),
-                schema_compliant=data.get("schema_compliant", True),
+                format=data.get("format", "json"),  # type: ignore[arg-type]
+                schema_compliant=data.get("schema_compliant", True),  # type: ignore[arg-type]
             )
 
         # Single example as dict
@@ -233,7 +234,7 @@ class ModelExamplesCollection(BaseModel):
 
     def add_example(
         self,
-        example: ModelExample | dict[str, Any],
+        example: ModelExample | SerializedDict,
         name: str | None = None,
     ) -> None:
         """Add a new example to the collection."""
@@ -306,7 +307,7 @@ class ModelExamplesCollection(BaseModel):
     @classmethod
     def create_from_examples(
         cls,
-        examples: list[ModelExample | dict[str, Any]],
+        examples: list[ModelExample | SerializedDict],
         metadata: ModelExampleMetadata | None = None,
         example_format: str = "json",
     ) -> Self:
@@ -325,7 +326,7 @@ class ModelExamplesCollection(BaseModel):
 
     # === Protocol Method Implementations ===
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

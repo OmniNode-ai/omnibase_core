@@ -16,8 +16,9 @@ Follows ONEX one-model-per-file naming conventions.
 
 
 from datetime import UTC
-from typing import Any
 from uuid import UUID
+
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 from pydantic import BaseModel
 
@@ -190,7 +191,7 @@ class ModelCliResultMetadata(BaseModel):
 
     @field_validator("custom_metadata", mode="before")
     @classmethod
-    def validate_custom_metadata(cls, v: dict[str, Any]) -> dict[str, ModelValue]:
+    def validate_custom_metadata(cls, v: dict[str, object]) -> dict[str, ModelValue]:
         """Validate custom metadata values ensure they are ModelValue objects."""
         result = {}
         for key, value in v.items():
@@ -300,7 +301,7 @@ class ModelCliResultMetadata(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def handle_legacy_labels_field(cls, data: Any) -> Any:
+    def handle_legacy_labels_field(cls, data: object) -> object:
         """
         Transform legacy 'labels' field to new label_ids/label_names structure.
 
@@ -336,7 +337,7 @@ class ModelCliResultMetadata(BaseModel):
 
     # Protocol method implementations
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

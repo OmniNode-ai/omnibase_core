@@ -24,12 +24,15 @@ Part of omnibase_core framework - provides standardized event wrapping
 """
 
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+if TYPE_CHECKING:
+    from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelOnexEnvelopeV1(BaseModel):
@@ -98,7 +101,7 @@ class ModelOnexEnvelopeV1(BaseModel):
     )
 
     # Event payload (actual data)
-    payload: dict[str, Any] = Field(
+    payload: "SerializedDict" = Field(
         description="The actual event data",
     )
 

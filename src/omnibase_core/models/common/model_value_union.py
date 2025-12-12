@@ -46,7 +46,7 @@ Safe Runtime Imports (OK to import at module level):
 from __future__ import annotations
 
 import math
-from typing import Any, ClassVar, Literal, Union
+from typing import ClassVar, Literal, Union
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -88,7 +88,8 @@ class ModelValueUnion(BaseModel):
     MAX_LIST_SIZE: ClassVar[int] = 10000
     MAX_DICT_SIZE: ClassVar[int] = 1000
 
-    value: Union[bool, int, float, str, list[Any], dict[str, Any]] = Field(
+    # union-ok: discriminated_union - companion value_type Literal field provides type safety
+    value: Union[bool, int, float, str, list[object], dict[str, object]] = Field(
         description="The actual value",
     )
 
@@ -103,7 +104,7 @@ class ModelValueUnion(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def infer_value_type(cls, data: Any) -> dict[str, Any]:
+    def infer_value_type(cls, data: object) -> dict[str, object]:
         """
         Automatically infer value_type from value if not provided.
 
@@ -119,13 +120,13 @@ class ModelValueUnion(BaseModel):
             data: Input data (dict or value)
 
         Returns:
-            dict[str, Any]: Data with value_type populated
+            dict[str, object]: Data with value_type populated
 
         Raises:
             ModelOnexError: If value type is unsupported
         """
         # Ensure data is a dict
-        result: dict[str, Any]
+        result: dict[str, object]
         if not isinstance(data, dict):
             result = {"value": data}
         else:
@@ -275,7 +276,8 @@ class ModelValueUnion(BaseModel):
 
         return self
 
-    def get_value(self) -> Union[bool, int, float, str, list[Any], dict[str, Any]]:
+    # union-ok: discriminated_union - return type matches discriminated value field
+    def get_value(self) -> Union[bool, int, float, str, list[object], dict[str, object]]:
         """
         Get the stored value with proper type.
 
@@ -310,12 +312,12 @@ class ModelValueUnion(BaseModel):
         }
         return type_map[self.value_type]
 
-    def as_dict(self) -> dict[str, Any]:
+    def as_dict(self) -> dict[str, object]:
         """
         Convert to dictionary representation.
 
         Returns:
-            dict[str, Any]: Dictionary with value, value_type, and metadata
+            dict[str, object]: Dictionary with value, value_type, and metadata
 
         Examples:
             >>> value = ModelValueUnion(value=42)

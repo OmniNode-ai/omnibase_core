@@ -7,6 +7,10 @@ Provides fine-grained control over ONEX strict typing standards enforcement.
 
 from typing import Any
 
+from omnibase_core.models.decorators.model_pattern_exclusion_info import (
+    ModelPatternExclusionInfo,
+)
+
 # Self-exclusion: This module contains example code and infrastructure
 # ONEX_EXCLUDE: dict_str_any - Example code in docstrings and function signatures
 # ONEX_EXCLUDE: any_type - Example code and infrastructure utilities
@@ -94,6 +98,27 @@ def allow_dict_str_any(
         reason=reason,
         reviewer=reviewer,
     )
+
+
+def allow_dict_any[F: Callable[..., object]](func: F) -> F:
+    """
+    Simple decorator to allow dict[str, Any] usage in specific functions.
+
+    This decorator is recognized by the validation script and should only be used when:
+    1. Serialization methods that must return dict[str, Any] for Pydantic compatibility
+    2. Validator methods that accept raw untyped data before conversion
+    3. Legacy integration where gradual typing is being applied
+
+    Unlike allow_dict_str_any, this is a simple pass-through decorator
+    that doesn't require reason arguments, making it suitable for
+    common serialization patterns where the justification is implicit.
+
+    Example:
+        @allow_dict_any
+        def serialize(self) -> dict[str, Any]:
+            return self.model_dump()
+    """
+    return func
 
 
 def allow_mixed_types(reason: str, reviewer: str | None = None) -> ONEXPatternExclusion:
@@ -188,7 +213,7 @@ def has_pattern_exclusion(obj: Any, pattern: str) -> bool:
     return pattern in exclusions
 
 
-def get_exclusion_info(obj: Any) -> dict[str, Any] | None:
+def get_exclusion_info(obj: Any) -> ModelPatternExclusionInfo | None:
     """
     Get exclusion information for an object.
 
@@ -196,17 +221,17 @@ def get_exclusion_info(obj: Any) -> dict[str, Any] | None:
         obj: Function, method, or class to check
 
     Returns:
-        Dictionary with exclusion info or None if no exclusions
+        ModelPatternExclusionInfo with exclusion info or None if no exclusions
     """
     if not hasattr(obj, "_onex_pattern_exclusions"):
         return None
 
-    return {
-        "excluded_patterns": getattr(obj, "_onex_pattern_exclusions", set()),
-        "reason": getattr(obj, "_onex_exclusion_reason", "No reason provided"),
-        "scope": getattr(obj, "_onex_exclusion_scope", "function"),
-        "reviewer": getattr(obj, "_onex_exclusion_reviewer", None),
-    }
+    return ModelPatternExclusionInfo(
+        excluded_patterns=getattr(obj, "_onex_pattern_exclusions", set()),
+        reason=getattr(obj, "_onex_exclusion_reason", "No reason provided"),
+        scope=getattr(obj, "_onex_exclusion_scope", "function"),
+        reviewer=getattr(obj, "_onex_exclusion_reviewer", None),
+    )
 
 
 def is_excluded_from_pattern_check(

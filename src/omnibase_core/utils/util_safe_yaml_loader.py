@@ -190,7 +190,7 @@ def _dump_yaml_content(
     explicit_end: bool = False,
     indent: int = 2,
     width: int = 120,
-    **kwargs: Any,
+    **kwargs: Any,  # Any: required for yaml.dump() external API compatibility
 ) -> str:
     """
     Internal function to dump data to YAML format with security restrictions.
@@ -205,6 +205,7 @@ def _dump_yaml_content(
         )
 
         # Convert ModelYamlOption values to Python values
+        # ONEX_EXCLUDE: dict_str_any - required for yaml.dump() external API compatibility
         yaml_kwargs: dict[str, Any] = {
             k: v.to_value() if isinstance(v, ModelYamlOption) else v
             for k, v in kwargs.items()
@@ -261,7 +262,7 @@ def _dump_yaml_content(
 def serialize_pydantic_model_to_yaml(
     model: BaseModel,
     comment_prefix: str = "",
-    **yaml_options: Any,
+    **yaml_options: Any,  # Any: required for yaml.dump() external API compatibility
 ) -> str:
     """
     Serialize a Pydantic model to YAML format through the centralized dumper.
@@ -313,7 +314,7 @@ def serialize_pydantic_model_to_yaml(
 def serialize_data_to_yaml(
     data: object,
     comment_prefix: str = "",
-    **yaml_options: Any,
+    **yaml_options: Any,  # Any: required for yaml.dump() external API compatibility
 ) -> str:
     """
     Serialize arbitrary data to YAML format through the centralized dumper.
@@ -322,7 +323,7 @@ def serialize_data_to_yaml(
     For Pydantic models, prefer serialize_pydantic_model_to_yaml.
 
     Args:
-        data: Data to serialize (dict[str, Any], list[Any], or other YAML-serializable types)
+        data: Data to serialize (dict, list, or other YAML-serializable types)
         comment_prefix: Optional prefix for each line (for comment blocks)
         **yaml_options: Additional options to pass to YAML dumper
 

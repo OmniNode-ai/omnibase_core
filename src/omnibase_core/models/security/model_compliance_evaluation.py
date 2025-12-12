@@ -4,9 +4,11 @@ Compliance Evaluation Model.
 Compliance evaluation result model for security framework validation.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field
+
+from omnibase_core.models.security.model_security_summaries import (
+    ModelComplianceStatusSummary,
+)
 
 
 class ModelComplianceEvaluation(BaseModel):
@@ -51,14 +53,14 @@ class ModelComplianceEvaluation(BaseModel):
         """Check if all requirements are met (no violations)."""
         return self.meets_requirements and len(self.violations) == 0
 
-    def get_status_summary(self) -> dict[str, Any]:
+    def get_status_summary(self) -> ModelComplianceStatusSummary:
         """Get compliance status summary."""
-        return {
-            "meets_requirements": self.meets_requirements,
-            "violation_count": len(self.violations),
-            "warning_count": len(self.warnings),
-            "framework_count": len(self.status),
-            "compliant_frameworks": sum(
+        return ModelComplianceStatusSummary(
+            meets_requirements=self.meets_requirements,
+            violation_count=len(self.violations),
+            warning_count=len(self.warnings),
+            framework_count=len(self.status),
+            compliant_frameworks=sum(
                 1 for compliant in self.status.values() if compliant
             ),
-        }
+        )

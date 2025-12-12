@@ -11,7 +11,7 @@ excessive string fields in a single large model.
 
 import uuid
 from datetime import datetime
-from typing import Any
+from omnibase_core.types import SerializedDict
 from uuid import UUID
 
 from pydantic import BaseModel, field_serializer
@@ -245,7 +245,7 @@ class ModelConnectionInfo(BaseModel):
 
     # Protocol method implementations
 
-    def configure(self, **kwargs: Any) -> bool:
+    def configure(self, **kwargs: object) -> bool:
         """Configure instance with provided parameters (Configurable protocol).
 
         Raises:
@@ -267,6 +267,6 @@ class ModelConnectionInfo(BaseModel):
         # Override in specific models for custom validation
         return True
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)

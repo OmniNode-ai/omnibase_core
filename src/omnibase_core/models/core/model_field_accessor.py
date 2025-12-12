@@ -8,8 +8,6 @@ dot notation support and type safety.
 """
 
 
-from typing import Any
-
 from pydantic import BaseModel
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
@@ -181,7 +179,7 @@ class ModelFieldAccessor(BaseModel):
 
     # Protocol method implementations
 
-    def configure(self, **kwargs: Any) -> bool:
+    def configure(self, **kwargs: object) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
         try:
             for key, value in kwargs.items():
@@ -191,7 +189,7 @@ class ModelFieldAccessor(BaseModel):
         except Exception:  # fallback-ok: Configurable protocol requires boolean return for graceful config failure
             return False
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> dict[str, object]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

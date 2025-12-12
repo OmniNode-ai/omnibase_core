@@ -1,5 +1,3 @@
-from typing import Any
-
 from pydantic import Field, field_validator
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -21,6 +19,9 @@ from pydantic import BaseModel
 
 from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.contracts.model_event_subscription import (
+    ModelEventSubscription,
+)
 
 
 class ModelYamlContract(BaseModel):
@@ -58,7 +59,7 @@ class ModelYamlContract(BaseModel):
         description="Human-readable contract description",
     )
 
-    event_subscriptions: list[dict[str, Any]] | None = Field(
+    event_subscriptions: list[ModelEventSubscription] | None = Field(
         default=None,
         description="Event subscription patterns for event-driven execution",
     )

@@ -1,5 +1,4 @@
 import os
-from typing import Any
 from urllib.parse import urljoin, urlparse
 
 from pydantic import BaseModel, Field, SecretStr, field_validator
@@ -376,7 +375,7 @@ class ModelRestApiConnectionConfig(BaseModel):
 
     def apply_environment_overrides(self) -> "ModelRestApiConnectionConfig":
         """Apply environment variable overrides for CI/local testing."""
-        overrides: dict[str, Any] = {}
+        overrides: dict[str, str | int | SecretStr] = {}
 
         # Environment variable mappings
         env_mappings = {

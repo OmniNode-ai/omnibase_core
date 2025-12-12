@@ -4,9 +4,12 @@ Tool Security Model.
 Security configuration and requirements for tools.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field
+
+from omnibase_core.models.core.model_tool_security_assessment import (
+    ModelToolSecurityAssessment,
+    ModelToolSecuritySummary,
+)
 
 
 class ModelToolSecurity(BaseModel):
@@ -68,7 +71,7 @@ class ModelToolSecurity(BaseModel):
         """Get number of external endpoints."""
         return len(self.external_endpoints)
 
-    def get_security_assessment(self) -> dict[str, Any]:
+    def get_security_assessment(self) -> ModelToolSecurityAssessment:
         """Get security assessment summary."""
         risk_level = "low"
         if self.handles_sensitive_data() or self.is_high_security_profile():
@@ -76,25 +79,25 @@ class ModelToolSecurity(BaseModel):
         elif self.is_network_required() or self.accesses_external_endpoints():
             risk_level = "medium"
 
-        return {
-            "processes_sensitive_data": self.handles_sensitive_data(),
-            "requires_network_access": self.is_network_required(),
-            "accesses_external_endpoints": self.accesses_external_endpoints(),
-            "data_classification": self.get_data_classification_level(),
-            "security_profile": self.get_security_profile_level(),
-            "is_high_security": self.is_high_security_profile(),
-            "is_bootstrap": self.is_bootstrap_profile(),
-            "external_endpoint_count": self.get_external_endpoint_count(),
-            "risk_level": risk_level,
-        }
+        return ModelToolSecurityAssessment(
+            processes_sensitive_data=self.handles_sensitive_data(),
+            requires_network_access=self.is_network_required(),
+            accesses_external_endpoints=self.accesses_external_endpoints(),
+            data_classification=self.get_data_classification_level(),
+            security_profile=self.get_security_profile_level(),
+            is_high_security=self.is_high_security_profile(),
+            is_bootstrap=self.is_bootstrap_profile(),
+            external_endpoint_count=self.get_external_endpoint_count(),
+            risk_level=risk_level,
+        )
 
-    def get_summary(self) -> dict[str, Any]:
+    def get_summary(self) -> ModelToolSecuritySummary:
         """Get security configuration summary."""
-        return {
-            "processes_sensitive_data": self.processes_sensitive_data,
-            "data_classification": self.data_classification,
-            "requires_network_access": self.requires_network_access,
-            "external_endpoints": self.external_endpoints,
-            "security_profile_required": self.security_profile_required,
-            "security_assessment": self.get_security_assessment(),
-        }
+        return ModelToolSecuritySummary(
+            processes_sensitive_data=self.processes_sensitive_data,
+            data_classification=self.data_classification,
+            requires_network_access=self.requires_network_access,
+            external_endpoints=self.external_endpoints,
+            security_profile_required=self.security_profile_required,
+            security_assessment=self.get_security_assessment(),
+        )
