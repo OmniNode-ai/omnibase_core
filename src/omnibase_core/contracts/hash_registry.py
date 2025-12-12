@@ -160,9 +160,10 @@ def normalize_contract(
     """Normalize a contract model for deterministic fingerprinting.
 
     Applies the normalization pipeline from CONTRACT_STABILITY_SPEC.md:
-    1. Remove null values (optional)
-    2. Canonical key ordering (optional)
-    3. Stable JSON serialization
+    1. Exclude self-referential fields (fingerprint, correlation_id)
+    2. Remove null values (optional)
+    3. Canonical key ordering (optional)
+    4. Stable JSON serialization
 
     Args:
         contract: Pydantic contract model (e.g., ModelContractCompute, ModelContractEffect)
@@ -173,6 +174,12 @@ def normalize_contract(
 
     Raises:
         ModelOnexError: If contract cannot be normalized
+
+    Note:
+        The 'fingerprint' field is excluded by default to prevent self-referential
+        hashing, where the fingerprint value would affect its own computation.
+        The 'correlation_id' field is also excluded as it's a runtime-generated
+        UUID that shouldn't affect contract identity.
     """
     if config is None:
         config = ModelContractNormalizationConfig()
@@ -189,6 +196,13 @@ def normalize_contract(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         normalized = converted
+
+        # Step 0.5: Exclude self-referential fields (fingerprint, correlation_id, etc.)
+        # This prevents the fingerprint value from affecting its own computation.
+        if config.exclude_fields:
+            normalized = {
+                k: v for k, v in normalized.items() if k not in config.exclude_fields
+            }
 
         # Step 1: Remove null values
         if config.remove_nulls:

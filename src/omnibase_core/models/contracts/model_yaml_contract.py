@@ -33,11 +33,11 @@ class ModelYamlContract(BaseModel):
     - node_type: Node type classification
     - description: Optional contract description
 
-    Extra fields are ignored to maintain a clean contract structure.
+    Extra fields are allowed to ensure complete content is included in fingerprint computation.
     """
 
     model_config = {
-        "extra": "ignore",  # Ignore extra fields to maintain clean contract structure
+        "extra": "allow",  # Allow extra fields to be included in model_dump for fingerprinting
         "use_enum_values": False,
         "validate_assignment": True,
     }

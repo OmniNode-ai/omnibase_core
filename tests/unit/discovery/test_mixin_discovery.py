@@ -46,13 +46,16 @@ class TestModelMixinInfo:
 
     def test_mixin_info_creation_with_all_fields(self) -> None:
         """Test ModelMixinInfo creation with all fields."""
+        # Note: default="3" is a string because ModelConfigSchemaProperty.default
+        # is typed as str | None - all defaults are stored as string representations
+        # for JSON Schema compatibility (converted at runtime when used)
         config_schema = ModelMixinConfigSchema(
             properties={
                 "max_retries": ModelConfigSchemaProperty(
                     type="integer",
                     min_value=0,
                     max_value=10,
-                    default="3",  # String per ModelConfigSchemaProperty design
+                    default="3",
                 )
             },
         )

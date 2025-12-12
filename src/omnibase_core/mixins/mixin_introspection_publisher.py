@@ -19,11 +19,15 @@ from omnibase_core.logging.structured import emit_log_event_sync
 from omnibase_core.mixins.mixin_node_introspection_data import (
     MixinNodeIntrospectionData,
 )
+from omnibase_core.models.common.model_typed_metadata import (
+    ModelNodeCapabilitiesMetadata,
+)
 from omnibase_core.models.core.model_log_context import ModelLogContext
 from omnibase_core.models.discovery.model_node_introspection_event import (
     ModelNodeCapabilities,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
 _COMPONENT_NAME = Path(__file__).stem
 DEFAULT_AUTHOR = "ONEX"
@@ -249,10 +253,6 @@ class MixinIntrospectionPublisher:
             pass
 
         # Create capabilities with properly constructed metadata model
-        from omnibase_core.models.common.model_typed_metadata import (
-            ModelNodeCapabilitiesMetadata,
-        )
-
         capabilities = ModelNodeCapabilities(
             actions=self._extract_node_actions(),
             protocols=self._detect_supported_protocols(),
@@ -361,7 +361,6 @@ class MixinIntrospectionPublisher:
             return
         node_id_raw = getattr(self, "_node_id", None)
         node_id = node_id_raw if node_id_raw is not None else "<unset>"
-        from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
         source_node_id_str: str
         if isinstance(node_id_raw, UUID):

@@ -69,6 +69,10 @@ class ModelContractNormalizationConfig(BaseModel):
             Default: 12 (48 bits, ~281 trillion possibilities - sufficient
             for collision avoidance in typical contract registries while
             keeping fingerprints readable).
+        exclude_fields: Fields to exclude from normalization/hashing.
+            Default: {"fingerprint", "correlation_id"} - fingerprint is excluded
+            to prevent self-referential hashing; correlation_id is excluded because
+            it's a runtime-generated UUID that shouldn't affect contract identity.
 
     Example:
         >>> config = ModelContractNormalizationConfig(
@@ -99,6 +103,15 @@ class ModelContractNormalizationConfig(BaseModel):
         ge=8,
         le=64,
         description="Number of hex characters from SHA256 hash (default: 12)",
+    )
+    exclude_fields: frozenset[str] = Field(
+        default=frozenset({"fingerprint", "correlation_id"}),
+        description=(
+            "Fields to exclude from normalization/hashing. Default excludes 'fingerprint' "
+            "(to prevent self-referential hashing where fingerprint value affects its own "
+            "computation) and 'correlation_id' (runtime-generated UUID that changes per "
+            "instantiation and shouldn't affect contract identity)."
+        ),
     )
 
     model_config = ConfigDict(

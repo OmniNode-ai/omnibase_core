@@ -43,7 +43,7 @@ class ModelValidationBase(BaseModel):
         """Check if model is valid (no validation errors) (ProtocolValidatable protocol).
 
         Raises:
-            Exception: If validation logic fails
+            ModelOnexError: If validation logic fails
         """
         return self.validation.validate_instance()
 

@@ -94,12 +94,16 @@ class ModelDataHandlingDeclaration(BaseModel):
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol).
 
+        This base implementation always returns True because Pydantic's model
+        validators (like validate_data_handling_consistency) already enforce
+        all validation rules at construction time. This method exists to satisfy
+        the ProtocolValidatable protocol interface.
+
         Returns:
-            True if validation passes
+            True: Instance is valid (validation was enforced at construction)
 
         Note:
-            Override in subclasses for custom validation logic.
+            Subclasses may override to add runtime validation beyond what
+            Pydantic validators provide at construction time.
         """
-        # Basic validation - ensure required fields exist
-        # Override in specific models for custom validation
         return True

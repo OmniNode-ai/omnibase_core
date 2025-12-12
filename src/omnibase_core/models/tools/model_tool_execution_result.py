@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Simple Tool Execution Result Model.
 
@@ -11,7 +9,7 @@ Strict typing is enforced: No Any types allowed in implementation.
 
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.types.constraints import PrimitiveValueType
 
@@ -56,7 +54,11 @@ class ModelToolExecutionResult(BaseModel):
         ge=0,
     )
 
-    status_code: int = Field(default=0, description="Tool execution status code")
+    status_code: int = Field(
+        default=0,
+        description="Tool execution status code (0=success, >0=error codes)",
+        ge=0,
+    )
 
     model_config = {
         "extra": "ignore",

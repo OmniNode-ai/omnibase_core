@@ -197,7 +197,7 @@ class ModelSecurityEventInfo(BaseModel):
     """Security event information summary."""
 
     event_id: UUID = Field(description="Event ID")
-    event_type: str = Field(description="Event type")
+    event_type: str = Field(description="Event type", min_length=1, max_length=256)
     timestamp: str = Field(description="Timestamp")
     envelope_id: UUID = Field(description="Envelope ID")
     severity: str = Field(description="Event severity")

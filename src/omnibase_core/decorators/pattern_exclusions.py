@@ -1,15 +1,18 @@
-from collections.abc import Callable
-
 """
 ONEX Pattern Exclusion Decorators.
+
 Provides fine-grained control over ONEX strict typing standards enforcement.
 """
 
+import logging
+from collections.abc import Callable
 from typing import Any
 
 from omnibase_core.models.decorators.model_pattern_exclusion_info import (
     ModelPatternExclusionInfo,
 )
+
+logger = logging.getLogger(__name__)
 
 # Self-exclusion: This module contains example code and infrastructure
 # ONEX_EXCLUDE: dict_str_any - Example code in docstrings and function signatures
@@ -272,5 +275,14 @@ def is_excluded_from_pattern_check(
 
         return False
 
-    except (FileNotFoundError, IndexError, UnicodeDecodeError):
+    except (FileNotFoundError, IndexError, UnicodeDecodeError) as e:
+        # Log at DEBUG level as this is expected in some scenarios
+        # (e.g., file moved/deleted during analysis)
+        logger.debug(
+            "Could not check pattern exclusion for %s:%d pattern=%s: %s",
+            file_path,
+            line_number,
+            pattern,
+            type(e).__name__,
+        )
         return False

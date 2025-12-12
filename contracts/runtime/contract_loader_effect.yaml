@@ -19,7 +19,7 @@
 node_type: EFFECT_GENERIC
 contract_version: {major: 1, minor: 1, patch: 0}
 # Fingerprint: SHA-256 hash of canonical contract content (node_type, effect_operations, metadata.description)
-fingerprint: "1.1.0:66346191a6a6"
+fingerprint: "1.1.0:0ce5689d8ebd"
 # Effect Subcontract
 # NOTE: This contract uses `effect_operations` (multi-operation schema) rather than
 # `effect` (single-operation schema) because it defines multiple filesystem operations

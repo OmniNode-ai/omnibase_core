@@ -1011,18 +1011,20 @@ def validate_execution_mode_string(mode: str) -> None:
 
     Raises:
         ModelOnexError: In two cases (two-step validation):
-            1. **Step 1 - String validation**: If the mode string is not a valid
+            1. **Step 1 - Unrecognized mode**: If the mode string is not a valid
                EnumExecutionMode value. Error code: VALIDATION_ERROR with
-               "Invalid execution mode" message. Error context includes:
-               - mode: The invalid mode that was provided
+               "Unrecognized execution mode" message. This means the mode is
+               completely unknown (e.g., "foobar", "invalid"). Error context includes:
+               - mode: The unrecognized mode that was provided
                - reserved_modes: List of reserved mode names
                - accepted_modes: List of accepted mode names
 
-            2. **Step 2 - Reserved mode check**: If the execution mode is
+            2. **Step 2 - Reserved mode**: If the execution mode is
                CONDITIONAL or STREAMING (reserved for future ONEX versions).
+               These are valid enum values but not accepted in v1.0.
                This step delegates to ``validate_execution_mode_enum`` (imported
                from ``reserved_enum_validator``) which raises the error.
-               Error code: VALIDATION_ERROR with error context including:
+               Error code: VALIDATION_ERROR with "reserved" message. Error context:
                - mode: The reserved mode value
                - reserved_modes: List of reserved mode names
                - accepted_modes: List of accepted mode names
@@ -1043,15 +1045,15 @@ def validate_execution_mode_string(mode: str) -> None:
             validate_execution_mode_string("parallel")    # OK
             validate_execution_mode_string("batch")       # OK
 
-        Invalid mode strings::
+        Unrecognized mode strings (completely unknown modes)::
 
-            validate_execution_mode_string("invalid")  # Raises ModelOnexError
-            validate_execution_mode_string("unknown")  # Raises ModelOnexError
+            validate_execution_mode_string("foobar")  # Raises "Unrecognized execution mode"
+            validate_execution_mode_string("unknown")  # Raises "Unrecognized execution mode"
 
-        Reserved modes::
+        Reserved modes (valid enum values but not accepted in v1.0)::
 
-            validate_execution_mode_string("conditional")  # Raises ModelOnexError
-            validate_execution_mode_string("streaming")    # Raises ModelOnexError
+            validate_execution_mode_string("conditional")  # Raises "reserved for v1.1+"
+            validate_execution_mode_string("streaming")    # Raises "reserved for v1.2+"
 
         Handling validation errors::
 
@@ -1067,13 +1069,16 @@ def validate_execution_mode_string(mode: str) -> None:
     try:
         mode_enum = EnumExecutionMode(mode_lower)
     except ValueError:
-        # Invalid mode string - not a recognized execution mode
+        # Unrecognized mode string - not a valid execution mode
+        # Note: "Unrecognized" means the mode is not a valid EnumExecutionMode value
+        # at all. This is different from "reserved" modes which are valid enum values
+        # but not accepted in v1.0.
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=(
-                f"Invalid execution mode '{mode}'. "
+                f"Unrecognized execution mode '{mode}'. "
                 f"Accepted modes: {', '.join(ACCEPTED_EXECUTION_MODES)}. "
-                f"Reserved (future): {', '.join(RESERVED_EXECUTION_MODES)}"
+                f"Reserved for future versions: {', '.join(sorted(RESERVED_EXECUTION_MODES))}"
             ),
             mode=mode,
             reserved_modes=list(RESERVED_EXECUTION_MODES),

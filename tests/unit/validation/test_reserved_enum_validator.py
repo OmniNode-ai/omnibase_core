@@ -45,9 +45,13 @@ class TestValidateExecutionMode:
 
         error = exc_info.value
         assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        # Check for specific reserved mode message format (not just substring match)
         assert "conditional" in error.message.lower()
         assert "reserved" in error.message.lower()
-        assert "v1.1+" in error.message or "future" in error.message.lower()
+        assert "not accepted" in error.message.lower()  # Must indicate not accepted
+        assert "v1.1+" in error.message  # Specific version, not just "future"
+        # Ensure it doesn't say "Unrecognized" (that's for unknown modes)
+        assert "unrecognized" not in error.message.lower()
 
     def test_streaming_mode_rejected(self) -> None:
         """Test that STREAMING execution mode raises ModelOnexError."""
@@ -56,9 +60,13 @@ class TestValidateExecutionMode:
 
         error = exc_info.value
         assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        # Check for specific reserved mode message format (not just substring match)
         assert "streaming" in error.message.lower()
         assert "reserved" in error.message.lower()
-        assert "v1.2+" in error.message or "future" in error.message.lower()
+        assert "not accepted" in error.message.lower()  # Must indicate not accepted
+        assert "v1.2+" in error.message  # Specific version, not just "future"
+        # Ensure it doesn't say "Unrecognized" (that's for unknown modes)
+        assert "unrecognized" not in error.message.lower()
 
     def test_conditional_error_context(self) -> None:
         """Test that CONDITIONAL error includes proper context."""
@@ -190,34 +198,42 @@ class TestErrorMessageQuality:
         with pytest.raises(ModelOnexError) as exc_info:
             validate_execution_mode(EnumExecutionMode.CONDITIONAL)
 
-        message = exc_info.value.message.lower()
+        message = exc_info.value.message
 
-        # Message should explain what's wrong
-        assert "conditional" in message
-        assert "reserved" in message
+        # Message should explain what's wrong (exact wording check)
+        assert "conditional" in message.lower()
+        assert "reserved" in message.lower()
 
-        # Message should indicate when it's available
-        assert "v1.1" in message or "future" in message
+        # Message MUST indicate when it's available (exact version, not just "future")
+        assert "v1.1+" in message
 
-        # Message should indicate it's not accepted now
-        assert "not accepted" in message or "not available" in message
+        # Message MUST indicate it's not accepted now (exact wording)
+        assert "not accepted" in message.lower()
+        assert "v1.0" in message.lower()
+
+        # Should NOT be confused with "Unrecognized" errors
+        assert "unrecognized" not in message.lower()
 
     def test_streaming_error_message_clarity(self) -> None:
         """Test that STREAMING error message is clear and actionable."""
         with pytest.raises(ModelOnexError) as exc_info:
             validate_execution_mode(EnumExecutionMode.STREAMING)
 
-        message = exc_info.value.message.lower()
+        message = exc_info.value.message
 
-        # Message should explain what's wrong
-        assert "streaming" in message
-        assert "reserved" in message
+        # Message should explain what's wrong (exact wording check)
+        assert "streaming" in message.lower()
+        assert "reserved" in message.lower()
 
-        # Message should indicate when it's available
-        assert "v1.2" in message or "future" in message
+        # Message MUST indicate when it's available (exact version, not just "future")
+        assert "v1.2+" in message
 
-        # Message should indicate it's not accepted now
-        assert "not accepted" in message or "not available" in message
+        # Message MUST indicate it's not accepted now (exact wording)
+        assert "not accepted" in message.lower()
+        assert "v1.0" in message.lower()
+
+        # Should NOT be confused with "Unrecognized" errors
+        assert "unrecognized" not in message.lower()
 
     def test_error_context_provides_alternatives(self) -> None:
         """Test that error context lists accepted alternatives."""
@@ -264,8 +280,12 @@ class TestValidateExecutionModeString:
 
         error = exc_info.value
         assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        # Reserved mode errors should NOT say "Unrecognized" - that's for unknown modes
+        assert "unrecognized" not in error.message.lower()
+        # Must explicitly mention "reserved" and the mode name
         assert "conditional" in error.message.lower()
         assert "reserved" in error.message.lower()
+        assert "not accepted" in error.message.lower()
 
     def test_streaming_mode_string_rejected(self) -> None:
         """Test that 'streaming' string execution mode raises ModelOnexError."""
@@ -274,8 +294,12 @@ class TestValidateExecutionModeString:
 
         error = exc_info.value
         assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        # Reserved mode errors should NOT say "Unrecognized" - that's for unknown modes
+        assert "unrecognized" not in error.message.lower()
+        # Must explicitly mention "reserved" and the mode name
         assert "streaming" in error.message.lower()
         assert "reserved" in error.message.lower()
+        assert "not accepted" in error.message.lower()
 
     def test_case_insensitive_validation(self) -> None:
         """Test that string mode validation is case-insensitive."""
@@ -559,20 +583,26 @@ class TestInvalidInputHandling:
         Test string validator behavior with unknown mode strings.
 
         The validator first validates that the mode is a valid EnumExecutionMode,
-        then checks if it's reserved. Unknown modes should raise ModelOnexError.
+        then checks if it's reserved. Unknown modes should raise ModelOnexError
+        with "Unrecognized execution mode" message (not "Invalid" - that's too
+        generic and could match other errors).
         """
         # Unknown modes should raise - they're not valid execution modes
         with pytest.raises(ModelOnexError) as exc_info:
             validate_execution_mode_string("unknown_mode")
-        assert "Invalid execution mode" in exc_info.value.message
+        # Specifically check for "Unrecognized" (not just "Invalid") to distinguish
+        # from reserved mode errors which say "reserved"
+        assert "Unrecognized execution mode" in exc_info.value.message
+        assert "unknown_mode" in exc_info.value.message
 
         with pytest.raises(ModelOnexError) as exc_info:
             validate_execution_mode_string("foobar")
-        assert "Invalid execution mode" in exc_info.value.message
+        assert "Unrecognized execution mode" in exc_info.value.message
+        assert "foobar" in exc_info.value.message
 
         with pytest.raises(ModelOnexError) as exc_info:
             validate_execution_mode_string("")  # Empty string is not valid
-        assert "Invalid execution mode" in exc_info.value.message
+        assert "Unrecognized execution mode" in exc_info.value.message
 
     def test_string_validator_normalizes_to_lowercase_in_error_for_reserved(
         self,
@@ -591,24 +621,28 @@ class TestInvalidInputHandling:
             # Error should mention the reserved mode
             assert "reserved" in exc_info.value.message.lower()
 
-    def test_string_validator_whitespace_raises_invalid_mode(self) -> None:
+    def test_string_validator_whitespace_raises_unrecognized_mode(self) -> None:
         """
         Test string validator with whitespace in mode strings.
 
-        Modes with leading/trailing whitespace are not valid EnumExecutionMode values.
+        Modes with leading/trailing whitespace are not valid EnumExecutionMode values,
+        so they should raise "Unrecognized execution mode" (not "reserved").
         """
-        # These should raise as invalid modes (not matching enum values)
+        # These should raise as unrecognized modes (whitespace makes them invalid)
         with pytest.raises(ModelOnexError) as exc_info:
             validate_execution_mode_string(" conditional")
-        assert "Invalid execution mode" in exc_info.value.message
+        assert "Unrecognized execution mode" in exc_info.value.message
+        assert " conditional" in exc_info.value.message
 
         with pytest.raises(ModelOnexError) as exc_info:
             validate_execution_mode_string("conditional ")
-        assert "Invalid execution mode" in exc_info.value.message
+        assert "Unrecognized execution mode" in exc_info.value.message
+        assert "conditional " in exc_info.value.message
 
         with pytest.raises(ModelOnexError) as exc_info:
             validate_execution_mode_string(" conditional ")
-        assert "Invalid execution mode" in exc_info.value.message
+        assert "Unrecognized execution mode" in exc_info.value.message
+        assert " conditional " in exc_info.value.message
 
     def test_enum_validator_error_includes_version_info(self) -> None:
         """Test that enum validator error includes version information."""
@@ -627,17 +661,20 @@ class TestInvalidInputHandling:
         assert "v1.2" in context["version"]
 
     def test_string_validator_error_lists_valid_modes(self) -> None:
-        """Test that string validator error for unknown mode lists valid options."""
+        """Test that string validator error for unrecognized mode lists valid options."""
         with pytest.raises(ModelOnexError) as exc_info:
             validate_execution_mode_string("invalid_mode")
 
         message = exc_info.value.message
-        # Should clearly distinguish accepted modes from reserved (future) modes
+        # Should be "Unrecognized" (not just "Invalid") to distinguish from reserved
+        assert "Unrecognized execution mode" in message
+        assert "invalid_mode" in message
+        # Should clearly distinguish accepted modes from reserved modes
         assert "Accepted modes:" in message
         assert "sequential" in message
         assert "parallel" in message
         assert "batch" in message
-        assert "Reserved (future):" in message
+        assert "Reserved for future versions:" in message
 
 
 @pytest.mark.unit

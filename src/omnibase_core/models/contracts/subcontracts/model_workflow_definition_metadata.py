@@ -89,7 +89,6 @@ class ModelWorkflowDefinitionMetadata(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
         use_enum_values=False,
-        validate_assignment=True,
         from_attributes=True,  # Safe: model is frozen (immutable)
         frozen=True,  # Immutable after creation for thread safety
     )

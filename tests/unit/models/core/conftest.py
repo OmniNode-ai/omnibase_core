@@ -23,7 +23,7 @@ from omnibase_core.models.security.model_security_level import ModelSecurityLeve
 
 
 @pytest.fixture(scope="module", autouse=True)
-def rebuild_model_environment():
+def rebuild_model_environment() -> None:
     """Resolve forward references in ModelEnvironment for tests.
 
     ModelEnvironment uses TYPE_CHECKING imports which create forward references.

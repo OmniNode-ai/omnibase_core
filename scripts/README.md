@@ -22,7 +22,7 @@ ONEX uses deterministic SHA256 fingerprints to track contract integrity and dete
 
 ### Fingerprint Format
 
-```
+```text
 <semver>:<sha256-first-12-hex-chars>
 Example: 0.4.0:8fa1e2b4c9d1
 ```
@@ -243,7 +243,9 @@ if [ $? -eq 1 ]; then
     echo "ERROR: Fingerprints out of date. Run regenerate_fingerprints.py"
     exit 1
 fi
+```
 
+```bash
 # Full contract validation
 poetry run python scripts/lint_contract.py contracts/ -r --json
 ```

@@ -168,8 +168,7 @@ class ModelExecutionMetadata(BaseModel):
         """Validate execution metadata integrity (ProtocolValidatable protocol).
 
         Raises:
-            OnexError: If validation fails with invalid field values
-            Exception: If validation logic fails
+            ModelOnexError: If validation fails with invalid field values
         """
         # Validate required fields
         if not self.execution_id:
