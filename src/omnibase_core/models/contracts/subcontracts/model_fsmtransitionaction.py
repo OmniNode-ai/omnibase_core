@@ -83,9 +83,9 @@ class ModelFSMTransitionAction(BaseModel):
         seen: set[str] = set()
         duplicates: set[str] = set()
         for param in self.action_config:
-            if param.parameter_name in seen:
-                duplicates.add(param.parameter_name)
-            seen.add(param.parameter_name)
+            if param.name in seen:
+                duplicates.add(param.name)
+            seen.add(param.name)
         if duplicates:
             raise ModelOnexError(
                 message=f"Duplicate parameter names in action_config: {sorted(duplicates)}",

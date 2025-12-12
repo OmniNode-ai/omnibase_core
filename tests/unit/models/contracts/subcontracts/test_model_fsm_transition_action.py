@@ -14,7 +14,6 @@ from omnibase_core.models.contracts.model_action_config_parameter import (
 from omnibase_core.models.contracts.subcontracts.model_fsmtransitionaction import (
     ModelFSMTransitionAction,
 )
-from omnibase_core.models.core.model_action_config_value import from_int, from_string
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -33,14 +32,16 @@ class TestModelFSMTransitionActionValidation:
             action_type="log",
             action_config=[
                 ModelActionConfigParameter(
-                    version=DEFAULT_VERSION,
-                    parameter_name="level",
-                    parameter_value=from_string("info"),
+                    name="level",
+                    type="string",
+                    required=True,
+                    default="info",
                 ),
                 ModelActionConfigParameter(
-                    version=DEFAULT_VERSION,
-                    parameter_name="message",
-                    parameter_value=from_string("State transition occurred"),
+                    name="message",
+                    type="string",
+                    required=True,
+                    default="State transition occurred",
                 ),
             ],
         )
@@ -56,14 +57,16 @@ class TestModelFSMTransitionActionValidation:
                 action_type="validate",
                 action_config=[
                     ModelActionConfigParameter(
-                        version=DEFAULT_VERSION,
-                        parameter_name="threshold",
-                        parameter_value=from_int(100),
+                        name="threshold",
+                        type="int",
+                        required=True,
+                        default=100,
                     ),
                     ModelActionConfigParameter(
-                        version=DEFAULT_VERSION,
-                        parameter_name="threshold",  # Duplicate!
-                        parameter_value=from_int(200),
+                        name="threshold",  # Duplicate!
+                        type="int",
+                        required=True,
+                        default=200,
                     ),
                 ],
             )
@@ -82,24 +85,28 @@ class TestModelFSMTransitionActionValidation:
                 action_type="validate",
                 action_config=[
                     ModelActionConfigParameter(
-                        version=DEFAULT_VERSION,
-                        parameter_name="param_a",
-                        parameter_value=from_string("value1"),
+                        name="param_a",
+                        type="string",
+                        required=True,
+                        default="value1",
                     ),
                     ModelActionConfigParameter(
-                        version=DEFAULT_VERSION,
-                        parameter_name="param_a",  # Duplicate!
-                        parameter_value=from_string("value2"),
+                        name="param_a",  # Duplicate!
+                        type="string",
+                        required=True,
+                        default="value2",
                     ),
                     ModelActionConfigParameter(
-                        version=DEFAULT_VERSION,
-                        parameter_name="param_b",
-                        parameter_value=from_string("value3"),
+                        name="param_b",
+                        type="string",
+                        required=True,
+                        default="value3",
                     ),
                     ModelActionConfigParameter(
-                        version=DEFAULT_VERSION,
-                        parameter_name="param_b",  # Duplicate!
-                        parameter_value=from_string("value4"),
+                        name="param_b",  # Duplicate!
+                        type="string",
+                        required=True,
+                        default="value4",
                     ),
                 ],
             )
@@ -127,9 +134,10 @@ class TestModelFSMTransitionActionValidation:
             action_type="modify",
             action_config=[
                 ModelActionConfigParameter(
-                    version=DEFAULT_VERSION,
-                    parameter_name="target",
-                    parameter_value=from_string("state_field"),
+                    name="target",
+                    type="string",
+                    required=True,
+                    default="state_field",
                 ),
             ],
         )
@@ -156,7 +164,7 @@ class TestModelFSMTransitionActionCreation:
         assert action.is_critical is False
         assert action.rollback_action is None
         assert action.timeout_ms is None
-        assert action.action_config == []
+        assert action.action_config == []  # Default is empty list
 
     def test_optional_fields(self) -> None:
         """Test optional field assignment."""
