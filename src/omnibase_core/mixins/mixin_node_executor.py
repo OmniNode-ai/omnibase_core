@@ -6,7 +6,6 @@ if TYPE_CHECKING:
     from omnibase_core.types.type_serializable_value import SerializedDict
     from omnibase_core.types.typed_dict_mixin_types import TypedDictNodeExecutorHealth
 
-
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 "\nNode Executor Mixin.\n\nCanonical mixin for persistent node executor capabilities. Enables nodes to run\nas persistent executors that respond to TOOL_INVOCATION events, providing\ntool-as-a-service functionality for MCP, GraphQL, and other integrations.\n"

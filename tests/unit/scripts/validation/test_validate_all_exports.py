@@ -447,7 +447,8 @@ class TestValidateFile:
     def test_validates_correct_all_exports(self, tmp_path: Path) -> None:
         """Test validation of file with correct __all__."""
         test_file = tmp_path / "module.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 class MyClass:
     pass
 
@@ -455,7 +456,8 @@ def my_function():
     pass
 
 __all__ = ["MyClass", "my_function"]
-""")
+"""
+        )
         result = validate_file(test_file)
 
         assert result.is_valid is True
@@ -466,12 +468,14 @@ __all__ = ["MyClass", "my_function"]
     def test_detects_extra_exports(self, tmp_path: Path) -> None:
         """Test detection of items in __all__ but not defined."""
         test_file = tmp_path / "module.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 class MyClass:
     pass
 
 __all__ = ["MyClass", "NonExistent", "AnotherMissing"]
-""")
+"""
+        )
         result = validate_file(test_file)
 
         assert result.is_valid is False
@@ -483,10 +487,12 @@ __all__ = ["MyClass", "NonExistent", "AnotherMissing"]
     def test_handles_file_without_all(self, tmp_path: Path) -> None:
         """Test handling of file without __all__."""
         test_file = tmp_path / "module.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 class MyClass:
     pass
-""")
+"""
+        )
         result = validate_file(test_file)
 
         assert result.is_valid is True
@@ -506,9 +512,11 @@ class MyClass:
     def test_handles_syntax_error(self, tmp_path: Path) -> None:
         """Test handling of file with syntax error."""
         test_file = tmp_path / "module.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 def incomplete(
-""")
+"""
+        )
         result = validate_file(test_file)
 
         assert result.is_valid is False
@@ -518,7 +526,8 @@ def incomplete(
     def test_warn_missing_detects_unlisted_publics(self, tmp_path: Path) -> None:
         """Test that warn_missing mode detects public names not in __all__."""
         test_file = tmp_path / "module.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 class PublicClass:
     pass
 
@@ -526,7 +535,8 @@ class AnotherPublic:
     pass
 
 __all__ = ["PublicClass"]
-""")
+"""
+        )
         result = validate_file(test_file, warn_missing=True)
 
         assert result.is_valid is True  # Not having all publics is a warning, not error
@@ -535,11 +545,13 @@ __all__ = ["PublicClass"]
     def test_includes_imports_in_defined_names(self, tmp_path: Path) -> None:
         """Test that imported names can be in __all__."""
         test_file = tmp_path / "module.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 from typing import Optional
 
 __all__ = ["Optional"]
-""")
+"""
+        )
         result = validate_file(test_file)
 
         assert result.is_valid is True
@@ -688,12 +700,14 @@ class TestMainFunction:
     def test_main_returns_zero_for_valid_files(self, tmp_path: Path) -> None:
         """Test that main returns 0 when all files are valid."""
         test_file = tmp_path / "module.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 class MyClass:
     pass
 
 __all__ = ["MyClass"]
-""")
+"""
+        )
         with patch.object(sys, "argv", ["validate-all-exports.py", str(tmp_path)]):
             result = main()
             assert result == 0
@@ -701,12 +715,14 @@ __all__ = ["MyClass"]
     def test_main_returns_one_for_invalid_files(self, tmp_path: Path) -> None:
         """Test that main returns 1 when violations found."""
         test_file = tmp_path / "module.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 class MyClass:
     pass
 
 __all__ = ["MyClass", "NonExistent"]
-""")
+"""
+        )
         with patch.object(sys, "argv", ["validate-all-exports.py", str(tmp_path)]):
             result = main()
             assert result == 1
@@ -714,10 +730,12 @@ __all__ = ["MyClass", "NonExistent"]
     def test_main_returns_zero_for_files_without_all(self, tmp_path: Path) -> None:
         """Test that files without __all__ are not errors."""
         test_file = tmp_path / "module.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 class MyClass:
     pass
-""")
+"""
+        )
         with patch.object(sys, "argv", ["validate-all-exports.py", str(tmp_path)]):
             result = main()
             assert result == 0
@@ -733,12 +751,14 @@ class MyClass:
     ) -> None:
         """Test that --verbose flag shows additional output."""
         test_file = tmp_path / "module.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 class MyClass:
     pass
 
 __all__ = ["MyClass"]
-""")
+"""
+        )
         with patch.object(
             sys, "argv", ["validate-all-exports.py", "--verbose", str(tmp_path)]
         ):
@@ -752,7 +772,8 @@ __all__ = ["MyClass"]
     ) -> None:
         """Test that --warn-missing flag shows missing exports."""
         test_file = tmp_path / "module.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 class PublicClass:
     pass
 
@@ -760,7 +781,8 @@ class AnotherPublic:
     pass
 
 __all__ = ["PublicClass"]
-""")
+"""
+        )
         with patch.object(
             sys, "argv", ["validate-all-exports.py", "--warn-missing", str(tmp_path)]
         ):
@@ -800,7 +822,8 @@ class TestComplexModules:
     def test_validates_module_with_all_definition_types(self, tmp_path: Path) -> None:
         """Test validation of module with all types of definitions."""
         test_file = tmp_path / "module.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 import os
 from pathlib import Path
 
@@ -825,7 +848,8 @@ __all__ = [
     "MY_CONSTANT",
     "SETTINGS",
 ]
-""")
+"""
+        )
         result = validate_file(test_file)
 
         assert result.is_valid is True
@@ -834,7 +858,8 @@ __all__ = [
     def test_validates_module_with_partial_exports(self, tmp_path: Path) -> None:
         """Test validation when only some definitions are exported."""
         test_file = tmp_path / "module.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 class PublicClass:
     pass
 
@@ -848,7 +873,8 @@ def _private_function():
     pass
 
 __all__ = ["PublicClass", "public_function"]
-""")
+"""
+        )
         result = validate_file(test_file, warn_missing=True)
 
         assert result.is_valid is True
@@ -860,7 +886,8 @@ __all__ = ["PublicClass", "public_function"]
     def test_handles_multiline_all(self, tmp_path: Path) -> None:
         """Test handling of multiline __all__ definition."""
         test_file = tmp_path / "module.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 class Foo:
     pass
 
@@ -871,7 +898,8 @@ __all__ = [
     "Foo",
     "Bar",
 ]
-""")
+"""
+        )
         result = validate_file(test_file)
 
         assert result.is_valid is True
@@ -880,7 +908,8 @@ __all__ = [
     def test_handles_all_with_comments(self, tmp_path: Path) -> None:
         """Test handling of __all__ with comments."""
         test_file = tmp_path / "module.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 class Foo:
     pass
 
@@ -891,7 +920,8 @@ __all__ = [
     "Foo",  # Main class
     "Bar",  # Helper class
 ]
-""")
+"""
+        )
         result = validate_file(test_file)
 
         assert result.is_valid is True
@@ -924,11 +954,13 @@ __all__ = ["MyClass"]
         all_items = ", ".join(f'"Class{i}"' for i in range(100))
 
         test_file = tmp_path / "module.py"
-        test_file.write_text(f"""
+        test_file.write_text(
+            f"""
 {class_defs}
 
 __all__ = [{all_items}]
-""")
+"""
+        )
         result = validate_file(test_file)
 
         assert result.is_valid is True
@@ -937,12 +969,14 @@ __all__ = [{all_items}]
     def test_handles_dotted_import_in_all(self, tmp_path: Path) -> None:
         """Test handling when only first part of dotted import is available."""
         test_file = tmp_path / "module.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 import os.path
 
 # Note: os is available, but os.path would need full specification
 __all__ = ["os"]
-""")
+"""
+        )
         result = validate_file(test_file)
 
         assert result.is_valid is True

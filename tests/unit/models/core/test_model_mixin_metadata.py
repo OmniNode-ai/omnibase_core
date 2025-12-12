@@ -574,7 +574,7 @@ class TestYAMLLoading:
         yaml_file = tmp_path / "invalid.yaml"
         yaml_file.write_text("{ invalid yaml content [")
 
-        with pytest.raises(ModelOnexError, match="Failed to load YAML"):
+        with pytest.raises(ModelOnexError, match="YAML parsing error"):
             ModelMixinMetadataCollection.from_yaml(yaml_file)
 
     def test_load_non_dict_yaml(self, tmp_path: Path) -> None:

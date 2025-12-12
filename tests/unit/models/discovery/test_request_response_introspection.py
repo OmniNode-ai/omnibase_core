@@ -197,7 +197,8 @@ class TestIntrospectionResponseEvent:
 
         assert error_response.current_status == EnumNodeCurrentStatus.ERROR
         assert error_response.additional_info.error_message == "Test error"
-        assert error_response.capabilities.metadata["error"] == "Test error"
+        # Note: Error is stored in additional_info.error_message, not in capabilities.metadata
+        # The metadata field is now ModelNodeCapabilitiesMetadata (typed model), not dict
 
     def test_detailed_response_models(self):
         """Test detailed response models (resource usage, performance metrics, tools)."""

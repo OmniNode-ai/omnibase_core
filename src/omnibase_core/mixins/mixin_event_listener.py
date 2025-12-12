@@ -142,22 +142,23 @@ class MixinEventListener[InputStateT, OutputStateT]:
 
                     event_subscriptions = contract.get("event_subscriptions", [])
                     if event_subscriptions:
-                        event_types = [
-                            sub.get("event_type")
+                        # ModelEventSubscription uses 'event_pattern' field
+                        event_patterns = [
+                            sub.get("event_pattern")
                             for sub in event_subscriptions
-                            if sub.get("event_type")
+                            if sub.get("event_pattern")
                         ]
-                        if event_types:
+                        if event_patterns:
                             emit_log_event(
                                 LogLevel.INFO,
                                 "📋 EVENT_PATTERNS: Found event_subscriptions in contract",
                                 {
                                     "node_name": self.get_node_name(),
-                                    "event_types": event_types,
-                                    "subscription_count": len(event_types),
+                                    "event_patterns": event_patterns,
+                                    "subscription_count": len(event_patterns),
                                 },
                             )
-                            return event_types
+                            return event_patterns
 
                     # If no event_subscriptions, try legacy pattern derivation
                     emit_log_event(

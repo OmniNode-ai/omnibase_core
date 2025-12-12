@@ -58,9 +58,14 @@ class ModelMixinMetadataCollection(BaseModel):
         try:
             with yaml_path.open("r", encoding="utf-8") as f:
                 data = yaml.safe_load(f)
-        except Exception as e:
+        except yaml.YAMLError as e:
             raise ModelOnexError(
-                message=f"Failed to load YAML from {yaml_path}: {e}",
+                message=f"YAML parsing error in {yaml_path}: {e}",
+                error_code=EnumCoreErrorCode.PARSING_ERROR,
+            ) from e
+        except OSError as e:
+            raise ModelOnexError(
+                message=f"Failed to read YAML file {yaml_path}: {e}",
                 error_code=EnumCoreErrorCode.FILE_READ_ERROR,
             ) from e
 

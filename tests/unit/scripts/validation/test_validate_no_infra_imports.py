@@ -340,10 +340,12 @@ class TestInfraImportValidator:
     def test_validates_clean_file(self, tmp_path: Path) -> None:
         """Test validation of a clean file with no infra imports."""
         test_file = tmp_path / "clean.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 from omnibase_core import models
 import os
-""")
+"""
+        )
         validator = InfraImportValidator()
         is_valid = validator.validate_file(test_file)
 
@@ -354,9 +356,11 @@ import os
     def test_validates_file_with_violations(self, tmp_path: Path) -> None:
         """Test validation of a file with infra imports."""
         test_file = tmp_path / "bad.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 from omnibase_infra import kafka
-""")
+"""
+        )
         validator = InfraImportValidator()
         is_valid = validator.validate_file(test_file)
 
@@ -367,9 +371,11 @@ from omnibase_infra import kafka
     def test_skips_pyi_files(self, tmp_path: Path) -> None:
         """Test that .pyi type stub files are skipped."""
         test_file = tmp_path / "module.pyi"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 from omnibase_infra import types
-""")
+"""
+        )
         validator = InfraImportValidator()
         is_valid = validator.validate_file(test_file)
 
@@ -380,9 +386,11 @@ from omnibase_infra import types
     def test_handles_syntax_error_gracefully(self, tmp_path: Path) -> None:
         """Test that syntax errors are handled gracefully."""
         test_file = tmp_path / "syntax_error.py"
-        test_file.write_text("""
+        test_file.write_text(
+            """
 def incomplete(
-""")
+"""
+        )
         validator = InfraImportValidator()
         is_valid = validator.validate_file(test_file)
 
@@ -706,11 +714,13 @@ class TestEdgeCases:
     def test_handles_comments_only_file(self, tmp_path: Path) -> None:
         """Test handling of files with only comments."""
         comments_file = tmp_path / "comments.py"
-        comments_file.write_text("""
+        comments_file.write_text(
+            """
 # This is a comment
 # from omnibase_infra import kafka
 # import omnibase_infra
-""")
+"""
+        )
         validator = InfraImportValidator()
         is_valid = validator.validate_file(comments_file)
 
@@ -720,12 +730,14 @@ class TestEdgeCases:
     def test_handles_string_containing_import(self, tmp_path: Path) -> None:
         """Test that imports in strings don't trigger violations."""
         string_file = tmp_path / "strings.py"
-        string_file.write_text('''
+        string_file.write_text(
+            '''
 message = "from omnibase_infra import kafka"
 doc = """
 import omnibase_infra
 """
-''')
+'''
+        )
         validator = InfraImportValidator()
         is_valid = validator.validate_file(string_file)
 
@@ -735,10 +747,12 @@ import omnibase_infra
     def test_handles_conditional_import(self, tmp_path: Path) -> None:
         """Test detection of conditional imports."""
         conditional_file = tmp_path / "conditional.py"
-        conditional_file.write_text("""
+        conditional_file.write_text(
+            """
 if TYPE_CHECKING:
     from omnibase_infra import types
-""")
+"""
+        )
         validator = InfraImportValidator()
         is_valid = validator.validate_file(conditional_file)
 
@@ -749,12 +763,14 @@ if TYPE_CHECKING:
     def test_handles_try_except_import(self, tmp_path: Path) -> None:
         """Test detection of imports in try/except blocks."""
         try_file = tmp_path / "try_import.py"
-        try_file.write_text("""
+        try_file.write_text(
+            """
 try:
     from omnibase_infra import kafka
 except ImportError:
     kafka = None
-""")
+"""
+        )
         validator = InfraImportValidator()
         is_valid = validator.validate_file(try_file)
 

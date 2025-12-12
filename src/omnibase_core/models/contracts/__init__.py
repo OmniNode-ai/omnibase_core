@@ -91,9 +91,7 @@ from .model_contract_meta import (
     is_valid_meta_model,
     validate_meta_model,
 )
-from .model_contract_node_metadata import (
-    ModelContractNodeMetadata,
-)
+from .model_contract_node_metadata import ModelContractNodeMetadata
 from .model_contract_normalization_config import ModelContractNormalizationConfig
 from .model_contract_orchestrator import ModelContractOrchestrator
 from .model_contract_reducer import ModelContractReducer
