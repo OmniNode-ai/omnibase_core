@@ -772,20 +772,70 @@ class TestContractSubscriptionsTopicsFormat:
         # If subscriptions is a list, that's also valid
 
     def test_event_bus_wiring_effect_subscriptions_has_topics(self) -> None:
-        """Test event_bus_wiring_effect has subscriptions with topics."""
+        """Test event_bus_wiring_effect has subscriptions with topics.
+
+        This contract can have subscriptions in two formats:
+        1. Dict format with 'topics' key containing list of topic dicts
+        2. List format with subscription objects directly
+
+        Topics should follow the 'onex.*' naming convention.
+        """
         contract_data = load_contract("event_bus_wiring_effect.yaml")
         subscriptions = contract_data.get("subscriptions", {})
 
-        # event_bus_wiring_effect uses dict format with topics
+        # Determine the topics list based on format
+        topics: list[Any] = []
         if isinstance(subscriptions, dict):
             topics = subscriptions.get("topics", [])
             assert isinstance(topics, list), (
                 "event_bus_wiring_effect: subscriptions.topics should be a list"
             )
-            # This contract should have actual topic subscriptions
-            assert len(topics) > 0, (
-                "event_bus_wiring_effect: subscriptions.topics should not be empty"
+        elif isinstance(subscriptions, list):
+            # List format - subscriptions is directly a list of topic entries
+            topics = subscriptions
+        else:
+            pytest.fail(
+                f"event_bus_wiring_effect: subscriptions should be dict or list, "
+                f"got {type(subscriptions).__name__}"
             )
+
+        # This contract should have actual topic subscriptions
+        assert len(topics) > 0, (
+            "event_bus_wiring_effect: subscriptions.topics should not be empty"
+        )
+
+        # Validate each topic entry
+        for i, topic in enumerate(topics):
+            if isinstance(topic, str):
+                # String topics should not be empty and follow naming convention
+                assert topic.strip(), (
+                    f"event_bus_wiring_effect: subscriptions.topics[{i}] "
+                    f"is empty string"
+                )
+                assert topic.startswith("onex."), (
+                    f"event_bus_wiring_effect: subscriptions.topics[{i}] "
+                    f"should follow 'onex.*' naming convention, got '{topic}'"
+                )
+            elif isinstance(topic, dict):
+                # Dict topics should have a topic identifier
+                topic_name = topic.get("topic", topic.get("name", ""))
+                assert topic_name, (
+                    f"event_bus_wiring_effect: subscriptions.topics[{i}] "
+                    f"dict entry missing 'topic' or 'name' field"
+                )
+                assert isinstance(topic_name, str), (
+                    f"event_bus_wiring_effect: subscriptions.topics[{i}].topic "
+                    f"should be a string, got {type(topic_name).__name__}"
+                )
+                assert topic_name.startswith("onex."), (
+                    f"event_bus_wiring_effect: subscriptions.topics[{i}] "
+                    f"should follow 'onex.*' naming convention, got '{topic_name}'"
+                )
+            else:
+                pytest.fail(
+                    f"event_bus_wiring_effect: subscriptions.topics[{i}] "
+                    f"should be str or dict, got {type(topic).__name__}"
+                )
 
 
 @pytest.mark.unit
@@ -852,7 +902,8 @@ class TestSubscriptionsElementShape:
         """
         subscriptions = contract_data.get("subscriptions", {})
 
-        topics: list[Any] = []
+        # Use Any type to allow defensive isinstance check
+        topics: Any = []
         if isinstance(subscriptions, dict):
             topics = subscriptions.get("topics", [])
         elif isinstance(subscriptions, list):
@@ -882,7 +933,8 @@ class TestSubscriptionsElementShape:
         """Test that string subscription entries are not empty."""
         subscriptions = contract_data.get("subscriptions", {})
 
-        topics: list[Any] = []
+        # Use Any type to allow defensive isinstance check
+        topics: Any = []
         if isinstance(subscriptions, dict):
             topics = subscriptions.get("topics", [])
         elif isinstance(subscriptions, list):
@@ -895,6 +947,82 @@ class TestSubscriptionsElementShape:
             if isinstance(topic, str):
                 assert topic.strip(), (
                     f"{contract_name}: subscriptions.topics[{i}] is empty string"
+                )
+
+    def test_subscription_topics_follow_naming_convention(
+        self, contract_data: dict[str, Any], contract_name: str
+    ) -> None:
+        """Test that subscription topics follow the 'onex.*' naming convention.
+
+        All ONEX event topics should start with 'onex.' prefix to:
+        - Prevent namespace collisions with external systems
+        - Enable clear identification of ONEX internal events
+        - Support wildcard filtering in event bus configurations
+        """
+        subscriptions = contract_data.get("subscriptions", {})
+
+        # Use Any type to allow defensive isinstance check
+        topics: Any = []
+        if isinstance(subscriptions, dict):
+            topics = subscriptions.get("topics", [])
+        elif isinstance(subscriptions, list):
+            topics = subscriptions
+
+        if not isinstance(topics, list):
+            return  # Already covered by other test
+
+        for i, topic in enumerate(topics):
+            topic_name: str | None = None
+            if isinstance(topic, str):
+                topic_name = topic
+            elif isinstance(topic, dict):
+                topic_name = topic.get("topic", topic.get("name", ""))
+
+            if topic_name and isinstance(topic_name, str) and topic_name.strip():
+                assert topic_name.startswith("onex."), (
+                    f"{contract_name}: subscriptions.topics[{i}] should follow "
+                    f"'onex.*' naming convention, got '{topic_name}'"
+                )
+
+    def test_list_format_subscriptions_have_required_fields(
+        self, contract_data: dict[str, Any], contract_name: str
+    ) -> None:
+        """Test that list format subscriptions have required fields.
+
+        When subscriptions is a list (not dict with topics key), each entry
+        should be a dict with at least 'topic' field and preferably a 'handler'
+        or 'description' for documentation.
+        """
+        subscriptions = contract_data.get("subscriptions")
+
+        # Only validate list format subscriptions
+        if not isinstance(subscriptions, list):
+            return  # Skip dict format (validated by other tests)
+
+        for i, entry in enumerate(subscriptions):
+            if not isinstance(entry, dict):
+                pytest.fail(
+                    f"{contract_name}: subscriptions[{i}] in list format "
+                    f"should be a dict, got {type(entry).__name__}"
+                )
+
+            # Must have topic identifier
+            has_topic = "topic" in entry or "name" in entry or "pattern" in entry
+            assert has_topic, (
+                f"{contract_name}: subscriptions[{i}] missing topic identifier "
+                f"(expected 'topic', 'name', or 'pattern' key). "
+                f"Got keys: {list(entry.keys())}"
+            )
+
+            # Topic value must be a non-empty string
+            topic_value = entry.get("topic", entry.get("name", entry.get("pattern")))
+            if topic_value is not None:
+                assert isinstance(topic_value, str), (
+                    f"{contract_name}: subscriptions[{i}].topic should be a string, "
+                    f"got {type(topic_value).__name__}"
+                )
+                assert topic_value.strip(), (
+                    f"{contract_name}: subscriptions[{i}].topic is empty"
                 )
 
 
@@ -968,6 +1096,12 @@ class TestAllV110FieldsPresent:
     Aggregate test to ensure all v1.1.0 required fields are present.
     """
 
+    # EFFECT contracts require subscriptions field (even if empty)
+    EFFECT_CONTRACTS = [
+        "contract_loader_effect.yaml",
+        "event_bus_wiring_effect.yaml",
+    ]
+
     @pytest.fixture(params=V110_RUNTIME_CONTRACTS)
     def contract_name(self, request: pytest.FixtureRequest) -> str:
         """Parameterized fixture that yields each v1.1.0 contract name."""
@@ -983,6 +1117,10 @@ class TestAllV110FieldsPresent:
     ) -> None:
         """Test that all v1.1.0 required fields are present."""
         required_fields = ["fingerprint", "handlers", "profile_tags"]
+
+        # EFFECT contracts require subscriptions field
+        if contract_name in self.EFFECT_CONTRACTS:
+            required_fields.append("subscriptions")
 
         missing_fields = []
         for field in required_fields:

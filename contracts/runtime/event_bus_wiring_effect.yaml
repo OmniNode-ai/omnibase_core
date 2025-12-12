@@ -52,11 +52,18 @@ handlers:
       version: ">=1.0.0"
 
 # Kafka topic subscriptions for this effect
+# This node subscribes to these topics to receive events for wiring operations
 subscriptions:
   topics:
-    - onex.runtime.node_graph.ready
-    - onex.runtime.node.registered
-    - onex.runtime.node.unregistered
+    - topic: onex.runtime.node_graph.ready
+      description: Triggered when node graph is fully instantiated
+      handler: wire_all_subscriptions
+    - topic: onex.runtime.node.registered
+      description: Handle new node registration for hot reload
+      handler: wire_single_subscription
+    - topic: onex.runtime.node.unregistered
+      description: Handle node removal
+      handler: remove_subscription
 
 # Profile tags for categorization
 profile_tags:
@@ -238,18 +245,6 @@ health_check:
       check_type: latency
       critical: false
       threshold_ms: 1000
-
-# Event subscriptions (what this node listens to)
-subscriptions:
-  - topic: onex.runtime.node_graph.ready
-    description: Triggered when node graph is fully instantiated
-    handler: wire_all_subscriptions
-  - topic: onex.runtime.node.registered
-    description: Handle new node registration for hot reload
-    handler: wire_single_subscription
-  - topic: onex.runtime.node.unregistered
-    description: Handle node removal
-    handler: remove_subscription
 
 # Events published by this node
 publications:
