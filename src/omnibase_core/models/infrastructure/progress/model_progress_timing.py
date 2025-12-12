@@ -18,10 +18,9 @@ from datetime import UTC, timedelta
 
 from pydantic import BaseModel
 
-from omnibase_core.types.type_serializable_value import SerializedDict
-
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.infrastructure.model_time_based import ModelTimeBased
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelProgressTiming(BaseModel):

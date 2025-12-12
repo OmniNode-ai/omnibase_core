@@ -14,11 +14,10 @@ typed property with validation in the environment property system.
 
 from typing import cast
 
-from omnibase_core.types.type_serializable_value import SerializedDict
-
 from pydantic import BaseModel, model_validator
 
 from omnibase_core.enums.enum_property_type import EnumPropertyType
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 from .model_property_metadata import ModelPropertyMetadata
 from .model_property_value import ModelPropertyValue

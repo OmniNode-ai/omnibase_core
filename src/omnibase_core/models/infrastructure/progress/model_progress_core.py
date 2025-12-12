@@ -16,11 +16,10 @@ from typing import Self
 
 from pydantic import BaseModel
 
-from omnibase_core.types.type_serializable_value import SerializedDict
-
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
 from omnibase_core.enums.enum_status_message import EnumStatusMessage
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelProgressCore(BaseModel):

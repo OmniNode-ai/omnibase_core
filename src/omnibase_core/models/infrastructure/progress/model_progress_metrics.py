@@ -11,13 +11,12 @@ from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.types.type_serializable_value import SerializedDict
-
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_flexible_value import ModelFlexibleValue
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.infrastructure.model_metrics_data import ModelMetricsData
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelProgressMetrics(BaseModel):

@@ -7,9 +7,8 @@ Namespace configuration model.
 
 from pydantic import BaseModel
 
-from omnibase_core.types.type_serializable_value import SerializedDict
-
 from omnibase_core.enums.enum_namespace_strategy import EnumNamespaceStrategy
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelNamespaceConfig(BaseModel):

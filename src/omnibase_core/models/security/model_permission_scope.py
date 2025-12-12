@@ -11,8 +11,6 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.types.type_serializable_value import SerializedDict
-
 from omnibase_core.models.security.model_context_variables import ModelContextVariables
 from omnibase_core.models.security.model_permission_evaluation_context import (
     ModelPermissionEvaluationContext,
@@ -20,6 +18,7 @@ from omnibase_core.models.security.model_permission_evaluation_context import (
 from omnibase_core.models.security.model_permission_metadata import (
     ModelPermissionMetadata,
 )
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelPermissionScope(BaseModel):

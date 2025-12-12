@@ -8,7 +8,6 @@ Part of the ModelConnectionInfo restructuring to reduce excessive string fields.
 """
 
 import hashlib
-from omnibase_core.types import SerializedDict
 from uuid import UUID
 
 from pydantic import BaseModel, Field, SecretStr, field_serializer
@@ -16,6 +15,7 @@ from pydantic import BaseModel, Field, SecretStr, field_serializer
 from omnibase_core.enums.enum_auth_type import EnumAuthType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.types import SerializedDict
 
 
 class ModelConnectionAuth(BaseModel):

@@ -15,11 +15,10 @@ Follows ONEX one-model-per-file naming conventions.
 
 from pydantic import BaseModel
 
-from omnibase_core.types.type_serializable_value import SerializedDict
-
 from omnibase_core.enums.enum_data_type import EnumDataType
 from omnibase_core.enums.enum_io_type import EnumIoType
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelExampleInputData(BaseModel):

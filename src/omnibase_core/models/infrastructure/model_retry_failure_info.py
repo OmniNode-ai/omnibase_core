@@ -17,8 +17,8 @@ from typing import Any
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.types.type_serializable_value import SerializedDict
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelRetryFailureInfo(BaseModel):

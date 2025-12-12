@@ -15,8 +15,6 @@ outcome of CLI command execution with proper typing.
 from datetime import UTC
 from uuid import uuid4
 
-from omnibase_core.types.type_serializable_value import SerializedDict
-
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_config_category import EnumConfigCategory
@@ -26,6 +24,7 @@ from omnibase_core.models.cli.model_cli_performance_metrics import (
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_duration import ModelDuration
 from omnibase_core.models.validation.model_validation_error import ModelValidationError
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 from .model_cli_debug_info import ModelCliDebugInfo
 from .model_cli_execution import ModelCliExecution

@@ -15,14 +15,13 @@ Follows ONEX one-model-per-file naming conventions.
 
 from uuid import UUID
 
-from omnibase_core.types.type_serializable_value import SerializedDict
-
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_context_type import EnumContextType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_environment import EnumEnvironment
 from omnibase_core.enums.enum_execution_trigger import EnumExecutionTrigger
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelExampleContextData(BaseModel):
