@@ -832,6 +832,49 @@ class TestModelFSMTransitionConditionEdgeCases:
         assert "Expression must have exactly 3 tokens" in str(exc_info.value)
         assert "got 0 tokens" in str(exc_info.value)
 
+    def test_invalid_operator_raises_error(self):
+        """Test that invalid operators in expression raise ModelOnexError.
+
+        Only the following operators are valid:
+        ==, !=, <, >, <=, >=, in, not_in, contains, matches
+        """
+        invalid_operators = ["INVALID", "equals", "is", "===", "!==", "and", "or"]
+        for invalid_op in invalid_operators:
+            with pytest.raises(ModelOnexError) as exc_info:
+                ModelFSMTransitionCondition(
+                    condition_name="check",
+                    condition_type="expression",
+                    expression=f"value {invalid_op} expected",
+                )
+            error_msg = str(exc_info.value)
+            assert "Invalid operator" in error_msg
+            assert invalid_op in error_msg
+
+    def test_valid_operators(self):
+        """Test that all valid operators are accepted.
+
+        Valid operators: ==, !=, <, >, <=, >=, in, not_in, contains, matches
+        """
+        valid_operators = [
+            "==",
+            "!=",
+            "<",
+            ">",
+            "<=",
+            ">=",
+            "in",
+            "not_in",
+            "contains",
+            "matches",
+        ]
+        for valid_op in valid_operators:
+            condition = ModelFSMTransitionCondition(
+                condition_name="check",
+                condition_type="expression",
+                expression=f"value {valid_op} expected",
+            )
+            assert condition.expression == f"value {valid_op} expected"
+
     def test_very_long_expression(self):
         """Test condition with very long expression."""
         long_expr = "field_" + "x" * 10000 + " == value"
@@ -935,14 +978,19 @@ class TestModelFSMTransitionConditionEdgeCases:
         assert condition.retry_count == 0
 
     def test_timeout_ms_zero(self):
-        """Test timeout_ms with zero value (allowed by ge=0 constraint)."""
-        condition = ModelFSMTransitionCondition(
-            condition_name="check",
-            condition_type="expression",
-            expression="value > 0",
-            timeout_ms=0,
-        )
-        assert condition.timeout_ms == 0
+        """Test timeout_ms with zero value is rejected (gt=0 constraint).
+
+        A timeout of 0ms doesn't make practical sense, so the constraint
+        requires timeout_ms > 0 when specified.
+        """
+        with pytest.raises(ValidationError) as exc_info:
+            ModelFSMTransitionCondition(
+                condition_name="check",
+                condition_type="expression",
+                expression="value > 0",
+                timeout_ms=0,
+            )
+        assert "greater than 0" in str(exc_info.value)
 
     def test_large_retry_count(self):
         """Test with large retry count value."""

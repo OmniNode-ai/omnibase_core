@@ -7,10 +7,10 @@ actions to execute during state transitions.
 
 Specification Reference: docs/architecture/CONTRACT_DRIVEN_NODEREDUCER_V1_0.md
 
-Type Aliases:
-    ActionConfigValue: Union type for action configuration values.
-        Supports primitive types (str, int, float, bool), tuples of strings,
-        and None for FSM action configuration parameters.
+Action Config Value Type:
+    Action configuration values support primitive types (str, int, float, bool),
+    tuples of strings, and None for FSM action configuration parameters.
+    The full type is: str | int | float | bool | tuple[str, ...] | None
 
 Deep Immutability:
     This model uses frozen=True for Pydantic immutability, and also uses
@@ -28,11 +28,6 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-# Type alias for action configuration values
-# Supports primitive types and tuples of strings for FSM action configuration
-# Note: tuple[str, ...] is used instead of list[str] for deep immutability
-ActionConfigValue = str | int | float | bool | tuple[str, ...] | None
-
 
 class ModelFSMTransitionAction(BaseModel):
     """
@@ -48,7 +43,7 @@ class ModelFSMTransitionAction(BaseModel):
     - Validatable: Validation and verification
 
     Deep Immutability:
-        The action_config field uses tuple[tuple[str, ActionConfigValue], ...]
+        The action_config field uses tuple[tuple[str, str | int | float | bool | tuple[str, ...] | None], ...]
         instead of dict for deep immutability. Validators automatically convert
         incoming dicts to frozen types for convenience during model construction.
 
@@ -100,7 +95,9 @@ class ModelFSMTransitionAction(BaseModel):
         description="Type of action (emit_intent, log, validate, etc.)",
     )
 
-    action_config: tuple[tuple[str, ActionConfigValue], ...] = Field(
+    action_config: tuple[
+        tuple[str, str | int | float | bool | tuple[str, ...] | None], ...
+    ] = Field(
         default=(),
         description="Action configuration parameters as frozen key-value pairs",
     )
@@ -132,11 +129,11 @@ class ModelFSMTransitionAction(BaseModel):
     def _convert_action_config_to_frozen(
         cls,
         v: (
-            dict[str, ActionConfigValue]
-            | tuple[tuple[str, ActionConfigValue], ...]
+            dict[str, str | int | float | bool | tuple[str, ...] | None]
+            | tuple[tuple[str, str | int | float | bool | tuple[str, ...] | None], ...]
             | None
         ),
-    ) -> tuple[tuple[str, ActionConfigValue], ...]:
+    ) -> tuple[tuple[str, str | int | float | bool | tuple[str, ...] | None], ...]:
         """Convert dict to tuple of tuples for deep immutability.
 
         Also converts any list values to tuples for complete immutability.
@@ -196,7 +193,7 @@ class ModelFSMTransitionAction(BaseModel):
         Performs validation to ensure required fields exist and have valid values:
         - action_name must be a non-empty string
         - action_type must be a non-empty string
-        - action_config values must be valid ActionConfigValue types
+        - action_config values must be valid types (str, int, float, bool, tuple[str, ...], or None)
 
         Returns:
             bool: True if validation passed, False otherwise
@@ -209,8 +206,8 @@ class ModelFSMTransitionAction(BaseModel):
         if not self.action_type or not self.action_type.strip():
             return False
 
-        # Validate action_config values are valid ActionConfigValue types
-        # Note: action_config is now tuple[tuple[str, ActionConfigValue], ...]
+        # Validate action_config values are valid types
+        # Note: action_config is tuple[tuple[str, str | int | float | bool | tuple[str, ...] | None], ...]
         # for deep immutability. This runtime check validates tuple contents
         # since tuple[str, ...] can't be validated at runtime without iteration.
         for _key, value in self.action_config:
@@ -224,4 +221,4 @@ class ModelFSMTransitionAction(BaseModel):
 
 
 # Export for use
-__all__ = ["ActionConfigValue", "ModelFSMTransitionAction"]
+__all__ = ["ModelFSMTransitionAction"]

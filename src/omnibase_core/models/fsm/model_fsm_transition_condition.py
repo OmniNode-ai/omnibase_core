@@ -85,7 +85,7 @@ class ModelFSMTransitionCondition(BaseModel):
 
     timeout_ms: int | None = Field(
         default=None,
-        ge=0,
+        gt=0,
         description="Reserved for v1.1+",
     )
 
@@ -95,18 +95,26 @@ class ModelFSMTransitionCondition(BaseModel):
         frozen=True,
     )
 
+    # Valid operators for expression evaluation
+    VALID_OPERATORS: frozenset[str] = frozenset(
+        {"==", "!=", "<", ">", "<=", ">=", "in", "not_in", "contains", "matches"}
+    )
+
     @model_validator(mode="after")
     def validate_expression_format(self) -> Self:
-        """Validate that expression has exactly 3 tokens.
+        """Validate that expression has exactly 3 tokens and valid operator.
 
         Expression format must be: "field operator value"
         Examples: "status == active", "count > 0", "name != empty"
+
+        Valid operators: ==, !=, <, >, <=, >=, in, not_in, contains, matches
 
         Returns:
             Self: The validated model instance.
 
         Raises:
-            ModelOnexError: If expression does not have exactly 3 tokens.
+            ModelOnexError: If expression does not have exactly 3 tokens
+                or if the operator is not in the valid operators whitelist.
         """
         tokens = self.expression.split()
         if len(tokens) != 3:
@@ -122,6 +130,24 @@ class ModelFSMTransitionCondition(BaseModel):
                     "token_count": len(tokens),
                 },
             )
+
+        # Validate operator is in whitelist
+        operator = tokens[1]
+        if operator not in self.VALID_OPERATORS:
+            raise ModelOnexError(
+                message=(
+                    f"Invalid operator '{operator}'. "
+                    f"Valid operators: {', '.join(sorted(self.VALID_OPERATORS))}"
+                ),
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={
+                    "condition_name": self.condition_name,
+                    "expression": self.expression,
+                    "operator": operator,
+                    "valid_operators": sorted(self.VALID_OPERATORS),
+                },
+            )
+
         return self
 
     # Protocol method implementations

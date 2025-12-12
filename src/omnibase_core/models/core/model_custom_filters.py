@@ -14,18 +14,6 @@ from .model_numeric_filter import ModelNumericFilter
 from .model_status_filter import ModelStatusFilter
 from .model_string_filter import ModelStringFilter
 
-# union-ok: discriminated_model_union - All filter types share filter_type discriminator field
-# Type alias for the filter union
-FilterType = Union[
-    ModelStringFilter,
-    ModelNumericFilter,
-    ModelDateTimeFilter,
-    ModelListFilter,
-    ModelMetadataFilter,
-    ModelStatusFilter,
-    ModelComplexFilter,
-]
-
 
 class ModelCustomFilters(BaseModel):
     """
@@ -34,9 +22,19 @@ class ModelCustomFilters(BaseModel):
     Replaces Dict[str, Any] for custom_filters fields with typed filters.
     """
 
-    filters: dict[str, FilterType] = Field(
-        default_factory=dict, description="Named custom filters"
-    )
+    # union-ok: discriminated_model_union - All filter types share filter_type discriminator field
+    filters: dict[
+        str,
+        Union[
+            ModelStringFilter,
+            ModelNumericFilter,
+            ModelDateTimeFilter,
+            ModelListFilter,
+            ModelMetadataFilter,
+            ModelStatusFilter,
+            ModelComplexFilter,
+        ],
+    ] = Field(default_factory=dict, description="Named custom filters")
 
     def add_string_filter(self, name: str, pattern: str, **kwargs: Any) -> None:
         """Add a string filter."""
@@ -68,7 +66,21 @@ class ModelCustomFilters(BaseModel):
         """Add a status filter."""
         self.filters[name] = ModelStatusFilter(allowed_statuses=allowed, **kwargs)
 
-    def get_filter(self, name: str) -> FilterType | None:
+    # union-ok: discriminated_model_union - All filter types share filter_type discriminator field
+    def get_filter(
+        self, name: str
+    ) -> (
+        Union[
+            ModelStringFilter,
+            ModelNumericFilter,
+            ModelDateTimeFilter,
+            ModelListFilter,
+            ModelMetadataFilter,
+            ModelStatusFilter,
+            ModelComplexFilter,
+        ]
+        | None
+    ):
         """Get a filter by name."""
         return self.filters.get(name)
 
@@ -84,7 +96,19 @@ class ModelCustomFilters(BaseModel):
     @classmethod
     def from_dict(cls, data: SerializedDict) -> "ModelCustomFilters":
         """Create from dictionary (for migration)."""
-        filters: dict[str, FilterType] = {}
+        # union-ok: discriminated_model_union - All filter types share filter_type discriminator field
+        filters: dict[
+            str,
+            Union[
+                ModelStringFilter,
+                ModelNumericFilter,
+                ModelDateTimeFilter,
+                ModelListFilter,
+                ModelMetadataFilter,
+                ModelStatusFilter,
+                ModelComplexFilter,
+            ],
+        ] = {}
 
         for name, filter_data in data.items():
             if isinstance(filter_data, dict) and "filter_type" in filter_data:
