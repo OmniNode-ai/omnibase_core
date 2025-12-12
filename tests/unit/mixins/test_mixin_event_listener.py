@@ -138,6 +138,7 @@ node_type: COMPUTE
 event_subscriptions:
   - event_pattern: "test.event.type"
     handler_function: "handle_test_event"
+    description: "Test event subscription"
 """
         contract_path.write_text(contract_content)
         node.contract_path = str(contract_path)

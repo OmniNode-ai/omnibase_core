@@ -21,7 +21,7 @@
 node_type: ORCHESTRATOR_GENERIC
 contract_version: {major: 1, minor: 1, patch: 0}
 # Fingerprint: SHA-256 hash of canonical contract content (node_type, workflow_coordination, metadata.description)
-fingerprint: "1.1.0:8d00f09e22ec"
+fingerprint: "1.1.0:407e93f3b1d2"
 # Workflow Coordination Subcontract
 workflow_coordination:
   version: {major: 1, minor: 1, patch: 0}

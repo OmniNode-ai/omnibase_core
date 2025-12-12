@@ -30,7 +30,7 @@
 node_type: COMPUTE_GENERIC
 contract_version: {major: 1, minor: 1, patch: 0}
 # Fingerprint: SHA-256 hash of canonical contract content (node_type, compute, metadata.description)
-fingerprint: "1.1.0:18699bda82af"
+fingerprint: "1.1.0:8d515de74de2"
 # ---------------------------------------------------------------------------
 # COMPUTE SUBCONTRACT: Defines the transformation pipeline
 # ---------------------------------------------------------------------------

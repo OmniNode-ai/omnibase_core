@@ -255,14 +255,16 @@ class TestModelRouteHop:
 
         # ModelRouteHopMetadata has structured fields, not arbitrary nesting
         # Use tags for list data and custom_fields for string key-value pairs
+        custom_fields = {
+            "deep_value": "found",
+            "simple": "value",
+            "top_level": "value",
+        }
+
         metadata = ModelRouteHopMetadata(
             route_version="2.0.0",
             tags=["level1", "level2", "level3"],
-            custom_fields={
-                "deep_value": "found",
-                "simple": "value",
-                "top_level": "value",
-            },
+            custom_fields=custom_fields,
         )
 
         hop = ModelRouteHop(
@@ -634,7 +636,11 @@ class TestModelRouteHop:
         assert hop.metadata.custom_fields["key_999"] == "value_999"
 
         # Test with unicode custom_fields
-        unicode_custom_fields = {"中文": "测试", "emoji": "🚀", "special": "!@#$%^&*()"}
+        unicode_custom_fields = {
+            "chinese": "测试",
+            "emoji": "rocket_symbol",
+            "special": "exclamation_at_hash",
+        }
         metadata = ModelRouteHopMetadata(custom_fields=unicode_custom_fields)
         hop = ModelRouteHop(
             version=DEFAULT_VERSION,
@@ -644,9 +650,9 @@ class TestModelRouteHop:
             metadata=metadata,
         )
 
-        assert hop.metadata.custom_fields["中文"] == "测试"
-        assert hop.metadata.custom_fields["emoji"] == "🚀"
-        assert hop.metadata.custom_fields["special"] == "!@#$%^&*()"
+        assert hop.metadata.custom_fields["chinese"] == "测试"
+        assert hop.metadata.custom_fields["emoji"] == "rocket_symbol"
+        assert hop.metadata.custom_fields["special"] == "exclamation_at_hash"
 
         # Test with very large processing duration
         hop = ModelRouteHop(

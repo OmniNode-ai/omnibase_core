@@ -6,10 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.protocols import (
-    LiteralInjectionScope,
-    LiteralServiceLifecycle,
-)
+from omnibase_core.protocols import LiteralInjectionScope, LiteralServiceLifecycle
 from omnibase_core.types.type_serializable_value import SerializedDict
 from omnibase_core.utils.util_decorators import allow_dict_str_any
 

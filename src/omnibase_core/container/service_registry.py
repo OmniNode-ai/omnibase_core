@@ -20,10 +20,7 @@ from omnibase_core.models.container.model_service_registration import (
     ModelServiceRegistration,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.protocols import (
-    LiteralInjectionScope,
-    LiteralServiceLifecycle,
-)
+from omnibase_core.protocols import LiteralInjectionScope, LiteralServiceLifecycle
 from omnibase_core.types.type_serializable_value import SerializedDict
 from omnibase_core.types.typed_dict_resolution_context import TypedDictResolutionContext
 
