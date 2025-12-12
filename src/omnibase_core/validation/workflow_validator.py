@@ -1074,8 +1074,8 @@ def validate_execution_mode_string(mode: str) -> None:
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=(
                 f"Invalid execution mode '{mode}'. "
-                f"Valid modes: {', '.join(ACCEPTED_EXECUTION_MODES)}, "
-                f"{', '.join(RESERVED_EXECUTION_MODES)}"
+                f"Accepted modes: {', '.join(ACCEPTED_EXECUTION_MODES)}. "
+                f"Reserved (future): {', '.join(RESERVED_EXECUTION_MODES)}"
             ),
             mode=mode,
             reserved_modes=list(RESERVED_EXECUTION_MODES),

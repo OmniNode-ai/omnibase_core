@@ -632,10 +632,12 @@ class TestInvalidInputHandling:
             validate_execution_mode_string("invalid_mode")
 
         message = exc_info.value.message
-        # Should list all valid modes (including reserved, since they ARE valid enum values)
+        # Should clearly distinguish accepted modes from reserved (future) modes
+        assert "Accepted modes:" in message
         assert "sequential" in message
         assert "parallel" in message
         assert "batch" in message
+        assert "Reserved (future):" in message
 
 
 @pytest.mark.unit
