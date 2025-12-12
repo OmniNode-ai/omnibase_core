@@ -5,6 +5,7 @@ Model for discovery client requests with proper typing and validation
 following ONEX canonical patterns.
 """
 
+from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field

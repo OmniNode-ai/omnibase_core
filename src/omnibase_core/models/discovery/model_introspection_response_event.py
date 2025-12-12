@@ -219,7 +219,9 @@ class ModelIntrospectionResponseEvent(ModelOnexEvent):
         )
 
         capabilities = ModelNodeCapabilities(
-            actions=[], protocols=[], metadata={"error": error_message}
+            actions=[],
+            protocols=[],
+            metadata={"error": error_message},  # type: ignore[arg-type]
         )
         return cls(
             correlation_id=correlation_id,

@@ -12,24 +12,8 @@ from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.core.model_routing_constraints import ModelRoutingConstraints
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
-
-class ModelRoutingConstraints(BaseModel):
-    """Routing constraints and preferences."""
-
-    max_latency_ms: int | None = Field(
-        default=None, description="Maximum acceptable latency in milliseconds"
-    )
-    allowed_regions: list[str] = Field(
-        default_factory=list, description="Allowed regions for routing"
-    )
-    min_security_level: str | None = Field(
-        default=None, description="Minimum security level required"
-    )
-    custom_constraints: dict[str, ModelSchemaValue] = Field(
-        default_factory=dict, description="Additional custom constraints"
-    )
 
 
 class ModelRouteSpec(BaseModel):
@@ -186,7 +170,7 @@ class ModelRouteSpec(BaseModel):
         cls, destination: str, **kwargs: object
     ) -> "ModelRouteSpec":
         """Create a direct route to destination with dynamic routing."""
-        return cls(final_destination=destination, routing_strategy="dynamic", **kwargs)
+        return cls(final_destination=destination, routing_strategy="dynamic", **kwargs)  # type: ignore[arg-type]
 
     @classmethod
     def create_explicit_route(
@@ -200,7 +184,7 @@ class ModelRouteSpec(BaseModel):
             final_destination=destination,
             remaining_hops=hops.copy(),
             routing_strategy="explicit",
-            **kwargs,
+            **kwargs,  # type: ignore[arg-type]
         )
 
     @classmethod
@@ -211,7 +195,7 @@ class ModelRouteSpec(BaseModel):
         return cls(
             final_destination=service_pattern,
             routing_strategy="anycast",
-            **kwargs,
+            **kwargs,  # type: ignore[arg-type]
         )
 
     @classmethod
@@ -220,7 +204,7 @@ class ModelRouteSpec(BaseModel):
         return cls(
             final_destination="broadcast://all",
             routing_strategy="broadcast",
-            **kwargs,
+            **kwargs,  # type: ignore[arg-type]
         )
 
     def add_constraint(self, key: str, value: ModelSchemaValue) -> None:

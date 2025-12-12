@@ -5,10 +5,9 @@ Integrates all existing Docker models into unified composition structure.
 """
 
 from pathlib import Path
+from typing import Any
 
 import yaml
-
-from omnibase_core.types.type_serializable_value import SerializableValue, SerializedDict
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -23,6 +22,10 @@ from omnibase_core.models.docker.model_docker_volume_config import (
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.types.type_serializable_value import (
+    SerializableValue,
+    SerializedDict,
+)
 
 
 class ModelDockerComposeManifest(BaseModel):

@@ -185,7 +185,7 @@ class ModelAnalyticsQualityMetrics(BaseModel):
                     metadata[field] = (
                         str(value) if not isinstance(value, (dict, list)) else value
                     )
-        return metadata
+        return metadata  # type: ignore[return-value]
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""

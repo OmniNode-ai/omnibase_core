@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
+
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
 """
@@ -202,7 +203,7 @@ class ModelNodeTimestamps(BaseModel):
                     except (TypeError, AttributeError):
                         # Fallback to string conversion
                         metadata[field] = str(value)
-        return metadata
+        return metadata  # type: ignore[return-value]
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol).

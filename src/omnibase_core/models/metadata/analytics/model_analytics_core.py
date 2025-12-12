@@ -17,8 +17,8 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.utils.util_uuid_utilities import uuid_from_string
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
+from omnibase_core.utils.util_uuid_utilities import uuid_from_string
 
 
 class ModelAnalyticsCore(BaseModel):
@@ -162,7 +162,7 @@ class ModelAnalyticsCore(BaseModel):
                     metadata[field] = (
                         str(value) if not isinstance(value, (dict, list)) else value
                     )
-        return metadata
+        return metadata  # type: ignore[return-value]
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""

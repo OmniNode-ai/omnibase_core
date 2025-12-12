@@ -20,6 +20,7 @@ from omnibase_core.enums.enum_conceptual_complexity import EnumConceptualComplex
 from omnibase_core.enums.enum_documentation_quality import EnumDocumentationQuality
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_node_type import EnumNodeType
+from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 from omnibase_core.types.typed_dict_categorization_update_data import (
     TypedDictCategorizationUpdateData,
 )
@@ -44,7 +45,6 @@ from .node_info.model_node_core import ModelNodeCore
 from .node_info.model_node_performance_metrics import ModelNodePerformanceMetrics
 from .node_info.model_node_quality_indicators import ModelNodeQualityIndicators
 from .node_info.model_node_timestamps import ModelNodeTimestamps
-from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
 
 class ModelNodeInfoSummary(BaseModel):
@@ -583,7 +583,7 @@ class ModelNodeInfoSummary(BaseModel):
                     metadata[field] = (
                         str(value) if not isinstance(value, (dict, list)) else value
                     )
-        return metadata
+        return metadata  # type: ignore[return-value]
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol).

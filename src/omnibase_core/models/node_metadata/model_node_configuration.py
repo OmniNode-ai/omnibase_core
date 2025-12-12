@@ -14,6 +14,7 @@ from pydantic import BaseModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
+from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 from omnibase_core.types.typed_dict_node_configuration_summary import (
     TypedDictNodeConfigurationSummary,
 )
@@ -22,7 +23,6 @@ from .model_node_connection_settings import ModelNodeConnectionSettings
 from .model_node_execution_settings import ModelNodeExecutionSettings
 from .model_node_feature_flags import ModelNodeFeatureFlags
 from .model_node_resource_limits import ModelNodeResourceLimits
-from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
 
 class ModelNodeConfiguration(BaseModel):
@@ -322,7 +322,7 @@ class ModelNodeConfiguration(BaseModel):
                     metadata[field] = (
                         str(value) if not isinstance(value, (dict, list)) else value
                     )
-        return metadata
+        return metadata  # type: ignore[return-value]
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""

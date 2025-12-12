@@ -340,7 +340,9 @@ class MixinDiscoveryResponder:
 
         return True
 
-    def _matches_custom_criteria(self, filter_criteria: "TypedDictFilterCriteria") -> bool:
+    def _matches_custom_criteria(
+        self, filter_criteria: "TypedDictFilterCriteria"
+    ) -> bool:
         """
         Check custom filter criteria.
 
@@ -416,7 +418,7 @@ class MixinDiscoveryResponder:
             response_metadata = ModelDiscoveryResponseModelMetadata(
                 request_id=request.request_id,
                 node_id=node_id_value,
-                introspection=introspection_data,
+                introspection=introspection_data,  # type: ignore[arg-type]
                 health_status=self.get_health_status(),
                 capabilities=self.get_discovery_capabilities(),
                 node_type=(
@@ -434,7 +436,7 @@ class MixinDiscoveryResponder:
                 event_type=create_event_type_from_registry("DISCOVERY_RESPONSE"),
                 node_id=node_id_value,
                 correlation_id=original_event.correlation_id,
-                data=response_metadata.model_dump(),
+                data=response_metadata.model_dump(),  # type: ignore[arg-type]
             )
 
             # Publish response (assuming we have access to event bus)

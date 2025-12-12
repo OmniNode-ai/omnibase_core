@@ -18,6 +18,7 @@ from omnibase_core.models.core.model_custom_properties import ModelCustomPropert
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 from omnibase_core.types.typed_dict_documentation_summary_filtered import (
     TypedDictDocumentationSummaryFiltered,
 )
@@ -26,7 +27,6 @@ from .model_function_deprecation_info import ModelFunctionDeprecationInfo
 from .model_function_documentation import ModelFunctionDocumentation
 from .model_function_metadata_summary import ModelFunctionMetadataSummary
 from .model_function_relationships import ModelFunctionRelationships
-from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
 
 class ModelFunctionNodeMetadata(BaseModel):
@@ -272,7 +272,7 @@ class ModelFunctionNodeMetadata(BaseModel):
             {
                 "documentation": doc_filtered,
                 "deprecation": dep_summary,
-                "relationships": rel_converted,
+                "relationships": rel_converted,  # type: ignore[typeddict-item]
                 "documentation_quality_score": self.get_documentation_quality_score(),
                 # Consider "fully documented" based on documentation, not recency
                 "is_fully_documented": (
@@ -359,7 +359,7 @@ class ModelFunctionNodeMetadata(BaseModel):
                     metadata[field] = (
                         str(value) if not isinstance(value, (dict, list)) else value
                     )
-        return metadata
+        return metadata  # type: ignore[return-value]
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""

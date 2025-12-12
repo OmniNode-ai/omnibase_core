@@ -89,6 +89,6 @@ class ModelStringSet(BaseModel):
         """Support len() function."""
         return self.size()
 
-    def __iter__(self) -> Iterator[str]:
+    def __iter__(self) -> Iterator[str]:  # type: ignore[override]
         """Support iteration."""
         return iter(self.elements)

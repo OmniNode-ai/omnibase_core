@@ -11,15 +11,14 @@ Discriminated union for function node types following ONEX one-model-per-file ar
 """
 
 
-
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_node_union_type import EnumNodeUnionType
 from omnibase_core.models.node_metadata.model_function_node import ModelFunctionNode
+from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
 from .model_function_node_data import ModelFunctionNodeData
-from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
 
 class ModelNodeUnion(BaseModel):
@@ -146,7 +145,7 @@ class ModelNodeUnion(BaseModel):
                     metadata[field] = (
                         str(value) if not isinstance(value, (dict, list)) else value
                     )
-        return metadata
+        return metadata  # type: ignore[return-value]
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol).

@@ -3,15 +3,15 @@
 List container for masked data.
 """
 
-from pydantic import BaseModel, Field
+from typing import Any
 
-from omnibase_core.models.common.model_typed_value import ModelTypedValue
+from pydantic import BaseModel, Field
 
 
 class ModelMaskedDataList(BaseModel):
     """List container for masked data.
 
-    Uses ModelTypedValue for type-safe storage of heterogeneous list items.
+    Uses Any for storage of heterogeneous list items.
     """
 
-    items: list[ModelTypedValue] = Field(default_factory=list)
+    items: list[Any] = Field(default_factory=list)

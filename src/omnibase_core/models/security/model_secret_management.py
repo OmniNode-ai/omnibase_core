@@ -83,7 +83,7 @@ def validate_secret_configuration(config_type: str, **kwargs: object) -> Seriali
                 ModelDatabaseSecureConfig,
             )
 
-            config = ModelDatabaseSecureConfig(**kwargs)
+            config = ModelDatabaseSecureConfig(**kwargs)  # type: ignore[arg-type]
             result = config.validate_credentials()
             # Convert Pydantic model to dict
             return result.model_dump()
@@ -94,7 +94,7 @@ def validate_secret_configuration(config_type: str, **kwargs: object) -> Seriali
 
     elif config_type == "backend":
         try:
-            backend = ModelSecretBackend(**kwargs)
+            backend = ModelSecretBackend(**kwargs)  # type: ignore[arg-type]
             return {"is_valid": True, "backend": backend.model_dump()}
         except (
             Exception
@@ -126,7 +126,7 @@ def get_security_recommendations(
 
             config = ModelDatabaseSecureConfig(**config_dict)
             assessment = config.get_security_assessment()
-            recommendations: list[str] = assessment.get("recommendations", [])
+            recommendations: list[str] = assessment.get("recommendations", [])  # type: ignore[attr-defined]
             return recommendations
 
         if config_type == "backend":

@@ -160,7 +160,7 @@ class ModelOptionalInt(BaseModel):
             except ValueError:
                 coercion_mode = EnumCoercionMode.STRICT
         else:
-            coercion_mode = coercion_mode_value
+            coercion_mode = coercion_mode_value  # type: ignore[assignment]
 
         # Handle None - no coercion needed
         if v is None:

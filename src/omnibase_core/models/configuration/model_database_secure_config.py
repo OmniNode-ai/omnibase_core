@@ -495,7 +495,9 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
             query_params: dict[str, str] = {}
             for param, value in params.items():
                 mapped_param = param_mapping.get(param, param)
-                param_value = value[0] if isinstance(value, list) and value else str(value)
+                param_value = (
+                    value[0] if isinstance(value, list) and value else str(value)
+                )
                 if mapped_param == "ssl_mode":
                     parsed_info = ParsedConnectionInfo(
                         **{**parsed_info.model_dump(), "ssl_mode": param_value}
@@ -610,7 +612,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         assessment = self.get_security_assessment()
 
         # Production requires encryption
-        if not assessment["encryption_in_transit"]:
+        if not assessment["encryption_in_transit"]:  # type: ignore[index]
             return False
 
         # Check for critical vulnerabilities
@@ -619,7 +621,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
             "Using common/default password",
         ]
 
-        for vuln in assessment["vulnerabilities"]:
+        for vuln in assessment["vulnerabilities"]:  # type: ignore[index]
             if any(critical in vuln for critical in critical_vulnerabilities):
                 return False
 
@@ -659,14 +661,14 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
 
         # Performance profile based on driver
         if self.driver == "postgresql":
-            recommendations.performance_profile = {
+            recommendations.performance_profile = {  # type: ignore[assignment]
                 "recommended_pool_size": min(20, max(5, self.pool_size)),
                 "recommended_max_overflow": min(30, max(10, self.max_overflow)),
                 "connection_overhead": "low",
                 "concurrent_connections_limit": 100,
             }
         elif self.driver == "mysql":
-            recommendations.performance_profile = {
+            recommendations.performance_profile = {  # type: ignore[assignment]
                 "recommended_pool_size": min(15, max(5, self.pool_size)),
                 "recommended_max_overflow": min(25, max(10, self.max_overflow)),
                 "connection_overhead": "medium",
@@ -983,7 +985,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         # Remove None values
         config_data = {k: v for k, v in config_data.items() if v is not None}
 
-        return cls(**config_data)
+        return cls(**config_data)  # type: ignore[arg-type]
 
     # === Factory Methods ===
 

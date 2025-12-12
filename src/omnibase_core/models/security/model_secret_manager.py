@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 from .model_configuration_summary import ModelConfigurationSummary
 from .model_credentials_analysis import ModelCredentialsAnalysis, ModelManagerAssessment
@@ -217,7 +218,7 @@ class ModelSecretManager(BaseModel):
                     for key, value in obj.items()
                 }
             if isinstance(obj, list):
-                return [mask_recursive(item) for item in obj]
+                return [mask_recursive(item) for item in obj]  # type: ignore[arg-type]
             return obj
 
         # Parameter is typed as ModelMaskData, no need to check

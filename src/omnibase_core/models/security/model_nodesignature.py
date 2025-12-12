@@ -167,7 +167,7 @@ class ModelNodeSignature(BaseModel):
             operation=EnumNodeOperation.SOURCE,
             hop_index=0,
             user_context=user_context,
-            **kwargs,
+            **kwargs,  # type: ignore[arg-type]
         )
 
     @classmethod
@@ -197,7 +197,7 @@ class ModelNodeSignature(BaseModel):
             hop_index=hop_index,
             previous_signature_hash=previous_signature_hash,
             operation_details=ModelOperationDetails(routing_decision=routing_decision),
-            **kwargs,
+            **kwargs,  # type: ignore[arg-type]
         )
 
     @classmethod
@@ -227,7 +227,7 @@ class ModelNodeSignature(BaseModel):
             hop_index=hop_index,
             previous_signature_hash=previous_signature_hash,
             operation_details=ModelOperationDetails(delivery_status=delivery_status),
-            **kwargs,
+            **kwargs,  # type: ignore[arg-type]
         )
 
     def verify_signature_chain_continuity(

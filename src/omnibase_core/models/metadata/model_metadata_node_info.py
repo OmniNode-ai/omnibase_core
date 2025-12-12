@@ -30,13 +30,13 @@ from omnibase_core.models.infrastructure.model_value import ModelValue
 from omnibase_core.models.metadata.model_metadata_usage_metrics import (
     ModelMetadataUsageMetrics,
 )
+from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
 from .model_metadata_value import ModelMetadataValue
 from .model_node_info_summary import ModelNodeInfoSummary
 from .model_structured_description import ModelStructuredDescription
 from .model_structured_display_name import ModelStructuredDisplayName
 from .model_structured_tags import ModelStructuredTags
-from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
 # Type aliases for convenience
 ModelMetadataNodeType = EnumMetadataNodeType
@@ -492,7 +492,7 @@ class ModelMetadataNodeInfo(BaseModel):
                     metadata[field] = (
                         str(value) if not isinstance(value, (dict, list)) else value
                     )
-        return metadata
+        return metadata  # type: ignore[return-value]
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol).

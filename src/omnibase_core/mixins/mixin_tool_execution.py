@@ -226,7 +226,7 @@ class MixinToolExecution:
             node_id=node_id_uuid,
             correlation_id=correlation_id,
             timestamp=datetime.fromtimestamp(time.time(), tz=UTC),
-            data={
+            data={  # type: ignore[arg-type]
                 "tool_name": self.get_node_name(),
                 "success": success,
                 "result": result,

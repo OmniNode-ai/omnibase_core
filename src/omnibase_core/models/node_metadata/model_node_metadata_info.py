@@ -24,13 +24,13 @@ from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
 from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 from omnibase_core.models.metadata.node_info import ModelNodePerformanceMetrics
+from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 from omnibase_core.types.typed_dict_node_metadata_summary import (
     TypedDictNodeMetadataSummary,
 )
 
 from .model_node_core_metadata import ModelNodeCoreMetadata
 from .model_node_organization_metadata import ModelNodeOrganizationMetadata
-from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
 
 class ModelNodeMetadataInfo(BaseModel):
@@ -327,7 +327,9 @@ class ModelNodeMetadataInfo(BaseModel):
         )
 
     @classmethod
-    def from_node_info(cls, node_info: TypedDictSerializedModel) -> ModelNodeMetadataInfo:
+    def from_node_info(
+        cls, node_info: TypedDictSerializedModel
+    ) -> ModelNodeMetadataInfo:
         """Create from node info object."""
         # Extract basic information and distribute to sub-models
         core = ModelNodeCoreMetadata(
@@ -400,7 +402,7 @@ class ModelNodeMetadataInfo(BaseModel):
                     metadata[field] = (
                         str(value) if not isinstance(value, (dict, list)) else value
                     )
-        return metadata
+        return metadata  # type: ignore[return-value]
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""

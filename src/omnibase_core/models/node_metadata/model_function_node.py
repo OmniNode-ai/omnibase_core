@@ -15,7 +15,6 @@ excessive string fields in a single large model.
 """
 
 
-
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_category import EnumCategory
@@ -23,12 +22,12 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_function_status import EnumFunctionStatus
 from omnibase_core.enums.enum_operational_complexity import EnumOperationalComplexity
 from omnibase_core.enums.enum_return_type import EnumReturnType
+from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
 from .model_function_node_core import ModelFunctionNodeCore
 from .model_function_node_metadata import ModelFunctionNodeMetadata
 from .model_function_node_performance import ModelFunctionNodePerformance
 from .model_function_node_summary import ModelFunctionNodeSummary
-from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
 
 class ModelFunctionNode(BaseModel):
@@ -375,7 +374,7 @@ class ModelFunctionNode(BaseModel):
                     metadata[field] = (
                         str(value) if not isinstance(value, (dict, list)) else value
                     )
-        return metadata
+        return metadata  # type: ignore[return-value]
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
