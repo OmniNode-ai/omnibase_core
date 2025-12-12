@@ -1011,13 +1011,19 @@ def validate_execution_mode_string(mode: str) -> None:
         mode: The execution mode string to validate. Case-insensitive.
 
     Raises:
-        ModelOnexError: If the execution mode is CONDITIONAL or STREAMING.
-            The error uses EnumCoreErrorCode.VALIDATION_ERROR and includes
-            a clear message indicating which reserved mode was used.
-            Error context includes:
-            - mode: The invalid mode that was provided
-            - reserved_modes: List of reserved mode names
-            - accepted_modes: List of accepted mode names
+        ModelOnexError: In two cases:
+            1. If the mode string is not a valid EnumExecutionMode value.
+               Error code: VALIDATION_ERROR with "Invalid execution mode" message.
+               Error context includes:
+               - mode: The invalid mode that was provided
+               - reserved_modes: List of reserved mode names
+               - accepted_modes: List of accepted mode names
+
+            2. If the execution mode is CONDITIONAL or STREAMING (reserved modes
+               not yet implemented). Delegates to validate_execution_mode_enum
+               from reserved_enum_validator for this check.
+               Error code: VALIDATION_ERROR with context including mode,
+               reserved_modes, and accepted_modes.
 
     Complexity:
         Time: O(1) - set lookup
@@ -1035,12 +1041,17 @@ def validate_execution_mode_string(mode: str) -> None:
             validate_execution_mode_string("parallel")    # OK
             validate_execution_mode_string("batch")       # OK
 
+        Invalid mode strings::
+
+            validate_execution_mode_string("invalid")  # Raises ModelOnexError
+            validate_execution_mode_string("unknown")  # Raises ModelOnexError
+
         Reserved modes::
 
             validate_execution_mode_string("conditional")  # Raises ModelOnexError
             validate_execution_mode_string("streaming")    # Raises ModelOnexError
 
-        Handling reserved mode errors::
+        Handling validation errors::
 
             try:
                 validate_execution_mode_string(workflow.execution_mode)
