@@ -1,15 +1,18 @@
-from typing import Any
-from uuid import UUID, uuid4
+"""
+Introspection Publisher Mixin.
 
-from omnibase_core.models.discovery.model_nodeintrospectionevent import (
-    ModelNodeIntrospectionEvent,
-)
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+This mixin handles:
+- Gathering node introspection data from various sources
+- Publishing NODE_INTROSPECTION_EVENT for service discovery
+- Extracting actions, protocols, metadata from nodes
+- Retry logic for failed publishes
+"""
 
-"\nIntrospection Publisher Mixin.\n\nThis mixin handles:\n- Gathering node introspection data from various sources\n- Publishing NODE_INTROSPECTION_EVENT for service discovery\n- Extracting actions, protocols, metadata from nodes\n- Retry logic for failed publishes\n"
 import re
 from datetime import datetime
 from pathlib import Path
+from typing import Any
+from uuid import UUID, uuid4
 
 from pydantic import ValidationError
 
@@ -26,8 +29,12 @@ from omnibase_core.models.core.model_log_context import ModelLogContext
 from omnibase_core.models.discovery.model_node_introspection_event import (
     ModelNodeCapabilities,
 )
+from omnibase_core.models.discovery.model_nodeintrospectionevent import (
+    ModelNodeIntrospectionEvent,
+)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 _COMPONENT_NAME = Path(__file__).stem
 DEFAULT_AUTHOR = "ONEX"
@@ -159,11 +166,6 @@ class MixinIntrospectionPublisher:
                 f"Failed to gather full introspection data for node {node_id}, using fallback: {e}",
                 context=context,
             )
-            # Import typed metadata model for proper Pydantic usage
-            from omnibase_core.models.common.model_typed_metadata import (
-                ModelNodeCapabilitiesMetadata,
-            )
-
             return MixinNodeIntrospectionData(
                 node_name=self.__class__.__name__.lower(),
                 version=ModelSemVer(major=1, minor=0, patch=0),

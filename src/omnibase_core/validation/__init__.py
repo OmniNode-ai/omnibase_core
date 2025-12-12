@@ -78,9 +78,7 @@ from .patterns import validate_patterns_directory, validate_patterns_file
 # - Takes EnumExecutionMode (type-safe, for validated enum values)
 # - Rejects CONDITIONAL/STREAMING modes reserved for future versions
 # - For string input (e.g., YAML config), use validate_execution_mode_string instead
-from .reserved_enum_validator import (
-    RESERVED_EXECUTION_MODES,
-)
+from .reserved_enum_validator import RESERVED_EXECUTION_MODES
 from .reserved_enum_validator import (
     validate_execution_mode as validate_reserved_execution_mode,
 )

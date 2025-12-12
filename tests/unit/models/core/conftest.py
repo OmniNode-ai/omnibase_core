@@ -9,9 +9,7 @@ Provides reusable fixtures for:
 
 import pytest
 
-from omnibase_core.models.configuration.model_resource_limits import (
-    ModelResourceLimits,
-)
+from omnibase_core.models.configuration.model_resource_limits import ModelResourceLimits
 from omnibase_core.models.core.model_cli_command_definition import (
     ModelCliCommandDefinition,
 )

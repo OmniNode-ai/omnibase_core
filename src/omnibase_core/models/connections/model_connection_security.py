@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, ValidationError, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -158,7 +158,7 @@ class ModelConnectionSecurity(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception as e:
+        except (AttributeError, TypeError, ValueError, ValidationError) as e:
             raise ModelOnexError(
                 message=f"Operation failed: {e}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,

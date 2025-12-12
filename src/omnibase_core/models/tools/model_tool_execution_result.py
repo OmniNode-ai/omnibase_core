@@ -25,6 +25,17 @@ class ModelToolExecutionResult(BaseModel):
     output data, and error handling.
 
     Strict typing is enforced: No Any types allowed.
+
+    Field Relationships:
+        - success: Boolean indicating overall execution success/failure.
+          Use for simple conditional logic (if result.success: ...).
+        - status_code: Numeric code providing granular error classification.
+          0 indicates success, values >0 represent specific error categories.
+          Use when you need to distinguish between different failure modes
+          (e.g., 1=validation error, 2=timeout, 3=resource not found).
+
+    Both fields are intentionally provided: `success` for simple boolean checks,
+    `status_code` for detailed error handling and categorization.
     """
 
     execution_id: UUID = Field(
