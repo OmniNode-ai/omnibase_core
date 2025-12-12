@@ -277,7 +277,9 @@ class ModelValueUnion(BaseModel):
         return self
 
     # union-ok: discriminated_union - return type matches discriminated value field
-    def get_value(self) -> Union[bool, int, float, str, list[object], dict[str, object]]:
+    def get_value(
+        self,
+    ) -> Union[bool, int, float, str, list[object], dict[str, object]]:
         """
         Get the stored value with proper type.
 
