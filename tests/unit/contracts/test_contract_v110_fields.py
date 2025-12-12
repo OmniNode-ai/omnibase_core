@@ -136,8 +136,8 @@ class TestContractFingerprintField:
         version_part = fingerprint.split(":", 1)[0]
 
         # Semver pattern: major.minor.patch
-        semver_pattern = r"^\d+\.\d+\.\d+$"
-        assert re.match(semver_pattern, version_part), (
+        semver_pattern = r"\d+\.\d+\.\d+"
+        assert re.fullmatch(semver_pattern, version_part), (
             f"{contract_name}: fingerprint version '{version_part}' "
             f"is not valid semver (expected X.Y.Z format)"
         )
@@ -153,8 +153,8 @@ class TestContractFingerprintField:
         hash_part = fingerprint.split(":", 1)[1]
 
         # Hash should be 12 hex characters
-        hex_pattern = r"^[0-9a-fA-F]{12}$"
-        assert re.match(hex_pattern, hash_part), (
+        hex_pattern = r"[0-9a-fA-F]{12}"
+        assert re.fullmatch(hex_pattern, hash_part), (
             f"{contract_name}: fingerprint hash '{hash_part}' "
             f"should be exactly 12 hex characters"
         )
