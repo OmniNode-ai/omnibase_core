@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.types import SerializedDict
+from omnibase_core.types.type_serializable_value import SerializedDict
 from omnibase_core.types.typed_dict_ssl_context_options import (
     TypedDictSSLContextOptions,
 )

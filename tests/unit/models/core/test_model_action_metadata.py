@@ -29,10 +29,6 @@ from omnibase_core.models.security.model_security_level import (
     ModelSecurityLevel,
 )
 
-# Rebuild ModelEnvironment to resolve forward references
-# This is needed because ModelEnvironment uses TYPE_CHECKING imports
-ModelEnvironment.model_rebuild()
-
 
 def create_test_action_type() -> ModelNodeActionType:
     """Helper to create test action type with proper structure."""

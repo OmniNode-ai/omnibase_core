@@ -4,16 +4,40 @@ Shared fixtures for models/core tests.
 Provides reusable fixtures for:
 - CLI command definition creation
 - Default version instances
+- Model forward reference resolution
 """
 
 import pytest
 
+from omnibase_core.models.configuration.model_resource_limits import (
+    ModelResourceLimits,
+)
 from omnibase_core.models.core.model_cli_command_definition import (
     ModelCliCommandDefinition,
 )
+from omnibase_core.models.core.model_environment import ModelEnvironment
 from omnibase_core.models.core.model_event_type import ModelEventType
 from omnibase_core.models.core.model_node_reference import ModelNodeReference
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.security.model_security_level import ModelSecurityLevel
+
+
+@pytest.fixture(scope="module", autouse=True)
+def rebuild_model_environment():
+    """Resolve forward references in ModelEnvironment for tests.
+
+    ModelEnvironment uses TYPE_CHECKING imports which create forward references.
+    This fixture rebuilds the model to resolve those references before tests run.
+
+    The _types_namespace parameter provides the types that were imported under
+    TYPE_CHECKING in the model module.
+    """
+    ModelEnvironment.model_rebuild(
+        _types_namespace={
+            "ModelResourceLimits": ModelResourceLimits,
+            "ModelSecurityLevel": ModelSecurityLevel,
+        }
+    )
 
 
 @pytest.fixture

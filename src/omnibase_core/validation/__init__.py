@@ -1,6 +1,3 @@
-from pathlib import Path
-from typing import Any, Union
-
 """
 Comprehensive validation framework for omni* ecosystem.
 
@@ -27,6 +24,9 @@ Usage Examples:
     python -m omnibase_core.validation union-usage --strict
     python -m omnibase_core.validation all
 """
+
+from pathlib import Path
+from typing import Any, Union
 
 # Import models and enums
 from omnibase_core.enums.enum_import_status import EnumImportStatus
@@ -74,6 +74,10 @@ from .fsm_analysis import analyze_fsm
 from .patterns import validate_patterns_directory, validate_patterns_file
 
 # Import reserved enum validator (OMN-669)
+# Alias: validate_execution_mode -> validate_reserved_execution_mode
+# - Takes EnumExecutionMode (type-safe, for validated enum values)
+# - Rejects CONDITIONAL/STREAMING modes reserved for future versions
+# - For string input (e.g., YAML config), use validate_execution_mode_string instead
 from .reserved_enum_validator import (
     RESERVED_EXECUTION_MODES,
 )

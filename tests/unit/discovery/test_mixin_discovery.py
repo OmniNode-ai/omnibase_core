@@ -52,7 +52,7 @@ class TestModelMixinInfo:
                     type="integer",
                     min_value=0,
                     max_value=10,
-                    default="3",
+                    default="3",  # String per ModelConfigSchemaProperty design
                 )
             },
         )
