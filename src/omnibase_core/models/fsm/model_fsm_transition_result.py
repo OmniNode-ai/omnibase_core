@@ -105,9 +105,11 @@ class ModelFSMTransitionResult(BaseModel):
     @classmethod
     def _convert_metadata_to_frozen(
         cls,
-        v: dict[str, SerializableValue]
-        | tuple[tuple[str, SerializableValue], ...]
-        | None,
+        v: (
+            dict[str, SerializableValue]
+            | tuple[tuple[str, SerializableValue], ...]
+            | None
+        ),
     ) -> tuple[tuple[str, SerializableValue], ...]:
         """Convert dict to sorted tuple of tuples for deep immutability.
 

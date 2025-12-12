@@ -244,7 +244,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
                 if self._total_invocations > 0
                 else 1.0
             ),
-            node_id=getattr(self, "_node_id", "unknown"),
+            node_id=str(getattr(self, "_node_id", "unknown")),
             node_name=self._extract_node_name(),
             shutdown_requested=self._shutdown_requested,
         )

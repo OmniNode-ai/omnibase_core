@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 from typing import TypedDict
-from uuid import UUID
 
 
 class TypedDictNodeExecutorHealth(TypedDict):
-    """TypedDict for node executor health status from MixinNodeExecutor.get_executor_health()."""
+    """TypedDict for node executor health status from MixinNodeExecutor.get_executor_health().
+
+    Note: node_id is always str - UUIDs should be converted to string at boundaries
+    for type safety and JSON serialization compatibility.
+    """
 
     status: str
     uptime_seconds: int
@@ -16,9 +19,7 @@ class TypedDictNodeExecutorHealth(TypedDict):
     successful_invocations: int
     failed_invocations: int
     success_rate: float
-    node_id: (
-        str | UUID
-    )  # Union needed: codebase uses string fallback when _node_id not set
+    node_id: str  # Always str - UUIDs converted at boundaries for type safety
     node_name: str
     shutdown_requested: bool
 

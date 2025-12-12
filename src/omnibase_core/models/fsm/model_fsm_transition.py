@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Strongly-typed FSM transition model.
 
@@ -11,6 +9,8 @@ Deep Immutability:
     immutable types (tuple instead of list) for deep immutability. This
     ensures that nested collections cannot be modified after construction.
 """
+
+from __future__ import annotations
 
 from typing import Any
 

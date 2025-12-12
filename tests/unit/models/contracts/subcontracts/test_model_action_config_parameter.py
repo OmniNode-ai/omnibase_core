@@ -1,193 +1,246 @@
 """
-Unit tests for ModelActionConfigParameter and ModelActionConfigValue.
+Unit tests for ModelActionConfigParameter.
 
 Comprehensive test coverage including:
-- ModelActionConfigParameter field validation
-- ModelActionConfigValue discriminated union behavior
-- ModelActionConfigStringValue, ModelActionConfigNumericValue, ModelActionConfigBooleanValue
-- Factory functions (from_string, from_int, from_float, from_bool, from_value)
-- Type conversions (as_string, as_int, as_float, as_bool)
-- Discriminator validation
-- Edge cases and error scenarios
-- ConfigDict behavior
+- Basic instantiation with all field combinations
+- Field validation (name min_length, type literal validation)
+- Default value type matching (model_validator)
+- Immutability tests (frozen=True)
+- Serialization (model_dump, model_dump_json, model_validate_json)
+- Edge cases and boundary conditions
 """
+
+import json
 
 import pytest
 from pydantic import ValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 from omnibase_core.models.contracts.model_action_config_parameter import (
     ModelActionConfigParameter,
 )
-from omnibase_core.models.core.model_action_config_value import (
-    ModelActionConfigBooleanValue,
-    ModelActionConfigNumericValue,
-    ModelActionConfigStringValue,
-    from_bool,
-    from_float,
-    from_int,
-    from_numeric,
-    from_string,
-    from_value,
-    get_action_config_discriminator_value,
-)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
-# Default version for test instances - required field after removing default_factory
-DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
 class TestModelActionConfigParameterBasics:
     """Test basic ModelActionConfigParameter instantiation and defaults."""
 
-    def test_minimal_instantiation_string_value(self):
-        """Test parameter with string value."""
+    def test_minimal_instantiation(self):
+        """Test minimal instantiation with only required fields."""
         param = ModelActionConfigParameter(
-            version=DEFAULT_VERSION,
-            parameter_name="timeout",
-            parameter_value=from_string("30s"),
+            name="timeout",
+            type="int",
+            required=True,
         )
 
-        assert param.parameter_name == "timeout"
-        assert isinstance(param.parameter_value, ModelActionConfigStringValue)
-        assert param.parameter_value.value == "30s"
-        assert param.is_required is False
-        assert param.description is None
-        assert param.validation_rule is None
-
-    def test_minimal_instantiation_numeric_value(self):
-        """Test parameter with numeric value."""
-        param = ModelActionConfigParameter(
-            version=DEFAULT_VERSION,
-            parameter_name="max_retries",
-            parameter_value=from_int(5),
-        )
-
-        assert param.parameter_name == "max_retries"
-        assert isinstance(param.parameter_value, ModelActionConfigNumericValue)
-        assert param.parameter_value.as_int() == 5
-
-    def test_minimal_instantiation_boolean_value(self):
-        """Test parameter with boolean value."""
-        param = ModelActionConfigParameter(
-            version=DEFAULT_VERSION,
-            parameter_name="enabled",
-            parameter_value=from_bool(True),
-        )
-
-        assert param.parameter_name == "enabled"
-        assert isinstance(param.parameter_value, ModelActionConfigBooleanValue)
-        assert param.parameter_value.as_bool() is True
-
-    def test_full_instantiation(self):
-        """Test parameter with all fields specified."""
-        param = ModelActionConfigParameter(
-            version=DEFAULT_VERSION,
-            parameter_name="connection_timeout",
-            parameter_value=from_int(30),
-            is_required=True,
-            description="Maximum time to wait for connection",
-            validation_rule="value > 0 and value <= 300",
-        )
-
-        assert param.parameter_name == "connection_timeout"
-        assert param.parameter_value.as_int() == 30
-        assert param.is_required is True
-        assert param.description == "Maximum time to wait for connection"
-        assert param.validation_rule == "value > 0 and value <= 300"
-
-    def test_default_is_required(self):
-        """Test is_required defaults to False."""
-        param = ModelActionConfigParameter(
-            version=DEFAULT_VERSION,
-            parameter_name="optional_param",
-            parameter_value=from_string("default"),
-        )
-
-        assert param.is_required is False
-
-    def test_default_description_none(self):
-        """Test description defaults to None."""
-        param = ModelActionConfigParameter(
-            version=DEFAULT_VERSION,
-            parameter_name="param",
-            parameter_value=from_string("value"),
-        )
-
+        assert param.name == "timeout"
+        assert param.type == "int"
+        assert param.required is True
+        assert param.default is None
         assert param.description is None
 
-    def test_default_validation_rule_none(self):
-        """Test validation_rule defaults to None."""
+    def test_instantiation_with_string_type(self):
+        """Test parameter with string type."""
         param = ModelActionConfigParameter(
-            version=DEFAULT_VERSION,
-            parameter_name="param",
-            parameter_value=from_string("value"),
+            name="log_level",
+            type="string",
+            required=False,
+            default="INFO",
+            description="Logging level",
         )
 
-        assert param.validation_rule is None
+        assert param.name == "log_level"
+        assert param.type == "string"
+        assert param.required is False
+        assert param.default == "INFO"
+        assert param.description == "Logging level"
+
+    def test_instantiation_with_int_type(self):
+        """Test parameter with int type."""
+        param = ModelActionConfigParameter(
+            name="max_retries",
+            type="int",
+            required=False,
+            default=3,
+        )
+
+        assert param.name == "max_retries"
+        assert param.type == "int"
+        assert param.default == 3
+
+    def test_instantiation_with_bool_type(self):
+        """Test parameter with bool type."""
+        param = ModelActionConfigParameter(
+            name="enabled",
+            type="bool",
+            required=False,
+            default=True,
+        )
+
+        assert param.name == "enabled"
+        assert param.type == "bool"
+        assert param.default is True
+
+    def test_instantiation_with_float_type(self):
+        """Test parameter with float type."""
+        param = ModelActionConfigParameter(
+            name="rate_limit",
+            type="float",
+            required=False,
+            default=10.5,
+        )
+
+        assert param.name == "rate_limit"
+        assert param.type == "float"
+        assert param.default == 10.5
+
+    def test_instantiation_with_list_type(self):
+        """Test parameter with list type."""
+        param = ModelActionConfigParameter(
+            name="allowed_values",
+            type="list",
+            required=False,
+            default=["a", "b", "c"],
+        )
+
+        assert param.name == "allowed_values"
+        assert param.type == "list"
+        assert param.default == ["a", "b", "c"]
+
+    def test_instantiation_with_dict_type(self):
+        """Test parameter with dict type."""
+        param = ModelActionConfigParameter(
+            name="config",
+            type="dict",
+            required=False,
+            default={"key": "value"},
+        )
+
+        assert param.name == "config"
+        assert param.type == "dict"
+        assert param.default == {"key": "value"}
+
+    def test_required_parameter_without_default(self):
+        """Test required parameter without default value."""
+        param = ModelActionConfigParameter(
+            name="api_key",
+            type="string",
+            required=True,
+        )
+
+        assert param.required is True
+        assert param.default is None
+
+    def test_optional_parameter_with_none_default(self):
+        """Test optional parameter with explicit None default."""
+        param = ModelActionConfigParameter(
+            name="optional_config",
+            type="dict",
+            required=False,
+            default=None,
+        )
+
+        assert param.required is False
+        assert param.default is None
 
 
 class TestModelActionConfigParameterValidation:
     """Test ModelActionConfigParameter field validation."""
 
-    def test_parameter_name_required(self):
-        """Test parameter_name is required."""
+    def test_name_required(self):
+        """Test name is required."""
         with pytest.raises(ValidationError) as exc_info:
             ModelActionConfigParameter(
-                version=DEFAULT_VERSION,
-                parameter_value=from_string("value"),
+                type="string",
+                required=True,
             )
 
-        assert "parameter_name" in str(exc_info.value)
+        assert "name" in str(exc_info.value)
 
-    def test_parameter_name_min_length(self):
-        """Test parameter_name has minimum length constraint."""
+    def test_name_min_length(self):
+        """Test name has minimum length constraint (min_length=1)."""
         with pytest.raises(ValidationError) as exc_info:
             ModelActionConfigParameter(
-                version=DEFAULT_VERSION,
-                parameter_name="",
-                parameter_value=from_string("value"),
+                name="",
+                type="string",
+                required=True,
             )
 
-        assert "parameter_name" in str(exc_info.value)
+        assert "name" in str(exc_info.value).lower()
 
-    def test_parameter_name_whitespace_accepted(self):
-        """Test parameter_name accepts whitespace (no strip validation)."""
+    def test_name_single_char_accepted(self):
+        """Test single character name is accepted."""
         param = ModelActionConfigParameter(
-            version=DEFAULT_VERSION,
-            parameter_name="   ",
-            parameter_value=from_string("value"),
+            name="x",
+            type="int",
+            required=True,
         )
-        # Pydantic doesn't strip by default, so whitespace is accepted
-        assert param.parameter_name == "   "
 
-    def test_parameter_value_required(self):
-        """Test parameter_value is required."""
+        assert param.name == "x"
+
+    def test_type_required(self):
+        """Test type is required."""
         with pytest.raises(ValidationError) as exc_info:
-            ModelActionConfigParameter(version=DEFAULT_VERSION, parameter_name="test")
+            ModelActionConfigParameter(
+                name="test",
+                required=True,
+            )
 
-        assert "parameter_value" in str(exc_info.value)
+        assert "type" in str(exc_info.value)
 
-    def test_long_parameter_name(self):
-        """Test parameter_name accepts long names."""
+    def test_type_invalid_literal(self):
+        """Test type must be one of the allowed literals."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelActionConfigParameter(
+                name="test",
+                type="invalid_type",
+                required=True,
+            )
+
+        # Should fail literal validation
+        error_str = str(exc_info.value)
+        assert "type" in error_str.lower()
+
+    def test_type_all_valid_literals(self):
+        """Test all valid type literals are accepted."""
+        valid_types = ["string", "int", "bool", "float", "list", "dict"]
+
+        for type_name in valid_types:
+            param = ModelActionConfigParameter(
+                name=f"param_{type_name}",
+                type=type_name,
+                required=True,
+            )
+            assert param.type == type_name
+
+    def test_required_is_required(self):
+        """Test required field is mandatory."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelActionConfigParameter(
+                name="test",
+                type="string",
+            )
+
+        assert "required" in str(exc_info.value)
+
+    def test_long_name_accepted(self):
+        """Test long parameter names are accepted."""
         long_name = "very_long_parameter_name_" * 10
         param = ModelActionConfigParameter(
-            version=DEFAULT_VERSION,
-            parameter_name=long_name,
-            parameter_value=from_string("value"),
+            name=long_name,
+            type="string",
+            required=True,
         )
 
-        assert param.parameter_name == long_name
+        assert param.name == long_name
 
-    def test_long_description(self):
-        """Test description accepts long text."""
+    def test_long_description_accepted(self):
+        """Test long descriptions are accepted."""
         long_desc = "This is a very detailed description. " * 50
         param = ModelActionConfigParameter(
-            version=DEFAULT_VERSION,
-            parameter_name="param",
-            parameter_value=from_string("value"),
+            name="param",
+            type="string",
+            required=True,
             description=long_desc,
         )
 
@@ -196,459 +249,539 @@ class TestModelActionConfigParameterValidation:
     def test_empty_description_accepted(self):
         """Test empty string description is accepted."""
         param = ModelActionConfigParameter(
-            version=DEFAULT_VERSION,
-            parameter_name="param",
-            parameter_value=from_string("value"),
+            name="param",
+            type="string",
+            required=True,
             description="",
         )
 
         assert param.description == ""
 
 
-class TestModelActionConfigStringValue:
-    """Test ModelActionConfigStringValue behavior."""
+class TestModelActionConfigParameterDefaultValidation:
+    """Test default value type matching validation (model_validator)."""
 
-    def test_string_value_creation(self):
-        """Test creating string value."""
-        value = from_string("hello")
+    def test_string_default_valid(self):
+        """Test valid string default for string type."""
+        param = ModelActionConfigParameter(
+            name="test",
+            type="string",
+            required=False,
+            default="hello",
+        )
 
-        assert isinstance(value, ModelActionConfigStringValue)
-        assert value.value_type == "string"
-        assert value.value == "hello"
+        assert param.default == "hello"
 
-    def test_string_value_to_python(self):
-        """Test to_python_value returns string."""
-        value = from_string("test")
-
-        assert value.to_python_value() == "test"
-        assert isinstance(value.to_python_value(), str)
-
-    def test_string_value_as_string(self):
-        """Test as_string returns string."""
-        value = from_string("data")
-
-        assert value.as_string() == "data"
-
-    def test_string_value_as_int_valid(self):
-        """Test as_int converts valid numeric string."""
-        value = from_string("42")
-
-        assert value.as_int() == 42
-
-    def test_string_value_as_int_invalid(self):
-        """Test as_int raises error for non-numeric string."""
-        value = from_string("not_a_number")
-
+    def test_string_default_invalid_int(self):
+        """Test int default invalid for string type."""
         with pytest.raises(ModelOnexError) as exc_info:
-            value.as_int()
-
-        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
-        assert "Cannot convert string" in exc_info.value.message
-
-    def test_string_value_empty(self):
-        """Test string value with empty string."""
-        value = from_string("")
-
-        assert value.value == ""
-        assert value.as_string() == ""
-
-    def test_string_value_whitespace(self):
-        """Test string value with whitespace."""
-        value = from_string("  spaces  ")
-
-        assert value.value == "  spaces  "
-
-    def test_string_value_multiline(self):
-        """Test string value with multiline text."""
-        multiline = "Line 1\nLine 2\nLine 3"
-        value = from_string(multiline)
-
-        assert value.value == multiline
-
-
-class TestModelActionConfigNumericValue:
-    """Test ModelActionConfigNumericValue behavior."""
-
-    def test_numeric_value_from_int(self):
-        """Test creating numeric value from int."""
-        value = from_int(42)
-
-        assert isinstance(value, ModelActionConfigNumericValue)
-        assert value.value_type == "numeric"
-        assert value.to_python_value() == 42
-
-    def test_numeric_value_from_float(self):
-        """Test creating numeric value from float."""
-        value = from_float(3.14)
-
-        assert isinstance(value, ModelActionConfigNumericValue)
-        assert value.value_type == "numeric"
-        assert value.to_python_value() == 3.14
-
-    def test_numeric_value_from_numeric(self):
-        """Test creating numeric value from ModelNumericValue."""
-        numeric = ModelNumericValue.from_int(100)
-        value = from_numeric(numeric)
-
-        assert isinstance(value, ModelActionConfigNumericValue)
-        assert value.to_python_value() == 100
-
-    def test_numeric_value_as_int(self):
-        """Test as_int returns integer."""
-        value = from_int(42)
-
-        assert value.as_int() == 42
-        assert isinstance(value.as_int(), int)
-
-    def test_numeric_value_as_float(self):
-        """Test as_float returns float."""
-        value = from_float(3.14)
-
-        assert value.as_float() == 3.14
-        assert isinstance(value.as_float(), float)
-
-    def test_numeric_value_as_string(self):
-        """Test as_string returns string representation."""
-        value = from_int(42)
-
-        assert value.as_string() == "42"
-        assert isinstance(value.as_string(), str)
-
-    def test_numeric_value_zero(self):
-        """Test numeric value with zero."""
-        value = from_int(0)
-
-        assert value.to_python_value() == 0
-        assert value.as_int() == 0
-
-    def test_numeric_value_negative(self):
-        """Test numeric value with negative number."""
-        value = from_int(-100)
-
-        assert value.to_python_value() == -100
-        assert value.as_int() == -100
-
-    def test_numeric_value_large_number(self):
-        """Test numeric value with large number."""
-        large = 999999999999
-        value = from_int(large)
-
-        assert value.to_python_value() == large
-
-
-class TestModelActionConfigBooleanValue:
-    """Test ModelActionConfigBooleanValue behavior."""
-
-    def test_boolean_value_true(self):
-        """Test creating boolean value True."""
-        value = from_bool(True)
-
-        assert isinstance(value, ModelActionConfigBooleanValue)
-        assert value.value_type == "boolean"
-        assert value.value is True
-
-    def test_boolean_value_false(self):
-        """Test creating boolean value False."""
-        value = from_bool(False)
-
-        assert isinstance(value, ModelActionConfigBooleanValue)
-        assert value.value_type == "boolean"
-        assert value.value is False
-
-    def test_boolean_value_to_python(self):
-        """Test to_python_value returns bool."""
-        value = from_bool(True)
-
-        assert value.to_python_value() is True
-        assert isinstance(value.to_python_value(), bool)
-
-    def test_boolean_value_as_bool(self):
-        """Test as_bool returns boolean."""
-        value = from_bool(False)
-
-        assert value.as_bool() is False
-
-    def test_boolean_value_as_string_true(self):
-        """Test as_string returns 'true' for True."""
-        value = from_bool(True)
-
-        assert value.as_string() == "true"
-
-    def test_boolean_value_as_string_false(self):
-        """Test as_string returns 'false' for False."""
-        value = from_bool(False)
-
-        assert value.as_string() == "false"
-
-
-class TestActionConfigValueFactoryFunctions:
-    """Test factory functions for creating action config values."""
-
-    def test_from_value_string(self):
-        """Test from_value with string input."""
-        value = from_value("hello")
-
-        assert isinstance(value, ModelActionConfigStringValue)
-        assert value.value == "hello"
-
-    def test_from_value_int(self):
-        """Test from_value with int input."""
-        value = from_value(42)
-
-        assert isinstance(value, ModelActionConfigNumericValue)
-        assert value.as_int() == 42
-
-    def test_from_value_float(self):
-        """Test from_value with float input."""
-        value = from_value(3.14)
-
-        assert isinstance(value, ModelActionConfigNumericValue)
-        assert value.as_float() == 3.14
-
-    def test_from_value_bool_true(self):
-        """Test from_value with bool True (must check before int)."""
-        value = from_value(True)
-
-        assert isinstance(value, ModelActionConfigBooleanValue)
-        assert value.as_bool() is True
-
-    def test_from_value_bool_false(self):
-        """Test from_value with bool False."""
-        value = from_value(False)
-
-        assert isinstance(value, ModelActionConfigBooleanValue)
-        assert value.as_bool() is False
-
-    def test_from_value_fallback_to_string(self):
-        """Test from_value falls back to string for unknown types."""
-        value = from_value({"key": "value"})
-
-        assert isinstance(value, ModelActionConfigStringValue)
-        assert "key" in value.value
-
-    def test_from_value_none_becomes_string(self):
-        """Test from_value converts None to string."""
-        value = from_value(None)
-
-        assert isinstance(value, ModelActionConfigStringValue)
-        assert value.value == "None"
-
-
-class TestActionConfigValueDiscriminator:
-    """Test discriminator function behavior."""
-
-    def test_discriminator_string_dict(self):
-        """Test discriminator with string type in dict."""
-        result = get_action_config_discriminator_value({"value_type": "string"})
-
-        assert result == "string"
-
-    def test_discriminator_numeric_dict(self):
-        """Test discriminator with numeric type in dict."""
-        result = get_action_config_discriminator_value({"value_type": "numeric"})
-
-        assert result == "numeric"
-
-    def test_discriminator_boolean_dict(self):
-        """Test discriminator with boolean type in dict."""
-        result = get_action_config_discriminator_value({"value_type": "boolean"})
-
-        assert result == "boolean"
-
-    def test_discriminator_missing_value_type(self):
-        """Test discriminator defaults to string when missing."""
-        result = get_action_config_discriminator_value({})
-
-        assert result == "string"
-
-    def test_discriminator_object_with_attribute(self):
-        """Test discriminator with object having value_type attribute."""
-        value = from_int(42)
-        result = get_action_config_discriminator_value(value)
-
-        assert result == "numeric"
-
-    def test_discriminator_object_without_attribute(self):
-        """Test discriminator defaults to string for object without attribute."""
-
-        class CustomObject:
-            pass
-
-        obj = CustomObject()
-        result = get_action_config_discriminator_value(obj)
-
-        assert result == "string"
+            ModelActionConfigParameter(
+                name="test",
+                type="string",
+                required=False,
+                default=42,
+            )
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH
+        assert "string" in exc_info.value.message
+        assert "int" in exc_info.value.message
+
+    def test_int_default_valid(self):
+        """Test valid int default for int type."""
+        param = ModelActionConfigParameter(
+            name="test",
+            type="int",
+            required=False,
+            default=42,
+        )
+
+        assert param.default == 42
+
+    def test_int_default_invalid_string(self):
+        """Test string default invalid for int type."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelActionConfigParameter(
+                name="test",
+                type="int",
+                required=False,
+                default="42",
+            )
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH
+        assert "int" in exc_info.value.message
+        assert "str" in exc_info.value.message
+
+    def test_int_default_invalid_bool(self):
+        """Test bool default invalid for int type (special case)."""
+        # In Python, bool is a subclass of int, but we explicitly disallow this
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelActionConfigParameter(
+                name="test",
+                type="int",
+                required=False,
+                default=True,
+            )
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH
+        assert "bool" in exc_info.value.message
+        assert "int" in exc_info.value.message
+
+    def test_bool_default_valid(self):
+        """Test valid bool default for bool type."""
+        param = ModelActionConfigParameter(
+            name="test",
+            type="bool",
+            required=False,
+            default=False,
+        )
+
+        assert param.default is False
+
+    def test_bool_default_invalid_int(self):
+        """Test int default invalid for bool type."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelActionConfigParameter(
+                name="test",
+                type="bool",
+                required=False,
+                default=1,
+            )
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH
+
+    def test_float_default_valid_float(self):
+        """Test valid float default for float type."""
+        param = ModelActionConfigParameter(
+            name="test",
+            type="float",
+            required=False,
+            default=3.14,
+        )
+
+        assert param.default == 3.14
+
+    def test_float_default_valid_int(self):
+        """Test int default is valid for float type (int acceptable for float)."""
+        param = ModelActionConfigParameter(
+            name="test",
+            type="float",
+            required=False,
+            default=42,
+        )
+
+        assert param.default == 42
+
+    def test_float_default_invalid_string(self):
+        """Test string default invalid for float type."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelActionConfigParameter(
+                name="test",
+                type="float",
+                required=False,
+                default="3.14",
+            )
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH
+
+    def test_list_default_valid(self):
+        """Test valid list default for list type."""
+        param = ModelActionConfigParameter(
+            name="test",
+            type="list",
+            required=False,
+            default=[1, 2, 3],
+        )
+
+        assert param.default == [1, 2, 3]
+
+    def test_list_default_empty(self):
+        """Test empty list default is valid for list type."""
+        param = ModelActionConfigParameter(
+            name="test",
+            type="list",
+            required=False,
+            default=[],
+        )
+
+        assert param.default == []
+
+    def test_list_default_invalid_tuple(self):
+        """Test tuple default invalid for list type."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelActionConfigParameter(
+                name="test",
+                type="list",
+                required=False,
+                default=(1, 2, 3),
+            )
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH
+
+    def test_dict_default_valid(self):
+        """Test valid dict default for dict type."""
+        param = ModelActionConfigParameter(
+            name="test",
+            type="dict",
+            required=False,
+            default={"key": "value"},
+        )
+
+        assert param.default == {"key": "value"}
+
+    def test_dict_default_empty(self):
+        """Test empty dict default is valid for dict type."""
+        param = ModelActionConfigParameter(
+            name="test",
+            type="dict",
+            required=False,
+            default={},
+        )
+
+        assert param.default == {}
+
+    def test_dict_default_invalid_list(self):
+        """Test list default invalid for dict type."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelActionConfigParameter(
+                name="test",
+                type="dict",
+                required=False,
+                default=["key", "value"],
+            )
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH
+
+    def test_none_default_always_valid(self):
+        """Test None default is valid for all types."""
+        valid_types = ["string", "int", "bool", "float", "list", "dict"]
+
+        for type_name in valid_types:
+            param = ModelActionConfigParameter(
+                name=f"test_{type_name}",
+                type=type_name,
+                required=False,
+                default=None,
+            )
+            assert param.default is None
+
+
+class TestModelActionConfigParameterFrozen:
+    """Test immutability (frozen=True)."""
+
+    def test_frozen_cannot_modify_name(self):
+        """Test name cannot be modified after instantiation."""
+        param = ModelActionConfigParameter(
+            name="original",
+            type="string",
+            required=True,
+        )
+
+        with pytest.raises(ValidationError):
+            param.name = "modified"
+
+    def test_frozen_cannot_modify_type(self):
+        """Test type cannot be modified after instantiation."""
+        param = ModelActionConfigParameter(
+            name="test",
+            type="string",
+            required=True,
+        )
+
+        with pytest.raises(ValidationError):
+            param.type = "int"
+
+    def test_frozen_cannot_modify_required(self):
+        """Test required cannot be modified after instantiation."""
+        param = ModelActionConfigParameter(
+            name="test",
+            type="string",
+            required=True,
+        )
+
+        with pytest.raises(ValidationError):
+            param.required = False
+
+    def test_frozen_cannot_modify_default(self):
+        """Test default cannot be modified after instantiation."""
+        param = ModelActionConfigParameter(
+            name="test",
+            type="string",
+            required=False,
+            default="original",
+        )
+
+        with pytest.raises(ValidationError):
+            param.default = "modified"
+
+    def test_frozen_cannot_modify_description(self):
+        """Test description cannot be modified after instantiation."""
+        param = ModelActionConfigParameter(
+            name="test",
+            type="string",
+            required=True,
+            description="original",
+        )
+
+        with pytest.raises(ValidationError):
+            param.description = "modified"
+
+
+class TestModelActionConfigParameterSerialization:
+    """Test serialization (model_dump, model_dump_json, model_validate_json)."""
+
+    def test_model_dump_minimal(self):
+        """Test model_dump with minimal fields."""
+        param = ModelActionConfigParameter(
+            name="timeout",
+            type="int",
+            required=True,
+        )
+
+        data = param.model_dump()
+
+        assert data["name"] == "timeout"
+        assert data["type"] == "int"
+        assert data["required"] is True
+        assert data["default"] is None
+        assert data["description"] is None
+
+    def test_model_dump_full(self):
+        """Test model_dump with all fields."""
+        param = ModelActionConfigParameter(
+            name="max_retries",
+            type="int",
+            required=False,
+            default=3,
+            description="Maximum retry attempts",
+        )
+
+        data = param.model_dump()
+
+        assert data["name"] == "max_retries"
+        assert data["type"] == "int"
+        assert data["required"] is False
+        assert data["default"] == 3
+        assert data["description"] == "Maximum retry attempts"
+
+    def test_model_dump_json(self):
+        """Test model_dump_json produces valid JSON."""
+        param = ModelActionConfigParameter(
+            name="enabled",
+            type="bool",
+            required=False,
+            default=True,
+        )
+
+        json_str = param.model_dump_json()
+
+        assert isinstance(json_str, str)
+        # Validate it's proper JSON
+        data = json.loads(json_str)
+        assert data["name"] == "enabled"
+        assert data["type"] == "bool"
+        assert data["default"] is True
+
+    def test_model_validate_json(self):
+        """Test model_validate_json deserializes correctly."""
+        json_data = """{
+            "name": "timeout_seconds",
+            "type": "int",
+            "required": false,
+            "default": 30,
+            "description": "Timeout in seconds"
+        }"""
+
+        param = ModelActionConfigParameter.model_validate_json(json_data)
+
+        assert param.name == "timeout_seconds"
+        assert param.type == "int"
+        assert param.required is False
+        assert param.default == 30
+        assert param.description == "Timeout in seconds"
+
+    def test_roundtrip_serialization(self):
+        """Test roundtrip serialization preserves all data."""
+        original = ModelActionConfigParameter(
+            name="config_value",
+            type="dict",
+            required=False,
+            default={"nested": {"key": "value"}},
+            description="Complex configuration",
+        )
+
+        # Serialize and deserialize
+        json_str = original.model_dump_json()
+        restored = ModelActionConfigParameter.model_validate_json(json_str)
+
+        assert restored.name == original.name
+        assert restored.type == original.type
+        assert restored.required == original.required
+        assert restored.default == original.default
+        assert restored.description == original.description
+
+    def test_model_validate_from_dict(self):
+        """Test model_validate from dict."""
+        data = {
+            "name": "rate",
+            "type": "float",
+            "required": True,
+            "default": None,
+            "description": "Rate value",
+        }
+
+        param = ModelActionConfigParameter.model_validate(data)
+
+        assert param.name == "rate"
+        assert param.type == "float"
+        assert param.required is True
+
+    def test_extra_fields_ignored(self):
+        """Test extra fields are ignored per ConfigDict."""
+        param = ModelActionConfigParameter(
+            name="test",
+            type="string",
+            required=True,
+            unknown_field="ignored",  # type: ignore[call-arg]
+        )
+
+        assert param.name == "test"
+        assert not hasattr(param, "unknown_field")
 
 
 class TestModelActionConfigParameterEdgeCases:
     """Test edge cases and boundary conditions."""
 
-    def test_required_parameter_with_validation(self):
-        """Test required parameter with validation rule."""
-        param = ModelActionConfigParameter(
-            version=DEFAULT_VERSION,
-            parameter_name="port",
-            parameter_value=from_int(8080),
-            is_required=True,
-            validation_rule="1024 <= value <= 65535",
-        )
-
-        assert param.is_required is True
-        assert param.validation_rule is not None
-
-    def test_optional_parameter_with_default(self):
-        """Test optional parameter with default value."""
-        param = ModelActionConfigParameter(
-            version=DEFAULT_VERSION,
-            parameter_name="timeout",
-            parameter_value=from_int(30),
-            is_required=False,
-            description="Defaults to 30 seconds",
-        )
-
-        assert param.is_required is False
-        assert "default" in param.description.lower()
-
-    def test_complex_validation_rule(self):
-        """Test parameter with complex validation rule."""
-        rule = "value in ['DEBUG', 'INFO', 'WARNING', 'ERROR'] and len(value) > 0"
-        param = ModelActionConfigParameter(
-            version=DEFAULT_VERSION,
-            parameter_name="log_level",
-            parameter_value=from_string("INFO"),
-            validation_rule=rule,
-        )
-
-        assert param.validation_rule == rule
-
-    def test_parameter_with_json_string_value(self):
-        """Test parameter with JSON string value."""
-        json_str = '{"key": "value", "count": 42}'
-        param = ModelActionConfigParameter(
-            version=DEFAULT_VERSION,
-            parameter_name="config",
-            parameter_value=from_string(json_str),
-        )
-
-        assert param.parameter_value.value == json_str
-
-    def test_parameter_with_numeric_string(self):
-        """Test parameter with numeric string value."""
-        param = ModelActionConfigParameter(
-            version=DEFAULT_VERSION,
-            parameter_name="version",
-            parameter_value=from_string("1.2.3"),
-        )
-
-        assert isinstance(param.parameter_value, ModelActionConfigStringValue)
-        assert param.parameter_value.value == "1.2.3"
-
-    def test_parameter_name_with_special_chars(self):
-        """Test parameter_name with special characters."""
+    def test_name_with_special_characters(self):
+        """Test parameter name with special characters."""
         special_name = "param-name.with_special:chars"
         param = ModelActionConfigParameter(
-            version=DEFAULT_VERSION,
-            parameter_name=special_name,
-            parameter_value=from_string("value"),
+            name=special_name,
+            type="string",
+            required=True,
         )
 
-        assert param.parameter_name == special_name
+        assert param.name == special_name
 
-
-class TestModelActionConfigParameterConfigDict:
-    """Test ConfigDict behavior."""
-
-    def test_extra_fields_ignored(self):
-        """Test extra fields are ignored per ConfigDict."""
+    def test_name_with_unicode(self):
+        """Test parameter name with unicode characters."""
+        unicode_name = "parameter_with_unicode"
         param = ModelActionConfigParameter(
-            version=DEFAULT_VERSION,
-            parameter_name="test",
-            parameter_value=from_string("value"),
-            unknown_field="ignored",  # type: ignore[call-arg]
+            name=unicode_name,
+            type="string",
+            required=True,
         )
 
-        assert param.parameter_name == "test"
-        assert not hasattr(param, "unknown_field")
+        assert param.name == unicode_name
 
-    def test_validate_assignment(self):
-        """Test assignment validation is enabled."""
+    def test_string_default_with_json(self):
+        """Test string default containing JSON."""
+        json_str = '{"key": "value", "count": 42}'
         param = ModelActionConfigParameter(
-            version=DEFAULT_VERSION,
-            parameter_name="test",
-            parameter_value=from_string("value"),
+            name="json_config",
+            type="string",
+            required=False,
+            default=json_str,
         )
 
-        # Valid assignment
-        param.is_required = True
-        assert param.is_required is True
+        assert param.default == json_str
 
-        # Invalid assignment should raise
-        with pytest.raises(ValidationError):
-            param.parameter_name = ""
-
-    def test_use_enum_values_false(self):
-        """Test use_enum_values=False in nested models."""
+    def test_string_default_multiline(self):
+        """Test string default with multiline text."""
+        multiline = "Line 1\nLine 2\nLine 3"
         param = ModelActionConfigParameter(
-            version=DEFAULT_VERSION,
-            parameter_name="test",
-            parameter_value=from_string("value"),
+            name="multiline_text",
+            type="string",
+            required=False,
+            default=multiline,
         )
 
-        # Value type should be preserved as string
-        assert param.parameter_value.value_type == "string"
+        assert param.default == multiline
 
-    def test_model_serialization(self):
-        """Test parameter model serialization."""
-        original = ModelActionConfigParameter(
-            version=DEFAULT_VERSION,
-            parameter_name="max_connections",
-            parameter_value=from_int(100),
-            is_required=True,
-            description="Maximum number of concurrent connections",
-            validation_rule="value > 0",
-        )
-
-        # Serialize to dict
-        data = original.model_dump()
-
-        # Deserialize
-        restored = ModelActionConfigParameter(**data)
-
-        assert restored.parameter_name == original.parameter_name
-        assert restored.parameter_value.as_int() == original.parameter_value.as_int()
-        assert restored.is_required == original.is_required
-        assert restored.description == original.description
-        assert restored.validation_rule == original.validation_rule
-
-    def test_model_json_serialization(self):
-        """Test parameter JSON serialization."""
+    def test_int_default_zero(self):
+        """Test int default with zero value."""
         param = ModelActionConfigParameter(
-            version=DEFAULT_VERSION,
-            parameter_name="enabled",
-            parameter_value=from_bool(True),
+            name="zero_value",
+            type="int",
+            required=False,
+            default=0,
         )
 
-        json_str = param.model_dump_json()
-        assert isinstance(json_str, str)
-        assert "enabled" in json_str
+        assert param.default == 0
 
-    def test_model_json_deserialization(self):
-        """Test parameter JSON deserialization."""
-        json_data = """{
-            "version": {"major": 1, "minor": 0, "patch": 0},
-            "parameter_name": "timeout",
-            "parameter_value": {
-                "value_type": "numeric",
-                "value": {"value_type": "integer", "value": 30}
+    def test_int_default_negative(self):
+        """Test int default with negative value."""
+        param = ModelActionConfigParameter(
+            name="negative_value",
+            type="int",
+            required=False,
+            default=-100,
+        )
+
+        assert param.default == -100
+
+    def test_int_default_large_number(self):
+        """Test int default with large number."""
+        large = 999999999999
+        param = ModelActionConfigParameter(
+            name="large_value",
+            type="int",
+            required=False,
+            default=large,
+        )
+
+        assert param.default == large
+
+    def test_float_default_zero(self):
+        """Test float default with zero."""
+        param = ModelActionConfigParameter(
+            name="zero_float",
+            type="float",
+            required=False,
+            default=0.0,
+        )
+
+        assert param.default == 0.0
+
+    def test_float_default_negative(self):
+        """Test float default with negative value."""
+        param = ModelActionConfigParameter(
+            name="negative_float",
+            type="float",
+            required=False,
+            default=-3.14,
+        )
+
+        assert param.default == -3.14
+
+    def test_list_default_nested(self):
+        """Test list default with nested structures."""
+        nested_list = [[1, 2], [3, 4], {"nested": "dict"}]
+        param = ModelActionConfigParameter(
+            name="nested_list",
+            type="list",
+            required=False,
+            default=nested_list,
+        )
+
+        assert param.default == nested_list
+
+    def test_dict_default_nested(self):
+        """Test dict default with deeply nested structure."""
+        nested_dict = {
+            "level1": {
+                "level2": {
+                    "level3": "value",
+                },
             },
-            "is_required": true
-        }"""
+        }
+        param = ModelActionConfigParameter(
+            name="nested_dict",
+            type="dict",
+            required=False,
+            default=nested_dict,
+        )
 
-        param = ModelActionConfigParameter.model_validate_json(json_data)
-
-        assert param.parameter_name == "timeout"
-        assert param.parameter_value.as_int() == 30
-        assert param.is_required is True
+        assert param.default == nested_dict
 
 
 class TestModelActionConfigParameterDocumentation:
@@ -673,17 +806,17 @@ class TestModelActionConfigParameterDocumentation:
         schema = ModelActionConfigParameter.model_json_schema()
 
         required_fields = schema.get("required", [])
-        assert "parameter_name" in required_fields
-        assert "parameter_value" in required_fields
+        assert "name" in required_fields
+        assert "type" in required_fields
+        assert "required" in required_fields
 
-    def test_optional_fields_documented(self):
+    def test_optional_fields_not_required(self):
         """Test optional fields are not in required list."""
         schema = ModelActionConfigParameter.model_json_schema()
 
         required_fields = schema.get("required", [])
-        assert "is_required" not in required_fields
+        assert "default" not in required_fields
         assert "description" not in required_fields
-        assert "validation_rule" not in required_fields
 
 
 class TestModelActionConfigParameterUseCases:
@@ -692,64 +825,89 @@ class TestModelActionConfigParameterUseCases:
     def test_fsm_transition_timeout_parameter(self):
         """Test FSM transition timeout configuration."""
         param = ModelActionConfigParameter(
-            version=DEFAULT_VERSION,
-            parameter_name="transition_timeout_ms",
-            parameter_value=from_int(5000),
-            is_required=True,
+            name="transition_timeout_ms",
+            type="int",
+            required=True,
+            default=None,
             description="Maximum time to wait for state transition",
-            validation_rule="value > 0 and value <= 60000",
         )
 
-        assert param.parameter_value.as_int() == 5000
-        assert param.is_required is True
+        assert param.type == "int"
+        assert param.required is True
 
     def test_fsm_action_enabled_flag(self):
         """Test FSM action enabled flag."""
         param = ModelActionConfigParameter(
-            version=DEFAULT_VERSION,
-            parameter_name="action_enabled",
-            parameter_value=from_bool(True),
-            is_required=False,
+            name="action_enabled",
+            type="bool",
+            required=False,
+            default=True,
             description="Whether this action is enabled",
         )
 
-        assert param.parameter_value.as_bool() is True
+        assert param.default is True
 
     def test_retry_configuration_parameter(self):
         """Test retry configuration."""
         param = ModelActionConfigParameter(
-            version=DEFAULT_VERSION,
-            parameter_name="max_retry_attempts",
-            parameter_value=from_int(3),
-            is_required=True,
+            name="max_retry_attempts",
+            type="int",
+            required=False,
+            default=3,
             description="Maximum number of retry attempts",
-            validation_rule="value >= 0 and value <= 10",
         )
 
-        assert param.parameter_value.as_int() == 3
+        assert param.default == 3
 
     def test_logging_level_parameter(self):
         """Test logging level configuration."""
         param = ModelActionConfigParameter(
-            version=DEFAULT_VERSION,
-            parameter_name="log_level",
-            parameter_value=from_string("INFO"),
-            is_required=False,
+            name="log_level",
+            type="string",
+            required=False,
+            default="INFO",
             description="Logging level for this action",
-            validation_rule="value in ['DEBUG', 'INFO', 'WARNING', 'ERROR']",
         )
 
-        assert param.parameter_value.as_string() == "INFO"
+        assert param.default == "INFO"
 
     def test_rate_limit_parameter(self):
         """Test rate limiting configuration."""
         param = ModelActionConfigParameter(
-            version=DEFAULT_VERSION,
-            parameter_name="requests_per_second",
-            parameter_value=from_float(10.5),
-            is_required=True,
+            name="requests_per_second",
+            type="float",
+            required=True,
             description="Maximum requests per second",
-            validation_rule="value > 0",
         )
 
-        assert param.parameter_value.as_float() == 10.5
+        assert param.type == "float"
+        assert param.required is True
+
+    def test_allowed_values_list_parameter(self):
+        """Test list of allowed values."""
+        param = ModelActionConfigParameter(
+            name="allowed_states",
+            type="list",
+            required=False,
+            default=["pending", "active", "completed"],
+            description="List of allowed state values",
+        )
+
+        assert param.default == ["pending", "active", "completed"]
+
+    def test_connection_config_dict_parameter(self):
+        """Test connection configuration as dict."""
+        param = ModelActionConfigParameter(
+            name="connection_config",
+            type="dict",
+            required=False,
+            default={
+                "host": "localhost",
+                "port": 5432,
+                "timeout": 30,
+            },
+            description="Database connection configuration",
+        )
+
+        assert param.default["host"] == "localhost"
+        assert param.default["port"] == 5432

@@ -26,8 +26,6 @@ Note:
 
 from __future__ import annotations
 
-from typing import Any
-
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 # Type alias for action configuration values
@@ -133,9 +131,11 @@ class ModelFSMTransitionAction(BaseModel):
     @classmethod
     def _convert_action_config_to_frozen(
         cls,
-        v: dict[str, ActionConfigValue]
-        | tuple[tuple[str, ActionConfigValue], ...]
-        | None,
+        v: (
+            dict[str, ActionConfigValue]
+            | tuple[tuple[str, ActionConfigValue], ...]
+            | None
+        ),
     ) -> tuple[tuple[str, ActionConfigValue], ...]:
         """Convert dict to tuple of tuples for deep immutability.
 
@@ -159,7 +159,7 @@ class ModelFSMTransitionAction(BaseModel):
 
     # Protocol method implementations
 
-    def execute(self, **kwargs: object) -> bool:
+    def execute(self, **_kwargs: object) -> bool:
         """Execute action (Executable protocol).
 
         Reserved for v1.1+ implementation. In v1.0, this method is a no-op
@@ -172,7 +172,7 @@ class ModelFSMTransitionAction(BaseModel):
             modifying the model instance.
 
         Args:
-            **kwargs: Reserved for v1.1+ - execution parameters (currently ignored)
+            **_kwargs: Reserved for v1.1+ - execution parameters (currently unused)
 
         Returns:
             bool: Always True in v1.0 (reserved for v1.1+ implementation)
@@ -180,7 +180,6 @@ class ModelFSMTransitionAction(BaseModel):
         # v1.1+ reserved: Implement action execution with external state management
         # The model is frozen for thread safety, so execution state must be
         # tracked externally (e.g., in the FSM runtime context)
-        _ = kwargs  # Explicitly mark as unused for v1.0
         return True
 
     def serialize(self) -> dict[str, object]:

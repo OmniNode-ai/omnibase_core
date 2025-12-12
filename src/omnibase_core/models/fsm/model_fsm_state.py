@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Strongly-typed FSM state model.
 
@@ -12,6 +10,8 @@ Deep Immutability:
     for deep immutability. This ensures that nested collections cannot be
     modified after construction.
 """
+
+from __future__ import annotations
 
 from typing import Any
 

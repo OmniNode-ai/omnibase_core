@@ -34,6 +34,7 @@ class ModelFSMTransitionCondition(BaseModel):
         condition_name: Unique identifier for the condition.
         condition_type: Type of condition (e.g., "expression", "custom").
         expression: 3-token expression in format "field operator value".
+            Valid operators: ==, !=, <, >, <=, >=, in, not_in, contains, matches.
         required: If False, evaluation errors are treated as False result.
         error_message: Custom error message for validation failures.
         retry_count: Reserved for v1.1+ (parsed but not executed).
@@ -60,7 +61,10 @@ class ModelFSMTransitionCondition(BaseModel):
 
     expression: str = Field(
         default=...,
-        description="3-token expression (field operator value)",
+        description=(
+            "3-token expression in format 'field operator value'. "
+            "Valid operators: ==, !=, <, >, <=, >=, in, not_in, contains, matches"
+        ),
     )
 
     required: bool = Field(

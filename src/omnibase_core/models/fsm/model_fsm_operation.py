@@ -95,7 +95,7 @@ class ModelFSMOperation(BaseModel):
 
     # Protocol method implementations
 
-    def execute(self, **kwargs: object) -> bool:
+    def execute(self, **_kwargs: object) -> bool:
         """Execute the operation (Executable protocol).
 
         Reserved for v1.1+ implementation. This method is a placeholder
@@ -108,7 +108,7 @@ class ModelFSMOperation(BaseModel):
             modifying this instance in place.
 
         Args:
-            **kwargs: Reserved for v1.1+ execution parameters
+            **_kwargs: Reserved for v1.1+ execution parameters (currently unused)
 
         Returns:
             bool: Always returns True (placeholder behavior)
@@ -121,7 +121,6 @@ class ModelFSMOperation(BaseModel):
         """
         # v1.1+ reserved: actual execution logic will be implemented here
         # Model is frozen, so no in-place mutation is possible
-        _ = kwargs  # Explicitly mark as unused
         return True
 
     def serialize(self) -> dict[str, object]:
