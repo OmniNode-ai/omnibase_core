@@ -138,7 +138,7 @@ async def execute_transition(
             new_state=current_state,  # Stay in current state
             old_state=current_state,
             transition_name=transition.transition_name,
-            intents=intents,
+            intents=tuple(intents),  # Convert to tuple for immutability
             error="Transition conditions not met",
         )
 
@@ -206,11 +206,11 @@ async def execute_transition(
         new_state=transition.to_state,
         old_state=current_state,
         transition_name=transition.transition_name,
-        intents=intents,
-        metadata={
-            "conditions_evaluated": len(transition.conditions or []),
-            "actions_executed": len(transition.actions or []),
-        },
+        intents=tuple(intents),  # Convert to tuple for immutability
+        metadata=(
+            ("conditions_evaluated", len(transition.conditions or [])),
+            ("actions_executed", len(transition.actions or [])),
+        ),
     )
 
 

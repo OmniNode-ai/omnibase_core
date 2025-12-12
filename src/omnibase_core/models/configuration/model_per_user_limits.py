@@ -4,6 +4,7 @@ ModelPerUserLimits - Per-user rate limiting configuration
 Per-user limits model for defining user-specific rate limiting rules
 with user tiers, quotas, and individual user overrides.
 """
+
 from uuid import UUID
 
 from pydantic import BaseModel, Field

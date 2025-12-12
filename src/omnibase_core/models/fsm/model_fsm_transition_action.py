@@ -9,8 +9,13 @@ Specification Reference: docs/architecture/CONTRACT_DRIVEN_NODEREDUCER_V1_0.md
 
 Type Aliases:
     ActionConfigValue: Union type for action configuration values.
-        Supports primitive types (str, int, float, bool), lists of strings,
+        Supports primitive types (str, int, float, bool), tuples of strings,
         and None for FSM action configuration parameters.
+
+Deep Immutability:
+    This model uses frozen=True for Pydantic immutability, and also uses
+    immutable types (tuple instead of list/dict) for deep immutability.
+    This ensures that nested collections cannot be modified after construction.
 
 Note:
     This model is part of the FSM v1.0 implementation. The following fields
@@ -21,16 +26,19 @@ Note:
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 # Type alias for action configuration values
-# Supports primitive types and lists of strings for FSM action configuration
-ActionConfigValue = str | int | float | bool | list[str] | None
+# Supports primitive types and tuples of strings for FSM action configuration
+# Note: tuple[str, ...] is used instead of list[str] for deep immutability
+ActionConfigValue = str | int | float | bool | tuple[str, ...] | None
 
 
 class ModelFSMTransitionAction(BaseModel):
     """
-    Action specification for FSM state transitions.
+    Action specification for FSM state transitions with deep immutability.
 
     Defines actions to execute during state transitions, including
     action types (emit_intent, log, etc.), configuration parameters,
@@ -40,6 +48,19 @@ class ModelFSMTransitionAction(BaseModel):
     - Executable: Execution management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification
+
+    Deep Immutability:
+        The action_config field uses tuple[tuple[str, ActionConfigValue], ...]
+        instead of dict for deep immutability. Validators automatically convert
+        incoming dicts to frozen types for convenience during model construction.
+
+    Accessing dict-like fields:
+        For action_config, use dict() to convert back:
+        >>> action = ModelFSMTransitionAction(
+        ...     action_name="test", action_type="log",
+        ...     action_config={"level": "info"}
+        ... )
+        >>> config_dict = dict(action.action_config)  # Convert to dict for lookup
 
     v1.0 Reserved Fields (parsed but NOT executed):
         - rollback_action: Parsed, but rollback NOT executed until v1.1
@@ -51,7 +72,7 @@ class ModelFSMTransitionAction(BaseModel):
     Attributes:
         action_name: Unique identifier for the action (required)
         action_type: Type of action (emit_intent, log, etc.) (required)
-        action_config: Configuration dictionary for the action
+        action_config: Configuration as frozen key-value pairs (immutable)
         execution_order: Order of execution within the phase (default: 0)
         is_critical: If true, failure stops the transition (default: False)
         rollback_action: Reserved for v1.1+ - action to execute on rollback
@@ -79,9 +100,9 @@ class ModelFSMTransitionAction(BaseModel):
         description="Type of action (emit_intent, log, validate, etc.)",
     )
 
-    action_config: dict[str, ActionConfigValue] = Field(
-        default_factory=dict,
-        description="Action configuration parameters",
+    action_config: tuple[tuple[str, ActionConfigValue], ...] = Field(
+        default=(),
+        description="Action configuration parameters as frozen key-value pairs",
     )
 
     execution_order: int = Field(
@@ -105,6 +126,28 @@ class ModelFSMTransitionAction(BaseModel):
         gt=0,
         description="Action timeout in milliseconds (must be positive if set)",
     )
+
+    @field_validator("action_config", mode="before")
+    @classmethod
+    def _convert_action_config_to_frozen(
+        cls,
+        v: dict[str, ActionConfigValue]
+        | tuple[tuple[str, ActionConfigValue], ...]
+        | None,
+    ) -> tuple[tuple[str, ActionConfigValue], ...]:
+        """Convert dict to tuple of tuples for deep immutability.
+
+        Also converts any list values to tuples for complete immutability.
+        """
+        if v is None:
+            return ()
+        if isinstance(v, dict):
+            # Convert dict to tuple of tuples, also converting list values to tuples
+            return tuple(
+                (k, tuple(val) if isinstance(val, list) else val)
+                for k, val in v.items()
+            )
+        return v
 
     model_config = ConfigDict(
         extra="ignore",
@@ -166,12 +209,12 @@ class ModelFSMTransitionAction(BaseModel):
             return False
 
         # Validate action_config values are valid ActionConfigValue types
-        # Note: The dict[str, ActionConfigValue] type annotation ensures type safety
-        # at compile time. This runtime check validates list contents specifically
-        # since list[str] can't be validated at runtime without iteration.
-        for value in self.action_config.values():
-            # Check list type - must be list of strings (runtime validation)
-            if isinstance(value, list) and not all(
+        # Note: action_config is now tuple[tuple[str, ActionConfigValue], ...]
+        # for deep immutability. This runtime check validates tuple contents
+        # since tuple[str, ...] can't be validated at runtime without iteration.
+        for _key, value in self.action_config:
+            # Check tuple type - must be tuple of strings (runtime validation)
+            if isinstance(value, tuple) and not all(
                 isinstance(item, str) for item in value
             ):
                 return False

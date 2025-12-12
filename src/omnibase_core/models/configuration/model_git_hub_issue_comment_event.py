@@ -15,9 +15,7 @@ from .model_git_hub_user import ModelGitHubUser
 class ModelGitHubCommentChange(BaseModel):
     """Represents a change to a GitHub comment field."""
 
-    from_: str | None = Field(
-        default=None, alias="from", description="Previous value"
-    )
+    from_: str | None = Field(default=None, alias="from", description="Previous value")
 
 
 class ModelGitHubIssueCommentChanges(BaseModel):

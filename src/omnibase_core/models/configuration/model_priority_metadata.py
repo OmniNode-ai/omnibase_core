@@ -25,9 +25,7 @@ class ModelPriorityMetadataSummary(BaseModel):
     approval_required: bool = Field(
         default=False, description="Whether approval is required"
     )
-    approved_users_count: int = Field(
-        default=0, description="Number of approved users"
-    )
+    approved_users_count: int = Field(default=0, description="Number of approved users")
     approved_groups_count: int = Field(
         default=0, description="Number of approved groups"
     )

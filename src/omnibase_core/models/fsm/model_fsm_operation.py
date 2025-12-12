@@ -40,6 +40,11 @@ class ModelFSMOperation(BaseModel):
         operation_type: Type of operation (required). Must be non-empty.
             Common values: "synchronous", "asynchronous", "batch".
         description: Human-readable description (optional).
+        requires_atomic_execution: Whether this operation requires atomic execution
+            guarantees. Critical operations (transition, snapshot, restore) should
+            set this to True.
+        supports_rollback: Whether this operation supports rollback on failure.
+            Critical operations should set this to True for error recovery.
 
     Planned Fields (v1.1+):
         The following fields are planned for v1.1+ but NOT YET IMPLEMENTED
@@ -72,6 +77,14 @@ class ModelFSMOperation(BaseModel):
     description: str | None = Field(
         default=None,
         description="Human-readable description of the operation",
+    )
+    requires_atomic_execution: bool = Field(
+        default=False,
+        description="Whether this operation requires atomic execution guarantees",
+    )
+    supports_rollback: bool = Field(
+        default=False,
+        description="Whether this operation supports rollback on failure",
     )
 
     model_config = ConfigDict(

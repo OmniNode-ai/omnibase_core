@@ -8,6 +8,11 @@ Tests all aspects of the FSM state model including:
 - State properties
 - Protocol implementations (execute, serialize, validate)
 - Edge cases and error conditions
+
+Deep Immutability:
+    ModelFsmState uses tuples instead of lists and tuple-of-tuples instead
+    of dicts for deep immutability. Validators convert lists/dicts to
+    frozen types during construction.
 """
 
 import pytest
@@ -28,9 +33,9 @@ class TestModelFsmStateInstantiation:
         assert state.description == ""
         assert state.is_initial is False
         assert state.is_final is False
-        assert state.entry_actions == []
-        assert state.exit_actions == []
-        assert state.properties == {}
+        assert state.entry_actions == ()  # tuple for deep immutability
+        assert state.exit_actions == ()  # tuple for deep immutability
+        assert state.properties == ()  # tuple of tuples for deep immutability
 
     def test_model_instantiation_full(self):
         """Test model instantiation with all fields populated."""
@@ -48,9 +53,11 @@ class TestModelFsmStateInstantiation:
         assert state.description == "Processing state for data validation"
         assert state.is_initial is False
         assert state.is_final is False
-        assert state.entry_actions == ["validate_input", "log_entry"]
-        assert state.exit_actions == ["cleanup", "log_exit"]
-        assert state.properties == {"timeout": "30s", "retry_count": "3"}
+        # Lists are converted to tuples for deep immutability
+        assert state.entry_actions == ("validate_input", "log_entry")
+        assert state.exit_actions == ("cleanup", "log_exit")
+        # Dicts are converted to tuple of tuples for deep immutability
+        assert dict(state.properties) == {"timeout": "30s", "retry_count": "3"}
 
     def test_initial_state_creation(self):
         """Test creation of an initial state."""
@@ -101,10 +108,12 @@ class TestModelFsmStateInstantiation:
             },
         )
 
+        # Properties are stored as tuple of tuples for deep immutability
         assert len(state.properties) == 3
-        assert state.properties["max_wait_time"] == "60s"
-        assert state.properties["retry_enabled"] == "true"
-        assert state.properties["priority"] == "high"
+        props_dict = dict(state.properties)
+        assert props_dict["max_wait_time"] == "60s"
+        assert props_dict["retry_enabled"] == "true"
+        assert props_dict["priority"] == "high"
 
 
 @pytest.mark.unit
@@ -144,10 +153,10 @@ class TestModelFsmStateValidation:
             ModelFsmState(name="test", is_final={"not": "bool"})
 
     def test_entry_actions_list_validation(self):
-        """Test that entry_actions must be a list of strings."""
-        # Valid list of strings
+        """Test that entry_actions accepts list/tuple of strings (converted to tuple)."""
+        # Valid list of strings - converted to tuple
         state = ModelFsmState(name="test", entry_actions=["action1", "action2"])
-        assert state.entry_actions == ["action1", "action2"]
+        assert state.entry_actions == ("action1", "action2")
 
         # Invalid type for entry_actions
         with pytest.raises(ValidationError):
@@ -157,10 +166,10 @@ class TestModelFsmStateValidation:
             ModelFsmState(name="test", entry_actions=[1, 2, 3])
 
     def test_exit_actions_list_validation(self):
-        """Test that exit_actions must be a list of strings."""
-        # Valid list of strings
+        """Test that exit_actions accepts list/tuple of strings (converted to tuple)."""
+        # Valid list of strings - converted to tuple
         state = ModelFsmState(name="test", exit_actions=["exit1", "exit2"])
-        assert state.exit_actions == ["exit1", "exit2"]
+        assert state.exit_actions == ("exit1", "exit2")
 
         # Invalid type for exit_actions
         with pytest.raises(ValidationError):
@@ -170,10 +179,10 @@ class TestModelFsmStateValidation:
             ModelFsmState(name="test", exit_actions=[True, False])
 
     def test_properties_dict_validation(self):
-        """Test that properties must be a dict with string values."""
-        # Valid dict
+        """Test that properties accepts dict (converted to tuple of tuples)."""
+        # Valid dict - converted to tuple of tuples
         state = ModelFsmState(name="test", properties={"key": "value"})
-        assert state.properties == {"key": "value"}
+        assert dict(state.properties) == {"key": "value"}
 
         # Invalid type for properties
         with pytest.raises(ValidationError):
@@ -236,9 +245,11 @@ class TestModelFsmStateProtocols:
         assert serialized["description"] == "Test description"
         assert serialized["is_initial"] is True
         assert serialized["is_final"] is False
-        assert serialized["entry_actions"] == ["action1"]
-        assert serialized["exit_actions"] == ["action2"]
-        assert serialized["properties"] == {"key": "value"}
+        # Serialized as tuples for deep immutability
+        assert serialized["entry_actions"] == ("action1",)
+        assert serialized["exit_actions"] == ("action2",)
+        # Properties serialized as tuple of tuples
+        assert serialized["properties"] == (("key", "value"),)
 
     def test_serialize_protocol_minimal(self):
         """Test serialize protocol with minimal state."""
@@ -313,9 +324,11 @@ class TestModelFsmStateSerialization:
         assert state.name == "validated"
         assert state.description == "Validated state"
         assert state.is_initial is True
-        assert state.entry_actions == ["entry1"]
-        assert state.exit_actions == ["exit1"]
-        assert state.properties == {"prop": "val"}
+        # Lists converted to tuples for deep immutability
+        assert state.entry_actions == ("entry1",)
+        assert state.exit_actions == ("exit1",)
+        # Dicts converted to tuple of tuples for deep immutability
+        assert dict(state.properties) == {"prop": "val"}
 
     def test_model_dump_json(self):
         """Test JSON serialization."""
@@ -378,28 +391,32 @@ class TestModelFsmStateEdgeCases:
         assert state.is_final is True
 
     def test_empty_actions_lists(self):
-        """Test state with empty action lists."""
+        """Test state with empty action lists (converted to empty tuples)."""
         state = ModelFsmState(name="empty", entry_actions=[], exit_actions=[])
-        assert state.entry_actions == []
-        assert state.exit_actions == []
+        # Empty lists are converted to empty tuples
+        assert state.entry_actions == ()
+        assert state.exit_actions == ()
 
     def test_duplicate_actions(self):
         """Test state with duplicate actions."""
         state = ModelFsmState(name="dup", entry_actions=["action", "action", "action"])
-        # Duplicates should be preserved
+        # Duplicates should be preserved (as tuple)
         assert len(state.entry_actions) == 3
         assert state.entry_actions.count("action") == 3
 
     def test_empty_properties_dict(self):
-        """Test state with empty properties."""
+        """Test state with empty properties (converted to empty tuple)."""
         state = ModelFsmState(name="empty_props", properties={})
-        assert state.properties == {}
+        # Empty dict converted to empty tuple
+        assert state.properties == ()
 
     def test_property_with_empty_values(self):
         """Test properties with empty string values."""
         state = ModelFsmState(name="test", properties={"key1": "", "key2": "value"})
-        assert state.properties["key1"] == ""
-        assert state.properties["key2"] == "value"
+        # Use dict() to convert back for lookup
+        props_dict = dict(state.properties)
+        assert props_dict["key1"] == ""
+        assert props_dict["key2"] == "value"
 
     def test_model_equality(self):
         """Test model equality comparison."""

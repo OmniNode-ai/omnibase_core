@@ -33,7 +33,8 @@ class TestModelFSMTransitionActionInstantiation:
 
         assert action.action_name == "log_entry"
         assert action.action_type == "log"
-        assert action.action_config == {}  # Default value
+        # Deep immutability: action_config is tuple[tuple[str, ActionConfigValue], ...]
+        assert action.action_config == ()  # Default empty tuple
         assert action.execution_order == 0  # Default value
         assert action.is_critical is False  # Default value
         assert action.rollback_action is None  # Default value
@@ -56,7 +57,8 @@ class TestModelFSMTransitionActionInstantiation:
 
         assert action.action_name == "emit_event"
         assert action.action_type == "emit_intent"
-        assert action.action_config == {
+        # Deep immutability: dict converted to tuple of tuples
+        assert dict(action.action_config) == {
             "target": "notification_service",
             "event_type": "state_change",
         }
@@ -103,28 +105,37 @@ class TestModelFSMTransitionActionInstantiation:
 
         assert action.is_critical is True
 
-    def test_action_config_default_empty_dict(self):
-        """Test that action_config defaults to empty dict."""
+    def test_action_config_default_empty_tuple(self):
+        """Test that action_config defaults to empty tuple (deep immutability)."""
         action = ModelFSMTransitionAction(
             action_name="test",
             action_type="log",
         )
 
-        assert action.action_config == {}
-        assert isinstance(action.action_config, dict)
+        # Deep immutability: action_config is tuple[tuple[str, ActionConfigValue], ...]
+        assert action.action_config == ()
+        assert isinstance(action.action_config, tuple)
 
     def test_action_config_with_data(self):
         """Test providing action_config with various data types.
 
-        Note: ActionConfigValue supports: str | int | float | bool | list[str] | None
-        Nested dicts and list[int] are NOT supported to comply with ONEX typing standards.
+        Note: ActionConfigValue supports: str | int | float | bool | tuple[str, ...] | None
+        Nested dicts and tuple[int, ...] are NOT supported to comply with ONEX typing standards.
+
+        Deep Immutability:
+            The action_config dict is converted to tuple[tuple[str, ActionConfigValue], ...]
+            for deep immutability. Lists are also converted to tuples.
         """
         config = {
             "string_key": "value",
             "int_key": 42,
             "float_key": 3.14,
             "bool_key": True,
-            "list_key": ["item1", "item2", "item3"],  # list[str], not list[int]
+            "list_key": [
+                "item1",
+                "item2",
+                "item3",
+            ],  # list[str] converted to tuple[str, ...]
         }
         action = ModelFSMTransitionAction(
             action_name="configured",
@@ -132,10 +143,12 @@ class TestModelFSMTransitionActionInstantiation:
             action_config=config,
         )
 
-        assert action.action_config == config
-        assert action.action_config["string_key"] == "value"
-        assert action.action_config["int_key"] == 42
-        assert action.action_config["list_key"] == ["item1", "item2", "item3"]
+        # Deep immutability: dict converted to tuple of tuples
+        config_dict = dict(action.action_config)
+        assert config_dict["string_key"] == "value"
+        assert config_dict["int_key"] == 42
+        # Lists are converted to tuples for deep immutability
+        assert config_dict["list_key"] == ("item1", "item2", "item3")
 
     def test_rollback_action_optional(self):
         """Test that rollback_action is optional and defaults to None."""
@@ -240,7 +253,10 @@ class TestModelFSMTransitionActionValidation:
             )
 
     def test_action_config_type_validation(self):
-        """Test that action_config must be a dict."""
+        """Test that action_config must be a dict or tuple.
+
+        Deep immutability: dicts are converted to tuple[tuple[str, ActionConfigValue], ...].
+        """
         # String should fail
         with pytest.raises(ValidationError):
             ModelFSMTransitionAction(
@@ -249,7 +265,7 @@ class TestModelFSMTransitionActionValidation:
                 action_config="not_a_dict",
             )
 
-        # List should fail
+        # Plain list should fail (not a valid action_config type)
         with pytest.raises(ValidationError):
             ModelFSMTransitionAction(
                 action_name="test",
@@ -386,18 +402,23 @@ class TestModelFSMTransitionActionValidateInstanceFalse:
         action = ModelFSMTransitionAction(action_name=" \t\n ", action_type="log")
         assert action.validate_instance() is False
 
-    def test_validate_instance_action_config_with_invalid_list_returns_false(self):
-        """Test validate_instance returns False when action_config has non-string list.
+    def test_validate_instance_action_config_with_invalid_tuple_returns_false(self):
+        """Test validate_instance returns False when action_config has non-string tuple.
 
         Note: This test requires bypassing Pydantic's type validation.
-        The validate_instance() method has runtime validation for list contents.
+        The validate_instance() method has runtime validation for tuple contents.
         We use model_construct to bypass construction validation.
+
+        Deep immutability: action_config is tuple[tuple[str, ActionConfigValue], ...].
+        ActionConfigValue for tuples must be tuple[str, ...] (not tuple[int, ...]).
         """
         # Use model_construct to bypass Pydantic validation during construction
         action = ModelFSMTransitionAction.model_construct(
             action_name="test",
             action_type="log",
-            action_config={"invalid_list": [1, 2, 3]},  # list[int] not allowed
+            action_config=(
+                ("invalid_tuple", (1, 2, 3)),
+            ),  # tuple[int, ...] not allowed
             execution_order=0,
             is_critical=False,
             rollback_action=None,
@@ -405,17 +426,17 @@ class TestModelFSMTransitionActionValidateInstanceFalse:
         )
         assert action.validate_instance() is False
 
-    def test_validate_instance_action_config_with_mixed_list_returns_false(self):
-        """Test validate_instance returns False when list has mixed types.
+    def test_validate_instance_action_config_with_mixed_tuple_returns_false(self):
+        """Test validate_instance returns False when tuple has mixed types.
 
         Note: This tests the runtime validation in validate_instance() that
-        checks list contents are all strings.
+        checks tuple contents are all strings.
         """
         # Use model_construct to bypass Pydantic validation during construction
         action = ModelFSMTransitionAction.model_construct(
             action_name="test",
             action_type="log",
-            action_config={"mixed_list": ["valid", 123, "also_valid"]},
+            action_config=(("mixed_tuple", ("valid", 123, "also_valid")),),
             execution_order=0,
             is_critical=False,
             rollback_action=None,
@@ -423,17 +444,17 @@ class TestModelFSMTransitionActionValidateInstanceFalse:
         )
         assert action.validate_instance() is False
 
-    def test_validate_instance_action_config_with_nested_list_returns_false(self):
-        """Test validate_instance returns False when list contains non-strings.
+    def test_validate_instance_action_config_with_nested_tuple_returns_false(self):
+        """Test validate_instance returns False when tuple contains non-strings.
 
-        Note: Lists nested in action_config must contain only strings per
-        ActionConfigValue type definition.
+        Note: Tuples nested in action_config must contain only strings per
+        ActionConfigValue type definition (tuple[str, ...]).
         """
         # Use model_construct to bypass Pydantic validation during construction
         action = ModelFSMTransitionAction.model_construct(
             action_name="test",
             action_type="log",
-            action_config={"nested": [[1, 2], [3, 4]]},  # list of lists
+            action_config=(("nested", ((1, 2), (3, 4))),),  # tuple of tuples
             execution_order=0,
             is_critical=False,
             rollback_action=None,
@@ -521,7 +542,8 @@ class TestModelFSMTransitionActionProtocols:
         assert isinstance(serialized, dict)
         assert serialized["action_name"] == "emit_event"
         assert serialized["action_type"] == "emit_intent"
-        assert serialized["action_config"] == {"target": "service"}
+        # Deep immutability: action_config is tuple of tuples in serialized form
+        assert dict(serialized["action_config"]) == {"target": "service"}
         assert serialized["execution_order"] == 2
         assert serialized["is_critical"] is True
         assert serialized["rollback_action"] == "undo"
@@ -539,7 +561,8 @@ class TestModelFSMTransitionActionProtocols:
         assert isinstance(serialized, dict)
         assert serialized["action_name"] == "simple"
         assert serialized["action_type"] == "log"
-        assert serialized["action_config"] == {}
+        # Deep immutability: empty action_config is empty tuple
+        assert serialized["action_config"] == ()
         assert serialized["execution_order"] == 0
         assert serialized["is_critical"] is False
         assert serialized["rollback_action"] is None
@@ -560,6 +583,7 @@ class TestModelFSMTransitionActionProtocols:
         """Test validate_instance with complex action.
 
         Note: action_config values are flat (no nested dicts) per ONEX typing standards.
+        Deep immutability: list values are converted to tuples.
         """
         action = ModelFSMTransitionAction(
             action_name="complex_action",
@@ -567,7 +591,7 @@ class TestModelFSMTransitionActionProtocols:
             action_config={
                 "intent_name": "user_logged_in",
                 "priority": 10,
-                "tags": ["auth", "login", "user"],
+                "tags": ["auth", "login", "user"],  # Converted to tuple
             },
             execution_order=10,
             is_critical=True,
@@ -598,7 +622,8 @@ class TestModelFSMTransitionActionSerialization:
         assert isinstance(data, dict)
         assert data["action_name"] == "test"
         assert data["action_type"] == "log"
-        assert data["action_config"] == {"level": "info"}
+        # Deep immutability: action_config is tuple of tuples
+        assert dict(data["action_config"]) == {"level": "info"}
         assert data["execution_order"] == 1
         assert data["is_critical"] is True
 
@@ -618,7 +643,8 @@ class TestModelFSMTransitionActionSerialization:
 
         assert action.action_name == "validated_action"
         assert action.action_type == "emit_intent"
-        assert action.action_config == {"target": "service"}
+        # Deep immutability: dict converted to tuple of tuples
+        assert dict(action.action_config) == {"target": "service"}
         assert action.execution_order == 3
         assert action.is_critical is False
         assert action.rollback_action == "undo_action"
@@ -645,7 +671,8 @@ class TestModelFSMTransitionActionSerialization:
 
         assert action.action_name == "from_json"
         assert action.action_type == "custom"
-        assert action.action_config == {"param": "value"}
+        # Deep immutability: dict converted to tuple of tuples
+        assert dict(action.action_config) == {"param": "value"}
         assert action.execution_order == 2
 
     def test_roundtrip_serialization(self):
@@ -800,35 +827,40 @@ class TestModelFSMTransitionActionEdgeCases:
         assert action.timeout_ms == 86400000
 
     def test_action_config_empty_dict(self):
-        """Test action_config with explicitly empty dict."""
+        """Test action_config with explicitly empty dict (converted to empty tuple)."""
         action = ModelFSMTransitionAction(
             action_name="test",
             action_type="log",
             action_config={},
         )
-        assert action.action_config == {}
+        # Deep immutability: empty dict converted to empty tuple
+        assert action.action_config == ()
 
     def test_action_config_flat_structure(self):
         """Test action_config with flat structure (no nesting per ONEX standards).
 
-        Note: ActionConfigValue supports: str | int | float | bool | list[str] | None
+        Note: ActionConfigValue supports: str | int | float | bool | tuple[str, ...] | None
         Nested dicts are NOT supported to comply with ONEX typing standards.
+        Deep immutability: dicts converted to tuple of tuples, lists to tuples.
         """
         flat_config = {
             "level": "info",
             "message": "test message",
             "count": 42,
             "enabled": True,
-            "tags": ["tag1", "tag2"],
+            "tags": ["tag1", "tag2"],  # Converted to tuple
         }
         action = ModelFSMTransitionAction(
             action_name="test",
             action_type="log",
             action_config=flat_config,
         )
-        assert action.action_config["level"] == "info"
-        assert action.action_config["count"] == 42
-        assert action.action_config["tags"] == ["tag1", "tag2"]
+        # Deep immutability: dict converted to tuple of tuples
+        config_dict = dict(action.action_config)
+        assert config_dict["level"] == "info"
+        assert config_dict["count"] == 42
+        # Lists converted to tuples for deep immutability
+        assert config_dict["tags"] == ("tag1", "tag2")
 
     def test_action_config_with_none_value(self):
         """Test action_config containing None values."""
@@ -842,24 +874,29 @@ class TestModelFSMTransitionActionEdgeCases:
             action_type="log",
             action_config=config,
         )
-        assert action.action_config["key2"] is None
+        # Deep immutability: dict converted to tuple of tuples
+        config_dict = dict(action.action_config)
+        assert config_dict["key2"] is None
 
     def test_action_config_with_list_values(self):
         """Test action_config containing list values.
 
-        Note: Only list[str] is supported per ONEX typing standards (ActionConfigValue).
+        Note: Only tuple[str, ...] is supported per ONEX typing standards (ActionConfigValue).
+        Deep immutability: lists are converted to tuples.
         """
         config = {
             "targets": ["service1", "service2"],
-            "tags": ["high", "medium", "low"],  # list[str], not list[int]
+            "tags": ["high", "medium", "low"],  # list[str] converted to tuple[str, ...]
         }
         action = ModelFSMTransitionAction(
             action_name="test",
             action_type="emit_intent",
             action_config=config,
         )
-        assert action.action_config["targets"] == ["service1", "service2"]
-        assert action.action_config["tags"] == ["high", "medium", "low"]
+        # Deep immutability: lists converted to tuples
+        config_dict = dict(action.action_config)
+        assert config_dict["targets"] == ("service1", "service2")
+        assert config_dict["tags"] == ("high", "medium", "low")
 
     def test_rollback_action_with_special_characters(self):
         """Test rollback_action with special characters."""
@@ -922,10 +959,11 @@ class TestModelFSMTransitionActionEdgeCases:
         assert not hasattr(action, "another_extra")
 
     def test_action_config_default_factory_isolation(self):
-        """Test that default_factory creates new dicts for each instance.
+        """Test that default_factory creates new tuples for each instance.
 
         Note: Model is frozen, so we cannot modify action_config in place.
         Instead, we test that instances created with different configs are isolated.
+        Deep immutability: dicts converted to tuple of tuples.
         """
         action1 = ModelFSMTransitionAction(
             action_name="test1",
@@ -935,12 +973,13 @@ class TestModelFSMTransitionActionEdgeCases:
         action2 = ModelFSMTransitionAction(
             action_name="test2",
             action_type="log",
-            action_config={},  # Empty config
+            action_config={},  # Empty config -> empty tuple
         )
 
         # Each instance has its own config (isolation)
-        assert action1.action_config == {"key1": "value1"}
-        assert action2.action_config == {}
+        # Deep immutability: dict converted to tuple of tuples
+        assert dict(action1.action_config) == {"key1": "value1"}
+        assert action2.action_config == ()
         # Confirm they are different objects (default_factory isolation)
         assert action1.action_config is not action2.action_config
 

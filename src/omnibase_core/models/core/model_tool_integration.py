@@ -38,7 +38,9 @@ class ModelToolIntegrationSummary(BaseModel):
     implementation_file: str = Field(description="Main implementation file name")
     contract_file: str = Field(description="Contract file name")
     main_class_name: str = Field(description="Main implementation class name")
-    resources: ModelToolResourceRequirements = Field(description="Resource requirements")
+    resources: ModelToolResourceRequirements = Field(
+        description="Resource requirements"
+    )
     timeout_settings: ModelToolTimeoutSettings = Field(description="Timeout settings")
 
 
