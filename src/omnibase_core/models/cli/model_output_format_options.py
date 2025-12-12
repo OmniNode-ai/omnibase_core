@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Callable
 from typing import TypeVar
 
 from pydantic import Field
@@ -18,37 +17,19 @@ from typing import Any, cast
 
 from pydantic import BaseModel
 
-from omnibase_core.models.infrastructure.model_value import ModelValue
-
-# Removed Any import - using object for ONEX compliance
-
-# Type alias for CLI option values - simplified to avoid primitive soup
-CliOptionValueType = object
-T = TypeVar("T", str, int, bool)  # Keep for generic methods
-
-
-def allow_dict_any[F: Callable[..., object]](func: F) -> F:
-    """
-    Decorator to allow dict[str, Any] usage in specific functions.
-
-    This should only be used when:
-    1. Converting untyped external data to typed internal models
-    2. Complex conversion functions where intermediate dict[str, Any]s need flexibility
-    3. Legacy integration where gradual typing is being applied
-
-    Justification: This function converts string-based configuration data
-    to properly typed model fields, requiring temporary dict[str, Any] storage.
-    """
-    return func
-
-
+from omnibase_core.decorators import allow_dict_any
 from omnibase_core.enums.enum_color_scheme import EnumColorScheme
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_table_alignment import EnumTableAlignment
+from omnibase_core.models.infrastructure.model_value import ModelValue
 from omnibase_core.models.utils.model_field_converter import ModelFieldConverterRegistry
 from omnibase_core.types.typed_dict_output_format_options_kwargs import (
     TypedDictOutputFormatOptionsKwargs,
 )
+
+# Type alias for CLI option values - simplified to avoid primitive soup
+CliOptionValueType = object
+T = TypeVar("T", str, int, bool)  # Keep for generic methods
 
 
 class ModelOutputFormatOptions(BaseModel):
@@ -301,6 +282,7 @@ class ModelOutputFormatOptions(BaseModel):
 
     # Protocol method implementations
 
+    @allow_dict_any
     def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)

@@ -9,9 +9,13 @@ Custom settings model.
 """
 
 from datetime import UTC, datetime
-from typing import Any
 
 from pydantic import BaseModel, field_validator
+
+from omnibase_core.types.type_serializable_value import (
+    SerializableValue,
+    SerializedDict,
+)
 
 
 class ModelCustomSettings(BaseModel):
@@ -21,17 +25,17 @@ class ModelCustomSettings(BaseModel):
     """
 
     # Settings categories
-    general_settings: dict[str, Any] = Field(
+    general_settings: SerializedDict = Field(
         default_factory=dict,
         description="General settings",
     )
 
-    advanced_settings: dict[str, Any] = Field(
+    advanced_settings: SerializedDict = Field(
         default_factory=dict,
         description="Advanced settings",
     )
 
-    experimental_settings: dict[str, Any] = Field(
+    experimental_settings: SerializedDict = Field(
         default_factory=dict,
         description="Experimental settings",
     )
@@ -63,10 +67,10 @@ class ModelCustomSettings(BaseModel):
     )
     allow_unknown: bool = Field(default=True, description="Allow unknown settings")
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> SerializedDict:
         """Convert to dictionary for current standards."""
         # Custom flattening logic for current standards
-        result = {}
+        result: SerializedDict = {}
         result.update(self.general_settings)
         result.update(self.advanced_settings)
         result.update(self.experimental_settings)
@@ -75,7 +79,7 @@ class ModelCustomSettings(BaseModel):
     @classmethod
     def from_dict(
         cls,
-        data: dict[str, Any] | None,
+        data: SerializedDict | None,
     ) -> Optional["ModelCustomSettings"]:
         """Create from dictionary for easy migration."""
         if data is None:
@@ -88,7 +92,9 @@ class ModelCustomSettings(BaseModel):
         # Legacy format - all settings in flat dict
         return cls(general_settings=data.copy())
 
-    def get_setting(self, key: str, default: Any = None) -> Any:
+    def get_setting(
+        self, key: str, default: SerializableValue = None
+    ) -> SerializableValue:
         """Get a setting value."""
         # Check all categories
         for settings in [
@@ -100,7 +106,9 @@ class ModelCustomSettings(BaseModel):
                 return settings[key]
         return default
 
-    def set_setting(self, key: str, value: Any, category: str = "general") -> None:
+    def set_setting(
+        self, key: str, value: SerializableValue, category: str = "general"
+    ) -> None:
         """Set a setting value."""
         if category == "advanced":
             self.advanced_settings[key] = value

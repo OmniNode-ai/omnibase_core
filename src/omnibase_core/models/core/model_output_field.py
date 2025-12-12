@@ -1,6 +1,23 @@
-from typing import Any
-
 from pydantic import BaseModel, Field
+
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
+
+class ModelOnexFieldData(BaseModel):
+    """Structured data for ONEX fields."""
+
+    string_values: dict[str, str] = Field(
+        default_factory=dict, description="String key-value pairs"
+    )
+    numeric_values: dict[str, float] = Field(
+        default_factory=dict, description="Numeric key-value pairs"
+    )
+    boolean_values: dict[str, bool] = Field(
+        default_factory=dict, description="Boolean key-value pairs"
+    )
+    list_values: dict[str, list[str]] = Field(
+        default_factory=dict, description="List key-value pairs"
+    )
 
 
 class ModelOnexField(BaseModel):
@@ -13,13 +30,15 @@ class ModelOnexField(BaseModel):
 
     # Protocol-required fields
     field_name: str = Field(default="output_field", description="Name of the field")
-    field_value: Any = Field(default=None, description="Value stored in the field")
+    field_value: ModelSchemaValue | None = Field(
+        default=None, description="Value stored in the field"
+    )
     field_type: str = Field(
         default="generic", description="Type identifier for the field"
     )
 
-    data: dict[str, Any] | None = Field(
-        default=None, description="Arbitrary ONEX field data"
+    data: ModelOnexFieldData | None = Field(
+        default=None, description="Structured ONEX field data"
     )
 
     # Optionally, add more required methods or attributes as needed

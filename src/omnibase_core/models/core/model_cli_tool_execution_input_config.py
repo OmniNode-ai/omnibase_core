@@ -1,11 +1,8 @@
-from typing import Any
-
-
 class ModelConfig:
     """Pydantic configuration."""
 
     # Example for documentation
-    json_schema_extra: dict[str, Any] = {
+    json_schema_extra: dict[str, dict[str, object]] = {
         "example": {
             "action": "list_tools",
             "tool_name": None,

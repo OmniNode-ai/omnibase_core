@@ -4,9 +4,9 @@ FSM execution utilities for declarative state machines.
 Pure functions for executing FSM transitions from ModelFSMSubcontract.
 No side effects - returns results and intents.
 
-Typing: Strongly typed with dict[str, object] for runtime context flexibility.
-Context dictionaries use dict[str, object] to allow dynamic execution data
-while maintaining strong typing (object is the base of all Python types).
+Typing: Strongly typed with FSMContextType for runtime context flexibility.
+Context dictionaries use FSMContextType (dict[str, Any]) to allow dynamic execution data
+while maintaining type clarity for FSM-specific usage.
 """
 
 from collections.abc import Sized
@@ -34,13 +34,14 @@ from omnibase_core.models.fsm.model_fsm_transition_result import (
     ModelFSMTransitionResult as FSMTransitionResult,
 )
 from omnibase_core.models.reducer.model_intent import ModelIntent
+from omnibase_core.types.type_fsm_context import FSMContextType
 
 
 async def execute_transition(
     fsm: ModelFSMSubcontract,
     current_state: str,
     trigger: str,
-    context: dict[str, object],
+    context: FSMContextType,
 ) -> FSMTransitionResult:
     """
     Execute FSM transition declaratively from YAML contract.
@@ -377,7 +378,7 @@ def _find_transition(
 
 async def _evaluate_conditions(
     transition: ModelFSMStateTransition,
-    context: dict[str, object],
+    context: FSMContextType,
 ) -> bool:
     """
     Evaluate all transition conditions.
@@ -408,7 +409,7 @@ async def _evaluate_conditions(
 
 async def _evaluate_single_condition(
     condition: ModelFSMTransitionCondition,
-    context: dict[str, object],
+    context: FSMContextType,
 ) -> bool:
     """
     Evaluate a single transition condition.
@@ -526,7 +527,7 @@ async def _execute_state_actions(
     fsm: ModelFSMSubcontract,
     state: ModelFSMStateDefinition,
     action_type: str,  # "entry" or "exit"
-    context: dict[str, object],
+    context: FSMContextType,
 ) -> list[ModelIntent]:
     """
     Execute state entry/exit actions, returning intents.
@@ -570,7 +571,7 @@ async def _execute_state_actions(
 
 async def _execute_transition_actions(
     transition: ModelFSMStateTransition,
-    context: dict[str, object],
+    context: FSMContextType,
 ) -> list[ModelIntent]:
     """
     Execute transition actions, returning intents.

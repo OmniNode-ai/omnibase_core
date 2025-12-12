@@ -63,6 +63,7 @@ from omnibase_core.models.primitives.model_semver import (
     ModelSemVer,
     parse_semver_from_string,
 )
+from omnibase_core.types.typed_dict_mixin_types import TypedDictPerformanceProfile
 
 
 class MixinNodeIntrospection(ABC):
@@ -473,13 +474,13 @@ class MixinNodeIntrospection(ABC):
         return []
 
     @classmethod
-    def _get_performance_profile(cls) -> dict[str, Any]:
+    def _get_performance_profile(cls) -> TypedDictPerformanceProfile:
         """Return performance profile. Override to specify performance characteristics."""
-        return {
-            "typical_execution_time": "unknown",
-            "memory_usage": "unknown",
-            "cpu_intensive": False,
-        }
+        return TypedDictPerformanceProfile(
+            typical_execution_time="unknown",
+            memory_usage="unknown",
+            cpu_intensive=False,
+        )
 
     @classmethod
     def handle_introspect_command(cls, event_bus: Any = None) -> None:

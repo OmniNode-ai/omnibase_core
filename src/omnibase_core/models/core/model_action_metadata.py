@@ -1,10 +1,3 @@
-from typing import Any
-
-from pydantic import Field
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Action Metadata Model.
 
@@ -15,13 +8,18 @@ Enhanced for tool-as-a-service architecture with strong typing throughout.
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.core.model_core_performance_metrics import (
     ModelPerformanceMetrics,
 )
+from omnibase_core.models.core.model_execution_context import ModelExecutionContext
 from omnibase_core.models.core.model_node_action_type import ModelNodeActionType
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.security.model_security_context import ModelSecurityContext
+from omnibase_core.models.service.model_error_details import ModelErrorDetails
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelActionMetadata(BaseModel):
@@ -87,30 +85,30 @@ class ModelActionMetadata(BaseModel):
     )
 
     # Execution context
-    execution_context: dict[str, Any] = Field(
-        default_factory=dict,
+    execution_context: ModelExecutionContext | None = Field(
+        default=None,
         description="Execution environment and context",
     )
-    parameters: dict[str, Any] = Field(
+    parameters: SerializedDict = Field(
         default_factory=dict,
-        description="Action parameters with strong typing",
+        description="Action parameters as JSON-serializable data",
     )
 
     # Results and status
     status: str = Field(default="created", description="Current action status")
-    result_data: dict[str, Any] | None = Field(
+    result_data: SerializedDict | None = Field(
         default=None,
-        description="Action result data",
+        description="Action result data as JSON-serializable data",
     )
-    error_details: dict[str, Any] | None = Field(
+    error_details: ModelErrorDetails | None = Field(
         default=None,
-        description="Error details if action failed",
+        description="Structured error details if action failed",
     )
 
     # Tool-as-a-service metadata
-    service_metadata: dict[str, Any] = Field(
+    service_metadata: SerializedDict = Field(
         default_factory=dict,
-        description="Service discovery and composition metadata",
+        description="Service discovery and composition metadata as JSON-serializable data",
     )
     tool_discovery_tags: list[str] = Field(
         default_factory=list,
@@ -142,7 +140,7 @@ class ModelActionMetadata(BaseModel):
 
     def mark_completed(
         self,
-        result_data: dict[str, Any] | None = None,
+        result_data: SerializedDict | None = None,
     ) -> None:
         """Mark the action as completed with optional result data."""
         self.completed_at = datetime.now(UTC)
@@ -150,8 +148,8 @@ class ModelActionMetadata(BaseModel):
         if result_data:
             self.result_data = result_data
 
-    def mark_failed(self, error_details: dict[str, Any]) -> None:
-        """Mark the action as failed with error details."""
+    def mark_failed(self, error_details: ModelErrorDetails) -> None:
+        """Mark the action as failed with structured error details."""
         self.completed_at = datetime.now(UTC)
         self.status = "failed"
         self.error_details = error_details
@@ -167,7 +165,7 @@ class ModelActionMetadata(BaseModel):
         if not hasattr(self.performance_metrics, name):
             msg = (
                 f"Performance metric '{name}' is not supported. "
-                f"Use one of: {list[Any](self.performance_metrics.__fields__.keys())}"
+                f"Use one of: {list(self.performance_metrics.model_fields.keys())}"
             )
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -181,8 +179,8 @@ class ModelActionMetadata(BaseModel):
 
     def to_service_discovery_metadata(
         self,
-    ) -> dict[str, Any]:
-        """Generate metadata for service discovery with strong typing."""
+    ) -> SerializedDict:
+        """Generate metadata for service discovery as JSON-serializable data."""
         return {
             "action_id": str(self.action_id),
             "action_type": self.action_type.name,

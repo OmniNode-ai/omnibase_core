@@ -3,8 +3,9 @@ from __future__ import annotations
 from pydantic import Field
 
 "\nBase computation input model for discriminated union.\n\nProvides common interface for all computation input types.\nFollows ONEX strong typing principles and one-model-per-file architecture.\n"
-from typing import Any
 from uuid import UUID
+
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 from pydantic import BaseModel
 
@@ -30,7 +31,7 @@ class ModelComputationInputBase(BaseModel):
     priority: int = Field(
         default=0, description="Priority level for execution ordering"
     )
-    metadata: dict[str, Any] = Field(
+    metadata: dict[str, ModelSchemaValue] = Field(
         default_factory=dict, description="Additional metadata for computation input"
     )
     model_config = {

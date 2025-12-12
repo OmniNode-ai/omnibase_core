@@ -3,7 +3,7 @@
 import base64
 import hashlib
 from datetime import UTC, datetime
-from typing import Any, ClassVar, Self
+from typing import ClassVar, Self
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -12,6 +12,10 @@ from omnibase_core.enums.enum_node_operation import EnumNodeOperation
 from omnibase_core.enums.enum_signature_algorithm import EnumSignatureAlgorithm
 from omnibase_core.errors import ModelOnexError
 from omnibase_core.models.security.model_operation_details import ModelOperationDetails
+from omnibase_core.models.security.model_security_summaries import (
+    ModelProcessingSummary,
+    SignatureOptionalParams,
+)
 from omnibase_core.models.security.model_signature_metadata import (
     ModelSignatureMetadata,
 )
@@ -152,7 +156,7 @@ class ModelNodeSignature(BaseModel):
         key_id: UUID,
         envelope_state_hash: str,
         user_context: str | None = None,
-        **kwargs: Any,
+        **kwargs: SignatureOptionalParams,
     ) -> Self:
         """Create a source signature for envelope origination."""
         return cls(
@@ -163,7 +167,7 @@ class ModelNodeSignature(BaseModel):
             operation=EnumNodeOperation.SOURCE,
             hop_index=0,
             user_context=user_context,
-            **kwargs,
+            **kwargs,  # type: ignore[arg-type]
         )
 
     @classmethod
@@ -176,7 +180,7 @@ class ModelNodeSignature(BaseModel):
         hop_index: int,
         previous_signature_hash: str,
         routing_decision: str,
-        **kwargs: Any,
+        **kwargs: SignatureOptionalParams,
     ) -> Self:
         """Create a routing signature for envelope forwarding."""
         if hop_index <= 0:
@@ -193,7 +197,7 @@ class ModelNodeSignature(BaseModel):
             hop_index=hop_index,
             previous_signature_hash=previous_signature_hash,
             operation_details=ModelOperationDetails(routing_decision=routing_decision),
-            **kwargs,
+            **kwargs,  # type: ignore[arg-type]
         )
 
     @classmethod
@@ -206,7 +210,7 @@ class ModelNodeSignature(BaseModel):
         hop_index: int,
         previous_signature_hash: str,
         delivery_status: str,
-        **kwargs: Any,
+        **kwargs: SignatureOptionalParams,
     ) -> Self:
         """Create a destination signature for envelope delivery."""
         if hop_index <= 0:
@@ -223,7 +227,7 @@ class ModelNodeSignature(BaseModel):
             hop_index=hop_index,
             previous_signature_hash=previous_signature_hash,
             operation_details=ModelOperationDetails(delivery_status=delivery_status),
-            **kwargs,
+            **kwargs,  # type: ignore[arg-type]
         )
 
     def verify_signature_chain_continuity(
@@ -317,19 +321,19 @@ class ModelNodeSignature(BaseModel):
         """Check if this signature is valid (no errors)."""
         return not self.has_errors()
 
-    def get_processing_summary(self) -> dict[str, Any]:
+    def get_processing_summary(self) -> ModelProcessingSummary:
         """Get a summary of processing information."""
-        return {
-            "node_id": self.node_id,
-            "operation": self.operation.value,
-            "hop_index": self.hop_index,
-            "timestamp": self.timestamp.isoformat(),
-            "processing_time_ms": self.processing_time_ms,
-            "signature_time_ms": self.signature_time_ms,
-            "has_errors": self.has_errors(),
-            "has_warnings": self.has_warnings(),
-            "error_count": len(self.warning_messages),
-        }
+        return ModelProcessingSummary(
+            node_id=self.node_id,
+            operation=self.operation.value,
+            hop_index=self.hop_index,
+            timestamp=self.timestamp.isoformat(),
+            processing_time_ms=self.processing_time_ms,
+            signature_time_ms=self.signature_time_ms,
+            has_errors=self.has_errors(),
+            has_warnings=self.has_warnings(),
+            error_count=len(self.warning_messages),
+        )
 
     def __str__(self) -> str:
         """Human-readable representation."""

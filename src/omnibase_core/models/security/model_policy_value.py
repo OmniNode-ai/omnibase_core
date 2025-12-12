@@ -5,6 +5,7 @@ from typing import Any, Literal, Union
 
 from pydantic import BaseModel, Field, model_validator
 
+from omnibase_core.decorators.pattern_exclusions import allow_dict_str_any
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -66,6 +67,9 @@ Safe Runtime Imports (OK to import at module level):
 """
 
 
+@allow_dict_str_any(
+    reason="JSON-compatible value wrapper for security policies - must accept any valid JSON value"
+)
 class ModelPolicyValue(BaseModel):
     """
     SECURITY-CRITICAL: Type-safe wrapper for security policy values.

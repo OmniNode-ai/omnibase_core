@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Optional
 from uuid import UUID
 
 from pydantic import Field
@@ -7,6 +7,7 @@ from pydantic import Field
 Error summary model to replace dictionary usage for get_error_summary() returns.
 """
 
+from collections.abc import Mapping
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, field_serializer
@@ -73,11 +74,14 @@ class ModelErrorSummary(BaseModel):
     model_config = ConfigDict()
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any] | None) -> Optional["ModelErrorSummary"]:
+    def from_dict(
+        cls, data: Mapping[str, object] | None
+    ) -> Optional["ModelErrorSummary"]:
         """Create from dictionary for easy migration."""
         if data is None:
             return None
-        return cls(**data)
+        # Pydantic validates the data at runtime - type safety is enforced by Pydantic
+        return cls(**dict(data))  # type: ignore[arg-type]
 
     @field_serializer("occurred_at")
     def serialize_datetime(self, value: datetime | None) -> str | None:

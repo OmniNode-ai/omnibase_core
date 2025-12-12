@@ -11,6 +11,12 @@ from pydantic import BaseModel, Field, field_validator
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.types.typed_dict_tool_comprehensive_summary import (
+    TypedDictToolComprehensiveSummary,
+)
+from omnibase_core.types.typed_dict_tool_resource_summary import (
+    TypedDictToolResourceSummary,
+)
 
 if TYPE_CHECKING:
     from omnibase_core.enums.enum_tool_manifest import (
@@ -251,37 +257,37 @@ class ModelToolManifest(BaseModel):
         """Get number of required dependencies."""
         return self.get_total_dependencies() - self.get_optional_dependencies()
 
-    def get_resource_summary(self) -> dict[str, Any]:
+    def get_resource_summary(self) -> TypedDictToolResourceSummary:
         """Get resource requirements summary."""
-        return {
-            "max_memory_mb": self.max_memory_mb,
-            "max_cpu_percent": self.max_cpu_percent,
-            "timeout_seconds": self.timeout_seconds,
-            "execution_mode": self.execution_mode,
-            "requires_network": self.security.requires_network_access,
-            "requires_separate_port": self.integration.requires_separate_port,
-        }
+        return TypedDictToolResourceSummary(
+            max_memory_mb=self.max_memory_mb,
+            max_cpu_percent=self.max_cpu_percent,
+            timeout_seconds=self.timeout_seconds,
+            execution_mode=self.execution_mode,
+            requires_network=self.security.requires_network_access,
+            requires_separate_port=self.integration.requires_separate_port,
+        )
 
-    def get_comprehensive_summary(self) -> dict[str, Any]:
+    def get_comprehensive_summary(self) -> TypedDictToolComprehensiveSummary:
         """Get comprehensive tool summary."""
-        return {
-            "tool_name": self.tool_name,
-            "description": self.description,
-            "author": self.author,
-            "node_type": self.node_type.value,
-            "business_logic_pattern": self.business_logic_pattern.value,
-            "status": self.status.value,
-            "current_stable_version": self.current_stable_version,
-            "current_development_version": self.current_development_version,
-            "version_count": len(self.versions),
-            "active_version_count": len(self.get_active_versions()),
-            "capability_count": len(self.capabilities),
-            "dependency_count": self.get_total_dependencies(),
-            "required_dependencies": self.get_required_dependencies(),
-            "optional_dependencies": self.get_optional_dependencies(),
-            "resource_requirements": self.get_resource_summary(),
-            "security_compliant": self.is_security_compliant(),
-            "recommended_version": self.get_recommended_version(),
-            "security_assessment": self.security.get_security_assessment(),
-            "testing_requirements": self.testing.get_test_requirement_summary(),
-        }
+        return TypedDictToolComprehensiveSummary(
+            tool_name=self.tool_name,
+            description=self.description,
+            author=self.author,
+            node_type=self.node_type.value,
+            business_logic_pattern=self.business_logic_pattern.value,
+            status=self.status.value,
+            current_stable_version=self.current_stable_version,
+            current_development_version=self.current_development_version,
+            version_count=len(self.versions),
+            active_version_count=len(self.get_active_versions()),
+            capability_count=len(self.capabilities),
+            dependency_count=self.get_total_dependencies(),
+            required_dependencies=self.get_required_dependencies(),
+            optional_dependencies=self.get_optional_dependencies(),
+            resource_requirements=self.get_resource_summary(),
+            security_compliant=self.is_security_compliant(),
+            recommended_version=self.get_recommended_version(),
+            security_assessment=self.security.get_security_assessment(),
+            testing_requirements=self.testing.get_test_requirement_summary(),
+        )

@@ -161,7 +161,7 @@ class MixinIntrospectionPublisher:
                 capabilities=ModelNodeCapabilities(
                     actions=["health_check"],
                     protocols=["event_bus"],
-                    metadata={
+                    metadata={  # type: ignore[arg-type]
                         "description": "Event-driven ONEX node",
                         "author": DEFAULT_AUTHOR,
                     },
@@ -225,7 +225,7 @@ class MixinIntrospectionPublisher:
         capabilities = ModelNodeCapabilities(
             actions=self._extract_node_actions(),
             protocols=self._detect_supported_protocols(),
-            metadata={
+            metadata={  # type: ignore[arg-type]
                 "description": "Event-driven ONEX node",
                 "author": DEFAULT_AUTHOR,
             },
@@ -238,17 +238,17 @@ class MixinIntrospectionPublisher:
                     if hasattr(loader_metadata, "description") and getattr(
                         loader_metadata, "description", None
                     ):
-                        capabilities.metadata["description"] = str(
+                        capabilities.metadata["description"] = str(  # type: ignore[index]
                             loader_metadata.description
                         )
                     if hasattr(loader_metadata, "author") and getattr(
                         loader_metadata, "author", None
                     ):
-                        capabilities.metadata["author"] = str(loader_metadata.author)
+                        capabilities.metadata["author"] = str(loader_metadata.author)  # type: ignore[index]
                     if hasattr(loader_metadata, "copyright") and getattr(
                         loader_metadata, "copyright", None
                     ):
-                        capabilities.metadata["copyright"] = str(
+                        capabilities.metadata["copyright"] = str(  # type: ignore[index]
                             loader_metadata.copyright
                         )
         except Exception:

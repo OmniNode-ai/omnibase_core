@@ -13,8 +13,9 @@ with structured validation and proper type handling.
 
 
 from datetime import datetime
-from typing import Any
 from uuid import UUID
+
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 from pydantic import BaseModel, model_validator
 
@@ -437,7 +438,7 @@ class ModelPropertyValue(BaseModel):
 
     # Protocol method implementations
 
-    def configure(self, **kwargs: Any) -> bool:
+    def configure(self, **kwargs: object) -> bool:
         """Configure instance with provided parameters (Configurable protocol).
 
         Raises:
@@ -449,7 +450,7 @@ class ModelPropertyValue(BaseModel):
                 setattr(self, key, value)
         return True
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

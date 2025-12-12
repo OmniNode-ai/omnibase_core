@@ -12,7 +12,7 @@ Follows ONEX one-model-per-file naming conventions.
 """
 
 from datetime import datetime
-from typing import Any
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 from pydantic import BaseModel
 
@@ -72,7 +72,7 @@ class ModelExamplesCollectionSummary(BaseModel):
         default=None, description="Last update timestamp"
     )
 
-    def model_post_init(self, __context: dict[str, Any] | None = None) -> None:
+    def model_post_init(self, __context: object = None) -> None:
         """Calculate completion rate after initialization."""
         if self.example_count > 0:
             self.completion_rate = (self.valid_example_count / self.example_count) * 100
@@ -89,7 +89,7 @@ class ModelExamplesCollectionSummary(BaseModel):
 
     # Protocol method implementations
 
-    def configure(self, **kwargs: Any) -> bool:
+    def configure(self, **kwargs: object) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
         try:
             for key, value in kwargs.items():
@@ -102,7 +102,7 @@ class ModelExamplesCollectionSummary(BaseModel):
                 message=f"Operation failed: {e}",
             ) from e
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

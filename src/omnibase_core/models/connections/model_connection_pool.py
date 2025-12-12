@@ -12,7 +12,7 @@ Part of the ModelConnectionInfo restructuring to reduce excessive string fields.
 """
 
 
-from typing import Any
+from omnibase_core.types import SerializedDict
 
 from pydantic import BaseModel
 
@@ -208,7 +208,7 @@ class ModelConnectionPool(BaseModel):
 
     # Protocol method implementations
 
-    def configure(self, **kwargs: Any) -> bool:
+    def configure(self, **kwargs: object) -> bool:
         """Configure instance with provided parameters (Configurable protocol).
 
         Raises:
@@ -230,7 +230,7 @@ class ModelConnectionPool(BaseModel):
         # Override in specific models for custom validation
         return True
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

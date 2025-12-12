@@ -14,8 +14,9 @@ Follows ONEX strong typing principles and one-model-per-file architecture.
 
 
 from datetime import datetime
-from typing import Any
 from uuid import UUID, uuid4
+
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 from pydantic import BaseModel
 
@@ -88,7 +89,7 @@ class ModelEventMetadata(BaseModel):
 
     # Protocol method implementations
 
-    def execute(self, **kwargs: Any) -> bool:
+    def execute(self, **kwargs: object) -> bool:
         """Execute or update execution status (Executable protocol)."""
         try:
             # Update any relevant execution fields
@@ -119,7 +120,7 @@ class ModelEventMetadata(BaseModel):
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
         )
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

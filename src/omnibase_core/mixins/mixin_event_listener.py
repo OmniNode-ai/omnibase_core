@@ -958,7 +958,7 @@ class MixinEventListener[InputStateT, OutputStateT]:
             event_type=completion_event_type,
             node_id=node_uuid,
             correlation_id=input_event.correlation_id,
-            data=completion_data,
+            data=completion_data,  # type: ignore[arg-type]
         )
 
         emit_log_event(
@@ -1043,7 +1043,7 @@ class MixinEventListener[InputStateT, OutputStateT]:
             event_type=completion_event_type,
             node_id=node_uuid,
             correlation_id=input_event.correlation_id,
-            data=error_data,
+            data=error_data,  # type: ignore[arg-type]
         )
 
         # Import envelope model

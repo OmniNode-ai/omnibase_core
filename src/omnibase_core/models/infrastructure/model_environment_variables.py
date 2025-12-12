@@ -12,9 +12,10 @@ Follows ONEX one-model-per-file naming conventions.
 """
 
 from collections.abc import Iterator
-from typing import Any
 
 from pydantic import BaseModel
+
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
@@ -266,7 +267,7 @@ class ModelEnvironmentVariables(BaseModel):
 
     # Protocol method implementations
 
-    def execute(self, **kwargs: Any) -> bool:
+    def execute(self, **kwargs: object) -> bool:
         """Execute or update execution status (Executable protocol).
 
         Raises:
@@ -279,7 +280,7 @@ class ModelEnvironmentVariables(BaseModel):
                 setattr(self, key, value)
         return True
 
-    def configure(self, **kwargs: Any) -> bool:
+    def configure(self, **kwargs: object) -> bool:
         """Configure instance with provided parameters (Configurable protocol).
 
         Raises:
@@ -291,7 +292,7 @@ class ModelEnvironmentVariables(BaseModel):
                 setattr(self, key, value)
         return True
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

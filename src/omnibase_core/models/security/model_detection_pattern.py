@@ -4,7 +4,6 @@ Detection Pattern Model.
 Configuration for a single detection pattern used in sensitive information detection.
 """
 
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -13,6 +12,9 @@ from omnibase_core.enums.enum_detection_method import EnumDetectionMethod
 from omnibase_core.enums.enum_detection_type import EnumDetectionType
 from omnibase_core.enums.enum_language_code import EnumLanguageCode
 from omnibase_core.enums.enum_sensitivity_level import EnumSensitivityLevel
+from omnibase_core.models.security.model_security_summaries import (
+    ModelDetectionPatternSummary,
+)
 
 __all__ = [
     "EnumLanguageCode",
@@ -94,14 +96,14 @@ class ModelDetectionPattern(BaseModel):
         """Check if confidence meets threshold."""
         return confidence >= self.confidence_threshold
 
-    def get_summary(self) -> dict[str, Any]:
+    def get_summary(self) -> ModelDetectionPatternSummary:
         """Get pattern summary."""
-        return {
-            "pattern_id": self.pattern_id,
-            "pattern_name": self.pattern_name,
-            "detection_type": self.detection_type.value,
-            "sensitivity_level": self.sensitivity_level.value,
-            "enabled": self.enabled,
-            "supported_languages": [lang.value for lang in self.languages],
-            "confidence_threshold": self.confidence_threshold,
-        }
+        return ModelDetectionPatternSummary(
+            pattern_id=self.pattern_id,
+            pattern_name=self.pattern_name,
+            detection_type=self.detection_type.value,
+            sensitivity_level=self.sensitivity_level.value,
+            enabled=self.enabled,
+            supported_languages=[lang.value for lang in self.languages],
+            confidence_threshold=self.confidence_threshold,
+        )

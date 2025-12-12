@@ -8,5 +8,5 @@ class ExceptionContractViolationError(ExceptionFailFastError):
         super().__init__(
             message,
             "CONTRACT_VIOLATION",
-            {"contract_field": contract_field},
+            {"contract_field": contract_field},  # type: ignore[arg-type]
         )

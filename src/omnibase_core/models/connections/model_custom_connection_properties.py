@@ -13,6 +13,8 @@ Each sub-model handles a specific concern area.
 
 
 from typing import Any
+
+from omnibase_core.types import SerializedDict
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -133,8 +135,8 @@ class ModelCustomConnectionProperties(BaseModel):
         if perf_kwargs and "performance" not in data:
             data["performance"] = perf_kwargs
 
-        # Type narrowing: data is confirmed to be dict[str, Any] at this point
-        typed_result: dict[str, Any] = data
+        # Type narrowing: data is confirmed to be a dict at this point
+        typed_result: dict[str, object] = data
         return typed_result
 
     # Factory methods
@@ -546,7 +548,7 @@ class ModelCustomConnectionProperties(BaseModel):
 
     # Protocol method implementations
 
-    def configure(self, **kwargs: Any) -> bool:
+    def configure(self, **kwargs: object) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
         try:
             for key, value in kwargs.items():
@@ -571,7 +573,7 @@ class ModelCustomConnectionProperties(BaseModel):
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             ) from e
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

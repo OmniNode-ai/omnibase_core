@@ -4,9 +4,11 @@ Authorization Summary Model.
 Authorization requirements summary with roles and security clearance information.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field
+
+from omnibase_core.models.security.model_security_summaries import (
+    ModelAuthorizationInfoSummary,
+)
 
 
 class ModelAuthorizationSummary(BaseModel):
@@ -47,13 +49,13 @@ class ModelAuthorizationSummary(BaseModel):
         """Get security clearance level."""
         return self.security_clearance_required or "none"
 
-    def get_authorization_summary(self) -> dict[str, Any]:
+    def get_authorization_summary(self) -> ModelAuthorizationInfoSummary:
         """Get authorization summary."""
-        return {
-            "role_count": self.get_role_count(),
-            "node_count": self.get_node_count(),
-            "clearance_required": self.requires_clearance(),
-            "clearance_level": self.get_clearance_level(),
-            "authorized_roles": self.authorized_roles,
-            "authorized_nodes": self.authorized_nodes,
-        }
+        return ModelAuthorizationInfoSummary(
+            role_count=self.get_role_count(),
+            node_count=self.get_node_count(),
+            clearance_required=self.requires_clearance(),
+            clearance_level=self.get_clearance_level(),
+            authorized_roles=self.authorized_roles,
+            authorized_nodes=self.authorized_nodes,
+        )

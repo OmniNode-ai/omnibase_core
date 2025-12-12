@@ -4,9 +4,14 @@ from typing import Any
 from omnibase_core.models.service.model_node_service_config import (
     ModelNodeServiceConfig,
 )
+from omnibase_core.utils.util_decorators import allow_dict_str_any
 from omnibase_core.utils.util_safe_yaml_loader import serialize_data_to_yaml
 
 
+@allow_dict_str_any(
+    "Kubernetes template generator returns dict[str, Any] for YAML serialization "
+    "compatibility with K8s manifest structures."
+)
 class ModelKubernetesTemplateGenerator:
     """Generator for Kubernetes deployment templates."""
 

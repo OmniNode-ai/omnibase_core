@@ -21,7 +21,8 @@
 # version: 1.0.0
 # === /OmniNode:Metadata ===
 
-from typing import Any, Union
+from collections.abc import Mapping
+from typing import Union
 
 from omnibase_core.enums import EnumNodeMetadataField
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -72,7 +73,7 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
 
     def canonicalize_metadata_block(
         self,
-        metadata_block: Union[dict[str, Any], "NodeMetadataBlock"],
+        metadata_block: Union[Mapping[str, object], "NodeMetadataBlock"],
         volatile_fields: tuple[EnumNodeMetadataField, ...] = (
             EnumNodeMetadataField.HASH,
             EnumNodeMetadataField.LAST_MODIFIED_AT,
@@ -84,7 +85,7 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
         default_flow_style: bool = False,
         allow_unicode: bool = True,
         comment_prefix: str = "",
-        **kwargs: Any,
+        **kwargs: ContextValue,
     ) -> str:
         """
         Canonicalize a metadata block for deterministic YAML serialization and hash computation.
@@ -192,6 +193,9 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
                     # If still failing, use model_validate as last resort
                     metadata_block = NodeMetadataBlock.model_validate(complete_metadata)
 
+        # At this point metadata_block is always NodeMetadataBlock
+        # (either passed directly or converted from dict above)
+        assert isinstance(metadata_block, NodeMetadataBlock)
         block_dict = metadata_block.model_dump(mode="json")
         # Protocol-compliant placeholders
         protocol_placeholders = {
@@ -267,7 +271,7 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
         # --- PATCH START: Protocol-compliant entrypoint and null omission ---
         # Remove all None/null/empty fields except protocol-required ones
         protocol_required = {"tools"}
-        filtered_dict: dict[str, Any] = {}
+        filtered_dict: dict[str, object] = {}
 
         # Get canonical versions with fallback to defaults if project file not found
         try:
@@ -428,7 +432,7 @@ def extract_metadata_block_and_body(
     content: str,
     open_delim: str,
     close_delim: str,
-    _event_bus: Any = None,
+    _event_bus: object = None,
 ) -> tuple[str | None, str]:
     """
     Canonical utility: Extract the metadata block (if present) and the rest of the file content.

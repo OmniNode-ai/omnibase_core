@@ -35,6 +35,7 @@ from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.health.model_health_status import ModelHealthStatus
+from omnibase_core.types.typed_dict_mixin_types import TypedDictHealthCheckStatus
 
 
 class MixinHealthCheck:
@@ -410,29 +411,35 @@ class MixinHealthCheck:
             issues=all_issues,
         )
 
-    def get_health_status(self) -> dict[str, Any]:
+    def get_health_status(self) -> TypedDictHealthCheckStatus:
         """
-        Get health status as a dictionary.
+        Get health status as a typed dictionary.
 
         Returns a dictionary with basic health information including:
         - node_id: Node identifier
         - is_healthy: Boolean health status
-        - message: Health status message
+        - status: Health status string
+        - health_score: Numeric health score
+        - issues: List of issue messages
 
         Returns:
-            Dictionary with health status information
+            TypedDictHealthCheckStatus with health status information
         """
         # Call the proper health_check method
         health = self.health_check()
 
-        # Convert to dictionary format expected by tests
-        return {
-            "node_id": getattr(self, "node_id", "unknown"),
-            "is_healthy": health.status == "healthy",
-            "status": health.status,
-            "health_score": health.health_score,
-            "issues": [issue.message for issue in health.issues],
-        }
+        # Get node_id safely
+        raw_node_id = getattr(self, "node_id", "unknown")
+        node_id_str = str(raw_node_id) if raw_node_id else "unknown"
+
+        # Convert to typed dictionary format
+        return TypedDictHealthCheckStatus(
+            node_id=node_id_str,
+            is_healthy=health.status == "healthy",
+            status=health.status,
+            health_score=health.health_score,
+            issues=[issue.message for issue in health.issues],
+        )
 
     def check_dependency_health(
         self,

@@ -1,17 +1,32 @@
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Tool Version Model.
 
 Version information for a tool with lifecycle management.
 """
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
 if TYPE_CHECKING:
     from omnibase_core.enums.enum_tool_manifest import EnumVersionStatus
+
+
+class ModelToolVersionSummary(BaseModel):
+    """Summary of tool version information."""
+
+    version: str = Field(description="Semantic version string")
+    status: str = Field(description="Version status value")
+    is_active: bool = Field(description="Whether version is active")
+    is_deprecated: bool = Field(description="Whether version is deprecated")
+    is_end_of_life: bool = Field(description="Whether version is end of life")
+    lifecycle_phase: str = Field(description="Current lifecycle phase")
+    breaking_changes: bool = Field(description="Whether has breaking changes")
+    recommended: bool = Field(description="Whether version is recommended")
+    has_deprecation_date: bool = Field(description="Whether has deprecation date")
+    has_end_of_life_date: bool = Field(description="Whether has end of life date")
 
 
 class ModelToolVersion(BaseModel):
@@ -63,17 +78,17 @@ class ModelToolVersion(BaseModel):
         else:
             return "active"
 
-    def get_summary(self) -> dict[str, Any]:
+    def get_summary(self) -> ModelToolVersionSummary:
         """Get version summary."""
-        return {
-            "version": str(self.version),
-            "status": self.status.value,
-            "is_active": self.is_active(),
-            "is_deprecated": self.is_deprecated(),
-            "is_end_of_life": self.is_end_of_life(),
-            "lifecycle_phase": self.get_lifecycle_phase(),
-            "breaking_changes": self.breaking_changes,
-            "recommended": self.recommended,
-            "has_deprecation_date": self.deprecation_date is not None,
-            "has_end_of_life_date": self.end_of_life_date is not None,
-        }
+        return ModelToolVersionSummary(
+            version=str(self.version),
+            status=self.status.value,
+            is_active=self.is_active(),
+            is_deprecated=self.is_deprecated(),
+            is_end_of_life=self.is_end_of_life(),
+            lifecycle_phase=self.get_lifecycle_phase(),
+            breaking_changes=self.breaking_changes,
+            recommended=self.recommended,
+            has_deprecation_date=self.deprecation_date is not None,
+            has_end_of_life_date=self.end_of_life_date is not None,
+        )

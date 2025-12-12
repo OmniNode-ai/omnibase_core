@@ -16,6 +16,8 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from omnibase_core.decorators import allow_dict_any
+
 # Use object type for values convertible to ModelValue via from_any() method.
 # This avoids primitive soup union anti-pattern while maintaining type safety
 # through runtime validation in ModelValue.from_any().
@@ -269,6 +271,7 @@ class ModelCliAdvancedParams(BaseModel):
 
     # Protocol method implementations
 
+    @allow_dict_any
     def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)

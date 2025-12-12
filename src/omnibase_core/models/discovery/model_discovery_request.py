@@ -1,15 +1,19 @@
+"""
+Discovery Request Model
+
+Model for discovery client requests with proper typing and validation
+following ONEX canonical patterns.
+"""
+
+from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import Field
+from pydantic import BaseModel, Field
 
+from omnibase_core.models.common.model_typed_metadata import ModelRequestMetadata
 from omnibase_core.models.discovery.model_tool_discovery_request import (
     ModelDiscoveryFilters,
 )
-
-"\nDiscovery Request Model\n\nModel for discovery client requests with proper typing and validation\nfollowing ONEX canonical patterns.\n"
-from typing import Any
-
-from pydantic import BaseModel
 
 
 class ModelDiscoveryRequest(BaseModel):
@@ -54,8 +58,8 @@ class ModelDiscoveryRequest(BaseModel):
     correlation_id: UUID | None = Field(
         default=None, description="Correlation ID for request tracking"
     )
-    metadata: dict[str, Any] = Field(
-        default_factory=dict, description="Additional request metadata"
+    metadata: ModelRequestMetadata = Field(
+        default_factory=ModelRequestMetadata, description="Additional request metadata"
     )
 
     @classmethod

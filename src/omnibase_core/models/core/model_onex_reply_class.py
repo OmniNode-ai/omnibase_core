@@ -6,14 +6,14 @@ status tracking, error information, and performance metrics for ONEX tool commun
 """
 
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_onex_reply_status import EnumOnexReplyStatus
-from omnibase_core.errors.model_onex_error_details import ModelOnexErrorDetails
+from omnibase_core.models.core.model_onex_error_details import ModelOnexErrorDetails
 from omnibase_core.models.core.model_onex_performance_metrics import (
     ModelOnexPerformanceMetrics,
 )
@@ -395,8 +395,8 @@ class ModelOnexReply(BaseModel):
         """Get error code if present."""
         return self.error.error_code if self.error else None
 
-    def to_dict(self) -> dict[str, Any]:
-        """Convert reply to dictionary representation."""
+    def to_dict(self) -> dict[str, str]:
+        """Convert reply to dictionary representation with string values."""
         # Use model_dump() as the base for consistency
         result = self.model_dump()
 

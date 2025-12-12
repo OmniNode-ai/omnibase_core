@@ -1,4 +1,4 @@
-from typing import Any
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -11,6 +11,9 @@ Model for CLI tool execution input parameters.
 Replaces primitive dictionary parameters with type-safe Pydantic models
 for CLI tool execution operations.
 """
+
+if TYPE_CHECKING:
+    from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelCliToolExecutionInput(BaseModel):
@@ -82,14 +85,16 @@ class ModelCliToolExecutionInput(BaseModel):
         description="Request identifier for tracking",
     )
 
-    def to_legacy_dict(self) -> dict[str, Any]:
+    def to_legacy_dict(self) -> "SerializedDict":
         """
         Convert to legacy dictionary format for current standards.
 
         Returns:
-            Dictionary representation compatible with existing code
+            SerializedDict representation compatible with existing code
         """
-        base_dict = {
+        from omnibase_core.types.type_serializable_value import SerializedDict
+
+        base_dict: SerializedDict = {
             "action": self.action,
             "include_metadata": self.include_metadata,
             "health_filter": self.health_filter,
@@ -116,12 +121,12 @@ class ModelCliToolExecutionInput(BaseModel):
         return base_dict
 
     @classmethod
-    def from_legacy_dict(cls, data: dict[str, Any]) -> "ModelCliToolExecutionInput":
+    def from_legacy_dict(cls, data: "SerializedDict") -> "ModelCliToolExecutionInput":
         """
         Create instance from legacy dictionary format.
 
         Args:
-            data: Legacy dictionary parameters
+            data: Legacy SerializedDict parameters
 
         Returns:
             ModelCliToolExecutionInput instance

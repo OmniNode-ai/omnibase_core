@@ -13,9 +13,10 @@ Part of the ModelRetryPolicy restructuring to reduce excessive string fields.
 
 
 from datetime import UTC, timedelta
-from typing import Any
 
 from pydantic import BaseModel
+
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
@@ -174,7 +175,7 @@ class ModelRetryExecution(BaseModel):
 
     # Protocol method implementations
 
-    def execute(self, **kwargs: Any) -> bool:
+    def execute(self, **kwargs: object) -> bool:
         """Execute or update execution status (Executable protocol).
 
         Raises:
@@ -187,7 +188,7 @@ class ModelRetryExecution(BaseModel):
                 setattr(self, key, value)
         return True
 
-    def configure(self, **kwargs: Any) -> bool:
+    def configure(self, **kwargs: object) -> bool:
         """Configure instance with provided parameters (Configurable protocol).
 
         Raises:
@@ -199,7 +200,7 @@ class ModelRetryExecution(BaseModel):
                 setattr(self, key, value)
         return True
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

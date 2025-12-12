@@ -1,8 +1,3 @@
-from typing import Any
-
-from omnibase_core.enums.enum_transition_type import EnumTransitionType
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Contract-Driven State Reducer Mixin
 
@@ -14,14 +9,20 @@ state transition capability directly to nodes.
 """
 
 from pathlib import Path
+from typing import Any
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
+from omnibase_core.enums.enum_transition_type import EnumTransitionType
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.core.model_generic_contract import ModelGenericContract
 from omnibase_core.models.core.model_state_transition import ModelStateTransition
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.types.typed_dict_default_output_state import (
+    TypedDictDefaultOutputState,
+)
 from omnibase_core.utils.util_safe_yaml_loader import load_and_validate_yaml_model
 
 
@@ -322,7 +323,9 @@ class MixinContractStateReducer:
             },
         )
 
-    def _create_default_output_state(self, input_state: Any) -> dict[str, Any]:
+    def _create_default_output_state(
+        self, input_state: Any
+    ) -> TypedDictDefaultOutputState:
         """Create a default output state when no main tool is available."""
         # This is a fallback - each tool should implement proper processing
         tool_name = getattr(self, "node_name", "unknown_tool")
