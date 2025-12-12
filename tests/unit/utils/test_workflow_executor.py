@@ -35,6 +35,50 @@ from omnibase_core.utils.workflow_executor import (
 )
 
 
+def _create_mock_workflow_step(
+    step_id: UUID | None = None,
+    step_name: str = "test_step",
+    step_type: str = "compute",
+    enabled: bool = True,
+    depends_on: list[UUID] | None = None,
+) -> ModelWorkflowStep:
+    """Create a ModelWorkflowStep using model_construct to bypass Pydantic validation.
+
+    This helper is used for tests that create many steps (1000+) where Pydantic
+    validation overhead becomes significant. Uses model_construct() to skip
+    validation while still creating proper ModelWorkflowStep instances.
+
+    Args:
+        step_id: Optional step ID (generates UUID if not provided)
+        step_name: Human-readable name for the step
+        step_type: Type of workflow step (compute, effect, etc.)
+        enabled: Whether the step is enabled
+        depends_on: List of step IDs this step depends on
+
+    Returns:
+        ModelWorkflowStep instance created without validation overhead
+    """
+    return ModelWorkflowStep.model_construct(
+        correlation_id=uuid4(),
+        step_id=step_id or uuid4(),
+        step_name=step_name,
+        step_type=step_type,
+        timeout_ms=30000,
+        retry_count=3,
+        enabled=enabled,
+        skip_on_failure=False,
+        continue_on_error=False,
+        error_action="stop",
+        max_memory_mb=None,
+        max_cpu_percent=None,
+        priority=100,
+        order_index=0,
+        depends_on=depends_on if depends_on is not None else [],
+        parallel_group=None,
+        max_parallel_instances=1,
+    )
+
+
 @pytest.fixture
 def simple_workflow_definition() -> ModelWorkflowDefinition:
     """Create simple workflow definition."""
@@ -3064,13 +3108,9 @@ class TestWorkflowSizeLimitEnforcement:
         from omnibase_core.utils.workflow_executor import MAX_WORKFLOW_STEPS
 
         # Create workflow with exactly 1000 steps (at limit)
+        # Uses model_construct to bypass Pydantic validation for performance
         steps = [
-            ModelWorkflowStep(
-                step_id=uuid4(),
-                step_name=f"step_{i}",
-                step_type="compute",
-                enabled=True,
-            )
+            _create_mock_workflow_step(step_name=f"step_{i}")
             for i in range(MAX_WORKFLOW_STEPS)
         ]
 
@@ -3087,13 +3127,9 @@ class TestWorkflowSizeLimitEnforcement:
         from omnibase_core.utils.workflow_executor import MAX_WORKFLOW_STEPS
 
         # Create workflow with 1001 steps (exceeds limit)
+        # Uses model_construct to bypass Pydantic validation for performance
         steps = [
-            ModelWorkflowStep(
-                step_id=uuid4(),
-                step_name=f"step_{i}",
-                step_type="compute",
-                enabled=True,
-            )
+            _create_mock_workflow_step(step_name=f"step_{i}")
             for i in range(MAX_WORKFLOW_STEPS + 1)
         ]
 
@@ -3356,16 +3392,11 @@ class TestWorkflowSizeLimitEnforcement:
         """Test that step limit validation error includes the actual count."""
         from omnibase_core.utils.workflow_executor import MAX_WORKFLOW_STEPS
 
-        # Create workflow exceeding limit
-        num_steps = MAX_WORKFLOW_STEPS + 50
+        # Create workflow exceeding limit by 1 (minimum needed to trigger error)
+        # Uses model_construct to bypass Pydantic validation for performance
+        num_steps = MAX_WORKFLOW_STEPS + 1
         steps = [
-            ModelWorkflowStep(
-                step_id=uuid4(),
-                step_name=f"step_{i}",
-                step_type="compute",
-                enabled=True,
-            )
-            for i in range(num_steps)
+            _create_mock_workflow_step(step_name=f"step_{i}") for i in range(num_steps)
         ]
 
         errors = await validate_workflow_definition(simple_workflow_definition, steps)
@@ -3376,3 +3407,48 @@ class TestWorkflowSizeLimitEnforcement:
         assert step_limit_error is not None
         assert str(num_steps) in step_limit_error
         assert str(MAX_WORKFLOW_STEPS) in step_limit_error
+
+    @pytest.mark.asyncio
+    async def test_step_limit_short_circuits_validation(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test that step limit validation short-circuits to prevent DoS.
+
+        When step count exceeds MAX_WORKFLOW_STEPS, validation should return
+        immediately with only the step count error. This prevents attackers from
+        causing CPU exhaustion by submitting workflows with millions of steps
+        that would otherwise trigger expensive cycle detection and per-step
+        validation.
+
+        Security: OMN-670 - DoS mitigation via validation short-circuit
+        """
+        from omnibase_core.utils.workflow_executor import MAX_WORKFLOW_STEPS
+
+        # Create workflow with steps that would have other validation errors
+        # (invalid dependencies) if validation continued past the step count check
+        # Uses model_construct to bypass Pydantic validation for performance
+        num_steps = MAX_WORKFLOW_STEPS + 1
+        invalid_dep_id = uuid4()  # Non-existent dependency
+        steps = [
+            _create_mock_workflow_step(
+                step_name=f"step_{i}",
+                depends_on=[
+                    invalid_dep_id
+                ],  # Would fail dep validation if not short-circuited
+            )
+            for i in range(num_steps)
+        ]
+
+        errors = await validate_workflow_definition(simple_workflow_definition, steps)
+
+        # Should return ONLY the step limit error due to short-circuit
+        # If validation continued, we would see additional errors for:
+        # - Invalid dependencies (num_steps errors - one per step)
+        # Without short-circuit, this would be 1 + num_steps errors
+        assert len(errors) == 1, (
+            f"Expected exactly 1 error (step limit), got {len(errors)} errors. "
+            f"Short-circuit validation failed - other validations ran. Errors: {errors[:5]}..."
+        )
+        assert "maximum step limit" in errors[0]
+        assert str(num_steps) in errors[0]

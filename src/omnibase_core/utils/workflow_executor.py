@@ -257,10 +257,15 @@ async def validate_workflow_definition(
     errors: list[str] = []
 
     # Validate step count limit (OMN-670: Security hardening)
+    # SECURITY: Short-circuit immediately on step count overflow to prevent DoS.
+    # Without early return, an attacker could submit workflows with millions of steps
+    # and the validation would still iterate through all steps for dependency cycle
+    # detection and per-step validation, causing CPU exhaustion.
     if len(workflow_steps) > MAX_WORKFLOW_STEPS:
         errors.append(
             f"Workflow exceeds maximum step limit: {len(workflow_steps)} steps > {MAX_WORKFLOW_STEPS} maximum"
         )
+        return errors  # DoS mitigation: skip all subsequent expensive validation
 
     # Validate workflow definition metadata
     if not workflow_definition.workflow_metadata.workflow_name:
@@ -969,13 +974,23 @@ def _create_action_for_step(
         "step_name": step.step_name,
     }
 
-    # Validate payload is JSON-serializable (fail fast)
-    _validate_json_payload(payload, context=step.step_name)
+    # Serialize payload once for both validation and size checking (OMN-670: Performance optimization)
+    # This replaces the previous two-step approach that called json.dumps() twice
+    try:
+        payload_json = json.dumps(payload, default=_json_default_for_workflow)
+    except (TypeError, ValueError) as e:
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"Payload is not JSON-serializable for step '{step.step_name}': {e}",
+            context={
+                "payload_keys": list(payload.keys()),
+                "step_context": step.step_name,
+            },
+        ) from e
 
     # Validate payload size (OMN-670: Security hardening)
-    payload_size = len(
-        json.dumps(payload, default=_json_default_for_workflow).encode("utf-8")
-    )
+    payload_bytes = payload_json.encode("utf-8")
+    payload_size = len(payload_bytes)
     if payload_size > MAX_STEP_PAYLOAD_SIZE_BYTES:
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.WORKFLOW_PAYLOAD_SIZE_EXCEEDED,
