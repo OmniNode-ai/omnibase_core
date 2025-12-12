@@ -9,8 +9,8 @@ from typing import TYPE_CHECKING
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.models.operations.model_summary_types import (
-    ComputationOutputSummaryDict,
+from omnibase_core.types.typed_dict_computation_output_summary import (
+    TypedDictComputationOutputSummary,
 )
 
 if TYPE_CHECKING:
@@ -83,9 +83,9 @@ class ModelComputationOutputBase(BaseModel):
         """Get metadata by key."""
         return self.output_metadata.get(key)
 
-    def get_summary(self) -> ComputationOutputSummaryDict:
+    def get_summary(self) -> TypedDictComputationOutputSummary:
         """Get a summary of the computation output."""
-        return ComputationOutputSummaryDict(
+        return TypedDictComputationOutputSummary(
             computation_type=self.computation_type.value,
             computed_values_count=len(self.computed_values),
             metrics_count=len(self.metrics),

@@ -10,8 +10,8 @@ from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.operations.model_summary_types import (
-    ComputationOutputDataSummaryDict,
+from omnibase_core.types.typed_dict_computation_output_data_summary import (
+    TypedDictComputationOutputDataSummary,
 )
 
 if TYPE_CHECKING:
@@ -189,10 +189,10 @@ class ModelComputationOutputData(BaseModel):
         """Get processing information by key."""
         return self.processing_info.get(key)
 
-    def get_output_summary(self) -> ComputationOutputDataSummaryDict:
+    def get_output_summary(self) -> TypedDictComputationOutputDataSummary:
         """Get a comprehensive summary of the computation output."""
         base_summary = self.output_data.get_summary()
-        return ComputationOutputDataSummaryDict(
+        return TypedDictComputationOutputDataSummary(
             computation_type=self.computation_type.value,
             computed_values_count=base_summary["computed_values_count"],
             metrics_count=base_summary["metrics_count"],

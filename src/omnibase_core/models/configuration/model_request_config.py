@@ -1,56 +1,18 @@
-from pydantic import Field
+"""Request configuration model."""
 
-"""
-Request configuration model.
-"""
+from pydantic import BaseModel, ConfigDict, Field
 
-from pydantic import BaseModel, ConfigDict
-
+from omnibase_core.models.configuration.model_auth_summary import ModelAuthSummary
 from omnibase_core.models.configuration.model_request_auth import ModelRequestAuth
 from omnibase_core.models.configuration.model_request_retry_config import (
     ModelRequestRetryConfig,
 )
-
-
-class ModelAuthSummary(BaseModel):
-    """Masked authentication summary for logging/debugging."""
-
-    auth_type: str = Field(default="unknown", description="Type of authentication")
-    username: str | None = Field(default=None, description="Username (if basic auth)")
-    password: str | None = Field(
-        default=None, description="Password placeholder (always masked)"
-    )
-    token: str | None = Field(
-        default=None, description="Token placeholder (always masked)"
-    )
-
-
-class ModelRequestSummary(BaseModel):
-    """Clean request configuration summary."""
-
-    method: str = Field(default="GET", description="HTTP method")
-    url: str = Field(default="", description="Request URL")
-    headers_count: int = Field(default=0, description="Number of headers")
-    params_count: int = Field(default=0, description="Number of query parameters")
-    has_json_data: bool = Field(default=False, description="Has JSON body data")
-    has_form_data: bool = Field(default=False, description="Has form data")
-    has_files: bool = Field(default=False, description="Has files to upload")
-    has_auth: bool = Field(default=False, description="Has authentication")
-    connect_timeout: float = Field(
-        default=10.0, description="Connection timeout in seconds"
-    )
-    read_timeout: float = Field(default=30.0, description="Read timeout in seconds")
-    verify_ssl: bool = Field(default=True, description="Verify SSL certificates")
-    follow_redirects: bool = Field(default=True, description="Follow HTTP redirects")
-    max_redirects: int = Field(default=10, description="Maximum number of redirects")
-    stream: bool = Field(default=False, description="Stream response content")
-
-
-class ModelJsonData(BaseModel):
-    """Typed JSON data container for request bodies."""
-
-    class Config:
-        extra = "allow"  # Allow arbitrary fields for JSON data
+from omnibase_core.models.configuration.model_request_summary import (
+    ModelRequestSummary,
+)
+from omnibase_core.models.configuration.model_simple_json_data import (
+    ModelSimpleJsonData,
+)
 
 
 class ModelRequestConfig(BaseModel):
@@ -71,8 +33,8 @@ class ModelRequestConfig(BaseModel):
     )
 
     # Body data - Required explicit None handling
-    json_data: ModelJsonData = Field(
-        default_factory=ModelJsonData, description="JSON body data"
+    json_data: ModelSimpleJsonData = Field(
+        default_factory=ModelSimpleJsonData, description="JSON body data"
     )
     form_data: dict[str, str] = Field(default_factory=dict, description="Form data")
     files: dict[str, str] = Field(
@@ -125,10 +87,13 @@ class ModelRequestConfig(BaseModel):
             return ModelAuthSummary(
                 auth_type="basic",
                 username=auth_data.get("username"),
-                password="***MASKED***",
+                password="***MASKED***",  # secret-ok: masked placeholder value
             )
         elif auth_data.get("auth_type") == "bearer":
-            return ModelAuthSummary(auth_type="bearer", token="***MASKED***")
+            return ModelAuthSummary(
+                auth_type="bearer",
+                token="***MASKED***",  # secret-ok: masked placeholder
+            )
         return ModelAuthSummary(auth_type=auth_data.get("auth_type", "unknown"))
 
     @property

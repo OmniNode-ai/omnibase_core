@@ -11,8 +11,8 @@ from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.operations.model_computation_output_base import (
     ModelComputationOutputBase,
 )
-from omnibase_core.models.operations.model_summary_types import (
-    StructuredComputationSummaryDict,
+from omnibase_core.types.typed_dict_structured_computation_summary import (
+    TypedDictStructuredComputationSummary,
 )
 
 
@@ -88,9 +88,9 @@ class ModelStructuredComputationOutput(ModelComputationOutputBase):
         transformation_score = self.get_total_transformations() * 5
         return depth_score + transformation_score
 
-    def get_structured_summary(self) -> StructuredComputationSummaryDict:
+    def get_structured_summary(self) -> TypedDictStructuredComputationSummary:
         """Get structured processing summary."""
-        return StructuredComputationSummaryDict(
+        return TypedDictStructuredComputationSummary(
             result_count=len(self.structured_results),
             schema_valid=self.is_schema_valid(),
             validation_status=self.schema_validation_status,

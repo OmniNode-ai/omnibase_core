@@ -10,8 +10,8 @@ from omnibase_core.enums.enum_computation_type import EnumComputationType
 from omnibase_core.models.operations.model_computation_output_base import (
     ModelComputationOutputBase,
 )
-from omnibase_core.models.operations.model_summary_types import (
-    BinaryComputationSummaryDict,
+from omnibase_core.types.typed_dict_binary_computation_summary import (
+    TypedDictBinaryComputationSummary,
 )
 
 
@@ -85,9 +85,9 @@ class ModelBinaryComputationOutput(ModelComputationOutputBase):
         """Get total size of all binary results in bytes."""
         return sum(len(data) for data in self.binary_results.values())
 
-    def get_binary_summary(self) -> BinaryComputationSummaryDict:
+    def get_binary_summary(self) -> TypedDictBinaryComputationSummary:
         """Get binary processing summary."""
-        return BinaryComputationSummaryDict(
+        return TypedDictBinaryComputationSummary(
             result_count=len(self.binary_results),
             total_size_bytes=self.get_total_size_bytes(),
             checksums_verified=self.checksums_verified,

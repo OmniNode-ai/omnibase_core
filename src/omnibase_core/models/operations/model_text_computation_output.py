@@ -10,8 +10,8 @@ from omnibase_core.enums.enum_computation_type import EnumComputationType
 from omnibase_core.models.operations.model_computation_output_base import (
     ModelComputationOutputBase,
 )
-from omnibase_core.models.operations.model_summary_types import (
-    TextComputationSummaryDict,
+from omnibase_core.types.typed_dict_text_computation_summary import (
+    TypedDictTextComputationSummary,
 )
 
 
@@ -78,9 +78,9 @@ class ModelTextComputationOutput(ModelComputationOutputBase):
         """Check if there are any processing warnings."""
         return len(self.processing_warnings) > 0
 
-    def get_text_summary(self) -> TextComputationSummaryDict:
+    def get_text_summary(self) -> TypedDictTextComputationSummary:
         """Get text processing summary."""
-        return TextComputationSummaryDict(
+        return TypedDictTextComputationSummary(
             language_detected=self.language_detected,
             result_count=len(self.text_results),
             average_confidence=self.get_average_confidence(),

@@ -90,6 +90,9 @@ from .typed_dict_analytics_summary_data import TypedDictAnalyticsSummaryData
 from .typed_dict_audit_change import TypedDictAuditChange
 from .typed_dict_audit_info import TypedDictAuditInfo
 from .typed_dict_batch_processing_info import TypedDictBatchProcessingInfo
+
+# Computation output summary TypedDicts
+from .typed_dict_binary_computation_summary import TypedDictBinaryComputationSummary
 from .typed_dict_cache_info import TypedDictCacheInfo
 from .typed_dict_capability_factory_kwargs import TypedDictCapabilityFactoryKwargs
 from .typed_dict_categorization_update_data import TypedDictCategorizationUpdateData
@@ -105,6 +108,10 @@ from .typed_dict_collection_validation import TypedDictCollectionValidation
 
 # Node infrastructure TypedDict definitions
 from .typed_dict_comprehensive_health import TypedDictComprehensiveHealth
+from .typed_dict_computation_output_data_summary import (
+    TypedDictComputationOutputDataSummary,
+)
+from .typed_dict_computation_output_summary import TypedDictComputationOutputSummary
 from .typed_dict_conditional_branch import TypedDictConditionalBranch
 from .typed_dict_configuration_settings import TypedDictConfigurationSettings
 from .typed_dict_connection_info import TypedDictConnectionInfo
@@ -126,6 +133,7 @@ from .typed_dict_error_analysis import TypedDictErrorAnalysis
 from .typed_dict_error_data import TypedDictErrorData
 from .typed_dict_error_details import TypedDictErrorDetails
 from .typed_dict_event_info import TypedDictEventInfo
+from .typed_dict_event_type import TypedDictEventType
 from .typed_dict_execution_stats import TypedDictExecutionStats
 from .typed_dict_factory_kwargs import (
     TypedDictExecutionParams,
@@ -214,6 +222,7 @@ from .typed_dict_node_resource_constraint_kwargs import (
 from .typed_dict_node_resource_summary_type import TypedDictNodeResourceSummaryType
 from .typed_dict_node_rule_structure import TypedDictNodeRuleStructure
 from .typed_dict_node_state import TypedDictNodeState
+from .typed_dict_numeric_precision_summary import TypedDictNumericPrecisionSummary
 from .typed_dict_operation_result import TypedDictOperationResult
 from .typed_dict_operation_summary import TypedDictOperationSummary
 from .typed_dict_operational_impact import TypedDictOperationalImpact
@@ -245,7 +254,11 @@ from .typed_dict_signature_optional_params import TypedDictSignatureOptionalPara
 from .typed_dict_ssl_context_options import TypedDictSSLContextOptions
 from .typed_dict_stats_collection import TypedDictStatsCollection
 from .typed_dict_status_migration_result import TypedDictStatusMigrationResult
+from .typed_dict_structured_computation_summary import (
+    TypedDictStructuredComputationSummary,
+)
 from .typed_dict_system_state import TypedDictSystemState
+from .typed_dict_text_computation_summary import TypedDictTextComputationSummary
 from .typed_dict_timestamp_data import TypedDictTimestampData
 from .typed_dict_timestamp_update_data import TypedDictTimestampUpdateData
 from .typed_dict_tool_breakdown import TypedDictToolBreakdown
@@ -276,6 +289,14 @@ __all__ = [
     "TypedDictBasicErrorContext",
     "ProtocolSchemaValue",
     "TypedDictCoreSummary",
+    # Computation output summary TypedDicts
+    "TypedDictBinaryComputationSummary",
+    "TypedDictComputationOutputDataSummary",
+    "TypedDictComputationOutputSummary",
+    "TypedDictEventType",
+    "TypedDictNumericPrecisionSummary",
+    "TypedDictStructuredComputationSummary",
+    "TypedDictTextComputationSummary",
     # Effect result type aliases
     "EffectResultType",
     "DbParamType",
