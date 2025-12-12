@@ -9,9 +9,9 @@ Data handling declaration model.
 """
 
 
-from pydantic import BaseModel
+from typing import Any
 
-from omnibase_core.types.type_serializable_value import SerializedDict
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_data_classification import EnumDataClassification
@@ -75,7 +75,7 @@ class ModelDataHandlingDeclaration(BaseModel):
 
     # Protocol method implementations
 
-    def configure(self, **kwargs: object) -> bool:
+    def configure(self, **kwargs: Any) -> bool:
         """Configure instance with provided parameters (Configurable protocol).
 
         Raises:
@@ -92,7 +92,7 @@ class ModelDataHandlingDeclaration(BaseModel):
                 message=f"Configuration failed: {e}",
             ) from e
 
-    def serialize(self) -> SerializedDict:
+    def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

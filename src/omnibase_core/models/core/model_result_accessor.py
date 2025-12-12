@@ -11,7 +11,6 @@ from typing import Any
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.types.constraints import PrimitiveValueType
-from omnibase_core.types.type_serializable_value import SerializedDict
 
 from .model_field_accessor import ModelFieldAccessor
 
@@ -81,10 +80,10 @@ class ModelResultAccessor(ModelFieldAccessor):
             # fallback-ok: Configurable protocol requires bool return - False signals configuration failure
             return False
 
-    def serialize(self) -> SerializedDict:
+    def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
         # Accessor classes don't have specific model fields - serialize accessible data
-        result: SerializedDict = {
+        result: dict[str, Any] = {
             "accessor_type": self.__class__.__name__,
         }
 

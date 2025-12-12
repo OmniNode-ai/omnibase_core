@@ -7,6 +7,7 @@ Strongly-typed model that can parse both AI and Generation hub formats.
 
 import hashlib
 from pathlib import Path
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field, model_validator
@@ -19,12 +20,6 @@ from omnibase_core.models.core.model_hub_service_configuration import (
     ModelHubServiceConfiguration,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.types.constraints import PrimitiveValueType
-from omnibase_core.types.type_serializable_value import SerializedDict
-
-# Type alias for structured configuration data
-# Uses PrimitiveValueType for type-safe values (validated at runtime)
-StructuredData = dict[str, PrimitiveValueType]
 
 
 class ModelUnifiedHubContract(BaseModel):
@@ -49,38 +44,38 @@ class ModelUnifiedHubContract(BaseModel):
     )
 
     # Tool specification (AI hub format)
-    tool_specification: StructuredData | None = Field(
+    tool_specification: dict[str, Any] | None = Field(
         default=None,
         description="Tool specification from AI hub contracts",
     )
 
     # Workflows (Generation hub format)
-    orchestration_workflows: StructuredData | None = Field(
+    orchestration_workflows: dict[str, Any] | None = Field(
         default_factory=dict,
         description="Orchestration workflows",
     )
 
     # Tool coordination (Generation hub format)
-    tool_coordination: StructuredData | None = Field(
+    tool_coordination: dict[str, Any] | None = Field(
         default=None,
         description="Tool coordination configuration",
     )
 
     # Tool execution (Generation hub format)
-    tool_execution: StructuredData | None = Field(
+    tool_execution: dict[str, Any] | None = Field(
         default=None,
         description="Tool execution configuration",
     )
 
     # Contract metadata
-    contract_metadata: StructuredData | None = Field(
+    contract_metadata: dict[str, Any] | None = Field(
         default=None,
         description="Contract metadata",
     )
 
     @model_validator(mode="before")
     @classmethod
-    def validate_contract_format(cls, values: object) -> SerializedDict:
+    def validate_contract_format(cls, values: Any) -> dict[str, Any]:
         """Validate that we have either hub_configuration or service_configuration."""
         if isinstance(values, dict):
             hub_config = values.get("hub_configuration")
@@ -93,7 +88,7 @@ class ModelUnifiedHubContract(BaseModel):
                     message=msg,
                 )
 
-        result: SerializedDict = values if isinstance(values, dict) else {}
+        result: dict[str, Any] = values if isinstance(values, dict) else {}
         return result
 
     def get_unified_config(self) -> ModelHubConfiguration:
@@ -116,18 +111,14 @@ class ModelUnifiedHubContract(BaseModel):
         # Extract domain from tool_specification if available
         if self.tool_specification:
             # Try to infer domain from tool name
-            raw_tool_name = self.tool_specification.get("tool_name", "")
-            tool_name = str(raw_tool_name) if raw_tool_name else ""
+            tool_name = self.tool_specification.get("tool_name", "")
             if "ai" in tool_name.lower():
                 domain = "ai"
             elif "generation" in tool_name.lower():
                 domain = "generation"
 
             # Extract capabilities
-            raw_capabilities = self.tool_specification.get("capabilities", [])
-            spec_capabilities = (
-                raw_capabilities if isinstance(raw_capabilities, list) else []
-            )
+            spec_capabilities = self.tool_specification.get("capabilities", [])
             for cap in spec_capabilities:
                 if cap in [e.value for e in EnumHubCapability]:
                     capabilities.append(EnumHubCapability(cap))
@@ -188,7 +179,7 @@ class ModelUnifiedHubContract(BaseModel):
         return config.coordination_mode or EnumCoordinationMode.EVENT_ROUTER
 
     @classmethod
-    def from_dict(cls, contract_data: SerializedDict) -> "ModelUnifiedHubContract":
+    def from_dict(cls, contract_data: dict[str, Any]) -> "ModelUnifiedHubContract":
         """
         Create unified contract from raw dictionary data.
 

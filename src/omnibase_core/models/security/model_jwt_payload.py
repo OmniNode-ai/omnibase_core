@@ -1,14 +1,15 @@
+from typing import Any
+from uuid import UUID
+
+from pydantic import Field
+
 """
 ONEX Model: JWT Payload Model
 
 Strongly typed model for JWT payload with proper type safety.
 """
 
-from uuid import UUID
-
-from pydantic import BaseModel, Field
-
-from omnibase_core.types.type_serializable_value import SerializedDict
+from pydantic import BaseModel
 
 
 class ModelJWTPayload(BaseModel):
@@ -28,7 +29,7 @@ class ModelJWTPayload(BaseModel):
     )
 
     @classmethod
-    def from_jwt_dict(cls, payload_dict: SerializedDict) -> "ModelJWTPayload":
+    def from_jwt_dict(cls, payload_dict: dict[str, Any]) -> "ModelJWTPayload":
         """Create payload model from JWT dictionary.
 
         Args:

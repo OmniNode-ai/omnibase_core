@@ -11,7 +11,7 @@ Part of the connection properties restructuring to reduce string field violation
 """
 
 
-from omnibase_core.types import SerializedDict
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -72,7 +72,7 @@ class ModelDatabaseProperties(BaseModel):
 
     # Protocol method implementations
 
-    def configure(self, **kwargs: object) -> bool:
+    def configure(self, **kwargs: Any) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
         try:
             for key, value in kwargs.items():
@@ -97,7 +97,7 @@ class ModelDatabaseProperties(BaseModel):
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             ) from e
 
-    def serialize(self) -> SerializedDict:
+    def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

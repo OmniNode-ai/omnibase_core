@@ -4,9 +4,7 @@ TypedDictMetadataDict.
 Typed structure for metadata dictionary in protocol methods.
 """
 
-from typing import TYPE_CHECKING, TypedDict
-
-from omnibase_core.types.type_serializable_value import SerializableValue
+from typing import TYPE_CHECKING, Any, TypedDict
 
 if TYPE_CHECKING:
     from omnibase_core.models.primitives.model_semver import ModelSemVer
@@ -19,7 +17,7 @@ class TypedDictMetadataDict(TypedDict, total=False):
     description: str
     version: "ModelSemVer"
     tags: list[str]
-    metadata: dict[str, SerializableValue]
+    metadata: dict[str, Any]
 
 
 __all__ = ["TypedDictMetadataDict"]

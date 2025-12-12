@@ -10,13 +10,8 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.service.model_custom_fields import ModelCustomFields
-from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 
-@allow_dict_str_any(
-    "Orchestrator output requires flexible step_outputs, output_variables, and metrics "
-    "for arbitrary workflow results and execution data."
-)
 class ModelOrchestratorOutput(BaseModel):
     """
     Type-safe orchestrator output.

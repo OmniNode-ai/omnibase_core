@@ -11,11 +11,12 @@ Part of the metadata field info restructuring to reduce string field violations.
 """
 
 
+from typing import Any
+
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
-from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
 
 class ModelFieldValidationRules(BaseModel):
@@ -137,7 +138,7 @@ class ModelFieldValidationRules(BaseModel):
 
     # Protocol method implementations
 
-    def get_metadata(self) -> TypedDictMetadataDict:
+    def get_metadata(self) -> dict[str, Any]:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
@@ -148,9 +149,9 @@ class ModelFieldValidationRules(BaseModel):
                     metadata[field] = (
                         str(value) if not isinstance(value, (dict, list)) else value
                     )
-        return metadata  # type: ignore[return-value]
+        return metadata
 
-    def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
+    def set_metadata(self, metadata: dict[str, Any]) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
@@ -163,7 +164,7 @@ class ModelFieldValidationRules(BaseModel):
                 message=f"Operation failed: {e}",
             ) from e
 
-    def serialize(self) -> TypedDictSerializedModel:
+    def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

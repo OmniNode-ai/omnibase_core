@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-pass  # no typing imports needed
+from typing import Any
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -110,13 +110,13 @@ class ModelDiscriminatedValue(BaseModel):
         default=None,
         description="String value (set when value_type is STR)",
     )
-    dict_value: dict[str, object] | None = Field(
+    dict_value: dict[str, Any] | None = Field(
         default=None,
-        description="Dictionary value (set when value_type is DICT) - must be JSON-serializable",
+        description="Dictionary value (set when value_type is DICT)",
     )
-    list_value: list[object] | None = Field(
+    list_value: list[Any] | None = Field(
         default=None,
-        description="List value (set when value_type is LIST) - must be JSON-serializable",
+        description="List value (set when value_type is LIST)",
     )
 
     # Metadata
@@ -301,7 +301,7 @@ class ModelDiscriminatedValue(BaseModel):
 
     @classmethod
     def from_dict(
-        cls, value: dict[str, object], metadata: dict[str, str] | None = None
+        cls, value: dict[str, Any], metadata: dict[str, str] | None = None
     ) -> ModelDiscriminatedValue:
         """
         Create discriminated value from dictionary.
@@ -329,7 +329,7 @@ class ModelDiscriminatedValue(BaseModel):
 
     @classmethod
     def from_list(
-        cls, value: list[object], metadata: dict[str, str] | None = None
+        cls, value: list[Any], metadata: dict[str, str] | None = None
     ) -> ModelDiscriminatedValue:
         """
         Create discriminated value from list.
@@ -359,7 +359,7 @@ class ModelDiscriminatedValue(BaseModel):
     def from_any(
         cls,
         # union-ok: discriminated_union - factory creates discriminated value with EnumDiscriminatedValueType
-        value: bool | float | int | str | dict[str, object] | list[object],
+        value: bool | float | int | str | dict[str, Any] | list[Any],
         metadata: dict[str, str] | None = None,
     ) -> ModelDiscriminatedValue:
         """
@@ -405,8 +405,7 @@ class ModelDiscriminatedValue(BaseModel):
 
     # === Helper Methods ===
 
-    # union-ok: discriminated_union - return type matches discriminated value storage fields
-    def get_value(self) -> bool | float | int | str | dict[str, object] | list[object]:
+    def get_value(self) -> bool | float | int | str | dict[str, Any] | list[Any]:
         """
         Get the actual value with proper type.
 

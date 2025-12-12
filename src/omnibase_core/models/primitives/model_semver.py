@@ -1,10 +1,10 @@
 import re
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.types.type_serializable_value import SerializedDict
 
 # Pre-compiled SemVer pattern for performance
 # Basic SemVer regex pattern for major.minor.patch
@@ -202,7 +202,7 @@ def parse_semver_from_string(version_str: str) -> ModelSemVer:
     )
 
 
-def parse_input_state_version(input_state: SerializedDict) -> "ModelSemVer":
+def parse_input_state_version(input_state: dict[str, Any]) -> "ModelSemVer":
     """
     Parse a version from an input state dict[str, Any], requiring structured dictionary format.
 

@@ -1,3 +1,8 @@
+from pydantic import Field, field_validator
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
 """
 ModelRouteSpec: Routing specifications and strategy
 
@@ -7,13 +12,9 @@ anycast, and constraint-based routing.
 """
 
 import re
+from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.models.core.model_routing_constraints import ModelRoutingConstraints
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from pydantic import BaseModel
 
 
 class ModelRouteSpec(BaseModel):
@@ -41,8 +42,8 @@ class ModelRouteSpec(BaseModel):
     )
 
     # Routing constraints
-    constraints: ModelRoutingConstraints = Field(
-        default_factory=ModelRoutingConstraints,
+    constraints: dict[str, Any] = Field(
+        default_factory=dict,
         description="Routing constraints and preferences",
     )
 
@@ -166,62 +167,60 @@ class ModelRouteSpec(BaseModel):
         return v
 
     @classmethod
-    def create_direct_route(
-        cls, destination: str, **kwargs: object
-    ) -> "ModelRouteSpec":
+    def create_direct_route(cls, destination: str, **kwargs: Any) -> "ModelRouteSpec":
         """Create a direct route to destination with dynamic routing."""
-        return cls(final_destination=destination, routing_strategy="dynamic", **kwargs)  # type: ignore[arg-type]
+        return cls(final_destination=destination, routing_strategy="dynamic", **kwargs)
 
     @classmethod
     def create_explicit_route(
         cls,
         destination: str,
         hops: list[str],
-        **kwargs: object,
+        **kwargs: Any,
     ) -> "ModelRouteSpec":
         """Create an explicit route through specified hops."""
         return cls(
             final_destination=destination,
             remaining_hops=hops.copy(),
             routing_strategy="explicit",
-            **kwargs,  # type: ignore[arg-type]
+            **kwargs,
         )
 
     @classmethod
     def create_anycast_route(
-        cls, service_pattern: str, **kwargs: object
+        cls, service_pattern: str, **kwargs: Any
     ) -> "ModelRouteSpec":
         """Create anycast route to any instance of a service."""
         return cls(
             final_destination=service_pattern,
             routing_strategy="anycast",
-            **kwargs,  # type: ignore[arg-type]
+            **kwargs,
         )
 
     @classmethod
-    def create_broadcast_route(cls, **kwargs: object) -> "ModelRouteSpec":
+    def create_broadcast_route(cls, **kwargs: Any) -> "ModelRouteSpec":
         """Create broadcast route to all nodes."""
         return cls(
             final_destination="broadcast://all",
             routing_strategy="broadcast",
-            **kwargs,  # type: ignore[arg-type]
+            **kwargs,
         )
 
-    def add_constraint(self, key: str, value: ModelSchemaValue) -> None:
+    def add_constraint(self, key: str, value: Any) -> None:
         """Add a routing constraint."""
-        self.constraints.custom_constraints[key] = value
+        self.constraints[key] = value
 
     def set_latency_constraint(self, max_latency_ms: int) -> None:
         """Set maximum acceptable latency constraint."""
-        self.constraints.max_latency_ms = max_latency_ms
+        self.constraints["max_latency_ms"] = max_latency_ms
 
     def set_region_constraint(self, allowed_regions: list[str]) -> None:
         """Set allowed regions constraint."""
-        self.constraints.allowed_regions = allowed_regions
+        self.constraints["allowed_regions"] = allowed_regions
 
     def set_security_constraint(self, min_security_level: str) -> None:
         """Set minimum security level constraint."""
-        self.constraints.min_security_level = min_security_level
+        self.constraints["min_security_level"] = min_security_level
 
     def consume_next_hop(self) -> str | None:
         """Consume and return the next hop from remaining_hops."""

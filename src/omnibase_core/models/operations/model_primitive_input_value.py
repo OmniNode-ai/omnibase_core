@@ -10,10 +10,11 @@ Follows ONEX strong typing principles and one-model-per-file architecture.
 """
 
 
+from typing import Any
+
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_input_data_type import EnumInputDataType
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
 class ModelPrimitiveInputValue(BaseModel):
@@ -27,7 +28,7 @@ class ModelPrimitiveInputValue(BaseModel):
         default=EnumInputDataType.PRIMITIVE,
         description="Type identifier for primitive input data",
     )
-    value: ModelSchemaValue = Field(
+    value: Any = Field(
         description="Primitive value (string, number, boolean, etc.)",
     )
     value_type: str = Field(
@@ -37,7 +38,7 @@ class ModelPrimitiveInputValue(BaseModel):
         default=None,
         description="Optional unit for numeric values",
     )
-    metadata: dict[str, ModelSchemaValue] = Field(
+    metadata: dict[str, Any] = Field(
         default_factory=dict,
         description="Additional metadata for primitive input",
     )

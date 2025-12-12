@@ -5,9 +5,9 @@ Pydantic model for service discovery and resolution configuration.
 Follows ONEX conventions: CamelCase model name, one model per file.
 """
 
-from pydantic import BaseModel, Field
+from typing import Any
 
-from omnibase_core.types.type_serializable_value import SerializedDict
+from pydantic import BaseModel, Field
 
 
 class ModelServiceDiscoveryManager(BaseModel):
@@ -33,7 +33,7 @@ class ModelServiceDiscoveryManager(BaseModel):
         description="Consul connection timeout in seconds",
     )
 
-    static_config: SerializedDict = Field(
+    static_config: dict[str, Any] = Field(
         default_factory=dict,
         description="Static service configuration mappings",
     )

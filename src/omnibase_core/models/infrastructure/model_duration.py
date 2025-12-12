@@ -12,9 +12,9 @@ Provides convenient methods for working with time durations in various units.
 """
 
 
-from pydantic import BaseModel
+from typing import Any
 
-from omnibase_core.types.type_serializable_value import SerializedDict
+from pydantic import BaseModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_time_unit import EnumTimeUnit
@@ -250,7 +250,7 @@ class ModelDuration(BaseModel):
 
     # Protocol method implementations
 
-    def execute(self, **kwargs: object) -> bool:
+    def execute(self, **kwargs: Any) -> bool:
         """Execute or update execution status (Executable protocol)."""
         try:
             # Update any relevant execution fields
@@ -264,7 +264,7 @@ class ModelDuration(BaseModel):
                 message=f"Operation failed: {e}",
             ) from e
 
-    def configure(self, **kwargs: object) -> bool:
+    def configure(self, **kwargs: Any) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
         try:
             for key, value in kwargs.items():
@@ -277,7 +277,7 @@ class ModelDuration(BaseModel):
                 message=f"Operation failed: {e}",
             ) from e
 
-    def serialize(self) -> SerializedDict:
+    def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

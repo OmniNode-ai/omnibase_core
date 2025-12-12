@@ -22,7 +22,6 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from omnibase_core.decorators import allow_dict_any
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
 from omnibase_core.enums.enum_execution_status_v2 import (
@@ -211,7 +210,6 @@ class ModelCliExecutionCore(BaseModel):
 
     # Protocol method implementations
 
-    @allow_dict_any
     def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)

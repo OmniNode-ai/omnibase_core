@@ -16,8 +16,6 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from omnibase_core.types.type_serializable_value import SerializedDict
-
 
 class ModelParseMetadata(BaseModel):
     """
@@ -107,12 +105,12 @@ class ModelParseMetadata(BaseModel):
         description="Relevant environment variables during parsing",
     )
 
-    parsing_context: SerializedDict = Field(
+    parsing_context: dict[str, Any] = Field(
         default_factory=dict,
         description="Additional parsing context",
     )
 
-    debug_info: SerializedDict = Field(
+    debug_info: dict[str, Any] = Field(
         default_factory=dict,
         description="Debug information for troubleshooting",
     )
@@ -132,7 +130,7 @@ class ModelParseMetadata(BaseModel):
         """Add parsing context information."""
         self.parsing_context[key] = value
 
-    def get_performance_summary(self) -> SerializedDict:
+    def get_performance_summary(self) -> dict[str, Any]:
         """Get performance summary for monitoring."""
         return {
             "parse_duration_ms": self.parse_duration_ms,

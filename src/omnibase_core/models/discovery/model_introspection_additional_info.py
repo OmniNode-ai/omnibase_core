@@ -1,15 +1,12 @@
-"""
-Model for introspection additional info to replace Dict[str, Any] usage.
-"""
+from typing import Any
 
+from pydantic import Field
+
+"\nModel for introspection additional info to replace Dict[str, Any] usage.\n"
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
-from omnibase_core.models.common.model_typed_metadata import (
-    ModelIntrospectionCustomMetrics,
-)
-from omnibase_core.models.core.model_feature_flags import ModelFeatureFlags
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
@@ -46,10 +43,10 @@ class ModelIntrospectionAdditionalInfo(BaseModel):
     error_count: int | None = Field(
         default=None, description="Total number of errors since startup"
     )
-    custom_metrics: ModelIntrospectionCustomMetrics | None = Field(
+    custom_metrics: dict[str, Any] | None = Field(
         default=None, description="Custom metrics specific to this node type"
     )
-    feature_flags: ModelFeatureFlags | None = Field(
+    feature_flags: dict[str, Any] | None = Field(
         default=None, description="Feature flags enabled for this node"
     )
     model_config = ConfigDict(extra="allow")

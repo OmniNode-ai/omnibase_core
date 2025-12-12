@@ -4,9 +4,9 @@ Node Status Maintenance Model.
 Maintenance node status with estimated completion for discriminated union pattern.
 """
 
-from pydantic import BaseModel, Field
+from typing import Any
 
-from omnibase_core.types.typed_dict_status_summaries import TypedDictMaintenanceSummary
+from pydantic import BaseModel, Field
 
 
 class ModelNodeStatusMaintenance(BaseModel):
@@ -44,7 +44,7 @@ class ModelNodeStatusMaintenance(BaseModel):
         else:
             return "normal"
 
-    def get_maintenance_summary(self) -> TypedDictMaintenanceSummary:
+    def get_maintenance_summary(self) -> dict[str, Any]:
         """Get maintenance status summary."""
         return {
             "status_type": self.status_type,

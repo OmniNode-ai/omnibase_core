@@ -24,7 +24,6 @@ from .model_time_based import ModelTimeBased
 from .model_timeout import ModelTimeout
 from .model_timeout_data import ModelTimeoutData
 from .model_transaction import ModelTransaction
-from .model_load_balancer_stats import ModelLoadBalancerStats
 
 __all__ = [
     "ModelAction",
@@ -47,7 +46,6 @@ __all__ = [
     "ModelTimeout",
     "ModelTimeoutData",
     "ModelTransaction",
-    "ModelLoadBalancerStats",
     "collect_results",
     "err",
     "ok",

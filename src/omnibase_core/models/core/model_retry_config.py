@@ -1,12 +1,9 @@
 import time
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.core.model_retry_performance import (
-    ModelCircuitBreakerRecommendation,
-    ModelRetryPerformanceImpact,
-)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.utils.util_hash import deterministic_jitter
 
@@ -163,7 +160,7 @@ class ModelRetryConfig(BaseModel):
 
     # === Performance Assessment ===
 
-    def get_performance_impact(self) -> ModelRetryPerformanceImpact:
+    def get_performance_impact(self) -> dict[str, str]:
         """Assess the performance impact of this retry configuration."""
         total_time = self.get_total_retry_time()
 
@@ -183,13 +180,13 @@ class ModelRetryConfig(BaseModel):
 
         backoff_efficiency = "high" if self.exponential_backoff else "moderate"
 
-        return ModelRetryPerformanceImpact(
-            latency_impact=latency_impact,
-            resource_impact=resource_impact,
-            backoff_efficiency=backoff_efficiency,
-            total_retry_time=f"{total_time:.1f}s",
-            strategy_type=self.get_retry_strategy_type(),
-        )
+        return {
+            "latency_impact": latency_impact,
+            "resource_impact": resource_impact,
+            "backoff_efficiency": backoff_efficiency,
+            "total_retry_time": f"{total_time:.1f}s",
+            "strategy_type": self.get_retry_strategy_type(),
+        }
 
     def get_performance_recommendations(self) -> list[str]:
         """Get performance tuning recommendations."""
@@ -227,13 +224,13 @@ class ModelRetryConfig(BaseModel):
         """Determine if a circuit breaker should be used with this configuration."""
         return self.max_attempts > 3 or self.get_total_retry_time() > 15.0
 
-    def get_circuit_breaker_recommendations(self) -> ModelCircuitBreakerRecommendation:
+    def get_circuit_breaker_recommendations(self) -> dict[str, Any]:
         """Get circuit breaker configuration recommendations."""
         if not self.should_use_circuit_breaker():
-            return ModelCircuitBreakerRecommendation(
-                recommended=False,
-                reason="Retry configuration is conservative enough",
-            )
+            return {
+                "recommended": False,
+                "reason": "Retry configuration is conservative enough",
+            }
 
         # Calculate failure threshold based on retry attempts
         failure_threshold = max(5, self.max_attempts * 2)
@@ -241,13 +238,13 @@ class ModelRetryConfig(BaseModel):
         # Calculate timeout based on retry budget
         timeout_seconds = max(30, int(self.get_total_retry_time() * 2))
 
-        return ModelCircuitBreakerRecommendation(
-            recommended=True,
-            failure_threshold=failure_threshold,
-            timeout_seconds=timeout_seconds,
-            half_open_max_calls=max(3, self.max_attempts),
-            reason=f"High retry count ({self.max_attempts}) or long retry time ({self.get_total_retry_time():.1f}s)",
-        )
+        return {
+            "recommended": True,
+            "failure_threshold": failure_threshold,
+            "timeout_seconds": timeout_seconds,
+            "half_open_max_calls": max(3, self.max_attempts),
+            "reason": f"High retry count ({self.max_attempts}) or long retry time ({self.get_total_retry_time():.1f}s)",
+        }
 
     # === Timeout Integration ===
 

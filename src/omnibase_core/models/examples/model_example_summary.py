@@ -12,9 +12,8 @@ individual example summary data following ONEX naming conventions.
 """
 
 
+from typing import Any
 from uuid import UUID, uuid4
-
-from omnibase_core.types.type_serializable_value import SerializedDict
 
 from pydantic import BaseModel
 
@@ -59,7 +58,7 @@ class ModelExampleSummary(BaseModel):
 
     # Protocol method implementations
 
-    def configure(self, **kwargs: object) -> bool:
+    def configure(self, **kwargs: Any) -> bool:
         """Configure instance with provided parameters (Configurable protocol).
 
         Raises:
@@ -76,7 +75,7 @@ class ModelExampleSummary(BaseModel):
                 message=f"Configuration failed: {e}",
             ) from e
 
-    def serialize(self) -> SerializedDict:
+    def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

@@ -1,10 +1,12 @@
+from pydantic import Field
+
 """
 Parsed connection information model to replace Dict[str, Any] usage in connection parsing.
 """
 
-from pydantic import BaseModel, Field
+from typing import Any
 
-from omnibase_core.types import SerializedDict
+from pydantic import BaseModel
 
 
 class ModelParsedConnectionInfo(BaseModel):
@@ -50,6 +52,6 @@ class ModelParsedConnectionInfo(BaseModel):
     pool_size: int | None = Field(default=None, description="Connection pool size")
 
     @classmethod
-    def from_dict(cls, data: SerializedDict) -> "ModelParsedConnectionInfo":
+    def from_dict(cls, data: dict[str, Any]) -> "ModelParsedConnectionInfo":
         """Create from dictionary for easy migration."""
         return cls(**data)

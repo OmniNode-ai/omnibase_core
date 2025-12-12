@@ -27,13 +27,8 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_workflow_execution import EnumActionType
-from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 
-@allow_dict_str_any(
-    "Action model requires flexible payload and metadata for arbitrary action data "
-    "across different action types and workflow contexts."
-)
 class ModelAction(BaseModel):
     """
     Orchestrator-issued Action with lease management for single-writer semantics.

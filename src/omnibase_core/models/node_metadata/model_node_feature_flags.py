@@ -12,10 +12,11 @@ Part of the ModelNodeConfiguration restructuring.
 """
 
 
+from typing import Any
+
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 from omnibase_core.types.typed_dict_node_feature_summary_type import (
     TypedDictNodeFeatureSummaryType,
 )
@@ -143,7 +144,7 @@ class ModelNodeFeatureFlags(BaseModel):
             f"Cannot generate stable ID without UUID field.",
         )
 
-    def get_metadata(self) -> TypedDictMetadataDict:
+    def get_metadata(self) -> dict[str, Any]:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
@@ -154,9 +155,9 @@ class ModelNodeFeatureFlags(BaseModel):
                     metadata[field] = (
                         str(value) if not isinstance(value, (dict, list)) else value
                     )
-        return metadata  # type: ignore[return-value]
+        return metadata
 
-    def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
+    def set_metadata(self, metadata: dict[str, Any]) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
@@ -166,7 +167,7 @@ class ModelNodeFeatureFlags(BaseModel):
         except Exception:  # fallback-ok: Protocol method - graceful fallback for optional implementation
             return False
 
-    def serialize(self) -> TypedDictSerializedModel:
+    def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

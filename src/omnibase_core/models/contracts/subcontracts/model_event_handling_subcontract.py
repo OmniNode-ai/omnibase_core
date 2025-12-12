@@ -17,7 +17,7 @@ providing clean separation between node logic and event-driven behavior.
 Strict typing is enforced: No Any types allowed in implementation.
 """
 
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -76,7 +76,7 @@ class ModelEventHandlingSubcontract(BaseModel):
     )
 
     # Event filtering configuration
-    event_filters: dict[str, str] = Field(
+    event_filters: dict[str, Any] = Field(
         default_factory=dict,
         description="Event filtering rules (e.g., {'node_id': 'pattern*', 'node_name': 'compute*'})",
     )

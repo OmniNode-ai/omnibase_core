@@ -6,7 +6,7 @@ Strongly-typed model for checkpoint data in ONEX storage backends.
 """
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -14,9 +14,6 @@ from pydantic import BaseModel, Field
 from omnibase_core.enums.enum_checkpoint_status import EnumCheckpointStatus
 from omnibase_core.enums.enum_checkpoint_type import EnumCheckpointType
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-
-if TYPE_CHECKING:
-    from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelCheckpointData(BaseModel):
@@ -40,7 +37,7 @@ class ModelCheckpointData(BaseModel):
         default=EnumCheckpointStatus.ACTIVE,
     )
 
-    data_payload: "SerializedDict" = Field(
+    data_payload: dict[str, Any] = Field(
         description="Serialized checkpoint data payload",
         default_factory=dict,
     )

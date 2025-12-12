@@ -10,10 +10,11 @@ Follows ONEX strong typing principles and one-model-per-file architecture.
 """
 
 
+from typing import Any
+
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_input_data_type import EnumInputDataType
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
@@ -28,7 +29,7 @@ class ModelStructuredInputValue(BaseModel):
         default=EnumInputDataType.STRUCTURED,
         description="Type identifier for structured input data",
     )
-    data_structure: dict[str, ModelSchemaValue] = Field(
+    data_structure: dict[str, Any] = Field(
         default_factory=dict,
         description="Structured data with field definitions",
     )
@@ -36,7 +37,7 @@ class ModelStructuredInputValue(BaseModel):
         ...,  # REQUIRED - specify in contract
         description="Schema version for the structured data",
     )
-    metadata: dict[str, ModelSchemaValue] = Field(
+    metadata: dict[str, Any] = Field(
         default_factory=dict,
         description="Additional metadata for structured input",
     )

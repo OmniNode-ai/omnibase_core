@@ -9,14 +9,12 @@ Registry Action Payload Model.
 Payload for registry actions (register, unregister, discover).
 """
 
+from typing import Any
+
 from pydantic import Field
 
 from omnibase_core.models.core.model_action_payload_base import ModelActionPayloadBase
 from omnibase_core.models.core.model_node_action_type import ModelNodeActionType
-from omnibase_core.models.core.model_service_registry_config import (
-    ModelDiscoveryFilters,
-    ModelServiceConfig,
-)
 
 
 class ModelRegistryActionPayload(ModelActionPayloadBase):
@@ -26,12 +24,12 @@ class ModelRegistryActionPayload(ModelActionPayloadBase):
         default=None,
         description="Name of the service to register/unregister",
     )
-    service_config: ModelServiceConfig = Field(
-        default_factory=ModelServiceConfig,
+    service_config: dict[str, Any] = Field(
+        default_factory=dict,
         description="Service configuration",
     )
-    discovery_filters: ModelDiscoveryFilters = Field(
-        default_factory=ModelDiscoveryFilters,
+    discovery_filters: dict[str, Any] = Field(
+        default_factory=dict,
         description="Filters for service discovery",
     )
 

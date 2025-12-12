@@ -43,11 +43,10 @@ See Also:
 """
 
 from datetime import datetime
+from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
-
-from omnibase_core.types.type_serializable_value import SerializedDict
 
 __all__ = [
     "ModelComputeInput",
@@ -111,5 +110,5 @@ class ModelComputeInput[T_Input](BaseModel):
     computation_type: str = "default"
     cache_enabled: bool = True
     parallel_enabled: bool = False
-    metadata: SerializedDict = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
     timestamp: datetime = Field(default_factory=datetime.now)

@@ -22,9 +22,7 @@
 # === /OmniNode:Metadata ===
 
 
-from typing import Protocol, TypeVar
-
-from omnibase_core.types.type_serializable_value import SerializedDict
+from typing import Any, Protocol, TypeVar
 
 T = TypeVar("T", bound="MixinSerializable")
 
@@ -33,12 +31,12 @@ class MixinSerializable(Protocol):
     """
     Protocol for models that support recursive, protocol-driven serialization for ONEX/OmniNode file/block I/O.
     Implementations must provide:
-      - to_serializable_dict(self) -> SerializedDict: Recursively serialize self and all sub-models, lists, dicts, and enums.
-      - from_serializable_dict(cls, data: SerializedDict) -> Self: Recursively reconstruct the model and all sub-models from dicts.
+      - to_serializable_dict(self) -> dict[str, Any]: Recursively serialize self and all sub-models, list[Any]s, dict[str, Any]s, and enums.
+      - from_serializable_dict(cls, data: dict[str, Any]) -> Self: Recursively reconstruct the model and all sub-models from dict[str, Any]s.
     This protocol is foundational and should be implemented by any model intended for canonical serialization or deserialization.
     """
 
-    def to_serializable_dict(self: T) -> SerializedDict: ...
+    def to_serializable_dict(self: T) -> dict[str, Any]: ...
 
     @classmethod
-    def from_serializable_dict(cls: type[T], data: SerializedDict) -> T: ...
+    def from_serializable_dict(cls: type[T], data: dict[str, Any]) -> T: ...

@@ -1,3 +1,5 @@
+from typing import Any
+
 """
 ONEX Debug Discovery Logging Mixin.
 
@@ -6,16 +8,11 @@ to monitor and debug service discovery interactions.
 """
 
 import logging
-from collections.abc import Mapping
-from typing import Any
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 
 logger = logging.getLogger(__name__)
-
-# Type alias for logging context values
-LogContextValue = str | int | float | bool | None
 
 
 class MixinDebugDiscoveryLogging:
@@ -30,7 +27,7 @@ class MixinDebugDiscoveryLogging:
     def setup_discovery_debug_logging(
         self,
         node_name: str,
-        additional_context: Mapping[str, LogContextValue] | None = None,
+        additional_context: dict[str, Any] | None = None,
     ) -> None:
         """
         Setup comprehensive discovery event debug logging.
@@ -63,6 +60,8 @@ class MixinDebugDiscoveryLogging:
             )
 
             # Replace with debug version (explicit type for MyPy)
+            from typing import Any
+
             def debug_handler(envelope_or_event: Any) -> None:
                 return self._debug_handle_introspection_request(
                     envelope_or_event, node_name

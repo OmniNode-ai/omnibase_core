@@ -13,17 +13,13 @@ and compliance with one-model-per-file naming conventions.
 import hashlib
 import inspect
 from datetime import datetime
-from typing import Any, cast
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ValidationInfo, computed_field
 
 from omnibase_core.models.core.model_performance_summary import ModelPerformanceSummary
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.types import (
-    TypedDictAccessControlConfig,
-    TypedDictSecurityPolicyConfig,
-)
 
 from .model_tool_metadata import (
     EnumToolCapabilityLevel,
@@ -49,7 +45,6 @@ class ModelToolCollection(BaseModel):
     """
 
     # Core tool storage (enhanced)
-    # ONEX_EXCLUDE: dict_str_any - Heterogeneous tool registry (classes, configs, instances)
     tools: dict[str, Any] = Field(
         default_factory=dict,
         description="Mapping of tool names to ProtocolTool implementations",
@@ -109,16 +104,16 @@ class ModelToolCollection(BaseModel):
     )
 
     # Security and compliance
-    security_policy: TypedDictSecurityPolicyConfig = Field(
-        default_factory=lambda: cast(TypedDictSecurityPolicyConfig, {}),
+    security_policy: dict[str, Any] = Field(
+        default_factory=dict,
         description="Security policy configuration",
     )
     compliance_requirements: list[str] = Field(
         default_factory=list,
         description="Compliance requirements",
     )
-    access_control: TypedDictAccessControlConfig = Field(
-        default_factory=lambda: cast(TypedDictAccessControlConfig, {}),
+    access_control: dict[str, Any] = Field(
+        default_factory=dict,
         description="Access control settings",
     )
 
@@ -416,7 +411,6 @@ class ModelToolCollection(BaseModel):
     @classmethod
     def create_from_tools_dict(
         cls,
-        # ONEX_EXCLUDE: dict_str_any - Heterogeneous tool registry (classes, configs, instances)
         tools_dict: dict[str, Any],
         collection_name: str = "imported",
         auto_validate: bool = True,

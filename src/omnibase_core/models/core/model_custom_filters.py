@@ -4,8 +4,6 @@ from typing import Any, Union
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.types.type_serializable_value import SerializedDict
-
 from .model_complex_filter import ModelComplexFilter
 from .model_datetime_filter import ModelDateTimeFilter
 from .model_list_filter import ModelListFilter
@@ -76,13 +74,13 @@ class ModelCustomFilters(BaseModel):
         """Remove a filter by name."""
         self.filters.pop(name, None)
 
-    def to_dict(self) -> SerializedDict:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary (for current standards)."""
         # Custom transformation logic for filters dictionary
         return {name: filter_obj.to_dict() for name, filter_obj in self.filters.items()}
 
     @classmethod
-    def from_dict(cls, data: SerializedDict) -> "ModelCustomFilters":
+    def from_dict(cls, data: dict[str, Any]) -> "ModelCustomFilters":
         """Create from dictionary (for migration)."""
         filters: dict[str, FilterType] = {}
 

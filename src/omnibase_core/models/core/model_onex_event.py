@@ -9,7 +9,6 @@ from omnibase_core.constants.event_types import normalize_legacy_event_type
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
-from .model_event_data import ModelEventData
 from .model_event_type import ModelEventType
 from .model_onex_event_metadata import ModelOnexEventMetadata
 from .model_telemetry_operation_error_metadata import (
@@ -88,7 +87,7 @@ class ModelOnexEvent(BaseModel):
         default=None,
         description="Optional correlation ID for request/response patterns",
     )
-    data: ModelEventData | None = Field(default=None, description="Event payload data")
+    data: dict[str, Any] | None = Field(default=None, description="Event payload data")
 
     @field_validator("event_type")
     @classmethod

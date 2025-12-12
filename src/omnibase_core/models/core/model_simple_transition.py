@@ -4,16 +4,15 @@ Simple Transition Model.
 Simple direct state field updates.
 """
 
-from pydantic import BaseModel, Field
+from typing import Any
 
-from omnibase_core.types.type_serializable_value import SerializedDict
+from pydantic import BaseModel, Field
 
 
 class ModelSimpleTransition(BaseModel):
     """Simple direct state field updates."""
 
-    # Uses SerializedDict for state field updates (JSON-serializable values)
-    updates: SerializedDict = Field(
+    updates: dict[str, Any] = Field(
         default=...,
         description="Field path to value mappings (e.g., {'user.name': 'John'})",
     )

@@ -2,13 +2,12 @@
 OnexEventMetadata model.
 """
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.types.type_serializable_value import SerializedDict
 
 if TYPE_CHECKING:
     from omnibase_core.models.core.model_node_announce_metadata import (
@@ -17,8 +16,8 @@ if TYPE_CHECKING:
 
 
 class ModelOnexEventMetadata(BaseModel):
-    input_state: SerializedDict | None = None
-    output_state: SerializedDict | None = None
+    input_state: dict[str, Any] | None = None
+    output_state: dict[str, Any] | None = None
     error: str | None = None
     error_type: str | None = None
     error_code: str | None = None

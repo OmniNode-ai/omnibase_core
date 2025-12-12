@@ -141,22 +141,6 @@ class PythonASTValidator(ast.NodeVisitor):
             # EXECUTION_CONTEXT_FIELDS (flexible identifiers)
             # See: src/omnibase_core/models/compute/model_compute_execution_context.py
             "node_id",  # Intentionally str: can be UUID, hostname, or custom identifier
-            # TYPED_DICT_SERIALIZATION_BOUNDARY (TypedDicts for logging/monitoring/introspection)
-            # See: src/omnibase_core/types/ for TypedDict definitions
-            # These TypedDicts are at serialization boundaries where string versions/IDs are appropriate
-            "input_version",  # TypedDict at serialization boundary for logging/monitoring
-            "output_version",  # TypedDict at serialization boundary for logging/monitoring
-            "policy_version",  # TypedDict for security policy config (serialization boundary)
-            "correlation_id",  # TypedDict event metadata (OpenTelemetry-style correlation)
-            "operation_id",  # TypedDict FSM context (reducer operation tracking)
-            # GENERIC_SERIALIZATION_FIELDS (used in TypedDicts for serialization)
-            # NOTE: These generic names are allowed because:
-            # 1. TypedDicts are serialization boundaries (JSON, logging, monitoring)
-            # 2. Pydantic models should NOT use these generic names - use specific names
-            #    (e.g., node_version, tool_version, schema_version instead of version)
-            #    (e.g., collection_id, tool_id, node_id instead of id)
-            "version",  # Generic version field in TypedDicts - serialization boundary only
-            "id",  # Generic ID field in TypedDicts - serialization boundary only
         }
 
     def visit_Import(self, node: ast.Import):

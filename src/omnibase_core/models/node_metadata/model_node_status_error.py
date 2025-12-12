@@ -4,9 +4,9 @@ Node Status Error Model.
 Error node status with error details for discriminated union pattern.
 """
 
-from pydantic import BaseModel, Field
+from typing import Any
 
-from omnibase_core.types.typed_dict_status_summaries import TypedDictErrorSummary
+from pydantic import BaseModel, Field
 
 
 class ModelNodeStatusError(BaseModel):
@@ -43,7 +43,7 @@ class ModelNodeStatusError(BaseModel):
         else:
             return "medium"
 
-    def get_error_summary(self) -> TypedDictErrorSummary:
+    def get_error_summary(self) -> dict[str, Any]:
         """Get error status summary."""
         return {
             "status_type": self.status_type,

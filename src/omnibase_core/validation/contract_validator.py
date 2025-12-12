@@ -11,7 +11,7 @@ Provides programmatic contract validation against ONEX standards with:
 import ast
 import re
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal, cast
 
 import yaml
 from pydantic import ValidationError
@@ -37,11 +37,6 @@ from omnibase_core.protocols import (
     ProtocolComplianceViolation,
     ProtocolONEXStandards,
     ProtocolValidationResult,
-)
-from omnibase_core.types import (
-    TypedDictContractData,
-    TypedDictModelClassInfo,
-    TypedDictModelFieldInfo,
 )
 
 # Validation constants
@@ -475,9 +470,9 @@ class ProtocolContractValidator:
             elif "value_error" in error_type:
                 suggestions.append(f"Check value constraints for field: {field}")
 
-    def _extract_model_classes(self, tree: ast.AST) -> list[TypedDictModelClassInfo]:
+    def _extract_model_classes(self, tree: ast.AST) -> list[dict[str, Any]]:
         """Extract Pydantic model class definitions from AST."""
-        model_classes: list[TypedDictModelClassInfo] = []
+        model_classes = []
 
         for node in ast.walk(tree):
             if isinstance(node, ast.ClassDef):
@@ -485,7 +480,7 @@ class ProtocolContractValidator:
                 for base in node.bases:
                     if isinstance(base, ast.Name) and "BaseModel" in base.id:
                         # Extract fields
-                        fields: list[TypedDictModelFieldInfo] = []
+                        fields = []
                         for item in node.body:
                             if isinstance(item, ast.AnnAssign) and isinstance(
                                 item.target, ast.Name
@@ -496,33 +491,30 @@ class ProtocolContractValidator:
                                     if item.annotation
                                     else "Any"
                                 )
-                                field_info: TypedDictModelFieldInfo = {
-                                    "name": field_name,
-                                    "type": field_type,
-                                }
-                                fields.append(field_info)
+                                fields.append({"name": field_name, "type": field_type})
 
-                        model_info: TypedDictModelClassInfo = {
-                            "name": node.name,
-                            "fields": fields,
-                            "bases": [ast.unparse(b) for b in node.bases],
-                        }
-                        model_classes.append(model_info)
+                        model_classes.append(
+                            {
+                                "name": node.name,
+                                "fields": fields,
+                                "bases": [ast.unparse(b) for b in node.bases],
+                            }
+                        )
                         break
 
         return model_classes
 
     def _validate_model_fields(
         self,
-        model_class: TypedDictModelClassInfo,
-        contract_data: TypedDictContractData,
+        model_class: dict[str, Any],
+        contract_data: dict[str, Any],
         violations: list[str],
         warnings: list[str],
         suggestions: list[str],
     ) -> None:
         """Validate model fields against contract specifications."""
         model_name = model_class["name"]
-        fields: list[TypedDictModelFieldInfo] = model_class.get("fields", [])
+        fields = cast("list[dict[str, Any]]", model_class.get("fields", []))
 
         # Check if this is the input or output model
         input_model = contract_data.get("input_model", "")
@@ -551,7 +543,7 @@ class ProtocolContractValidator:
 
     def _check_model_naming(
         self,
-        model_classes: list[TypedDictModelClassInfo],
+        model_classes: list[dict[str, Any]],
         violations: list[str],
         warnings: list[str],
     ) -> None:

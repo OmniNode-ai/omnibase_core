@@ -1,17 +1,9 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-
-if TYPE_CHECKING:
-    from omnibase_core.types import (
-        TypedDictComprehensiveHealth,
-        TypedDictNodeCapabilities,
-        TypedDictNodeIntrospection,
-    )
 
 """
 NodeCoreBase - Foundation for 4-Node ModelArchitecture.
@@ -32,7 +24,6 @@ This base class implements only the core functionality needed by all node types:
 
 import time
 from abc import ABC, abstractmethod
-from collections.abc import Mapping
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
@@ -75,9 +66,9 @@ class NodeCoreBase(ABC):
     node_id: UUID
     _node_id: UUID  # Alias for mixin compatibility
     created_at: datetime
-    state: dict[str, str]
+    state: dict[str, Any]
     metrics: dict[str, float]
-    contract_data: object | None
+    contract_data: Any | None
     version: ModelSemVer
 
     def __init__(self, container: ModelONEXContainer) -> None:
@@ -269,7 +260,7 @@ class NodeCoreBase(ABC):
             ]
 
             # Emit final metrics
-            final_metrics: dict[str, float | str] = {
+            final_metrics = {
                 **self.metrics,
                 "cleanup_time_ms": cleanup_time,
                 "total_lifetime_ms": total_lifetime,
@@ -333,7 +324,7 @@ class NodeCoreBase(ABC):
             "node_health_score": max(0.0, 1.0 - error_rate),
         }
 
-    async def get_introspection_data(self) -> TypedDictNodeIntrospection:
+    async def get_introspection_data(self) -> dict[str, Any]:
         """
         Get node introspection data for monitoring and debugging.
 
@@ -345,7 +336,7 @@ class NodeCoreBase(ABC):
             "node_type": self.__class__.__name__,
             "version": str(self.version),
             "created_at": self.created_at.isoformat(),
-            "state": dict(self.state),
+            "state": self.state.copy(),
             "metrics": await self.get_performance_metrics(),
             "capabilities": self._get_node_capabilities(),
             "contract_loaded": self.contract_data is not None,
@@ -366,7 +357,7 @@ class NodeCoreBase(ABC):
 
     def get_state(self) -> dict[str, str]:
         """Get current node state."""
-        return dict(self.state)
+        return self.state.copy()
 
     async def _load_contract(self) -> None:
         """
@@ -483,14 +474,14 @@ class NodeCoreBase(ABC):
     async def _emit_lifecycle_event(
         self,
         event_type: str,
-        metadata: Mapping[str, float | str],
+        metadata: dict[str, Any],
     ) -> None:
         """
         Emit lifecycle transition events.
 
         Args:
             event_type: Type of lifecycle event
-            metadata: Additional event metadata (timing and status information)
+            metadata: Additional event metadata
         """
         try:
             # Try to get event bus from container
@@ -531,7 +522,7 @@ class NodeCoreBase(ABC):
                 {"node_id": self.node_id, "event_type": event_type},
             )
 
-    def _get_node_capabilities(self) -> TypedDictNodeCapabilities:
+    def _get_node_capabilities(self) -> dict[str, bool]:
         """
         Get node capabilities for introspection.
 
@@ -841,7 +832,7 @@ class NodeCoreBase(ABC):
     def _get_health_status_comprehensive(
         self,
         health_checks: dict[str, bool],
-    ) -> TypedDictComprehensiveHealth:
+    ) -> dict[str, Any]:
         """
         Aggregate health status from multiple component checks.
 

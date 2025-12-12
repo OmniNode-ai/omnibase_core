@@ -7,7 +7,7 @@ a structured representation of error context data.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field
 
@@ -91,7 +91,7 @@ class ModelErrorContext(BaseModel):
 
     # Protocol method implementations
 
-    def serialize(self) -> dict[str, object]:
+    def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

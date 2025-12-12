@@ -1,14 +1,12 @@
 from typing import Optional
+
+from pydantic import Field
+
+"\nAudit value model to replace Dict[str, Any] usage in audit entries.\n"
+from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
-
-from omnibase_core.types import SerializedDict, TypedDictAuditChange
-
-"""
-Audit value model to replace Dict[str, Any] usage in audit entries.
-"""
-
+from pydantic import BaseModel
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_audit_field_change import ModelAuditFieldChange
@@ -46,20 +44,20 @@ class ModelAuditValue(BaseModel):
     )
     change_count: int = Field(default=0, description="Number of fields changed")
 
-    def to_dict(self) -> dict[str, TypedDictAuditChange]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for current standards."""
-        result: dict[str, TypedDictAuditChange] = {}
+        result = {}
         for change in self.field_changes:
             if not change.is_sensitive():
-                result[change.field_path] = TypedDictAuditChange(
-                    old=change.old_value,
-                    new=change.new_value,
-                )
+                result[change.field_path] = {
+                    "old": change.old_value,
+                    "new": change.new_value,
+                }
         return result
 
     @classmethod
     def from_dict(
-        cls, data: SerializedDict | None, is_new: bool = False
+        cls, data: dict[str, Any] | None, is_new: bool = False
     ) -> Optional["ModelAuditValue"]:
         """Create from dictionary for easy migration."""
         if data is None:
@@ -98,7 +96,7 @@ class ModelAuditValue(BaseModel):
         return cls(**data)
 
     def get_changed_fields(self) -> list[str]:
-        """Get list of changed field names."""
+        """Get list[Any]of changed field names."""
         return [change.field_path for change in self.field_changes]
 
     def has_sensitive_changes(self) -> bool:

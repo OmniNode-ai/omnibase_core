@@ -4,11 +4,9 @@ Signature Evaluation Model.
 Signature evaluation result model for security and compliance validation.
 """
 
-from pydantic import BaseModel, Field
+from typing import Any
 
-from omnibase_core.models.security.model_security_summaries import (
-    ModelSignatureEvaluationSummary,
-)
+from pydantic import BaseModel, Field
 
 
 class ModelSignatureEvaluation(BaseModel):
@@ -48,11 +46,11 @@ class ModelSignatureEvaluation(BaseModel):
         """Check if signature is valid (no violations)."""
         return self.is_valid and len(self.violations) == 0
 
-    def get_summary(self) -> ModelSignatureEvaluationSummary:
+    def get_summary(self) -> dict[str, Any]:
         """Get evaluation summary."""
-        return ModelSignatureEvaluationSummary(
-            is_valid=self.is_valid,
-            meets_requirements=self.meets_requirements,
-            violation_count=len(self.violations),
-            warning_count=len(self.warnings),
-        )
+        return {
+            "is_valid": self.is_valid,
+            "meets_requirements": self.meets_requirements,
+            "violation_count": len(self.violations),
+            "warning_count": len(self.warnings),
+        }

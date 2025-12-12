@@ -37,6 +37,7 @@ from omnibase_core.enums.enum_security_level import EnumSecurityLevel
 """
 
 from pathlib import Path
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
 
@@ -51,7 +52,6 @@ from .model_config_validation_result import ModelConfigValidationResult
 from .model_performance_optimization_config import ModelPerformanceOptimizationConfig
 from .model_secret_backend import ModelSecretBackend
 from .model_secret_health_check_result import ModelSecretHealthCheckResult
-from .model_security_summaries import ModelBackendConfigData
 
 try:
     from dotenv import load_dotenv
@@ -226,8 +226,8 @@ class ModelSecretConfig(BaseModel):
         )
 
         # Validate primary backend configuration
-        backend_config_data = self.get_backend_config_dict()
-        backend_config = ModelBackendConfig(**backend_config_data.model_dump())
+        backend_config_dict = self.get_backend_config_dict()
+        backend_config = ModelBackendConfig(**backend_config_dict)
         backend_validation = self.backend.validate_config(backend_config)
 
         if not backend_validation.is_valid:
@@ -293,45 +293,35 @@ class ModelSecretConfig(BaseModel):
 
         return validation_result
 
-    def get_backend_config_dict(self) -> ModelBackendConfigData:
+    def get_backend_config_dict(self) -> dict[str, Any]:
         """Get configuration dictionary for backend validation."""
-        config = ModelBackendConfigData()
+        config: dict[str, Any] = {}
 
         if self.backend.backend_type == EnumBackendType.DOTENV:
-            config = ModelBackendConfigData(
-                dotenv_path=str(self.dotenv_path) if self.dotenv_path else None,
-                auto_load_dotenv=str(self.auto_load_dotenv),
-                env_prefix=self.env_prefix,
-            )
+            config["dotenv_path"] = str(self.dotenv_path) if self.dotenv_path else None
+            config["auto_load_dotenv"] = str(self.auto_load_dotenv)
+            config["env_prefix"] = self.env_prefix
 
         elif self.backend.backend_type == EnumBackendType.VAULT:
-            config = ModelBackendConfigData(
-                vault_url=self.vault_url,
-                vault_token=(
-                    self.vault_token.get_secret_value() if self.vault_token else None
-                ),
-                vault_namespace=self.vault_namespace,
-                vault_path=self.vault_path,
+            config["vault_url"] = self.vault_url
+            config["vault_token"] = (
+                self.vault_token.get_secret_value() if self.vault_token else None
             )
+            config["vault_namespace"] = self.vault_namespace
+            config["vault_path"] = self.vault_path
 
         elif self.backend.backend_type == EnumBackendType.KUBERNETES:
-            config = ModelBackendConfigData(
-                namespace=self.kubernetes_namespace,
-                secret_name=self.kubernetes_secret_name,
-            )
+            config["namespace"] = self.kubernetes_namespace
+            config["secret_name"] = self.kubernetes_secret_name
 
         elif self.backend.backend_type == EnumBackendType.FILE:
-            config = ModelBackendConfigData(
-                file_path=str(self.file_path) if self.file_path else None,
-                encryption_key=(
-                    self.encryption_key.get_secret_value()
-                    if self.encryption_key
-                    else None
-                ),
+            config["file_path"] = str(self.file_path) if self.file_path else None
+            config["encryption_key"] = (
+                self.encryption_key.get_secret_value() if self.encryption_key else None
             )
 
         elif self.backend.backend_type == EnumBackendType.ENVIRONMENT:
-            config = ModelBackendConfigData(env_prefix=self.env_prefix)
+            config["env_prefix"] = self.env_prefix
 
         return config
 

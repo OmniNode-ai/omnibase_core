@@ -4,9 +4,9 @@ Node Status Active Model.
 Active node status with uptime tracking for discriminated union pattern.
 """
 
-from pydantic import BaseModel, Field
+from typing import Any
 
-from omnibase_core.types.typed_dict_status_summaries import TypedDictActiveSummary
+from pydantic import BaseModel, Field
 
 
 class ModelNodeStatusActive(BaseModel):
@@ -42,7 +42,7 @@ class ModelNodeStatusActive(BaseModel):
         heartbeat_score = 50 if self.is_recently_heartbeat() else 25
         return uptime_score + heartbeat_score
 
-    def get_summary(self) -> TypedDictActiveSummary:
+    def get_summary(self) -> dict[str, Any]:
         """Get active status summary."""
         return {
             "status_type": self.status_type,

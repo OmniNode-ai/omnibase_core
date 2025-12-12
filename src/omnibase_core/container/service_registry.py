@@ -24,8 +24,6 @@ from omnibase_core.protocols import (
     LiteralInjectionScope,
     LiteralServiceLifecycle,
 )
-from omnibase_core.types.type_serializable_value import SerializedDict
-from omnibase_core.types.typed_dict_resolution_context import TypedDictResolutionContext
 
 # Define LiteralOperationStatus locally to avoid runtime import
 LiteralOperationStatus = Literal[
@@ -122,7 +120,7 @@ class ServiceRegistry:
         implementation: type[TImplementation],
         lifecycle: LiteralServiceLifecycle,
         scope: LiteralInjectionScope,
-        configuration: SerializedDict | None = None,
+        configuration: dict[str, Any] | None = None,
     ) -> UUID:
         """
         Register service by interface and implementation class.
@@ -216,7 +214,7 @@ class ServiceRegistry:
         interface: type[TInterface],
         instance: TInterface,
         scope: LiteralInjectionScope = "global",
-        metadata: SerializedDict | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> UUID:
         """
         Register existing service instance.
@@ -368,7 +366,7 @@ class ServiceRegistry:
         self,
         interface: type[TInterface],
         scope: LiteralInjectionScope | None = None,
-        context: TypedDictResolutionContext | None = None,
+        context: dict[str, Any] | None = None,
     ) -> TInterface:
         """
         Resolve service instance by interface.
@@ -754,7 +752,7 @@ class ServiceRegistry:
         )
 
     async def update_service_configuration(
-        self, registration_id: UUID, configuration: SerializedDict
+        self, registration_id: UUID, configuration: dict[str, Any]
     ) -> bool:
         """
         Update service configuration.
@@ -864,7 +862,7 @@ class ServiceRegistry:
         registration_id: UUID,
         registration: ModelServiceRegistration,
         scope: LiteralInjectionScope,
-        context: TypedDictResolutionContext | None,
+        context: dict[str, Any] | None,
     ) -> Any:
         """Resolve service based on lifecycle pattern."""
         lifecycle = registration.lifecycle

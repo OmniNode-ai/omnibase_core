@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional
+from typing import Any, Optional
 
 from pydantic import Field
 
@@ -14,9 +14,6 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, field_serializer
 
-if TYPE_CHECKING:
-    from omnibase_core.types.type_serializable_value import SerializedDict
-
 
 class ModelGenericMetadata(BaseModel):
     """
@@ -27,8 +24,7 @@ class ModelGenericMetadata(BaseModel):
     """
 
     # ProtocolMetadata required fields
-    # Uses dict[str, object] for generic protocol data values
-    data: dict[str, object] = Field(
+    data: dict[str, Any] = Field(
         default_factory=dict,
         description="Generic data dictionary for ProtocolMetadata compliance",
     )
@@ -80,7 +76,7 @@ class ModelGenericMetadata(BaseModel):
     @classmethod
     def from_dict(
         cls,
-        data: "SerializedDict | None",
+        data: dict[str, Any] | None,
     ) -> Optional["ModelGenericMetadata"]:
         """Create from dictionary for easy migration."""
         if data is None:

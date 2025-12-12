@@ -1,7 +1,8 @@
+from typing import Any
+
 from pydantic import Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.types.typed_dict_operation_summary import TypedDictOperationSummary
 
 "\nEvent Bus Input/Output State Composite Model.\n\nThis module provides a composite model that combines the input and output states\nfor event bus operations, enabling unified handling of both states.\n"
 from pydantic import BaseModel
@@ -41,16 +42,16 @@ class ModelEventBusInputOutputState(BaseModel):
         """Check if input and output versions match."""
         return str(self.input_state.version) == str(self.output_state.version)
 
-    def get_operation_summary(self) -> TypedDictOperationSummary:
+    def get_operation_summary(self) -> dict[str, Any]:
         """Get a summary of the operation for logging/monitoring."""
-        return TypedDictOperationSummary(
-            input_version=str(self.input_state.version),
-            output_version=str(self.output_state.version),
-            status=self.output_state.status.value,
-            message=self.output_state.message,
-            version_match=self.get_version_match(),
-            successful=self.is_successful(),
-        )
+        return {
+            "input_version": str(self.input_state.version),
+            "output_version": str(self.output_state.version),
+            "status": self.output_state.status.value,
+            "message": self.output_state.message,
+            "version_match": self.get_version_match(),
+            "successful": self.is_successful(),
+        }
 
     @classmethod
     def create_from_versions(

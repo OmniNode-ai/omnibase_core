@@ -13,13 +13,8 @@ from typing import Any
 from uuid import UUID, uuid4
 
 from omnibase_core.mixins.mixin_lazy_evaluation import MixinLazyEvaluation
-from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 
-@allow_dict_str_any(
-    "Event envelope requires flexible metadata and security_context for "
-    "arbitrary event attributes and security information across services."
-)
 class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
     """
     ONEX-compatible envelope wrapper for all events.

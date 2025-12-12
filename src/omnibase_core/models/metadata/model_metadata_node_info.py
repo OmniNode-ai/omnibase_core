@@ -16,6 +16,7 @@ with usage metrics and performance tracking.
 
 
 from datetime import UTC
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -30,7 +31,6 @@ from omnibase_core.models.infrastructure.model_value import ModelValue
 from omnibase_core.models.metadata.model_metadata_usage_metrics import (
     ModelMetadataUsageMetrics,
 )
-from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
 from .model_metadata_value import ModelMetadataValue
 from .model_node_info_summary import ModelNodeInfoSummary
@@ -481,7 +481,7 @@ class ModelMetadataNodeInfo(BaseModel):
 
     # Protocol method implementations
 
-    def get_metadata(self) -> TypedDictMetadataDict:
+    def get_metadata(self) -> dict[str, Any]:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
@@ -492,9 +492,9 @@ class ModelMetadataNodeInfo(BaseModel):
                     metadata[field] = (
                         str(value) if not isinstance(value, (dict, list)) else value
                     )
-        return metadata  # type: ignore[return-value]
+        return metadata
 
-    def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
+    def set_metadata(self, metadata: dict[str, Any]) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol).
 
         Raises:
@@ -506,7 +506,7 @@ class ModelMetadataNodeInfo(BaseModel):
                 setattr(self, key, value)
         return True
 
-    def serialize(self) -> TypedDictSerializedModel:
+    def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

@@ -25,18 +25,11 @@ def find_duplicate_filenames(src_dir: Path) -> dict[str, list[Path]]:
     Returns:
         Dict mapping filename to list of paths where it appears
     """
-    # Known legacy duplicates that will be resolved in separate PRs
-    # These are pre-existing issues tracked for future cleanup
-    legacy_duplicates = {
-        "model_service_registry_config.py",  # core vs service versions
-    }
-
     files_by_name = defaultdict(list)
 
     for file_path in src_dir.rglob("model_*.py"):
         if "__pycache__" not in str(file_path):
-            if file_path.name not in legacy_duplicates:
-                files_by_name[file_path.name].append(file_path)
+            files_by_name[file_path.name].append(file_path)
 
     # Return only duplicates
     return {name: paths for name, paths in files_by_name.items() if len(paths) > 1}

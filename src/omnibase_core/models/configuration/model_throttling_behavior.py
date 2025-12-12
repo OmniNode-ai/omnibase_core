@@ -7,18 +7,9 @@ Throttling behavior model for defining how to handle requests when rate limits
 are exceeded, including blocking, queuing, delay, and custom responses.
 """
 
+from typing import Any
+
 from pydantic import BaseModel
-
-
-class ModelThrottleResponse(BaseModel):
-    """Typed response for throttled requests."""
-
-    status_code: int = Field(default=429, description="HTTP status code")
-    headers: dict[str, str] = Field(
-        default_factory=dict, description="Response headers"
-    )
-    message: str = Field(default="", description="Response message")
-    body: str | None = Field(default=None, description="Custom response body")
 
 
 class ModelThrottlingBehavior(BaseModel):
@@ -254,7 +245,7 @@ class ModelThrottlingBehavior(BaseModel):
         """Get features that should remain enabled during degradation"""
         if not self.should_degrade_service():
             # All features enabled when not degrading
-            return {key: True for key in self.degradation_features.keys()}
+            return dict[str, Any].fromkeys(self.degradation_features.keys(), True)
 
         # During degradation, return the configured feature states
         return self.degradation_features.copy()
@@ -262,16 +253,18 @@ class ModelThrottlingBehavior(BaseModel):
     def get_throttle_response(
         self,
         retry_after: int | None = None,
-    ) -> ModelThrottleResponse:
+    ) -> dict[str, Any]:
         """Get complete response for throttled requests"""
-        return ModelThrottleResponse(
-            status_code=self.reject_status_code,
-            headers=self.get_response_headers(retry_after),
-            message=self.reject_message,
-            body=self.custom_response_body
-            if self.custom_response_enabled
-            else None,
-        )
+        response = {
+            "status_code": self.reject_status_code,
+            "headers": self.get_response_headers(retry_after),
+            "message": self.reject_message,
+        }
+
+        if self.custom_response_enabled and self.custom_response_body:
+            response["body"] = self.custom_response_body
+
+        return response
 
     @classmethod
     def create_strict_rejection(cls) -> "ModelThrottlingBehavior":

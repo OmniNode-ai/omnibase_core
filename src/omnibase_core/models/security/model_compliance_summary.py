@@ -4,11 +4,9 @@ Compliance Summary Model.
 Compliance information summary with data classification indicators.
 """
 
-from pydantic import BaseModel, Field
+from typing import Any
 
-from omnibase_core.models.security.model_security_summaries import (
-    ModelComplianceInfoSummary,
-)
+from pydantic import BaseModel, Field
 
 
 class ModelComplianceSummary(BaseModel):
@@ -48,14 +46,14 @@ class ModelComplianceSummary(BaseModel):
         else:
             return "low"
 
-    def get_summary(self) -> ModelComplianceInfoSummary:
+    def get_summary(self) -> dict[str, Any]:
         """Get compliance summary."""
-        return ModelComplianceInfoSummary(
-            framework_count=self.get_framework_count(),
-            classification=self.classification,
-            has_pii=self.contains_pii,
-            has_phi=self.contains_phi,
-            has_financial=self.contains_financial,
-            has_sensitive_data=self.has_sensitive_data(),
-            risk_level=self.get_data_risk_level(),
-        )
+        return {
+            "framework_count": self.get_framework_count(),
+            "classification": self.classification,
+            "has_pii": self.contains_pii,
+            "has_phi": self.contains_phi,
+            "has_financial": self.contains_financial,
+            "has_sensitive_data": self.has_sensitive_data(),
+            "risk_level": self.get_data_risk_level(),
+        }

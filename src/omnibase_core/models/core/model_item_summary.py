@@ -8,7 +8,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 """
 Item summary model for collection item protocols.
 
-Clean, strongly-typed replacement for collection item dict return types.
+Clean, strongly-typed replacement for collection item dict[str, Any]return types.
 Follows ONEX one-model-per-file naming conventions.
 """
 
@@ -20,13 +20,12 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_item_type import EnumItemType
-from omnibase_core.types.type_serializable_value import SerializedDict
 from omnibase_core.utils.util_uuid_utilities import uuid_from_string
 
 
 class ModelItemSummary(BaseModel):
     """
-    Clean, strongly-typed model replacing collection item dict return types.
+    Clean, strongly-typed model replacing collection item dict[str, Any]return types.
 
     Eliminates: dict[str, primitive_soup_unions] (replaced with PrimitiveValueType)
 
@@ -117,7 +116,7 @@ class ModelItemSummary(BaseModel):
                     ) from e
         return True
 
-    def serialize(self) -> SerializedDict:
+    def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

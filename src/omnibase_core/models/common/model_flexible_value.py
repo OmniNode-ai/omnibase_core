@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field, model_validator
@@ -277,13 +278,13 @@ class ModelFlexibleValue(BaseModel):
 
     def get_python_type(self) -> type:
         """Get the Python type of the stored value."""
-        type_map: dict[EnumFlexibleValueType, type] = {
+        type_map = {
             EnumFlexibleValueType.STRING: str,
             EnumFlexibleValueType.INTEGER: int,
             EnumFlexibleValueType.FLOAT: float,
             EnumFlexibleValueType.BOOLEAN: bool,
-            EnumFlexibleValueType.DICT: dict,
-            EnumFlexibleValueType.LIST: list,
+            EnumFlexibleValueType.DICT: dict[str, Any],
+            EnumFlexibleValueType.LIST: list[Any],
             EnumFlexibleValueType.UUID: UUID,
             EnumFlexibleValueType.NONE: type(None),
         }

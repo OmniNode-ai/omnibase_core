@@ -93,9 +93,6 @@ from typing import Any
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.types.typed_dict_path_resolution_context import (
-    TypedDictPathResolutionContext,
-)
 
 
 class PathResolutionError(ModelOnexError):
@@ -130,7 +127,7 @@ class PathResolutionError(ModelOnexError):
             segment: The specific segment where resolution failed
             available_keys: List of available keys/attributes at failure point
         """
-        context: TypedDictPathResolutionContext = {}
+        context: dict[str, Any] = {}
         if path is not None:
             context["path"] = path
         if segment is not None:
@@ -138,7 +135,7 @@ class PathResolutionError(ModelOnexError):
         if available_keys is not None:
             context["available_keys"] = available_keys
 
-        super().__init__(message=message, error_code=error_code, context=context)  # type: ignore[arg-type]  # TypedDict compatible with dict[str, object]
+        super().__init__(message=message, error_code=error_code, context=context)
 
 
 def _validate_path_start(path: str) -> None:
@@ -389,8 +386,8 @@ def resolve_input_path(
 
 def resolve_step_path(
     path: str,
-    step_results: dict[str, object],
-) -> object:
+    step_results: dict[str, Any],
+) -> Any:
     """
     Resolve a pipeline step path expression ($.steps prefix).
 
@@ -489,9 +486,9 @@ def resolve_step_path(
 
 def resolve_pipeline_path(
     path: str,
-    input_data: Any,  # Any: input can be dict, Pydantic model, or arbitrary object
-    step_results: dict[str, object],
-) -> object:
+    input_data: Any,
+    step_results: dict[str, Any],
+) -> Any:
     """
     Resolve a pipeline path expression to its value.
 

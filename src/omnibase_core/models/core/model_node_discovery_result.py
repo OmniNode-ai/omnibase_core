@@ -5,11 +5,12 @@ Defines the structured result model for node discovery operations
 within the ONEX architecture.
 """
 
+from typing import Any
+
 from pydantic import Field
 
 from omnibase_core.models.core.model_base_result import ModelBaseResult
 from omnibase_core.models.core.model_node_info import ModelNodeInfo
-from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelNodeDiscoveryResult(ModelBaseResult):
@@ -32,7 +33,7 @@ class ModelNodeDiscoveryResult(ModelBaseResult):
         default=None,
         description="Total nodes available in source",
     )
-    discovery_metadata: SerializedDict = Field(
+    discovery_metadata: dict[str, Any] = Field(
         default_factory=dict,
         description="Additional discovery metadata",
     )

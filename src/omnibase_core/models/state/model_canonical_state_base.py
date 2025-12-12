@@ -6,9 +6,9 @@ in the pure reducer pattern. Implementations provide concrete storage backends
 (PostgreSQL, Redis, DynamoDB, etc.).
 """
 
-from pydantic import BaseModel, ConfigDict, Field
+from typing import Any
 
-from omnibase_core.types.type_serializable_value import SerializedDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelCanonicalStateBase(BaseModel):
@@ -74,7 +74,7 @@ class ModelCanonicalStateBase(BaseModel):
         ge=1,
     )
 
-    state: SerializedDict = Field(
+    state: dict[str, Any] = Field(
         ...,
         description="The actual state data (flexible structure, JSONB-style)",
         min_length=1,

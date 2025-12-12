@@ -10,17 +10,10 @@ Follows ONEX strong typing principles and one-model-per-file architecture.
 """
 
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import Any
 from uuid import UUID
-
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-
-from .model_initialization_metadata import ModelInitializationMetadata
-
-if TYPE_CHECKING:
-    from omnibase_core.models.contracts.model_node_contract import ModelNodeContract
 
 
 @dataclass
@@ -29,16 +22,14 @@ class ModelNodeState:
 
     contract_path: Path
     node_id: UUID
-    contract_content: ModelNodeContract | ModelSchemaValue | None
-    container_reference: object | None
+    contract_content: Any
+    container_reference: Any | None
     node_name: str
     version: ModelSemVer
     node_tier: int
     node_classification: str
     event_bus: object | None
-    initialization_metadata: ModelInitializationMetadata = field(
-        default_factory=ModelInitializationMetadata
-    )
+    initialization_metadata: dict[str, Any]
 
 
 # Export for use

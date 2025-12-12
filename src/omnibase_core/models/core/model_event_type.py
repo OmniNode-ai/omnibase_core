@@ -13,8 +13,6 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from omnibase_core.models.core.model_json_schema import ModelJsonSchema
-
 
 class ModelEventType(BaseModel):
     """
@@ -38,7 +36,7 @@ class ModelEventType(BaseModel):
         ...,  # REQUIRED - specify in contract
         description="Event schema version",
     )
-    payload_schema: ModelJsonSchema | None = Field(
+    payload_schema: dict[str, Any] | None = Field(
         default=None,
         description="Expected payload schema",
     )

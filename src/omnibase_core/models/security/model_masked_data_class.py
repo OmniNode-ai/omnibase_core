@@ -9,10 +9,7 @@ from omnibase_core.types.json_types import JsonValue
 
 
 class ModelMaskedData(BaseModel):
-    """Masked data structure container.
-
-    Uses JsonValue for type-safe storage of JSON-compatible data.
-    """
+    """Masked data structure container."""
 
     data: dict[str, JsonValue] = Field(
         default_factory=dict,
