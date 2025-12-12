@@ -13,9 +13,6 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
-if TYPE_CHECKING:
-    pass
-
 
 class ModelSerializedData(BaseModel):
     """
@@ -41,7 +38,9 @@ class ModelSerializedData(BaseModel):
     @classmethod
     def from_model_dump(cls, data: dict[str, object]) -> ModelSerializedData:
         """Create from a Pydantic model_dump() result."""
-        fields = {key: ModelSchemaValue.from_value(value) for key, value in data.items()}
+        fields = {
+            key: ModelSchemaValue.from_value(value) for key, value in data.items()
+        }
         return cls(fields=fields)
 
     def to_dict(self) -> dict[str, object]:

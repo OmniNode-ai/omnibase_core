@@ -1,31 +1,13 @@
-from pydantic import Field
+"""GitHubIssueCommentEvent model."""
 
-"""
-GitHubIssueCommentEvent model.
-"""
+from pydantic import BaseModel, Field
 
-from pydantic import BaseModel
-
+from .model_git_hub_comment_change import ModelGitHubCommentChange
 from .model_git_hub_issue import ModelGitHubIssue
 from .model_git_hub_issue_comment import ModelGitHubIssueComment
+from .model_git_hub_issue_comment_changes import ModelGitHubIssueCommentChanges
 from .model_git_hub_repository import ModelGitHubRepository
 from .model_git_hub_user import ModelGitHubUser
-
-
-class ModelGitHubCommentChange(BaseModel):
-    """Represents a change to a GitHub comment field."""
-
-    from_: str | None = Field(
-        default=None, alias="from", description="Previous value"
-    )
-
-
-class ModelGitHubIssueCommentChanges(BaseModel):
-    """Changes made to a GitHub issue comment (for edited action)."""
-
-    body: ModelGitHubCommentChange | None = Field(
-        default=None, description="Body content change"
-    )
 
 
 class ModelGitHubIssueCommentEvent(BaseModel):
@@ -49,6 +31,11 @@ class ModelGitHubIssueCommentEvent(BaseModel):
         default=None,
         description="Changes made (for edited action)",
     )
+
+
+__all__ = [
+    "ModelGitHubIssueCommentEvent",
+]
 
 
 # ONEX compliance remediation complete - factory method eliminated

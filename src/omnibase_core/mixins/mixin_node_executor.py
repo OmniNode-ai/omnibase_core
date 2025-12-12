@@ -221,7 +221,9 @@ class MixinNodeExecutor(MixinEventDrivenNode):
         Returns:
             Typed dictionary containing health metrics and status
         """
-        from omnibase_core.types.typed_dict_mixin_types import TypedDictNodeExecutorHealth
+        from omnibase_core.types.typed_dict_mixin_types import (
+            TypedDictNodeExecutorHealth,
+        )
 
         uptime_seconds = 0
         if self._start_time:

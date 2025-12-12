@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 ModelThrottlingBehavior - Throttling behavior configuration for rate limiting
 
@@ -7,18 +5,11 @@ Throttling behavior model for defining how to handle requests when rate limits
 are exceeded, including blocking, queuing, delay, and custom responses.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-
-class ModelThrottleResponse(BaseModel):
-    """Typed response for throttled requests."""
-
-    status_code: int = Field(default=429, description="HTTP status code")
-    headers: dict[str, str] = Field(
-        default_factory=dict, description="Response headers"
-    )
-    message: str = Field(default="", description="Response message")
-    body: str | None = Field(default=None, description="Custom response body")
+from omnibase_core.models.configuration.model_throttle_response import (
+    ModelThrottleResponse,
+)
 
 
 class ModelThrottlingBehavior(BaseModel):
@@ -254,7 +245,7 @@ class ModelThrottlingBehavior(BaseModel):
         """Get features that should remain enabled during degradation"""
         if not self.should_degrade_service():
             # All features enabled when not degrading
-            return {key: True for key in self.degradation_features.keys()}
+            return dict.fromkeys(self.degradation_features.keys(), True)
 
         # During degradation, return the configured feature states
         return self.degradation_features.copy()
@@ -268,9 +259,7 @@ class ModelThrottlingBehavior(BaseModel):
             status_code=self.reject_status_code,
             headers=self.get_response_headers(retry_after),
             message=self.reject_message,
-            body=self.custom_response_body
-            if self.custom_response_enabled
-            else None,
+            body=self.custom_response_body if self.custom_response_enabled else None,
         )
 
     @classmethod

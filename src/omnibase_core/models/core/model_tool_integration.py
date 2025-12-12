@@ -6,40 +6,9 @@ Service integration configuration for tool with deployment settings.
 
 from pydantic import BaseModel, Field
 
-
-class ModelToolResourceRequirements(BaseModel):
-    """Resource requirements for a tool."""
-
-    requires_separate_port: bool = Field(
-        description="Whether tool requires separate HTTP port"
-    )
-    health_check_via_service: bool = Field(
-        description="Whether health checked by parent service"
-    )
-    loaded_as_module: bool = Field(description="Whether loaded as module by service")
-
-
-class ModelToolTimeoutSettings(BaseModel):
-    """Timeout settings for a tool."""
-
-    shutdown_timeout: int = Field(description="Graceful shutdown timeout in seconds")
-    initialization_order: int = Field(
-        description="Initialization order relative to other tools"
-    )
-
-
-class ModelToolIntegrationSummary(BaseModel):
-    """Summary of tool integration configuration."""
-
-    auto_load_strategy: str = Field(description="Strategy for loading tool versions")
-    has_fallback_versions: bool = Field(description="Whether has fallback versions")
-    fallback_versions_count: int = Field(description="Number of fallback versions")
-    directory_pattern_type: str = Field(description="Directory pattern type")
-    implementation_file: str = Field(description="Main implementation file name")
-    contract_file: str = Field(description="Contract file name")
-    main_class_name: str = Field(description="Main implementation class name")
-    resources: ModelToolResourceRequirements = Field(description="Resource requirements")
-    timeout_settings: ModelToolTimeoutSettings = Field(description="Timeout settings")
+from .model_tool_integration_summary import ModelToolIntegrationSummary
+from .model_tool_resource_requirements import ModelToolResourceRequirements
+from .model_tool_timeout_settings import ModelToolTimeoutSettings
 
 
 class ModelToolIntegration(BaseModel):

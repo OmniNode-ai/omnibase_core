@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import json
-pass  # no typing imports needed
 
+# no typing imports needed
 from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
