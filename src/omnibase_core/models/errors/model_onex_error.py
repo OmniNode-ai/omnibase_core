@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Any
 
 """
 ONEX Error Base Class
@@ -31,7 +30,7 @@ Breaking this chain (e.g., adding runtime import from models.*) will cause circu
 """
 
 from datetime import UTC
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
 
 # Import required enums from the same package
@@ -43,6 +42,7 @@ from omnibase_core.errors.error_codes import get_exit_code_for_status
 
 # Import basic types (no circular dependency risk)
 from omnibase_core.types.core_types import TypedDictBasicErrorContext
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 # Type-only imports - protected by TYPE_CHECKING to prevent circular imports
 # _ModelOnexErrorData moved here to break circular import chain
@@ -274,10 +274,10 @@ class ModelOnexError(Exception):
         return self.model.timestamp
 
     @property
-    def context(self) -> dict[str, Any]:
+    def context(self) -> TypedDictBasicErrorContext:
         """Get the context information."""
         # Return context as dict (TypedDict is already a dict, no conversion needed)
-        return dict(self._simple_context)
+        return TypedDictBasicErrorContext(**self._simple_context)
 
     def get_exit_code(self) -> int:
         """Get the appropriate CLI exit code for this error."""
@@ -297,7 +297,7 @@ class ModelOnexError(Exception):
             return f"[{error_code_str}] {self.message}"
         return self.message
 
-    def model_dump(self) -> dict[str, Any]:
+    def model_dump(self) -> SerializedDict:
         """Convert error to dictionary for serialization."""
         return self.model.model_dump()
 
@@ -310,7 +310,7 @@ class ModelOnexError(Exception):
         return self.model_dump_json()
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "ModelOnexError":
+    def from_dict(cls, data: SerializedDict) -> "ModelOnexError":
         """Create ModelOnexError from dictionary."""
         # Local import to avoid circular dependency
         from omnibase_core.models.common.model_onex_error_data import (
@@ -346,7 +346,7 @@ class ModelOnexError(Exception):
         )
 
     @classmethod
-    def model_json_schema(cls) -> dict[str, Any]:
+    def model_json_schema(cls) -> SerializedDict:
         """Get the JSON schema for ModelOnexError."""
         # Local import to avoid circular dependency
         from omnibase_core.models.common.model_onex_error_data import (

@@ -14,7 +14,8 @@ Design Principles:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 from omnibase_core.protocols.base import ContextValue
 
@@ -48,7 +49,9 @@ class ProtocolCanonicalSerializer(Protocol):
         - Volatile fields replaced with placeholders
     """
 
-    def canonicalize_metadata_block(self, metadata_block: dict[str, Any]) -> str:
+    def canonicalize_metadata_block(
+        self, metadata_block: Mapping[str, ContextValue]
+    ) -> str:
         """
         Canonicalize a metadata block for deterministic serialization.
 

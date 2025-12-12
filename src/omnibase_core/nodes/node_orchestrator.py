@@ -252,7 +252,7 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
             )
 
         # Convert dict steps to ModelWorkflowStep instances
-        workflow_steps = self.create_workflow_steps_from_config(input_data.steps)
+        workflow_steps = self.create_workflow_steps_from_config(input_data.steps)  # type: ignore[arg-type]
 
         # Extract workflow ID
         workflow_id = input_data.workflow_id

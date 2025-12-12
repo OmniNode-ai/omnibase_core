@@ -6,7 +6,6 @@ compatibility checking, and dependency resolution for intelligent composition.
 """
 
 from pathlib import Path
-from typing import Any
 
 import yaml
 from pydantic import TypeAdapter, ValidationError
@@ -14,6 +13,7 @@ from pydantic import TypeAdapter, ValidationError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.discovery.model_mixin_info import ModelMixinInfo
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 # Discovery constants
 MAX_METADATA_FILE_SIZE_BYTES = 10 * 1024 * 1024  # 10MB limit for metadata files
@@ -46,7 +46,7 @@ class MixinDiscovery:
         self._mixins_cache: dict[str, ModelMixinInfo] | None = None
 
     @staticmethod
-    def from_yaml_metadata(yaml_content: str) -> dict[str, Any]:
+    def from_yaml_metadata(yaml_content: str) -> SerializedDict:
         """
         Parse YAML metadata content and validate structure with Pydantic.
 
@@ -67,7 +67,7 @@ class MixinDiscovery:
             raw_data = yaml.safe_load(yaml_content)
 
             # Validate structure using Pydantic TypeAdapter
-            metadata_adapter = TypeAdapter(dict[str, Any])
+            metadata_adapter = TypeAdapter(SerializedDict)
             return metadata_adapter.validate_python(raw_data)
 
         except yaml.YAMLError as e:
@@ -81,7 +81,7 @@ class MixinDiscovery:
                 message=f"Invalid metadata format: expected dictionary, got {type(raw_data).__name__}",
             ) from e
 
-    def _load_metadata(self) -> dict[str, dict[str, Any]]:
+    def _load_metadata(self) -> dict[str, SerializedDict]:
         """
         Load mixin metadata from YAML file.
 

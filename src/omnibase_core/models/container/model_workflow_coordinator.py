@@ -20,6 +20,7 @@ Safe Runtime Imports (OK to import at module level):
 from typing import Any
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelWorkflowCoordinator:
@@ -27,14 +28,14 @@ class ModelWorkflowCoordinator:
 
     def __init__(self, factory: Any) -> None:
         self.factory = factory
-        self.active_workflows: dict[str, Any] = {}
+        self.active_workflows: SerializedDict = {}
 
     async def execute_workflow(
         self,
         workflow_id: Any,
         workflow_type: str,
         input_data: Any,
-        config: dict[str, Any] | None = None,
+        config: SerializedDict | None = None,
     ) -> Any:
         """Execute workflow with logging and error handling."""
         try:
@@ -100,7 +101,7 @@ class ModelWorkflowCoordinator:
         self,
         workflow_type: str,
         input_data: Any,
-        config: dict[str, Any] | None,
+        config: SerializedDict | None,
     ) -> Any:
         """Execute a specific workflow type with input data."""
         try:

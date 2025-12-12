@@ -1,5 +1,3 @@
-from typing import Any
-
 from pydantic import Field
 
 """
@@ -44,7 +42,8 @@ class ModelActionBase(BaseModel):
     )
 
     # Service metadata for tool-as-a-service with strong typing
-    service_metadata: dict[str, Any] = Field(
+    # Uses dict[str, object] for generic service metadata values
+    service_metadata: dict[str, object] = Field(
         default_factory=dict,
         description="Service discovery and composition metadata",
     )

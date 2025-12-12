@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelMixinConfigField(BaseModel):
@@ -33,7 +34,7 @@ class ModelMixinConfigField(BaseModel):
     minimum: float | int | None = Field(None, description="Minimum value")
     maximum: float | int | None = Field(None, description="Maximum value")
     enum: list[str] | None = Field(None, description="Allowed enum values")
-    items: dict[str, Any] | None = Field(None, description="Array item schema")
+    items: SerializedDict | None = Field(None, description="Array item schema")
 
     @field_validator("type")
     @classmethod

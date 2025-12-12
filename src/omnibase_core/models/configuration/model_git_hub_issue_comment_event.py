@@ -4,14 +4,28 @@ from pydantic import Field
 GitHubIssueCommentEvent model.
 """
 
-from typing import Any
-
 from pydantic import BaseModel
 
 from .model_git_hub_issue import ModelGitHubIssue
 from .model_git_hub_issue_comment import ModelGitHubIssueComment
 from .model_git_hub_repository import ModelGitHubRepository
 from .model_git_hub_user import ModelGitHubUser
+
+
+class ModelGitHubCommentChange(BaseModel):
+    """Represents a change to a GitHub comment field."""
+
+    from_: str | None = Field(
+        default=None, alias="from", description="Previous value"
+    )
+
+
+class ModelGitHubIssueCommentChanges(BaseModel):
+    """Changes made to a GitHub issue comment (for edited action)."""
+
+    body: ModelGitHubCommentChange | None = Field(
+        default=None, description="Body content change"
+    )
 
 
 class ModelGitHubIssueCommentEvent(BaseModel):
@@ -31,7 +45,7 @@ class ModelGitHubIssueCommentEvent(BaseModel):
     sender: ModelGitHubUser = Field(
         default=..., description="User who triggered the event"
     )
-    changes: dict[str, Any] | None = Field(
+    changes: ModelGitHubIssueCommentChanges | None = Field(
         default=None,
         description="Changes made (for edited action)",
     )

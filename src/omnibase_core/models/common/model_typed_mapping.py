@@ -27,7 +27,7 @@ Safe Runtime Imports (OK to import at module level):
 - Standard library modules only
 """
 
-from typing import Any, ClassVar
+from typing import ClassVar
 
 from pydantic import BaseModel
 
@@ -76,12 +76,12 @@ class ModelTypedMapping(BaseModel):
         """Set a boolean value using ONEX-compatible direct __init__ calls."""
         self.data[key] = ModelValueContainer(value=value)
 
-    def set_list(self, key: str, value: list[Any]) -> None:
-        """Set a list[Any]value using ONEX-compatible direct __init__ calls."""
+    def set_list(self, key: str, value: list[object]) -> None:
+        """Set a list value using ONEX-compatible direct __init__ calls."""
         self.data[key] = ModelValueContainer(value=value)
 
-    def set_dict(self, key: str, value: dict[str, Any]) -> None:
-        """Set a dict[str, Any]value with depth checking for security using ONEX-compatible direct __init__ calls."""
+    def set_dict(self, key: str, value: dict[str, object]) -> None:
+        """Set a dict value with depth checking for security using ONEX-compatible direct __init__ calls."""
         if self.current_depth > self.MAX_DEPTH:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -89,7 +89,7 @@ class ModelTypedMapping(BaseModel):
             )
         self.data[key] = ModelValueContainer(value=value)
 
-    def set_value(self, key: str, value: Any) -> None:
+    def set_value(self, key: str, value: object) -> None:
         """
         Set a value with automatic type detection.
 
@@ -118,7 +118,7 @@ class ModelTypedMapping(BaseModel):
                 message=f"Unsupported type for key '{key}': {type(value)}",
             )
 
-    def get_value(self, key: str, default: Any = None) -> Any:
+    def get_value(self, key: str, default: object = None) -> object:
         """Get a value from the mapping."""
         if key not in self.data:
             return default
@@ -172,7 +172,7 @@ class ModelTypedMapping(BaseModel):
         """Get all keys in the mapping."""
         return list(self.data.keys())
 
-    def to_python_dict(self) -> dict[str, Any]:
+    def to_python_dict(self) -> dict[str, object]:
         """Convert to a regular Python dictionary with native types."""
         return {key: container.value for key, container in self.data.items()}
 

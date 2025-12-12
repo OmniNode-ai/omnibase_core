@@ -6,12 +6,12 @@ Action Payload Base Model.
 Base class for action-specific payload types with common fields and validation.
 """
 
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
 from omnibase_core.models.core.model_node_action_type import ModelNodeActionType
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelActionPayloadBase(BaseModel):
@@ -29,7 +29,7 @@ class ModelActionPayloadBase(BaseModel):
         default=None,
         description="Correlation ID for tracking this action",
     )
-    metadata: dict[str, Any] = Field(
+    metadata: SerializedDict = Field(
         default_factory=dict,
         description="Additional metadata for the action",
     )

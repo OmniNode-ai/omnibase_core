@@ -4,9 +4,42 @@ Tool Integration Model.
 Service integration configuration for tool with deployment settings.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field
+
+
+class ModelToolResourceRequirements(BaseModel):
+    """Resource requirements for a tool."""
+
+    requires_separate_port: bool = Field(
+        description="Whether tool requires separate HTTP port"
+    )
+    health_check_via_service: bool = Field(
+        description="Whether health checked by parent service"
+    )
+    loaded_as_module: bool = Field(description="Whether loaded as module by service")
+
+
+class ModelToolTimeoutSettings(BaseModel):
+    """Timeout settings for a tool."""
+
+    shutdown_timeout: int = Field(description="Graceful shutdown timeout in seconds")
+    initialization_order: int = Field(
+        description="Initialization order relative to other tools"
+    )
+
+
+class ModelToolIntegrationSummary(BaseModel):
+    """Summary of tool integration configuration."""
+
+    auto_load_strategy: str = Field(description="Strategy for loading tool versions")
+    has_fallback_versions: bool = Field(description="Whether has fallback versions")
+    fallback_versions_count: int = Field(description="Number of fallback versions")
+    directory_pattern_type: str = Field(description="Directory pattern type")
+    implementation_file: str = Field(description="Main implementation file name")
+    contract_file: str = Field(description="Contract file name")
+    main_class_name: str = Field(description="Main implementation class name")
+    resources: ModelToolResourceRequirements = Field(description="Resource requirements")
+    timeout_settings: ModelToolTimeoutSettings = Field(description="Timeout settings")
 
 
 class ModelToolIntegration(BaseModel):
@@ -61,31 +94,31 @@ class ModelToolIntegration(BaseModel):
         else:
             return "static"
 
-    def get_required_resources(self) -> dict[str, bool]:
+    def get_required_resources(self) -> ModelToolResourceRequirements:
         """Get required resources summary."""
-        return {
-            "requires_separate_port": self.requires_separate_port,
-            "health_check_via_service": self.health_check_via_service,
-            "loaded_as_module": self.load_as_module,
-        }
+        return ModelToolResourceRequirements(
+            requires_separate_port=self.requires_separate_port,
+            health_check_via_service=self.health_check_via_service,
+            loaded_as_module=self.load_as_module,
+        )
 
-    def get_timeout_settings(self) -> dict[str, int]:
+    def get_timeout_settings(self) -> ModelToolTimeoutSettings:
         """Get timeout-related settings."""
-        return {
-            "shutdown_timeout": self.shutdown_timeout,
-            "initialization_order": self.initialization_order,
-        }
+        return ModelToolTimeoutSettings(
+            shutdown_timeout=self.shutdown_timeout,
+            initialization_order=self.initialization_order,
+        )
 
-    def get_summary(self) -> dict[str, Any]:
+    def get_summary(self) -> ModelToolIntegrationSummary:
         """Get integration summary."""
-        return {
-            "auto_load_strategy": self.get_load_strategy(),
-            "has_fallback_versions": self.has_fallback_versions(),
-            "fallback_versions_count": len(self.fallback_versions),
-            "directory_pattern_type": self.get_directory_pattern_type(),
-            "implementation_file": self.implementation_file,
-            "contract_file": self.contract_file,
-            "main_class_name": self.main_class_name,
-            "resources": self.get_required_resources(),
-            "timeout_settings": self.get_timeout_settings(),
-        }
+        return ModelToolIntegrationSummary(
+            auto_load_strategy=self.get_load_strategy(),
+            has_fallback_versions=self.has_fallback_versions(),
+            fallback_versions_count=len(self.fallback_versions),
+            directory_pattern_type=self.get_directory_pattern_type(),
+            implementation_file=self.implementation_file,
+            contract_file=self.contract_file,
+            main_class_name=self.main_class_name,
+            resources=self.get_required_resources(),
+            timeout_settings=self.get_timeout_settings(),
+        )

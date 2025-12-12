@@ -7,7 +7,7 @@ Ensures tools crash early with clear error messages rather than continuing in in
 
 import sys
 import traceback
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 from functools import wraps
 from typing import Any, TypeVar
@@ -212,8 +212,8 @@ class MixinFailFast:
                     message=msg,
                     error_code=EnumCoreErrorCode.VALIDATION_FAILED,
                 )
-            elif expected_type == dict[str, Any] and not hasattr(value, "keys"):
-                msg = f"Field '{field_name}' must be dict[str, Any]-like, got {actual_type.__name__}"
+            elif expected_type == Mapping[str, object] and not hasattr(value, "keys"):
+                msg = f"Field '{field_name}' must be mapping-like, got {actual_type.__name__}"
                 raise ModelOnexError(
                     message=msg,
                     error_code=EnumCoreErrorCode.VALIDATION_FAILED,

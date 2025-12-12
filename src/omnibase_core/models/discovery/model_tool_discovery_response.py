@@ -1,9 +1,3 @@
-from uuid import UUID
-
-from pydantic import Field
-
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Tool Discovery Response Event Model
 
@@ -12,9 +6,12 @@ Contains discovered tools matching the request filters.
 """
 
 from datetime import datetime
-from typing import Any
+from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from omnibase_core.models.common.model_typed_metadata import ModelToolMetadataFields
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelDiscoveredTool(BaseModel):
@@ -42,8 +39,8 @@ class ModelDiscoveredTool(BaseModel):
 
     # Discovery metadata
     tags: list[str] = Field(default_factory=list, description="Tags for categorization")
-    metadata: dict[str, Any] = Field(
-        default_factory=dict,
+    metadata: ModelToolMetadataFields = Field(
+        default_factory=ModelToolMetadataFields,
         description="Additional tool metadata",
     )
 

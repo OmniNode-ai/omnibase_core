@@ -11,6 +11,7 @@ from typing import Any
 from omnibase_core.models.contracts.subcontracts.model_fsm_subcontract import (
     ModelFSMSubcontract,
 )
+from omnibase_core.types.type_serializable_value import SerializedDict
 from omnibase_core.utils.fsm_executor import (
     FSMState,
     FSMTransitionResult,
@@ -55,7 +56,7 @@ class MixinFSMExecution:
         self,
         fsm_contract: ModelFSMSubcontract,
         trigger: str,
-        context: dict[str, Any],
+        context: "SerializedDict",
     ) -> FSMTransitionResult:
         """
         Execute FSM transition from YAML contract.
@@ -182,7 +183,7 @@ class MixinFSMExecution:
         self._fsm_state = get_initial_state(fsm_contract)
 
     def initialize_fsm_state(
-        self, fsm_contract: ModelFSMSubcontract, context: dict[str, Any] | None = None
+        self, fsm_contract: ModelFSMSubcontract, context: SerializedDict | None = None
     ) -> None:
         """
         Initialize FSM state with optional context.

@@ -13,7 +13,6 @@ anti-pattern with proper type safety.
 """
 
 from datetime import datetime
-from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel
@@ -54,7 +53,7 @@ class ModelGenericCollectionSummary(BaseModel):
 
     # Protocol method implementations
 
-    def configure(self, **kwargs: Any) -> bool:
+    def configure(self, **kwargs: object) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
         try:
             for key, value in kwargs.items():
@@ -67,7 +66,7 @@ class ModelGenericCollectionSummary(BaseModel):
                 message=f"Operation failed: {e}",
             ) from e
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> dict[str, object]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

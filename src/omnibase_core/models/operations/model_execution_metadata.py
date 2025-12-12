@@ -123,7 +123,7 @@ class ModelExecutionMetadata(BaseModel):
         """Get execution identifier (Identifiable protocol)."""
         return str(self.execution_id)
 
-    def execute(self, **kwargs: Any) -> bool:
+    def execute(self, **kwargs: object) -> bool:
         """Execute or update execution status (Executable protocol)."""
         try:
             # Update execution status and metadata
@@ -137,16 +137,22 @@ class ModelExecutionMetadata(BaseModel):
                         message=f"Status must be EnumExecutionStatusV2, got {type(status_value)}",
                     )
             if "end_time" in kwargs:
-                self.end_time = kwargs["end_time"]
-                if self.start_time and self.end_time:
-                    self.duration_ms = int(
-                        (self.end_time - self.start_time).total_seconds() * 1000,
-                    )
+                end_time_value = kwargs["end_time"]
+                if isinstance(end_time_value, datetime):
+                    self.end_time = end_time_value
+                    if self.start_time and self.end_time:
+                        self.duration_ms = int(
+                            (self.end_time - self.start_time).total_seconds() * 1000,
+                        )
             # Update resource usage if provided
             if "memory_usage_mb" in kwargs:
-                self.memory_usage_mb = kwargs["memory_usage_mb"]
+                memory_value = kwargs["memory_usage_mb"]
+                if isinstance(memory_value, (int, float)):
+                    self.memory_usage_mb = float(memory_value)
             if "cpu_usage_percent" in kwargs:
-                self.cpu_usage_percent = kwargs["cpu_usage_percent"]
+                cpu_value = kwargs["cpu_usage_percent"]
+                if isinstance(cpu_value, (int, float)):
+                    self.cpu_usage_percent = float(cpu_value)
             return True
         except Exception as e:
             raise ModelOnexError(
@@ -154,7 +160,7 @@ class ModelExecutionMetadata(BaseModel):
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
             ) from e
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> dict[str, object]:
         """Serialize execution metadata to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

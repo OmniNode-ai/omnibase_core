@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
 
 from pydantic import Field
+
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 """
 CLI Execution Model.
@@ -420,7 +421,7 @@ class ModelCliExecution(BaseModel):
 
     # Protocol method implementations
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

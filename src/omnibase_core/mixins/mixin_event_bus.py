@@ -202,7 +202,7 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
     async def publish_event(
         self,
         event_type: str,
-        payload: dict[str, Any],
+        payload: ModelOnexEvent | None = None,
         correlation_id: UUID | None = None,
     ) -> None:
         """
@@ -212,7 +212,7 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
 
         Args:
             event_type: Type of event to publish
-            payload: Event payload data
+            payload: Event payload data (ModelOnexEvent or None for a new event)
             correlation_id: Optional correlation ID for tracking
         """
         bus = self._get_event_bus()
@@ -224,12 +224,11 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
             return
 
         try:
-            # Build event using ModelOnexEvent
-            event = ModelOnexEvent.create_core_event(
+            # Build event using ModelOnexEvent or use provided payload
+            event = payload or ModelOnexEvent.create_core_event(
                 event_type=event_type,
                 node_id=self.get_node_id(),
                 correlation_id=correlation_id,
-                **payload,
             )
 
             # Wrap in envelope
@@ -691,8 +690,14 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
                     error_code=EnumCoreErrorCode.VALIDATION_FAILED,
                 )
 
-            # Extract data from event
-            event_data = event.data or {}
+            # Extract data from event - convert to dict if ModelEventData
+            event_data_raw = event.data
+            if event_data_raw is None:
+                event_data: dict[str, object] = {}
+            elif hasattr(event_data_raw, "model_dump"):
+                event_data = event_data_raw.model_dump()
+            else:
+                event_data = {}
 
             # Try to create input state from event data
             if hasattr(input_state_class, "from_event"):
