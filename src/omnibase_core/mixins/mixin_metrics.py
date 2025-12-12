@@ -11,6 +11,8 @@ Usage:
             # Metrics tracking automatically available
 """
 
+from typing import Any
+
 from omnibase_core.types.typed_dict_mixin_types import TypedDictMetricEntry
 
 

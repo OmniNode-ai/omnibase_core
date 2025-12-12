@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 from typing import Any
 
 """
@@ -15,6 +16,10 @@ from omnibase_core.logging.structured import emit_log_event_sync as emit_log_eve
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.models.core.model_node_metadata import ModelNodeMetadata
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+# Type alias for contract data - the output of ModelGenericYaml.model_dump()
+# which contains arbitrary YAML fields loaded from contract files
+ContractDataMapping = Mapping[str, object]
 
 
 class MixinContractMetadata:
@@ -40,7 +45,7 @@ class MixinContractMetadata:
 
         # Initialize properties
         self._node_metadata: ModelNodeMetadata | None = None
-        self._contract_data: dict[str, Any] | None = None
+        self._contract_data: dict[str, object] | None = None
         self._node_name: str | None = None
         self._node_version: str | None = None
         self._description: str | None = None
@@ -175,16 +180,20 @@ class MixinContractMetadata:
 
                 self._contract_data = yaml_model.model_dump()
 
-            # Extract key fields
+            # Extract key fields with explicit string conversion
             if self._contract_data:
                 if cf.NODE_NAME in self._contract_data:
-                    self._node_name = self._contract_data[cf.NODE_NAME]
+                    value = self._contract_data[cf.NODE_NAME]
+                    self._node_name = str(value) if value is not None else None
                 if cf.DESCRIPTION in self._contract_data:
-                    self._description = self._contract_data[cf.DESCRIPTION]
+                    value = self._contract_data[cf.DESCRIPTION]
+                    self._description = str(value) if value is not None else None
                 if cf.TOOL_TYPE in self._contract_data:
-                    self._tool_type = self._contract_data[cf.TOOL_TYPE]
+                    value = self._contract_data[cf.TOOL_TYPE]
+                    self._tool_type = str(value) if value is not None else None
                 if cf.NODE_VERSION in self._contract_data:
-                    self._node_version = self._contract_data[cf.NODE_VERSION]
+                    value = self._contract_data[cf.NODE_VERSION]
+                    self._node_version = str(value) if value is not None else None
 
             emit_log_event(
                 LogLevel.INFO,
@@ -222,7 +231,7 @@ class MixinContractMetadata:
         return self._tool_type or "generic"
 
     @property
-    def contract_data(self) -> dict[str, Any] | None:
+    def contract_data(self) -> ContractDataMapping | None:
         """Get full contract data."""
         return self._contract_data
 

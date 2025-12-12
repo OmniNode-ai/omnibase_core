@@ -1,5 +1,3 @@
-from typing import Any
-
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -235,7 +233,7 @@ class ProtocolContractLoader:
 
             # Parse dependencies section (optional, for Phase 0 pattern)
             # Pass raw dictionaries to ModelContractContent and let Pydantic handle validation
-            dependencies: list[dict[str, Any]] | None = None
+            dependencies: list[dict[str, object]] | None = None
             if "dependencies" in raw_content:
                 deps_data = raw_content["dependencies"]
                 if isinstance(deps_data, list):

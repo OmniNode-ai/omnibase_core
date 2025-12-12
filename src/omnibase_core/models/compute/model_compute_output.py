@@ -40,10 +40,11 @@ See Also:
     - omnibase_core.nodes.node_compute: NodeCompute.process() returns this model
 """
 
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
+
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 __all__ = [
     "ModelComputeOutput",
@@ -106,6 +107,6 @@ class ModelComputeOutput[T_Output](BaseModel):
     cache_lookup_time_ms: float = Field(default=0.0, ge=0)
     cache_hit: bool = False
     parallel_execution_used: bool = False
-    metadata: dict[str, Any] = Field(default_factory=dict)
+    metadata: SerializedDict = Field(default_factory=dict)
 
     model_config = ConfigDict(extra="forbid", frozen=True)

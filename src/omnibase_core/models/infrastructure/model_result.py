@@ -19,9 +19,11 @@ from typing import cast
 
 from pydantic import BaseModel, field_serializer
 
-from omnibase_core.types.type_serializable_value import SerializableValue, SerializedDict
-
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.types.type_serializable_value import (
+    SerializableValue,
+    SerializedDict,
+)
 
 # Type variables for mapped types in transformations (still needed for methods)
 U = TypeVar("U")  # Mapped type for transformations
@@ -50,40 +52,42 @@ class ModelResult[T, E](
     }
 
     @field_serializer("error")
-    def serialize_error(self, error: object) -> SerializableValue:
+    def serialize_error(self, error: E | None) -> SerializableValue:
         """Convert Exception types to string for serialization."""
         if isinstance(error, Exception):
             return str(error)
         # Return as SerializableValue - Pydantic will handle the conversion
         if isinstance(error, (str, int, float, bool, type(None))):
             return error
+        if error is None:
+            return None
         return str(error)
 
     @field_validator("error", mode="before")
     @classmethod
-    def validate_error(cls, v: object) -> object:
+    def validate_error(cls, v: E | None) -> E | None:
         """Pre-process Exception types before Pydantic validation."""
         if isinstance(v, Exception):
-            return str(v)
+            return cast("E | None", str(v))
         return v
 
     @field_validator("value", mode="before")
     @classmethod
-    def validate_value(cls, v: object) -> object:
+    def validate_value(cls, v: T | None) -> T | None:
         """Pre-process Exception types in value field before Pydantic validation."""
         if isinstance(v, Exception):
-            return str(v)
+            return cast("T | None", str(v))
         return v
 
     success: bool = Field(default=..., description="Whether the operation succeeded")
-    value: object = Field(default=None, description="Success value (if success=True)")
-    error: object = Field(default=None, description="Error value (if success=False)")
+    value: T | None = Field(default=None, description="Success value (if success=True)")
+    error: E | None = Field(default=None, description="Error value (if success=False)")
 
     def __init__(
         self,
         success: bool,
-        value: object = None,
-        error: object = None,
+        value: T | None = None,
+        error: E | None = None,
         **data: object,
     ) -> None:
         """Initialize Result with type validation."""

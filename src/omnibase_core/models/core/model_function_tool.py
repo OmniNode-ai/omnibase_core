@@ -1,10 +1,10 @@
 import builtins
-from typing import Any
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_function_language import EnumFunctionLanguage
 from omnibase_core.enums.enum_tool_type import EnumToolType
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 # Add other tool types as needed
 
@@ -45,12 +45,12 @@ class ModelFunctionTool(BaseModel):
         description="Side effects this function may have",
     )
 
-    def to_serializable_dict(self) -> dict[str, Any]:
+    def to_serializable_dict(self) -> SerializedDict:
         return {k: getattr(self, k) for k in self.__class__.model_fields}
 
     @classmethod
     def from_serializable_dict(
         cls: builtins.type["ModelFunctionTool"],
-        data: dict[str, Any],
+        data: SerializedDict,
     ) -> "ModelFunctionTool":
         return cls(**data)

@@ -1,6 +1,6 @@
 """ModelSemVerConstraint - Strongly typed semantic version constraints."""
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -8,6 +8,9 @@ from omnibase_core.models.primitives.model_semver import (
     ModelSemVer,
     parse_semver_from_string,
 )
+
+if TYPE_CHECKING:
+    from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelSemVerConstraint(BaseModel):
@@ -48,7 +51,7 @@ class ModelSemVerConstraint(BaseModel):
             if "," in v:
                 # Range constraint like ">=1.0.0,<2.0.0"
                 parts = [p.strip() for p in v.split(",")]
-                result: dict[str, Any] = {}
+                result: dict[str, object] = {}
                 for part in parts:
                     if part.startswith(">="):
                         result["min"] = parse_semver_from_string(

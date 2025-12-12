@@ -1,6 +1,6 @@
 import importlib
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
@@ -9,7 +9,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 class MixinIntrospectFromContract:
     """
-    Mixin to provide a canonical introspect() method that loads contract/metadata YAML as a dict[str, Any].
+    Mixin to provide a canonical introspect() method that loads contract/metadata YAML.
     Looks for node.onex.yaml or contract.yaml in the node's directory.
     """
 
@@ -38,7 +38,7 @@ class MixinIntrospectFromContract:
         node_file = Path(module.__file__)
         return node_file.parent
 
-    def introspect(self, contract_path: Path | None = None) -> dict[str, Any]:
+    def introspect(self, contract_path: Path | None = None) -> Mapping[str, object]:
         # Lazy import to avoid circular dependency
         from omnibase_core.utils.util_safe_yaml_loader import (
             load_and_validate_yaml_model,

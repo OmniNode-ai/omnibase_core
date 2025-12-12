@@ -60,11 +60,17 @@ class DictAnyDetector(ast.NodeVisitor):
         """Check if any decorator in the list allows dict[str, Any]."""
         for decorator in decorator_list:
             # Direct decorator: @allow_dict_any or @allow_dict_str_any
-            if isinstance(decorator, ast.Name) and decorator.id in self.ALLOW_DECORATORS:
+            if (
+                isinstance(decorator, ast.Name)
+                and decorator.id in self.ALLOW_DECORATORS
+            ):
                 return True
             # Call decorator: @allow_dict_str_any("reason") or @allow_dict_any("reason")
             if isinstance(decorator, ast.Call):
-                if isinstance(decorator.func, ast.Name) and decorator.func.id in self.ALLOW_DECORATORS:
+                if (
+                    isinstance(decorator.func, ast.Name)
+                    and decorator.func.id in self.ALLOW_DECORATORS
+                ):
                     return True
         return False
 
@@ -99,15 +105,41 @@ class DictAnyDetector(ast.NodeVisitor):
         self.generic_visit(node)
 
 
+def _find_onex_exclude_lines(content: str) -> set[int]:
+    """Find lines that are excluded via ONEX_EXCLUDE: dict_str_any comments.
+
+    The comment can be on the line itself or up to 5 lines after (to handle
+    function signatures that span multiple lines).
+    """
+    excluded_lines: set[int] = set()
+    lines = content.split("\n")
+
+    for i, line in enumerate(lines, start=1):
+        # Check for ONEX_EXCLUDE: dict_str_any comment
+        if "ONEX_EXCLUDE:" in line and "dict_str_any" in line:
+            # Exclude this line and the next 5 lines (handles multi-line signatures)
+            for offset in range(6):
+                excluded_lines.add(i + offset)
+
+    return excluded_lines
+
+
 def check_file_for_dict_any(filepath: Path) -> list[tuple[int, str]]:
     """Check a single Python file for dict[str, Any] violations."""
     try:
         with open(filepath, encoding="utf-8") as f:
             content = f.read()
 
+        # Find lines excluded via ONEX_EXCLUDE comments
+        excluded_lines = _find_onex_exclude_lines(content)
+
         # Parse AST
         tree = ast.parse(content, filename=str(filepath))
         detector = DictAnyDetector(str(filepath))
+
+        # Add excluded lines to detector's allowed set
+        detector.allowed_lines.update(excluded_lines)
+
         detector.visit(tree)
 
         return detector.violations

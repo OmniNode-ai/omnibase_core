@@ -5,41 +5,16 @@ Strongly-typed summary models for security domain return values.
 These models replace dict[str, Any] return types with proper Pydantic models.
 """
 
-from datetime import datetime
-from typing import TYPE_CHECKING, TypedDict
+from typing import TYPE_CHECKING
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-if TYPE_CHECKING:
-    from uuid import UUID
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.types import TypedDictSignatureOptionalParams
 
-    from omnibase_core.enums.enum_signature_algorithm import EnumSignatureAlgorithm
-    from omnibase_core.models.primitives.model_semver import ModelSemVer
-    from omnibase_core.models.security.model_operation_details import (
-        ModelOperationDetails,
-    )
-    from omnibase_core.models.security.model_signature_metadata import (
-        ModelSignatureMetadata,
-    )
-else:
-    from uuid import UUID
-
-
-class SignatureOptionalParams(TypedDict, total=False):
-    """Optional parameters for signature factory methods."""
-
-    node_name: str | None
-    timestamp: datetime
-    signature_algorithm: "EnumSignatureAlgorithm"
-    certificate_thumbprint: str | None
-    operation_details: "ModelOperationDetails | None"
-    previous_signature_hash: str | None
-    security_clearance: str | None
-    processing_time_ms: int | None
-    signature_time_ms: int | None
-    error_message: str | None
-    warning_messages: list[str]
-    signature_metadata: "ModelSignatureMetadata | None"
+# Type alias for use in this module
+SignatureOptionalParams = TypedDictSignatureOptionalParams
 
 
 class ModelDetectionConfigSummary(BaseModel):
@@ -48,7 +23,9 @@ class ModelDetectionConfigSummary(BaseModel):
     config_id: UUID = Field(description="Configuration ID")
     config_name: str = Field(description="Configuration name")
     enabled_rulesets_count: int = Field(description="Number of enabled rulesets")
-    global_confidence_threshold: float = Field(description="Global confidence threshold")
+    global_confidence_threshold: float = Field(
+        description="Global confidence threshold"
+    )
     max_document_size_mb: int = Field(description="Maximum document size in MB")
     parallel_workers: int = Field(description="Number of parallel workers")
     supported_file_types: list[str] = Field(description="Supported file types")
@@ -58,7 +35,9 @@ class ModelDetectionConfigSummary(BaseModel):
 class ModelDetectionFeatures(BaseModel):
     """Detection feature flags."""
 
-    false_positive_reduction: bool = Field(description="False positive reduction enabled")
+    false_positive_reduction: bool = Field(
+        description="False positive reduction enabled"
+    )
     context_analysis: bool = Field(description="Context analysis enabled")
     ml_detection: bool = Field(description="ML detection enabled")
     audit_logging: bool = Field(description="Audit logging enabled")
@@ -71,8 +50,12 @@ class ModelProcessingSummary(BaseModel):
     operation: str = Field(description="Operation performed")
     hop_index: int = Field(description="Hop index in chain")
     timestamp: str = Field(description="Timestamp ISO format")
-    processing_time_ms: int | None = Field(default=None, description="Processing time in ms")
-    signature_time_ms: int | None = Field(default=None, description="Signature time in ms")
+    processing_time_ms: int | None = Field(
+        default=None, description="Processing time in ms"
+    )
+    signature_time_ms: int | None = Field(
+        default=None, description="Signature time in ms"
+    )
     has_errors: bool = Field(description="Whether errors occurred")
     has_warnings: bool = Field(description="Whether warnings occurred")
     error_count: int = Field(description="Number of warnings/errors")
@@ -111,7 +94,9 @@ class ModelComprehensiveSecuritySummary(BaseModel):
     controls: ModelSecurityControlsSummary = Field(description="Security controls")
     signature_chain: "ModelChainInfoSummary" = Field(description="Signature chain info")
     compliance: ModelComplianceInfoSummary = Field(description="Compliance info")
-    authorization: "ModelAuthorizationInfoSummary" = Field(description="Authorization info")
+    authorization: "ModelAuthorizationInfoSummary" = Field(
+        description="Authorization info"
+    )
     last_security_event: "ModelSecurityEventInfo | None" = Field(
         default=None, description="Last security event"
     )
@@ -200,7 +185,7 @@ class ModelDetectionRuleSetSummary(BaseModel):
 
     ruleset_id: UUID = Field(description="Ruleset ID")
     ruleset_name: str = Field(description="Ruleset name")
-    version: "ModelSemVer" = Field(description="Ruleset version")
+    version: ModelSemVer = Field(description="Ruleset version")
     pattern_count: int = Field(description="Total pattern count")
     enabled_pattern_count: int = Field(description="Enabled pattern count")
     detection_types: list[str] = Field(description="Detection type values")
@@ -236,8 +221,12 @@ class ModelEventStatistics(BaseModel):
     severity_distribution: dict[str, int] = Field(
         default_factory=dict, description="Count by severity"
     )
-    users_involved: list[UUID] = Field(default_factory=list, description="Users involved")
-    nodes_involved: list[UUID] = Field(default_factory=list, description="Nodes involved")
+    users_involved: list[UUID] = Field(
+        default_factory=list, description="Users involved"
+    )
+    nodes_involved: list[UUID] = Field(
+        default_factory=list, description="Nodes involved"
+    )
     time_range: ModelEventTimeRange | None = Field(
         default=None, description="Time range of events"
     )
@@ -247,8 +236,12 @@ class ModelBackendConfigData(BaseModel):
     """Backend configuration data for validation."""
 
     dotenv_path: str | None = Field(default=None, description="Dotenv file path")
-    auto_load_dotenv: str | None = Field(default=None, description="Auto load dotenv flag")
-    env_prefix: str | None = Field(default=None, description="Environment variable prefix")
+    auto_load_dotenv: str | None = Field(
+        default=None, description="Auto load dotenv flag"
+    )
+    env_prefix: str | None = Field(
+        default=None, description="Environment variable prefix"
+    )
     vault_url: str | None = Field(default=None, description="Vault URL")
     vault_token: str | None = Field(default=None, description="Vault token")
     vault_namespace: str | None = Field(default=None, description="Vault namespace")

@@ -37,6 +37,10 @@ from omnibase_core.constants.event_types import TOOL_RESPONSE
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.discovery.model_outputmetadata import ModelOutputMetadata
 from omnibase_core.models.discovery.model_resource_usage import ModelResourceUsage
+from omnibase_core.types.type_serializable_value import SerializedDict
+from omnibase_core.types.typed_dict_tool_performance_summary import (
+    TypedDictToolPerformanceSummary,
+)
 
 
 class ModelToolResponseEvent(ModelOnexEvent):
@@ -79,7 +83,7 @@ class ModelToolResponseEvent(ModelOnexEvent):
     success: bool = Field(
         default=..., description="Whether the tool execution was successful"
     )
-    result: dict[str, Any] | None = Field(
+    result: SerializedDict | None = Field(
         default=None,
         description="Tool execution result data (if successful)",
     )
@@ -142,7 +146,7 @@ class ModelToolResponseEvent(ModelOnexEvent):
         source_node_name: str,
         tool_name: str,
         action: str,
-        result: dict[str, Any],
+        result: SerializedDict,
         execution_time_ms: int,
         target_node_id: str | UUID,
         requester_id: str | UUID,
@@ -323,9 +327,9 @@ class ModelToolResponseEvent(ModelOnexEvent):
         """Get the routing key for response delivery."""
         return f"response.{self.requester_id}.{self.correlation_id}"
 
-    def get_performance_summary(self) -> dict[str, Any]:
+    def get_performance_summary(self) -> TypedDictToolPerformanceSummary:
         """Get a summary of performance metrics."""
-        summary = {
+        summary: TypedDictToolPerformanceSummary = {
             "execution_time_ms": self.execution_time_ms,
             "priority": self.execution_priority,
             "mode": self.execution_mode,

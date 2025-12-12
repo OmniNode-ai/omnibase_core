@@ -67,6 +67,9 @@ Safe Runtime Imports (OK to import at module level):
 """
 
 
+@allow_dict_str_any(
+    reason="JSON-compatible value wrapper for security policies - must accept any valid JSON value"
+)
 class ModelPolicyValue(BaseModel):
     """
     SECURITY-CRITICAL: Type-safe wrapper for security policy values.

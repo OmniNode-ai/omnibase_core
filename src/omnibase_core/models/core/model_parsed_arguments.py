@@ -10,9 +10,12 @@ Type-safe parsed CLI arguments with validation results, command definition,
 and parsing metadata for complete argument handling.
 """
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel
+
+if TYPE_CHECKING:
+    from omnibase_core.types.type_serializable_value import SerializedDict
 
 from omnibase_core.models.core.model_argument_map import ModelArgumentMap
 from omnibase_core.models.core.model_cli_command_definition import (
@@ -138,17 +141,19 @@ class ModelParsedArguments(BaseModel):
             if error.is_critical():
                 self.parsed_successfully = False
 
-    def to_execution_dict(self) -> dict[str, Any]:
+    def to_execution_dict(self) -> "SerializedDict":
         """Convert to dictionary suitable for node execution."""
+        from omnibase_core.types.type_serializable_value import SerializedDict
+
         if not self.is_valid():
-            msg = "Cannot convert invalid arguments to execution dict[str, Any]"
+            msg = "Cannot convert invalid arguments to execution dict"
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
         # Start with the argument map dictionary
-        result = self.arguments.to_dict()
+        result: SerializedDict = self.arguments.to_dict()  # type: ignore[assignment]
 
         # Add command metadata
         result["_command_name"] = self.command_definition.command_name

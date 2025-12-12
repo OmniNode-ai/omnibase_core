@@ -7,7 +7,6 @@ This model represents state transitions that can be defined in contracts
 to specify how state should change in response to actions.
 """
 
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field, model_validator
@@ -25,6 +24,7 @@ from omnibase_core.models.core.model_tool_based_transition import (
     ModelToolBasedTransition,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelStateTransition(BaseModel):
@@ -162,7 +162,7 @@ class ModelStateTransition(BaseModel):
         cls,
         name: str,
         triggers: list[str],
-        updates: dict[str, Any],
+        updates: SerializedDict,
         description: str | None = None,
     ) -> "ModelStateTransition":
         """Factory method for simple transitions."""
@@ -181,7 +181,7 @@ class ModelStateTransition(BaseModel):
         triggers: list[str],
         tool_id: UUID,
         tool_display_name: str | None = None,
-        tool_params: dict[str, Any] | None = None,
+        tool_params: SerializedDict | None = None,
         description: str | None = None,
     ) -> "ModelStateTransition":
         """Factory method for tool-based transitions."""

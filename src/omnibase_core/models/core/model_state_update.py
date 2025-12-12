@@ -1,9 +1,9 @@
-from typing import Any
 from uuid import UUID
 
 from pydantic import Field
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.types.type_serializable_value import SerializableValue
 
 """
 Model for state updates in tool-based state management.
@@ -105,16 +105,7 @@ class ModelStateUpdate(BaseModel):
     def set_field(
         self,
         field_path: str,
-        value: (
-            ModelSchemaValue
-            | int
-            | float
-            | str
-            | bool
-            | list[Any]
-            | dict[str, Any]
-            | None
-        ),
+        value: ModelSchemaValue | SerializableValue,
         condition: str | None = None,
     ) -> None:
         """Convenience method to set a field value."""
@@ -172,19 +163,10 @@ class ModelStateUpdate(BaseModel):
     def append_to_field(
         self,
         field_path: str,
-        value: (
-            ModelSchemaValue
-            | int
-            | float
-            | str
-            | bool
-            | list[Any]
-            | dict[str, Any]
-            | None
-        ),
+        value: ModelSchemaValue | SerializableValue,
         condition: str | None = None,
     ) -> None:
-        """Convenience method to append to a list[Any]field."""
+        """Convenience method to append to a list field."""
         # Convert to ModelSchemaValue if needed
         if not isinstance(value, ModelSchemaValue) and value is not None:
             value = ModelSchemaValue.from_value(value)

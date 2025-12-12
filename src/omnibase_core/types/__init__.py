@@ -78,11 +78,16 @@ from .type_effect_result import DbParamType, EffectResultType
 
 # Serializable value types (for JSON-compatible data)
 from .type_serializable_value import SerializedDict
+from .typed_dict_access_control_config import TypedDictAccessControlConfig
+from .typed_dict_action_validation_context import TypedDictActionValidationContext
+from .typed_dict_action_validation_statistics import TypedDictActionValidationStatistics
 from .typed_dict_additional_fields import TypedDictAdditionalFields
-from .typed_dict_serialized_model import TypedDictSerializedModel
+from .typed_dict_alert_data import TypedDictAlertData
+from .typed_dict_alert_metadata import TypedDictAlertMetadata
 
 # TypedDict classes
 from .typed_dict_analytics_summary_data import TypedDictAnalyticsSummaryData
+from .typed_dict_audit_change import TypedDictAuditChange
 from .typed_dict_audit_info import TypedDictAuditInfo
 from .typed_dict_batch_processing_info import TypedDictBatchProcessingInfo
 from .typed_dict_cache_info import TypedDictCacheInfo
@@ -93,18 +98,31 @@ from .typed_dict_collection_kwargs import (
     TypedDictCollectionCreateKwargs,
     TypedDictCollectionFromItemsKwargs,
 )
+
+# Metadata tool collection TypedDict definitions
+from .typed_dict_collection_metadata import TypedDictCollectionMetadata
+from .typed_dict_collection_validation import TypedDictCollectionValidation
+
+# Node infrastructure TypedDict definitions
+from .typed_dict_comprehensive_health import TypedDictComprehensiveHealth
+from .typed_dict_conditional_branch import TypedDictConditionalBranch
 from .typed_dict_configuration_settings import TypedDictConfigurationSettings
 from .typed_dict_connection_info import TypedDictConnectionInfo
+
+# Contract validation TypedDict definitions
+from .typed_dict_contract_data import TypedDictContractData
 from .typed_dict_core_analytics import TypedDictCoreAnalytics
 from .typed_dict_core_data import TypedDictCoreData
 from .typed_dict_core_summary import TypedDictCoreSummary
 from .typed_dict_debug_info_data import TypedDictDebugInfoData
+from .typed_dict_default_output_state import TypedDictDefaultOutputState
 from .typed_dict_dependency_info import TypedDictDependencyInfo
 from .typed_dict_deprecation_summary import TypedDictDeprecationSummary
 from .typed_dict_discovery_stats import TypedDictDiscoveryStats
 from .typed_dict_documentation_summary_filtered import (
     TypedDictDocumentationSummaryFiltered,
 )
+from .typed_dict_error_analysis import TypedDictErrorAnalysis
 from .typed_dict_error_data import TypedDictErrorData
 from .typed_dict_error_details import TypedDictErrorDetails
 from .typed_dict_event_info import TypedDictEventInfo
@@ -131,7 +149,18 @@ from .typed_dict_input_state_source_type import TypedDictInputStateSourceType
 from .typed_dict_legacy_error import TypedDictLegacyError
 from .typed_dict_legacy_health import TypedDictLegacyHealth
 from .typed_dict_legacy_stats import TypedDictLegacyStats
+from .typed_dict_lifecycle_event_fields import TypedDictLifecycleEventFields
+from .typed_dict_lifecycle_event_metadata import TypedDictLifecycleEventMetadata
+
+# YAML and path resolution TypedDict definitions
+from .typed_dict_mapping_result import MappingResultDict
 from .typed_dict_metadata_dict import TypedDictMetadataDict
+from .typed_dict_metadata_tool_analytics_report import (
+    TypedDictMetadataToolAnalyticsReport,
+)
+from .typed_dict_metadata_tool_analytics_summary_data import (
+    TypedDictMetadataToolAnalyticsSummaryData,
+)
 from .typed_dict_metrics import TypedDictMetrics
 from .typed_dict_migration_conflict_base_dict import TypedDictMigrationConflictBaseDict
 from .typed_dict_migration_duplicate_conflict_dict import (
@@ -139,59 +168,11 @@ from .typed_dict_migration_duplicate_conflict_dict import (
 )
 from .typed_dict_migration_name_conflict_dict import TypedDictMigrationNameConflictDict
 from .typed_dict_migration_step_dict import TypedDictMigrationStepDict
-from .typed_dict_node_capabilities_summary import TypedDictNodeCapabilitiesSummary
-from .typed_dict_node_configuration_summary import TypedDictNodeConfigurationSummary
-from .typed_dict_node_connection_summary_type import TypedDictNodeConnectionSummaryType
-from .typed_dict_node_core import TypedDictNodeCore
-from .typed_dict_node_core_update_data import TypedDictNodeCoreUpdateData
-from .typed_dict_node_execution_summary import TypedDictNodeExecutionSummary
-from .typed_dict_node_feature_summary_type import TypedDictNodeFeatureSummaryType
-from .typed_dict_node_info_summary_data import TypedDictNodeInfoSummaryData
-from .typed_dict_node_metadata_summary import TypedDictNodeMetadataSummary
-from .typed_dict_node_resource_constraint_kwargs import (
-    TypedDictNodeResourceConstraintKwargs,
-)
-from .typed_dict_node_resource_summary_type import TypedDictNodeResourceSummaryType
-from .typed_dict_node_rule_structure import TypedDictNodeRuleStructure
-from .typed_dict_operation_result import TypedDictOperationResult
-from .typed_dict_output_format_options_kwargs import TypedDictOutputFormatOptionsKwargs
-from .typed_dict_performance_data import TypedDictPerformanceData
-from .typed_dict_performance_metric_data import TypedDictPerformanceMetricData
-from .typed_dict_performance_metrics import TypedDictPerformanceMetrics
-from .typed_dict_performance_update_data import TypedDictPerformanceUpdateData
-from .typed_dict_property_metadata import TypedDictPropertyMetadata
-from .typed_dict_quality_data import TypedDictQualityData
-from .typed_dict_quality_update_data import TypedDictQualityUpdateData
-
-# Schema reference types
-from .typed_dict_ref_parts import TypedDictRefParts
-from .typed_dict_resource_usage import TypedDictResourceUsage
-from .typed_dict_result_factory_kwargs import TypedDictResultFactoryKwargs
-from .typed_dict_routing_info import TypedDictRoutingInfo
-from .typed_dict_security_context import TypedDictSecurityContext
-
-# New individual TypedDict classes extracted from typed_dict_structured_definitions.py
-from .typed_dict_sem_ver import TypedDictSemVer
-from .typed_dict_service_info import TypedDictServiceInfo
-from .typed_dict_ssl_context_options import TypedDictSSLContextOptions
-from .typed_dict_stats_collection import TypedDictStatsCollection
-from .typed_dict_status_migration_result import TypedDictStatusMigrationResult
-from .typed_dict_system_state import TypedDictSystemState
-from .typed_dict_timestamp_data import TypedDictTimestampData
-from .typed_dict_timestamp_update_data import TypedDictTimestampUpdateData
-from .typed_dict_trace_info_data import TypedDictTraceInfoData
-from .typed_dict_usage_metadata import TypedDictUsageMetadata
-from .typed_dict_validation_metadata_type import TypedDictValidationMetadataType
-from .typed_dict_validation_result import TypedDictValidationResult
-from .typed_dict_validator_info import TypedDictValidatorInfo
-from .typed_dict_workflow_context import TypedDictWorkflowContext
-from .typed_dict_workflow_state import TypedDictWorkflowState
 
 # Mixin-specific TypedDict definitions
 from .typed_dict_mixin_types import (
     TypedDictCacheStats,
     TypedDictDiscoveryExtendedStats,
-    TypedDictDiscoveryStats as TypedDictMixinDiscoveryStats,
     TypedDictEventMetadata,
     TypedDictExecutorHealth,
     TypedDictFilterCriteria,
@@ -210,6 +191,82 @@ from .typed_dict_mixin_types import (
     TypedDictToolExecutionResult,
     TypedDictWorkflowStepConfig,
 )
+from .typed_dict_mixin_types import (
+    TypedDictDiscoveryStats as TypedDictMixinDiscoveryStats,
+)
+from .typed_dict_model_class_info import TypedDictModelClassInfo
+from .typed_dict_model_field_info import TypedDictModelFieldInfo
+from .typed_dict_monitoring_metrics import TypedDictMonitoringMetrics
+from .typed_dict_node_capabilities import TypedDictNodeCapabilities
+from .typed_dict_node_capabilities_summary import TypedDictNodeCapabilitiesSummary
+from .typed_dict_node_configuration_summary import TypedDictNodeConfigurationSummary
+from .typed_dict_node_connection_summary_type import TypedDictNodeConnectionSummaryType
+from .typed_dict_node_core import TypedDictNodeCore
+from .typed_dict_node_core_update_data import TypedDictNodeCoreUpdateData
+from .typed_dict_node_execution_summary import TypedDictNodeExecutionSummary
+from .typed_dict_node_feature_summary_type import TypedDictNodeFeatureSummaryType
+from .typed_dict_node_info_summary_data import TypedDictNodeInfoSummaryData
+from .typed_dict_node_introspection import TypedDictNodeIntrospection
+from .typed_dict_node_metadata_summary import TypedDictNodeMetadataSummary
+from .typed_dict_node_resource_constraint_kwargs import (
+    TypedDictNodeResourceConstraintKwargs,
+)
+from .typed_dict_node_resource_summary_type import TypedDictNodeResourceSummaryType
+from .typed_dict_node_rule_structure import TypedDictNodeRuleStructure
+from .typed_dict_node_state import TypedDictNodeState
+from .typed_dict_operation_result import TypedDictOperationResult
+from .typed_dict_operation_summary import TypedDictOperationSummary
+from .typed_dict_operational_impact import TypedDictOperationalImpact
+from .typed_dict_output_format_options_kwargs import TypedDictOutputFormatOptionsKwargs
+from .typed_dict_path_resolution_context import TypedDictPathResolutionContext
+from .typed_dict_performance_data import TypedDictPerformanceData
+from .typed_dict_performance_metric_data import TypedDictPerformanceMetricData
+from .typed_dict_performance_metrics import TypedDictPerformanceMetrics
+from .typed_dict_performance_metrics_report import TypedDictPerformanceMetricsReport
+from .typed_dict_performance_update_data import TypedDictPerformanceUpdateData
+from .typed_dict_property_metadata import TypedDictPropertyMetadata
+from .typed_dict_quality_data import TypedDictQualityData
+from .typed_dict_quality_update_data import TypedDictQualityUpdateData
+
+# Schema reference types
+from .typed_dict_ref_parts import TypedDictRefParts
+from .typed_dict_resolution_context import TypedDictResolutionContext
+from .typed_dict_resource_usage import TypedDictResourceUsage
+from .typed_dict_result_factory_kwargs import TypedDictResultFactoryKwargs
+from .typed_dict_routing_info import TypedDictRoutingInfo
+from .typed_dict_security_context import TypedDictSecurityContext
+from .typed_dict_security_policy_config import TypedDictSecurityPolicyConfig
+
+# New individual TypedDict classes extracted from typed_dict_structured_definitions.py
+from .typed_dict_sem_ver import TypedDictSemVer
+from .typed_dict_serialized_model import TypedDictSerializedModel
+from .typed_dict_service_info import TypedDictServiceInfo
+from .typed_dict_signature_optional_params import TypedDictSignatureOptionalParams
+from .typed_dict_ssl_context_options import TypedDictSSLContextOptions
+from .typed_dict_stats_collection import TypedDictStatsCollection
+from .typed_dict_status_migration_result import TypedDictStatusMigrationResult
+from .typed_dict_system_state import TypedDictSystemState
+from .typed_dict_timestamp_data import TypedDictTimestampData
+from .typed_dict_timestamp_update_data import TypedDictTimestampUpdateData
+from .typed_dict_tool_breakdown import TypedDictToolBreakdown
+
+# Tool manifest TypedDict definitions
+from .typed_dict_tool_comprehensive_summary import TypedDictToolComprehensiveSummary
+from .typed_dict_tool_details import TypedDictToolDetails
+from .typed_dict_tool_performance_summary import TypedDictToolPerformanceSummary
+from .typed_dict_tool_resource_summary import TypedDictToolResourceSummary
+from .typed_dict_tool_testing_config_summary import TypedDictToolTestingConfigSummary
+from .typed_dict_tool_testing_summary import TypedDictToolTestingSummary
+from .typed_dict_tool_validation import TypedDictToolValidation
+from .typed_dict_trace_info_data import TypedDictTraceInfoData
+from .typed_dict_transition_config import TypedDictTransitionConfig
+from .typed_dict_usage_metadata import TypedDictUsageMetadata
+from .typed_dict_validation_metadata_type import TypedDictValidationMetadataType
+from .typed_dict_validation_result import TypedDictValidationResult
+from .typed_dict_validator_info import TypedDictValidatorInfo
+from .typed_dict_workflow_context import TypedDictWorkflowContext
+from .typed_dict_workflow_state import TypedDictWorkflowState
+from .typed_dict_yaml_dump_kwargs import TypedDictYamlDumpKwargs
 
 # Utility functions
 from .util_datetime_parser import parse_datetime
@@ -277,6 +334,7 @@ __all__ = [
     "TypedDictCollectionFromItemsKwargs",
     "TypedDictCoreAnalytics",
     "TypedDictDebugInfoData",
+    "TypedDictDefaultOutputState",
     "TypedDictDeprecationSummary",
     "TypedDictDiscoveryStats",
     "TypedDictDocumentationSummaryFiltered",
@@ -293,6 +351,13 @@ __all__ = [
     "TypedDictMigrationConflictBaseDict",
     "TypedDictMigrationDuplicateConflictDict",
     "TypedDictMigrationNameConflictDict",
+    # Missing tool analysis types
+    "TypedDictAlertData",
+    "TypedDictAlertMetadata",
+    "TypedDictErrorAnalysis",
+    "TypedDictMonitoringMetrics",
+    "TypedDictOperationalImpact",
+    "TypedDictToolDetails",
     "TypedDictNodeCapabilitiesSummary",
     "TypedDictNodeConfigurationSummary",
     "TypedDictNodeConnectionSummaryType",
@@ -314,6 +379,7 @@ __all__ = [
     "TypedDictSSLContextOptions",
     "TypedDictTimestampUpdateData",
     "TypedDictTraceInfoData",
+    "TypedDictTransitionConfig",
     "TypedDictUsageMetadata",
     "TypedDictValidationMetadataType",
     # New individual TypedDict classes extracted from typed_dict_structured_definitions.py
@@ -330,16 +396,22 @@ __all__ = [
     "TypedDictErrorData",
     "TypedDictErrorDetails",
     "TypedDictOperationResult",
+    "TypedDictOperationSummary",
     "TypedDictWorkflowContext",
     "TypedDictWorkflowState",
     "TypedDictValidatorInfo",
     "TypedDictEventInfo",
+    "TypedDictConditionalBranch",
     "TypedDictConnectionInfo",
     "TypedDictServiceInfo",
     "TypedDictDependencyInfo",
     "TypedDictCacheInfo",
     "TypedDictBatchProcessingInfo",
     "TypedDictSecurityContext",
+    "TypedDictSecurityPolicyConfig",
+    "TypedDictSignatureOptionalParams",
+    "TypedDictAccessControlConfig",
+    "TypedDictAuditChange",
     "TypedDictAuditInfo",
     "TypedDictFeatureFlags",
     "TypedDictStatsCollection",
@@ -356,6 +428,7 @@ __all__ = [
     "TypedDictTimestampData",
     # Schema reference types
     "TypedDictRefParts",
+    "TypedDictResolutionContext",
     # Converter functions
     "convert_stats_to_typed_dict",
     "convert_health_to_typed_dict",
@@ -383,6 +456,38 @@ __all__ = [
     "TypedDictToolExecutionResponse",
     "TypedDictToolExecutionResult",
     "TypedDictWorkflowStepConfig",
+    # Tool manifest TypedDict definitions
+    "TypedDictToolComprehensiveSummary",
+    "TypedDictToolPerformanceSummary",
+    "TypedDictToolResourceSummary",
+    "TypedDictToolTestingConfigSummary",
+    "TypedDictToolTestingSummary",
+    # Contract validation TypedDict definitions
+    "TypedDictContractData",
+    "TypedDictModelClassInfo",
+    "TypedDictModelFieldInfo",
+    # Node infrastructure TypedDict definitions
+    "TypedDictComprehensiveHealth",
+    "TypedDictLifecycleEventFields",
+    "TypedDictLifecycleEventMetadata",
+    "TypedDictNodeCapabilities",
+    "TypedDictNodeIntrospection",
+    "TypedDictNodeState",
+    # YAML and path resolution types
+    "MappingResultDict",
+    "TypedDictPathResolutionContext",
+    "TypedDictYamlDumpKwargs",
+    # Metadata tool collection types
+    "TypedDictCollectionMetadata",
+    "TypedDictCollectionValidation",
+    "TypedDictMetadataToolAnalyticsReport",
+    "TypedDictMetadataToolAnalyticsSummaryData",
+    "TypedDictPerformanceMetricsReport",
+    "TypedDictToolBreakdown",
+    "TypedDictToolValidation",
+    # Action validation TypedDict definitions
+    "TypedDictActionValidationContext",
+    "TypedDictActionValidationStatistics",
 ]
 
 

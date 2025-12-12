@@ -222,7 +222,7 @@ class NodeConfigProvider:
         """
         return key in self._config_cache or key in self._DEFAULTS
 
-    async def get_all_config(self) -> dict[str, Any]:
+    async def get_all_config(self) -> dict[str, ConfigValue]:
         """
         Get all configuration as dictionary.
 
@@ -257,18 +257,18 @@ class NodeConfigProvider:
         """
         return {key: self.has_config(key) for key in required_keys}
 
-    async def get_config_schema(self) -> dict[str, Any]:
+    async def get_config_schema(self) -> dict[str, ModelNodeConfigSchema]:
         """
         Get configuration schema.
 
         Returns:
             Dictionary describing configuration schema
         """
-        schema: dict[str, Any] = {}
+        schema: dict[str, ModelNodeConfigSchema] = {}
         for key, value in self._DEFAULTS.items():
-            schema[key] = {
-                "key": key,
-                "type": type(value).__name__,
-                "default": value,
-            }
+            schema[key] = ModelNodeConfigSchema(
+                key=key,
+                type=type(value).__name__,
+                default=value,
+            )
         return schema

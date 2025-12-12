@@ -6,7 +6,10 @@ Zero custom Python code required - all state transitions defined declaratively.
 """
 
 import time
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
+
+if TYPE_CHECKING:
+    from omnibase_core.types.type_serializable_value import SerializedDict
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
@@ -197,7 +200,8 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
         trigger = input_data.metadata.get("trigger", "process")
 
         # Build context from input data - context contains serializable values
-        context: dict[str, object] = {
+        # Type ignore: input_data.metadata is dict[str, object], SerializedDict is compatible
+        context: SerializedDict = {  # type: ignore[assignment]
             "input_data": input_data.data,
             "reduction_type": input_data.reduction_type.value,
             "operation_id": str(input_data.operation_id),
