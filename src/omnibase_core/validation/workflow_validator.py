@@ -1011,19 +1011,23 @@ def validate_execution_mode_string(mode: str) -> None:
         mode: The execution mode string to validate. Case-insensitive.
 
     Raises:
-        ModelOnexError: In two cases:
-            1. If the mode string is not a valid EnumExecutionMode value.
-               Error code: VALIDATION_ERROR with "Invalid execution mode" message.
-               Error context includes:
+        ModelOnexError: In two cases (two-step validation):
+            1. **Step 1 - String validation**: If the mode string is not a valid
+               EnumExecutionMode value. Error code: VALIDATION_ERROR with
+               "Invalid execution mode" message. Error context includes:
                - mode: The invalid mode that was provided
                - reserved_modes: List of reserved mode names
                - accepted_modes: List of accepted mode names
 
-            2. If the execution mode is CONDITIONAL or STREAMING (reserved modes
-               not yet implemented). Delegates to validate_execution_mode_enum
-               from reserved_enum_validator for this check.
-               Error code: VALIDATION_ERROR with context including mode,
-               reserved_modes, and accepted_modes.
+            2. **Step 2 - Reserved mode check**: If the execution mode is
+               CONDITIONAL or STREAMING (reserved for future ONEX versions).
+               This step delegates to ``validate_execution_mode_enum`` (imported
+               from ``reserved_enum_validator``) which raises the error.
+               Error code: VALIDATION_ERROR with error context including:
+               - mode: The reserved mode value
+               - reserved_modes: List of reserved mode names
+               - accepted_modes: List of accepted mode names
+               - version: The version the mode is reserved for (e.g., "v1.1+", "v1.2+")
 
     Complexity:
         Time: O(1) - set lookup
