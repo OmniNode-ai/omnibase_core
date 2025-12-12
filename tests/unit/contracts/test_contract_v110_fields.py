@@ -19,6 +19,7 @@ Related:
 
 import re
 from pathlib import Path
+from typing import Any
 
 import pytest
 import yaml
@@ -38,7 +39,7 @@ V110_RUNTIME_CONTRACTS = [
 ]
 
 
-def load_contract(contract_name: str) -> dict[str, object]:
+def load_contract(contract_name: str) -> dict[str, Any]:
     """
     Load contract data from a YAML file.
 
@@ -217,27 +218,49 @@ class TestFingerprintUniqueness:
         # Collect from runtime contracts
         if self.RUNTIME_CONTRACTS_DIR.exists():
             for yaml_file in self.RUNTIME_CONTRACTS_DIR.glob("*.yaml"):
-                with open(yaml_file, encoding="utf-8") as f:
-                    data = yaml.safe_load(f)
-                    if isinstance(data, dict) and "fingerprint" in data:
-                        fp = data["fingerprint"]
-                        if isinstance(fp, str):
-                            fingerprints.setdefault(fp, []).append(str(yaml_file.name))
+                try:
+                    with open(yaml_file, encoding="utf-8") as f:
+                        data = yaml.safe_load(f)
+                        # Guard: check data is not None before accessing
+                        if data is None:
+                            continue
+                        if isinstance(data, dict) and "fingerprint" in data:
+                            fp = data["fingerprint"]
+                            if isinstance(fp, str):
+                                fingerprints.setdefault(fp, []).append(
+                                    str(yaml_file.name)
+                                )
+                except OSError:
+                    # Skip file read errors gracefully
+                    continue
+                except yaml.YAMLError:
+                    # Skip files with invalid YAML (will be caught by other tests)
+                    continue
 
         # Collect from example contracts (recursive)
         if self.EXAMPLES_CONTRACTS_DIR.exists():
             for yaml_file in self.EXAMPLES_CONTRACTS_DIR.rglob("*.yaml"):
-                with open(yaml_file, encoding="utf-8") as f:
-                    data = yaml.safe_load(f)
-                    if isinstance(data, dict) and "fingerprint" in data:
-                        fp = data["fingerprint"]
-                        if isinstance(fp, str):
-                            rel_path = yaml_file.relative_to(
-                                self.EXAMPLES_CONTRACTS_DIR
-                            )
-                            fingerprints.setdefault(fp, []).append(
-                                f"examples/{rel_path}"
-                            )
+                try:
+                    with open(yaml_file, encoding="utf-8") as f:
+                        data = yaml.safe_load(f)
+                        # Guard: check data is not None before accessing
+                        if data is None:
+                            continue
+                        if isinstance(data, dict) and "fingerprint" in data:
+                            fp = data["fingerprint"]
+                            if isinstance(fp, str):
+                                rel_path = yaml_file.relative_to(
+                                    self.EXAMPLES_CONTRACTS_DIR
+                                )
+                                fingerprints.setdefault(fp, []).append(
+                                    f"examples/{rel_path}"
+                                )
+                except OSError:
+                    # Skip file read errors gracefully
+                    continue
+                except yaml.YAMLError:
+                    # Skip files with invalid YAML (will be caught by other tests)
+                    continue
 
         return fingerprints
 
@@ -370,28 +393,34 @@ class TestContractHandlersField:
             )
 
         for i, handler in enumerate(required):
-            assert isinstance(handler, dict), (
-                f"{contract_name}: handlers.required[{i}] should be a dict, "
-                f"got {type(handler).__name__}: {handler}"
-            )
-            assert "type" in handler, (
-                f"{contract_name}: handlers.required[{i}] missing 'type' field"
-            )
-            assert "version" in handler, (
-                f"{contract_name}: handlers.required[{i}] missing 'version' field"
-            )
+            if not isinstance(handler, dict):
+                pytest.fail(
+                    f"{contract_name}: handlers.required[{i}] should be a dict, "
+                    f"got {type(handler).__name__}: {handler}"
+                )
+            if "type" not in handler:
+                pytest.fail(
+                    f"{contract_name}: handlers.required[{i}] missing 'type' field"
+                )
+            if "version" not in handler:
+                pytest.fail(
+                    f"{contract_name}: handlers.required[{i}] missing 'version' field"
+                )
 
         for i, handler in enumerate(optional):
-            assert isinstance(handler, dict), (
-                f"{contract_name}: handlers.optional[{i}] should be a dict, "
-                f"got {type(handler).__name__}: {handler}"
-            )
-            assert "type" in handler, (
-                f"{contract_name}: handlers.optional[{i}] missing 'type' field"
-            )
-            assert "version" in handler, (
-                f"{contract_name}: handlers.optional[{i}] missing 'version' field"
-            )
+            if not isinstance(handler, dict):
+                pytest.fail(
+                    f"{contract_name}: handlers.optional[{i}] should be a dict, "
+                    f"got {type(handler).__name__}: {handler}"
+                )
+            if "type" not in handler:
+                pytest.fail(
+                    f"{contract_name}: handlers.optional[{i}] missing 'type' field"
+                )
+            if "version" not in handler:
+                pytest.fail(
+                    f"{contract_name}: handlers.optional[{i}] missing 'version' field"
+                )
 
 
 # ==============================================================================
@@ -719,7 +748,3 @@ class TestExampleContractsV110Compliance:
                     assert data is not None, f"{yaml_file.name}: Empty YAML"
                 except yaml.YAMLError as e:
                     pytest.fail(f"{yaml_file.name}: Invalid YAML - {e}")
-
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
