@@ -677,19 +677,19 @@ class TestFSMState:
         assert isinstance(state, FSMState)
         assert state.current_state == "idle"
         assert state.context == {}
-        assert state.history == []
+        assert state.history == ()
 
     def test_fsm_state_creation(self):
         """Test FSM state creation with context."""
         state = FSMState(
             current_state="running",
             context={"data": [1, 2, 3]},
-            history=["idle"],
+            history=("idle",),
         )
 
         assert state.current_state == "running"
         assert state.context["data"] == [1, 2, 3]
-        assert state.history == ["idle"]
+        assert state.history == ("idle",)
 
 
 class TestWildcardTransitions:

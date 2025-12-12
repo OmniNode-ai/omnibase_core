@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from pydantic import Field
-
 """
 Strongly-typed FSM state model.
 
@@ -9,8 +7,7 @@ Replaces dict[str, Any] usage in FSM state operations with structured typing.
 Follows ONEX strong typing principles and one-model-per-file architecture.
 """
 
-
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelFsmState(BaseModel):
@@ -38,11 +35,11 @@ class ModelFsmState(BaseModel):
         default_factory=dict, description="State properties"
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "frozen": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        frozen=True,
+    )
 
     # Protocol method implementations
 

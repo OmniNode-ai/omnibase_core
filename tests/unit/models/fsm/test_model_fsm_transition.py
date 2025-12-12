@@ -15,6 +15,7 @@ from pydantic import ValidationError
 from omnibase_core.models.fsm.model_fsm_transition import ModelFsmTransition
 
 
+@pytest.mark.unit
 class TestModelFsmTransitionInstantiation:
     """Test cases for ModelFsmTransition instantiation."""
 
@@ -27,8 +28,8 @@ class TestModelFsmTransitionInstantiation:
         assert transition.from_state == "idle"
         assert transition.to_state == "active"
         assert transition.trigger == "start"
-        assert transition.conditions == []
-        assert transition.actions == []
+        assert transition.conditions == ()
+        assert transition.actions == ()
 
     def test_model_instantiation_full(self):
         """Test model instantiation with all fields populated."""
@@ -43,12 +44,12 @@ class TestModelFsmTransitionInstantiation:
         assert transition.from_state == "waiting"
         assert transition.to_state == "processing"
         assert transition.trigger == "data_received"
-        assert transition.conditions == ["has_valid_data", "has_capacity"]
-        assert transition.actions == [
+        assert transition.conditions == ("has_valid_data", "has_capacity")
+        assert transition.actions == (
             "log_transition",
             "update_metrics",
             "notify_observers",
-        ]
+        )
 
     def test_transition_with_conditions(self):
         """Test transition with multiple conditions."""
@@ -86,6 +87,7 @@ class TestModelFsmTransitionInstantiation:
         assert transition.from_state == "processing"
 
 
+@pytest.mark.unit
 class TestModelFsmTransitionValidation:
     """Test validation rules for ModelFsmTransition."""
 
@@ -133,16 +135,16 @@ class TestModelFsmTransitionValidation:
         with pytest.raises(ValidationError):
             ModelFsmTransition(from_state="idle", to_state="active", trigger=None)
 
-    def test_conditions_list_validation(self):
-        """Test that conditions must be a list of strings."""
-        # Valid list of strings
+    def test_conditions_tuple_validation(self):
+        """Test that conditions must be a sequence of strings (converted to tuple)."""
+        # Valid list of strings (converted to tuple)
         transition = ModelFsmTransition(
             from_state="a",
             to_state="b",
             trigger="t",
             conditions=["cond1", "cond2"],
         )
-        assert transition.conditions == ["cond1", "cond2"]
+        assert transition.conditions == ("cond1", "cond2")
 
         # Invalid type for conditions
         with pytest.raises(ValidationError):
@@ -161,16 +163,16 @@ class TestModelFsmTransitionValidation:
                 conditions=[1, 2, 3],
             )
 
-    def test_actions_list_validation(self):
-        """Test that actions must be a list of strings."""
-        # Valid list of strings
+    def test_actions_tuple_validation(self):
+        """Test that actions must be a sequence of strings (converted to tuple)."""
+        # Valid list of strings (converted to tuple)
         transition = ModelFsmTransition(
             from_state="a",
             to_state="b",
             trigger="t",
             actions=["action1", "action2"],
         )
-        assert transition.actions == ["action1", "action2"]
+        assert transition.actions == ("action1", "action2")
 
         # Invalid type for actions
         with pytest.raises(ValidationError):
@@ -190,6 +192,7 @@ class TestModelFsmTransitionValidation:
             )
 
 
+@pytest.mark.unit
 class TestModelFsmTransitionProtocols:
     """Test protocol implementations for ModelFsmTransition."""
 
@@ -244,8 +247,8 @@ class TestModelFsmTransitionProtocols:
         assert serialized["from_state"] == "waiting"
         assert serialized["to_state"] == "processing"
         assert serialized["trigger"] == "process"
-        assert serialized["conditions"] == ["condition1"]
-        assert serialized["actions"] == ["action1"]
+        assert serialized["conditions"] == ("condition1",)
+        assert serialized["actions"] == ("action1",)
 
     def test_serialize_protocol_minimal(self):
         """Test serialize protocol with minimal transition."""
@@ -283,6 +286,7 @@ class TestModelFsmTransitionProtocols:
         assert result is True
 
 
+@pytest.mark.unit
 class TestModelFsmTransitionSerialization:
     """Test serialization and deserialization for ModelFsmTransition."""
 
@@ -302,8 +306,8 @@ class TestModelFsmTransitionSerialization:
         assert data["from_state"] == "start"
         assert data["to_state"] == "end"
         assert data["trigger"] == "finish"
-        assert data["conditions"] == ["ready"]
-        assert data["actions"] == ["cleanup"]
+        assert data["conditions"] == ("ready",)
+        assert data["actions"] == ("cleanup",)
 
     def test_model_validate(self):
         """Test model_validate method."""
@@ -320,8 +324,8 @@ class TestModelFsmTransitionSerialization:
         assert transition.from_state == "validated_from"
         assert transition.to_state == "validated_to"
         assert transition.trigger == "validated_trigger"
-        assert transition.conditions == ["cond1", "cond2"]
-        assert transition.actions == ["act1", "act2"]
+        assert transition.conditions == ("cond1", "cond2")
+        assert transition.actions == ("act1", "act2")
 
     def test_model_dump_json(self):
         """Test JSON serialization."""
@@ -346,19 +350,25 @@ class TestModelFsmTransitionSerialization:
         assert transition.trigger == "json_event"
 
 
+@pytest.mark.unit
 class TestModelFsmTransitionEdgeCases:
     """Test edge cases for ModelFsmTransition."""
 
-    def test_empty_string_states(self):
-        """Test transitions with empty string state names."""
-        transition = ModelFsmTransition(from_state="", to_state="", trigger="event")
-        assert transition.from_state == ""
-        assert transition.to_state == ""
+    def test_empty_string_states_rejected(self):
+        """Test that empty string state names are rejected (min_length=1)."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelFsmTransition(from_state="", to_state="active", trigger="event")
+        assert "from_state" in str(exc_info.value)
 
-    def test_empty_string_trigger(self):
-        """Test transition with empty string trigger."""
-        transition = ModelFsmTransition(from_state="a", to_state="b", trigger="")
-        assert transition.trigger == ""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelFsmTransition(from_state="idle", to_state="", trigger="event")
+        assert "to_state" in str(exc_info.value)
+
+    def test_empty_string_trigger_rejected(self):
+        """Test that empty string trigger is rejected (min_length=1)."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelFsmTransition(from_state="a", to_state="b", trigger="")
+        assert "trigger" in str(exc_info.value)
 
     def test_very_long_state_names(self):
         """Test transitions with very long state names."""
@@ -403,19 +413,19 @@ class TestModelFsmTransitionEdgeCases:
             )
             assert transition.trigger == trigger
 
-    def test_empty_conditions_list(self):
-        """Test transition with empty conditions list."""
+    def test_empty_conditions_tuple(self):
+        """Test transition with empty conditions (converted to empty tuple)."""
         transition = ModelFsmTransition(
             from_state="a", to_state="b", trigger="t", conditions=[]
         )
-        assert transition.conditions == []
+        assert transition.conditions == ()
 
-    def test_empty_actions_list(self):
-        """Test transition with empty actions list."""
+    def test_empty_actions_tuple(self):
+        """Test transition with empty actions (converted to empty tuple)."""
         transition = ModelFsmTransition(
             from_state="a", to_state="b", trigger="t", actions=[]
         )
-        assert transition.actions == []
+        assert transition.actions == ()
 
     def test_duplicate_conditions(self):
         """Test transition with duplicate conditions."""
@@ -513,12 +523,11 @@ class TestModelFsmTransitionEdgeCases:
 class TestModelFsmTransitionValidateInstanceFalse:
     """Test validate_instance returning False for invalid states."""
 
-    def test_validate_instance_empty_from_state_returns_false(self):
-        """Test validate_instance returns False for empty from_state."""
-        transition = ModelFsmTransition(
-            from_state="", to_state="active", trigger="start"
-        )
-        assert transition.validate_instance() is False
+    def test_validate_instance_empty_from_state_rejected_by_pydantic(self):
+        """Test that empty from_state is rejected by Pydantic (min_length=1)."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelFsmTransition(from_state="", to_state="active", trigger="start")
+        assert "from_state" in str(exc_info.value)
 
     def test_validate_instance_whitespace_from_state_returns_false(self):
         """Test validate_instance returns False for whitespace-only from_state."""
@@ -527,10 +536,11 @@ class TestModelFsmTransitionValidateInstanceFalse:
         )
         assert transition.validate_instance() is False
 
-    def test_validate_instance_empty_to_state_returns_false(self):
-        """Test validate_instance returns False for empty to_state."""
-        transition = ModelFsmTransition(from_state="idle", to_state="", trigger="start")
-        assert transition.validate_instance() is False
+    def test_validate_instance_empty_to_state_rejected_by_pydantic(self):
+        """Test that empty to_state is rejected by Pydantic (min_length=1)."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelFsmTransition(from_state="idle", to_state="", trigger="start")
+        assert "to_state" in str(exc_info.value)
 
     def test_validate_instance_whitespace_to_state_returns_false(self):
         """Test validate_instance returns False for whitespace-only to_state."""
@@ -539,12 +549,11 @@ class TestModelFsmTransitionValidateInstanceFalse:
         )
         assert transition.validate_instance() is False
 
-    def test_validate_instance_empty_trigger_returns_false(self):
-        """Test validate_instance returns False for empty trigger."""
-        transition = ModelFsmTransition(
-            from_state="idle", to_state="active", trigger=""
-        )
-        assert transition.validate_instance() is False
+    def test_validate_instance_empty_trigger_rejected_by_pydantic(self):
+        """Test that empty trigger is rejected by Pydantic (min_length=1)."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelFsmTransition(from_state="idle", to_state="active", trigger="")
+        assert "trigger" in str(exc_info.value)
 
     def test_validate_instance_whitespace_trigger_returns_false(self):
         """Test validate_instance returns False for whitespace-only trigger."""

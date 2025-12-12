@@ -15,7 +15,7 @@ Spec Reference:
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelFSMOperation(BaseModel):
@@ -74,11 +74,11 @@ class ModelFSMOperation(BaseModel):
         description="Human-readable description of the operation",
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "frozen": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        frozen=True,
+    )
 
     # Protocol method implementations
 
@@ -108,6 +108,7 @@ class ModelFSMOperation(BaseModel):
         """
         # v1.1+ reserved: actual execution logic will be implemented here
         # Model is frozen, so no in-place mutation is possible
+        _ = kwargs  # Explicitly mark as unused
         return True
 
     def serialize(self) -> dict[str, object]:

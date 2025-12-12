@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from typing import Self
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -85,11 +85,11 @@ class ModelFSMTransitionCondition(BaseModel):
         description="Reserved for v1.1+",
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "frozen": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        frozen=True,
+    )
 
     @model_validator(mode="after")
     def validate_expression_format(self) -> Self:
@@ -138,6 +138,7 @@ class ModelFSMTransitionCondition(BaseModel):
         # v1.1+ reserved: Implement full execution logic with retry and timeout
         # Model is frozen, so setattr is not allowed. Execution behavior
         # reserved for v1.1+ when proper state management is implemented.
+        _ = kwargs  # Explicitly mark as unused
         return True
 
     def serialize(self) -> dict[str, object]:

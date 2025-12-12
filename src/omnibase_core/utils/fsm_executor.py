@@ -332,7 +332,7 @@ def get_initial_state(fsm: ModelFSMSubcontract) -> FSMState:
             state = get_initial_state(fsm)
             print(f"Starting in state: {state.current_state}")  # "start"
             print(f"Context: {state.context}")                  # {}
-            print(f"History: {state.history}")                  # []
+            print(f"History: {state.history}")                  # ()
 
             # Use state for first transition
             result = await execute_transition(
@@ -342,7 +342,7 @@ def get_initial_state(fsm: ModelFSMSubcontract) -> FSMState:
                 context=state.context,
             )
     """
-    return FSMState(current_state=fsm.initial_state, context={}, history=[])
+    return FSMState(current_state=fsm.initial_state, context={}, history=())
 
 
 # Private helper functions

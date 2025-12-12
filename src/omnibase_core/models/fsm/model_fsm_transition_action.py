@@ -21,7 +21,7 @@ Note:
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 # Type alias for action configuration values
 # Supports primitive types and lists of strings for FSM action configuration
@@ -106,11 +106,11 @@ class ModelFSMTransitionAction(BaseModel):
         description="Action timeout in milliseconds (must be positive if set)",
     )
 
-    model_config = {
-        "extra": "ignore",
-        "frozen": True,
-        "use_enum_values": False,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        frozen=True,
+        use_enum_values=False,
+    )
 
     # Protocol method implementations
 

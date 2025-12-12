@@ -16,6 +16,7 @@ from pydantic import ValidationError
 from omnibase_core.models.fsm.model_fsm_state import ModelFsmState
 
 
+@pytest.mark.unit
 class TestModelFsmStateInstantiation:
     """Test cases for ModelFsmState instantiation."""
 
@@ -106,6 +107,7 @@ class TestModelFsmStateInstantiation:
         assert state.properties["priority"] == "high"
 
 
+@pytest.mark.unit
 class TestModelFsmStateValidation:
     """Test validation rules for ModelFsmState."""
 
@@ -181,6 +183,7 @@ class TestModelFsmStateValidation:
             ModelFsmState(name="test", properties=["list", "of", "values"])
 
 
+@pytest.mark.unit
 class TestModelFsmStateProtocols:
     """Test protocol implementations for ModelFsmState."""
 
@@ -273,6 +276,7 @@ class TestModelFsmStateProtocols:
         assert result is True
 
 
+@pytest.mark.unit
 class TestModelFsmStateSerialization:
     """Test serialization and deserialization for ModelFsmState."""
 
@@ -333,6 +337,7 @@ class TestModelFsmStateSerialization:
         assert state.description == "From JSON"
 
 
+@pytest.mark.unit
 class TestModelFsmStateEdgeCases:
     """Test edge cases for ModelFsmState."""
 
