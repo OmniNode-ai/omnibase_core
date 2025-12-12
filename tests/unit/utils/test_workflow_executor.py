@@ -3141,14 +3141,14 @@ class TestWorkflowSizeLimitEnforcement:
         )
 
     @pytest.mark.asyncio
-    async def test_step_payload_size_at_limit(
+    async def test_step_payload_size_under_limit(
         self,
         simple_workflow_definition: ModelWorkflowDefinition,
     ) -> None:
-        """Test step payload exactly at MAX_STEP_PAYLOAD_SIZE_BYTES passes.
+        """Test step payload under MAX_STEP_PAYLOAD_SIZE_BYTES passes.
 
         The payload includes workflow_id, step_id, and step_name fields.
-        We use a reasonable step_name that should produce a payload under 64KB.
+        We use a reasonable step_name that produces a payload well under 64KB.
         """
         # Create a step with a normal name (well under limit)
         step = ModelWorkflowStep(

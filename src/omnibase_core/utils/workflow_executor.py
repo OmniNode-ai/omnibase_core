@@ -28,12 +28,13 @@ Priority Clamping (Step Priority vs Action Priority):
 
 Size Limits:
     To prevent memory exhaustion, this module enforces the following limits:
-    - MAX_WORKFLOW_STEPS (1000): Maximum number of steps in a workflow
-    - MAX_STEP_PAYLOAD_SIZE_BYTES (64KB): Maximum size of individual step payload
-    - MAX_TOTAL_PAYLOAD_SIZE_BYTES (10MB): Maximum accumulated payload size
-
-    These limits are validated during workflow execution. Exceeding any limit
-    raises ModelOnexError with appropriate error codes.
+    - MAX_WORKFLOW_STEPS (1000): Maximum number of steps in a workflow.
+      Validated during workflow validation; raises ModelOnexError if exceeded.
+    - MAX_STEP_PAYLOAD_SIZE_BYTES (64KB): Maximum size of individual step payload.
+      Validated during action creation; raises ModelOnexError if exceeded.
+    - MAX_TOTAL_PAYLOAD_SIZE_BYTES (10MB): Maximum accumulated payload size.
+      In parallel mode, raises ModelOnexError. In sequential mode, treated as
+      a step failure (per error_action configuration, defaults to continue).
 """
 
 import asyncio
@@ -652,13 +653,7 @@ async def _execute_parallel(
         # Process results from parallel execution
         for step, action, error in results:
             if error is None and action is not None:
-                # Step succeeded
-                all_actions.append(action)
-                completed_steps.append(str(step.step_id))
-                completed_step_ids.add(step.step_id)
-                # Store step output for subsequent waves (action payload serves as output)
-                step_outputs[step.step_id] = action.payload
-
+                # Step succeeded - check payload size BEFORE marking completed
                 # Track total payload size (OMN-670: Security hardening)
                 action_payload_size = len(
                     json.dumps(
@@ -676,6 +671,13 @@ async def _execute_parallel(
                             "limit": MAX_TOTAL_PAYLOAD_SIZE_BYTES,
                         },
                     )
+
+                # Payload size check passed - now mark step completed
+                all_actions.append(action)
+                completed_steps.append(str(step.step_id))
+                completed_step_ids.add(step.step_id)
+                # Store step output for subsequent waves (action payload serves as output)
+                step_outputs[step.step_id] = action.payload
             else:
                 # Step failed
                 failed_steps.append(str(step.step_id))
@@ -996,6 +998,7 @@ def _create_action_for_step(
             error_code=EnumCoreErrorCode.WORKFLOW_PAYLOAD_SIZE_EXCEEDED,
             message=f"Step payload exceeds size limit: {payload_size} bytes > {MAX_STEP_PAYLOAD_SIZE_BYTES} byte limit",
             context={
+                "step_id": str(step.step_id),
                 "step_name": step.step_name,
                 "payload_size": payload_size,
                 "limit": MAX_STEP_PAYLOAD_SIZE_BYTES,

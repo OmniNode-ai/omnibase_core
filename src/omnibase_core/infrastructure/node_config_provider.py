@@ -8,8 +8,10 @@ Domain: Infrastructure configuration management
 """
 
 import os
+from typing import cast, get_args
 
 from omnibase_core.models.configuration.model_node_config_value import (
+    VALID_VALUE_TYPES,
     ConfigValue,
     ModelNodeConfigSchema,
 )
@@ -265,10 +267,18 @@ class NodeConfigProvider:
             Dictionary describing configuration schema
         """
         schema: dict[str, ModelNodeConfigSchema] = {}
+        valid_types = get_args(VALID_VALUE_TYPES)
         for key, value in self._DEFAULTS.items():
+            type_name = type(value).__name__
+            # Validate type_name is one of the allowed values
+            if type_name not in valid_types:
+                raise ValueError(  # error-ok: internal bootstrap validation before OnexError available
+                    f"Invalid config type '{type_name}' for key '{key}'. "
+                    f"Allowed types: {valid_types}"
+                )
             schema[key] = ModelNodeConfigSchema(
                 key=key,
-                type=type(value).__name__,
+                type=cast(VALID_VALUE_TYPES, type_name),
                 default=value,
             )
         return schema

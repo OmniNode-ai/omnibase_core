@@ -1,9 +1,11 @@
 """Model for node configuration entry."""
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
-# Type alias for valid configuration value types
-ConfigValue = int | float | bool | str
+from omnibase_core.models.configuration.model_config_types import (
+    VALID_VALUE_TYPES,
+    ConfigValue,
+)
 
 
 class ModelNodeConfigEntry(BaseModel):
@@ -23,7 +25,7 @@ class ModelNodeConfigEntry(BaseModel):
         ...,
         description="Configuration key (e.g., 'compute.max_parallel_workers')",
     )
-    value_type: str = Field(
+    value_type: VALID_VALUE_TYPES = Field(
         ...,
         description="Type name of the value ('int', 'float', 'bool', 'str')",
     )
@@ -33,3 +35,22 @@ class ModelNodeConfigEntry(BaseModel):
     )
 
     model_config = {"frozen": True}
+
+    @model_validator(mode="after")
+    def validate_default_type(self) -> "ModelNodeConfigEntry":
+        """Ensure default value type matches declared value_type."""
+        type_map: dict[str, type | tuple[type, ...]] = {
+            "int": int,
+            "float": (int, float),  # int is valid for float
+            "bool": bool,
+            "str": str,
+        }
+        expected = type_map[self.value_type]
+        # Strict bool check - don't allow int/float to match bool
+        if self.value_type == "bool" and not isinstance(self.default, bool):
+            raise ValueError(f"default must be bool, got {type(self.default).__name__}")
+        if not isinstance(self.default, expected):
+            raise ValueError(
+                f"default must be {self.value_type}, got {type(self.default).__name__}"
+            )
+        return self
