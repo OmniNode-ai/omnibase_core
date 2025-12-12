@@ -289,7 +289,13 @@ repos:
         language: system
         pass_filenames: true
         files: ^src/.*\.py$
-        exclude: ^(tests/|archived/|archive/|scripts/validation/|src/omnibase_core/utils/util_singleton_holders\.py|src/omnibase_core/models/core/model_action_config_value\.py|src/omnibase_core/protocols/).*\.py$
+        # Exclusions:
+        # - protocols/: Protocol types define interfaces, not implementations
+        # - util_singleton_holders.py: Singleton holder pattern requires multiple classes
+        # - model_action_config_value.py: Action config value types
+        # - model_node_config_value.py: Node config entry and schema types
+        # - types/typed_dict_*: TypedDict collections are intentionally grouped
+        exclude: ^(tests/|archived/|archive/|scripts/validation/|src/omnibase_core/utils/util_singleton_holders\.py$|src/omnibase_core/models/core/model_action_config_value\.py$|src/omnibase_core/models/configuration/model_node_config_value\.py$|src/omnibase_core/types/typed_dict_.*\.py$|src/omnibase_core/protocols/)
         stages: [pre-commit]
 
       - id: validate-enum-model-imports

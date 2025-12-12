@@ -1,9 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field, model_validator
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Connection Security Model.
 
@@ -11,11 +5,14 @@ SSL/TLS and security configuration for network connections.
 Part of the ModelConnectionInfo restructuring to reduce excessive string fields.
 """
 
+from __future__ import annotations
+
 from pathlib import Path
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types import SerializedDict
 from omnibase_core.types.typed_dict_ssl_context_options import (
     TypedDictSSLContextOptions,

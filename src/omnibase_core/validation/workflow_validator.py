@@ -967,8 +967,7 @@ def validate_execution_mode_string(mode: str) -> None:
 
     This function validates raw string execution modes, typically from YAML configs
     or user input. For type-safe validation when you already have an EnumExecutionMode
-    instance, use validate_reserved_execution_mode (aliased from validate_execution_mode
-    in reserved_enum_validator) instead.
+    instance, use validate_execution_mode (from reserved_enum_validator) instead.
 
     **When to use which function:**
 
@@ -977,7 +976,7 @@ def validate_execution_mode_string(mode: str) -> None:
       to an enum yet. This is the appropriate choice for ModelWorkflowDefinition
       validation where execution_mode is stored as a string.
 
-    - ``validate_reserved_execution_mode(mode: EnumExecutionMode)``: Use when you
+    - ``validate_execution_mode(mode: EnumExecutionMode)``: Use when you
       already have a typed EnumExecutionMode value (e.g., from a Pydantic model
       with enum field). Provides compile-time type safety.
 
@@ -1034,9 +1033,8 @@ def validate_execution_mode_string(mode: str) -> None:
         Space: O(1) - constant storage
 
     See Also:
-        validate_reserved_execution_mode: Type-safe validation for EnumExecutionMode.
-            Located in omnibase_core.validation.reserved_enum_validator and re-exported
-            from omnibase_core.validation as validate_reserved_execution_mode.
+        validate_execution_mode: Type-safe validation for EnumExecutionMode.
+            Located in omnibase_core.validation.reserved_enum_validator.
 
     Example:
         Valid modes::

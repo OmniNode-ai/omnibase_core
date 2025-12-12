@@ -133,10 +133,13 @@ class TypedDictFilterCriteria(TypedDict, total=False):
 
 
 class TypedDictRedactedData(TypedDict):
-    """TypedDict for data after redaction processing."""
+    """
+    TypedDict for data after redaction processing.
 
-    # This is intentionally flexible since redaction can be applied to any structure
-    pass
+    This is intentionally an empty TypedDict since redaction
+    can be applied to any structure - the output shape depends
+    on the input shape with sensitive fields removed or masked.
+    """
 
 
 class TypedDictFSMContext(TypedDict, total=False):
