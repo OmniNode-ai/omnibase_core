@@ -11,14 +11,27 @@ from uuid import UUID, uuid4
 import pytest
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
+# Import forward-referenced types to resolve forward references in ModelEnvironment
+from omnibase_core.models.configuration.model_resource_limits import (
+    ModelResourceLimits,
+)
 from omnibase_core.models.core.model_action_category import ModelActionCategory
 from omnibase_core.models.core.model_action_metadata import ModelActionMetadata
 from omnibase_core.models.core.model_core_performance_metrics import (
     ModelPerformanceMetrics,
 )
+from omnibase_core.models.core.model_environment import ModelEnvironment
 from omnibase_core.models.core.model_node_action_type import ModelNodeActionType
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.security.model_security_context import ModelSecurityContext
+from omnibase_core.models.security.model_security_level import (
+    ModelSecurityLevel,
+)
+
+# Rebuild ModelEnvironment to resolve forward references
+# This is needed because ModelEnvironment uses TYPE_CHECKING imports
+ModelEnvironment.model_rebuild()
 
 
 def create_test_action_type() -> ModelNodeActionType:
@@ -53,7 +66,7 @@ class TestModelActionMetadata:
         assert isinstance(metadata.security_context, ModelSecurityContext)
         assert isinstance(metadata.performance_metrics, ModelPerformanceMetrics)
         assert metadata.parameters == {}
-        assert metadata.execution_context == {}
+        assert metadata.execution_context is None
 
     def test_initialization_with_custom_values(self):
         """Test initialization with custom values."""
