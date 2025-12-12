@@ -15,7 +15,6 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_return_type import EnumReturnType
 from omnibase_core.enums.enum_type_name import EnumTypeName
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
 # Default version for factory methods
 _DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
@@ -696,7 +695,7 @@ class ModelNodeType(BaseModel):
             message=f"{self.__class__.__name__} must have a valid ID field (type_id, id, uuid, identifier, etc.). Cannot generate stable ID without UUID field.",
         )
 
-    def get_metadata(self) -> TypedDictMetadataDict:
+    def get_metadata(self) -> dict[str, Any]:
         """
         Get node type metadata as a dictionary.
 
@@ -733,9 +732,9 @@ class ModelNodeType(BaseModel):
                     metadata[field] = (
                         str(value) if not isinstance(value, (dict, list)) else value
                     )
-        return metadata  # type: ignore[return-value]
+        return metadata
 
-    def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
+    def set_metadata(self, metadata: dict[str, Any]) -> bool:
         """
         Set node type metadata from a dictionary.
 
@@ -781,7 +780,7 @@ class ModelNodeType(BaseModel):
             # fallback-ok: Metadata update failures should not break the system
             return False
 
-    def serialize(self) -> TypedDictSerializedModel:
+    def serialize(self) -> dict[str, Any]:
         """
         Serialize the node type to a dictionary.
 

@@ -11,8 +11,6 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
-from omnibase_core.models.core.model_route_hop_metadata import ModelRouteHopMetadata
-
 
 class ModelRouteHop(BaseModel):
     """
@@ -53,8 +51,8 @@ class ModelRouteHop(BaseModel):
     next_hop: str | None = Field(default=None, description="Address of next hop chosen")
 
     # Metadata and debugging
-    metadata: ModelRouteHopMetadata = Field(
-        default_factory=ModelRouteHopMetadata,
+    metadata: dict[str, Any] = Field(
+        default_factory=dict,
         description="Additional hop-specific metadata",
     )
     error_info: str | None = Field(

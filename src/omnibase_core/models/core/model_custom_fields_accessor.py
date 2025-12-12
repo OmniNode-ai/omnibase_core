@@ -17,7 +17,6 @@ from pydantic import Field
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.types.constraints import PrimitiveValueType
-from omnibase_core.types.type_serializable_value import SerializedDict
 
 from .model_field_accessor import ModelFieldAccessor
 
@@ -47,7 +46,7 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
 
     @model_validator(mode="before")
     @classmethod
-    def validate_and_distribute_fields(cls, values: object) -> dict[str, object]:
+    def validate_and_distribute_fields(cls, values: Any) -> dict[str, Any]:
         """Validate and distribute incoming fields to appropriate typed storages."""
         if not isinstance(values, dict):
             return {}
@@ -85,7 +84,7 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
             elif isinstance(value, float):
                 result["float_fields"][key] = value
             elif isinstance(value, dict):
-                # Convert dict to string representation
+                # Convert dict[str, Any]to string representation
                 result["string_fields"][key] = str(value)
             else:
                 # Store as string fallback
@@ -392,7 +391,7 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
             return True  # Custom fields accept any type
         return False
 
-    def get_fields_by_type(self, field_type: str) -> dict[str, object]:
+    def get_fields_by_type(self, field_type: str) -> dict[str, Any]:
         """Get all fields of a specific type."""
         if field_type == "string":
             return dict(self.string_fields)
@@ -451,9 +450,9 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
             # Initialize our custom_fields if other has them but we don't
             self.custom_fields = copy.deepcopy(other_custom_fields)
 
-    def model_dump(self, exclude_none: bool = False, **kwargs: Any) -> SerializedDict:
+    def model_dump(self, exclude_none: bool = False, **kwargs: Any) -> dict[str, Any]:
         """Override model_dump to include all field data."""
-        data: SerializedDict = {}
+        data = {}
 
         # Add all fields to the output
         for key in self.get_all_field_names():
@@ -549,7 +548,7 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
         except Exception:  # fallback-ok: protocol method must return bool, not raise
             return False
 
-    def serialize(self) -> SerializedDict:
+    def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

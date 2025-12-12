@@ -4,15 +4,12 @@ FSM execution utilities for declarative state machines.
 Pure functions for executing FSM transitions from ModelFSMSubcontract.
 No side effects - returns results and intents.
 
-Typing: Strongly typed with SerializedDict for runtime context.
-Context dictionaries use SerializedDict as they contain JSON-serializable execution data.
+Typing: Strongly typed with strategic Any usage for runtime context flexibility.
+Context dictionaries use dict[str, Any] as they contain dynamic execution data.
 """
 
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any
-
-if TYPE_CHECKING:
-    from omnibase_core.types.type_serializable_value import SerializedDict
+from typing import Any
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.contracts.subcontracts.model_fsm_state_definition import (
@@ -41,7 +38,7 @@ async def execute_transition(
     fsm: ModelFSMSubcontract,
     current_state: str,
     trigger: str,
-    context: "SerializedDict",
+    context: dict[str, Any],
 ) -> FSMTransitionResult:
     """
     Execute FSM transition declaratively from YAML contract.
@@ -378,7 +375,7 @@ def _find_transition(
 
 async def _evaluate_conditions(
     transition: ModelFSMStateTransition,
-    context: "SerializedDict",
+    context: dict[str, Any],
 ) -> bool:
     """
     Evaluate all transition conditions.
@@ -409,7 +406,7 @@ async def _evaluate_conditions(
 
 async def _evaluate_single_condition(
     condition: ModelFSMTransitionCondition,
-    context: "SerializedDict",
+    context: dict[str, Any],
 ) -> bool:
     """
     Evaluate a single transition condition.
@@ -519,7 +516,7 @@ async def _execute_state_actions(
     fsm: ModelFSMSubcontract,
     state: ModelFSMStateDefinition,
     action_type: str,  # "entry" or "exit"
-    context: "SerializedDict",
+    context: dict[str, Any],
 ) -> list[ModelIntent]:
     """
     Execute state entry/exit actions, returning intents.
@@ -563,7 +560,7 @@ async def _execute_state_actions(
 
 async def _execute_transition_actions(
     transition: ModelFSMStateTransition,
-    context: "SerializedDict",
+    context: dict[str, Any],
 ) -> list[ModelIntent]:
     """
     Execute transition actions, returning intents.

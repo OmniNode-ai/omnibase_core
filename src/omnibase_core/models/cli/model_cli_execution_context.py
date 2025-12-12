@@ -14,9 +14,10 @@ Replaces dict[str, Any] for custom context with structured typing.
 
 from datetime import datetime
 from pathlib import Path
-from uuid import UUID
+from typing import Any
 
-from omnibase_core.types.type_serializable_value import SerializedDict
+# Removed Any import - using object for ONEX compliance
+from uuid import UUID
 
 from pydantic import BaseModel
 
@@ -116,7 +117,7 @@ class ModelCliExecutionContext(BaseModel):
 
     # Protocol method implementations
 
-    def serialize(self) -> SerializedDict:
+    def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

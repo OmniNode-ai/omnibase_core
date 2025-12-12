@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from typing import Literal, Union
+from typing import Any, Literal, Union
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -94,8 +94,7 @@ class ModelMultiTypeValue(BaseModel):
     MAX_LIST_SIZE: int = 10000
     MAX_STRING_LENGTH: int = 1000000  # 1MB character limit
 
-    # union-ok: discriminated_union - companion value_type Literal field provides type safety
-    value: Union[bool, int, float, str, list[object]] = Field(
+    value: Union[bool, int, float, str, list[Any]] = Field(
         description="The actual value",
     )
 
@@ -110,7 +109,7 @@ class ModelMultiTypeValue(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def infer_value_type(cls, data: object) -> dict[str, object]:
+    def infer_value_type(cls, data: Any) -> dict[str, Any]:
         """
         Automatically infer value_type from value if not provided.
 
@@ -126,13 +125,13 @@ class ModelMultiTypeValue(BaseModel):
             data: Input data (dict or value)
 
         Returns:
-            dict[str, object]: Data with value_type populated
+            dict[str, Any]: Data with value_type populated
 
         Raises:
             ModelOnexError: If value type is unsupported
         """
         # Ensure data is a dict (help mypy with type narrowing)
-        data_dict: dict[str, object]
+        data_dict: dict[str, Any]
         if not isinstance(data, dict):
             data_dict = {"value": data}
         else:
@@ -266,8 +265,7 @@ class ModelMultiTypeValue(BaseModel):
 
         return self
 
-    # union-ok: discriminated_union - return type matches discriminated value field
-    def get_value(self) -> Union[bool, int, float, str, list[object]]:
+    def get_value(self) -> Union[bool, int, float, str, list[Any]]:
         """
         Get the stored value with proper type.
 
@@ -318,12 +316,12 @@ class ModelMultiTypeValue(BaseModel):
         """
         return self.get_python_type() == expected_type
 
-    def as_dict(self) -> dict[str, object]:
+    def as_dict(self) -> dict[str, Any]:
         """
         Convert to dictionary representation.
 
         Returns:
-            dict[str, object]: Dictionary with value, value_type, and metadata
+            dict[str, Any]: Dictionary with value, value_type, and metadata
 
         Examples:
             >>> value = ModelMultiTypeValue(value=42)

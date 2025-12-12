@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 
 # === OmniNode:Metadata ===
 # author: OmniNode Team
@@ -52,9 +53,6 @@ from omnibase_core.models.primitives.model_semver import (
     ModelSemVer,
     parse_semver_from_string,
 )
-from omnibase_core.types.typed_dict_lifecycle_event_fields import (
-    TypedDictLifecycleEventFields,
-)
 
 # Component identifier for logging
 _COMPONENT_NAME = Path(__file__).stem
@@ -67,7 +65,7 @@ def _ensure_uuid(value: UUID | None) -> UUID:
     return value
 
 
-def _get_node_id_as_uuid(obj: object) -> UUID:
+def _get_node_id_as_uuid(obj: Any) -> UUID:
     """Get node_id as UUID from object, converting if necessary."""
     node_id = getattr(obj, "_node_id", None)
     if isinstance(node_id, UUID):
@@ -271,7 +269,7 @@ class MixinNodeLifecycle:
 
     def emit_node_start(
         self,
-        metadata: TypedDictLifecycleEventFields | None = None,
+        metadata: dict[str, Any] | None = None,
         correlation_id: UUID | None = None,
     ) -> UUID:
         """
@@ -333,7 +331,7 @@ class MixinNodeLifecycle:
 
     def emit_node_success(
         self,
-        metadata: TypedDictLifecycleEventFields | None = None,
+        metadata: dict[str, Any] | None = None,
         correlation_id: UUID | None = None,
     ) -> UUID:
         """
@@ -395,7 +393,7 @@ class MixinNodeLifecycle:
 
     def emit_node_failure(
         self,
-        metadata: TypedDictLifecycleEventFields | None = None,
+        metadata: dict[str, Any] | None = None,
         correlation_id: UUID | None = None,
     ) -> UUID:
         """

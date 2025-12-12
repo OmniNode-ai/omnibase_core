@@ -1,7 +1,6 @@
 import time
+from typing import Any
 from uuid import UUID
-
-from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelServiceRegistryEntry:
@@ -11,16 +10,16 @@ class ModelServiceRegistryEntry:
         self,
         node_id: UUID,
         service_name: str,
-        metadata: SerializedDict | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> None:
         self.node_id = node_id
         self.service_name = service_name
-        self.metadata: SerializedDict = metadata or {}
+        self.metadata = metadata or {}
         self.registered_at = time.time()
         self.last_seen = time.time()
         self.status = "online"
         self.capabilities: list[str] = []
-        self.introspection_data: SerializedDict | None = None
+        self.introspection_data: dict[str, Any] | None = None
 
     def update_last_seen(self) -> None:
         """Update the last seen timestamp."""
@@ -30,11 +29,8 @@ class ModelServiceRegistryEntry:
         """Mark service as offline."""
         self.status = "offline"
 
-    def update_introspection(self, introspection_data: SerializedDict) -> None:
+    def update_introspection(self, introspection_data: dict[str, Any]) -> None:
         """Update with introspection data."""
         self.introspection_data = introspection_data
-        capabilities = introspection_data.get("capabilities")
-        self.capabilities = capabilities if isinstance(capabilities, list) else []
-        metadata_update = introspection_data.get("metadata")
-        if isinstance(metadata_update, dict):
-            self.metadata.update(metadata_update)
+        self.capabilities = introspection_data.get("capabilities", [])
+        self.metadata.update(introspection_data.get("metadata", {}))

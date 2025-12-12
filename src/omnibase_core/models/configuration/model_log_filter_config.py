@@ -1,9 +1,8 @@
 import random
 import re
+from typing import Any
 
 from pydantic import BaseModel, Field
-
-from omnibase_core.types import SerializedDict
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -58,7 +57,7 @@ class ModelLogFilterConfig(BaseModel):
         default=None,
         description="Fully qualified function name for custom filter",
     )
-    custom_filter_config: SerializedDict | None = Field(
+    custom_filter_config: dict[str, Any] | None = Field(
         default=None,
         description="Configuration for custom filter function",
     )
@@ -99,10 +98,10 @@ class ModelLogFilterConfig(BaseModel):
             return True
         return len(message) <= self.max_message_length
 
-    def has_required_fields(self, log_data: dict[str, object]) -> bool:
+    def has_required_fields(self, log_data: dict[str, Any]) -> bool:
         """Check if log data contains all required fields."""
         return all(field in log_data for field in self.required_fields)
 
-    def filter_excluded_fields(self, log_data: dict[str, object]) -> dict[str, object]:
+    def filter_excluded_fields(self, log_data: dict[str, Any]) -> dict[str, Any]:
         """Remove excluded fields from log data."""
         return {k: v for k, v in log_data.items() if k not in self.excluded_fields}

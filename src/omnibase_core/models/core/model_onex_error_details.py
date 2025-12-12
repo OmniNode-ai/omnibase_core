@@ -4,9 +4,9 @@ ONEX Error Details Model.
 Detailed error information for ONEX replies with context and resolution suggestions.
 """
 
-from pydantic import BaseModel, Field
+from typing import Any
 
-from omnibase_core.types.type_serializable_value import SerializedDict
+from pydantic import BaseModel, Field
 
 
 class ModelOnexErrorDetails(BaseModel):
@@ -65,7 +65,7 @@ class ModelOnexErrorDetails(BaseModel):
         }
         return self.error_type.lower() not in non_retriable_types
 
-    def to_dict(self) -> SerializedDict:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         return self.model_dump()
 

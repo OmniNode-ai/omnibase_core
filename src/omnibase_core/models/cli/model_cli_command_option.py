@@ -11,9 +11,10 @@ Represents command-line options and flags with proper validation.
 Replaces dict[str, Any] for command options with structured typing.
 """
 
-from uuid import UUID
+from typing import Any
 
-from omnibase_core.types.type_serializable_value import SerializedDict
+# Removed Any import - using object for ONEX compliance
+from uuid import UUID
 
 from pydantic import BaseModel, model_validator
 
@@ -408,7 +409,7 @@ class ModelCliCommandOption(BaseModel):
 
     # Protocol method implementations
 
-    def serialize(self) -> SerializedDict:
+    def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

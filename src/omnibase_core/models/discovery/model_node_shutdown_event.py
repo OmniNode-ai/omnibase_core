@@ -1,9 +1,4 @@
-"""
-Node Shutdown Event Model
-
-Event published by nodes when they are shutting down to enable
-graceful deregistration from the service registry.
-"""
+"\nNode Shutdown Event Model\n\nEvent published by nodes when they are shutting down to enable\ngraceful deregistration from the service registry.\n"
 
 from datetime import datetime
 from typing import Any, cast
@@ -12,7 +7,6 @@ from uuid import UUID
 from pydantic import Field, field_validator
 
 from omnibase_core.constants.event_types import NODE_SHUTDOWN_EVENT
-from omnibase_core.models.common.model_typed_metadata import ModelShutdownMetrics
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.utils.util_uuid_utilities import uuid_from_string
 
@@ -65,9 +59,8 @@ class ModelNodeShutdownEvent(ModelOnexEvent):
     service_id: UUID | None = Field(
         default=None, description="Service ID for Consul deregistration"
     )
-    final_metrics: ModelShutdownMetrics = Field(
-        default_factory=ModelShutdownMetrics,
-        description="Final performance metrics before shutdown",
+    final_metrics: dict[str, Any] = Field(
+        default_factory=dict, description="Final performance metrics before shutdown"
     )
 
     @field_validator("node_id", mode="before")
@@ -158,7 +151,7 @@ class ModelNodeShutdownEvent(ModelOnexEvent):
             final_status="error",
             uptime_seconds=uptime_seconds,
             cleanup_errors=[error_message],
-            final_metrics=ModelShutdownMetrics(error_message=error_message),
+            final_metrics={"error_message": error_message},
             **kwargs,
         )
 
@@ -202,7 +195,7 @@ class ModelNodeShutdownEvent(ModelOnexEvent):
             restart_delay_seconds=restart_delay_seconds,
             replacement_node_id=replacement_node_id,
             cleanup_actions=["maintenance_prep", "state_backup"],
-            final_metrics=ModelShutdownMetrics(maintenance_reason=maintenance_reason),
+            final_metrics={"maintenance_reason": maintenance_reason},
             **kwargs,
         )
 
@@ -235,7 +228,7 @@ class ModelNodeShutdownEvent(ModelOnexEvent):
             shutdown_reason="forced",
             final_status="stopped",
             cleanup_actions=["emergency_cleanup"],
-            final_metrics={"force_reason": force_reason},  # type: ignore[arg-type]
+            final_metrics={"force_reason": force_reason},
             **kwargs,
         )
 

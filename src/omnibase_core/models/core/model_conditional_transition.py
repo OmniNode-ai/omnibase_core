@@ -4,23 +4,20 @@ Conditional Transition Model.
 Transition that applies different updates based on conditions.
 """
 
-from pydantic import BaseModel, Field
+from typing import Any
 
-from omnibase_core.types.typed_dict_conditional_branch import TypedDictConditionalBranch
-from omnibase_core.types.typed_dict_transition_config import TypedDictTransitionConfig
+from pydantic import BaseModel, Field
 
 
 class ModelConditionalTransition(BaseModel):
     """Transition that applies different updates based on conditions."""
 
-    # List of condition/transition pairs with typed structure
-    branches: list[TypedDictConditionalBranch] = Field(
+    branches: list[dict[str, Any]] = Field(
         default=...,
         description="List of condition/transition pairs",
     )
 
-    # Transition configuration to apply if no conditions match
-    default_transition: TypedDictTransitionConfig | None = Field(
+    default_transition: dict[str, Any] | None = Field(
         default=None,
         description="Transition to apply if no conditions match",
     )

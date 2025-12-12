@@ -4,14 +4,10 @@ Detection Configuration Model.
 Overall configuration for sensitive information detection system.
 """
 
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
-
-from omnibase_core.models.security.model_security_summaries import (
-    ModelDetectionConfigSummary,
-    ModelDetectionFeatures,
-)
 
 
 class ModelDetectionConfiguration(BaseModel):
@@ -100,20 +96,20 @@ class ModelDetectionConfiguration(BaseModel):
         """Check if confidence meets global threshold."""
         return confidence >= self.global_confidence_threshold
 
-    def get_summary(self) -> ModelDetectionConfigSummary:
+    def get_summary(self) -> dict[str, Any]:
         """Get configuration summary."""
-        return ModelDetectionConfigSummary(
-            config_id=self.config_id,
-            config_name=self.config_name,
-            enabled_rulesets_count=len(self.enabled_rulesets),
-            global_confidence_threshold=self.global_confidence_threshold,
-            max_document_size_mb=self.max_document_size_mb,
-            parallel_workers=self.parallel_processing_workers,
-            supported_file_types=self.supported_file_types,
-            features=ModelDetectionFeatures(
-                false_positive_reduction=self.enable_false_positive_reduction,
-                context_analysis=self.enable_context_analysis,
-                ml_detection=self.enable_ml_detection,
-                audit_logging=self.audit_logging_enabled,
-            ),
-        )
+        return {
+            "config_id": self.config_id,
+            "config_name": self.config_name,
+            "enabled_rulesets_count": len(self.enabled_rulesets),
+            "global_confidence_threshold": self.global_confidence_threshold,
+            "max_document_size_mb": self.max_document_size_mb,
+            "parallel_workers": self.parallel_processing_workers,
+            "supported_file_types": self.supported_file_types,
+            "features": {
+                "false_positive_reduction": self.enable_false_positive_reduction,
+                "context_analysis": self.enable_context_analysis,
+                "ml_detection": self.enable_ml_detection,
+                "audit_logging": self.audit_logging_enabled,
+            },
+        }

@@ -5,7 +5,6 @@ from collections.abc import Callable
 from typing import Any, TypeVar
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.types.typed_dict_mixin_types import TypedDictLazyCacheStats
 
 """
 Lazy Evaluation Mixin for Performance Optimization
@@ -146,31 +145,31 @@ class MixinLazyEvaluation:
                 if pattern in key:
                     lazy_val.invalidate()
 
-    def get_lazy_cache_stats(self) -> TypedDictLazyCacheStats:
+    def get_lazy_cache_stats(self) -> dict[str, Any]:
         """
         Get statistics about lazy cache usage.
 
         Returns:
-            Typed dictionary with cache statistics
+            Dictionary with cache statistics
         """
         total_entries = len(self._lazy_cache)
         computed_entries = sum(
             1 for lv in self._lazy_cache.values() if lv.is_computed()
         )
 
-        return TypedDictLazyCacheStats(
-            total_entries=total_entries,
-            computed_entries=computed_entries,
-            pending_entries=total_entries - computed_entries,
-            cache_hit_ratio=(
+        return {
+            "total_entries": total_entries,
+            "computed_entries": computed_entries,
+            "pending_entries": total_entries - computed_entries,
+            "cache_hit_ratio": (
                 computed_entries / total_entries if total_entries > 0 else 0.0
             ),
-            memory_efficiency=(
+            "memory_efficiency": (
                 f"{((total_entries - computed_entries) / total_entries * 100):.1f}%"
                 if total_entries > 0
                 else "0.0%"
             ),
-        )
+        }
 
 
 def lazy_cached(

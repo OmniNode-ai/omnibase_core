@@ -1,11 +1,8 @@
-from typing import TYPE_CHECKING
+from typing import Any
 
 from pydantic import Field
 
 from omnibase_core.enums.enum_impact_severity import EnumImpactSeverity
-
-if TYPE_CHECKING:
-    from omnibase_core.types.type_serializable_value import SerializedDict
 
 __all__ = [
     "EnumImpactSeverity",
@@ -140,7 +137,7 @@ class ModelBusinessImpact(BaseModel):
     model_config = ConfigDict()
 
     @classmethod
-    def from_dict(cls, data: "SerializedDict") -> "ModelBusinessImpact":
+    def from_dict(cls, data: dict[str, Any]) -> "ModelBusinessImpact":
         """Create from dictionary for easy migration."""
         return cls(**data)
 

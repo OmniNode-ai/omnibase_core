@@ -5,6 +5,7 @@ Comprehensive validator for node actions with security and trust scoring.
 """
 
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from omnibase_core.models.core.model_action_metadata import ModelActionMetadata
 from omnibase_core.models.core.model_action_payload_types import SpecificActionPayload
@@ -13,12 +14,6 @@ from omnibase_core.models.core.model_action_validation_result import (
 )
 from omnibase_core.models.core.model_node_action import ModelNodeAction
 from omnibase_core.models.core.model_node_action_type import ModelNodeActionType
-from omnibase_core.types.typed_dict_action_validation_context import (
-    TypedDictActionValidationContext,
-)
-from omnibase_core.types.typed_dict_action_validation_statistics import (
-    TypedDictActionValidationStatistics,
-)
 from omnibase_core.utils.util_hash import deterministic_hash
 
 
@@ -55,7 +50,7 @@ class ModelNodeActionValidator:
         action: ModelNodeAction,
         payload: SpecificActionPayload | None = None,
         metadata: ModelActionMetadata | None = None,
-        context: TypedDictActionValidationContext | None = None,
+        context: dict[str, Any] | None = None,
         use_cache: bool = True,
     ) -> ModelActionValidationResult:
         """
@@ -121,7 +116,7 @@ class ModelNodeActionValidator:
         action: ModelNodeAction,
         payload: SpecificActionPayload | None = None,
         metadata: ModelActionMetadata | None = None,
-        context: TypedDictActionValidationContext | None = None,
+        context: dict[str, Any] | None = None,
     ) -> ModelActionValidationResult:
         """Perform the actual validation logic."""
         result = ModelActionValidationResult(is_valid=True)
@@ -256,7 +251,7 @@ class ModelNodeActionValidator:
         action: ModelNodeAction,
         payload: SpecificActionPayload | None,
         metadata: ModelActionMetadata | None,
-        context: TypedDictActionValidationContext | None,
+        context: dict[str, Any] | None,
         result: ModelActionValidationResult,
     ) -> None:
         """Perform security validation checks."""
@@ -289,7 +284,7 @@ class ModelNodeActionValidator:
         action: ModelNodeAction,
         payload: SpecificActionPayload | None,
         metadata: ModelActionMetadata | None,
-        context: TypedDictActionValidationContext | None,
+        context: dict[str, Any] | None,
         result: ModelActionValidationResult,
     ) -> None:
         """Calculate a trust score for the action based on various factors."""
@@ -341,25 +336,25 @@ class ModelNodeActionValidator:
 
         return True, []
 
-    def get_validation_statistics(self) -> TypedDictActionValidationStatistics:
+    def get_validation_statistics(self) -> dict[str, Any]:
         """Get statistics about validation history."""
         if not self.validation_history:
-            return TypedDictActionValidationStatistics(total_validations=0)
+            return {"total_validations": 0}
 
         total = len(self.validation_history)
         valid_count = sum(1 for r in self.validation_history if r.is_valid)
         avg_trust_score = sum(r.trust_score for r in self.validation_history) / total
 
-        return TypedDictActionValidationStatistics(
-            total_validations=total,
-            valid_actions=valid_count,
-            invalid_actions=total - valid_count,
-            success_rate=valid_count / total,
-            average_trust_score=avg_trust_score,
-            recent_validations=(
+        return {
+            "total_validations": total,
+            "valid_actions": valid_count,
+            "invalid_actions": total - valid_count,
+            "success_rate": valid_count / total,
+            "average_trust_score": avg_trust_score,
+            "recent_validations": (
                 self.validation_history[-10:] if total > 10 else self.validation_history
             ),
-        )
+        }
 
 
 def create_node_validator(

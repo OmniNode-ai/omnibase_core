@@ -31,8 +31,7 @@ import time
 from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
-from typing import Any
-from uuid import UUID, uuid4
+from typing import TYPE_CHECKING, Any
 
 from omnibase_core.constants.event_types import TOOL_INVOCATION
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -49,7 +48,11 @@ from omnibase_core.models.discovery.model_tool_response_event import (
     ModelToolResponseEvent,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.types import TypedDictSerializedResult, TypedDictServiceHealth
+
+if TYPE_CHECKING:
+    from uuid import UUID
+
+from uuid import uuid4
 
 # Component identifier for logging
 _COMPONENT_NAME = Path(__file__).stem
@@ -315,7 +318,7 @@ class MixinNodeService:
             # Remove from active invocations
             self._active_invocations.discard(correlation_id)
 
-    def get_service_health(self) -> TypedDictServiceHealth:
+    def get_service_health(self) -> dict[str, Any]:
         """
         Get current service health status.
 
@@ -326,26 +329,26 @@ class MixinNodeService:
         if self._start_time:
             uptime_seconds = int(time.time() - self._start_time)
 
-        return TypedDictServiceHealth(
-            status=(
+        return {
+            "status": (
                 "healthy"
                 if self._service_running and not self._shutdown_requested
                 else "unhealthy"
             ),
-            uptime_seconds=uptime_seconds,
-            active_invocations=len(self._active_invocations),
-            total_invocations=self._total_invocations,
-            successful_invocations=self._successful_invocations,
-            failed_invocations=self._failed_invocations,
-            success_rate=(
+            "uptime_seconds": uptime_seconds,
+            "active_invocations": len(self._active_invocations),
+            "total_invocations": self._total_invocations,
+            "successful_invocations": self._successful_invocations,
+            "failed_invocations": self._failed_invocations,
+            "success_rate": (
                 self._successful_invocations / self._total_invocations
                 if self._total_invocations > 0
                 else 1.0
             ),
-            node_id=getattr(self, "_node_id", "unknown"),
-            node_name=self._extract_node_name(),
-            shutdown_requested=self._shutdown_requested,
-        )
+            "node_id": getattr(self, "_node_id", "unknown"),
+            "node_name": self._extract_node_name(),
+            "shutdown_requested": self._shutdown_requested,
+        }
 
     def add_shutdown_callback(self, callback: Callable[[], None]) -> None:
         """
@@ -484,12 +487,12 @@ class MixinNodeService:
 
         if input_state_class:
             # Create input state with action and parameters
-            params_dict: dict[str, object] = (
+            params_dict: dict[str, Any] = (
                 event.parameters.get_parameter_dict()
                 if hasattr(event.parameters, "get_parameter_dict")
                 else event.parameters  # type: ignore[assignment]
             )
-            state_data: dict[str, object] = {"action": event.action, **params_dict}
+            state_data = {"action": event.action, **params_dict}
             return input_state_class(**state_data)
         # Fallback to generic state object
         from types import SimpleNamespace
@@ -539,7 +542,7 @@ class MixinNodeService:
             input_state,
         )
 
-    def _serialize_result(self, result: object) -> dict[str, object]:
+    def _serialize_result(self, result: Any) -> dict[str, Any]:
         """Serialize the execution result to a dictionary."""
         # None results are not allowed - raise validation error
         if result is None:
@@ -550,11 +553,11 @@ class MixinNodeService:
 
         if hasattr(result, "model_dump"):
             # Pydantic v2 model - use mode='json' for JSON-serializable output
-            serialized: dict[str, object] = result.model_dump(mode="json")
+            serialized: dict[str, Any] = result.model_dump(mode="json")
             return serialized
         if hasattr(result, "__dict__"):
             # Regular object
-            obj_dict: dict[str, object] = result.__dict__
+            obj_dict: dict[str, Any] = result.__dict__
             return obj_dict
         if isinstance(result, dict):
             return result

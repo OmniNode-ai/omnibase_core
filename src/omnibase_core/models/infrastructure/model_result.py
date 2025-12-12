@@ -15,15 +15,11 @@ success/error handling with proper MyPy compliance.
 """
 
 
-from typing import cast
+from typing import Any, cast
 
 from pydantic import BaseModel, field_serializer
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.types.type_serializable_value import (
-    SerializableValue,
-    SerializedDict,
-)
 
 # Type variables for mapped types in transformations (still needed for methods)
 U = TypeVar("U")  # Mapped type for transformations
@@ -52,42 +48,37 @@ class ModelResult[T, E](
     }
 
     @field_serializer("error")
-    def serialize_error(self, error: E | None) -> SerializableValue:
+    def serialize_error(self, error: Any) -> Any:
         """Convert Exception types to string for serialization."""
         if isinstance(error, Exception):
             return str(error)
-        # Return as SerializableValue - Pydantic will handle the conversion
-        if isinstance(error, (str, int, float, bool, type(None))):
-            return error
-        if error is None:
-            return None
-        return str(error)
+        return error
 
     @field_validator("error", mode="before")
     @classmethod
-    def validate_error(cls, v: E | None) -> E | None:
+    def validate_error(cls, v: Any) -> Any:
         """Pre-process Exception types before Pydantic validation."""
         if isinstance(v, Exception):
-            return cast("E | None", str(v))
+            return str(v)
         return v
 
     @field_validator("value", mode="before")
     @classmethod
-    def validate_value(cls, v: T | None) -> T | None:
+    def validate_value(cls, v: Any) -> Any:
         """Pre-process Exception types in value field before Pydantic validation."""
         if isinstance(v, Exception):
-            return cast("T | None", str(v))
+            return str(v)
         return v
 
     success: bool = Field(default=..., description="Whether the operation succeeded")
-    value: T | None = Field(default=None, description="Success value (if success=True)")
-    error: E | None = Field(default=None, description="Error value (if success=False)")
+    value: Any = Field(default=None, description="Success value (if success=True)")
+    error: Any = Field(default=None, description="Error value (if success=False)")
 
     def __init__(
         self,
         success: bool,
-        value: T | None = None,
-        error: E | None = None,
+        value: Any = None,
+        error: Any = None,
         **data: object,
     ) -> None:
         """Initialize Result with type validation."""
@@ -327,7 +318,7 @@ class ModelResult[T, E](
 
     # Protocol method implementations
 
-    def execute(self, **kwargs: object) -> bool:
+    def execute(self, **kwargs: Any) -> bool:
         """Execute or update execution status (Executable protocol)."""
         try:
             # Update any relevant execution fields
@@ -341,7 +332,7 @@ class ModelResult[T, E](
                 message=f"Operation failed: {e}",
             ) from e
 
-    def configure(self, **kwargs: object) -> bool:
+    def configure(self, **kwargs: Any) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
         try:
             for key, value in kwargs.items():
@@ -354,7 +345,7 @@ class ModelResult[T, E](
                 message=f"Operation failed: {e}",
             ) from e
 
-    def serialize(self) -> SerializedDict:
+    def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

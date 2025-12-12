@@ -4,7 +4,7 @@ Additional metadata for execution priorities with ONEX compliance and validation
 """
 
 from datetime import UTC, datetime
-from typing import Self
+from typing import Any, Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -16,28 +16,6 @@ from omnibase_core.models.configuration.model_notification_settings import (
     ModelNotificationSettings,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
-
-class ModelPriorityMetadataSummary(BaseModel):
-    """Summary of priority metadata."""
-
-    owner: str | None = Field(default=None, description="Owner of the priority")
-    approval_required: bool = Field(
-        default=False, description="Whether approval is required"
-    )
-    approved_users_count: int = Field(
-        default=0, description="Number of approved users"
-    )
-    approved_groups_count: int = Field(
-        default=0, description="Number of approved groups"
-    )
-    tags_count: int = Field(default=0, description="Number of tags")
-    has_sla: bool = Field(default=False, description="Whether SLA is defined")
-    has_cost: bool = Field(default=False, description="Whether cost is defined")
-    has_usage_limit: bool = Field(
-        default=False, description="Whether usage limit is defined"
-    )
-    age_days: float = Field(default=0.0, description="Age in days since creation")
 
 
 class ModelPriorityMetadata(BaseModel):
@@ -475,19 +453,19 @@ class ModelPriorityMetadata(BaseModel):
 
     # === Utility Methods ===
 
-    def get_summary(self) -> "ModelPriorityMetadataSummary":
+    def get_summary(self) -> dict[str, Any]:
         """Get a summary of priority metadata."""
-        return ModelPriorityMetadataSummary(
-            owner=self.owner,
-            approval_required=self.approval_required,
-            approved_users_count=len(self.approved_users),
-            approved_groups_count=len(self.approved_groups),
-            tags_count=len(self.tags),
-            has_sla=self.sla_requirements is not None,
-            has_cost=self.cost_per_hour is not None,
-            has_usage_limit=self.max_daily_usage is not None,
-            age_days=self.get_age_days(),
-        )
+        return {
+            "owner": self.owner,
+            "approval_required": self.approval_required,
+            "approved_users_count": len(self.approved_users),
+            "approved_groups_count": len(self.approved_groups),
+            "tags_count": len(self.tags),
+            "has_sla": self.sla_requirements is not None,
+            "has_cost": self.cost_per_hour is not None,
+            "has_usage_limit": self.max_daily_usage is not None,
+            "age_days": self.get_age_days(),
+        }
 
     def copy_with_modifications(
         self,

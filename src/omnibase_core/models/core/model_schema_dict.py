@@ -5,23 +5,23 @@ from pydantic import Field
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 """
-Model for representing schema dictionaries with proper type safety.
+Model for representing schema dict[str, Any]ionaries with proper type safety.
 
 This model replaces dictionary usage in schema definitions by providing
-a structured representation of schema dictionaries.
+a structured representation of schema dict[str, Any]ionaries.
 """
 
-from collections.abc import Mapping
+from typing import Any
 
 from pydantic import BaseModel
 
 
 class ModelSchemaDict(BaseModel):
     """
-    Type-safe representation of schema dictionaries.
+    Type-safe representation of schema dict[str, Any]ionaries.
 
     This model represents JSON Schema objects as structured data without
-    using untyped dictionaries.
+    using untyped dict[str, Any]ionaries.
     """
 
     # Core schema fields
@@ -141,7 +141,7 @@ class ModelSchemaDict(BaseModel):
         description="Additional schema fields",
     )
 
-    def to_dict(self) -> dict[str, object]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert to standard dictionary format.
 
@@ -149,7 +149,7 @@ class ModelSchemaDict(BaseModel):
             Dictionary representation
         """
         # Custom reconstruction logic for schema dictionary format
-        result: dict[str, object] = {}
+        result: dict[str, Any] = {}
 
         # Add core fields
         if self.type is not None:
@@ -236,7 +236,7 @@ class ModelSchemaDict(BaseModel):
         return result
 
     @classmethod
-    def from_dict(cls, data: Mapping[str, object]) -> "ModelSchemaDict":
+    def from_dict(cls, data: dict[str, Any]) -> "ModelSchemaDict":
         """
         Create from dictionary.
 
@@ -279,8 +279,8 @@ class ModelSchemaDict(BaseModel):
         }
 
         # Build kwargs
-        kwargs: dict[str, object] = {}
-        additional_fields: dict[str, ModelSchemaValue] = {}
+        kwargs: dict[str, Any] = {}
+        additional_fields: dict[str, Any] = {}
 
         for key, value in data.items():
             if key == "items" and isinstance(value, dict):
@@ -330,5 +330,4 @@ class ModelSchemaDict(BaseModel):
                 additional_fields[key] = ModelSchemaValue.from_value(value)
 
         kwargs["additional_fields"] = additional_fields
-        # Pydantic validates the data at runtime - type safety is enforced by Pydantic
-        return cls(**kwargs)  # type: ignore[arg-type]
+        return cls(**kwargs)

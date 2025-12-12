@@ -10,12 +10,9 @@ Type-safe parsed CLI arguments with validation results, command definition,
 and parsing metadata for complete argument handling.
 """
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from pydantic import BaseModel
-
-if TYPE_CHECKING:
-    from omnibase_core.types.type_serializable_value import SerializedDict
 
 from omnibase_core.models.core.model_argument_map import ModelArgumentMap
 from omnibase_core.models.core.model_cli_command_definition import (
@@ -23,9 +20,6 @@ from omnibase_core.models.core.model_cli_command_definition import (
 )
 from omnibase_core.models.core.model_node_reference import ModelNodeReference
 from omnibase_core.models.core.model_parse_metadata import ModelParseMetadata
-from omnibase_core.models.core.model_validation_summary import (
-    ModelValidationErrorSummary,
-)
 from omnibase_core.models.validation.model_validation_error import ModelValidationError
 
 
@@ -99,16 +93,16 @@ class ModelParsedArguments(BaseModel):
         """Check if there are critical validation errors."""
         return any(error.is_critical() for error in self.validation_errors)
 
-    def get_error_summary(self) -> ModelValidationErrorSummary:
+    def get_error_summary(self) -> dict[str, int]:
         """Get summary of validation issues."""
-        return ModelValidationErrorSummary(
-            errors=len(self.validation_errors),
-            warnings=len(self.validation_warnings),
-            critical_errors=len(
+        return {
+            "errors": len(self.validation_errors),
+            "warnings": len(self.validation_warnings),
+            "critical_errors": len(
                 [e for e in self.validation_errors if e.is_critical()],
             ),
-            total_issues=len(self.validation_errors) + len(self.validation_warnings),
-        )
+            "total_issues": len(self.validation_errors) + len(self.validation_warnings),
+        }
 
     def get_all_errors(self) -> list[ModelValidationError]:
         """Get all validation errors and warnings combined."""
@@ -141,19 +135,17 @@ class ModelParsedArguments(BaseModel):
             if error.is_critical():
                 self.parsed_successfully = False
 
-    def to_execution_dict(self) -> "SerializedDict":
+    def to_execution_dict(self) -> dict[str, Any]:
         """Convert to dictionary suitable for node execution."""
-        from omnibase_core.types.type_serializable_value import SerializedDict
-
         if not self.is_valid():
-            msg = "Cannot convert invalid arguments to execution dict"
+            msg = "Cannot convert invalid arguments to execution dict[str, Any]"
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=msg,
             )
 
         # Start with the argument map dictionary
-        result: SerializedDict = self.arguments.to_dict()  # type: ignore[assignment]
+        result = self.arguments.to_dict()
 
         # Add command metadata
         result["_command_name"] = self.command_definition.command_name

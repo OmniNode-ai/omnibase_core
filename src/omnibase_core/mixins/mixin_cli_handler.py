@@ -1,3 +1,7 @@
+from typing import Any
+
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
 """
 CLI Handler Mixin for ONEX Tool Nodes.
 
@@ -9,14 +13,11 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Any
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class MixinCLIHandler[InputStateT, OutputStateT]:
@@ -139,7 +140,7 @@ class MixinCLIHandler[InputStateT, OutputStateT]:
 
         return parser
 
-    def parse_input(self, args: argparse.Namespace) -> SerializedDict | None:
+    def parse_input(self, args: argparse.Namespace) -> dict[str, Any] | None:
         """Parse input from CLI arguments."""
         input_data = None
 
@@ -189,7 +190,7 @@ class MixinCLIHandler[InputStateT, OutputStateT]:
 
         return input_data
 
-    def _load_file(self, path: Path) -> SerializedDict:
+    def _load_file(self, path: Path) -> dict[str, Any]:
         """Load JSON or YAML file."""
         content = path.read_text()
 
@@ -323,7 +324,7 @@ class MixinCLIHandler[InputStateT, OutputStateT]:
                 pass
             return 1
 
-    def _create_input_state(self, data: SerializedDict) -> InputStateT:
+    def _create_input_state(self, data: dict[str, Any]) -> InputStateT:
         """Create input state from dictionary data."""
         from typing import cast
 

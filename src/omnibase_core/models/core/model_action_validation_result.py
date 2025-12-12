@@ -7,12 +7,9 @@ Result of action validation with detailed information.
 """
 
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel
-
-from omnibase_core.models.core.model_action_validation_metadata import (
-    ModelActionValidationMetadata,
-)
 
 
 class ModelActionValidationResult(BaseModel):
@@ -39,8 +36,8 @@ class ModelActionValidationResult(BaseModel):
         default_factory=list,
         description="Recommendations for improvement",
     )
-    metadata: ModelActionValidationMetadata = Field(
-        default_factory=ModelActionValidationMetadata,
+    metadata: dict[str, Any] = Field(
+        default_factory=dict,
         description="Additional validation metadata",
     )
     validated_at: datetime = Field(

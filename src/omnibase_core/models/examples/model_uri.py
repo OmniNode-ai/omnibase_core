@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
-
-from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelOnexUri(BaseModel):
@@ -29,7 +27,7 @@ class ModelOnexUri(BaseModel):
     )
     original: str = Field(default=..., description="Original URI string as provided")
 
-    def configure(self, **kwargs: object) -> bool:
+    def configure(self, **kwargs: Any) -> bool:
         """Configure instance with provided parameters (Configurable protocol).
 
         Raises:
@@ -41,7 +39,7 @@ class ModelOnexUri(BaseModel):
                 setattr(self, key, value)
         return True
 
-    def serialize(self) -> SerializedDict:
+    def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

@@ -4,15 +4,14 @@ Structured Computation Output Model.
 Structured data computation output with schema validation and transformation tracking.
 """
 
+from typing import Any
+
 from pydantic import Field
 
 from omnibase_core.enums.enum_computation_type import EnumComputationType
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.operations.model_computation_output_base import (
     ModelComputationOutputBase,
-)
-from omnibase_core.types.typed_dict_structured_computation_summary import (
-    TypedDictStructuredComputationSummary,
 )
 
 
@@ -88,13 +87,13 @@ class ModelStructuredComputationOutput(ModelComputationOutputBase):
         transformation_score = self.get_total_transformations() * 5
         return depth_score + transformation_score
 
-    def get_structured_summary(self) -> TypedDictStructuredComputationSummary:
+    def get_structured_summary(self) -> dict[str, Any]:
         """Get structured processing summary."""
-        return TypedDictStructuredComputationSummary(
-            result_count=len(self.structured_results),
-            schema_valid=self.is_schema_valid(),
-            validation_status=self.schema_validation_status,
-            nested_depth=self.nested_structure_depth,
-            total_transformations=self.get_total_transformations(),
-            complexity_score=self.get_complexity_score(),
-        )
+        return {
+            "result_count": len(self.structured_results),
+            "schema_valid": self.is_schema_valid(),
+            "validation_status": self.schema_validation_status,
+            "nested_depth": self.nested_structure_depth,
+            "total_transformations": self.get_total_transformations(),
+            "complexity_score": self.get_complexity_score(),
+        }

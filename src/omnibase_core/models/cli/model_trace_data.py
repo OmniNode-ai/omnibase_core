@@ -8,11 +8,10 @@ with proper typing and validation.
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
-
-from omnibase_core.types.type_serializable_value import SerializedDict
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -44,7 +43,7 @@ class ModelTraceData(BaseModel):
 
     # Utility methods
 
-    def serialize(self) -> SerializedDict:
+    def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

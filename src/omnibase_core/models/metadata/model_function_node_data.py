@@ -25,7 +25,6 @@ from omnibase_core.enums.enum_node_type import EnumNodeType
 from omnibase_core.enums.enum_standard_category import EnumStandardCategory
 from omnibase_core.enums.enum_standard_tag import EnumStandardTag
 from omnibase_core.models.infrastructure.model_value import ModelValue
-from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
 from .model_nested_configuration import ModelNestedConfiguration
 from .model_structured_description import ModelStructuredDescription
@@ -249,7 +248,7 @@ class ModelFunctionNodeData(BaseModel):
 
     # Protocol method implementations
 
-    def get_metadata(self) -> TypedDictMetadataDict:
+    def get_metadata(self) -> dict[str, Any]:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
@@ -260,9 +259,9 @@ class ModelFunctionNodeData(BaseModel):
                     metadata[field] = (
                         str(value) if not isinstance(value, (dict, list)) else value
                     )
-        return metadata  # type: ignore[return-value]
+        return metadata
 
-    def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
+    def set_metadata(self, metadata: dict[str, Any]) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
@@ -275,7 +274,7 @@ class ModelFunctionNodeData(BaseModel):
                 message=f"Operation failed: {e}",
             ) from e
 
-    def serialize(self) -> TypedDictSerializedModel:
+    def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

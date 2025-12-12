@@ -28,11 +28,6 @@ from omnibase_core.protocols import ProtocolEventBus
 if TYPE_CHECKING:
     from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
     from omnibase_core.protocols import ProtocolEventMessage
-    from omnibase_core.types.type_serializable_value import SerializedDict
-    from omnibase_core.types.typed_dict_mixin_types import (
-        TypedDictDiscoveryExtendedStats,
-        TypedDictFilterCriteria,
-    )
 
 
 class MixinDiscoveryResponder:
@@ -340,16 +335,14 @@ class MixinDiscoveryResponder:
 
         return True
 
-    def _matches_custom_criteria(
-        self, filter_criteria: "TypedDictFilterCriteria"
-    ) -> bool:
+    def _matches_custom_criteria(self, filter_criteria: dict[str, Any]) -> bool:
         """
         Check custom filter criteria.
 
         Override this method in subclasses for custom filtering logic.
 
         Args:
-            filter_criteria: Custom filter criteria (TypedDictFilterCriteria with optional fields)
+            filter_criteria: Custom filter criteria (dict[str, Any] required for flexible structure)
 
         Returns:
             bool: True if node matches criteria, False otherwise
@@ -418,7 +411,7 @@ class MixinDiscoveryResponder:
             response_metadata = ModelDiscoveryResponseModelMetadata(
                 request_id=request.request_id,
                 node_id=node_id_value,
-                introspection=introspection_data,  # type: ignore[arg-type]
+                introspection=introspection_data,
                 health_status=self.get_health_status(),
                 capabilities=self.get_discovery_capabilities(),
                 node_type=(
@@ -436,7 +429,7 @@ class MixinDiscoveryResponder:
                 event_type=create_event_type_from_registry("DISCOVERY_RESPONSE"),
                 node_id=node_id_value,
                 correlation_id=original_event.correlation_id,
-                data=response_metadata.model_dump(),  # type: ignore[arg-type]
+                data=response_metadata.model_dump(),
             )
 
             # Publish response (assuming we have access to event bus)
@@ -490,20 +483,18 @@ class MixinDiscoveryResponder:
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
             ) from e
 
-    def _get_discovery_introspection(self) -> "SerializedDict":
+    def _get_discovery_introspection(self) -> dict[str, Any]:
         """
         Get introspection data for discovery response.
 
         STRICT: Node must implement get_introspection_response() method.
 
         Returns:
-            SerializedDict: Node introspection data (serialized model output)
+            dict[str, Any]: Node introspection data (dict[str, Any] required for flexible structure)
 
         Raises:
             ModelOnexError: If get_introspection_response() method is missing
         """
-        from omnibase_core.types.type_serializable_value import SerializedDict
-
         if not hasattr(self, "get_introspection_response"):
             raise ModelOnexError(
                 message="Node must implement 'get_introspection_response()' method for discovery",
@@ -512,7 +503,7 @@ class MixinDiscoveryResponder:
             )
 
         introspection_response = self.get_introspection_response()
-        result: SerializedDict = introspection_response.model_dump()
+        result: dict[str, Any] = introspection_response.model_dump()
         return result
 
     def get_discovery_capabilities(self) -> list[str]:
@@ -617,28 +608,19 @@ class MixinDiscoveryResponder:
         result: dict[str, list[str]] = channels.model_dump()
         return result
 
-    def get_discovery_stats(self) -> "TypedDictDiscoveryExtendedStats":
+    def get_discovery_stats(self) -> dict[str, Any]:
         """
         Get discovery responder statistics.
 
         Returns:
-            TypedDictDiscoveryExtendedStats: Discovery statistics with extended status
+            dict[str, Any]: Discovery statistics (dict[str, Any] required for flexible structure)
         """
-        from omnibase_core.types.typed_dict_mixin_types import (
-            TypedDictDiscoveryExtendedStats,
-        )
-
-        return TypedDictDiscoveryExtendedStats(
-            requests_received=self._discovery_stats["requests_received"],
-            responses_sent=self._discovery_stats["responses_sent"],
-            throttled_requests=self._discovery_stats["throttled_requests"],
-            filtered_requests=self._discovery_stats["filtered_requests"],
-            last_request_time=self._discovery_stats["last_request_time"],
-            error_count=self._discovery_stats["error_count"],
-            active=self._discovery_active,
-            throttle_seconds=self._response_throttle,
-            last_response_time=self._last_response_time,
-        )
+        return {
+            **self._discovery_stats,
+            "active": self._discovery_active,
+            "throttle_seconds": self._response_throttle,
+            "last_response_time": self._last_response_time,
+        }
 
     def reset_discovery_stats(self) -> None:
         """

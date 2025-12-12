@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Callable
-from typing import Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -124,7 +124,7 @@ class ModelOptionalInt(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def coerce_float_to_int(cls, data: object) -> dict[str, object]:
+    def coerce_float_to_int(cls, data: Any) -> dict[str, Any]:
         """
         Validate and coerce value to optional integer.
 
@@ -135,7 +135,7 @@ class ModelOptionalInt(BaseModel):
             data: Input data (dict or value)
 
         Returns:
-            dict[str, object]: Validated data with coerced value
+            dict[str, Any]: Validated data with coerced value
 
         Raises:
             ModelOnexError: If value is invalid or coercion fails
@@ -145,7 +145,7 @@ class ModelOptionalInt(BaseModel):
             data = {"value": data}
 
         # Type narrowing for mypy strict mode
-        validated_data: dict[str, object] = data
+        validated_data: dict[str, Any] = data
 
         # Get value and coercion mode
         v = validated_data.get("value")
@@ -160,7 +160,7 @@ class ModelOptionalInt(BaseModel):
             except ValueError:
                 coercion_mode = EnumCoercionMode.STRICT
         else:
-            coercion_mode = coercion_mode_value  # type: ignore[assignment]
+            coercion_mode = coercion_mode_value
 
         # Handle None - no coercion needed
         if v is None:
@@ -397,12 +397,12 @@ class ModelOptionalInt(BaseModel):
             metadata=self.metadata.copy(),
         )
 
-    def as_dict(self) -> dict[str, object]:
+    def as_dict(self) -> dict[str, Any]:
         """
         Convert to dictionary representation.
 
         Returns:
-            dict[str, object]: Dictionary with value, coercion_mode, and metadata
+            dict[str, Any]: Dictionary with value, coercion_mode, and metadata
 
         Examples:
             >>> value = ModelOptionalInt(value=42)

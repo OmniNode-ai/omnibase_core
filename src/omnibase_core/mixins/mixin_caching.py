@@ -24,8 +24,6 @@ import hashlib
 import json
 from typing import Any
 
-from omnibase_core.types.typed_dict_mixin_types import TypedDictCacheStats
-
 
 class MixinCaching:
     """
@@ -37,15 +35,14 @@ class MixinCaching:
 
     Attributes:
         _cache_enabled: Whether caching is enabled
-        _cache_data: In-memory cache storage (stub) - stores serializable values
+        _cache_data: In-memory cache storage (stub)
     """
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize caching mixin."""
         super().__init__(*args, **kwargs)
         self._cache_enabled = True
-        # Cache stores arbitrary serializable values - use object for type flexibility
-        self._cache_data: dict[str, object] = {}
+        self._cache_data: dict[str, Any] = {}
 
     def generate_cache_key(self, data: Any) -> str:
         """
@@ -111,15 +108,15 @@ class MixinCaching:
         """Clear all cache entries."""
         self._cache_data.clear()
 
-    def get_cache_stats(self) -> TypedDictCacheStats:
+    def get_cache_stats(self) -> dict[str, Any]:
         """
         Get cache statistics.
 
         Returns:
-            Typed dictionary with cache statistics
+            Dictionary with cache statistics
         """
-        return TypedDictCacheStats(
-            enabled=self._cache_enabled,
-            entries=len(self._cache_data),
-            keys=list(self._cache_data.keys()),
-        )
+        return {
+            "enabled": self._cache_enabled,
+            "entries": len(self._cache_data),
+            "keys": list(self._cache_data.keys()),
+        }

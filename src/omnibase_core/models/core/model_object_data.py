@@ -1,14 +1,14 @@
 """Centralized ModelObjectData implementation."""
 
-from pydantic import BaseModel, Field
+from typing import Any
 
-from omnibase_core.types.type_serializable_value import SerializedDict
+from pydantic import BaseModel, Field
 
 
 class ModelObjectData(BaseModel):
     """Generic objectdata model for common use."""
 
-    data: SerializedDict | None = Field(
+    data: dict[str, Any] | None = Field(
         default_factory=dict,
         description="Arbitrary object data for flexible field content",
     )

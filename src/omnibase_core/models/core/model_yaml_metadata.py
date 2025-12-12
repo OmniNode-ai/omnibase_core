@@ -1,11 +1,8 @@
-from typing import TYPE_CHECKING
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-
-if TYPE_CHECKING:
-    from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelYamlMetadata(BaseModel):
@@ -14,7 +11,7 @@ class ModelYamlMetadata(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     # Common metadata patterns
-    metadata: "SerializedDict | None" = Field(
+    metadata: dict[str, Any] | None = Field(
         default=None, description="Metadata section"
     )
     title: str | None = Field(default=None, description="Optional title")

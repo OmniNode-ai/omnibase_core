@@ -10,13 +10,8 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.service.model_custom_fields import ModelCustomFields
-from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 
-@allow_dict_str_any(
-    "Workflow outputs output_data field requires dict[str, Any] for "
-    "flexible workflow-specific result data and custom output formats."
-)
 class ModelWorkflowOutputs(BaseModel):
     """
     Type-safe workflow outputs.

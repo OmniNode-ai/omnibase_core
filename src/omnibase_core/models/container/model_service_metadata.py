@@ -1,19 +1,14 @@
 """Service metadata model - implements ProtocolServiceRegistrationMetadata."""
 
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.types.type_serializable_value import SerializedDict
-from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 
-@allow_dict_str_any(
-    "Service metadata configuration requires flexible dict for service-specific "
-    "settings that vary across implementations (e.g., connection pooling, timeouts)."
-)
 class ModelServiceMetadata(BaseModel):
     """
     Service registration metadata.
@@ -66,7 +61,7 @@ class ModelServiceMetadata(BaseModel):
         default_factory=list,
         description="Service tags for categorization",
     )
-    configuration: SerializedDict = Field(
+    configuration: dict[str, Any] = Field(
         default_factory=dict,
         description="Additional configuration",
     )

@@ -7,11 +7,8 @@ ModelWorkflowDefinition.
 Typing: Strongly typed with strategic Any usage for mixin kwargs and configuration dicts.
 """
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 from uuid import UUID
-
-if TYPE_CHECKING:
-    from omnibase_core.types.typed_dict_mixin_types import TypedDictWorkflowStepConfig
 
 from omnibase_core.enums.enum_workflow_execution import EnumExecutionMode
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
@@ -150,7 +147,7 @@ class MixinWorkflowExecution:
 
     def create_workflow_steps_from_config(
         self,
-        steps_config: list["TypedDictWorkflowStepConfig"],
+        steps_config: list[dict[str, Any]],
     ) -> list[ModelWorkflowStep]:
         """
         Create ModelWorkflowStep instances from configuration dictionaries.
@@ -165,26 +162,23 @@ class MixinWorkflowExecution:
 
         Example:
             steps_config = [
-                TypedDictWorkflowStepConfig(
-                    step_name="Fetch Data",
-                    step_type="effect",
-                    timeout_ms=10000,
-                ),
-                TypedDictWorkflowStepConfig(
-                    step_name="Process Data",
-                    step_type="compute",
-                    depends_on=[...],
-                ),
+                {
+                    "step_name": "Fetch Data",
+                    "step_type": "effect",
+                    "timeout_ms": 10000,
+                },
+                {
+                    "step_name": "Process Data",
+                    "step_type": "compute",
+                    "depends_on": [...],
+                },
             ]
             steps = self.create_workflow_steps_from_config(steps_config)
         """
-        from omnibase_core.types.typed_dict_mixin_types import TypedDictWorkflowStepConfig
-
         workflow_steps: list[ModelWorkflowStep] = []
 
         for step_config in steps_config:
-            # TypedDict is compatible with ** unpacking
-            step = ModelWorkflowStep(**step_config)  # type: ignore[arg-type]
+            step = ModelWorkflowStep(**step_config)
             workflow_steps.append(step)
 
         return workflow_steps

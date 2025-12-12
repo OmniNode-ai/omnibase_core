@@ -4,7 +4,7 @@ Connection metrics model for network performance tracking.
 
 from __future__ import annotations
 
-from omnibase_core.types import SerializedDict
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -69,7 +69,7 @@ class ModelConnectionMetrics(BaseModel):
 
     # Protocol method implementations
 
-    def configure(self, **kwargs: object) -> bool:
+    def configure(self, **kwargs: Any) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
         try:
             for key, value in kwargs.items():
@@ -88,6 +88,6 @@ class ModelConnectionMetrics(BaseModel):
         # Override in specific models for custom validation
         return True
 
-    def serialize(self) -> SerializedDict:
+    def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)

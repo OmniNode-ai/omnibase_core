@@ -1,15 +1,12 @@
+from typing import Any
+
+from pydantic import BaseModel, Field
+
 """
 ModelMaskData: Structured data model for masking operations.
 
 This model provides strongly typed data masking without using Any types.
 """
-
-from pydantic import BaseModel, Field
-
-from omnibase_core.types.type_serializable_value import (
-    SerializableValue,
-    SerializedDict,
-)
 
 
 class ModelMaskData(BaseModel):
@@ -36,10 +33,11 @@ class ModelMaskData(BaseModel):
         description="Nested data structures",
     )
 
-    def to_dict(self) -> SerializedDict:
+    # union-ok: mask_value - domain-specific masking types (no float/None, list[str] not list[Any])
+    def to_dict(self) -> dict[str, str | int | bool | list[str] | dict[str, Any]]:
         """Convert to a dictionary representation."""
         # Custom flattening logic with recursive nested data handling
-        result: dict[str, SerializableValue] = {}
+        result: dict[str, str | int | bool | list[str] | dict[str, Any]] = {}
         result.update(self.string_data)
         result.update(self.integer_data)
         result.update(self.boolean_data)
@@ -52,7 +50,7 @@ class ModelMaskData(BaseModel):
     @classmethod
     def from_dict(
         cls,
-        data: SerializedDict,
+        data: dict[str, str | int | bool | list[str] | dict[str, Any]],
     ) -> "ModelMaskData":
         """Create from a dictionary."""
         string_data: dict[str, str] = {}

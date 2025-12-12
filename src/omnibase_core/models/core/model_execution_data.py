@@ -7,9 +7,9 @@ Contains detailed execution information including results, errors,
 performance metrics, and node-specific artifacts.
 """
 
-from pydantic import BaseModel
+from typing import Any
 
-from omnibase_core.types.type_serializable_value import SerializedDict
+from pydantic import BaseModel
 
 
 class ModelExecutionData(BaseModel):
@@ -30,7 +30,7 @@ class ModelExecutionData(BaseModel):
     output_text: str | None = Field(
         default=None, description="Text output from execution"
     )
-    output_json: SerializedDict | None = Field(
+    output_json: dict[str, Any] | None = Field(
         default=None,
         description="Structured JSON output",
     )

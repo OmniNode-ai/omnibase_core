@@ -13,7 +13,7 @@ and runtime imports in validators that need to raise errors.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
@@ -177,7 +177,7 @@ class ModelNumericValue(BaseModel):
 
     # Protocol method implementations
 
-    def serialize(self) -> dict[str, object]:
+    def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

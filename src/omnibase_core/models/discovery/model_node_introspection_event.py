@@ -1,3 +1,10 @@
+from pydantic import Field
+
+__all__ = [
+    "ModelNodeCapabilities",
+    "ModelNodeIntrospectionEvent",
+]
+
 """
 Node Introspection Event Model
 
@@ -5,18 +12,11 @@ Event published by nodes on startup to announce their capabilities to the regist
 This enables pure event-driven service discovery.
 """
 
-from pydantic import BaseModel, Field
+from typing import Any
 
-from omnibase_core.models.common.model_typed_metadata import (
-    ModelNodeCapabilitiesMetadata,
-)
+from pydantic import BaseModel
 
 from .model_nodeintrospectionevent import ModelNodeIntrospectionEvent
-
-__all__ = [
-    "ModelNodeCapabilities",
-    "ModelNodeIntrospectionEvent",
-]
 
 
 class ModelNodeCapabilities(BaseModel):
@@ -30,7 +30,7 @@ class ModelNodeCapabilities(BaseModel):
         default_factory=list,
         description="List of protocols this node supports (mcp, graphql, event_bus)",
     )
-    metadata: ModelNodeCapabilitiesMetadata = Field(
-        default_factory=ModelNodeCapabilitiesMetadata,
+    metadata: dict[str, Any] = Field(
+        default_factory=dict,
         description="Additional node metadata (author, trust_score, etc.)",
     )

@@ -12,6 +12,7 @@ serialization, and schema generation capabilities.
 """
 
 from datetime import UTC
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
@@ -67,9 +68,9 @@ class ModelOnexWarning(BaseModel):
         description="Timestamp when the warning occurred",
         json_schema_extra={"example": "2025-05-25T22:30:00Z"},
     )
-    context: dict[str, object] = Field(
+    context: dict[str, Any] = Field(
         default_factory=dict,
-        description="Additional context information for the warning (JSON-serializable values)",
+        description="Additional context information for the warning",
         json_schema_extra={"example": {"file_path": "/path/to/config.yaml"}},
     )
 

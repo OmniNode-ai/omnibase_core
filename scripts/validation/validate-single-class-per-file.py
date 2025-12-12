@@ -147,16 +147,6 @@ def should_exclude_file(filepath: Path) -> bool:
     if filepath.name == "singleton_holders.py":
         return True
 
-    # Exclude legacy files with multiple summary models
-    # These are pre-existing and will be refactored in a separate PR
-    legacy_multi_class_files = {
-        "model_security_summaries.py",  # 18+ security summary models
-        "model_database_secure_config.py",  # Database config with nested models
-        "model_service_registry_config.py",  # Service config models
-    }
-    if filepath.name in legacy_multi_class_files:
-        return True
-
     return False
 
 

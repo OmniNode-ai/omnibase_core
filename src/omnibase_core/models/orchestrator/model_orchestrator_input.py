@@ -57,13 +57,8 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_workflow_execution import EnumExecutionMode
-from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 
-@allow_dict_str_any(
-    "Orchestrator input requires flexible metadata and step configurations "
-    "for workflow-specific context and dynamic step parameters."
-)
 class ModelOrchestratorInput(BaseModel):
     """
     Input model for NodeOrchestrator operations.

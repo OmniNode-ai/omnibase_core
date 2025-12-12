@@ -1,6 +1,7 @@
+from typing import Any
+
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.types.type_serializable_value import SerializedDict
 
 """
 ONEX Secret Management Models and Utilities.
@@ -66,7 +67,7 @@ def create_secret_manager_for_environment(
     )
 
 
-def validate_secret_configuration(config_type: str, **kwargs: object) -> SerializedDict:
+def validate_secret_configuration(config_type: str, **kwargs: Any) -> dict[str, Any]:
     """
     Validate secret configuration for specific type.
 
@@ -83,7 +84,7 @@ def validate_secret_configuration(config_type: str, **kwargs: object) -> Seriali
                 ModelDatabaseSecureConfig,
             )
 
-            config = ModelDatabaseSecureConfig(**kwargs)  # type: ignore[arg-type]
+            config = ModelDatabaseSecureConfig(**kwargs)
             result = config.validate_credentials()
             # Convert Pydantic model to dict
             return result.model_dump()
@@ -94,8 +95,8 @@ def validate_secret_configuration(config_type: str, **kwargs: object) -> Seriali
 
     elif config_type == "backend":
         try:
-            backend = ModelSecretBackend(**kwargs)  # type: ignore[arg-type]
-            return {"is_valid": True, "backend": backend.model_dump()}
+            backend = ModelSecretBackend(**kwargs)
+            return {"is_valid": True, "backend": backend}
         except (
             Exception
         ) as e:  # fallback-ok: validation returns structured error dict, caller handles
@@ -106,8 +107,8 @@ def validate_secret_configuration(config_type: str, **kwargs: object) -> Seriali
 
 
 def get_security_recommendations(
-    config_type: str, config_dict: SerializedDict
-) -> list[str]:
+    config_type: str, config_dict: dict[str, Any]
+) -> list[Any]:
     """
     Get security recommendations for configuration.
 
@@ -126,7 +127,7 @@ def get_security_recommendations(
 
             config = ModelDatabaseSecureConfig(**config_dict)
             assessment = config.get_security_assessment()
-            recommendations: list[str] = assessment.get("recommendations", [])  # type: ignore[attr-defined]
+            recommendations: list[Any] = assessment.get("recommendations", [])
             return recommendations
 
         if config_type == "backend":

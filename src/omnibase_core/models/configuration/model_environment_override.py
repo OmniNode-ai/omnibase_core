@@ -1,4 +1,6 @@
-from pydantic import BaseModel, Field
+from typing import Any
+
+from pydantic import Field
 
 """
 Environment Override Model for ONEX Configuration System.
@@ -6,14 +8,7 @@ Environment Override Model for ONEX Configuration System.
 Strongly typed model for environment variable overrides.
 """
 
-
-class ModelEnvironmentConfigOverride(BaseModel):
-    """Typed configuration override result from environment variables."""
-
-    default_mode: str | None = Field(
-        default=None,
-        description="Default mode override from environment",
-    )
+from pydantic import BaseModel
 
 
 class ModelEnvironmentOverride(BaseModel):
@@ -29,8 +24,9 @@ class ModelEnvironmentOverride(BaseModel):
         description="Override for ONEX_REGISTRY_MODE environment variable",
     )
 
-    def to_config_dict(self) -> ModelEnvironmentConfigOverride:
+    def to_config_dict(self) -> dict[str, Any]:
         """Convert to configuration dictionary format."""
-        return ModelEnvironmentConfigOverride(
-            default_mode=self.registry_mode if self.registry_mode is not None else None
-        )
+        overrides = {}
+        if self.registry_mode is not None:
+            overrides["default_mode"] = self.registry_mode
+        return overrides

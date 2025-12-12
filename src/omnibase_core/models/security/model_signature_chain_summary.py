@@ -4,13 +4,10 @@ Signature Chain Summary Model.
 Signature chain summary with validation status and trust level information.
 """
 
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
-
-from omnibase_core.models.security.model_security_summaries import (
-    ModelChainInfoSummary,
-)
 
 
 class ModelSignatureChainSummary(BaseModel):
@@ -58,20 +55,20 @@ class ModelSignatureChainSummary(BaseModel):
             return 0.0
         return self.unique_signers / self.signature_count
 
-    def get_chain_summary(self) -> ModelChainInfoSummary:
+    def get_chain_summary(self) -> dict[str, Any]:
         """Get signature chain summary."""
-        return ModelChainInfoSummary(
-            chain_id=self.chain_id,
-            envelope_id=self.envelope_id,
-            signature_count=self.signature_count,
-            unique_signers=self.unique_signers,
-            signer_efficiency=self.get_signer_efficiency(),
-            operation_count=self.get_operation_count(),
-            algorithm_count=self.get_algorithm_count(),
-            compliance_count=self.get_compliance_count(),
-            is_valid=self.is_valid(),
-            is_trusted=self.is_trusted(),
-            has_complete_route=self.has_complete_route,
-            validation_status=self.validation_status,
-            trust_level=self.trust_level,
-        )
+        return {
+            "chain_id": self.chain_id,
+            "envelope_id": self.envelope_id,
+            "signature_count": self.signature_count,
+            "unique_signers": self.unique_signers,
+            "signer_efficiency": self.get_signer_efficiency(),
+            "operation_count": self.get_operation_count(),
+            "algorithm_count": self.get_algorithm_count(),
+            "compliance_count": self.get_compliance_count(),
+            "is_valid": self.is_valid(),
+            "is_trusted": self.is_trusted(),
+            "has_complete_route": self.has_complete_route,
+            "validation_status": self.validation_status,
+            "trust_level": self.trust_level,
+        }

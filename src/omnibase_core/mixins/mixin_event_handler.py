@@ -1,13 +1,8 @@
-from typing import TYPE_CHECKING
+from typing import Any
 from uuid import UUID
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
-if TYPE_CHECKING:
-    from omnibase_core.mixins.mixin_node_introspection_data import (
-        MixinNodeIntrospectionData,
-    )
 
 # === OmniNode:Metadata ===
 # author: OmniNode Team
@@ -41,9 +36,9 @@ This mixin handles:
 import asyncio
 import fnmatch
 import inspect
-from typing import Any, TYPE_CHECKING
 from datetime import datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
@@ -363,30 +358,24 @@ class MixinEventHandler:
 
     @staticmethod
     def _filter_introspection_data(
-        introspection_data: "MixinNodeIntrospectionData | dict[str, object]",
+        introspection_data: dict[str, Any],
         requested_types: list[str],
-    ) -> dict[str, object]:
+    ) -> dict[str, Any]:
         """
         Filter introspection data based on requested types.
 
         Args:
-            introspection_data: Full introspection data (MixinNodeIntrospectionData or dict)
+            introspection_data: Full introspection data
             requested_types: List of requested data types
 
         Returns:
-            Filtered introspection data as dict with requested fields only
+            Filtered introspection data
         """
-        # Convert to dict if it's a Pydantic model
-        if hasattr(introspection_data, "model_dump"):
-            data_dict = introspection_data.model_dump()
-        else:
-            data_dict = dict(introspection_data)  # type: ignore[arg-type]
-
-        filtered_data: dict[str, object] = {}
+        filtered_data = {}
 
         for requested_type in requested_types:
-            if requested_type in data_dict:
-                filtered_data[requested_type] = data_dict[requested_type]
+            if requested_type in introspection_data:
+                filtered_data[requested_type] = introspection_data[requested_type]
 
         return filtered_data
 

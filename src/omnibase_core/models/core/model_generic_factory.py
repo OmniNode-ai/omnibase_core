@@ -11,7 +11,7 @@ factory methods across CLI, Config, Nodes, and Validation domains.
 Restructured to reduce string field violations through logical grouping.
 """
 
-from typing import TYPE_CHECKING, Any, Unpack
+from typing import Any, Unpack
 
 from pydantic import BaseModel
 
@@ -21,9 +21,6 @@ from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types import TypedDictFactoryKwargs
-
-if TYPE_CHECKING:
-    from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelGenericFactory[T: BaseModel]:
@@ -218,17 +215,14 @@ class ModelGenericFactory[T: BaseModel]:
                 message=f"Operation failed: {e}",
             ) from e
 
-    def serialize(self) -> SerializedDict:
+    def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
-        from omnibase_core.types.type_serializable_value import SerializedDict
-
         # Factory instances don't have model_dump - serialize factory state instead
-        result: SerializedDict = {
+        return {
             "model_class": self.model_class.__name__,
-            "factories": list(self._factories.keys()),
-            "builders": list(self._builders.keys()),
+            "factories": list[Any](self._factories.keys()),
+            "builders": list[Any](self._builders.keys()),
         }
-        return result
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""

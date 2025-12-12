@@ -12,11 +12,9 @@ Follows ONEX one-model-per-file architecture.
 """
 
 
-from typing import Self
+from typing import Any, Self
 
 from pydantic import BaseModel
-
-from omnibase_core.types.type_serializable_value import SerializedDict
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
@@ -178,7 +176,7 @@ class ModelProgressCore(BaseModel):
 
     # Protocol method implementations
 
-    def execute(self, **kwargs: object) -> bool:
+    def execute(self, **kwargs: Any) -> bool:
         """Execute or update execution status (Executable protocol).
 
         Raises:
@@ -191,7 +189,7 @@ class ModelProgressCore(BaseModel):
                 setattr(self, key, value)
         return True
 
-    def configure(self, **kwargs: object) -> bool:
+    def configure(self, **kwargs: Any) -> bool:
         """Configure instance with provided parameters (Configurable protocol).
 
         Raises:
@@ -203,9 +201,11 @@ class ModelProgressCore(BaseModel):
                 setattr(self, key, value)
         return True
 
-    def serialize(self) -> SerializedDict:
+    def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
-        return self.model_dump(exclude_none=False, by_alias=True)
+        # Explicit typing to ensure MyPy recognizes the return type
+        result: dict[str, Any] = self.model_dump(exclude_none=False, by_alias=True)
+        return result
 
     model_config = {
         "extra": "ignore",

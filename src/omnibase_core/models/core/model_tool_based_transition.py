@@ -4,11 +4,10 @@ Tool-Based Transition Model.
 Transition that delegates to a tool for state computation.
 """
 
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
-
-from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelToolBasedTransition(BaseModel):
@@ -24,14 +23,12 @@ class ModelToolBasedTransition(BaseModel):
         description="Human-readable name of the tool (e.g., 'State Calculator Tool')",
     )
 
-    # Uses SerializedDict for tool parameters (JSON-serializable values)
-    tool_params: SerializedDict | None = Field(
+    tool_params: dict[str, Any] | None = Field(
         default=None,
         description="Additional parameters to pass to the tool",
     )
 
-    # Uses SerializedDict for fallback state updates (JSON-serializable values)
-    fallback_updates: SerializedDict | None = Field(
+    fallback_updates: dict[str, Any] | None = Field(
         default=None,
         description="Updates to apply if tool invocation fails",
     )

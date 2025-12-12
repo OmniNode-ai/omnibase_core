@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Any
 
 from pydantic import BaseModel, Field
-
-from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
 """
 Node Timestamps Model.
@@ -182,7 +181,7 @@ class ModelNodeTimestamps(BaseModel):
 
     # Protocol method implementations
 
-    def get_metadata(self) -> TypedDictMetadataDict:
+    def get_metadata(self) -> dict[str, Any]:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
@@ -203,9 +202,9 @@ class ModelNodeTimestamps(BaseModel):
                     except (TypeError, AttributeError):
                         # Fallback to string conversion
                         metadata[field] = str(value)
-        return metadata  # type: ignore[return-value]
+        return metadata
 
-    def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
+    def set_metadata(self, metadata: dict[str, Any]) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol).
 
         Raises:
@@ -217,7 +216,7 @@ class ModelNodeTimestamps(BaseModel):
                 setattr(self, key, value)
         return True
 
-    def serialize(self) -> TypedDictSerializedModel:
+    def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

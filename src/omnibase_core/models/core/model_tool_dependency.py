@@ -4,10 +4,11 @@ Tool Dependency Model.
 Tool-specific dependency definition with version requirements.
 """
 
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelToolDependency(BaseModel):
@@ -50,7 +51,7 @@ class ModelToolDependency(BaseModel):
         """Get binding method in lowercase."""
         return self.binding.lower()
 
-    def get_summary(self) -> SerializedDict:
+    def get_summary(self) -> dict[str, Any]:
         """Get dependency summary."""
         return {
             "name": self.name,
@@ -59,11 +60,7 @@ class ModelToolDependency(BaseModel):
             "binding": self.binding,
             "optional": self.optional,
             "has_version_constraint": self.has_version_constraint(),
-            "version_requirement": (
-                self.version_requirement.model_dump()
-                if self.version_requirement
-                else None
-            ),
+            "version_requirement": self.version_requirement,
             "is_service": self.is_service_dependency(),
             "is_protocol": self.is_protocol_dependency(),
             "is_library": self.is_library_dependency(),

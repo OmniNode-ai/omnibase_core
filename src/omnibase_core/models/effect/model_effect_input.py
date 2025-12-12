@@ -51,13 +51,8 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_effect_types import EnumEffectType
-from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 
-@allow_dict_str_any(
-    "Effect operations require flexible operation_data for various external I/O types "
-    "(database queries, API payloads, file operations, etc.) and metadata for tracking."
-)
 class ModelEffectInput(BaseModel):
     """
     Input model for NodeEffect operations.

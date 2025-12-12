@@ -18,15 +18,10 @@ from pydantic import BaseModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
-from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 from .model_validation_value import ModelValidationValue
 
 
-@allow_dict_str_any(
-    "Validation error requires flexible details dictionary for context-specific "
-    "error information using ModelValidationValue discriminated union."
-)
 class ModelValidationError(BaseModel):
     """Validation error information.
     Implements Core protocols:

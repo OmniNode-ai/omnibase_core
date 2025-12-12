@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from typing import Any
 
-from omnibase_core.types.type_serializable_value import SerializedDict
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_workflow_type import EnumWorkflowType
@@ -61,7 +61,7 @@ class ModelWorkflowPayload(BaseModel):
 
     # Protocol method implementations
 
-    def execute(self, **kwargs: object) -> bool:
+    def execute(self, **kwargs: Any) -> bool:
         """Execute or update execution status (Executable protocol)."""
         try:
             # Update any relevant execution fields
@@ -94,7 +94,7 @@ class ModelWorkflowPayload(BaseModel):
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
         )
 
-    def serialize(self) -> SerializedDict:
+    def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

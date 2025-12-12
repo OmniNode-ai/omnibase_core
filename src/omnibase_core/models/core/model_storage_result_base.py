@@ -5,11 +5,11 @@ Strongly-typed model for storage backend operation results.
 """
 
 from datetime import datetime
+from typing import Any, Optional
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_checkpoint_data import ModelCheckpointData
-from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelStorageResult(BaseModel):
@@ -32,7 +32,7 @@ class ModelStorageResult(BaseModel):
         description="Error message if operation failed", default=None
     )
 
-    metadata: SerializedDict = Field(
+    metadata: dict[str, Any] = Field(
         description="Operation metadata", default_factory=dict
     )
 

@@ -4,9 +4,9 @@ This module provides the ModelMixinPreset class for defining
 preset configurations for common use cases.
 """
 
-from pydantic import BaseModel, Field
+from typing import Any
 
-from omnibase_core.types.type_serializable_value import SerializedDict
+from pydantic import BaseModel, Field
 
 
 class ModelMixinPreset(BaseModel):
@@ -18,4 +18,4 @@ class ModelMixinPreset(BaseModel):
     """
 
     description: str = Field(..., description="Preset description")
-    config: SerializedDict = Field(default_factory=dict, description="Config values")
+    config: dict[str, Any] = Field(default_factory=dict, description="Config values")

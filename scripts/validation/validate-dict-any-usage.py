@@ -25,9 +25,6 @@ from pathlib import Path
 class DictAnyDetector(ast.NodeVisitor):
     """AST visitor to detect dict[str, Any] usage patterns."""
 
-    # Decorator names that allow dict[str, Any] usage
-    ALLOW_DECORATORS = {"allow_dict_any", "allow_dict_str_any"}
-
     def __init__(self, filepath: str):
         self.filepath = filepath
         self.violations: list[tuple[int, str]] = []
@@ -56,43 +53,16 @@ class DictAnyDetector(ast.NodeVisitor):
             )
         return False
 
-    def _has_allow_decorator(self, decorator_list: list[ast.expr]) -> bool:
-        """Check if any decorator in the list allows dict[str, Any]."""
-        for decorator in decorator_list:
-            # Direct decorator: @allow_dict_any or @allow_dict_str_any
-            if (
-                isinstance(decorator, ast.Name)
-                and decorator.id in self.ALLOW_DECORATORS
-            ):
-                return True
-            # Call decorator: @allow_dict_str_any("reason") or @allow_dict_any("reason")
-            if isinstance(decorator, ast.Call):
-                if (
-                    isinstance(decorator.func, ast.Name)
-                    and decorator.func.id in self.ALLOW_DECORATORS
-                ):
-                    return True
-        return False
-
-    def _allow_all_lines_in_node(self, node: ast.AST) -> None:
-        """Allow dict[str, Any] usage in all lines within a node."""
-        for stmt in ast.walk(node):
-            if hasattr(stmt, "lineno"):
-                self.allowed_lines.add(stmt.lineno)
-
     def _check_allow_dict_any_decorator(
         self, node: ast.FunctionDef | ast.AsyncFunctionDef
     ) -> None:
         """Check for @allow_dict_any decorator on a function."""
-        if self._has_allow_decorator(node.decorator_list):
-            self._allow_all_lines_in_node(node)
-
-    def visit_ClassDef(self, node: ast.ClassDef) -> None:
-        """Check for @allow_dict_any or @allow_dict_str_any decorator on classes."""
-        if self._has_allow_decorator(node.decorator_list):
-            # Allow dict[str, Any] usage in entire class
-            self._allow_all_lines_in_node(node)
-        self.generic_visit(node)
+        for decorator in node.decorator_list:
+            if isinstance(decorator, ast.Name) and decorator.id == "allow_dict_any":
+                # Allow dict[str, Any] usage in this function
+                for stmt in ast.walk(node):
+                    if hasattr(stmt, "lineno"):
+                        self.allowed_lines.add(stmt.lineno)
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         """Check for @allow_dict_any decorator on sync functions."""
@@ -105,41 +75,15 @@ class DictAnyDetector(ast.NodeVisitor):
         self.generic_visit(node)
 
 
-def _find_onex_exclude_lines(content: str) -> set[int]:
-    """Find lines that are excluded via ONEX_EXCLUDE: dict_str_any comments.
-
-    The comment can be on the line itself or up to 5 lines after (to handle
-    function signatures that span multiple lines).
-    """
-    excluded_lines: set[int] = set()
-    lines = content.split("\n")
-
-    for i, line in enumerate(lines, start=1):
-        # Check for ONEX_EXCLUDE: dict_str_any comment
-        if "ONEX_EXCLUDE:" in line and "dict_str_any" in line:
-            # Exclude this line and the next 5 lines (handles multi-line signatures)
-            for offset in range(6):
-                excluded_lines.add(i + offset)
-
-    return excluded_lines
-
-
 def check_file_for_dict_any(filepath: Path) -> list[tuple[int, str]]:
     """Check a single Python file for dict[str, Any] violations."""
     try:
         with open(filepath, encoding="utf-8") as f:
             content = f.read()
 
-        # Find lines excluded via ONEX_EXCLUDE comments
-        excluded_lines = _find_onex_exclude_lines(content)
-
         # Parse AST
         tree = ast.parse(content, filename=str(filepath))
         detector = DictAnyDetector(str(filepath))
-
-        # Add excluded lines to detector's allowed set
-        detector.allowed_lines.update(excluded_lines)
-
         detector.visit(tree)
 
         return detector.violations

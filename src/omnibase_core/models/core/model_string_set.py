@@ -1,6 +1,6 @@
-"""Model for managing sets of strings."""
+from typing import Any
 
-from collections.abc import Iterator
+"""Model for managing sets of strings."""
 
 from pydantic import BaseModel, Field
 
@@ -20,7 +20,7 @@ class ModelStringSet(BaseModel):
 
     def __post_init__(self) -> None:
         """Ensure uniqueness of elements."""
-        self.elements = list(dict.fromkeys(self.elements))
+        self.elements = list(dict[str, Any].fromkeys(self.elements))
 
     def add(self, element: str) -> None:
         """Add an element to the set."""
@@ -89,6 +89,6 @@ class ModelStringSet(BaseModel):
         """Support len() function."""
         return self.size()
 
-    def __iter__(self) -> Iterator[str]:  # type: ignore[override]
+    def __iter__(self) -> Any:
         """Support iteration."""
         return iter(self.elements)

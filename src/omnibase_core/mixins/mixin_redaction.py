@@ -21,10 +21,7 @@
 # version: 1.0.0
 # === /OmniNode:Metadata ===
 
-from typing import TYPE_CHECKING, Any
-
-if TYPE_CHECKING:
-    from omnibase_core.types.type_serializable_value import SerializedDict
+from typing import Any
 
 
 class MixinSensitiveFieldRedaction:
@@ -134,9 +131,9 @@ class MixinSensitiveFieldRedaction:
 
     def redact_sensitive_fields(
         self,
-        data: "SerializedDict",
+        data: dict[str, Any],
         additional_sensitive_fields: set[str] | None = None,
-    ) -> "SerializedDict":
+    ) -> dict[str, Any]:
         """
         Redact sensitive fields in a dictionary.
 
@@ -147,9 +144,7 @@ class MixinSensitiveFieldRedaction:
         Returns:
             Dictionary with sensitive fields redacted
         """
-        from omnibase_core.types.type_serializable_value import SerializedDict
-
-        redacted_data: SerializedDict = dict(data)  # type: ignore[assignment]
+        redacted_data = data.copy()
         additional_fields = additional_sensitive_fields or set()
 
         for field_name, field_value in data.items():
@@ -163,19 +158,19 @@ class MixinSensitiveFieldRedaction:
 
             # Recursively redact nested dictionaries
             elif isinstance(field_value, dict):
-                redacted_data[field_name] = self.redact_sensitive_fields(field_value)  # type: ignore[arg-type]
+                redacted_data[field_name] = self.redact_sensitive_fields(field_value)
 
             # Redact items in lists that are dictionaries
             elif isinstance(field_value, list):
-                redacted_list: list[object] = []
+                redacted_list = []
                 for item in field_value:
                     if isinstance(item, dict):
                         redacted_list.append(
-                            self.redact_sensitive_fields(item),  # type: ignore[arg-type]
+                            self.redact_sensitive_fields(item),
                         )
                     else:
                         redacted_list.append(item)
-                redacted_data[field_name] = redacted_list  # type: ignore[assignment]
+                redacted_data[field_name] = redacted_list
 
         return redacted_data
 
@@ -183,7 +178,7 @@ class MixinSensitiveFieldRedaction:
         self,
         additional_sensitive_fields: set[str] | None = None,
         **kwargs: Any,
-    ) -> "SerializedDict":
+    ) -> dict[str, Any]:
         """
         Get a redacted version of the model data.
 
@@ -194,11 +189,9 @@ class MixinSensitiveFieldRedaction:
         Returns:
             Dictionary with sensitive fields redacted
         """
-        from omnibase_core.types.type_serializable_value import SerializedDict
-
         # Get the model data using standard model_dump
         if hasattr(self, "model_dump"):
-            data: SerializedDict = self.model_dump(**kwargs)
+            data = self.model_dump(**kwargs)
         else:
             # Fallback for non-Pydantic models
             data = {
@@ -211,7 +204,7 @@ class MixinSensitiveFieldRedaction:
         self,
         additional_sensitive_fields: set[str] | None = None,
         **kwargs: Any,
-    ) -> "SerializedDict":
+    ) -> dict[str, Any]:
         """
         Convenience method that combines model_dump with redaction.
 

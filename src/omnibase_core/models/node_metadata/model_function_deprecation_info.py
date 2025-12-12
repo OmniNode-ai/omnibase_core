@@ -6,13 +6,14 @@ Contains deprecation details, version information, and replacement suggestions.
 
 from __future__ import annotations
 
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_deprecation_status import EnumDeprecationStatus
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 from omnibase_core.types.typed_dict_deprecation_summary import (
     TypedDictDeprecationSummary,
 )
@@ -124,7 +125,7 @@ class ModelFunctionDeprecationInfo(BaseModel):
             f"Cannot generate stable ID without UUID field.",
         )
 
-    def get_metadata(self) -> TypedDictMetadataDict:
+    def get_metadata(self) -> dict[str, Any]:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
@@ -135,9 +136,9 @@ class ModelFunctionDeprecationInfo(BaseModel):
                     metadata[field] = (
                         str(value) if not isinstance(value, (dict, list)) else value
                     )
-        return metadata  # type: ignore[return-value]
+        return metadata
 
-    def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
+    def set_metadata(self, metadata: dict[str, Any]) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
@@ -147,7 +148,7 @@ class ModelFunctionDeprecationInfo(BaseModel):
         except Exception:  # fallback-ok: Protocol method - graceful fallback for optional implementation
             return False
 
-    def serialize(self) -> TypedDictSerializedModel:
+    def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

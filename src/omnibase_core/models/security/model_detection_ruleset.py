@@ -4,6 +4,7 @@ Detection RuleSet Model.
 Collection of detection patterns organized by type for sensitive information detection.
 """
 
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -15,9 +16,6 @@ from omnibase_core.models.primitives.model_semver import (
     default_model_version,
 )
 from omnibase_core.models.security.model_detection_pattern import ModelDetectionPattern
-from omnibase_core.models.security.model_security_summaries import (
-    ModelDetectionRuleSetSummary,
-)
 
 
 class ModelDetectionRuleSet(BaseModel):
@@ -83,15 +81,15 @@ class ModelDetectionRuleSet(BaseModel):
         """Get all enabled patterns."""
         return [p for p in self.patterns if p.is_enabled()]
 
-    def get_summary(self) -> ModelDetectionRuleSetSummary:
+    def get_summary(self) -> dict[str, Any]:
         """Get ruleset summary."""
-        return ModelDetectionRuleSetSummary(
-            ruleset_id=self.ruleset_id,
-            ruleset_name=self.ruleset_name,
-            version=self.version,
-            pattern_count=len(self.patterns),
-            enabled_pattern_count=len(self.get_enabled_patterns()),
-            detection_types=[t.value for t in self.detection_types],
-            supported_languages=[lang.value for lang in self.supported_languages],
-            tags=self.tags,
-        )
+        return {
+            "ruleset_id": self.ruleset_id,
+            "ruleset_name": self.ruleset_name,
+            "version": self.version,
+            "pattern_count": len(self.patterns),
+            "enabled_pattern_count": len(self.get_enabled_patterns()),
+            "detection_types": [t.value for t in self.detection_types],
+            "supported_languages": [lang.value for lang in self.supported_languages],
+            "tags": self.tags,
+        }

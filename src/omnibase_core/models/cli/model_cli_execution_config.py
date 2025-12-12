@@ -13,10 +13,9 @@ Part of the ModelCliExecution restructuring to reduce excessive string fields.
 
 
 from pathlib import Path
+from typing import Any
 
 from pydantic import BaseModel
-
-from omnibase_core.types.type_serializable_value import SerializedDict
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_output_format import EnumOutputFormat
@@ -137,7 +136,7 @@ class ModelCliExecutionConfig(BaseModel):
 
     # Protocol method implementations
 
-    def serialize(self) -> SerializedDict:
+    def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
