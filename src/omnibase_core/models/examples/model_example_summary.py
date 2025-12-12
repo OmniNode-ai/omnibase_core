@@ -14,11 +14,10 @@ individual example summary data following ONEX naming conventions.
 
 from uuid import UUID, uuid4
 
-from omnibase_core.types.type_serializable_value import SerializedDict
-
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 from .model_example_data import ModelExampleInputData, ModelExampleOutputData
 

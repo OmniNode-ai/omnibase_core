@@ -5,12 +5,11 @@ from pydantic import Field
 "\nBase computation input model for discriminated union.\n\nProvides common interface for all computation input types.\nFollows ONEX strong typing principles and one-model-per-file architecture.\n"
 from uuid import UUID
 
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_computation_type import EnumComputationType
 from omnibase_core.enums.enum_input_data_type import EnumInputDataType
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
 class ModelComputationInputBase(BaseModel):

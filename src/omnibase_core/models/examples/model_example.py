@@ -13,10 +13,11 @@ example data with comprehensive fields and validation.
 
 
 from datetime import UTC
-from omnibase_core.types.type_serializable_value import SerializedDict
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel
+
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 from .model_example_context_data import ModelExampleContextData
 from .model_example_data import ModelExampleInputData, ModelExampleOutputData

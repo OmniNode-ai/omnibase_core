@@ -13,10 +13,9 @@ Discriminated union for error values following ONEX one-model-per-file architect
 
 from pydantic import BaseModel
 
-from omnibase_core.types.type_serializable_value import SerializedDict
-
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_error_value_type import EnumErrorValueType
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelErrorValue(BaseModel):

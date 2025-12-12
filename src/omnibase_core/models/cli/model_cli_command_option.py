@@ -13,12 +13,11 @@ Replaces dict[str, Any] for command options with structured typing.
 
 from uuid import UUID
 
-from omnibase_core.types.type_serializable_value import SerializedDict
-
 from pydantic import BaseModel, model_validator
 
 from omnibase_core.enums.enum_cli_option_value_type import EnumCliOptionValueType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelCliCommandOption(BaseModel):

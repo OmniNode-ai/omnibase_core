@@ -2,7 +2,6 @@
 
 from pydantic import BaseModel, Field
 
-
 # Type alias for valid configuration value types
 ConfigValue = int | float | bool | str
 

@@ -136,7 +136,6 @@ class TypedDictRedactedData(TypedDict):
     """TypedDict for data after redaction processing."""
 
     # This is intentionally flexible since redaction can be applied to any structure
-    pass
 
 
 class TypedDictFSMContext(TypedDict, total=False):

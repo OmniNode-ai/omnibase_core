@@ -17,14 +17,13 @@ from functools import cached_property, lru_cache
 
 from pydantic import BaseModel
 
-from omnibase_core.types.type_serializable_value import SerializedDict
-
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_runtime_category import EnumRuntimeCategory
 from omnibase_core.enums.enum_time_unit import EnumTimeUnit
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 from .model_time_based import ModelTimeBased
 from .model_timeout_data import ModelTimeoutData

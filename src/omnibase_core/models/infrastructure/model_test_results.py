@@ -17,9 +17,8 @@ from datetime import UTC
 
 from pydantic import BaseModel
 
-from omnibase_core.types.type_serializable_value import SerializedDict
-
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 from .model_test_result import ModelTestResult
 
