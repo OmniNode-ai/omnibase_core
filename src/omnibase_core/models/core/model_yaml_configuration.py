@@ -15,7 +15,9 @@ class ModelYamlConfiguration(BaseModel):
     settings: ModelYamlSection | None = Field(
         default=None, description="Settings section"
     )
-    options: ModelYamlSection | None = Field(default=None, description="Options section")
+    options: ModelYamlSection | None = Field(
+        default=None, description="Options section"
+    )
     parameters: ModelYamlSection | None = Field(
         default=None, description="Parameters section"
     )

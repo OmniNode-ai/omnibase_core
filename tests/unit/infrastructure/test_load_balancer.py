@@ -53,10 +53,10 @@ def test_get_stats_initial_state():
 
     stats = lb.get_stats()
 
-    assert stats["active_operations"] == 0
-    assert stats["max_concurrent"] == 10
-    assert stats["utilization"] == 0.0
-    assert stats["total_operations"] == 0
+    assert stats.active_operations == 0
+    assert stats.max_concurrent == 10
+    assert stats.utilization == 0.0
+    assert stats.total_operations == 0
 
 
 @pytest.mark.asyncio

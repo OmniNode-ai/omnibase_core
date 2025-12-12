@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Contract validation tools for ONEX compliance.
 
@@ -11,6 +7,7 @@ This module provides validation functions for contract files:
 - Contract structure validation
 """
 
+from __future__ import annotations
 
 import argparse
 import os
@@ -21,15 +18,16 @@ from typing import TYPE_CHECKING
 
 import yaml
 
-if TYPE_CHECKING:
-    from omnibase_core.models.contracts.model_yaml_contract import ModelYamlContract
-
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_validation_metadata import (
     ModelValidationMetadata,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 from .validation_utils import ModelValidationResult
+
+if TYPE_CHECKING:
+    from omnibase_core.models.contracts.model_yaml_contract import ModelYamlContract
 
 # Constants
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB - prevent DoS attacks
@@ -106,9 +104,12 @@ def validate_yaml_file(file_path: Path) -> list[str]:
 
             # Validation successful if we reach here
 
-        except Exception as e:
-            # Collect validation errors instead of raising
-            errors.append(f"Contract validation failed: {e}")
+        except yaml.YAMLError as e:
+            # Collect YAML parsing errors
+            errors.append(f"YAML parsing failed: {e}")
+        except ModelOnexError as e:
+            # Collect structured validation errors
+            errors.append(f"Contract validation failed: {e.message}")
 
         # All validation is now handled by Pydantic model
         # Manual validation removed for ONEX compliance
@@ -116,8 +117,8 @@ def validate_yaml_file(file_path: Path) -> list[str]:
     except OSError as e:
         # Collect OS errors during file reading
         errors.append(f"OS error reading file: {e}")
-    except Exception as e:
-        # Collect other file reading errors
+    except (UnicodeDecodeError, yaml.YAMLError) as e:
+        # Collect encoding and YAML parsing errors
         errors.append(f"Error reading file: {e}")
 
     return errors
@@ -158,8 +159,10 @@ def validate_no_manual_yaml(directory: Path) -> list[str]:
                         )
                         break
 
-            except Exception as e:
-                errors.append(f"Error checking {yaml_file}: {e}")
+            except OSError as e:
+                errors.append(f"Error reading {yaml_file}: {e}")
+            except UnicodeDecodeError as e:
+                errors.append(f"Error decoding {yaml_file}: {e}")
 
     return errors
 

@@ -12,12 +12,11 @@ about individual properties in the environment property system.
 """
 
 
-from omnibase_core.types.type_serializable_value import SerializedDict
-
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_property_type import EnumPropertyType
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelPropertyMetadata(BaseModel):

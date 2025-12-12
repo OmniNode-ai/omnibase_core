@@ -11,6 +11,7 @@ from .model_cli_result_data import ModelCliResultData
 from .model_duration import ModelDuration
 from .model_environment_variables import ModelEnvironmentVariables
 from .model_execution_summary import ModelExecutionSummary
+from .model_load_balancer_stats import ModelLoadBalancerStats
 from .model_metric import ModelMetric
 from .model_metrics_data import ModelMetricsData
 from .model_progress import ModelProgress
@@ -24,7 +25,6 @@ from .model_time_based import ModelTimeBased
 from .model_timeout import ModelTimeout
 from .model_timeout_data import ModelTimeoutData
 from .model_transaction import ModelTransaction
-from .model_load_balancer_stats import ModelLoadBalancerStats
 
 __all__ = [
     "ModelAction",

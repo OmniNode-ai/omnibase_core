@@ -1,8 +1,22 @@
 ---
 node_type: REDUCER_GENERIC
-contract_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 1, patch: 0}
+
+# Contract fingerprint for drift detection (format: v{version}:{12-char-hash})
+# The 12-character hash is a truncated SHA256 of the normalized contract content
+# (excluding the fingerprint field itself to avoid circular dependency)
+# Regenerate when contract content changes using: poetry run python scripts/compute_contract_fingerprint.py
+fingerprint: "v1.1.0:1af36171af17"
+profile_tags:
+  - metrics
+  - aggregation
+  - observability
+  - time-series
+handlers:
+  required: []  # Reducers are pure state machines - no external I/O handlers
+  optional: []
 state_transitions:
-  version: {major: 1, minor: 0, patch: 0}
+  version: {major: 1, minor: 1, patch: 0}
   state_machine_version: {major: 1, minor: 0, patch: 0}
   state_machine_name: metrics_aggregation_fsm
   description: Aggregates metrics from multiple data sources with validation
@@ -225,7 +239,7 @@ state_transitions:
       version: {major: 1, minor: 0, patch: 0}
       operation_type: administrative
 metadata:
-  version: {major: 1, minor: 0, patch: 0}
+  version: {major: 1, minor: 1, patch: 0}
   author: ONEX Framework Team
   description: Declarative metrics aggregation reducer using FSM pattern
   tags:

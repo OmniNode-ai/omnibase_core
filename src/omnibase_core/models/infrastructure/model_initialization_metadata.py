@@ -68,7 +68,12 @@ class ModelInitializationMetadata(BaseModel):
         dependencies_resolved = data.get("dependencies_resolved", False)
 
         # Convert remaining to properties
-        known_keys = {"initialized_at", "source", "config_loaded", "dependencies_resolved"}
+        known_keys = {
+            "initialized_at",
+            "source",
+            "config_loaded",
+            "dependencies_resolved",
+        }
         properties = {
             key: ModelSchemaValue.from_value(value)
             for key, value in data.items()
@@ -76,7 +81,9 @@ class ModelInitializationMetadata(BaseModel):
         }
 
         return cls(
-            initialized_at=initialized_at if isinstance(initialized_at, datetime) else None,
+            initialized_at=(
+                initialized_at if isinstance(initialized_at, datetime) else None
+            ),
             source=str(source) if source else "",
             config_loaded=bool(config_loaded),
             dependencies_resolved=bool(dependencies_resolved),

@@ -97,9 +97,7 @@ from omnibase_core.models.contracts.model_drift_result import (
     DriftType,
     ModelDriftResult,
 )
-from omnibase_core.models.contracts.model_node_extensions import (
-    ModelNodeExtensions,
-)
+from omnibase_core.models.contracts.model_node_extensions import ModelNodeExtensions
 
 __all__ = [
     # Hash Registry

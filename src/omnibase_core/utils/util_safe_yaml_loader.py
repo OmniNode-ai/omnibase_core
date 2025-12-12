@@ -1,11 +1,11 @@
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Safe YAML loading utilities using yaml.safe_load plus Pydantic validation.
 
 This module provides type-safe YAML loading that uses yaml.safe_load for parsing
 combined with Pydantic model validation to ensure proper structure and security.
 """
+
+from __future__ import annotations
 
 from pathlib import Path
 from typing import Any, cast
@@ -17,6 +17,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.examples.model_schema_example import ModelSchemaExample
 from omnibase_core.models.utils import ModelYamlOption, ModelYamlValue
 
@@ -452,6 +453,36 @@ def extract_example_from_schema(
 
     except ModelOnexError:
         raise
+    except FileNotFoundError as e:
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.NOT_FOUND,
+            message=f"Schema file not found: {schema_path}",
+            details=ModelErrorContext.with_context(
+                {
+                    "operation": ModelSchemaValue.from_value(
+                        "extract_example_from_schema",
+                    ),
+                    "path": ModelSchemaValue.from_value(str(schema_path)),
+                    "example_index": ModelSchemaValue.from_value(example_index),
+                },
+            ),
+            cause=e,
+        )
+    except yaml.YAMLError as e:
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.CONVERSION_ERROR,
+            message=f"YAML parsing error in schema file: {schema_path}: {e}",
+            details=ModelErrorContext.with_context(
+                {
+                    "operation": ModelSchemaValue.from_value(
+                        "extract_example_from_schema",
+                    ),
+                    "path": ModelSchemaValue.from_value(str(schema_path)),
+                    "example_index": ModelSchemaValue.from_value(example_index),
+                },
+            ),
+            cause=e,
+        )
     except Exception as e:
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.INTERNAL_ERROR,

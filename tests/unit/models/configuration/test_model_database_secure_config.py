@@ -596,10 +596,10 @@ class TestSecurityAssessment:
             ssl_enabled=False,
         )
         assessment = config.get_security_assessment()
-        assert assessment["security_level"] == "basic"
-        assert assessment["encryption_in_transit"] is False
-        assert "No encryption" in " ".join(assessment["vulnerabilities"])
-        assert "Enable SSL/TLS" in " ".join(assessment["recommendations"])
+        assert assessment.security_level == "basic"
+        assert assessment.encryption_in_transit is False
+        assert "No encryption" in " ".join(assessment.vulnerabilities)
+        assert "Enable SSL/TLS" in " ".join(assessment.recommendations)
 
     def test_security_assessment_with_ssl_weak_mode(self):
         """Test security assessment with weak SSL mode."""
@@ -614,8 +614,8 @@ class TestSecurityAssessment:
             ssl_mode="allow",
         )
         assessment = config.get_security_assessment()
-        assert assessment["security_level"] == "medium"
-        assert "Weak SSL mode" in " ".join(assessment["vulnerabilities"])
+        assert assessment.security_level == "medium"
+        assert "Weak SSL mode" in " ".join(assessment.vulnerabilities)
 
     def test_security_assessment_with_ssl_verify_full(self):
         """Test security assessment with verify-full SSL mode."""
@@ -630,8 +630,8 @@ class TestSecurityAssessment:
             ssl_mode="verify-full",
         )
         assessment = config.get_security_assessment()
-        assert assessment["security_level"] == "high"
-        assert assessment["encryption_in_transit"] is True
+        assert assessment.security_level == "high"
+        assert assessment.encryption_in_transit is True
 
     def test_security_assessment_weak_password(self):
         """Test security assessment with weak password."""
@@ -644,7 +644,7 @@ class TestSecurityAssessment:
             driver="postgresql",
         )
         assessment = config.get_security_assessment()
-        assert "Weak password" in " ".join(assessment["vulnerabilities"])
+        assert "Weak password" in " ".join(assessment.vulnerabilities)
 
     def test_security_assessment_common_password(self):
         """Test security assessment with common password."""
@@ -657,7 +657,7 @@ class TestSecurityAssessment:
             driver="postgresql",
         )
         assessment = config.get_security_assessment()
-        assert "common/default password" in " ".join(assessment["vulnerabilities"])
+        assert "common/default password" in " ".join(assessment.vulnerabilities)
 
     def test_security_assessment_postgres_superuser(self):
         """Test security assessment warns about postgres superuser."""
@@ -670,7 +670,7 @@ class TestSecurityAssessment:
             driver="postgresql",
         )
         assessment = config.get_security_assessment()
-        assert any("postgres" in rec for rec in assessment["recommendations"])
+        assert any("postgres" in rec for rec in assessment.recommendations)
 
     def test_security_assessment_mysql_root_user(self):
         """Test security assessment warns about MySQL root user."""
@@ -683,7 +683,7 @@ class TestSecurityAssessment:
             driver="mysql",
         )
         assessment = config.get_security_assessment()
-        assert any("root" in rec for rec in assessment["recommendations"])
+        assert any("root" in rec for rec in assessment.recommendations)
 
     def test_security_assessment_compliance_status(self):
         """Test security assessment compliance status."""
@@ -698,9 +698,9 @@ class TestSecurityAssessment:
             ssl_mode="verify-full",
         )
         assessment = config.get_security_assessment()
-        assert "pci_dss" in assessment["compliance_status"]
-        assert "hipaa" in assessment["compliance_status"]
-        assert "gdpr" in assessment["compliance_status"]
+        assert hasattr(assessment.compliance_status, "pci_dss")
+        assert hasattr(assessment.compliance_status, "hipaa")
+        assert hasattr(assessment.compliance_status, "gdpr")
 
     def test_is_production_ready_without_ssl(self):
         """Test production readiness without SSL."""
@@ -848,10 +848,10 @@ class TestPerformanceProfile:
             driver="postgresql",
         )
         profile = config.get_performance_profile()
-        assert "latency_characteristics" in profile
-        assert "throughput_optimization" in profile
-        assert "resource_usage" in profile
-        assert "monitoring_recommendations" in profile
+        assert hasattr(profile, "latency_characteristics")
+        assert hasattr(profile, "throughput_optimization")
+        assert hasattr(profile, "resource_usage")
+        assert hasattr(profile, "monitoring_recommendations")
 
     def test_latency_profile_with_ssl(self):
         """Test latency profile with SSL enabled."""
@@ -865,7 +865,7 @@ class TestPerformanceProfile:
             ssl_enabled=True,
         )
         profile = config.get_performance_profile()
-        latency = profile["latency_characteristics"]
+        latency = profile.latency_characteristics
         assert latency.connection_latency == "medium"
         assert "SSL handshake" in " ".join(latency.factors)
 
@@ -880,7 +880,7 @@ class TestPerformanceProfile:
             driver="postgresql",
         )
         profile = config.get_performance_profile()
-        recommendations = profile["throughput_optimization"]
+        recommendations = profile.throughput_optimization
         assert any("PgBouncer" in rec for rec in recommendations)
 
     def test_resource_usage_large_pool(self):
@@ -895,7 +895,7 @@ class TestPerformanceProfile:
             pool_size=25,
         )
         profile = config.get_performance_profile()
-        resource_usage = profile["resource_usage"]
+        resource_usage = profile.resource_usage
         assert resource_usage["memory_usage"] == "high"
 
     def test_resource_usage_sqlite(self):
@@ -909,7 +909,7 @@ class TestPerformanceProfile:
             driver="sqlite",
         )
         profile = config.get_performance_profile()
-        resource_usage = profile["resource_usage"]
+        resource_usage = profile.resource_usage
         assert resource_usage["network_usage"] == "none"
 
     def test_monitoring_recommendations(self):
@@ -924,7 +924,7 @@ class TestPerformanceProfile:
             ssl_enabled=True,
         )
         profile = config.get_performance_profile()
-        recommendations = profile["monitoring_recommendations"]
+        recommendations = profile.monitoring_recommendations
         assert any("SSL certificate expiration" in rec for rec in recommendations)
 
 

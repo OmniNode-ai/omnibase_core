@@ -16,9 +16,8 @@ from datetime import UTC, timedelta
 
 from pydantic import BaseModel
 
-from omnibase_core.types.type_serializable_value import SerializedDict
-
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 from .model_retry_failure_info import ModelRetryFailureInfo
 

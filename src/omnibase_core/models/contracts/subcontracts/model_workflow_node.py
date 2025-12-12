@@ -49,4 +49,8 @@ class ModelWorkflowNode(BaseModel):
         "use_enum_values": False,
         "validate_assignment": True,
         "frozen": True,
+        # from_attributes=True allows Pydantic to accept objects with matching
+        # attributes even when class identity differs (e.g., in pytest-xdist
+        # parallel execution where model classes are imported in separate workers)
+        "from_attributes": True,
     }

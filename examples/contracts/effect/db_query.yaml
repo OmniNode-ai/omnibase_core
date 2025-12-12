@@ -52,7 +52,7 @@
 #
 # 📚 For comprehensive security guidance, see: SECURITY.md in this directory
 #
-# v1.0 Contract Schema Version
+# v1.1.0 Contract Schema Version
 # ============================================================================
 
 # ---------------------------------------------------------------------------
@@ -61,10 +61,34 @@
 
 contract_version:
   major: 1
-  minor: 0
+  minor: 1
   patch: 0
 
+# Contract fingerprint for drift detection (format: v{version}:{12-char-hash})
+# The 12-character hash is a truncated SHA256 of the normalized contract content
+# (excluding the fingerprint field itself to avoid circular dependency)
+# Regenerate when contract content changes using: poetry run python scripts/compute_contract_fingerprint.py
+fingerprint: "v1.1.0:63026d0ac547"
+
 node_type: effect
+
+# Handler requirements for this effect contract
+handlers:
+  required:
+    - type: db
+      version: ">=1.0.0"
+  optional: []
+
+# Kafka topic subscriptions (none for this effect)
+subscriptions:
+  topics: []
+
+# Profile tags for categorization
+profile_tags:
+  - database
+  - sql
+  - postgresql
+  - user-management
 
 # ---------------------------------------------------------------------------
 # EFFECT SUBCONTRACT: Defines database operations
@@ -475,7 +499,7 @@ effect_operations:
 # ---------------------------------------------------------------------------
 
 metadata:
-  version: {major: 1, minor: 0, patch: 0}
+  version: {major: 1, minor: 1, patch: 0}
   author: "ONEX Framework Team"
   description: |
     Contract-driven database operations for user management.

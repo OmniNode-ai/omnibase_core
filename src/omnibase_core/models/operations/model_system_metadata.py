@@ -17,9 +17,9 @@ Follows ONEX strong typing principles and one-model-per-file architecture.
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from omnibase_core.types.type_serializable_value import SerializedDict
-
 from pydantic import BaseModel
+
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelSystemMetadata(BaseModel):

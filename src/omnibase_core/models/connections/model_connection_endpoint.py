@@ -13,12 +13,11 @@ Part of the ModelConnectionInfo restructuring to reduce excessive string fields.
 """
 
 
-from omnibase_core.types import SerializedDict
-
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_connection_type import EnumConnectionType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.types import SerializedDict
 
 
 class ModelConnectionEndpoint(BaseModel):

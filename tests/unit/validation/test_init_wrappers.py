@@ -204,8 +204,16 @@ class TestValidateContractsWrapper:
 
     def test_validate_contracts_default_directory(self, tmp_path: Path) -> None:
         """Test validate_contracts with default directory."""
-        # Create test structure
-        (tmp_path / "test.yaml").write_text("# Empty test\n")
+        # Create test structure with valid YAML contract
+        # Note: ModelYamlContract requires contract_version (as dict with major/minor/patch)
+        # and node_type fields
+        (tmp_path / "test.yaml").write_text(
+            """
+contract_version: {major: 1, minor: 0, patch: 0}
+node_type: COMPUTE_GENERIC
+description: Test contract
+"""
+        )
 
         import os
 
@@ -232,15 +240,15 @@ class TestValidateContractsWrapper:
         test_dir = tmp_path / "contracts"
         test_dir.mkdir()
 
-        # Create valid YAML
+        # Create valid YAML with required ModelYamlContract fields
+        # ModelYamlContract requires: contract_version (as dict with major/minor/patch)
+        # and node_type
         yaml_file = test_dir / "test.yaml"
         yaml_file.write_text(
             """
-version: 1.0
-contract_id: test-contract
-operations:
-  - name: test_op
-    type: query
+contract_version: {major: 1, minor: 0, patch: 0}
+node_type: COMPUTE_GENERIC
+description: Test contract for validation
 """
         )
 

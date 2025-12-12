@@ -942,9 +942,7 @@ class TestModelEffectSubcontractExports:
 
     def test_import_from_subcontracts_module(self) -> None:
         """Test import from subcontracts module."""
-        from omnibase_core.models.contracts.subcontracts import (
-            ModelEffectSubcontract,
-        )
+        from omnibase_core.models.contracts.subcontracts import ModelEffectSubcontract
 
         assert ModelEffectSubcontract is not None
 

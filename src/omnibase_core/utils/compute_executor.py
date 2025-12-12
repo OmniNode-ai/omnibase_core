@@ -309,8 +309,9 @@ def execute_mapping_step(
 def execute_validation_step(
     step: ModelComputePipelineStep,
     data: Any,  # Any: validation accepts any data type for schema checking
-    schema_registry: Mapping[str, object]
-    | None = None,  # schema definitions vary; reserved for v1.1
+    schema_registry: (
+        Mapping[str, object] | None
+    ) = None,  # schema definitions vary; reserved for v1.1
 ) -> Any:  # Any: returns input unchanged (v1.0 pass-through)
     """
     Execute a validation step against a schema.

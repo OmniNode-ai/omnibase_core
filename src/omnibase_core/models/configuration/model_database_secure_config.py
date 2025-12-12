@@ -612,7 +612,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         assessment = self.get_security_assessment()
 
         # Production requires encryption
-        if not assessment["encryption_in_transit"]:  # type: ignore[index]
+        if not assessment.encryption_in_transit:
             return False
 
         # Check for critical vulnerabilities
@@ -621,7 +621,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
             "Using common/default password",
         ]
 
-        for vuln in assessment["vulnerabilities"]:  # type: ignore[index]
+        for vuln in assessment.vulnerabilities:
             if any(critical in vuln for critical in critical_vulnerabilities):
                 return False
 

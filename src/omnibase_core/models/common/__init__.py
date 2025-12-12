@@ -15,11 +15,6 @@ from .model_numeric_string_value import ModelNumericStringValue
 from .model_numeric_value import ModelNumericValue
 from .model_optional_int import ModelOptionalInt
 from .model_schema_value import ModelSchemaValue
-from .model_validation_result import (
-    ModelValidationIssue,
-    ModelValidationMetadata,
-    ModelValidationResult,
-)
 from .model_typed_metadata import (
     ModelConfigSchemaProperty,
     ModelCustomHealthMetrics,
@@ -37,6 +32,11 @@ from .model_typed_metadata import (
     ModelShutdownMetrics,
     ModelToolMetadataFields,
     ModelToolResultData,
+)
+from .model_validation_result import (
+    ModelValidationIssue,
+    ModelValidationMetadata,
+    ModelValidationResult,
 )
 from .model_value_union import ModelValueUnion
 
