@@ -3,11 +3,10 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.types import SerializedDict
-
 from omnibase_core.models.configuration.model_log_filter_config import (
     ModelLogFilterConfig,
 )
+from omnibase_core.types import SerializedDict
 
 
 class ModelLogFilter(BaseModel):
@@ -136,7 +135,9 @@ class ModelLogFilter(BaseModel):
     def apply_filter(self, log_entry: dict[str, object]) -> dict[str, object] | None:
         """Apply this filter to a log entry."""
         level_value_raw = log_entry.get("level", 0)
-        level_value = int(level_value_raw) if isinstance(level_value_raw, (int, float)) else 0
+        level_value = (
+            int(level_value_raw) if isinstance(level_value_raw, (int, float)) else 0
+        )
         message_raw = log_entry.get("message", "")
         message = str(message_raw) if message_raw is not None else ""
         fields: dict[str, object] = {
