@@ -3,6 +3,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.types import SerializedDict
+
 from omnibase_core.models.configuration.model_log_filter_config import (
     ModelLogFilterConfig,
 )
@@ -61,7 +63,7 @@ class ModelLogFilter(BaseModel):
         self,
         level_value: int,
         message: str,
-        fields: dict[str, Any],
+        fields: dict[str, object],
     ) -> bool:
         """Check if this filter matches a log message."""
         if not self.enabled:
@@ -91,7 +93,7 @@ class ModelLogFilter(BaseModel):
         except (ValueError, re.error):
             return False
 
-    def _matches_field(self, fields: dict[str, Any]) -> bool:
+    def _matches_field(self, fields: dict[str, object]) -> bool:
         """Check if field matches the specified value."""
         if not self.field_name or self.field_name not in fields:
             return False
@@ -122,7 +124,7 @@ class ModelLogFilter(BaseModel):
 
         return any(keyword in search_message for keyword in keywords)
 
-    def _matches_custom(self, message: str, fields: dict[str, Any]) -> bool:
+    def _matches_custom(self, message: str, fields: dict[str, object]) -> bool:
         """Check using custom filter logic."""
         if not self.configuration.custom_filter_function:
             return False
@@ -131,11 +133,15 @@ class ModelLogFilter(BaseModel):
         # dynamic function loading and execution
         return False
 
-    def apply_filter(self, log_entry: dict[str, Any]) -> dict[str, Any] | None:
+    def apply_filter(self, log_entry: dict[str, object]) -> dict[str, object] | None:
         """Apply this filter to a log entry."""
-        level_value = log_entry.get("level", 0)
-        message = log_entry.get("message", "")
-        fields = {k: v for k, v in log_entry.items() if k not in ("level", "message")}
+        level_value_raw = log_entry.get("level", 0)
+        level_value = int(level_value_raw) if isinstance(level_value_raw, (int, float)) else 0
+        message_raw = log_entry.get("message", "")
+        message = str(message_raw) if message_raw is not None else ""
+        fields: dict[str, object] = {
+            k: v for k, v in log_entry.items() if k not in ("level", "message")
+        }
 
         if not self.matches_message(level_value, message, fields):
             return None  # Filtered out
@@ -156,7 +162,7 @@ class ModelLogFilter(BaseModel):
             return None
 
         # Return filtered entry
-        result = {
+        result: dict[str, object] = {
             "level": level_value,
             "message": message,
             **filtered_fields,

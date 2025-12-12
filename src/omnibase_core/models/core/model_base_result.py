@@ -22,13 +22,16 @@
 # === /OmniNode:Metadata ===
 
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.results.model_simple_metadata import ModelGenericMetadata
 
 from .model_base_error import ModelBaseError
+
+if TYPE_CHECKING:
+    from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelBaseResult(BaseModel):
@@ -37,14 +40,14 @@ class ModelBaseResult(BaseModel):
     errors: list[ModelBaseError] = Field(default_factory=list)
     metadata: ModelGenericMetadata | None = None  # Typed metadata with compatibility
 
-    def model_dump(self, **kwargs: Any) -> dict[str, Any]:
+    def model_dump(self, **kwargs: Any) -> "SerializedDict":
         """Override model_dump to maintain current standards for metadata field."""
         result = super().model_dump(**kwargs)
         if self.metadata and isinstance(self.metadata, ModelGenericMetadata):
             result["metadata"] = self.metadata.model_dump(exclude_none=True)
         return result
 
-    def dict(self, **kwargs: Any) -> dict[str, Any]:
+    def dict(self, **kwargs: Any) -> "SerializedDict":
         """Modern standards method that calls model_dump."""
         return self.model_dump(**kwargs)
 

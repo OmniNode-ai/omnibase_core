@@ -1,6 +1,6 @@
-from typing import Any
-
 from pydantic import BaseModel, ConfigDict, Field
+
+from omnibase_core.models.core.model_yaml_section import ModelYamlSection
 
 
 class ModelYamlConfiguration(BaseModel):
@@ -8,14 +8,14 @@ class ModelYamlConfiguration(BaseModel):
 
     model_config = ConfigDict(extra="allow")
 
-    # Common configuration patterns
-    config: dict[str, Any] | None = Field(
+    # Common configuration patterns - use typed sections
+    config: ModelYamlSection | None = Field(
         default=None, description="Configuration section"
     )
-    settings: dict[str, Any] | None = Field(
+    settings: ModelYamlSection | None = Field(
         default=None, description="Settings section"
     )
-    options: dict[str, Any] | None = Field(default=None, description="Options section")
-    parameters: dict[str, Any] | None = Field(
+    options: ModelYamlSection | None = Field(default=None, description="Options section")
+    parameters: ModelYamlSection | None = Field(
         default=None, description="Parameters section"
     )

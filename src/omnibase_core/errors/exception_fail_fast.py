@@ -1,5 +1,6 @@
 from datetime import UTC, datetime
-from typing import Any
+
+from omnibase_core.models.errors.model_fail_fast_details import ModelFailFastDetails
 
 
 class ExceptionFailFastError(Exception):
@@ -9,9 +10,9 @@ class ExceptionFailFastError(Exception):
         self,
         message: str,
         error_code: str = "FAIL_FAST",
-        details: dict[str, Any] | None = None,
+        details: ModelFailFastDetails | None = None,
     ) -> None:
         super().__init__(message)
         self.error_code = error_code
-        self.details = details or {}
+        self.details = details or ModelFailFastDetails()
         self.timestamp = datetime.now(UTC)

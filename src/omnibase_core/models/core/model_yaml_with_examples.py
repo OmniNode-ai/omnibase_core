@@ -1,10 +1,13 @@
-from typing import Any
+from typing import TYPE_CHECKING
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
+if TYPE_CHECKING:
+    from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelYamlWithExamples(BaseModel):
@@ -13,7 +16,7 @@ class ModelYamlWithExamples(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     # For schema files with examples
-    examples: list[dict[str, Any]] | None = Field(
+    examples: list["SerializedDict"] | None = Field(
         default=None, description="Examples section"
     )
 

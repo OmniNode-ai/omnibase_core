@@ -9,9 +9,10 @@ Generic metadata model to replace Dict[str, Any] usage for metadata fields.
 """
 
 from datetime import datetime
-from typing import Any
 
 from pydantic import BaseModel, ConfigDict, field_serializer
+
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelGenericMetadata(BaseModel):
@@ -44,9 +45,9 @@ class ModelGenericMetadata(BaseModel):
     )
 
     # Additional flexible storage (non-recursive for Pydantic compatibility)
-    # BOUNDARY_LAYER_EXCEPTION: Uses Any for flexible metadata storage
+    # Uses SerializedDict for flexible metadata storage
     # Supporting various JSON-serializable types validated at runtime
-    custom_fields: dict[str, Any] = Field(
+    custom_fields: SerializedDict = Field(
         default_factory=dict,
         description="Custom fields with JSON-serializable types",
     )
@@ -68,7 +69,7 @@ class ModelGenericMetadata(BaseModel):
         return None
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any] | None) -> ModelGenericMetadata:
+    def from_dict(cls, data: SerializedDict | object) -> ModelGenericMetadata:
         """Create instance from dictionary."""
         if not isinstance(data, dict):
             data = {}

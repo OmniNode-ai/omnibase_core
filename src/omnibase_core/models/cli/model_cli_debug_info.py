@@ -15,9 +15,10 @@ Follows ONEX one-model-per-file naming conventions.
 
 
 from datetime import UTC
-from typing import Any
 
 from pydantic import BaseModel
+
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_debug_level import EnumDebugLevel
@@ -97,7 +98,7 @@ class ModelCliDebugInfo(BaseModel):
     @classmethod
     def validate_custom_debug_fields(
         cls,
-        v: dict[str, Any],
+        v: dict[str, object],
     ) -> dict[str, ModelValue]:
         """Convert raw values to ModelValue objects for custom_debug_fields."""
         if not isinstance(v, dict):
@@ -179,7 +180,7 @@ class ModelCliDebugInfo(BaseModel):
 
     # Protocol method implementations
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

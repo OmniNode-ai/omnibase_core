@@ -11,12 +11,12 @@ Validation Error Factory Pattern for Model Creation.
 Specialized factory for validation error models with severity patterns.
 """
 
-from typing import Any, Unpack
+from typing import Unpack
 
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
-from omnibase_core.types import TypedDictFactoryKwargs
+from omnibase_core.types import SerializedDict, TypedDictFactoryKwargs
 
 from .model_generic_factory import ModelGenericFactory
 
@@ -52,7 +52,8 @@ class ModelValidationErrorFactory(ModelGenericFactory[T]):
         severity: EnumValidationSeverity = EnumValidationSeverity.ERROR
 
         # Remove processed fields to avoid duplication
-        filtered_kwargs: dict[str, Any] = {
+        # Use dict[str, object] since we're filtering TypedDictFactoryKwargs
+        filtered_kwargs: dict[str, object] = {
             k: v for k, v in kwargs.items() if k not in ["message", "severity"]
         }
 
@@ -67,7 +68,8 @@ class ModelValidationErrorFactory(ModelGenericFactory[T]):
         severity: EnumValidationSeverity = EnumValidationSeverity.WARNING
 
         # Remove processed fields to avoid duplication
-        filtered_kwargs: dict[str, Any] = {
+        # Use dict[str, object] since we're filtering TypedDictFactoryKwargs
+        filtered_kwargs: dict[str, object] = {
             k: v for k, v in kwargs.items() if k not in ["message", "severity"]
         }
 
@@ -82,7 +84,8 @@ class ModelValidationErrorFactory(ModelGenericFactory[T]):
         severity: EnumValidationSeverity = EnumValidationSeverity.CRITICAL
 
         # Remove processed fields to avoid duplication
-        filtered_kwargs: dict[str, Any] = {
+        # Use dict[str, object] since we're filtering TypedDictFactoryKwargs
+        filtered_kwargs: dict[str, object] = {
             k: v for k, v in kwargs.items() if k not in ["message", "severity"]
         }
 
@@ -97,7 +100,8 @@ class ModelValidationErrorFactory(ModelGenericFactory[T]):
         severity: EnumValidationSeverity = EnumValidationSeverity.INFO
 
         # Remove processed fields to avoid duplication
-        filtered_kwargs: dict[str, Any] = {
+        # Use dict[str, object] since we're filtering TypedDictFactoryKwargs
+        filtered_kwargs: dict[str, object] = {
             k: v for k, v in kwargs.items() if k not in ["message", "severity"]
         }
 
@@ -111,7 +115,7 @@ class ModelValidationErrorFactory(ModelGenericFactory[T]):
 
     # Protocol method implementations
 
-    def configure(self, **kwargs: Any) -> bool:
+    def configure(self, **kwargs: object) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
         try:
             for key, value in kwargs.items():
@@ -124,13 +128,13 @@ class ModelValidationErrorFactory(ModelGenericFactory[T]):
                 message=f"Operation failed: {e}",
             ) from e
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""
         # Factory instances don't have model_dump - serialize factory state instead
         return {
             "model_class": self.model_class.__name__,
-            "factories": list[Any](self._factories.keys()),
-            "builders": list[Any](self._builders.keys()),
+            "factories": list(self._factories.keys()),
+            "builders": list(self._builders.keys()),
         }
 
     def validate_instance(self) -> bool:

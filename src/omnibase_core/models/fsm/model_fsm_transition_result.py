@@ -1,9 +1,9 @@
 """FSM transition result model."""
 
 from datetime import datetime
-from typing import Any
 
 from omnibase_core.models.reducer.model_intent import ModelIntent
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelFSMTransitionResult:
@@ -20,7 +20,7 @@ class ModelFSMTransitionResult:
         old_state: str,
         transition_name: str | None,
         intents: list[ModelIntent],
-        metadata: dict[str, Any] | None = None,
+        metadata: SerializedDict | None = None,
         error: str | None = None,
     ):
         """

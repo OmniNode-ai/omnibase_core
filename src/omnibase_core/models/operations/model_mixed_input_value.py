@@ -9,11 +9,10 @@ Represents mixed data inputs combining structured and primitive data.
 Follows ONEX strong typing principles and one-model-per-file architecture.
 """
 
-from typing import Any
-
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_input_data_type import EnumInputDataType
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
 class ModelMixedInputValue(BaseModel):
@@ -27,10 +26,10 @@ class ModelMixedInputValue(BaseModel):
         default=EnumInputDataType.MIXED,
         description="Type identifier for mixed input data",
     )
-    primary_value: Any = Field(
+    primary_value: ModelSchemaValue = Field(
         description="Primary primitive or structured value",
     )
-    secondary_values: list[Any] = Field(
+    secondary_values: list[ModelSchemaValue] = Field(
         default_factory=list,
         description="List of secondary values of mixed types",
     )
@@ -38,7 +37,7 @@ class ModelMixedInputValue(BaseModel):
         default_factory=list,
         description="Hierarchy defining value precedence",
     )
-    metadata: dict[str, Any] = Field(
+    metadata: dict[str, ModelSchemaValue] = Field(
         default_factory=dict,
         description="Additional metadata for mixed input",
     )

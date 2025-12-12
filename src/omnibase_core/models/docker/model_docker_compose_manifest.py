@@ -22,6 +22,10 @@ from omnibase_core.models.docker.model_docker_volume_config import (
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.types.type_serializable_value import (
+    SerializableValue,
+    SerializedDict,
+)
 
 
 class ModelDockerComposeManifest(BaseModel):
@@ -396,7 +400,7 @@ class ModelDockerComposeManifest(BaseModel):
         # Convert to dict for YAML serialization
         # Serialize version as Docker Compose format (major.minor, no patch)
         version_str = f"{self.version.major}.{self.version.minor}"
-        data: dict[str, Any] = {
+        data: SerializedDict = {
             "version": version_str,
         }
 
@@ -405,10 +409,10 @@ class ModelDockerComposeManifest(BaseModel):
 
         # Convert services
         if self.services:
-            services_data: dict[str, Any] = {}
+            services_data: SerializedDict = {}
             for service_name, service in self.services.items():
                 # Convert dataclass to dict, exclude None values
-                service_dict: dict[str, Any] = {}
+                service_dict: SerializedDict = {}
                 # Include version (required field)
                 service_dict["version"] = {
                     "major": service.version.major,

@@ -15,9 +15,9 @@ aspects of ModelProgress with a single generic type-safe implementation.
 
 
 from datetime import UTC, timedelta
-from typing import Any
-
 from pydantic import BaseModel, model_validator
+
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_runtime_category import EnumRuntimeCategory
@@ -381,7 +381,7 @@ class ModelTimeBased[T: (int, float)](BaseModel):
 
     # Protocol method implementations
 
-    def execute(self, **kwargs: Any) -> bool:
+    def execute(self, **kwargs: object) -> bool:
         """Execute or update execution status (Executable protocol)."""
         try:
             # Update any relevant execution fields
@@ -395,7 +395,7 @@ class ModelTimeBased[T: (int, float)](BaseModel):
                 message=f"Operation failed: {e}",
             ) from e
 
-    def configure(self, **kwargs: Any) -> bool:
+    def configure(self, **kwargs: object) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
         try:
             for key, value in kwargs.items():
@@ -408,7 +408,7 @@ class ModelTimeBased[T: (int, float)](BaseModel):
                 message=f"Operation failed: {e}",
             ) from e
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

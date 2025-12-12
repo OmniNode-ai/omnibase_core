@@ -3,11 +3,15 @@ Metadata tool collection models.
 
 This module now imports from separated model files for better organization
 and compliance with one-model-per-file naming conventions.
+
+# ONEX_EXCLUDE: dict_str_any - RootModel requires dict[str, Any] for heterogeneous collections
+# The root dictionary stores: tools (ModelFunctionTool), _metadata_analytics (dict),
+# and _tool_info (dict[str, dict]). This heterogeneity necessitates Any type.
 """
 
 import hashlib
 from datetime import datetime
-from typing import Any, Optional, Union
+from typing import Any, Union
 from uuid import UUID
 
 from pydantic import RootModel, computed_field, model_validator
@@ -21,6 +25,13 @@ from omnibase_core.models.core.model_audit_entry import ModelAuditEntry
 from omnibase_core.models.core.model_function_tool import ModelFunctionTool
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.types.typed_dict_collection_validation import (
+    TypedDictCollectionValidation,
+)
+from omnibase_core.types.typed_dict_metadata_tool_analytics_report import (
+    TypedDictMetadataToolAnalyticsReport,
+)
+from omnibase_core.types.typed_dict_tool_validation import TypedDictToolValidation
 
 from .model_metadata_tool_analytics import ModelMetadataToolAnalytics
 from .model_metadata_tool_info import ModelMetadataToolInfo
@@ -28,15 +39,23 @@ from .model_metadata_tool_info import ModelMetadataToolInfo
 # Import separated models
 from .model_metadata_tool_usage_metrics import ModelMetadataToolUsageMetrics
 
+# Type alias for tool data values - can be ModelFunctionTool or raw dict
+ToolDataType = Union[ModelFunctionTool, dict[str, object]]
 
+
+# ONEX_EXCLUDE: dict_str_any - RootModel heterogeneous collection
 class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
     """
     Enterprise-grade collection of metadata/documentation tools for ONEX metadata blocks.
 
     Enhanced with comprehensive tool analytics, usage tracking, performance monitoring,
     and operational insights for documentation and metadata management systems.
+
+    Note: Uses dict[str, Any] for root because this collection is heterogeneous,
+    containing tools (ModelFunctionTool), metadata analytics (dict), and tool info (dict).
     """
 
+    # ONEX_EXCLUDE: dict_str_any - Constructor accepts heterogeneous dict input
     def __init__(
         self,
         root: Union[dict[str, Any], "ModelMetadataToolCollection", None] = None,
@@ -364,29 +383,37 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
         # Update tool info
         self.update_tool_info(name, tool_info)
 
-    def get_tools_by_type(self, tool_type: EnumMetadataToolType) -> dict[str, Any]:
+    def get_tools_by_type(
+        self, tool_type: EnumMetadataToolType
+    ) -> dict[str, ToolDataType]:
         """Get all tools of a specific type."""
-        tools = {}
+        tools: dict[str, ToolDataType] = {}
         for name, tool_data in self.root.items():
             if name.startswith("_"):
                 continue
 
             tool_info = self.get_tool_info(name)
             if tool_info and tool_info.tool_type == tool_type:
-                tools[name] = tool_data
+                # Cast to ToolDataType - tool entries are either ModelFunctionTool or SerializedDict
+                if isinstance(tool_data, (ModelFunctionTool, dict)):
+                    tools[name] = tool_data
 
         return tools
 
-    def get_tools_by_status(self, status: EnumMetadataToolStatus) -> dict[str, Any]:
+    def get_tools_by_status(
+        self, status: EnumMetadataToolStatus
+    ) -> dict[str, ToolDataType]:
         """Get all tools with a specific status."""
-        tools = {}
+        tools: dict[str, ToolDataType] = {}
         for name, tool_data in self.root.items():
             if name.startswith("_"):
                 continue
 
             tool_info = self.get_tool_info(name)
             if tool_info and tool_info.status == status:
-                tools[name] = tool_data
+                # Cast to ToolDataType - tool entries are either ModelFunctionTool or SerializedDict
+                if isinstance(tool_data, (ModelFunctionTool, dict)):
+                    tools[name] = tool_data
 
         return tools
 
@@ -447,63 +474,68 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
 
         return self.update_tool_info(name, tool_info)
 
-    def validate_collection(self) -> dict[str, Any]:
+    def validate_collection(self) -> TypedDictCollectionValidation:
         """Perform comprehensive collection validation."""
-        validation_results: dict[str, Any] = {
-            "valid": True,
-            "errors": [],
-            "warnings": [],
-            "tool_validations": {},
-        }
+        tool_validations: dict[str, TypedDictToolValidation] = {}
+        all_errors: list[str] = []
+        all_warnings: list[str] = []
+        is_valid = True
 
         for name, tool_data in self.root.items():
             if name.startswith("_"):
                 continue
 
-            tool_validation: dict[str, Any] = {
-                "valid": True,
-                "errors": [],
-                "warnings": [],
-            }
+            tool_errors: list[str] = []
+            tool_warnings: list[str] = []
+            tool_is_valid = True
 
             # Validate tool name
             if not name.isidentifier():
-                tool_validation["valid"] = False
-                tool_validation["errors"].append("Invalid tool name")
+                tool_is_valid = False
+                tool_errors.append("Invalid tool name")
 
             # Validate tool data
             if tool_data is None:
-                tool_validation["valid"] = False
-                tool_validation["errors"].append("Tool data is None")
+                tool_is_valid = False
+                tool_errors.append("Tool data is None")
 
             # Check for tool info
             tool_info = self.get_tool_info(name)
             if not tool_info:
-                tool_validation["warnings"].append("Missing tool information")
+                tool_warnings.append("Missing tool information")
 
             # Check for deprecated tools without replacement
             if tool_info and tool_info.status == EnumMetadataToolStatus.DEPRECATED:
                 if not tool_info.replaces:
-                    tool_validation["warnings"].append(
+                    tool_warnings.append(
                         "Deprecated tool without replacement",
                     )
 
-            validation_results["tool_validations"][name] = tool_validation
+            tool_validations[name] = TypedDictToolValidation(
+                valid=tool_is_valid,
+                errors=tool_errors,
+                warnings=tool_warnings,
+            )
 
-            if not tool_validation["valid"]:
-                validation_results["valid"] = False
-                validation_results["errors"].extend(tool_validation["errors"])
+            if not tool_is_valid:
+                is_valid = False
+                all_errors.extend(tool_errors)
 
-            validation_results["warnings"].extend(tool_validation["warnings"])
+            all_warnings.extend(tool_warnings)
 
-        return validation_results
+        return TypedDictCollectionValidation(
+            valid=is_valid,
+            errors=all_errors,
+            warnings=all_warnings,
+            tool_validations=tool_validations,
+        )
 
-    def export_analytics_report(self) -> dict[str, Any]:
+    def export_analytics_report(self) -> TypedDictMetadataToolAnalyticsReport:
         """Export comprehensive analytics report."""
         analytics = self.analytics
 
         # Calculate additional metrics
-        tool_infos = []
+        tool_infos: list[ModelMetadataToolInfo] = []
         for name in self.root:
             if name.startswith("_"):
                 continue
@@ -524,27 +556,53 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
         )
         doc_coverage = (documented_tools / max(len(tool_infos), 1)) * 100
 
-        return {
-            "collection_metadata": {
+        # Build the analytics summary data with proper typing
+        analytics_dump = analytics.model_dump()
+
+        return TypedDictMetadataToolAnalyticsReport(
+            collection_metadata={
                 "id": self.collection_id,
                 "tool_count": self.tool_count,
                 "health_score": self.health_score,
                 "generated_at": datetime.now().isoformat(),
             },
-            "analytics_summary": analytics.model_dump(),
-            "performance_metrics": {
+            analytics_summary={
+                "collection_created": str(analytics_dump.get("collection_created", "")),
+                "last_modified": str(analytics_dump.get("last_modified", "")),
+                "total_tools": int(analytics_dump.get("total_tools", 0)),
+                "tools_by_type": dict(analytics_dump.get("tools_by_type", {})),
+                "tools_by_status": dict(analytics_dump.get("tools_by_status", {})),
+                "tools_by_complexity": dict(
+                    analytics_dump.get("tools_by_complexity", {})
+                ),
+                "total_invocations": int(analytics_dump.get("total_invocations", 0)),
+                "overall_success_rate": float(
+                    analytics_dump.get("overall_success_rate", 100.0)
+                ),
+                "avg_collection_performance": float(
+                    analytics_dump.get("avg_collection_performance", 0.0)
+                ),
+                "health_score": float(analytics_dump.get("health_score", 100.0)),
+                "documentation_coverage": float(
+                    analytics_dump.get("documentation_coverage", 0.0)
+                ),
+                "validation_compliance": float(
+                    analytics_dump.get("validation_compliance", 100.0)
+                ),
+            },
+            performance_metrics={
                 "total_invocations": total_invocations,
                 "avg_popularity_score": avg_popularity,
                 "documentation_coverage": doc_coverage,
             },
-            "tool_breakdown": {
+            tool_breakdown={
                 "by_type": analytics.tools_by_type,
                 "by_status": analytics.tools_by_status,
                 "by_complexity": analytics.tools_by_complexity,
             },
-            "popular_tools": self.get_popular_tools(5),
-            "validation_results": self.validate_collection(),
-        }
+            popular_tools=self.get_popular_tools(5),
+            validation_results=self.validate_collection(),
+        )
 
     def _update_analytics(self) -> None:
         """Internal method to update collection analytics."""

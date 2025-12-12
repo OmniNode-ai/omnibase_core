@@ -1,16 +1,17 @@
-from pydantic import Field
+"""Request configuration model."""
 
-"""
-Request configuration model.
-"""
+from pydantic import BaseModel, ConfigDict, Field
 
-from typing import Any
-
-from pydantic import BaseModel, ConfigDict
-
+from omnibase_core.models.configuration.model_auth_summary import ModelAuthSummary
 from omnibase_core.models.configuration.model_request_auth import ModelRequestAuth
 from omnibase_core.models.configuration.model_request_retry_config import (
     ModelRequestRetryConfig,
+)
+from omnibase_core.models.configuration.model_request_summary import (
+    ModelRequestSummary,
+)
+from omnibase_core.models.configuration.model_simple_json_data import (
+    ModelSimpleJsonData,
 )
 
 
@@ -32,8 +33,8 @@ class ModelRequestConfig(BaseModel):
     )
 
     # Body data - Required explicit None handling
-    json_data: dict[str, Any] = Field(
-        default_factory=dict, description="JSON body data"
+    json_data: ModelSimpleJsonData = Field(
+        default_factory=ModelSimpleJsonData, description="JSON body data"
     )
     form_data: dict[str, str] = Field(default_factory=dict, description="Form data")
     files: dict[str, str] = Field(
@@ -76,38 +77,41 @@ class ModelRequestConfig(BaseModel):
     model_config = ConfigDict()
 
     @property
-    def masked_auth_summary(self) -> dict[str, Any]:
+    def masked_auth_summary(self) -> ModelAuthSummary:
         """Get masked authentication summary for logging/debugging."""
         if not self.auth:
-            return {}
+            return ModelAuthSummary()
 
         auth_data = self.auth.model_dump(exclude_none=True)
         if auth_data.get("auth_type") == "basic":
-            return {
-                "auth_type": "basic",
-                "username": auth_data.get("username"),
-                "password": "***MASKED***",
-            }
+            return ModelAuthSummary(
+                auth_type="basic",
+                username=auth_data.get("username"),
+                password="***MASKED***",  # secret-ok: masked placeholder value
+            )
         elif auth_data.get("auth_type") == "bearer":
-            return {"auth_type": "bearer", "token": "***MASKED***"}
-        return {"auth_type": auth_data.get("auth_type", "unknown")}
+            return ModelAuthSummary(
+                auth_type="bearer",
+                token="***MASKED***",  # secret-ok: masked placeholder
+            )
+        return ModelAuthSummary(auth_type=auth_data.get("auth_type", "unknown"))
 
     @property
-    def request_summary(self) -> dict[str, Any]:
+    def request_summary(self) -> ModelRequestSummary:
         """Get clean request configuration summary."""
-        return {
-            "method": self.method,
-            "url": self.url,
-            "headers_count": len(self.headers),
-            "params_count": len(self.params),
-            "has_json_data": self.json_data is not None,
-            "has_form_data": self.form_data is not None,
-            "has_files": self.files is not None,
-            "has_auth": self.auth is not None,
-            "connect_timeout": self.connect_timeout,
-            "read_timeout": self.read_timeout,
-            "verify_ssl": self.verify_ssl,
-            "follow_redirects": self.follow_redirects,
-            "max_redirects": self.max_redirects,
-            "stream": self.stream,
-        }
+        return ModelRequestSummary(
+            method=self.method,
+            url=self.url,
+            headers_count=len(self.headers),
+            params_count=len(self.params),
+            has_json_data=self.json_data is not None,
+            has_form_data=self.form_data is not None,
+            has_files=self.files is not None,
+            has_auth=self.auth is not None,
+            connect_timeout=self.connect_timeout,
+            read_timeout=self.read_timeout,
+            verify_ssl=self.verify_ssl,
+            follow_redirects=self.follow_redirects,
+            max_redirects=self.max_redirects,
+            stream=self.stream,
+        )

@@ -1,13 +1,13 @@
-from typing import cast
-
-from pydantic import BaseModel, Field
-
 """
 ModelSecurityPolicyData: Security policy data container.
 
 This model represents the serialized data structure for security policies.
 Now uses strongly-typed values instead of Union types for better type safety.
 """
+
+from typing import cast
+
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.common.model_typed_value import ModelTypedMapping
 from omnibase_core.types.json_types import JsonValue

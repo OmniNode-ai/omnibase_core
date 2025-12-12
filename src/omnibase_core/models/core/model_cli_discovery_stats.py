@@ -5,9 +5,9 @@ Provides structured statistics about CLI tool discovery operations,
 replacing primitive dictionary types with type-safe Pydantic models.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field
+
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelCliDiscoveryStats(BaseModel):
@@ -96,7 +96,7 @@ class ModelCliDiscoveryStats(BaseModel):
             return 100.0
         return (self.registries_online / self.registries_total) * 100.0
 
-    def to_summary_dict(self) -> dict[str, Any]:
+    def to_summary_dict(self) -> SerializedDict:
         """
         Convert to a summary dictionary for display purposes.
 

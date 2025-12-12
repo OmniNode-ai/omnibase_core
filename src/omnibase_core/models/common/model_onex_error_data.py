@@ -13,7 +13,6 @@ by ModelOnexError exception class.
 """
 
 from datetime import UTC
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
@@ -69,9 +68,9 @@ class _ModelOnexErrorData(BaseModel):
         description="Timestamp when the error occurred",
         json_schema_extra={"example": "2025-05-25T22:30:00Z"},
     )
-    context: dict[str, Any] = Field(
+    context: dict[str, object] = Field(
         default_factory=dict,
-        description="Additional context information for the error",
+        description="Additional context information for the error (JSON-serializable values)",
         json_schema_extra={"example": {"file_path": "/path/to/config.yaml"}},
     )
 

@@ -4,9 +4,14 @@ Tool Testing Model.
 Testing requirements and configuration for tools.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field
+
+from omnibase_core.types.typed_dict_tool_testing_config_summary import (
+    TypedDictToolTestingConfigSummary,
+)
+from omnibase_core.types.typed_dict_tool_testing_summary import (
+    TypedDictToolTestingSummary,
+)
 
 
 class ModelToolTesting(BaseModel):
@@ -53,19 +58,19 @@ class ModelToolTesting(BaseModel):
         """Check if tool has canonical test cases."""
         return len(self.canonical_test_case_ids) > 0
 
-    def get_test_requirement_summary(self) -> dict[str, Any]:
+    def get_test_requirement_summary(self) -> TypedDictToolTestingSummary:
         """Get test requirement summary."""
-        return {
-            "requires_unit": self.requires_unit_tests(),
-            "requires_integration": self.requires_integration_tests(),
-            "requires_e2e": self.requires_e2e_tests(),
-            "requires_performance": self.performance_test_required,
-            "requires_security": self.security_test_required,
-            "ci_tier_count": self.get_ci_tier_count(),
-            "has_canonical_tests": self.has_canonical_tests(),
-            "canonical_test_count": len(self.canonical_test_case_ids),
-            "minimum_coverage": self.minimum_coverage_percentage,
-        }
+        return TypedDictToolTestingSummary(
+            requires_unit=self.requires_unit_tests(),
+            requires_integration=self.requires_integration_tests(),
+            requires_e2e=self.requires_e2e_tests(),
+            requires_performance=self.performance_test_required,
+            requires_security=self.security_test_required,
+            ci_tier_count=self.get_ci_tier_count(),
+            has_canonical_tests=self.has_canonical_tests(),
+            canonical_test_count=len(self.canonical_test_case_ids),
+            minimum_coverage=self.minimum_coverage_percentage,
+        )
 
     def meets_coverage_requirement(self, actual_coverage: float) -> bool:
         """Check if actual coverage meets requirement."""
@@ -75,13 +80,13 @@ class ModelToolTesting(BaseModel):
         """Get coverage gap (negative if exceeding requirement)."""
         return self.minimum_coverage_percentage - actual_coverage
 
-    def get_summary(self) -> dict[str, Any]:
+    def get_summary(self) -> TypedDictToolTestingConfigSummary:
         """Get testing configuration summary."""
-        return {
-            "required_ci_tiers": self.required_ci_tiers,
-            "minimum_coverage_percentage": self.minimum_coverage_percentage,
-            "canonical_test_case_ids": self.canonical_test_case_ids,
-            "performance_test_required": self.performance_test_required,
-            "security_test_required": self.security_test_required,
-            "test_requirements": self.get_test_requirement_summary(),
-        }
+        return TypedDictToolTestingConfigSummary(
+            required_ci_tiers=self.required_ci_tiers,
+            minimum_coverage_percentage=self.minimum_coverage_percentage,
+            canonical_test_case_ids=self.canonical_test_case_ids,
+            performance_test_required=self.performance_test_required,
+            security_test_required=self.security_test_required,
+            test_requirements=self.get_test_requirement_summary(),
+        )
