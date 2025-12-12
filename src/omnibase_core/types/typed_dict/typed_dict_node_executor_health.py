@@ -16,7 +16,9 @@ class TypedDictNodeExecutorHealth(TypedDict):
     successful_invocations: int
     failed_invocations: int
     success_rate: float
-    node_id: str | UUID
+    node_id: (
+        str | UUID
+    )  # Union needed: codebase uses string fallback when _node_id not set
     node_name: str
     shutdown_requested: bool
 

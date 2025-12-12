@@ -13,13 +13,13 @@ Comprehensive test coverage including:
 """
 
 import pytest
-from omnibase_core.models.contracts.subcontracts.model_action_config_parameter import (
-    ModelActionConfigParameter,
-)
 from pydantic import ValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
+from omnibase_core.models.contracts.model_action_config_parameter import (
+    ModelActionConfigParameter,
+)
 from omnibase_core.models.core.model_action_config_value import (
     ModelActionConfigBooleanValue,
     ModelActionConfigNumericValue,

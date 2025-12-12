@@ -12,7 +12,7 @@ Deep Immutability:
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -47,13 +47,13 @@ class ModelFSMTransitionResult(BaseModel):
 
     Attributes:
         success: Whether the transition succeeded.
-        new_state: Name of the resulting state after transition.
-        old_state: Name of the state before transition.
+        new_state: Name of the resulting state after transition (min 1 char).
+        old_state: Name of the state before transition (min 1 char).
         transition_name: Name of the transition executed, or None if failed.
         intents: Tuple of intents generated for side effect execution.
-        metadata: Tuple of key-value pairs for execution metadata.
+        metadata: Sorted tuple of key-value pairs for deterministic hashing.
         error: Error message if the transition failed, None otherwise.
-        timestamp: ISO-format timestamp of when the result was created.
+        timestamp: ISO-format UTC timestamp (timezone-aware) of result creation.
     """
 
     success: bool = Field(
@@ -62,10 +62,12 @@ class ModelFSMTransitionResult(BaseModel):
     )
     new_state: str = Field(
         default=...,
+        min_length=1,
         description="Resulting state name after transition",
     )
     old_state: str = Field(
         default=...,
+        min_length=1,
         description="Previous state name before transition",
     )
     transition_name: str | None = Field(
@@ -85,8 +87,8 @@ class ModelFSMTransitionResult(BaseModel):
         description="Error message if transition failed",
     )
     timestamp: str = Field(
-        default_factory=lambda: datetime.now().isoformat(),
-        description="ISO-format timestamp of result creation",
+        default_factory=lambda: datetime.now(UTC).isoformat(),
+        description="ISO-format UTC timestamp of result creation (timezone-aware)",
     )
 
     @field_validator("intents", mode="before")
@@ -107,12 +109,18 @@ class ModelFSMTransitionResult(BaseModel):
         | tuple[tuple[str, SerializableValue], ...]
         | None,
     ) -> tuple[tuple[str, SerializableValue], ...]:
-        """Convert dict to tuple of tuples for deep immutability."""
+        """Convert dict to sorted tuple of tuples for deep immutability.
+
+        Keys are sorted for deterministic ordering, which ensures consistent
+        hashing and comparison of model instances.
+        """
         if v is None:
             return ()
         if isinstance(v, dict):
-            return tuple(v.items())
-        return v
+            # Sort by key for deterministic ordering
+            return tuple(sorted(v.items(), key=lambda x: x[0]))
+        # If already tuple, sort for deterministic ordering
+        return tuple(sorted(v, key=lambda x: x[0]))
 
     model_config = ConfigDict(
         extra="ignore",

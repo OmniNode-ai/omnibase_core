@@ -11,7 +11,7 @@ class TypedDictToolExecutionResponse(TypedDict):
     tool_name: str
     success: bool
     result: object | None
-    execution_time: float
+    execution_time_ms: float
     error: str | None
     tool_version: str
 

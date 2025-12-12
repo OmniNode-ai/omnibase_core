@@ -6,11 +6,11 @@ uniqueness constraints on parameter names.
 """
 
 import pytest
-from omnibase_core.models.contracts.subcontracts.model_action_config_parameter import (
-    ModelActionConfigParameter,
-)
 from pydantic import ValidationError
 
+from omnibase_core.models.contracts.model_action_config_parameter import (
+    ModelActionConfigParameter,
+)
 from omnibase_core.models.contracts.subcontracts.model_fsmtransitionaction import (
     ModelFSMTransitionAction,
 )

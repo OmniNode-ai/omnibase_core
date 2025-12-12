@@ -3,7 +3,9 @@
 from pydantic import BaseModel, Field
 
 # Type alias for valid configuration value types
-ConfigValue = int | float | bool | str
+# IMPORTANT: bool MUST come before int because bool is a subclass of int in Python
+# If int comes first, Pydantic will match True/False as 1/0 integers
+ConfigValue = bool | int | float | str
 
 
 class ModelNodeConfigEntry(BaseModel):

@@ -8,8 +8,12 @@ from typing import TypedDict
 class TypedDictRedactedData(TypedDict):
     """TypedDict for data after redaction processing.
 
-    This is intentionally flexible since redaction can be applied to any structure.
+    Contains metadata about the redaction operation applied to sensitive data.
     """
+
+    redacted: bool
+    original_field_count: int
+    redacted_field_count: int
 
 
 __all__ = ["TypedDictRedactedData"]

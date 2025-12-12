@@ -16,7 +16,7 @@ class TypedDictDiscoveryExtendedStats(TypedDict):
     error_count: int
     active: bool
     throttle_seconds: float
-    last_response_time: float
+    last_response_time: float | None
 
 
 __all__ = ["TypedDictDiscoveryExtendedStats"]

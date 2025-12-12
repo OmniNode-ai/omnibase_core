@@ -347,10 +347,15 @@ class TestModelFSMTransitionActionValidation:
 class TestModelFSMTransitionActionValidateInstanceFalse:
     """Test validate_instance returning False for invalid states."""
 
-    def test_validate_instance_empty_action_name_returns_false(self):
-        """Test validate_instance returns False for empty action_name."""
-        action = ModelFSMTransitionAction(action_name="", action_type="log")
-        assert action.validate_instance() is False
+    def test_validate_instance_empty_action_name_raises_validation_error(self):
+        """Test that empty action_name raises ValidationError at Pydantic level.
+
+        Note: With min_length=1 constraint, empty strings are rejected at
+        construction time rather than by validate_instance().
+        """
+        with pytest.raises(ValidationError) as exc_info:
+            ModelFSMTransitionAction(action_name="", action_type="log")
+        assert "action_name" in str(exc_info.value)
 
     def test_validate_instance_whitespace_action_name_returns_false(self):
         """Test validate_instance returns False for whitespace-only action_name."""
@@ -367,10 +372,15 @@ class TestModelFSMTransitionActionValidateInstanceFalse:
         action = ModelFSMTransitionAction(action_name="\n\n", action_type="log")
         assert action.validate_instance() is False
 
-    def test_validate_instance_empty_action_type_returns_false(self):
-        """Test validate_instance returns False for empty action_type."""
-        action = ModelFSMTransitionAction(action_name="test", action_type="")
-        assert action.validate_instance() is False
+    def test_validate_instance_empty_action_type_raises_validation_error(self):
+        """Test that empty action_type raises ValidationError at Pydantic level.
+
+        Note: With min_length=1 constraint, empty strings are rejected at
+        construction time rather than by validate_instance().
+        """
+        with pytest.raises(ValidationError) as exc_info:
+            ModelFSMTransitionAction(action_name="test", action_type="")
+        assert "action_type" in str(exc_info.value)
 
     def test_validate_instance_whitespace_action_type_returns_false(self):
         """Test validate_instance returns False for whitespace-only action_type."""
@@ -387,10 +397,17 @@ class TestModelFSMTransitionActionValidateInstanceFalse:
         action = ModelFSMTransitionAction(action_name="test", action_type="\n\n")
         assert action.validate_instance() is False
 
-    def test_validate_instance_both_empty_returns_false(self):
-        """Test validate_instance returns False when both fields are empty."""
-        action = ModelFSMTransitionAction(action_name="", action_type="")
-        assert action.validate_instance() is False
+    def test_validate_instance_both_empty_raises_validation_error(self):
+        """Test that both empty fields raise ValidationError at Pydantic level.
+
+        Note: With min_length=1 constraint, empty strings are rejected at
+        construction time rather than by validate_instance().
+        """
+        with pytest.raises(ValidationError) as exc_info:
+            ModelFSMTransitionAction(action_name="", action_type="")
+        error_str = str(exc_info.value)
+        assert "action_name" in error_str
+        assert "action_type" in error_str
 
     def test_validate_instance_both_whitespace_returns_false(self):
         """Test validate_instance returns False when both fields are whitespace."""
@@ -704,21 +721,31 @@ class TestModelFSMTransitionActionSerialization:
 class TestModelFSMTransitionActionEdgeCases:
     """Test edge cases for ModelFSMTransitionAction."""
 
-    def test_empty_string_action_name(self):
-        """Test action with empty string action_name."""
-        action = ModelFSMTransitionAction(
-            action_name="",
-            action_type="log",
-        )
-        assert action.action_name == ""
+    def test_empty_string_action_name_raises_validation_error(self):
+        """Test that empty string action_name raises ValidationError.
 
-    def test_empty_string_action_type(self):
-        """Test action with empty string action_type."""
-        action = ModelFSMTransitionAction(
-            action_name="test",
-            action_type="",
-        )
-        assert action.action_type == ""
+        Note: With min_length=1 constraint, empty strings are rejected at
+        construction time by Pydantic validation.
+        """
+        with pytest.raises(ValidationError) as exc_info:
+            ModelFSMTransitionAction(
+                action_name="",
+                action_type="log",
+            )
+        assert "action_name" in str(exc_info.value)
+
+    def test_empty_string_action_type_raises_validation_error(self):
+        """Test that empty string action_type raises ValidationError.
+
+        Note: With min_length=1 constraint, empty strings are rejected at
+        construction time by Pydantic validation.
+        """
+        with pytest.raises(ValidationError) as exc_info:
+            ModelFSMTransitionAction(
+                action_name="test",
+                action_type="",
+            )
+        assert "action_type" in str(exc_info.value)
 
     def test_action_name_with_special_characters(self):
         """Test action names with special characters."""

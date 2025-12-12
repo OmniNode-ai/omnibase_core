@@ -13,10 +13,11 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.contracts.model_action_config_parameter import (
+    ModelActionConfigParameter,
+)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-
-from .model_action_config_parameter import ModelActionConfigParameter
 
 
 class ModelFSMTransitionAction(BaseModel):

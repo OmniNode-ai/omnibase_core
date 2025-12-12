@@ -92,11 +92,13 @@ class ModelFSMTransitionAction(BaseModel):
 
     action_name: str = Field(
         default=...,
+        min_length=1,
         description="Unique action identifier",
     )
 
     action_type: str = Field(
         default=...,
+        min_length=1,
         description="Type of action (emit_intent, log, validate, etc.)",
     )
 

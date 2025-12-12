@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import NotRequired, TypedDict
 
 
-class TypedDictWorkflowStepConfig(TypedDict, total=False):
+class TypedDictWorkflowStepConfig(TypedDict):
     """TypedDict for workflow step configuration from YAML."""
 
     step_name: str

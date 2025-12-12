@@ -5,19 +5,34 @@ Strongly-typed FSM transition model.
 
 Replaces dict[str, Any] usage in FSM transition operations with structured typing.
 Follows ONEX strong typing principles and one-model-per-file architecture.
+
+Deep Immutability:
+    This model uses frozen=True for Pydantic immutability, and also uses
+    immutable types (tuple instead of list) for deep immutability. This
+    ensures that nested collections cannot be modified after construction.
 """
 
+from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class ModelFsmTransition(BaseModel):
     """
-    Strongly-typed FSM transition.
+    Strongly-typed FSM transition with deep immutability.
+
     Implements Core protocols:
     - Executable: Execution management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification
+
+    Deep Immutability:
+        All collection fields use immutable types:
+        - conditions: tuple[str, ...] instead of list[str]
+        - actions: tuple[str, ...] instead of list[str]
+
+        Validators automatically convert incoming lists to frozen tuples
+        for convenience during model construction.
     """
 
     from_state: str = Field(
@@ -35,6 +50,26 @@ class ModelFsmTransition(BaseModel):
     actions: tuple[str, ...] = Field(
         default=(), description="Actions to execute on transition"
     )
+
+    @field_validator("conditions", mode="before")
+    @classmethod
+    def _convert_conditions_to_tuple(
+        cls, v: list[Any] | tuple[Any, ...] | Any
+    ) -> tuple[str, ...]:
+        """Convert list of conditions to tuple for deep immutability."""
+        if isinstance(v, list):
+            return tuple(v)
+        return v
+
+    @field_validator("actions", mode="before")
+    @classmethod
+    def _convert_actions_to_tuple(
+        cls, v: list[Any] | tuple[Any, ...] | Any
+    ) -> tuple[str, ...]:
+        """Convert list of actions to tuple for deep immutability."""
+        if isinstance(v, list):
+            return tuple(v)
+        return v
 
     model_config = ConfigDict(
         extra="ignore",
