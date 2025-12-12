@@ -393,10 +393,73 @@ jobs:
           echo "## Documentation Validation" >> $GITHUB_STEP_SUMMARY
           echo "✅ All documentation links validated" >> $GITHUB_STEP_SUMMARY
 
+  # Node Purity Validation (OMN-203)
+  # Ensures declarative nodes (COMPUTE, REDUCER) maintain purity guarantees
+  node-purity-check:
+    name: Node Purity Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: >-
+            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
+            ${{ hashFiles('**/poetry.lock') }}-
+            ${{ env.CACHE_VERSION }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}-${{ env.CACHE_VERSION }}
+
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root
+
+      - name: Install project
+        run: poetry install --no-interaction
+
+      - name: Run Node Purity Check
+        run: |
+          # Node Purity Check (OMN-203)
+          # Validates declarative nodes (COMPUTE, REDUCER) maintain purity guarantees
+          # TECH DEBT NOTE: Existing 'Any' type violations in node_compute.py and node_reducer.py
+          # are tracked tech debt. Once fixed, remove --continue-on-error and make blocking.
+          poetry run python scripts/check_node_purity.py --verbose
+        continue-on-error: true  # Non-blocking until tech debt resolved
+
+      - name: Node purity check summary
+        if: always()
+        run: |
+          echo "## Node Purity Validation (OMN-203)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Validates that declarative nodes (COMPUTE, REDUCER) maintain purity:" >> $GITHUB_STEP_SUMMARY
+          echo "- No I/O operations or network calls" >> $GITHUB_STEP_SUMMARY
+          echo "- No forbidden imports (networking, subprocess, threading)" >> $GITHUB_STEP_SUMMARY
+          echo "- No class-level mutable state" >> $GITHUB_STEP_SUMMARY
+          echo "- No caching decorators that introduce state" >> $GITHUB_STEP_SUMMARY
+
   test-summary:
     name: Test Summary
     runs-on: ubuntu-latest
-    needs: [smoke-test, test-parallel, lint, mypy-validation-scripts, docs-validation]
+    needs: [smoke-test, test-parallel, lint, mypy-validation-scripts, docs-validation, node-purity-check]
     if: always()
 
     steps:
@@ -407,18 +470,21 @@ jobs:
           lint="${{ needs.lint.result }}"
           mypy_scripts="${{ needs.mypy-validation-scripts.result }}"
           docs="${{ needs.docs-validation.result }}"
+          purity="${{ needs.node-purity-check.result }}"
 
           if [[ "$smoke" == "success" ]] && \
              [[ "$parallel" == "success" ]] && \
              [[ "$lint" == "success" ]] && \
              [[ "$mypy_scripts" == "success" ]] && \
-             [[ "$docs" == "success" ]]; then
+             [[ "$docs" == "success" ]] && \
+             [[ "$purity" == "success" ]]; then
             echo "✅ All tests passed successfully"
             echo "Smoke Tests: ✅ Passed"
             echo "Parallel Tests (20 splits): ✅ Passed"
             echo "Code Quality: ✅ Passed"
             echo "Mypy Validation Scripts: ✅ Passed"
             echo "Documentation: ✅ Passed"
+            echo "Node Purity: ✅ Passed"
             exit 0
           else
             echo "❌ Tests failed"
@@ -427,5 +493,6 @@ jobs:
             echo "Lint: $lint"
             echo "Mypy Scripts: $mypy_scripts"
             echo "Documentation: $docs"
+            echo "Node Purity: $purity"
             exit 1
           fi

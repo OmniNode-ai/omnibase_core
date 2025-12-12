@@ -431,6 +431,22 @@ repos:
           - no:rerunfailures
         stages: [pre-push]
 
+      # Node Purity Validation (OMN-203)
+      # Ensures declarative nodes (COMPUTE, REDUCER) maintain purity guarantees:
+      # - No I/O operations, network calls, or side effects
+      # - No forbidden imports (networking, subprocess, threading)
+      # - No class-level mutable state
+      # - No caching decorators that introduce state
+      # EFFECT and ORCHESTRATOR nodes are excluded (allowed to have side effects)
+      # Runs at pre-push: analyzes all node files (~2-5s runtime)
+      - id: check-node-purity
+        name: ONEX Node Purity Validation
+        entry: poetry run python scripts/check_node_purity.py
+        language: system
+        pass_filenames: false
+        files: ^src/omnibase_core/nodes/
+        stages: [pre-push]
+
 # Configuration
 default_install_hook_types: [pre-commit, pre-push]
 default_stages: [pre-commit]

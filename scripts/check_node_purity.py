@@ -70,6 +70,12 @@ class ViolationType(Enum):
     INVALID_INHERITANCE = "invalid_inheritance"
     OPEN_CALL = "open_call"
     PATHLIB_WRITE = "pathlib_write"
+    # New violation types for OMN-203: Declarative node purity linter
+    ANY_IMPORT = "any_import"
+    ANY_TYPE_HINT = "any_type_hint"
+    DICT_ANY_TYPE_HINT = "dict_any_type_hint"
+    LEGACY_MIXIN_IMPORT = "legacy_mixin_import"
+    EVENT_BUS_IMPORT = "event_bus_import"
 
 
 class Severity(Enum):
@@ -255,6 +261,51 @@ FORBIDDEN_CACHING_DECORATORS = frozenset(
         "functools.lru_cache",
         "functools.cache",
         "functools.cached_property",
+    }
+)
+
+# ==============================================================================
+# DECLARATIVE NODE PURITY CONFIGURATION (OMN-203)
+# ==============================================================================
+
+# Legacy mixins - FORBIDDEN in declarative nodes (NodeCompute, NodeReducer)
+FORBIDDEN_LEGACY_MIXINS = frozenset(
+    {
+        "MixinEventBus",
+        "MixinEventDrivenNode",
+        "MixinEventHandler",
+        "MixinEventListener",
+        "MixinServiceRegistry",
+    }
+)
+
+# Event bus module prefixes - FORBIDDEN in declarative nodes
+FORBIDDEN_EVENT_BUS_MODULES = frozenset(
+    {
+        "omnibase_core.events",
+        "omnibase_core.models.event_bus",
+        "omnibase_core.models.events",
+    }
+)
+
+# Event bus component names - FORBIDDEN in declarative nodes
+FORBIDDEN_EVENT_BUS_NAMES = frozenset(
+    {
+        "ProtocolEventBus",
+        "ModelEventEnvelope",
+        "ModelEventBusConfig",
+        "ModelEventBusInputState",
+        "ModelEventBusOutputState",
+        "ModelEventConfig",
+        "ModelEventPublishIntent",
+    }
+)
+
+# Decorators that allow Dict[str, Any] exemption
+ALLOW_DICT_ANY_DECORATORS = frozenset(
+    {
+        "allow_dict_any",
+        "allow_dict_str_any",
     }
 )
 
@@ -492,6 +543,10 @@ class PurityAnalyzer(ast.NodeVisitor):
         node_class_name: Name of the node class being analyzed.
         is_pure_node: Whether this node requires purity checking.
         current_class: Name of the class currently being visited.
+        in_type_checking_block: Whether currently inside TYPE_CHECKING block.
+        excluded_lines: Set of line numbers with ONEX_EXCLUDE comments.
+        class_allow_dict_any: Whether current class has @allow_dict_any.
+        function_allow_dict_any_lines: Set of line numbers for functions with @allow_dict_any.
     """
 
     file_path: Path
@@ -501,6 +556,38 @@ class PurityAnalyzer(ast.NodeVisitor):
     node_class_name: str | None = None
     is_pure_node: bool = False
     current_class: str | None = None
+    in_type_checking_block: bool = False
+    excluded_lines: set[int] = field(default_factory=set)
+    class_allow_dict_any: bool = False
+    function_allow_dict_any_lines: set[int] = field(default_factory=set)
+
+    def __post_init__(self) -> None:
+        """Parse source lines for ONEX_EXCLUDE comments after initialization."""
+        self._parse_onex_exclude_comments()
+
+    def _parse_onex_exclude_comments(self) -> None:
+        """Parse source lines for ONEX_EXCLUDE comments.
+
+        Finds lines marked with `# ONEX_EXCLUDE: purity` to exclude from purity checks.
+        Exclusion applies to the marked line and the next 5 lines (handles multi-line signatures).
+        """
+        for i, line in enumerate(self.source_lines, start=1):
+            # Check for ONEX_EXCLUDE: purity comment
+            if "ONEX_EXCLUDE:" in line and "purity" in line:
+                # Exclude this line and the next 5 lines (handles multi-line signatures)
+                for offset in range(6):
+                    self.excluded_lines.add(i + offset)
+
+    def _is_excluded_line(self, line_number: int) -> bool:
+        """Check if a line is excluded from purity checks.
+
+        Args:
+            line_number: Line number to check (1-indexed).
+
+        Returns:
+            True if line is excluded via ONEX_EXCLUDE comment.
+        """
+        return line_number in self.excluded_lines
 
     def visit_Import(self, node: ast.Import) -> None:
         """Check import statements for forbidden modules.
@@ -508,9 +595,21 @@ class PurityAnalyzer(ast.NodeVisitor):
         Args:
             node: AST import node to check.
         """
+        if not self.is_pure_node:
+            self.generic_visit(node)
+            return
+
         for alias in node.names:
             module_name = alias.name
             self._check_module_import(node, module_name)
+
+            # Check for event bus module imports (OMN-203)
+            self._check_event_bus_module_import(node, module_name)
+
+            # Check for legacy mixin module imports (OMN-203)
+            # e.g., import omnibase_core.mixins.mixin_event_bus
+            self._check_legacy_mixin_module_import(node, module_name)
+
         self.generic_visit(node)
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
@@ -519,28 +618,89 @@ class PurityAnalyzer(ast.NodeVisitor):
         Args:
             node: AST import-from node to check.
         """
+        if not self.is_pure_node:
+            self.generic_visit(node)
+            return
+
+        # Skip imports inside TYPE_CHECKING blocks
+        if self.in_type_checking_block:
+            self.generic_visit(node)
+            return
+
         module_name = node.module or ""
 
         # Check the module itself
         self._check_module_import(node, module_name)
 
-        # Check specific imports for caching decorators
-        if self.is_pure_node:
-            for alias in node.names:
-                full_name = f"{module_name}.{alias.name}" if module_name else alias.name
-                if (
-                    alias.name in FORBIDDEN_CACHING_DECORATORS
-                    or full_name in FORBIDDEN_CACHING_DECORATORS
-                ):
-                    self._add_violation(
-                        node,
-                        ViolationType.CACHING_DECORATOR,
-                        Severity.ERROR,
-                        f"Caching decorator '{alias.name}' introduces mutable state",
-                        "Use container-provided caching services or ModelComputeCache",
-                    )
+        # Check for event bus module imports (OMN-203)
+        self._check_event_bus_module_import(node, module_name)
+
+        # Check specific imports
+        for alias in node.names:
+            imported_name = alias.name
+            full_name = (
+                f"{module_name}.{imported_name}" if module_name else imported_name
+            )
+
+            # Check for typing.Any import (OMN-203)
+            if module_name == "typing" and imported_name == "Any":
+                self._add_violation(
+                    node,
+                    ViolationType.ANY_IMPORT,
+                    Severity.ERROR,
+                    "Importing 'Any' from typing is forbidden in declarative nodes",
+                    "Use specific types, TypedDict, or Pydantic models instead",
+                )
+
+            # Check for caching decorators
+            if (
+                imported_name in FORBIDDEN_CACHING_DECORATORS
+                or full_name in FORBIDDEN_CACHING_DECORATORS
+            ):
+                self._add_violation(
+                    node,
+                    ViolationType.CACHING_DECORATOR,
+                    Severity.ERROR,
+                    f"Caching decorator '{imported_name}' introduces mutable state",
+                    "Use container-provided caching services or ModelComputeCache",
+                )
+
+            # Check for legacy mixin imports (OMN-203)
+            if imported_name in FORBIDDEN_LEGACY_MIXINS:
+                self._add_violation(
+                    node,
+                    ViolationType.LEGACY_MIXIN_IMPORT,
+                    Severity.ERROR,
+                    f"Legacy mixin '{imported_name}' is forbidden in declarative nodes",
+                    "Remove mixin or use Effect nodes for event-driven functionality",
+                )
+
+            # Check for event bus component imports (OMN-203)
+            if imported_name in FORBIDDEN_EVENT_BUS_NAMES:
+                self._add_violation(
+                    node,
+                    ViolationType.EVENT_BUS_IMPORT,
+                    Severity.ERROR,
+                    f"Event bus component '{imported_name}' is forbidden in declarative nodes",
+                    "Use Effect nodes for event bus operations or emit intents instead",
+                )
 
         self.generic_visit(node)
+
+    def visit_If(self, node: ast.If) -> None:
+        """Track TYPE_CHECKING blocks to skip import checks inside them.
+
+        Args:
+            node: AST if statement node to check.
+        """
+        # Check if this is a TYPE_CHECKING block
+        if self._is_type_checking_block(node):
+            prev_in_type_checking = self.in_type_checking_block
+            self.in_type_checking_block = True
+            self.generic_visit(node)
+            self.in_type_checking_block = prev_in_type_checking
+        else:
+            self.generic_visit(node)
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         """Analyze class definitions for purity violations.
@@ -558,6 +718,10 @@ class PurityAnalyzer(ast.NodeVisitor):
         prev_class = self.current_class
         self.current_class = node.name
 
+        # Track @allow_dict_any on class level
+        prev_class_allow_dict_any = self.class_allow_dict_any
+        self.class_allow_dict_any = self._has_allow_dict_any_decorator(node)
+
         # Check if this is the node class (check inheritance)
         if self._is_node_class(node):
             self._check_inheritance(node)
@@ -567,23 +731,57 @@ class PurityAnalyzer(ast.NodeVisitor):
 
         self.generic_visit(node)
         self.current_class = prev_class
+        self.class_allow_dict_any = prev_class_allow_dict_any
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
-        """Check function definitions for forbidden decorators.
+        """Check function definitions for forbidden decorators and type hints.
 
         Args:
             node: AST function definition node to check.
         """
         self._check_decorators(node)
+
+        # Check type hints in function signature if pure node
+        if self.is_pure_node:
+            has_allow_dict_any = self._has_allow_dict_any_decorator(node)
+            self._check_function_type_hints(node, has_allow_dict_any)
+
         self.generic_visit(node)
 
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
-        """Check async function definitions for forbidden decorators.
+        """Check async function definitions for forbidden decorators and type hints.
 
         Args:
             node: AST async function definition node to check.
         """
         self._check_decorators(node)
+
+        # Check type hints in function signature if pure node
+        if self.is_pure_node:
+            has_allow_dict_any = self._has_allow_dict_any_decorator(node)
+            self._check_function_type_hints(node, has_allow_dict_any)
+
+        self.generic_visit(node)
+
+    def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
+        """Check annotated assignments for Any/Dict[str, Any] type hints.
+
+        Args:
+            node: AST annotated assignment node to check.
+        """
+        if not self.is_pure_node:
+            self.generic_visit(node)
+            return
+
+        # Skip if line is excluded or class has @allow_dict_any
+        line_num = getattr(node, "lineno", 0)
+        if self._is_line_excluded(line_num) or self.class_allow_dict_any:
+            self.generic_visit(node)
+            return
+
+        # Check the annotation for Any/Dict[str, Any]
+        self._check_type_annotation(node.annotation, node)
+
         self.generic_visit(node)
 
     def visit_Call(self, node: ast.Call) -> None:
@@ -1028,6 +1226,294 @@ class PurityAnalyzer(ast.NodeVisitor):
                 code_snippet=code_snippet,
             )
         )
+
+    # ==========================================================================
+    # OMN-203: DECLARATIVE NODE PURITY HELPER METHODS
+    # ==========================================================================
+
+    def _parse_onex_exclude_comments(self) -> None:
+        """Parse source lines for ONEX_EXCLUDE comments.
+
+        Identifies lines that have ONEX_EXCLUDE comments to exclude them
+        from Any/Dict[str, Any] checks.
+        """
+        import re
+
+        for i, line in enumerate(self.source_lines):
+            # Check for ONEX_EXCLUDE comments
+            if "ONEX_EXCLUDE:" in line:
+                # The comment affects the next non-blank line (for function/class definitions)
+                # or the current line (for inline exclusions)
+                if re.search(r"#\s*ONEX_EXCLUDE:", line):
+                    # Mark this line and next few lines as excluded
+                    self.excluded_lines.add(i + 1)  # Current line (1-indexed)
+                    # Also check if this is a comment-only line (marks next statement)
+                    stripped = line.strip()
+                    if stripped.startswith("#"):
+                        # This is a comment-only line, mark next few lines
+                        for j in range(i + 1, min(i + 5, len(self.source_lines))):
+                            next_line = self.source_lines[j].strip()
+                            if next_line and not next_line.startswith("#"):
+                                self.excluded_lines.add(j + 1)  # 1-indexed
+                                break
+
+    def _is_line_excluded(self, line_num: int) -> bool:
+        """Check if a line is excluded from checks via ONEX_EXCLUDE.
+
+        Args:
+            line_num: Line number (1-indexed) to check.
+
+        Returns:
+            True if line is excluded from Any/Dict[Any] checks.
+        """
+        return line_num in self.excluded_lines
+
+    def _is_type_checking_block(self, node: ast.If) -> bool:
+        """Check if an If statement is a TYPE_CHECKING block.
+
+        Args:
+            node: AST If node to check.
+
+        Returns:
+            True if this is a `if TYPE_CHECKING:` block.
+        """
+        test = node.test
+        # Handle: if TYPE_CHECKING:
+        if isinstance(test, ast.Name) and test.id == "TYPE_CHECKING":
+            return True
+        # Handle: if typing.TYPE_CHECKING:
+        if isinstance(test, ast.Attribute):
+            if test.attr == "TYPE_CHECKING":
+                return True
+        return False
+
+    def _has_allow_dict_any_decorator(
+        self, node: ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef
+    ) -> bool:
+        """Check if a function or class has @allow_dict_any decorator.
+
+        Args:
+            node: AST function/class definition node.
+
+        Returns:
+            True if decorated with @allow_dict_any or @allow_dict_str_any.
+        """
+        for decorator in node.decorator_list:
+            decorator_name = self._get_decorator_name(decorator)
+            if decorator_name in ALLOW_DICT_ANY_DECORATORS:
+                return True
+        return False
+
+    def _check_event_bus_module_import(self, node: ast.AST, module_name: str) -> None:
+        """Check if a module import is from forbidden event bus modules.
+
+        Args:
+            node: AST node for error location reporting.
+            module_name: Fully qualified module name to check.
+        """
+        if not self.is_pure_node:
+            return
+
+        # Check if module matches any forbidden event bus module prefix
+        for forbidden_module in FORBIDDEN_EVENT_BUS_MODULES:
+            if module_name == forbidden_module or module_name.startswith(
+                forbidden_module + "."
+            ):
+                self._add_violation(
+                    node,
+                    ViolationType.EVENT_BUS_IMPORT,
+                    Severity.ERROR,
+                    f"Event bus module '{module_name}' is forbidden in declarative nodes",
+                    "Use Effect nodes for event bus operations or emit intents instead",
+                )
+                return
+
+    def _check_legacy_mixin_module_import(
+        self, node: ast.AST, module_name: str
+    ) -> None:
+        """Check if a module import is a forbidden legacy mixin module.
+
+        Detects imports like: import omnibase_core.mixins.mixin_event_bus
+
+        Args:
+            node: AST node for error location reporting.
+            module_name: Fully qualified module name to check.
+        """
+        if not self.is_pure_node:
+            return
+
+        # Check if module path contains a forbidden mixin
+        # e.g., omnibase_core.mixins.mixin_event_bus -> MixinEventBus
+        for mixin_name in FORBIDDEN_LEGACY_MIXINS:
+            # Convert MixinEventBus to mixin_event_bus pattern
+            snake_case = self._camel_to_snake(mixin_name)
+            if f"mixins.{snake_case}" in module_name or f".{snake_case}" in module_name:
+                self._add_violation(
+                    node,
+                    ViolationType.LEGACY_MIXIN_IMPORT,
+                    Severity.ERROR,
+                    f"Legacy mixin module '{module_name}' is forbidden in declarative nodes",
+                    "Remove mixin or use Effect nodes for event-driven functionality",
+                )
+                return
+
+    def _camel_to_snake(self, name: str) -> str:
+        """Convert CamelCase to snake_case.
+
+        Args:
+            name: CamelCase name to convert.
+
+        Returns:
+            snake_case version of the name.
+        """
+        import re
+
+        # Insert underscore before uppercase letters and convert to lowercase
+        s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
+        return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
+
+    def _check_function_type_hints(
+        self,
+        node: ast.FunctionDef | ast.AsyncFunctionDef,
+        has_allow_dict_any: bool,
+    ) -> None:
+        """Check function parameter and return type hints for Any/Dict[str, Any].
+
+        Args:
+            node: AST function definition node.
+            has_allow_dict_any: Whether function has @allow_dict_any decorator.
+        """
+        # Skip if function has @allow_dict_any or class has it
+        if has_allow_dict_any or self.class_allow_dict_any:
+            return
+
+        line_num = getattr(node, "lineno", 0)
+        if self._is_line_excluded(line_num):
+            return
+
+        # Check parameter annotations
+        for arg in node.args.args + node.args.posonlyargs + node.args.kwonlyargs:
+            if arg.annotation:
+                self._check_type_annotation(arg.annotation, node)
+
+        # Check *args annotation
+        if node.args.vararg and node.args.vararg.annotation:
+            self._check_type_annotation(node.args.vararg.annotation, node)
+
+        # Check **kwargs annotation
+        if node.args.kwarg and node.args.kwarg.annotation:
+            self._check_type_annotation(node.args.kwarg.annotation, node)
+
+        # Check return annotation
+        if node.returns:
+            self._check_type_annotation(node.returns, node)
+
+    def _check_type_annotation(
+        self, annotation: ast.expr, context_node: ast.AST
+    ) -> None:
+        """Check a type annotation for Any or Dict[str, Any] usage.
+
+        Args:
+            annotation: AST expression representing the type annotation.
+            context_node: AST node to use for error location reporting.
+        """
+        # Check for bare "Any" name
+        if isinstance(annotation, ast.Name) and annotation.id == "Any":
+            self._add_violation(
+                context_node,
+                ViolationType.ANY_TYPE_HINT,
+                Severity.ERROR,
+                "'Any' type hint is forbidden in declarative nodes",
+                "Use specific types, Generic type variables, or Pydantic models",
+            )
+            return
+
+        # Check for typing.Any attribute access
+        if isinstance(annotation, ast.Attribute) and annotation.attr == "Any":
+            self._add_violation(
+                context_node,
+                ViolationType.ANY_TYPE_HINT,
+                Severity.ERROR,
+                "'typing.Any' type hint is forbidden in declarative nodes",
+                "Use specific types, Generic type variables, or Pydantic models",
+            )
+            return
+
+        # Check for subscripted types (Dict[str, Any], List[Any], etc.)
+        if isinstance(annotation, ast.Subscript):
+            # Check if this is Dict[str, Any] or dict[str, Any]
+            if self._is_dict_str_any(annotation):
+                self._add_violation(
+                    context_node,
+                    ViolationType.DICT_ANY_TYPE_HINT,
+                    Severity.ERROR,
+                    "'Dict[str, Any]' type hint is forbidden in declarative nodes",
+                    "Use TypedDict, Pydantic models, or specific typed mappings",
+                )
+                return
+
+            # Recursively check type arguments for Any
+            self._check_subscript_for_any(annotation, context_node)
+
+    def _is_dict_str_any(self, node: ast.Subscript) -> bool:
+        """Check if a subscript is Dict[str, Any] or dict[str, Any].
+
+        Args:
+            node: AST subscript node to check.
+
+        Returns:
+            True if this is a Dict[str, Any] pattern.
+        """
+        # Check if the base is Dict or dict
+        base = node.value
+        is_dict_type = False
+
+        if (isinstance(base, ast.Name) and base.id in ("Dict", "dict")) or (
+            isinstance(base, ast.Attribute) and base.attr == "Dict"
+        ):
+            is_dict_type = True
+
+        if not is_dict_type:
+            return False
+
+        # Check if slice is [str, Any]
+        slice_node = node.slice
+
+        # Python 3.9+ uses direct tuple for multiple args
+        if isinstance(slice_node, ast.Tuple):
+            elts = slice_node.elts
+            if len(elts) == 2:
+                # Check if second element is Any
+                second = elts[1]
+                if isinstance(second, ast.Name) and second.id == "Any":
+                    return True
+                if isinstance(second, ast.Attribute) and second.attr == "Any":
+                    return True
+
+        return False
+
+    def _check_subscript_for_any(
+        self, node: ast.Subscript, context_node: ast.AST
+    ) -> None:
+        """Recursively check subscript type arguments for Any usage.
+
+        Args:
+            node: AST subscript node to check.
+            context_node: AST node to use for error location reporting.
+        """
+        slice_node = node.slice
+
+        # Handle tuple of type arguments (e.g., Dict[K, V], Callable[[Args], Return])
+        if isinstance(slice_node, ast.Tuple):
+            for elt in slice_node.elts:
+                self._check_type_annotation(elt, context_node)
+        elif isinstance(slice_node, ast.List):
+            # Callable[[arg_types], return_type] has a list for arg_types
+            for elt in slice_node.elts:
+                self._check_type_annotation(elt, context_node)
+        else:
+            # Single type argument (e.g., List[T], Optional[T])
+            self._check_type_annotation(slice_node, context_node)
 
 
 # ==============================================================================
