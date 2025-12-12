@@ -11,13 +11,13 @@ Part of the connection properties restructuring to reduce string field violation
 """
 
 
-from omnibase_core.types import SerializedDict
 from uuid import UUID
 
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_instance_type import EnumInstanceType
+from omnibase_core.types import SerializedDict
 
 
 class ModelCloudServiceProperties(BaseModel):

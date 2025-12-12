@@ -18,8 +18,6 @@ Follows ONEX one-model-per-file naming conventions.
 from datetime import UTC
 from uuid import UUID
 
-from omnibase_core.types.type_serializable_value import SerializedDict
-
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -28,6 +26,7 @@ from omnibase_core.enums.enum_result_category import EnumResultCategory
 from omnibase_core.enums.enum_result_type import EnumResultType
 from omnibase_core.enums.enum_retention_policy import EnumRetentionPolicy
 from omnibase_core.models.infrastructure.model_value import ModelValue
+from omnibase_core.types.type_serializable_value import SerializedDict
 from omnibase_core.utils.util_uuid_utilities import uuid_from_string
 
 # Using ModelValue instead of primitive soup type alias for proper discriminated union typing

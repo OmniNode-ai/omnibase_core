@@ -708,9 +708,11 @@ max_parallel_instances: 1
         for key, value in round_tripped_dict.items():
             if value is None:
                 # These are the only fields allowed to be null based on model definition
-                assert key in ["max_memory_mb", "max_cpu_percent", "parallel_group"], (
-                    f"Unexpected null field: {key}"
-                )
+                assert key in [
+                    "max_memory_mb",
+                    "max_cpu_percent",
+                    "parallel_group",
+                ], f"Unexpected null field: {key}"
 
     def test_missing_optional_fields_stay_missing_or_have_defaults(self) -> None:
         """Test missing optional fields stay missing or have default values."""

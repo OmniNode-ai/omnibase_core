@@ -11,7 +11,6 @@ excessive string fields in a single large model.
 
 import uuid
 from datetime import datetime
-from omnibase_core.types import SerializedDict
 from uuid import UUID
 
 from pydantic import BaseModel, field_serializer
@@ -31,6 +30,7 @@ from omnibase_core.models.connections.model_connection_security import (
 from omnibase_core.models.connections.model_custom_connection_properties import (
     ModelCustomConnectionProperties,
 )
+from omnibase_core.types import SerializedDict
 
 
 class ModelConnectionInfo(BaseModel):

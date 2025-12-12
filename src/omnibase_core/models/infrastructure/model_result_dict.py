@@ -12,9 +12,8 @@ Clean Pydantic model for Result serialization following ONEX one-model-per-file 
 
 from pydantic import BaseModel
 
-from omnibase_core.types.type_serializable_value import SerializedDict
-
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 from .model_error_value import ModelErrorValue
 from .model_value import ModelValue

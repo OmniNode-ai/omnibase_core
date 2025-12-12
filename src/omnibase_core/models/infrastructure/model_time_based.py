@@ -15,13 +15,13 @@ aspects of ModelProgress with a single generic type-safe implementation.
 
 
 from datetime import UTC, timedelta
-from pydantic import BaseModel, model_validator
 
-from omnibase_core.types.type_serializable_value import SerializedDict
+from pydantic import BaseModel, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_runtime_category import EnumRuntimeCategory
 from omnibase_core.enums.enum_time_unit import EnumTimeUnit
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelTimeBased[T: (int, float)](BaseModel):

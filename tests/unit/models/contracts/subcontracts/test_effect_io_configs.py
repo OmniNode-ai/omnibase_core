@@ -466,9 +466,9 @@ class TestModelDbIOConfig:
             config = ModelDbIOConfig(
                 operation=operation,  # type: ignore[arg-type]
                 connection_name="db",
-                query_template="SELECT 1"
-                if operation == "select"
-                else "UPDATE t SET x = 1",
+                query_template=(
+                    "SELECT 1" if operation == "select" else "UPDATE t SET x = 1"
+                ),
                 query_params=[],
                 read_only=False,
             )

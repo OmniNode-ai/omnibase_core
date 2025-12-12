@@ -109,7 +109,7 @@ class ModelServiceCompute(
     MixinHealthCheck,
     MixinCaching,
     MixinMetrics,
-    Generic[T_Input, T_Output],  # noqa: UP046 - Traditional syntax required for mypy CI compatibility
+    Generic[T_Input, T_Output],  # noqa: UP046 - Traditional Generic syntax required for mypy CI compatibility
 ):
     """
     Standard Compute Node Service following ONEX model naming conventions.

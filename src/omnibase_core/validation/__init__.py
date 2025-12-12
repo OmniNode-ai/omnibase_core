@@ -74,9 +74,7 @@ from .fsm_analysis import analyze_fsm
 from .patterns import validate_patterns_directory, validate_patterns_file
 
 # Import reserved enum validator (OMN-669)
-from .reserved_enum_validator import (
-    RESERVED_EXECUTION_MODES,
-)
+from .reserved_enum_validator import RESERVED_EXECUTION_MODES
 from .reserved_enum_validator import (
     validate_execution_mode as validate_reserved_execution_mode,
 )

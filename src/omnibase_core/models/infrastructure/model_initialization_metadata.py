@@ -81,9 +81,9 @@ class ModelInitializationMetadata(BaseModel):
         }
 
         return cls(
-            initialized_at=initialized_at
-            if isinstance(initialized_at, datetime)
-            else None,
+            initialized_at=(
+                initialized_at if isinstance(initialized_at, datetime) else None
+            ),
             source=str(source) if source else "",
             config_loaded=bool(config_loaded),
             dependencies_resolved=bool(dependencies_resolved),

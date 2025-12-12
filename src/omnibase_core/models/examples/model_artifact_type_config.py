@@ -6,13 +6,13 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 "\nArtifact type configuration model.\n"
 from pathlib import Path
-from omnibase_core.types.type_serializable_value import SerializedDict
 
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_artifact_type import EnumArtifactType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelArtifactTypeConfig(BaseModel):

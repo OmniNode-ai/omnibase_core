@@ -7,9 +7,7 @@ from omnibase_core.models.configuration.model_request_auth import ModelRequestAu
 from omnibase_core.models.configuration.model_request_retry_config import (
     ModelRequestRetryConfig,
 )
-from omnibase_core.models.configuration.model_request_summary import (
-    ModelRequestSummary,
-)
+from omnibase_core.models.configuration.model_request_summary import ModelRequestSummary
 from omnibase_core.models.configuration.model_simple_json_data import (
     ModelSimpleJsonData,
 )

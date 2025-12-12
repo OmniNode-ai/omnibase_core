@@ -13,10 +13,9 @@ Follows ONEX one-model-per-file architecture.
 
 from pydantic import BaseModel
 
-from omnibase_core.types.type_serializable_value import SerializedDict
-
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelProgressMilestones(BaseModel):
