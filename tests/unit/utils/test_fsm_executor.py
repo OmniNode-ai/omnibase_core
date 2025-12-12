@@ -15,10 +15,10 @@ from omnibase_core.models.contracts.subcontracts.model_fsm_state_transition impo
 from omnibase_core.models.contracts.subcontracts.model_fsm_subcontract import (
     ModelFSMSubcontract,
 )
-from omnibase_core.models.contracts.subcontracts.model_fsmtransitionaction import (
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.fsm.model_fsm_transition_action import (
     ModelFSMTransitionAction,
 )
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.fsm.model_fsm_transition_condition import (
     ModelFSMTransitionCondition,
 )
@@ -136,7 +136,6 @@ def fsm_with_conditions() -> ModelFSMSubcontract:
                         condition_type="field_check",
                         expression="data_count min_length 1",
                         required=True,
-                        version=ModelSemVer(major=1, minor=0, patch=0),
                     )
                 ],
                 version=ModelSemVer(major=1, minor=0, patch=0),
@@ -188,7 +187,6 @@ def fsm_with_actions() -> ModelFSMSubcontract:
                         action_type="setup",
                         execution_order=1,
                         is_critical=True,
-                        version=ModelSemVer(major=1, minor=0, patch=0),
                     )
                 ],
                 version=ModelSemVer(major=1, minor=0, patch=0),

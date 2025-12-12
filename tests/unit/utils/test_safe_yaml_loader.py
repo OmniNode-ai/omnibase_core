@@ -555,7 +555,8 @@ examples:
 
         with pytest.raises(ModelOnexError) as exc_info:
             extract_example_from_schema(schema_file)
-        assert exc_info.value.error_code == EnumCoreErrorCode.INTERNAL_ERROR
+        # NOT_FOUND is the semantically correct error code for file not found
+        assert exc_info.value.error_code == EnumCoreErrorCode.NOT_FOUND
 
     def test_extract_example_malformed_yaml(self, tmp_path: Path) -> None:
         """Test extracting from malformed YAML schema."""
@@ -571,9 +572,7 @@ examples:
         )
 
         # Should raise an error due to YAML parsing failure
+        # CONVERSION_ERROR is the semantically correct error code for YAML parsing errors
         with pytest.raises(ModelOnexError) as exc_info:
             extract_example_from_schema(schema_file)
-        assert exc_info.value.error_code in [
-            EnumCoreErrorCode.INTERNAL_ERROR,
-            EnumCoreErrorCode.VALIDATION_ERROR,
-        ]
+        assert exc_info.value.error_code == EnumCoreErrorCode.CONVERSION_ERROR
