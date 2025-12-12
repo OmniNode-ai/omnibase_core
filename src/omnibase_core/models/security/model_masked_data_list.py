@@ -3,15 +3,15 @@
 List container for masked data.
 """
 
-from typing import TYPE_CHECKING, Any
-
 from pydantic import BaseModel, Field
 
-# Recursive data structure without Any usage
-ModelMaskedDataValue = dict[str, Any] | list[Any] | str | int | float | bool | None
+from omnibase_core.types.json_types import JsonValue
 
 
 class ModelMaskedDataList(BaseModel):
-    """List container for masked data."""
+    """List container for masked data.
 
-    items: list[ModelMaskedDataValue] = Field(default_factory=list)
+    Uses JsonValue for type-safe storage of JSON-compatible list items.
+    """
+
+    items: list[JsonValue] = Field(default_factory=list)

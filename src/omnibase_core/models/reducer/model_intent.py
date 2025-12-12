@@ -66,7 +66,13 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.utils.util_decorators import allow_dict_str_any
 
+
+@allow_dict_str_any(
+    "Intent payloads require flexible dict[str, Any] to carry arbitrary data "
+    "for side effects (event data, log metadata, storage payloads, etc.)."
+)
 class ModelIntent(BaseModel):
     """
     Intent declaration for side effects from pure Reducer FSM.

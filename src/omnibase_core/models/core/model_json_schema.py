@@ -3,6 +3,7 @@ from typing import Optional, Union
 from pydantic import Field
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 """
 Model for representing JSON schema structures with proper type safety.
@@ -10,8 +11,6 @@ Model for representing JSON schema structures with proper type safety.
 This model replaces dictionary usage when working with JSON schemas
 by providing a structured representation of schema data.
 """
-
-from typing import Any
 
 from pydantic import BaseModel
 
@@ -88,7 +87,7 @@ class ModelJsonSchema(BaseModel):
     write_only: bool | None = Field(default=None, alias="writeOnly")
 
     @classmethod
-    def from_dict(cls, schema_dict: dict[str, Any]) -> "ModelJsonSchema":
+    def from_dict(cls, schema_dict: SerializedDict) -> "ModelJsonSchema":
         """
         Create ModelJsonSchema from a dictionary.
 
@@ -153,7 +152,7 @@ class ModelJsonSchema(BaseModel):
 
         return cls(**schema_dict)
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> SerializedDict:
         """
         Convert back to dictionary representation.
 
@@ -161,7 +160,7 @@ class ModelJsonSchema(BaseModel):
             Dictionary representation of the schema
         """
         # Custom reconstruction logic for JSON schema format
-        result: dict[str, Any] = {}
+        result: SerializedDict = {}
 
         # Add basic properties
         if self.type:

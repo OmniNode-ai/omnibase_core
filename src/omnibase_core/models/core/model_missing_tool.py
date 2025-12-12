@@ -12,7 +12,6 @@ error analysis, and operational insights for ONEX registry validation systems.
 
 import re
 from datetime import datetime
-from typing import Any
 
 from pydantic import BaseModel
 
@@ -21,6 +20,12 @@ from omnibase_core.enums.enum_tool_criticality import EnumToolCriticality
 from omnibase_core.enums.enum_tool_missing_reason import EnumToolMissingReason
 from omnibase_core.models.core.model_protocol_metadata import ModelGenericMetadata
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.types.typed_dict_alert_data import TypedDictAlertData
+from omnibase_core.types.typed_dict_alert_metadata import TypedDictAlertMetadata
+from omnibase_core.types.typed_dict_error_analysis import TypedDictErrorAnalysis
+from omnibase_core.types.typed_dict_monitoring_metrics import TypedDictMonitoringMetrics
+from omnibase_core.types.typed_dict_operational_impact import TypedDictOperationalImpact
+from omnibase_core.types.typed_dict_tool_details import TypedDictToolDetails
 
 
 class ModelMissingTool(BaseModel):
@@ -245,20 +250,20 @@ class ModelMissingTool(BaseModel):
 
     # === Error Analysis ===
 
-    def analyze_error_category(self) -> dict[str, Any]:
+    def analyze_error_category(self) -> TypedDictErrorAnalysis:
         """Analyze the error category and provide insights."""
-        return {
-            "category": (
+        return TypedDictErrorAnalysis(
+            category=(
                 self.reason_category.value
                 if self.reason_category is not None
                 else "UNKNOWN"
             ),
-            "is_recoverable": self._is_recoverable_error(),
-            "requires_code_change": self._requires_code_change(),
-            "requires_configuration": self._requires_configuration_change(),
-            "estimated_fix_time": self._estimate_fix_time(),
-            "fix_complexity": self._assess_fix_complexity(),
-        }
+            is_recoverable=self._is_recoverable_error(),
+            requires_code_change=self._requires_code_change(),
+            requires_configuration=self._requires_configuration_change(),
+            estimated_fix_time=self._estimate_fix_time(),
+            fix_complexity=self._assess_fix_complexity(),
+        )
 
     def _is_recoverable_error(self) -> bool:
         """Check if the error is recoverable."""
@@ -455,19 +460,19 @@ class ModelMissingTool(BaseModel):
 
         return min(score, 1.0)
 
-    def assess_operational_impact(self) -> dict[str, Any]:
+    def assess_operational_impact(self) -> TypedDictOperationalImpact:
         """Assess operational impact of this missing tool."""
-        return {
-            "business_impact_score": self.calculate_business_impact_score(),
-            "severity_level": self.get_severity_level(),
-            "affected_operations_count": (
+        return TypedDictOperationalImpact(
+            business_impact_score=self.calculate_business_impact_score(),
+            severity_level=self.get_severity_level(),
+            affected_operations_count=(
                 len(self.affected_operations) if self.affected_operations else 0
             ),
-            "requires_immediate_attention": self.requires_immediate_attention(),
-            "estimated_downtime": self._estimate_downtime(),
-            "user_experience_impact": self._assess_user_experience_impact(),
-            "system_stability_risk": self._assess_stability_risk(),
-        }
+            requires_immediate_attention=self.requires_immediate_attention(),
+            estimated_downtime=self._estimate_downtime(),
+            user_experience_impact=self._assess_user_experience_impact(),
+            system_stability_risk=self._assess_stability_risk(),
+        )
 
     def _estimate_downtime(self) -> str:
         """Estimate potential downtime impact."""
@@ -503,72 +508,71 @@ class ModelMissingTool(BaseModel):
 
     # === Monitoring Integration ===
 
-    def get_monitoring_metrics(self) -> dict[str, Any]:
+    def get_monitoring_metrics(self) -> TypedDictMonitoringMetrics:
         """Get comprehensive metrics for monitoring systems."""
-        return {
-            "tool_name": self.tool_name,
-            "reason_category": (
+        error_analysis = self.analyze_error_category()
+        return TypedDictMonitoringMetrics(
+            tool_name=self.tool_name,
+            reason_category=(
                 self.reason_category.value
                 if self.reason_category is not None
                 else "UNKNOWN"
             ),
-            "criticality": (
+            criticality=(
                 self.criticality.value if self.criticality is not None else "UNKNOWN"
             ),
-            "tool_category": (
+            tool_category=(
                 self.tool_category.value
                 if self.tool_category is not None
                 else "UNKNOWN"
             ),
-            "severity_level": self.get_severity_level(),
-            "business_impact_score": self.calculate_business_impact_score(),
-            "requires_immediate_attention": self.requires_immediate_attention(),
-            "is_critical_tool": self.is_critical_tool(),
-            "is_recoverable": self.analyze_error_category()["is_recoverable"],
-            "fix_complexity": self.analyze_error_category()["fix_complexity"],
-            "detection_count": self.detection_count or 1,
-            "affected_operations_count": (
+            severity_level=self.get_severity_level(),
+            business_impact_score=self.calculate_business_impact_score(),
+            requires_immediate_attention=self.requires_immediate_attention(),
+            is_critical_tool=self.is_critical_tool(),
+            is_recoverable=error_analysis["is_recoverable"],
+            fix_complexity=error_analysis["fix_complexity"],
+            detection_count=self.detection_count or 1,
+            affected_operations_count=(
                 len(self.affected_operations) if self.affected_operations else 0
             ),
-            "has_alternatives": bool(self.alternative_tools),
-            "has_dependencies": bool(self.dependencies),
-            "first_detected": self.first_detected,
-        }
+            has_alternatives=bool(self.alternative_tools),
+            has_dependencies=bool(self.dependencies),
+            first_detected=self.first_detected,
+        )
 
-    def get_alert_data(self) -> dict[str, Any]:
+    def get_alert_data(self) -> TypedDictAlertData:
         """Get structured data for alerting systems."""
-        return {
-            "alert_level": self.get_severity_level(),
-            "title": f"Missing Tool: {self.tool_name}",
-            "description": self.reason,
-            "tool_details": {
-                "name": self.tool_name,
-                "expected_type": self.expected_type,
-                "category": (
+        return TypedDictAlertData(
+            alert_level=self.get_severity_level(),
+            title=f"Missing Tool: {self.tool_name}",
+            description=self.reason,
+            tool_details=TypedDictToolDetails(
+                name=self.tool_name,
+                expected_type=self.expected_type,
+                category=(
                     self.tool_category.value
                     if self.tool_category is not None
                     else "UNKNOWN"
                 ),
-                "criticality": (
+                criticality=(
                     self.criticality.value
                     if self.criticality is not None
                     else "UNKNOWN"
                 ),
-            },
-            "impact_assessment": self.assess_operational_impact(),
-            "recovery_recommendations": self.get_recovery_recommendations()[
-                :3
-            ],  # Top 3
-            "metadata": {
-                "reason_category": (
+            ),
+            impact_assessment=self.assess_operational_impact(),
+            recovery_recommendations=self.get_recovery_recommendations()[:3],  # Top 3
+            metadata=TypedDictAlertMetadata(
+                reason_category=(
                     self.reason_category.value
                     if self.reason_category is not None
                     else "UNKNOWN"
                 ),
-                "detection_count": self.detection_count,
-                "first_detected": self.first_detected,
-            },
-        }
+                detection_count=self.detection_count,
+                first_detected=self.first_detected,
+            ),
+        )
 
     # === Factory Methods ===
 

@@ -48,6 +48,7 @@ def test_fsm() -> ModelFSMSubcontract:
                 state_name="completed",
                 state_type="terminal",
                 is_terminal=True,
+                is_recoverable=False,  # Terminal states cannot be recoverable
                 description="Terminal completion state",
             ),
         ],

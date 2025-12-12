@@ -1,4 +1,4 @@
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pydantic import Field
 
@@ -12,6 +12,9 @@ Connection properties model to replace Dict[str, Any] usage in connection proper
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, SecretStr, field_serializer
+
+if TYPE_CHECKING:
+    from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelConnectionProperties(BaseModel):
@@ -75,7 +78,7 @@ class ModelConnectionProperties(BaseModel):
     model_config = ConfigDict()
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "ModelConnectionProperties":
+    def from_dict(cls, data: "SerializedDict") -> "ModelConnectionProperties":
         """Create from dictionary for easy migration."""
         return cls(**data)
 

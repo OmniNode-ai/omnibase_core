@@ -1,15 +1,14 @@
 from typing import Any
 
-from pydantic import Field
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.types import SerializedDict
 
 """
 Project metadata block model.
 """
-
-from pydantic import BaseModel
 
 from omnibase_core.enums.enum_metadata import EnumLifecycle, EnumMetaType
 from omnibase_core.models.core.model_entrypoint import EntrypointBlock
@@ -77,7 +76,7 @@ class ModelProjectMetadataBlock(BaseModel):
         )
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "ModelProjectMetadataBlock":
+    def from_dict(cls, data: SerializedDict) -> "ModelProjectMetadataBlock":
         # Convert entrypoint to EntrypointBlock if needed
         if ENTRYPOINT_KEY in data:
             entrypoint_val = data[ENTRYPOINT_KEY]
@@ -112,7 +111,7 @@ class ModelProjectMetadataBlock(BaseModel):
             )
         return cls(**data)
 
-    def to_serializable_dict(self) -> dict[str, Any]:
+    def to_serializable_dict(self) -> SerializedDict:
         # Always emit entrypoint as URI string
         d = self.model_dump(exclude_none=True)
         d[ENTRYPOINT_KEY] = self._parse_entrypoint(self.entrypoint)

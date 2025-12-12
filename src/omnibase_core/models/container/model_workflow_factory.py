@@ -16,7 +16,13 @@ Safe Runtime Imports (OK to import at module level):
 
 from typing import Any
 
+from omnibase_core.utils.util_decorators import allow_dict_str_any
 
+
+@allow_dict_str_any(
+    "Workflow factory config parameter accepts dict[str, Any] for "
+    "flexible workflow-specific configuration options."
+)
 class ModelWorkflowFactory:
     """Workflow factory for LlamaIndex integration."""
 

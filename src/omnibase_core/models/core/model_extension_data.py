@@ -16,6 +16,8 @@ from typing import Annotated
 
 from pydantic import BaseModel
 
+from omnibase_core.types.json_types import PrimitiveContainer
+
 
 class ModelExtensionData(BaseModel):
     """
@@ -47,13 +49,9 @@ class ModelExtensionData(BaseModel):
 
     # Core value - constrained union of allowed types
     # NO nested objects or list[Any]s - keeps validation simple and predictable
+    # Uses PrimitiveContainer type alias: PrimitiveValue | list[PrimitiveValue] | dict[str, PrimitiveValue]
     value: Annotated[
-        str
-        | int
-        | float
-        | bool
-        | list[str | int | float | bool]
-        | dict[str, str | int | float | bool],
+        PrimitiveContainer,
         Field(
             description="Extension value - supports primitives, list[Any]s, and flat objects",
         ),

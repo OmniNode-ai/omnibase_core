@@ -35,8 +35,6 @@ follow this structure for consistency and validation.
 Schema Version: 1.0.0
 """
 
-from typing import Any
-
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -48,6 +46,7 @@ from omnibase_core.models.metadata.model_metadata_constants import (
     NODE_VERSION_KEY,
 )
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.types import SerializedDict, TypedDictSemVer
 
 from .model_error_state import ModelErrorState
 from .model_state_schema import ModelStateSchema
@@ -166,7 +165,7 @@ class ModelStateContract(BaseModel):
     @field_validator("contract_version", mode="before")
     @classmethod
     def validate_contract_version(
-        cls, v: ModelSemVer | str | dict[str, Any]
+        cls, v: ModelSemVer | str | TypedDictSemVer
     ) -> ModelSemVer:
         """Validate and convert contract version to ModelSemVer."""
         if isinstance(v, ModelSemVer):
@@ -183,7 +182,7 @@ class ModelStateContract(BaseModel):
     @field_validator("node_version", mode="before")
     @classmethod
     def validate_node_version(
-        cls, v: ModelSemVer | str | dict[str, Any]
+        cls, v: ModelSemVer | str | TypedDictSemVer
     ) -> ModelSemVer:
         """Validate and convert node version to ModelSemVer."""
         if isinstance(v, ModelSemVer):
@@ -216,7 +215,7 @@ class ModelStateContract(BaseModel):
             )
         return v
 
-    def to_yaml_dict(self) -> dict[str, Any]:
+    def to_yaml_dict(self) -> SerializedDict:
         """
         Convert the model to a dictionary suitable for YAML serialization.
 
@@ -235,7 +234,7 @@ class ModelStateContract(BaseModel):
         return ordered_data
 
     @classmethod
-    def from_yaml_dict(cls, data: dict[str, Any]) -> "ModelStateContract":
+    def from_yaml_dict(cls, data: SerializedDict) -> "ModelStateContract":
         """
         Create a ModelStateContract from a dictionary loaded from YAML.
 

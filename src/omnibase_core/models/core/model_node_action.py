@@ -17,6 +17,7 @@ from pydantic import Field
 from omnibase_core.models.core.model_action_category import ModelActionCategory
 from omnibase_core.models.core.model_node_action_type import ModelNodeActionType
 from omnibase_core.models.core.model_predefined_categories import LIFECYCLE, VALIDATION
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 from .model_action_base import ModelActionBase
 
@@ -67,6 +68,7 @@ class ModelNodeAction(ModelActionBase):
         default_factory=list,
         description="Optional parameter names",
     )
+    # union-ok: nested_schema - Complex nested dict structure for JSON Schema representation
     parameter_schemas: dict[str, dict[str, str | list[str] | bool | int | float]] = (
         Field(
             default_factory=dict,
@@ -199,9 +201,10 @@ class ModelNodeAction(ModelActionBase):
             },
         )
 
+    # union-ok: service_metadata - Complex return type for service discovery metadata
     def to_service_metadata(
         self,
-    ) -> dict[str, str | bool | list[str] | int | None | dict[str, Any]]:
+    ) -> dict[str, str | bool | list[str] | int | None | SerializedDict]:
         """Generate service metadata for tool discovery with strong typing."""
         return {
             "action_name": self.action_name,

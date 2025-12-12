@@ -1,6 +1,6 @@
-from typing import Any
-
 from pydantic import Field
+
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 "\nHealth check result model to replace Dict[str, Any] usage for health checks.\n"
 from datetime import datetime
@@ -66,7 +66,7 @@ class ModelHealthCheckResult(BaseModel):
     model_config = ConfigDict()
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "ModelHealthCheckResult":
+    def from_dict(cls, data: SerializedDict) -> "ModelHealthCheckResult":
         """Create from dictionary for easy migration."""
         return cls(**data)
 

@@ -172,11 +172,12 @@ class ModelNodeActionType(BaseModel):
         }
         return protocol_map.get(protocol.lower(), False)
 
+    # union-ok: service_metadata - Complex return type includes ModelActionCategory model
     def to_service_metadata(
         self,
     ) -> dict[
         str,
-        str | bool | int | list[str] | ModelActionCategory | int | None,
+        str | bool | int | list[str] | ModelActionCategory | None,
     ]:
         """Generate service discovery metadata with strong typing."""
         return {

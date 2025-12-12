@@ -1,7 +1,3 @@
-from typing import TypeVar
-
-from pydantic import Field
-
 """
 Argument Map Model
 
@@ -9,11 +5,12 @@ Type-safe container for parsed CLI arguments that provides both positional
 and named argument access with type conversion capabilities.
 """
 
-from typing import Any
+from typing import Any, TypeVar
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_argument_value import ModelArgumentValue
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 T = TypeVar("T")
 
@@ -169,10 +166,10 @@ class ModelArgumentMap(BaseModel):
         )
         self.positional_args.append(arg_value)
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> SerializedDict:
         """Convert to dictionary for easy serialization."""
         # Custom serialization logic for argument map format
-        result = {}
+        result: SerializedDict = {}
 
         # Add positional args
         for i, arg in enumerate(self.positional_args):

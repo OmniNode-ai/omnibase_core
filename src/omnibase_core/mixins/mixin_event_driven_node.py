@@ -1,4 +1,5 @@
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.types.typed_dict_mixin_types import TypedDictIntrospectionData
 
 # === OmniNode:Metadata ===
 # author: OmniNode Team
@@ -155,22 +156,42 @@ class MixinEventDrivenNode(
         """Check if node supports introspection."""
         return True
 
-    def get_introspection_data(self) -> dict[str, Any]:
+    def get_introspection_data(self) -> TypedDictIntrospectionData:
         """Get introspection data."""
         try:
             # Use the method from MixinIntrospectionPublisher
             data = self._gather_introspection_data()
-            return data.model_dump() if hasattr(data, "model_dump") else data  # type: ignore[return-value]
+            if hasattr(data, "model_dump"):
+                dumped = data.model_dump()
+                return {
+                    "node_name": str(dumped.get("node_name", self.get_node_name())),
+                    "node_id": str(self._node_id),
+                    "version": str(dumped.get("version", self.get_node_version())),
+                    "capabilities": dumped.get("capabilities", {}).get(
+                        "actions", ["health_check"]
+                    ),
+                    "status": "active",
+                    "event_types_handled": ["introspection", "discovery"],
+                }
+            # Fallback for dict-like data
+            return {
+                "node_name": self.get_node_name(),
+                "node_id": str(self._node_id),
+                "version": self.get_node_version(),
+                "capabilities": ["health_check"],
+                "status": "active",
+                "event_types_handled": ["introspection", "discovery"],
+            }
         except (
             Exception
         ):  # fallback-ok: introspection is non-critical, return minimal metadata
             return {
                 "node_name": self.get_node_name(),
+                "node_id": str(self._node_id),
                 "version": self.get_node_version(),
-                "actions": ["health_check"],
-                "protocols": ["event_bus"],
-                "metadata": {"description": "Event-driven ONEX node"},
-                "tags": ["event_driven"],
+                "capabilities": ["health_check"],
+                "status": "active",
+                "event_types_handled": ["introspection", "discovery"],
             }
 
     def cleanup_event_handlers(self) -> None:

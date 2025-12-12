@@ -22,10 +22,16 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.utils.util_decorators import allow_dict_str_any
+
 # Kafka topic for intent events
 TOPIC_EVENT_PUBLISH_INTENT = "dev.omninode-bridge.intents.event-publish.v1"
 
 
+@allow_dict_str_any(
+    "Event publish intent requires flexible target_event_payload to carry "
+    "arbitrary event data for domain events being published to Kafka."
+)
 class ModelEventPublishIntent(BaseModel):
     """
     Intent to publish an event to Kafka.

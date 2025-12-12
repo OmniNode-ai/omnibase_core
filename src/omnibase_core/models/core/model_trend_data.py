@@ -1,4 +1,5 @@
-from typing import Any, Optional
+from collections.abc import Mapping
+from typing import Optional
 
 from pydantic import Field
 
@@ -77,11 +78,12 @@ class ModelTrendData(BaseModel):
     model_config = ConfigDict()
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any] | None) -> Optional["ModelTrendData"]:
+    def from_dict(cls, data: Mapping[str, object] | None) -> Optional["ModelTrendData"]:
         """Create from dictionary for easy migration."""
         if data is None:
             return None
-        return cls(**data)
+        # Pydantic validates the data at runtime - type safety is enforced by Pydantic
+        return cls(**dict(data))  # type: ignore[arg-type]
 
     def add_point(
         self,

@@ -5,10 +5,9 @@ Provides comprehensive information about mixin capabilities, compatibility,
 dependencies, and usage.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
+from omnibase_core.models.common.model_typed_metadata import ModelMixinConfigSchema
 from omnibase_core.models.primitives.model_semver import (
     ModelSemVer,
     default_model_version,
@@ -68,18 +67,9 @@ class ModelMixinInfo(BaseModel):
         description="List of mixins this is incompatible with",
         json_schema_extra={"example": ["MixinSynchronous"]},
     )
-    config_schema: dict[str, Any] = Field(
-        default_factory=dict,
+    config_schema: ModelMixinConfigSchema = Field(
+        default_factory=ModelMixinConfigSchema,
         description="Configuration schema for this mixin",
-        json_schema_extra={
-            "example": {
-                "event_bus_type": {
-                    "type": "string",
-                    "enum": ["redis", "kafka", "memory"],
-                    "default": "redis",
-                }
-            }
-        },
     )
     usage_examples: list[str] = Field(
         default_factory=list,

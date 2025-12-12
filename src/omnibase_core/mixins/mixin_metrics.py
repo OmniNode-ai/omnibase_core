@@ -13,6 +13,8 @@ Usage:
 
 from typing import Any
 
+from omnibase_core.types.typed_dict_mixin_types import TypedDictMetricEntry
+
 
 class MixinMetrics:
     """
@@ -92,23 +94,23 @@ class MixinMetrics:
             current = metrics_data.get(counter_name, {"value": 0})["value"]
             metrics_data[counter_name] = {"value": current + value}
 
-    def get_metrics(self) -> dict[str, Any]:
+    def get_metrics(self) -> dict[str, TypedDictMetricEntry]:
         """
         Get current metrics data.
 
         Returns:
-            Dictionary of current metrics
+            Dictionary of current metrics with typed metric entries
         """
         # Use object.__getattribute__() to access attributes set with object.__setattr__()
         # Defensive: Initialize _metrics_data if it doesn't exist (e.g., if __init__ wasn't called)
         try:
-            metrics_data: dict[str, Any] = object.__getattribute__(
+            metrics_data: dict[str, TypedDictMetricEntry] = object.__getattribute__(
                 self, "_metrics_data"
             )
         except AttributeError:
             object.__setattr__(self, "_metrics_data", {})
             metrics_data = object.__getattribute__(self, "_metrics_data")
-        result: dict[str, Any] = metrics_data.copy()
+        result: dict[str, TypedDictMetricEntry] = metrics_data.copy()
         return result
 
     def reset_metrics(self) -> None:

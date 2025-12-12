@@ -12,7 +12,7 @@ To avoid circular imports with error_codes, we use TYPE_CHECKING for type hints
 and runtime imports in methods that need to raise errors.
 """
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -163,7 +163,7 @@ class ModelSchemaValue(BaseModel):
 
     # Protocol method implementations
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> dict[str, object]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

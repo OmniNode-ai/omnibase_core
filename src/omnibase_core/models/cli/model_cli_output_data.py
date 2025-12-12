@@ -11,9 +11,9 @@ Clean, strongly-typed replacement for dict[str, Any] in CLI execution output.
 Follows ONEX one-model-per-file naming conventions.
 """
 
-from typing import Any
-
 from pydantic import BaseModel
+
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 from omnibase_core.enums.enum_cli_status import EnumCliStatus
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -151,7 +151,7 @@ class ModelCliOutputData(BaseModel):
 
     # Protocol method implementations
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
