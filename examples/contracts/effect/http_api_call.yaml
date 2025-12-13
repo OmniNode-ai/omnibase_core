@@ -64,32 +64,10 @@ contract_version:
   major: 1
   minor: 1
   patch: 0
-
-# Contract fingerprint for drift detection (format: v{version}:{12-char-hash})
-# The 12-character hash is a truncated SHA256 of the normalized contract content
-# (excluding the fingerprint field itself to avoid circular dependency)
-# Regenerate when contract content changes using: poetry run python scripts/compute_contract_fingerprint.py
-fingerprint: "v1.1.0:601d59a4df02"
-
+# Fingerprint: SHA-256 hash of canonical normalized contract content (excluding fingerprint field).
+# See docs/architecture/CONTRACT_STABILITY_SPEC.md for normalization specification.
+fingerprint: "1.1.0:90a9aae3adb2"
 node_type: effect
-
-# Handler requirements for this effect contract
-handlers:
-  required:
-    - type: http
-      version: ">=1.0.0"
-  optional: []
-
-# Kafka topic subscriptions (none for this effect)
-subscriptions:
-  topics: []
-
-# Profile tags for categorization
-profile_tags:
-  - http
-  - rest-api
-  - user-management
-  - integration
 
 # ---------------------------------------------------------------------------
 # EFFECT SUBCONTRACT: Defines external I/O operations
@@ -100,7 +78,7 @@ profile_tags:
 
 effect_operations:
   # Schema version for forward compatibility - must use dict format for ModelSemVer
-  version: {major: 1, minor: 0, patch: 0}
+  version: {major: 1, minor: 1, patch: 0}
 
   # Unique subcontract name (required by ModelEffectSubcontract)
   subcontract_name: "http_api_call_effect"
