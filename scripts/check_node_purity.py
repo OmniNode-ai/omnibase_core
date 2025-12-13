@@ -49,6 +49,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import re
 import sys
 from dataclasses import dataclass, field
 from enum import Enum
@@ -1230,8 +1231,6 @@ class PurityAnalyzer(ast.NodeVisitor):
         Identifies lines that have ONEX_EXCLUDE comments to exclude them
         from Any/Dict[str, Any] checks.
         """
-        import re
-
         for i, line in enumerate(self.source_lines):
             # Check for ONEX_EXCLUDE comments
             if "ONEX_EXCLUDE:" in line:
@@ -1359,8 +1358,6 @@ class PurityAnalyzer(ast.NodeVisitor):
         Returns:
             snake_case version of the name.
         """
-        import re
-
         # Insert underscore before uppercase letters and convert to lowercase
         s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
         return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()

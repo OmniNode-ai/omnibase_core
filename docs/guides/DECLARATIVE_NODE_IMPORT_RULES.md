@@ -113,9 +113,7 @@ def process(self, data: ModelComputeInput) -> ModelComputeOutput:
 | `MixinEventDrivenNode` | Subscribes/publishes events - hidden I/O |
 | `MixinEventHandler` | Handles external events - non-deterministic |
 | `MixinEventListener` | Listens for events - non-deterministic |
-| `MixinDiscoveryResponder` | Service discovery - external I/O |
-| `MixinNodeExecutor` | Executes external nodes - side effect |
-| `MixinHealthCheck` | External health checks - I/O operation |
+| `MixinServiceRegistry` | Service registry access - external I/O |
 
 **Blocked Import Patterns**:
 ```python
@@ -151,19 +149,30 @@ from omnibase_core.events import publish_event, subscribe_to_topic
 
 ### 4. Direct I/O Operations
 
-**Status**: BLOCKED in pure nodes
+**Status**: PARTIALLY BLOCKED in pure nodes
 
 **Why Disallowed**:
 - File, network, database operations are side effects
 - Non-deterministic (external state can change)
 - Violates ONEX 4-node architecture principle
 
+**Note on `open()` behavior**: The linter allows `open()` in **read mode** (default mode, or explicit `'r'`). Only write modes (`'w'`, `'a'`, `'x'`, `'+'`) are blocked.
+
 **Blocked Patterns**:
 ```python
-# BLOCKED - File I/O
-import os
-with open("file.txt") as f:
-    ...
+# BLOCKED - File I/O (write modes)
+with open("file.txt", "w") as f:  # Write mode - BLOCKED
+    f.write("data")
+
+with open("file.txt", "a") as f:  # Append mode - BLOCKED
+    f.write("more data")
+
+# ALLOWED - Read mode (for configuration, schemas, etc.)
+with open("config.json", "r") as f:  # Read mode - ALLOWED
+    config = json.load(f)
+
+with open("schema.yaml") as f:  # Default read mode - ALLOWED
+    schema = yaml.safe_load(f)
 
 # BLOCKED - Network
 import requests
@@ -177,27 +186,35 @@ import sqlalchemy
 
 ### 5. Non-Deterministic Operations
 
-**Status**: BLOCKED in pure nodes
+**Status**: ALLOWED (guidance provided for best practices)
 
-**Why Disallowed**:
-- Random/time-based operations break determinism
-- Same inputs may produce different outputs
-- Makes testing unreliable
+**Note on Linter Behavior**: The purity linter **allows** `random`, `time`, and `uuid` imports because they are in the `ALLOWED_STDLIB_MODULES` allowlist. These are permitted for legitimate use cases:
+- `time.perf_counter()` for performance metrics
+- `random` with seeded values for deterministic pseudo-random algorithms
+- `uuid` for identifier generation
 
-**Blocked Patterns**:
+**Best Practice Guidance**:
+While these imports are allowed by the linter, consider injecting values for maximum testability:
+
 ```python
-# BLOCKED - Time-based (use injected timestamps instead)
+# ALLOWED - time module for metrics
 import time
-current_time = time.time()
+elapsed = time.perf_counter() - start_time  # Performance measurement
 
-# BLOCKED - Random (use injected seeds instead)
+# ALLOWED - random with seeds is deterministic
 import random
+random.seed(42)  # Seeded random is deterministic
 value = random.randint(0, 100)
 
-# BLOCKED - UUID generation (use injected UUIDs instead)
+# ALLOWED - UUID generation
 from uuid import uuid4
-new_id = uuid4()  # Use container.correlation_id or passed UUIDs
+new_id = uuid4()  # Consider using container.correlation_id for traceability
 ```
+
+**Recommendation**: For maximum testability in pure nodes, consider:
+- Injecting timestamps through function parameters
+- Using seeded random generators
+- Passing UUIDs as input rather than generating internally
 
 ---
 
@@ -285,9 +302,14 @@ These mixins maintain purity and are allowed:
 | `MixinWorkflowExecution` | Workflow step coordination | Pure workflow logic |
 | `MixinComputeExecution` | Computation execution | Pure computation patterns |
 | `MixinContractMetadata` | Contract access | Read-only metadata |
+| `MixinDiscoveryResponder` | Service discovery responses | Read-only discovery metadata |
 | `MixinIntrospection` | Node introspection | Read-only reflection |
 | `MixinHashComputation` | Deterministic hashing | Pure computation |
+| `MixinNodeLifecycle` | Node lifecycle management | Lifecycle coordination |
+| `MixinNodeExecutor` | Node execution patterns | Execution coordination |
+| `MixinRequestResponseIntrospection` | Request/response inspection | Read-only introspection |
 | `MixinSerializable` | Serialization | Pure transformation |
+| `MixinWorkflowSupport` | Workflow support utilities | Pure workflow logic |
 | `MixinYAMLSerialization` | YAML serialization | Pure transformation |
 
 ```python
@@ -369,21 +391,22 @@ def legacy_bridge(data: Any) -> Any:  # noqa: ONEX001
 
 ## CI Enforcement
 
-### Pre-commit Hook
+### Pre-push Hook
 
-The purity linter runs automatically on pre-commit:
+The purity linter runs automatically on pre-push when node files are modified:
 
 ```yaml
 # .pre-commit-config.yaml
 repos:
   - repo: local
     hooks:
-      - id: onex-purity-linter
-        name: ONEX Purity Linter
-        entry: poetry run python -m omnibase_core.linters.purity_linter
+      - id: check-node-purity
+        name: ONEX Node Purity Validation
+        entry: poetry run python scripts/check_node_purity.py
         language: system
-        files: \.py$
-        types: [python]
+        pass_filenames: false
+        files: ^src/omnibase_core/nodes/
+        stages: [pre-push]
 ```
 
 ### CI Pipeline
@@ -393,7 +416,7 @@ The linter runs in CI via GitHub Actions:
 ```yaml
 # .github/workflows/test.yml
 - name: Run purity linter
-  run: poetry run python -m omnibase_core.linters.purity_linter src/
+  run: poetry run python scripts/check_node_purity.py src/
 ```
 
 ### Error Codes
@@ -427,13 +450,13 @@ Run the linter to find all violations:
 
 ```bash
 # Check specific file
-poetry run python -m omnibase_core.linters.purity_linter src/nodes/node_my_compute.py
+poetry run python scripts/check_node_purity.py src/omnibase_core/nodes/node_my_compute.py
 
 # Check all nodes
-poetry run python -m omnibase_core.linters.purity_linter src/nodes/
+poetry run python scripts/check_node_purity.py src/omnibase_core/nodes/
 
 # Generate report
-poetry run python -m omnibase_core.linters.purity_linter src/ --output report.json
+poetry run python scripts/check_node_purity.py src/ --output report.json
 ```
 
 ### Step 2: Replace `Any` with Typed Alternatives
@@ -542,13 +565,13 @@ After migration, verify:
 
 ```bash
 # Run linter - should pass
-poetry run python -m omnibase_core.linters.purity_linter src/nodes/
+poetry run python scripts/check_node_purity.py src/omnibase_core/nodes/
 
 # Run tests - should pass
 poetry run pytest tests/unit/nodes/ -v
 
 # Run type checker - should pass
-poetry run mypy src/nodes/
+poetry run mypy src/omnibase_core/nodes/
 ```
 
 ---
@@ -574,13 +597,17 @@ poetry run mypy src/nodes/
 | `MixinEventBus` | NO | YES |
 | `MixinEventDrivenNode` | NO | YES |
 | Event publishing | NO | YES |
-| File I/O | NO | YES |
+| File I/O (write modes) | NO | YES |
+| File I/O (read mode) | YES* | YES |
 | Network calls | NO | YES |
 | Database operations | NO | YES |
-| `random`, `time.time()` | NO (use injected values) | YES |
+| `random`, `time`, `uuid` | YES* (inject for testability) | YES |
 | Pydantic models | YES | YES |
 | Typed containers | YES | YES |
 | Pure mixins | YES | YES |
+| `@lru_cache`, `@cache` | NO | YES |
+
+*Allowed by linter but consider best practices for testability
 
 ### Decision Tree
 

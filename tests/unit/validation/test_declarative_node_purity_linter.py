@@ -25,25 +25,63 @@ Ticket: OMN-203
 from __future__ import annotations
 
 import ast
+import importlib.util
 import sys
 import textwrap
 from collections.abc import Callable
 from pathlib import Path
+from types import ModuleType
 
 import pytest
 
-# Import the purity checker module
-# We need to add scripts to path for the import
-scripts_path = Path(__file__).parent.parent.parent.parent / "scripts"
-if str(scripts_path) not in sys.path:
-    sys.path.insert(0, str(scripts_path))
 
-from check_node_purity import (
-    NodeTypeFinder,
-    PurityAnalyzer,
-    Severity,
-    ViolationType,
-)
+def _load_check_node_purity_module() -> ModuleType:
+    """Load the check_node_purity module without modifying sys.path.
+
+    Uses importlib.util to load the script module directly from its file path.
+    This avoids mutating global sys.path state, which is problematic for:
+    - Parallel test execution (pytest-xdist)
+    - Test isolation
+    - Cleanup reliability
+
+    Note: The module is registered in sys.modules because dataclasses requires
+    the module to be findable via sys.modules[cls.__module__] during class
+    decoration. This is a minimal and safe modification compared to sys.path
+    manipulation.
+
+    Returns:
+        The loaded check_node_purity module.
+
+    Raises:
+        FileNotFoundError: If the script file doesn't exist.
+        ImportError: If the module cannot be loaded.
+    """
+    script_path = (
+        Path(__file__).parent.parent.parent.parent / "scripts" / "check_node_purity.py"
+    )
+    if not script_path.exists():
+        raise FileNotFoundError(f"Script not found: {script_path}")
+
+    spec = importlib.util.spec_from_file_location("check_node_purity", script_path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Cannot create module spec for: {script_path}")
+
+    module = importlib.util.module_from_spec(spec)
+    # Register in sys.modules before exec_module - required for dataclasses
+    # to resolve the module's __dict__ during class decoration
+    sys.modules["check_node_purity"] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+# Load module at module level for efficiency (loaded once per test session)
+_purity_module = _load_check_node_purity_module()
+
+# Extract the classes/enums we need from the loaded module
+NodeTypeFinder = _purity_module.NodeTypeFinder
+PurityAnalyzer = _purity_module.PurityAnalyzer
+Severity = _purity_module.Severity
+ViolationType = _purity_module.ViolationType
 
 # ==============================================================================
 # FIXTURES
