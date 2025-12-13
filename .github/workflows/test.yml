@@ -215,6 +215,94 @@ jobs:
       - name: Run mypy type checking (strict)
         run: poetry run mypy src/omnibase_core
 
+  pyright:
+    name: Pyright Type Checking
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: >-
+            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
+            ${{ hashFiles('**/poetry.lock') }}-
+            ${{ env.CACHE_VERSION }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}-${{ env.CACHE_VERSION }}
+
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root
+
+      - name: Install project
+        run: poetry install --no-interaction
+
+      - name: Run pyright type checking
+        run: poetry run pyright src/omnibase_core
+
+  exports-validation:
+    name: Exports Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: >-
+            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
+            ${{ hashFiles('**/poetry.lock') }}-
+            ${{ env.CACHE_VERSION }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}-${{ env.CACHE_VERSION }}
+
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root
+
+      - name: Install project
+        run: poetry install --no-interaction
+
+      - name: Validate __all__ exports
+        run: poetry run python scripts/validation/validate-all-exports.py
+
   # Separate job for validation scripts mypy
   mypy-validation-scripts:
     name: Mypy Validation Scripts
@@ -459,7 +547,7 @@ jobs:
   test-summary:
     name: Test Summary
     runs-on: ubuntu-latest
-    needs: [smoke-test, test-parallel, lint, mypy-validation-scripts, docs-validation, node-purity-check]
+    needs: [smoke-test, test-parallel, lint, pyright, exports-validation, mypy-validation-scripts, docs-validation, node-purity-check]
     if: always()
 
     steps:
@@ -468,6 +556,8 @@ jobs:
           smoke="${{ needs.smoke-test.result }}"
           parallel="${{ needs.test-parallel.result }}"
           lint="${{ needs.lint.result }}"
+          pyright="${{ needs.pyright.result }}"
+          exports="${{ needs.exports-validation.result }}"
           mypy_scripts="${{ needs.mypy-validation-scripts.result }}"
           docs="${{ needs.docs-validation.result }}"
           purity="${{ needs.node-purity-check.result }}"
@@ -475,6 +565,8 @@ jobs:
           if [[ "$smoke" == "success" ]] && \
              [[ "$parallel" == "success" ]] && \
              [[ "$lint" == "success" ]] && \
+             [[ "$pyright" == "success" ]] && \
+             [[ "$exports" == "success" ]] && \
              [[ "$mypy_scripts" == "success" ]] && \
              [[ "$docs" == "success" ]] && \
              [[ "$purity" == "success" ]]; then
@@ -482,6 +574,8 @@ jobs:
             echo "Smoke Tests: ✅ Passed"
             echo "Parallel Tests (20 splits): ✅ Passed"
             echo "Code Quality: ✅ Passed"
+            echo "Pyright Type Checking: ✅ Passed"
+            echo "Exports Validation: ✅ Passed"
             echo "Mypy Validation Scripts: ✅ Passed"
             echo "Documentation: ✅ Passed"
             echo "Node Purity: ✅ Passed"
@@ -491,6 +585,8 @@ jobs:
             echo "Smoke Tests: $smoke"
             echo "Parallel Tests: $parallel"
             echo "Lint: $lint"
+            echo "Pyright: $pyright"
+            echo "Exports: $exports"
             echo "Mypy Scripts: $mypy_scripts"
             echo "Documentation: $docs"
             echo "Node Purity: $purity"
