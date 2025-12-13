@@ -1,0 +1,20 @@
+{
+  "include": ["src/omnibase_core"],
+  "exclude": [
+    "**/__pycache__",
+    "**/.venv",
+    "**/node_modules",
+    "tmp"
+  ],
+  "typeCheckingMode": "strict",
+  "pythonVersion": "3.12",
+  "pythonPlatform": "Linux",
+  "reportMissingImports": true,
+  "reportMissingTypeStubs": false,
+  "reportUnknownParameterType": true,
+  "reportUnknownArgumentType": false,
+  "reportUnknownMemberType": false,
+  "reportUnknownVariableType": false,
+  "reportUntypedFunctionDecorator": false,
+  "reportPrivateUsage": false
+}
