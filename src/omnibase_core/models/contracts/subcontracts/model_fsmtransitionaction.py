@@ -13,10 +13,11 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.contracts.model_action_config_parameter import (
+    ModelActionConfigParameter,
+)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-
-from .model_action_config_parameter import ModelActionConfigParameter
 
 
 class ModelFSMTransitionAction(BaseModel):
@@ -82,9 +83,9 @@ class ModelFSMTransitionAction(BaseModel):
         seen: set[str] = set()
         duplicates: set[str] = set()
         for param in self.action_config:
-            if param.parameter_name in seen:
-                duplicates.add(param.parameter_name)
-            seen.add(param.parameter_name)
+            if param.name in seen:
+                duplicates.add(param.name)
+            seen.add(param.name)
         if duplicates:
             raise ModelOnexError(
                 message=f"Duplicate parameter names in action_config: {sorted(duplicates)}",

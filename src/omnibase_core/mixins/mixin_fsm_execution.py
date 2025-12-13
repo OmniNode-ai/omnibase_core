@@ -11,7 +11,7 @@ from typing import Any
 from omnibase_core.models.contracts.subcontracts.model_fsm_subcontract import (
     ModelFSMSubcontract,
 )
-from omnibase_core.types.type_serializable_value import SerializedDict
+from omnibase_core.types.type_fsm_context import FSMContextType
 from omnibase_core.utils.fsm_executor import (
     FSMState,
     FSMTransitionResult,
@@ -56,7 +56,7 @@ class MixinFSMExecution:
         self,
         fsm_contract: ModelFSMSubcontract,
         trigger: str,
-        context: "SerializedDict",
+        context: FSMContextType,
     ) -> FSMTransitionResult:
         """
         Execute FSM transition from YAML contract.
@@ -104,13 +104,13 @@ class MixinFSMExecution:
         # Update internal state if successful
         if result.success:
             # Create new FSMState with updated current state and history
-            history = (self._fsm_state.history if self._fsm_state else []) + [
-                result.old_state
-            ]
+            # Use tuple concatenation to maintain immutability
+            previous_history = self._fsm_state.history if self._fsm_state else ()
+            new_history = previous_history + (result.old_state,)
             self._fsm_state = FSMState(
                 current_state=result.new_state,
                 context=context,
-                history=history,
+                history=new_history,
             )
 
         return result
@@ -155,18 +155,18 @@ class MixinFSMExecution:
         """
         return self._fsm_state.current_state if self._fsm_state else None
 
-    def get_fsm_state_history(self) -> list[str]:
+    def get_fsm_state_history(self) -> tuple[str, ...]:
         """
         Get FSM state transition history.
 
         Returns:
-            List of previous state names in chronological order
+            Tuple of previous state names in chronological order (immutable)
 
         Example:
             history = self.get_fsm_state_history()
             print(f"State history: {' -> '.join(history)}")
         """
-        return self._fsm_state.history if self._fsm_state else []
+        return self._fsm_state.history if self._fsm_state else ()
 
     def reset_fsm_state(self, fsm_contract: ModelFSMSubcontract) -> None:
         """
@@ -183,7 +183,7 @@ class MixinFSMExecution:
         self._fsm_state = get_initial_state(fsm_contract)
 
     def initialize_fsm_state(
-        self, fsm_contract: ModelFSMSubcontract, context: SerializedDict | None = None
+        self, fsm_contract: ModelFSMSubcontract, context: FSMContextType | None = None
     ) -> None:
         """
         Initialize FSM state with optional context.
@@ -202,7 +202,7 @@ class MixinFSMExecution:
         self._fsm_state = FSMState(
             current_state=fsm_contract.initial_state,
             context=context or {},
-            history=[],
+            history=(),
         )
 
     def is_terminal_state(self, fsm_contract: ModelFSMSubcontract) -> bool:

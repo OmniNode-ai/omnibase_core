@@ -1,25 +1,56 @@
-from __future__ import annotations
-
-from pydantic import Field
-
 """
 Strongly-typed FSM state model.
 
 Replaces dict[str, Any] usage in FSM state operations with structured typing.
 Follows ONEX strong typing principles and one-model-per-file architecture.
+
+Deep Immutability:
+    This model uses frozen=True for Pydantic immutability, and also uses
+    immutable types (tuple instead of list, tuple-of-tuples instead of dict)
+    for deep immutability. This ensures that nested collections cannot be
+    modified after construction.
 """
 
+from __future__ import annotations
 
-from pydantic import BaseModel
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class ModelFsmState(BaseModel):
     """
-    Strongly-typed FSM state.
+    Strongly-typed FSM state with deep immutability.
+
+    Represents a single state in a finite state machine, including its
+    entry/exit actions and custom properties.
+
     Implements Core protocols:
     - Executable: Execution management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification
+
+    Deep Immutability:
+        All collection fields use immutable types:
+        - entry_actions/exit_actions: tuple instead of list
+        - properties: tuple[tuple[str, str], ...] instead of dict
+
+        Validators automatically convert incoming lists/dicts to frozen types
+        for convenience during model construction.
+
+    Accessing dict-like fields:
+        For properties, use dict() to convert back:
+        >>> state = ModelFsmState(name="example", properties={"key": "value"})
+        >>> props_dict = dict(state.properties)  # Convert to dict for lookup
+
+    Attributes:
+        name: Unique state identifier (required).
+        description: Human-readable description of the state.
+        is_initial: Whether this is the initial/starting state.
+        is_final: Whether this is a terminal/accepting state.
+        entry_actions: Tuple of action names to execute on state entry.
+        exit_actions: Tuple of action names to execute on state exit.
+        properties: Tuple of key-value pairs for custom state properties.
     """
 
     name: str = Field(default=..., description="State name")
@@ -28,35 +59,62 @@ class ModelFsmState(BaseModel):
         default=False, description="Whether this is the initial state"
     )
     is_final: bool = Field(default=False, description="Whether this is a final state")
-    entry_actions: list[str] = Field(
-        default_factory=list, description="Actions on state entry"
+    entry_actions: tuple[str, ...] = Field(
+        default=(), description="Actions on state entry (immutable)"
     )
-    exit_actions: list[str] = Field(
-        default_factory=list, description="Actions on state exit"
+    exit_actions: tuple[str, ...] = Field(
+        default=(), description="Actions on state exit (immutable)"
     )
-    properties: dict[str, str] = Field(
-        default_factory=dict, description="State properties"
+    properties: tuple[tuple[str, str], ...] = Field(
+        default=(), description="State properties as frozen key-value pairs"
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    @field_validator("entry_actions", mode="before")
+    @classmethod
+    def _convert_entry_actions_to_tuple(
+        cls, v: list[str] | tuple[str, ...] | Any
+    ) -> tuple[str, ...]:
+        """Convert list of entry actions to tuple for deep immutability."""
+        if isinstance(v, list):
+            return tuple(v)
+        return v
+
+    @field_validator("exit_actions", mode="before")
+    @classmethod
+    def _convert_exit_actions_to_tuple(
+        cls, v: list[str] | tuple[str, ...] | Any
+    ) -> tuple[str, ...]:
+        """Convert list of exit actions to tuple for deep immutability."""
+        if isinstance(v, list):
+            return tuple(v)
+        return v
+
+    @field_validator("properties", mode="before")
+    @classmethod
+    def _convert_properties_to_frozen(
+        cls, v: dict[str, str] | tuple[tuple[str, str], ...] | Any
+    ) -> tuple[tuple[str, str], ...]:
+        """Convert dict to tuple of tuples for deep immutability."""
+        if isinstance(v, dict):
+            return tuple(v.items())
+        return v
+
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        frozen=True,
+    )
 
     # Protocol method implementations
 
     def execute(self, **kwargs: object) -> bool:
         """Execute or update execution status (Executable protocol).
 
-        Raises:
-            AttributeError: If setting an attribute fails
-            Exception: If execution logic fails
+        Note: In v1.0, this method returns True without modification.
+        The model is frozen (immutable) for thread safety.
         """
-        # Update any relevant execution fields
-        for key, value in kwargs.items():
-            if hasattr(self, key):
-                setattr(self, key, value)
+        # v1.0: Model is frozen, so setattr is not allowed
+        _ = kwargs  # Explicitly mark as unused
         return True
 
     def serialize(self) -> dict[str, object]:
@@ -66,11 +124,15 @@ class ModelFsmState(BaseModel):
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol).
 
-        Raises:
-            Exception: If validation logic fails
+        Validates that required fields have valid values:
+        - name must be a non-empty, non-whitespace string
+
+        Returns:
+            bool: True if validation passed, False otherwise
         """
-        # Basic validation - ensure required fields exist
-        # Override in specific models for custom validation
+        # Validate name is non-empty and non-whitespace
+        if not self.name or not self.name.strip():
+            return False
         return True
 
 

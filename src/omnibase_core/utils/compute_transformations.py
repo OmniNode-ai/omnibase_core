@@ -37,17 +37,7 @@ See Also:
 import re
 import unicodedata
 from collections.abc import Callable
-from typing import Any, Union
-
-# Type alias for JSON-compatible data structures
-# Used for documenting expected data shapes in transformation functions
-JsonValue = Union[str, int, float, bool, None]
-JsonType = Union[dict[str, "JsonType"], list["JsonType"], JsonValue]
-
-# Type alias for transformation handler functions
-# All handlers follow the signature (data, config) -> result for uniform registry usage
-# We use Callable[..., Any] for flexibility with different config types
-TransformationHandler = Callable[..., Any]
+from typing import Any
 
 from omnibase_core.enums.enum_case_mode import EnumCaseMode
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -140,7 +130,7 @@ def transform_identity(
 
     Note:
         The signature uses `config: ModelTransformationConfig | None` to align with
-        other TransformationHandler functions which all take `(data, config)`. This
+        other transformation handler functions which all take `(data, config)`. This
         maintains uniform `handler(data, config)` call pattern in the registry and
         enables safer type checking when handlers are stored in the registry.
 
@@ -479,8 +469,8 @@ def transform_json_path(
 
 
 # Transformation registry mapping type to handler
-# TransformationHandler used because handlers have varying signatures
-TRANSFORMATION_REGISTRY: dict[EnumTransformationType, TransformationHandler] = {
+# Callable[..., Any] used because handlers have varying signatures
+TRANSFORMATION_REGISTRY: dict[EnumTransformationType, Callable[..., Any]] = {
     EnumTransformationType.IDENTITY: transform_identity,
     EnumTransformationType.REGEX: transform_regex,
     EnumTransformationType.CASE_CONVERSION: transform_case,
@@ -570,10 +560,6 @@ def execute_transformation(
 
 
 __all__ = [
-    # Type aliases
-    "JsonValue",
-    "JsonType",
-    "TransformationHandler",
     # Transformation functions
     "transform_identity",
     "transform_regex",

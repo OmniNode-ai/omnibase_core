@@ -27,17 +27,14 @@ def get_effect_result_discriminator(v: Any) -> str:
     return str(getattr(v, "result_type", "dict[str, Any]"))  # Ensure string type
 
 
-# ONEX Discriminated Union Type
-EffectResultUnion = Union[
-    ModelEffectResultDict,
-    ModelEffectResultBool,
-    ModelEffectResultStr,
-    ModelEffectResultList,
-]
-
 # Type alias with discriminator for Pydantic validation
 ModelEffectResult = Annotated[
-    EffectResultUnion,
+    Union[
+        ModelEffectResultDict,
+        ModelEffectResultBool,
+        ModelEffectResultStr,
+        ModelEffectResultList,
+    ],
     Field(discriminator="result_type"),
 ]
 

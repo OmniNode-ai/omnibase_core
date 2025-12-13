@@ -18,6 +18,7 @@ from omnibase_core.models.fsm.model_fsm_state import ModelFsmState
 from omnibase_core.models.fsm.model_fsm_transition import ModelFsmTransition
 
 
+@pytest.mark.unit
 class TestModelFsmDataInstantiation:
     """Test cases for ModelFsmData instantiation."""
 
@@ -43,9 +44,11 @@ class TestModelFsmDataInstantiation:
         assert fsm.initial_state == "start"
         assert len(fsm.states) == 2
         assert len(fsm.transitions) == 1
-        assert fsm.variables == {}
-        assert fsm.global_actions == []
-        assert fsm.metadata == {}
+        # Deep immutability: variables/metadata are tuple[tuple[str, str], ...]
+        assert fsm.variables == ()
+        # Deep immutability: global_actions is tuple[str, ...]
+        assert fsm.global_actions == ()
+        assert fsm.metadata == ()
 
     def test_model_instantiation_full(self):
         """Test model instantiation with all fields populated."""
@@ -75,11 +78,14 @@ class TestModelFsmDataInstantiation:
         assert fsm.initial_state == "idle"
         assert len(fsm.states) == 3
         assert len(fsm.transitions) == 2
-        assert fsm.variables == {"counter": "0", "mode": "normal"}
-        assert fsm.global_actions == ["log", "notify"]
-        assert fsm.metadata == {"version": "1.0", "author": "test"}
+        # Deep immutability: dict converted to tuple of tuples
+        # Order depends on dict iteration order (Python 3.7+: insertion order)
+        assert dict(fsm.variables) == {"counter": "0", "mode": "normal"}
+        assert fsm.global_actions == ("log", "notify")
+        assert dict(fsm.metadata) == {"version": "1.0", "author": "test"}
 
 
+@pytest.mark.unit
 class TestModelFsmDataValidation:
     """Test validation rules for ModelFsmData."""
 
@@ -169,6 +175,7 @@ class TestModelFsmDataValidation:
             )
 
 
+@pytest.mark.unit
 class TestModelFsmDataStateQueries:
     """Test state query methods."""
 
@@ -208,8 +215,11 @@ class TestModelFsmDataStateQueries:
         assert state is None
 
     def test_get_state_by_name_empty_states(self):
-        """Test getting state when states list is empty."""
-        # This will fail validation but let's test the method logic
+        """Test getting state when states list has only unrelated states.
+
+        Note: ModelFsmData is frozen (immutable), so we test that searching
+        for a non-matching state returns None rather than testing empty list.
+        """
         states = [ModelFsmState(name="s1", is_initial=True, is_final=True)]
         transitions = []
 
@@ -220,12 +230,12 @@ class TestModelFsmDataStateQueries:
             transitions=transitions,
         )
 
-        # Clear states for test
-        fsm.states = []
+        # Model is frozen - search for a state that doesn't exist
         state = fsm.get_state_by_name("any")
         assert state is None
 
 
+@pytest.mark.unit
 class TestModelFsmDataTransitionQueries:
     """Test transition query methods."""
 
@@ -319,6 +329,7 @@ class TestModelFsmDataTransitionQueries:
         assert result == []
 
 
+@pytest.mark.unit
 class TestModelFsmDataStructureValidation:
     """Test FSM structure validation."""
 
@@ -446,6 +457,7 @@ class TestModelFsmDataStructureValidation:
         assert len(errors) >= 3  # Initial state, no final state, bad transitions
 
 
+@pytest.mark.unit
 class TestModelFsmDataProtocols:
     """Test protocol implementations for ModelFsmData."""
 
@@ -505,6 +517,7 @@ class TestModelFsmDataProtocols:
         assert result is True
 
 
+@pytest.mark.unit
 class TestModelFsmDataSerialization:
     """Test serialization and deserialization for ModelFsmData."""
 
@@ -559,6 +572,7 @@ class TestModelFsmDataSerialization:
         assert "json_test" in json_str
 
 
+@pytest.mark.unit
 class TestModelFsmDataEdgeCases:
     """Test edge cases for ModelFsmData."""
 
@@ -727,9 +741,10 @@ class TestModelFsmDataEdgeCases:
             metadata={},
         )
 
-        assert fsm.variables == {}
-        assert fsm.global_actions == []
-        assert fsm.metadata == {}
+        # Deep immutability: empty dict/list become empty tuple
+        assert fsm.variables == ()
+        assert fsm.global_actions == ()
+        assert fsm.metadata == ()
 
     def test_extra_fields_ignored(self):
         """Test that extra fields are ignored."""
@@ -743,6 +758,61 @@ class TestModelFsmDataEdgeCases:
 
         fsm = ModelFsmData.model_validate(data)
         assert not hasattr(fsm, "extra_field")
+
+
+@pytest.mark.unit
+class TestModelFsmDataValidateInstanceFalse:
+    """Test validate_instance returning False for invalid states."""
+
+    def test_validate_instance_empty_state_machine_name_returns_false(self):
+        """Test validate_instance returns False for empty state_machine_name."""
+        data = ModelFsmData(
+            state_machine_name="",
+            initial_state="idle",
+            states=[ModelFsmState(name="idle", is_initial=True, is_final=True)],
+            transitions=[],
+        )
+        assert data.validate_instance() is False
+
+    def test_validate_instance_whitespace_state_machine_name_returns_false(self):
+        """Test validate_instance returns False for whitespace-only state_machine_name."""
+        data = ModelFsmData(
+            state_machine_name="   ",
+            initial_state="idle",
+            states=[ModelFsmState(name="idle", is_initial=True, is_final=True)],
+            transitions=[],
+        )
+        assert data.validate_instance() is False
+
+    def test_validate_instance_empty_initial_state_returns_false(self):
+        """Test validate_instance returns False for empty initial_state."""
+        data = ModelFsmData(
+            state_machine_name="test_fsm",
+            initial_state="",
+            states=[ModelFsmState(name="idle", is_initial=True, is_final=True)],
+            transitions=[],
+        )
+        assert data.validate_instance() is False
+
+    def test_validate_instance_whitespace_initial_state_returns_false(self):
+        """Test validate_instance returns False for whitespace-only initial_state."""
+        data = ModelFsmData(
+            state_machine_name="test_fsm",
+            initial_state="   ",
+            states=[ModelFsmState(name="idle", is_initial=True, is_final=True)],
+            transitions=[],
+        )
+        assert data.validate_instance() is False
+
+    def test_validate_instance_valid_returns_true(self):
+        """Test validate_instance returns True for valid data."""
+        data = ModelFsmData(
+            state_machine_name="test_fsm",
+            initial_state="idle",
+            states=[ModelFsmState(name="idle", is_initial=True, is_final=True)],
+            transitions=[],
+        )
+        assert data.validate_instance() is True
 
 
 if __name__ == "__main__":
