@@ -96,8 +96,37 @@ class ModelFSMTransitionCondition(BaseModel):
     )
 
     # Valid operators for expression evaluation
+    # Must be kept in sync with fsm_expression_parser.SUPPORTED_OPERATORS
+    # and fsm_executor._evaluate_single_condition()
     VALID_OPERATORS: frozenset[str] = frozenset(
-        {"==", "!=", "<", ">", "<=", ">=", "in", "not_in", "contains", "matches"}
+        {
+            # Equality operators (symbolic and textual)
+            "==",
+            "!=",
+            "equals",
+            "not_equals",
+            # Comparison operators (symbolic and textual)
+            "<",
+            ">",
+            "<=",
+            ">=",
+            "greater_than",
+            "less_than",
+            "greater_than_or_equal",
+            "less_than_or_equal",
+            # Length operators
+            "min_length",
+            "max_length",
+            # Existence operators
+            "exists",
+            "not_exists",
+            # Containment operators
+            "in",
+            "not_in",
+            "contains",
+            # Pattern matching
+            "matches",
+        }
     )
 
     @model_validator(mode="after")
@@ -105,9 +134,17 @@ class ModelFSMTransitionCondition(BaseModel):
         """Validate that expression has exactly 3 tokens and valid operator.
 
         Expression format must be: "field operator value"
-        Examples: "status == active", "count > 0", "name != empty"
+        Examples: "status == active", "count > 0", "name != empty",
+                  "status equals ready", "items min_length 1"
 
-        Valid operators: ==, !=, <, >, <=, >=, in, not_in, contains, matches
+        Valid operators:
+        - Equality: ==, !=, equals, not_equals
+        - Comparison: <, >, <=, >=, greater_than, less_than,
+          greater_than_or_equal, less_than_or_equal
+        - Length: min_length, max_length
+        - Existence: exists, not_exists
+        - Containment: in, not_in, contains
+        - Pattern: matches
 
         Returns:
             Self: The validated model instance.

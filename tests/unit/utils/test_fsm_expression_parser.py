@@ -236,10 +236,10 @@ class TestParseExpressionUnsupportedOperator:
         assert "Unsupported operator" in str(exc_info.value)
         assert "eqals" in str(exc_info.value)
 
-    def test_python_operator_not_supported(self) -> None:
-        """Should reject Python comparison operators."""
+    def test_python_is_operator_not_supported(self) -> None:
+        """Should reject Python 'is' operator (not a comparison operator)."""
         with pytest.raises(ModelOnexError) as exc_info:
-            parse_expression("count == 5")
+            parse_expression("count is None")
         assert "Unsupported operator" in str(exc_info.value)
 
     def test_sql_operator_not_supported(self) -> None:

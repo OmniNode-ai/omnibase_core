@@ -985,7 +985,7 @@ class TestNestedFieldAccess:
                         ModelFSMTransitionCondition(
                             condition_name="deep_check",
                             condition_type="field_check",
-                            expression="config.settings.feature.enabled equals true",
+                            expression="config.settings.feature.enabled == true",
                             required=True,
                         )
                     ],
@@ -1039,7 +1039,17 @@ class TestExpressionValidation:
             initial_state="idle",
             terminal_states=[],
             error_states=[],
-            transitions=[],
+            transitions=[
+                # Dummy transition to satisfy min_length=1 validation
+                ModelFSMStateTransition(
+                    transition_name="dummy_transition",
+                    from_state="idle",
+                    to_state="active",
+                    trigger="dummy",
+                    priority=1,
+                    version=ModelSemVer(major=1, minor=0, patch=0),
+                ),
+            ],
             operations=[],
             persistence_enabled=False,
             recovery_enabled=False,
