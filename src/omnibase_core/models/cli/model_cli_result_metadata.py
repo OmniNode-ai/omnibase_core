@@ -1,12 +1,3 @@
-from __future__ import annotations
-
-from datetime import datetime
-
-from pydantic import Field, field_validator, model_validator
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 CLI result metadata model.
 
@@ -14,19 +5,22 @@ Clean, strongly-typed replacement for dict[str, Any] in CLI result metadata.
 Follows ONEX one-model-per-file naming conventions.
 """
 
+from __future__ import annotations
 
-from datetime import UTC
-from typing import Any
+from datetime import UTC, datetime
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_data_classification import EnumDataClassification
 from omnibase_core.enums.enum_result_category import EnumResultCategory
 from omnibase_core.enums.enum_result_type import EnumResultType
 from omnibase_core.enums.enum_retention_policy import EnumRetentionPolicy
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.infrastructure.model_value import ModelValue
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.types.type_serializable_value import SerializedDict
 from omnibase_core.utils.util_uuid_utilities import uuid_from_string
 
 # Using ModelValue instead of primitive soup type alias for proper discriminated union typing
@@ -190,7 +184,7 @@ class ModelCliResultMetadata(BaseModel):
 
     @field_validator("custom_metadata", mode="before")
     @classmethod
-    def validate_custom_metadata(cls, v: dict[str, Any]) -> dict[str, ModelValue]:
+    def validate_custom_metadata(cls, v: dict[str, object]) -> dict[str, ModelValue]:
         """Validate custom metadata values ensure they are ModelValue objects."""
         result = {}
         for key, value in v.items():
@@ -300,7 +294,7 @@ class ModelCliResultMetadata(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def handle_legacy_labels_field(cls, data: Any) -> Any:
+    def handle_legacy_labels_field(cls, data: object) -> object:
         """
         Transform legacy 'labels' field to new label_ids/label_names structure.
 
@@ -336,7 +330,7 @@ class ModelCliResultMetadata(BaseModel):
 
     # Protocol method implementations
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 Permission action model for defining allowed actions in permission constraints.
 """
 
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelPermissionAction(BaseModel):

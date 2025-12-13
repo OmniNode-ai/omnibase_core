@@ -1,7 +1,3 @@
-from uuid import UUID
-
-from pydantic import Field
-
 """
 Graph Node Model
 
@@ -9,11 +5,12 @@ Type-safe graph node that replaces Dict[str, Any] usage
 in orchestrator graphs.
 """
 
-from typing import Any
+from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.service.model_custom_fields import ModelCustomFields
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelGraphNode(BaseModel):
@@ -44,8 +41,8 @@ class ModelGraphNode(BaseModel):
     color: str | None = Field(default=None, description="Node color for visualization")
     icon: str | None = Field(default=None, description="Node icon identifier")
 
-    # Node data
-    data: dict[str, Any] | None = Field(default=None, description="Node-specific data")
+    # Node data - uses SerializedDict for JSON-serializable node data
+    data: SerializedDict | None = Field(default=None, description="Node-specific data")
     properties: dict[str, str] | None = Field(
         default=None, description="Node properties"
     )
@@ -53,7 +50,8 @@ class ModelGraphNode(BaseModel):
     # Execution details (for executable nodes)
     node_name: str | None = Field(default=None, description="ONEX node name to execute")
     action: str | None = Field(default=None, description="Action to perform")
-    inputs: dict[str, Any] | None = Field(default=None, description="Input parameters")
+    # Uses SerializedDict for JSON-serializable input parameters
+    inputs: SerializedDict | None = Field(default=None, description="Input parameters")
 
     # Graph relationships (may be redundant with edges)
     incoming_edges: list[str] = Field(

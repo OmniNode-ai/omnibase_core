@@ -1,17 +1,19 @@
-from pydantic import Field
+"""GitHubIssueCommentEvent model."""
 
-"""
-GitHubIssueCommentEvent model.
-"""
+from pydantic import BaseModel, Field
 
-from typing import Any
-
-from pydantic import BaseModel
-
+from .model_git_hub_comment_change import ModelGitHubCommentChange
 from .model_git_hub_issue import ModelGitHubIssue
 from .model_git_hub_issue_comment import ModelGitHubIssueComment
+from .model_git_hub_issue_comment_changes import ModelGitHubIssueCommentChanges
 from .model_git_hub_repository import ModelGitHubRepository
 from .model_git_hub_user import ModelGitHubUser
+
+__all__ = [
+    "ModelGitHubCommentChange",
+    "ModelGitHubIssueCommentChanges",
+    "ModelGitHubIssueCommentEvent",
+]
 
 
 class ModelGitHubIssueCommentEvent(BaseModel):
@@ -31,7 +33,7 @@ class ModelGitHubIssueCommentEvent(BaseModel):
     sender: ModelGitHubUser = Field(
         default=..., description="User who triggered the event"
     )
-    changes: dict[str, Any] | None = Field(
+    changes: ModelGitHubIssueCommentChanges | None = Field(
         default=None,
         description="Changes made (for edited action)",
     )

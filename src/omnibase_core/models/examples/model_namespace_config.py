@@ -5,11 +5,10 @@ Namespace configuration model.
 """
 
 
-from typing import Any
-
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_namespace_strategy import EnumNamespaceStrategy
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelNamespaceConfig(BaseModel):
@@ -31,7 +30,7 @@ class ModelNamespaceConfig(BaseModel):
 
     # Protocol method implementations
 
-    def configure(self, **kwargs: Any) -> bool:
+    def configure(self, **kwargs: object) -> bool:
         """Configure instance with provided parameters (Configurable protocol).
 
         Raises:
@@ -43,7 +42,7 @@ class ModelNamespaceConfig(BaseModel):
                 setattr(self, key, value)
         return True
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

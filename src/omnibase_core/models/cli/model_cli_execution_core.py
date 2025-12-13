@@ -1,11 +1,3 @@
-from __future__ import annotations
-
-from datetime import datetime
-
-from pydantic import Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 CLI Execution Core Model.
 
@@ -13,20 +5,23 @@ Core execution information for CLI commands.
 Part of the ModelCliExecution restructuring to reduce excessive string fields.
 """
 
+from __future__ import annotations
 
 import uuid
-from datetime import UTC
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
+from omnibase_core.decorators import allow_dict_any
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
 from omnibase_core.enums.enum_execution_status_v2 import (
     EnumExecutionStatusV2 as EnumExecutionStatus,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 from .model_cli_command_option import ModelCliCommandOption
 
@@ -210,6 +205,7 @@ class ModelCliExecutionCore(BaseModel):
 
     # Protocol method implementations
 
+    @allow_dict_any
     def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)

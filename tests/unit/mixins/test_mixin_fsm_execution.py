@@ -6,6 +6,8 @@ Tests the FSM execution mixin for declarative state machines.
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 from omnibase_core.mixins.mixin_fsm_execution import MixinFSMExecution
 from omnibase_core.models.contracts.subcontracts.model_fsm_state_definition import (
     ModelFSMStateDefinition,
@@ -48,6 +50,7 @@ def test_fsm() -> ModelFSMSubcontract:
                 state_name="completed",
                 state_type="terminal",
                 is_terminal=True,
+                is_recoverable=False,  # Terminal states cannot be recoverable
                 description="Terminal completion state",
             ),
         ],

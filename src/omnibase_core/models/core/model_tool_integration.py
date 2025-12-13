@@ -4,9 +4,24 @@ Tool Integration Model.
 Service integration configuration for tool with deployment settings.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field
+
+from omnibase_core.models.core.model_tool_integration_summary import (
+    ModelToolIntegrationSummary,
+)
+from omnibase_core.models.core.model_tool_resource_requirements import (
+    ModelToolResourceRequirements,
+)
+from omnibase_core.models.core.model_tool_timeout_settings import (
+    ModelToolTimeoutSettings,
+)
+
+__all__ = [
+    "ModelToolIntegration",
+    "ModelToolIntegrationSummary",
+    "ModelToolResourceRequirements",
+    "ModelToolTimeoutSettings",
+]
 
 
 class ModelToolIntegration(BaseModel):
@@ -61,31 +76,31 @@ class ModelToolIntegration(BaseModel):
         else:
             return "static"
 
-    def get_required_resources(self) -> dict[str, bool]:
+    def get_required_resources(self) -> ModelToolResourceRequirements:
         """Get required resources summary."""
-        return {
-            "requires_separate_port": self.requires_separate_port,
-            "health_check_via_service": self.health_check_via_service,
-            "loaded_as_module": self.load_as_module,
-        }
+        return ModelToolResourceRequirements(
+            requires_separate_port=self.requires_separate_port,
+            health_check_via_service=self.health_check_via_service,
+            loaded_as_module=self.load_as_module,
+        )
 
-    def get_timeout_settings(self) -> dict[str, int]:
+    def get_timeout_settings(self) -> ModelToolTimeoutSettings:
         """Get timeout-related settings."""
-        return {
-            "shutdown_timeout": self.shutdown_timeout,
-            "initialization_order": self.initialization_order,
-        }
+        return ModelToolTimeoutSettings(
+            shutdown_timeout=self.shutdown_timeout,
+            initialization_order=self.initialization_order,
+        )
 
-    def get_summary(self) -> dict[str, Any]:
+    def get_summary(self) -> ModelToolIntegrationSummary:
         """Get integration summary."""
-        return {
-            "auto_load_strategy": self.get_load_strategy(),
-            "has_fallback_versions": self.has_fallback_versions(),
-            "fallback_versions_count": len(self.fallback_versions),
-            "directory_pattern_type": self.get_directory_pattern_type(),
-            "implementation_file": self.implementation_file,
-            "contract_file": self.contract_file,
-            "main_class_name": self.main_class_name,
-            "resources": self.get_required_resources(),
-            "timeout_settings": self.get_timeout_settings(),
-        }
+        return ModelToolIntegrationSummary(
+            auto_load_strategy=self.get_load_strategy(),
+            has_fallback_versions=self.has_fallback_versions(),
+            fallback_versions_count=len(self.fallback_versions),
+            directory_pattern_type=self.get_directory_pattern_type(),
+            implementation_file=self.implementation_file,
+            contract_file=self.contract_file,
+            main_class_name=self.main_class_name,
+            resources=self.get_required_resources(),
+            timeout_settings=self.get_timeout_settings(),
+        )

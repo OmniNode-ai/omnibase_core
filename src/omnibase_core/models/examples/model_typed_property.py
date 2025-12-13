@@ -12,11 +12,12 @@ typed property with validation in the environment property system.
 """
 
 
-from typing import Any, cast
+from typing import cast
 
 from pydantic import BaseModel, model_validator
 
 from omnibase_core.enums.enum_property_type import EnumPropertyType
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 from .model_property_metadata import ModelPropertyMetadata
 from .model_property_value import ModelPropertyValue
@@ -106,7 +107,7 @@ class ModelTypedProperty(BaseModel):
 
     # Protocol method implementations
 
-    def configure(self, **kwargs: Any) -> bool:
+    def configure(self, **kwargs: object) -> bool:
         """Configure instance with provided parameters (Configurable protocol).
 
         Raises:
@@ -118,7 +119,7 @@ class ModelTypedProperty(BaseModel):
                 setattr(self, key, value)
         return True
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

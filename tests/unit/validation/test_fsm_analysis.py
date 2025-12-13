@@ -15,9 +15,8 @@ See src/omnibase_core/validation/fsm_analysis.py for implementation.
 
 import pytest
 
-from omnibase_core.models.contracts.subcontracts.model_fsm_operation import (
-    ModelFSMOperation,
-)
+pytestmark = pytest.mark.unit
+
 from omnibase_core.models.contracts.subcontracts.model_fsm_state_definition import (
     ModelFSMStateDefinition,
 )
@@ -28,8 +27,6 @@ from omnibase_core.models.contracts.subcontracts.model_fsm_subcontract import (
     ModelFSMSubcontract,
 )
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-
-# Import the module under test
 from omnibase_core.validation.fsm_analysis import (
     ModelAmbiguousTransition,
     ModelFSMAnalysisResult,
@@ -78,6 +75,7 @@ def valid_fsm(base_version: ModelSemVer) -> ModelFSMSubcontract:
             state_type="terminal",
             description="Work completed successfully",
             is_terminal=True,
+            is_recoverable=False,  # Terminal states cannot be recoverable
         ),
     ]
 
@@ -144,6 +142,7 @@ def fsm_with_unreachable_state(base_version: ModelSemVer) -> ModelFSMSubcontract
             state_type="terminal",
             description="Terminal state",
             is_terminal=True,
+            is_recoverable=False,  # Terminal states cannot be recoverable
         ),
         ModelFSMStateDefinition(
             version=base_version,
@@ -241,6 +240,7 @@ def fsm_with_cycle_no_exit(base_version: ModelSemVer) -> ModelFSMSubcontract:
             state_type="terminal",
             description="Terminal state",
             is_terminal=True,
+            is_recoverable=False,  # Terminal states cannot be recoverable
         ),
     ]
 
@@ -330,6 +330,7 @@ def fsm_with_cycle_and_exit(base_version: ModelSemVer) -> ModelFSMSubcontract:
             state_type="terminal",
             description="Terminal state",
             is_terminal=True,
+            is_recoverable=False,  # Terminal states cannot be recoverable
         ),
     ]
 
@@ -380,110 +381,10 @@ def fsm_with_cycle_and_exit(base_version: ModelSemVer) -> ModelFSMSubcontract:
     )
 
 
-@pytest.fixture
-def fsm_with_ambiguous_transitions(base_version: ModelSemVer) -> ModelFSMSubcontract:
-    """
-    FSM where (state_A, event_X) maps to BOTH state_B AND state_C.
-
-    Structure:
-    - idle → processing
-    - processing + trigger "ambiguous" → stateB (priority 1)
-    - processing + trigger "ambiguous" → stateC (priority 1)
-
-    Expected issue: ambiguous_transitions for (processing, ambiguous)
-    """
-    states = [
-        ModelFSMStateDefinition(
-            version=base_version,
-            state_name="idle",
-            state_type="operational",
-            description="Initial state",
-            is_terminal=False,
-        ),
-        ModelFSMStateDefinition(
-            version=base_version,
-            state_name="processing",
-            state_type="operational",
-            description="State with ambiguous transitions",
-            is_terminal=False,
-        ),
-        ModelFSMStateDefinition(
-            version=base_version,
-            state_name="stateB",
-            state_type="operational",
-            description="First ambiguous target",
-            is_terminal=False,
-        ),
-        ModelFSMStateDefinition(
-            version=base_version,
-            state_name="stateC",
-            state_type="operational",
-            description="Second ambiguous target",
-            is_terminal=False,
-        ),
-        ModelFSMStateDefinition(
-            version=base_version,
-            state_name="completed",
-            state_type="terminal",
-            description="Terminal state",
-            is_terminal=True,
-        ),
-    ]
-
-    transitions = [
-        ModelFSMStateTransition(
-            version=base_version,
-            transition_name="start",
-            from_state="idle",
-            to_state="processing",
-            trigger="start",
-            priority=1,
-        ),
-        # AMBIGUOUS: same from_state + trigger with SAME priority
-        ModelFSMStateTransition(
-            version=base_version,
-            transition_name="ambiguous_to_b",
-            from_state="processing",
-            to_state="stateB",
-            trigger="ambiguous",
-            priority=1,
-        ),
-        ModelFSMStateTransition(
-            version=base_version,
-            transition_name="ambiguous_to_c",
-            from_state="processing",
-            to_state="stateC",
-            trigger="ambiguous",
-            priority=1,
-        ),
-        ModelFSMStateTransition(
-            version=base_version,
-            transition_name="b_to_completed",
-            from_state="stateB",
-            to_state="completed",
-            trigger="finish",
-            priority=1,
-        ),
-        ModelFSMStateTransition(
-            version=base_version,
-            transition_name="c_to_completed",
-            from_state="stateC",
-            to_state="completed",
-            trigger="finish",
-            priority=1,
-        ),
-    ]
-
-    return ModelFSMSubcontract(
-        version=base_version,
-        state_machine_name="FSMWithAmbiguousTransitions",
-        state_machine_version=base_version,
-        description="FSM with ambiguous transitions",
-        states=states,
-        initial_state="idle",
-        terminal_states=["completed"],
-        transitions=transitions,
-    )
+# NOTE: fsm_with_ambiguous_transitions fixture was removed because since OMN-575,
+# FSMs with duplicate structural transitions (same from_state, trigger, priority)
+# are now rejected at construction time. The test_detect_ambiguous_transitions test
+# was updated to test construction-time validation instead.
 
 
 @pytest.fixture
@@ -525,6 +426,7 @@ def fsm_with_wildcard_transitions(base_version: ModelSemVer) -> ModelFSMSubcontr
             state_type="error",
             description="Global error state",
             is_terminal=True,
+            is_recoverable=False,  # Terminal states cannot be recoverable
         ),
         ModelFSMStateDefinition(
             version=base_version,
@@ -532,6 +434,7 @@ def fsm_with_wildcard_transitions(base_version: ModelSemVer) -> ModelFSMSubcontr
             state_type="terminal",
             description="Terminal state",
             is_terminal=True,
+            is_recoverable=False,  # Terminal states cannot be recoverable
         ),
     ]
 
@@ -624,6 +527,7 @@ def fsm_with_dead_end_state(base_version: ModelSemVer) -> ModelFSMSubcontract:
             state_type="terminal",
             description="Terminal state",
             is_terminal=True,
+            is_recoverable=False,  # Terminal states cannot be recoverable
         ),
     ]
 
@@ -735,6 +639,7 @@ def fsm_with_multiple_issues(base_version: ModelSemVer) -> ModelFSMSubcontract:
             state_type="terminal",
             description="Terminal state",
             is_terminal=True,
+            is_recoverable=False,  # Terminal states cannot be recoverable
         ),
     ]
 
@@ -747,22 +652,23 @@ def fsm_with_multiple_issues(base_version: ModelSemVer) -> ModelFSMSubcontract:
             trigger="start",
             priority=1,
         ),
-        # Ambiguous transitions
+        # Multiple transitions from same state (different priorities - NOT ambiguous)
+        # Note: Since OMN-575, same priority would be rejected at construction
         ModelFSMStateTransition(
             version=base_version,
-            transition_name="ambiguous_b",
+            transition_name="priority_high_to_b",
             from_state="processing",
             to_state="stateB",
-            trigger="ambiguous",
-            priority=1,
+            trigger="choose",
+            priority=1,  # Higher priority
         ),
         ModelFSMStateTransition(
             version=base_version,
-            transition_name="ambiguous_c",
+            transition_name="priority_low_to_c",
             from_state="processing",
             to_state="stateC",
-            trigger="ambiguous",
-            priority=1,
+            trigger="choose",
+            priority=2,  # Lower priority - deterministic resolution
         ),
         # Dead-end transition
         ModelFSMStateTransition(
@@ -908,29 +814,107 @@ class TestFSMAnalysisCycles:
 
 
 class TestFSMAnalysisAmbiguousTransitions:
-    """Test detection of ambiguous transitions."""
+    """Test detection of ambiguous transitions.
 
-    def test_detect_ambiguous_transitions(
-        self, fsm_with_ambiguous_transitions: ModelFSMSubcontract
-    ) -> None:
+    NOTE: Since OMN-575, duplicate structural transitions (same from_state,
+    trigger, priority) are now rejected at FSM construction time. This class
+    tests both the construction-time validation and the analysis function.
+    """
+
+    def test_detect_ambiguous_transitions(self, base_version: ModelSemVer) -> None:
         """
-        Test that ambiguous transitions are detected.
+        Test that ambiguous transitions are rejected at construction time.
 
-        When (state, trigger) maps to multiple targets with same priority,
-        it should be flagged as ambiguous.
+        Since OMN-575, FSMs with duplicate structural transitions (same
+        from_state, trigger, priority) are rejected during model validation.
+        This test verifies that behavior.
         """
-        result = analyze_fsm(fsm_with_ambiguous_transitions)
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
-        assert not result.is_valid, "FSM with ambiguous transitions should be invalid"
-        assert len(result.ambiguous_transitions) > 0
+        states = [
+            ModelFSMStateDefinition(
+                version=base_version,
+                state_name="idle",
+                state_type="operational",
+                description="Initial state",
+                is_terminal=False,
+            ),
+            ModelFSMStateDefinition(
+                version=base_version,
+                state_name="processing",
+                state_type="operational",
+                description="State with ambiguous transitions",
+                is_terminal=False,
+            ),
+            ModelFSMStateDefinition(
+                version=base_version,
+                state_name="stateB",
+                state_type="operational",
+                description="First ambiguous target",
+                is_terminal=False,
+            ),
+            ModelFSMStateDefinition(
+                version=base_version,
+                state_name="stateC",
+                state_type="operational",
+                description="Second ambiguous target",
+                is_terminal=False,
+            ),
+            ModelFSMStateDefinition(
+                version=base_version,
+                state_name="completed",
+                state_type="terminal",
+                description="Terminal state",
+                is_terminal=True,
+                is_recoverable=False,
+            ),
+        ]
 
-        # Check that the ambiguous transition is reported
-        found = any(
-            amb.from_state == "processing" and amb.trigger == "ambiguous"
-            for amb in result.ambiguous_transitions
-        )
-        assert found, "Expected ambiguous transition for (processing, ambiguous)"
-        assert any("ambiguous" in error.lower() for error in result.errors)
+        transitions = [
+            ModelFSMStateTransition(
+                version=base_version,
+                transition_name="start",
+                from_state="idle",
+                to_state="processing",
+                trigger="start",
+                priority=1,
+            ),
+            # AMBIGUOUS: same from_state + trigger with SAME priority
+            ModelFSMStateTransition(
+                version=base_version,
+                transition_name="ambiguous_to_b",
+                from_state="processing",
+                to_state="stateB",
+                trigger="ambiguous",
+                priority=1,
+            ),
+            ModelFSMStateTransition(
+                version=base_version,
+                transition_name="ambiguous_to_c",
+                from_state="processing",
+                to_state="stateC",
+                trigger="ambiguous",
+                priority=1,  # Same priority = duplicate structural transition!
+            ),
+        ]
+
+        # FSM construction should now fail with duplicate structural transitions
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelFSMSubcontract(
+                version=base_version,
+                state_machine_name="AmbiguousFSM",
+                state_machine_version=base_version,
+                description="FSM with ambiguous transitions",
+                states=states,
+                initial_state="idle",
+                terminal_states=["completed"],
+                transitions=transitions,
+            )
+
+        error_message = str(exc_info.value)
+        assert "Duplicate structural transitions" in error_message
+        assert "processing" in error_message
+        assert "ambiguous" in error_message
 
     def test_wildcard_transitions_not_ambiguous(
         self, fsm_with_wildcard_transitions: ModelFSMSubcontract
@@ -988,6 +972,7 @@ class TestFSMAnalysisAmbiguousTransitions:
                 state_type="terminal",
                 description="Terminal",
                 is_terminal=True,
+                is_recoverable=False,  # Terminal states cannot be recoverable
             ),
         ]
 
@@ -1055,11 +1040,16 @@ class TestFSMAnalysisAmbiguousTransitions:
     def test_wildcard_to_wildcard_ambiguous(self, base_version: ModelSemVer) -> None:
         """
         Test that multiple wildcard transitions with same trigger and priority
-        going to DIFFERENT targets are detected as ambiguous.
+        are rejected at construction time.
+
+        Since OMN-575, duplicate structural transitions (same from_state, trigger,
+        priority) are rejected at FSM construction time, including wildcards.
 
         Wildcard-to-wildcard ambiguity: '*' + trigger -> {stateA, stateB} at same priority
-        is ambiguous because no precedence rule applies between wildcards.
+        is now caught during construction as duplicate structural transitions.
         """
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
         states = [
             ModelFSMStateDefinition(
                 version=base_version,
@@ -1074,6 +1064,7 @@ class TestFSMAnalysisAmbiguousTransitions:
                 state_type="error",
                 description="Error handler A",
                 is_terminal=True,
+                is_recoverable=False,  # Terminal states cannot be recoverable
             ),
             ModelFSMStateDefinition(
                 version=base_version,
@@ -1081,6 +1072,7 @@ class TestFSMAnalysisAmbiguousTransitions:
                 state_type="error",
                 description="Error handler B",
                 is_terminal=True,
+                is_recoverable=False,  # Terminal states cannot be recoverable
             ),
             ModelFSMStateDefinition(
                 version=base_version,
@@ -1088,6 +1080,7 @@ class TestFSMAnalysisAmbiguousTransitions:
                 state_type="terminal",
                 description="Terminal",
                 is_terminal=True,
+                is_recoverable=False,  # Terminal states cannot be recoverable
             ),
         ]
 
@@ -1101,7 +1094,7 @@ class TestFSMAnalysisAmbiguousTransitions:
                 priority=1,
             ),
             # AMBIGUOUS: Two wildcard transitions with same trigger and priority
-            # but different targets - this IS ambiguous
+            # but different targets - this IS ambiguous (duplicate structural)
             ModelFSMStateTransition(
                 version=base_version,
                 transition_name="global_error_a",
@@ -1116,40 +1109,29 @@ class TestFSMAnalysisAmbiguousTransitions:
                 from_state="*",
                 to_state="error_state_b",
                 trigger="error",
-                priority=1,  # Same priority - AMBIGUOUS!
+                priority=1,  # Same priority - duplicate structural transition!
             ),
         ]
 
-        fsm = ModelFSMSubcontract(
-            version=base_version,
-            state_machine_name="WildcardAmbiguous",
-            state_machine_version=base_version,
-            description="FSM with ambiguous wildcard transitions",
-            states=states,
-            initial_state="idle",
-            terminal_states=["completed", "error_state_a", "error_state_b"],
-            error_states=["error_state_a", "error_state_b"],
-            transitions=transitions,
-        )
+        # FSM construction should fail with duplicate structural transitions
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelFSMSubcontract(
+                version=base_version,
+                state_machine_name="WildcardAmbiguous",
+                state_machine_version=base_version,
+                description="FSM with ambiguous wildcard transitions",
+                states=states,
+                initial_state="idle",
+                terminal_states=["completed", "error_state_a", "error_state_b"],
+                error_states=["error_state_a", "error_state_b"],
+                transitions=transitions,
+            )
 
-        result = analyze_fsm(fsm)
-
-        # Should be invalid - wildcard-to-wildcard ambiguity detected
-        assert not result.is_valid, "Wildcard-to-wildcard ambiguity should be detected"
-        assert len(result.ambiguous_transitions) > 0
-
-        # Check that the wildcard ambiguous transition is reported
-        found = any(
-            amb.from_state == "*" and amb.trigger == "error"
-            for amb in result.ambiguous_transitions
-        )
-        assert found, "Expected ambiguous transition for (*, error)"
-
-        # Check that both targets are reported
-        for amb in result.ambiguous_transitions:
-            if amb.from_state == "*" and amb.trigger == "error":
-                assert "error_state_a" in amb.target_states
-                assert "error_state_b" in amb.target_states
+        error_message = str(exc_info.value)
+        assert "Duplicate structural transitions" in error_message
+        # Wildcard from_state should be mentioned
+        assert "*" in error_message or "wildcard" in error_message.lower()
+        assert "error" in error_message
 
     def test_wildcard_different_priority_not_ambiguous(
         self, base_version: ModelSemVer
@@ -1173,6 +1155,7 @@ class TestFSMAnalysisAmbiguousTransitions:
                 state_type="error",
                 description="High priority error handler",
                 is_terminal=True,
+                is_recoverable=False,  # Terminal states cannot be recoverable
             ),
             ModelFSMStateDefinition(
                 version=base_version,
@@ -1180,6 +1163,7 @@ class TestFSMAnalysisAmbiguousTransitions:
                 state_type="error",
                 description="Low priority error handler",
                 is_terminal=True,
+                is_recoverable=False,  # Terminal states cannot be recoverable
             ),
             ModelFSMStateDefinition(
                 version=base_version,
@@ -1187,6 +1171,7 @@ class TestFSMAnalysisAmbiguousTransitions:
                 state_type="terminal",
                 description="Terminal",
                 is_terminal=True,
+                is_recoverable=False,  # Terminal states cannot be recoverable
             ),
         ]
 
@@ -1306,11 +1291,14 @@ class TestFSMAnalysisComprehensiveReporting:
 
         FSM has multiple issues:
         - Unreachable state (orphan)
-        - Ambiguous transitions (processing + ambiguous)
         - Dead-end state (dead_end)
-        - Cycle without exit (cycleA ↔ cycleB)
+        - Cycle without exit (cycleA -> cycleB -> cycleA)
 
-        All should be reported in the result.
+        Note: Since OMN-575, duplicate structural transitions (which would
+        cause ambiguous transitions) are rejected at construction time.
+        This test now focuses on issues that pass construction validation.
+
+        All issues should be reported in the result.
         """
         result = analyze_fsm(fsm_with_multiple_issues)
 
@@ -1320,11 +1308,6 @@ class TestFSMAnalysisComprehensiveReporting:
         assert len(result.unreachable_states) > 0, "Should detect unreachable states"
         assert "orphan" in result.unreachable_states
 
-        # Check ambiguous transitions
-        assert len(result.ambiguous_transitions) > 0, (
-            "Should detect ambiguous transitions"
-        )
-
         # Check dead-end states
         assert len(result.missing_transitions) > 0, "Should detect missing transitions"
         assert "dead_end" in result.missing_transitions
@@ -1332,7 +1315,7 @@ class TestFSMAnalysisComprehensiveReporting:
         # Check cycles without exit
         assert len(result.cycles_without_exit) > 0, "Should detect cycles without exit"
 
-        # Multiple errors should be reported
+        # Multiple errors should be reported (at least unreachable + dead-end + cycle)
         assert len(result.errors) >= 3, "Should report multiple errors"
 
     def test_analysis_result_structure(self, valid_fsm: ModelFSMSubcontract) -> None:
@@ -1400,6 +1383,7 @@ class TestFSMAnalysisDeadTransitions:
                 state_type="terminal",
                 description="Terminal",
                 is_terminal=True,
+                is_recoverable=False,  # Terminal states cannot be recoverable
             ),
         ]
 
@@ -1472,6 +1456,7 @@ class TestFSMAnalysisEdgeCases:
                 state_type="terminal",
                 description="Terminal state",
                 is_terminal=True,
+                is_recoverable=False,  # Terminal states cannot be recoverable
             ),
         ]
 
@@ -1530,6 +1515,7 @@ class TestFSMAnalysisEdgeCases:
                 state_type="terminal",
                 description="Success terminal",
                 is_terminal=True,
+                is_recoverable=False,  # Terminal states cannot be recoverable
             ),
             ModelFSMStateDefinition(
                 version=base_version,
@@ -1537,6 +1523,7 @@ class TestFSMAnalysisEdgeCases:
                 state_type="terminal",
                 description="Failure terminal",
                 is_terminal=True,
+                is_recoverable=False,  # Terminal states cannot be recoverable
             ),
         ]
 
@@ -1609,6 +1596,7 @@ class TestFSMAnalysisEdgeCases:
                 state_type="terminal",
                 description="Terminal",
                 is_terminal=True,
+                is_recoverable=False,  # Terminal states cannot be recoverable
             ),
         ]
 
@@ -1685,6 +1673,7 @@ class TestFSMAnalysisEdgeCases:
                 state_type="terminal",
                 description="Terminal",
                 is_terminal=True,
+                is_recoverable=False,  # Terminal states cannot be recoverable
             ),
         ]
 
@@ -1721,13 +1710,14 @@ class TestFSMAnalysisEdgeCases:
         self, base_version: ModelSemVer
     ) -> None:
         """
-        Test that multiple wildcard transitions with same trigger and priority are ambiguous.
+        Test that multiple wildcard transitions with same trigger and priority
+        are rejected at construction time.
 
-        When two wildcard ('*') transitions have the same trigger and same priority,
-        but different target states, this creates ambiguity because the FSM executor
-        cannot determine which transition to take (no precedence rule applies to
-        wildcard-to-wildcard conflicts).
+        Since OMN-575, duplicate structural transitions (same from_state, trigger,
+        priority) are rejected at FSM construction time. This applies to wildcards too.
         """
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
         states = [
             ModelFSMStateDefinition(
                 version=base_version,
@@ -1749,6 +1739,7 @@ class TestFSMAnalysisEdgeCases:
                 state_type="error",
                 description="Error handler A",
                 is_terminal=True,
+                is_recoverable=False,  # Terminal states cannot be recoverable
             ),
             ModelFSMStateDefinition(
                 version=base_version,
@@ -1756,6 +1747,7 @@ class TestFSMAnalysisEdgeCases:
                 state_type="error",
                 description="Error handler B",
                 is_terminal=True,
+                is_recoverable=False,  # Terminal states cannot be recoverable
             ),
         ]
 
@@ -1769,7 +1761,7 @@ class TestFSMAnalysisEdgeCases:
                 priority=1,
             ),
             # Two wildcard transitions with SAME trigger and SAME priority
-            # This creates ambiguity for any state receiving "error" trigger
+            # This is now caught as duplicate structural transitions
             ModelFSMStateTransition(
                 version=base_version,
                 transition_name="global_error_a",
@@ -1784,43 +1776,28 @@ class TestFSMAnalysisEdgeCases:
                 from_state="*",
                 to_state="error_b",
                 trigger="error",
-                priority=1,  # Same priority as global_error_a
+                priority=1,  # Same priority - duplicate structural transition!
             ),
         ]
 
-        fsm = ModelFSMSubcontract(
-            version=base_version,
-            state_machine_name="WildcardAmbiguity",
-            state_machine_version=base_version,
-            description="FSM with ambiguous wildcard transitions",
-            states=states,
-            initial_state="idle",
-            terminal_states=["error_a", "error_b"],
-            error_states=["error_a", "error_b"],
-            transitions=transitions,
-        )
+        # FSM construction should fail with duplicate structural transitions
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelFSMSubcontract(
+                version=base_version,
+                state_machine_name="WildcardAmbiguity",
+                state_machine_version=base_version,
+                description="FSM with ambiguous wildcard transitions",
+                states=states,
+                initial_state="idle",
+                terminal_states=["error_a", "error_b"],
+                error_states=["error_a", "error_b"],
+                transitions=transitions,
+            )
 
-        result = analyze_fsm(fsm)
-
-        # Wildcard-to-wildcard ambiguity IS detected when multiple wildcard
-        # transitions have the same trigger and same priority with different targets
-        assert not result.is_valid, (
-            "FSM with ambiguous wildcard transitions should be invalid"
-        )
-        assert len(result.ambiguous_transitions) > 0, (
-            "Should detect ambiguous wildcard transitions"
-        )
-
-        # Check that the ambiguous wildcard transition is correctly reported
-        found_wildcard_ambiguity = any(
-            amb.from_state == "*" and amb.trigger == "error"
-            for amb in result.ambiguous_transitions
-        )
-        assert found_wildcard_ambiguity, (
-            "Expected ambiguous transition for (*, error) - got: "
-            f"{result.ambiguous_transitions}"
-        )
-        assert any("ambiguous" in error.lower() for error in result.errors)
+        error_message = str(exc_info.value)
+        assert "Duplicate structural transitions" in error_message
+        assert "*" in error_message or "wildcard" in error_message.lower()
+        assert "error" in error_message
 
 
 class TestFSMAnalysisInitialStateValidation:
@@ -1857,6 +1834,7 @@ class TestFSMAnalysisInitialStateValidation:
                 state_type="terminal",
                 description="Terminal state",
                 is_terminal=True,
+                is_recoverable=False,  # Terminal states cannot be recoverable
             ),
         ]
 
@@ -1911,6 +1889,7 @@ class TestFSMAnalysisInitialStateValidation:
                 state_type="terminal",
                 description="Terminal state",
                 is_terminal=True,
+                is_recoverable=False,  # Terminal states cannot be recoverable
             ),
         ]
 

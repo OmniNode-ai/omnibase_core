@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Connection Authentication Model.
 
@@ -7,8 +5,9 @@ Authentication configuration for network connections.
 Part of the ModelConnectionInfo restructuring to reduce excessive string fields.
 """
 
+from __future__ import annotations
+
 import hashlib
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field, SecretStr, field_serializer
@@ -16,6 +15,7 @@ from pydantic import BaseModel, Field, SecretStr, field_serializer
 from omnibase_core.enums.enum_auth_type import EnumAuthType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.types import SerializedDict
 
 
 class ModelConnectionAuth(BaseModel):
@@ -200,7 +200,7 @@ class ModelConnectionAuth(BaseModel):
 
     # Protocol method implementations
 
-    def configure(self, **kwargs: Any) -> bool:
+    def configure(self, **kwargs: object) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
         try:
             for key, value in kwargs.items():
@@ -225,7 +225,7 @@ class ModelConnectionAuth(BaseModel):
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             ) from e
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

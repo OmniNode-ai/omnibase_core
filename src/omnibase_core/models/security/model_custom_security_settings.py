@@ -1,14 +1,21 @@
-from typing import Any
-
-from pydantic import Field
-
 """
 ModelCustomSecuritySettings: Custom security settings model.
 
 This model provides structured custom security settings without using Any types.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+# Type alias for security setting values stored in this model.
+# Intentionally constrained to exactly the types this model stores:
+# - str, int, bool: Basic setting types
+# - list[str]: List of strings (e.g., allowed origins, permissions)
+# - None: For missing settings (default return)
+#
+# This is more precise than JsonPrimitive (excludes float) or
+# ToolParameterValue (excludes None, includes dict[str, str]).
+# union-ok: domain-specific type alias for security settings
+SecuritySettingValue = str | int | bool | list[str] | None
 
 
 class ModelCustomSecuritySettings(BaseModel):
@@ -31,24 +38,37 @@ class ModelCustomSecuritySettings(BaseModel):
         description="List security settings",
     )
 
-    def add_setting(self, key: str, value: Any) -> None:
-        """Add a custom security setting with automatic type detection."""
-        if isinstance(value, str):
+    def add_setting(self, key: str, value: SecuritySettingValue) -> None:
+        """Add a custom security setting with automatic type detection.
+
+        Note: bool check must come before int check because bool is a subclass of int.
+        """
+        if value is None:
+            # None values are valid but not stored - use get_setting's default
+            return
+        if isinstance(value, bool):
+            self.boolean_settings[key] = value
+        elif isinstance(value, str):
             self.string_settings[key] = value
         elif isinstance(value, int):
             self.integer_settings[key] = value
-        elif isinstance(value, bool):
-            self.boolean_settings[key] = value
-        elif isinstance(value, list) and all(isinstance(item, str) for item in value):
+        elif isinstance(value, list):
             self.list_settings[key] = value
-        else:
-            # Default to string representation for unknown types
-            self.string_settings[key] = str(value)
 
     def get_setting(
-        self, key: str, default: Any = None
-    ) -> str | int | bool | list[str] | Any:
-        """Get a custom security setting."""
+        self, key: str, default: SecuritySettingValue = None
+    ) -> SecuritySettingValue:
+        """Get a custom security setting.
+
+        Args:
+            key: The setting key to retrieve.
+            default: Default value if setting not found. Must be a valid
+                SecuritySettingValue (str, int, bool, list[str], or None).
+
+        Returns:
+            The setting value from the appropriate typed dictionary,
+            or the default value if not found.
+        """
         if key in self.string_settings:
             return self.string_settings[key]
         if key in self.integer_settings:
@@ -70,10 +90,9 @@ class ModelCustomSecuritySettings(BaseModel):
 
     def to_dict(self) -> dict[str, object]:
         """Convert to dictionary for current standards."""
-        # Custom flattening logic for security settings
-        result: dict[str, object] = {}
-        result.update(dict(self.string_settings.items()))
-        result.update(dict(self.integer_settings.items()))
-        result.update(dict(self.boolean_settings.items()))
-        result.update(dict(self.list_settings.items()))
-        return result
+        return {
+            **self.string_settings,
+            **self.integer_settings,
+            **self.boolean_settings,
+            **self.list_settings,
+        }

@@ -126,6 +126,39 @@ logger = container.get_service("ProtocolLogger")
 - No isinstance checks - use duck typing
 - No registry dependencies - pure protocol-based resolution
 
+### Contract Loading with FileRegistry
+
+FileRegistry provides fail-fast loading of RuntimeHostContract YAML files:
+
+```python
+from omnibase_core.runtime.file_registry import FileRegistry
+from pathlib import Path
+
+registry = FileRegistry()
+
+# Load single contract
+contract = registry.load(Path("config/runtime_host.yaml"))
+
+# Load all contracts from directory (fail-fast on first error)
+contracts = registry.load_all(Path("config/contracts/"))
+
+# Access contract data
+print(contract.event_bus.kind)  # "kafka"
+print(len(contract.handlers))   # Number of handlers
+```
+
+**Error Handling**: All errors are `ModelOnexError` with specific error codes:
+- `FILE_NOT_FOUND` - Contract file does not exist
+- `FILE_READ_ERROR` - Cannot read file (permissions, I/O errors)
+- `CONFIGURATION_PARSE_ERROR` - Invalid YAML syntax
+- `CONTRACT_VALIDATION_ERROR` - Pydantic schema validation failure
+- `DUPLICATE_REGISTRATION` - Duplicate handler types in contract
+- `DIRECTORY_NOT_FOUND` - Directory does not exist (for `load_all`)
+
+**Thread Safety**: FileRegistry instances are stateless and thread-safe.
+
+**See**: `src/omnibase_core/runtime/file_registry.py` for full documentation.
+
 ### Base Classes Usage
 
 **v0.4.0+**: Import nodes directly from `omnibase_core.nodes`:
@@ -592,28 +625,45 @@ For detailed guidance on monitoring CI health, detecting anomalies, and investig
 
 ### Type Checking
 
-**Status**: ✅ 100% strict mypy compliance (0 errors in 1865 source files)
+**Status**:
+- ✅ mypy: 100% strict mode compliance (0 errors in 1865 source files)
+- ✅ pyright: basic mode compliance (0 errors, warnings only)
+
+**Note**: Both mypy AND pyright must pass in CI. This dual-checker approach catches different categories of type errors.
 
 ```bash
-# Type check entire codebase
+# Type check with mypy (strict mode)
 poetry run mypy src/omnibase_core/
 
-# Type check specific file
+# Type check with pyright (basic mode)
+poetry run pyright src/omnibase_core/
+
+# Type check specific file with mypy
 poetry run mypy src/omnibase_core/models/common/model_typed_mapping.py
+
+# Type check specific file with pyright
+poetry run pyright src/omnibase_core/models/common/model_typed_mapping.py
 ```
 
-**Configuration**: See `[tool.mypy]` in pyproject.toml
+**Configuration**:
+- mypy: See `[tool.mypy]` in pyproject.toml
+- pyright: See `pyrightconfig.json` at repo root
 
-**Strict Mode Features**:
+**mypy Strict Mode Features**:
 - `disallow_untyped_defs = true` - All functions must have type annotations
 - `warn_return_any = true` - Warns on functions returning Any
 - `warn_unused_configs = true` - Detects unused mypy configuration
 - Pydantic plugin enabled for model validation
 
+**pyright Configuration**:
+- Basic type checking mode (planned migration to stricter settings per OMN-200)
+- Targets Python 3.12
+- Configured for Pydantic compatibility
+
 **Enforcement**:
-- ✅ Pre-commit hooks (strict configuration)
-- ✅ CI/CD pipeline (strict configuration)
-- ✅ Local development (strict configuration)
+- ✅ Pre-commit hooks (mypy strict, pyright basic)
+- ✅ CI/CD pipeline (both checkers must pass)
+- ✅ Local development (both checkers available)
 
 ### Formatting
 
@@ -717,6 +767,47 @@ class MyNode(NodeCoreBase, MixinDiscoveryResponder):
 - `MixinNodeLifecycle` - Lifecycle management
 - `MixinRequestResponseIntrospection` - Request/response inspection
 - `MixinWorkflowSupport` - Workflow support
+
+### Pydantic `from_attributes=True` for Value Objects
+
+**When to use**: Add `from_attributes=True` to `ConfigDict` for immutable value objects that:
+1. Are nested inside other Pydantic models
+2. May be used in tests with pytest-xdist parallel execution
+
+**Why**: pytest-xdist runs tests across multiple workers. Each worker imports classes independently,
+so `id(ModelSemVer)` in Worker A != `id(ModelSemVer)` in Worker B. Without `from_attributes=True`,
+Pydantic rejects already-valid instances because class identity differs.
+
+**Technical Details**:
+- Default Pydantic validation uses `isinstance()` which checks class identity
+- `from_attributes=True` enables attribute-based validation instead
+- This allows Pydantic to accept objects with matching attributes regardless of class identity
+- Essential for immutable value objects where equality is defined by DATA, not class identity
+
+**Example**:
+```python
+from pydantic import BaseModel, ConfigDict
+
+class ModelSemVer(BaseModel):
+    """Immutable semantic version - value defined by data, not class identity."""
+    model_config = ConfigDict(frozen=True, extra="ignore", from_attributes=True)
+
+    major: int
+    minor: int
+    patch: int
+```
+
+**Models using this pattern**:
+- `ModelSemVer` - Semantic versioning (`models/primitives/model_semver.py`)
+- `ModelWorkflowNode` - Workflow nodes (`models/workflow/model_workflow_node.py`)
+- `ModelExecutionGraph` - Execution graphs (`models/graph/model_execution_graph.py`)
+- `ModelWorkflowDefinitionMetadata` - Workflow metadata (`models/workflow/model_workflow_definition_metadata.py`)
+- `ModelServiceMetadata` - Service metadata (`models/service/model_service_metadata.py`)
+
+**When NOT to use**:
+- Models that are never nested in other Pydantic models
+- Models that are not used in parallel test execution
+- Models where class identity IS significant (e.g., singletons, service instances)
 
 ---
 

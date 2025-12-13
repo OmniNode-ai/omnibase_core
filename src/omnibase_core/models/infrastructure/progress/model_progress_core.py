@@ -1,9 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field, model_validator
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Progress Core Model.
 
@@ -11,14 +5,17 @@ Core progress tracking functionality with percentage, steps, and phase managemen
 Follows ONEX one-model-per-file architecture.
 """
 
+from __future__ import annotations
 
-from typing import Any, Self
+from typing import Self
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
 from omnibase_core.enums.enum_status_message import EnumStatusMessage
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelProgressCore(BaseModel):
@@ -176,7 +173,7 @@ class ModelProgressCore(BaseModel):
 
     # Protocol method implementations
 
-    def execute(self, **kwargs: Any) -> bool:
+    def execute(self, **kwargs: object) -> bool:
         """Execute or update execution status (Executable protocol).
 
         Raises:
@@ -189,7 +186,7 @@ class ModelProgressCore(BaseModel):
                 setattr(self, key, value)
         return True
 
-    def configure(self, **kwargs: Any) -> bool:
+    def configure(self, **kwargs: object) -> bool:
         """Configure instance with provided parameters (Configurable protocol).
 
         Raises:
@@ -201,11 +198,9 @@ class ModelProgressCore(BaseModel):
                 setattr(self, key, value)
         return True
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""
-        # Explicit typing to ensure MyPy recognizes the return type
-        result: dict[str, Any] = self.model_dump(exclude_none=False, by_alias=True)
-        return result
+        return self.model_dump(exclude_none=False, by_alias=True)
 
     model_config = {
         "extra": "ignore",

@@ -13,9 +13,11 @@ Type-safe custom environment properties with access methods.
 """
 
 from datetime import datetime
-from typing import Any, cast, get_origin
+from typing import cast, get_origin
 
 from pydantic import BaseModel
+
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 # Type variable for generic property handling
 T = TypeVar("T")
@@ -212,7 +214,7 @@ class ModelEnvironmentProperties(BaseModel):
 
     # Protocol method implementations
 
-    def configure(self, **kwargs: Any) -> bool:
+    def configure(self, **kwargs: object) -> bool:
         """Configure instance with provided parameters (Configurable protocol).
 
         Raises:
@@ -229,7 +231,7 @@ class ModelEnvironmentProperties(BaseModel):
                 message=f"Configuration failed: {e}",
             ) from e
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

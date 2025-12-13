@@ -47,7 +47,7 @@ Safe Runtime Imports (OK to import at module level):
 from __future__ import annotations
 
 import math
-from typing import Any, ClassVar, Literal, Union, cast
+from typing import ClassVar, Literal, Union, cast
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -91,7 +91,7 @@ class ModelDictValueUnion(BaseModel):
     MAX_DICT_SIZE: ClassVar[int] = 1000
 
     # union-ok: discriminated_union - companion value_type Literal field provides type safety
-    value: Union[bool, dict[str, Any], float, int, list[Any], str] = Field(
+    value: Union[bool, dict[str, object], float, int, list[object], str] = Field(
         description="The actual value",
     )
 
@@ -106,7 +106,7 @@ class ModelDictValueUnion(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def infer_value_type(cls, data: Any) -> dict[str, Any]:
+    def infer_value_type(cls, data: object) -> dict[str, object]:
         """
         Automatically infer value_type from value if not provided.
 
@@ -123,7 +123,7 @@ class ModelDictValueUnion(BaseModel):
             data: Input data (dict or value)
 
         Returns:
-            dict[str, Any]: Data with value_type populated
+            dict[str, object]: Data with value_type populated
 
         Raises:
             ModelOnexError: If value type is unsupported
@@ -135,7 +135,7 @@ class ModelDictValueUnion(BaseModel):
 
         # If value_type already specified, validate it's correct
         if "value_type" in data:
-            return cast("dict[str, Any]", data)
+            return cast("dict[str, object]", data)
 
         # Infer type from value
         value = data.get("value")
@@ -163,7 +163,7 @@ class ModelDictValueUnion(BaseModel):
                 },
             )
 
-        return cast("dict[str, Any]", data)
+        return cast("dict[str, object]", data)
 
     @model_validator(mode="after")
     def validate_value_type_match(self) -> ModelDictValueUnion:
@@ -279,7 +279,9 @@ class ModelDictValueUnion(BaseModel):
         return self
 
     # union-ok: discriminated_union - return type matches discriminated value field
-    def get_value(self) -> Union[bool, dict[str, Any], float, int, list[Any], str]:
+    def get_value(
+        self,
+    ) -> Union[bool, dict[str, object], float, int, list[object], str]:
         """
         Get the stored value with proper type.
 
@@ -418,7 +420,7 @@ class ModelDictValueUnion(BaseModel):
             )
         return self.value  # type: ignore[return-value]
 
-    def get_as_dict(self) -> dict[str, Any]:
+    def get_as_dict(self) -> dict[str, object]:
         """
         Get value as dictionary with safe-access semantics.
 
@@ -435,7 +437,7 @@ class ModelDictValueUnion(BaseModel):
                 raise ModelOnexError(...)
 
         Returns:
-            dict[str, Any]: The dictionary value, or empty dict if not a dict
+            dict[str, object]: The dictionary value, or empty dict if not a dict
 
         Examples:
             >>> value = ModelDictValueUnion(value={"key": "value"})
@@ -491,12 +493,12 @@ class ModelDictValueUnion(BaseModel):
             )
         return self.value  # type: ignore[return-value]
 
-    def get_as_list(self) -> list[Any]:
+    def get_as_list(self) -> list[object]:
         """
         Get value as list.
 
         Returns:
-            list[Any]: The list value
+            list[object]: The list value
 
         Raises:
             ModelOnexError: If value is not a list
@@ -561,7 +563,7 @@ class ModelDictValueUnion(BaseModel):
         # Direct access to self.value since we already verified is_dict()
         return key in self.value  # type: ignore[operator]
 
-    def get_dict_value(self, key: str, default: Any = None) -> Any:
+    def get_dict_value(self, key: str, default: object = None) -> object:
         """
         Get value from dict by key.
 
@@ -572,7 +574,7 @@ class ModelDictValueUnion(BaseModel):
             default: Default value if key not found or not a dict
 
         Returns:
-            Any: The value at key, or default
+            object: The value at key, or default
 
         Examples:
             >>> value = ModelDictValueUnion(value={"a": 1, "b": 2})
@@ -588,12 +590,12 @@ class ModelDictValueUnion(BaseModel):
 
     # === Collection Helpers ===
 
-    def as_dict(self) -> dict[str, Any]:
+    def as_dict(self) -> dict[str, object]:
         """
         Convert to dictionary representation.
 
         Returns:
-            dict[str, Any]: Dictionary with value, value_type, and metadata
+            dict[str, object]: Dictionary with value, value_type, and metadata
 
         Examples:
             >>> value = ModelDictValueUnion(value=42)

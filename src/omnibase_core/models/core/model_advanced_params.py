@@ -1,7 +1,3 @@
-from typing import Any
-
-from pydantic import Field
-
 """
 Model for representing advanced parameters with proper type safety.
 
@@ -9,9 +5,12 @@ This model replaces dictionary usage in CLI tool execution by providing
 a structured representation of advanced parameters.
 """
 
-from pydantic import BaseModel
+from typing import Any
+
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.types import SerializedDict
 
 
 class ModelAdvancedParams(BaseModel):
@@ -19,7 +18,7 @@ class ModelAdvancedParams(BaseModel):
     Type-safe representation of advanced parameters for CLI tool execution.
 
     This model provides structured fields for common advanced parameters
-    while maintaining flexibility through typed dict[str, Any]ionaries.
+    while maintaining flexibility through typed dictionaries.
     """
 
     # Common advanced parameters
@@ -96,13 +95,13 @@ class ModelAdvancedParams(BaseModel):
         description="Tool-specific numeric parameters",
     )
 
-    # Tool-specific list[Any]parameters
+    # Tool-specific list parameters
     list_params: dict[str, list[str]] = Field(
         default_factory=dict,
-        description="Tool-specific list[Any]parameters",
+        description="Tool-specific list parameters",
     )
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> SerializedDict:
         """
         Convert to dictionary format for current standards.
 
@@ -130,7 +129,7 @@ class ModelAdvancedParams(BaseModel):
             if value is not None:
                 result[field_name] = value
 
-        # Add non-empty dict[str, Any]ionaries
+        # Add non-empty dictionaries
         if self.environment_vars:
             result["environment_vars"] = self.environment_vars
         if self.feature_flags:
@@ -147,7 +146,7 @@ class ModelAdvancedParams(BaseModel):
         return result
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "ModelAdvancedParams":
+    def from_dict(cls, data: SerializedDict) -> "ModelAdvancedParams":
         """
         Create from dictionary, intelligently categorizing parameters.
 

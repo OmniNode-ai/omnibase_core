@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Tool Parameters Model
 
@@ -7,7 +5,7 @@ Strongly typed model for tool parameters to replace Dict[str, Any] usage.
 Follows ONEX canonical patterns with strict typing - no Any types allowed.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelToolParameter(BaseModel):

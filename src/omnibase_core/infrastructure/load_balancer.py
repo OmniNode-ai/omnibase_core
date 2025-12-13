@@ -7,8 +7,11 @@ for workflow orchestration operations.
 
 import asyncio
 from datetime import datetime
-from typing import Any
 from uuid import UUID
+
+from omnibase_core.models.infrastructure.model_load_balancer_stats import (
+    ModelLoadBalancerStats,
+)
 
 
 class LoadBalancer:
@@ -73,11 +76,11 @@ class LoadBalancer:
 
         return min(targets, key=lambda t: self.target_counts.get(t, 0))
 
-    def get_stats(self) -> dict[str, Any]:
+    def get_stats(self) -> ModelLoadBalancerStats:
         """Get load balancer statistics."""
-        return {
-            "active_operations": len(self.active_operations),
-            "max_concurrent": self.max_concurrent_operations,
-            "utilization": len(self.active_operations) / self.max_concurrent_operations,
-            "total_operations": sum(self.operation_counts.values()),
-        }
+        return ModelLoadBalancerStats(
+            active_operations=len(self.active_operations),
+            max_concurrent=self.max_concurrent_operations,
+            utilization=len(self.active_operations) / self.max_concurrent_operations,
+            total_operations=sum(self.operation_counts.values()),
+        )

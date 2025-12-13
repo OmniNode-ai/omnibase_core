@@ -53,7 +53,7 @@ Related:
 
 import warnings
 from datetime import datetime
-from typing import Any, Self
+from typing import Self
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -61,6 +61,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from omnibase_core.enums.enum_handler_type import EnumHandlerType
 from omnibase_core.models.core.model_envelope_metadata import ModelEnvelopeMetadata
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelOnexEnvelope(BaseModel):
@@ -114,7 +115,7 @@ class ModelOnexEnvelope(BaseModel):
             action or event this envelope represents (e.g., 'GET_DATA',
             'USER_CREATED').
 
-        payload (dict[str, Any]): The actual message data as a dictionary.
+        payload (SerializedDict): The actual message data as a dictionary.
             Contains the business-specific content of the envelope. Can
             contain nested structures and any JSON-serializable types.
 
@@ -441,8 +442,8 @@ class ModelOnexEnvelope(BaseModel):
     # Payload and Metadata (Required + Optional)
     # ==========================================================================
 
-    # NOTE: dict[str, Any] is intentionally used here and is an acceptable exception
-    # to the typed-dict pattern. Rationale:
+    # NOTE: SerializedDict (which uses SerializableValue internally) is used here
+    # as an acceptable exception to strict typing. Rationale:
     # - Envelopes are generic message containers that MUST accept arbitrary
     #   JSON-serializable data from any producer
     # - Type safety is enforced at the application layer where specific payload
@@ -452,7 +453,7 @@ class ModelOnexEnvelope(BaseModel):
     # - Consumers should use payload.get() with appropriate type guards or
     #   Pydantic model_validate() to parse expected payload structures
     # See: scripts/validation/validate-dict-any-usage.py for the validation script
-    payload: dict[str, Any] = Field(
+    payload: SerializedDict = Field(
         ...,
         description="The actual message data as a dictionary. Contains the "
         "business-specific content of the envelope.",
@@ -605,7 +606,7 @@ class ModelOnexEnvelope(BaseModel):
     def create_request(
         cls,
         operation: str,
-        payload: dict[str, Any],
+        payload: SerializedDict,
         source_node: str,
         *,
         target_node: str | None = None,
@@ -702,7 +703,7 @@ class ModelOnexEnvelope(BaseModel):
     def create_response(
         cls,
         request: "ModelOnexEnvelope",
-        payload: dict[str, Any],
+        payload: SerializedDict,
         *,
         success: bool = True,
         error: str | None = None,

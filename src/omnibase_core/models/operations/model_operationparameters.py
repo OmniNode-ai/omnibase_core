@@ -1,5 +1,3 @@
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -7,6 +5,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.operations.model_operation_parameters_base import (
     ModelOperationParameterValue,
 )
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelOperationParameters(BaseModel):
@@ -92,7 +91,7 @@ class ModelOperationParameters(BaseModel):
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
         )
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> SerializedDict:
         """
         Serialize to dictionary format.
 

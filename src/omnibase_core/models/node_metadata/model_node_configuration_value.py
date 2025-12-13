@@ -1,11 +1,3 @@
-from __future__ import annotations
-
-from typing import Literal, Union
-
-from pydantic import Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Node configuration value model.
 
@@ -13,13 +5,15 @@ Type-safe configuration value container using Pydantic discriminated unions
 for proper type safety and validation of node configurations.
 """
 
+from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal, Union
 
-from pydantic import BaseModel, Discriminator
+from pydantic import BaseModel, Discriminator, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 from .model_nodeconfigurationnumericvalue import ModelNodeConfigurationNumericValue
 
@@ -62,13 +56,6 @@ def get_discriminator_value(v: Any) -> str:
     return str(getattr(v, "value_type", "string"))  # Ensure string type
 
 
-# Discriminated union type for configuration values
-ModelNodeConfigurationValue = Union[
-    ModelNodeConfigurationStringValue,
-    ModelNodeConfigurationNumericValue,
-]
-
-
 # Type alias with discriminator annotation for proper Pydantic support
 ModelNodeConfigurationValueUnion = Discriminator(
     get_discriminator_value,
@@ -99,14 +86,17 @@ def from_numeric(value: ModelNumericValue) -> ModelNodeConfigurationNumericValue
     return ModelNodeConfigurationNumericValue(value=value)
 
 
-def from_value(value: object) -> ModelNodeConfigurationValue:
+def from_value(
+    value: object,
+) -> Union[ModelNodeConfigurationStringValue, ModelNodeConfigurationNumericValue]:
     """Create configuration value from any supported type.
 
     Args:
         value: Input value (str, int, float, bool, or other types)
 
     Returns:
-        ModelNodeConfigurationValue with appropriate type discrimination
+        Union[ModelNodeConfigurationStringValue, ModelNodeConfigurationNumericValue]:
+            Configuration value with appropriate type discrimination.
     """
     if isinstance(value, str):
         return from_string(value)
@@ -121,7 +111,6 @@ def from_value(value: object) -> ModelNodeConfigurationValue:
 __all__ = [
     "ModelNodeConfigurationNumericValue",
     "ModelNodeConfigurationStringValue",
-    "ModelNodeConfigurationValue",
     "ModelNodeConfigurationValueUnion",
     "from_float",
     "from_int",

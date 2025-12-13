@@ -60,7 +60,7 @@ repos:
         entry: poetry run ruff format
         language: system
         types: [python]
-        exclude: ^(tests/fixtures/validation/edge_cases/syntax_error\.py|\.github/workflows/|archived/).*$
+        exclude: ^(tests/fixtures/validation/(edge_cases|exports)/syntax_error\.py|\.github/workflows/|archived/).*$
         stages: [pre-commit]
 
       - id: ruff-fix
@@ -68,7 +68,7 @@ repos:
         entry: poetry run ruff check --fix --exit-non-zero-on-fix
         language: system
         types: [python]
-        exclude: ^(tests/fixtures/validation/edge_cases/syntax_error\.py|\.github/workflows/|archived/).*$
+        exclude: ^(tests/fixtures/validation/(edge_cases|exports)/syntax_error\.py|\.github/workflows/|archived/).*$
         stages: [pre-commit]
         # Note: --exit-non-zero-on-fix ensures pre-commit fails if files were modified,
         # forcing you to re-stage the changes. This keeps pre-commit and CI in sync.
@@ -82,6 +82,34 @@ repos:
         exclude: ^(tests/|src/omnibase_core/examples|archive/|archived/).*\.py$
         pass_filenames: true  # Only check changed files, not entire codebase
         stages: [pre-push]  # Moved to pre-push: ~1-5s for changed files only
+
+      # PYRIGHT CHANGED-FILES-ONLY (pass_filenames: true)
+      # ===========================================================
+      # STRATEGY: Fast local check + comprehensive CI
+      # - Pre-push: Check only changed files (~1-5s)
+      # - CI: Full codebase scan catches cross-file type issues
+      #
+      # TRADEOFF:
+      # Changed-files-only may miss cross-file type issues (e.g., if you
+      # change a function signature in file A, file B that imports it won't
+      # be checked locally). CI catches these comprehensively.
+      #
+      # CONFIGURATION:
+      # See pyrightconfig.json for strictness settings (currently: basic mode)
+      # See OMN-200 for phase timeline to enable stricter rules
+      #
+      # DUAL-CHECKER RATIONALE:
+      # Both mypy (strict) and pyright (basic) check changed files only.
+      # CI runs both on full codebase for comprehensive coverage.
+      - id: pyright-type-check
+        name: pyright (type checking - basic)
+        entry: poetry run pyright
+        language: system
+        types: [python]
+        files: ^src/omnibase_core/.*\.py$
+        exclude: ^(tests/|src/omnibase_core/examples|archive/|archived/).*\.py$
+        pass_filenames: true  # Only check changed files, CI does full scan
+        stages: [pre-push]  # ~1-5s for changed files only
 
       # Cleanup: Clear tmp/ directory before commits
       # Prevents accumulation of temporary files from custom commands
@@ -211,15 +239,14 @@ repos:
         stages: [pre-commit]
 
       # UNION VALIDATION THRESHOLD:
-      # Tech debt: Union type threshold set to 256 to allow PR to pass.
-      # Target: Reduce to 0 incrementally. Tracking: OMN-468
-      # Current baseline from v0.4.0 contract-driven NodeEffect refactor (2025-12-09).
-      # Threshold maintained by using centralized type aliases (EffectResultType,
-      # DbParamType from omnibase_core.types.type_effect_result) instead of inline unions.
+      # Tech debt: Union type threshold reduced from 256 to 160 (OMN-676).
+      # Target: Reduce to 0 incrementally. Tracking: OMN-468, OMN-676
+      # Improvements: Created json_types.py with centralized aliases (JsonValue,
+      # PrimitiveValue, ToolParameterValue), fixed any_contaminated and overly_broad patterns.
       - id: validate-union-usage
         name: ONEX Union Usage Validation
         entry: poetry run python scripts/validation/validate-union-usage.py
-        args: ['--allow-invalid', '256']
+        args: ['--allow-invalid', '160']
         language: system
         pass_filenames: true
         files: ^src/.*\.py$
@@ -430,6 +457,27 @@ repos:
           - --timeout=30
           - -p
           - no:rerunfailures
+        stages: [pre-push]
+
+      # Node Purity Validation (OMN-203)
+      # Ensures declarative nodes (COMPUTE, REDUCER) maintain purity guarantees:
+      # - No I/O operations, network calls, or side effects
+      # - No forbidden imports (networking, subprocess, threading)
+      # - No class-level mutable state
+      # - No caching decorators that introduce state
+      # EFFECT and ORCHESTRATOR nodes are excluded (allowed to have side effects)
+      # RUNS UNCONDITIONALLY: always_run=true ensures this runs on EVERY push
+      # regardless of which files changed. The script (not the hook) internally
+      # discovers and scans ALL node files (~2-5s runtime). No file pattern filter
+      # is configured at the hook level - the script handles all file discovery.
+      # NOTE: Base node classes (node_compute.py, node_reducer.py) have pre-existing
+      # Any usages that need cleanup in a separate ticket
+      - id: check-node-purity
+        name: ONEX Node Purity Validation
+        entry: poetry run python scripts/check_node_purity.py
+        language: system
+        pass_filenames: false
+        always_run: true
         stages: [pre-push]
 
 # Configuration

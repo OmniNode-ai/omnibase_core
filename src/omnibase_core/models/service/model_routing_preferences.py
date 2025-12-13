@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 Routing Preferences Model.
 
 Type-safe routing and load balancing preferences for node operations.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelRoutingPreferences(BaseModel):

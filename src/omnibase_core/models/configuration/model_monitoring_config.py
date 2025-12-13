@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 ModelMonitoringConfig
 
@@ -13,7 +11,7 @@ Safe Runtime Imports (OK to import at module level):
 - Standard library modules only
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelMonitoringConfig(BaseModel):

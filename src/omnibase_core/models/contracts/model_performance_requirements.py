@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Performance Requirements Model.
 
@@ -12,8 +10,7 @@ Performance SLA specifications for contract-driven behavior providing:
 Strict typing is enforced: No Any types allowed in implementation.
 """
 
-
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelPerformanceRequirements(BaseModel):

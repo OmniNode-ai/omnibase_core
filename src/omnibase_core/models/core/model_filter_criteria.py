@@ -1,15 +1,13 @@
-from typing import Optional
-
-from pydantic import Field
-
 """
 Filter criteria model to replace Dict[str, Any] usage for filter fields.
 """
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
+
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 from .model_custom_filter import ModelCustomFilters
 from .model_filter_condition import ModelFilterCondition
@@ -77,11 +75,11 @@ class ModelFilterCriteria(BaseModel):
 
     model_config = ConfigDict()
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> SerializedDict:
         """Convert to dictionary for current standards."""
         # Use model_dump() as base and transform custom filters
         data = self.model_dump(exclude_none=True)
-        # Convert custom filters to dict[str, Any]if present
+        # Convert custom filters to SerializedDict if present
         if self.custom_filters and self.custom_filters.filters:
             data["custom_filters"] = self.custom_filters.to_dict()
         return data
@@ -89,7 +87,7 @@ class ModelFilterCriteria(BaseModel):
     @classmethod
     def from_dict(
         cls,
-        data: dict[str, Any] | None,
+        data: SerializedDict | None,
     ) -> Optional["ModelFilterCriteria"]:
         """Create from dictionary for easy migration."""
         if data is None:

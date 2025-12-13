@@ -18,9 +18,7 @@ from uuid import uuid4
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.enums.enum_reducer_types import (
-    EnumReductionType,
-)
+from omnibase_core.enums.enum_reducer_types import EnumReductionType
 from omnibase_core.models.reducer.model_intent import ModelIntent
 from omnibase_core.models.reducer.model_reducer_input import ModelReducerInput
 from omnibase_core.models.reducer.model_reducer_output import ModelReducerOutput

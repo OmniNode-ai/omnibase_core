@@ -1,7 +1,3 @@
-from pydantic import Field
-
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Model for contract content representation in ONEX NodeBase implementation.
 
@@ -10,21 +6,58 @@ strongly typed contract content.
 
 """
 
-from typing import Any
-
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_node_type import EnumNodeType
+from omnibase_core.models.configuration.model_metadata_config import ModelMetadataConfig
+from omnibase_core.models.contracts.model_algorithm_config import ModelAlgorithmConfig
+from omnibase_core.models.contracts.model_caching_config import ModelCachingConfig
+from omnibase_core.models.contracts.model_conflict_resolution_config import (
+    ModelConflictResolutionConfig,
+)
+from omnibase_core.models.contracts.model_io_operation_config import (
+    ModelIOOperationConfig,
+)
+from omnibase_core.models.contracts.model_memory_management_config import (
+    ModelMemoryManagementConfig,
+)
+from omnibase_core.models.contracts.model_performance_requirements import (
+    ModelPerformanceRequirements,
+)
+from omnibase_core.models.contracts.model_reduction_config import ModelReductionConfig
+from omnibase_core.models.contracts.model_streaming_config import ModelStreamingConfig
 from omnibase_core.models.contracts.model_validation_rules import ModelValidationRules
+from omnibase_core.models.contracts.model_workflow_config import ModelWorkflowConfig
+from omnibase_core.models.contracts.subcontracts.model_aggregation_subcontract import (
+    ModelAggregationSubcontract,
+)
+from omnibase_core.models.contracts.subcontracts.model_event_type_subcontract import (
+    ModelEventTypeSubcontract,
+)
+from omnibase_core.models.contracts.subcontracts.model_observability_subcontract import (
+    ModelObservabilitySubcontract,
+)
+from omnibase_core.models.contracts.subcontracts.model_routing_subcontract import (
+    ModelRoutingSubcontract,
+)
+from omnibase_core.models.contracts.subcontracts.model_state_management_subcontract import (
+    ModelStateManagementSubcontract,
+)
 from omnibase_core.models.core.model_contract_definitions import (
     ModelContractDefinitions,
 )
 from omnibase_core.models.core.model_contract_dependency import ModelContractDependency
+from omnibase_core.models.core.model_state_transition_class import ModelStateTransition
 from omnibase_core.models.core.model_subcontract_reference import (
     ModelSubcontractReference,
 )
 from omnibase_core.models.core.model_tool_specification import ModelToolSpecification
 from omnibase_core.models.core.model_yaml_schema_object import ModelYamlSchemaObject
+from omnibase_core.models.orchestrator.model_action import ModelAction
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.service.model_service_configuration_single import (
+    ModelServiceConfiguration,
+)
 
 
 class ModelContractContent(BaseModel):
@@ -75,9 +108,9 @@ class ModelContractContent(BaseModel):
         default=None,
         description="Contract dependencies - strongly typed per ONEX Phase 0",
     )
-    actions: list[dict[str, Any]] | None = Field(
+    actions: list[ModelAction] | None = Field(
         default=None,
-        description="Available actions",
+        description="Available actions - strongly typed orchestrator actions",
     )
     primary_actions: list[str] | None = Field(
         default=None, description="Primary actions"
@@ -105,105 +138,105 @@ class ModelContractContent(BaseModel):
     )
 
     # === INFRASTRUCTURE FIELDS ===
-    infrastructure: dict[str, Any] | None = Field(
+    infrastructure: dict[str, str | int | bool | list[str]] | None = Field(
         default=None,
-        description="Infrastructure configuration",
+        description="Infrastructure configuration - basic typed config values",
     )
-    infrastructure_services: dict[str, Any] | None = Field(
+    infrastructure_services: dict[str, ModelServiceConfiguration] | None = Field(
         default=None,
-        description="Infrastructure services",
+        description="Infrastructure services - strongly typed service configs",
     )
-    service_configuration: dict[str, Any] | None = Field(
+    service_configuration: ModelServiceConfiguration | None = Field(
         default=None,
-        description="Service configuration",
+        description="Service configuration - strongly typed",
     )
-    service_resolution: dict[str, Any] | None = Field(
+    service_resolution: dict[str, str] | None = Field(
         default=None,
-        description="Service resolution",
+        description="Service resolution mappings - string to string",
     )
-    performance: dict[str, Any] | None = Field(
+    performance: ModelPerformanceRequirements | None = Field(
         default=None,
-        description="Performance configuration",
+        description="Performance configuration - strongly typed requirements",
     )
 
     # === NODE-SPECIFIC FIELDS ===
     # These should only appear in specific node types - architectural validation will catch violations
-    aggregation: dict[str, Any] | None = Field(
+    aggregation: ModelAggregationSubcontract | None = Field(
         default=None,
         description="Aggregation configuration - COMPUTE nodes should not have this",
     )
-    state_management: dict[str, Any] | None = Field(
+    state_management: ModelStateManagementSubcontract | None = Field(
         default=None,
         description="State management configuration - COMPUTE nodes should not have this",
     )
-    reduction_operations: list[dict[str, Any]] | None = Field(
+    reduction_operations: list[ModelReductionConfig] | None = Field(
         default=None,
         description="Reduction operations - Only REDUCER nodes",
     )
-    streaming: dict[str, Any] | None = Field(
+    streaming: ModelStreamingConfig | None = Field(
         default=None,
         description="Streaming configuration - Only REDUCER nodes",
     )
-    conflict_resolution: dict[str, Any] | None = Field(
+    conflict_resolution: ModelConflictResolutionConfig | None = Field(
         default=None,
         description="Conflict resolution - Only REDUCER nodes",
     )
-    memory_management: dict[str, Any] | None = Field(
+    memory_management: ModelMemoryManagementConfig | None = Field(
         default=None,
         description="Memory management - Only REDUCER nodes",
     )
-    state_transitions: dict[str, Any] | None = Field(
+    state_transitions: dict[str, ModelStateTransition] | None = Field(
         default=None,
         description="State transitions - Only REDUCER nodes",
     )
-    routing: dict[str, Any] | None = Field(
+    routing: ModelRoutingSubcontract | None = Field(
         default=None,
         description="Routing configuration - Only ORCHESTRATOR nodes",
     )
-    workflow_registry: dict[str, Any] | None = Field(
+    workflow_registry: ModelWorkflowConfig | None = Field(
         default=None,
         description="Workflow registry - Only ORCHESTRATOR nodes",
     )
 
     # === EFFECT NODE FIELDS ===
-    io_operations: list[dict[str, Any]] | None = Field(
+    io_operations: list[ModelIOOperationConfig] | None = Field(
         default=None,
         description="I/O operations - Only EFFECT nodes",
     )
-    interface: dict[str, Any] | None = Field(
+    interface: dict[str, str | int | bool | list[str]] | None = Field(
         default=None,
-        description="Interface configuration - Only EFFECT nodes",
+        description="Interface configuration - Only EFFECT nodes (basic typed values)",
     )
 
     # === OPTIONAL METADATA FIELDS ===
-    metadata: dict[str, Any] | None = Field(
-        default=None, description="Contract metadata"
+    metadata: ModelMetadataConfig | None = Field(
+        default=None, description="Contract metadata - strongly typed"
     )
     capabilities: list[str] | None = Field(
         default=None, description="Node capabilities"
     )
-    configuration: dict[str, Any] | None = Field(
+    configuration: dict[str, str | int | bool | float | list[str]] | None = Field(
         default=None,
-        description="General configuration",
+        description="General configuration - basic typed values",
     )
-    algorithm: dict[str, Any] | None = Field(
+    algorithm: ModelAlgorithmConfig | None = Field(
         default=None,
-        description="Algorithm configuration",
+        description="Algorithm configuration - strongly typed",
     )
-    caching: dict[str, Any] | None = Field(
-        default=None, description="Caching configuration"
+    caching: ModelCachingConfig | None = Field(
+        default=None, description="Caching configuration - strongly typed"
     )
-    error_handling: dict[str, Any] | None = Field(
+    error_handling: dict[str, str | int | bool | list[str]] | None = Field(
         default=None,
-        description="Error handling configuration",
+        description="Error handling configuration - basic typed values",
     )
-    observability: dict[str, Any] | None = Field(
+    observability: ModelObservabilitySubcontract | None = Field(
         default=None,
-        description="Observability configuration",
+        description="Observability configuration - strongly typed subcontract",
     )
-    event_type: dict[str, Any] | None = Field(
+    event_type: ModelEventTypeSubcontract | None = Field(
         default=None,
-        description="Event type configuration for publish/subscribe patterns",
+        description="Event type configuration for publish/subscribe patterns - strongly typed",
     )
 
     # === ONEX COMPLIANCE FLAGS ===
@@ -230,9 +263,9 @@ class ModelContractContent(BaseModel):
     )
 
     # === DEPRECATED/LEGACY FIELDS ===
-    original_dependencies: list[dict[str, Any]] | None = Field(
+    original_dependencies: list[ModelContractDependency] | None = Field(
         default=None,
-        description="Original dependencies (deprecated)",
+        description="Original dependencies (deprecated) - use strongly typed dependencies",
     )
 
     @field_validator("dependencies", mode="before")

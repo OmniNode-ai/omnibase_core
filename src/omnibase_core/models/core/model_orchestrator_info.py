@@ -1,21 +1,19 @@
-from __future__ import annotations
-
-from typing import Any, Optional
-from uuid import UUID
-
-from pydantic import Field
-
 """
 Orchestrator info model to replace Dict[str, Any] usage for orchestrator_info fields.
 """
 
-from datetime import datetime
+from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, field_serializer, field_validator
+from datetime import datetime
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelOrchestratorInfo(BaseModel):
@@ -113,8 +111,8 @@ class ModelOrchestratorInfo(BaseModel):
         default=False, description="Whether sidecar is injected"
     )
 
-    # Custom orchestrator data
-    custom_data: dict[str, Any] = Field(
+    # Custom orchestrator data - uses SerializedDict for JSON-serializable custom fields
+    custom_data: SerializedDict = Field(
         default_factory=dict,
         description="Custom orchestrator-specific data",
     )
@@ -141,7 +139,7 @@ class ModelOrchestratorInfo(BaseModel):
     @classmethod
     def from_dict(
         cls,
-        data: dict[str, Any] | None,
+        data: SerializedDict | None,
     ) -> ModelOrchestratorInfo | None:
         """Create from dictionary for easy migration."""
         if data is None:

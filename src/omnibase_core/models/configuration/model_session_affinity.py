@@ -1,6 +1,5 @@
 import hashlib
 import warnings
-from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -206,12 +205,12 @@ class ModelSessionAffinity(BaseModel):
 
         return self.sticky_on_failure
 
-    def get_cookie_attributes(self) -> dict[str, Any]:
+    def get_cookie_attributes(self) -> dict[str, object]:
         """Get cookie attributes for affinity cookie"""
         if not self.enabled or self.affinity_type != "cookie":
             return {}
 
-        attrs: dict[str, Any] = {
+        attrs: dict[str, object] = {
             "secure": self.cookie_secure,
             "httponly": self.cookie_http_only,
         }

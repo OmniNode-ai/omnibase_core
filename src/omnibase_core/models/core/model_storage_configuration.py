@@ -4,9 +4,9 @@ Storage Configuration Model.
 Strongly-typed model for storage backend configuration.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field
+
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelStorageConfiguration(BaseModel):
@@ -45,6 +45,7 @@ class ModelStorageConfiguration(BaseModel):
         description="Health check interval in seconds", default=60
     )
 
-    additional_config: dict[str, Any] = Field(
+    # Backend-specific configuration uses SerializedDict for JSON-serializable values
+    additional_config: SerializedDict = Field(
         description="Backend-specific additional configuration", default_factory=dict
     )

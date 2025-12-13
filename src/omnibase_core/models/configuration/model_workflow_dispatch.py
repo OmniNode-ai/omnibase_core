@@ -1,10 +1,8 @@
-from pydantic import Field
-
 """
 Workflow dispatch model.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .model_workflow_input import ModelWorkflowInput
 

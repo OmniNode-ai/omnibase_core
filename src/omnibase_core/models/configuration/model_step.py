@@ -1,10 +1,8 @@
-from pydantic import Field
-
 """
 Step model.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .model_step_with import ModelStepWith
 

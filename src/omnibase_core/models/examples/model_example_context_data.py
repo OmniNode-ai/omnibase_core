@@ -13,7 +13,6 @@ Follows ONEX one-model-per-file naming conventions.
 """
 
 
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -22,6 +21,7 @@ from omnibase_core.enums.enum_context_type import EnumContextType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_environment import EnumEnvironment
 from omnibase_core.enums.enum_execution_trigger import EnumExecutionTrigger
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelExampleContextData(BaseModel):
@@ -89,7 +89,7 @@ class ModelExampleContextData(BaseModel):
 
     # Protocol method implementations
 
-    def configure(self, **kwargs: Any) -> bool:
+    def configure(self, **kwargs: object) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
         try:
             for key, value in kwargs.items():
@@ -102,7 +102,7 @@ class ModelExampleContextData(BaseModel):
                 message=f"Operation failed: {e}",
             ) from e
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

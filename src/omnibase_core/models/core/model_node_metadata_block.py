@@ -3,7 +3,7 @@ Node metadata block model.
 """
 
 import enum
-from typing import Annotated, Any, ClassVar
+from typing import Annotated, Any, ClassVar, TypedDict
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, StringConstraints, field_validator
@@ -25,6 +25,7 @@ from omnibase_core.models.core.model_signature_block import ModelSignatureBlock
 from omnibase_core.models.core.model_tool_collection import ModelToolCollection
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.types import SerializedDict
 
 # Default version constants - overridden at serialization time by get_canonical_versions()
 # Using ModelSemVer to avoid hardcoded version strings
@@ -257,7 +258,7 @@ class ModelNodeMetadataBlock(BaseModel):
             if k == "namespace" and isinstance(v, ModelNamespace):
                 d[k] = str(v)
                 continue
-            # PATCH: Omit tools if None, empty dict[str, Any], or empty ToolCollection (protocol rule)
+            # PATCH: Omit tools if None, empty dict, or empty ToolCollection (protocol rule)
             if k == "tools":
                 if v is None:
                     continue
@@ -266,7 +267,7 @@ class ModelNodeMetadataBlock(BaseModel):
                 if hasattr(v, "root") and not v.root:
                     continue
             d[k] = serialize_value(v)
-        # PATCH: Remove all None/null/empty fields after dict[str, Any]construction
+        # PATCH: Remove all None/null/empty fields after dict construction
         d = {k: v for k, v in d.items() if v not in (None, "", [], {})}
         return ModelSerializableDict(data=d)
 
@@ -287,7 +288,7 @@ class ModelNodeMetadataBlock(BaseModel):
     @field_validator("namespace", mode="before")
     @classmethod
     def validate_namespace_field(cls, value: object) -> Any:
-        # Recursively flatten any dict[str, Any]or Namespace to a plain string
+        # Recursively flatten any dict or Namespace to a plain string
         def flatten_namespace(val: object) -> str:
             if isinstance(val, ModelNamespace):
                 return val.value
@@ -319,14 +320,14 @@ class ModelNodeMetadataBlock(BaseModel):
                 out[k] = ModelExtensionValue(value=val)
         return out
 
-    def model_dump(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
+    def model_dump(self, *args: Any, **kwargs: Any) -> SerializedDict:
         d = super().model_dump(*args, **kwargs)
         d["entrypoint"] = self.entrypoint.to_uri()
         return d
 
 
-# Utility: Remove all volatile fields from a dict[str, Any]using EnumNodeMetadataField.volatile()
-def strip_volatile_fields_from_dict(d: dict[str, Any]) -> dict[str, Any]:
+# Utility: Remove all volatile fields from a serialized dict using EnumNodeMetadataField.volatile()
+def strip_volatile_fields_from_dict(d: SerializedDict) -> SerializedDict:
     from omnibase_core.enums.enum_metadata import EnumNodeMetadataField
 
     volatile_keys = {f.value for f in EnumNodeMetadataField.volatile()}

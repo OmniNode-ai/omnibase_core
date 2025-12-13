@@ -1,13 +1,3 @@
-from __future__ import annotations
-
-import math
-from typing import Any, Literal, Union
-
-from pydantic import BaseModel, Field, model_validator
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 ModelMultiTypeValue
 
@@ -55,6 +45,16 @@ Safe Runtime Imports (OK to import at module level):
 - pydantic modules
 """
 
+from __future__ import annotations
+
+import math
+from typing import Literal, Union
+
+from pydantic import BaseModel, Field, model_validator
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
 
 class ModelMultiTypeValue(BaseModel):
     """
@@ -94,7 +94,8 @@ class ModelMultiTypeValue(BaseModel):
     MAX_LIST_SIZE: int = 10000
     MAX_STRING_LENGTH: int = 1000000  # 1MB character limit
 
-    value: Union[bool, int, float, str, list[Any]] = Field(
+    # union-ok: discriminated_union - companion value_type Literal field provides type safety
+    value: Union[bool, int, float, str, list[object]] = Field(
         description="The actual value",
     )
 
@@ -109,7 +110,7 @@ class ModelMultiTypeValue(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
-    def infer_value_type(cls, data: Any) -> dict[str, Any]:
+    def infer_value_type(cls, data: object) -> dict[str, object]:
         """
         Automatically infer value_type from value if not provided.
 
@@ -125,13 +126,13 @@ class ModelMultiTypeValue(BaseModel):
             data: Input data (dict or value)
 
         Returns:
-            dict[str, Any]: Data with value_type populated
+            dict[str, object]: Data with value_type populated
 
         Raises:
             ModelOnexError: If value type is unsupported
         """
         # Ensure data is a dict (help mypy with type narrowing)
-        data_dict: dict[str, Any]
+        data_dict: dict[str, object]
         if not isinstance(data, dict):
             data_dict = {"value": data}
         else:
@@ -265,7 +266,8 @@ class ModelMultiTypeValue(BaseModel):
 
         return self
 
-    def get_value(self) -> Union[bool, int, float, str, list[Any]]:
+    # union-ok: discriminated_union - return type matches discriminated value field
+    def get_value(self) -> Union[bool, int, float, str, list[object]]:
         """
         Get the stored value with proper type.
 
@@ -316,12 +318,12 @@ class ModelMultiTypeValue(BaseModel):
         """
         return self.get_python_type() == expected_type
 
-    def as_dict(self) -> dict[str, Any]:
+    def as_dict(self) -> dict[str, object]:
         """
         Convert to dictionary representation.
 
         Returns:
-            dict[str, Any]: Dictionary with value, value_type, and metadata
+            dict[str, object]: Dictionary with value, value_type, and metadata
 
         Examples:
             >>> value = ModelMultiTypeValue(value=42)

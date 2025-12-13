@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Caching Configuration Model.
 
@@ -9,8 +7,7 @@ with TTL, size limits, and eviction policies.
 Strict typing is enforced: No Any types allowed in implementation.
 """
 
-
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelCachingConfig(BaseModel):

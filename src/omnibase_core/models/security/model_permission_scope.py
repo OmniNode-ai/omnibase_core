@@ -1,9 +1,3 @@
-import fnmatch
-from typing import Any
-from uuid import UUID, uuid4
-
-from pydantic import Field
-
 """
 ModelPermissionScope - Permission scope configuration
 
@@ -11,9 +5,11 @@ Permission scope model for defining the context and boundaries of permissions
 including resource hierarchies, temporal constraints, and geographic limitations.
 """
 
+import fnmatch
 from datetime import UTC, datetime
+from uuid import UUID, uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.security.model_context_variables import ModelContextVariables
 from omnibase_core.models.security.model_permission_evaluation_context import (
@@ -22,6 +18,7 @@ from omnibase_core.models.security.model_permission_evaluation_context import (
 from omnibase_core.models.security.model_permission_metadata import (
     ModelPermissionMetadata,
 )
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelPermissionScope(BaseModel):
@@ -97,7 +94,7 @@ class ModelPermissionScope(BaseModel):
     )
 
     days_of_week: list[int] = Field(
-        default_factory=lambda: list[Any](range(7)),  # All days by default
+        default_factory=lambda: list(range(7)),  # All days by default
         description="Days of week when permission is valid (0=Monday, 6=Sunday)",
     )
 
@@ -261,7 +258,7 @@ class ModelPermissionScope(BaseModel):
         return fnmatch.fnmatch(value, pattern)
 
     def _evaluate_simple_expression(
-        self, expression: str, context: dict[str, Any]
+        self, expression: str, context: SerializedDict
     ) -> bool:
         """Simple expression evaluation (placeholder for production logic)"""
         # This is a simplified implementation

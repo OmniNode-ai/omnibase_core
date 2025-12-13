@@ -1,10 +1,16 @@
+"""
+Semantic Version Model
+
+Pydantic model for semantic versioning following SemVer specification.
+"""
+
 import re
-from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 # Pre-compiled SemVer pattern for performance
 # Basic SemVer regex pattern for major.minor.patch
@@ -13,12 +19,6 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 _SEMVER_PATTERN = re.compile(
     r"^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:[-+].*)?$"
 )
-
-"""
-Semantic Version Model
-
-Pydantic model for semantic versioning following SemVer specification.
-"""
 
 
 class ModelSemVer(BaseModel):
@@ -42,7 +42,10 @@ class ModelSemVer(BaseModel):
     minor: int = Field(ge=0, description="Minor version number")
     patch: int = Field(ge=0, description="Patch version number")
 
-    model_config = ConfigDict(frozen=True, extra="ignore")
+    # from_attributes=True allows Pydantic to accept objects with matching
+    # attributes even when class identity differs (e.g., in pytest-xdist
+    # parallel execution where model classes are imported in separate workers)
+    model_config = ConfigDict(frozen=True, extra="ignore", from_attributes=True)
 
     @field_validator("major", "minor", "patch")
     @classmethod
@@ -202,7 +205,7 @@ def parse_semver_from_string(version_str: str) -> ModelSemVer:
     )
 
 
-def parse_input_state_version(input_state: dict[str, Any]) -> "ModelSemVer":
+def parse_input_state_version(input_state: SerializedDict) -> "ModelSemVer":
     """
     Parse a version from an input state dict[str, Any], requiring structured dictionary format.
 

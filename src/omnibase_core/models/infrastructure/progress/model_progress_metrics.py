@@ -8,7 +8,6 @@ Follows ONEX one-model-per-file architecture.
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -17,6 +16,7 @@ from omnibase_core.models.common.model_flexible_value import ModelFlexibleValue
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.infrastructure.model_metrics_data import ModelMetricsData
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelProgressMetrics(BaseModel):
@@ -197,7 +197,7 @@ class ModelProgressMetrics(BaseModel):
                 message=f"Operation failed: {e}",
             ) from e
 
-    def configure(self, **kwargs: Any) -> None:
+    def configure(self, **kwargs: object) -> None:
         """Configure instance with provided parameters (Configurable protocol)."""
         try:
             for key, value in kwargs.items():
@@ -209,7 +209,7 @@ class ModelProgressMetrics(BaseModel):
                 message=f"Operation failed: {e}",
             ) from e
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

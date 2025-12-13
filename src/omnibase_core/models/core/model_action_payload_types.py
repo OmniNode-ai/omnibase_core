@@ -1,15 +1,12 @@
-from typing import Union
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Action Payload Type Hierarchies.
 
 Re-exports all payload types from their individual files and provides factory functions.
 """
 
-from typing import Any
+from typing import Any, Union
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 # Import all payload types from their individual files
 from omnibase_core.models.core.model_custom_action_payload import (
@@ -41,9 +38,9 @@ from omnibase_core.models.core.model_transformation_action_payload import (
 from omnibase_core.models.core.model_validation_action_payload import (
     ModelValidationActionPayload,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
-# Union type for all payload types
-# union-ok: Factory pattern legitimately needs union of all action payload types
+# union-ok: discriminated_model_union - Type alias for external consumers
 SpecificActionPayload = Union[
     ModelLifecycleActionPayload,
     ModelOperationalActionPayload,
@@ -62,6 +59,7 @@ def create_specific_action_payload(
     action_type: ModelNodeActionType,
     **kwargs: Any,
 ) -> SpecificActionPayload:
+    # union-ok: Factory pattern legitimately needs union of all action payload types
     """
     Create the appropriate specific payload type for an action.
 

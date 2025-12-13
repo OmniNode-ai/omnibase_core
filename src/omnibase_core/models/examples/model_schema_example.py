@@ -14,14 +14,13 @@ Type-safe model for extracting examples from YAML schema files,
 replacing dict[str, Any] return types with structured models.
 """
 
-from typing import Any
-
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_data_type import EnumDataType
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 # Note: Using ModelSchemaValue instead of complex union types for type safety
 
@@ -278,7 +277,7 @@ class ModelSchemaExample(BaseModel):
 
     # Protocol method implementations
 
-    def configure(self, **kwargs: Any) -> bool:
+    def configure(self, **kwargs: object) -> bool:
         """Configure instance with provided parameters (Configurable protocol).
 
         Raises:
@@ -295,7 +294,7 @@ class ModelSchemaExample(BaseModel):
                 message=f"Configuration failed: {e}",
             ) from e
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

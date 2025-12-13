@@ -1,12 +1,3 @@
-from __future__ import annotations
-
-from collections.abc import Callable
-from typing import TypeVar
-
-from pydantic import Field, field_validator
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Result Model.
 
@@ -14,12 +5,19 @@ Generic Result[T, E] pattern for CLI operations providing type-safe
 success/error handling with proper MyPy compliance.
 """
 
+from __future__ import annotations
 
-from typing import Any, cast
+from collections.abc import Callable
+from typing import Any, TypeVar, cast
 
-from pydantic import BaseModel, field_serializer
+from pydantic import BaseModel, Field, field_serializer, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.types.type_serializable_value import (
+    SerializableValue,
+    SerializedDict,
+)
 
 # Type variables for mapped types in transformations (still needed for methods)
 U = TypeVar("U")  # Mapped type for transformations
@@ -48,16 +46,25 @@ class ModelResult[T, E](
     }
 
     @field_serializer("error")
-    def serialize_error(self, error: Any) -> Any:
+    def serialize_error(self, error: E | None) -> SerializableValue:
         """Convert Exception types to string for serialization."""
         if isinstance(error, Exception):
             return str(error)
-        return error
+        # Return as SerializableValue - Pydantic will handle the conversion
+        if isinstance(error, (str, int, float, bool, type(None))):
+            return error
+        if error is None:
+            return None
+        return str(error)
 
     @field_validator("error", mode="before")
     @classmethod
     def validate_error(cls, v: Any) -> Any:
-        """Pre-process Exception types before Pydantic validation."""
+        """Pre-process Exception types before Pydantic validation.
+
+        Note: Uses Any types because field validators operate at runtime before
+        type parameters are resolved. Pydantic handles the actual type validation.
+        """
         if isinstance(v, Exception):
             return str(v)
         return v
@@ -65,20 +72,24 @@ class ModelResult[T, E](
     @field_validator("value", mode="before")
     @classmethod
     def validate_value(cls, v: Any) -> Any:
-        """Pre-process Exception types in value field before Pydantic validation."""
+        """Pre-process Exception types in value field before Pydantic validation.
+
+        Note: Uses Any types because field validators operate at runtime before
+        type parameters are resolved. Pydantic handles the actual type validation.
+        """
         if isinstance(v, Exception):
             return str(v)
         return v
 
     success: bool = Field(default=..., description="Whether the operation succeeded")
-    value: Any = Field(default=None, description="Success value (if success=True)")
-    error: Any = Field(default=None, description="Error value (if success=False)")
+    value: T | None = Field(default=None, description="Success value (if success=True)")
+    error: E | None = Field(default=None, description="Error value (if success=False)")
 
     def __init__(
         self,
         success: bool,
-        value: Any = None,
-        error: Any = None,
+        value: T | None = None,
+        error: E | None = None,
         **data: object,
     ) -> None:
         """Initialize Result with type validation."""
@@ -106,6 +117,48 @@ class ModelResult[T, E](
                 "Error result cannot have a value",
             )
 
+    def _get_value_or_raise(self) -> T:
+        """
+        Internal helper to extract value from success result with None guard.
+
+        Returns the value if it exists, raising ModelOnexError if value is None.
+        This centralizes the "success-but-None" guard pattern used across methods.
+
+        Returns:
+            T: The unwrapped value
+
+        Raises:
+            ModelOnexError: If value is None despite success=True
+        """
+        value = self.value
+        if value is None:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="Success result has None value",
+            )
+        return value
+
+    def _get_error_or_raise(self) -> E:
+        """
+        Internal helper to extract error from error result with None guard.
+
+        Returns the error if it exists, raising ModelOnexError if error is None.
+        This centralizes the "error-but-None" guard pattern used across methods.
+
+        Returns:
+            E: The unwrapped error
+
+        Raises:
+            ModelOnexError: If error is None despite success=False
+        """
+        error = self.error
+        if error is None:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="Error result has None error",
+            )
+        return error
+
     @classmethod
     def ok(cls, value: T) -> ModelResult[T, E]:
         """Create a successful result."""
@@ -129,46 +182,26 @@ class ModelResult[T, E](
         Unwrap the value, raising an exception if error.
 
         Raises:
-            ValueError: If result is an error
+            ModelOnexError: If result is an error
         """
         if not self.success:
             raise ModelOnexError(
                 EnumCoreErrorCode.OPERATION_FAILED,
                 f"Called unwrap() on error result: {self.error}",
             )
-        if self.value is None:
-            raise ModelOnexError(
-                EnumCoreErrorCode.VALIDATION_ERROR,
-                "Success result has None value",
-            )
-        return cast("T", self.value)
+        return self._get_value_or_raise()
 
     def unwrap_or(self, default: T) -> T:
         """Unwrap the value or return default if error."""
         if self.success:
-            if self.value is None:
-                raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message="Success result has None value",
-                )
-            return cast("T", self.value)
+            return self._get_value_or_raise()
         return default
 
     def unwrap_or_else(self, f: Callable[[E], T]) -> T:
         """Unwrap the value or compute from error using function."""
         if self.success:
-            if self.value is None:
-                raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message="Success result has None value",
-                )
-            return cast("T", self.value)
-        if self.error is None:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="Error result has None error",
-            )
-        return f(self.error)
+            return self._get_value_or_raise()
+        return f(self._get_error_or_raise())
 
     def expect(self, msg: str) -> T:
         """
@@ -178,124 +211,102 @@ class ModelResult[T, E](
             msg: Custom error message
 
         Raises:
-            ValueError: If result is an error, with custom message
+            ModelOnexError: If result is an error, with custom message
         """
         if not self.success:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"{msg}: {self.error}",
             )
-        if self.value is None:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="Success result has None value",
-            )
-        return cast("T", self.value)
+        return self._get_value_or_raise()
 
-    def map(self, f: Callable[[T], U]) -> ModelResult[U, object]:
+    def map(self, f: Callable[[T], U]) -> ModelResult[U, E | Exception]:
         """
         Map function over the success value.
 
         If this is Ok(value), returns Ok(f(value)).
         If this is Err(error), returns Err(error).
+
+        Note: Return type is E | Exception because exceptions thrown by f()
+        are caught and converted to error results.
         """
         if self.success:
             try:
-                if self.value is None:
-                    raise ModelOnexError(
-                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                        message="Success result has None value",
-                    )
-                new_value = f(self.value)
+                new_value = f(self._get_value_or_raise())
                 return ModelResult.ok(new_value)
             except Exception as e:
                 # fallback-ok: Monadic error handling - converting exceptions to error results
                 return ModelResult.err(e)
-        if self.error is None:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="Error result has None error",
-            )
-        # Return the original error without unsafe cast
-        return ModelResult.err(self.error)
+        # Pass through the original error
+        return ModelResult.err(self._get_error_or_raise())
 
-    def map_err(self, f: Callable[[E], F]) -> ModelResult[T, object]:
+    def map_err(self, f: Callable[[E], F]) -> ModelResult[T, F | Exception]:
         """
         Map function over the error value.
 
         If this is Ok(value), returns Ok(value).
         If this is Err(error), returns Err(f(error)).
+
+        Note: Return type is F | Exception because exceptions thrown by f()
+        are caught and converted to error results.
         """
         if self.success:
-            if self.value is None:
-                raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message="Success result has None value",
-                )
-            return ModelResult.ok(self.value)
+            return ModelResult.ok(self._get_value_or_raise())
         try:
-            if self.error is None:
-                raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message="Error result has None error",
-                )
-            new_error = f(self.error)
+            new_error = f(self._get_error_or_raise())
             return ModelResult.err(new_error)
         except Exception as e:
             # fallback-ok: Monadic error handling - converting exceptions to error results
             return ModelResult.err(e)
 
-    def and_then(self, f: Callable[[T], ModelResult[U, E]]) -> ModelResult[U, object]:
+    def and_then(
+        self, f: Callable[[T], ModelResult[U, E]]
+    ) -> ModelResult[U, E | Exception]:
         """
         Flat map (bind) operation for chaining Results.
 
         If this is Ok(value), returns f(value).
         If this is Err(error), returns Err(error).
+
+        Note: Return type is E | Exception because:
+        - Original error E is passed through if this is an error result
+        - Function f() returns ModelResult[U, E] which could contain E
+        - Exceptions thrown by f() are caught and converted to error results
         """
         if self.success:
             try:
-                if self.value is None:
-                    raise ModelOnexError(
-                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                        message="Success result has None value",
-                    )
-                result = f(self.value)
-                # Cast to match the object return type signature
-                return cast("ModelResult[U, object]", result)
+                # Call f() and widen the return type to include Exception
+                # This cast is safe because ModelResult[U, E] is a subtype of
+                # ModelResult[U, E | Exception] at runtime (same structure, wider error type)
+                result = f(self._get_value_or_raise())
+                return cast("ModelResult[U, E | Exception]", result)
             except Exception as e:
                 # fallback-ok: Monadic error handling - converting exceptions to error results
                 return ModelResult.err(e)
-        if self.error is None:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="Error result has None error",
-            )
-        # Return the original error without unsafe cast
-        return ModelResult.err(self.error)
+        # Pass through the original error
+        return ModelResult.err(self._get_error_or_raise())
 
-    def or_else(self, f: Callable[[E], ModelResult[T, F]]) -> ModelResult[T, object]:
+    def or_else(
+        self, f: Callable[[E], ModelResult[T, F]]
+    ) -> ModelResult[T, F | Exception]:
         """
         Alternative operation for error recovery.
 
         If this is Ok(value), returns Ok(value).
         If this is Err(error), returns f(error).
+
+        Note: Return type is F | Exception because:
+        - Function f() returns ModelResult[T, F] which could contain F
+        - Exceptions thrown by f() are caught and converted to error results
         """
         if self.success:
-            if self.value is None:
-                raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message="Success result has None value",
-                )
-            return ModelResult.ok(self.value)
+            return ModelResult.ok(self._get_value_or_raise())
         try:
-            if self.error is None:
-                raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message="Error result has None error",
-                )
-            result = f(self.error)
-            # Cast to match the object return type signature
-            return cast("ModelResult[T, object]", result)
+            # Call f() and widen the return type to include Exception
+            # This cast is safe because ModelResult[T, F] is a subtype of
+            # ModelResult[T, F | Exception] at runtime (same structure, wider error type)
+            result = f(self._get_error_or_raise())
+            return cast("ModelResult[T, F | Exception]", result)
         except Exception as e:
             # fallback-ok: Monadic error handling - converting exceptions to error results
             return ModelResult.err(e)
@@ -318,7 +329,7 @@ class ModelResult[T, E](
 
     # Protocol method implementations
 
-    def execute(self, **kwargs: Any) -> bool:
+    def execute(self, **kwargs: object) -> bool:
         """Execute or update execution status (Executable protocol)."""
         try:
             # Update any relevant execution fields
@@ -332,7 +343,7 @@ class ModelResult[T, E](
                 message=f"Operation failed: {e}",
             ) from e
 
-    def configure(self, **kwargs: Any) -> bool:
+    def configure(self, **kwargs: object) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
         try:
             for key, value in kwargs.items():
@@ -345,7 +356,7 @@ class ModelResult[T, E](
                 message=f"Operation failed: {e}",
             ) from e
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
@@ -398,12 +409,13 @@ def collect_results[T, E](
         if result.is_ok():
             values.append(result.unwrap())
         else:
-            if result.error is None:
+            error = result.error  # Local bind for type narrowing
+            if error is None:
                 raise ModelOnexError(
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="Error result has None error",
                 )
-            errors.append(result.error)
+            errors.append(error)
 
     if errors:
         return ModelResult.err(errors)

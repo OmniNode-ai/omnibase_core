@@ -1,14 +1,12 @@
-from typing import Any, Optional
-
-from pydantic import Field
-
 """
 Trend data model to replace Dict[str, Any] usage for trends fields.
 """
 
+from collections.abc import Mapping
 from datetime import datetime
+from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, field_serializer
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 from omnibase_core.models.core.model_trend_metrics import ModelTrendMetrics
 from omnibase_core.models.core.model_trend_point import ModelTrendPoint
@@ -77,11 +75,12 @@ class ModelTrendData(BaseModel):
     model_config = ConfigDict()
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any] | None) -> Optional["ModelTrendData"]:
+    def from_dict(cls, data: Mapping[str, object] | None) -> Optional["ModelTrendData"]:
         """Create from dictionary for easy migration."""
         if data is None:
             return None
-        return cls(**data)
+        # Pydantic validates the data at runtime - type safety is enforced by Pydantic
+        return cls(**dict(data))  # type: ignore[arg-type]
 
     def add_point(
         self,

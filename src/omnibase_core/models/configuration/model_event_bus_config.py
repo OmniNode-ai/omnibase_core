@@ -1,5 +1,4 @@
 import os
-from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, SecretStr
@@ -75,7 +74,10 @@ class ModelEventBusConfig(BaseModel):
 
     def apply_environment_overrides(self) -> "ModelEventBusConfig":
         """Apply environment variable overrides for CI/local testing."""
-        overrides: dict[str, Any] = {}
+        overrides: dict[
+            str,
+            list[str] | str | int | bool | SecretStr | None,
+        ] = {}
         env_mappings = {
             "ONEX_EVENT_BUS_BOOTSTRAP_SERVERS": "bootstrap_servers",
             "ONEX_EVENT_BUS_TOPICS": "topics",

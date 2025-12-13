@@ -1,8 +1,3 @@
-from typing import Any, Optional
-from uuid import UUID
-
-from pydantic import Field
-
 """
 ModelLoadBalancingPolicy - Comprehensive load balancing policy configuration
 
@@ -10,14 +5,16 @@ Load balancing policy model that combines algorithm selection, node weights,
 health checks, session affinity, and circuit breaker configurations.
 """
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
+from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
     from omnibase_core.models.service.model_node_weights import ModelNodeWeights
 
 from omnibase_core.models.health.model_health_check_config import ModelHealthCheckConfig
+from omnibase_core.types import SerializedDict
 
 from .model_circuit_breaker import ModelCircuitBreaker
 from .model_load_balancing_algorithm import ModelLoadBalancingAlgorithm
@@ -177,7 +174,7 @@ class ModelLoadBalancingPolicy(BaseModel):
         return self.node_weights.get_weight(node_id)
 
     def calculate_policy_score(
-        self, performance_metrics: dict[str, Any] | None = None
+        self, performance_metrics: SerializedDict | None = None
     ) -> float:
         """Calculate overall policy performance score"""
         score = 0.0
@@ -258,7 +255,7 @@ class ModelLoadBalancingPolicy(BaseModel):
 
         return issues
 
-    def get_configuration_summary(self) -> dict[str, Any]:
+    def get_configuration_summary(self) -> SerializedDict:
         """Get human-readable configuration summary"""
         return {
             "policy_name": self.policy_name,

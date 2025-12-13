@@ -29,9 +29,9 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.fsm.model_fsm_operation import ModelFSMOperation
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
-from .model_fsm_operation import ModelFSMOperation
 from .model_fsm_state_definition import ModelFSMStateDefinition
 from .model_fsm_state_transition import ModelFSMStateTransition
 
@@ -321,6 +321,138 @@ class ModelFSMSubcontract(BaseModel):
                         },
                     ),
                 )
+        return self
+
+    @model_validator(mode="after")
+    def validate_unique_transition_names(self) -> "ModelFSMSubcontract":
+        """Validate that all transition names are unique.
+
+        Runs during construction before the instance is frozen.
+
+        Returns:
+            The validated instance (self).
+
+        Raises:
+            ModelOnexError: If duplicate transition names are found.
+        """
+        seen_names: set[str] = set()
+        duplicates: set[str] = set()
+
+        for transition in self.transitions:
+            if transition.transition_name in seen_names:
+                duplicates.add(transition.transition_name)
+            seen_names.add(transition.transition_name)
+
+        if duplicates:
+            msg = f"Duplicate transition names found: {sorted(duplicates)}"
+            raise ModelOnexError(
+                message=msg,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation",
+                        ),
+                    },
+                ),
+            )
+        return self
+
+    @model_validator(mode="after")
+    def validate_unique_structural_transitions(self) -> "ModelFSMSubcontract":
+        """Validate that no duplicate structural transitions exist.
+
+        Two transitions with identical (from_state, trigger, priority) tuple
+        create ambiguous selection that definition order cannot reliably resolve.
+
+        Runs during construction before the instance is frozen.
+
+        Returns:
+            The validated instance (self).
+
+        Raises:
+            ModelOnexError: If duplicate structural transitions are found.
+        """
+        seen_tuples: set[tuple[str, str, int]] = set()
+        duplicates: list[tuple[str, str, int]] = []
+
+        for transition in self.transitions:
+            key = (transition.from_state, transition.trigger, transition.priority)
+            if key in seen_tuples:
+                duplicates.append(key)
+            seen_tuples.add(key)
+
+        if duplicates:
+            duplicate_strs = [
+                f"(from_state='{fs}', trigger='{t}', priority={p})"
+                for fs, t, p in duplicates
+            ]
+            msg = f"Duplicate structural transitions found: {duplicate_strs}"
+            raise ModelOnexError(
+                message=msg,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation",
+                        ),
+                    },
+                ),
+            )
+        return self
+
+    @model_validator(mode="after")
+    def validate_no_transitions_from_terminal_states(self) -> "ModelFSMSubcontract":
+        """Validate that terminal states have no outgoing transitions.
+
+        Terminal states represent completed workflows that cannot be re-entered.
+        Defining transitions from terminal states is a contract error.
+
+        Runs during construction before the instance is frozen.
+
+        Returns:
+            The validated instance (self).
+
+        Raises:
+            ModelOnexError: If transitions from terminal states are found.
+        """
+        # Get all terminal state names
+        terminal_state_names: set[str] = set()
+        for state in self.states:
+            if state.is_terminal:
+                terminal_state_names.add(state.state_name)
+
+        # Also include explicitly declared terminal states
+        terminal_state_names.update(self.terminal_states)
+
+        # Check for transitions from terminal states (excluding wildcards)
+        violations: list[str] = []
+        for transition in self.transitions:
+            if (
+                transition.from_state in terminal_state_names
+                and transition.from_state != "*"
+            ):
+                violations.append(
+                    f"Transition '{transition.transition_name}' from terminal state "
+                    f"'{transition.from_state}'"
+                )
+
+        if violations:
+            msg = f"Transitions from terminal states are not allowed: {violations}"
+            raise ModelOnexError(
+                message=msg,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                details=ModelErrorContext.with_context(
+                    {
+                        "error_type": ModelSchemaValue.from_value("valueerror"),
+                        "validation_context": ModelSchemaValue.from_value(
+                            "model_validation",
+                        ),
+                    },
+                ),
+            )
         return self
 
     model_config = ConfigDict(

@@ -1,10 +1,3 @@
-from typing import Optional
-
-from pydantic import Field, field_validator
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Node Action Type Model.
 
@@ -12,11 +5,13 @@ Rich action type model that replaces EnumNodeActionType with full metadata suppo
 Self-contained action definitions with built-in categorization and validation.
 """
 
-from typing import ClassVar
+from typing import ClassVar, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.core.model_action_category import ModelActionCategory
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelNodeActionType(BaseModel):
@@ -172,11 +167,12 @@ class ModelNodeActionType(BaseModel):
         }
         return protocol_map.get(protocol.lower(), False)
 
+    # union-ok: service_metadata - Complex return type includes ModelActionCategory model
     def to_service_metadata(
         self,
     ) -> dict[
         str,
-        str | bool | int | list[str] | ModelActionCategory | int | None,
+        str | bool | int | list[str] | ModelActionCategory | None,
     ]:
         """Generate service discovery metadata with strong typing."""
         return {

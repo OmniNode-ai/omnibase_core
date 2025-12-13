@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Reduction Configuration Model.
 
@@ -10,7 +8,7 @@ for efficient data consolidation.
 Part of the "one model per file" convention for clean architecture.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelReductionConfig(BaseModel):

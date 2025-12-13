@@ -1,26 +1,22 @@
-from pydantic import field_validator
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Operational Action Payload Model.
 
 Payload for operational actions (process, execute, run, etc.).
 """
 
-from typing import Any
+from pydantic import Field, field_validator
 
-from pydantic import Field
-
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.core.model_action_payload_base import ModelActionPayloadBase
 from omnibase_core.models.core.model_node_action_type import ModelNodeActionType
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelOperationalActionPayload(ModelActionPayloadBase):
     """Payload for operational actions (process, execute, run, etc.)."""
 
-    parameters: dict[str, Any] = Field(
+    parameters: SerializedDict = Field(
         default_factory=dict,
         description="Parameters for the operation",
     )

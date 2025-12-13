@@ -1,7 +1,3 @@
-from uuid import UUID
-
-from pydantic import Field
-
 """
 Model for container reference in ONEX NodeBase implementation.
 
@@ -10,7 +6,9 @@ strongly-typed container references.
 
 """
 
-from pydantic import BaseModel, ConfigDict
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelContainerReference(BaseModel):

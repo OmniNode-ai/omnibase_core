@@ -4,11 +4,14 @@ Computation Output Base Model.
 Base computation output with discriminator and common fields for all computation types.
 """
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.types.typed_dict_computation_output_summary import (
+    TypedDictComputationOutputSummary,
+)
 
 if TYPE_CHECKING:
     from omnibase_core.enums.enum_computation_type import EnumComputationType
@@ -80,12 +83,12 @@ class ModelComputationOutputBase(BaseModel):
         """Get metadata by key."""
         return self.output_metadata.get(key)
 
-    def get_summary(self) -> dict[str, Any]:
+    def get_summary(self) -> TypedDictComputationOutputSummary:
         """Get a summary of the computation output."""
-        return {
-            "computation_type": self.computation_type.value,
-            "computed_values_count": len(self.computed_values),
-            "metrics_count": len(self.metrics),
-            "status_flags_count": len(self.status_flags),
-            "metadata_count": len(self.output_metadata),
-        }
+        return TypedDictComputationOutputSummary(
+            computation_type=self.computation_type.value,
+            computed_values_count=len(self.computed_values),
+            metrics_count=len(self.metrics),
+            status_flags_count=len(self.status_flags),
+            metadata_count=len(self.output_metadata),
+        )

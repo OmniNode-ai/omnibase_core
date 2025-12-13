@@ -364,9 +364,7 @@ class TestWarnPriorityClamping:
         Note: ModelWorkflowStep validates priority bounds at creation time,
         so this test uses model_construct to bypass validation.
         """
-        from omnibase_core.models.contracts.model_workflow_step import (
-            ModelWorkflowStep,
-        )
+        from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 
         # Use model_construct to bypass Pydantic validation
         step = ModelWorkflowStep.model_construct(
@@ -404,9 +402,7 @@ class TestWarnPriorityClamping:
         Note: ModelWorkflowStep validates priority bounds at creation time,
         so this test uses model_construct to bypass validation.
         """
-        from omnibase_core.models.contracts.model_workflow_step import (
-            ModelWorkflowStep,
-        )
+        from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 
         # Use model_construct to bypass Pydantic validation
         step_too_low = ModelWorkflowStep.model_construct(
@@ -464,9 +460,7 @@ class TestWarnPriorityClamping:
 
         Negative priorities will be clamped to 1 at runtime.
         """
-        from omnibase_core.models.contracts.model_workflow_step import (
-            ModelWorkflowStep,
-        )
+        from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 
         # Use model_construct to bypass Pydantic validation
         step_negative = ModelWorkflowStep.model_construct(
@@ -505,9 +499,7 @@ class TestWarnPriorityClamping:
         Note: ModelWorkflowStep validates priority bounds at creation time,
         so this test uses model_construct to bypass validation.
         """
-        from omnibase_core.models.contracts.model_workflow_step import (
-            ModelWorkflowStep,
-        )
+        from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 
         # Use model_construct to bypass Pydantic validation
         step_too_high = ModelWorkflowStep.model_construct(
@@ -984,9 +976,6 @@ class TestWarningAggregation:
         without calling _aggregate_warnings_by_code, preserving full count.
         """
         from omnibase_core.enums.enum_node_type import EnumNodeType
-        from omnibase_core.models.contracts.subcontracts.model_workflow_node import (
-            ModelWorkflowNode,
-        )
 
         # Create two linters: one with aggregation, one without
         linter_with_agg = WorkflowLinter(
@@ -1003,18 +992,17 @@ class TestWarningAggregation:
 
         # Create workflow with many isolated nodes (will trigger W005 warnings)
         # We need 5+ isolated nodes to exceed the threshold of 2
-        # IMPORTANT: Convert model instances to dicts to avoid Pydantic class identity
-        # issues in pytest-xdist parallel execution. With frozen=True models,
-        # Pydantic 2.12 may reject instances when model classes are imported
-        # differently across workers.
-        isolated_nodes = [
-            ModelWorkflowNode(
-                version=version_dict,
-                node_id=uuid4(),
-                node_type=EnumNodeType.COMPUTE_GENERIC,
-                node_requirements={"step_name": f"isolated_step_{i}"},
-                dependencies=[],
-            ).model_dump(mode="python")
+        # NOTE: Use dicts for nodes instead of ModelWorkflowNode instances to avoid
+        # class identity issues when nodes are re-validated by ModelExecutionGraph
+        # in pytest-split CI environment
+        isolated_node_dicts = [
+            {
+                "version": version_dict,
+                "node_id": str(uuid4()),
+                "node_type": EnumNodeType.COMPUTE_GENERIC.value,
+                "node_requirements": {"step_name": f"isolated_step_{i}"},
+                "dependencies": [],
+            }
             for i in range(5)
         ]
 
@@ -1029,7 +1017,7 @@ class TestWarningAggregation:
             ),
             execution_graph=ModelExecutionGraph(
                 version=version_dict,
-                nodes=isolated_nodes,
+                nodes=isolated_node_dicts,
             ),
         )
 

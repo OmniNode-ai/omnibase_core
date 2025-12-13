@@ -1,7 +1,3 @@
-from typing import Any
-
-from pydantic import Field
-
 """
 Internal Processing Context Model for ONEX.
 
@@ -10,10 +6,12 @@ where all traceability information is guaranteed to be present.
 """
 
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
+from omnibase_core.types.type_serializable_value import SerializedDict
 from omnibase_core.utils.util_uuid_service import UtilUUID
 
 
@@ -46,7 +44,7 @@ class ModelOnexInternalProcessingContext(BaseModel):
     )
 
     # Optional context data
-    additional_data: dict[str, Any] = Field(
+    additional_data: SerializedDict = Field(
         default_factory=dict,
         description="Additional processing data",
     )

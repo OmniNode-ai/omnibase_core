@@ -15,6 +15,24 @@ from .model_numeric_string_value import ModelNumericStringValue
 from .model_numeric_value import ModelNumericValue
 from .model_optional_int import ModelOptionalInt
 from .model_schema_value import ModelSchemaValue
+from .model_typed_metadata import (
+    ModelConfigSchemaProperty,
+    ModelCustomHealthMetrics,
+    ModelEffectMetadata,
+    ModelEventSubscriptionConfig,
+    ModelGraphNodeData,
+    ModelGraphNodeInputs,
+    ModelIntentPayload,
+    ModelIntrospectionCustomMetrics,
+    ModelMixinConfigSchema,
+    ModelNodeCapabilitiesMetadata,
+    ModelOperationData,
+    ModelReducerMetadata,
+    ModelRequestMetadata,
+    ModelShutdownMetrics,
+    ModelToolMetadataFields,
+    ModelToolResultData,
+)
 from .model_validation_result import (
     ModelValidationIssue,
     ModelValidationMetadata,
@@ -37,4 +55,21 @@ __all__ = [
     "ModelValidationMetadata",
     "ModelValidationResult",
     "ModelValueUnion",
+    # Typed metadata models
+    "ModelConfigSchemaProperty",
+    "ModelCustomHealthMetrics",
+    "ModelEffectMetadata",
+    "ModelEventSubscriptionConfig",
+    "ModelGraphNodeData",
+    "ModelGraphNodeInputs",
+    "ModelIntentPayload",
+    "ModelIntrospectionCustomMetrics",
+    "ModelMixinConfigSchema",
+    "ModelNodeCapabilitiesMetadata",
+    "ModelOperationData",
+    "ModelReducerMetadata",
+    "ModelRequestMetadata",
+    "ModelShutdownMetrics",
+    "ModelToolMetadataFields",
+    "ModelToolResultData",
 ]

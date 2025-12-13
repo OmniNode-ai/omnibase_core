@@ -1,18 +1,17 @@
-from __future__ import annotations
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Typed field accessor for specific value types.
 
 Provides type-safe field access with generic type support.
 """
 
+from __future__ import annotations
 
 from typing import Any
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 from .model_field_accessor import ModelFieldAccessor
 
@@ -58,10 +57,10 @@ class ModelTypedAccessor[T](ModelFieldAccessor):
                 message=f"Operation failed: {e}",
             ) from e
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""
         # Typed accessor classes don't have specific model fields - serialize accessible data
-        result: dict[str, Any] = {
+        result: SerializedDict = {
             "accessor_type": self.__class__.__name__,
             "type_parameter": str(getattr(self, "__orig_class__", "Unknown")),
         }

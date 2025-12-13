@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field
-
 """
 Strongly-typed structured input value model.
 
@@ -9,12 +5,12 @@ Represents structured data inputs for computation operations.
 Follows ONEX strong typing principles and one-model-per-file architecture.
 """
 
+from __future__ import annotations
 
-from typing import Any
-
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_input_data_type import EnumInputDataType
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
@@ -29,7 +25,7 @@ class ModelStructuredInputValue(BaseModel):
         default=EnumInputDataType.STRUCTURED,
         description="Type identifier for structured input data",
     )
-    data_structure: dict[str, Any] = Field(
+    data_structure: dict[str, ModelSchemaValue] = Field(
         default_factory=dict,
         description="Structured data with field definitions",
     )
@@ -37,7 +33,7 @@ class ModelStructuredInputValue(BaseModel):
         ...,  # REQUIRED - specify in contract
         description="Schema version for the structured data",
     )
-    metadata: dict[str, Any] = Field(
+    metadata: dict[str, ModelSchemaValue] = Field(
         default_factory=dict,
         description="Additional metadata for structured input",
     )

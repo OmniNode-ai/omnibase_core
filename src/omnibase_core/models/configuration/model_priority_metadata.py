@@ -4,7 +4,7 @@ Additional metadata for execution priorities with ONEX compliance and validation
 """
 
 from datetime import UTC, datetime
-from typing import Any, Self
+from typing import Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -15,7 +15,12 @@ from omnibase_core.models.configuration.model_monitoring_thresholds import (
 from omnibase_core.models.configuration.model_notification_settings import (
     ModelNotificationSettings,
 )
+from omnibase_core.models.configuration.model_priority_metadata_summary import (
+    ModelPriorityMetadataSummary,
+)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
+__all__ = ["ModelPriorityMetadata", "ModelPriorityMetadataSummary"]
 
 
 class ModelPriorityMetadata(BaseModel):
@@ -453,19 +458,19 @@ class ModelPriorityMetadata(BaseModel):
 
     # === Utility Methods ===
 
-    def get_summary(self) -> dict[str, Any]:
+    def get_summary(self) -> "ModelPriorityMetadataSummary":
         """Get a summary of priority metadata."""
-        return {
-            "owner": self.owner,
-            "approval_required": self.approval_required,
-            "approved_users_count": len(self.approved_users),
-            "approved_groups_count": len(self.approved_groups),
-            "tags_count": len(self.tags),
-            "has_sla": self.sla_requirements is not None,
-            "has_cost": self.cost_per_hour is not None,
-            "has_usage_limit": self.max_daily_usage is not None,
-            "age_days": self.get_age_days(),
-        }
+        return ModelPriorityMetadataSummary(
+            owner=self.owner,
+            approval_required=self.approval_required,
+            approved_users_count=len(self.approved_users),
+            approved_groups_count=len(self.approved_groups),
+            tags_count=len(self.tags),
+            has_sla=self.sla_requirements is not None,
+            has_cost=self.cost_per_hour is not None,
+            has_usage_limit=self.max_daily_usage is not None,
+            age_days=self.get_age_days(),
+        )
 
     def copy_with_modifications(
         self,

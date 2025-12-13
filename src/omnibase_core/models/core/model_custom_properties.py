@@ -1,10 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Generic Custom Properties Model.
 
@@ -13,16 +6,20 @@ found across 15+ models in the codebase. Provides type-safe custom property hand
 with validation and utility methods.
 """
 
+from __future__ import annotations
 
 from collections.abc import Mapping
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.infrastructure.model_result import ModelResult
 from omnibase_core.types.constraints import PrimitiveValueType
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelCustomProperties(BaseModel):
@@ -279,7 +276,7 @@ class ModelCustomProperties(BaseModel):
         except Exception:  # fallback-ok: protocol method contract requires bool return - False indicates configuration failed safely
             return False
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

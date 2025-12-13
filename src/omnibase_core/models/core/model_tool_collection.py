@@ -15,6 +15,7 @@ from omnibase_core.models.core.model_enhanced_tool_collection import (
     EnumToolCompatibilityMode,
     EnumToolRegistrationStatus,
     ModelToolCollection,
+    ToolCollection,
     ToolMetadata,
     ToolPerformanceMetrics,
     ToolValidationResult,
@@ -24,53 +25,37 @@ from omnibase_core.models.core.model_metadata_tool_collection import (
     EnumMetadataToolStatus,
     EnumMetadataToolType,
     MetadataToolAnalytics,
+    MetadataToolCollection,
     MetadataToolInfo,
     MetadataToolUsageMetrics,
+    ModelMetadataToolAnalytics,
     ModelMetadataToolCollection,
+    ModelMetadataToolInfo,
+    ModelMetadataToolUsageMetrics,
 )
 
-# Ensure all original functionality is available
+# Re-export all models and compatibility aliases
 __all__ = [
     # Enhanced tool collection models
-    "ModelToolCollection",
     "EnumToolCapabilityLevel",
     "EnumToolCategory",
     "EnumToolCompatibilityMode",
     "EnumToolRegistrationStatus",
+    "ModelToolCollection",
+    "ToolCollection",
     "ToolMetadata",
     "ToolPerformanceMetrics",
     "ToolValidationResult",
     # Metadata tool collection models
-    "ModelMetadataToolCollection",
     "EnumMetadataToolComplexity",
     "EnumMetadataToolStatus",
     "EnumMetadataToolType",
     "MetadataToolAnalytics",
+    "MetadataToolCollection",
     "MetadataToolInfo",
     "MetadataToolUsageMetrics",
-    # Legacy aliases
-    "ToolCollection",
-    "MetadataToolCollection",
-    "LegacyToolCollection",
-    "ToolCapabilityLevel",
-    "ToolCategory",
-    "ToolCompatibilityMode",
-    "ToolRegistrationStatus",
-    "MetadataToolComplexity",
-    "MetadataToolStatus",
-    "MetadataToolType",
+    "ModelMetadataToolAnalytics",
+    "ModelMetadataToolCollection",
+    "ModelMetadataToolInfo",
+    "ModelMetadataToolUsageMetrics",
 ]
-
-# Legacy aliases for current standards during migration
-ToolCollection = ModelToolCollection
-MetadataToolCollection = ModelMetadataToolCollection
-LegacyToolCollection = ModelMetadataToolCollection
-
-# Enum aliases without Model/Enum prefix for convenience
-ToolCapabilityLevel = EnumToolCapabilityLevel
-ToolCategory = EnumToolCategory
-ToolCompatibilityMode = EnumToolCompatibilityMode
-ToolRegistrationStatus = EnumToolRegistrationStatus
-MetadataToolComplexity = EnumMetadataToolComplexity
-MetadataToolStatus = EnumMetadataToolStatus
-MetadataToolType = EnumMetadataToolType

@@ -1,21 +1,16 @@
-from __future__ import annotations
-
-from pydantic import Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Performance connection properties sub-model.
 
 Part of the connection properties restructuring to reduce string field violations.
 """
 
+from __future__ import annotations
 
-from typing import Any
-
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.types import SerializedDict
 
 
 class ModelPerformanceProperties(BaseModel):
@@ -49,7 +44,7 @@ class ModelPerformanceProperties(BaseModel):
 
     # Protocol method implementations
 
-    def configure(self, **kwargs: Any) -> bool:
+    def configure(self, **kwargs: object) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
         try:
             for key, value in kwargs.items():
@@ -74,7 +69,7 @@ class ModelPerformanceProperties(BaseModel):
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             ) from e
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

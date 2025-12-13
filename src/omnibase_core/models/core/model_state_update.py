@@ -1,10 +1,3 @@
-from typing import Any
-from uuid import UUID
-
-from pydantic import Field
-
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-
 """
 Model for state updates in tool-based state management.
 
@@ -12,10 +5,14 @@ This model represents state updates that can be applied to the current state
 as part of contract-driven state transitions.
 """
 
-from pydantic import BaseModel
+from uuid import UUID
+
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_state_update_operation import EnumStateUpdateOperation
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_state_field_update import ModelStateFieldUpdate
+from omnibase_core.types.type_serializable_value import SerializableValue
 
 # ModelStateFieldUpdate has been extracted to model_state_field_update.py
 
@@ -105,16 +102,7 @@ class ModelStateUpdate(BaseModel):
     def set_field(
         self,
         field_path: str,
-        value: (
-            ModelSchemaValue
-            | int
-            | float
-            | str
-            | bool
-            | list[Any]
-            | dict[str, Any]
-            | None
-        ),
+        value: ModelSchemaValue | SerializableValue,
         condition: str | None = None,
     ) -> None:
         """Convenience method to set a field value."""
@@ -172,19 +160,10 @@ class ModelStateUpdate(BaseModel):
     def append_to_field(
         self,
         field_path: str,
-        value: (
-            ModelSchemaValue
-            | int
-            | float
-            | str
-            | bool
-            | list[Any]
-            | dict[str, Any]
-            | None
-        ),
+        value: ModelSchemaValue | SerializableValue,
         condition: str | None = None,
     ) -> None:
-        """Convenience method to append to a list[Any]field."""
+        """Convenience method to append to a list field."""
         # Convert to ModelSchemaValue if needed
         if not isinstance(value, ModelSchemaValue) and value is not None:
             value = ModelSchemaValue.from_value(value)

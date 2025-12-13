@@ -3,13 +3,18 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, ClassVar
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_security_event_type import EnumSecurityEventType
 from omnibase_core.errors import ModelOnexError
+from omnibase_core.models.security.model_security_summaries import (
+    ModelEventStatistics,
+    ModelEventTimeRange,
+)
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 if TYPE_CHECKING:
     from omnibase_core.models.security.model_security_event import ModelSecurityEvent
@@ -186,22 +191,22 @@ class ModelSecurityEventCollection(BaseModel):
                     break
         return matching_events
 
-    def get_event_statistics(self) -> dict[str, Any]:
+    def get_event_statistics(self) -> ModelEventStatistics:
         """Get statistics about the events in this collection."""
         if not self.events:
-            return {
-                "total_events": 0,
-                "event_types": {},
-                "severity_distribution": {},
-                "users_involved": [],
-                "nodes_involved": [],
-                "time_range": None,
-            }
+            return ModelEventStatistics(
+                total_events=0,
+                event_types={},
+                severity_distribution={},
+                users_involved=[],
+                nodes_involved=[],
+                time_range=None,
+            )
         event_types: dict[str, int] = {}
         severity_distribution: dict[str, int] = {}
-        users_involved = set()
-        nodes_involved = set()
-        timestamps = []
+        users_involved: set[UUID] = set()
+        nodes_involved: set[UUID] = set()
+        timestamps: list[datetime] = []
         for event in self.events:
             event_type = (
                 event.event_type.value
@@ -216,20 +221,20 @@ class ModelSecurityEventCollection(BaseModel):
             if hasattr(event, "node_id") and event.node_id:
                 nodes_involved.add(event.node_id)
             timestamps.append(event.timestamp)
-        time_range = None
+        time_range: ModelEventTimeRange | None = None
         if timestamps:
-            time_range = {
-                "earliest": min(timestamps).isoformat(),
-                "latest": max(timestamps).isoformat(),
-            }
-        return {
-            "total_events": len(self.events),
-            "event_types": event_types,
-            "severity_distribution": severity_distribution,
-            "users_involved": sorted(users_involved),
-            "nodes_involved": sorted(nodes_involved),
-            "time_range": time_range,
-        }
+            time_range = ModelEventTimeRange(
+                earliest=min(timestamps).isoformat(),
+                latest=max(timestamps).isoformat(),
+            )
+        return ModelEventStatistics(
+            total_events=len(self.events),
+            event_types=event_types,
+            severity_distribution=severity_distribution,
+            users_involved=sorted(users_involved),
+            nodes_involved=sorted(nodes_involved),
+            time_range=time_range,
+        )
 
     def clear_events(self) -> None:
         """Clear all events from the collection."""
@@ -261,14 +266,14 @@ class ModelSecurityEventCollection(BaseModel):
         cutoff_date = datetime.now(UTC) - timedelta(days=self.retention_days)
         return self.remove_old_events(cutoff_date)
 
-    def export_events(self, format_type: str = "dict") -> list[dict[str, Any]]:
+    def export_events(self, format_type: str = "dict") -> list[SerializedDict]:
         """Export events in specified format."""
         if format_type not in ["dict", "json"]:
             raise ModelOnexError(
                 message="Format must be 'dict' or 'json'",
                 error_code="ONEX_SECURITY_EVENT_COLLECTION_VALIDATION_ERROR",
             )
-        event_data = []
+        event_data: list[SerializedDict] = []
         for event in self.events:
             event_dict = event.model_dump()
             for key, value in event_dict.items():

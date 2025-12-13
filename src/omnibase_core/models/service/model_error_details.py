@@ -1,18 +1,20 @@
-from typing import Optional
-from uuid import UUID
-
-from pydantic import Field
-
 """
 Error details model to replace Dict[str, Any] usage.
 """
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
+from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, field_serializer
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
+
+from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 
+@allow_dict_str_any(
+    "Error details require flexible context_data for error-specific information "
+    "and from_dict factory method for legacy format compatibility."
+)
 class ModelErrorDetails(BaseModel):
     """
     Error details with typed fields.

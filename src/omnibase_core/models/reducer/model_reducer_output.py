@@ -32,7 +32,7 @@ class ModelReducerOutput[T_Output](BaseModel):
         intents: Side effects to be executed by Effect node
 
     Thread Safety:
-        This model is immutable (frozen=True) after creation. The intents list
+        This model is immutable (frozen=True) after creation. The intents tuple
         and metadata dict are captured at construction time and cannot be modified.
         This ensures thread-safe sharing of output instances across concurrent
         readers without synchronization.
@@ -57,8 +57,8 @@ class ModelReducerOutput[T_Output](BaseModel):
     batches_processed: int = 1
 
     # Intent emission for pure FSM pattern
-    intents: list[ModelIntent] = Field(
-        default_factory=list,
+    intents: tuple[ModelIntent, ...] = Field(
+        default=(),
         description="Side effect intents emitted during reduction (for Effect node)",
     )
 

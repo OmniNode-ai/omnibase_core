@@ -581,7 +581,7 @@ class MixinRequestResponseIntrospection:
         return ModelNodeCapabilities(
             actions=actions,
             protocols=protocols,
-            metadata=metadata,
+            metadata=metadata,  # type: ignore[arg-type]
         )
 
     def _get_current_tool_availability(self) -> list[ModelCurrentToolAvailability]:

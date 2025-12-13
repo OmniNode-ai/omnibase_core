@@ -25,12 +25,56 @@ Priority Clamping (Step Priority vs Action Priority):
         - ModelAction.priority constraint: models/orchestrator/model_action.py
         - Architecture rationale: docs/architecture/CONTRACT_DRIVEN_NODEORCHESTRATOR_V1_0.md
           (Section: "Step Priority vs Action Priority")
+
+Size Limits:
+    To prevent memory exhaustion, this module enforces the following limits:
+    - MAX_WORKFLOW_STEPS (default 1000): Maximum number of steps in a workflow.
+      Validated during workflow validation; raises ModelOnexError if exceeded.
+    - MAX_STEP_PAYLOAD_SIZE_BYTES (default 64KB): Maximum size of individual step payload.
+      Validated during action creation; raises ModelOnexError if exceeded.
+    - MAX_TOTAL_PAYLOAD_SIZE_BYTES (default 10MB): Maximum accumulated payload size.
+      In parallel mode, raises ModelOnexError. In sequential mode, treated as
+      a step failure (per error_action configuration, defaults to continue).
+
+    These limits are configurable via environment variables for extreme workloads:
+    - ONEX_MAX_WORKFLOW_STEPS: Override max workflow steps (bounds: 1-100,000)
+    - ONEX_MAX_STEP_PAYLOAD_SIZE_BYTES: Override max step payload size (bounds: 1KB-10MB)
+    - ONEX_MAX_TOTAL_PAYLOAD_SIZE_BYTES: Override max total payload size (bounds: 1KB-1GB)
+
+    Invalid environment variable values log a warning and fall back to defaults.
+    Bounds are enforced to prevent both DoS attacks (too-small limits causing many
+    small workflows) and memory exhaustion (too-large limits).
+
+Security Considerations:
+    Compression Attacks:
+        The payload size limits (MAX_STEP_PAYLOAD_SIZE_BYTES, MAX_TOTAL_PAYLOAD_SIZE_BYTES)
+        are validated on the SERIALIZED JSON payload, not on compressed data. If payloads
+        are transmitted compressed (e.g., gzip), they MUST be validated for size AFTER
+        decompression but BEFORE processing.
+
+        Risk: A "compression bomb" (also known as a "zip bomb" or "decompression bomb")
+        is a small compressed file that expands to a massive size when decompressed.
+        Without post-decompression size validation, an attacker could bypass payload
+        limits by sending small compressed payloads that expand to memory-exhausting
+        sizes, leading to denial-of-service (DoS) conditions.
+
+        Mitigation:
+        - Always validate payload size on the decompressed/deserialized data
+        - Consider adding streaming decompression with size limits for transport layers
+        - The workflow executor validates size on json.dumps() output, which is the
+          serialized (uncompressed) representation
+        - Transport layers that accept compressed payloads should enforce their own
+          decompression limits before passing data to the workflow executor
+
+        Reference: OWASP - Denial of Service through Resource Depletion
+        (https://owasp.org/www-community/attacks/Denial_of_Service)
 """
 
 import asyncio
 import heapq
 import json
 import logging
+import os
 import time
 from datetime import datetime
 from uuid import UUID, uuid4
@@ -55,6 +99,131 @@ from omnibase_core.models.workflow.execution.model_declarative_workflow_step_con
 )
 from omnibase_core.types.typed_dict_workflow_context import TypedDictWorkflowContext
 from omnibase_core.validation.reserved_enum_validator import validate_execution_mode
+
+
+def _get_limit_from_env(env_var: str, default: int, min_val: int, max_val: int) -> int:
+    """Get limit from environment variable with bounds checking.
+
+    Args:
+        env_var: Environment variable name
+        default: Default value if env var not set
+        min_val: Minimum allowed value
+        max_val: Maximum allowed value
+
+    Returns:
+        Validated limit value
+    """
+    value = os.environ.get(env_var)
+    if value is None:
+        return default
+    try:
+        int_value = int(value)
+        return max(min_val, min(int_value, max_val))
+    except ValueError:
+        logging.warning(
+            f"Invalid value for {env_var}: {value}, using default {default}"
+        )
+        return default
+
+
+# Workflow execution limits (OMN-670: Security hardening)
+# Configurable via environment variables for extreme workloads
+# Bounds prevent both too-small (DoS via many small workflows) and too-large (memory exhaustion) values
+MAX_WORKFLOW_STEPS = _get_limit_from_env(
+    "ONEX_MAX_WORKFLOW_STEPS", default=1000, min_val=1, max_val=100000
+)
+MAX_STEP_PAYLOAD_SIZE_BYTES = _get_limit_from_env(
+    "ONEX_MAX_STEP_PAYLOAD_SIZE_BYTES",
+    default=64 * 1024,
+    min_val=1024,
+    max_val=10 * 1024 * 1024,
+)
+MAX_TOTAL_PAYLOAD_SIZE_BYTES = _get_limit_from_env(
+    "ONEX_MAX_TOTAL_PAYLOAD_SIZE_BYTES",
+    default=10 * 1024 * 1024,
+    min_val=1024,
+    max_val=1024 * 1024 * 1024,
+)
+
+
+def _log_payload_metrics(
+    workflow_id: UUID,
+    step_id: UUID,
+    step_name: str,
+    payload_size: int,
+    total_payload_size: int,
+) -> None:
+    """Log payload size metrics for observability.
+
+    In production, these structured logs can be captured by log aggregators
+    (DataDog, Splunk, etc.) and converted to metrics. This approach avoids
+    adding external metric dependencies to the core library.
+
+    Args:
+        workflow_id: Workflow execution ID
+        step_id: Step ID
+        step_name: Step name for context
+        payload_size: Size of this step's payload in bytes
+        total_payload_size: Cumulative payload size for the workflow
+    """
+    # Only log at DEBUG level to avoid noise in production
+    # Structured format enables log-based metrics extraction
+    logging.debug(
+        "workflow_payload_metrics",
+        extra={
+            "metric_type": "payload_size",
+            "workflow_id": str(workflow_id),
+            "step_id": str(step_id),
+            "step_name": step_name,
+            "payload_size_bytes": payload_size,
+            "total_payload_size_bytes": total_payload_size,
+            "payload_size_pct_of_limit": round(
+                payload_size / MAX_STEP_PAYLOAD_SIZE_BYTES * 100, 2
+            ),
+            "total_payload_pct_of_limit": round(
+                total_payload_size / MAX_TOTAL_PAYLOAD_SIZE_BYTES * 100, 2
+            ),
+        },
+    )
+
+
+def _log_workflow_completion_metrics(
+    workflow_id: UUID,
+    workflow_name: str,
+    total_payload_size: int,
+    step_count: int,
+    execution_mode: str,
+) -> None:
+    """Log workflow completion metrics for observability.
+
+    Summarizes workflow execution with aggregated payload statistics.
+    In production, these structured logs can be captured by log aggregators
+    (DataDog, Splunk, etc.) and converted to metrics.
+
+    Args:
+        workflow_id: Workflow execution ID
+        workflow_name: Workflow name for context
+        total_payload_size: Total accumulated payload size in bytes
+        step_count: Number of steps executed
+        execution_mode: Execution mode (sequential, parallel, batch)
+    """
+    logging.debug(
+        "workflow_completion_metrics",
+        extra={
+            "metric_type": "workflow_complete",
+            "workflow_id": str(workflow_id),
+            "workflow_name": workflow_name,
+            "total_payload_size_bytes": total_payload_size,
+            "step_count": step_count,
+            "execution_mode": execution_mode,
+            "avg_payload_size_bytes": total_payload_size // step_count
+            if step_count > 0
+            else 0,
+            "total_payload_pct_of_limit": round(
+                total_payload_size / MAX_TOTAL_PAYLOAD_SIZE_BYTES * 100, 2
+            ),
+        },
+    )
 
 
 async def execute_workflow(
@@ -190,6 +359,11 @@ async def validate_workflow_definition(
 
     Pure validation function - no side effects.
 
+    Enforces the following limits (OMN-670: Security hardening):
+    - MAX_WORKFLOW_STEPS: Maximum number of steps allowed in a workflow
+    - Dependencies must reference existing steps
+    - No dependency cycles allowed
+
     Args:
         workflow_definition: Workflow definition to validate
         workflow_steps: Workflow steps to validate
@@ -235,6 +409,17 @@ async def validate_workflow_definition(
                 # Safe to execute
     """
     errors: list[str] = []
+
+    # Validate step count limit (OMN-670: Security hardening)
+    # SECURITY: Short-circuit immediately on step count overflow to prevent DoS.
+    # Without early return, an attacker could submit workflows with millions of steps
+    # and the validation would still iterate through all steps for dependency cycle
+    # detection and per-step validation, causing CPU exhaustion.
+    if len(workflow_steps) > MAX_WORKFLOW_STEPS:
+        errors.append(
+            f"Workflow exceeds maximum step limit: {len(workflow_steps)} steps > {MAX_WORKFLOW_STEPS} maximum"
+        )
+        return errors  # DoS mitigation: skip all subsequent expensive validation
 
     # Validate workflow definition metadata
     if not workflow_definition.workflow_metadata.workflow_name:
@@ -379,12 +564,39 @@ async def _execute_sequential(
     workflow_steps: list[ModelWorkflowStep],
     workflow_id: UUID,
 ) -> WorkflowExecutionResult:
-    """Execute workflow steps sequentially."""
+    """
+    Execute workflow steps sequentially.
+
+    Steps are executed one at a time in topological order (respecting dependencies).
+    Each step's output is available to subsequent steps via workflow context.
+
+    Args:
+        workflow_definition: Workflow definition from YAML contract.
+        workflow_steps: List of workflow steps to execute.
+        workflow_id: Unique workflow execution ID.
+
+    Returns:
+        WorkflowExecutionResult with completed/failed steps and emitted actions.
+
+    Raises:
+        ModelOnexError: If workflow validation fails during setup.
+
+    Note:
+        Total payload limit violations (MAX_TOTAL_PAYLOAD_SIZE_BYTES) are caught
+        by the step error handler and treated as step failures per the step's
+        error_action configuration (default: 'continue'). The workflow returns
+        FAILED status rather than raising the error. This differs from parallel
+        mode, which raises ModelOnexError immediately for payload limit violations.
+
+        Individual step payload limit violations (MAX_STEP_PAYLOAD_SIZE_BYTES) are
+        also caught and treated as step failures in the same manner.
+    """
     completed_steps: list[str] = []
     failed_steps: list[str] = []
     all_actions: list[ModelAction] = []
     completed_step_ids: set[UUID] = set()
     step_outputs: dict[UUID, object] = {}
+    total_payload_size = 0  # Track total payload size (OMN-670: Security hardening)
 
     # Log workflow execution start
     logging.info(
@@ -422,9 +634,35 @@ async def _execute_sequential(
                 step, workflow_id, completed_step_ids, workflow_context
             )
 
-            # Emit action for this step
-            action = _create_action_for_step(step, workflow_id)
+            # Emit action for this step (returns tuple with payload size to avoid
+            # redundant JSON serialization - OMN-670: Performance optimization)
+            action, action_payload_size = _create_action_for_step(step, workflow_id)
             all_actions.append(action)
+
+            # Track total payload size (OMN-670: Security hardening)
+            # Note: action_payload_size comes from _create_action_for_step to avoid
+            # redundant json.dumps() call
+            total_payload_size += action_payload_size
+
+            # Log payload metrics for observability (OMN-670: Metrics)
+            _log_payload_metrics(
+                workflow_id=workflow_id,
+                step_id=step.step_id,
+                step_name=step.step_name,
+                payload_size=action_payload_size,
+                total_payload_size=total_payload_size,
+            )
+
+            if total_payload_size > MAX_TOTAL_PAYLOAD_SIZE_BYTES:
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.WORKFLOW_TOTAL_PAYLOAD_EXCEEDED,
+                    message=f"Workflow total payload exceeds limit: {total_payload_size} bytes > {MAX_TOTAL_PAYLOAD_SIZE_BYTES} byte limit",
+                    context={
+                        "workflow_id": str(workflow_id),
+                        "total_size": total_payload_size,
+                        "limit": MAX_TOTAL_PAYLOAD_SIZE_BYTES,
+                    },
+                )
 
             # Mark step as completed
             context.completed_at = datetime.now()
@@ -481,6 +719,15 @@ async def _execute_sequential(
         EnumWorkflowState.COMPLETED if not failed_steps else EnumWorkflowState.FAILED
     )
 
+    # Log workflow completion metrics (OMN-670: Metrics)
+    _log_workflow_completion_metrics(
+        workflow_id=workflow_id,
+        workflow_name=workflow_definition.workflow_metadata.workflow_name,
+        total_payload_size=total_payload_size,
+        step_count=len(completed_steps),
+        execution_mode="sequential",
+    )
+
     return WorkflowExecutionResult(
         workflow_id=workflow_id,
         execution_status=status,
@@ -500,13 +747,50 @@ async def _execute_parallel(
     workflow_steps: list[ModelWorkflowStep],
     workflow_id: UUID,
 ) -> WorkflowExecutionResult:
-    """Execute workflow steps in parallel (respecting dependencies)."""
+    """
+    Execute workflow steps in parallel (respecting dependencies).
+
+    Steps are executed in waves based on dependency order. Within each wave,
+    all steps with met dependencies run concurrently via asyncio.gather.
+    Steps in the same wave cannot see each other's outputs (they run in parallel),
+    but can access outputs from prior waves via workflow context.
+
+    Args:
+        workflow_definition: Workflow definition from YAML contract.
+        workflow_steps: List of workflow steps to execute.
+        workflow_id: Unique workflow execution ID.
+
+    Returns:
+        WorkflowExecutionResult with completed/failed steps and emitted actions.
+
+    Raises:
+        ModelOnexError: If workflow validation fails during setup, or if total
+            payload limit (MAX_TOTAL_PAYLOAD_SIZE_BYTES) is exceeded. Unlike
+            sequential mode, payload limit violations in parallel mode fail
+            the entire workflow immediately after all wave steps complete,
+            raising ModelOnexError rather than treating it as a step failure.
+
+    Note:
+        The error handling behavior differs from sequential mode:
+        - Sequential mode: Payload limit violations are caught and treated as
+          step failures per error_action configuration (workflow returns FAILED).
+        - Parallel mode: Payload limit violations raise ModelOnexError immediately
+          after the current wave completes (error propagates to caller).
+
+        This difference exists because parallel execution processes all steps in a
+        wave simultaneously, making per-step error handling less meaningful when
+        the aggregate payload exceeds the limit.
+
+        Individual step errors (including MAX_STEP_PAYLOAD_SIZE_BYTES violations)
+        are still handled per-step and respect the error_action configuration.
+    """
     completed_steps: list[str] = []
     failed_steps: list[str] = []
     all_actions: list[ModelAction] = []
     completed_step_ids: set[UUID] = set()
     step_outputs: dict[UUID, object] = {}
     should_stop = False
+    total_payload_size = 0  # Track total payload size (OMN-670: Security hardening)
 
     # Log workflow execution start
     logging.info(
@@ -516,7 +800,7 @@ async def _execute_parallel(
     async def execute_step(
         step: ModelWorkflowStep,
         wave_context: TypedDictWorkflowContext,
-    ) -> tuple[ModelWorkflowStep, ModelAction | None, Exception | None]:
+    ) -> tuple[ModelWorkflowStep, ModelAction | None, int, Exception | None]:
         """
         Execute a single workflow step asynchronously.
 
@@ -531,14 +815,18 @@ async def _execute_parallel(
                 enabling data flow between steps across wave boundaries.
 
         Returns:
-            A 3-tuple of (step, action, error) where:
+            A 4-tuple of (step, action, payload_size, error) where:
             - step: The original ModelWorkflowStep (always present for correlation)
             - action: ModelAction if execution succeeded, None if failed
+            - payload_size: Size in bytes of the JSON payload (0 if failed)
             - error: Exception if execution failed, None if succeeded
 
             Exactly one of action/error will be None (mutually exclusive).
             This tuple pattern allows the caller to process results from
             asyncio.gather without individual try/except blocks per task.
+
+            The payload_size is returned to avoid redundant JSON serialization
+            in the caller (OMN-670: Performance optimization).
 
         Note:
             This function catches all exceptions and returns them in the tuple
@@ -561,11 +849,12 @@ async def _execute_parallel(
                 step, workflow_id, completed_step_ids, wave_context
             )
 
-            # Create action for this step
-            action = _create_action_for_step(step, workflow_id)
-            return (step, action, None)
+            # Create action for this step (returns tuple with payload size to avoid
+            # redundant JSON serialization - OMN-670: Performance optimization)
+            action, payload_size = _create_action_for_step(step, workflow_id)
+            return (step, action, payload_size, None)
         except Exception as e:  # fallback-ok: parallel execution returns error in tuple for caller handling
-            return (step, None, e)
+            return (step, None, 0, e)
 
     # For parallel execution, we execute in waves based on dependencies
     # Filter out disabled steps entirely - they are skipped, not failed
@@ -599,9 +888,35 @@ async def _execute_parallel(
         results = await asyncio.gather(*tasks)
 
         # Process results from parallel execution
-        for step, action, error in results:
+        for step, action, action_payload_size, error in results:
             if error is None and action is not None:
-                # Step succeeded
+                # Step succeeded - check payload size BEFORE marking completed
+                # Track total payload size (OMN-670: Security hardening)
+                # Note: action_payload_size comes from _create_action_for_step via execute_step
+                # to avoid redundant json.dumps() call (OMN-670: Performance optimization)
+                total_payload_size += action_payload_size
+
+                # Log payload metrics for observability (OMN-670: Metrics)
+                _log_payload_metrics(
+                    workflow_id=workflow_id,
+                    step_id=step.step_id,
+                    step_name=step.step_name,
+                    payload_size=action_payload_size,
+                    total_payload_size=total_payload_size,
+                )
+
+                if total_payload_size > MAX_TOTAL_PAYLOAD_SIZE_BYTES:
+                    raise ModelOnexError(
+                        error_code=EnumCoreErrorCode.WORKFLOW_TOTAL_PAYLOAD_EXCEEDED,
+                        message=f"Workflow total payload exceeds limit: {total_payload_size} bytes > {MAX_TOTAL_PAYLOAD_SIZE_BYTES} byte limit",
+                        context={
+                            "workflow_id": str(workflow_id),
+                            "total_size": total_payload_size,
+                            "limit": MAX_TOTAL_PAYLOAD_SIZE_BYTES,
+                        },
+                    )
+
+                # Payload size check passed - now mark step completed
                 all_actions.append(action)
                 completed_steps.append(str(step.step_id))
                 completed_step_ids.add(step.step_id)
@@ -649,6 +964,15 @@ async def _execute_parallel(
         EnumWorkflowState.COMPLETED if not failed_steps else EnumWorkflowState.FAILED
     )
 
+    # Log workflow completion metrics (OMN-670: Metrics)
+    _log_workflow_completion_metrics(
+        workflow_id=workflow_id,
+        workflow_name=workflow_definition.workflow_metadata.workflow_name,
+        total_payload_size=total_payload_size,
+        step_count=len(completed_steps),
+        execution_mode="parallel",
+    )
+
     return WorkflowExecutionResult(
         workflow_id=workflow_id,
         execution_status=status,
@@ -668,7 +992,29 @@ async def _execute_batch(
     workflow_steps: list[ModelWorkflowStep],
     workflow_id: UUID,
 ) -> WorkflowExecutionResult:
-    """Execute workflow with batching."""
+    """
+    Execute workflow with batching.
+
+    Delegates to sequential execution internally, adding batch-specific metadata.
+    Error handling behavior follows sequential mode semantics.
+
+    Args:
+        workflow_definition: Workflow definition from YAML contract.
+        workflow_steps: List of workflow steps to execute.
+        workflow_id: Unique workflow execution ID.
+
+    Returns:
+        WorkflowExecutionResult with batch metadata (execution_mode='batch', batch_size).
+
+    Raises:
+        ModelOnexError: If workflow validation fails during setup.
+
+    Note:
+        Since batch mode uses sequential execution internally, payload limit
+        violations (MAX_TOTAL_PAYLOAD_SIZE_BYTES) are handled as step failures
+        per the step's error_action configuration, not raised as exceptions.
+        See _execute_sequential for detailed error handling semantics.
+    """
     # For batch mode, use sequential execution with batching metadata
     result = await _execute_sequential(workflow_definition, workflow_steps, workflow_id)
     result.metadata["execution_mode"] = "batch"
@@ -855,19 +1201,24 @@ def _validate_json_payload(
 def _create_action_for_step(
     step: ModelWorkflowStep,
     workflow_id: UUID,
-) -> ModelAction:
+) -> tuple[ModelAction, int]:
     """
     Create action for workflow step.
+
+    Enforces payload size limit (OMN-670: Security hardening):
+    - MAX_STEP_PAYLOAD_SIZE_BYTES: Maximum size of individual step payload
 
     Args:
         step: Workflow step to create action for
         workflow_id: Parent workflow ID
 
     Returns:
-        ModelAction for step execution
+        Tuple of (ModelAction, payload_size_bytes) where payload_size_bytes is
+        the UTF-8 encoded size of the JSON payload. This avoids redundant
+        serialization in callers that need to track total payload size.
 
     Raises:
-        ModelOnexError: If payload is not JSON-serializable
+        ModelOnexError: If payload is not JSON-serializable or exceeds size limit
     """
     # Map step type to action type
     action_type_map = {
@@ -902,10 +1253,36 @@ def _create_action_for_step(
         "step_name": step.step_name,
     }
 
-    # Validate payload is JSON-serializable (fail fast)
-    _validate_json_payload(payload, context=step.step_name)
+    # Serialize payload once for both validation and size checking (OMN-670: Performance optimization)
+    # This replaces the previous two-step approach that called json.dumps() twice
+    try:
+        payload_json = json.dumps(payload, default=_json_default_for_workflow)
+    except (TypeError, ValueError) as e:
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"Payload is not JSON-serializable for step '{step.step_name}': {e}",
+            context={
+                "payload_keys": list(payload.keys()),
+                "step_context": step.step_name,
+            },
+        ) from e
 
-    return ModelAction(
+    # Validate payload size (OMN-670: Security hardening)
+    payload_bytes = payload_json.encode("utf-8")
+    payload_size = len(payload_bytes)
+    if payload_size > MAX_STEP_PAYLOAD_SIZE_BYTES:
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.WORKFLOW_PAYLOAD_SIZE_EXCEEDED,
+            message=f"Step payload exceeds size limit: {payload_size} bytes > {MAX_STEP_PAYLOAD_SIZE_BYTES} byte limit",
+            context={
+                "step_id": str(step.step_id),
+                "step_name": step.step_name,
+                "payload_size": payload_size,
+                "limit": MAX_STEP_PAYLOAD_SIZE_BYTES,
+            },
+        )
+
+    action = ModelAction(
         action_id=uuid4(),
         action_type=action_type,
         target_node_type=target_node_type,
@@ -922,6 +1299,8 @@ def _create_action_for_step(
         },
         created_at=datetime.now(),
     )
+
+    return (action, payload_size)
 
 
 def _dependencies_met(
@@ -1119,6 +1498,9 @@ def verify_workflow_integrity(
 
 # Public API
 __all__ = [
+    "MAX_STEP_PAYLOAD_SIZE_BYTES",
+    "MAX_TOTAL_PAYLOAD_SIZE_BYTES",
+    "MAX_WORKFLOW_STEPS",
     "WorkflowExecutionResult",
     "execute_workflow",
     "get_execution_order",

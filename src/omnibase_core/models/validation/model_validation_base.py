@@ -14,9 +14,15 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from omnibase_core.utils.util_decorators import allow_dict_str_any
+
 from .model_validation_container import ModelValidationContainer
 
 
+@allow_dict_str_any(
+    "Validation base serialize method returns dict[str, Any] for Pydantic "
+    "model serialization compatibility."
+)
 class ModelValidationBase(BaseModel):
     """
     Mixin for models that need validation capabilities.

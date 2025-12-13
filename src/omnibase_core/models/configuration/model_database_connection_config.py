@@ -385,9 +385,7 @@ class ModelDatabaseConnectionConfig(BaseModel):
 
     def apply_environment_overrides(self) -> "ModelDatabaseConnectionConfig":
         """Apply environment variable overrides for CI/local testing."""
-        from typing import Any
-
-        overrides: dict[str, Any] = {}
+        overrides: dict[str, object] = {}
 
         # Environment variable mappings
         env_mappings = {

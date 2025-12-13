@@ -1,7 +1,3 @@
-from pydantic import Field
-
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Model for node contract data validation.
 
@@ -9,9 +5,14 @@ Provides strongly typed contract data structure to replace manual YAML validatio
 in node initialization, ensuring required fields are validated properly.
 """
 
-from typing import Any
+from typing import TYPE_CHECKING
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+if TYPE_CHECKING:
+    from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelNodeContractData(BaseModel):
@@ -31,7 +32,7 @@ class ModelNodeContractData(BaseModel):
     model_config = {"extra": "allow"}
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "ModelNodeContractData":
+    def from_dict(cls, data: "SerializedDict") -> "ModelNodeContractData":
         """
         Create model from dictionary data.
 

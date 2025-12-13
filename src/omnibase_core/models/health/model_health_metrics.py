@@ -1,7 +1,3 @@
-from typing import Any
-
-from pydantic import Field
-
 """
 Health Metrics Model
 
@@ -11,7 +7,9 @@ and error tracking.
 
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelHealthMetrics(BaseModel):
@@ -93,7 +91,8 @@ class ModelHealthMetrics(BaseModel):
         ge=0.0,
     )
 
-    custom_metrics: dict[str, Any] = Field(
+    # Uses SerializedDict for custom metrics (JSON-serializable values like strings, floats, etc.)
+    custom_metrics: SerializedDict = Field(
         default_factory=dict,
         description="Custom health metrics (can include strings, floats, etc.)",
     )

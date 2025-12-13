@@ -1,13 +1,14 @@
-from pydantic import Field
-
 """
 Security assessment model to replace Dict[str, Any] usage for security data.
 """
 
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, ConfigDict, field_serializer
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
+
+if TYPE_CHECKING:
+    from omnibase_core.types.type_serializable_value import SerializedDict
 
 from omnibase_core.enums.enum_security_risk_level import EnumSecurityRiskLevel
 from omnibase_core.models.core.model_security_vulnerability import (
@@ -160,7 +161,7 @@ class ModelSecurityAssessment(BaseModel):
     model_config = ConfigDict()
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "ModelSecurityAssessment":
+    def from_dict(cls, data: "SerializedDict") -> "ModelSecurityAssessment":
         """Create from dictionary for easy migration."""
         return cls(**data)
 

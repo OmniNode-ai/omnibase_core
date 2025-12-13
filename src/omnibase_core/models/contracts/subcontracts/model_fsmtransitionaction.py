@@ -1,12 +1,23 @@
+"""
+ModelFSMTransitionAction - Action specification for FSM state transitions.
+
+Schema version: v1.5.0
+Thread-safe: Yes (frozen=True)
+
+This model defines actions to execute during state transitions,
+including logging, validation, and state modifications.
+"""
+
 from __future__ import annotations
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.contracts.model_action_config_parameter import (
+    ModelActionConfigParameter,
+)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-
-from .model_action_config_parameter import ModelActionConfigParameter
 
 
 class ModelFSMTransitionAction(BaseModel):
@@ -15,6 +26,10 @@ class ModelFSMTransitionAction(BaseModel):
 
     Defines actions to execute during state transitions,
     including logging, validation, and state modifications.
+
+    Thread Safety:
+        This model is immutable (frozen=True) and safe for concurrent access
+        across multiple threads without synchronization.
     """
 
     # Model version for instance tracking
@@ -68,9 +83,9 @@ class ModelFSMTransitionAction(BaseModel):
         seen: set[str] = set()
         duplicates: set[str] = set()
         for param in self.action_config:
-            if param.parameter_name in seen:
-                duplicates.add(param.parameter_name)
-            seen.add(param.parameter_name)
+            if param.name in seen:
+                duplicates.add(param.name)
+            seen.add(param.name)
         if duplicates:
             raise ModelOnexError(
                 message=f"Duplicate parameter names in action_config: {sorted(duplicates)}",
@@ -78,8 +93,9 @@ class ModelFSMTransitionAction(BaseModel):
             )
         return self
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",  # Allow extra fields from YAML contracts
+        frozen=True,  # Immutability after creation for thread safety
+        use_enum_values=False,  # Keep enum objects, don't convert to strings
+        validate_assignment=True,  # Explicit - redundant with frozen=True but kept for clarity
+    )

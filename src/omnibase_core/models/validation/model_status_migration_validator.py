@@ -4,6 +4,7 @@ from typing import Any
 
 from omnibase_core.models.core.model_status_migrator import ModelEnumStatusMigrator
 from omnibase_core.types import TypedDictStatusMigrationResult
+from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 """
 Status Migration Validation Utilities.
@@ -17,6 +18,10 @@ Usage:
 """
 
 
+@allow_dict_str_any(
+    "Migration validator validate_model_migration returns dict[str, Any] "
+    "for flexible migration issue reporting."
+)
 class ModelEnumStatusMigrationValidator:
     """
     Validates status enum migrations and identifies potential issues.

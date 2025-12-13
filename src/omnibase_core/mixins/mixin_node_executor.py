@@ -3,7 +3,8 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
-
+    from omnibase_core.types.type_serializable_value import SerializedDict
+    from omnibase_core.types.typed_dict_mixin_types import TypedDictNodeExecutorHealth
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -212,36 +213,40 @@ class MixinNodeExecutor(MixinEventDrivenNode):
         finally:
             self._active_invocations.discard(correlation_id)
 
-    def get_executor_health(self) -> dict[str, Any]:
+    def get_executor_health(self) -> "TypedDictNodeExecutorHealth":
         """
         Get current executor health status.
 
         Returns:
-            Dictionary containing health metrics and status
+            Typed dictionary containing health metrics and status
         """
+        from omnibase_core.types.typed_dict_mixin_types import (
+            TypedDictNodeExecutorHealth,
+        )
+
         uptime_seconds = 0
         if self._start_time:
             uptime_seconds = int(time.time() - self._start_time)
-        return {
-            "status": (
+        return TypedDictNodeExecutorHealth(
+            status=(
                 "healthy"
                 if self._executor_running and (not self._shutdown_requested)
                 else "unhealthy"
             ),
-            "uptime_seconds": uptime_seconds,
-            "active_invocations": len(self._active_invocations),
-            "total_invocations": self._total_invocations,
-            "successful_invocations": self._successful_invocations,
-            "failed_invocations": self._failed_invocations,
-            "success_rate": (
+            uptime_seconds=uptime_seconds,
+            active_invocations=len(self._active_invocations),
+            total_invocations=self._total_invocations,
+            successful_invocations=self._successful_invocations,
+            failed_invocations=self._failed_invocations,
+            success_rate=(
                 self._successful_invocations / self._total_invocations
                 if self._total_invocations > 0
                 else 1.0
             ),
-            "node_id": getattr(self, "_node_id", "unknown"),
-            "node_name": self._extract_node_name(),
-            "shutdown_requested": self._shutdown_requested,
-        }
+            node_id=str(getattr(self, "_node_id", "unknown")),
+            node_name=self._extract_node_name(),
+            shutdown_requested=self._shutdown_requested,
+        )
 
     def add_shutdown_callback(self, callback: Callable[[], None]) -> None:
         """
@@ -356,13 +361,16 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             None, run_method, input_state
         )
 
-    def _serialize_result(self, result: Any) -> dict[str, Any]:
+    def _serialize_result(self, result: Any) -> "SerializedDict":
         """Serialize the execution result to a dictionary."""
+        from omnibase_core.types.type_serializable_value import SerializedDict
+
         if hasattr(result, "model_dump"):
-            serialized: dict[str, Any] = result.model_dump()
+            serialized: SerializedDict = result.model_dump()
             return serialized
         if hasattr(result, "__dict__"):
-            dict_result: dict[str, Any] = result.__dict__
+            # Cast __dict__ to SerializedDict as we expect serializable values
+            dict_result: SerializedDict = result.__dict__
             return dict_result
         if isinstance(result, dict):
             return result

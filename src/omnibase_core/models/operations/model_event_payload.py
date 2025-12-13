@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -11,6 +9,7 @@ from omnibase_core.models.operations.model_event_routing_info import (
     ModelEventRoutingInfo,
 )
 from omnibase_core.models.operations.model_types_event_data import EventDataUnion
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelEventPayload(BaseModel):
@@ -45,7 +44,7 @@ class ModelEventPayload(BaseModel):
 
     # Protocol method implementations
 
-    def execute(self, **kwargs: Any) -> bool:
+    def execute(self, **kwargs: object) -> bool:
         """Execute or update execution status (Executable protocol)."""
         try:
             # Update any relevant execution fields
@@ -78,7 +77,7 @@ class ModelEventPayload(BaseModel):
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
         )
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

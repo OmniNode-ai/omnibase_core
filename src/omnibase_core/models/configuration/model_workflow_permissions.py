@@ -1,9 +1,8 @@
-from pydantic import Field
+"""
+Workflow permissions model.
+"""
 
-"\nWorkflow permissions model.\n"
-from typing import Any
-
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelWorkflowPermissions(BaseModel):
@@ -37,7 +36,7 @@ class ModelWorkflowPermissions(BaseModel):
     )
 
     @property
-    def permission_summary(self) -> dict[str, Any]:
+    def permission_summary(self) -> dict[str, str]:
         """Get comprehensive permissions summary."""
         standard_permissions = {
             "actions": self.actions,

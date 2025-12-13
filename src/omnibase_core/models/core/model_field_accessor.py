@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Base field accessor pattern for replacing dict[str, Any]-like interfaces.
 
@@ -7,8 +5,7 @@ Provides unified field access across CLI, Config, and Data domains with
 dot notation support and type safety.
 """
 
-
-from typing import Any
+from __future__ import annotations
 
 from pydantic import BaseModel
 
@@ -181,7 +178,7 @@ class ModelFieldAccessor(BaseModel):
 
     # Protocol method implementations
 
-    def configure(self, **kwargs: Any) -> bool:
+    def configure(self, **kwargs: object) -> bool:
         """Configure instance with provided parameters (Configurable protocol)."""
         try:
             for key, value in kwargs.items():
@@ -191,7 +188,7 @@ class ModelFieldAccessor(BaseModel):
         except Exception:  # fallback-ok: Configurable protocol requires boolean return for graceful config failure
             return False
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> dict[str, object]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

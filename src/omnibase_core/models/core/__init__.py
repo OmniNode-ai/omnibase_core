@@ -1,7 +1,3 @@
-from typing import Generic
-
-from pydantic import Field
-
 """Core models for OmniBase - Core domain models only.
 
 This module contains only core domain models to prevent circular dependencies.
@@ -10,6 +6,10 @@ Other domains should import from their respective modules directly.
 Note: ModelSemVer is located in omnibase_core.models.primitives.model_semver.
 Import directly: from omnibase_core.models.primitives.model_semver import ModelSemVer
 """
+
+from typing import Generic
+
+from pydantic import Field
 
 # Configuration base classes
 from .model_configuration_base import ModelConfigurationBase
@@ -52,6 +52,12 @@ from .model_onex_version import ModelOnexVersionInfo
 # Generic metadata pattern
 from .model_protocol_metadata import ModelGenericMetadata
 from .model_result_accessor import ModelResultAccessor
+
+# Tool integration models
+from .model_tool_integration import ModelToolIntegration
+from .model_tool_integration_summary import ModelToolIntegrationSummary
+from .model_tool_resource_requirements import ModelToolResourceRequirements
+from .model_tool_timeout_settings import ModelToolTimeoutSettings
 from .model_typed_accessor import ModelTypedAccessor
 from .model_typed_configuration import ModelTypedConfiguration
 
@@ -186,4 +192,9 @@ __all__ = [
     "ModelNodeVersionConstraints",
     # Workflow models
     "ModelWorkflow",
+    # Tool integration models
+    "ModelToolIntegration",
+    "ModelToolIntegrationSummary",
+    "ModelToolResourceRequirements",
+    "ModelToolTimeoutSettings",
 ]

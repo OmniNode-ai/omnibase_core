@@ -581,10 +581,14 @@ class ModelContractBase(BaseModel, ABC):
                 architectural_guidance="Consider breaking complex contracts into smaller, more focused contracts",
             )
 
+    # from_attributes=True allows Pydantic to accept objects with matching
+    # attributes even when class identity differs (e.g., in pytest-xdist
+    # parallel execution where model classes are imported in separate workers)
     model_config = ConfigDict(
         extra="forbid",  # Strict typing - reject unknown fields (Strict typing is enforced)
         use_enum_values=False,  # Keep enum objects, don't convert to strings
         validate_assignment=True,
         str_strip_whitespace=True,
         validate_default=True,  # Enable model validation caching for performance
+        from_attributes=True,
     )

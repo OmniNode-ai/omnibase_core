@@ -1,9 +1,3 @@
-from __future__ import annotations
-
-from datetime import datetime
-
-from pydantic import Field
-
 """
 Pydantic model for ONEX warning serialization and validation.
 
@@ -11,11 +5,12 @@ This model provides structured warning information with validation,
 serialization, and schema generation capabilities.
 """
 
-from datetime import UTC
-from typing import Any
+from __future__ import annotations
+
+from datetime import UTC, datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 
@@ -68,9 +63,9 @@ class ModelOnexWarning(BaseModel):
         description="Timestamp when the warning occurred",
         json_schema_extra={"example": "2025-05-25T22:30:00Z"},
     )
-    context: dict[str, Any] = Field(
+    context: dict[str, object] = Field(
         default_factory=dict,
-        description="Additional context information for the warning",
+        description="Additional context information for the warning (JSON-serializable values)",
         json_schema_extra={"example": {"file_path": "/path/to/config.yaml"}},
     )
 

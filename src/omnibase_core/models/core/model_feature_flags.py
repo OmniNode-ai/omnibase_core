@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Feature Flags Model
 
@@ -7,9 +5,41 @@ Type-safe feature flag configuration model for enabling/disabling
 features across different environments and contexts.
 """
 
-from typing import Any
+from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+
+class ModelFeatureFlagMetadata(BaseModel):
+    """Metadata for a feature flag."""
+
+    description: str = Field(default="", description="Description of the feature flag")
+    created_at: datetime | None = Field(
+        default=None, description="When the flag was created"
+    )
+    updated_at: datetime | None = Field(
+        default=None, description="When the flag was last updated"
+    )
+    owner: str | None = Field(default=None, description="Owner of the feature flag")
+    tags: list[str] = Field(default_factory=list, description="Tags for categorization")
+    rollout_percentage: int = Field(
+        default=100, description="Percentage rollout (0-100)"
+    )
+
+
+class ModelFeatureFlagSummary(BaseModel):
+    """Summary of feature flag state."""
+
+    total_flags: int = Field(default=0, description="Total number of flags")
+    enabled_flags: int = Field(default=0, description="Number of enabled flags")
+    disabled_flags: int = Field(default=0, description="Number of disabled flags")
+    default_enabled: bool = Field(default=False, description="Default state for flags")
+    enabled_flag_names: list[str] = Field(
+        default_factory=list, description="Names of enabled flags"
+    )
+    disabled_flag_names: list[str] = Field(
+        default_factory=list, description="Names of disabled flags"
+    )
 
 
 class ModelFeatureFlags(BaseModel):
@@ -25,7 +55,7 @@ class ModelFeatureFlags(BaseModel):
         description="Feature flag states (name -> enabled)",
     )
 
-    flag_metadata: dict[str, dict[str, Any]] = Field(
+    flag_metadata: dict[str, ModelFeatureFlagMetadata] = Field(
         default_factory=dict,
         description="Metadata for each feature flag",
     )
@@ -50,13 +80,17 @@ class ModelFeatureFlags(BaseModel):
             return self.flags[flag]
         return default if default is not None else self.default_enabled
 
-    def enable(self, flag: str, metadata: dict[str, Any] | None = None) -> None:
+    def enable(
+        self, flag: str, metadata: ModelFeatureFlagMetadata | None = None
+    ) -> None:
         """Enable a feature flag with optional metadata."""
         self.flags[flag] = True
         if metadata:
             self.flag_metadata[flag] = metadata
 
-    def disable(self, flag: str, metadata: dict[str, Any] | None = None) -> None:
+    def disable(
+        self, flag: str, metadata: ModelFeatureFlagMetadata | None = None
+    ) -> None:
         """Disable a feature flag with optional metadata."""
         self.flags[flag] = False
         if metadata:
@@ -73,7 +107,7 @@ class ModelFeatureFlags(BaseModel):
         self,
         flag: str,
         enabled: bool,
-        metadata: dict[str, Any] | None = None,
+        metadata: ModelFeatureFlagMetadata | None = None,
     ) -> None:
         """Set a feature flag to a specific state."""
         self.flags[flag] = enabled
@@ -99,11 +133,11 @@ class ModelFeatureFlags(BaseModel):
         """Get list[Any]of all defined feature flags."""
         return list(self.flags.keys())
 
-    def get_flag_metadata(self, flag: str) -> dict[str, Any] | None:
+    def get_flag_metadata(self, flag: str) -> ModelFeatureFlagMetadata | None:
         """Get metadata for a specific flag."""
         return self.flag_metadata.get(flag)
 
-    def set_flag_metadata(self, flag: str, metadata: dict[str, Any]) -> None:
+    def set_flag_metadata(self, flag: str, metadata: ModelFeatureFlagMetadata) -> None:
         """Set metadata for a specific flag."""
         self.flag_metadata[flag] = metadata
 
@@ -152,16 +186,16 @@ class ModelFeatureFlags(BaseModel):
             env_dict[env_var_name] = str(enabled).lower()
         return env_dict
 
-    def get_summary(self) -> dict[str, Any]:
+    def get_summary(self) -> ModelFeatureFlagSummary:
         """Get summary of feature flag state."""
-        return {
-            "total_flags": self.get_flag_count(),
-            "enabled_flags": self.get_enabled_count(),
-            "disabled_flags": self.get_disabled_count(),
-            "default_enabled": self.default_enabled,
-            "enabled_flag_names": self.get_enabled_flags(),
-            "disabled_flag_names": self.get_disabled_flags(),
-        }
+        return ModelFeatureFlagSummary(
+            total_flags=self.get_flag_count(),
+            enabled_flags=self.get_enabled_count(),
+            disabled_flags=self.get_disabled_count(),
+            default_enabled=self.default_enabled,
+            enabled_flag_names=self.get_enabled_flags(),
+            disabled_flag_names=self.get_disabled_flags(),
+        )
 
     @classmethod
     def create_development(cls) -> "ModelFeatureFlags":

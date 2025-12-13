@@ -1,7 +1,3 @@
-from typing import Any
-
-from pydantic import Field
-
 """
 Base Action Model
 
@@ -12,7 +8,7 @@ Provides UUID correlation tracking, trust scores, and service metadata.
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -44,7 +40,8 @@ class ModelActionBase(BaseModel):
     )
 
     # Service metadata for tool-as-a-service with strong typing
-    service_metadata: dict[str, Any] = Field(
+    # Uses dict[str, object] for generic service metadata values
+    service_metadata: dict[str, object] = Field(
         default_factory=dict,
         description="Service discovery and composition metadata",
     )

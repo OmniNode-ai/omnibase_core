@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.service.model_custom_fields import ModelCustomFields
+from omnibase_core.types import SerializedDict
 
 
 class ModelLogFormatting(BaseModel):
@@ -163,7 +164,7 @@ class ModelLogFormatting(BaseModel):
         return " ".join(base_parts)
 
     @property
-    def format_analysis(self) -> dict[str, Any]:
+    def format_analysis(self) -> SerializedDict:
         """Comprehensive format analysis and configuration."""
         return {
             "format_type": self.format_type,

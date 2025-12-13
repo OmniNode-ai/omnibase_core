@@ -1,7 +1,7 @@
 from typing import Any, TypeVar, cast
 
-
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 """
 Model ONEX Dependency Injection Container.
@@ -22,19 +22,17 @@ from pathlib import Path
 # Import needed for type annotations
 from uuid import UUID, uuid4
 
-
-from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.models.configuration.model_compute_cache_config import (
-    ModelComputeCacheConfig,
-)
-
 # Import context-based container management
 from omnibase_core.context.application_context import (
     get_current_container,
     set_current_container,
+)
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.configuration.model_compute_cache_config import (
+    ModelComputeCacheConfig,
 )
 
 # Optional performance enhancements
@@ -64,8 +62,13 @@ T = TypeVar("T")
 from omnibase_core.models.container.model_base_model_onex_container import (
     _BaseModelONEXContainer,
 )
+from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 
+@allow_dict_str_any(
+    "Container service cache and performance stats use dict[str, Any] for "
+    "flexible service instance storage and statistics reporting."
+)
 class ModelONEXContainer:
     """
     Model ONEX dependency injection container.
@@ -592,9 +595,9 @@ class ModelONEXContainer:
             f"Cache warming completed: {warmed_count}/{len(common_services)} services warmed",
         )
 
-    def get_performance_stats(self) -> dict[str, Any]:
+    def get_performance_stats(self) -> SerializedDict:
         """Get comprehensive performance statistics."""
-        stats = {
+        stats: SerializedDict = {
             "container_type": "ModelONEXContainer",
             "cache_enabled": self.enable_performance_cache,
             "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),

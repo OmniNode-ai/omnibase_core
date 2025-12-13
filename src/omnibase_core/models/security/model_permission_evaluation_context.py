@@ -34,6 +34,7 @@ class ModelPermissionEvaluationContext(BaseModel):
         default_factory=dict, description="Boolean context attributes"
     )
 
+    # union-ok: permission_primitive - domain excludes float for permission attribute types
     def get(
         self, key: str, default: str | int | bool | None = None
     ) -> str | int | bool | None:
@@ -70,6 +71,7 @@ class ModelPermissionEvaluationContext(BaseModel):
             or key in self.boolean_attributes
         )
 
+    # union-ok: permission_primitive - domain excludes float for permission attribute types
     def __getitem__(self, key: str) -> str | int | bool:
         """Get item with indexing (dict[str, Any]-like behavior)."""
         value = self.get(key)

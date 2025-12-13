@@ -1,30 +1,26 @@
-from __future__ import annotations
-
-from pydantic import Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Node Metadata Info Model.
 
 Simple model for node metadata information used in CLI output.
 """
 
+from __future__ import annotations
 
-from typing import Any
 from uuid import UUID, uuid4
 
 # Import SPI protocol directly - no fallback pattern per ONEX standards
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_category import EnumCategory
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
 from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
 from omnibase_core.models.metadata.node_info import ModelNodePerformanceMetrics
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 from omnibase_core.types.typed_dict_node_metadata_summary import (
     TypedDictNodeMetadataSummary,
 )
@@ -327,7 +323,9 @@ class ModelNodeMetadataInfo(BaseModel):
         )
 
     @classmethod
-    def from_node_info(cls, node_info: dict[str, Any]) -> ModelNodeMetadataInfo:
+    def from_node_info(
+        cls, node_info: TypedDictSerializedModel
+    ) -> ModelNodeMetadataInfo:
         """Create from node info object."""
         # Extract basic information and distribute to sub-models
         core = ModelNodeCoreMetadata(
@@ -389,7 +387,7 @@ class ModelNodeMetadataInfo(BaseModel):
             f"Cannot generate stable ID without UUID field.",
         )
 
-    def get_metadata(self) -> dict[str, Any]:
+    def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         metadata = {}
         # Include common metadata fields
@@ -400,9 +398,9 @@ class ModelNodeMetadataInfo(BaseModel):
                     metadata[field] = (
                         str(value) if not isinstance(value, (dict, list)) else value
                     )
-        return metadata
+        return metadata  # type: ignore[return-value]
 
-    def set_metadata(self, metadata: dict[str, Any]) -> bool:
+    def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
@@ -412,7 +410,7 @@ class ModelNodeMetadataInfo(BaseModel):
         except Exception:  # fallback-ok: Protocol method - graceful fallback for optional implementation
             return False
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> TypedDictSerializedModel:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 

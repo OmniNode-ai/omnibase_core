@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 ModelConditionValue: Strongly typed value for permission conditions.
 
 This model provides strongly typed values for permission conditions without using Any types.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelConditionValue(BaseModel):
@@ -36,6 +34,7 @@ class ModelConditionValue(BaseModel):
         description="List of integers for comparison",
     )
 
+    # union-ok: condition_value - domain-specific typed lists (list[str], list[int]) not list[Any]
     def get_value(self) -> str | int | float | bool | list[str] | list[int] | None:
         """Get the actual value that is set."""
         if self.string_value is not None:

@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Execution data model for node operations.
 
@@ -7,9 +5,9 @@ Contains detailed execution information including results, errors,
 performance metrics, and node-specific artifacts.
 """
 
-from typing import Any
+from pydantic import BaseModel, Field
 
-from pydantic import BaseModel
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelExecutionData(BaseModel):
@@ -30,7 +28,7 @@ class ModelExecutionData(BaseModel):
     output_text: str | None = Field(
         default=None, description="Text output from execution"
     )
-    output_json: dict[str, Any] | None = Field(
+    output_json: SerializedDict | None = Field(
         default=None,
         description="Structured JSON output",
     )

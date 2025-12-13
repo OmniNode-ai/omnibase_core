@@ -4,10 +4,17 @@ Security Summary Model.
 Comprehensive security summary for reporting with component summaries.
 """
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from pydantic import BaseModel, Field
+
+from omnibase_core.models.security.model_security_summaries import (
+    ModelComprehensiveSecuritySummary,
+    ModelSecurityControlsSummary,
+    ModelSecurityPostureSummary,
+)
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 if TYPE_CHECKING:
     from omnibase_core.models.security.model_authorization_summary import (
@@ -80,38 +87,38 @@ class ModelSecuritySummary(BaseModel):
             return False
         return self.last_security_event.is_recent(minutes_threshold)
 
-    def get_security_controls(self) -> dict[str, Any]:
+    def get_security_controls(self) -> ModelSecurityControlsSummary:
         """Get security controls summary."""
-        return {
-            "encryption_enabled": self.is_encrypted,
-            "signatures_required": self.signature_required,
-            "signature_valid": self.signature_chain.is_valid(),
-            "signature_trusted": self.signature_chain.is_trusted(),
-            "has_recent_events": self.has_recent_security_events(),
-            "security_events_count": self.security_events_count,
-        }
+        return ModelSecurityControlsSummary(
+            encryption_enabled=self.is_encrypted,
+            signatures_required=self.signature_required,
+            signature_valid=self.signature_chain.is_valid(),
+            signature_trusted=self.signature_chain.is_trusted(),
+            has_recent_events=self.has_recent_security_events(),
+            security_events_count=self.security_events_count,
+        )
 
-    def get_comprehensive_summary(self) -> dict[str, Any]:
+    def get_comprehensive_summary(self) -> SerializedDict:
         """Get comprehensive security summary."""
         return {
-            "envelope_id": self.envelope_id,
+            "envelope_id": str(self.envelope_id),
             "security_level": self.security_level,
             "security_score": self.get_security_score(),
             "risk_level": self.get_risk_level(),
-            "controls": self.get_security_controls(),
-            "signature_chain": self.signature_chain.get_chain_summary(),
-            "compliance": self.compliance.get_summary(),
-            "authorization": self.authorization.get_authorization_summary(),
+            "controls": self.get_security_controls().model_dump(),
+            "signature_chain": self.signature_chain.get_chain_summary().model_dump(),
+            "compliance": self.compliance.get_summary().model_dump(),
+            "authorization": self.authorization.get_authorization_summary().model_dump(),
             "last_security_event": (
-                self.last_security_event.get_event_summary()
+                self.last_security_event.get_event_summary().model_dump()
                 if self.last_security_event
                 else None
             ),
         }
 
-    def validate_security_posture(self) -> dict[str, Any]:
+    def validate_security_posture(self) -> ModelSecurityPostureSummary:
         """Validate overall security posture."""
-        issues = []
+        issues: list[str] = []
         if not self.is_encrypted:
             issues.append("Content is not encrypted")
         if not self.signature_chain.is_valid():
@@ -122,9 +129,9 @@ class ModelSecuritySummary(BaseModel):
             issues.append("Recent security events detected")
         if self.compliance.get_data_risk_level() == "high":
             issues.append("High risk data classification")
-        return {
-            "is_secure": len(issues) == 0,
-            "issue_count": len(issues),
-            "issues": issues,
-            "security_score": self.get_security_score(),
-        }
+        return ModelSecurityPostureSummary(
+            is_secure=len(issues) == 0,
+            issue_count=len(issues),
+            issues=issues,
+            security_score=self.get_security_score(),
+        )

@@ -59,6 +59,9 @@ documentation = "https://github.com/OmniNode-ai/omnibase_core/tree/main/docs"
 onex = "omnibase_core.cli.commands:cli"
 # Backward-compatibility alias (renamed from 'omni-agent' to 'onex' in v0.3.0)
 omni-agent = "omnibase_core.cli.commands:cli"
+# Dev/test runtime host CLI (Phase 1 MVP - LocalHandler only)
+# WARNING: For development and testing ONLY, not for production use
+omninode-runtime-host-dev = "omnibase_core.cli.runtime_host_cli:main"
 
 [project.optional-dependencies]
 cli = ["psutil"]
@@ -102,6 +105,7 @@ psutil = {version = "^7.1.3", optional = true}
 pytest = "^8.4.0"
 pytest-asyncio = "^1.3.0"
 mypy = "^1.19.0"
+pyright = "^1.1.390"
 ruff = "^0.14.7"
 types-pyyaml = "^6.0.12.20250822"
 pre-commit = "^4.3.0"
@@ -125,6 +129,7 @@ exclude = [
     "**/archive/**",
     "**/__pycache__/**",
     "**/site-packages/**",
+    "tests/fixtures/validation/exports/syntax_error.py",  # Intentionally invalid for testing
 ]
 
 [tool.ruff.format]
@@ -255,11 +260,12 @@ ignore = [
 "src/omnibase_core/types/constraints.py" = ["I001"]  # Import order to avoid circular dependencies (lazy imports)
 
 [tool.mypy]
+# Strict mode enables: warn_return_any, warn_unused_configs, disallow_untyped_defs,
+# disallow_incomplete_defs, check_untyped_defs, disallow_untyped_decorators,
+# no_implicit_optional, warn_redundant_casts, warn_unused_ignores, strict_equality, and more
+strict = true
 plugins = ["pydantic.mypy"]
 python_version = "3.12"
-warn_return_any = true
-warn_unused_configs = true
-disallow_untyped_defs = true
 mypy_path = "src"
 namespace_packages = true
 explicit_package_bases = true
@@ -300,6 +306,11 @@ addopts = [
     "--reruns-delay=1",  # 1 second delay between reruns
 ]
 filterwarnings = [
+    # === Deprecation Warning Capture (OMN-199, Phase 7) ===
+    # Display deprecation warnings during test runs so developers can address them
+    # before v0.5.0 when these will become errors
+    "default::DeprecationWarning",
+    "default::PendingDeprecationWarning",
     # Suppress asyncio "Task was destroyed but it is pending!" warnings
     # These are expected during test cleanup when fixtures cancel pending tasks
     # The cleanup fixtures (event_loop_cleanup, cleanup_service_tasks) properly

@@ -1,9 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field, field_validator, model_validator
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Dynamic CLI Action Model.
 
@@ -11,15 +5,18 @@ Replaces hardcoded EnumNodeCliAction with extensible model that
 enables plugin extensibility and contract-driven action registration.
 """
 
+from __future__ import annotations
 
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator, model_validator
 
+from omnibase_core.decorators import allow_dict_any
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax validation
@@ -260,6 +257,7 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
         "populate_by_name": True,  # Allow both field name and alias
     }
 
+    @allow_dict_any
     def model_dump(self, **kwargs: Any) -> dict[str, Any]:
         """Override model_dump to use aliases by default."""
         kwargs.setdefault("by_alias", True)
@@ -267,6 +265,7 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
 
     # Protocol method implementations
 
+    @allow_dict_any
     def serialize(self) -> dict[str, Any]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)

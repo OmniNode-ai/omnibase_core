@@ -1,12 +1,10 @@
-from uuid import UUID
-
-from pydantic import Field
-
 """
 WorkflowStopArgs model.
 """
 
-from pydantic import BaseModel
+from uuid import UUID
+
+from pydantic import BaseModel, Field
 
 
 class ModelWorkflowStopArgs(BaseModel):

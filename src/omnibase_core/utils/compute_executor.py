@@ -47,7 +47,10 @@ See Also:
 import logging
 import time
 import warnings
+from collections.abc import Mapping
 from typing import Any
+
+from omnibase_core.types.typed_dict_mapping_result import MappingResultDict
 
 logger = logging.getLogger(__name__)
 
@@ -259,9 +262,9 @@ def execute_mapping_step(
     step: ModelComputePipelineStep,
     input_data: Any,  # Any: accepts dict, Pydantic models, or other objects with attributes
     step_results: dict[str, ModelComputeStepResult],
-) -> dict[
-    str, Any
-]:  # Returns dict with field mappings; values are Any based on resolved paths
+) -> (
+    MappingResultDict
+):  # Returns dict with field mappings; values are path-resolved objects
     """
     Execute a mapping step, building output from path expressions.
 
@@ -296,7 +299,7 @@ def execute_mapping_step(
             message="mapping_config required for mapping step",
         )
 
-    result: dict[str, Any] = {}
+    result: MappingResultDict = {}
     for output_field, path_expr in step.mapping_config.field_mappings.items():
         result[output_field] = resolve_mapping_path(path_expr, input_data, step_results)
 
@@ -306,8 +309,9 @@ def execute_mapping_step(
 def execute_validation_step(
     step: ModelComputePipelineStep,
     data: Any,  # Any: validation accepts any data type for schema checking
-    schema_registry: dict[str, Any]
-    | None = None,  # Any: schema definitions vary in structure
+    schema_registry: (
+        Mapping[str, object] | None
+    ) = None,  # schema definitions vary; reserved for v1.1
 ) -> Any:  # Any: returns input unchanged (v1.0 pass-through)
     """
     Execute a validation step against a schema.

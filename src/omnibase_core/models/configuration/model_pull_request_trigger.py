@@ -1,10 +1,8 @@
-from pydantic import Field
-
 """
 Pull request trigger model.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelPullRequestTrigger(BaseModel):

@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Parallel Configuration Model.
 
@@ -9,8 +7,7 @@ and concurrency parameters for performance optimization.
 Strict typing is enforced: No Any types allowed in implementation.
 """
 
-
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelParallelConfig(BaseModel):

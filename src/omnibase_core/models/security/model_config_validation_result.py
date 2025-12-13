@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 ModelConfigValidationResult: Configuration validation result model.
 
 This model represents the result of configuration validation.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelConfigValidationResult(BaseModel):

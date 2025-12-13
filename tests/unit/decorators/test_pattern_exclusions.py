@@ -349,11 +349,11 @@ class TestGetExclusionInfo:
         info = get_exclusion_info(plugin_function)
 
         assert info is not None
-        assert "any_type" in info["excluded_patterns"]
-        assert "dict_str_any" in info["excluded_patterns"]
-        assert info["reason"] == "Plugin interface"
-        assert info["scope"] == "function"
-        assert info["reviewer"] == "architect"
+        assert "any_type" in info.excluded_patterns
+        assert "dict_str_any" in info.excluded_patterns
+        assert info.reason == "Plugin interface"
+        assert info.scope == "function"
+        assert info.reviewer == "architect"
 
     def test_get_exclusion_info_minimal(self):
         """Test getting exclusion info with minimal metadata."""
@@ -365,9 +365,9 @@ class TestGetExclusionInfo:
         info = get_exclusion_info(simple_function)
 
         assert info is not None
-        assert "any_type" in info["excluded_patterns"]
-        assert info["reason"] == "Simple reason"
-        assert info["reviewer"] is None
+        assert "any_type" in info.excluded_patterns
+        assert info.reason == "Simple reason"
+        assert info.reviewer is None
 
     def test_get_exclusion_info_none(self):
         """Test getting info from function with no exclusions."""
@@ -388,9 +388,9 @@ class TestGetExclusionInfo:
         info = get_exclusion_info(ExcludedClass)
 
         assert info is not None
-        assert "any_type" in info["excluded_patterns"]
-        assert "dict_str_any" in info["excluded_patterns"]
-        assert info["reviewer"] == "tech_lead"
+        assert "any_type" in info.excluded_patterns
+        assert "dict_str_any" in info.excluded_patterns
+        assert info.reviewer == "tech_lead"
 
 
 class TestIsExcludedFromPatternCheck:
@@ -651,7 +651,7 @@ class TestEdgeCasesAndComplexScenarios:
 
         info = get_exclusion_info(test_function)
         assert info is not None
-        assert info["reason"] == ""
+        assert info.reason == ""
 
     def test_case_sensitivity_in_comments(self):
         """Test that inline comment checking is case-sensitive."""

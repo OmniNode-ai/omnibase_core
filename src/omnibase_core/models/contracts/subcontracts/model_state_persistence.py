@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 State Persistence Model.
 
@@ -9,8 +7,7 @@ Part of the State Management Subcontract Model family.
 Strict typing is enforced: No Any types allowed in implementation.
 """
 
-
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_state_management import EnumStorageBackend
 from omnibase_core.models.primitives.model_semver import ModelSemVer

@@ -1,7 +1,3 @@
-from typing import Any
-
-from pydantic import Field
-
 """
 CLI Command Registry
 
@@ -9,9 +5,10 @@ Manages dynamic discovery and registration of CLI commands from node contracts.
 This replaces hardcoded command enums with flexible, contract-driven command discovery.
 """
 
+from collections.abc import Mapping
 from pathlib import Path
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors import ModelOnexError
@@ -184,7 +181,7 @@ class ModelCliCommandRegistry(BaseModel):
 
     def _create_command_from_contract(
         self,
-        command_data: dict[str, Any] | str,
+        command_data: Mapping[str, object] | str,
         node_name: str,
     ) -> ModelCliCommandDefinition | None:
         """Create a command definition from contract data."""
@@ -197,7 +194,7 @@ class ModelCliCommandRegistry(BaseModel):
                 description = f"Execute {command_data} on {node_name}"
                 category = "general"
                 event_type_name = "NODE_START"
-                examples = []
+                examples: list[str] = []
             else:
                 # Object format with detailed information
                 command_name_raw = command_data.get("command_name") or command_data.get(
@@ -208,14 +205,22 @@ class ModelCliCommandRegistry(BaseModel):
 
                 # Type assertion: we know command_name_raw is truthy and should be str
                 command_name_str = str(command_name_raw)
-                action = command_data.get("action", command_name_str)
-                description = command_data.get(
-                    "description",
-                    f"Execute {command_name_str} on {node_name}",
+                # Cast values from Mapping[str, object] to expected types
+                # Pydantic validates at runtime - these are safe casts for contract data
+                action_raw = command_data.get("action", command_name_str)
+                action = str(action_raw) if action_raw else command_name_str
+                desc_raw = command_data.get("description")
+                description = (
+                    str(desc_raw)
+                    if desc_raw
+                    else f"Execute {command_name_str} on {node_name}"
                 )
-                category = command_data.get("category", "general")
-                event_type_name = command_data.get("event_type", "NODE_START")
-                examples = command_data.get("examples", [])
+                cat_raw = command_data.get("category", "general")
+                category = str(cat_raw) if cat_raw else "general"
+                evt_raw = command_data.get("event_type", "NODE_START")
+                event_type_name = str(evt_raw) if evt_raw else "NODE_START"
+                examples_raw = command_data.get("examples", [])
+                examples = list(examples_raw) if isinstance(examples_raw, list) else []
 
             # Create node reference
             node_ref = ModelNodeReference.create_local(node_name=node_name)

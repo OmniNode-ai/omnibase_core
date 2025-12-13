@@ -7,7 +7,6 @@ enabling contract-driven deployment infrastructure.
 """
 
 from pathlib import Path
-from typing import Any
 
 from omnibase_core.models.service.model_kubernetestemplategenerator import (
     ModelKubernetesTemplateGenerator,
@@ -15,6 +14,7 @@ from omnibase_core.models.service.model_kubernetestemplategenerator import (
 from omnibase_core.models.service.model_node_service_config import (
     ModelNodeServiceConfig,
 )
+from omnibase_core.types.type_serializable_value import SerializedDict
 from omnibase_core.utils.util_safe_yaml_loader import serialize_data_to_yaml
 
 
@@ -104,7 +104,7 @@ ENTRYPOINT ["python", "-m", "omnibase.nodes.{self.config.node_name}.v1_0_0"]
 
         return dockerfile_content
 
-    def generate_docker_compose_service(self) -> dict[str, Any]:
+    def generate_docker_compose_service(self) -> SerializedDict:
         """
         Generate Docker Compose service definition.
 
@@ -163,7 +163,7 @@ ENTRYPOINT ["python", "-m", "omnibase.nodes.{self.config.node_name}.v1_0_0"]
     def generate_docker_compose_full(
         self,
         include_dependencies: bool = True,
-        additional_services: dict[str, Any] | None = None,
+        additional_services: SerializedDict | None = None,
     ) -> str:
         """
         Generate complete Docker Compose file with dependencies.
@@ -175,7 +175,7 @@ ENTRYPOINT ["python", "-m", "omnibase.nodes.{self.config.node_name}.v1_0_0"]
         Returns:
             Complete Docker Compose YAML content
         """
-        compose_config: dict[str, Any] = {"version": "3.8", "services": {}}
+        compose_config: SerializedDict = {"version": "3.8", "services": {}}
 
         # Add the main service
         compose_config["services"].update(self.generate_docker_compose_service())
@@ -202,9 +202,9 @@ ENTRYPOINT ["python", "-m", "omnibase.nodes.{self.config.node_name}.v1_0_0"]
             compose_config, default_flow_style=False, sort_keys=False
         )
 
-    def _get_dependency_services(self) -> dict[str, Any]:
+    def _get_dependency_services(self) -> SerializedDict:
         """Get common ONEX dependency services."""
-        dependencies = {}
+        dependencies: SerializedDict = {}
 
         # Event bus service (always needed for ONEX nodes)
         dependencies["event-bus"] = {
@@ -270,9 +270,9 @@ ENTRYPOINT ["python", "-m", "omnibase.nodes.{self.config.node_name}.v1_0_0"]
             "redis" in dep for dep in self.config.depends_on
         )
 
-    def _get_volume_definitions(self) -> dict[str, Any]:
+    def _get_volume_definitions(self) -> SerializedDict:
         """Get volume definitions for the compose file."""
-        volumes: dict[str, Any] = {}
+        volumes: SerializedDict = {}
 
         if self.config.monitoring.prometheus_enabled:
             volumes.update({"prometheus-data": {}, "grafana-data": {}})

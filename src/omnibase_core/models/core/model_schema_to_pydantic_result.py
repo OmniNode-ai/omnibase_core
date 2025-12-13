@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Model for schema to Pydantic conversion result.
 
@@ -7,7 +5,7 @@ This model contains the results of converting schemas to Pydantic
 model definitions.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_definition import ModelDefinition
 

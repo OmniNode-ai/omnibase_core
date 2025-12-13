@@ -1,9 +1,8 @@
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
 
-from pydantic import Field, SecretStr, field_validator, model_validator
+from pydantic import BaseModel, Field, SecretStr, field_validator, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.configuration.model_connection_parse_result import (
@@ -11,12 +10,80 @@ from omnibase_core.models.configuration.model_connection_parse_result import (
     ParsedConnectionInfo,
     PoolRecommendations,
 )
+from omnibase_core.models.configuration.model_latency_profile import ModelLatencyProfile
+from omnibase_core.models.configuration.model_pool_recommendations import (
+    ModelPoolPerformanceProfile,
+    ModelPoolRecommendations,
+)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
-# Moved to TYPE_CHECKING import
 from omnibase_core.models.security.model_secure_credentials import (
     ModelSecureCredentials,
 )
+
+
+class ModelComplianceStatus(BaseModel):
+    """Compliance status for database configuration."""
+
+    pci_dss: bool = Field(default=False, description="PCI DSS compliance")
+    hipaa: bool = Field(default=False, description="HIPAA compliance")
+    gdpr: bool = Field(default=False, description="GDPR compliance")
+    sox: bool = Field(default=False, description="SOX compliance")
+
+
+class ModelSecurityAssessment(BaseModel):
+    """Security assessment for database configuration."""
+
+    security_level: str = Field(default="basic", description="Overall security level")
+    encryption_in_transit: bool = Field(
+        default=False, description="Data encrypted in transit"
+    )
+    authentication_strength: str = Field(
+        default="basic", description="Authentication strength"
+    )
+    vulnerabilities: list[str] = Field(
+        default_factory=list, description="Identified vulnerabilities"
+    )
+    recommendations: list[str] = Field(
+        default_factory=list, description="Security recommendations"
+    )
+    compliance_status: ModelComplianceStatus = Field(
+        default_factory=ModelComplianceStatus, description="Compliance status"
+    )
+
+
+class ModelPerformanceProfile(BaseModel):
+    """Performance profile for database configuration."""
+
+    latency_characteristics: ModelLatencyProfile = Field(
+        default_factory=ModelLatencyProfile, description="Latency characteristics"
+    )
+    throughput_optimization: list[str] = Field(
+        default_factory=list, description="Throughput optimization recommendations"
+    )
+    resource_usage: dict[str, str] = Field(
+        default_factory=dict, description="Resource usage profile"
+    )
+    monitoring_recommendations: list[str] = Field(
+        default_factory=list, description="Monitoring recommendations"
+    )
+
+
+class ModelTroubleshootingGuide(BaseModel):
+    """Troubleshooting guide for database connections."""
+
+    connection_failures: list[str] = Field(
+        default_factory=list, description="Connection failure tips"
+    )
+    ssl_issues: list[str] = Field(default_factory=list, description="SSL issue tips")
+    authentication_failures: list[str] = Field(
+        default_factory=list, description="Authentication failure tips"
+    )
+    performance_issues: list[str] = Field(
+        default_factory=list, description="Performance issue tips"
+    )
+    driver_specific: list[str] = Field(
+        default_factory=list, description="Driver-specific tips"
+    )
 
 
 class ModelDatabaseSecureConfig(ModelSecureCredentials):
@@ -402,128 +469,150 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
 
     def parse_connection_string(self, connection_string: str) -> ParsedConnectionInfo:
         """Parse connection string back to configuration components."""
+        from urllib.parse import parse_qs
+
         parsed = urlparse(connection_string)
 
-        config_data: dict[str, Any] = {
-            "scheme": parsed.scheme,
-            "host": parsed.hostname,
-            "port": parsed.port,
-            "username": parsed.username,
-            "database": parsed.path.lstrip("/") if parsed.path else None,
-        }
+        # Build base parsed info
+        parsed_info = ParsedConnectionInfo(
+            scheme=parsed.scheme,
+            host=parsed.hostname,
+            port=parsed.port,
+            username=parsed.username,
+            database=parsed.path.lstrip("/") if parsed.path else None,
+        )
 
         # Parse query parameters
         if parsed.query:
-            from urllib.parse import parse_qs
-
             params = parse_qs(parsed.query)
 
             # Map common parameters
             param_mapping = {
                 "ssl": "ssl_mode",
                 "sslmode": "ssl_mode",
-                "connect_timeout": "connection_timeout",
-                "timeout": "connection_timeout",
             }
 
+            query_params: dict[str, str] = {}
             for param, value in params.items():
                 mapped_param = param_mapping.get(param, param)
-                config_data[mapped_param] = (
-                    value[0] if isinstance(value, list) and value else value
+                param_value = (
+                    value[0] if isinstance(value, list) and value else str(value)
+                )
+                if mapped_param == "ssl_mode":
+                    parsed_info = ParsedConnectionInfo(
+                        **{**parsed_info.model_dump(), "ssl_mode": param_value}
+                    )
+                elif mapped_param in ("connect_timeout", "timeout"):
+                    try:
+                        parsed_info = ParsedConnectionInfo(
+                            **{
+                                **parsed_info.model_dump(),
+                                "connect_timeout": int(param_value),
+                            }
+                        )
+                    except ValueError:
+                        query_params[mapped_param] = param_value
+                else:
+                    query_params[mapped_param] = param_value
+
+            if query_params:
+                parsed_info = ParsedConnectionInfo(
+                    **{**parsed_info.model_dump(), "query_params": query_params}
                 )
 
-        return ParsedConnectionInfo(**config_data)
+        return parsed_info
 
     # === Security Assessment ===
 
-    def get_security_assessment(self) -> dict[str, Any]:
+    def get_security_assessment(self) -> ModelSecurityAssessment:
         """Comprehensive security assessment of database configuration."""
 
-        assessment: dict[str, Any] = {
-            "security_level": "basic",
-            "encryption_in_transit": self.ssl_enabled,
-            "authentication_strength": "basic",
-            "vulnerabilities": [],
-            "recommendations": [],
-            "compliance_status": {},
-        }
+        vulnerabilities: list[str] = []
+        recommendations: list[str] = []
+        security_level = "basic"
+        authentication_strength = "basic"
 
         # Assess SSL/TLS configuration
         if not self.ssl_enabled:
-            assessment["vulnerabilities"].extend(
+            vulnerabilities.extend(
                 [
                     "No encryption - database traffic sent in plaintext",
                     "Connection vulnerable to man-in-the-middle attacks",
                 ],
             )
-            assessment["recommendations"].extend(
+            recommendations.extend(
                 [
                     "Enable SSL/TLS encryption (ssl_enabled: true)",
                     "Use 'require' or 'verify-full' SSL mode for production",
                 ],
             )
         else:
-            assessment["security_level"] = "medium"
+            security_level = "medium"
 
             if self.ssl_mode in ["disable", "allow"]:
-                assessment["vulnerabilities"].append(f"Weak SSL mode: {self.ssl_mode}")
-                assessment["recommendations"].append(
+                vulnerabilities.append(f"Weak SSL mode: {self.ssl_mode}")
+                recommendations.append(
                     "Use 'require' or 'verify-full' SSL mode",
                 )
             elif self.ssl_mode == "verify-full":
-                assessment["security_level"] = "high"
+                security_level = "high"
 
         # Assess password strength
         password_value = self.password.get_secret_value()
         if len(password_value) < 8:
-            assessment["vulnerabilities"].append(
+            vulnerabilities.append(
                 "Weak password (less than 8 characters)",
             )
-            assessment["recommendations"].append(
+            recommendations.append(
                 "Use password with at least 12 characters",
             )
         elif len(password_value) < 12:
-            assessment["recommendations"].append(
+            recommendations.append(
                 "Consider using longer password (12+ characters)",
             )
         else:
-            assessment["authentication_strength"] = "strong"
+            authentication_strength = "strong"
 
         # Check for default credentials
         weak_passwords = ["password", "123456", "admin", "root", self.username]
         if password_value.lower() in [p.lower() for p in weak_passwords]:
-            assessment["vulnerabilities"].append("Using common/default password")
-            assessment["recommendations"].append("Use strong, unique password")
+            vulnerabilities.append("Using common/default password")
+            recommendations.append("Use strong, unique password")
 
         # Database-specific security checks
         if self.driver == "postgresql":
             if self.username == "postgres":
-                assessment["recommendations"].append(
+                recommendations.append(
                     "Avoid using 'postgres' superuser for applications",
                 )
         elif self.driver == "mysql" and self.username == "root":
-            assessment["recommendations"].append(
+            recommendations.append(
                 "Avoid using 'root' user for applications",
             )
 
         # Compliance assessment
-        assessment["compliance_status"] = {
-            "pci_dss": assessment["encryption_in_transit"]
-            and assessment["authentication_strength"] == "strong",
-            "hipaa": assessment["encryption_in_transit"]
-            and self.ssl_mode in ["require", "verify-full"],
-            "gdpr": assessment["encryption_in_transit"],
-            "sox": assessment["authentication_strength"] == "strong",
-        }
+        compliance_status = ModelComplianceStatus(
+            pci_dss=self.ssl_enabled and authentication_strength == "strong",
+            hipaa=self.ssl_enabled and self.ssl_mode in ["require", "verify-full"],
+            gdpr=self.ssl_enabled,
+            sox=authentication_strength == "strong",
+        )
 
-        return assessment
+        return ModelSecurityAssessment(
+            security_level=security_level,
+            encryption_in_transit=self.ssl_enabled,
+            authentication_strength=authentication_strength,
+            vulnerabilities=vulnerabilities,
+            recommendations=recommendations,
+            compliance_status=compliance_status,
+        )
 
     def is_production_ready(self) -> bool:
         """Check if configuration is suitable for production deployment."""
         assessment = self.get_security_assessment()
 
         # Production requires encryption
-        if not assessment["encryption_in_transit"]:
+        if not assessment.encryption_in_transit:
             return False
 
         # Check for critical vulnerabilities
@@ -532,7 +621,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
             "Using common/default password",
         ]
 
-        for vuln in assessment["vulnerabilities"]:
+        for vuln in assessment.vulnerabilities:
             if any(critical in vuln for critical in critical_vulnerabilities):
                 return False
 
@@ -572,14 +661,14 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
 
         # Performance profile based on driver
         if self.driver == "postgresql":
-            recommendations.performance_profile = {
+            recommendations.performance_profile = {  # type: ignore[assignment]
                 "recommended_pool_size": min(20, max(5, self.pool_size)),
                 "recommended_max_overflow": min(30, max(10, self.max_overflow)),
                 "connection_overhead": "low",
                 "concurrent_connections_limit": 100,
             }
         elif self.driver == "mysql":
-            recommendations.performance_profile = {
+            recommendations.performance_profile = {  # type: ignore[assignment]
                 "recommended_pool_size": min(15, max(5, self.pool_size)),
                 "recommended_max_overflow": min(25, max(10, self.max_overflow)),
                 "connection_overhead": "medium",
@@ -590,14 +679,14 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
 
     # === Performance Optimization ===
 
-    def get_performance_profile(self) -> dict[str, Any]:
+    def get_performance_profile(self) -> ModelPerformanceProfile:
         """Get performance characteristics and optimization recommendations."""
-        return {
-            "latency_characteristics": self._get_latency_profile(),
-            "throughput_optimization": self._get_throughput_recommendations(),
-            "resource_usage": self._get_resource_usage_profile(),
-            "monitoring_recommendations": self._get_monitoring_recommendations(),
-        }
+        return ModelPerformanceProfile(
+            latency_characteristics=self._get_latency_profile(),
+            throughput_optimization=self._get_throughput_recommendations(),
+            resource_usage=self._get_resource_usage_profile(),
+            monitoring_recommendations=self._get_monitoring_recommendations(),
+        )
 
     def _get_latency_profile(self) -> LatencyProfile:
         """Assess configuration impact on latency."""
@@ -834,7 +923,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
                 message=msg,
             )
 
-        config_data: dict[str, Any] = {
+        config_data: dict[str, object] = {
             "host": os.getenv(f"{env_prefix}HOST", "localhost"),
             "database": os.getenv(f"{env_prefix}DATABASE", "onex_dev"),
             "username": os.getenv(f"{env_prefix}USERNAME", "onex_user"),
@@ -896,7 +985,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         # Remove None values
         config_data = {k: v for k, v in config_data.items() if v is not None}
 
-        return cls(**config_data)
+        return cls(**config_data)  # type: ignore[arg-type]
 
     # === Factory Methods ===
 

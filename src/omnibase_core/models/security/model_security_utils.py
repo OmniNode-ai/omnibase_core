@@ -2,24 +2,13 @@
 
 import re
 from collections.abc import Mapping, Sequence
-from typing import Any, Union
+from typing import Any
 
 from omnibase_core.enums.enum_credential_strength import EnumCredentialStrength
 
 from .model_credential_audit_report import ModelCredentialAuditReport
 from .model_credential_strength_assessment import ModelCredentialStrengthAssessment
 from .model_secure_mask_config import ModelSecureMaskConfig
-
-# Define recursive JSON value type for proper type checking
-JSONValue = Union[
-    dict[str, "JSONValue"],
-    list["JSONValue"],
-    str,
-    int,
-    float,
-    bool,
-    None,
-]
 
 
 class ModelSecurityUtils:
@@ -92,7 +81,7 @@ class ModelSecurityUtils:
         data: Mapping[str, Any],
         sensitive_patterns: set[str] | None = None,
         recursive: bool = True,
-    ) -> dict[str, JSONValue]:
+    ) -> dict[str, object]:
         """
         Recursively mask credential fields in a dictionary.
 
@@ -107,7 +96,7 @@ class ModelSecurityUtils:
         if sensitive_patterns is None:
             sensitive_patterns = ModelSecurityUtils.DEFAULT_SENSITIVE_PATTERNS
 
-        masked_data: dict[str, JSONValue] = {}
+        masked_data: dict[str, object] = {}
         for key, value in data.items():
             if isinstance(value, Mapping) and recursive:
                 # Recursively mask nested dictionaries
@@ -140,7 +129,7 @@ class ModelSecurityUtils:
     def _mask_list_credentials(
         data: Sequence[Any],
         sensitive_patterns: set[str],
-    ) -> list[JSONValue]:
+    ) -> list[object]:
         """
         Mask credentials in a list (may contain dicts and nested lists).
 
@@ -151,7 +140,7 @@ class ModelSecurityUtils:
         Returns:
             New list with credentials masked
         """
-        masked_list: list[JSONValue] = []
+        masked_list: list[object] = []
         for item in data:
             if isinstance(item, Mapping):
                 # Recursively mask dictionaries in the list

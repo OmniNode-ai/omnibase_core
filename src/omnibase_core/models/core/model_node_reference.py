@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Node Reference Model.
 
@@ -7,7 +5,7 @@ Flexible node reference model that replaces EnumTargetNode
 to support local, remote, and third-party node references.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_capability import ModelCapability
 from omnibase_core.models.core.model_node_metadata import (
