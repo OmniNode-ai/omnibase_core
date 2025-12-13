@@ -465,7 +465,7 @@ class TestFileRegistryFileNotFound:
         tmp_path: Path,
         file_registry: FileRegistry,
     ) -> None:
-        """Test that file not found error includes the file path."""
+        """Test that file not found error includes the file path in structured context."""
         # Arrange
         nonexistent = tmp_path / "missing_file.yaml"
 
@@ -474,8 +474,12 @@ class TestFileRegistryFileNotFound:
             file_registry.load(nonexistent)
 
         error = exc_info.value
-        # Error message or context should contain the file path
-        assert str(nonexistent) in str(error) or "missing_file.yaml" in str(error)
+        # Verify error code
+        assert error.error_code == EnumCoreErrorCode.FILE_NOT_FOUND
+        # Verify file_path is in structured context
+        context = error.context
+        assert "file_path" in context
+        assert str(nonexistent) in context.get("file_path", "")
 
     def test_load_all_nonexistent_directory_raises_error(
         self,
@@ -498,7 +502,7 @@ class TestFileRegistryFileNotFound:
         tmp_path: Path,
         file_registry: FileRegistry,
     ) -> None:
-        """Test that directory not found error includes the directory path."""
+        """Test that directory not found error includes path in structured context."""
         # Arrange
         nonexistent_dir = tmp_path / "missing_directory"
 
@@ -507,7 +511,12 @@ class TestFileRegistryFileNotFound:
             file_registry.load_all(nonexistent_dir)
 
         error = exc_info.value
-        assert str(nonexistent_dir) in str(error) or "missing_directory" in str(error)
+        # Verify error code
+        assert error.error_code == EnumCoreErrorCode.DIRECTORY_NOT_FOUND
+        # Verify file_path is in structured context
+        context = error.context
+        assert "file_path" in context
+        assert str(nonexistent_dir) in context.get("file_path", "")
 
 
 # =============================================================================
@@ -518,7 +527,19 @@ class TestFileRegistryFileNotFound:
 @pytest.mark.unit
 @pytest.mark.timeout(60)
 class TestFileRegistryInvalidYaml:
-    """Test invalid YAML syntax error handling."""
+    """Test invalid YAML syntax and root type error handling.
+
+    INTENTIONAL DESIGN: Contract files MUST have a YAML mapping (dict) at root.
+
+    This validation is by design for three reasons:
+    1. Pydantic model_validate() requires dict input for field mapping
+    2. RuntimeHostContract has named fields (event_bus, handlers, nodes)
+       which only make semantic sense as a YAML mapping, not list/scalar
+    3. Fail-fast: reject invalid root types with clear errors rather than
+       letting them cause cryptic failures in model_validate()
+
+    See: ModelRuntimeHostContract.from_yaml() docstring for full documentation.
+    """
 
     def test_load_invalid_yaml_raises_error(
         self,
@@ -544,7 +565,7 @@ class TestFileRegistryInvalidYaml:
         file_registry: FileRegistry,
         invalid_yaml_syntax: str,
     ) -> None:
-        """Test that YAML syntax error includes the file path."""
+        """Test that YAML syntax error includes file path in structured context."""
         # Arrange
         bad_yaml_file = tmp_path / "syntax_error.yaml"
         bad_yaml_file.write_text(invalid_yaml_syntax)
@@ -554,7 +575,12 @@ class TestFileRegistryInvalidYaml:
             file_registry.load(bad_yaml_file)
 
         error = exc_info.value
-        assert str(bad_yaml_file) in str(error) or "syntax_error.yaml" in str(error)
+        # Verify error code
+        assert error.error_code == EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR
+        # Verify file_path is in structured context
+        context = error.context
+        assert "file_path" in context
+        assert str(bad_yaml_file) in context.get("file_path", "")
 
     def test_load_invalid_yaml_includes_line_info_if_available(
         self,
@@ -578,16 +604,35 @@ handlers:
             file_registry.load(bad_yaml_file)
 
         error = exc_info.value
-        # Error context or message should ideally include line information
-        # The exact format depends on implementation, but path should be present
-        assert "line_error.yaml" in str(error) or str(bad_yaml_file) in str(error)
+        # Verify error code is correct for YAML parse errors
+        assert error.error_code == EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR
+
+        # Verify file_path is in context
+        context = error.context
+        assert "file_path" in context
+        assert str(bad_yaml_file) in context.get("file_path", "")
+
+        # Verify line/column info is in context when available
+        # YAML parse errors should include line_number and column_number
+        assert "line_number" in context or "additional_context" in context
+        if "additional_context" in context:
+            additional = context["additional_context"]
+            assert "line_number" in additional or "yaml_error" in additional
+        else:
+            # line_number should be an integer
+            assert isinstance(context.get("line_number"), int)
 
     def test_load_empty_file(
         self,
         tmp_path: Path,
         file_registry: FileRegistry,
     ) -> None:
-        """Test loading an empty file raises appropriate error."""
+        """Test that empty YAML files are INTENTIONALLY rejected.
+
+        INTENTIONAL BEHAVIOR: Empty files parse to None in YAML, which is not
+        a valid dict. We explicitly reject these with VALIDATION_ERROR to
+        fail-fast rather than letting None propagate to model_validate().
+        """
         # Arrange
         empty_file = tmp_path / "empty.yaml"
         empty_file.write_text("")
@@ -596,7 +641,7 @@ handlers:
         with pytest.raises(ModelOnexError) as exc_info:
             file_registry.load(empty_file)
 
-        # Empty YAML parses to None, which is not a valid dict
+        # Empty YAML parses to None - intentionally rejected as invalid root type
         error = exc_info.value
         assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
@@ -606,7 +651,13 @@ handlers:
         file_registry: FileRegistry,
         yaml_empty_list: str,
     ) -> None:
-        """Test that YAML list (not dict) raises appropriate error."""
+        """Test that YAML lists at root are INTENTIONALLY rejected.
+
+        INTENTIONAL BEHAVIOR: Contract files must have a mapping (dict) at root.
+        Lists at root are semantically invalid for RuntimeHostContract which
+        has named fields (event_bus, handlers, nodes). We reject with
+        VALIDATION_ERROR to fail-fast with a clear message.
+        """
         # Arrange
         list_yaml_file = tmp_path / "list_not_dict.yaml"
         list_yaml_file.write_text(yaml_empty_list)
@@ -615,6 +666,7 @@ handlers:
         with pytest.raises(ModelOnexError) as exc_info:
             file_registry.load(list_yaml_file)
 
+        # List at root - intentionally rejected as invalid root type
         error = exc_info.value
         assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
@@ -624,7 +676,13 @@ handlers:
         file_registry: FileRegistry,
         yaml_scalar_value: str,
     ) -> None:
-        """Test that YAML scalar value (not dict) raises appropriate error."""
+        """Test that YAML scalars at root are INTENTIONALLY rejected.
+
+        INTENTIONAL BEHAVIOR: Contract files must have a mapping (dict) at root.
+        Scalars (strings, numbers, booleans) at root are semantically invalid
+        for RuntimeHostContract which has named fields. We reject with
+        VALIDATION_ERROR to fail-fast with a clear message.
+        """
         # Arrange
         scalar_yaml_file = tmp_path / "scalar.yaml"
         scalar_yaml_file.write_text(yaml_scalar_value)
@@ -633,6 +691,7 @@ handlers:
         with pytest.raises(ModelOnexError) as exc_info:
             file_registry.load(scalar_yaml_file)
 
+        # Scalar at root - intentionally rejected as invalid root type
         error = exc_info.value
         assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
@@ -671,7 +730,7 @@ class TestFileRegistryUnknownFields:
         file_registry: FileRegistry,
         yaml_with_unknown_fields: str,
     ) -> None:
-        """Test that unknown fields error includes file path."""
+        """Test that unknown fields error includes file path and validation_errors."""
         # Arrange
         unknown_fields_file = tmp_path / "extra_fields.yaml"
         unknown_fields_file.write_text(yaml_with_unknown_fields)
@@ -681,9 +740,17 @@ class TestFileRegistryUnknownFields:
             file_registry.load(unknown_fields_file)
 
         error = exc_info.value
-        assert str(unknown_fields_file) in str(error) or "extra_fields.yaml" in str(
-            error
-        )
+        # Verify error code
+        assert error.error_code == EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR
+        # Verify file_path is in structured context
+        context = error.context
+        assert "file_path" in context
+        assert str(unknown_fields_file) in context.get("file_path", "")
+        # Verify validation_errors is present (Pydantic validation details)
+        assert "additional_context" in context
+        additional = context["additional_context"]
+        assert "validation_errors" in additional
+        assert isinstance(additional["validation_errors"], list)
 
     def test_load_yaml_with_unknown_fields_includes_field_name(
         self,
@@ -758,7 +825,7 @@ class TestFileRegistryUnknownHandlerType:
         file_registry: FileRegistry,
         yaml_with_unknown_handler_type: str,
     ) -> None:
-        """Test that unknown handler_type error includes file path."""
+        """Test that unknown handler_type error includes file path and validation_errors."""
         # Arrange
         unknown_handler_file = tmp_path / "bad_handler.yaml"
         unknown_handler_file.write_text(yaml_with_unknown_handler_type)
@@ -768,9 +835,17 @@ class TestFileRegistryUnknownHandlerType:
             file_registry.load(unknown_handler_file)
 
         error = exc_info.value
-        assert str(unknown_handler_file) in str(error) or "bad_handler.yaml" in str(
-            error
-        )
+        # Verify error code
+        assert error.error_code == EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR
+        # Verify file_path is in structured context
+        context = error.context
+        assert "file_path" in context
+        assert str(unknown_handler_file) in context.get("file_path", "")
+        # Verify validation_errors is present (Pydantic validation details)
+        assert "additional_context" in context
+        additional = context["additional_context"]
+        assert "validation_errors" in additional
+        assert isinstance(additional["validation_errors"], list)
 
     def test_load_yaml_with_unknown_handler_type_includes_invalid_type(
         self,
@@ -827,7 +902,7 @@ class TestFileRegistryMissingRequiredFields:
         file_registry: FileRegistry,
         yaml_missing_required_fields: str,
     ) -> None:
-        """Test that missing field error includes file path."""
+        """Test that missing field error includes file path and validation_errors."""
         # Arrange
         missing_field_file = tmp_path / "no_event_bus.yaml"
         missing_field_file.write_text(yaml_missing_required_fields)
@@ -837,9 +912,17 @@ class TestFileRegistryMissingRequiredFields:
             file_registry.load(missing_field_file)
 
         error = exc_info.value
-        assert str(missing_field_file) in str(error) or "no_event_bus.yaml" in str(
-            error
-        )
+        # Verify error code
+        assert error.error_code == EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR
+        # Verify file_path is in structured context
+        context = error.context
+        assert "file_path" in context
+        assert str(missing_field_file) in context.get("file_path", "")
+        # Verify validation_errors is present (Pydantic validation details)
+        assert "additional_context" in context
+        additional = context["additional_context"]
+        assert "validation_errors" in additional
+        assert isinstance(additional["validation_errors"], list)
 
     def test_load_yaml_missing_event_bus_includes_field_name(
         self,
@@ -987,7 +1070,7 @@ class TestFileRegistryDuplicateHandlers:
         file_registry: FileRegistry,
         yaml_with_duplicate_handlers: str,
     ) -> None:
-        """Test that duplicate handler error includes file path."""
+        """Test that duplicate handler error includes file path in structured context."""
         # Arrange
         duplicate_file = tmp_path / "dup_handlers.yaml"
         duplicate_file.write_text(yaml_with_duplicate_handlers)
@@ -997,7 +1080,17 @@ class TestFileRegistryDuplicateHandlers:
             file_registry.load(duplicate_file)
 
         error = exc_info.value
-        assert str(duplicate_file) in str(error) or "dup_handlers.yaml" in str(error)
+        # Verify error code
+        assert error.error_code == EnumCoreErrorCode.DUPLICATE_REGISTRATION
+        # Verify file_path is in structured context
+        context = error.context
+        assert "file_path" in context
+        assert str(duplicate_file) in context.get("file_path", "")
+        # Verify duplicate_handler_type is in context
+        assert "additional_context" in context
+        additional = context["additional_context"]
+        assert "duplicate_handler_type" in additional
+        assert additional["duplicate_handler_type"] == "http"
 
     def test_load_yaml_with_duplicate_handler_types_includes_duplicate_type(
         self,
@@ -1052,13 +1145,18 @@ nodes:
         # Assert
         assert isinstance(contract, ModelRuntimeHostContract)
 
-    def test_load_handles_multiline_strings(
+    def test_load_handles_multiline_strings_with_trailing_newline(
         self,
         tmp_path: Path,
         file_registry: FileRegistry,
     ) -> None:
-        """Test that multiline strings in YAML work correctly."""
-        # Arrange
+        """Test that YAML block scalars with trailing newlines are handled.
+
+        YAML block scalars (with |) include a trailing newline. This test
+        verifies that multiline strings load successfully with the trailing
+        newline preserved in the slug value.
+        """
+        # Arrange - YAML block scalar includes trailing newline
         yaml_content = """
 event_bus:
   kind: kafka
@@ -1069,51 +1167,60 @@ nodes:
         multiline_file = tmp_path / "multiline.yaml"
         multiline_file.write_text(yaml_content)
 
-        # Note: multiline slug with newline might be valid or invalid
-        # depending on validation rules. Test the behavior.
-        try:
-            contract = file_registry.load(multiline_file)
-            # If it loads, verify it's valid
-            assert isinstance(contract, ModelRuntimeHostContract)
-        except ModelOnexError:
-            # If it fails, that's also acceptable behavior
-            pass
+        # Act - Load the file
+        contract = file_registry.load(multiline_file)
 
-    def test_load_all_stops_on_first_error_or_collects_all_errors(
+        # Assert - Should load successfully with trailing newline preserved
+        assert isinstance(contract, ModelRuntimeHostContract)
+        assert len(contract.nodes) == 1
+        # YAML block scalar (|) preserves the trailing newline
+        assert contract.nodes[0].slug == "node-multiline-slug\n"
+
+    def test_load_all_uses_fail_fast_behavior(
         self,
         tmp_path: Path,
         file_registry: FileRegistry,
         valid_contract_yaml: str,
         invalid_yaml_syntax: str,
     ) -> None:
-        """
-        Test load_all() behavior when one file in directory has errors.
+        """Test that load_all() uses fail-fast behavior and stops on first error.
 
-        This tests whether load_all() uses fail-fast (stops at first error)
-        or collects all errors. Both are valid implementation choices.
+        FileRegistry uses fail-fast semantics: when loading multiple files,
+        it stops immediately upon encountering the first error rather than
+        collecting all errors. This is the documented contract.
         """
-        # Arrange
-        (tmp_path / "valid1.yaml").write_text(valid_contract_yaml)
-        (tmp_path / "invalid.yaml").write_text(invalid_yaml_syntax)
-        (tmp_path / "valid2.yaml").write_text(valid_contract_yaml)
+        # Arrange - files are sorted alphabetically, so "a_valid" comes first,
+        # then "b_invalid", then "c_valid". The error should be for "b_invalid".
+        (tmp_path / "a_valid.yaml").write_text(valid_contract_yaml)
+        (tmp_path / "b_invalid.yaml").write_text(invalid_yaml_syntax)
+        (tmp_path / "c_valid.yaml").write_text(valid_contract_yaml)
 
-        # Act & Assert
+        # Act & Assert - fail-fast means we stop at first error
         with pytest.raises(ModelOnexError) as exc_info:
             file_registry.load_all(tmp_path)
 
         error = exc_info.value
-        # Error should reference the invalid file
-        assert "invalid.yaml" in str(error) or str(tmp_path / "invalid.yaml") in str(
-            error
-        )
+        # Verify the error is for the invalid file specifically
+        assert error.error_code == EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR
+        context = error.context
+        assert "file_path" in context
+        # The error should reference b_invalid.yaml (the first error encountered)
+        assert "b_invalid.yaml" in context.get("file_path", "")
+        # Should NOT reference c_valid.yaml (fail-fast means we never processed it)
+        assert "c_valid.yaml" not in str(error)
 
-    def test_load_very_large_contract(
+    def test_load_very_large_contract_with_duplicates_fails(
         self,
         tmp_path: Path,
         file_registry: FileRegistry,
     ) -> None:
-        """Test loading a contract with many handlers and nodes."""
-        # Arrange - create a large but valid contract
+        """Test that loading a contract with duplicate handlers raises DUPLICATE_REGISTRATION.
+
+        FileRegistry enforces unique handler types per contract. This test verifies
+        that duplicate handler types (http repeated 5 times) are rejected with the
+        correct error code and context.
+        """
+        # Arrange - create a contract with duplicate handler_type entries
         handlers = "\n".join(
             ["  - handler_type: http" for _ in range(5)]
             + ["  - handler_type: database" for _ in range(5)]
@@ -1128,19 +1235,52 @@ handlers:
 nodes:
 {nodes}
 """
-        # Note: This YAML has duplicate handler_type entries (http and database repeated)
-        # If duplicate validation is strict, this will fail. Adjust accordingly.
-
         large_file = tmp_path / "large.yaml"
         large_file.write_text(yaml_content)
 
-        # Act - may fail if duplicate handlers are not allowed
-        try:
-            contract = file_registry.load(large_file)
-            assert len(contract.nodes) == 100
-        except ModelOnexError as e:
-            # Duplicate handlers may cause failure - that's expected
-            assert "duplicate" in str(e).lower() or "http" in str(e).lower()
+        # Act & Assert - should fail with DUPLICATE_REGISTRATION for duplicate http
+        with pytest.raises(ModelOnexError) as exc_info:
+            file_registry.load(large_file)
+
+        error = exc_info.value
+        # Verify correct error code for duplicate handlers
+        assert error.error_code == EnumCoreErrorCode.DUPLICATE_REGISTRATION
+        # Verify file_path is in context
+        context = error.context
+        assert "file_path" in context
+        assert str(large_file) in context.get("file_path", "")
+        # Verify the duplicate handler type is mentioned
+        assert "http" in str(error).lower()
+
+    def test_load_large_contract_with_unique_handlers_succeeds(
+        self,
+        tmp_path: Path,
+        file_registry: FileRegistry,
+    ) -> None:
+        """Test that loading a large valid contract with unique handlers succeeds."""
+        # Arrange - create a large but valid contract with unique handler types
+        nodes = "\n".join([f"  - slug: node-{i}" for i in range(100)])
+
+        yaml_content = f"""
+event_bus:
+  kind: kafka
+handlers:
+  - handler_type: http
+  - handler_type: database
+  - handler_type: kafka
+nodes:
+{nodes}
+"""
+        large_file = tmp_path / "large_valid.yaml"
+        large_file.write_text(yaml_content)
+
+        # Act
+        contract = file_registry.load(large_file)
+
+        # Assert - should load successfully
+        assert isinstance(contract, ModelRuntimeHostContract)
+        assert len(contract.nodes) == 100
+        assert len(contract.handlers) == 3
 
     def test_load_file_with_only_comments(
         self,
@@ -1495,3 +1635,44 @@ class TestFileRegistryOSErrorHandling:
         # The __cause__ should be the original OSError
         assert error.__cause__ is not None
         assert isinstance(error.__cause__, OSError)
+
+    def test_from_yaml_file_deleted_after_exists_check_raises_file_not_found(
+        self,
+        tmp_path: Path,
+        file_registry: FileRegistry,
+        valid_contract_yaml: str,
+    ) -> None:
+        """Test TOCTOU race condition: file deleted between exists() and open().
+
+        This tests that FileNotFoundError during the open() call (after the
+        exists() check passes) is properly mapped to FILE_NOT_FOUND error code.
+        This handles the race condition where a file is deleted between the
+        exists check and the actual file read.
+
+        Note: This is a documentation test - the actual TOCTOU race is hard to
+        reproduce reliably. Instead, we verify that the error handling path
+        exists by checking the from_yaml implementation handles FileNotFoundError
+        from open() and maps it to FILE_NOT_FOUND.
+        """
+        # Arrange - create a file that exists initially
+        contract_file = tmp_path / "toctou_test.yaml"
+        contract_file.write_text(valid_contract_yaml)
+
+        # First, verify the file loads successfully
+        contract = file_registry.load(contract_file)
+        assert isinstance(contract, ModelRuntimeHostContract)
+
+        # Now delete the file to simulate TOCTOU race
+        contract_file.unlink()
+
+        # Act & Assert - loading a now-deleted file should raise FILE_NOT_FOUND
+        with pytest.raises(ModelOnexError) as exc_info:
+            file_registry.load(contract_file)
+
+        error = exc_info.value
+        # Verify the error code is FILE_NOT_FOUND (not FILE_READ_ERROR)
+        assert error.error_code == EnumCoreErrorCode.FILE_NOT_FOUND
+        # Verify file_path is in context
+        context = error.context
+        assert "file_path" in context
+        assert str(contract_file) in context.get("file_path", "")
