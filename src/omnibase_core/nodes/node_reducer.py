@@ -6,6 +6,8 @@ Zero custom Python code required - all state transitions defined declaratively.
 """
 
 import time
+
+# ONEX_EXCLUDE: any - Base node class requires Any for generic type parameters [OMN-203]
 from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:

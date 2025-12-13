@@ -49,6 +49,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import re
 import sys
 from dataclasses import dataclass, field
 from enum import Enum
@@ -70,6 +71,12 @@ class ViolationType(Enum):
     INVALID_INHERITANCE = "invalid_inheritance"
     OPEN_CALL = "open_call"
     PATHLIB_WRITE = "pathlib_write"
+    # New violation types for OMN-203: Declarative node purity linter
+    ANY_IMPORT = "any_import"
+    ANY_TYPE_HINT = "any_type_hint"
+    DICT_ANY_TYPE_HINT = "dict_any_type_hint"
+    LEGACY_MIXIN_IMPORT = "legacy_mixin_import"
+    EVENT_BUS_IMPORT = "event_bus_import"
 
 
 class Severity(Enum):
@@ -258,6 +265,51 @@ FORBIDDEN_CACHING_DECORATORS = frozenset(
     }
 )
 
+# ==============================================================================
+# DECLARATIVE NODE PURITY CONFIGURATION (OMN-203)
+# ==============================================================================
+
+# Legacy mixins - FORBIDDEN in declarative nodes (NodeCompute, NodeReducer)
+FORBIDDEN_LEGACY_MIXINS = frozenset(
+    {
+        "MixinEventBus",
+        "MixinEventDrivenNode",
+        "MixinEventHandler",
+        "MixinEventListener",
+        "MixinServiceRegistry",
+    }
+)
+
+# Event bus module prefixes - FORBIDDEN in declarative nodes
+FORBIDDEN_EVENT_BUS_MODULES = frozenset(
+    {
+        "omnibase_core.events",
+        "omnibase_core.models.event_bus",
+        "omnibase_core.models.events",
+    }
+)
+
+# Event bus component names - FORBIDDEN in declarative nodes
+FORBIDDEN_EVENT_BUS_NAMES = frozenset(
+    {
+        "ProtocolEventBus",
+        "ModelEventEnvelope",
+        "ModelEventBusConfig",
+        "ModelEventBusInputState",
+        "ModelEventBusOutputState",
+        "ModelEventConfig",
+        "ModelEventPublishIntent",
+    }
+)
+
+# Decorators that allow Dict[str, Any] exemption
+ALLOW_DICT_ANY_DECORATORS = frozenset(
+    {
+        "allow_dict_any",
+        "allow_dict_str_any",
+    }
+)
+
 # ALLOWED standard library modules (pure operations only)
 ALLOWED_STDLIB_MODULES = frozenset(
     {
@@ -341,12 +393,12 @@ VALID_NODE_BASE_CLASSES = frozenset(
         "NodeCoreBase",
         "Generic",
         "ABC",
-        # Mixins are allowed
+        # Mixins are allowed (except those in FORBIDDEN_LEGACY_MIXINS)
         "MixinFSMExecution",
         "MixinWorkflowExecution",
         "MixinDiscoveryResponder",
-        "MixinEventHandler",
-        "MixinEventListener",
+        # MixinEventHandler - REMOVED (in FORBIDDEN_LEGACY_MIXINS)
+        # MixinEventListener - REMOVED (in FORBIDDEN_LEGACY_MIXINS)
         "MixinNodeExecutor",
         "MixinNodeLifecycle",
         "MixinRequestResponseIntrospection",
@@ -354,6 +406,124 @@ VALID_NODE_BASE_CLASSES = frozenset(
         "MixinContractMetadata",
     }
 )
+
+
+# ==============================================================================
+# AST HELPER FUNCTIONS (SHARED)
+# ==============================================================================
+#
+# These module-level helper functions are shared between NodeTypeFinder and
+# PurityAnalyzer to avoid code duplication. They provide pure utility operations
+# for extracting information from AST nodes.
+# ==============================================================================
+
+
+def _get_base_class_name(base: ast.expr) -> str | None:
+    """Extract base class name from AST expression.
+
+    This is a shared utility function used by both NodeTypeFinder and
+    PurityAnalyzer to extract class names from inheritance declarations.
+
+    Args:
+        base: AST expression representing a base class.
+
+    Returns:
+        String name of the base class, or None if cannot be extracted.
+
+    Examples:
+        - ast.Name("NodeCompute") -> "NodeCompute"
+        - ast.Attribute(module.NodeCompute) -> "NodeCompute"
+        - ast.Subscript(Generic[T]) -> "Generic"
+    """
+    if isinstance(base, ast.Name):
+        return base.id
+    if isinstance(base, ast.Attribute):
+        return base.attr
+    if isinstance(base, ast.Subscript):
+        # Generic[T] case
+        if isinstance(base.value, ast.Name):
+            return base.value.id
+    return None
+
+
+def _is_onex_node_class(node: ast.ClassDef) -> bool:
+    """Check if class is an ONEX Node class.
+
+    This is a shared utility function used by both NodeTypeFinder and
+    PurityAnalyzer to identify ONEX node classes based on their inheritance.
+
+    Args:
+        node: AST class definition node to check.
+
+    Returns:
+        True if class inherits from a Node base class (NodeCoreBase,
+        NodeCompute, NodeEffect, NodeReducer, NodeOrchestrator, or any
+        class starting with "Node").
+    """
+    for base in node.bases:
+        base_name = _get_base_class_name(base)
+        if base_name in (
+            "NodeCoreBase",
+            "NodeCompute",
+            "NodeEffect",
+            "NodeReducer",
+            "NodeOrchestrator",
+        ):
+            return True
+        if base_name and base_name.startswith("Node"):
+            return True
+    return False
+
+
+def _determine_onex_node_type(node: ast.ClassDef) -> str | None:
+    """Determine the type of node from class name or base classes.
+
+    This is a shared utility function used by NodeTypeFinder to classify
+    node type for purity requirement determination.
+
+    The function first checks the class name for type keywords (compute,
+    effect, reducer, orchestrator), then falls back to checking base class
+    names if no match is found.
+
+    Args:
+        node: AST class definition node to analyze.
+
+    Returns:
+        Node type string ('compute', 'effect', 'reducer', 'orchestrator')
+        or None if type cannot be determined.
+
+    Examples:
+        - class NodeMyCompute(NodeCoreBase) -> "compute"
+        - class MyNode(NodeEffect) -> "effect"
+        - class UnknownClass(object) -> None
+    """
+    class_name = node.name.lower()
+
+    # Check class name first (most specific)
+    if "compute" in class_name:
+        return "compute"
+    if "effect" in class_name:
+        return "effect"
+    if "reducer" in class_name:
+        return "reducer"
+    if "orchestrator" in class_name:
+        return "orchestrator"
+
+    # Fall back to checking base class names
+    for base in node.bases:
+        base_name = _get_base_class_name(base)
+        if base_name:
+            base_lower = base_name.lower()
+            if "compute" in base_lower:
+                return "compute"
+            if "effect" in base_lower:
+                return "effect"
+            if "reducer" in base_lower:
+                return "reducer"
+            if "orchestrator" in base_lower:
+                return "orchestrator"
+
+    return None
 
 
 # ==============================================================================
@@ -367,6 +537,9 @@ class NodeTypeFinder(ast.NodeVisitor):
     This visitor scans the AST to identify ONEX node classes and determine
     whether they should be subject to purity checks. COMPUTE and REDUCER
     nodes require purity; EFFECT and ORCHESTRATOR nodes do not.
+
+    Uses shared helper functions (_is_onex_node_class, _determine_onex_node_type,
+    _get_base_class_name) to avoid code duplication with PurityAnalyzer.
 
     Attributes:
         node_class_name: Name of the node class found, if any.
@@ -386,94 +559,11 @@ class NodeTypeFinder(ast.NodeVisitor):
         Args:
             node: AST class definition node to analyze.
         """
-        if self._is_node_class(node):
+        if _is_onex_node_class(node):
             self.node_class_name = node.name
-            self.node_type = self._determine_node_type(node)
+            self.node_type = _determine_onex_node_type(node)
             self.is_pure_node = self.node_type in ("compute", "reducer")
         self.generic_visit(node)
-
-    def _is_node_class(self, node: ast.ClassDef) -> bool:
-        """Check if class is an ONEX Node class (first pass).
-
-        Used during the initial AST traversal to identify node classes
-        for purity requirement determination.
-
-        Args:
-            node: AST class definition node to check.
-
-        Returns:
-            True if class inherits from a Node base class.
-        """
-        for base in node.bases:
-            base_name = self._get_base_name(base)
-            if base_name in (
-                "NodeCoreBase",
-                "NodeCompute",
-                "NodeEffect",
-                "NodeReducer",
-                "NodeOrchestrator",
-            ):
-                return True
-            if base_name and base_name.startswith("Node"):
-                return True
-        return False
-
-    def _determine_node_type(self, node: ast.ClassDef) -> str | None:
-        """Determine the type of node from class name or base classes (first pass).
-
-        Used during initial AST traversal to classify node type for
-        purity requirement determination.
-
-        Args:
-            node: AST class definition node to analyze.
-
-        Returns:
-            Node type string ('compute', 'effect', 'reducer', 'orchestrator')
-            or None if type cannot be determined.
-        """
-        class_name = node.name.lower()
-
-        if "compute" in class_name:
-            return "compute"
-        if "effect" in class_name:
-            return "effect"
-        if "reducer" in class_name:
-            return "reducer"
-        if "orchestrator" in class_name:
-            return "orchestrator"
-
-        for base in node.bases:
-            base_name = self._get_base_name(base)
-            if base_name:
-                base_lower = base_name.lower()
-                if "compute" in base_lower:
-                    return "compute"
-                if "effect" in base_lower:
-                    return "effect"
-                if "reducer" in base_lower:
-                    return "reducer"
-                if "orchestrator" in base_lower:
-                    return "orchestrator"
-
-        return None
-
-    def _get_base_name(self, base: ast.expr) -> str | None:
-        """Extract base class name from AST expression (first pass helper).
-
-        Args:
-            base: AST expression representing a base class.
-
-        Returns:
-            String name of the base class, or None if cannot be extracted.
-        """
-        if isinstance(base, ast.Name):
-            return base.id
-        if isinstance(base, ast.Attribute):
-            return base.attr
-        if isinstance(base, ast.Subscript):
-            if isinstance(base.value, ast.Name):
-                return base.value.id
-        return None
 
 
 @dataclass
@@ -492,6 +582,10 @@ class PurityAnalyzer(ast.NodeVisitor):
         node_class_name: Name of the node class being analyzed.
         is_pure_node: Whether this node requires purity checking.
         current_class: Name of the class currently being visited.
+        in_type_checking_block: Whether currently inside TYPE_CHECKING block.
+        excluded_lines: Set of line numbers with ONEX_EXCLUDE comments.
+        class_allow_dict_any: Whether current class has @allow_dict_any.
+        function_allow_dict_any_lines: Set of line numbers for functions with @allow_dict_any.
     """
 
     file_path: Path
@@ -501,6 +595,14 @@ class PurityAnalyzer(ast.NodeVisitor):
     node_class_name: str | None = None
     is_pure_node: bool = False
     current_class: str | None = None
+    in_type_checking_block: bool = False
+    excluded_lines: set[int] = field(default_factory=set)
+    class_allow_dict_any: bool = False
+    function_allow_dict_any_lines: set[int] = field(default_factory=set)
+
+    def __post_init__(self) -> None:
+        """Parse source lines for ONEX_EXCLUDE comments after initialization."""
+        self._parse_onex_exclude_comments()
 
     def visit_Import(self, node: ast.Import) -> None:
         """Check import statements for forbidden modules.
@@ -508,9 +610,32 @@ class PurityAnalyzer(ast.NodeVisitor):
         Args:
             node: AST import node to check.
         """
+        if not self.is_pure_node:
+            self.generic_visit(node)
+            return
+
+        # Skip imports inside TYPE_CHECKING blocks
+        if self.in_type_checking_block:
+            self.generic_visit(node)
+            return
+
+        # Skip imports with ONEX_EXCLUDE comments
+        line_num = getattr(node, "lineno", 0)
+        if self._is_line_excluded(line_num):
+            self.generic_visit(node)
+            return
+
         for alias in node.names:
             module_name = alias.name
             self._check_module_import(node, module_name)
+
+            # Check for event bus module imports (OMN-203)
+            self._check_event_bus_module_import(node, module_name)
+
+            # Check for legacy mixin module imports (OMN-203)
+            # e.g., import omnibase_core.mixins.mixin_event_bus
+            self._check_legacy_mixin_module_import(node, module_name)
+
         self.generic_visit(node)
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
@@ -519,28 +644,95 @@ class PurityAnalyzer(ast.NodeVisitor):
         Args:
             node: AST import-from node to check.
         """
+        if not self.is_pure_node:
+            self.generic_visit(node)
+            return
+
+        # Skip imports inside TYPE_CHECKING blocks
+        if self.in_type_checking_block:
+            self.generic_visit(node)
+            return
+
+        # Skip imports with ONEX_EXCLUDE comments
+        line_num = getattr(node, "lineno", 0)
+        if self._is_line_excluded(line_num):
+            self.generic_visit(node)
+            return
+
         module_name = node.module or ""
 
         # Check the module itself
         self._check_module_import(node, module_name)
 
-        # Check specific imports for caching decorators
-        if self.is_pure_node:
-            for alias in node.names:
-                full_name = f"{module_name}.{alias.name}" if module_name else alias.name
-                if (
-                    alias.name in FORBIDDEN_CACHING_DECORATORS
-                    or full_name in FORBIDDEN_CACHING_DECORATORS
-                ):
-                    self._add_violation(
-                        node,
-                        ViolationType.CACHING_DECORATOR,
-                        Severity.ERROR,
-                        f"Caching decorator '{alias.name}' introduces mutable state",
-                        "Use container-provided caching services or ModelComputeCache",
-                    )
+        # Check for event bus module imports (OMN-203)
+        self._check_event_bus_module_import(node, module_name)
+
+        # Check specific imports
+        for alias in node.names:
+            imported_name = alias.name
+            full_name = (
+                f"{module_name}.{imported_name}" if module_name else imported_name
+            )
+
+            # Check for typing.Any import (OMN-203)
+            if module_name == "typing" and imported_name == "Any":
+                self._add_violation(
+                    node,
+                    ViolationType.ANY_IMPORT,
+                    Severity.ERROR,
+                    "Importing 'Any' from typing is forbidden in declarative nodes",
+                    "Use specific types, TypedDict, or Pydantic models instead",
+                )
+
+            # Check for caching decorators
+            if (
+                imported_name in FORBIDDEN_CACHING_DECORATORS
+                or full_name in FORBIDDEN_CACHING_DECORATORS
+            ):
+                self._add_violation(
+                    node,
+                    ViolationType.CACHING_DECORATOR,
+                    Severity.ERROR,
+                    f"Caching decorator '{imported_name}' introduces mutable state",
+                    "Use container-provided caching services or ModelComputeCache",
+                )
+
+            # Check for legacy mixin imports (OMN-203)
+            if imported_name in FORBIDDEN_LEGACY_MIXINS:
+                self._add_violation(
+                    node,
+                    ViolationType.LEGACY_MIXIN_IMPORT,
+                    Severity.ERROR,
+                    f"Legacy mixin '{imported_name}' is forbidden in declarative nodes",
+                    "Remove mixin or use Effect nodes for event-driven functionality",
+                )
+
+            # Check for event bus component imports (OMN-203)
+            if imported_name in FORBIDDEN_EVENT_BUS_NAMES:
+                self._add_violation(
+                    node,
+                    ViolationType.EVENT_BUS_IMPORT,
+                    Severity.ERROR,
+                    f"Event bus component '{imported_name}' is forbidden in declarative nodes",
+                    "Use Effect nodes for event bus operations or emit intents instead",
+                )
 
         self.generic_visit(node)
+
+    def visit_If(self, node: ast.If) -> None:
+        """Track TYPE_CHECKING blocks to skip import checks inside them.
+
+        Args:
+            node: AST if statement node to check.
+        """
+        # Check if this is a TYPE_CHECKING block
+        if self._is_type_checking_block(node):
+            prev_in_type_checking = self.in_type_checking_block
+            self.in_type_checking_block = True
+            self.generic_visit(node)
+            self.in_type_checking_block = prev_in_type_checking
+        else:
+            self.generic_visit(node)
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         """Analyze class definitions for purity violations.
@@ -558,8 +750,12 @@ class PurityAnalyzer(ast.NodeVisitor):
         prev_class = self.current_class
         self.current_class = node.name
 
+        # Track @allow_dict_any on class level
+        prev_class_allow_dict_any = self.class_allow_dict_any
+        self.class_allow_dict_any = self._has_allow_dict_any_decorator(node)
+
         # Check if this is the node class (check inheritance)
-        if self._is_node_class(node):
+        if _is_onex_node_class(node):
             self._check_inheritance(node)
 
         # Check for class-level mutable data in all classes
@@ -567,23 +763,57 @@ class PurityAnalyzer(ast.NodeVisitor):
 
         self.generic_visit(node)
         self.current_class = prev_class
+        self.class_allow_dict_any = prev_class_allow_dict_any
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
-        """Check function definitions for forbidden decorators.
+        """Check function definitions for forbidden decorators and type hints.
 
         Args:
             node: AST function definition node to check.
         """
         self._check_decorators(node)
+
+        # Check type hints in function signature if pure node
+        if self.is_pure_node:
+            has_allow_dict_any = self._has_allow_dict_any_decorator(node)
+            self._check_function_type_hints(node, has_allow_dict_any)
+
         self.generic_visit(node)
 
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
-        """Check async function definitions for forbidden decorators.
+        """Check async function definitions for forbidden decorators and type hints.
 
         Args:
             node: AST async function definition node to check.
         """
         self._check_decorators(node)
+
+        # Check type hints in function signature if pure node
+        if self.is_pure_node:
+            has_allow_dict_any = self._has_allow_dict_any_decorator(node)
+            self._check_function_type_hints(node, has_allow_dict_any)
+
+        self.generic_visit(node)
+
+    def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
+        """Check annotated assignments for Any/Dict[str, Any] type hints.
+
+        Args:
+            node: AST annotated assignment node to check.
+        """
+        if not self.is_pure_node:
+            self.generic_visit(node)
+            return
+
+        # Skip if line is excluded or class has @allow_dict_any
+        line_num = getattr(node, "lineno", 0)
+        if self._is_line_excluded(line_num) or self.class_allow_dict_any:
+            self.generic_visit(node)
+            return
+
+        # Check the annotation for Any/Dict[str, Any]
+        self._check_type_annotation(node.annotation, node)
+
         self.generic_visit(node)
 
     def visit_Call(self, node: ast.Call) -> None:
@@ -711,7 +941,7 @@ class PurityAnalyzer(ast.NodeVisitor):
             node: AST class definition node to check.
         """
         for base in node.bases:
-            base_name = self._get_base_name(base)
+            base_name = _get_base_class_name(base)
             if base_name and base_name not in VALID_NODE_BASE_CLASSES:
                 # Check if it's a Mixin (allowed)
                 if not base_name.startswith("Mixin"):
@@ -784,86 +1014,10 @@ class PurityAnalyzer(ast.NodeVisitor):
                     "Use ModelComputeCache from container or remove caching",
                 )
 
-    def _is_node_class(self, node: ast.ClassDef) -> bool:
-        """Check if class is an ONEX Node class.
-
-        Args:
-            node: AST class definition node to check.
-
-        Returns:
-            True if class inherits from a Node base class.
-        """
-        # Check if it inherits from NodeCoreBase or Node* classes
-        for base in node.bases:
-            base_name = self._get_base_name(base)
-            if base_name in (
-                "NodeCoreBase",
-                "NodeCompute",
-                "NodeEffect",
-                "NodeReducer",
-                "NodeOrchestrator",
-            ):
-                return True
-            if base_name and base_name.startswith("Node"):
-                return True
-        return False
-
-    def _determine_node_type(self, node: ast.ClassDef) -> str | None:
-        """Determine the type of node from class name or base classes.
-
-        Args:
-            node: AST class definition node to analyze.
-
-        Returns:
-            Node type string ('compute', 'effect', 'reducer', 'orchestrator')
-            or None if type cannot be determined.
-        """
-        class_name = node.name.lower()
-
-        # Check class name
-        if "compute" in class_name:
-            return "compute"
-        if "effect" in class_name:
-            return "effect"
-        if "reducer" in class_name:
-            return "reducer"
-        if "orchestrator" in class_name:
-            return "orchestrator"
-
-        # Check base classes
-        for base in node.bases:
-            base_name = self._get_base_name(base)
-            if base_name:
-                base_lower = base_name.lower()
-                if "compute" in base_lower:
-                    return "compute"
-                if "effect" in base_lower:
-                    return "effect"
-                if "reducer" in base_lower:
-                    return "reducer"
-                if "orchestrator" in base_lower:
-                    return "orchestrator"
-
-        return None
-
-    def _get_base_name(self, base: ast.expr) -> str | None:
-        """Extract base class name from AST expression.
-
-        Args:
-            base: AST expression representing a base class.
-
-        Returns:
-            String name of the base class, or None if cannot be extracted.
-        """
-        if isinstance(base, ast.Name):
-            return base.id
-        if isinstance(base, ast.Attribute):
-            return base.attr
-        if isinstance(base, ast.Subscript):
-            # Generic[T] case
-            if isinstance(base.value, ast.Name):
-                return base.value.id
-        return None
+    # NOTE: _is_node_class, _determine_node_type, and _get_base_name have been
+    # consolidated into module-level functions (_is_onex_node_class,
+    # _determine_onex_node_type, _get_base_class_name) to avoid code duplication.
+    # See the "AST HELPER FUNCTIONS (SHARED)" section above.
 
     def _get_decorator_name(self, decorator: ast.expr) -> str:
         """Extract decorator name from AST expression.
@@ -922,6 +1076,37 @@ class PurityAnalyzer(ast.NodeVisitor):
 
     def _is_write_mode_open(self, node: ast.Call) -> bool:
         """Check if open() call is in write mode.
+
+        POLICY: Read mode open() is ALLOWED; write modes are BLOCKED.
+
+        WHY READ MODE IS ALLOWED:
+            Pure nodes often need to read configuration files, schemas, or
+            static data files. Reading is considered "less impure" than writing
+            because it doesn't modify external state - it only observes it.
+
+        RISKS OF ALLOWING READ MODE (developers should be aware):
+            1. NON-DETERMINISM: File contents can change between runs, making
+               node behavior non-deterministic. The same input may produce
+               different outputs if the file changes.
+            2. EXTERNAL STATE DEPENDENCY: Node correctness depends on external
+               filesystem state, which violates pure function principles.
+            3. TESTING COMPLEXITY: Tests must mock file contents or use fixtures,
+               adding complexity to the test setup.
+            4. DEPLOYMENT SENSITIVITY: Nodes may behave differently across
+               environments if files differ (dev vs prod configurations).
+
+        BEST PRACTICES (prefer these over direct open()):
+            1. INJECT CONFIGURATION: Pass config as input parameters rather than
+               reading files inside the node. Let orchestrators load configs.
+               Example: `def compute(self, input: ModelInput, config: ConfigModel)`
+            2. USE CONTAINER SERVICES: Use `container.get_service("ConfigLoader")`
+               to abstract file access behind a mockable interface.
+            3. LOAD AT STARTUP: If files must be read, do it in __init__ not in
+               compute methods. This makes the dependency explicit and testable.
+            4. DOCUMENT FILE DEPENDENCIES: If your node reads files, document
+               this in the class docstring so users know about the dependency.
+
+        See: docs/guides/DECLARATIVE_NODE_IMPORT_RULES.md Section 4 for full policy.
 
         Args:
             node: AST call node for an open() call.
@@ -1029,10 +1214,407 @@ class PurityAnalyzer(ast.NodeVisitor):
             )
         )
 
+    # ==========================================================================
+    # OMN-203: DECLARATIVE NODE PURITY HELPER METHODS
+    # ==========================================================================
+
+    def _parse_onex_exclude_comments(self) -> None:
+        """Parse source lines for ONEX_EXCLUDE comments.
+
+        Identifies lines that have ONEX_EXCLUDE comments to exclude them
+        from Any/Dict[str, Any] checks.
+        """
+        for i, line in enumerate(self.source_lines):
+            # Check for ONEX_EXCLUDE comments
+            if "ONEX_EXCLUDE:" in line:
+                # The comment affects the next non-blank line (for function/class definitions)
+                # or the current line (for inline exclusions)
+                if re.search(r"#\s*ONEX_EXCLUDE:", line):
+                    # Mark this line and next few lines as excluded
+                    self.excluded_lines.add(i + 1)  # Current line (1-indexed)
+                    # Also check if this is a comment-only line (marks next statement)
+                    stripped = line.strip()
+                    if stripped.startswith("#"):
+                        # This is a comment-only line, mark next few lines
+                        for j in range(i + 1, min(i + 5, len(self.source_lines))):
+                            next_line = self.source_lines[j].strip()
+                            if next_line and not next_line.startswith("#"):
+                                self.excluded_lines.add(j + 1)  # 1-indexed
+                                break
+
+    def _is_line_excluded(self, line_num: int) -> bool:
+        """Check if a line is excluded from checks via ONEX_EXCLUDE.
+
+        Args:
+            line_num: Line number (1-indexed) to check.
+
+        Returns:
+            True if line is excluded from Any/Dict[Any] checks.
+        """
+        # Type guard: ensure line_num is a valid positive integer
+        if not isinstance(line_num, int) or line_num < 1:
+            return False
+        return line_num in self.excluded_lines
+
+    def _is_type_checking_block(self, node: ast.If) -> bool:
+        """Check if an If statement is a TYPE_CHECKING block.
+
+        Only accepts `if TYPE_CHECKING:` (where TYPE_CHECKING was imported from typing)
+        or `if typing.TYPE_CHECKING:` (explicit module reference).
+
+        Args:
+            node: AST If node to check.
+
+        Returns:
+            True if this is a `if TYPE_CHECKING:` or `if typing.TYPE_CHECKING:` block.
+        """
+        test = node.test
+        # Handle: if TYPE_CHECKING:
+        # (assumes TYPE_CHECKING was imported from typing module)
+        if isinstance(test, ast.Name) and test.id == "TYPE_CHECKING":
+            return True
+        # Handle: if typing.TYPE_CHECKING:
+        # Only accept typing.TYPE_CHECKING, not arbitrary X.TYPE_CHECKING
+        if isinstance(test, ast.Attribute):
+            if test.attr == "TYPE_CHECKING":
+                # Verify the value is specifically "typing" module
+                if isinstance(test.value, ast.Name) and test.value.id == "typing":
+                    return True
+        return False
+
+    def _has_allow_dict_any_decorator(
+        self, node: ast.FunctionDef | ast.AsyncFunctionDef | ast.ClassDef
+    ) -> bool:
+        """Check if a function or class has @allow_dict_any decorator.
+
+        Args:
+            node: AST function/class definition node.
+
+        Returns:
+            True if decorated with @allow_dict_any or @allow_dict_str_any.
+        """
+        for decorator in node.decorator_list:
+            decorator_name = self._get_decorator_name(decorator)
+            if decorator_name in ALLOW_DICT_ANY_DECORATORS:
+                return True
+        return False
+
+    def _check_event_bus_module_import(self, node: ast.AST, module_name: str) -> None:
+        """Check if a module import is from forbidden event bus modules.
+
+        Args:
+            node: AST node for error location reporting.
+            module_name: Fully qualified module name to check.
+        """
+        if not self.is_pure_node:
+            return
+
+        # Check if module matches any forbidden event bus module prefix
+        for forbidden_module in FORBIDDEN_EVENT_BUS_MODULES:
+            if module_name == forbidden_module or module_name.startswith(
+                forbidden_module + "."
+            ):
+                self._add_violation(
+                    node,
+                    ViolationType.EVENT_BUS_IMPORT,
+                    Severity.ERROR,
+                    f"Event bus module '{module_name}' is forbidden in declarative nodes",
+                    "Use Effect nodes for event bus operations or emit intents instead",
+                )
+                return
+
+    def _check_legacy_mixin_module_import(
+        self, node: ast.AST, module_name: str
+    ) -> None:
+        """Check if a module import is a forbidden legacy mixin module.
+
+        Detects imports like: import omnibase_core.mixins.mixin_event_bus
+
+        Args:
+            node: AST node for error location reporting.
+            module_name: Fully qualified module name to check.
+        """
+        if not self.is_pure_node:
+            return
+
+        # Check if module path contains a forbidden mixin
+        # e.g., omnibase_core.mixins.mixin_event_bus -> MixinEventBus
+        for mixin_name in FORBIDDEN_LEGACY_MIXINS:
+            # Convert MixinEventBus to mixin_event_bus pattern
+            snake_case = self._camel_to_snake(mixin_name)
+            # Match patterns:
+            # 1. "mixins.mixin_event_bus" - standard mixin module path
+            # 2. Module ends with ".mixin_event_bus" - handles submodule imports
+            # 3. Module exactly equals "mixin_event_bus" - handles direct imports
+            if (
+                f"mixins.{snake_case}" in module_name
+                or module_name.endswith(f".{snake_case}")
+                or module_name == snake_case
+            ):
+                self._add_violation(
+                    node,
+                    ViolationType.LEGACY_MIXIN_IMPORT,
+                    Severity.ERROR,
+                    f"Legacy mixin module '{module_name}' is forbidden in declarative nodes",
+                    "Remove mixin or use Effect nodes for event-driven functionality",
+                )
+                return
+
+    def _camel_to_snake(self, name: str) -> str:
+        """Convert CamelCase to snake_case.
+
+        Args:
+            name: CamelCase name to convert.
+
+        Returns:
+            snake_case version of the name.
+        """
+        # Insert underscore before uppercase letters and convert to lowercase
+        s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
+        return re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
+
+    def _check_function_type_hints(
+        self,
+        node: ast.FunctionDef | ast.AsyncFunctionDef,
+        has_allow_dict_any: bool,
+    ) -> None:
+        """Check function parameter and return type hints for Any/Dict[str, Any].
+
+        Args:
+            node: AST function definition node.
+            has_allow_dict_any: Whether function has @allow_dict_any decorator.
+        """
+        # Skip if function has @allow_dict_any or class has it
+        if has_allow_dict_any or self.class_allow_dict_any:
+            return
+
+        line_num = getattr(node, "lineno", 0)
+        if self._is_line_excluded(line_num):
+            return
+
+        # Check parameter annotations
+        for arg in node.args.args + node.args.posonlyargs + node.args.kwonlyargs:
+            if arg.annotation:
+                self._check_type_annotation(arg.annotation, node)
+
+        # Check *args annotation
+        if node.args.vararg and node.args.vararg.annotation:
+            self._check_type_annotation(node.args.vararg.annotation, node)
+
+        # Check **kwargs annotation
+        if node.args.kwarg and node.args.kwarg.annotation:
+            self._check_type_annotation(node.args.kwarg.annotation, node)
+
+        # Check return annotation
+        if node.returns:
+            self._check_type_annotation(node.returns, node)
+
+    def _check_type_annotation(
+        self, annotation: ast.expr, context_node: ast.AST
+    ) -> None:
+        """Check a type annotation for Any or Dict[str, Any] usage.
+
+        Args:
+            annotation: AST expression representing the type annotation.
+            context_node: AST node to use for error location reporting.
+        """
+        # PEP604 unions: X | Y (represented as BinOp with BitOr)
+        if isinstance(annotation, ast.BinOp) and isinstance(annotation.op, ast.BitOr):
+            self._check_type_annotation(annotation.left, context_node)
+            self._check_type_annotation(annotation.right, context_node)
+            return
+
+        # Check for bare "Any" name
+        if isinstance(annotation, ast.Name) and annotation.id == "Any":
+            self._add_violation(
+                context_node,
+                ViolationType.ANY_TYPE_HINT,
+                Severity.ERROR,
+                "'Any' type hint is forbidden in declarative nodes",
+                "Use specific types, Generic type variables, or Pydantic models",
+            )
+            return
+
+        # Check for typing.Any attribute access
+        if isinstance(annotation, ast.Attribute) and annotation.attr == "Any":
+            self._add_violation(
+                context_node,
+                ViolationType.ANY_TYPE_HINT,
+                Severity.ERROR,
+                "'typing.Any' type hint is forbidden in declarative nodes",
+                "Use specific types, Generic type variables, or Pydantic models",
+            )
+            return
+
+        # Check for subscripted types (Dict[str, Any], List[Any], etc.)
+        if isinstance(annotation, ast.Subscript):
+            # Check if this is Dict[str, Any] or dict[str, Any]
+            if self._is_dict_str_any(annotation):
+                self._add_violation(
+                    context_node,
+                    ViolationType.DICT_ANY_TYPE_HINT,
+                    Severity.ERROR,
+                    "'Dict[str, Any]' type hint is forbidden in declarative nodes",
+                    "Use TypedDict, Pydantic models, or specific typed mappings",
+                )
+                return
+
+            # Recursively check type arguments for Any
+            self._check_subscript_for_any(annotation, context_node)
+            return
+
+        # Handle ast.List for Callable argument lists (e.g., Callable[[Any], str])
+        # When processing Callable[[Any], str], the slice is a Tuple where the first
+        # element is an ast.List containing the argument types
+        if isinstance(annotation, ast.List):
+            for elt in annotation.elts:
+                self._check_type_annotation(elt, context_node)
+            return
+
+    def _is_dict_str_any(self, node: ast.Subscript) -> bool:
+        """Check if a subscript is Dict[str, Any] or dict[str, Any].
+
+        Args:
+            node: AST subscript node to check.
+
+        Returns:
+            True if this is a Dict[str, Any] pattern (key type must be str).
+        """
+        # Check if the base is Dict or dict
+        base = node.value
+        is_dict_type = False
+
+        if (isinstance(base, ast.Name) and base.id in ("Dict", "dict")) or (
+            isinstance(base, ast.Attribute) and base.attr == "Dict"
+        ):
+            is_dict_type = True
+
+        if not is_dict_type:
+            return False
+
+        # Check if slice is [str, Any]
+        slice_node = node.slice
+
+        # Python 3.9+ uses direct tuple for multiple args
+        if isinstance(slice_node, ast.Tuple):
+            elts = slice_node.elts
+            if len(elts) == 2:
+                # Verify the key type is str (ast.Name with id "str")
+                first = elts[0]
+                if not (isinstance(first, ast.Name) and first.id == "str"):
+                    # Key type is not str, so this is not Dict[str, Any]
+                    return False
+
+                # Check if second element is Any
+                second = elts[1]
+                if isinstance(second, ast.Name) and second.id == "Any":
+                    return True
+                if isinstance(second, ast.Attribute) and second.attr == "Any":
+                    return True
+
+        return False
+
+    def _check_subscript_for_any(
+        self, node: ast.Subscript, context_node: ast.AST
+    ) -> None:
+        """Recursively check subscript type arguments for Any usage.
+
+        Args:
+            node: AST subscript node to check.
+            context_node: AST node to use for error location reporting.
+        """
+        slice_node = node.slice
+
+        # Handle tuple of type arguments (e.g., Dict[K, V], Callable[[Args], Return])
+        if isinstance(slice_node, ast.Tuple):
+            for elt in slice_node.elts:
+                self._check_type_annotation(elt, context_node)
+        elif isinstance(slice_node, ast.List):
+            # Callable[[arg_types], return_type] has a list for arg_types
+            for elt in slice_node.elts:
+                self._check_type_annotation(elt, context_node)
+        else:
+            # Single type argument (e.g., List[T], Optional[T])
+            self._check_type_annotation(slice_node, context_node)
+
 
 # ==============================================================================
 # MAIN ANALYSIS FUNCTIONS
 # ==============================================================================
+
+
+# ==============================================================================
+# BASE NODE FILE EXEMPTIONS
+# ==============================================================================
+#
+# These base node files are exempt from purity checks because they are
+# FRAMEWORK code that provides the generic base classes for user nodes.
+#
+# WHY THESE EXEMPTIONS ARE NECESSARY:
+#
+# 1. Generic Type Parameters Require Any:
+#    - NodeCompute[T_Input, T_Output] must use Any for unbounded generic types
+#    - NodeReducer[T_Input, T_Output] has the same requirement
+#    - Example: `ModelComputeInput[Any]` is the base type before specialization
+#    - Example: `Callable[..., Any]` for computation registry functions
+#
+# 2. Type Aliases for Circular Import Avoidance:
+#    - `ContractComputeType = Any` avoids circular imports at module level
+#    - These are TYPE_CHECKING-guarded imports but need runtime aliases
+#
+# 3. Framework vs User Code Distinction:
+#    - Base classes define the contract; user subclasses implement specifics
+#    - User nodes MUST use concrete types; base classes MUST remain generic
+#    - The purity linter enforces this by checking user code, not framework code
+#
+# WHAT IS CHECKED VS SKIPPED:
+#    - SKIPPED: All purity violations (because these are framework files)
+#    - CHECKED: Syntax validity (always parsed to verify no syntax errors)
+#    - CHECKED: Class metadata extraction (for reporting purposes)
+#
+# DETAILED FILE-BY-FILE EXEMPTION RATIONALE:
+#
+#   node_compute.py:
+#     - Uses `Any` in: Generic type bounds (T_Input, T_Output), computation
+#       registry callbacks (Callable[..., Any]), base input/output models
+#     - Risk Level: LOW - These are framework-level abstractions that users
+#       never interact with directly; users override with concrete types
+#     - Alternatives Considered: Using TypeVar bounds, but this prevents
+#       flexibility for diverse user input/output models
+#
+#   node_reducer.py:
+#     - Uses `Any` in: FSM state handling (states can be any serializable type),
+#       generic event payloads, state transition type parameters
+#     - Risk Level: LOW - FSM systems require runtime type flexibility for
+#       state representation; user reducers define concrete state types
+#     - Alternatives Considered: Protocol-based state contracts, but this
+#       adds complexity without meaningful type safety gains
+#
+# CRITERIA FOR ADDING NEW FILES TO THIS SKIP LIST:
+#
+#   1. REQUIRED: File must be a base class that users extend (not instantiate)
+#   2. REQUIRED: Any usage must be for generic type parameters, not lazy typing
+#   3. REQUIRED: Document the specific Any usages in the file's docstrings
+#   4. REQUIRED: User subclasses must be able to use concrete types
+#   5. PREFERRED: Use ONEX_EXCLUDE comments for specific lines if possible
+#   6. PROHIBITED: Do NOT add files just because fixing Any is "too hard"
+#
+# RED FLAGS - DO NOT ADD FILES THAT:
+#   - Use Any for return types that could be typed with Union/Protocol
+#   - Use Any for parameters that accept specific known types
+#   - Use Any to avoid importing types (use TYPE_CHECKING instead)
+#   - Use Any because "the type is complex" (simplify the type instead)
+#
+# RELATED: ONEX_EXCLUDE comments can exempt specific lines in user code
+# when legitimate Any usage is required (e.g., external API contracts).
+#
+# See: docs/guides/node-building/03_COMPUTE_NODE_TUTORIAL.md for user guidance
+# See: docs/guides/DECLARATIVE_NODE_IMPORT_RULES.md for import policies
+# ==============================================================================
+BASE_NODE_FILES_SKIP = {
+    "node_compute.py",  # Generic base: NodeCompute[T_Input, T_Output], Callable[..., Any]
+    "node_reducer.py",  # Generic base: NodeReducer[T_Input, T_Output], FSM type handling
+}
 
 
 def analyze_file(file_path: Path) -> PurityCheckResult:
@@ -1043,12 +1625,112 @@ def analyze_file(file_path: Path) -> PurityCheckResult:
     1. First pass: Determine if file contains pure node classes
     2. Second pass: Check for purity violations if pure nodes found
 
+    Base File Exemptions:
+        Files in BASE_NODE_FILES_SKIP (e.g., node_compute.py, node_reducer.py)
+        are exempt from purity checks because they are framework code that
+        legitimately requires Any for generic type parameters. However:
+
+        - Syntax errors are STILL reported (framework code must be valid)
+        - I/O errors are STILL reported (files must be readable)
+        - Encoding errors are STILL reported (files must be valid UTF-8)
+        - Class metadata is STILL extracted (for reporting purposes)
+
+        See BASE_NODE_FILES_SKIP documentation for full explanation of why
+        these exemptions are necessary.
+
     Args:
         file_path: Path to the Python file
 
     Returns:
         PurityCheckResult with violations and analysis
+
+    Error Handling:
+        - SyntaxError: Reported as ERROR violation with line number
+        - OSError: Reported as ERROR violation (file access issues)
+        - UnicodeDecodeError: Reported as ERROR violation (encoding issues)
     """
+    # For base node files, still extract class info but skip purity checks.
+    # These are framework files that legitimately need Any for generic types.
+    # See BASE_NODE_FILES_SKIP documentation above for full explanation.
+    if file_path.name in BASE_NODE_FILES_SKIP:
+        try:
+            source = file_path.read_text(encoding="utf-8")
+            tree = ast.parse(source, filename=str(file_path))
+
+            # First pass: Find node classes to populate metadata
+            finder = NodeTypeFinder()
+            finder.visit(tree)
+
+            return PurityCheckResult(
+                file_path=file_path,
+                node_class_name=finder.node_class_name,
+                node_type=finder.node_type,
+                violations=[],
+                is_pure=True,
+                skip_reason="Base node file (framework code with legitimate generic types)",
+            )
+        except SyntaxError as e:
+            # Syntax errors in base files are REAL errors that must be reported.
+            # Framework code must be syntactically valid.
+            return PurityCheckResult(
+                file_path=file_path,
+                node_class_name=None,
+                node_type=None,
+                violations=[
+                    PurityViolation(
+                        file_path=file_path,
+                        line_number=e.lineno or 0,
+                        column=e.offset or 0,
+                        violation_type=ViolationType.FORBIDDEN_IMPORT,
+                        severity=Severity.ERROR,
+                        message=f"Syntax error in base node file: {e.msg}",
+                        suggestion="Fix the syntax error - base files must be valid Python",
+                    )
+                ],
+                is_pure=False,
+                skip_reason=f"Syntax error in base node file: {e.msg}",
+            )
+        except OSError as e:
+            # I/O errors (file not found, permission denied, etc.) are real errors.
+            return PurityCheckResult(
+                file_path=file_path,
+                node_class_name=None,
+                node_type=None,
+                violations=[
+                    PurityViolation(
+                        file_path=file_path,
+                        line_number=0,
+                        column=0,
+                        violation_type=ViolationType.FORBIDDEN_IMPORT,
+                        severity=Severity.ERROR,
+                        message=f"I/O error reading base node file: {e}",
+                        suggestion="Check file exists and is readable",
+                    )
+                ],
+                is_pure=False,
+                skip_reason=f"I/O error: {e}",
+            )
+        except UnicodeDecodeError as e:
+            # Encoding errors indicate corrupted or non-UTF-8 files.
+            return PurityCheckResult(
+                file_path=file_path,
+                node_class_name=None,
+                node_type=None,
+                violations=[
+                    PurityViolation(
+                        file_path=file_path,
+                        line_number=0,
+                        column=0,
+                        violation_type=ViolationType.FORBIDDEN_IMPORT,
+                        severity=Severity.ERROR,
+                        message=f"Encoding error in base node file: {e}",
+                        suggestion="Ensure file is valid UTF-8 encoded",
+                    )
+                ],
+                is_pure=False,
+                skip_reason=f"Encoding error: {e}",
+            )
+
     try:
         source = file_path.read_text(encoding="utf-8")
         source_lines = source.splitlines()

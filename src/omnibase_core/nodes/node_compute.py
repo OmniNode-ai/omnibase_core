@@ -17,6 +17,8 @@ import hashlib
 import time
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
+
+# ONEX_EXCLUDE: any - Base node class requires Any for generic type parameters [OMN-203]
 from typing import Any
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
