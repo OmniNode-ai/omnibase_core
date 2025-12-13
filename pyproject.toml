@@ -126,6 +126,7 @@ exclude = [
     "**/archive/**",
     "**/__pycache__/**",
     "**/site-packages/**",
+    "tests/fixtures/validation/exports/syntax_error.py",  # Intentionally invalid for testing
 ]
 
 [tool.ruff.format]
