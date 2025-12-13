@@ -4,6 +4,30 @@ Typed query parameters model for effect operations.
 This module provides a strongly-typed model for query parameters,
 replacing dict[str, str] patterns with explicit type validation
 and helper methods for query string generation.
+
+The ``ModelQueryParameters`` class supports multiple value types
+(str, int, float, bool, list[str]) and provides URL-safe query string
+generation with proper encoding.
+
+Example:
+    >>> from omnibase_core.models.common.model_query_parameters import (
+    ...     ModelQueryParameters,
+    ... )
+    >>> params = ModelQueryParameters.from_dict({
+    ...     "limit": 10,
+    ...     "offset": 0,
+    ...     "active": True,
+    ... })
+    >>> params.to_query_string()
+    'limit=10&offset=0&active=true'
+
+Security:
+    - ``MAX_PARAMETERS = 100`` prevents DoS via parameter flooding
+    - URL encoding via ``urllib.parse.urlencode`` prevents injection attacks
+    - Type validation ensures only safe value types are accepted
+
+See Also:
+    - :class:`ModelEnvelopePayload`: Typed event payload model.
 """
 
 from __future__ import annotations

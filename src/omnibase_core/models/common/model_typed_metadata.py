@@ -552,6 +552,20 @@ class ModelReducerMetadata(BaseModel):
 
     Replaces dict[str, Any] metadata field in ModelReducerInput
     with explicit typed fields for reducer metadata.
+
+    Note:
+        The ``partition_id`` and ``window_id`` fields use UUID type for
+        strong typing and consistency with distributed system identifiers.
+
+    Example:
+        >>> from omnibase_core.models.common.model_typed_metadata import (
+        ...     ModelReducerMetadata,
+        ... )
+        >>> from uuid import UUID
+        >>> meta = ModelReducerMetadata(
+        ...     source="kafka",
+        ...     partition_id=UUID("12345678-1234-5678-1234-567812345678"),
+        ... )
     """
 
     source: str | None = Field(
@@ -576,11 +590,11 @@ class ModelReducerMetadata(BaseModel):
     )
     partition_id: UUID | None = Field(
         default=None,
-        description="Partition identifier for distributed processing",
+        description="Partition identifier for distributed processing (UUID type)",
     )
     window_id: UUID | None = Field(
         default=None,
-        description="Window identifier for streaming operations",
+        description="Window identifier for streaming operations (UUID type)",
     )
     tags: list[str] = Field(
         default_factory=list,

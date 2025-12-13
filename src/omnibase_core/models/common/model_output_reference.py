@@ -1,8 +1,36 @@
 """
-Output Reference Model
+Output Reference Model.
 
 Strongly-typed model for referencing outputs from other graph nodes.
 Follows ONEX canonical patterns with strict typing - no Any types allowed.
+
+This module provides the ``ModelOutputReference`` class for defining
+typed data flow references between nodes in the ONEX execution graph.
+It replaces untyped ``dict[str, str]`` patterns with validated references.
+
+The source_reference format is "node_id.output_name" which is validated
+to ensure proper structure and prevent malformed references at runtime.
+
+Example:
+    >>> from omnibase_core.models.common.model_output_reference import (
+    ...     ModelOutputReference,
+    ... )
+    >>> ref = ModelOutputReference(
+    ...     source_reference="preprocessing_node.cleaned_data",
+    ...     local_name="input_data",
+    ... )
+    >>> ref.source_node_id
+    'preprocessing_node'
+    >>> ref.source_output_name
+    'cleaned_data'
+
+Security:
+    - ``source_reference`` has max_length=512 to prevent memory exhaustion
+    - ``local_name`` has max_length=255 to align with identifier limits
+    - Format validation prevents injection of malformed references
+
+See Also:
+    - :class:`ModelOutputMapping`: Container for multiple output references.
 """
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator

@@ -1,8 +1,26 @@
 """
-Output Mapping Container Model
+Output Mapping Container Model.
 
 Container for strongly-typed output references between graph nodes.
 Follows ONEX canonical patterns with strict typing - no Any types allowed.
+
+This module provides the ``ModelOutputMapping`` class for managing
+collections of typed output references in the ONEX execution graph.
+It replaces untyped ``dict[str, str]`` patterns with strongly-typed containers.
+
+Example:
+    >>> from omnibase_core.models.common.model_output_mapping import (
+    ...     ModelOutputMapping,
+    ... )
+    >>> mapping = ModelOutputMapping.from_dict({
+    ...     "input_data": "preprocessing_node.cleaned_data",
+    ...     "config": "config_node.settings",
+    ... })
+    >>> mapping.get_source_reference("input_data")
+    'preprocessing_node.cleaned_data'
+
+See Also:
+    - :class:`ModelOutputReference`: Individual output reference model.
 """
 
 from pydantic import BaseModel, ConfigDict, Field

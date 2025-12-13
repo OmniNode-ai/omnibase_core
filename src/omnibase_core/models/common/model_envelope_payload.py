@@ -4,6 +4,28 @@ Typed envelope payload model for event-driven processing.
 This module provides a strongly-typed model for event envelope payloads,
 replacing dict[str, str] patterns with explicit typed fields for common
 event payload data including event_type, source, timestamp, and correlation_id.
+
+The ``ModelEnvelopePayload`` class provides immutable update methods
+(e.g., ``set_data()``, ``with_timestamp()``) that return new instances
+to maintain data integrity in event-driven workflows.
+
+Example:
+    >>> from omnibase_core.models.common.model_envelope_payload import (
+    ...     ModelEnvelopePayload,
+    ... )
+    >>> payload = ModelEnvelopePayload(
+    ...     event_type="user.created",
+    ...     source="auth-service",
+    ...     correlation_id="abc-123",
+    ... )
+    >>> payload.event_type
+    'user.created'
+    >>> updated = payload.with_timestamp()  # Returns new instance
+    >>> updated.timestamp is not None
+    True
+
+See Also:
+    - :class:`ModelQueryParameters`: Typed query parameters for effects.
 """
 
 from __future__ import annotations

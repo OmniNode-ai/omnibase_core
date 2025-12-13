@@ -1,8 +1,27 @@
 """
-Graph Node Parameters Container Model
+Graph Node Parameters Container Model.
 
 Container for strongly-typed graph node parameters.
 Follows ONEX canonical patterns with strict typing - no Any types allowed.
+
+This module provides the ``ModelGraphNodeParameters`` class for managing
+collections of typed parameters in the ONEX graph node execution system.
+It replaces untyped ``dict[str, str]`` patterns with strongly-typed containers.
+
+Example:
+    >>> from omnibase_core.models.common.model_graph_node_parameters import (
+    ...     ModelGraphNodeParameters,
+    ... )
+    >>> params = ModelGraphNodeParameters.from_dict({
+    ...     "threshold": 0.85,
+    ...     "enabled": True,
+    ...     "tags": ["production", "ml"],
+    ... })
+    >>> params.get_parameter("threshold")
+    0.85
+
+See Also:
+    - :class:`ModelGraphNodeParameter`: Individual parameter model.
 """
 
 from pydantic import BaseModel, ConfigDict, Field
