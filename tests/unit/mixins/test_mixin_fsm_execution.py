@@ -177,7 +177,7 @@ class TestMixinFSMExecution:
         node.reset_fsm_state(test_fsm)
 
         assert node.get_current_fsm_state() == "idle"
-        assert node.get_fsm_state_history() == ()
+        assert node.get_fsm_state_history() == []
 
     @pytest.mark.asyncio
     async def test_mixin_initialize_state(self, test_fsm: ModelFSMSubcontract):

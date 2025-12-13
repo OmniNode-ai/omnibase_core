@@ -215,23 +215,25 @@ class ModelResult[T, E](
         """
         if self.success:
             try:
-                if self.value is None:
+                value = self.value  # Local bind for type narrowing
+                if value is None:
                     raise ModelOnexError(
                         error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                         message="Success result has None value",
                     )
-                new_value = f(self.value)
+                new_value = f(value)
                 return ModelResult.ok(new_value)
             except Exception as e:
                 # fallback-ok: Monadic error handling - converting exceptions to error results
                 return ModelResult.err(e)
-        if self.error is None:
+        error = self.error  # Local bind for type narrowing
+        if error is None:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Error result has None error",
             )
         # Return the original error without unsafe cast
-        return ModelResult.err(self.error)
+        return ModelResult.err(error)
 
     def map_err(self, f: Callable[[E], F]) -> ModelResult[T, object]:
         """
@@ -241,19 +243,21 @@ class ModelResult[T, E](
         If this is Err(error), returns Err(f(error)).
         """
         if self.success:
-            if self.value is None:
+            value = self.value  # Local bind for type narrowing
+            if value is None:
                 raise ModelOnexError(
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="Success result has None value",
                 )
-            return ModelResult.ok(self.value)
+            return ModelResult.ok(value)
         try:
-            if self.error is None:
+            error = self.error  # Local bind for type narrowing
+            if error is None:
                 raise ModelOnexError(
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="Error result has None error",
                 )
-            new_error = f(self.error)
+            new_error = f(error)
             return ModelResult.err(new_error)
         except Exception as e:
             # fallback-ok: Monadic error handling - converting exceptions to error results
@@ -268,24 +272,26 @@ class ModelResult[T, E](
         """
         if self.success:
             try:
-                if self.value is None:
+                value = self.value  # Local bind for type narrowing
+                if value is None:
                     raise ModelOnexError(
                         error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                         message="Success result has None value",
                     )
-                result = f(self.value)
+                result = f(value)
                 # Cast to match the object return type signature
                 return cast("ModelResult[U, object]", result)
             except Exception as e:
                 # fallback-ok: Monadic error handling - converting exceptions to error results
                 return ModelResult.err(e)
-        if self.error is None:
+        error = self.error  # Local bind for type narrowing
+        if error is None:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Error result has None error",
             )
         # Return the original error without unsafe cast
-        return ModelResult.err(self.error)
+        return ModelResult.err(error)
 
     def or_else(self, f: Callable[[E], ModelResult[T, F]]) -> ModelResult[T, object]:
         """
@@ -295,19 +301,21 @@ class ModelResult[T, E](
         If this is Err(error), returns f(error).
         """
         if self.success:
-            if self.value is None:
+            value = self.value  # Local bind for type narrowing
+            if value is None:
                 raise ModelOnexError(
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="Success result has None value",
                 )
-            return ModelResult.ok(self.value)
+            return ModelResult.ok(value)
         try:
-            if self.error is None:
+            error = self.error  # Local bind for type narrowing
+            if error is None:
                 raise ModelOnexError(
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="Error result has None error",
                 )
-            result = f(self.error)
+            result = f(error)
             # Cast to match the object return type signature
             return cast("ModelResult[T, object]", result)
         except Exception as e:
@@ -412,12 +420,13 @@ def collect_results[T, E](
         if result.is_ok():
             values.append(result.unwrap())
         else:
-            if result.error is None:
+            error = result.error  # Local bind for type narrowing
+            if error is None:
                 raise ModelOnexError(
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="Error result has None error",
                 )
-            errors.append(result.error)
+            errors.append(error)
 
     if errors:
         return ModelResult.err(errors)

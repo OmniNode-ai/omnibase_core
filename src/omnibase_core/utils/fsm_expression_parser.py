@@ -30,14 +30,22 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 # These correspond to operators used in fsm_executor._evaluate_single_condition()
 SUPPORTED_OPERATORS: Final[frozenset[str]] = frozenset(
     {
-        # Equality operators
+        # Equality operators (textual)
         "equals",
         "not_equals",
-        # Comparison operators
+        # Equality operators (symbolic)
+        "==",
+        "!=",
+        # Comparison operators (textual)
         "greater_than",
         "less_than",
         "greater_than_or_equal",
         "less_than_or_equal",
+        # Comparison operators (symbolic)
+        ">",
+        "<",
+        ">=",
+        "<=",
         # Length operators
         "min_length",
         "max_length",

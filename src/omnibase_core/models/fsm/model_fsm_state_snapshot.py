@@ -17,6 +17,17 @@ Immutability Considerations:
        While lists are mutable by nature, the frozen model prevents reassignment.
        Callers should treat this as immutable.
 
+       Design Decision (list vs tuple):
+       - tuple[str, ...] was considered for stronger immutability guarantees
+       - list[str] was chosen because:
+         a) Better Pydantic serialization compatibility (native JSON array)
+         b) Consistent with existing FSM executor and mixin patterns
+         c) Simpler type annotations for callers
+         d) The contract-based immutability via frozen=True + documentation
+            is sufficient for this use case
+       - The correct pattern is: new_history = [*snapshot.history, "new_state"]
+         which works identically for both list and tuple types
+
     2. **context field**: Uses dict[str, Any] which is mutable by Python design.
        The dict container itself cannot be reassigned (frozen), but its contents
        CAN still be modified (e.g., context["key"] = "new_value" will work).

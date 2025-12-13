@@ -22,6 +22,7 @@ class ModelGitHubActionsWorkflow(BaseModel):
         frozen=False,
         strict=False,
         extra="forbid",
+        from_attributes=True,
     )
 
     name: str
