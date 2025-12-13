@@ -279,12 +279,12 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
         """
         return self.get_current_fsm_state()
 
-    def get_state_history(self) -> list[str]:
+    def get_state_history(self) -> tuple[str, ...]:
         """
         Get FSM state transition history.
 
         Returns:
-            List of previous state names in chronological order
+            Tuple of previous state names in chronological order (immutable)
 
         Example:
             ```python

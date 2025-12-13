@@ -39,9 +39,6 @@ from .model_metadata_tool_info import ModelMetadataToolInfo
 # Import separated models
 from .model_metadata_tool_usage_metrics import ModelMetadataToolUsageMetrics
 
-# Type alias for tool data values - can be ModelFunctionTool or raw dict
-ToolDataType = Union[ModelFunctionTool, dict[str, object]]
-
 
 # ONEX_EXCLUDE: dict_str_any - RootModel heterogeneous collection
 class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
@@ -385,9 +382,10 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
 
     def get_tools_by_type(
         self, tool_type: EnumMetadataToolType
-    ) -> dict[str, ToolDataType]:
+    ) -> dict[str, Union[ModelFunctionTool, dict[str, object]]]:
         """Get all tools of a specific type."""
-        tools: dict[str, ToolDataType] = {}
+        # Tool data values can be ModelFunctionTool or raw dict
+        tools: dict[str, Union[ModelFunctionTool, dict[str, object]]] = {}
         for name, tool_data in self.root.items():
             if name.startswith("_"):
                 continue
@@ -402,9 +400,10 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
 
     def get_tools_by_status(
         self, status: EnumMetadataToolStatus
-    ) -> dict[str, ToolDataType]:
+    ) -> dict[str, Union[ModelFunctionTool, dict[str, object]]]:
         """Get all tools with a specific status."""
-        tools: dict[str, ToolDataType] = {}
+        # Tool data values can be ModelFunctionTool or raw dict
+        tools: dict[str, Union[ModelFunctionTool, dict[str, object]]] = {}
         for name, tool_data in self.root.items():
             if name.startswith("_"):
                 continue
@@ -727,6 +726,11 @@ __all__ = [
     "EnumMetadataToolComplexity",
     "EnumMetadataToolStatus",
     "EnumMetadataToolType",
+    "LegacyToolCollection",
+    "MetadataToolAnalytics",
+    "MetadataToolCollection",
+    "MetadataToolInfo",
+    "MetadataToolUsageMetrics",
     "ModelMetadataToolAnalytics",
     "ModelMetadataToolCollection",
     "ModelMetadataToolInfo",

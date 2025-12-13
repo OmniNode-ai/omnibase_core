@@ -917,8 +917,8 @@ operations: []
         yaml_file = tmp_path / "test.yaml"
         yaml_file.write_text("version: '1.0'\ncontract_id: test\noperations: []")
 
-        # Mock open to raise an OSError (realistic file read exception)
-        # Note: Real file read operations raise OSError or its subclasses
+        # Mock open to raise an OSError (the appropriate exception for I/O errors)
+        # The validate_yaml_file function catches OSError for file reading errors
         with patch("builtins.open", side_effect=OSError("Read error")):
             errors = validate_yaml_file(yaml_file)
 
