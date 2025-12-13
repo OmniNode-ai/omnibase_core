@@ -925,28 +925,32 @@ description: Test contract
             yaml_file.chmod(0o644)
 
     def test_validate_yaml_file_read_exception(self, tmp_path: Path) -> None:
-        """Test handling of file read exceptions."""
+        """Test handling of file read exceptions.
+
+        Note: validate_yaml_file only catches OSError, UnicodeDecodeError, and yaml.YAMLError.
+        RuntimeError is not caught and will propagate up. This test verifies the OSError
+        handling path which covers most real-world file read failures.
+        """
         from unittest.mock import patch
 
         yaml_file = tmp_path / "test.yaml"
-        # Use valid contract structure (though it won't be read due to mock)
-        yaml_file.write_text(
-            """
+        # Create valid contract content
+        content = """
 contract_version:
   major: 1
   minor: 0
   patch: 0
 node_type: COMPUTE
-description: Test contract
-""",
-        )
+operations: []
+"""
+        yaml_file.write_text(content)
 
         # Mock open to raise an OSError (the appropriate exception for I/O errors)
         # The validate_yaml_file function catches OSError for file reading errors
         with patch("builtins.open", side_effect=OSError("Read error")):
             errors = validate_yaml_file(yaml_file)
 
-        # Should handle exception gracefully
+        # Should handle OSError gracefully
         assert len(errors) > 0
         assert any("OS error reading file" in error for error in errors)
 

@@ -436,6 +436,27 @@ repos:
           - no:rerunfailures
         stages: [pre-push]
 
+      # Node Purity Validation (OMN-203)
+      # Ensures declarative nodes (COMPUTE, REDUCER) maintain purity guarantees:
+      # - No I/O operations, network calls, or side effects
+      # - No forbidden imports (networking, subprocess, threading)
+      # - No class-level mutable state
+      # - No caching decorators that introduce state
+      # EFFECT and ORCHESTRATOR nodes are excluded (allowed to have side effects)
+      # RUNS UNCONDITIONALLY: always_run=true ensures this runs on EVERY push
+      # regardless of which files changed. The script (not the hook) internally
+      # discovers and scans ALL node files (~2-5s runtime). No file pattern filter
+      # is configured at the hook level - the script handles all file discovery.
+      # NOTE: Base node classes (node_compute.py, node_reducer.py) have pre-existing
+      # Any usages that need cleanup in a separate ticket
+      - id: check-node-purity
+        name: ONEX Node Purity Validation
+        entry: poetry run python scripts/check_node_purity.py
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]
+
 # Configuration
 default_install_hook_types: [pre-commit, pre-push]
 default_stages: [pre-commit]

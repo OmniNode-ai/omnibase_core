@@ -5,8 +5,8 @@
 #          These are legitimate utility functions and files that need to use yaml.safe_load()
 #          for valid architectural reasons (e.g., parsing before Pydantic validation).
 #
-# Review Cycle: Quarterly (check for stale entries, validate paths still exist)
-# Next Review: 2025-02-22
+# Review Cycle: Semi-Annual (check for stale entries, validate paths still exist)
+# Next Review: 2026-06-13
 #
 # Format Requirements:
 #   - reason: Architectural justification for allowing YAML parsing
@@ -26,19 +26,19 @@ allowed_files:
     reason: "Foundational utility layer that bridges raw YAML parsing and Pydantic validation - provides
       safe loading primitives for entire codebase"
     added: "2024-10-15"
-    review: "2025-04-15"
+    review: "2026-06-13"
 
   - file: "src/omnibase_core/validation/contracts.py"
     reason: "Central orchestrator for YAML contract file parsing and validation - provides high-level
       API for loading/validating contract YAML files"
     added: "2024-10-15"
-    review: "2025-04-15"
+    review: "2026-06-13"
 
   - file: "src/omnibase_core/validation/contract_validator.py"
     reason: "Validation layer that requires inspection of raw YAML structure before type conversion -
       preprocesses YAML to ensure it meets contract schema requirements"
     added: "2024-10-15"
-    review: "2025-04-15"
+    review: "2026-06-13"
 
   - file: "scripts/regenerate_fingerprints.py"
     reason: "Must parse YAML to detect node_type before selecting appropriate Pydantic model class - contract
@@ -54,7 +54,7 @@ allowed_filenames:
     reason: "Core utility that should be allowed regardless of module path location - may be copied to
       multiple locations for modularity"
     added: "2024-10-15"
-    review: "2025-04-15"
+    review: "2026-06-13"
 
 # Function names allowed to use yaml.safe_load()
 # These functions form the YAML→Pydantic validation pipeline and need raw YAML access
@@ -64,28 +64,28 @@ allowed_functions:
     reason: "Must parse YAML before passing to Pydantic for validation - YAML→Pydantic conversion utility
       that loads raw YAML and validates against model schema"
     added: "2024-10-15"
-    review: "2025-04-15"
+    review: "2026-06-13"
 
   - function: "validate_model_compliance"
     reason: "Needs access to raw YAML dict to check structural requirements - contract compliance validator
       that inspects YAML structure before model instantiation"
     added: "2024-10-15"
-    review: "2025-04-15"
+    review: "2026-06-13"
 
   - function: "validate_contract_yaml"
     reason: "Pre-validation step that checks YAML structure before type conversion - validates contract
       YAML before Pydantic model instantiation"
     added: "2024-10-15"
-    review: "2025-04-15"
+    review: "2026-06-13"
 
   - function: "load_yaml_content_as_model"
     reason: "Foundation utility that bridges YAML parsing and Pydantic validation - generic utility for
       loading YAML content into Pydantic models"
     added: "2024-10-15"
-    review: "2025-04-15"
+    review: "2026-06-13"
 
   - function: "extract_example_from_schema"
     reason: "Parses schema YAML to extract embedded examples for documentation - schema example extractor
       that extracts configurations from YAML schema definitions"
     added: "2024-10-15"
-    review: "2025-04-15"
+    review: "2026-06-13"

@@ -42,7 +42,10 @@ class ModelSemVer(BaseModel):
     minor: int = Field(ge=0, description="Minor version number")
     patch: int = Field(ge=0, description="Patch version number")
 
-    model_config = ConfigDict(frozen=True, extra="ignore")
+    # from_attributes=True allows Pydantic to accept objects with matching
+    # attributes even when class identity differs (e.g., in pytest-xdist
+    # parallel execution where model classes are imported in separate workers)
+    model_config = ConfigDict(frozen=True, extra="ignore", from_attributes=True)
 
     @field_validator("major", "minor", "patch")
     @classmethod
