@@ -5,7 +5,7 @@ This module provides strongly-typed models for common metadata patterns
 found across discovery, effect, reducer, and other model modules.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class ModelToolMetadataFields(BaseModel):
@@ -189,13 +189,13 @@ class ModelConfigSchemaProperty(BaseModel):
         default=None,
         description="Property description",
     )
-    default: str | None = Field(
+    default: str | int | float | bool | None = Field(
         default=None,
-        description="Default value as string",
+        description="Default value (type should match the 'type' field)",
     )
-    enum: list[str] | None = Field(
+    enum: list[str | int | float | bool | None] | None = Field(
         default=None,
-        description="Allowed values for enum types",
+        description="Allowed enum values (supports strings, numbers, booleans, and null)",
     )
     required: bool = Field(
         default=False,
@@ -231,6 +231,25 @@ class ModelMixinConfigSchema(BaseModel):
         default=True,
         description="Whether additional properties are allowed",
     )
+
+    @model_validator(mode="after")
+    def _validate_required_properties_subset(self) -> "ModelMixinConfigSchema":
+        """Validate that required_properties is a subset of properties keys."""
+        if not self.required_properties:
+            return self
+
+        property_names = set(self.properties.keys())
+        required_set = set(self.required_properties)
+        undefined_required = required_set - property_names
+
+        if undefined_required:
+            raise ValueError(
+                f"required_properties contains undefined properties: "
+                f"{sorted(undefined_required)}. "
+                f"Valid properties are: {sorted(property_names)}"
+            )
+
+        return self
 
 
 class ModelOperationData(BaseModel):

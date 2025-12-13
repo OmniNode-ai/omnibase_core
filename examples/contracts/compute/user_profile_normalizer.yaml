@@ -1,7 +1,7 @@
 ---
 # Example: Contract-Driven NodeCompute Pipeline - User Profile Normalizer
 #
-# This example demonstrates the v1.0 NodeCompute contract-driven pipeline system
+# This example demonstrates the v1.1.0 NodeCompute contract-driven pipeline system
 # for normalizing user profile data before storage or processing.
 #
 # USE CASE: Normalize user-submitted profile data to ensure consistency:
@@ -29,49 +29,9 @@
 # Contract required fields
 node_type: COMPUTE_GENERIC
 contract_version: {major: 1, minor: 1, patch: 0}
-
-# Contract fingerprint for drift detection (format: v{version}:{12-char-hash})
-# The 12-character hash is a truncated SHA256 of the normalized contract content
-# (excluding the fingerprint field itself to avoid circular dependency)
-# Regenerate when contract content changes using: poetry run python scripts/compute_contract_fingerprint.py
-fingerprint: "v1.1.0:15c395cb78d1"
-
-# ---------------------------------------------------------------------------
-# CONCURRENCY SEMANTICS
-# ---------------------------------------------------------------------------
-# concurrency: parallelizable | sequential
-#
-# "parallelizable" means this COMPUTE node instance can be safely executed
-# in parallel with OTHER node instances (horizontal scaling). The runtime
-# may spawn multiple instances of this node to process different inputs
-# concurrently. This is safe because COMPUTE nodes are pure transformations
-# with no shared mutable state or external I/O.
-#
-# This is DIFFERENT from pipeline step execution:
-# - Pipeline steps within this contract ALWAYS execute sequentially
-#   (abort-on-first-failure semantics, see compute.pipeline below)
-# - "parallelizable" refers to node-level parallelism, not step-level
-#
-# Use "sequential" if the node has singleton constraints or requires
-# exclusive access to in-memory caches that cannot be shared.
-#
-# For most COMPUTE nodes, "parallelizable" is the correct choice because:
-# 1. No external I/O (handled by EFFECT nodes)
-# 2. No shared mutable state (pure transformations)
-# 3. Deterministic output for given input
-concurrency: parallelizable
-
-profile_tags:
-  - compute
-  - transformation
-  - user-data
-
-# Handler requirements for this compute contract
-# COMPUTE nodes are pure transformations - no external I/O handlers required
-handlers:
-  required: []
-  optional: []
-
+# Fingerprint: SHA-256 hash of canonical normalized contract content (excluding fingerprint field).
+# See docs/architecture/CONTRACT_STABILITY_SPEC.md for normalization specification.
+fingerprint: "1.1.0:8d515de74de2"
 # ---------------------------------------------------------------------------
 # COMPUTE SUBCONTRACT: Defines the transformation pipeline
 # ---------------------------------------------------------------------------
@@ -81,11 +41,11 @@ handlers:
 
 compute:
   # Schema version for forward compatibility
-  version: {major: 1, minor: 0, patch: 0}
+  version: {major: 1, minor: 1, patch: 0}
 
   # Operation identification
   operation_name: user_profile_normalizer
-  operation_version: {major: 1, minor: 0, patch: 0}
+  operation_version: {major: 1, minor: 1, patch: 0}
   description: |
     Normalizes user profile data for consistent storage and processing.
     Handles unicode normalization, whitespace trimming, email standardization,

@@ -20,69 +20,20 @@
 # Contract Metadata
 node_type: ORCHESTRATOR_GENERIC
 contract_version: {major: 1, minor: 1, patch: 0}
-
-# Contract fingerprint for drift detection (format: v{version}:{12-char-hash})
-# The 12-character hash is a truncated SHA256 of the normalized contract content
-# (excluding the fingerprint field itself to avoid circular dependency)
-# Regenerate when contract content changes using: poetry run python scripts/compute_contract_fingerprint.py
-fingerprint: "v1.1.0:0460b8943604"
-
-# Profile tags for orchestrator classification
-profile_tags:
-  - data-processing
-  - etl-pipeline
-  - parallel-execution
-  - multi-stage
-
-# Handlers configuration
-handlers:
-  required: []  # Orchestrators coordinate, may not need direct handlers
-  optional:
-    - type: local
-      version: ">=1.0.0"
-
+# Fingerprint: SHA-256 hash of canonical normalized contract content (excluding fingerprint field).
+# See docs/architecture/CONTRACT_STABILITY_SPEC.md for normalization specification.
+fingerprint: "1.1.0:407e93f3b1d2"
 # Workflow Coordination Subcontract
 workflow_coordination:
   version: {major: 1, minor: 1, patch: 0}
   subcontract_version: {major: 1, minor: 1, patch: 0}
-
-  # Workflow Steps: Required step definitions for orchestration
-  workflow_steps:
-    - step_id: "fetch_raw_data"
-      step_name: "Fetch Raw Data"
-      step_type: "effect"
-      depends_on: []
-    - step_id: "validate_schema"
-      step_name: "Validate Schema"
-      step_type: "compute"
-      depends_on: ["fetch_raw_data"]
-    - step_id: "enrich_data"
-      step_name: "Enrich Data"
-      step_type: "compute"
-      depends_on: ["fetch_raw_data"]
-    - step_id: "aggregate_metrics"
-      step_name: "Aggregate Metrics"
-      step_type: "reducer"
-      depends_on: ["validate_schema", "enrich_data"]
-    - step_id: "quality_check"
-      step_name: "Quality Check"
-      step_type: "compute"
-      depends_on: ["aggregate_metrics"]
-    - step_id: "persist_results"
-      step_name: "Persist Results"
-      step_type: "effect"
-      depends_on: ["quality_check"]
-    - step_id: "send_notification"
-      step_name: "Send Notification"
-      step_type: "effect"
-      depends_on: ["quality_check"]
 
   # Workflow Definition: Complete workflow specification
   workflow_definition:
     # Workflow Metadata
     workflow_metadata:
       workflow_name: data_processing_pipeline
-      workflow_version: {major: 1, minor: 0, patch: 0}
+      workflow_version: {major: 1, minor: 1, patch: 0}
       description: Multi-stage data processing with validation and enrichment
       execution_mode: parallel  # Can be: sequential, parallel, batch
       author: ONEX Framework Team

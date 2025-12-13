@@ -1,22 +1,11 @@
 ---
 node_type: REDUCER_GENERIC
 contract_version: {major: 1, minor: 1, patch: 0}
-
-# Contract fingerprint for drift detection (format: v{version}:{12-char-hash})
-# The 12-character hash is a truncated SHA256 of the normalized contract content
-# (excluding the fingerprint field itself to avoid circular dependency)
-# Regenerate when contract content changes using: poetry run python scripts/compute_contract_fingerprint.py
-fingerprint: "v1.1.0:6d57709afa44"
-profile_tags:
-  - runtime
-  - contracts
-  - registry
-  - configuration
-handlers:
-  required: []  # Reducers are pure state machines - no external I/O handlers
-  optional: []
+# Fingerprint: SHA-256 hash of canonical normalized contract content (excluding fingerprint field).
+# See docs/architecture/CONTRACT_STABILITY_SPEC.md for normalization specification.
+fingerprint: "1.1.0:c753f440fda3"
 state_transitions:
-  version: {major: 1, minor: 1, patch: 0}
+  version: {major: 1, minor: 0, patch: 0}
   state_machine_version: {major: 1, minor: 0, patch: 0}
   state_machine_name: contract_registry_fsm
   description: Maintains state of loaded and compiled ONEX contracts using FSM pattern
@@ -294,6 +283,36 @@ state_transitions:
           trigger: undo_clear
       version: {major: 1, minor: 0, patch: 0}
       operation_type: administrative
+
+# v1.1.0 Required Fields
+# NOTE: The `handlers` section defines protocol-based dependencies injected via DI container.
+# This is SEPARATE from FSM action types (event, logging, data_capture, persistence) which are
+# defined in transition actions.
+#
+# FSM Action Type Execution:
+# The runtime's built-in FSM action executor handles all action_type values. Each action_type
+# maps to a runtime capability:
+#   - event: Publishes events via ProtocolEventBus (optional handler below)
+#   - logging: Logs via ProtocolLogger (optional handler below)
+#   - data_capture: Snapshots state to memory/persistence store
+#   - persistence: Persists FSM state for recovery (when persistence_enabled: true)
+#
+# The `required: []` means no handlers are MANDATORY for this node to function, since the
+# runtime provides default implementations. Optional handlers allow custom implementations.
+handlers:
+  required: []
+  optional:
+    - type: ProtocolLogger
+      version: {major: 1, minor: 0, patch: 0}
+    - type: ProtocolEventBus
+      version: {major: 1, minor: 0, patch: 0}
+
+profile_tags:
+  - runtime
+  - reducer
+  - contracts
+  - registry
+
 metadata:
   version: {major: 1, minor: 1, patch: 0}
   author: ONEX Framework Team

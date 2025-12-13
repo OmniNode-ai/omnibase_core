@@ -1,429 +1,280 @@
-# ONEX Scripts Reference
+# ONEX Scripts
 
-**Version**: 0.4.0
-**Scope**: Development scripts for contract management, validation, and code quality
+This directory contains utility scripts for ONEX development, validation, and maintenance.
 
 ---
 
 ## Table of Contents
 
-1. [Overview](#overview)
-2. [Contract Fingerprint Management](#contract-fingerprint-management)
-3. [Contract Linting](#contract-linting)
-4. [Validation Scripts](#validation-scripts)
-5. [Utility Scripts](#utility-scripts)
-6. [v1.1.0 Contract Field Reference](#v110-contract-field-reference)
-7. [Security Considerations](#security-considerations)
+1. [Contract Fingerprinting](#contract-fingerprinting)
+   - [Computing Fingerprints](#computing-fingerprints)
+   - [Regenerating Fingerprints](#regenerating-fingerprints)
+   - [Linting Contracts](#linting-contracts)
+2. [Validation Scripts](#validation-scripts)
+3. [Code Quality Scripts](#code-quality-scripts)
+4. [Quick Reference](#quick-reference)
 
 ---
 
-## Overview
+## Contract Fingerprinting
 
-This directory contains development and CI/CD scripts for the ONEX framework:
+ONEX uses deterministic SHA256 fingerprints to track contract integrity and detect drift.
 
-| Script | Purpose | Usage |
-|--------|---------|-------|
-| `compute_contract_fingerprint.py` | Compute/validate contract fingerprints | `poetry run python scripts/compute_contract_fingerprint.py <contract.yaml>` |
-| `lint_contract.py` | Lint YAML contracts for correctness | `poetry run python scripts/lint_contract.py <contract.yaml>` |
-| `cleanup.py` | Clean temporary files and caches | `poetry run python scripts/cleanup.py --tmp-only` |
-| `check_node_purity.py` | Verify node implementation purity | `poetry run python scripts/check_node_purity.py` |
-| `check_protocol_exports.py` | Validate protocol exports | `poetry run python scripts/check_protocol_exports.py` |
-| `check_transport_imports.py` | Check transport layer imports | `poetry run python scripts/check_transport_imports.py` |
-| `fix_dict_any_violations.py` | Fix dict[str, Any] anti-patterns | `poetry run python scripts/fix_dict_any_violations.py` |
+### Fingerprint Format
 
----
+```plaintext
+<semver>:<sha256-first-12-hex-chars>
+Example: 0.4.0:8fa1e2b4c9d1
+```
 
-## Contract Fingerprint Management
+**Components:**
+- **semver**: Contract's semantic version (e.g., `1.0.0`, `0.4.0`)
+- **hash**: First 12 characters of SHA256 hash of normalized contract content
 
-### Overview
+### Hash Length Justification
 
-Contract fingerprints enable drift detection between YAML contracts and their generated code.
-The fingerprint is a combination of the contract version and a truncated SHA256 hash.
+The default hash length of **12 hex characters (48 bits)** provides:
 
-**Format**: `v<semver>:<12-hex-chars>`
-**Example**: `v1.1.0:8fa1e2b4c9d1`
+- **~281 trillion possible values** (2^48)
+- **Collision probability**: With 10,000 contracts, birthday paradox gives ~0.00002% collision chance
+- **Readable fingerprints**: Short enough for human readability and copy/paste
+- **Sufficient for registry use**: Contract registries typically have hundreds to thousands of contracts
 
-### Compute a Fingerprint
+For higher security requirements, use `--hash-length 16` (64 bits) or higher.
+
+### Computing Fingerprints
+
+**Script**: `scripts/compute_contract_fingerprint.py`
+
+Compute fingerprints without modifying files:
 
 ```bash
 # Compute fingerprint for a single contract
-poetry run python scripts/compute_contract_fingerprint.py contracts/runtime/runtime_orchestrator.yaml
+poetry run python scripts/compute_contract_fingerprint.py contracts/my_contract.yaml
 
-# Compute with verbose output (includes full hash)
-poetry run python scripts/compute_contract_fingerprint.py contracts/runtime/runtime_orchestrator.yaml --verbose
+# Verbose output with full hash
+poetry run python scripts/compute_contract_fingerprint.py contracts/my_contract.yaml --verbose
 
-# Output as JSON (for CI/CD pipelines)
-poetry run python scripts/compute_contract_fingerprint.py contracts/runtime/runtime_orchestrator.yaml --json
+# Validate existing fingerprint matches computed
+poetry run python scripts/compute_contract_fingerprint.py contracts/my_contract.yaml --validate
 
-# Process multiple contracts
-poetry run python scripts/compute_contract_fingerprint.py contracts/runtime/*.yaml
+# Output as JSON for CI/CD
+poetry run python scripts/compute_contract_fingerprint.py contracts/my_contract.yaml --json
+
+# Process multiple files
+poetry run python scripts/compute_contract_fingerprint.py contracts/*.yaml
 ```
 
-### Validate Existing Fingerprints
-
-```bash
-# Validate fingerprint in contract matches computed value
-poetry run python scripts/compute_contract_fingerprint.py contracts/runtime/runtime_orchestrator.yaml --validate
-
-# Returns exit code 0 if valid, 1 if mismatch, 2 on error
-```
+**Exit Codes:**
+- `0`: Success (fingerprint computed or validation passed)
+- `1`: Validation failed (fingerprint mismatch)
+- `2`: Error (file not found, invalid format, etc.)
 
 ### Regenerating Fingerprints
 
-When you modify a contract's content, you **MUST** regenerate its fingerprint:
+**Script**: `scripts/regenerate_fingerprints.py`
 
-#### Step 1: Compute the New Fingerprint
-
-```bash
-poetry run python scripts/compute_contract_fingerprint.py path/to/your_contract.yaml
-```
-
-This outputs something like:
-```text
-File: path/to/your_contract.yaml
-Fingerprint: v1.1.0:a1b2c3d4e5f6
-```
-
-#### Step 2: Update the Contract
-
-Edit the contract YAML and update the `fingerprint` field:
-
-```yaml
-# Before
-fingerprint: "v1.1.0:oldvalue12ab"
-
-# After
-fingerprint: "v1.1.0:a1b2c3d4e5f6"
-```
-
-#### Step 3: Validate the Update
+Update fingerprints in-place when contract content changes:
 
 ```bash
-# Confirm fingerprint is now valid
-poetry run python scripts/compute_contract_fingerprint.py path/to/your_contract.yaml --validate
+# Regenerate single contract
+poetry run python scripts/regenerate_fingerprints.py contracts/my_contract.yaml
+
+# Regenerate all contracts in directory
+poetry run python scripts/regenerate_fingerprints.py contracts/ --recursive
+
+# Dry-run: preview changes without modifying files
+poetry run python scripts/regenerate_fingerprints.py contracts/ --dry-run -v
+
+# CI/CD: check if fingerprints are current (exits 1 if changes needed)
+poetry run python scripts/regenerate_fingerprints.py contracts/ --dry-run --json
 ```
 
-### Batch Fingerprint Regeneration
+**Exit Codes:**
+- `0`: All fingerprints up-to-date
+- `1`: Fingerprints were changed (drift detected)
+- `2`: Error occurred
 
-For multiple contracts (e.g., after a major refactor):
+**When to Regenerate:**
+- After modifying contract YAML content
+- After upgrading contract version
+- Before committing contract changes
+- In CI/CD to verify fingerprints are current
+
+### Linting Contracts
+
+**Script**: `scripts/lint_contract.py`
+
+Comprehensive contract validation with fingerprint checking:
 
 ```bash
-# Regenerate all runtime contracts
-for f in contracts/runtime/*.yaml; do
-    echo "Processing $f"
-    poetry run python scripts/compute_contract_fingerprint.py "$f"
-done
+# Lint single contract
+poetry run python scripts/lint_contract.py contracts/my_contract.yaml
 
-# Or use --json for scripted updates
-poetry run python scripts/compute_contract_fingerprint.py contracts/runtime/*.yaml --json > fingerprints.json
+# Lint directory recursively
+poetry run python scripts/lint_contract.py contracts/ --recursive
+
+# Lint with baseline for drift detection
+poetry run python scripts/lint_contract.py contracts/ --baseline fingerprints.json
+
+# Update baseline with current fingerprints
+poetry run python scripts/lint_contract.py contracts/ --baseline fingerprints.json --update-baseline
+
+# Only compute fingerprints (skip other checks)
+poetry run python scripts/lint_contract.py contracts/ --compute-fingerprint
+
+# Output as JSON
+poetry run python scripts/lint_contract.py contracts/ --json
 ```
 
-### CI/CD Integration
+**Validation Checks:**
+- YAML syntax validation
+- Required field verification (`name`, `version`, `node_type`, `input_model`, `output_model`)
+- ONEX naming conventions
+- Fingerprint integrity (declared vs computed)
+- Baseline drift detection
 
-```yaml
-# Example GitHub Actions workflow step
-- name: Validate Contract Fingerprints
-  run: |
-    for contract in contracts/**/*.yaml; do
-      poetry run python scripts/compute_contract_fingerprint.py "$contract" --validate
-    done
-```
-
----
-
-## Contract Linting
-
-The contract linter validates YAML contracts against the ONEX schema.
-
-```bash
-# Lint a single contract
-poetry run python scripts/lint_contract.py contracts/runtime/runtime_orchestrator.yaml
-
-# Lint all contracts in a directory
-poetry run python scripts/lint_contract.py contracts/
-
-# Strict mode (treat warnings as errors)
-poetry run python scripts/lint_contract.py contracts/ --strict
-```
+**Exit Codes:**
+- `0`: Validation passed
+- `1`: Validation failed (issues detected)
+- `2`: Script error
 
 ---
 
 ## Validation Scripts
 
-Located in `scripts/validation/`, these scripts enforce ONEX conventions:
+Located in `scripts/validation/`. See `scripts/validation/README.md` for details.
 
-| Script | Purpose |
-|--------|---------|
-| `validate-contracts.py` | Validate all contract YAML files |
-| `validate-pydantic-patterns.py` | Check Pydantic model patterns |
-| `validate-imports.py` | Verify import patterns |
-| `validate-typing-syntax.py` | Check typing syntax consistency |
-| `validate-onex-error-compliance.py` | Ensure proper error handling |
-| `validate-no-dict-methods.py` | Prevent dict method anti-patterns |
-
-Run all validations:
+### Security Validators
 
 ```bash
-# Individual validation
-poetry run python scripts/validation/validate-contracts.py
+# Detect hardcoded secrets
+poetry run python scripts/validation/validate-secrets.py src/
 
-# Run all validations via pre-commit
-pre-commit run --all-files
+# Detect hardcoded environment variables
+poetry run python scripts/validation/validate-hardcoded-env-vars.py src/
+```
+
+### Code Quality Validators
+
+```bash
+# Check for stubbed functionality
+poetry run python scripts/validation/check_stub_implementations.py
+
+# Validate protocol exports
+poetry run python scripts/check_protocol_exports.py
+
+# Check for circular imports
+poetry run python scripts/validation/test_circular_imports.py
+
+# Validate ONEX error compliance
+poetry run python scripts/validation/validate-onex-error-compliance.py src/
+```
+
+### Contract Validators
+
+```bash
+# Validate contract YAML structure
+poetry run python scripts/validation/validate-contracts.py contracts/
+
+# Validate markdown documentation links
+poetry run python scripts/validation/validate_markdown_links.py docs/
 ```
 
 ---
 
-## Utility Scripts
+## Code Quality Scripts
 
-### cleanup.py
-
-Clean temporary files while preserving caches:
+### Cleanup
 
 ```bash
-# Clean tmp/ directory only (recommended for regular use)
+# Clean temporary files (preserves caches)
 poetry run python scripts/cleanup.py --tmp-only
 
-# Full cleanup (deletes ALL caches - slow rebuild!)
+# Full cleanup (removes ALL caches - slow rebuild!)
 poetry run python scripts/cleanup.py
 
-# Preview what would be cleaned
+# Preview cleanup actions
 poetry run python scripts/cleanup.py --dry-run
 
-# Remove tracked tmp files from git index
+# Remove tracked tmp files from git
 poetry run python scripts/cleanup.py --remove-from-git --tmp-only
 ```
 
----
+### Protocol Checking
 
-## v1.1.0 Contract Field Reference
+```bash
+# Check protocol exports
+poetry run python scripts/check_protocol_exports.py
 
-The v1.1.0 contract specification introduces several new fields for enhanced
-contract management and runtime behavior.
+# Check node purity (no side effects in COMPUTE nodes)
+poetry run python scripts/check_node_purity.py
 
-### fingerprint
-
-**Purpose**: Drift detection between contract definition and implementation.
-
-**Format**: `"v<major>.<minor>.<patch>:<12-hex-sha256>"`
-
-**Example**:
-```yaml
-fingerprint: "v1.1.0:8fa1e2b4c9d1"
-```
-
-**Regeneration**: Required when any contract content changes.
-See [Regenerating Fingerprints](#regenerating-fingerprints).
-
-**Security Note**: The 12-character hash prefix provides 48 bits of entropy.
-For collision probability analysis, see [Security Considerations](#security-considerations).
-
----
-
-### handlers
-
-**Purpose**: Declare handler dependencies for node execution.
-
-**Structure**:
-```yaml
-handlers:
-  required:
-    - type: <handler_type>
-      version: "<semver_constraint>"
-  optional:
-    - type: <handler_type>
-      version: "<semver_constraint>"
-```
-
-**Handler Requirements by Node Type**:
-
-| Node Type | Handler Requirements | Rationale |
-|-----------|---------------------|-----------|
-| **COMPUTE** | `required: []` (none) | Pure transformations with no external I/O. All data comes from input, all results go to output. No filesystem, database, or network access. |
-| **EFFECT** | External I/O handlers required | Handles all external interactions: filesystem, database, HTTP, message queues. Declare handlers for each I/O type used. |
-| **REDUCER** | `required: []` (FSM-driven) | State transitions driven by FSM, no direct I/O. State persistence is handled by the runtime, not the node itself. |
-| **ORCHESTRATOR** | Usually `required: []` | Coordinates other nodes via workflow definitions. May optionally use `local` handler for internal coordination, but most orchestration is declarative. |
-
-**When to Use Required vs Optional Handlers**:
-
-| Handler Category | Use `required` | Use `optional` |
-|-----------------|----------------|----------------|
-| Core I/O (filesystem, database) | Yes - node cannot function | No |
-| Logging/Metrics | No | Yes - graceful degradation |
-| External APIs | Depends on criticality | Yes for optional features |
-| Caching | No | Yes - performance enhancement |
-
-**Examples**:
-
-```yaml
-# EFFECT node with filesystem operations (required handler)
-handlers:
-  required:
-    - type: filesystem
-      version: ">=1.0.0"
-  optional: []
-
-# ORCHESTRATOR node (may not need direct handlers)
-handlers:
-  required: []  # Orchestrators coordinate, may not need direct handlers
-  optional:
-    - type: local
-      version: ">=1.0.0"
-
-# COMPUTE node with optional caching
-handlers:
-  required: []  # Pure compute, no I/O handlers needed
-  optional:
-    - type: cache
-      version: ">=1.0.0"
+# Check transport imports
+poetry run python scripts/check_transport_imports.py
 ```
 
 ---
 
-### profile_tags
+## Quick Reference
 
-**Purpose**: Categorization tags for contract discovery and filtering.
+### Contract Fingerprinting Workflow
 
-**Structure**: List of lowercase, hyphen-separated strings.
+```bash
+# 1. Modify contract YAML
 
-**Naming Conventions**:
+# 2. Regenerate fingerprint
+poetry run python scripts/regenerate_fingerprints.py contracts/my_contract.yaml
 
-| Tag Category | Pattern | Examples |
-|--------------|---------|----------|
-| Node role | `<role>` | `runtime`, `kernel`, `compute` |
-| Feature area | `<feature>` | `filesystem`, `contracts`, `events` |
-| Lifecycle | `<phase>` | `loader`, `wiring`, `discovery` |
-| Capability | `<capability>` | `self-hosted`, `hot-reload` |
+# 3. Verify with lint
+poetry run python scripts/lint_contract.py contracts/my_contract.yaml
 
-**Examples**:
-```yaml
-# Runtime orchestrator tags
-profile_tags:
-  - runtime
-  - kernel
-  - self-hosted
-  - lifecycle-management
-
-# Contract loader effect tags
-profile_tags:
-  - filesystem
-  - contracts
-  - discovery
-  - runtime
-  - loader
+# 4. Commit changes
+git add contracts/my_contract.yaml
+git commit -m "Update contract and fingerprint"
 ```
 
-**Validation Rules**:
-- Tags must be non-empty strings
-- No duplicates within a contract
-- Runtime contracts MUST include `runtime` tag
-- Tags should be lowercase and hyphen-separated
+### CI/CD Integration
 
----
-
-### subscriptions
-
-**Purpose**: Kafka topic subscriptions for event-driven contracts.
-
-**Structure**:
-```yaml
-subscriptions:
-  topics:
-    - <topic_name>
-  # OR list format for detailed subscriptions
-subscriptions:
-  - topic: <topic_name>
-    description: <description>
+```bash
+# Check fingerprints are current (fails if drift detected)
+poetry run python scripts/regenerate_fingerprints.py contracts/ -r --dry-run
+if [ $? -eq 1 ]; then
+    echo "ERROR: Fingerprints out of date. Run regenerate_fingerprints.py"
+    exit 1
+fi
 ```
 
-**Topic Naming Conventions**:
+```bash
+# Full contract validation
+poetry run python scripts/lint_contract.py contracts/ -r --json
+```
 
-All topics MUST follow the pattern: `<namespace>.<domain>.<action>`
+### Pre-commit Hook Integration
 
-| Component | Description | Examples |
-|-----------|-------------|----------|
-| Namespace | Service or module name | `runtime`, `contracts`, `nodes` |
-| Domain | Subject area | `startup`, `contracts`, `events` |
-| Action | What happened | `reload`, `ready`, `error` |
+Add to `.pre-commit-config.yaml`:
 
-**Reserved Prefixes**:
-- `runtime.*` - Runtime lifecycle events (e.g., `runtime.startup`, `runtime.shutdown`)
-- `contracts.*` - Contract-related events (e.g., `contracts.loaded`, `contracts.validated`)
-- `nodes.*` - Node lifecycle events (e.g., `nodes.registered`, `nodes.disposed`)
-
-**Examples**:
 ```yaml
-# Orchestrator subscriptions
-subscriptions:
-  - topic: runtime.startup
-    description: Trigger runtime startup sequence
-  - topic: runtime.shutdown
-    description: Trigger graceful shutdown sequence
-  - topic: runtime.contracts.reload
-    description: Trigger contract reload without full restart
-
-# Effect with no subscriptions (uses dict format)
-subscriptions:
-  topics: []
+- repo: local
+  hooks:
+    - id: regenerate-fingerprints
+      name: Regenerate Contract Fingerprints
+      entry: poetry run python scripts/regenerate_fingerprints.py
+      language: system
+      files: ^contracts/.*\.yaml$
+      pass_filenames: true
 ```
 
 ---
 
-## Security Considerations
+## Related Documentation
 
-### Fingerprint Hash Truncation
-
-The fingerprint uses a **12-character (48-bit) truncated SHA256 hash**.
-
-**Collision Probability Analysis**:
-
-| Contracts | Collision Probability | Risk Level |
-|-----------|----------------------|------------|
-| 1,000 | 0.00000018% | Negligible |
-| 10,000 | 0.000018% | Negligible |
-| 100,000 | 0.0018% | Very Low |
-| 1,000,000 | 0.18% | Low |
-| 17,000,000 | 50% | Birthday paradox threshold |
-
-**Mitigation Factors**:
-1. **Version prefix**: Collisions only matter within the same semver version
-2. **Practical limits**: Most deployments have <100,000 contracts
-3. **Drift detection**: Fingerprints are for detecting unintended changes, not cryptographic security
-4. **Full hash available**: `--verbose` flag shows complete 64-character hash for verification
-
-**When Full Hash Verification is Recommended**:
-- Cross-repository contract synchronization
-- Long-term archival and auditing
-- High-security environments with strict compliance requirements
-
-**Not Recommended For**:
-- Cryptographic signatures (use proper signing instead)
-- Authentication or authorization decisions
-- Tamper-proof verification (fingerprints can be updated)
-
-### File Size Limits
-
-The fingerprint tool enforces a **10MB file size limit** to prevent DoS attacks
-from processing maliciously large files.
-
-### Path Security
-
-Contract loading enforces:
-- No path traversal (`..` sequences blocked)
-- Restricted to allowed base paths
-- Symlink escape prevention
-- Absolute path injection blocked
-
-See `io_config.security` in effect contracts for detailed configuration.
-
----
-
-## References
-
-- [CONTRACT_STABILITY_SPEC.md](../docs/architecture/CONTRACT_STABILITY_SPEC.md) - Fingerprint specification
-- [ONEX Four-Node Architecture](../docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) - Node types
-- [Contract System](../docs/architecture/CONTRACT_SYSTEM.md) - Contract architecture
+- **Contract Stability Spec**: `docs/architecture/CONTRACT_STABILITY_SPEC.md`
+- **Hash Registry**: `src/omnibase_core/contracts/hash_registry.py`
+- **Security Validators**: `scripts/validation/README.md`
+- **ONEX Architecture**: `docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md`
 
 ---
 
 **Last Updated**: 2025-12-12
-**Maintainer**: ONEX Framework Team
+**Project**: omnibase_core v0.4.0

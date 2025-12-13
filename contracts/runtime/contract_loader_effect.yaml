@@ -18,42 +18,17 @@
 # Contract Metadata
 node_type: EFFECT_GENERIC
 contract_version: {major: 1, minor: 1, patch: 0}
-
-# Contract fingerprint for drift detection (format: v{version}:{12-char-hash})
-# The 12-character hash is a truncated SHA256 of the normalized contract content
-# (excluding the fingerprint field itself to avoid circular dependency)
-# Regenerate when contract content changes using: poetry run python scripts/compute_contract_fingerprint.py
-fingerprint: "v1.1.0:5686d9c0320d"
-
-# Handler requirements for this effect contract
-# Effects perform external I/O and require handlers for their operations
-handlers:
-  required:
-    # Filesystem handler required for directory scanning and file reading operations
-    - type: filesystem
-      version: ">=1.0.0"
-  optional: []
-
-# Kafka topic subscriptions (none for this effect)
-subscriptions:
-  topics: []
-
-# Profile tags for categorization
-profile_tags:
-  - filesystem
-  - contracts
-  - discovery
-  - runtime
-  - loader
-
+# Fingerprint: SHA-256 hash of canonical normalized contract content (excluding fingerprint field).
+# See docs/architecture/CONTRACT_STABILITY_SPEC.md for normalization specification.
+fingerprint: "1.1.0:423f8598810c"
 # Effect Subcontract
 # NOTE: This contract uses `effect_operations` (multi-operation schema) rather than
 # `effect` (single-operation schema) because it defines multiple filesystem operations
 # (scan_contracts_directory, read_contract_file). Contracts with a single operation
 # use the simpler `effect:` key (e.g., event_bus_wiring_effect.yaml).
 effect_operations:
-  version: {major: 1, minor: 0, patch: 0}
-  subcontract_version: {major: 1, minor: 0, patch: 0}
+  version: {major: 1, minor: 1, patch: 0}
+  subcontract_version: {major: 1, minor: 1, patch: 0}
 
   # Execution configuration
   execution_mode: sequential_abort  # Abort on first failure
@@ -227,6 +202,24 @@ effect_operations:
     log_response: false  # Contract contents may be large
     emit_metrics: true
     trace_propagation: true
+
+# v1.1.0 Required Fields
+handlers:
+  required: []
+  optional:
+    - type: ProtocolLogger
+      version: {major: 1, minor: 0, patch: 0}
+    - type: ProtocolFileSystem
+      version: {major: 1, minor: 0, patch: 0}
+
+profile_tags:
+  - runtime
+  - effect
+  - contracts
+  - discovery
+
+subscriptions:
+  topics: []
 
 # Metadata
 metadata:

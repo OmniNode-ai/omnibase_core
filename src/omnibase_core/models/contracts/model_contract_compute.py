@@ -58,9 +58,10 @@ class ModelContractCompute(MixinNodeTypeValidator, ModelContractBase):
         The following field extraction order is used for robustness.
         Warning logs are emitted when using non-preferred fallback sources.
 
-        **input_data extraction** (for computation input):
-            1. input_state (preferred - canonical location)
-            2. input_data (fallback - legacy/deprecated)
+        **input_state extraction** (for computation input):
+            - input_state (REQUIRED - canonical location)
+              The input_state field is the only supported source for computation input.
+              An error is raised if input_state is not provided.
 
         **computation_type extraction** (for algorithm selection):
             1. algorithm.algorithm_type (preferred - canonical location)
@@ -76,9 +77,9 @@ class ModelContractCompute(MixinNodeTypeValidator, ModelContractBase):
                Uses the built-in "default" computation type.
                Warning log emitted recommending explicit configuration.
 
-        **Migration guidance**:
-            To avoid warning logs, ensure your contracts specify:
-            - input_state (not input_data) for computation input
+        **Contract requirements**:
+            Ensure your contracts specify:
+            - input_state (required) for computation input
             - algorithm.algorithm_type for computation type selection
 
         Example of preferred contract structure::
