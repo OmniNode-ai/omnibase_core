@@ -7,6 +7,12 @@ on:
     branches: [main, develop]
   workflow_dispatch:
 
+# Prevent auto-cancellation of running workflows when new commits are pushed
+# This ensures test splits actually run to completion instead of being skipped
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 env:
   POETRY_VERSION: "2.2.1"
   PYTHON_VERSION: "3.12"
