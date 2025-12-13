@@ -1418,6 +1418,12 @@ class PurityAnalyzer(ast.NodeVisitor):
             annotation: AST expression representing the type annotation.
             context_node: AST node to use for error location reporting.
         """
+        # PEP604 unions: X | Y (represented as BinOp with BitOr)
+        if isinstance(annotation, ast.BinOp) and isinstance(annotation.op, ast.BitOr):
+            self._check_type_annotation(annotation.left, context_node)
+            self._check_type_annotation(annotation.right, context_node)
+            return
+
         # Check for bare "Any" name
         if isinstance(annotation, ast.Name) and annotation.id == "Any":
             self._add_violation(

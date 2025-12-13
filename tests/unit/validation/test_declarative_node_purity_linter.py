@@ -1343,6 +1343,224 @@ class TestAnyTypeHintDetectionInDeclarativeNodes:
 
 @pytest.mark.unit
 @pytest.mark.timeout(30)
+class TestPEP604UnionAnyDetection:
+    """Tests for PEP604 union type Any detection (str | Any syntax).
+
+    Python 3.10+ introduced PEP604 union syntax using | operator.
+    The linter must detect Any in these unions to maintain purity guarantees.
+
+    Examples of what should be detected:
+    - str | Any
+    - Any | str
+    - int | str | Any
+    - list[str | Any]
+    - Any | None
+
+    Ticket: OMN-203
+    """
+
+    def test_pep604_union_with_any_on_right_detected(
+        self, analyze_source: Callable[[str], PurityAnalyzer]
+    ) -> None:
+        """Test that str | Any is detected as a violation.
+
+        The | operator creates a union type at runtime. Any on the right
+        side should be detected just like Union[str, Any].
+        """
+        source = """
+        from typing import Any
+        from omnibase_core.nodes import NodeCompute
+
+        class NodeTestCompute(NodeCompute):
+            def process(self, data: str | Any) -> str:
+                return str(data)
+        """
+        analyzer = analyze_source(source)
+
+        any_violations = [
+            v
+            for v in analyzer.violations
+            if v.violation_type == ViolationType.ANY_TYPE_HINT
+        ]
+        assert len(any_violations) >= 1, "Should detect Any in str | Any union"
+
+    def test_pep604_union_with_any_on_left_detected(
+        self, analyze_source: Callable[[str], PurityAnalyzer]
+    ) -> None:
+        """Test that Any | str is detected as a violation.
+
+        Any can appear on either side of the | operator and should
+        be detected regardless of position.
+        """
+        source = """
+        from typing import Any
+        from omnibase_core.nodes import NodeCompute
+
+        class NodeTestCompute(NodeCompute):
+            def process(self, data: Any | str) -> str:
+                return str(data)
+        """
+        analyzer = analyze_source(source)
+
+        any_violations = [
+            v
+            for v in analyzer.violations
+            if v.violation_type == ViolationType.ANY_TYPE_HINT
+        ]
+        assert len(any_violations) >= 1, "Should detect Any in Any | str union"
+
+    def test_pep604_union_multiple_types_with_any_detected(
+        self, analyze_source: Callable[[str], PurityAnalyzer]
+    ) -> None:
+        """Test that int | str | Any is detected as a violation.
+
+        PEP604 unions can chain multiple types. Any in any position
+        should be detected.
+        """
+        source = """
+        from typing import Any
+        from omnibase_core.nodes import NodeCompute
+
+        class NodeTestCompute(NodeCompute):
+            def process(self, data: int | str | Any) -> str:
+                return str(data)
+        """
+        analyzer = analyze_source(source)
+
+        any_violations = [
+            v
+            for v in analyzer.violations
+            if v.violation_type == ViolationType.ANY_TYPE_HINT
+        ]
+        assert len(any_violations) >= 1, "Should detect Any in int | str | Any union"
+
+    def test_pep604_union_without_any_allowed(
+        self, analyze_source: Callable[[str], PurityAnalyzer]
+    ) -> None:
+        """Test that str | int | None is allowed (no violation).
+
+        PEP604 unions without Any should not trigger ANY_TYPE_HINT violations.
+        This ensures no false positives for valid union types.
+        """
+        source = """
+        from omnibase_core.nodes import NodeCompute
+
+        class NodeTestCompute(NodeCompute):
+            def process(self, data: str | int | None) -> str:
+                return str(data) if data else ""
+        """
+        analyzer = analyze_source(source)
+
+        any_type_violations = [
+            v
+            for v in analyzer.violations
+            if v.violation_type == ViolationType.ANY_TYPE_HINT
+        ]
+        assert len(any_type_violations) == 0, (
+            "str | int | None should not trigger ANY_TYPE_HINT violation"
+        )
+
+    def test_pep604_union_nested_with_any_detected(
+        self, analyze_source: Callable[[str], PurityAnalyzer]
+    ) -> None:
+        """Test that list[str | Any] is detected as a violation.
+
+        PEP604 unions can be nested inside generic types. The linter
+        should traverse into subscript types to find Any.
+        """
+        source = """
+        from typing import Any
+        from omnibase_core.nodes import NodeCompute
+
+        class NodeTestCompute(NodeCompute):
+            items: list[str | Any]
+        """
+        analyzer = analyze_source(source)
+
+        any_violations = [
+            v
+            for v in analyzer.violations
+            if v.violation_type == ViolationType.ANY_TYPE_HINT
+        ]
+        assert len(any_violations) >= 1, "Should detect Any in list[str | Any]"
+
+    def test_pep604_optional_syntax_with_any_detected(
+        self, analyze_source: Callable[[str], PurityAnalyzer]
+    ) -> None:
+        """Test that Any | None is detected as a violation.
+
+        Any | None is effectively Optional[Any] in PEP604 syntax.
+        Both sides should be checked for Any.
+        """
+        source = """
+        from typing import Any
+        from omnibase_core.nodes import NodeCompute
+
+        class NodeTestCompute(NodeCompute):
+            def process(self, data: Any | None) -> str:
+                return str(data) if data else ""
+        """
+        analyzer = analyze_source(source)
+
+        any_violations = [
+            v
+            for v in analyzer.violations
+            if v.violation_type == ViolationType.ANY_TYPE_HINT
+        ]
+        assert len(any_violations) >= 1, "Should detect Any in Any | None union"
+
+    def test_pep604_union_in_return_type_detected(
+        self, analyze_source: Callable[[str], PurityAnalyzer]
+    ) -> None:
+        """Test that str | Any in return type is detected.
+
+        PEP604 unions in return positions should also be checked.
+        """
+        source = """
+        from typing import Any
+        from omnibase_core.nodes import NodeCompute
+
+        class NodeTestCompute(NodeCompute):
+            def process(self, data: str) -> str | Any:
+                return data
+        """
+        analyzer = analyze_source(source)
+
+        any_violations = [
+            v
+            for v in analyzer.violations
+            if v.violation_type == ViolationType.ANY_TYPE_HINT
+        ]
+        assert len(any_violations) >= 1, "Should detect Any in return type str | Any"
+
+    def test_pep604_union_deeply_nested_with_any_detected(
+        self, analyze_source: Callable[[str], PurityAnalyzer]
+    ) -> None:
+        """Test that dict[str, list[int | Any]] is detected.
+
+        Deeply nested PEP604 unions should be traversed to find Any.
+        """
+        source = """
+        from typing import Any
+        from omnibase_core.nodes import NodeCompute
+
+        class NodeTestCompute(NodeCompute):
+            data: dict[str, list[int | Any]]
+        """
+        analyzer = analyze_source(source)
+
+        any_violations = [
+            v
+            for v in analyzer.violations
+            if v.violation_type == ViolationType.ANY_TYPE_HINT
+        ]
+        assert len(any_violations) >= 1, (
+            "Should detect Any in dict[str, list[int | Any]]"
+        )
+
+
+@pytest.mark.unit
+@pytest.mark.timeout(30)
 class TestOnexExcludeCommentForAnyDictAny:
     """
     TDD tests for ONEX_EXCLUDE comment-based exclusions for Any/Dict[Any].
