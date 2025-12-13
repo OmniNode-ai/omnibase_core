@@ -1545,16 +1545,34 @@ def analyze_file(file_path: Path) -> PurityCheckResult:
     Returns:
         PurityCheckResult with violations and analysis
     """
-    # Skip base node files (framework code with legitimate Any usage)
+    # For base node files, still extract class info but skip purity checks
     if file_path.name in BASE_NODE_FILES_SKIP:
-        return PurityCheckResult(
-            file_path=file_path,
-            node_class_name=None,
-            node_type=None,
-            violations=[],
-            is_pure=True,
-            skip_reason="Base node file (framework code with legitimate generic types)",
-        )
+        try:
+            source = file_path.read_text(encoding="utf-8")
+            tree = ast.parse(source, filename=str(file_path))
+
+            # First pass: Find node classes to populate metadata
+            finder = NodeTypeFinder()
+            finder.visit(tree)
+
+            return PurityCheckResult(
+                file_path=file_path,
+                node_class_name=finder.node_class_name,
+                node_type=finder.node_type,
+                violations=[],
+                is_pure=True,
+                skip_reason="Base node file (framework code with legitimate generic types)",
+            )
+        except (SyntaxError, Exception):
+            # If parsing fails, return with None values
+            return PurityCheckResult(
+                file_path=file_path,
+                node_class_name=None,
+                node_type=None,
+                violations=[],
+                is_pure=True,
+                skip_reason="Base node file (framework code with legitimate generic types)",
+            )
 
     try:
         source = file_path.read_text(encoding="utf-8")
