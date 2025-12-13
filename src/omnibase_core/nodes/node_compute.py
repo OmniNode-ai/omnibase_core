@@ -156,11 +156,11 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
         """
         if self._cache is None:
             # Lazily create default cache from container config
-            from omnibase_core.infrastructure.compute_cache_service import (
-                ComputeCacheService,
+            from omnibase_core.services.service_compute_cache import (
+                ServiceComputeCache,
             )
 
-            self._cache = ComputeCacheService(self.container.compute_cache_config)
+            self._cache = ServiceComputeCache(self.container.compute_cache_config)
         return self._cache
 
     @property
@@ -626,29 +626,29 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
 
         # If services not available, create default implementations
         if self._cache is None or self._timing_service is None:
-            from omnibase_core.infrastructure.compute_cache_service import (
-                ComputeCacheService,
+            from omnibase_core.services.service_compute_cache import (
+                ServiceComputeCache,
             )
-            from omnibase_core.infrastructure.parallel_executor_service import (
-                ParallelExecutorService,
+            from omnibase_core.services.service_parallel_executor import (
+                ServiceParallelExecutor,
             )
-            from omnibase_core.infrastructure.timing_service import TimingService
+            from omnibase_core.services.service_timing import ServiceTiming
 
             # Create cache from container's compute_cache_config
             if self._cache is None:
                 cache_config = self.container.compute_cache_config
-                self._cache = ComputeCacheService(cache_config)
+                self._cache = ServiceComputeCache(cache_config)
                 ttl = cache_config.get_ttl_minutes()
                 if ttl is not None:
                     self.cache_ttl_minutes = ttl
 
             # Create timing service
             if self._timing_service is None:
-                self._timing_service = TimingService()
+                self._timing_service = ServiceTiming()
 
             # Create parallel executor with default workers
             if self._parallel_executor is None:
-                self._parallel_executor = ParallelExecutorService(max_workers=4)
+                self._parallel_executor = ServiceParallelExecutor(max_workers=4)
 
         # Load configuration from NodeConfigProvider if available
         config = self.container.get_service_optional(NodeConfigProvider)

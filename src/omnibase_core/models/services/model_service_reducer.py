@@ -13,7 +13,7 @@ for reducer nodes that aggregate data, manage state, or persist computed results
 
 Usage Example:
     ```python
-    from omnibase_core.models.service.model_service_reducer import ModelServiceReducer
+    from omnibase_core.models.services.model_service_reducer import ModelServiceReducer
     from omnibase_core.models.container.model_onex_container import ModelONEXContainer
     from omnibase_core.models.contracts.model_contract_reducer import ModelContractReducer
 

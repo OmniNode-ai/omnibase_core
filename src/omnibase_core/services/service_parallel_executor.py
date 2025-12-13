@@ -1,5 +1,5 @@
 """
-ParallelExecutorService - Default ProtocolParallelExecutor implementation.
+ServiceParallelExecutor - Default ProtocolParallelExecutor implementation.
 
 Provides parallel execution using ThreadPoolExecutor.
 
@@ -16,10 +16,10 @@ from typing import Any
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
-__all__ = ["ParallelExecutorService"]
+__all__ = ["ServiceParallelExecutor"]
 
 
-class ParallelExecutorService:
+class ServiceParallelExecutor:
     """
     Default ProtocolParallelExecutor implementation using ThreadPoolExecutor.
 
@@ -30,7 +30,7 @@ class ParallelExecutorService:
         Thread-safe. ThreadPoolExecutor is designed for concurrent access.
 
     Example:
-        >>> executor = ParallelExecutorService(max_workers=4)
+        >>> executor = ServiceParallelExecutor(max_workers=4)
         >>> result = await executor.execute(expensive_func, data)
         >>> await executor.shutdown()
 

@@ -27,12 +27,12 @@ Note: ModelServiceOrchestrator and ModelServiceReducer will be available after
 """
 
 # Standard service wrappers - production-ready mixin compositions
-from omnibase_core.models.service.model_service_compute import ModelServiceCompute
-from omnibase_core.models.service.model_service_effect import ModelServiceEffect
+from omnibase_core.models.services.model_service_compute import ModelServiceCompute
+from omnibase_core.models.services.model_service_effect import ModelServiceEffect
 
 # NOTE: Available after Phase 3 restoration:
-# from omnibase_core.models.service.model_service_orchestrator import ModelServiceOrchestrator
-# from omnibase_core.models.service.model_service_reducer import ModelServiceReducer
+# from omnibase_core.models.services.model_service_orchestrator import ModelServiceOrchestrator
+# from omnibase_core.models.services.model_service_reducer import ModelServiceReducer
 
 __all__ = [
     "ModelServiceEffect",

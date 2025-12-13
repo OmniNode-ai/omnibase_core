@@ -1,7 +1,7 @@
 import json
 from typing import Any
 
-from omnibase_core.models.service.model_node_service_config import (
+from omnibase_core.models.services.model_node_service_config import (
     ModelNodeServiceConfig,
 )
 from omnibase_core.utils.util_decorators import allow_dict_str_any

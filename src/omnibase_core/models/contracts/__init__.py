@@ -64,7 +64,7 @@ from omnibase_core.mixins.mixin_node_type_validator import MixinNodeTypeValidato
 from omnibase_core.models.core.model_workflow import ModelWorkflow
 from omnibase_core.models.discovery.model_event_descriptor import ModelEventDescriptor
 from omnibase_core.models.security.model_condition_value import ModelConditionValue
-from omnibase_core.models.service.model_external_service_config import (
+from omnibase_core.models.services.model_external_service_config import (
     ModelExternalServiceConfig,
 )
 

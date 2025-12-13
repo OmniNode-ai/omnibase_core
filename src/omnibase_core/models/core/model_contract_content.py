@@ -55,7 +55,7 @@ from omnibase_core.models.core.model_tool_specification import ModelToolSpecific
 from omnibase_core.models.core.model_yaml_schema_object import ModelYamlSchemaObject
 from omnibase_core.models.orchestrator.model_action import ModelAction
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.models.service.model_service_configuration_single import (
+from omnibase_core.models.services.model_service_configuration_single import (
     ModelServiceConfiguration,
 )
 

@@ -181,7 +181,7 @@ Use the standard `ModelService*` wrappers for production-ready compositions:
 
 #### Service Composition Example:
 ```
-from omnibase_core.models.service import ModelServiceEffect
+from omnibase_core.models.services import ModelServiceEffect
 
 class NodeDatabaseWriter(ModelServiceEffect):
     """Effect node with health checks, events, and metrics pre-wired."""

@@ -6,7 +6,7 @@ Strongly typed model to replace dictionary usage in configuration merging.
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.service.model_service_registry_config import (
+from omnibase_core.models.services.model_service_registry_config import (
     ModelServiceRegistryConfig,
 )
 

@@ -379,7 +379,7 @@ Now that you understand what nodes are, learn about the **four node types** and 
 from omnibase_core.nodes import NodeCompute, NodeEffect, NodeReducer, NodeOrchestrator
 
 # Preferred: production-ready compute via service wrapper
-from omnibase_core.models.service.model_service_compute import ModelServiceCompute
+from omnibase_core.models.services.model_service_compute import ModelServiceCompute
 
 class MyComputeService(ModelServiceCompute):
     pass

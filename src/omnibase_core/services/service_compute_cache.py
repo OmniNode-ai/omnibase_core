@@ -1,5 +1,5 @@
 """
-ComputeCacheService - Default ProtocolComputeCache implementation.
+ServiceComputeCache - Default ProtocolComputeCache implementation.
 
 Wraps ModelComputeCache to satisfy the ProtocolComputeCache protocol.
 
@@ -16,10 +16,10 @@ from omnibase_core.models.configuration.model_compute_cache_config import (
 from omnibase_core.models.infrastructure import ModelComputeCache
 from omnibase_core.protocols.compute import ProtocolComputeCache
 
-__all__ = ["ComputeCacheService"]
+__all__ = ["ServiceComputeCache"]
 
 
-class ComputeCacheService:
+class ServiceComputeCache:
     """
     Default ProtocolComputeCache implementation using ModelComputeCache.
 
@@ -31,7 +31,7 @@ class ComputeCacheService:
 
     Example:
         >>> config = ModelComputeCacheConfig(max_size=256)
-        >>> cache = ComputeCacheService(config)
+        >>> cache = ServiceComputeCache(config)
         >>> cache.put("key", "value")
         >>> cache.get("key")
         'value'
@@ -97,4 +97,4 @@ class ComputeCacheService:
 
 
 # Verify protocol compliance
-_cache_check: ProtocolComputeCache = ComputeCacheService(ModelComputeCacheConfig())
+_cache_check: ProtocolComputeCache = ServiceComputeCache(ModelComputeCacheConfig())

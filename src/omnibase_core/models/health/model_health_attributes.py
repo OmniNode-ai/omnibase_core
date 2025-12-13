@@ -6,7 +6,7 @@ Type-safe health attributes that replace Dict[str, Any] usage.
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.service.model_custom_fields import ModelCustomFields
+from omnibase_core.models.services.model_custom_fields import ModelCustomFields
 
 
 class ModelHealthAttributes(BaseModel):

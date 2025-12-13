@@ -1,5 +1,5 @@
 """
-TimingService - Default ProtocolTimingService implementation.
+ServiceTiming - Default ProtocolTimingService implementation.
 
 Provides high-precision timing using time.perf_counter.
 
@@ -12,10 +12,10 @@ import time
 
 from omnibase_core.protocols.compute import ProtocolTimingService
 
-__all__ = ["TimingService"]
+__all__ = ["ServiceTiming"]
 
 
-class TimingService:
+class ServiceTiming:
     """
     Default ProtocolTimingService implementation using time.perf_counter.
 
@@ -26,7 +26,7 @@ class TimingService:
         Thread-safe. Uses thread-safe system calls.
 
     Example:
-        >>> timing = TimingService()
+        >>> timing = ServiceTiming()
         >>> start = timing.start_timer()
         >>> # ... do work ...
         >>> duration_ms = timing.stop_timer(start)
@@ -44,4 +44,4 @@ class TimingService:
 
 
 # Verify protocol compliance
-_timing_check: ProtocolTimingService = TimingService()
+_timing_check: ProtocolTimingService = ServiceTiming()
