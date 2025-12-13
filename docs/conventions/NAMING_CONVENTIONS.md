@@ -374,6 +374,7 @@ models/
 
 ## Related Documentation
 
+- **Pydantic Best Practices**: `docs/conventions/PYDANTIC_BEST_PRACTICES.md`
 - **Version Semantics**: `docs/conventions/VERSION_SEMANTICS.md`
 - **Error Handling**: `docs/conventions/ERROR_HANDLING_BEST_PRACTICES.md`
 - **Contract System**: `docs/architecture/CONTRACT_SYSTEM.md`

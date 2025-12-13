@@ -350,6 +350,7 @@ Need from_attributes?
 
 ## Related Documentation
 
+- **Naming Conventions**: `docs/conventions/NAMING_CONVENTIONS.md`
 - **Error Handling**: `docs/conventions/ERROR_HANDLING_BEST_PRACTICES.md`
 - **Threading Guide**: `docs/guides/THREADING.md`
 - **Contract System**: `docs/architecture/CONTRACT_SYSTEM.md`
