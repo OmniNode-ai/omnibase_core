@@ -334,7 +334,10 @@ def validate_configuration(self) -> "ModelConfig":
 | Envelope | `True` | `"forbid"` | Optional | `True` |
 | Contract | `False` | `"ignore"` | No | `True` |
 | Config | `False` | `"forbid"` | Optional | `True` |
-| Metadata | `False` | `"forbid"` | `True` (ORM) | `True` |
+| Metadata | `False` | (default) | `True` (ORM) | (default) |
+
+**Note**: Metadata models use `from_attributes=True` for ORM compatibility. Other options
+use Pydantic defaults unless specific validation behavior is required.
 
 ### Safety Decision Tree
 

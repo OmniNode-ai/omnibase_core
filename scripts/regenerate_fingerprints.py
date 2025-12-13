@@ -183,20 +183,31 @@ def detect_contract_model(contract_data: dict[str, object]) -> type[BaseModel] |
 # ==============================================================================
 
 
+@dataclass
+class FingerprintResult:
+    """Result of fingerprint computation attempt."""
+
+    fingerprint: ModelContractFingerprint | None
+    error: str | None = None
+
+
 def compute_fingerprint_for_contract(
     contract_data: dict[str, object],
-) -> ModelContractFingerprint | None:
+) -> FingerprintResult:
     """Compute fingerprint for parsed contract data.
 
     Args:
         contract_data: Parsed YAML contract data.
 
     Returns:
-        Computed fingerprint or None if computation fails.
+        FingerprintResult with computed fingerprint or error message.
     """
     model_class = detect_contract_model(contract_data)
     if model_class is None:
-        return None
+        return FingerprintResult(
+            fingerprint=None,
+            error="Could not detect contract model type",
+        )
 
     try:
         # Remove existing fingerprint to avoid circular dependency
@@ -204,9 +215,24 @@ def compute_fingerprint_for_contract(
             k: v for k, v in contract_data.items() if k != "fingerprint"
         }
         contract = model_class.model_validate(data_for_fingerprint)
-        return compute_contract_fingerprint(contract)
-    except (ValueError, TypeError, ModelOnexError):
-        return None
+        fingerprint = compute_contract_fingerprint(contract)
+        return FingerprintResult(fingerprint=fingerprint)
+    except ModelOnexError as e:
+        return FingerprintResult(
+            fingerprint=None,
+            error=f"ONEX error: {e.message}",
+        )
+    except ValueError as e:
+        # Pydantic ValidationError inherits from ValueError
+        return FingerprintResult(
+            fingerprint=None,
+            error=f"Validation error: {e}",
+        )
+    except TypeError as e:
+        return FingerprintResult(
+            fingerprint=None,
+            error=f"Type error: {e}",
+        )
 
 
 def update_fingerprint_in_yaml(
@@ -360,17 +386,17 @@ def regenerate_fingerprint(
         old_fingerprint = str(old_fingerprint)
 
     # Compute new fingerprint
-    fingerprint = compute_fingerprint_for_contract(contract_data)
-    if fingerprint is None:
+    fingerprint_result = compute_fingerprint_for_contract(contract_data)
+    if fingerprint_result.fingerprint is None:
         return RegenerateResult(
             file_path=file_path,
             old_fingerprint=old_fingerprint,
             new_fingerprint=None,
             changed=False,
-            error="Failed to compute fingerprint (schema validation error)",
+            error=fingerprint_result.error or "Failed to compute fingerprint",
         )
 
-    new_fingerprint = str(fingerprint)
+    new_fingerprint = str(fingerprint_result.fingerprint)
 
     # Check if changed
     changed = old_fingerprint != new_fingerprint

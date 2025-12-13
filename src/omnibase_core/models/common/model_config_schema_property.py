@@ -13,6 +13,9 @@ JsonSchemaType = Literal[
     "string", "integer", "boolean", "number", "array", "object", "null"
 ]
 
+# Valid enum value types (matches JSON Schema primitive types)
+EnumValue = str | int | float | bool | None
+
 
 class ModelConfigSchemaProperty(BaseModel):
     """
@@ -40,9 +43,9 @@ class ModelConfigSchemaProperty(BaseModel):
         default=None,
         description="Default value (type should match the 'type' field)",
     )
-    enum: list[str] | None = Field(
+    enum: list[EnumValue] | None = Field(
         default=None,
-        description="Allowed values for enum types",
+        description="Allowed enum values (supports strings, numbers, booleans, and null)",
     )
     required: bool = Field(
         default=False,
@@ -100,4 +103,4 @@ class ModelConfigSchemaProperty(BaseModel):
         return self
 
 
-__all__ = ["ModelConfigSchemaProperty"]
+__all__ = ["ModelConfigSchemaProperty", "EnumValue", "JsonSchemaType"]

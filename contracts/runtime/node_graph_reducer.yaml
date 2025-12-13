@@ -299,6 +299,22 @@ state_transitions:
       operation_type: administrative
 
 # v1.1.0 Required Fields
+# NOTE: The `handlers` section defines protocol-based dependencies injected via DI container.
+# This is SEPARATE from FSM action types (event, logging, data_capture, persistence, alert, cleanup)
+# which are defined in transition actions.
+#
+# FSM Action Type Execution:
+# The runtime's built-in FSM action executor handles all action_type values. Each action_type
+# maps to a runtime capability:
+#   - event: Publishes events via ProtocolEventBus (optional handler below)
+#   - logging: Logs via ProtocolLogger (optional handler below)
+#   - data_capture: Snapshots state to memory/persistence store
+#   - persistence: Persists FSM state for recovery (when persistence_enabled: true)
+#   - alert: Emits alerts via alerting subsystem (monitoring integration)
+#   - cleanup: Executes resource cleanup procedures
+#
+# The `required: []` means no handlers are MANDATORY for this node to function, since the
+# runtime provides default implementations. Optional handlers allow custom implementations.
 handlers:
   required: []
   optional:

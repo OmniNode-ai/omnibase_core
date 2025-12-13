@@ -209,6 +209,18 @@ health_check:
       threshold_ms: 1000
 
 # Event subscriptions (what this node listens to)
+# NOTE: Each subscription defines a `handler` field that references a method that MUST be
+# implemented by the runtime or node implementation. These handlers are NOT protocol-based
+# dependencies (those go in the `handlers` section below). Instead, subscription handlers
+# are callback methods that the event bus invokes when matching events arrive.
+#
+# Handler Implementation Requirements:
+# - wire_all_subscriptions: Receives ModelNodeGraphReadyEvent, wires all nodes to their subscriptions
+# - wire_single_subscription: Receives ModelNodeRegisteredEvent, wires a single new node
+# - remove_subscription: Receives ModelNodeUnregisteredEvent, removes subscription for a node
+#
+# These handlers are implemented by the NodeEventBusWiringEffect class or provided by the
+# runtime's built-in subscription handler executor. See docs/architecture/SUBSCRIPTION_HANDLERS.md.
 subscriptions:
   topics:
     - topic: onex.runtime.node_graph.ready
