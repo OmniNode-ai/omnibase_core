@@ -458,8 +458,8 @@ class TestConsistencyWithFSMExecutor:
     """Tests ensuring consistency with fsm_executor condition evaluation."""
 
     def test_all_fsm_executor_operators_supported(self) -> None:
-        """Should support all operators used in fsm_executor."""
-        # These operators are used in fsm_executor._evaluate_single_condition()
+        """Should support all word-based operators used in fsm_executor."""
+        # These word-based operators are used in fsm_executor._evaluate_single_condition()
         fsm_executor_operators = {
             "equals",
             "not_equals",
@@ -467,18 +467,102 @@ class TestConsistencyWithFSMExecutor:
             "not_in",
             "contains",
             "matches",
-            # The parser supports both word-based operators (equals, not_equals, etc.)
-            # and symbolic operators (==, !=, >, <, >=, <=).
         }
-        # Also verify symbolic operators are supported
-        symbolic_operators = {"==", "!=", ">", "<", ">=", "<="}
-        for op in symbolic_operators:
-            assert op in SUPPORTED_OPERATORS, (
-                f"Symbolic operator '{op}' not in SUPPORTED_OPERATORS"
-            )
         for op in fsm_executor_operators:
             assert op in SUPPORTED_OPERATORS, (
                 f"Operator '{op}' not in SUPPORTED_OPERATORS"
+            )
+
+
+class TestOperatorSynchronization:
+    """Tests verifying that all symbolic operators are properly supported.
+
+    The parser supports both word-based operators (equals, not_equals, greater_than, etc.)
+    and symbolic operators (==, !=, >, <, >=, <=). This test class ensures all symbolic
+    operators are registered in SUPPORTED_OPERATORS and actually work when parsing.
+    """
+
+    def test_symbolic_equality_operators_in_supported_operators(self) -> None:
+        """Should include symbolic equality operators (==, !=) in SUPPORTED_OPERATORS."""
+        symbolic_equality_operators = {"==", "!="}
+        for op in symbolic_equality_operators:
+            assert op in SUPPORTED_OPERATORS, (
+                f"Symbolic equality operator '{op}' not in SUPPORTED_OPERATORS"
+            )
+
+    def test_symbolic_comparison_operators_in_supported_operators(self) -> None:
+        """Should include symbolic comparison operators (>, <, >=, <=) in SUPPORTED_OPERATORS."""
+        symbolic_comparison_operators = {">", "<", ">=", "<="}
+        for op in symbolic_comparison_operators:
+            assert op in SUPPORTED_OPERATORS, (
+                f"Symbolic comparison operator '{op}' not in SUPPORTED_OPERATORS"
+            )
+
+    def test_symbolic_equality_operators_parse_successfully(self) -> None:
+        """Should successfully parse expressions using symbolic equality operators."""
+        # Test == operator
+        field, operator, value = parse_expression("status == active")
+        assert field == "status"
+        assert operator == "=="
+        assert value == "active"
+
+        # Test != operator
+        field, operator, value = parse_expression("status != inactive")
+        assert field == "status"
+        assert operator == "!="
+        assert value == "inactive"
+
+    def test_symbolic_comparison_operators_parse_successfully(self) -> None:
+        """Should successfully parse expressions using symbolic comparison operators."""
+        # Test > operator
+        field, operator, value = parse_expression("count > 10")
+        assert field == "count"
+        assert operator == ">"
+        assert value == "10"
+
+        # Test < operator
+        field, operator, value = parse_expression("count < 100")
+        assert field == "count"
+        assert operator == "<"
+        assert value == "100"
+
+        # Test >= operator
+        field, operator, value = parse_expression("age >= 18")
+        assert field == "age"
+        assert operator == ">="
+        assert value == "18"
+
+        # Test <= operator
+        field, operator, value = parse_expression("age <= 65")
+        assert field == "age"
+        assert operator == "<="
+        assert value == "65"
+
+    def test_all_symbolic_operators_comprehensive(self) -> None:
+        """Should support all symbolic operators with various value types."""
+        # Define all symbolic operators with test expressions
+        symbolic_operator_tests = [
+            # Equality operators
+            ("field == value", "==", "value"),
+            ("field != value", "!=", "value"),
+            # Comparison operators with numeric values
+            ("count > 0", ">", "0"),
+            ("count < 999", "<", "999"),
+            ("score >= 0.5", ">=", "0.5"),
+            ("score <= 1.0", "<=", "1.0"),
+            # Comparison with negative numbers
+            ("temp > -10", ">", "-10"),
+            ("temp < -5", "<", "-5"),
+        ]
+        for expression, expected_op, expected_value in symbolic_operator_tests:
+            _field, operator, value = parse_expression(expression)
+            assert operator == expected_op, (
+                f"Expected operator '{expected_op}' but got '{operator}' "
+                f"for expression: {expression}"
+            )
+            assert value == expected_value, (
+                f"Expected value '{expected_value}' but got '{value}' "
+                f"for expression: {expression}"
             )
 
 

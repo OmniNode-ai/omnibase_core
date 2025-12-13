@@ -144,6 +144,55 @@ class ModelFSMStateSnapshot(BaseModel):
         """
         return cls(current_state=initial_state)
 
+    def transition_to(
+        self,
+        new_state: str,
+        *,
+        new_context: FSMContextType | None = None,
+    ) -> ModelFSMStateSnapshot:
+        """
+        Create a new snapshot representing a state transition.
+
+        This is the preferred method for FSM state transitions. It creates a new
+        immutable snapshot with the updated state, preserving the immutability
+        contract by never mutating the existing snapshot.
+
+        Args:
+            new_state: The target state name to transition to.
+            new_context: Optional new context data. If provided, it is merged
+                with the existing context (new values override existing ones).
+                If None, the existing context is preserved unchanged.
+
+        Returns:
+            A new ModelFSMStateSnapshot with:
+            - current_state set to new_state
+            - context merged with new_context (if provided)
+            - history extended with the previous current_state
+
+        Example:
+            >>> snapshot = ModelFSMStateSnapshot.create_initial("idle")
+            >>> snapshot = snapshot.transition_to("processing")
+            >>> snapshot.current_state
+            'processing'
+            >>> snapshot.history
+            ['idle']
+            >>> snapshot = snapshot.transition_to("completed", new_context={"result": "ok"})
+            >>> snapshot.current_state
+            'completed'
+            >>> snapshot.history
+            ['idle', 'processing']
+            >>> snapshot.context
+            {'result': 'ok'}
+        """
+        updated_context = (
+            self.context if new_context is None else {**self.context, **new_context}
+        )
+        return ModelFSMStateSnapshot(
+            current_state=new_state,
+            context=updated_context,
+            history=[*self.history, self.current_state],
+        )
+
 
 # Export for use
 __all__ = ["ModelFSMStateSnapshot"]

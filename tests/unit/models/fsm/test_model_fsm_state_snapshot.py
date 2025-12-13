@@ -18,7 +18,6 @@ from omnibase_core.models.fsm.model_fsm_state_snapshot import ModelFSMStateSnaps
 pytestmark = pytest.mark.unit
 
 
-@pytest.mark.unit
 class TestModelFSMStateSnapshotInstantiation:
     """Test cases for ModelFSMStateSnapshot instantiation."""
 
@@ -57,7 +56,6 @@ class TestModelFSMStateSnapshotInstantiation:
         assert isinstance(snapshot.history, list)
 
 
-@pytest.mark.unit
 class TestModelFSMStateSnapshotHistoryNeverNone:
     """Test that history is NEVER None, always a list."""
 
@@ -93,7 +91,6 @@ class TestModelFSMStateSnapshotHistoryNeverNone:
         assert "history" in str(exc_info.value)
 
 
-@pytest.mark.unit
 class TestModelFSMStateSnapshotFrozenBehavior:
     """Test frozen behavior (immutability) of ModelFSMStateSnapshot."""
 
@@ -126,7 +123,6 @@ class TestModelFSMStateSnapshotFrozenBehavior:
             snapshot.new_attr = "value"
 
 
-@pytest.mark.unit
 class TestModelFSMStateSnapshotExtraFieldsRejected:
     """Test that extra fields are rejected (extra='forbid')."""
 
@@ -166,7 +162,6 @@ class TestModelFSMStateSnapshotExtraFieldsRejected:
         assert "extra_field" in error_str.lower() or "extra" in error_str.lower()
 
 
-@pytest.mark.unit
 class TestModelFSMStateSnapshotCreateInitial:
     """Test create_initial factory method."""
 
@@ -210,7 +205,6 @@ class TestModelFSMStateSnapshotCreateInitial:
         assert snapshot.history == []
 
 
-@pytest.mark.unit
 class TestModelFSMStateSnapshotSerialization:
     """Test serialization and deserialization for ModelFSMStateSnapshot."""
 
@@ -309,7 +303,6 @@ class TestModelFSMStateSnapshotSerialization:
         assert restored == original
 
 
-@pytest.mark.unit
 class TestModelFSMStateSnapshotValidation:
     """Test validation rules for ModelFSMStateSnapshot."""
 
@@ -345,7 +338,6 @@ class TestModelFSMStateSnapshotValidation:
             ModelFSMStateSnapshot(current_state="idle", history={"dict": "value"})
 
 
-@pytest.mark.unit
 class TestModelFSMStateSnapshotEdgeCases:
     """Test edge cases for ModelFSMStateSnapshot."""
 
@@ -444,3 +436,136 @@ class TestModelFSMStateSnapshotEdgeCases:
         repr_str = repr(snapshot)
         assert "ModelFSMStateSnapshot" in repr_str
         assert "test" in repr_str
+
+
+class TestModelFSMStateSnapshotTransitionTo:
+    """Test transition_to helper method."""
+
+    def test_transition_to_basic(self) -> None:
+        """Test basic state transition."""
+        snapshot = ModelFSMStateSnapshot.create_initial("idle")
+        new_snapshot = snapshot.transition_to("processing")
+
+        assert new_snapshot.current_state == "processing"
+        assert new_snapshot.history == ["idle"]
+        assert new_snapshot.context == {}
+
+    def test_transition_to_preserves_original(self) -> None:
+        """Test that transition_to does not mutate original snapshot."""
+        original = ModelFSMStateSnapshot.create_initial("idle")
+        new_snapshot = original.transition_to("processing")
+
+        # Original should be unchanged
+        assert original.current_state == "idle"
+        assert original.history == []
+        assert original.context == {}
+
+        # New snapshot should have updated values
+        assert new_snapshot.current_state == "processing"
+        assert new_snapshot.history == ["idle"]
+
+    def test_transition_to_multiple_transitions(self) -> None:
+        """Test chaining multiple transitions."""
+        snapshot = ModelFSMStateSnapshot.create_initial("idle")
+        snapshot = snapshot.transition_to("validating")
+        snapshot = snapshot.transition_to("processing")
+        snapshot = snapshot.transition_to("completed")
+
+        assert snapshot.current_state == "completed"
+        assert snapshot.history == ["idle", "validating", "processing"]
+
+    def test_transition_to_with_new_context(self) -> None:
+        """Test transition with new context data."""
+        snapshot = ModelFSMStateSnapshot.create_initial("idle")
+        new_snapshot = snapshot.transition_to(
+            "processing", new_context={"request_id": "abc123"}
+        )
+
+        assert new_snapshot.current_state == "processing"
+        assert new_snapshot.context == {"request_id": "abc123"}
+
+    def test_transition_to_merges_context(self) -> None:
+        """Test that new_context is merged with existing context."""
+        snapshot = ModelFSMStateSnapshot(
+            current_state="idle",
+            context={"user_id": "user1", "retry_count": 0},
+        )
+        new_snapshot = snapshot.transition_to(
+            "processing", new_context={"retry_count": 1, "started_at": "2024-01-01"}
+        )
+
+        assert new_snapshot.context == {
+            "user_id": "user1",  # preserved from original
+            "retry_count": 1,  # overridden by new_context
+            "started_at": "2024-01-01",  # added from new_context
+        }
+
+    def test_transition_to_preserves_context_when_none(self) -> None:
+        """Test that context is preserved when new_context is None."""
+        snapshot = ModelFSMStateSnapshot(
+            current_state="idle",
+            context={"key": "value"},
+        )
+        new_snapshot = snapshot.transition_to("processing")
+
+        assert new_snapshot.context == {"key": "value"}
+
+    def test_transition_to_with_empty_new_context(self) -> None:
+        """Test transition with empty new_context dict."""
+        snapshot = ModelFSMStateSnapshot(
+            current_state="idle",
+            context={"existing": "value"},
+        )
+        new_snapshot = snapshot.transition_to("processing", new_context={})
+
+        # Empty dict merges with existing, preserving existing values
+        assert new_snapshot.context == {"existing": "value"}
+
+    def test_transition_to_appends_to_existing_history(self) -> None:
+        """Test that transition_to appends to existing history."""
+        snapshot = ModelFSMStateSnapshot(
+            current_state="processing",
+            history=["idle", "validating"],
+        )
+        new_snapshot = snapshot.transition_to("completed")
+
+        assert new_snapshot.history == ["idle", "validating", "processing"]
+
+    def test_transition_to_returns_correct_type(self) -> None:
+        """Test that transition_to returns ModelFSMStateSnapshot instance."""
+        snapshot = ModelFSMStateSnapshot.create_initial("idle")
+        new_snapshot = snapshot.transition_to("processing")
+
+        assert isinstance(new_snapshot, ModelFSMStateSnapshot)
+
+    def test_transition_to_result_is_frozen(self) -> None:
+        """Test that snapshot from transition_to is frozen."""
+        snapshot = ModelFSMStateSnapshot.create_initial("idle")
+        new_snapshot = snapshot.transition_to("processing")
+
+        with pytest.raises(ValidationError):
+            new_snapshot.current_state = "modified"
+
+    def test_transition_to_same_state(self) -> None:
+        """Test transition to the same state (self-loop)."""
+        snapshot = ModelFSMStateSnapshot(
+            current_state="processing",
+            context={"attempt": 1},
+        )
+        new_snapshot = snapshot.transition_to("processing", new_context={"attempt": 2})
+
+        assert new_snapshot.current_state == "processing"
+        assert new_snapshot.history == ["processing"]
+        assert new_snapshot.context == {"attempt": 2}
+
+    def test_transition_to_with_complex_context(self) -> None:
+        """Test transition with complex nested context."""
+        snapshot = ModelFSMStateSnapshot.create_initial("idle")
+        complex_context = {
+            "nested": {"inner": {"deep": "value"}},
+            "list": [1, 2, 3],
+            "mixed": {"count": 42, "items": ["a", "b"]},
+        }
+        new_snapshot = snapshot.transition_to("processing", new_context=complex_context)
+
+        assert new_snapshot.context == complex_context
