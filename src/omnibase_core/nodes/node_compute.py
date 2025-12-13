@@ -29,11 +29,9 @@ from omnibase_core.logging.structured import emit_log_event_sync as emit_log_eve
 from omnibase_core.models.compute.model_compute_input import ModelComputeInput
 from omnibase_core.models.compute.model_compute_output import ModelComputeOutput
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.contracts.model_contract_compute import ModelContractCompute
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.infrastructure import ModelComputeCache
-
-# Type alias for contract (avoids circular import at module level)
-ContractComputeType = Any  # ModelContractCompute - imported in method
 
 
 class NodeCompute[T_Input, T_Output](NodeCoreBase):
@@ -223,7 +221,7 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
 
     async def execute_compute(
         self,
-        contract: ContractComputeType,
+        contract: ModelContractCompute,
     ) -> ModelComputeOutput[T_Output]:
         """
         Execute computation based on contract specification.
@@ -241,11 +239,6 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
         Raises:
             ModelOnexError: If computation fails or contract is invalid
         """
-        # Import here to avoid circular dependency
-        from omnibase_core.models.contracts.model_contract_compute import (
-            ModelContractCompute,
-        )
-
         if not isinstance(contract, ModelContractCompute):
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -265,14 +258,13 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
 
     def _contract_to_input(
         self,
-        contract: ContractComputeType,
+        contract: ModelContractCompute,
     ) -> ModelComputeInput[T_Input]:
         """
         Convert ModelContractCompute to ModelComputeInput.
 
-        Performs field extraction with fallback chains for robustness.
-        Warning logs are emitted when using non-preferred fallback sources to help
-        identify contracts that should be updated to use preferred field locations.
+        Extracts input_state (required) and computation_type from the contract.
+        Fails fast if input_state is not provided.
 
         Args:
             contract: Compute contract to convert
@@ -290,30 +282,19 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
             3. contract.computation_type attribute (fallback - deprecated)
             4. "default" (final fallback - implicit default)
         """
-        # Extract input data from contract (input_state preferred, input_data as legacy fallback)
+        # Extract input data from contract - input_state is required
         input_data: Any = None
         if hasattr(contract, "input_state") and contract.input_state is not None:
             input_data = contract.input_state
-        elif hasattr(contract, "input_data") and contract.input_data is not None:
-            # Legacy fallback with deprecation warning
-            emit_log_event(
-                LogLevel.WARNING,
-                "Using legacy 'input_data' field - please migrate to 'input_state'. "
-                "This fallback will be removed in v0.5.0.",
-                {"node_id": str(self.node_id)},
-            )
-            input_data = contract.input_data
 
         if input_data is None:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message="Contract must have either 'input_state' or 'input_data' field",
+                message="Contract must have 'input_state' field with valid data",
                 context={
                     "node_id": str(self.node_id),
-                    "hint": "Provide input_state (preferred) or input_data (legacy) in contract",
-                    "checked_attributes": ["input_state", "input_data"],
+                    "hint": "Set input_state in your contract (input_data is no longer supported)",
                     "input_state_value": str(getattr(contract, "input_state", None)),
-                    "input_data_value": str(getattr(contract, "input_data", None)),
                 },
             )
 
