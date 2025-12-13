@@ -152,7 +152,7 @@ filterwarnings = [
 
 ### Filter Format
 
-```
+```text
 action:message:category:module:line
 ```
 
@@ -220,7 +220,7 @@ If this command passes, the codebase is ready for v0.5.0.
 
 The warning filter configuration is located in:
 
-```
+```text
 pyproject.toml
 ```
 
