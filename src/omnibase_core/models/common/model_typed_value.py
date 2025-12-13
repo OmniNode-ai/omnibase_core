@@ -1,10 +1,3 @@
-from typing import TypeVar
-
-__all__ = [
-    "ModelTypedMapping",
-    "ModelValueContainer",
-]
-
 """
 Generic Value Container Models
 
@@ -16,13 +9,17 @@ This replaces patterns like Union[str, int, float, bool, dict[str, Any], list[An
 type-safe generic containers that preserve exact type information.
 """
 
+from typing import TypeVar
 
-# Import protocols from Core-native location
 from omnibase_core.protocols import ProtocolModelValidatable as ModelProtocolValidatable
 
-# Import extracted classes
 from .model_typed_mapping import ModelTypedMapping
 from .model_value_container import ModelValueContainer
+
+__all__ = [
+    "ModelTypedMapping",
+    "ModelValueContainer",
+]
 
 ValidatableValue = TypeVar("ValidatableValue", bound=ModelProtocolValidatable)
 
