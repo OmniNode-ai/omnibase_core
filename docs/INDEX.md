@@ -185,6 +185,7 @@ omnibase_core/docs/
 | Document | Description | Status |
 |----------|-------------|--------|
 | [**CI Monitoring Guide**](ci/CI_MONITORING_GUIDE.md) | CI performance monitoring, alerting, and investigation | ✅ Complete |
+| [**Deprecation Warnings**](ci/DEPRECATION_WARNINGS.md) | Deprecation warning configuration and v0.5.0 migration path | ✅ Complete |
 | [CI Test Strategy](testing/CI_TEST_STRATEGY.md) | CI/CD test strategy and optimization | ✅ Complete |
 | [Parallel Testing](testing/PARALLEL_TESTING.md) | Parallel test execution configuration | ✅ Complete |
 | [Testing Guide](guides/TESTING_GUIDE.md) | Comprehensive testing strategies | ✅ Complete |
@@ -270,10 +271,10 @@ omnibase_core/docs/
 | **Node Building** | 10 | 0 | 0 | 10 |
 | **Architecture** | 13 | 0 | 0 | 13 |
 | **Reference** | 13 | 0 | 0 | 13 |
-| **Specialized** | 11 | 0 | 0 | 11 |
-| **TOTAL** | **50** | **0** | **0** | **50** |
+| **Specialized** | 12 | 0 | 0 | 12 |
+| **TOTAL** | **51** | **0** | **0** | **51** |
 
-**Overall Progress**: 100% complete (50/50 documents)
+**Overall Progress**: 100% complete (51/51 documents)
 
 ### Priority Items
 
