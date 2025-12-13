@@ -306,6 +306,11 @@ addopts = [
     "--reruns-delay=1",  # 1 second delay between reruns
 ]
 filterwarnings = [
+    # === Deprecation Warning Capture (OMN-199, Phase 7) ===
+    # Display deprecation warnings during test runs so developers can address them
+    # before v0.5.0 when these will become errors
+    "default::DeprecationWarning",
+    "default::PendingDeprecationWarning",
     # Suppress asyncio "Task was destroyed but it is pending!" warnings
     # These are expected during test cleanup when fixtures cancel pending tasks
     # The cleanup fixtures (event_loop_cleanup, cleanup_service_tasks) properly

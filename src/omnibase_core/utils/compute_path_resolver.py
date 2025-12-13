@@ -138,7 +138,7 @@ class PathResolutionError(ModelOnexError):
         if available_keys is not None:
             context["available_keys"] = available_keys
 
-        super().__init__(message=message, error_code=error_code, context=context)  # type: ignore[arg-type]  # TypedDict compatible with dict[str, object]
+        super().__init__(message=message, error_code=error_code, context=context)
 
 
 def _validate_path_start(path: str) -> None:
