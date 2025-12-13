@@ -7,7 +7,10 @@ standardized configuration patterns and utilities.
 
 from datetime import datetime
 
+import pytest
 from pydantic import BaseModel, Field
+
+pytestmark = pytest.mark.unit
 
 from omnibase_core.models.core import ModelConfigurationBase, ModelTypedConfiguration
 from omnibase_core.models.primitives.model_semver import ModelSemVer

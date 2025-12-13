@@ -262,17 +262,44 @@ class TestToolSpecificFields:
             result = ModelToolExecutionResult(tool_name=name, success=True)
             assert result.tool_name == name
 
-    def test_status_code_variations(self) -> None:
-        """Test various status code values."""
-        codes = [0, 1, 127, 200, 404, 500]
+    def test_status_code_variations_success(self) -> None:
+        """Test valid status code values for success=True.
 
-        for code in codes:
+        Valid status codes for success=True are:
+        - 0 (default success)
+        - 200-299 (HTTP success range)
+        """
+        success_codes = [0, 200, 201, 204, 299]
+
+        for code in success_codes:
             result = ModelToolExecutionResult(
                 tool_name="test_tool",
-                success=(code == 0),
+                success=True,
                 status_code=code,
             )
             assert result.status_code == code
+            assert result.success is True
+
+    def test_status_code_variations_failure(self) -> None:
+        """Test valid status code values for success=False.
+
+        Valid status codes for success=False are:
+        - 1-199 (non-HTTP error codes)
+        - 300+ (HTTP error/redirect codes)
+
+        Note: status_code=0 with success=False is auto-corrected to 1.
+        """
+        failure_codes = [1, 127, 300, 404, 500]
+
+        for code in failure_codes:
+            result = ModelToolExecutionResult(
+                tool_name="test_tool",
+                success=False,
+                error="Test error",
+                status_code=code,
+            )
+            assert result.status_code == code
+            assert result.success is False
 
     def test_status_code_default_zero(self) -> None:
         """Test that status_code defaults to 0."""
@@ -726,3 +753,205 @@ class TestRealWorldScenarios:
         assert result.output["successful"] == 75
         assert result.output["failed"] == 25
         assert result.status_code == 1
+
+
+class TestSuccessStatusCodeConsistency:
+    """Test validation of status_code/success consistency.
+
+    The validator enforces STRICT consistency:
+    - success=True: status_code must be 0 or 200-299
+    - success=False: status_code must NOT be in 200-299 range
+    """
+
+    def test_success_true_with_invalid_status_code_rejected(self) -> None:
+        """Test that success=True with non-success status_code raises ValueError."""
+        invalid_codes = [1, 127, 300, 400, 404, 500]
+
+        for code in invalid_codes:
+            with pytest.raises(ValidationError) as exc_info:
+                ModelToolExecutionResult(
+                    tool_name="test_tool",
+                    success=True,
+                    status_code=code,
+                )
+
+            assert "Inconsistent state" in str(exc_info.value)
+            assert "success=True" in str(exc_info.value)
+
+    def test_success_false_with_http_success_code_rejected(self) -> None:
+        """Test that success=False with HTTP success status_code raises ValueError."""
+        http_success_codes = [200, 201, 204, 250, 299]
+
+        for code in http_success_codes:
+            with pytest.raises(ValidationError) as exc_info:
+                ModelToolExecutionResult(
+                    tool_name="test_tool",
+                    success=False,
+                    error="Some error",
+                    status_code=code,
+                )
+
+            assert "Inconsistent state" in str(exc_info.value)
+            assert "success=False" in str(exc_info.value)
+            assert "HTTP success range" in str(exc_info.value)
+
+    def test_success_true_with_error_rejected(self) -> None:
+        """Test that success=True with error message raises ValueError."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelToolExecutionResult(
+                tool_name="test_tool",
+                success=True,
+                error="This should not be allowed",
+            )
+
+        assert "Inconsistent state" in str(exc_info.value)
+        assert "success=True" in str(exc_info.value)
+        assert "error is set" in str(exc_info.value)
+
+    def test_success_false_auto_sets_error_message(self) -> None:
+        """Test that success=False without error auto-sets default message."""
+        result = ModelToolExecutionResult(
+            tool_name="test_tool",
+            success=False,
+        )
+
+        assert result.success is False
+        assert result.error is not None
+        assert "Execution failed" in result.error
+
+    def test_success_false_auto_sets_status_code_to_1(self) -> None:
+        """Test that success=False with status_code=0 auto-corrects to 1."""
+        result = ModelToolExecutionResult(
+            tool_name="test_tool",
+            success=False,
+            status_code=0,  # Will be auto-corrected to 1
+        )
+
+        assert result.success is False
+        assert result.status_code == 1  # Auto-corrected from 0
+
+    def test_success_false_preserves_non_zero_status_code(self) -> None:
+        """Test that success=False preserves non-zero status codes."""
+        result = ModelToolExecutionResult(
+            tool_name="test_tool",
+            success=False,
+            error="Test error",
+            status_code=404,
+        )
+
+        assert result.success is False
+        assert result.status_code == 404  # Preserved
+
+    def test_success_true_allows_http_success_codes(self) -> None:
+        """Test that success=True allows HTTP success range codes."""
+        result_200 = ModelToolExecutionResult(
+            tool_name="test_tool",
+            success=True,
+            status_code=200,
+        )
+        result_201 = ModelToolExecutionResult(
+            tool_name="test_tool",
+            success=True,
+            status_code=201,
+        )
+        result_299 = ModelToolExecutionResult(
+            tool_name="test_tool",
+            success=True,
+            status_code=299,
+        )
+
+        assert result_200.status_code == 200
+        assert result_201.status_code == 201
+        assert result_299.status_code == 299
+
+    def test_boundary_status_codes(self) -> None:
+        """Test boundary conditions for status code ranges."""
+        # 199 is valid for success=True? No - only 0 or 200-299
+        with pytest.raises(ValidationError):
+            ModelToolExecutionResult(
+                tool_name="test_tool",
+                success=True,
+                status_code=199,
+            )
+
+        # 200 is valid for success=True
+        result_200 = ModelToolExecutionResult(
+            tool_name="test_tool",
+            success=True,
+            status_code=200,
+        )
+        assert result_200.status_code == 200
+
+        # 299 is valid for success=True
+        result_299 = ModelToolExecutionResult(
+            tool_name="test_tool",
+            success=True,
+            status_code=299,
+        )
+        assert result_299.status_code == 299
+
+        # 300 is invalid for success=True
+        with pytest.raises(ValidationError):
+            ModelToolExecutionResult(
+                tool_name="test_tool",
+                success=True,
+                status_code=300,
+            )
+
+        # 300 is valid for success=False
+        result_300_fail = ModelToolExecutionResult(
+            tool_name="test_tool",
+            success=False,
+            error="Redirect error",
+            status_code=300,
+        )
+        assert result_300_fail.status_code == 300
+
+
+class TestHelperMethods:
+    """Test helper methods on ModelToolExecutionResult."""
+
+    def test_is_success_method(self) -> None:
+        """Test is_success() method returns correct value."""
+        success_result = ModelToolExecutionResult(
+            tool_name="test_tool",
+            success=True,
+        )
+        failure_result = ModelToolExecutionResult(
+            tool_name="test_tool",
+            success=False,
+            error="Error",
+        )
+
+        assert success_result.is_success() is True
+        assert failure_result.is_success() is False
+
+    def test_is_failure_method(self) -> None:
+        """Test is_failure() method returns correct value."""
+        success_result = ModelToolExecutionResult(
+            tool_name="test_tool",
+            success=True,
+        )
+        failure_result = ModelToolExecutionResult(
+            tool_name="test_tool",
+            success=False,
+            error="Error",
+        )
+
+        assert success_result.is_failure() is False
+        assert failure_result.is_failure() is True
+
+    def test_has_error_method(self) -> None:
+        """Test has_error() method returns correct value."""
+        success_result = ModelToolExecutionResult(
+            tool_name="test_tool",
+            success=True,
+        )
+        failure_result = ModelToolExecutionResult(
+            tool_name="test_tool",
+            success=False,
+            error="Error message",
+        )
+
+        assert success_result.has_error() is False
+        assert failure_result.has_error() is True

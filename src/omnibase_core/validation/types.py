@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Type validation tools for ONEX compliance.
 
@@ -9,6 +7,8 @@ This module provides validation functions for proper type usage:
 - Pydantic pattern validation
 - Generic type validation
 """
+
+from __future__ import annotations
 
 import argparse
 import ast

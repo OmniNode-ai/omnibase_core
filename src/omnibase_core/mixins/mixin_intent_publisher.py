@@ -131,7 +131,7 @@ class MixinIntentPublisher:
             container: ModelContainer with services
 
         Raises:
-            ValueError: If required kafka_client service is missing
+            OnexError: If required kafka_client service is missing
 
         Example:
             def __init__(self, container):

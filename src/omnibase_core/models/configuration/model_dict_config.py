@@ -1,14 +1,12 @@
-from typing import Any
-
-from pydantic import Field
-
 """
 Dictionary Configuration Model for ONEX Configuration System.
 
 Strongly typed model for dictionary return types.
 """
 
-from pydantic import BaseModel
+from typing import Any
+
+from pydantic import BaseModel, Field
 
 
 class ModelDictConfig(BaseModel):

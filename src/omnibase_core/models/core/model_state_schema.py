@@ -1,10 +1,8 @@
-from pydantic import Field
-
 """
 State schema model for input/output state definitions in ONEX contracts.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .model_generic_properties import ModelGenericProperties
 

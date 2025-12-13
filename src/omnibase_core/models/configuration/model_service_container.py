@@ -1,10 +1,8 @@
-from pydantic import Field
-
 """
 Service container model.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelServiceContainer(BaseModel):

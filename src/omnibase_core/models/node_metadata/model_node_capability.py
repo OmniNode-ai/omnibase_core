@@ -1,13 +1,3 @@
-from __future__ import annotations
-
-from typing import Union
-from uuid import UUID, uuid4
-
-from pydantic import BaseModel, Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Node Capability Model
 
@@ -15,8 +5,17 @@ Replaces EnumNodeCapability with a proper model that includes metadata,
 descriptions, and dependencies for each capability.
 """
 
+from __future__ import annotations
+
+from typing import Union
+from uuid import UUID, uuid4
+
+from pydantic import BaseModel, Field
+
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_performance_impact import EnumPerformanceImpact
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 from omnibase_core.utils.util_uuid_utilities import uuid_from_string
 

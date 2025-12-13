@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 ModelEnhancedLogger
 
@@ -13,6 +11,7 @@ Safe Runtime Imports (OK to import at module level):
 - Standard library modules only
 """
 
+from __future__ import annotations
 
 from typing import Any
 
@@ -34,9 +33,9 @@ class ModelEnhancedLogger:
     ) -> None:
         """Emit log event synchronously."""
         if level.value >= self.level.value:
-            from datetime import datetime
+            from datetime import UTC, datetime
 
-            datetime.now().isoformat()
+            datetime.now(UTC).isoformat()
 
     async def emit_log_event_async(
         self,

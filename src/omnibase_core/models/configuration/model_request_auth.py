@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 Request authentication configuration model.
 """
 
 from typing import Any
 
-from pydantic import BaseModel, SecretStr, field_serializer
+from pydantic import BaseModel, Field, SecretStr, field_serializer
 
 
 class ModelRequestAuth(BaseModel):

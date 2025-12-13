@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 Request Parameter Model for ONEX Configuration System.
 
 Strongly typed model for HTTP request parameters.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelRequestParameter(BaseModel):

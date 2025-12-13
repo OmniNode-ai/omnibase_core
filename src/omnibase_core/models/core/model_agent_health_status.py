@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
 
@@ -19,7 +19,7 @@ class ModelAgentHealthStatus(BaseModel):
     system_metrics: ModelSystemMetrics = Field(description="System-level metrics")
     service_uptime_seconds: int = Field(description="Service uptime in seconds")
     last_updated: datetime = Field(
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(UTC),
         description="Health status last update timestamp",
     )
     alerts: list[str] = Field(default_factory=list, description="Current system alerts")

@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Output Metadata Model
 
@@ -7,8 +5,7 @@ Strongly typed model for output metadata to replace Dict[str, Any] usage.
 Follows ONEX canonical patterns with strict typing - no Any types allowed.
 """
 
-
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelOutputMetadataItem(BaseModel):

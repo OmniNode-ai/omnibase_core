@@ -1,17 +1,13 @@
-from typing import Optional
-
-from pydantic import Field
-
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Custom settings model.
 """
 
 from datetime import UTC, datetime
+from typing import Optional
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.types.type_serializable_value import (
     SerializableValue,
     SerializedDict,

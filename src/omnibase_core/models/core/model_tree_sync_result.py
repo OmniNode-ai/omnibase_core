@@ -1,6 +1,13 @@
-from pydantic import Field
+"""
+Model for .tree and filesystem sync validation results.
+"""
+
+from pathlib import Path
+
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_tree_sync_status import EnumTreeSyncStatus
+from omnibase_core.models.results.model_onex_message import ModelOnexMessage
 
 # === OmniNode:Metadata ===
 # author: OmniNode Team
@@ -24,17 +31,6 @@ from omnibase_core.enums.enum_tree_sync_status import EnumTreeSyncStatus
 # uuid: f8e726da-f556-48ef-8b60-37be6cf292ee
 # version: 1.0.0
 # === /OmniNode:Metadata ===
-
-
-"""
-Model for .tree and filesystem sync validation results.
-"""
-
-from pathlib import Path
-
-from pydantic import BaseModel
-
-from omnibase_core.models.results.model_onex_message import ModelOnexMessage
 
 
 class ModelTreeSyncResult(BaseModel):

@@ -7,6 +7,8 @@ of the ModelGenericMetadata implementation.
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 from omnibase_core.models.metadata.model_generic_metadata import ModelGenericMetadata
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 

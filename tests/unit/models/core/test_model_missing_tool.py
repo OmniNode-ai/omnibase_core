@@ -7,6 +7,8 @@ error analysis, business intelligence, and operational insights.
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 from omnibase_core.enums.enum_tool_category import EnumToolCategory
 from omnibase_core.enums.enum_tool_criticality import EnumToolCriticality
 from omnibase_core.enums.enum_tool_missing_reason import EnumToolMissingReason

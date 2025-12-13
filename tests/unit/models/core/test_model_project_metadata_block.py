@@ -14,6 +14,8 @@ from uuid import uuid4
 import pytest
 from pydantic import ValidationError
 
+pytestmark = pytest.mark.unit
+
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_metadata import EnumLifecycle, EnumMetaType
 from omnibase_core.models.core.model_entrypoint import EntrypointBlock

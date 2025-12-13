@@ -42,7 +42,7 @@ See Also:
     - omnibase_core.nodes.node_compute: NodeCompute.process() uses this model
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -112,4 +112,4 @@ class ModelComputeInput[T_Input](BaseModel):
     cache_enabled: bool = True
     parallel_enabled: bool = False
     metadata: SerializedDict = Field(default_factory=dict)
-    timestamp: datetime = Field(default_factory=datetime.now)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))

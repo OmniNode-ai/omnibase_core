@@ -33,6 +33,8 @@ from typing import TYPE_CHECKING, TypedDict
 if TYPE_CHECKING:
     from omnibase_core.models.discovery.model_resource_usage import ModelResourceUsage
 
+__all__ = ["TypedDictToolPerformanceSummary"]
+
 
 class TypedDictToolPerformanceSummary(TypedDict, total=False):
     """Performance summary for tool execution.

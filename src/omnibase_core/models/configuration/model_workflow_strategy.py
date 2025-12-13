@@ -1,11 +1,8 @@
-from pydantic import Field
-
 """
 Workflow strategy model.
 """
 
-
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .model_matrix_strategy import ModelMatrixStrategy
 

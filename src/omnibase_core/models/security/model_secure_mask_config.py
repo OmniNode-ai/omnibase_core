@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 ModelSecureMaskConfig: Configuration for secure credential masking.
 
 This model represents the configuration for secure credential masking operations.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelSecureMaskConfig(BaseModel):

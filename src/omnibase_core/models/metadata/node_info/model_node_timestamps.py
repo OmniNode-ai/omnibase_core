@@ -1,3 +1,10 @@
+"""
+Node Timestamps Model.
+
+Timing and lifecycle information for nodes.
+Follows ONEX one-model-per-file architecture.
+"""
+
 from __future__ import annotations
 
 from datetime import UTC, datetime
@@ -5,13 +12,6 @@ from datetime import UTC, datetime
 from pydantic import BaseModel, Field
 
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
-
-"""
-Node Timestamps Model.
-
-Timing and lifecycle information for nodes.
-Follows ONEX one-model-per-file architecture.
-"""
 
 
 class ModelNodeTimestamps(BaseModel):

@@ -12,6 +12,8 @@ Tests all aspects of the ONEX URI model including:
 import pytest
 from pydantic import ValidationError
 
+pytestmark = pytest.mark.unit
+
 from omnibase_core.models.examples.model_uri import ModelOnexUri
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 

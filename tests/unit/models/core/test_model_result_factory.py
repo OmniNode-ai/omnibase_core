@@ -4,7 +4,10 @@ Tests for ModelResultFactory.
 Comprehensive tests for result factory pattern including success/error builders.
 """
 
+import pytest
 from pydantic import BaseModel, Field
+
+pytestmark = pytest.mark.unit
 
 from omnibase_core.models.core.model_result_factory import ModelResultFactory
 

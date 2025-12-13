@@ -9,6 +9,8 @@ from typing import Any
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 from omnibase_core.models.core.model_custom_fields_accessor import (
     ModelCustomFieldsAccessor,
 )

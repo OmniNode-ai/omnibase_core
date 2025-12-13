@@ -1,7 +1,7 @@
 """Service Registry - Implementation of ProtocolServiceRegistry."""
 
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, Literal, TypeVar, cast
 from uuid import UUID, uuid4
 
@@ -743,7 +743,7 @@ class ServiceRegistry:
             scope_distribution=scope_dist,
             health_summary=health_dist,
             average_resolution_time_ms=avg_resolution_time,
-            last_updated=datetime.now(),
+            last_updated=datetime.now(UTC),
         )
 
     async def validate_service_health(self, registration_id: UUID) -> Any:
@@ -780,7 +780,7 @@ class ServiceRegistry:
 
         registration = self._registrations[registration_id]
         registration.service_metadata.configuration.update(configuration)
-        registration.service_metadata.last_modified_at = datetime.now()
+        registration.service_metadata.last_modified_at = datetime.now(UTC)
 
         return True
 

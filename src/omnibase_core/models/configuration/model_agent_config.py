@@ -5,7 +5,7 @@ This model defines the configuration structure for Claude Code agents,
 including authentication, permissions, environment settings, and safety parameters.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -42,7 +42,7 @@ class ModelAgentConfig(BaseModel):
         description="Hook scripts for agent lifecycle events",
     )
     created_at: datetime = Field(
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(UTC),
         description="Configuration creation timestamp",
     )
     updated_at: datetime | None = Field(

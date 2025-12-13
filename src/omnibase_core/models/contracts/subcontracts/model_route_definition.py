@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Route Definition Model.
 
@@ -11,7 +9,7 @@ Strict typing is enforced: No Any types allowed in implementation.
 
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 Convert legacy health dict[str, Any] to TypedDict.
 """
 
+__all__ = ["convert_health_to_typed_dict"]
 
 from .typed_dict_health_status import TypedDictHealthStatus
 from .typed_dict_legacy_health import TypedDictLegacyHealth

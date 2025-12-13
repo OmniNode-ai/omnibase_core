@@ -7,7 +7,7 @@ patterns in ModelEffectTransaction and ModelTransaction.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
 
@@ -74,7 +74,7 @@ class ModelTransactionOperation(BaseModel):
         description="Operation data as typed model",
     )
     timestamp: datetime = Field(
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(UTC),
         description="When the operation was recorded",
     )
 
@@ -102,7 +102,7 @@ class ModelTransactionOperation(BaseModel):
         return cls(
             name=name,
             data=operation_data,
-            timestamp=timestamp or datetime.now(),
+            timestamp=timestamp or datetime.now(UTC),
         )
 
 

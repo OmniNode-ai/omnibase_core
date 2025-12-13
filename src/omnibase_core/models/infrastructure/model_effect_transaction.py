@@ -8,7 +8,7 @@ sequences in the ONEX 4-Node Architecture.
 
 import asyncio
 from collections.abc import Callable
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID
 
 from omnibase_core.enums.enum_effect_types import EnumTransactionState
@@ -55,7 +55,7 @@ class ModelEffectTransaction:
         self.rollback_operations: list[tuple[str, Callable[[], object]]] = []
         self.rollback_failures: list[str] = []  # Track which rollbacks failed
         self._rollback_errors: list[ModelOnexError] = []  # Structured error tracking
-        self.started_at = datetime.now()
+        self.started_at = datetime.now(UTC)
         self.committed_at: datetime | None = None
 
     def add_operation(
@@ -74,7 +74,7 @@ class ModelEffectTransaction:
         operation = ModelTransactionOperation.create(
             name=operation_name,
             data=typed_data,
-            timestamp=datetime.now(),
+            timestamp=datetime.now(UTC),
         )
         self.operations.append(operation)
 
@@ -84,7 +84,7 @@ class ModelEffectTransaction:
     async def commit(self) -> None:
         """Commit ModelEffectTransaction - marks as successful."""
         self.state = EnumTransactionState.COMMITTED
-        self.committed_at = datetime.now()
+        self.committed_at = datetime.now(UTC)
 
     async def rollback(self) -> tuple[bool, list[ModelOnexError]]:
         """

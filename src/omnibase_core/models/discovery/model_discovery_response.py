@@ -5,7 +5,7 @@ Model for discovery client responses with proper typing and validation
 following ONEX canonical patterns.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
@@ -135,7 +135,7 @@ class ModelDiscoveryResponse(BaseModel):
             total_count=len(tools),
             filtered_count=len(tools),
             response_time_ms=response_time_ms,
-            completed_at=datetime.now(),
+            completed_at=datetime.now(UTC),
             **kwargs,
         )
 
@@ -164,7 +164,7 @@ class ModelDiscoveryResponse(BaseModel):
             status="error",
             message=message,
             errors=errors or [],
-            completed_at=datetime.now(),
+            completed_at=datetime.now(UTC),
             **kwargs,
         )
 
@@ -200,7 +200,7 @@ class ModelDiscoveryResponse(BaseModel):
             timeout_occurred=True,
             partial_response=len(tools) > 0,
             response_time_ms=timeout_seconds * 1000,
-            completed_at=datetime.now(),
+            completed_at=datetime.now(UTC),
             **kwargs,
         )
 
@@ -236,6 +236,6 @@ class ModelDiscoveryResponse(BaseModel):
             message=f"Client {client_id} status",
             client_id=client_uuid,
             client_stats=client_stats,
-            completed_at=datetime.now(),
+            completed_at=datetime.now(UTC),
             **kwargs,
         )

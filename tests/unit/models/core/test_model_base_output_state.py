@@ -4,6 +4,10 @@ Test suite for ModelBaseOutputState.
 
 from datetime import datetime
 
+import pytest
+
+pytestmark = pytest.mark.unit
+
 from omnibase_core.models.core.model_base_output_state import ModelBaseOutputState
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 

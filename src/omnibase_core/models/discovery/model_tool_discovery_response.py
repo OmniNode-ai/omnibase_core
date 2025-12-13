@@ -5,7 +5,7 @@ Event published by the registry in response to TOOL_DISCOVERY_REQUEST events.
 Contains discovered tools matching the request filters.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -50,7 +50,7 @@ class ModelDiscoveredTool(BaseModel):
         description="Health status (healthy, warning, critical, unknown)",
     )
     last_seen: datetime = Field(
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(UTC),
         description="When this tool was last seen",
     )
 

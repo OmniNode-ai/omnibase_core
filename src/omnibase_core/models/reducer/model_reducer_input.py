@@ -46,7 +46,7 @@ See Also:
     - docs/guides/node-building/05_REDUCER_NODE_TUTORIAL.md: Reducer node tutorial
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -120,4 +120,4 @@ class ModelReducerInput[T_Input](BaseModel):
     batch_size: int = Field(default=1000, gt=0, le=10000)
     window_size_ms: int = Field(default=5000, ge=1000, le=60000)
     metadata: dict[str, Any] = Field(default_factory=dict)
-    timestamp: datetime = Field(default_factory=datetime.now)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))

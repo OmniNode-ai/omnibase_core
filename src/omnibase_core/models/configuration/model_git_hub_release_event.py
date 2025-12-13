@@ -1,10 +1,10 @@
-from typing import Self
-
-from pydantic import BaseModel, Field
-
 """
 GitHub release event model to replace Dict[str, Any] usage.
 """
+
+from typing import Self
+
+from pydantic import BaseModel, Field
 
 from .model_git_hub_release import ModelGitHubRelease
 from .model_git_hub_repository import ModelGitHubRepository

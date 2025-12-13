@@ -654,11 +654,14 @@ class TestModelRouteHop:
         assert hop.metadata.custom_fields["key_0"] == "value_0"
         assert hop.metadata.custom_fields["key_999"] == "value_999"
 
-        # Test with unicode custom_fields
+        # Test with unicode custom_fields - using real unicode characters
         unicode_custom_fields = {
             "chinese": "测试",
-            "emoji": "rocket_symbol",
-            "special": "exclamation_at_hash",
+            "emoji": "\U0001f680",  # rocket emoji
+            "special": "!@#$%^&*()",
+            "japanese": "テスト",
+            "arabic": "اختبار",
+            "cyrillic": "тест",
         }
         metadata = ModelRouteHopMetadata(custom_fields=unicode_custom_fields)
         hop = ModelRouteHop(
@@ -670,8 +673,11 @@ class TestModelRouteHop:
         )
 
         assert hop.metadata.custom_fields["chinese"] == "测试"
-        assert hop.metadata.custom_fields["emoji"] == "rocket_symbol"
-        assert hop.metadata.custom_fields["special"] == "exclamation_at_hash"
+        assert hop.metadata.custom_fields["emoji"] == "\U0001f680"
+        assert hop.metadata.custom_fields["special"] == "!@#$%^&*()"
+        assert hop.metadata.custom_fields["japanese"] == "テスト"
+        assert hop.metadata.custom_fields["arabic"] == "اختبار"
+        assert hop.metadata.custom_fields["cyrillic"] == "тест"
 
         # Test with very large processing duration
         hop = ModelRouteHop(

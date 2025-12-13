@@ -6,8 +6,9 @@ Datetime parsing utilities for TypedDict conversions.
 Provides consistent datetime parsing across the codebase.
 """
 
+__all__ = ["parse_datetime"]
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 
 def parse_datetime(value: object) -> datetime:
@@ -20,6 +21,6 @@ def parse_datetime(value: object) -> datetime:
             return datetime.fromisoformat(value.replace("Z", "+00:00"))
         except ValueError:
             # Fallback to current datetime for invalid strings
-            return datetime.now()
+            return datetime.now(UTC)
     # Default for empty/None values
-    return datetime.now()
+    return datetime.now(UTC)

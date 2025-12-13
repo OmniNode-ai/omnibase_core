@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Pattern validation tools for ONEX compliance.
 
@@ -10,6 +8,7 @@ This module provides validation functions for various code patterns:
 - Naming convention validation
 """
 
+from __future__ import annotations
 
 import argparse
 import ast

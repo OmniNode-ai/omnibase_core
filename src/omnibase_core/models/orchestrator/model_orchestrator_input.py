@@ -50,7 +50,7 @@ See Also:
     - docs/guides/node-building/06_ORCHESTRATOR_NODE_TUTORIAL.md: Tutorial
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -138,7 +138,8 @@ class ModelOrchestratorInput(BaseModel):
         default_factory=dict, description="Additional workflow metadata"
     )
     timestamp: datetime = Field(
-        default_factory=datetime.now, description="Workflow creation timestamp"
+        default_factory=lambda: datetime.now(UTC),
+        description="Workflow creation timestamp",
     )
 
     model_config = ConfigDict(

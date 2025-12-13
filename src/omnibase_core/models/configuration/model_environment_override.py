@@ -1,10 +1,10 @@
-from pydantic import BaseModel, Field
-
 """
 Environment Override Model for ONEX Configuration System.
 
 Strongly typed model for environment variable overrides.
 """
+
+from pydantic import BaseModel, Field
 
 
 class ModelEnvironmentConfigOverride(BaseModel):

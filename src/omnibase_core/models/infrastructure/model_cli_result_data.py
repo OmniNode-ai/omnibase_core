@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field
-
 """
 CLI result data model.
 
@@ -9,10 +5,11 @@ CLI result data model with typed fields for command execution results.
 Follows ONEX one-model-per-file naming conventions.
 """
 
+from __future__ import annotations
 
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties

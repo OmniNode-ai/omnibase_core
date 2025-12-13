@@ -1,14 +1,12 @@
-from pydantic import Field
-
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Service Status Model.
 
 Status of a system service.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelServiceStatus(BaseModel):

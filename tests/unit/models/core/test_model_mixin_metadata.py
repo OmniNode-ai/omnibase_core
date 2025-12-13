@@ -14,6 +14,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 from omnibase_core.models.core import (
     ModelMixinCodePatterns,
     ModelMixinConfigField,

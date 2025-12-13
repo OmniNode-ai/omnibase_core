@@ -1,9 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field, ValidationInfo, field_validator
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Discriminated union model for migration conflicts.
 
@@ -11,10 +5,13 @@ Replaces Union[TypedDictMigrationDuplicateConflictDict, TypedDictMigrationNameCo
 with ONEX-compatible discriminated union pattern.
 """
 
-from pydantic import BaseModel
+from __future__ import annotations
+
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_migration_conflict_type import EnumMigrationConflictType
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.validation.migration_types import (
     TypedDictMigrationDuplicateConflictDict,
     TypedDictMigrationNameConflictDict,

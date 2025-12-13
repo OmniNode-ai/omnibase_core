@@ -29,7 +29,7 @@ Thread Safety:
 Extracted from node_orchestrator.py to eliminate embedded class anti-pattern.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -159,7 +159,7 @@ class ModelAction(BaseModel):
     )
 
     created_at: datetime = Field(
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(UTC),
         description="Timestamp when action was created",
     )
 

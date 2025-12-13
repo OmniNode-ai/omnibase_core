@@ -1,9 +1,3 @@
-from __future__ import annotations
-
-import hashlib
-
-from pydantic import Field
-
 """
 Generic typed metrics model.
 
@@ -11,10 +5,12 @@ Unified generic model replacing type-specific metrics variants.
 Follows ONEX one-model-per-file naming conventions.
 """
 
+from __future__ import annotations
 
+import hashlib
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 from omnibase_core.types.constraints import SimpleValueType

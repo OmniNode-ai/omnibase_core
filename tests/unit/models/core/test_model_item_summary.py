@@ -9,6 +9,8 @@ from uuid import UUID
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 from omnibase_core.enums.enum_item_type import EnumItemType
 from omnibase_core.models.core.model_item_summary import ModelItemSummary
 from omnibase_core.models.primitives.model_semver import ModelSemVer

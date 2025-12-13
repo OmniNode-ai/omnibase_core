@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 Raw Configuration Model for ONEX Configuration System.
 
 Strongly typed model for unvalidated configuration data loaded from YAML files.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.configuration.model_raw_registry_mode import (
     ModelRawRegistryMode,

@@ -1,11 +1,3 @@
-from __future__ import annotations
-
-from datetime import datetime
-
-from pydantic import Field, ValidationInfo, field_validator
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Time-Based Model.
 
@@ -13,14 +5,16 @@ Universal time-based model replacing ModelDuration, ModelTimeout, and timing
 aspects of ModelProgress with a single generic type-safe implementation.
 """
 
+from __future__ import annotations
 
-from datetime import UTC, timedelta
+from datetime import UTC, datetime, timedelta
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, ValidationInfo, field_validator, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_runtime_category import EnumRuntimeCategory
 from omnibase_core.enums.enum_time_unit import EnumTimeUnit
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 

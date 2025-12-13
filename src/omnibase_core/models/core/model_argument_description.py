@@ -1,10 +1,3 @@
-from typing import Any
-
-from pydantic import Field
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 CLI Argument Description Model
 
@@ -12,9 +5,13 @@ Defines the structure for CLI arguments discovered from node contracts.
 This enables dynamic CLI argument parsing based on contract specifications.
 """
 
-from pydantic import BaseModel
+from typing import Any
+
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_argument_type import EnumArgumentType
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelArgumentDescription(BaseModel):

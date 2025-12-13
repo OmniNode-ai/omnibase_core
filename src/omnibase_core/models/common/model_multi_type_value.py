@@ -1,13 +1,3 @@
-from __future__ import annotations
-
-import math
-from typing import Literal, Union
-
-from pydantic import BaseModel, Field, model_validator
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 ModelMultiTypeValue
 
@@ -54,6 +44,16 @@ Safe Runtime Imports (OK to import at module level):
 - omnibase_core.errors modules
 - pydantic modules
 """
+
+from __future__ import annotations
+
+import math
+from typing import Literal, Union
+
+from pydantic import BaseModel, Field, model_validator
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelMultiTypeValue(BaseModel):

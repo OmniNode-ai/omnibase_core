@@ -15,7 +15,7 @@ and contract-driven orchestration.
 
 import asyncio
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 from uuid import UUID, uuid4
@@ -401,7 +401,7 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
             ModelOnexError: If execution fails
         """
         correlation_id = uuid4()
-        start_time = datetime.now()
+        start_time = datetime.now(UTC)
 
         # Emit start event via structured logging
         emit_log_event(
@@ -421,7 +421,7 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
             # Delegate to process method
             result = await self.process_async(input_state)
 
-            end_time = datetime.now()
+            end_time = datetime.now(UTC)
             duration_ms = int((end_time - start_time).total_seconds() * 1000)
 
             # Emit success event via structured logging

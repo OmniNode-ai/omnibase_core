@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -80,7 +80,7 @@ class ModelOnexEvent(BaseModel):
         description="Optional event metadata",
     )
     timestamp: datetime = Field(
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(UTC),
         description="Event timestamp",
     )
     event_id: UUID = Field(default_factory=uuid4, description="Unique event identifier")

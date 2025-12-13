@@ -1,11 +1,3 @@
-from __future__ import annotations
-
-from datetime import datetime
-
-from pydantic import Field
-
-from omnibase_core.types.type_serializable_value import SerializedDict
-
 """
 CLI Execution Model.
 
@@ -13,11 +5,16 @@ Represents CLI command execution context with timing, configuration,
 and state tracking for comprehensive command execution management.
 """
 
+from __future__ import annotations
 
-from datetime import UTC
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
+
+from pydantic import Field
+
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 # Use object type for CLI command option values.
 # Avoids primitive soup union anti-pattern while maintaining flexibility.
@@ -98,7 +95,7 @@ class ModelCliExecution(BaseModel):
 
     # Timing information
     start_time: datetime = Field(
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(UTC),
         description="Execution start time",
     )
     end_time: datetime | None = Field(default=None, description="Execution end time")
@@ -194,7 +191,7 @@ class ModelCliExecution(BaseModel):
             if self.start_time.tzinfo is not None:
                 current_time = datetime.now(UTC)
             else:
-                current_time = datetime.now()
+                current_time = datetime.now(UTC)
             elapsed = current_time - self.start_time
         else:
             elapsed = self.end_time - self.start_time
@@ -234,7 +231,7 @@ class ModelCliExecution(BaseModel):
         """Mark execution as started."""
         self.status = EnumExecutionStatus.RUNNING
         if not hasattr(self, "_start_time_set"):
-            self.start_time = datetime.now()
+            self.start_time = datetime.now(UTC)
             self._start_time_set = True
 
     def mark_completed(self) -> None:
@@ -242,13 +239,13 @@ class ModelCliExecution(BaseModel):
         # Only mark as success if currently running
         if self.status == EnumExecutionStatus.RUNNING:
             self.status = EnumExecutionStatus.SUCCESS
-        self.end_time = datetime.now()
+        self.end_time = datetime.now(UTC)
         self.progress_percentage = 100.0
 
     def mark_failed(self, reason: str | None = None) -> None:
         """Mark execution as failed."""
         self.status = EnumExecutionStatus.FAILED
-        self.end_time = datetime.now()
+        self.end_time = datetime.now(UTC)
         if reason:
             from omnibase_core.enums.enum_context_source import EnumContextSource
             from omnibase_core.enums.enum_context_type import EnumContextType
@@ -268,7 +265,7 @@ class ModelCliExecution(BaseModel):
     def mark_cancelled(self) -> None:
         """Mark execution as cancelled."""
         self.status = EnumExecutionStatus.CANCELLED
-        self.end_time = datetime.now()
+        self.end_time = datetime.now(UTC)
 
     def set_phase(self, phase: EnumExecutionPhase) -> None:
         """Set current execution phase."""

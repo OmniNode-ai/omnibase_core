@@ -1,6 +1,13 @@
-from typing import Optional
+"""
+Model for directory processing results.
+"""
 
-from pydantic import Field
+from pathlib import Path
+from typing import TYPE_CHECKING, Optional
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from .model_skipped_file_reason import ModelSkippedFileReason
 
 # === OmniNode:Metadata ===
 # author: OmniNode Team
@@ -25,16 +32,6 @@ from pydantic import Field
 # version: 1.0.0
 # === /OmniNode:Metadata ===
 
-"""
-Model for directory processing results.
-"""
-
-from pathlib import Path
-from typing import TYPE_CHECKING
-
-from pydantic import BaseModel, ConfigDict
-
-from .model_skipped_file_reason import ModelSkippedFileReason
 
 if TYPE_CHECKING:
     from .model_file_filter import ModelFileFilter

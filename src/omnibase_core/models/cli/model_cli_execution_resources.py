@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field
-
 """
 CLI Execution Resources Model.
 
@@ -9,10 +5,11 @@ Resource limits and constraints for CLI command execution.
 Part of the ModelCliExecution restructuring to reduce excessive string fields.
 """
 
+from __future__ import annotations
 
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.types.type_serializable_value import SerializedDict
 

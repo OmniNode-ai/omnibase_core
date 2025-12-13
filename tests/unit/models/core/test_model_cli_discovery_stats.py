@@ -23,6 +23,8 @@ class TestModelCliDiscoveryStatsCreation:
         """Test stats initializes with default values."""
         stats = ModelCliDiscoveryStats(version=DEFAULT_VERSION)
 
+        # Assert return type is ModelCliDiscoveryStats
+        assert isinstance(stats, ModelCliDiscoveryStats)
         assert stats.total_tools_discovered == 0
         assert stats.healthy_tools_count == 0
         assert stats.unhealthy_tools_count == 0
@@ -56,6 +58,8 @@ class TestModelCliDiscoveryStatsCreation:
             registries_total=5,
         )
 
+        # Assert return type is ModelCliDiscoveryStats
+        assert isinstance(stats, ModelCliDiscoveryStats)
         assert stats.total_tools_discovered == 50
         assert stats.healthy_tools_count == 45
         assert stats.unhealthy_tools_count == 5

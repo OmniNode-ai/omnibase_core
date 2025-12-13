@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 ModelCredentialAuditReport: Audit report for credential usage.
 
 This model represents the result of auditing credential usage in data structures.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelCredentialAuditReport(BaseModel):

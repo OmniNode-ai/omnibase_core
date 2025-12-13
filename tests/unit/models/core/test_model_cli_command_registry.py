@@ -10,6 +10,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 from omnibase_core.models.core.model_cli_command_definition import (
     ModelCliCommandDefinition,
 )

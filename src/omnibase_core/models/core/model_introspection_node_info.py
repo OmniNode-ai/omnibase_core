@@ -1,17 +1,16 @@
-from pydantic import Field, field_validator
-
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Model for node information in introspection metadata.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
-from omnibase_core.models.primitives.model_semver import parse_semver_from_string
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    parse_semver_from_string,
+)
 
 
 class ModelIntrospectionNodeInfo(BaseModel):
@@ -26,7 +25,7 @@ class ModelIntrospectionNodeInfo(BaseModel):
     author: str = Field(default="ONEX System", description="Author of the node")
     tool_type: str = Field(description="Type of tool")
     created_at: str = Field(
-        default_factory=lambda: datetime.now().isoformat(),
+        default_factory=lambda: datetime.now(UTC).isoformat(),
         description="Creation timestamp",
     )
 

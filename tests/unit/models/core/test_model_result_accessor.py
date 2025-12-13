@@ -6,7 +6,10 @@ Tests the specialized accessor for handling CLI execution results and metadata.
 
 from typing import Any
 
+import pytest
 from pydantic import Field
+
+pytestmark = pytest.mark.unit
 
 from omnibase_core.models.core import ModelResultAccessor
 from omnibase_core.models.primitives.model_semver import ModelSemVer

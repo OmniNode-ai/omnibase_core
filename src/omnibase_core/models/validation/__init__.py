@@ -1,5 +1,3 @@
-from typing import Union
-
 """
 Validation models for error tracking and validation results.
 

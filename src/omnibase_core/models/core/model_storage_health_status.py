@@ -1,13 +1,12 @@
-from uuid import UUID
-
 """
 Storage Health Status Model.
 
 Strongly-typed model for storage backend health status.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Optional
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -43,7 +42,8 @@ class ModelStorageHealthStatus(BaseModel):
     checkpoint_count: int = Field(description="Number of stored checkpoints", default=0)
 
     last_health_check: datetime = Field(
-        description="When health was last checked", default_factory=datetime.now
+        description="When health was last checked",
+        default_factory=lambda: datetime.now(UTC),
     )
 
     average_response_time_ms: int | None = Field(

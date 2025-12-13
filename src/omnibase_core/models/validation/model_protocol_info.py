@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 """
 Protocol Information Model.
 
 Dataclass for storing information about discovered protocols.
 """
 
+from __future__ import annotations
 
 from dataclasses import dataclass
 

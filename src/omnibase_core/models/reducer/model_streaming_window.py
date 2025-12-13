@@ -40,7 +40,7 @@ See Also:
 """
 
 from collections import deque
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 
@@ -77,7 +77,7 @@ class ModelStreamingWindow:
         self.window_size_ms = window_size_ms
         self.overlap_ms = overlap_ms
         self.buffer: deque[tuple[Any, datetime]] = deque()
-        self.window_start = datetime.now()
+        self.window_start = datetime.now(UTC)
 
     def add_item(self, item: Any) -> bool:
         """
@@ -89,7 +89,7 @@ class ModelStreamingWindow:
         Returns:
             True if window is full and ready to process
         """
-        current_time = datetime.now()
+        current_time = datetime.now(UTC)
         self.buffer.append((item, current_time))
 
         # Check if window is complete
@@ -123,4 +123,4 @@ class ModelStreamingWindow:
             # Clear all items
             self.buffer.clear()
 
-        self.window_start = datetime.now()
+        self.window_start = datetime.now(UTC)

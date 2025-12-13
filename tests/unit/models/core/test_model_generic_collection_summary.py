@@ -10,6 +10,8 @@ from uuid import UUID
 import pytest
 from pydantic import ValidationError
 
+pytestmark = pytest.mark.unit
+
 from omnibase_core.models.core.model_generic_collection_summary import (
     ModelGenericCollectionSummary,
 )

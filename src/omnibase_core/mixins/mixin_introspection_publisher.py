@@ -9,7 +9,7 @@ This mixin handles:
 """
 
 import re
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 from uuid import UUID, uuid4
@@ -103,7 +103,7 @@ class MixinIntrospectionPublisher:
                 calling_module=_COMPONENT_NAME,
                 calling_function="_publish_introspection_event",
                 calling_line=71,
-                timestamp=datetime.now().isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 node_id=node_id_raw if isinstance(node_id_raw, UUID) else None,
             )
             emit_log_event_sync(
@@ -116,7 +116,7 @@ class MixinIntrospectionPublisher:
                 calling_module=_COMPONENT_NAME,
                 calling_function="_publish_introspection_event",
                 calling_line=95,
-                timestamp=datetime.now().isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 node_id=node_id_raw if isinstance(node_id_raw, UUID) else None,
             )
             emit_log_event_sync(
@@ -130,7 +130,7 @@ class MixinIntrospectionPublisher:
                 calling_module=_COMPONENT_NAME,
                 calling_function="_publish_introspection_event",
                 calling_line=95,
-                timestamp=datetime.now().isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 node_id=node_id_raw if isinstance(node_id_raw, UUID) else None,
             )
             emit_log_event_sync(
@@ -168,7 +168,7 @@ class MixinIntrospectionPublisher:
                 calling_module=_COMPONENT_NAME,
                 calling_function="_gather_introspection_data",
                 calling_line=127,
-                timestamp=datetime.now().isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 node_id=node_id_raw if isinstance(node_id_raw, UUID) else None,
             )
             emit_log_event_sync(
@@ -402,7 +402,7 @@ class MixinIntrospectionPublisher:
                         calling_module=_COMPONENT_NAME,
                         calling_function="_publish_with_retry",
                         calling_line=350,
-                        timestamp=datetime.now().isoformat(),
+                        timestamp=datetime.now(UTC).isoformat(),
                         node_id=node_id_raw if isinstance(node_id_raw, UUID) else None,
                     )
                     emit_log_event_sync(

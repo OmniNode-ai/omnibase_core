@@ -1,9 +1,3 @@
-from typing import Optional
-
-from pydantic import Field
-
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-
 """
 Model for representing schema dictionaries with proper type safety.
 
@@ -12,8 +6,11 @@ a structured representation of schema dictionaries.
 """
 
 from collections.abc import Mapping
+from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
 class ModelSchemaDict(BaseModel):

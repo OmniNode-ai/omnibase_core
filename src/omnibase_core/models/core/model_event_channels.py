@@ -1,10 +1,8 @@
-from pydantic import Field
-
 """
 Event channels model for node introspection.
 """
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelEventChannels(BaseModel):

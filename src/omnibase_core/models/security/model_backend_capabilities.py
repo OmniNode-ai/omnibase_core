@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 ModelBackendCapabilities: Secret backend capability configuration.
 
 This model represents the capabilities supported by different secret backends.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelBackendCapabilities(BaseModel):

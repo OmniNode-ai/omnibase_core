@@ -29,7 +29,7 @@ import asyncio
 import signal
 import time
 from collections.abc import Callable
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 from uuid import UUID, uuid4
@@ -746,7 +746,7 @@ class MixinNodeService:
             calling_module=_COMPONENT_NAME,
             calling_function="service",
             calling_line=1,  # Required field
-            timestamp=datetime.now().isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             node_id=node_id,
         )
         emit_log_event_sync(LogLevel.INFO, message, context=context)
@@ -759,7 +759,7 @@ class MixinNodeService:
             calling_module=_COMPONENT_NAME,
             calling_function="service",
             calling_line=1,  # Required field
-            timestamp=datetime.now().isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             node_id=node_id,
         )
         emit_log_event_sync(LogLevel.WARNING, message, context=context)
@@ -772,7 +772,7 @@ class MixinNodeService:
             calling_module=_COMPONENT_NAME,
             calling_function="service",
             calling_line=1,  # Required field
-            timestamp=datetime.now().isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             node_id=node_id,
         )
         emit_log_event_sync(LogLevel.ERROR, message, context=context)

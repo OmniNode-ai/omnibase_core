@@ -11,7 +11,7 @@ Thread Safety:
 
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -63,4 +63,4 @@ class ModelReducerOutput[T_Output](BaseModel):
     )
 
     metadata: dict[str, str] = Field(default_factory=dict)
-    timestamp: datetime = Field(default_factory=datetime.now)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))

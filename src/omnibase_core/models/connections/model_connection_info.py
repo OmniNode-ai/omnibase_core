@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field
-
 """
 Connection info model to replace Dict[str, Any] usage for connection_info fields.
 
@@ -9,11 +5,13 @@ Restructured to use composition of focused sub-models instead of
 excessive string fields in a single large model.
 """
 
+from __future__ import annotations
+
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID
 
-from pydantic import BaseModel, field_serializer
+from pydantic import BaseModel, Field, field_serializer
 
 from omnibase_core.enums.enum_connection_state import EnumConnectionState
 from omnibase_core.models.connections.model_connection_auth import ModelConnectionAuth
@@ -162,7 +160,7 @@ class ModelConnectionInfo(BaseModel):
     def mark_connected(self) -> None:
         """Mark connection as established."""
         self.connection_state = EnumConnectionState.CONNECTED
-        self.established_at = datetime.now()
+        self.established_at = datetime.now(UTC)
 
     def mark_disconnected(self) -> None:
         """Mark connection as disconnected."""
@@ -170,7 +168,7 @@ class ModelConnectionInfo(BaseModel):
 
     def mark_used(self) -> None:
         """Mark connection as recently used."""
-        self.last_used_at = datetime.now()
+        self.last_used_at = datetime.now(UTC)
 
     @field_serializer("established_at", "last_used_at")
     def serialize_datetime(self, value: datetime | None) -> str | None:

@@ -5,7 +5,7 @@ Event published by nodes when they are shutting down to enable
 graceful deregistration from the service registry.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, cast
 from uuid import UUID
 
@@ -34,7 +34,8 @@ class ModelNodeShutdownEvent(ModelOnexEvent):
         description="Reason for shutdown (graceful, error, forced, maintenance)",
     )
     shutdown_initiated_at: datetime = Field(
-        default_factory=datetime.now, description="When the shutdown was initiated"
+        default_factory=lambda: datetime.now(UTC),
+        description="When the shutdown was initiated",
     )
     final_status: str = Field(
         default="stopping",

@@ -27,7 +27,12 @@ All ONEX event bus topics **MUST** use the `onex.` prefix to:
 
 ### Topic Format
 
-```
+Topics and event types follow a hierarchical naming structure:
+
+- **Topic name**: The full dot-separated path used for event bus routing (e.g., `onex.node.compute.completed`)
+- **Event type**: The action suffix that describes what happened (e.g., `completed`, `failed`, `started`)
+
+```text
 onex.<domain>.<entity>.<event-type>
 ```
 
@@ -35,7 +40,7 @@ onex.<domain>.<entity>.<event-type>
 - `onex.` - Required prefix (lowercase)
 - `<domain>` - Business domain (e.g., `node`, `workflow`, `discovery`)
 - `<entity>` - Specific entity type (e.g., `compute`, `effect`, `reducer`)
-- `<event-type>` - Event action (e.g., `created`, `completed`, `failed`)
+- `<event-type>` - Event action suffix (e.g., `created`, `completed`, `failed`)
 
 ### Examples
 
@@ -56,9 +61,9 @@ onex.<domain>.<entity>.<event-type>
 "onex.introspection.request"
 "onex.introspection.response"
 
-# System events
-"onex.system.health.check"
-"onex.system.metrics.collected"
+# System events (use reserved topic prefixes)
+"onex.health.node.check"
+"onex.metrics.node.collected"
 ```
 
 ### Reserved Topics
@@ -123,20 +128,39 @@ Handlers are classified by `EnumHandlerType` for routing purposes:
 ### Handler Registration Example
 
 ```python
-from omnibase_core.protocols.runtime import ProtocolHandler
 from omnibase_core.enums.enum_handler_type import EnumHandlerType
+from omnibase_core.models.core.model_onex_envelope import ModelOnexEnvelope
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.protocols.runtime import ProtocolHandler
+from omnibase_core.types.typed_dict_handler_metadata import TypedDictHandlerMetadata
+
 
 class MyHandler(ProtocolHandler):
+    """Custom HTTP handler implementation."""
+
     @property
     def handler_type(self) -> EnumHandlerType:
-        return EnumHandlerType.HTTP  # Required: classify the handler
+        """Return the handler type classification."""
+        return EnumHandlerType.HTTP
 
     async def execute(self, envelope: ModelOnexEnvelope) -> ModelOnexEnvelope:
-        # Required: implement execution logic
-        pass
+        """Execute the handler logic.
+
+        Args:
+            envelope: The incoming event envelope to process.
+
+        Returns:
+            The processed event envelope.
+        """
+        # Implement your handler logic here
+        return envelope
 
     def describe(self) -> TypedDictHandlerMetadata:
-        # Required: provide handler metadata
+        """Provide handler metadata for discovery and routing.
+
+        Returns:
+            Handler metadata dictionary.
+        """
         return {
             "name": "my_http_handler",
             "version": ModelSemVer(major=1, minor=0, patch=0),
@@ -168,7 +192,7 @@ version = ModelSemVer(major=1, minor=0, patch=0)  # 1.0.0
 
 Profile tags follow a hierarchical naming convention:
 
-```
+```text
 <category>:<value>
 ```
 
@@ -277,7 +301,7 @@ event_handling = ModelEventHandlingSubcontract(
 
 ### Format Specification
 
-```
+```text
 <semver>:<sha256-first-N-hex-chars>
 ```
 
@@ -288,7 +312,7 @@ event_handling = ModelEventHandlingSubcontract(
 
 ### Examples
 
-```
+```text
 1.0.0:8fa1e2b4c9d1
 0.4.0:abcdef123456
 2.1.3-beta.1:deadbeef0000
@@ -360,7 +384,7 @@ name: node_data_transformer_compute
 
 Model files follow `model_<name>.py` convention:
 
-```
+```text
 models/
   core/
     model_onex_envelope.py

@@ -21,7 +21,10 @@ from omnibase_core.constants.constants_effect_limits import (
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_effect_handler_type import EnumEffectHandlerType
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 
 from .model_effect_circuit_breaker import ModelEffectCircuitBreaker
 from .model_effect_contract_metadata import ModelEffectContractMetadata
@@ -50,9 +53,7 @@ class ModelEffectSubcontract(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
 
     # Interface version for code generation stability
-    INTERFACE_VERSION: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0)
-    )
+    INTERFACE_VERSION: ModelSemVer = Field(default_factory=default_model_version)
 
     # Contract metadata for tooling and RSD compatibility
     metadata: ModelEffectContractMetadata = Field(
@@ -63,9 +64,7 @@ class ModelEffectSubcontract(BaseModel):
     subcontract_name: str = Field(
         ..., min_length=1, max_length=EFFECT_SUBCONTRACT_NAME_MAX_LENGTH
     )
-    version: ModelSemVer = Field(
-        default_factory=lambda: ModelSemVer(major=1, minor=0, patch=0)
-    )
+    version: ModelSemVer = Field(default_factory=default_model_version)
     description: str | None = Field(
         default=None, max_length=EFFECT_SUBCONTRACT_DESCRIPTION_MAX_LENGTH
     )

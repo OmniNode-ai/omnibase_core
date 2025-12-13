@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -13,6 +13,6 @@ class ModelBaseInputState(BaseModel):
         description="Metadata for the input state",
     )
     timestamp: datetime = Field(
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(UTC),
         description="Timestamp when the input was created",
     )

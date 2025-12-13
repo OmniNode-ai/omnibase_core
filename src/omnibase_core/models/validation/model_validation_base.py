@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field
-
 """
 Mixin for models that need validation capabilities.
 
@@ -9,10 +5,11 @@ This provides a standard validation container and common validation
 methods that can be inherited by any model requiring validation.
 """
 
+from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.utils.util_decorators import allow_dict_str_any
 

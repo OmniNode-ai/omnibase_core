@@ -18,7 +18,7 @@ See Also:
     docs/architecture/CONTAINER_TYPES.md: Container and DI architecture.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -98,7 +98,7 @@ class ModelServiceMetadata(BaseModel):
         description="Additional configuration",
     )
     created_at: datetime = Field(
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(UTC),
         description="Registration timestamp",
     )
     last_modified_at: datetime | None = Field(

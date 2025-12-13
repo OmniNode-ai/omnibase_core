@@ -4,7 +4,7 @@ Storage Result Base Model.
 Strongly-typed model for storage backend operation results.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
 
@@ -45,5 +45,6 @@ class ModelStorageResult(BaseModel):
     )
 
     timestamp: datetime = Field(
-        description="When the operation completed", default_factory=datetime.now
+        description="When the operation completed",
+        default_factory=lambda: datetime.now(UTC),
     )

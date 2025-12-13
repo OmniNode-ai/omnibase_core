@@ -2,7 +2,7 @@
 
 import asyncio
 from collections.abc import Callable
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
@@ -28,7 +28,7 @@ class ModelTransaction:
         self.state = EnumTransactionState.PENDING
         self.operations: list[ModelTransactionOperation] = []
         self.rollback_operations: list[Callable[[], object]] = []
-        self.started_at = datetime.now()
+        self.started_at = datetime.now(UTC)
         self.committed_at: datetime | None = None
 
     def add_operation(
@@ -47,7 +47,7 @@ class ModelTransaction:
         operation = ModelTransactionOperation.create(
             name=operation_name,
             data=typed_data,
-            timestamp=datetime.now(),
+            timestamp=datetime.now(UTC),
         )
         self.operations.append(operation)
 
@@ -57,7 +57,7 @@ class ModelTransaction:
     async def commit(self) -> None:
         """Commit transaction - marks as successful."""
         self.state = EnumTransactionState.COMMITTED
-        self.committed_at = datetime.now()
+        self.committed_at = datetime.now(UTC)
 
     async def rollback(self) -> None:
         """Rollback transaction - execute all rollback operations."""

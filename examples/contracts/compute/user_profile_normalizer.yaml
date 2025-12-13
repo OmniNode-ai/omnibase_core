@@ -1,7 +1,7 @@
 ---
 # Example: Contract-Driven NodeCompute Pipeline - User Profile Normalizer
 #
-# This example demonstrates the v1.0 NodeCompute contract-driven pipeline system
+# This example demonstrates the v1.1.0 NodeCompute contract-driven pipeline system
 # for normalizing user profile data before storage or processing.
 #
 # USE CASE: Normalize user-submitted profile data to ensure consistency:
@@ -31,7 +31,7 @@ node_type: COMPUTE_GENERIC
 contract_version: {major: 1, minor: 1, patch: 0}
 # Fingerprint: SHA-256 hash of canonical normalized contract content (excluding fingerprint field).
 # See docs/architecture/CONTRACT_STABILITY_SPEC.md for normalization specification.
-fingerprint: "v1.1.0:8d515de74de2"
+fingerprint: "1.1.0:8d515de74de2"
 # ---------------------------------------------------------------------------
 # COMPUTE SUBCONTRACT: Defines the transformation pipeline
 # ---------------------------------------------------------------------------

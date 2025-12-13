@@ -7,7 +7,10 @@ type safety, and backward compatibility with existing field access patterns.
 
 from typing import Any
 
+import pytest
 from pydantic import Field
+
+pytestmark = pytest.mark.unit
 
 from omnibase_core.models.core import (
     ModelCustomFieldsAccessor,

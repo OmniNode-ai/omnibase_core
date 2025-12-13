@@ -10,7 +10,7 @@ and compliance with one-model-per-file naming conventions.
 """
 
 import hashlib
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, Union
 from uuid import UUID
 
@@ -70,8 +70,8 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
         # Initialize enterprise features if not present
         if "_metadata_analytics" not in self.root:
             self.root["_metadata_analytics"] = ModelMetadataToolAnalytics(
-                collection_created=datetime.now(),
-                last_modified=datetime.now(),
+                collection_created=datetime.now(UTC),
+                last_modified=datetime.now(UTC),
                 total_tools=0,
                 tools_by_type={},
                 tools_by_status={},
@@ -161,7 +161,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
         analytics = self.root.get("_metadata_analytics", {})
         analytics.update(
             {
-                "last_modified": datetime.now().isoformat(),
+                "last_modified": datetime.now(UTC).isoformat(),
                 "total_tools": tool_count,
                 "tools_by_type": tools_by_type,
                 "tools_by_status": tools_by_status,
@@ -342,7 +342,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
         # Update usage metrics
         metrics = tool_info.usage_metrics
         metrics.total_invocations += 1
-        metrics.last_used = datetime.now()
+        metrics.last_used = datetime.now(UTC)
 
         if success:
             metrics.success_count += 1
@@ -363,7 +363,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
         # Calculate popularity score (based on recent usage)
         days_since_last_use = 0
         if metrics.last_used:
-            days_since_last_use = (datetime.now() - metrics.last_used).days
+            days_since_last_use = (datetime.now(UTC) - metrics.last_used).days
 
         # Popularity decreases over time, increases with usage
         usage_factor = min(metrics.total_invocations / 10.0, 10.0)  # Cap at 10
@@ -448,14 +448,14 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
         tool_info.status = EnumMetadataToolStatus.DEPRECATED
         # Generate deterministic UUID for audit entry
         audit_id = uuid5(
-            NAMESPACE_DNS, f"deprecate_{name}_{datetime.now().isoformat()}"
+            NAMESPACE_DNS, f"deprecate_{name}_{datetime.now(UTC).isoformat()}"
         )
         # Generate target_id properly - tools don't have UUIDs, so use None or empty string
         target_id = UUID(int=0) if not name else None  # Use null UUID or None
         tool_info.audit_trail.append(
             ModelAuditEntry(
                 audit_id=audit_id,
-                timestamp=datetime.now(),
+                timestamp=datetime.now(UTC),
                 action=EnumAuditAction.UPDATE,
                 action_detail=f"Deprecated tool: {reason}",
                 target_type="tool",
@@ -563,7 +563,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
                 "id": self.collection_id,
                 "tool_count": self.tool_count,
                 "health_score": self.health_score,
-                "generated_at": datetime.now().isoformat(),
+                "generated_at": datetime.now(UTC).isoformat(),
             },
             analytics_summary={
                 "collection_created": str(analytics_dump.get("collection_created", "")),
@@ -647,7 +647,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
         # Update analytics
         analytics_data.update(
             {
-                "last_modified": datetime.now().isoformat(),
+                "last_modified": datetime.now(UTC).isoformat(),
                 "total_tools": tool_count,
                 "tools_by_type": tools_by_type,
                 "tools_by_status": tools_by_status,
@@ -704,7 +704,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
 
         # Set up analytics for documentation focus
         analytics_data = {
-            "collection_created": datetime.now().isoformat(),
+            "collection_created": datetime.now(UTC).isoformat(),
             "collection_name": name,
             "collection_purpose": "documentation",
             "documentation_coverage": 0.0,

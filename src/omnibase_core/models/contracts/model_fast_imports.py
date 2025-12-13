@@ -1,7 +1,3 @@
-from typing import TYPE_CHECKING, Any, TypeVar
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Fast Import Module - Aggressive Performance Optimization
 
@@ -11,7 +7,9 @@ NO imports are executed at module level to eliminate cascade effects.
 Performance Target: Module import <5ms, contract loading <50ms total
 """
 
-from typing import cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
+
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # NO RUNTIME IMPORTS AT MODULE LEVEL
 # All imports moved to function level to eliminate cascade

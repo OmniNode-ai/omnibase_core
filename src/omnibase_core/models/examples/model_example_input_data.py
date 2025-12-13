@@ -1,9 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field
-
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Example input data model.
 
@@ -12,12 +6,14 @@ strongly-typed replacement for dict[str, Any] in example input data.
 Follows ONEX one-model-per-file naming conventions.
 """
 
+from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_data_type import EnumDataType
 from omnibase_core.enums.enum_io_type import EnumIoType
 from omnibase_core.models.metadata.model_metadata_value import ModelMetadataValue
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 

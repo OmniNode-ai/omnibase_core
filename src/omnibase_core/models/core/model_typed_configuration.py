@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Typed Configuration with Custom Properties Support.
 
@@ -7,6 +5,7 @@ Configuration base with custom properties support that combines the standard
 configuration base with ModelCustomProperties for extensible custom fields.
 """
 
+from __future__ import annotations
 
 from typing import TypeVar
 

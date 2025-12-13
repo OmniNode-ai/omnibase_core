@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 PerformanceSummary model.
 """
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, field_serializer
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 
 class ModelPerformanceSummary(BaseModel):

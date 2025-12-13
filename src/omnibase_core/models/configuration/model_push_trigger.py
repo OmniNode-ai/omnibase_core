@@ -1,10 +1,8 @@
-from pydantic import Field
-
 """
 Push trigger model.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelPushTrigger(BaseModel):

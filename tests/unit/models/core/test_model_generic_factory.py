@@ -10,6 +10,8 @@ from typing import Any
 import pytest
 from pydantic import BaseModel, Field
 
+pytestmark = pytest.mark.unit
+
 from omnibase_core.enums.enum_severity_level import EnumSeverityLevel
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_generic_factory import ModelGenericFactory

@@ -1,11 +1,3 @@
-from __future__ import annotations
-
-from typing import Literal, Union
-
-from pydantic import Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Node configuration value model.
 
@@ -13,13 +5,15 @@ Type-safe configuration value container using Pydantic discriminated unions
 for proper type safety and validation of node configurations.
 """
 
+from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal, Union
 
-from pydantic import BaseModel, Discriminator
+from pydantic import BaseModel, Discriminator, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 from .model_nodeconfigurationnumericvalue import ModelNodeConfigurationNumericValue
 

@@ -1,8 +1,3 @@
-from typing import Any, TypeVar, cast
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.types.type_serializable_value import SerializedDict
-
 """
 Model ONEX Dependency Injection Container.
 
@@ -16,8 +11,9 @@ import asyncio
 import os
 import tempfile
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any, TypeVar, cast
 
 # Import needed for type annotations
 from uuid import UUID, uuid4
@@ -34,6 +30,8 @@ from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.configuration.model_compute_cache_config import (
     ModelComputeCacheConfig,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 # Optional performance enhancements
 try:
@@ -298,7 +296,7 @@ class ModelONEXContainer:
 
         # Fallback resolution if registry lookup fails
         try:
-            start_time = datetime.now()
+            start_time = datetime.now(UTC)
 
             # TODO: Ready to implement using ProtocolServiceResolver from omnibase_spi.protocols.container
             # Note: ProtocolServiceResolver available in omnibase_spi v0.2.0
@@ -344,7 +342,7 @@ class ModelONEXContainer:
                     correlation_id=final_correlation_id,
                 )
 
-            end_time = datetime.now()
+            end_time = datetime.now(UTC)
             resolution_time_ms = int((end_time - start_time).total_seconds() * 1000)
 
             # Cache successful resolution

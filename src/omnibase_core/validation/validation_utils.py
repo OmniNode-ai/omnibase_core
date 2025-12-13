@@ -1,9 +1,8 @@
-from __future__ import annotations
-
 """
 Shared utilities for protocol validation across omni* ecosystem.
 """
 
+from __future__ import annotations
 
 import ast
 import hashlib

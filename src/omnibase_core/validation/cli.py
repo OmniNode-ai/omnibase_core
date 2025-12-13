@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Unified CLI interface for all omnibase_core validation tools.
 
@@ -15,6 +11,8 @@ Usage:
     python -m omnibase_core.validation.cli all
 """
 
+from __future__ import annotations
+
 import argparse
 import sys
 from pathlib import Path
@@ -23,6 +21,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_validation_metadata import (
     ModelValidationMetadata,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.typed_dict_validator_info import TypedDictValidatorInfo
 
 from .architecture import validate_architecture_directory

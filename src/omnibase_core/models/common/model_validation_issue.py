@@ -1,3 +1,10 @@
+"""
+Individual validation issue with proper typing.
+
+Represents a specific issue found during validation with
+comprehensive metadata and suggestions.
+"""
+
 import re
 from pathlib import Path
 
@@ -5,13 +12,6 @@ from pydantic import BaseModel, Field, field_validator
 
 # Import the existing enum from enums module
 from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
-
-"""
-Individual validation issue with proper typing.
-
-Represents a specific issue found during validation with
-comprehensive metadata and suggestions.
-"""
 
 
 class ModelValidationIssue(BaseModel):

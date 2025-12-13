@@ -4,6 +4,7 @@ from __future__ import annotations
 Convert legacy error dict[str, Any] to TypedDict.
 """
 
+__all__ = ["convert_error_details_to_typed_dict"]
 
 from .typed_dict_error_details import TypedDictErrorDetails
 from .typed_dict_legacy_error import TypedDictLegacyError

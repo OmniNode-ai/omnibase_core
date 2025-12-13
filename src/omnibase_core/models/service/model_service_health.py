@@ -6,7 +6,7 @@ connection management, and operational insights for ONEX registry services.
 """
 
 import re
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Optional
 from urllib.parse import urlparse
 
@@ -528,7 +528,7 @@ class ModelServiceHealth(BaseModel):
             service_type=EnumServiceType(service_type),
             status=EnumServiceHealthStatus.REACHABLE,
             connection_string=connection_string,
-            last_check_time=datetime.now().isoformat(),
+            last_check_time=datetime.now(UTC).isoformat(),
             response_time_ms=response_time_ms,
             consecutive_failures=0,
         )
@@ -550,7 +550,7 @@ class ModelServiceHealth(BaseModel):
             connection_string=connection_string,
             error_message=error_message,
             error_code=error_code,
-            last_check_time=datetime.now().isoformat(),
+            last_check_time=datetime.now(UTC).isoformat(),
             consecutive_failures=1,
         )
 
@@ -569,7 +569,7 @@ class ModelServiceHealth(BaseModel):
             status=EnumServiceHealthStatus.TIMEOUT,
             connection_string=connection_string,
             error_message=f"Service timeout after {timeout_ms}ms",
-            last_check_time=datetime.now().isoformat(),
+            last_check_time=datetime.now(UTC).isoformat(),
             response_time_ms=timeout_ms,
             consecutive_failures=1,
         )

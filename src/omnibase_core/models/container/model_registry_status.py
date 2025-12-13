@@ -1,6 +1,6 @@
 """Registry status model - implements ProtocolServiceRegistryStatus."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -85,7 +85,7 @@ class ModelServiceRegistryStatus(BaseModel):
         description="Average resolution time",
     )
     last_updated: datetime = Field(
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(UTC),
         description="Last update timestamp",
     )
 
