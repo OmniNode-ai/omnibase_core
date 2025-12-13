@@ -62,13 +62,6 @@ def get_discriminator_value(v: Any) -> str:
     return str(getattr(v, "value_type", "string"))  # Ensure string type
 
 
-# Discriminated union type for configuration values
-ModelNodeConfigurationValue = Union[
-    ModelNodeConfigurationStringValue,
-    ModelNodeConfigurationNumericValue,
-]
-
-
 # Type alias with discriminator annotation for proper Pydantic support
 ModelNodeConfigurationValueUnion = Discriminator(
     get_discriminator_value,
@@ -99,14 +92,17 @@ def from_numeric(value: ModelNumericValue) -> ModelNodeConfigurationNumericValue
     return ModelNodeConfigurationNumericValue(value=value)
 
 
-def from_value(value: object) -> ModelNodeConfigurationValue:
+def from_value(
+    value: object,
+) -> Union[ModelNodeConfigurationStringValue, ModelNodeConfigurationNumericValue]:
     """Create configuration value from any supported type.
 
     Args:
         value: Input value (str, int, float, bool, or other types)
 
     Returns:
-        ModelNodeConfigurationValue with appropriate type discrimination
+        Union[ModelNodeConfigurationStringValue, ModelNodeConfigurationNumericValue]:
+            Configuration value with appropriate type discrimination.
     """
     if isinstance(value, str):
         return from_string(value)
@@ -121,7 +117,6 @@ def from_value(value: object) -> ModelNodeConfigurationValue:
 __all__ = [
     "ModelNodeConfigurationNumericValue",
     "ModelNodeConfigurationStringValue",
-    "ModelNodeConfigurationValue",
     "ModelNodeConfigurationValueUnion",
     "from_float",
     "from_int",

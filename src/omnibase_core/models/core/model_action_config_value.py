@@ -1,8 +1,10 @@
 """
 Action Configuration Value Model - Discriminated union and factory functions.
 
-This module provides the ModelActionConfigValue discriminated union type,
-discriminator function, and factory functions for creating typed config values.
+This module provides the discriminator function and factory functions for creating
+typed config values. The discriminated union type is a Union of
+ModelActionConfigStringValue, ModelActionConfigNumericValue, and
+ModelActionConfigBooleanValue.
 
 Strict typing is enforced: No Any types allowed in implementation.
 """
@@ -31,14 +33,6 @@ def get_action_config_discriminator_value(v: object) -> str:
         value_type = v.get("value_type", "string")
         return str(value_type)
     return str(getattr(v, "value_type", "string"))
-
-
-# Discriminated union type for action configuration values
-ModelActionConfigValue = Union[
-    ModelActionConfigStringValue,
-    ModelActionConfigNumericValue,
-    ModelActionConfigBooleanValue,
-]
 
 
 # Type alias with discriminator annotation for proper Pydantic support
@@ -76,7 +70,13 @@ def from_numeric(value: ModelNumericValue) -> ModelActionConfigNumericValue:
     return ModelActionConfigNumericValue(value=value)
 
 
-def from_value(value: object) -> ModelActionConfigValue:
+def from_value(
+    value: object,
+) -> Union[
+    ModelActionConfigStringValue,
+    ModelActionConfigNumericValue,
+    ModelActionConfigBooleanValue,
+]:
     """
     Create action config value from any supported type.
 
@@ -84,7 +84,8 @@ def from_value(value: object) -> ModelActionConfigValue:
         value: Input value (str, int, float, bool, or other types)
 
     Returns:
-        ModelActionConfigValue with appropriate type discrimination
+        Union of ModelActionConfigStringValue, ModelActionConfigNumericValue,
+        or ModelActionConfigBooleanValue with appropriate type discrimination
     """
     if isinstance(value, bool):  # Check bool before int (bool is subclass of int)
         return from_bool(value)
@@ -102,7 +103,6 @@ __all__ = [
     "ModelActionConfigBooleanValue",
     "ModelActionConfigNumericValue",
     "ModelActionConfigStringValue",
-    "ModelActionConfigValue",
     "ModelActionConfigValueUnion",
     "from_bool",
     "from_float",

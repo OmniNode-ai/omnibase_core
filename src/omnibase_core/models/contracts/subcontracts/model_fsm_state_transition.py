@@ -17,10 +17,13 @@ Strict typing is enforced: No Any types allowed in implementation.
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.models.fsm.model_fsm_transition_action import (
+    ModelFSMTransitionAction,
+)
+from omnibase_core.models.fsm.model_fsm_transition_condition import (
+    ModelFSMTransitionCondition,
+)
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-
-from .model_fsm_transition_action import ModelFSMTransitionAction
-from .model_fsm_transition_condition import ModelFSMTransitionCondition
 
 
 class ModelFSMStateTransition(BaseModel):

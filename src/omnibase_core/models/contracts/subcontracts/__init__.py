@@ -25,6 +25,13 @@ from omnibase_core.constants import IDEMPOTENCY_DEFAULTS
 from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 from omnibase_core.models.core.model_health_check_result import ModelHealthCheckResult
 from omnibase_core.models.core.model_workflow_metrics import ModelWorkflowMetrics
+from omnibase_core.models.fsm.model_fsm_operation import ModelFSMOperation
+from omnibase_core.models.fsm.model_fsm_transition_action import (
+    ModelFSMTransitionAction,
+)
+from omnibase_core.models.fsm.model_fsm_transition_condition import (
+    ModelFSMTransitionCondition,
+)
 
 # Subcontract model imports (alphabetical order)
 from .model_aggregation_function import ModelAggregationFunction
@@ -87,12 +94,9 @@ from .model_event_routing import ModelEventRouting
 from .model_event_transformation import ModelEventTransformation
 from .model_event_type_subcontract import ModelEventTypeSubcontract
 from .model_execution_graph import ModelExecutionGraph
-from .model_fsm_operation import ModelFSMOperation
 from .model_fsm_state_definition import ModelFSMStateDefinition
 from .model_fsm_state_transition import ModelFSMStateTransition
 from .model_fsm_subcontract import ModelFSMSubcontract
-from .model_fsm_transition_action import ModelFSMTransitionAction
-from .model_fsm_transition_condition import ModelFSMTransitionCondition
 from .model_health_check_subcontract import ModelHealthCheckSubcontract
 from .model_introspection_subcontract import ModelIntrospectionSubcontract
 from .model_lifecycle_subcontract import ModelLifecycleSubcontract

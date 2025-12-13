@@ -69,6 +69,10 @@ from omnibase_core.models.service.model_external_service_config import (
 )
 
 from . import subcontracts
+from .model_action_config_parameter import (
+    ModelActionConfigParameter,
+    ParameterType,
+)
 from .model_action_emission_config import ModelActionEmissionConfig
 from .model_algorithm_config import ModelAlgorithmConfig
 from .model_algorithm_factor_config import ModelAlgorithmFactorConfig
@@ -148,6 +152,8 @@ __all__ = [
     # Runtime Host Contract models
     "ModelRuntimeHostContract",
     # Configuration models
+    "ModelActionConfigParameter",
+    "ParameterType",
     "ModelAlgorithmConfig",
     "ModelAlgorithmFactorConfig",
     "ModelBackupConfig",

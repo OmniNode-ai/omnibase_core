@@ -4,7 +4,7 @@ Node Status Types.
 ONEX discriminated union types for node status patterns.
 """
 
-from typing import Any, Union
+from typing import Any
 
 from pydantic import Discriminator
 
@@ -27,14 +27,7 @@ def get_node_status_discriminator(v: Any) -> str:
     return str(getattr(v, "status_type", "active"))  # Ensure string type
 
 
-# ONEX Discriminated Union Type
-NodeStatusUnion = Union[
-    ModelNodeStatusActive,
-    ModelNodeStatusMaintenance,
-    ModelNodeStatusError,
-]
-
-# Type alias with discriminator for Pydantic validation
+# Discriminator for Pydantic validation of node status types
 NodeStatusDiscriminator = Discriminator(
     get_node_status_discriminator,
     custom_error_type="node_status_discriminator",
