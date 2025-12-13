@@ -221,7 +221,7 @@ If this command passes, the codebase is ready for v0.5.0.
 The warning filter configuration is located in:
 
 ```
-/workspace/omnibase_core4/pyproject.toml
+pyproject.toml
 ```
 
 Under the `[tool.pytest.ini_options]` section, in the `filterwarnings` array.
