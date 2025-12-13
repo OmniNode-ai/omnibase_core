@@ -162,6 +162,13 @@ class NamingConventionValidator:
         "contracts/": [
             "ContractHashRegistry",  # Registry service for contract hash management
         ],
+        # HANDLER INFRASTRUCTURE: Handler implementations for ONEX runtime
+        # Location: runtime/handlers/ - Handler implementations for EnvelopeRouter
+        # Rationale: Handlers implement ProtocolHandler and use Handler* prefix (e.g., HandlerLocal, HandlerHttp)
+        #            They are not "Services" in the ONEX architecture but runtime execution units.
+        "runtime/handlers/": [
+            "Handler*",  # All Handler* classes in handlers/ directory
+        ],
     }
 
     @staticmethod
