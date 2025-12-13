@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 CLI Command Definition Model
 
@@ -7,7 +5,7 @@ Defines the structure for CLI commands discovered dynamically from node contract
 This replaces hardcoded command enums with flexible, contract-driven command definitions.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_argument_description import (
     ModelArgumentDescription,

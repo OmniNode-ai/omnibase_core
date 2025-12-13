@@ -1,5 +1,3 @@
-from datetime import datetime
-
 """
 ONEX Error Base Class
 
@@ -29,7 +27,7 @@ Import Chain:
 Breaking this chain (e.g., adding runtime import from models.*) will cause circular import!
 """
 
-from datetime import UTC
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
 

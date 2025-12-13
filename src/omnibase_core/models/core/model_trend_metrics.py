@@ -1,10 +1,8 @@
-from pydantic import Field
-
 """
 Trend analysis metrics model.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelTrendMetrics(BaseModel):

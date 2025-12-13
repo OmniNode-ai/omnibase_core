@@ -1,11 +1,3 @@
-from __future__ import annotations
-
-from datetime import datetime
-
-from pydantic import Field, field_validator
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 CLI debug information model.
 
@@ -13,15 +5,17 @@ Clean, strongly-typed replacement for dict[str, Any] in CLI debug info.
 Follows ONEX one-model-per-file naming conventions.
 """
 
+from __future__ import annotations
 
-from datetime import UTC
+from datetime import UTC, datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_debug_level import EnumDebugLevel
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.infrastructure.model_value import ModelValue
 from omnibase_core.types.type_serializable_value import SerializedDict
 

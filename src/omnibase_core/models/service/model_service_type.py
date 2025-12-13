@@ -1,12 +1,3 @@
-from typing import Any
-
-from pydantic import Field, field_validator
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.enums.enum_service_type_category import EnumServiceTypeCategory
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Service Type Model for ONEX Configuration-Driven Registry System.
 
@@ -15,10 +6,15 @@ Extracted from model_service_configuration.py for modular architecture complianc
 
 """
 
+from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_service_type_category import EnumServiceTypeCategory
 from omnibase_core.models.core.model_protocol_metadata import ModelGenericMetadata
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelServiceType(BaseModel):

@@ -1,10 +1,3 @@
-from datetime import datetime
-from typing import Literal
-
-from pydantic import Field, field_validator
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Filter Conditions Model.
 
@@ -14,12 +7,14 @@ with proper Pydantic validation and type safety.
 Strict typing is enforced: No Any types or dict[str, Any]patterns allowed.
 """
 
-from datetime import UTC
+from datetime import UTC, datetime
+from typing import Literal
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelFilterConditions(BaseModel):

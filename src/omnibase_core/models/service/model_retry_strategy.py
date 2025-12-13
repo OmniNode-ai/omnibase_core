@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 Retry Strategy Model
 
 Type-safe retry strategy configuration.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelRetryStrategy(BaseModel):

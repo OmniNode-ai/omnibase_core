@@ -1,10 +1,8 @@
-from pydantic import Field
-
 """
 FilterCondition model.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .model_filter_operator import ModelFilterOperator
 

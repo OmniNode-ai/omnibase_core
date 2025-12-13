@@ -1,9 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field, ValidationInfo, field_validator
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 CLI Execution Input Data Model.
 
@@ -11,14 +5,17 @@ Represents input data for CLI execution with proper validation.
 Replaces dict[str, Any] for input data with structured typing.
 """
 
+from __future__ import annotations
+
 from pathlib import Path
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_cli_input_value_type import EnumCliInputValueType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_data_type import EnumDataType
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 # Input data values use discriminated union pattern with runtime validation

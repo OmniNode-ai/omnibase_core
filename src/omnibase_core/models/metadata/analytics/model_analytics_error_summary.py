@@ -1,9 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Analytics Error Summary Model.
 
@@ -11,10 +5,12 @@ Structured error summary data for analytics.
 Follows ONEX one-model-per-file architecture.
 """
 
+from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
 

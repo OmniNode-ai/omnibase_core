@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Model for contract definitions representation in ONEX NodeBase implementation.
 
@@ -8,7 +6,7 @@ strongly typed contract definitions section.
 
 """
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.core.model_yaml_schema_object import ModelYamlSchemaObject
 

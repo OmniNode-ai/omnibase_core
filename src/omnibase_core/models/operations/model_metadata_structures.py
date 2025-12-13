@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Strongly-typed metadata structures.
 
@@ -8,6 +6,7 @@ Follows ONEX strong typing principles and one-model-per-file architecture.
 
 """
 
+from __future__ import annotations
 
 from .model_event_metadata import ModelEventMetadata
 

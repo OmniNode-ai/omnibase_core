@@ -1,15 +1,13 @@
-from pydantic import Field, field_validator
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 ModelPolicySeverity: Policy violation severity configuration.
 
 This model represents policy violation severity levels and handling.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelPolicySeverity(BaseModel):

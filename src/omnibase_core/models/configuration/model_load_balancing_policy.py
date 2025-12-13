@@ -1,8 +1,3 @@
-from typing import Optional
-from uuid import UUID
-
-from pydantic import Field
-
 """
 ModelLoadBalancingPolicy - Comprehensive load balancing policy configuration
 
@@ -10,9 +5,10 @@ Load balancing policy model that combines algorithm selection, node weights,
 health checks, session affinity, and circuit breaker configurations.
 """
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
+from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
     from omnibase_core.models.service.model_node_weights import ModelNodeWeights

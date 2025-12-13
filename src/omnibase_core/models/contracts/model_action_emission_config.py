@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Thunk Emission Configuration Model.
 
@@ -9,8 +7,7 @@ execution strategies for workflow coordination.
 Strict typing is enforced: No Any types allowed in implementation.
 """
 
-
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelActionEmissionConfig(BaseModel):

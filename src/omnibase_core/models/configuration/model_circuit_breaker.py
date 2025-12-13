@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 ModelCircuitBreaker - Circuit breaker configuration for load balancing
 
@@ -9,7 +7,7 @@ cascade failures in load balancing systems.
 
 from datetime import UTC, datetime, timedelta
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .model_circuit_breaker_metadata import ModelCircuitBreakerMetadata
 

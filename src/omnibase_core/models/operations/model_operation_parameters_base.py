@@ -1,10 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field, ValidationInfo, field_validator
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Strongly-typed operation parameters model.
 
@@ -12,13 +5,16 @@ Replaces dict[str, Any] usage in operation parameters with structured typing.
 Follows ONEX strong typing principles and one-model-per-file architecture.
 """
 
+from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_operation_parameter_type import EnumOperationParameterType
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 # Discriminated parameter union to replace primitive soup pattern

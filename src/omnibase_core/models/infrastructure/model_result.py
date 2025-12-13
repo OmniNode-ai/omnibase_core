@@ -1,12 +1,3 @@
-from __future__ import annotations
-
-from collections.abc import Callable
-from typing import Any, TypeVar, cast
-
-from pydantic import Field, field_validator
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Result Model.
 
@@ -14,10 +5,15 @@ Generic Result[T, E] pattern for CLI operations providing type-safe
 success/error handling with proper MyPy compliance.
 """
 
+from __future__ import annotations
 
-from pydantic import BaseModel, field_serializer
+from collections.abc import Callable
+from typing import Any, TypeVar, cast
+
+from pydantic import BaseModel, Field, field_serializer, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import (
     SerializableValue,
     SerializedDict,

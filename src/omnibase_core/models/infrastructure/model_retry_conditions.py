@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field
-
 """
 Retry Conditions Model.
 
@@ -9,8 +5,9 @@ Retry trigger conditions and decision logic.
 Part of the ModelRetryPolicy restructuring to reduce excessive string fields.
 """
 
+from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.types.type_serializable_value import SerializedDict
 

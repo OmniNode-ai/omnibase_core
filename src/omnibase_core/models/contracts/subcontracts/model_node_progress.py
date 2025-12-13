@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Node Progress Model.
 
@@ -8,7 +6,7 @@ Model for progress information for individual nodes in the ONEX workflow coordin
 
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_node_type import EnumNodeType
 from omnibase_core.models.primitives.model_semver import ModelSemVer

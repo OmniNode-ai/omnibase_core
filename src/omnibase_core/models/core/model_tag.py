@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Tag Model
 
@@ -10,7 +8,7 @@ with flexible, extensible tagging system.
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelTag(BaseModel):

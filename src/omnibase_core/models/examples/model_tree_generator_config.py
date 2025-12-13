@@ -1,10 +1,8 @@
-from pydantic import Field
-
 """
 Tree generator configuration model.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_onex_ignore_section import ModelOnexIgnoreSection
 from omnibase_core.models.examples.model_artifact_type_config import (

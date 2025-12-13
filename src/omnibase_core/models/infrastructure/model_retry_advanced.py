@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field
-
 """
 Advanced Retry Features Model.
 
@@ -9,8 +5,9 @@ Circuit breaker and advanced retry features.
 Part of the ModelRetryPolicy restructuring to reduce excessive string fields.
 """
 
+from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties

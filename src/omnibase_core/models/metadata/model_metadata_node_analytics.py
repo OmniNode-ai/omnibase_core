@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Metadata Node Analytics Model.
 
@@ -7,6 +5,7 @@ Analytics and metrics for metadata node collections with
 performance tracking and health monitoring.
 """
 
+from __future__ import annotations
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.infrastructure.model_metrics_data import ModelMetricsData

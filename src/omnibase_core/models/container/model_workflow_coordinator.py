@@ -1,8 +1,3 @@
-from __future__ import annotations
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 ModelWorkflowCoordinator
 
@@ -16,10 +11,13 @@ Safe Runtime Imports (OK to import at module level):
 - Standard library modules only
 """
 
+from __future__ import annotations
 
 from typing import Any
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 

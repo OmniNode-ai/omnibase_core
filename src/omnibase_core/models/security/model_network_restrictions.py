@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Network Restrictions Model
 
@@ -7,7 +5,7 @@ Typed model for network access restrictions,
 replacing Dict[str, Any] with structured fields.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelNetworkRestrictions(BaseModel):

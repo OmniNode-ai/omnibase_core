@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Action Validation Result Model.
 
@@ -8,7 +6,7 @@ Result of action validation with detailed information.
 
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_action_validation_metadata import (
     ModelActionValidationMetadata,

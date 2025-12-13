@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Algorithm Factor Configuration Model.
 
@@ -9,7 +7,7 @@ calculation method, and parameters for each factor in a multi-factor algorithm.
 Strict typing is enforced: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelAlgorithmFactorConfig(BaseModel):

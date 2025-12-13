@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Health Metrics Model
 
@@ -9,7 +7,7 @@ and error tracking.
 
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.types.type_serializable_value import SerializedDict
 

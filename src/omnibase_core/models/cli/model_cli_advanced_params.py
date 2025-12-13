@@ -1,9 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field, field_validator
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 CLI advanced parameters model.
 
@@ -11,12 +5,14 @@ Clean, strongly-typed replacement for ModelCustomFields[Any] in CLI advanced par
 Follows ONEX one-model-per-file naming conventions.
 """
 
+from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.decorators import allow_dict_any
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Use object type for values convertible to ModelValue via from_any() method.
 # This avoids primitive soup union anti-pattern while maintaining type safety
