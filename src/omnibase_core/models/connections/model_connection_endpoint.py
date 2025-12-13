@@ -1,10 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Connection Endpoint Model.
 
@@ -12,11 +5,14 @@ Endpoint and addressing information for network connections.
 Part of the ModelConnectionInfo restructuring to reduce excessive string fields.
 """
 
+from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_connection_type import EnumConnectionType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.types import SerializedDict
 
 

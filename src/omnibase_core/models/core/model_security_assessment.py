@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Security assessment model to replace Dict[str, Any] usage for security data.
 """
@@ -7,7 +5,7 @@ Security assessment model to replace Dict[str, Any] usage for security data.
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, ConfigDict, field_serializer
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 if TYPE_CHECKING:
     from omnibase_core.types.type_serializable_value import SerializedDict

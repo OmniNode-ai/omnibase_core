@@ -1,18 +1,17 @@
-from __future__ import annotations
-
-from typing import Any
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.types.type_serializable_value import SerializedDict
-
 """
 Typed field accessor for specific value types.
 
 Provides type-safe field access with generic type support.
 """
 
+from __future__ import annotations
+
+from typing import Any
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 from .model_field_accessor import ModelFieldAccessor
 

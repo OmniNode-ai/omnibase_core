@@ -1,7 +1,3 @@
-from pydantic import Field
-
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Model for tool implementation references.
 
@@ -9,7 +5,9 @@ Represents a resolved tool implementation without requiring direct imports,
 enabling protocol-based tool execution while maintaining type safety.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelToolImplementation(BaseModel):

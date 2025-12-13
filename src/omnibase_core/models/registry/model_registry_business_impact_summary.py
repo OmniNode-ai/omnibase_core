@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 Registry Business Impact Summary Model
 
 Type-safe business impact summary for registry health reporting.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .model_registry_sla_compliance import ModelRegistrySlaCompliance
 

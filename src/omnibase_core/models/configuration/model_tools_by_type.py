@@ -1,14 +1,12 @@
-from typing import Any
-
-from pydantic import Field
-
 """
 Tools by Type Collection Model for ONEX Configuration System.
 
 Strongly typed model for tools filtered by type.
 """
 
-from pydantic import BaseModel
+from typing import Any
+
+from pydantic import BaseModel, Field
 
 
 class ModelToolsByType(BaseModel):

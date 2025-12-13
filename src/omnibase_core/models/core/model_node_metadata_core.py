@@ -1,7 +1,3 @@
-from pydantic import Field
-
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Core model for node metadata information.
 
@@ -10,7 +6,9 @@ usage with proper typing. This is the core model that should be
 used by all systems requiring node metadata.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelNodeMetadata(BaseModel):

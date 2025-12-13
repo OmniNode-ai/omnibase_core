@@ -1,7 +1,3 @@
-from typing import Generic
-
-from pydantic import Field
-
 """Core models for OmniBase - Core domain models only.
 
 This module contains only core domain models to prevent circular dependencies.
@@ -10,6 +6,10 @@ Other domains should import from their respective modules directly.
 Note: ModelSemVer is located in omnibase_core.models.primitives.model_semver.
 Import directly: from omnibase_core.models.primitives.model_semver import ModelSemVer
 """
+
+from typing import Generic
+
+from pydantic import Field
 
 # Configuration base classes
 from .model_configuration_base import ModelConfigurationBase

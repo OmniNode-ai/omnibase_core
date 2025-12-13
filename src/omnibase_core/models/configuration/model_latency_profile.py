@@ -1,11 +1,8 @@
-from pydantic import Field
-
 """
 Latency profile assessment model to replace Dict[str, Any] usage.
 """
 
-
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelLatencyProfile(BaseModel):

@@ -1,22 +1,19 @@
-from __future__ import annotations
-
-from pydantic import Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Metadata Analytics Summary Model (Composed).
 
 Composed model that combines focused analytics components.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 from omnibase_core.types.typed_dict_analytics_summary_data import (
     TypedDictAnalyticsSummaryData,

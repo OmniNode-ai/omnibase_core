@@ -1,8 +1,8 @@
+"""Metadata about the validation process."""
+
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-
-"""Metadata about the validation process."""
 
 
 class ModelValidationMetadata(BaseModel):

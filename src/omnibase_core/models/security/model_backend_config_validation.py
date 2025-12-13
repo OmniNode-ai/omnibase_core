@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 ModelBackendConfigValidation: Configuration validation for secret backends.
 
 This model represents configuration requirements and validation for backends.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelBackendConfigValidation(BaseModel):

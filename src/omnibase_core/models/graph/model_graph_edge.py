@@ -1,7 +1,3 @@
-from uuid import UUID
-
-from pydantic import Field
-
 """
 Graph Edge Model
 
@@ -9,8 +5,9 @@ Type-safe graph edge that replaces Dict[str, Any] usage
 in orchestrator graphs.
 """
 
+from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.service.model_custom_fields import ModelCustomFields
 

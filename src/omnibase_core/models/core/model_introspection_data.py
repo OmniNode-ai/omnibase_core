@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 Introspection data model to replace Dict[str, object] usage for node introspection.
 """
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, field_serializer
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.validation.model_schema import ModelSchema

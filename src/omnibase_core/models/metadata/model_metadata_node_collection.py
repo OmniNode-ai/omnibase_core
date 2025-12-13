@@ -1,19 +1,17 @@
-from __future__ import annotations
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Metadata Node Collection Model.
 
 Clean, focused implementation with proper typing and single responsibility following ONEX one-model-per-file architecture.
 """
 
+from __future__ import annotations
 
 from typing import Any
 
 from pydantic import Field, RootModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
 from .model_metadata_node_analytics import ModelMetadataNodeAnalytics

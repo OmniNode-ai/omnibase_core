@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Configuration Source Model.
 
@@ -8,7 +6,7 @@ Model for configuration source specifications in the ONEX configuration manageme
 
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 

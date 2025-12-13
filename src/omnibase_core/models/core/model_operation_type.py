@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Operation Type Model.
 
@@ -7,7 +5,7 @@ Extensible operation type model that replaces string literals with
 rich metadata for operation tracking and categorization.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelOperationType(BaseModel):

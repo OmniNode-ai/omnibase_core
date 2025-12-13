@@ -1,9 +1,3 @@
-from __future__ import annotations
-
-from datetime import datetime
-
-from pydantic import Field
-
 """
 Internal Pydantic model for ONEX error serialization and validation.
 
@@ -12,10 +6,12 @@ serialization, and schema generation capabilities. Used internally
 by ModelOnexError exception class.
 """
 
-from datetime import UTC
+from __future__ import annotations
+
+from datetime import UTC, datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_onex_error_code import EnumOnexErrorCode
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus

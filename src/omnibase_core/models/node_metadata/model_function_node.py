@@ -1,9 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Function Node Model.
 
@@ -14,14 +8,16 @@ Restructured to use composition of focused sub-models instead of
 excessive string fields in a single large model.
 """
 
+from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_category import EnumCategory
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_function_status import EnumFunctionStatus
 from omnibase_core.enums.enum_operational_complexity import EnumOperationalComplexity
 from omnibase_core.enums.enum_return_type import EnumReturnType
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
 from .model_function_node_core import ModelFunctionNodeCore

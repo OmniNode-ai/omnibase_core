@@ -1,19 +1,15 @@
-from __future__ import annotations
-
-from pydantic import Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Node configuration model for node settings and parameters.
 Restructured to use focused sub-models for better organization.
 """
 
+from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 from omnibase_core.types.typed_dict_node_configuration_summary import (
     TypedDictNodeConfigurationSummary,

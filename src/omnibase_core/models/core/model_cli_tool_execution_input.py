@@ -1,16 +1,16 @@
-from typing import TYPE_CHECKING
-from uuid import UUID
-
-from pydantic import BaseModel, Field
-
-from omnibase_core.models.core.model_advanced_params import ModelAdvancedParams
-
 """
 Model for CLI tool execution input parameters.
 
 Replaces primitive dictionary parameters with type-safe Pydantic models
 for CLI tool execution operations.
 """
+
+from typing import TYPE_CHECKING
+from uuid import UUID
+
+from pydantic import BaseModel, Field
+
+from omnibase_core.models.core.model_advanced_params import ModelAdvancedParams
 
 if TYPE_CHECKING:
     from omnibase_core.types.type_serializable_value import SerializedDict

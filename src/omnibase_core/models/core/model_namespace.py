@@ -1,10 +1,8 @@
-from typing import Any
-
 """
 Namespace model.
 """
 
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 from pydantic import BaseModel
 

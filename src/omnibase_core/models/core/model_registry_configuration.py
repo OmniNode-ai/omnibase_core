@@ -1,9 +1,3 @@
-from uuid import UUID
-
-from pydantic import Field
-
-from omnibase_core.enums.enum_registry_type import EnumRegistryType
-
 """
 Model for registry configuration representation in ONEX NodeBase implementation.
 
@@ -13,8 +7,11 @@ strongly typed registry configuration.
 """
 
 from pathlib import Path
+from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from omnibase_core.enums.enum_registry_type import EnumRegistryType
 
 
 class ModelRegistryConfiguration(BaseModel):

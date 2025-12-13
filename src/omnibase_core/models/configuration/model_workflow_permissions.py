@@ -1,8 +1,8 @@
-from pydantic import BaseModel, Field
-
 """
 Workflow permissions model.
 """
+
+from pydantic import BaseModel, Field
 
 
 class ModelWorkflowPermissions(BaseModel):

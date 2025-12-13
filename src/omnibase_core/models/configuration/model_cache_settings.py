@@ -1,11 +1,8 @@
-from pydantic import Field
-
 """
 Cache settings model.
 """
 
-
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelCacheSettings(BaseModel):

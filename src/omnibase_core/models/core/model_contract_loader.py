@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Model for contract loader representation in ONEX NodeBase implementation.
 
@@ -10,7 +8,7 @@ unified contract loading and resolution.
 
 from pathlib import Path
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_contract_cache import ModelContractCache
 from omnibase_core.models.core.model_contract_content import ModelContractContent

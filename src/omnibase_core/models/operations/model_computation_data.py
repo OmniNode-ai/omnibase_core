@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Strongly-typed computation data models.
 
@@ -8,6 +6,7 @@ Follows ONEX strong typing principles and one-model-per-file architecture.
 
 """
 
+from __future__ import annotations
 
 # Import models from individual files following ONEX one-model-per-file architecture
 from .model_computation_input_data import ModelComputationInputData

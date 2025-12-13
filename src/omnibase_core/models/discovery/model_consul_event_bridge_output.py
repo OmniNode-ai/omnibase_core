@@ -1,11 +1,9 @@
-from pydantic import Field
-
 """Consul Event Bridge Output model for ONEX Discovery & Integration Event Registry.
 
 This module defines the output model for Consul Event Bridge operations.
 """
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.discovery.model_event_descriptor import ModelEventDescriptor
 

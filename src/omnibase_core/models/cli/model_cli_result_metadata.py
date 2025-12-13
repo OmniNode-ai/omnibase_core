@@ -1,12 +1,3 @@
-from __future__ import annotations
-
-from datetime import datetime
-
-from pydantic import Field, field_validator, model_validator
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 CLI result metadata model.
 
@@ -14,18 +5,21 @@ Clean, strongly-typed replacement for dict[str, Any] in CLI result metadata.
 Follows ONEX one-model-per-file naming conventions.
 """
 
+from __future__ import annotations
 
-from datetime import UTC
+from datetime import UTC, datetime
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_data_classification import EnumDataClassification
 from omnibase_core.enums.enum_result_category import EnumResultCategory
 from omnibase_core.enums.enum_result_type import EnumResultType
 from omnibase_core.enums.enum_retention_policy import EnumRetentionPolicy
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.infrastructure.model_value import ModelValue
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.types.type_serializable_value import SerializedDict
 from omnibase_core.utils.util_uuid_utilities import uuid_from_string
 

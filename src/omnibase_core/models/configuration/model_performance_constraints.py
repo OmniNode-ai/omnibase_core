@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Performance Constraints Model.
 
@@ -7,7 +5,7 @@ Type-safe performance constraints for execution capabilities
 and resource management.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelPerformanceConstraints(BaseModel):
