@@ -146,8 +146,8 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
             )
 
             result = await node.process(input_data)
-            print(f"Completed steps: {len(result.completed_steps)}")
-            print(f"Actions emitted: {len(result.actions_emitted)}")
+            logger.debug("Completed steps: %d", len(result.completed_steps))
+            logger.debug("Actions emitted: %d", len(result.actions_emitted))
             ```
 
         Key Features:
@@ -241,8 +241,8 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
                 workflow_id=uuid4()
             )
 
-            print(f"Status: {result.execution_status}")
-            print(f"Actions: {len(result.actions_emitted)}")
+            logger.debug("Status: %s", result.execution_status)
+            logger.debug("Actions: %d", len(result.actions_emitted))
             ```
         """
         if not self.workflow_definition:
@@ -281,9 +281,9 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
             ```python
             errors = await node.validate_contract()
             if errors:
-                print(f"Contract validation failed: {errors}")
+                logger.warning("Contract validation failed: %s", errors)
             else:
-                print("Contract is valid!")
+                logger.info("Contract is valid!")
             ```
         """
         if not self.workflow_definition:
@@ -339,7 +339,7 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
             ```python
             steps = [ModelWorkflowStep(...), ModelWorkflowStep(...)]
             order = node.get_execution_order_for_steps(steps)
-            print(f"Execution order: {order}")
+            logger.debug("Execution order: %s", order)
             ```
         """
         return self.get_workflow_execution_order(steps)
