@@ -54,7 +54,7 @@
 # - Implement proper backup and retention policies
 # - Review and follow your organization's data handling policies
 #
-# v1.0 Contract Schema Version
+# v1.1.0 Contract Schema Version
 # ============================================================================
 
 # ---------------------------------------------------------------------------
@@ -65,7 +65,8 @@ contract_version:
   major: 1
   minor: 1
   patch: 0
-# Fingerprint: SHA-256 hash of canonical contract content (node_type, effect_operations, metadata.description)
+# Fingerprint: SHA-256 hash of canonical normalized contract content.
+# See docs/architecture/CONTRACT_FINGERPRINT_NORMALIZATION.md for normalization specification.
 fingerprint: "v1.1.0:920b41e8af2f"
 node_type: effect
 

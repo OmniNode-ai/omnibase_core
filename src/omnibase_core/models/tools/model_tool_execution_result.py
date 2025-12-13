@@ -31,18 +31,22 @@ class ModelToolExecutionResult(BaseModel):
         Use `result.success` or `result.is_success` for all success checks.
 
         A model validator enforces consistency between related fields:
-        - When `success=True`: `error` must be None
-        - When `success=False`: `error` should contain a message (warning if missing)
-        - `status_code` provides granular error classification (0=success, >0=error codes)
+        - When `success=True`: `error` must be None, `status_code` must not be
+          in HTTP error range (>=400)
+        - When `success=False`: `error` is set to default message if missing,
+          `status_code` is set to 1 if it was 0
 
     Field Relationships:
         - success: Boolean indicating overall execution success/failure.
           This is the authoritative field - use for all conditional logic.
         - error: Error message string, must be None when success=True.
-        - status_code: Numeric code providing granular error classification.
-          0 indicates success, values >0 represent specific error categories.
+          Automatically set to default message when success=False and error is None.
+        - status_code: Numeric code providing granular error/success classification.
+          Can be 0 (default success), HTTP success codes (200-299), or error codes.
+          HTTP error codes (>=400) are rejected when success=True.
+          Automatically set to 1 (generic error) when success=False and status_code is 0.
           Use when you need to distinguish between different failure modes
-          (e.g., 1=validation error, 2=timeout, 3=resource not found).
+          (e.g., 1=generic error, 404=not found, 500=server error).
 
     Example:
         >>> result = ModelToolExecutionResult(tool_name="my_tool", success=True)
@@ -91,22 +95,35 @@ class ModelToolExecutionResult(BaseModel):
 
     @model_validator(mode="after")
     def _ensure_success_consistency(self) -> "ModelToolExecutionResult":
-        """Ensure consistency between success flag and error field.
+        """Ensure consistency between success flag, error field, and status_code.
 
         This validator enforces the single source of truth principle:
         - If success=True, error must be None (raises ValueError if not)
+        - If success=True and status_code >= 400, raises ValueError (HTTP error codes)
         - If success=False and error is None, sets a default error message
+        - If success=False and status_code is 0, sets status_code to 1 (generic error)
+
+        Note: HTTP success codes (200-299) are allowed with success=True since they
+        represent successful HTTP responses.
 
         Returns:
             Self with consistent state.
 
         Raises:
-            ValueError: If success=True but error is not None.
+            ValueError: If success=True but error is not None, or status_code indicates error.
         """
         if self.success and self.error is not None:
             raise ValueError(
                 f"Inconsistent state: success=True but error is set to '{self.error}'. "
                 "When success=True, error must be None."
+            )
+
+        # HTTP status codes >= 400 indicate errors, inconsistent with success=True
+        if self.success and self.status_code >= 400:
+            raise ValueError(
+                f"Inconsistent state: success=True but status_code is {self.status_code} "
+                "(HTTP error range). When success=True, status_code should be 0 or a "
+                "success code (e.g., 200-299)."
             )
 
         # If failure but no error message, set a default
@@ -115,6 +132,10 @@ class ModelToolExecutionResult(BaseModel):
             object.__setattr__(
                 self, "error", "Execution failed (no error message provided)"
             )
+
+        # If failure but status_code is 0, set a non-zero status code
+        if not self.success and self.status_code == 0:
+            object.__setattr__(self, "status_code", 1)
 
         return self
 

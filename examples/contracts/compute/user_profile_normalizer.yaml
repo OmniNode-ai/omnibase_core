@@ -23,13 +23,14 @@
 # - Sequential execution with abort-on-first-failure semantics
 # - Pipeline-level timeout configuration
 #
-# v1.0 Contract Schema Version
+# v1.1.0 Contract Schema Version
 # ============================================================================
 
 # Contract required fields
 node_type: COMPUTE_GENERIC
 contract_version: {major: 1, minor: 1, patch: 0}
-# Fingerprint: SHA-256 hash of canonical contract content (node_type, compute, metadata.description)
+# Fingerprint: SHA-256 hash of canonical normalized contract content.
+# See docs/architecture/CONTRACT_FINGERPRINT_NORMALIZATION.md for normalization specification.
 fingerprint: "v1.1.0:8d515de74de2"
 # ---------------------------------------------------------------------------
 # COMPUTE SUBCONTRACT: Defines the transformation pipeline

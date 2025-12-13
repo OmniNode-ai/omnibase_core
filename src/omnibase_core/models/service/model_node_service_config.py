@@ -206,10 +206,28 @@ class ModelNodeServiceConfig(BaseModel):
 
         Returns:
             ModelNodeServiceConfig instance with environment-based configuration
+
+        Raises:
+            ModelOnexError: If NODE_VERSION environment variable contains invalid semver string
         """
+        node_version_str = os.getenv("NODE_VERSION", "1.0.0")
+        try:
+            node_version = ModelSemVer.parse(node_version_str)
+        except ModelOnexError as e:
+            # Re-raise with additional context about environment variable source
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Invalid NODE_VERSION environment variable: '{node_version_str}'",
+                context={
+                    "node_version_str": node_version_str,
+                    "expected_format": "MAJOR.MINOR.PATCH (e.g., 1.0.0)",
+                    "original_error": str(e),
+                    "source": "NODE_VERSION environment variable",
+                },
+            ) from e
         env_config = {
             "node_name": node_name,
-            "node_version": ModelSemVer.parse(os.getenv("NODE_VERSION", "1.0.0")),
+            "node_version": node_version,
             "node_id": os.getenv("NODE_ID"),
             "log_level": os.getenv("LOG_LEVEL", LogLevel.INFO.value),
             "debug_mode": os.getenv("DEBUG_MODE", "false").lower() == "true",

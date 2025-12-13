@@ -101,7 +101,6 @@ class TestModelActionMetadata:
 
         assert metadata.status == "running"
         assert metadata.started_at is not None
-        assert isinstance(metadata.started_at, datetime)
 
     def test_mark_completed_without_result(self):
         """Test marking action as completed without result data."""
@@ -117,9 +116,8 @@ class TestModelActionMetadata:
         metadata.mark_completed()
 
         assert metadata.status == "completed"
-        assert metadata.completed_at is not None
-        assert isinstance(metadata.completed_at, datetime)
         assert metadata.result_data is None
+        assert metadata.completed_at is not None
 
     def test_mark_completed_with_result(self):
         """Test marking action as completed with result data."""

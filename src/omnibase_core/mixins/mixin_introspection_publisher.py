@@ -70,6 +70,16 @@ class MixinIntrospectionPublisher:
                     message=f"Node {self.__class__.__name__} must implement get_node_type() "
                     "returning one of: effect, compute, reducer, orchestrator",
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    context={
+                        "node_class": self.__class__.__name__,
+                        "required_method": "get_node_type",
+                        "valid_return_values": [
+                            "effect",
+                            "compute",
+                            "reducer",
+                            "orchestrator",
+                        ],
+                    },
                 )
             node_type = self.get_node_type()
             # For creating the event, we need a valid UUID - generate one if unset

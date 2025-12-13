@@ -37,7 +37,11 @@ class TestBasicCreation:
         assert result.status_code == 0
 
     def test_error_creation_with_required_fields(self) -> None:
-        """Test creating error execution result with required fields."""
+        """Test creating error execution result with required fields.
+
+        Note: When success=False and status_code is not provided, it defaults to 0
+        but the validator auto-corrects it to 1 (generic error) for consistency.
+        """
         result = ModelToolExecutionResult(
             tool_name="test_tool",
             success=False,
@@ -50,7 +54,8 @@ class TestBasicCreation:
         assert result.output == {}
         assert isinstance(result.execution_id, UUID)
         assert result.execution_time_ms == 0
-        assert result.status_code == 0
+        # status_code auto-corrected from 0 to 1 for consistency with success=False
+        assert result.status_code == 1
 
     def test_custom_execution_id(self) -> None:
         """Test creating result with custom execution ID."""

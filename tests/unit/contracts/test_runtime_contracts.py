@@ -796,15 +796,38 @@ class TestEventBusWiringEffectContract:
         )
 
     def test_contract_has_subscriptions(self, wiring_data: dict) -> None:
-        """Test that event_bus_wiring_effect.yaml defines subscriptions."""
+        """Test that event_bus_wiring_effect.yaml defines subscriptions.
+
+        The subscriptions field supports two formats:
+        1. Dict format with 'topics' key: subscriptions: {topics: [...]}
+        2. List format directly: subscriptions: [...]
+
+        v1.1.0+ contracts should use the dict format with 'topics' key for
+        consistency with other event-driven contracts.
+        """
         assert "subscriptions" in wiring_data, "Missing subscriptions section"
         subscriptions = wiring_data["subscriptions"]
-        assert isinstance(subscriptions, list), (
-            f"subscriptions must be a list, got {type(subscriptions).__name__}"
+
+        # Extract topics from either dict format (v1.1.0+) or list format (legacy)
+        if isinstance(subscriptions, dict):
+            assert "topics" in subscriptions, (
+                "subscriptions dict must have 'topics' key"
+            )
+            topics = subscriptions["topics"]
+        elif isinstance(subscriptions, list):
+            topics = subscriptions
+        else:
+            raise AssertionError(
+                f"subscriptions must be a dict (with 'topics' key) or list, "
+                f"got {type(subscriptions).__name__}"
+            )
+
+        assert isinstance(topics, list), (
+            f"subscriptions topics must be a list, got {type(topics).__name__}"
         )
-        assert len(subscriptions) >= 1, "Expected at least one subscription defined"
+        assert len(topics) >= 1, "Expected at least one subscription defined"
         # Validate minimal element shape for each subscription
-        for i, sub in enumerate(subscriptions):
+        for i, sub in enumerate(topics):
             assert isinstance(sub, dict), (
                 f"subscriptions[{i}] must be a dict, got {type(sub).__name__}"
             )

@@ -89,6 +89,11 @@ class ModelExampleOutputData(BaseModel):
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Configuration failed: {e}",
+                context={
+                    "kwargs_keys": list(kwargs.keys()),
+                    "error_type": type(e).__name__,
+                    "error_message": str(e),
+                },
             ) from e
 
     def serialize(self) -> SerializedDict:

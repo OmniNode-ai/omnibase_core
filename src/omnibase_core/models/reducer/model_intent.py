@@ -15,8 +15,9 @@ Design Pattern:
     Reducer function: delta(state, action) -> (new_state, intents[])
 
 Thread Safety:
-    ModelIntent is immutable (frozen=True) after creation, providing thread-safe
-    read access for top-level field values from multiple threads or async tasks.
+    ModelIntent has frozen fields (frozen=True) after creation, preventing field
+    reassignment and providing thread-safe read access for top-level field values
+    from multiple threads or async tasks.
 
     Safe Operations (thread-safe without synchronization):
         - Reading any top-level field (intent_type, target, priority, etc.)
@@ -146,5 +147,4 @@ class ModelIntent(BaseModel):
         extra="forbid",
         frozen=True,
         use_enum_values=False,
-        validate_assignment=True,
     )
