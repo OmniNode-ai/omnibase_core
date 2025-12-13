@@ -180,11 +180,11 @@ class MixinToolExecution:
             return result
         if hasattr(output_state, "__dict__"):
             # Regular object - cast to SerializedDict
-            obj_dict: SerializedDict = output_state.__dict__  # type: ignore[assignment]
+            obj_dict: SerializedDict = output_state.__dict__
             return obj_dict
         if isinstance(output_state, dict):
             # Already a dict
-            return output_state  # type: ignore[return-value]
+            return output_state
         # Fallback
         return {"result": str(output_state)}
 

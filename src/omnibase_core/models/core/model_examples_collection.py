@@ -147,8 +147,8 @@ class ModelExamplesCollection(BaseModel):
             return cls(
                 examples=examples,
                 metadata=data.get("metadata"),
-                format=data.get("format", "json"),  # type: ignore[arg-type]
-                schema_compliant=data.get("schema_compliant", True),  # type: ignore[arg-type]
+                format=data.get("format", "json"),
+                schema_compliant=data.get("schema_compliant", True),
             )
 
         # Single example as dict

@@ -15,6 +15,8 @@ See src/omnibase_core/validation/fsm_analysis.py for implementation.
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 from omnibase_core.models.contracts.subcontracts.model_fsm_state_definition import (
     ModelFSMStateDefinition,
 )

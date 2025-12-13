@@ -110,7 +110,10 @@ class ModelMetadataNodeCollection(RootModel[dict[str, object]]):
 
     def serialize(self) -> TypedDictSerializedModel:
         """Serialize to dictionary (Serializable protocol)."""
-        return self.model_dump(exclude_none=False, by_alias=True)
+        result: TypedDictSerializedModel = self.model_dump(
+            exclude_none=False, by_alias=True
+        )
+        return result
 
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol)."""

@@ -153,7 +153,7 @@ class ModelParsedArguments(BaseModel):
             )
 
         # Start with the argument map dictionary
-        result: SerializedDict = self.arguments.to_dict()  # type: ignore[assignment]
+        result: SerializedDict = self.arguments.to_dict()
 
         # Add command metadata
         result["_command_name"] = self.command_definition.command_name

@@ -13,6 +13,8 @@ Tests all aspects of the FSM data structure model including:
 import pytest
 from pydantic import ValidationError
 
+pytestmark = pytest.mark.unit
+
 from omnibase_core.models.fsm.model_fsm_data import ModelFsmData
 from omnibase_core.models.fsm.model_fsm_state import ModelFsmState
 from omnibase_core.models.fsm.model_fsm_transition import ModelFsmTransition

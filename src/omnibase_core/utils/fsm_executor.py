@@ -10,7 +10,7 @@ while maintaining type clarity for FSM-specific usage.
 """
 
 from datetime import UTC, datetime
-from typing import SupportsFloat, cast
+from typing import Any, SupportsFloat, cast
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.contracts.subcontracts.model_fsm_state_definition import (
@@ -34,6 +34,8 @@ from omnibase_core.models.fsm.model_fsm_transition_result import (
 )
 from omnibase_core.models.reducer.model_intent import ModelIntent
 from omnibase_core.types.type_fsm_context import FSMContextType
+from omnibase_core.utils.fsm_expression_parser import parse_expression
+from omnibase_core.utils.fsm_operators import evaluate_equals, evaluate_not_equals
 
 
 async def execute_transition(
@@ -332,7 +334,7 @@ def get_initial_state(fsm: ModelFSMSubcontract) -> FSMState:
             state = get_initial_state(fsm)
             print(f"Starting in state: {state.current_state}")  # "start"
             print(f"Context: {state.context}")                  # {}
-            print(f"History: {state.history}")                  # ()
+            print(f"History: {state.history}")                  # []
 
             # Use state for first transition
             result = await execute_transition(
@@ -342,7 +344,7 @@ def get_initial_state(fsm: ModelFSMSubcontract) -> FSMState:
                 context=state.context,
             )
     """
-    return FSMState(current_state=fsm.initial_state, context={}, history=())
+    return FSMState(current_state=fsm.initial_state, context={}, history=[])
 
 
 # Private helper functions
@@ -406,6 +408,51 @@ async def _evaluate_conditions(
     return True
 
 
+def _get_nested_field_value(context: FSMContextType, field_path: str) -> Any:
+    """
+    Get value from nested dict using dot notation path.
+
+    Supports nested field access like "user.email" or "data.items.count".
+
+    Args:
+        context: The context dictionary
+        field_path: Dot-separated path like "user.email" or "data.items.count"
+
+    Returns:
+        The value at the path, or None if any segment is missing or
+        if any intermediate value is not a dict
+
+    Examples:
+        >>> _get_nested_field_value({"user": {"email": "test@example.com"}}, "user.email")
+        'test@example.com'
+
+        >>> _get_nested_field_value({"count": 5}, "count")
+        5
+
+        >>> _get_nested_field_value({"user": {"name": "Bob"}}, "user.email")
+        None
+
+        >>> _get_nested_field_value({"user": None}, "user.email")
+        None
+    """
+    # Fast path: no dots means simple field access
+    if "." not in field_path:
+        return context.get(field_path)
+
+    # Split and traverse for nested paths
+    segments = field_path.split(".")
+    current: Any = context
+
+    for segment in segments:
+        if not isinstance(current, dict):
+            return None
+        current = current.get(segment)
+        if current is None:
+            return None
+
+    return current
+
+
 async def _evaluate_single_condition(
     condition: ModelFSMTransitionCondition,
     context: FSMContextType,
@@ -451,37 +498,41 @@ async def _evaluate_single_condition(
             - 'min_length', 'max_length': Cast expected value to int
             - 'exists', 'not_exists': No type coercion (presence check only)
     """
-    # Simple expression-based evaluation
+    # Expression-based evaluation using validated parser
     # Format: "field operator value"
     # Example: "data_sources min_length 1"
+    #
+    # Uses parse_expression for validation:
+    # - Ensures exactly 3 tokens (field, operator, value)
+    # - Validates operator is in SUPPORTED_OPERATORS
+    # - Security: Rejects underscore-prefixed field names
 
-    parts = condition.expression.split()
-    if len(parts) < 2:
-        # Invalid expression format
+    try:
+        field_name, operator, expected_value = parse_expression(condition.expression)
+    except ModelOnexError:
+        # Invalid expression format - fail gracefully
+        # parse_expression raises for:
+        # - Empty expression
+        # - Wrong token count (not exactly 3)
+        # - Unsupported operator
+        # - Underscore-prefixed field names (security)
         return False
 
-    field_name = parts[0]
-    operator = parts[1]
-    expected_value = parts[2] if len(parts) > 2 else None
-
-    field_value = context.get(field_name)
+    # Use nested field access to support dot notation (e.g., "user.email")
+    field_value = _get_nested_field_value(context, field_name)
 
     # Evaluate based on operator
     # Standard operators (validated by ModelFSMTransitionCondition)
     if operator == "==" or operator == "equals":
-        # STRING-BASED COMPARISON: Both values are cast to str before comparison
-        # This is INTENTIONAL to handle YAML/JSON config values consistently
-        # Examples: 10 == "10" → True, True == "True" → True, None == "None" → True
-        # WARNING: Type information is lost! Use >/< operators for numeric checks
-        # See function docstring for complete type coercion behavior documentation
-        return str(field_value) == str(expected_value)
+        # STRING-BASED COMPARISON via fsm_operators module
+        # Both values are cast to str before comparison (INTENTIONAL)
+        # See fsm_operators.evaluate_equals docstring for type coercion behavior
+        return evaluate_equals(field_value, expected_value)
     elif operator == "!=" or operator == "not_equals":
-        # STRING-BASED COMPARISON: Both values are cast to str before comparison
-        # This is INTENTIONAL to handle YAML/JSON config values consistently
-        # Examples: 10 != "10" → False, True != "True" → False
-        # WARNING: Type information is lost! Use >/< operators for numeric checks
-        # See function docstring for complete type coercion behavior documentation
-        return str(field_value) != str(expected_value)
+        # STRING-BASED COMPARISON via fsm_operators module
+        # Both values are cast to str before comparison (INTENTIONAL)
+        # See fsm_operators.evaluate_not_equals docstring for type coercion behavior
+        return evaluate_not_equals(field_value, expected_value)
     elif operator == ">":
         try:
             # Cast to SupportsFloat - TypeError caught if not actually numeric
@@ -516,15 +567,13 @@ async def _evaluate_single_condition(
             return False
     elif operator == "in":
         # Check if field_value is in expected_value (comma-separated list or iterable)
-        if expected_value is None:
-            return False
-        expected_list = [v.strip() for v in str(expected_value).split(",")]
+        # Note: expected_value is always a string from parse_expression
+        expected_list = [v.strip() for v in expected_value.split(",")]
         return str(field_value) in expected_list
     elif operator == "not_in":
         # Check if field_value is NOT in expected_value (comma-separated list)
-        if expected_value is None:
-            return True
-        expected_list = [v.strip() for v in str(expected_value).split(",")]
+        # Note: expected_value is always a string from parse_expression
+        expected_list = [v.strip() for v in expected_value.split(",")]
         return str(field_value) not in expected_list
     elif operator == "contains":
         # Check if field_value contains expected_value as substring

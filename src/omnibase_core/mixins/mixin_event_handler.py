@@ -380,7 +380,7 @@ class MixinEventHandler:
         if hasattr(introspection_data, "model_dump"):
             data_dict = introspection_data.model_dump()
         else:
-            data_dict = dict(introspection_data)  # type: ignore[arg-type]
+            data_dict = dict(introspection_data)
 
         filtered_data: dict[str, object] = {}
 

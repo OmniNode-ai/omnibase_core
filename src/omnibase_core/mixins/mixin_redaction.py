@@ -149,7 +149,7 @@ class MixinSensitiveFieldRedaction:
         """
         from omnibase_core.types.type_serializable_value import SerializedDict
 
-        redacted_data: SerializedDict = dict(data)  # type: ignore[assignment]
+        redacted_data: SerializedDict = dict(data)
         additional_fields = additional_sensitive_fields or set()
 
         for field_name, field_value in data.items():
@@ -163,7 +163,7 @@ class MixinSensitiveFieldRedaction:
 
             # Recursively redact nested dictionaries
             elif isinstance(field_value, dict):
-                redacted_data[field_name] = self.redact_sensitive_fields(field_value)  # type: ignore[arg-type]
+                redacted_data[field_name] = self.redact_sensitive_fields(field_value)
 
             # Redact items in lists that are dictionaries
             elif isinstance(field_value, list):
@@ -171,11 +171,11 @@ class MixinSensitiveFieldRedaction:
                 for item in field_value:
                     if isinstance(item, dict):
                         redacted_list.append(
-                            self.redact_sensitive_fields(item),  # type: ignore[arg-type]
+                            self.redact_sensitive_fields(item),
                         )
                     else:
                         redacted_list.append(item)
-                redacted_data[field_name] = redacted_list  # type: ignore[assignment]
+                redacted_data[field_name] = redacted_list
 
         return redacted_data
 

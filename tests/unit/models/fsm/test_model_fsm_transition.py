@@ -12,6 +12,8 @@ Tests all aspects of the FSM transition model including:
 import pytest
 from pydantic import ValidationError
 
+pytestmark = pytest.mark.unit
+
 from omnibase_core.models.fsm.model_fsm_transition import ModelFsmTransition
 
 
