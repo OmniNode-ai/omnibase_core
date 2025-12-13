@@ -337,7 +337,7 @@ poetry run python scripts/check_node_purity.py --json
 
 ## CI Configuration
 
-The purity check runs as part of CI in `.github/workflows/test.yml`:
+The purity check runs as part of CI in GitHub Actions (see `.github/workflows/test.yml`):
 
 ```yaml
 node-purity-check:

@@ -529,7 +529,7 @@ class NodePriceCalculatorCompute(ModelServiceCompute):
 
 For **5% of use cases** where you need direct access to NodeCompute features:
 
-```
+```python
 from omnibase_core.nodes import NodeCompute
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
