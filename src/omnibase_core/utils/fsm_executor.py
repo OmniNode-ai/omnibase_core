@@ -9,7 +9,6 @@ Context dictionaries use FSMContextType (dict[str, Any]) to allow dynamic execut
 while maintaining type clarity for FSM-specific usage.
 """
 
-from collections.abc import Sized
 from datetime import UTC, datetime
 from typing import SupportsFloat, cast
 
@@ -468,37 +467,22 @@ async def _evaluate_single_condition(
     field_value = context.get(field_name)
 
     # Evaluate based on operator
-    if operator == "equals":
+    # Standard operators (validated by ModelFSMTransitionCondition)
+    if operator == "==" or operator == "equals":
         # STRING-BASED COMPARISON: Both values are cast to str before comparison
         # This is INTENTIONAL to handle YAML/JSON config values consistently
         # Examples: 10 == "10" → True, True == "True" → True, None == "None" → True
-        # WARNING: Type information is lost! Use greater_than/less_than for numeric checks
+        # WARNING: Type information is lost! Use >/< operators for numeric checks
         # See function docstring for complete type coercion behavior documentation
         return str(field_value) == str(expected_value)
-    elif operator == "not_equals":
+    elif operator == "!=" or operator == "not_equals":
         # STRING-BASED COMPARISON: Both values are cast to str before comparison
         # This is INTENTIONAL to handle YAML/JSON config values consistently
         # Examples: 10 != "10" → False, True != "True" → False
-        # WARNING: Type information is lost! Use greater_than/less_than for numeric checks
+        # WARNING: Type information is lost! Use >/< operators for numeric checks
         # See function docstring for complete type coercion behavior documentation
         return str(field_value) != str(expected_value)
-    elif operator == "min_length":
-        if not field_value:
-            return False
-        try:
-            # Cast to Sized for len() - TypeError caught if not actually Sized
-            return len(cast(Sized, field_value)) >= int(expected_value or "0")
-        except (TypeError, ValueError):
-            return False
-    elif operator == "max_length":
-        if not field_value:
-            return True
-        try:
-            # Cast to Sized for len() - TypeError caught if not actually Sized
-            return len(cast(Sized, field_value)) <= int(expected_value or "0")
-        except (TypeError, ValueError):
-            return False
-    elif operator == "greater_than":
+    elif operator == ">":
         try:
             # Cast to SupportsFloat - TypeError caught if not actually numeric
             return float(cast(SupportsFloat, field_value) or 0) > float(
@@ -506,7 +490,7 @@ async def _evaluate_single_condition(
             )
         except (TypeError, ValueError):
             return False
-    elif operator == "less_than":
+    elif operator == "<":
         try:
             # Cast to SupportsFloat - TypeError caught if not actually numeric
             return float(cast(SupportsFloat, field_value) or 0) < float(
@@ -514,10 +498,49 @@ async def _evaluate_single_condition(
             )
         except (TypeError, ValueError):
             return False
-    elif operator == "exists":
-        return field_name in context
-    elif operator == "not_exists":
-        return field_name not in context
+    elif operator == ">=":
+        try:
+            # Cast to SupportsFloat - TypeError caught if not actually numeric
+            return float(cast(SupportsFloat, field_value) or 0) >= float(
+                expected_value or "0"
+            )
+        except (TypeError, ValueError):
+            return False
+    elif operator == "<=":
+        try:
+            # Cast to SupportsFloat - TypeError caught if not actually numeric
+            return float(cast(SupportsFloat, field_value) or 0) <= float(
+                expected_value or "0"
+            )
+        except (TypeError, ValueError):
+            return False
+    elif operator == "in":
+        # Check if field_value is in expected_value (comma-separated list or iterable)
+        if expected_value is None:
+            return False
+        expected_list = [v.strip() for v in str(expected_value).split(",")]
+        return str(field_value) in expected_list
+    elif operator == "not_in":
+        # Check if field_value is NOT in expected_value (comma-separated list)
+        if expected_value is None:
+            return True
+        expected_list = [v.strip() for v in str(expected_value).split(",")]
+        return str(field_value) not in expected_list
+    elif operator == "contains":
+        # Check if field_value contains expected_value as substring
+        if field_value is None:
+            return False
+        return str(expected_value) in str(field_value)
+    elif operator == "matches":
+        # Regex match (basic pattern matching)
+        import re
+
+        if field_value is None:
+            return False
+        try:
+            return bool(re.match(str(expected_value), str(field_value)))
+        except re.error:
+            return False
 
     # Unknown operator - fail safe
     return False

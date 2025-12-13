@@ -134,7 +134,7 @@ def fsm_with_conditions() -> ModelFSMSubcontract:
                     ModelFSMTransitionCondition(
                         condition_name="has_data",
                         condition_type="field_check",
-                        expression="data_count min_length 1",
+                        expression="data_count_len >= 1",
                         required=True,
                     )
                 ],
@@ -271,7 +271,7 @@ class TestFSMConditions:
     @pytest.mark.asyncio
     async def test_condition_met(self, fsm_with_conditions: ModelFSMSubcontract):
         """Test transition when condition is met."""
-        context = {"data_count": [1, 2, 3]}  # Has data
+        context = {"data_count_len": 3}  # Has data (length >= 1)
 
         result = await execute_transition(fsm_with_conditions, "idle", "start", context)
 
@@ -281,7 +281,7 @@ class TestFSMConditions:
     @pytest.mark.asyncio
     async def test_condition_not_met(self, fsm_with_conditions: ModelFSMSubcontract):
         """Test transition when condition is not met."""
-        context = {"data_count": []}  # Empty list
+        context = {"data_count_len": 0}  # Empty (length < 1)
 
         result = await execute_transition(fsm_with_conditions, "idle", "start", context)
 
@@ -299,7 +299,7 @@ class TestFSMConditions:
         self, fsm_with_conditions: ModelFSMSubcontract
     ):
         """Test transition when condition field is missing."""
-        context = {}  # No data_count field
+        context = {}  # No data_count_len field
 
         result = await execute_transition(fsm_with_conditions, "idle", "start", context)
 
@@ -793,7 +793,7 @@ class TestPersistenceIntents:
         assert not fsm_with_conditions.persistence_enabled
 
         result = await execute_transition(
-            fsm_with_conditions, "idle", "start", {"data_count": [1, 2, 3]}
+            fsm_with_conditions, "idle", "start", {"data_count_len": 3}
         )
 
         persist_intents = [
