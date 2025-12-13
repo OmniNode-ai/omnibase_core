@@ -491,11 +491,7 @@ class TestFileRegistryFileNotFound:
             file_registry.load_all(nonexistent_dir)
 
         error = exc_info.value
-        assert error.error_code in (
-            EnumCoreErrorCode.DIRECTORY_NOT_FOUND,
-            EnumCoreErrorCode.FILE_NOT_FOUND,
-            EnumCoreErrorCode.NOT_FOUND,
-        )
+        assert error.error_code == EnumCoreErrorCode.DIRECTORY_NOT_FOUND
 
     def test_load_all_nonexistent_directory_includes_path_in_error(
         self,
@@ -602,11 +598,7 @@ handlers:
 
         # Empty YAML parses to None, which is not a valid dict
         error = exc_info.value
-        assert error.error_code in (
-            EnumCoreErrorCode.VALIDATION_ERROR,
-            EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR,
-            EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
-        )
+        assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
     def test_load_yaml_list_not_dict(
         self,
@@ -624,10 +616,7 @@ handlers:
             file_registry.load(list_yaml_file)
 
         error = exc_info.value
-        assert error.error_code in (
-            EnumCoreErrorCode.VALIDATION_ERROR,
-            EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
-        )
+        assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
     def test_load_yaml_scalar_not_dict(
         self,
@@ -645,10 +634,7 @@ handlers:
             file_registry.load(scalar_yaml_file)
 
         error = exc_info.value
-        assert error.error_code in (
-            EnumCoreErrorCode.VALIDATION_ERROR,
-            EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
-        )
+        assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
 
 # =============================================================================
@@ -955,11 +941,8 @@ event_bus:
             file_registry.load(versioned_file)
 
         error = exc_info.value
-        # Either CONTRACT_VALIDATION_ERROR (unknown field) or VERSION_INCOMPATIBLE
-        assert error.error_code in (
-            EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
-            EnumCoreErrorCode.VERSION_INCOMPATIBLE,
-        )
+        # schema_version is an unknown field (extra="forbid"), so CONTRACT_VALIDATION_ERROR
+        assert error.error_code == EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR
         # File path should be in error
         assert str(versioned_file) in str(error) or "versioned.yaml" in str(error)
 
@@ -995,12 +978,8 @@ class TestFileRegistryDuplicateHandlers:
             file_registry.load(duplicate_file)
 
         error = exc_info.value
-        # Should be a validation error for duplicate handlers
-        assert error.error_code in (
-            EnumCoreErrorCode.VALIDATION_ERROR,
-            EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
-            EnumCoreErrorCode.DUPLICATE_REGISTRATION,
-        )
+        # Should be DUPLICATE_REGISTRATION for duplicate handlers
+        assert error.error_code == EnumCoreErrorCode.DUPLICATE_REGISTRATION
 
     def test_load_yaml_with_duplicate_handler_types_includes_file_path(
         self,
@@ -1358,3 +1337,161 @@ handlers:
         # Assert
         assert len(contract.handlers) == 1
         assert contract.handlers[0].handler_type.value == handler_type
+
+
+# =============================================================================
+# OSError Handling Tests (PR #173 Critical/Major Fixes)
+# =============================================================================
+
+
+@pytest.mark.unit
+@pytest.mark.timeout(60)
+class TestFileRegistryOSErrorHandling:
+    """
+    Test OSError handling in FileRegistry.
+
+    These tests verify that OSError exceptions (permission denied,
+    is a directory, etc.) are properly wrapped in ModelOnexError
+    instead of leaking raw OSError to callers.
+
+    Related: PR #173 review feedback - Critical/Major issues.
+    """
+
+    def test_load_directory_path_as_file_raises_file_read_error(
+        self,
+        tmp_path: Path,
+        file_registry: FileRegistry,
+    ) -> None:
+        """Test that passing a directory path to load() raises FILE_READ_ERROR."""
+        # Arrange - create a directory (tmp_path is already a directory)
+        subdir = tmp_path / "subdir"
+        subdir.mkdir()
+
+        # Act & Assert
+        with pytest.raises(ModelOnexError) as exc_info:
+            file_registry.load(subdir)
+
+        error = exc_info.value
+        assert error.error_code == EnumCoreErrorCode.FILE_READ_ERROR
+        assert str(subdir) in str(error) or "subdir" in str(error)
+
+    def test_load_directory_path_includes_os_error_context(
+        self,
+        tmp_path: Path,
+        file_registry: FileRegistry,
+    ) -> None:
+        """Test that loading a directory includes OS error info in context."""
+        # Arrange
+        subdir = tmp_path / "test_dir"
+        subdir.mkdir()
+
+        # Act & Assert
+        with pytest.raises(ModelOnexError) as exc_info:
+            file_registry.load(subdir)
+
+        error = exc_info.value
+        # Context should include os_error details
+        context = error.context
+        has_os_error_info = (
+            "os_error" in context
+            or "directory" in str(error).lower()
+            or "IsADirectoryError" in str(error)
+        )
+        assert has_os_error_info
+
+    def test_load_does_not_leak_raw_oserror(
+        self,
+        tmp_path: Path,
+        file_registry: FileRegistry,
+    ) -> None:
+        """Test that load() never leaks raw OSError."""
+        # Arrange - create a directory to trigger IsADirectoryError
+        subdir = tmp_path / "not_a_file"
+        subdir.mkdir()
+
+        # Act & Assert - should raise ModelOnexError, not OSError
+        try:
+            file_registry.load(subdir)
+            pytest.fail("Expected ModelOnexError to be raised")
+        except ModelOnexError:
+            pass  # Expected
+        except OSError as e:
+            pytest.fail(f"Raw OSError leaked: {type(e).__name__}: {e}")
+        except Exception as e:
+            pytest.fail(f"Unexpected exception: {type(e).__name__}: {e}")
+
+    def test_load_all_does_not_leak_raw_oserror(
+        self,
+        tmp_path: Path,
+        file_registry: FileRegistry,
+        valid_contract_yaml: str,
+    ) -> None:
+        """Test that load_all() never leaks raw OSError during directory scan."""
+        # Arrange - create a valid directory with contracts
+        (tmp_path / "contract.yaml").write_text(valid_contract_yaml)
+
+        # Act - should not raise any OSError
+        try:
+            contracts = file_registry.load_all(tmp_path)
+            # If it succeeds, verify the result
+            assert len(contracts) == 1
+        except ModelOnexError:
+            pass  # Acceptable - wrapped error
+        except OSError as e:
+            pytest.fail(f"Raw OSError leaked: {type(e).__name__}: {e}")
+
+    def test_load_file_path_as_not_a_directory(
+        self,
+        tmp_path: Path,
+        file_registry: FileRegistry,
+        valid_contract_yaml: str,
+    ) -> None:
+        """Test that load_all() with file path (not dir) raises appropriate error."""
+        # Arrange - create a file
+        contract_file = tmp_path / "contract.yaml"
+        contract_file.write_text(valid_contract_yaml)
+
+        # Act & Assert - load_all expects directory, not file
+        with pytest.raises(ModelOnexError) as exc_info:
+            file_registry.load_all(contract_file)
+
+        error = exc_info.value
+        assert error.error_code == EnumCoreErrorCode.DIRECTORY_NOT_FOUND
+
+    def test_load_file_read_error_includes_file_path(
+        self,
+        tmp_path: Path,
+        file_registry: FileRegistry,
+    ) -> None:
+        """Test that FILE_READ_ERROR includes the file path in context."""
+        # Arrange
+        subdir = tmp_path / "readable_dir"
+        subdir.mkdir()
+
+        # Act & Assert
+        with pytest.raises(ModelOnexError) as exc_info:
+            file_registry.load(subdir)
+
+        error = exc_info.value
+        # Check file_path is in context
+        assert "file_path" in error.context
+        assert str(subdir) in error.context.get("file_path", "")
+
+    def test_load_file_read_error_preserves_exception_chain(
+        self,
+        tmp_path: Path,
+        file_registry: FileRegistry,
+    ) -> None:
+        """Test that FILE_READ_ERROR preserves the original exception chain."""
+        # Arrange
+        subdir = tmp_path / "chained_error_test"
+        subdir.mkdir()
+
+        # Act & Assert
+        with pytest.raises(ModelOnexError) as exc_info:
+            file_registry.load(subdir)
+
+        error = exc_info.value
+        # The __cause__ should be the original OSError
+        assert error.__cause__ is not None
+        assert isinstance(error.__cause__, OSError)

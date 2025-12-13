@@ -43,8 +43,8 @@ allowed_files:
   - file: "src/omnibase_core/runtime/file_registry.py"
     reason: "FileRegistry requires raw YAML access for line number extraction in error messages - provides
       fail-fast contract loading with detailed error context (OMN-229)"
-    added: "2024-12-13"
-    review: "2025-06-13"
+    added: "2025-12-13"
+    review: "2026-06-13"
 
 # Specific filenames that are allowed (matched by basename)
 # Allows the same utility to be used across different module paths (e.g., copied utilities)

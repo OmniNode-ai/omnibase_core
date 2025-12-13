@@ -15,10 +15,6 @@ Related:
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
-
-import yaml
-from pydantic import ValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_handler_type import EnumHandlerType
@@ -49,7 +45,9 @@ class FileRegistry:
         Load a single YAML contract file.
 
         Parses and validates a YAML contract file, returning a fully
-        validated ModelRuntimeHostContract instance.
+        validated ModelRuntimeHostContract instance. Delegates core YAML
+        loading to ModelRuntimeHostContract.from_yaml() and adds
+        FileRegistry-specific validations.
 
         Args:
             path: Path to the YAML contract file
@@ -61,6 +59,7 @@ class FileRegistry:
             ModelOnexError: If file not found, invalid YAML, or validation fails.
                 Error codes:
                 - FILE_NOT_FOUND: Contract file does not exist
+                - FILE_READ_ERROR: Cannot read file (permission denied, is a directory, etc.)
                 - CONFIGURATION_PARSE_ERROR: Invalid YAML syntax
                 - CONTRACT_VALIDATION_ERROR: Schema validation failure
                     (unknown fields, invalid enum values, missing required fields)
@@ -73,59 +72,13 @@ class FileRegistry:
             >>> contract.event_bus.kind
             'kafka'
         """
-        # Check file exists
-        if not path.exists():
-            raise ModelOnexError(
-                message=f"Contract file not found: {path}",
-                error_code=EnumCoreErrorCode.FILE_NOT_FOUND,
-                file_path=str(path),
-            )
+        # Delegate core YAML loading to ModelRuntimeHostContract.from_yaml()
+        # This handles: file existence check, OSError handling, YAML parsing
+        # (with line numbers), empty file detection, type validation, and
+        # Pydantic model validation
+        contract = ModelRuntimeHostContract.from_yaml(path)
 
-        # Parse YAML
-        try:
-            with path.open("r", encoding="utf-8") as f:
-                yaml_data = yaml.safe_load(f)
-        except yaml.YAMLError as e:
-            # Extract line number if available
-            line_info = ""
-            if hasattr(e, "problem_mark") and e.problem_mark:
-                line_info = f" at line {e.problem_mark.line + 1}"
-            raise ModelOnexError(
-                message=f"Invalid YAML in contract file: {path}{line_info}",
-                error_code=EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR,
-                file_path=str(path),
-                yaml_error=str(e),
-            ) from e
-
-        # Check YAML parsed to a dict
-        if yaml_data is None:
-            raise ModelOnexError(
-                message=f"Contract file is empty or contains only comments: {path}",
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                file_path=str(path),
-            )
-
-        if not isinstance(yaml_data, dict):
-            raise ModelOnexError(
-                message=f"Contract file must contain a YAML mapping, got {type(yaml_data).__name__}: {path}",
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                file_path=str(path),
-            )
-
-        # Validate with Pydantic model
-        try:
-            contract = ModelRuntimeHostContract.model_validate(yaml_data)
-        except ValidationError as e:
-            # Extract field information from validation error
-            error_details = str(e)
-            raise ModelOnexError(
-                message=f"Contract validation failed for {path}: {error_details}",
-                error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
-                file_path=str(path),
-                validation_error=error_details,
-            ) from e
-
-        # Validate no duplicate handler types
+        # FileRegistry-specific validation: no duplicate handler types
         self._validate_unique_handler_types(contract, path)
 
         return contract
@@ -136,12 +89,18 @@ class FileRegistry:
         """
         Validate that handler types are unique within a contract.
 
+        Ensures that no duplicate handler types exist in the contract's handlers list.
+        This is a FileRegistry-specific validation that complements the schema-level
+        validation performed by ModelRuntimeHostContract.
+
         Args:
-            contract: The validated contract to check
-            path: Path to the contract file (for error context)
+            contract: The validated contract to check for duplicate handler types
+            path: Path to the contract file (used for error context and debugging)
 
         Raises:
-            ModelOnexError: If duplicate handler types are found
+            ModelOnexError: If duplicate handler types are detected.
+                Error code: DUPLICATE_REGISTRATION
+                Context includes the path and duplicate handler type value
         """
         seen_types: set[EnumHandlerType] = set()
         for handler in contract.handlers:
@@ -172,7 +131,9 @@ class FileRegistry:
             ModelOnexError: If directory not found, or any file fails to load.
                 Error codes:
                 - DIRECTORY_NOT_FOUND: Directory does not exist or is not a directory
+                - FILE_OPERATION_ERROR: Cannot scan directory (permission denied, etc.)
                 - FILE_NOT_FOUND: Contract file does not exist
+                - FILE_READ_ERROR: Cannot read file (permission denied, is a directory, etc.)
                 - CONFIGURATION_PARSE_ERROR: Invalid YAML syntax
                 - CONTRACT_VALIDATION_ERROR: Schema validation failure
                 - VALIDATION_ERROR: YAML parsed to non-dict type
@@ -200,9 +161,18 @@ class FileRegistry:
             )
 
         # Find all YAML files (non-recursive)
-        yaml_files: list[Path] = []
-        for pattern in ("*.yaml", "*.yml"):
-            yaml_files.extend(directory.glob(pattern))
+        try:
+            yaml_files: list[Path] = []
+            for pattern in ("*.yaml", "*.yml"):
+                yaml_files.extend(directory.glob(pattern))
+        except OSError as e:
+            # Handle directory scanning errors (permission denied, etc.)
+            raise ModelOnexError(
+                message=f"Cannot scan directory for contract files: {directory}: {e}",
+                error_code=EnumCoreErrorCode.FILE_OPERATION_ERROR,
+                file_path=str(directory),
+                os_error=str(e),
+            ) from e
 
         # Sort for deterministic ordering
         yaml_files.sort()

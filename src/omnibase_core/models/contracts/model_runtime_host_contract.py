@@ -15,7 +15,7 @@ Strict typing is enforced: No Any types allowed in implementation.
 from pathlib import Path
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.contracts.model_node_ref import ModelNodeRef
@@ -92,7 +92,13 @@ class ModelRuntimeHostContract(BaseModel):
             ModelRuntimeHostContract: Validated contract instance
 
         Raises:
-            ModelOnexError: If file not found, invalid YAML, or validation fails
+            ModelOnexError: If file not found, invalid YAML, or validation fails.
+                Error codes:
+                - FILE_NOT_FOUND: Contract file does not exist
+                - FILE_READ_ERROR: Cannot read file (permission denied, is a directory, etc.)
+                - CONFIGURATION_PARSE_ERROR: Invalid YAML syntax
+                - VALIDATION_ERROR: YAML parsed to non-dict type or empty file
+                - CONTRACT_VALIDATION_ERROR: Schema validation failure
 
         Example:
             >>> from pathlib import Path
@@ -100,6 +106,7 @@ class ModelRuntimeHostContract(BaseModel):
             ...     Path("config/runtime_host.yaml")
             ... )  # doctest: +SKIP
         """
+        # Check file exists
         if not path.exists():
             raise ModelOnexError(
                 message=f"Contract file not found: {path}",
@@ -107,29 +114,54 @@ class ModelRuntimeHostContract(BaseModel):
                 file_path=str(path),
             )
 
+        # Parse YAML
         try:
             with path.open("r", encoding="utf-8") as f:
                 yaml_data = yaml.safe_load(f)
-        except yaml.YAMLError as e:
+        except OSError as e:
+            # Handle file read errors (permission denied, is a directory, etc.)
             raise ModelOnexError(
-                message=f"Invalid YAML in contract file: {path}",
+                message=f"Cannot read contract file: {path}: {e}",
+                error_code=EnumCoreErrorCode.FILE_READ_ERROR,
+                file_path=str(path),
+                os_error=str(e),
+            ) from e
+        except yaml.YAMLError as e:
+            # Extract line number if available
+            line_info = ""
+            if hasattr(e, "problem_mark") and e.problem_mark:
+                line_info = f" at line {e.problem_mark.line + 1}"
+            raise ModelOnexError(
+                message=f"Invalid YAML in contract file: {path}{line_info}",
                 error_code=EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR,
                 file_path=str(path),
                 yaml_error=str(e),
             ) from e
 
-        if not isinstance(yaml_data, dict):
+        # Check YAML parsed to a dict (handles empty files and non-mapping types)
+        if yaml_data is None:
             raise ModelOnexError(
-                message=f"Contract file must contain a YAML mapping, got {type(yaml_data).__name__}",
+                message=f"Contract file must contain a YAML mapping, got NoneType: {path}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 file_path=str(path),
             )
 
+        if not isinstance(yaml_data, dict):
+            raise ModelOnexError(
+                message=f"Contract file must contain a YAML mapping, got {type(yaml_data).__name__}: {path}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                file_path=str(path),
+            )
+
+        # Validate with Pydantic model
         try:
             return cls.model_validate(yaml_data)
-        except Exception as e:
+        except ValidationError as e:
+            # Extract field information from validation error
+            error_details = str(e)
             raise ModelOnexError(
-                message=f"Contract validation failed: {e}",
+                message=f"Contract validation failed for {path}: {error_details}",
                 error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
                 file_path=str(path),
+                validation_error=error_details,
             ) from e
