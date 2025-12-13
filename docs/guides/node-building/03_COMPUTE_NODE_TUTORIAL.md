@@ -4,21 +4,21 @@
 **Prerequisites**: [What is a Node?](01_WHAT_IS_A_NODE.md), [Node Types](02_NODE_TYPES.md)
 **What You'll Build**: A price calculation node with tax, discounts, and caching
 
-## 🎯 Recommended Approach
+## Recommended Approach
 
 This tutorial shows **TWO approaches**:
 
 1. **RECOMMENDED (95% of use cases)**: `ModelServiceCompute` wrapper
-   - Production-ready with built-in features
+   - Production-ready with built-in features (health checks, metrics, caching)
+   - Service mode for long-running MCP servers
    - Minimal boilerplate
-   - Health checks, metrics, event bus included
 
-2. **ADVANCED (5% of use cases)**: `NodeCompute` base class
-   - Custom mixin composition
-   - Selective feature inclusion
-   - More control, more setup
+2. **DIRECT (5% of use cases)**: `NodeCompute` base class
+   - Direct access to computation registry system
+   - Built-in caching (ModelComputeCache) and parallel processing
+   - More control over computation execution
 
-**Start with ModelServiceCompute unless you have specific needs for NodeCompute.**
+**Start with ModelServiceCompute unless you need direct access to NodeCompute features.**
 
 See [Node Class Hierarchy Guide](../../architecture/NODE_CLASS_HIERARCHY.md) for detailed comparison.
 
@@ -207,11 +207,9 @@ class ModelPriceCalculatorOutput(BaseModel):
         description="Whether result came from cache"
     )
 
-    class Config:
-        """Pydantic configuration."""
-        validate_assignment = True
-
-        schema_extra = {
+    model_config = {
+        "validate_assignment": True,
+        "json_schema_extra": {
             "example": {
                 "subtotal": 45.00,
                 "discount": 4.50,
@@ -223,6 +221,7 @@ class ModelPriceCalculatorOutput(BaseModel):
                 "cache_hit": False
             }
         }
+    }
 ```
 
 **Key points**:
@@ -346,14 +345,14 @@ class NodePriceCalculatorCompute(ModelServiceCompute):
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Validation failed: {str(e)}",
-                context={"input_data": input_data.dict()}
+                context={"input_data": input_data.model_dump()}
             ) from e
 
         except Exception as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.PROCESSING_ERROR,
                 message=f"Price calculation failed: {str(e)}",
-                context={"input_data": input_data.dict()}
+                context={"input_data": input_data.model_dump()}
             ) from e
 
     def _calculate_price(
@@ -516,48 +515,61 @@ class NodePriceCalculatorCompute(ModelServiceCompute):
 
 | Feature | ModelServiceCompute | NodeCompute |
 |---------|---------------------|-------------|
-| **Health Checks** | ✅ Included | ⚠️ Manual setup |
-| **Metrics** | ✅ Included | ⚠️ Manual setup |
-| **Event Bus** | ✅ Included | ⚠️ Manual setup |
-| **Circuit Breaker** | ✅ Included | ⚠️ Manual setup |
+| **Health Checks** | ✅ Included | Manual setup |
+| **Metrics** | ✅ Included | ✅ Built-in computation_metrics |
+| **Service Mode** | ✅ MixinNodeService | Not included |
+| **Computation Cache** | ✅ Via MixinCaching | ✅ Built-in ModelComputeCache |
+| **Computation Registry** | Via NodeCompute | ✅ Built-in register_computation() |
+| **Parallel Processing** | Via NodeCompute | ✅ Built-in ThreadPoolExecutor |
 | **Setup Complexity** | Minimal | Moderate |
-| **Production Ready** | ✅ Yes | ⚠️ Requires configuration |
-| **Use Case** | 95% of applications | Custom mixin composition |
+| **Production Ready** | ✅ Yes | ✅ Yes (core features only) |
+| **Use Case** | 95% of applications | Direct computation control |
 
-### ADVANCED: Using NodeCompute Base Class
+### DIRECT: Using NodeCompute Base Class
 
-For **5% of use cases** where you need custom mixin composition:
+For **5% of use cases** where you need direct access to NodeCompute features:
 
 ```
 from omnibase_core.nodes import NodeCompute
-from omnibase_core.mixins import MixinCustomBehavior
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
-class NodePriceCalculatorCompute(NodeCompute, MixinCustomBehavior):
+class NodePriceCalculatorCompute(NodeCompute):
     """
-    COMPUTE node with custom mixin composition.
+    COMPUTE node with direct NodeCompute inheritance.
 
     Use this approach when:
-    - You need specific mixin combinations not in ModelServiceCompute
-    - You want selective feature inclusion
-    - You're implementing non-standard patterns
+    - You need direct access to NodeCompute's built-in features
+    - You want to use the computation registry system
+    - You're implementing custom computation types
+    - You don't need the production service wrapper features
     """
 
     def __init__(self, container: ModelONEXContainer) -> None:
         super().__init__(container)
 
-        # Manually initialize computation-specific features
-        self._cache = {}
-        self.computation_count = 0
-        self.cache_hits = 0
+        # NodeCompute provides built-in features:
+        # - self.computation_cache (ModelComputeCache)
+        # - self.computation_registry (dict of computation functions)
+        # - self.thread_pool (ThreadPoolExecutor for parallel processing)
+        # - self.computation_metrics (performance tracking)
 
-    # ... rest of implementation (same as above)
+        # Register custom computation if needed
+        self.register_computation("price_calculation", self._calculate_price_func)
+
+    def _calculate_price_func(self, data: dict) -> dict:
+        """Custom computation function registered with the node."""
+        # Your computation logic here
+        return {"result": "computed"}
+
+    # ... rest of implementation uses NodeCompute's process() method
 ```
 
-**When to use NodeCompute**:
-- Custom mixin combinations beyond ModelServiceCompute
-- Selective feature inclusion (not all production features needed)
-- Non-standard caching strategies
-- Special initialization needs
+**When to use NodeCompute directly**:
+- Direct access to computation registry system
+- Custom computation types with register_computation()
+- Built-in caching via ModelComputeCache
+- Parallel processing via ThreadPoolExecutor
+- You don't need the full production service wrapper
 
 **When to use ModelServiceCompute** (recommended):
 - Standard COMPUTE operations (95% of cases)
@@ -844,14 +856,14 @@ async def process(self, input_data):
     # Try Redis cache
     cached = await self.redis.get(cache_key)
     if cached:
-        return ModelPriceCalculatorOutput.parse_raw(cached)
+        return ModelPriceCalculatorOutput.model_validate_json(cached)
 
     # Calculate and cache
     result = self._calculate_price(input_data)
     await self.redis.setex(
         cache_key,
         300,  # 5 minutes TTL
-        result.json()
+        result.model_dump_json()
     )
     return result
 ```
@@ -914,18 +926,18 @@ poetry run pytest tests/nodes/test_node_price_calculator.py -vvs
 
 You've learned:
 
-- ✅ COMPUTE node structure and patterns
-- ✅ **ModelServiceCompute** - Production-ready wrapper (RECOMMENDED)
-- ✅ **NodeCompute** - Custom mixin composition (ADVANCED)
-- ✅ When to use which approach
-- ✅ Type-safe input/output models
-- ✅ Caching implementation
-- ✅ Error handling and validation
-- ✅ Comprehensive testing
-- ✅ Performance tracking
+- COMPUTE node structure and patterns
+- **ModelServiceCompute** - Production-ready wrapper (RECOMMENDED)
+- **NodeCompute** - Direct computation control (DIRECT)
+- When to use which approach
+- Type-safe input/output models with Pydantic v2
+- Caching implementation
+- Error handling and validation
+- Comprehensive testing
+- Performance tracking
 
-**Key Takeaway**: Start with `ModelServiceCompute` for 95% of use cases. Only use `NodeCompute` when you need custom mixin composition.
+**Key Takeaway**: Start with `ModelServiceCompute` for 95% of use cases. Only use `NodeCompute` directly when you need access to the computation registry or parallel processing features.
 
-**Congratulations!** You've built a production-ready COMPUTE node! 🎉
+**Congratulations!** You've built a production-ready COMPUTE node!
 
 **Next**: [EFFECT Node Tutorial](04_EFFECT_NODE_TUTORIAL.md) →

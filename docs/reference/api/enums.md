@@ -12,7 +12,7 @@ This document provides comprehensive API reference for all enumeration types in 
 
 #### EnumCoreErrorCode
 
-**Location**: `omnibase_core.errors.error_codes`
+**Location**: `omnibase_core.enums.enum_core_error_code`
 
 **Purpose**: Standard error codes for ONEX framework.
 
@@ -86,62 +86,37 @@ node_type = EnumNodeType.COMPUTE_GENERIC
 - `is_output_node(node_type)` - Check if node produces output effects
 - `get_node_category(node_type)` - Get functional category (processing/control/output)
 
-### Intent Types
-
-#### EnumIntentType
-
-**Location**: `omnibase_core.enums.enum_intent_type`
-
-**Purpose**: Intent types for side effect requests.
-
-```
-from omnibase_core.enums.enum_intent_type import EnumIntentType
-
-intent = ModelIntent(
-    intent_type=EnumIntentType.DATABASE_WRITE,
-    payload={"table": "users"}
-)
-```
-
-#### Available Intent Types
-
-- `DATABASE_READ` - Database read operation
-- `DATABASE_WRITE` - Database write operation
-- `DATABASE_DELETE` - Database delete operation
-- `FILE_READ` - File read operation
-- `FILE_WRITE` - File write operation
-- `FILE_DELETE` - File delete operation
-- `API_CALL` - External API call
-- `EMAIL_SEND` - Email sending
-- `NOTIFICATION_SEND` - Notification sending
-- `CACHE_UPDATE` - Cache update operation
-
 ### Action Types
 
 #### EnumActionType
 
-**Location**: `omnibase_core.enums.enum_action_type`
+**Location**: `omnibase_core.enums.enum_workflow_execution`
 
-**Purpose**: Action types for state transitions.
+**Purpose**: Types of Actions for orchestrated execution.
 
 ```
-from omnibase_core.enums.enum_action_type import EnumActionType
+from uuid import uuid4
+from omnibase_core.enums.enum_workflow_execution import EnumActionType
+from omnibase_core.models.orchestrator.model_action import ModelAction
 
 action = ModelAction(
-    action_type=EnumActionType.UPDATE_STATE,
+    action_type=EnumActionType.COMPUTE,
+    target_node_type="compute",
+    lease_id=uuid4(),
+    epoch=1,
     payload={"field": "status", "value": "completed"}
 )
 ```
 
 #### Available Action Types
 
-- `UPDATE_STATE` - Update node state
-- `RESET_STATE` - Reset node state
-- `MERGE_STATE` - Merge with existing state
-- `CLEAR_STATE` - Clear node state
-- `EMIT_EVENT` - Emit event
-- `LOG_MESSAGE` - Log message
-- `UPDATE_METRICS` - Update metrics
+- `COMPUTE` - Compute node action
+- `EFFECT` - Effect node action
+- `REDUCE` - Reducer node action
+- `ORCHESTRATE` - Orchestrator action
+- `CUSTOM` - Custom action type
+
+**Note**: For Intent side effects, `ModelIntent` uses a string-based `intent_type` field (not an enum). Common values include: "log", "emit_event", "write", "notify", "http_request".
 
 ### Circuit Breaker States
 
@@ -335,15 +310,15 @@ if check_health(node.health_status):
 ### Enum Iteration
 
 ```
-from omnibase_core.enums.enum_intent_type import EnumIntentType
+from omnibase_core.enums.enum_workflow_execution import EnumActionType
 
-def get_all_intent_types() -> List[str]:
-    """Get all available intent types."""
-    return [intent_type.value for intent_type in EnumIntentType]
+def get_all_action_types() -> List[str]:
+    """Get all available action types."""
+    return [action_type.value for action_type in EnumActionType]
 
 # Usage
-available_intents = get_all_intent_types()
-print(f"Available intents: {available_intents}")
+available_actions = get_all_action_types()
+print(f"Available actions: {available_actions}")
 ```
 
 ### Enum Mapping
@@ -445,14 +420,14 @@ def is_compute_node(node_type: EnumNodeType) -> bool:
 ### Enum Lookup Optimization
 
 ```
-from omnibase_core.enums.enum_intent_type import EnumIntentType
+from omnibase_core.enums.enum_workflow_execution import EnumActionType
 
 # Pre-compute lookup table for performance
-INTENT_TYPE_LOOKUP = {intent_type.value: intent_type for intent_type in EnumIntentType}
+ACTION_TYPE_LOOKUP = {action_type.value: action_type for action_type in EnumActionType}
 
-def get_intent_type(value: str) -> EnumIntentType:
+def get_action_type(value: str) -> EnumActionType:
     """Fast enum lookup."""
-    return INTENT_TYPE_LOOKUP.get(value, EnumIntentType.API_CALL)
+    return ACTION_TYPE_LOOKUP.get(value, EnumActionType.CUSTOM)
 ```
 
 ## Related Documentation

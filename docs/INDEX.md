@@ -185,6 +185,7 @@ omnibase_core/docs/
 | Document | Description | Status |
 |----------|-------------|--------|
 | [**CI Monitoring Guide**](ci/CI_MONITORING_GUIDE.md) | CI performance monitoring, alerting, and investigation | ✅ Complete |
+| [**Node Purity Failure Guide**](ci/CORE_PURITY_FAILURE.md) | Interpreting and fixing CI purity check failures | ✅ Complete |
 | [CI Test Strategy](testing/CI_TEST_STRATEGY.md) | CI/CD test strategy and optimization | ✅ Complete |
 | [Parallel Testing](testing/PARALLEL_TESTING.md) | Parallel test execution configuration | ✅ Complete |
 | [Testing Guide](guides/TESTING_GUIDE.md) | Comprehensive testing strategies | ✅ Complete |
@@ -229,6 +230,7 @@ omnibase_core/docs/
 | **Understand the architecture** | [ONEX Four-Node Architecture](architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) |
 | **Test my node** | [Testing Guide](guides/TESTING_GUIDE.md) |
 | **Monitor CI performance** | [CI Monitoring Guide](ci/CI_MONITORING_GUIDE.md) |
+| **Fix CI purity failures** | [Node Purity Failure Guide](ci/CORE_PURITY_FAILURE.md) |
 | **Debug async hangs** | [Async Hang Debugging](troubleshooting/ASYNC_HANG_DEBUGGING.md) |
 | **Understand contracts** | [Subcontract Architecture](architecture/SUBCONTRACT_ARCHITECTURE.md) |
 | **Validate mixin metadata** | [ModelMixinMetadata](../src/omnibase_core/models/core/model_mixin_metadata.py) - Mixin discovery & validation |

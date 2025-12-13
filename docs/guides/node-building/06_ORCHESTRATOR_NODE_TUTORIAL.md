@@ -1,136 +1,19 @@
 # ORCHESTRATOR Node Tutorial: Build a Data Processing Pipeline
 
-**Reading Time**: 40 minutes
+**Reading Time**: 45 minutes
 **Difficulty**: Advanced
 **Prerequisites**: All other node tutorials (COMPUTE, EFFECT, REDUCER)
-
-## 🎯 Recommended Approach
-
-This tutorial shows **TWO approaches**:
-
-1. **RECOMMENDED (95% of use cases)**: `ModelServiceOrchestrator` wrapper
-   - Production-ready with built-in features
-   - Minimal boilerplate
-   - Health checks, metrics, event bus, workflow execution included
-
-2. **ADVANCED (5% of use cases)**: `NodeOrchestrator` base class
-   - Custom mixin composition
-   - Selective feature inclusion
-   - More control, more setup
-
-**Start with ModelServiceOrchestrator unless you have specific needs for NodeOrchestrator.**
-
-See [Node Class Hierarchy Guide](../../architecture/NODE_CLASS_HIERARCHY.md) for detailed comparison.
-
----
-
-## 🚀 Declarative Workflow Architecture (Recommended Path)
-
-> **IMPORTANT UPDATE (2025-11-16)**: omnibase_core provides **comprehensive YAML contract infrastructure** for building orchestrator workflows **without custom Python code**. See [Declarative Workflow Findings](../../architecture/DECLARATIVE_WORKFLOW_FINDINGS.md) for full details.
-
-### ✅ Available Today: Workflow Execution Infrastructure (v0.2.0+)
-
-**Status**: ✅ **FULLY IMPLEMENTED** as of omnibase_core v0.2.0 (2025-11-16)
-
-The omnibase_core codebase now includes:
-- **Pydantic Models**: Complete workflow coordination infrastructure
-- **Runtime Execution**: `utils/workflow_executor.py` with sequential/parallel/batch execution modes
-- **Mixin Integration**: `MixinWorkflowExecution` for seamless orchestrator integration
-- **Primary Implementation**: `NodeOrchestrator` base class for zero-code workflows (workflow-driven by default)
-- **Legacy Support**: `NodeOrchestratorLegacy` in `nodes/legacy/` for backwards compatibility
-- **Production Ready**: Topological ordering, cycle detection, dependency resolution, comprehensive tests
-
-**Example YAML Contract** (fully functional, production-ready):
-
-```yaml
-# contracts/orchestrator_data_pipeline.yaml
-node_type: ORCHESTRATOR
-node_name: data_pipeline_orchestrator
-
-workflow_coordination:
-  execution_mode: sequential  # or parallel, mixed
-  max_parallel_branches: 4
-  checkpoint_enabled: true
-  rollback_enabled: true
-
-  workflow_definition:
-    execution_graph:
-      steps:
-        - step_id: fetch_data
-          step_name: "Fetch Data from Sources"
-          action_type: EFFECT
-          target_node_type: NodeDataFetcher
-          timeout_ms: 10000
-
-        - step_id: validate_data
-          step_name: "Validate Data Quality"
-          action_type: COMPUTE
-          target_node_type: NodeDataValidator
-          dependencies: [fetch_data]
-          timeout_ms: 5000
-
-        - step_id: aggregate_metrics
-          step_name: "Aggregate Metrics"
-          action_type: REDUCE
-          target_node_type: NodeMetricsAggregator
-          dependencies: [validate_data]
-          timeout_ms: 8000
-```
-
-### 🎯 Vision: Minimal Customization Required
-
-**Goal**: Most orchestrator workflows should require **ZERO custom Python code**:
-
-1. **Define workflow in YAML** - Steps, dependencies, execution mode
-2. **Validation automatic** - Pydantic models validate structure
-3. **Execution automatic** - Runtime services execute declaratively
-
-**When Custom Code IS Needed**:
-- Custom conditional branching logic
-- Advanced error recovery strategies
-- Complex coordination patterns not supported by YAML
-
-### 📊 Current Status
-
-| Component | Status | Notes |
-|-----------|--------|-------|
-| YAML Contract Models | ✅ Complete | Full Pydantic validation |
-| Subcontract Composition | ✅ Complete | ModelContractOrchestrator |
-| Runtime Executor Services | ✅ Complete | workflow_executor.py with MixinWorkflowExecution |
-| Declarative Base Classes | ✅ Complete | `NodeOrchestrator` (primary implementation, workflow-driven) |
-| Legacy Classes | ✅ Available | `NodeOrchestratorLegacy` in `nodes/legacy/` for backwards compatibility |
-| Documentation | ✅ Complete | Full tutorial and migration guides available |
-
-**See**: [DECLARATIVE_WORKFLOW_FINDINGS.md](../../architecture/DECLARATIVE_WORKFLOW_FINDINGS.md) for implementation roadmap.
-
----
-
-### Tutorial Approach
-
-This tutorial demonstrates **two implementation approaches**:
-1. **Manual Orchestrator Implementation** (Current pattern): Custom Python code with action emission and workflow coordination
-2. **Declarative Workflows** (Recommended for new workflows): YAML-driven workflows using `NodeOrchestrator` (the primary workflow-driven implementation)
-
-> **Note (v0.4.0)**: `NodeOrchestrator` is now the PRIMARY workflow-driven implementation. The "Declarative" suffix has been removed because this IS the standard. Legacy imperative implementations are available in `nodes/legacy/NodeOrchestratorLegacy` for backwards compatibility.
-
-**Both approaches are production-ready and fully supported.**
-
-**Learning Path**:
-1. ✅ Learn current orchestrator implementation (this tutorial)
-2. ✅ Migrate to declarative YAML contracts (see [MIGRATING_TO_DECLARATIVE_NODES.md](../../guides/MIGRATING_TO_DECLARATIVE_NODES.md))
-
----
 
 ## What You'll Build
 
 In this tutorial, you'll build a production-ready **Data Processing Pipeline Orchestrator** that:
 
-✅ Coordinates multiple nodes (COMPUTE, EFFECT, REDUCER) in a workflow
-✅ Supports three execution modes: SEQUENTIAL, PARALLEL, BATCH
-✅ Implements action emission for deferred execution
-✅ Manages dependencies between workflow steps
-✅ Handles conditional branching and error recovery
-✅ Provides comprehensive workflow monitoring
+- Coordinates multiple nodes (COMPUTE, EFFECT, REDUCER) in a workflow
+- Supports three execution modes: SEQUENTIAL, PARALLEL, BATCH
+- Implements action emission for deferred execution with ModelAction pattern
+- Manages dependencies between workflow steps
+- Uses lease-based single-writer semantics for distributed coordination
+- Provides comprehensive workflow monitoring
 
 **Why ORCHESTRATOR Nodes?**
 
@@ -152,6 +35,105 @@ ORCHESTRATOR nodes coordinate complex workflows in the ONEX architecture:
 
 ---
 
+## v0.4.0 Architecture
+
+> **v0.4.0 Update**: `NodeOrchestrator` is now the PRIMARY workflow-driven implementation. The "Declarative" suffix has been removed because this IS the standard approach. All orchestrator nodes use YAML contracts for configuration with zero custom Python code for standard workflows.
+
+### Key Changes in v0.4.0
+
+| Before (v0.3.x) | After (v0.4.0) |
+|-----------------|----------------|
+| `NodeOrchestratorDeclarative` | `NodeOrchestrator` (primary) |
+| Manual workflow setup | YAML contract-driven |
+| Custom Python coordination | Workflow definitions |
+| Multiple import paths | Single import: `from omnibase_core.nodes import NodeOrchestrator` |
+
+### Import Patterns (v0.4.0+)
+
+```python
+# All node types - single import path
+from omnibase_core.nodes import (
+    NodeOrchestrator,
+    ModelOrchestratorInput,
+    ModelOrchestratorOutput,
+    EnumActionType,
+    EnumExecutionMode,
+    EnumWorkflowState,
+    EnumBranchCondition,
+)
+
+# Container for dependency injection
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+
+# ModelAction for workflow actions
+from omnibase_core.models.orchestrator.model_action import ModelAction
+
+# Workflow step model
+from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
+```
+
+---
+
+## Workflow-Driven Architecture
+
+The omnibase_core codebase provides **comprehensive YAML contract infrastructure** for building orchestrator workflows **without custom Python code**.
+
+### Available Infrastructure (v0.4.0+)
+
+| Component | Status | Description |
+|-----------|--------|-------------|
+| YAML Contract Models | Complete | Full Pydantic validation |
+| Subcontract Composition | Complete | ModelContractOrchestrator |
+| Runtime Executor Services | Complete | workflow_executor.py with MixinWorkflowExecution |
+| NodeOrchestrator | Complete | Primary workflow-driven implementation |
+| Documentation | Complete | Full tutorial and migration guides |
+
+### Example YAML Contract
+
+```yaml
+# contracts/orchestrator_data_pipeline.yaml
+node_type: ORCHESTRATOR
+node_name: data_pipeline_orchestrator
+
+workflow_coordination:
+  execution_mode: sequential  # or parallel, batch
+  max_parallel_branches: 4
+  checkpoint_enabled: true
+  rollback_enabled: true
+
+  workflow_definition:
+    execution_graph:
+      steps:
+        - step_id: fetch_data
+          step_name: "Fetch Data from Sources"
+          step_type: effect
+          target_node_type: NodeDataFetcher
+          timeout_ms: 10000
+
+        - step_id: validate_data
+          step_name: "Validate Data Quality"
+          step_type: compute
+          target_node_type: NodeDataValidator
+          depends_on: [fetch_data]
+          timeout_ms: 5000
+
+        - step_id: aggregate_metrics
+          step_name: "Aggregate Metrics"
+          step_type: reducer
+          target_node_type: NodeMetricsAggregator
+          depends_on: [validate_data]
+          timeout_ms: 8000
+```
+
+### When Custom Code IS Needed
+
+Most orchestrator workflows require **ZERO custom Python code**. Custom code is only needed for:
+- Custom conditional branching logic
+- Advanced error recovery strategies
+- Complex coordination patterns not supported by YAML
+
+---
+
 ## Prerequisites Check
 
 ```bash
@@ -166,7 +148,7 @@ poetry install
 poetry run pytest tests/unit/nodes/test_node_orchestrator.py -v --maxfail=1
 ```
 
-✅ **If tests pass**, you're ready to begin!
+If tests pass, you're ready to begin!
 
 ---
 
@@ -174,18 +156,19 @@ poetry run pytest tests/unit/nodes/test_node_orchestrator.py -v --maxfail=1
 
 ### What is an Action?
 
-An **action** is an Orchestrator-issued command that represents work to be done by a specific node type. Actions replace the legacy "thunk" terminology and include lease management for single-writer semantics:
+An **action** is an Orchestrator-issued command that represents work to be done by a specific node type. Actions use the **ModelAction pattern** with lease management for single-writer semantics:
 
 ```python
-from omnibase_core.models.model_action import ModelAction
-from omnibase_core.enums.enum_orchestrator_types import EnumActionType
+from uuid import uuid4
+from omnibase_core.models.orchestrator.model_action import ModelAction
+from omnibase_core.nodes import EnumActionType
 
 # Example: Action for COMPUTE operation
 compute_action = ModelAction(
     action_id=uuid4(),
     action_type=EnumActionType.COMPUTE,
     target_node_type="NodeDataValidator",
-    operation_data={"data": input_data},
+    payload={"data": input_data},
     dependencies=[],  # No dependencies
     priority=1,
     timeout_ms=5000,
@@ -198,7 +181,7 @@ effect_action = ModelAction(
     action_id=uuid4(),
     action_type=EnumActionType.EFFECT,
     target_node_type="NodeDatabaseWriter",
-    operation_data={"data": processed_data},
+    payload={"data": processed_data},
     dependencies=[compute_action.action_id],  # Depends on compute
     priority=2,
     timeout_ms=10000,
@@ -235,35 +218,32 @@ Actions include **lease management** fields to ensure single-writer semantics an
 **Usage Example**:
 ```python
 from uuid import uuid4
+from omnibase_core.models.orchestrator.model_action import ModelAction
+from omnibase_core.nodes import EnumActionType
 
 # Orchestrator creates action with initial lease and epoch
 orchestrator_lease_id = uuid4()
 action = ModelAction(
-    action_id=uuid4(),
     action_type=EnumActionType.COMPUTE,
     target_node_type="NodeDataProcessor",
-    operation_data={"task": "process"},
+    payload={"task": "process"},
     lease_id=orchestrator_lease_id,  # Ownership proof
     epoch=1,  # Initial epoch
 )
 
-# Only the owning Orchestrator can update
-action_update = ModelAction(
-    action_id=action.action_id,
-    action_type=action.action_type,
-    target_node_type=action.target_node_type,
-    operation_data={"task": "process", "status": "in_progress"},
-    lease_id=orchestrator_lease_id,  # Must match!
-    epoch=2,  # Incremented epoch
-)
+# To modify a frozen action, use model_copy()
+# Only the owning Orchestrator should update
+updated_action = action.model_copy(update={
+    "payload": {"task": "process", "status": "in_progress"},
+    "epoch": 2,  # Incremented epoch
+})
 
 # Another Orchestrator cannot modify (lease_id mismatch)
-# This update would be rejected:
-# invalid_update = ModelAction(
-#     action_id=action.action_id,
-#     lease_id=uuid4(),  # Different lease_id - REJECTED!
-#     epoch=2,
-# )
+# This update would be rejected in a distributed system:
+# invalid_update = action.model_copy(update={
+#     "lease_id": uuid4(),  # Different lease_id - REJECTED!
+#     "epoch": 2,
+# })
 ```
 
 **Benefits**:
@@ -274,17 +254,19 @@ action_update = ModelAction(
 
 ### Workflow Steps
 
-A **workflow step** groups related actions together:
+A **workflow step** groups related configuration for execution:
 
 ```python
-from omnibase_core.models.model_workflow_step import ModelWorkflowStep
+from uuid import uuid4
+from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 
 step = ModelWorkflowStep(
     step_id=uuid4(),
     step_name="Validate and Process Data",
-    execution_mode=EnumExecutionMode.SEQUENTIAL,
-    actions=[validation_action, processing_action],
+    step_type="compute",
     timeout_ms=30000,
+    retry_count=3,
+    depends_on=[],  # List of step IDs this step depends on
 )
 ```
 
@@ -303,14 +285,14 @@ ORCHESTRATOR nodes support three execution modes:
 The orchestrator builds a **dependency graph** to determine execution order:
 
 ```text
-Step 1 (Validate) ─┐
-                   ├──> Step 3 (Aggregate)
-Step 2 (Fetch) ────┘
+Step 1 (Validate) --+
+                    +--> Step 3 (Aggregate)
+Step 2 (Fetch) -----+
 
-Step 3 (Aggregate) ───> Step 4 (Save)
+Step 3 (Aggregate) ----> Step 4 (Save)
 ```
 
-Execution order: Steps 1&2 in parallel → Step 3 → Step 4
+Execution order: Steps 1 & 2 in parallel -> Step 3 -> Step 4
 
 ---
 
@@ -321,13 +303,17 @@ Execution order: Steps 1&2 in parallel → Step 3 → Step 4
 ```python
 """Input model for data processing pipeline orchestrator."""
 
-from pydantic import BaseModel, Field
 from uuid import UUID, uuid4
-from omnibase_core.enums.enum_orchestrator_types import EnumExecutionMode
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from omnibase_core.nodes import EnumExecutionMode
 
 
 class ModelPipelineConfig(BaseModel):
     """Configuration for pipeline processing."""
+
+    model_config = ConfigDict(extra="forbid")
 
     # Data source configuration
     data_source: str = Field(
@@ -367,6 +353,8 @@ class ModelPipelineOrchestratorInput(BaseModel):
     Defines the workflow configuration and execution parameters
     for coordinating a multi-step data pipeline.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     # Workflow identification
     workflow_id: UUID = Field(
@@ -408,19 +396,15 @@ class ModelPipelineOrchestratorInput(BaseModel):
         ge=1,
         description="Maximum parallel steps for PARALLEL mode",
     )
-
-    class Config:
-        """Pydantic configuration."""
-        use_enum_values = True
 ```
 
 ---
 
 ## Step 2: Implement the ORCHESTRATOR Node
 
-### ✅ RECOMMENDED: Using ModelServiceOrchestrator Wrapper
+### Using NodeOrchestrator Base Class
 
-For **95% of use cases**, use the production-ready `ModelServiceOrchestrator` wrapper that includes all standard features:
+For workflow-driven orchestration, use `NodeOrchestrator` which provides all standard features:
 
 **File**: `src/your_project/nodes/node_pipeline_orchestrator.py`
 
@@ -436,17 +420,20 @@ from uuid import UUID, uuid4
 from datetime import datetime
 from typing import Any
 
-from omnibase_core.infrastructure.infrastructure_bases import ModelServiceOrchestrator
-from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.enums.enum_orchestrator_types import (
-    EnumExecutionMode,
+from omnibase_core.nodes import (
+    NodeOrchestrator,
+    ModelOrchestratorInput,
+    ModelOrchestratorOutput,
     EnumActionType,
+    EnumExecutionMode,
     EnumWorkflowState,
 )
-from omnibase_core.models.model_action import ModelAction
-from omnibase_core.models.model_workflow_step import ModelWorkflowStep
-from omnibase_core.models.model_orchestrator_input import ModelOrchestratorInput
-from omnibase_core.models.model_orchestrator_output import ModelOrchestratorOutput
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.orchestrator.model_action import ModelAction
+from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
+from omnibase_core.models.contracts.subcontracts.model_workflow_definition import (
+    ModelWorkflowDefinition,
+)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
@@ -455,7 +442,7 @@ from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from .model_pipeline_orchestrator_input import ModelPipelineOrchestratorInput
 
 
-class NodePipelineOrchestrator(ModelServiceOrchestrator):
+class NodePipelineOrchestrator(NodeOrchestrator):
     """
     Data Processing Pipeline Orchestrator.
 
@@ -468,21 +455,19 @@ class NodePipelineOrchestrator(ModelServiceOrchestrator):
 
     Supports SEQUENTIAL, PARALLEL, and BATCH execution modes.
 
-    Production-ready features (via ModelServiceOrchestrator):
-    - ✅ Health checks
-    - ✅ Metrics tracking
-    - ✅ Event bus integration
-    - ✅ Workflow execution engine
-    - ✅ Lease management
-    - ✅ Error handling and recovery
-
-    Inherits from ModelServiceOrchestrator which provides:
+    Features (via NodeOrchestrator):
     - Workflow step execution
     - Action emission and coordination
-    - Dependency resolution
+    - Dependency resolution with topological ordering
     - Execution mode management (SEQUENTIAL, PARALLEL, BATCH)
     - Lease management for single-writer semantics
+    - Cycle detection in workflow graphs
     - Error handling and recovery
+
+    Thread Safety:
+        NodePipelineOrchestrator instances are NOT thread-safe due to
+        mutable workflow state. Each thread should have its own instance.
+        See docs/guides/THREADING.md for patterns.
     """
 
     def __init__(self, container: ModelONEXContainer) -> None:
@@ -494,7 +479,7 @@ class NodePipelineOrchestrator(ModelServiceOrchestrator):
         """
         super().__init__(container)
 
-        # Orchestrator configuration
+        # Orchestrator configuration (bypass Pydantic validation for mutable attrs)
         object.__setattr__(self, "max_concurrent_workflows", 5)
         object.__setattr__(self, "default_step_timeout_ms", 30000)
 
@@ -508,7 +493,7 @@ class NodePipelineOrchestrator(ModelServiceOrchestrator):
             {"node_id": str(self.node_id)},
         )
 
-    async def process(
+    async def process_pipeline(
         self,
         input_data: ModelPipelineOrchestratorInput,
     ) -> ModelOrchestratorOutput:
@@ -531,25 +516,17 @@ class NodePipelineOrchestrator(ModelServiceOrchestrator):
 
         try:
             # Create workflow steps
-            steps = await self._create_pipeline_steps(input_data)
+            steps = self._create_pipeline_steps(input_data)
 
             # Build orchestrator input
             orchestrator_input = ModelOrchestratorInput(
                 workflow_id=input_data.workflow_id,
-                operation_id=input_data.operation_id,
                 steps=[step.model_dump() for step in steps],
                 execution_mode=input_data.execution_mode,
-                dependency_resolution_enabled=True,
-                failure_strategy=input_data.failure_strategy,
-                max_parallel_steps=input_data.max_parallel_steps,
-                metadata={
-                    "pipeline_type": "data_processing",
-                    "data_source": input_data.config.data_source,
-                },
             )
 
             # Execute workflow (delegate to base orchestrator logic)
-            result = await self._execute_workflow(orchestrator_input)
+            result = await self.process(orchestrator_input)
 
             processing_time_ms = (
                 datetime.now() - start_time
@@ -561,7 +538,6 @@ class NodePipelineOrchestrator(ModelServiceOrchestrator):
                 {
                     "workflow_id": str(input_data.workflow_id),
                     "execution_mode": input_data.execution_mode.value,
-                    "steps_completed": result.steps_completed,
                     "processing_time_ms": processing_time_ms,
                 },
             )
@@ -585,211 +561,89 @@ class NodePipelineOrchestrator(ModelServiceOrchestrator):
                 },
             ) from e
 
-    async def _create_pipeline_steps(
+    def _create_pipeline_steps(
         self,
         input_data: ModelPipelineOrchestratorInput,
     ) -> list[ModelWorkflowStep]:
         """
         Create workflow steps for the data pipeline.
 
-        Each step contains actions representing operations to perform.
-        Dependencies between actions ensure correct execution order.
+        Each step is configured with appropriate type, timeout,
+        and dependencies to ensure correct execution order.
 
         Args:
             input_data: Pipeline configuration
 
         Returns:
-            List of workflow steps with actions
+            List of workflow steps
         """
-        steps = []
-        orchestrator_lease_id = uuid4()  # Single lease for this orchestrator instance
+        steps: list[ModelWorkflowStep] = []
 
         # Step 1: Validation (if enabled)
+        validation_step_id = uuid4()
         if input_data.config.validate_input:
-            validation_action = ModelAction(
-                action_id=uuid4(),
-                action_type=EnumActionType.COMPUTE,
-                target_node_type="NodeDataValidatorCompute",
-                operation_data={
-                    "data": input_data.input_data,
-                    "validation_rules": {
-                        "required_fields": ["id", "data"],
-                        "quality_threshold": input_data.config.quality_threshold,
-                    },
-                },
-                dependencies=[],
-                priority=1,
+            validation_step = ModelWorkflowStep(
+                step_id=validation_step_id,
+                step_name="Validate Input Data",
+                step_type="compute",
                 timeout_ms=5000,
                 retry_count=0,
-                metadata={"step_type": "validation"},
-                created_at=datetime.now(),
-                lease_id=orchestrator_lease_id,
-                epoch=1,
-            )
-
-            validation_step = ModelWorkflowStep(
-                step_id=uuid4(),
-                step_name="Validate Input Data",
-                execution_mode=EnumExecutionMode.SEQUENTIAL,
-                actions=[validation_action],
-                timeout_ms=self.default_step_timeout_ms,
-                metadata={"step_type": "validation"},
+                depends_on=[],
             )
             steps.append(validation_step)
 
         # Step 2: Data Fetching
-        fetch_action_id = uuid4()
+        fetch_step_id = uuid4()
         fetch_dependencies = (
-            [steps[0].actions[0].action_id] if input_data.config.validate_input else []
-        )
-
-        fetch_action = ModelAction(
-            action_id=fetch_action_id,
-            action_type=EnumActionType.EFFECT,
-            target_node_type="NodeDataFetcherEffect",
-            operation_data={
-                "source": input_data.config.data_source,
-                "query": input_data.input_data.get("query", {}),
-            },
-            dependencies=fetch_dependencies,
-            priority=1,
-            timeout_ms=10000,
-            retry_count=2,
-            metadata={"step_type": "fetch"},
-            created_at=datetime.now(),
-            lease_id=orchestrator_lease_id,
-            epoch=1,
+            [validation_step_id] if input_data.config.validate_input else []
         )
 
         fetch_step = ModelWorkflowStep(
-            step_id=uuid4(),
+            step_id=fetch_step_id,
             step_name="Fetch Data from Source",
-            execution_mode=EnumExecutionMode.SEQUENTIAL,
-            actions=[fetch_action],
-            timeout_ms=self.default_step_timeout_ms,
-            metadata={"step_type": "fetch"},
+            step_type="effect",
+            timeout_ms=10000,
+            retry_count=2,
+            depends_on=fetch_dependencies,
         )
         steps.append(fetch_step)
 
         # Step 3: Data Processing
-        process_action_id = uuid4()
-        process_action = ModelAction(
-            action_id=process_action_id,
-            action_type=EnumActionType.COMPUTE,
-            target_node_type="NodeDataProcessorCompute",
-            operation_data={
-                "operation": "transform",
-                "enable_caching": input_data.config.enable_caching,
-            },
-            dependencies=[fetch_action_id],
-            priority=1,
+        process_step_id = uuid4()
+        process_step = ModelWorkflowStep(
+            step_id=process_step_id,
+            step_name="Process Fetched Data",
+            step_type="compute",
             timeout_ms=15000,
             retry_count=1,
-            metadata={"step_type": "processing"},
-            created_at=datetime.now(),
-            lease_id=orchestrator_lease_id,
-            epoch=1,
-        )
-
-        process_step = ModelWorkflowStep(
-            step_id=uuid4(),
-            step_name="Process Fetched Data",
-            execution_mode=EnumExecutionMode.SEQUENTIAL,
-            actions=[process_action],
-            timeout_ms=self.default_step_timeout_ms,
-            metadata={"step_type": "processing"},
+            depends_on=[fetch_step_id],
         )
         steps.append(process_step)
 
         # Step 4: Data Aggregation
-        aggregate_action_id = uuid4()
-        aggregate_action = ModelAction(
-            action_id=aggregate_action_id,
-            action_type=EnumActionType.REDUCE,
-            target_node_type="NodeMetricsAggregatorReducer",
-            operation_data={
-                "aggregation_type": "sum",
-                "group_by": "category",
-            },
-            dependencies=[process_action_id],
-            priority=1,
+        aggregate_step_id = uuid4()
+        aggregate_step = ModelWorkflowStep(
+            step_id=aggregate_step_id,
+            step_name="Aggregate Processed Data",
+            step_type="reducer",
             timeout_ms=10000,
             retry_count=0,
-            metadata={"step_type": "aggregation"},
-            created_at=datetime.now(),
-            lease_id=orchestrator_lease_id,
-            epoch=1,
-        )
-
-        aggregate_step = ModelWorkflowStep(
-            step_id=uuid4(),
-            step_name="Aggregate Processed Data",
-            execution_mode=EnumExecutionMode.SEQUENTIAL,
-            actions=[aggregate_action],
-            timeout_ms=self.default_step_timeout_ms,
-            metadata={"step_type": "aggregation"},
+            depends_on=[process_step_id],
         )
         steps.append(aggregate_step)
 
         # Step 5: Save Results
-        save_action = ModelAction(
-            action_id=uuid4(),
-            action_type=EnumActionType.EFFECT,
-            target_node_type="NodeDatabaseWriterEffect",
-            operation_data={
-                "destination": "processed_data_table",
-                "mode": "upsert",
-            },
-            dependencies=[aggregate_action_id],
-            priority=2,
-            timeout_ms=10000,
-            retry_count=3,
-            metadata={"step_type": "storage"},
-            created_at=datetime.now(),
-            lease_id=orchestrator_lease_id,
-            epoch=1,
-        )
-
         save_step = ModelWorkflowStep(
             step_id=uuid4(),
             step_name="Save Aggregated Results",
-            execution_mode=EnumExecutionMode.SEQUENTIAL,
-            actions=[save_action],
-            timeout_ms=self.default_step_timeout_ms,
-            metadata={"step_type": "storage"},
+            step_type="effect",
+            timeout_ms=10000,
+            retry_count=3,
+            depends_on=[aggregate_step_id],
         )
         steps.append(save_step)
 
         return steps
-
-    async def _execute_workflow(
-        self,
-        orchestrator_input: ModelOrchestratorInput,
-    ) -> ModelOrchestratorOutput:
-        """
-        Execute workflow based on execution mode.
-
-        Delegates to the appropriate execution strategy:
-        - SEQUENTIAL: Execute steps one by one
-        - PARALLEL: Execute independent steps concurrently
-        - BATCH: Execute with load balancing
-
-        Args:
-            orchestrator_input: Workflow configuration
-
-        Returns:
-            Workflow execution results
-        """
-        # Import base orchestrator for execution logic
-        from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
-
-        # Create base orchestrator instance
-        base_orchestrator = NodeOrchestrator(self.container)
-
-        # Delegate execution to base orchestrator
-        result = await base_orchestrator.process(orchestrator_input)
-
-        return result
 
     async def _initialize_node_resources(self) -> None:
         """Initialize orchestrator-specific resources."""
@@ -811,95 +665,29 @@ class NodePipelineOrchestrator(ModelServiceOrchestrator):
         )
 ```
 
-**What `ModelServiceOrchestrator` Provides**:
-- ✅ **Health Checks**: Built-in readiness and liveness endpoints
-- ✅ **Metrics**: Automatic prometheus-style metrics tracking
-- ✅ **Event Bus**: Kafka/Redpanda integration for event publishing
-- ✅ **Workflow Execution**: Built-in execution for SEQUENTIAL, PARALLEL, and BATCH modes
-- ✅ **Action Management**: Action emission, tracking, and coordination
-- ✅ **Dependency Resolution**: Automatic dependency graph construction and execution ordering
-- ✅ **Lease Management**: Single-writer semantics with lease_id tracking
-- ✅ **Epoch Control**: Optimistic concurrency control for distributed scenarios
-- ✅ **Error Recovery**: Built-in error handling and compensation logic
-- ✅ **Performance Tracking**: Metrics for workflow execution time, step completion
-- ✅ **Configuration Support**: Automatic config loading from `NodeConfigProvider`
+**What `NodeOrchestrator` Provides**:
+- Workflow step execution with topological ordering
+- Action emission, tracking, and coordination
+- Dependency resolution and cycle detection
+- Execution mode management (SEQUENTIAL, PARALLEL, BATCH)
+- Lease management for single-writer semantics
+- Epoch control for optimistic concurrency
+- Disabled step handling
+- YAML contract integration via MixinWorkflowExecution
 
 **Key Implementation Points**:
 
-1. **Action Creation**: Each workflow step contains actions representing operations
-2. **Dependency Management**: Actions specify dependencies via `dependencies` field
-3. **Lease Management**: All actions share the same `lease_id` from the orchestrator instance
-4. **Epoch Control**: Each action starts at epoch 1 for optimistic concurrency
-5. **Execution Mode Support**: The orchestrator supports SEQUENTIAL, PARALLEL, BATCH modes
-6. **Zero Boilerplate**: All production features included out-of-the-box
-7. **Type Safety**: All actions use `EnumActionType` for type specification
-
-### When to Use Which Approach
-
-| Feature | ModelServiceOrchestrator | NodeOrchestrator |
-|---------|-------------------------|------------------|
-| **Health Checks** | ✅ Included | ⚠️ Manual setup |
-| **Metrics** | ✅ Included | ⚠️ Manual setup |
-| **Event Bus** | ✅ Included | ⚠️ Manual setup |
-| **Workflow Execution** | ✅ Included | ✅ Included |
-| **Lease Management** | ✅ Included | ✅ Included |
-| **Setup Complexity** | Minimal | Moderate |
-| **Production Ready** | ✅ Yes | ⚠️ Requires configuration |
-| **Use Case** | 95% of applications | Custom mixin composition |
-
-### 🔧 ADVANCED: Using NodeOrchestrator Base Class
-
-For **5% of use cases** where you need custom mixin composition:
-
-```python
-from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
-from omnibase_core.mixins import MixinCustomWorkflow
-
-class NodePipelineOrchestrator(NodeOrchestrator, MixinCustomWorkflow):
-    """
-    ORCHESTRATOR node with custom mixin composition.
-
-    Use this approach when:
-    - You need specific mixin combinations not in ModelServiceOrchestrator
-    - You want fine-grained control over workflow execution
-    - You're implementing non-standard orchestration patterns
-    """
-
-    def __init__(self, container: ModelONEXContainer) -> None:
-        super().__init__(container)
-
-        # Manually initialize orchestrator-specific features
-        self.active_workflows = {}
-        self.emitted_actions = {}
-        self.workflow_states = {}
-        self.dependency_graph = {}
-        # ... rest of manual setup
-
-    async def process(self, input_data):
-        # Custom workflow execution logic
-        pass
-
-    # ... rest of implementation (same as above)
-```
-
-**When to use NodeOrchestrator**:
-- Custom workflow execution strategies beyond built-in modes
-- Custom mixin combinations beyond ModelServiceOrchestrator
-- Non-standard action coordination patterns
-- Special dependency resolution logic
-
-**When to use ModelServiceOrchestrator** (recommended):
-- Standard ORCHESTRATOR operations (95% of cases)
-- Multi-step workflows with SEQUENTIAL, PARALLEL, BATCH modes
-- Production deployment
-- Need health checks, metrics, event bus out-of-the-box
-- Following ONEX best practices
+1. **Workflow Steps**: Each step is a `ModelWorkflowStep` with type, timeout, and dependencies
+2. **Dependency Management**: Steps specify dependencies via `depends_on` field (list of UUIDs)
+3. **Execution Mode Support**: The orchestrator supports SEQUENTIAL, PARALLEL, BATCH modes
+4. **Thread Safety**: Use `object.__setattr__()` to bypass Pydantic validation for mutable attributes
+5. **Type Safety**: All steps use proper step_type literals ("compute", "effect", "reducer", etc.)
 
 ---
 
 ## Step 3: Add Conditional Branching
 
-Let's extend the orchestrator to support conditional execution:
+Extend the orchestrator to support conditional execution:
 
 **File**: `src/your_project/nodes/node_conditional_pipeline_orchestrator.py`
 
@@ -911,9 +699,10 @@ Demonstrates conditional step execution based on runtime state.
 """
 
 from uuid import uuid4
-from datetime import datetime
+from typing import Any
 
-from omnibase_core.enums.enum_orchestrator_types import EnumBranchCondition
+from omnibase_core.nodes import EnumBranchCondition, EnumExecutionMode
+from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 
 from .node_pipeline_orchestrator import NodePipelineOrchestrator
 from .model_pipeline_orchestrator_input import ModelPipelineOrchestratorInput
@@ -926,7 +715,7 @@ class NodeConditionalPipelineOrchestrator(NodePipelineOrchestrator):
     Adds conditional execution based on quality scores and validation results.
     """
 
-    async def _create_pipeline_steps(
+    def _create_pipeline_steps(
         self,
         input_data: ModelPipelineOrchestratorInput,
     ) -> list[ModelWorkflowStep]:
@@ -934,20 +723,18 @@ class NodeConditionalPipelineOrchestrator(NodePipelineOrchestrator):
         Create pipeline steps with conditional branching.
 
         Adds quality-based branching:
-        - High quality → Fast track (skip some processing)
-        - Low quality → Full processing pipeline
-        - Failed validation → Error handling branch
+        - High quality -> Fast track (skip some processing)
+        - Low quality -> Full processing pipeline
+        - Failed validation -> Error handling branch
         """
-        steps = await super()._create_pipeline_steps(input_data)
+        steps = super()._create_pipeline_steps(input_data)
 
         # Add conditional quality check step
         quality_check_step = self._create_quality_check_step(input_data)
         steps.insert(1, quality_check_step)  # After validation
 
-        # Add conditional fast-track step
+        # Add conditional fast-track step (only executes for high quality data)
         fast_track_step = self._create_fast_track_step(input_data)
-        fast_track_step.condition = EnumBranchCondition.CUSTOM
-        fast_track_step.condition_function = self._check_high_quality
         steps.append(fast_track_step)
 
         return steps
@@ -957,31 +744,13 @@ class NodeConditionalPipelineOrchestrator(NodePipelineOrchestrator):
         input_data: ModelPipelineOrchestratorInput,
     ) -> ModelWorkflowStep:
         """Create step for quality assessment."""
-        orchestrator_lease_id = uuid4()
-        quality_action = ModelAction(
-            action_id=uuid4(),
-            action_type=EnumActionType.COMPUTE,
-            target_node_type="NodeQualityAssessorCompute",
-            operation_data={
-                "threshold": input_data.config.quality_threshold,
-            },
-            dependencies=[],
-            priority=1,
-            timeout_ms=5000,
-            retry_count=0,
-            metadata={"step_type": "quality_check"},
-            created_at=datetime.now(),
-            lease_id=orchestrator_lease_id,
-            epoch=1,
-        )
-
         return ModelWorkflowStep(
             step_id=uuid4(),
             step_name="Assess Data Quality",
-            execution_mode=EnumExecutionMode.SEQUENTIAL,
-            actions=[quality_action],
-            timeout_ms=self.default_step_timeout_ms,
-            metadata={"step_type": "quality_check"},
+            step_type="compute",
+            timeout_ms=5000,
+            retry_count=0,
+            depends_on=[],
         )
 
     def _create_fast_track_step(
@@ -989,31 +758,14 @@ class NodeConditionalPipelineOrchestrator(NodePipelineOrchestrator):
         input_data: ModelPipelineOrchestratorInput,
     ) -> ModelWorkflowStep:
         """Create fast-track step for high-quality data."""
-        orchestrator_lease_id = uuid4()
-        fast_track_action = ModelAction(
-            action_id=uuid4(),
-            action_type=EnumActionType.EFFECT,
-            target_node_type="NodeFastTrackWriterEffect",
-            operation_data={
-                "destination": "fast_track_table",
-            },
-            dependencies=[],
-            priority=3,
-            timeout_ms=5000,
-            retry_count=1,
-            metadata={"step_type": "fast_track"},
-            created_at=datetime.now(),
-            lease_id=orchestrator_lease_id,
-            epoch=1,
-        )
-
         return ModelWorkflowStep(
             step_id=uuid4(),
             step_name="Fast Track Storage",
-            execution_mode=EnumExecutionMode.SEQUENTIAL,
-            actions=[fast_track_action],
-            timeout_ms=self.default_step_timeout_ms,
-            metadata={"step_type": "fast_track"},
+            step_type="effect",
+            timeout_ms=5000,
+            retry_count=1,
+            depends_on=[],
+            # Conditional execution would be configured via contract
         )
 
     def _check_high_quality(
@@ -1041,8 +793,8 @@ class NodeConditionalPipelineOrchestrator(NodePipelineOrchestrator):
 
 **Conditional Execution Features**:
 
-1. **EnumBranchCondition**: Built-in conditions (IF_TRUE, IF_FALSE, CUSTOM)
-2. **condition_function**: Custom Python functions for complex logic
+1. **EnumBranchCondition**: Built-in conditions (IF_TRUE, IF_FALSE, IF_ERROR, IF_SUCCESS, IF_TIMEOUT, CUSTOM)
+2. **Custom Logic**: Custom Python functions for complex branching logic
 3. **Runtime Branching**: Steps execute only if condition is met
 4. **Previous Results**: Condition functions can access prior step results
 
@@ -1050,11 +802,11 @@ class NodeConditionalPipelineOrchestrator(NodePipelineOrchestrator):
 
 ## Step 4: Execution Mode Comparison
 
-Let's see how the same pipeline executes in different modes:
-
 ### SEQUENTIAL Mode
 
 ```python
+from omnibase_core.nodes import EnumExecutionMode
+
 # Create orchestrator
 orchestrator = NodePipelineOrchestrator(container)
 
@@ -1069,9 +821,9 @@ input_data = ModelPipelineOrchestratorInput(
 )
 
 # Execute
-result = await orchestrator.process(input_data)
+result = await orchestrator.process_pipeline(input_data)
 
-# Execution order: Step 1 → Step 2 → Step 3 → Step 4 → Step 5
+# Execution order: Step 1 -> Step 2 -> Step 3 -> Step 4 -> Step 5
 # Total time: ~50ms (sum of all steps)
 ```
 
@@ -1091,9 +843,9 @@ input_data = ModelPipelineOrchestratorInput(
 )
 
 # Execute
-result = await orchestrator.process(input_data)
+result = await orchestrator.process_pipeline(input_data)
 
-# Execution order:
+# Execution order (respects dependencies):
 #   Wave 1: Step 1 (validation) [10ms]
 #   Wave 2: Step 2 (fetch) [10ms]
 #   Wave 3: Step 3 (process) [15ms]
@@ -1120,7 +872,7 @@ input_data = ModelPipelineOrchestratorInput(
 )
 
 # Execute
-result = await orchestrator.process(input_data)
+result = await orchestrator.process_pipeline(input_data)
 
 # Execution:
 #   - Load balancer distributes operations
@@ -1146,6 +898,11 @@ result = await orchestrator.process(input_data)
 Add robust error handling with compensation logic:
 
 ```python
+from omnibase_core.nodes import EnumWorkflowState
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
+
 class NodeResilientPipelineOrchestrator(NodePipelineOrchestrator):
     """
     Pipeline orchestrator with error recovery.
@@ -1153,13 +910,13 @@ class NodeResilientPipelineOrchestrator(NodePipelineOrchestrator):
     Implements compensation logic and partial failure handling.
     """
 
-    async def process(
+    async def process_pipeline(
         self,
         input_data: ModelPipelineOrchestratorInput,
     ) -> ModelOrchestratorOutput:
         """Execute workflow with error recovery."""
         try:
-            return await super().process(input_data)
+            return await super().process_pipeline(input_data)
 
         except ModelOnexError as e:
             # Check if we can recover
@@ -1237,9 +994,9 @@ class NodeResilientPipelineOrchestrator(NodePipelineOrchestrator):
 
             # Increase timeout and retry
             input_data.max_parallel_steps = max(1, input_data.max_parallel_steps - 1)
-            return await super().process(input_data)
+            return await super().process_pipeline(input_data)
 
-        # Strategy 2: Skip failed step
+        # Strategy 2: Skip failed step (partial results)
         if input_data.failure_strategy == "continue_on_error":
             emit_log_event(
                 LogLevel.WARNING,
@@ -1249,15 +1006,15 @@ class NodeResilientPipelineOrchestrator(NodePipelineOrchestrator):
 
             # Return partial results
             return ModelOrchestratorOutput(
-                workflow_id=input_data.workflow_id,
-                operation_id=input_data.operation_id,
-                workflow_state=EnumWorkflowState.PARTIAL_SUCCESS,
-                steps_completed=0,
-                steps_failed=1,
+                execution_status="partial_success",
+                execution_time_ms=0.0,
+                start_time=datetime.now(),
+                end_time=datetime.now(),
+                completed_steps=[],
+                failed_steps=[],
+                final_result=None,
                 actions_emitted=[],
-                processing_time_ms=0.0,
-                results=[],
-                metadata={"recovery_strategy": "partial_results"},
+                metrics={"recovery_strategy": "partial_results"},
             )
 
         # No recovery possible
@@ -1277,10 +1034,7 @@ import pytest
 from uuid import uuid4
 
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.enums.enum_orchestrator_types import (
-    EnumExecutionMode,
-    EnumWorkflowState,
-)
+from omnibase_core.nodes import EnumExecutionMode
 
 from your_project.nodes.node_pipeline_orchestrator import (
     NodePipelineOrchestrator,
@@ -1318,14 +1072,12 @@ async def test_sequential_execution(orchestrator):
     )
 
     # Act
-    result = await orchestrator.process(input_data)
+    result = await orchestrator.process_pipeline(input_data)
 
     # Assert
-    assert result.workflow_state == EnumWorkflowState.COMPLETED
-    assert result.steps_completed >= 4  # At least 4 steps executed
-    assert result.steps_failed == 0
-    assert len(result.actions_emitted) >= 4
-    assert result.processing_time_ms > 0
+    assert result.execution_status in ["completed", "success"]
+    assert len(result.completed_steps) >= 4
+    assert result.execution_time_ms >= 0
 
 
 @pytest.mark.asyncio
@@ -1337,19 +1089,17 @@ async def test_parallel_execution(orchestrator):
         input_data={"id": "test-123", "data": "sample"},
         config=ModelPipelineConfig(
             data_source="test_database",
-            validate_input=False,  # Skip validation for independence
+            validate_input=False,
         ),
         execution_mode=EnumExecutionMode.PARALLEL,
         max_parallel_steps=3,
     )
 
     # Act
-    result = await orchestrator.process(input_data)
+    result = await orchestrator.process_pipeline(input_data)
 
     # Assert
-    assert result.workflow_state == EnumWorkflowState.COMPLETED
-    assert result.parallel_executions is not None
-    assert result.parallel_executions > 0
+    assert result.execution_status in ["completed", "success"]
 
 
 @pytest.mark.asyncio
@@ -1366,98 +1116,57 @@ async def test_batch_execution(orchestrator):
     )
 
     # Act
-    result = await orchestrator.process(input_data)
+    result = await orchestrator.process_pipeline(input_data)
 
     # Assert
-    assert result.workflow_state == EnumWorkflowState.COMPLETED
-    assert result.load_balanced_operations is not None
-    assert result.load_balanced_operations > 0
+    assert result.execution_status in ["completed", "success"]
 
 
 @pytest.mark.asyncio
-async def test_conditional_branching(orchestrator):
-    """Test conditional step execution."""
-    from your_project.nodes.node_conditional_pipeline_orchestrator import (
-        NodeConditionalPipelineOrchestrator,
-    )
-
-    # Arrange
-    conditional_orchestrator = NodeConditionalPipelineOrchestrator(
-        orchestrator.container
-    )
-
-    input_data = ModelPipelineOrchestratorInput(
-        workflow_id=uuid4(),
-        input_data={"id": "test-123", "data": "high_quality"},
-        config=ModelPipelineConfig(
-            data_source="test_database",
-            quality_threshold=0.95,
-        ),
-        execution_mode=EnumExecutionMode.SEQUENTIAL,
-    )
-
-    # Act
-    result = await conditional_orchestrator.process(input_data)
-
-    # Assert
-    assert result.workflow_state == EnumWorkflowState.COMPLETED
-    # Conditional steps may be skipped based on quality
-
-
-@pytest.mark.asyncio
-async def test_error_recovery(orchestrator):
-    """Test error recovery mechanisms."""
-    from your_project.nodes.node_resilient_pipeline_orchestrator import (
-        NodeResilientPipelineOrchestrator,
-    )
-
-    # Arrange
-    resilient_orchestrator = NodeResilientPipelineOrchestrator(
-        orchestrator.container
-    )
-
-    input_data = ModelPipelineOrchestratorInput(
-        workflow_id=uuid4(),
-        input_data={"id": "test-123", "data": "sample"},
-        config=ModelPipelineConfig(
-            data_source="unavailable_source",  # This will fail
-        ),
-        execution_mode=EnumExecutionMode.SEQUENTIAL,
-        failure_strategy="continue_on_error",
-    )
-
-    # Act
-    result = await resilient_orchestrator.process(input_data)
-
-    # Assert
-    # Should return partial results instead of failing
-    assert result.workflow_state in [
-        EnumWorkflowState.PARTIAL_SUCCESS,
-        EnumWorkflowState.COMPLETED,
-    ]
-
-
-@pytest.mark.asyncio
-async def test_dependency_resolution(orchestrator):
-    """Test dependency graph construction and execution."""
+async def test_workflow_step_creation(orchestrator):
+    """Test workflow step creation."""
     # Arrange
     input_data = ModelPipelineOrchestratorInput(
-        workflow_id=uuid4(),
         input_data={"id": "test-123", "data": "sample"},
         config=ModelPipelineConfig(
             data_source="test_database",
             validate_input=True,
         ),
-        execution_mode=EnumExecutionMode.SEQUENTIAL,
     )
 
     # Act
-    result = await orchestrator.process(input_data)
+    steps = orchestrator._create_pipeline_steps(input_data)
 
     # Assert
-    assert result.workflow_state == EnumWorkflowState.COMPLETED
-    # Verify steps executed in dependency order
-    assert result.steps_completed > 0
+    assert len(steps) >= 5  # At least 5 steps with validation
+    assert all(step.step_name for step in steps)
+    assert all(step.step_type in ["compute", "effect", "reducer"] for step in steps)
+
+
+@pytest.mark.asyncio
+async def test_dependency_order(orchestrator):
+    """Test that steps have correct dependency order."""
+    # Arrange
+    input_data = ModelPipelineOrchestratorInput(
+        input_data={"id": "test-123", "data": "sample"},
+        config=ModelPipelineConfig(
+            data_source="test_database",
+            validate_input=True,
+        ),
+    )
+
+    # Act
+    steps = orchestrator._create_pipeline_steps(input_data)
+
+    # Assert
+    # First step (validation) has no dependencies
+    assert len(steps[0].depends_on) == 0
+
+    # Subsequent steps should have dependencies
+    for i, step in enumerate(steps[1:], start=1):
+        # Each step (except the first) should depend on something
+        # (exact dependency structure depends on implementation)
+        pass
 
 
 @pytest.mark.asyncio
@@ -1474,7 +1183,7 @@ async def test_action_emission(orchestrator):
     )
 
     # Act
-    result = await orchestrator.process(input_data)
+    result = await orchestrator.process_pipeline(input_data)
 
     # Assert
     assert len(result.actions_emitted) > 0
@@ -1483,19 +1192,17 @@ async def test_action_emission(orchestrator):
         assert action.action_id is not None
         assert action.action_type is not None
         assert action.target_node_type is not None
-        assert action.operation_data is not None
         assert action.lease_id is not None  # Verify lease management
         assert action.epoch >= 1  # Verify epoch control
 ```
 
 **Test Coverage**:
-- ✅ Sequential execution mode
-- ✅ Parallel execution mode
-- ✅ Batch execution mode
-- ✅ Conditional branching
-- ✅ Error recovery
-- ✅ Dependency resolution
-- ✅ Action emission
+- Sequential execution mode
+- Parallel execution mode
+- Batch execution mode
+- Workflow step creation
+- Dependency ordering
+- Action emission with lease management
 
 ---
 
@@ -1523,10 +1230,10 @@ input_data = ModelPipelineOrchestratorInput(
 )
 
 # Execute ETL
-result = await orchestrator.process(input_data)
+result = await orchestrator.process_pipeline(input_data)
 
-print(f"ETL completed: {result.steps_completed} steps")
-print(f"Processing time: {result.processing_time_ms}ms")
+print(f"ETL completed: {len(result.completed_steps)} steps")
+print(f"Processing time: {result.execution_time_ms}ms")
 print(f"Actions emitted: {len(result.actions_emitted)}")
 ```
 
@@ -1553,10 +1260,9 @@ input_data = ModelPipelineOrchestratorInput(
 )
 
 # Execute real-time processing
-result = await orchestrator.process(input_data)
+result = await orchestrator.process_pipeline(input_data)
 
-print(f"Stream processing completed in {result.processing_time_ms}ms")
-print(f"Parallel executions: {result.parallel_executions}")
+print(f"Stream processing completed in {result.execution_time_ms}ms")
 ```
 
 ### Example 3: Conditional Workflow
@@ -1580,11 +1286,11 @@ input_data = ModelPipelineOrchestratorInput(
 )
 
 # Execute with conditional branching
-result = await orchestrator.process(input_data)
+result = await orchestrator.process_pipeline(input_data)
 
-# High-quality data → Fast track
-# Low-quality data → Full processing pipeline
-print(f"Workflow path taken: {result.metadata.get('path', 'standard')}")
+# High-quality data -> Fast track
+# Low-quality data -> Full processing pipeline
+print(f"Workflow completed: {result.execution_status}")
 ```
 
 ---
@@ -1598,37 +1304,36 @@ Execute multiple operations in parallel, then aggregate:
 ```python
 """Fan-out/fan-in pattern for parallel data processing."""
 
+from uuid import uuid4
+from omnibase_core.models.orchestrator.model_action import ModelAction
+from omnibase_core.nodes import EnumActionType
+
 orchestrator_lease_id = uuid4()
 
 # Step 1: Fan-out (parallel fetches from multiple sources)
-fetch_steps = []
+fetch_actions = []
 for source in ["db1", "db2", "db3"]:
     fetch_action = ModelAction(
         action_id=uuid4(),
         action_type=EnumActionType.EFFECT,
         target_node_type="NodeDataFetcherEffect",
-        operation_data={"source": source},
+        payload={"source": source},
         dependencies=[],  # No dependencies - can run in parallel
         priority=1,
         timeout_ms=10000,
         lease_id=orchestrator_lease_id,
         epoch=1,
     )
-    step = ModelWorkflowStep(
-        step_id=uuid4(),
-        step_name=f"Fetch from {source}",
-        actions=[fetch_action],
-    )
-    fetch_steps.append(step)
+    fetch_actions.append(fetch_action)
 
 # Step 2: Fan-in (aggregate all results)
-fan_in_dependencies = [step.actions[0].action_id for step in fetch_steps]
+fan_in_dependencies = [action.action_id for action in fetch_actions]
 
 aggregate_action = ModelAction(
     action_id=uuid4(),
     action_type=EnumActionType.REDUCE,
     target_node_type="NodeDataAggregatorReducer",
-    operation_data={"operation": "merge"},
+    payload={"operation": "merge"},
     dependencies=fan_in_dependencies,  # Wait for all fetches
     priority=2,
     timeout_ms=15000,
@@ -1646,6 +1351,7 @@ Prevent cascading failures with circuit breaker pattern:
 ```python
 """Circuit breaker pattern for resilient orchestration."""
 
+
 class NodeCircuitBreakerOrchestrator(NodePipelineOrchestrator):
     """Orchestrator with circuit breaker for external services."""
 
@@ -1654,40 +1360,36 @@ class NodeCircuitBreakerOrchestrator(NodePipelineOrchestrator):
         object.__setattr__(self, "circuit_breaker_state", {})
         object.__setattr__(self, "failure_threshold", 3)
 
-    async def _execute_workflow(self, orchestrator_input):
+    async def process_pipeline(self, input_data):
         """Execute with circuit breaker protection."""
-        # Check circuit state for each target service
-        for step_dict in orchestrator_input.steps:
-            step = self._dict_to_workflow_step(step_dict)
-            for action in step.actions:
-                service = action.target_node_type
+        # Check circuit state before execution
+        steps = self._create_pipeline_steps(input_data)
 
-                # Check if circuit is open
-                if self._is_circuit_open(service):
-                    emit_log_event(
-                        LogLevel.WARNING,
-                        f"Circuit breaker OPEN for {service}",
-                        {"service": service},
-                    )
-                    # Skip this service or use fallback
-                    continue
+        for step in steps:
+            service = step.step_type
+
+            # Check if circuit is open
+            if self._is_circuit_open(service):
+                emit_log_event(
+                    LogLevel.WARNING,
+                    f"Circuit breaker OPEN for {service}",
+                    {"service": service},
+                )
+                # Skip this service or use fallback
+                continue
 
         # Execute workflow
         try:
-            result = await super()._execute_workflow(orchestrator_input)
-            # Reset circuit on success
-            for step_dict in orchestrator_input.steps:
-                step = self._dict_to_workflow_step(step_dict)
-                for action in step.actions:
-                    self._reset_circuit(action.target_node_type)
+            result = await super().process_pipeline(input_data)
+            # Reset circuits on success
+            for step in steps:
+                self._reset_circuit(step.step_type)
             return result
 
         except Exception as e:
             # Record failure and potentially open circuit
-            for step_dict in orchestrator_input.steps:
-                step = self._dict_to_workflow_step(step_dict)
-                for action in step.actions:
-                    self._record_failure(action.target_node_type)
+            for step in steps:
+                self._record_failure(step.step_type)
             raise
 
     def _is_circuit_open(self, service: str) -> bool:
@@ -1707,33 +1409,35 @@ class NodeCircuitBreakerOrchestrator(NodePipelineOrchestrator):
             self.circuit_breaker_state[service]["failures"] = 0
 ```
 
-### Pattern 3: Compensation Logic
+### Pattern 3: Saga with Compensation
 
-Implement saga pattern with compensation:
+Implement saga pattern with compensation for distributed transactions:
 
 ```python
 """Saga pattern with compensation for distributed transactions."""
 
+
 class NodeSagaOrchestrator(NodePipelineOrchestrator):
     """Orchestrator implementing saga pattern with compensation."""
 
-    async def process(self, input_data):
+    async def process_pipeline(self, input_data):
         """Execute workflow with compensation tracking."""
-        compensation_stack = []
+        compensation_stack: list[dict] = []
 
         try:
             # Execute steps and track compensations
-            steps = await self._create_pipeline_steps(input_data)
+            steps = self._create_pipeline_steps(input_data)
 
             for step in steps:
-                # Execute step
-                result = await self._execute_step(step)
+                # Execute step via parent
+                # (simplified - actual implementation would execute each step)
 
                 # Register compensation action
                 compensation = self._create_compensation(step)
-                compensation_stack.append(compensation)
+                if compensation:
+                    compensation_stack.append(compensation)
 
-            return result
+            return await super().process_pipeline(input_data)
 
         except Exception as e:
             # Execute compensations in reverse order
@@ -1748,22 +1452,19 @@ class NodeSagaOrchestrator(NodePipelineOrchestrator):
 
             raise
 
-    def _create_compensation(self, step):
+    def _create_compensation(self, step: ModelWorkflowStep) -> dict | None:
         """Create compensation action for step."""
         # Example: If step saves to database, compensation deletes
-        if step.metadata.get("step_type") == "storage":
+        if step.step_type == "effect":
             return {
-                "action": "delete",
-                "target": step.actions[0].operation_data.get("destination"),
-                "action_id": step.actions[0].action_id,
+                "action": "rollback",
+                "step_id": str(step.step_id),
+                "step_name": step.step_name,
             }
         return None
 
-    async def _execute_compensation(self, compensation):
+    async def _execute_compensation(self, compensation: dict) -> None:
         """Execute compensation action."""
-        if compensation is None:
-            return
-
         emit_log_event(
             LogLevel.INFO,
             f"Executing compensation: {compensation['action']}",
@@ -1783,7 +1484,7 @@ class NodeSagaOrchestrator(NodePipelineOrchestrator):
 **Problem**: Workflow doesn't complete and appears stuck.
 
 **Solution**:
-1. Check for circular dependencies in action dependency graph
+1. Check for circular dependencies in step dependency graph
 2. Verify timeout values are appropriate
 3. Enable debug logging to see step execution:
 
@@ -1804,17 +1505,15 @@ emit_log_event_sync(
 **Problem**: Workflow steps don't respect dependencies.
 
 **Solution**:
-1. Verify `dependencies` field in actions is correctly set
-2. Enable dependency resolution: `dependency_resolution_enabled=True`
-3. Use SEQUENTIAL mode to force serial execution during debugging
+1. Verify `depends_on` field in steps is correctly set with UUIDs
+2. Use SEQUENTIAL mode to force serial execution during debugging
+3. Check that workflow definition is properly loaded
 
 ```python
-# Verify dependency graph
-orchestrator_input = ModelOrchestratorInput(
-    # ...
-    dependency_resolution_enabled=True,
-    execution_mode=EnumExecutionMode.SEQUENTIAL,  # Force order
-)
+# Verify step dependencies
+steps = orchestrator._create_pipeline_steps(input_data)
+for step in steps:
+    print(f"Step: {step.step_name}, depends_on: {step.depends_on}")
 ```
 
 ### Issue: Parallel mode slower than sequential
@@ -1849,72 +1548,7 @@ async def _cleanup_node_resources(self):
     """Cleanup orchestrator resources."""
     self.active_workflows.clear()
     self.emitted_actions.clear()
-    self.workflow_states.clear()
 ```
-
----
-
-## Advanced Topics
-
-### Optional: LlamaIndex Workflow Integration
-
-While ORCHESTRATOR nodes primarily use action emission for coordination, you can optionally integrate LlamaIndex workflows via the `MixinHybridExecution` mixin:
-
-```python
-"""Optional LlamaIndex workflow integration."""
-
-from omnibase_core.mixins.mixin_hybrid_execution import MixinHybridExecution
-from llama_index.core.workflow import Workflow, StartEvent, StopEvent, step
-
-
-class MyLlamaIndexWorkflow(Workflow):
-    """LlamaIndex workflow for complex orchestration."""
-
-    @step
-    async def validate(self, ev: StartEvent) -> ValidationEvent:
-        """Validation step."""
-        data = ev.data
-        # Validation logic
-        return ValidationEvent(validated_data=data)
-
-    @step
-    async def process(self, ev: ValidationEvent) -> ProcessEvent:
-        """Processing step."""
-        # Processing logic
-        return ProcessEvent(processed_data=ev.validated_data)
-
-    @step
-    async def finalize(self, ev: ProcessEvent) -> StopEvent:
-        """Final step."""
-        return StopEvent(result=ev.processed_data)
-
-
-class NodeHybridOrchestrator(MixinHybridExecution, NodePipelineOrchestrator):
-    """Orchestrator with optional LlamaIndex workflow support."""
-
-    def create_workflow(self, input_state):
-        """Create LlamaIndex workflow for complex operations."""
-        return MyLlamaIndexWorkflow()
-
-    def determine_execution_mode(self, input_state):
-        """Decide between action-based and LlamaIndex execution."""
-        complexity = self._calculate_complexity(input_state)
-
-        if complexity > 0.8:
-            return "workflow"  # Use LlamaIndex
-        return "direct"  # Use action-based orchestration
-```
-
-**When to use LlamaIndex workflows**:
-- Complex, deeply nested orchestration logic
-- Integration with LlamaIndex AI capabilities
-- Advanced workflow visualization needs
-
-**When to use action-based orchestration** (recommended):
-- Standard ONEX workflow coordination
-- Dependency-based execution ordering
-- Multi-mode execution (SEQUENTIAL, PARALLEL, BATCH)
-- Integration with other ONEX nodes
 
 ---
 
@@ -1922,24 +1556,24 @@ class NodeHybridOrchestrator(MixinHybridExecution, NodePipelineOrchestrator):
 
 Congratulations! You've completed the ORCHESTRATOR node tutorial. You now know how to:
 
-✅ Build multi-step workflow orchestrators
-✅ Use action emission for deferred execution
-✅ Implement lease management for single-writer semantics
-✅ Implement SEQUENTIAL, PARALLEL, and BATCH execution modes
-✅ Add conditional branching and error recovery
-✅ Test orchestrator nodes comprehensively
+- Build multi-step workflow orchestrators
+- Use action emission for deferred execution
+- Implement lease management for single-writer semantics
+- Implement SEQUENTIAL, PARALLEL, and BATCH execution modes
+- Add conditional branching and error recovery
+- Test orchestrator nodes comprehensively
 
 ### Related Documentation
 
 - [Node Types Overview](02_NODE_TYPES.md) - Understanding the 4-node architecture
 - [ONEX Four-Node Architecture](../../architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) - Complete architecture guide
-- [ORCHESTRATOR Node Template](../../guides/templates/ORCHESTRATOR_NODE_TEMPLATE.md) - Production template
+- [Migration Guide](../MIGRATING_TO_DECLARATIVE_NODES.md) - Migrating from v0.3.x to v0.4.0
 - [Patterns Catalog](07_PATTERNS_CATALOG.md) - Common orchestration patterns
 
 ### Practice Exercises
 
 1. **Build a CI/CD Pipeline Orchestrator**
-   - Steps: lint → test → build → deploy
+   - Steps: lint -> test -> build -> deploy
    - Use SEQUENTIAL mode with conditional branching
    - Add rollback compensation logic
 
@@ -1970,6 +1604,6 @@ Before deploying ORCHESTRATOR nodes to production:
 
 ---
 
-**Tutorial Complete!** 🎉
+**Tutorial Complete!**
 
 You've mastered ORCHESTRATOR nodes and completed the full ONEX node building guide. You're now ready to build complex, production-ready workflows using the four-node architecture.

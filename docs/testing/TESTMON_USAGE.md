@@ -42,7 +42,7 @@ poetry run pytest --testmon
 poetry run pytest --testmon-noselect
 ```
 
-**Speedup**: 10x-100x faster for small changes (10,987 tests → often <100 tests)
+**Speedup**: 10x-100x faster for small changes (12,198 tests → often <100 tests)
 
 ### Pre-Commit Validation
 
@@ -109,10 +109,10 @@ poetry run pytest --testmon-noselect
 
 | Scenario | Full Suite | Testmon | Speedup |
 |----------|-----------|---------|---------|
-| 1 file changed | 10,987 tests | ~50 tests | ~220x |
-| 5 files changed | 10,987 tests | ~200 tests | ~55x |
-| 20 files changed | 10,987 tests | ~800 tests | ~14x |
-| Major refactor | 10,987 tests | ~5,000 tests | ~2x |
+| 1 file changed | 12,198 tests | ~50 tests | ~244x |
+| 5 files changed | 12,198 tests | ~200 tests | ~61x |
+| 20 files changed | 12,198 tests | ~800 tests | ~15x |
+| Major refactor | 12,198 tests | ~5,000 tests | ~2x |
 
 **Note**: Speedups vary based on code coupling and test dependencies.
 

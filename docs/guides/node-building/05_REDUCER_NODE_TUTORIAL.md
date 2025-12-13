@@ -4,7 +4,7 @@
 **Difficulty**: Intermediate
 **Prerequisites**: [What is a Node?](01_WHAT_IS_A_NODE.md), [EFFECT Node Tutorial](04_EFFECT_NODE_TUTORIAL.md)
 
-## 🎯 Recommended Approach
+## Recommended Approach
 
 This tutorial shows **TWO approaches**:
 
@@ -24,15 +24,13 @@ See [Node Class Hierarchy Guide](../../architecture/NODE_CLASS_HIERARCHY.md) for
 
 ---
 
-## 🚀 Declarative FSM Architecture (Recommended Path)
+## FSM Architecture (v0.4.0+)
 
-> **IMPORTANT UPDATE (2025-11-16)**: omnibase_core provides **comprehensive FSM subcontract infrastructure** for building reducer state machines **without custom Python code**. See [Declarative Workflow Findings](../../architecture/DECLARATIVE_WORKFLOW_FINDINGS.md) for full details.
+> **v0.4.0 UPDATE**: `NodeReducer` is now the **PRIMARY FSM-driven implementation**. All REDUCER nodes use FSM subcontracts for state transitions. The "Declarative" suffix has been removed because this IS the standard approach.
 
-### ✅ Available Today: FSM Execution Infrastructure (v0.3.2+)
+### FSM Execution Infrastructure
 
-> **Status**: ✅ **IMPLEMENTED** as of omnibase_core v0.3.2 (2025-11-16)
-
-The omnibase_core codebase now includes complete FSM execution capabilities:
+The omnibase_core codebase includes complete FSM execution capabilities:
 
 **Infrastructure** (Models & Contracts):
 - **`ModelFSMSubcontract`** - Complete state machine definitions
@@ -40,10 +38,10 @@ The omnibase_core codebase now includes complete FSM execution capabilities:
 - **`ModelFSMStateTransition`** - Transition specifications with conditions
 - **`ModelFSMOperation`** - Operation definitions with rollback support
 
-**Runtime Execution** (NEW in v0.3.2):
-- **`utils/fsm_executor.py`** - Pure function FSM execution (548 lines)
-- **`MixinFSMExecution`** - Mixin for node integration (237 lines)
-- **Comprehensive Tests** - 18 unit tests, 610+ test lines
+**Runtime Execution**:
+- **`utils/fsm_executor.py`** - Pure function FSM execution
+- **`MixinFSMExecution`** - Mixin for node integration
+- **Comprehensive Tests** - Full test coverage
 - **100% Type Safety** - Zero `Any` types, full mypy strict compliance
 
 **Example YAML Contract** (fully functional):
@@ -123,7 +121,7 @@ state_transitions:
   strict_validation_enabled: true
 ```
 
-### 🎯 Vision: Minimal Customization Required
+### Vision: Minimal Customization Required
 
 **Goal**: Most reducer state machines should require **ZERO custom Python code**:
 
@@ -136,19 +134,17 @@ state_transitions:
 - Complex validation rules not expressible in YAML
 - Advanced conflict resolution logic
 
-### 📊 Current Status
+### Current Status (v0.4.0)
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| FSM Subcontract Models | ✅ Complete | Full state machine support |
-| Pydantic Validation | ✅ Complete | Comprehensive validation |
-| Subcontract Composition | ✅ Complete | ModelContractReducer |
-| FSM Runtime Executor | ✅ Complete | fsm_executor.py with MixinFSMExecution |
-| Declarative Base Classes | ✅ Complete | `NodeReducer` (primary implementation, FSM-driven) |
-| Legacy Classes | ✅ Available | `NodeReducerLegacy` in `nodes/legacy/` for backwards compatibility |
-| Documentation | ✅ Complete | Full tutorial and migration guides available |
-
-**See**: [DECLARATIVE_WORKFLOW_FINDINGS.md](../../architecture/DECLARATIVE_WORKFLOW_FINDINGS.md) for implementation roadmap.
+| FSM Subcontract Models | Complete | Full state machine support |
+| Pydantic Validation | Complete | Comprehensive validation |
+| Subcontract Composition | Complete | ModelContractReducer |
+| FSM Runtime Executor | Complete | fsm_executor.py with MixinFSMExecution |
+| NodeReducer | **PRIMARY** | FSM-driven implementation (v0.4.0+) |
+| Legacy Classes | Available | `NodeReducerLegacy` in `nodes/legacy/` for backwards compatibility |
+| Documentation | Complete | Full tutorial and migration guides available |
 
 ---
 
@@ -156,15 +152,15 @@ state_transitions:
 
 This tutorial demonstrates **two implementation approaches**:
 1. **Manual FSM Implementation** (Current pattern): Custom Python code with pure FSM principles and Intent emission
-2. **Declarative FSM** (Recommended for new nodes): YAML-driven state machines using `NodeReducer` (the primary FSM-driven implementation)
+2. **YAML-Driven FSM** (Recommended for new nodes): YAML-driven state machines using `NodeReducer`
 
-> **Note (v0.4.0)**: `NodeReducer` is now the PRIMARY FSM-driven implementation. The "Declarative" suffix has been removed because this IS the standard. Legacy imperative implementations are available in `nodes/legacy/NodeReducerLegacy` for backwards compatibility.
+> **Note (v0.4.0)**: `NodeReducer` is the PRIMARY FSM-driven implementation. Import directly from `omnibase_core.nodes`. Legacy imperative implementations are available in `nodes/legacy/NodeReducerLegacy` for backwards compatibility.
 
 **Both approaches are production-ready and fully supported.**
 
 **Learning Path**:
-1. ✅ Learn pure FSM pattern with Intents (this tutorial)
-2. ✅ Migrate to declarative FSM YAML contracts (see [MIGRATING_TO_DECLARATIVE_NODES.md](../../guides/MIGRATING_TO_DECLARATIVE_NODES.md))
+1. Learn pure FSM pattern with Intents (this tutorial)
+2. Migrate to YAML-driven FSM contracts (see [MIGRATING_TO_DECLARATIVE_NODES.md](../MIGRATING_TO_DECLARATIVE_NODES.md))
 
 ---
 
@@ -172,24 +168,24 @@ This tutorial demonstrates **two implementation approaches**:
 
 In this tutorial, you'll build a production-ready **Metrics Aggregation Node** as a **pure FSM** that:
 
-✅ Aggregates metrics data from multiple sources as pure state transitions
-✅ Supports multiple reduction types (fold, aggregate, merge, normalize)
-✅ Handles streaming for large datasets
-✅ Implements conflict resolution strategies
-✅ **Emits Intents for side effects** (no direct execution)
-✅ **Maintains no mutable state** (pure functional pattern)
+- Aggregates metrics data from multiple sources as pure state transitions
+- Supports multiple reduction types (fold, aggregate, merge, normalize)
+- Handles streaming for large datasets
+- Implements conflict resolution strategies
+- **Emits Intents for side effects** (no direct execution)
+- **Maintains no mutable state** (pure functional pattern)
 
 **Why Pure FSM REDUCER Nodes?**
 
 REDUCER nodes in ONEX are **pure finite state machines**:
-- **Input → (Output, Intents)**: Pure function transformation
+- **Input -> (Output, Intents)**: Pure function transformation
 - **No Mutable State**: All state flows through input/output
 - **Intent Emission**: Describe side effects, don't execute them
 - **Effect Delegation**: Let Effect nodes handle I/O, logging, metrics
 
 **Core Concept**:
 ```text
-δ(state, action) → (new_state, intents[])
+delta(state, action) -> (new_state, intents[])
 ```
 
 **Tutorial Structure**:
@@ -204,44 +200,48 @@ REDUCER nodes in ONEX are **pure finite state machines**:
 
 ## Pure FSM Pattern: Key Principles
 
-### ❌ Old Pattern (Stateful, Side Effects)
+### Old Pattern (Stateful, Side Effects) - AVOID
 ```python
 class NodeMetricsAggregatorReducer(NodeReducer):
     def __init__(self, container):
         super().__init__(container)
-        # ❌ WRONG: Mutable state
+        # WRONG: Mutable state
         self.aggregation_stats = {"total": 0}
         self.active_windows = {}
 
     async def aggregate_metrics(self, input_data):
         result = await self._aggregate(input_data)
 
-        # ❌ WRONG: Direct state mutation
+        # WRONG: Direct state mutation
         self.aggregation_stats["total"] += 1
 
-        # ❌ WRONG: Direct side effect execution
+        # WRONG: Direct side effect execution
         emit_log_event(LogLevel.INFO, "Aggregation complete")
 
         return result
 ```
 
-### ✅ New Pattern (Pure FSM, Intent Emission)
+### New Pattern (Pure FSM, Intent Emission) - CORRECT
 ```python
+from omnibase_core.nodes import NodeReducer
+from omnibase_core.models.reducer.model_intent import ModelIntent
+
+
 class NodeMetricsAggregatorReducer(NodeReducer):
     def __init__(self, container):
         super().__init__(container)
-        # ✅ CORRECT: No mutable state
+        # CORRECT: No mutable state
 
     async def aggregate_metrics(
         self,
         input_data: ModelMetricsAggregationInput,
     ) -> ModelMetricsAggregationOutput:
-        """Pure function: input → (result, intents)"""
+        """Pure function: input -> (result, intents)"""
 
-        # ✅ Pure transformation
+        # Pure transformation
         aggregated_data = self._reduce_data(input_data.data_sources)
 
-        # ✅ Describe side effects as Intents
+        # Describe side effects as Intents
         intents = [
             ModelIntent(
                 intent_type="log_event",
@@ -265,7 +265,7 @@ class NodeMetricsAggregatorReducer(NodeReducer):
             ),
         ]
 
-        # ✅ Return result + intents (no execution)
+        # Return result + intents (no execution)
         return ModelMetricsAggregationOutput(
             aggregated_data=aggregated_data,
             sources_processed=len(input_data.data_sources),
@@ -307,7 +307,8 @@ poetry run pytest tests/unit/nodes/test_node_reducer.py -v --maxfail=1
 """Input model for metrics aggregation REDUCER node."""
 
 from enum import Enum
-from pydantic import BaseModel, Field
+
+from pydantic import BaseModel, ConfigDict, Field
 from uuid import UUID, uuid4
 
 
@@ -331,6 +332,8 @@ class ModelMetricsAggregationInput(BaseModel):
 
     NOTE: Immutable input - Reducer maintains no state.
     """
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     # Data to aggregate
     data_sources: list[dict[str, object]] = Field(
@@ -380,12 +383,6 @@ class ModelMetricsAggregationInput(BaseModel):
         default_factory=dict,
         description="Additional operation metadata",
     )
-
-
-    class Config:
-        """Pydantic configuration."""
-
-        frozen = True
 ```
 
 ### Output Model with Intent Support
@@ -396,42 +393,12 @@ class ModelMetricsAggregationInput(BaseModel):
 """Output model for metrics aggregation REDUCER node."""
 
 from datetime import datetime
-from pydantic import BaseModel, Field
+
+from pydantic import BaseModel, ConfigDict, Field
 from uuid import UUID
 
-
-class ModelIntent(BaseModel):
-    """
-    Intent for side effects.
-
-    Reducer nodes emit Intents describing side effects.
-    Effect nodes execute them.
-    """
-
-    intent_type: str = Field(
-        ...,
-        description="Type of intent (log_event, record_metric, etc.)",
-    )
-
-    target: str = Field(
-        ...,
-        description="Target service/node for execution",
-    )
-
-    payload: dict[str, object] = Field(
-        ...,
-        description="Intent payload data",
-    )
-
-    priority: int = Field(
-        default=5,
-        ge=1,
-        le=10,
-        description="Execution priority (1=highest, 10=lowest)",
-    )
-
-    class Config:
-        frozen = True
+# Import ModelIntent from the correct v0.4.0 location
+from omnibase_core.models.reducer.model_intent import ModelIntent
 
 
 class ModelMetricsAggregationOutput(BaseModel):
@@ -443,6 +410,8 @@ class ModelMetricsAggregationOutput(BaseModel):
 
     NOTE: Pure output - contains result + intents, no state mutation.
     """
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     # Aggregation results
     aggregated_data: dict[str, object] = Field(
@@ -500,17 +469,11 @@ class ModelMetricsAggregationOutput(BaseModel):
         description="Completion timestamp",
     )
 
-    # Intent emission (NEW)
-    intents: list[ModelIntent] = Field(
-        default_factory=list,
+    # Intent emission - side effects for Effect nodes
+    intents: tuple[ModelIntent, ...] = Field(
+        default=(),
         description="Side effects to be executed by Effect nodes",
     )
-
-
-    class Config:
-        """Pydantic configuration."""
-
-        frozen = True
 ```
 
 ---
@@ -537,16 +500,12 @@ CRITICAL: This is a PURE FUNCTION node:
 """
 
 import time
-from collections import defaultdict
 
+# v0.4.0: Import NodeReducer directly from omnibase_core.nodes
+from omnibase_core.nodes import NodeReducer, ModelReducerInput, EnumReductionType
+from omnibase_core.nodes import EnumStreamingMode, EnumConflictResolution
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.nodes.node_reducer import NodeReducer
-from omnibase_core.models.model_reducer_input import ModelReducerInput
-from omnibase_core.enums.enum_reducer_types import (
-    EnumReductionType,
-    EnumStreamingMode,
-    EnumConflictResolution,
-)
+from omnibase_core.models.reducer.model_intent import ModelIntent
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
@@ -556,7 +515,6 @@ from your_project.nodes.model_metrics_aggregation_input import (
 )
 from your_project.nodes.model_metrics_aggregation_output import (
     ModelMetricsAggregationOutput,
-    ModelIntent,
 )
 
 
@@ -565,10 +523,10 @@ class NodeMetricsAggregatorReducer(NodeReducer):
     Metrics Aggregator REDUCER Node - Pure FSM Implementation.
 
     Key Principles:
-    ✅ Pure state transformations: input → (result, intents)
-    ✅ No mutable state (no self.* accumulation)
-    ✅ Intent emission for side effects
-    ✅ Effect delegation (not direct execution)
+    - Pure state transformations: input -> (result, intents)
+    - No mutable state (no self.* accumulation)
+    - Intent emission for side effects
+    - Effect delegation (not direct execution)
 
     This node demonstrates the core ONEX pattern:
     - Reducer: Transforms data, emits Intents
@@ -584,7 +542,7 @@ class NodeMetricsAggregatorReducer(NodeReducer):
         All state flows through input/output.
         """
         super().__init__(container)
-        # ✅ CORRECT: No mutable state
+        # CORRECT: No mutable state
         # (No self.aggregation_stats, no self.active_windows)
 
 
@@ -593,7 +551,7 @@ class NodeMetricsAggregatorReducer(NodeReducer):
         input_data: ModelMetricsAggregationInput,
     ) -> ModelMetricsAggregationOutput:
         """
-        Pure FSM aggregation: input → (result, intents).
+        Pure FSM aggregation: input -> (result, intents).
 
         This is a PURE FUNCTION:
         - Same input always produces same output
@@ -625,7 +583,7 @@ class NodeMetricsAggregatorReducer(NodeReducer):
                 if processing_time_s > 0 else 0
             )
 
-            # ✅ CORRECT: Emit Intents for side effects
+            # CORRECT: Emit Intents for side effects
             intents = self._create_intents(
                 input_data=input_data,
                 reducer_output=reducer_output,
@@ -669,7 +627,7 @@ class NodeMetricsAggregatorReducer(NodeReducer):
         input_data: ModelMetricsAggregationInput,
         reducer_output,
         aggregated_data: dict[str, object],
-    ) -> list[ModelIntent]:
+    ) -> tuple[ModelIntent, ...]:
         """
         Create Intents for side effects.
 
@@ -677,9 +635,9 @@ class NodeMetricsAggregatorReducer(NodeReducer):
         without executing it directly.
 
         Intents will be routed to Effect nodes for execution:
-        - log_event → LoggingEffectNode
-        - record_metric → MetricsEffectNode
-        - persist_data → DatabaseEffectNode
+        - log_event -> LoggingEffectNode
+        - record_metric -> MetricsEffectNode
+        - persist_data -> DatabaseEffectNode
         """
         intents = []
 
@@ -758,7 +716,7 @@ class NodeMetricsAggregatorReducer(NodeReducer):
                 )
             )
 
-        return intents
+        return tuple(intents)
 
 
     def _convert_to_reducer_input(
@@ -818,21 +776,21 @@ class NodeMetricsAggregatorReducer(NodeReducer):
 ```
 
 **What `NodeReducer` Provides**:
-- ✅ **Core Node Functionality**: All `NodeCoreBase` capabilities (lifecycle, validation, metrics)
-- ✅ **Reduction Functions**: Registry for different reduction types (fold, aggregate, merge)
-- ✅ **Streaming Support**: Batch, incremental, and windowed processing modes
-- ✅ **Conflict Resolution**: Built-in strategies (sum, average, max, min, latest, merge)
-- ✅ **Streaming Windows**: Window management for time-based aggregation
-- ✅ **Performance Tracking**: Built-in metrics for reduction operations
-- ✅ **Configuration Support**: Automatic config loading from `NodeConfigProvider`
-- ✅ **Pure FSM Pattern**: Designed for stateless operation with Intent emission
+- **Core Node Functionality**: All `NodeCoreBase` capabilities (lifecycle, validation, metrics)
+- **Reduction Functions**: Registry for different reduction types (fold, aggregate, merge)
+- **Streaming Support**: Batch, incremental, and windowed processing modes
+- **Conflict Resolution**: Built-in strategies (sum, average, max, min, latest, merge)
+- **Streaming Windows**: Window management for time-based aggregation
+- **Performance Tracking**: Built-in metrics for reduction operations
+- **Configuration Support**: Automatic config loading from `NodeConfigProvider`
+- **Pure FSM Pattern**: Designed for stateless operation with Intent emission
 
 **Key Implementation Points**:
-- ✅ Inherits from `NodeReducer` convenience wrapper
-- ✅ Pure FSM pattern - no mutable state
-- ✅ Intent emission for side effects
-- ✅ Streaming support already available
-- ✅ Conflict resolution built-in
+- Inherits from `NodeReducer` (FSM-driven, v0.4.0+)
+- Pure FSM pattern - no mutable state
+- Intent emission for side effects
+- Streaming support already available
+- Conflict resolution built-in
 
 ### Advanced: Custom Base Class (When You Need Full Control)
 
@@ -840,7 +798,9 @@ If you need custom mixin composition or want to build from scratch:
 
 ```python
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from collections import defaultdict
+
 
 class NodeMetricsAggregatorReducer(NodeCoreBase):
     """
@@ -888,7 +848,7 @@ Intent Flow Example:
 
 1. Reducer emits Intents:
    result = await reducer.aggregate_metrics(input_data)
-   intents = result.intents  # List of ModelIntent
+   intents = result.intents  # Tuple of ModelIntent
 
 2. Orchestrator routes Intents to Effect nodes:
    for intent in intents:
@@ -918,11 +878,11 @@ Intent Flow Example:
 ```python
 """Effect node that executes Intents from Reducer nodes."""
 
-from omnibase_core.nodes.node_effect import NodeEffect
+from omnibase_core.nodes import NodeEffect
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.reducer.model_intent import ModelIntent
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-
-from your_project.nodes.model_metrics_aggregation_output import ModelIntent
 
 
 class NodeIntentExecutorEffect(NodeEffect):
@@ -932,6 +892,9 @@ class NodeIntentExecutorEffect(NodeEffect):
     Executes side effects described by Reducer-emitted Intents.
     This is where actual I/O, logging, metrics happen.
     """
+
+    def __init__(self, container: ModelONEXContainer) -> None:
+        super().__init__(container)
 
     async def execute_intent(self, intent: ModelIntent) -> None:
         """Execute a single Intent."""
@@ -947,7 +910,7 @@ class NodeIntentExecutorEffect(NodeEffect):
             emit_log_event(
                 LogLevel.WARNING,
                 f"Unknown intent type: {intent.intent_type}",
-                {"intent": intent.dict()},
+                {"intent": intent.model_dump()},
             )
 
     def _execute_log_event(self, intent: ModelIntent) -> None:
@@ -975,14 +938,14 @@ class NodeIntentExecutorEffect(NodeEffect):
         # Send metrics to monitoring system
         for metric in payload.get("metrics", []):
             # In real implementation, send to Prometheus, Datadog, etc.
-            print(f"📊 Metric: {metric['name']} = {metric['value']} {metric.get('tags', {})}")
+            print(f"Metric: {metric['name']} = {metric['value']} {metric.get('tags', {})}")
 
     async def _execute_persist_aggregation(self, intent: ModelIntent) -> None:
         """Execute database persistence Intent."""
         payload = intent.payload
 
         # In real implementation, write to database
-        print(f"💾 Persisting aggregation: {payload['operation_id']}")
+        print(f"Persisting aggregation: {payload['operation_id']}")
 ```
 
 ---
@@ -1035,11 +998,11 @@ async def test_pure_fsm_no_mutable_state(aggregator_node):
     # Second call with same input
     result_2 = await aggregator_node.aggregate_metrics(input_1)
 
-    # ✅ VERIFY: Pure function - same input produces same result
+    # VERIFY: Pure function - same input produces same result
     assert result_1.sources_processed == result_2.sources_processed
     assert result_1.items_processed == result_2.items_processed
 
-    # ✅ VERIFY: No mutable state leaked between calls
+    # VERIFY: No mutable state leaked between calls
     # (If there was mutable state, results might differ)
 
 
@@ -1056,18 +1019,18 @@ async def test_intent_emission(aggregator_node):
 
     result = await aggregator_node.aggregate_metrics(input_data)
 
-    # ✅ VERIFY: Intents emitted
+    # VERIFY: Intents emitted
     assert len(result.intents) > 0
 
-    # ✅ VERIFY: Logging intent present
+    # VERIFY: Logging intent present
     log_intents = [i for i in result.intents if i.intent_type == "log_event"]
     assert len(log_intents) >= 1
 
-    # ✅ VERIFY: Metrics intent present
+    # VERIFY: Metrics intent present
     metric_intents = [i for i in result.intents if i.intent_type == "record_metric"]
     assert len(metric_intents) >= 1
 
-    # ✅ VERIFY: Intent structure
+    # VERIFY: Intent structure
     log_intent = log_intents[0]
     assert log_intent.target == "logging_service"
     assert "message" in log_intent.payload
@@ -1087,14 +1050,14 @@ async def test_persistence_intent_when_requested(aggregator_node):
 
     result = await aggregator_node.aggregate_metrics(input_data)
 
-    # ✅ VERIFY: Persistence intent emitted when requested
+    # VERIFY: Persistence intent emitted when requested
     persist_intents = [
         i for i in result.intents
         if i.intent_type == "persist_aggregation"
     ]
     assert len(persist_intents) == 1
 
-    # ✅ VERIFY: Intent has correct payload
+    # VERIFY: Intent has correct payload
     persist_intent = persist_intents[0]
     assert persist_intent.target == "database_service"
     assert "aggregated_data" in persist_intent.payload
@@ -1203,7 +1166,7 @@ async def test_intent_priority_ordering(aggregator_node):
 
     result = await aggregator_node.aggregate_metrics(input_data)
 
-    # ✅ VERIFY: High-priority intents first
+    # VERIFY: High-priority intents first
     persist_intents = [
         i for i in result.intents
         if i.intent_type == "persist_aggregation"
@@ -1219,7 +1182,7 @@ async def test_intent_priority_ordering(aggregator_node):
 
 ### Basic Metrics Aggregation with Intent Execution
 
-```
+```python
 import asyncio
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from your_project.nodes.node_metrics_aggregator_reducer import NodeMetricsAggregatorReducer
@@ -1258,7 +1221,7 @@ async def aggregate_server_metrics():
     # Step 1: Pure transformation (Reducer)
     result = await aggregator.aggregate_metrics(input_data)
 
-    print(f"📊 Metrics Aggregation Complete:")
+    print(f"Metrics Aggregation Complete:")
     print(f"   Sources: {result.sources_processed}")
     print(f"   Items: {result.items_processed}")
     print(f"   Time: {result.processing_time_ms:.2f}ms")
@@ -1266,7 +1229,7 @@ async def aggregate_server_metrics():
     print(f"   Intents Emitted: {len(result.intents)}")
 
     # Step 2: Execute Intents (Effect)
-    print(f"\n🎯 Executing {len(result.intents)} Intents:")
+    print(f"\nExecuting {len(result.intents)} Intents:")
     for intent in sorted(result.intents, key=lambda i: i.priority):
         print(f"   - {intent.intent_type} (priority {intent.priority})")
         await intent_executor.execute_intent(intent)
@@ -1279,10 +1242,13 @@ asyncio.run(aggregate_server_metrics())
 
 ### Orchestrator Pattern for Full Workflow
 
-```
+```python
 """
-Full orchestration pattern showing Reducer → Effect flow.
+Full orchestration pattern showing Reducer -> Effect flow.
 """
+
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+
 
 class MetricsAggregationOrchestrator:
     """Orchestrates Reducer + Effect nodes for metrics aggregation."""
@@ -1313,7 +1279,7 @@ class MetricsAggregationOrchestrator:
                 await self.effect_executor.execute_intent(intent)
             except Exception as e:
                 # Log Intent execution failure, but continue
-                print(f"⚠️  Intent execution failed: {intent.intent_type} - {e}")
+                print(f"Intent execution failed: {intent.intent_type} - {e}")
 
         return result
 
@@ -1332,7 +1298,7 @@ async def main():
     )
 
     result = await orchestrator.aggregate_and_execute(input_data)
-    print(f"✅ Aggregation complete: {result.items_processed} items")
+    print(f"Aggregation complete: {result.items_processed} items")
 
 
 asyncio.run(main())
@@ -1346,14 +1312,14 @@ asyncio.run(main())
 
 | Concept | Implementation | Example |
 |---------|----------------|---------|
-| **Pure Function** | Same input → same output | `aggregate_metrics(input)` |
+| **Pure Function** | Same input -> same output | `aggregate_metrics(input)` |
 | **No Mutable State** | No `self.*` accumulation | No `self.stats = {}` |
 | **Intent Emission** | Describe side effects | `intents.append(ModelIntent(...))` |
 | **Effect Delegation** | Let Effect nodes execute | `await effect.execute_intent(intent)` |
 
 ### Intent Types
 
-```
+```python
 # Common Intent types for Reducer nodes
 INTENT_TYPES = {
     "log_event": "Logging Effect Node",
@@ -1366,8 +1332,10 @@ INTENT_TYPES = {
 
 ### Conflict Resolution Strategies
 
-```
-# Available strategies
+```python
+# Available strategies (import from omnibase_core.nodes)
+from omnibase_core.nodes import EnumConflictResolution
+
 EnumConflictResolution.SUM          # Add values together
 EnumConflictResolution.AVERAGE      # Average conflicting values
 EnumConflictResolution.TAKE_MAX     # Keep maximum value
@@ -1385,23 +1353,25 @@ EnumConflictResolution.MERGE        # Merge lists/objects
 While `ModelIntent` is used for general side effects, **MixinIntentPublisher** provides a specialized pattern for publishing events to Kafka topics while maintaining node purity.
 
 **When to use MixinIntentPublisher**:
-- ✅ REDUCER needs to publish aggregated results as events
-- ✅ COMPUTE needs to publish computed results for downstream processing
-- ✅ Node wants to coordinate event publishing without direct Kafka I/O
-- ✅ Testing needs to verify intent publishing without real Kafka
+- REDUCER needs to publish aggregated results as events
+- COMPUTE needs to publish computed results for downstream processing
+- Node wants to coordinate event publishing without direct Kafka I/O
+- Testing needs to verify intent publishing without real Kafka
 
 ### Adding MixinIntentPublisher to Your REDUCER
 
 **Step 1: Inherit from Mixin**
 
-```
+```python
 from omnibase_core.mixins import MixinIntentPublisher
-from omnibase_core.nodes.node_reducer import NodeReducer
+from omnibase_core.nodes import NodeReducer
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+
 
 class NodeMetricsAggregatorReducer(NodeReducer, MixinIntentPublisher):
     """REDUCER with event publishing capability via intents."""
 
-    def __init__(self, container):
+    def __init__(self, container: ModelONEXContainer):
         super().__init__(container)
         # Initialize intent publisher (REQUIRED)
         self._init_intent_publisher(container)
@@ -1409,7 +1379,7 @@ class NodeMetricsAggregatorReducer(NodeReducer, MixinIntentPublisher):
 
 **Step 2: Publish Events as Intents**
 
-```
+```python
 async def aggregate_metrics(
     self,
     input_data: ModelMetricsAggregationInput,
@@ -1451,7 +1421,7 @@ async def aggregate_metrics(
 
 **Step 3: Update Contract**
 
-```
+```yaml
 # contract.yaml
 subcontracts:
   refs:
@@ -1463,9 +1433,10 @@ mixins:
 
 ### Testing with MixinIntentPublisher
 
-```
+```python
 import pytest
 from tests.fixtures.fixture_intent_publisher import MockKafkaClient
+
 
 @pytest.mark.asyncio
 async def test_reducer_publishes_aggregated_metrics():
@@ -1506,8 +1477,10 @@ async def test_reducer_publishes_aggregated_metrics():
 ### Pattern Comparison
 
 **ModelIntent (General Side Effects)**:
-```
+```python
 # Use for: Logging, metrics, notifications, general I/O
+from omnibase_core.models.reducer.model_intent import ModelIntent
+
 intents = [
     ModelIntent(
         intent_type="log_event",
@@ -1515,11 +1488,11 @@ intents = [
         payload={"message": "Aggregation complete"},
     )
 ]
-return ModelMetricsAggregationOutput(result=data, intents=intents)
+return ModelMetricsAggregationOutput(result=data, intents=tuple(intents))
 ```
 
 **MixinIntentPublisher (Event Publishing)**:
-```
+```python
 # Use for: Publishing domain events to Kafka topics
 await self.publish_event_intent(
     target_topic="my.events.v1",
@@ -1537,12 +1510,14 @@ return ModelMetricsAggregationOutput(result=data)
 
 ### Complete Example
 
-```
+```python
 from datetime import UTC, datetime
 from uuid import uuid4
 
 from omnibase_core.mixins import MixinIntentPublisher
-from omnibase_core.nodes.node_reducer import NodeReducer
+from omnibase_core.nodes import NodeReducer
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.reducer.model_intent import ModelIntent
 
 
 class NodeMetricsAggregatorReducer(NodeReducer, MixinIntentPublisher):
@@ -1555,7 +1530,7 @@ class NodeMetricsAggregatorReducer(NodeReducer, MixinIntentPublisher):
     - MixinIntentPublisher for event publishing
     """
 
-    def __init__(self, container):
+    def __init__(self, container: ModelONEXContainer):
         super().__init__(container)
         self._init_intent_publisher(container)
 
@@ -1586,7 +1561,7 @@ class NodeMetricsAggregatorReducer(NodeReducer, MixinIntentPublisher):
 
         # PURE: Build side effect intents
         processing_time = (datetime.now(UTC) - start_time).total_seconds() * 1000
-        intents = [
+        intents = (
             ModelIntent(
                 intent_type="log_metric",
                 target="metrics_service",
@@ -1594,8 +1569,8 @@ class NodeMetricsAggregatorReducer(NodeReducer, MixinIntentPublisher):
                     "metric": "aggregation_time_ms",
                     "value": processing_time,
                 },
-            )
-        ]
+            ),
+        )
 
         return ModelMetricsAggregationOutput(
             aggregated_data=aggregated,
@@ -1619,7 +1594,7 @@ class NodeMetricsAggregatorReducer(NodeReducer, MixinIntentPublisher):
 
 ## Key Takeaways
 
-### ✅ Pure FSM Pattern Benefits
+### Pure FSM Pattern Benefits
 
 1. **Predictable**: Same input always produces same output
 2. **Testable**: No hidden state, easy to test
@@ -1627,7 +1602,7 @@ class NodeMetricsAggregatorReducer(NodeReducer, MixinIntentPublisher):
 4. **Debuggable**: All state transitions visible in input/output
 5. **Parallelizable**: Pure functions safe for concurrent execution
 
-### ✅ Intent Emission Benefits
+### Intent Emission Benefits
 
 1. **Separation of Concerns**: Reducer describes, Effect executes
 2. **Testability**: Test Intent emission without executing side effects
@@ -1635,10 +1610,10 @@ class NodeMetricsAggregatorReducer(NodeReducer, MixinIntentPublisher):
 4. **Observability**: Track all side effects through Intent logs
 5. **Retry Logic**: Re-execute Intents without re-running Reducer
 
-### ❌ Anti-Patterns to Avoid
+### Anti-Patterns to Avoid
 
-```
-# ❌ WRONG: Mutable state
+```python
+# WRONG: Mutable state
 class NodeBadReducer(NodeReducer):
     def __init__(self, container):
         super().__init__(container)
@@ -1648,22 +1623,22 @@ class NodeBadReducer(NodeReducer):
         self.total_count += 1  # WRONG!
         return result
 
-# ❌ WRONG: Direct side effects
+# WRONG: Direct side effects
 async def process(self, input_data):
     result = self._aggregate(input_data)
     emit_log_event(LogLevel.INFO, "Done")  # WRONG!
     return result
 
-# ✅ CORRECT: Pure FSM with Intents
+# CORRECT: Pure FSM with Intents
 async def process(self, input_data):
     result = self._aggregate(input_data)
-    intents = [
+    intents = (
         ModelIntent(
             intent_type="log_event",
             target="logging_service",
             payload={"level": "INFO", "message": "Done"},
-        )
-    ]
+        ),
+    )
     return ModelOutput(result=result, intents=intents)
 ```
 
@@ -1671,7 +1646,7 @@ async def process(self, input_data):
 
 ## Next Steps
 
-✅ **Congratulations!** You've built a pure FSM REDUCER node with Intent emission!
+**Congratulations!** You've built a pure FSM REDUCER node with Intent emission!
 
 **Continue your journey**:
 - [ORCHESTRATOR Node Tutorial](06_ORCHESTRATOR_NODE_TUTORIAL.md) - Master workflow coordination
@@ -1682,6 +1657,6 @@ async def process(self, input_data):
 
 ---
 
-**Last Updated**: 2025-01-20
-**Framework Version**: omnibase_core 2.0+
-**Tutorial Status**: ✅ Complete (Pure FSM Pattern)
+**Last Updated**: 2025-12-13
+**Framework Version**: omnibase_core v0.4.0+
+**Tutorial Status**: Complete (Pure FSM Pattern)
