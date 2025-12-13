@@ -59,6 +59,9 @@ documentation = "https://github.com/OmniNode-ai/omnibase_core/tree/main/docs"
 onex = "omnibase_core.cli.commands:cli"
 # Backward-compatibility alias (renamed from 'omni-agent' to 'onex' in v0.3.0)
 omni-agent = "omnibase_core.cli.commands:cli"
+# Dev/test runtime host CLI (Phase 1 MVP - LocalHandler only)
+# WARNING: For development and testing ONLY, not for production use
+omninode-runtime-host-dev = "omnibase_core.cli.runtime_host_cli:main"
 
 [project.optional-dependencies]
 cli = ["psutil"]

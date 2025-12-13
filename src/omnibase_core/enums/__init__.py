@@ -32,6 +32,9 @@ from .enum_cli_exit_code import EnumCLIExitCode
 # Computation and processing enums
 from .enum_computation_type import EnumComputationType
 
+# Capability enums (handler capabilities)
+from .enum_compute_capability import EnumComputeCapability
+
 # Compute step type enums (contract-driven NodeCompute v1.0)
 from .enum_compute_step_type import EnumComputeStepType
 from .enum_contract_compliance import EnumContractCompliance
@@ -53,6 +56,7 @@ from .enum_detection_type import EnumDetectionType
 from .enum_discriminated_value_type import EnumDiscriminatedValueType
 
 # Effect-related enums (from nodes)
+from .enum_effect_capability import EnumEffectCapability
 from .enum_effect_handler_type import EnumEffectHandlerType
 from .enum_effect_types import (
     EnumCircuitBreakerState,
@@ -129,6 +133,7 @@ from .enum_node_health_status import EnumNodeHealthStatus
 
 # Node-related enums
 from .enum_node_kind import EnumNodeKind
+from .enum_node_requirement import EnumNodeRequirement
 from .enum_node_status import EnumNodeStatus
 from .enum_node_type import EnumNodeType
 from .enum_notification_method import EnumNotificationMethod
@@ -140,6 +145,7 @@ from .enum_onex_reply_status import EnumOnexReplyStatus
 from .enum_operation_status import EnumOperationStatus
 
 # Orchestrator-related enums (from nodes)
+from .enum_orchestrator_capability import EnumOrchestratorCapability
 from .enum_orchestrator_types import (
     EnumActionType,
     EnumBranchCondition,
@@ -153,6 +159,7 @@ from .enum_query_parameter_transformation_type import (
 )
 
 # Reducer-related enums (from nodes)
+from .enum_reducer_capability import EnumReducerCapability
 from .enum_reducer_types import (
     EnumConflictResolution,
     EnumReductionType,
@@ -343,6 +350,12 @@ __all__ = [
     "EnumTreeSyncStatus",
     # Response and reply domain
     "EnumOnexReplyStatus",
+    # Capability enums (handler capabilities)
+    "EnumComputeCapability",
+    "EnumEffectCapability",
+    "EnumNodeRequirement",
+    "EnumOrchestratorCapability",
+    "EnumReducerCapability",
     # Computation and processing domain
     "EnumComputationType",
     # Contract-driven NodeCompute v1.0 domain

@@ -36,6 +36,10 @@ class EnumHandlerType(str, Enum):
             - ``REDIS`` ("redis"): Redis cache and data structure handlers
             - ``EVENT_BUS`` ("event_bus"): Event bus handlers for pub/sub messaging
 
+        **Development/Testing Types** (v0.4.0+):
+            - ``LOCAL`` ("local"): Local echo handler for dev/test only.
+              WARNING: Not for production use.
+
     See Also:
         - :class:`~omnibase_core.protocols.runtime.protocol_handler.ProtocolHandler`:
           Protocol that uses this enum for handler classification
@@ -44,6 +48,9 @@ class EnumHandlerType(str, Enum):
 
     .. versionchanged:: 0.3.6
         Added concrete handler types (HTTP, DATABASE, KAFKA, etc.)
+
+    .. versionchanged:: 0.4.0
+        Added LOCAL handler type for dev/test only.
     """
 
     # Abstract types (foundational handler categories)
@@ -78,3 +85,7 @@ class EnumHandlerType(str, Enum):
 
     EVENT_BUS = "event_bus"
     """Event bus handlers for pub/sub messaging."""
+
+    # Development/Testing types (v0.4.0+)
+    LOCAL = "local"
+    """Local echo handler for dev/test only. WARNING: Not for production use."""
