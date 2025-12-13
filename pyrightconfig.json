@@ -1,4 +1,5 @@
 {
+  "_comment": "Phase 1 (OMN-200): Baseline with minimal rules. Phase 2: Enable reportReturnType, reportArgumentType. Phase 3: Enable reportGeneralTypeIssues. See OMN-200 for timeline.",
   "include": ["src/omnibase_core"],
   "exclude": [
     "**/__pycache__",
