@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 Cache Key Strategy Model.
 
 Model for cache key generation strategies in the ONEX caching system.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 

@@ -1,12 +1,10 @@
-from typing import Any
-
-from pydantic import Field
-
 """
 Node introspection response model for ONEX nodes.
 """
 
-from pydantic import BaseModel, field_validator
+from typing import Any
+
+from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_node_capability import EnumNodeCapability

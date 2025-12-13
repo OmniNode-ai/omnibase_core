@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 Approval Requirements Model
 
 Type-safe approval requirements configuration.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelApprovalRequirements(BaseModel):

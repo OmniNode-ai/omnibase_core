@@ -1,10 +1,8 @@
-from pydantic import Field
-
 """
 Model for masked configuration output.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelMaskedConfig(BaseModel):

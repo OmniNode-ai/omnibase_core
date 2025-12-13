@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 Raw Registry Mode Model for ONEX Configuration System.
 
 Strongly typed model for unvalidated registry mode data loaded from YAML files.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelRawRegistryMode(BaseModel):

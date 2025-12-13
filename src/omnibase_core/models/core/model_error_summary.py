@@ -1,16 +1,13 @@
-from typing import Optional
-from uuid import UUID
-
-from pydantic import Field
-
 """
 Error summary model to replace dictionary usage for get_error_summary() returns.
 """
 
 from collections.abc import Mapping
 from datetime import datetime
+from typing import Optional
+from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, field_serializer
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 
 class ModelErrorSummary(BaseModel):

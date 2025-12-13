@@ -1,14 +1,11 @@
-from pydantic import Field
-
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Contract model for node introspection.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_cli_interface import ModelCLIInterface
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelContract(BaseModel):

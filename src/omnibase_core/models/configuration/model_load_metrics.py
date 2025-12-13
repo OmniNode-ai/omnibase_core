@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Load Metrics Model
 
@@ -9,7 +7,7 @@ and capacity utilization.
 
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelLoadMetrics(BaseModel):

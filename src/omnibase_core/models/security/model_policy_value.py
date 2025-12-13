@@ -1,14 +1,3 @@
-from __future__ import annotations
-
-import math
-from typing import Any, Literal, Union
-
-from pydantic import BaseModel, Field, model_validator
-
-from omnibase_core.decorators.pattern_exclusions import allow_dict_str_any
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 ModelPolicyValue
 
@@ -65,6 +54,17 @@ Safe Runtime Imports (OK to import at module level):
 - omnibase_core.errors modules
 - pydantic modules
 """
+
+from __future__ import annotations
+
+import math
+from typing import Any, Literal, Union
+
+from pydantic import BaseModel, Field, model_validator
+
+from omnibase_core.decorators.pattern_exclusions import allow_dict_str_any
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 @allow_dict_str_any(

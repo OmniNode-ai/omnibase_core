@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Model for Pydantic model definition.
 
@@ -7,7 +5,7 @@ This model represents a generated Pydantic model definition,
 including its code, imports, and dependencies.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelDefinition(BaseModel):

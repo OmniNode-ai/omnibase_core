@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 ModelOperationDetails: Details about a security operation performed by a node.
 
@@ -7,7 +5,7 @@ This model captures structured information about operations performed
 during envelope processing with type-safe fields.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelOperationDetails(BaseModel):

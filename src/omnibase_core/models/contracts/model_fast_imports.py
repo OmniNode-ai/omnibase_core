@@ -1,7 +1,3 @@
-from typing import TYPE_CHECKING, Any, TypeVar
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Fast Import Module - Aggressive Performance Optimization
 
@@ -11,10 +7,11 @@ NO imports are executed at module level to eliminate cascade effects.
 Performance Target: Module import <5ms, contract loading <50ms total
 """
 
-from typing import cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 # NO RUNTIME IMPORTS AT MODULE LEVEL
 # All imports moved to function level to eliminate cascade
+# Note: ModelOnexError is imported at function level in _import_contract() to preserve zero-import-time
 
 # Type variables for proper typing
 ContractType = TypeVar("ContractType", bound="ModelContractBase")
@@ -60,6 +57,7 @@ class ModelFastContractFactory:
         from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
         from omnibase_core.models.common.model_error_context import ModelErrorContext
         from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
         cache_key = f"{contract_type}_{class_name}"
 
@@ -140,9 +138,9 @@ class ModelFastContractFactory:
     def get_stats(self) -> dict[str, object]:
         """Get factory statistics."""
         return {
-            "cached_contracts": list[Any](self._contract_cache.keys()),
+            "cached_contracts": list(self._contract_cache.keys()),
             "cache_size": len(self._contract_cache),
-            "available_contracts": list[Any](self._import_paths.keys()),
+            "available_contracts": list(self._import_paths.keys()),
         }
 
 

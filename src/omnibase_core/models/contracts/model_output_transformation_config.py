@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Output Transformation Configuration Model.
 
@@ -9,7 +7,7 @@ formatting rules, and post-processing configuration for output data.
 Strict typing is enforced: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelOutputTransformationConfig(BaseModel):

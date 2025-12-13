@@ -7,7 +7,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 "\nModel for Claude Code agent instance.\n\nThis model represents a running Claude Code agent instance with its\nconfiguration, status, and runtime information.\n"
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 
 from pydantic import BaseModel
 
@@ -44,7 +44,8 @@ class ModelAgentInstance(BaseModel):
         default=None, description="Path to agent log file"
     )
     created_at: datetime = Field(
-        default_factory=datetime.now, description="Instance creation timestamp"
+        default_factory=lambda: datetime.now(UTC),
+        description="Instance creation timestamp",
     )
     started_at: datetime | None = Field(
         default=None, description="Agent start timestamp"
@@ -75,7 +76,7 @@ class ModelAgentInstance(BaseModel):
         """Calculate agent uptime in seconds."""
         if self.started_at is None:
             return 0
-        end_time = self.terminated_at or datetime.now()
+        end_time = self.terminated_at or datetime.now(UTC)
         return int((end_time - self.started_at).total_seconds())
 
     @classmethod

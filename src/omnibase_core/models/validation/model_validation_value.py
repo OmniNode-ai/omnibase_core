@@ -1,9 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field, ValidationInfo, field_validator
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Validation value object model.
 
@@ -11,13 +5,15 @@ Strongly-typed value object for validation details, replacing union types
 with discriminated union patterns following ONEX strong typing standards.
 """
 
+from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_validation_value_type import EnumValidationValueType
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 # ONEX validation values - use discriminated union pattern instead of broad unions

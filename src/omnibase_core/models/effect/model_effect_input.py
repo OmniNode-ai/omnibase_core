@@ -44,7 +44,7 @@ See Also:
     - docs/guides/node-building/04_EFFECT_NODE_TUTORIAL.md: Effect node tutorial
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -110,7 +110,7 @@ class ModelEffectInput(BaseModel):
     circuit_breaker_enabled: bool = False
     timeout_ms: int = 30000
     metadata: dict[str, Any] = Field(default_factory=dict)
-    timestamp: datetime = Field(default_factory=datetime.now)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 __all__ = ["ModelEffectInput"]

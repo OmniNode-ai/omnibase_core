@@ -1,7 +1,3 @@
-from pydantic import Field, field_validator
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Workflow Conditions Model.
 
@@ -13,9 +9,10 @@ Strict typing is enforced: No Any types or dict[str, Any]patterns allowed.
 
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelWorkflowConditions(BaseModel):

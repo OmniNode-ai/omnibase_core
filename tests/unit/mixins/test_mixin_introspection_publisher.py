@@ -163,6 +163,10 @@ class TestMixinIntrospectionPublisher:
 
     def test_extract_node_capabilities_basic(self):
         """Test extracting basic node capabilities."""
+        from omnibase_core.models.common.model_typed_metadata import (
+            ModelNodeCapabilitiesMetadata,
+        )
+
         node = MockNode()
 
         capabilities = node._extract_node_capabilities()
@@ -170,11 +174,7 @@ class TestMixinIntrospectionPublisher:
         assert isinstance(capabilities, ModelNodeCapabilities)
         assert isinstance(capabilities.actions, list)
         assert isinstance(capabilities.protocols, list)
-        # metadata is now ModelNodeCapabilitiesMetadata (typed Pydantic model)
-        from omnibase_core.models.common.model_typed_metadata import (
-            ModelNodeCapabilitiesMetadata,
-        )
-
+        # metadata is now a typed Pydantic model, not a dict
         assert isinstance(capabilities.metadata, ModelNodeCapabilitiesMetadata)
 
     def test_extract_node_capabilities_with_metadata(self):
@@ -206,7 +206,6 @@ class TestMixinIntrospectionPublisher:
         assert isinstance(capabilities.metadata, ModelNodeCapabilitiesMetadata)
 
         # Verify the metadata values from loader are correctly applied
-        # (This was previously broken due to dict subscripting on Pydantic model)
         assert capabilities.metadata.author == "Test Author"
         assert capabilities.metadata.license == "Test Copyright"
 

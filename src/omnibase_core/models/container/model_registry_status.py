@@ -1,9 +1,9 @@
 """Registry status model - implements ProtocolServiceRegistryStatus."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.protocols import (
     LiteralHealthStatus,
@@ -45,6 +45,10 @@ class ModelServiceRegistryStatus(BaseModel):
         ```
     """
 
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
+
     registry_id: UUID = Field(description="Unique registry identifier")
     status: LiteralOperationStatus = Field(description="Operational status")
     message: str = Field(description="Status description")
@@ -85,7 +89,7 @@ class ModelServiceRegistryStatus(BaseModel):
         description="Average resolution time",
     )
     last_updated: datetime = Field(
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(UTC),
         description="Last update timestamp",
     )
 

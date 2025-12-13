@@ -1,11 +1,3 @@
-from typing import Any
-
-from pydantic import Field, field_validator
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Custom fields model to replace dictionary usage for custom/extensible fields.
 
@@ -14,9 +6,13 @@ and compliance with one-model-per-file naming conventions.
 """
 
 from datetime import UTC, datetime
+from typing import Any
 
-from pydantic import BaseModel, ConfigDict, field_serializer
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.utils.util_decorators import allow_any_type, allow_dict_str_any
 
 # Import separated models

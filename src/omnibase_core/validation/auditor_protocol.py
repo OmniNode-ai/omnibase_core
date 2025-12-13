@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 """
 Protocol auditor for detecting duplicates and violations across omni* ecosystem.
 
 Implements ProtocolQualityValidator for SPI compliance.
 """
 
+from __future__ import annotations
 
 import logging
 from collections import defaultdict

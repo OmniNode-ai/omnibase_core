@@ -1,9 +1,3 @@
-from uuid import UUID
-
-from pydantic import Field
-
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Parse Metadata Model
 
@@ -13,9 +7,11 @@ metrics, source information, and parsing context.
 
 from datetime import UTC, datetime
 from typing import Any
+from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 

@@ -1,7 +1,3 @@
-from pydantic import Field, field_validator
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 ModelOutputConfig
 
@@ -17,9 +13,10 @@ Safe Runtime Imports (OK to import at module level):
 
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelOutputConfig(BaseModel):

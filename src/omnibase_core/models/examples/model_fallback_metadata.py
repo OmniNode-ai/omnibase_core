@@ -60,7 +60,11 @@ class ModelFallbackMetadata(BaseModel):
     # Protocol method implementations
 
     def configure(self, **kwargs: object) -> bool:
-        """Configure instance with provided parameters (Configurable protocol)."""
+        """Configure instance with provided parameters (Configurable protocol).
+
+        Raises:
+            ModelOnexError: If configuration fails due to attribute or type errors
+        """
         try:
             for key, value in kwargs.items():
                 if hasattr(self, key):
@@ -77,7 +81,14 @@ class ModelFallbackMetadata(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (ProtocolValidatable protocol)."""
+        """Validate instance integrity (ProtocolValidatable protocol).
+
+        Returns:
+            True if validation passes
+
+        Note:
+            Override in subclasses for custom validation logic.
+        """
         # Basic validation - ensure required fields exist
         # Override in specific models for custom validation
         return True

@@ -1,12 +1,10 @@
-import shlex
-
-from pydantic import Field
-
 """
 Model for Docker command configuration.
 """
 
-from pydantic import BaseModel
+import shlex
+
+from pydantic import BaseModel, Field
 
 
 class ModelDockerCommand(BaseModel):

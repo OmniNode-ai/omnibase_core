@@ -1,10 +1,8 @@
-from pydantic import Field
-
 """
 ErrorCodes model for node introspection.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_error_code import ModelErrorCode
 

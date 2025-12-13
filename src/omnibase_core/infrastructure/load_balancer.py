@@ -6,7 +6,7 @@ for workflow orchestration operations.
 """
 
 import asyncio
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID
 
 from omnibase_core.models.infrastructure.model_load_balancer_stats import (
@@ -40,7 +40,7 @@ class LoadBalancer:
         """
         await self.semaphore.acquire()
         operation_id_str = str(operation_id)
-        self.active_operations[operation_id_str] = datetime.now()
+        self.active_operations[operation_id_str] = datetime.now(UTC)
         self.operation_counts[operation_id_str] = (
             self.operation_counts.get(operation_id_str, 0) + 1
         )

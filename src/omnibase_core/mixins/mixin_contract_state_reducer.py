@@ -19,7 +19,10 @@ from omnibase_core.logging.structured import emit_log_event_sync as emit_log_eve
 from omnibase_core.models.core.model_generic_contract import ModelGenericContract
 from omnibase_core.models.core.model_state_transition import ModelStateTransition
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 from omnibase_core.types.typed_dict_default_output_state import (
     TypedDictDefaultOutputState,
 )
@@ -334,8 +337,8 @@ class MixinContractStateReducer:
         f"Model{tool_name.replace('_', '').title()}OutputState"
 
         # Basic response structure
-        # Use ModelSemVer for version field instead of string literal
-        default_version = ModelSemVer(major=1, minor=0, patch=0)
+        # Use default_model_version() for consistency across codebase
+        default_version = default_model_version()
         return {
             "status": EnumOnexStatus.SUCCESS,
             "message": "Processed action via contract transitions",

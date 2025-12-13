@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
 # === OmniNode:Metadata ===
 # author: OmniNode Team
@@ -50,6 +50,7 @@ from omnibase_core.models.discovery.model_node_shutdown_event import (
 )
 from omnibase_core.models.primitives.model_semver import (
     ModelSemVer,
+    default_model_version,
     parse_semver_from_string,
 )
 from omnibase_core.types.typed_dict_lifecycle_event_fields import (
@@ -110,8 +111,8 @@ class MixinNodeLifecycle:
                     ModelNodeMetadataBlock,
                 )
 
-                # Use ModelSemVer for version instead of string literal
-                default_version = ModelSemVer(major=1, minor=0, patch=0)
+                # Use default_model_version() for consistency across codebase
+                default_version = default_model_version()
                 metadata_block = ModelNodeMetadataBlock(
                     name=self.__class__.__name__.lower(),
                     version=default_version,
@@ -123,7 +124,7 @@ class MixinNodeLifecycle:
                 calling_module=_COMPONENT_NAME,
                 calling_function="_register_node",
                 calling_line=67,
-                timestamp=datetime.now().isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 node_id=node_id,
             )
             emit_log_event_sync(
@@ -156,7 +157,7 @@ class MixinNodeLifecycle:
                 schema_version=parse_semver_from_string(
                     getattr(metadata_block, "schema_version", None) or "1.0.0"
                 ),
-                timestamp=datetime.now(),
+                timestamp=datetime.now(UTC),
                 signature_block=getattr(self, "signature_block", None),
                 node_version=parse_semver_from_string(
                     getattr(self, "node_version", None)
@@ -184,7 +185,7 @@ class MixinNodeLifecycle:
                 calling_module=_COMPONENT_NAME,
                 calling_function="_register_node",
                 calling_line=106,
-                timestamp=datetime.now().isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 node_id=node_id,
             )
             emit_log_event_sync(
@@ -198,7 +199,7 @@ class MixinNodeLifecycle:
                 calling_module=_COMPONENT_NAME,
                 calling_function="_register_node",
                 calling_line=118,
-                timestamp=datetime.now().isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 node_id=node_id,
             )
             emit_log_event_sync(
@@ -246,7 +247,7 @@ class MixinNodeLifecycle:
                 calling_module=_COMPONENT_NAME,
                 calling_function="_publish_shutdown_event",
                 calling_line=152,
-                timestamp=datetime.now().isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 node_id=node_id,
             )
             emit_log_event_sync(
@@ -260,7 +261,7 @@ class MixinNodeLifecycle:
                 calling_module=_COMPONENT_NAME,
                 calling_function="_publish_shutdown_event",
                 calling_line=164,
-                timestamp=datetime.now().isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 node_id=node_id,
             )
             emit_log_event_sync(
@@ -470,7 +471,7 @@ class MixinNodeLifecycle:
                     calling_module=_COMPONENT_NAME,
                     calling_function="cleanup_lifecycle_resources",
                     calling_line=283,
-                    timestamp=datetime.now().isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                     node_id=node_id,
                 )
                 emit_log_event_sync(

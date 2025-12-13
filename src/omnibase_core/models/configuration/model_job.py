@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 Job model.
 """
 
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.configuration.model_workflow_configuration import (
     WorkflowServices,

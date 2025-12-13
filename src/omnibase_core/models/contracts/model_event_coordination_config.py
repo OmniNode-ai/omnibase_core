@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Event Coordination Configuration Model.
 
@@ -9,7 +7,7 @@ and coordination patterns for event-driven execution.
 Strict typing is enforced: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelEventCoordinationConfig(BaseModel):

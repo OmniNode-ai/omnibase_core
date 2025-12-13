@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 State field model for state model specification.
 """
 
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelStateField(BaseModel):

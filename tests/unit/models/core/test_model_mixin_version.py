@@ -6,6 +6,8 @@ This module tests semantic version validation and parsing for mixin metadata.
 import pytest
 from pydantic import ValidationError
 
+pytestmark = pytest.mark.unit
+
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.core.model_mixin_version import ModelMixinVersion
 from omnibase_core.models.errors.model_onex_error import ModelOnexError

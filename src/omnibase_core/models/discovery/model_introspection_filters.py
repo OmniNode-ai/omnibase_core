@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 Introspection Filters Model
 
 Filters for targeting specific nodes in request-response introspection.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelIntrospectionFilters(BaseModel):

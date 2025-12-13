@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 ModelRequiredAttributes: Required attributes for permission conditions.
 
 This model provides structured required attributes without using Any types.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelRequiredAttributes(BaseModel):

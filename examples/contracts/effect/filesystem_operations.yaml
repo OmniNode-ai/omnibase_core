@@ -65,40 +65,20 @@ contract_version:
   major: 1
   minor: 1
   patch: 0
-
-# Contract fingerprint for drift detection (format: v{version}:{12-char-hash})
-# The 12-character hash is a truncated SHA256 of the normalized contract content
-# (excluding the fingerprint field itself to avoid circular dependency)
-# Regenerate when contract content changes using: poetry run python scripts/compute_contract_fingerprint.py
-fingerprint: "v1.1.0:1e8106221a03"
-
+# Fingerprint: SHA-256 hash of canonical normalized contract content (excluding fingerprint field).
+# See docs/architecture/CONTRACT_STABILITY_SPEC.md for normalization specification.
+fingerprint: "v1.1.0:920b41e8af2f"
 node_type: effect
-
-# Handler requirements for this effect contract
-handlers:
-  required:
-    - type: filesystem
-      version: ">=1.0.0"
-  optional: []
-
-# Kafka topic subscriptions (none for this effect)
-subscriptions:
-  topics: []
-
-# Profile tags for categorization
-profile_tags:
-  - filesystem
-  - file-operations
-  - document-management
-  - storage
 
 # ---------------------------------------------------------------------------
 # EFFECT SUBCONTRACT: Defines filesystem operations
 # ---------------------------------------------------------------------------
 
 effect_operations:
-  # Schema version for forward compatibility - must use dict format for ModelSemVer
-  version: {major: 1, minor: 0, patch: 0}
+  # Schema version for forward compatibility (v1.1.0) - must use dict format for ModelSemVer
+  # NOTE: Per-operation configs are parsed but NOT honored in v1.1.0 (uses subcontract-level defaults).
+  # Per-operation overrides will be fully implemented in v2.0. Tracking: OMN-467
+  version: {major: 1, minor: 1, patch: 0}
 
   # Unique subcontract name (required by ModelEffectSubcontract)
   subcontract_name: "filesystem_operations_effect"

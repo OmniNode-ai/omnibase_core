@@ -5,7 +5,7 @@ Checkpoint Data Model.
 Strongly-typed model for checkpoint data in ONEX storage backends.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 from uuid import UUID
 
@@ -52,12 +52,12 @@ class ModelCheckpointData(BaseModel):
 
     created_at: datetime = Field(
         description="When the checkpoint was created",
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(UTC),
     )
 
     updated_at: datetime = Field(
         description="When the checkpoint was last updated",
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(UTC),
     )
 
     version: ModelSemVer = Field(

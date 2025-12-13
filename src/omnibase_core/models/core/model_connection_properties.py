@@ -1,7 +1,3 @@
-from typing import TYPE_CHECKING, Any
-
-from pydantic import Field
-
 """
 from core.model_masked_connection_properties import ModelMaskedConnectionProperties
 from core.model_performance_summary import ModelPerformanceSummary
@@ -10,8 +6,9 @@ Connection properties model to replace Dict[str, Any] usage in connection proper
 """
 
 from datetime import datetime
+from typing import TYPE_CHECKING, Any
 
-from pydantic import BaseModel, ConfigDict, SecretStr, field_serializer
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_serializer
 
 if TYPE_CHECKING:
     from omnibase_core.types.type_serializable_value import SerializedDict

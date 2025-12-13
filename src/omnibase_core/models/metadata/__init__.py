@@ -1,18 +1,15 @@
-from typing import Generic, TypedDict
-
-from pydantic import Field
-
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Metadata Management Models
 
 Models for metadata collection, analytics, and field information.
 """
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Generic, TypedDict
+
+from pydantic import Field
 
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 # Import ProtocolSupportedMetadataType from Core-native protocols
 from omnibase_core.protocols import ProtocolSupportedMetadataType

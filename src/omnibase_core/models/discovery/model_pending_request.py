@@ -1,11 +1,9 @@
-from pydantic import Field
-
 """Pending request tracking model for event-driven discovery."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.discovery.model_introspection_filters import (
     ModelIntrospectionFilters,
@@ -20,7 +18,7 @@ class ModelPendingRequest(BaseModel):
         description="Unique correlation ID for request-response matching",
     )
     timestamp: datetime = Field(
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(UTC),
         description="When request was initiated",
     )
     request_type: str = Field(
@@ -35,5 +33,5 @@ class ModelPendingRequest(BaseModel):
 
     def is_expired(self) -> bool:
         """Check if request has expired based on timeout."""
-        age_ms = (datetime.now() - self.timestamp).total_seconds() * 1000
+        age_ms = (datetime.now(UTC) - self.timestamp).total_seconds() * 1000
         return age_ms > self.timeout_ms

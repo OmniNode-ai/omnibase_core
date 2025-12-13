@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Model for generated file representation.
 
@@ -9,7 +7,7 @@ multi-document model generator.
 
 from pathlib import Path
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelGeneratedFile(BaseModel):

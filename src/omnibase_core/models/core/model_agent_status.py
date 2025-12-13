@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -34,5 +34,6 @@ class ModelAgentStatus(BaseModel):
     )
     started_at: datetime = Field(description="Agent start timestamp")
     last_updated: datetime = Field(
-        default_factory=datetime.now, description="Status last update timestamp"
+        default_factory=lambda: datetime.now(UTC),
+        description="Status last update timestamp",
     )

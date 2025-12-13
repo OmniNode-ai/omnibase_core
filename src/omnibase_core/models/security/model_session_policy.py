@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Session Policy Model
 
@@ -7,7 +5,7 @@ Typed model for session management policy configuration,
 replacing Dict[str, Any] with structured fields.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelSessionPolicy(BaseModel):

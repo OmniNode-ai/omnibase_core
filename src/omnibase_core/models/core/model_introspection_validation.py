@@ -1,10 +1,8 @@
-from pydantic import Field
-
 """
 Model for validation information in introspection metadata.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelIntrospectionValidation(BaseModel):

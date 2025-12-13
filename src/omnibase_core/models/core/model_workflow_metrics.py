@@ -1,7 +1,3 @@
-from uuid import UUID
-
-from pydantic import Field
-
 """
 Core model for workflow metrics information.
 
@@ -9,7 +5,9 @@ Structured model for workflow execution metrics used by
 hybrid execution mixins and monitoring systems.
 """
 
-from pydantic import BaseModel
+from uuid import UUID
+
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_workflow_status import EnumWorkflowStatus
 from omnibase_core.models.core.model_resource_usage_details import (

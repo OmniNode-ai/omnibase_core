@@ -1,15 +1,11 @@
-from typing import Optional
-
-from pydantic import Field
-
 """
 Filter criteria model to replace Dict[str, Any] usage for filter fields.
 """
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.types.type_serializable_value import SerializedDict
 

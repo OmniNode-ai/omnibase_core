@@ -259,7 +259,7 @@ class MixinFailFast:
             check_func: Function that returns True if dependency is available
 
         Raises:
-            ExceptionDependencyFailed if dependency check fails
+            ModelOnexError: If dependency check fails (DEPENDENCY_FAILED error code)
         """
         try:
             if not check_func():
@@ -290,7 +290,7 @@ class MixinFailFast:
             contract_field: Contract field being enforced
 
         Raises:
-            ExceptionContractViolation if condition is False
+            ModelOnexError: If condition is False (CONTRACT_VIOLATION error code)
         """
         if not condition:
             raise ModelOnexError(

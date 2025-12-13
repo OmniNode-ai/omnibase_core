@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field
-
 """
 Nested configuration model.
 
@@ -9,10 +5,11 @@ Clean, strongly-typed model for nested configuration data.
 Follows ONEX one-model-per-file naming conventions.
 """
 
+from __future__ import annotations
 
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_config_type import EnumConfigType
 from omnibase_core.models.infrastructure.model_value import ModelValue
@@ -86,8 +83,11 @@ class ModelNestedConfiguration(BaseModel):
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol).
 
-        Raises:
-            Exception: If validation logic fails
+        Returns:
+            True if validation passes
+
+        Note:
+            Override in subclasses for custom validation logic.
         """
         # Basic validation - ensure required fields exist
         # Override in specific models for custom validation

@@ -1,24 +1,20 @@
-from __future__ import annotations
-
-from pydantic import Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Progress Model (Composed).
 
 Composed model that combines focused progress tracking components.
 """
 
+from __future__ import annotations
 
 from datetime import datetime, timedelta
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
 from omnibase_core.enums.enum_status_message import EnumStatusMessage
 from omnibase_core.models.common.model_flexible_value import ModelFlexibleValue
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.infrastructure.model_metrics_data import ModelMetricsData
 from omnibase_core.types.type_serializable_value import SerializedDict
 

@@ -1,7 +1,3 @@
-from pydantic import Field
-
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Internal Input State Model for ONEX.
 
@@ -14,8 +10,9 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.utils.util_uuid_service import UtilUUID
 
 if TYPE_CHECKING:

@@ -1,14 +1,12 @@
-from uuid import UUID
-
-from pydantic import Field
-
 """
 Node Data Model.
 
 Detailed node information data structure.
 """
 
-from pydantic import BaseModel
+from uuid import UUID
+
+from pydantic import BaseModel, Field
 
 
 class ModelNodeData(BaseModel):

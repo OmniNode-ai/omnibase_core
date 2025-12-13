@@ -1,13 +1,12 @@
-from __future__ import annotations
-
-from pydantic import Field
-
 """
 Compute node operation data for business logic and calculations.
 """
 
+from __future__ import annotations
 
 from typing import Literal
+
+from pydantic import Field
 
 from omnibase_core.enums.enum_node_type import EnumNodeType
 

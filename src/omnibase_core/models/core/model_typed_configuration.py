@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Typed Configuration with Custom Properties Support.
 
@@ -7,6 +5,7 @@ Configuration base with custom properties support that combines the standard
 configuration base with ModelCustomProperties for extensible custom fields.
 """
 
+from __future__ import annotations
 
 from typing import TypeVar
 
@@ -91,8 +90,11 @@ class ModelTypedConfiguration(
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol).
 
-        Raises:
-            Exception: If validation logic fails
+        Returns:
+            True if validation passes
+
+        Note:
+            Override in subclasses for custom validation logic.
         """
         # Basic validation - ensure required fields exist
         # Override in specific models for custom validation

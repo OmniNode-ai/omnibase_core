@@ -6,7 +6,10 @@ Tests the specialized accessor for managing custom fields with automatic initial
 
 from typing import Any
 
+import pytest
 from pydantic import Field
+
+pytestmark = pytest.mark.unit
 
 from omnibase_core.models.core import ModelCustomFieldsAccessor
 from omnibase_core.models.primitives.model_semver import ModelSemVer

@@ -1,9 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field, model_validator
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Progress Core Model.
 
@@ -11,14 +5,16 @@ Core progress tracking functionality with percentage, steps, and phase managemen
 Follows ONEX one-model-per-file architecture.
 """
 
+from __future__ import annotations
 
 from typing import Self
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
 from omnibase_core.enums.enum_status_message import EnumStatusMessage
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 

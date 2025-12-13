@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Execution Capabilities Model.
 
@@ -7,8 +5,7 @@ Type-safe execution capabilities and constraints for nodes,
 replacing Dict[str, Any] with structured configuration.
 """
 
-
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_delivery_mode import EnumDeliveryMode
 from omnibase_core.models.configuration.model_performance_constraints import (

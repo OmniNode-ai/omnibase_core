@@ -1,8 +1,3 @@
-from pydantic import field_validator
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Node Action Model.
 
@@ -12,11 +7,13 @@ Enhanced for tool-as-a-service architecture with MCP/GraphQL compatibility.
 
 from typing import Any
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.core.model_action_category import ModelActionCategory
 from omnibase_core.models.core.model_node_action_type import ModelNodeActionType
 from omnibase_core.models.core.model_predefined_categories import LIFECYCLE, VALIDATION
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 from .model_action_base import ModelActionBase

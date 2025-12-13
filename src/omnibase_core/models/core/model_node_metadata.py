@@ -1,28 +1,3 @@
-from typing import Any
-
-# === OmniNode:Metadata ===
-# author: OmniNode Team
-# copyright: OmniNode.ai
-# created_at: '2025-05-28T08:19:40.214329'
-# description: Stamped by ToolPython
-# entrypoint: python://model_node_metadata
-# hash: c3b5781a99c5e5c292687d7d048e46ec8bf0c5f699a664327a33bb6f39867612
-# last_modified_at: '2025-05-29T14:13:58.833046+00:00'
-# lifecycle: active
-# meta_type: tool
-# metadata_version: 0.1.0
-# name: model_node_metadata.py
-# namespace: python://omnibase.model.model_node_metadata
-# owner: OmniNode Team
-# protocol_version: 0.1.0
-# runtime_language_hint: python>=3.11
-# schema_version: 0.1.0
-# state_contract: state_contract://default
-# tools: null
-# uuid: e2fc1037-9f90-45d2-a14b-be759abddd39
-# version: 1.0.0
-# === /OmniNode:Metadata ===
-
 """
 Node metadata models.
 
@@ -39,6 +14,7 @@ This policy is enforced for all ONEX metadata blocks.
 """
 
 from pathlib import Path
+from typing import Any
 
 from omnibase_core.enums.enum_data_classification import EnumDataClassification
 from omnibase_core.enums.enum_metadata import (
@@ -67,6 +43,30 @@ from .model_state_contract_block import ModelStateContractBlock
 from .model_test_matrix_entry import ModelTestMatrixEntry
 from .model_testing_block import ModelTestingBlock
 
+# === OmniNode:Metadata ===
+# author: OmniNode Team
+# copyright: OmniNode.ai
+# created_at: '2025-05-28T08:19:40.214329'
+# description: Stamped by ToolPython
+# entrypoint: python://model_node_metadata
+# hash: c3b5781a99c5e5c292687d7d048e46ec8bf0c5f699a664327a33bb6f39867612
+# last_modified_at: '2025-05-29T14:13:58.833046+00:00'
+# lifecycle: active
+# meta_type: tool
+# metadata_version: 0.1.0
+# name: model_node_metadata.py
+# namespace: python://omnibase.model.model_node_metadata
+# owner: OmniNode Team
+# protocol_version: 0.1.0
+# runtime_language_hint: python>=3.11
+# schema_version: 0.1.0
+# state_contract: state_contract://default
+# tools: null
+# uuid: e2fc1037-9f90-45d2-a14b-be759abddd39
+# version: 1.0.0
+# === /OmniNode:Metadata ===
+
+
 # Component identifier for logging
 _COMPONENT_NAME = Path(__file__).stem
 
@@ -79,7 +79,6 @@ DataClassification = EnumDataClassification
 # Compatibility aliases for enums
 Architecture = EnumArchitecture
 LogFormat = EnumLogFormat
-
 
 # Compatibility aliases - existing models
 IOBlock = ModelIOBlock

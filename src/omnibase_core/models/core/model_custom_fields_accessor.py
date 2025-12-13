@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-from pydantic import model_validator
-
 """
 Generic custom fields accessor with comprehensive field management.
 
@@ -9,11 +5,12 @@ Provides generic type support and comprehensive field operations for managing
 typed custom fields with automatic initialization and type safety.
 """
 
+from __future__ import annotations
 
 import copy
 from typing import Any
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.types.constraints import PrimitiveValueType

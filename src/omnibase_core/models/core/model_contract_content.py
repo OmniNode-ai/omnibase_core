@@ -1,7 +1,3 @@
-from pydantic import Field
-
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Model for contract content representation in ONEX NodeBase implementation.
 
@@ -10,7 +6,7 @@ strongly typed contract content.
 
 """
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_node_type import EnumNodeType
 from omnibase_core.models.configuration.model_metadata_config import ModelMetadataConfig
@@ -58,6 +54,7 @@ from omnibase_core.models.core.model_subcontract_reference import (
 from omnibase_core.models.core.model_tool_specification import ModelToolSpecification
 from omnibase_core.models.core.model_yaml_schema_object import ModelYamlSchemaObject
 from omnibase_core.models.orchestrator.model_action import ModelAction
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.service.model_service_configuration_single import (
     ModelServiceConfiguration,
 )

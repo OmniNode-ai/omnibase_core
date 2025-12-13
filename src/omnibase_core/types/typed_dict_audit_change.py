@@ -2,6 +2,8 @@
 
 from typing import TypedDict
 
+__all__ = ["TypedDictAuditChange"]
+
 
 class TypedDictAuditChange(TypedDict):
     """Type-safe representation of an audit field change."""

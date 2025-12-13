@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field
-
 """
 Strongly-typed computation operation parameters model.
 
@@ -9,8 +5,9 @@ Represents structured parameters for computation operations.
 Follows ONEX strong typing principles and one-model-per-file architecture.
 """
 
+from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelComputationOperationParameters(BaseModel):

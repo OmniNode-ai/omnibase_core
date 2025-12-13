@@ -1,11 +1,8 @@
-from pydantic import Field
-
 """
 MaskedConnectionProperties model.
 """
 
-
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelMaskedConnectionProperties(BaseModel):

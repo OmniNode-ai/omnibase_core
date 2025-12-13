@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 CustomFieldDefinition model.
 """
 
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelCustomFieldDefinition(BaseModel):

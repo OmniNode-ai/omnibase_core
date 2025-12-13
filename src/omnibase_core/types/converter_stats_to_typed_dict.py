@@ -4,6 +4,7 @@ from __future__ import annotations
 Convert legacy stats dict[str, Any] to TypedDict.
 """
 
+__all__ = ["convert_stats_to_typed_dict"]
 
 from .typed_dict_execution_stats import TypedDictExecutionStats
 from .typed_dict_legacy_stats import TypedDictLegacyStats

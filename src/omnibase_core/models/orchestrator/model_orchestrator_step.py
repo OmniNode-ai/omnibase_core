@@ -1,10 +1,14 @@
-from pydantic import Field
+"""
+Orchestrator Step Model.
 
-"\nOrchestrator Step Model\n\nType-safe orchestrator step that replaces Dict[str, Any] usage\nin orchestrator plans.\n"
+Type-safe orchestrator step that replaces Dict[str, Any] usage
+in orchestrator plans.
+"""
+
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.service.model_custom_fields import ModelCustomFields
 from omnibase_core.utils.util_decorators import allow_dict_str_any

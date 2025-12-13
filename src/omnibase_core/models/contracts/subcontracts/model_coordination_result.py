@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Coordination Result Model.
 
@@ -8,7 +6,7 @@ Model for node coordination operation results in the ONEX workflow coordination 
 
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 

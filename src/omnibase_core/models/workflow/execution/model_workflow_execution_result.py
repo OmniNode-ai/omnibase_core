@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Simple Workflow Execution Result Model.
 
@@ -11,7 +9,7 @@ This implementation does not use Any types.
 
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_workflow_coordination import EnumWorkflowStatus
 from omnibase_core.models.core.model_workflow_metrics import ModelWorkflowMetrics

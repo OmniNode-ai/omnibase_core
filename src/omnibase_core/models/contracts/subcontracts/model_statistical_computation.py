@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Statistical Computation Model.
 
@@ -9,7 +7,7 @@ Part of the Aggregation Subcontract Model family.
 Strict typing is enforced: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 

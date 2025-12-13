@@ -843,7 +843,17 @@ class TestValidateYamlFileErrors:
         from unittest.mock import patch
 
         yaml_file = tmp_path / "test.yaml"
-        yaml_file.write_text("version: '1.0'\ncontract_id: test\noperations: []")
+        # Use valid contract structure (though stat will fail)
+        yaml_file.write_text(
+            """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: COMPUTE
+description: Test contract
+""",
+        )
 
         # Mock stat to raise OSError after exists() passes
         original_stat = yaml_file.stat
@@ -882,11 +892,15 @@ class TestValidateYamlFileErrors:
             pytest.skip("Permission tests not supported on Windows")
 
         yaml_file = tmp_path / "test.yaml"
+        # Use valid contract structure (though permissions will prevent reading)
         yaml_file.write_text(
             """
-version: "1.0"
-contract_id: test
-operations: []
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: COMPUTE
+description: Test contract
 """,
         )
 

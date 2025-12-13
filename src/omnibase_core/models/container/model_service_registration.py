@@ -1,6 +1,6 @@
 """Service registration model - implements ProtocolServiceRegistration."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Literal
 from uuid import UUID
 
@@ -72,7 +72,7 @@ class ModelServiceRegistration(BaseModel):
         description="Service health status",
     )
     registration_time: datetime = Field(
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(UTC),
         description="Registration timestamp",
     )
     last_access_time: datetime | None = Field(
@@ -112,7 +112,7 @@ class ModelServiceRegistration(BaseModel):
 
     def mark_accessed(self) -> None:
         """Update access tracking."""
-        self.last_access_time = datetime.now()
+        self.last_access_time = datetime.now(UTC)
         self.access_count += 1
 
     def increment_instance_count(self) -> None:

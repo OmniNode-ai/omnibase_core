@@ -1,7 +1,7 @@
 """Service Registry - Implementation of ProtocolServiceRegistry."""
 
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, Literal, TypeVar, cast
 from uuid import UUID, uuid4
 
@@ -520,6 +520,10 @@ class ServiceRegistry:
         """
         Try to resolve service without raising exception.
 
+        This method intentionally swallows ModelOnexError exceptions and returns
+        None to support optional service resolution patterns. The error is logged
+        at DEBUG level for diagnostics.
+
         Args:
             interface: Interface protocol type
             scope: Optional scope override
@@ -529,7 +533,15 @@ class ServiceRegistry:
         """
         try:
             return await self.resolve_service(interface, scope)
-        except ModelOnexError:
+        except ModelOnexError as e:
+            interface_name = (
+                interface.__name__ if hasattr(interface, "__name__") else str(interface)
+            )
+            emit_log_event(
+                EnumLogLevel.DEBUG,
+                f"Optional service resolution failed for {interface_name}: {e.message}",
+                {"interface": interface_name, "error_code": str(e.error_code)},
+            )
             return None
 
     async def get_registration(
@@ -731,7 +743,7 @@ class ServiceRegistry:
             scope_distribution=scope_dist,
             health_summary=health_dist,
             average_resolution_time_ms=avg_resolution_time,
-            last_updated=datetime.now(),
+            last_updated=datetime.now(UTC),
         )
 
     async def validate_service_health(self, registration_id: UUID) -> Any:
@@ -768,7 +780,7 @@ class ServiceRegistry:
 
         registration = self._registrations[registration_id]
         registration.service_metadata.configuration.update(configuration)
-        registration.service_metadata.last_modified_at = datetime.now()
+        registration.service_metadata.last_modified_at = datetime.now(UTC)
 
         return True
 

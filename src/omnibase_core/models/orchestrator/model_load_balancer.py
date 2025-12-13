@@ -48,7 +48,7 @@ See Also:
 """
 
 import asyncio
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
@@ -102,7 +102,7 @@ class ModelLoadBalancer:
             True when slot is acquired (always succeeds after blocking).
         """
         await self.semaphore.acquire()
-        self.active_operations[operation_id] = datetime.now()
+        self.active_operations[operation_id] = datetime.now(UTC)
         operation_key = str(operation_id)
         self.operation_counts[operation_key] = (
             self.operation_counts.get(operation_key, 0) + 1

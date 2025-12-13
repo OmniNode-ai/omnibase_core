@@ -7,6 +7,10 @@ validation, protocol implementations, and custom properties.
 
 from typing import Any
 
+import pytest
+
+pytestmark = pytest.mark.unit
+
 from omnibase_core.models.core.model_typed_configuration import ModelTypedConfiguration
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 

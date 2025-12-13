@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 Registry Component Performance Model
 
 Type-safe component performance tracking for registry health reporting.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelRegistryComponentPerformance(BaseModel):

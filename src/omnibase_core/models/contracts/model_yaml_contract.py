@@ -1,8 +1,3 @@
-from pydantic import Field, field_validator
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 YAML Contract Validation Model.
 
@@ -15,13 +10,15 @@ Pydantic model for validating YAML contract files providing:
 This replaces manual YAML field validation with proper Pydantic validation.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.contracts.model_event_subscription import (
     ModelEventSubscription,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelYamlContract(BaseModel):
@@ -33,11 +30,11 @@ class ModelYamlContract(BaseModel):
     - node_type: Node type classification
     - description: Optional contract description
 
-    Extra fields are ignored to maintain a clean contract structure.
+    Extra fields are allowed to ensure complete content is included in fingerprint computation.
     """
 
     model_config = {
-        "extra": "ignore",  # Ignore extra fields to maintain clean contract structure
+        "extra": "allow",  # Allow extra fields to be included in model_dump for fingerprinting
         "use_enum_values": False,
         "validate_assignment": True,
     }

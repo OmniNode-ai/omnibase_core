@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Tool Discovery Request Event Model
 
@@ -7,7 +5,7 @@ Event published by services to request discovery of available tools.
 The registry responds with a TOOL_DISCOVERY_RESPONSE event.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelDiscoveryFilters(BaseModel):

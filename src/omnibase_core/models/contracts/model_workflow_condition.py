@@ -1,7 +1,3 @@
-from pydantic import Field, ValidationInfo, field_validator
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Model Workflow Condition Specification.
 
@@ -13,7 +9,7 @@ Strict typing is enforced: No string conditions or Any types allowed.
 
 from typing import cast
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_condition_operator import EnumConditionOperator
 from omnibase_core.enums.enum_condition_type import EnumConditionType
@@ -21,6 +17,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.contracts.model_condition_value_list import (
     ModelConditionValueList,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.security.model_condition_value import ModelConditionValue
 from omnibase_core.types.constraints import (
     ComplexContextValueType,

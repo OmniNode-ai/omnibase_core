@@ -1,18 +1,15 @@
-from __future__ import annotations
-
-from pydantic import Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Environment Properties Collection Model
 
 Type-safe collection of environment properties with metadata support.
 """
 
-from pydantic import BaseModel
+from __future__ import annotations
+
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
 from omnibase_core.types.typed_dict_property_metadata import TypedDictPropertyMetadata
 
@@ -61,16 +58,20 @@ class ModelEnvironmentPropertiesCollection(BaseModel):
     # Protocol method implementations
 
     def configure(self, **kwargs: object) -> bool:
-        """Configure instance with provided parameters (Configurable protocol)."""
+        """Configure instance with provided parameters (Configurable protocol).
+
+        Raises:
+            ModelOnexError: If configuration fails due to attribute or type errors
+        """
         try:
             for key, value in kwargs.items():
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception as e:
+        except (AttributeError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Operation failed: {e}",
+                message=f"Configuration failed: {e}",
             ) from e
 
     def serialize(self) -> SerializedDict:
@@ -78,16 +79,21 @@ class ModelEnvironmentPropertiesCollection(BaseModel):
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception as e:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Operation failed: {e}",
-            ) from e
+        """Validate instance integrity (ProtocolValidatable protocol).
+
+        This base implementation always returns True because Pydantic's field
+        validators and type checking already enforce validation rules at
+        construction time. This method exists to satisfy the ProtocolValidatable
+        protocol interface.
+
+        Returns:
+            True: Instance is valid (validation was enforced at construction)
+
+        Note:
+            Subclasses may override to add runtime validation beyond what
+            Pydantic validators provide at construction time.
+        """
+        return True
 
 
 __all__ = [

@@ -1,11 +1,9 @@
-from pydantic import Field
-
 """Event Registry Coordinator Output model for ONEX Discovery & Integration Event Registry.
 
 This module defines the output model for Event Registry Coordinator operations.
 """
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_service_status import EnumServiceStatus
 

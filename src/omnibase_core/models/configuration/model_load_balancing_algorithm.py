@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 ModelLoadBalancingAlgorithm - Load balancing algorithm configuration
 
@@ -7,8 +5,7 @@ Load balancing algorithm model for defining how traffic should be distributed
 across multiple nodes with algorithm-specific parameters and behavior.
 """
 
-
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.configuration.model_load_balancing_parameters import (
     ModelLoadBalancingParameters,

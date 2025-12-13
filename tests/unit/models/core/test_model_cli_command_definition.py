@@ -8,6 +8,8 @@ and command matching for dynamically discovered CLI commands.
 import pytest
 from pydantic import ValidationError
 
+pytestmark = pytest.mark.unit
+
 from omnibase_core.enums.enum_argument_type import EnumArgumentType
 from omnibase_core.models.core.model_argument_description import (
     ModelArgumentDescription,

@@ -8,6 +8,8 @@ from typing import TypedDict
 
 from omnibase_core.types.type_serializable_value import SerializedDict
 
+__all__ = ["TypedDictConditionalBranch"]
+
 
 class TypedDictConditionalBranch(TypedDict, total=False):
     """TypedDict for conditional branch entries."""

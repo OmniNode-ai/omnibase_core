@@ -1,10 +1,8 @@
-from pydantic import Field
-
 """
 ErrorCode model for node introspection.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelErrorCode(BaseModel):

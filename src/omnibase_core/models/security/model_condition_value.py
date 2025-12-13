@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 ModelConditionValue: Strongly typed value for permission conditions.
 
 This model provides strongly typed values for permission conditions without using Any types.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelConditionValue(BaseModel):

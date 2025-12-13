@@ -1,8 +1,3 @@
-from pydantic import Field, field_validator
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Enhanced tool collection models.
 
@@ -12,13 +7,15 @@ and compliance with one-model-per-file naming conventions.
 
 import hashlib
 import inspect
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, cast
 from uuid import UUID
 
-from pydantic import BaseModel, ValidationInfo, computed_field
+from pydantic import BaseModel, Field, ValidationInfo, computed_field, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.core.model_performance_summary import ModelPerformanceSummary
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.types import (
     TypedDictAccessControlConfig,
@@ -72,11 +69,11 @@ class ModelToolCollection(BaseModel):
         description="Collection version",
     )
     created_at: datetime = Field(
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(UTC),
         description="Collection creation time",
     )
     last_modified: datetime = Field(
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(UTC),
         description="Last modification time",
     )
 
@@ -125,7 +122,7 @@ class ModelToolCollection(BaseModel):
     def __init__(self, **data: Any) -> None:
         # Generate collection_id if not provided
         if "collection_id" not in data:
-            timestamp = datetime.now().isoformat()
+            timestamp = datetime.now(UTC).isoformat()
             content = f"tool_collection_{timestamp}"
             data["collection_id"] = hashlib.sha256(content.encode()).hexdigest()[:16]
         super().__init__(**data)
@@ -243,7 +240,7 @@ class ModelToolCollection(BaseModel):
                     if m.status == EnumToolRegistrationStatus.REGISTERED
                 ],
             )
-            self.last_modified = datetime.now()
+            self.last_modified = datetime.now(UTC)
 
             return True
 

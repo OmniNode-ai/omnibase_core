@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Model for contract cache representation in ONEX NodeBase implementation.
 
@@ -8,10 +6,10 @@ contract caching and performance optimization.
 
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.core.model_contract_content import ModelContractContent
 
@@ -71,7 +69,7 @@ class ModelContractCache(BaseModel):
         if self.ttl_seconds is None:
             return False
 
-        age_seconds = (datetime.now() - self.cached_at).total_seconds()
+        age_seconds = (datetime.now(UTC) - self.cached_at).total_seconds()
         return age_seconds > self.ttl_seconds
 
     def is_stale(self) -> bool:
@@ -79,13 +77,13 @@ class ModelContractCache(BaseModel):
         if self.max_age_seconds is None:
             return False
 
-        age_seconds = (datetime.now() - self.cached_at).total_seconds()
+        age_seconds = (datetime.now(UTC) - self.cached_at).total_seconds()
         return age_seconds > self.max_age_seconds
 
     def update_access(self) -> None:
         """Update access tracking information."""
         self.access_count += 1
-        self.last_accessed_at = datetime.now()
+        self.last_accessed_at = datetime.now(UTC)
 
     def invalidate(self, reason: str) -> None:
         """Mark cache entry as invalid with reason."""

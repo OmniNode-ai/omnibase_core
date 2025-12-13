@@ -10,6 +10,8 @@ from uuid import uuid4
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 from omnibase_core.models.health.model_health_issue import ModelHealthIssue
 from omnibase_core.models.health.model_health_metric import ModelHealthMetric
 from omnibase_core.models.health.model_health_status import ModelHealthStatus

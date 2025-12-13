@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Model for YAML schema property representation in ONEX NodeBase implementation.
 
@@ -8,7 +6,7 @@ strongly typed YAML schema property definitions.
 
 """
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelYamlSchemaProperty(BaseModel):

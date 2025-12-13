@@ -1,7 +1,3 @@
-from pydantic import Field, field_validator
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Algorithm Configuration Model.
 
@@ -11,12 +7,12 @@ with factors, weights, and execution parameters for contract-driven behavior.
 Strict typing is enforced - no Any types allowed in implementation.
 """
 
-
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 from .model_algorithm_factor_config import ModelAlgorithmFactorConfig
 

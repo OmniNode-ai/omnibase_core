@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Branching Configuration Model.
 
@@ -9,7 +7,7 @@ strategies for dynamic workflow execution paths.
 Strict typing is enforced: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelBranchingConfig(BaseModel):

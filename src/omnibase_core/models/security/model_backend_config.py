@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 ModelBackendConfig: Configuration for secret backends.
 
@@ -8,7 +6,7 @@ This model represents the configuration parameters for different secret backends
 
 from pathlib import Path
 
-from pydantic import BaseModel, SecretStr
+from pydantic import BaseModel, Field, SecretStr
 
 
 class ModelBackendConfig(BaseModel):

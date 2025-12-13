@@ -1,5 +1,3 @@
-from typing import Any
-
 """
 Action Payload Model
 
@@ -7,6 +5,7 @@ Action payload with rich metadata for tool-as-a-service execution.
 Wraps a ModelNodeAction with execution parameters and context.
 """
 
+from typing import Any
 from uuid import UUID
 
 from pydantic import Field

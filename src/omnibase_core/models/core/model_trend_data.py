@@ -1,15 +1,12 @@
-from collections.abc import Mapping
-from typing import Optional
-
-from pydantic import Field
-
 """
 Trend data model to replace Dict[str, Any] usage for trends fields.
 """
 
+from collections.abc import Mapping
 from datetime import datetime
+from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, field_serializer
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 from omnibase_core.models.core.model_trend_metrics import ModelTrendMetrics
 from omnibase_core.models.core.model_trend_point import ModelTrendPoint

@@ -1,10 +1,8 @@
-from pydantic import Field
-
 """
 Tool validation result model.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelToolValidationResult(BaseModel):

@@ -1,14 +1,3 @@
-from __future__ import annotations
-
-import math
-
-from pydantic import BaseModel, Field, model_validator
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.enums.enum_numeric_value_type import EnumNumericValueType
-from omnibase_core.models.common.model_coercion_mode import EnumCoercionMode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 ModelNumericStringValue
 
@@ -55,6 +44,17 @@ Safe Runtime Imports (OK to import at module level):
 - omnibase_core.errors
 - omnibase_core.models.common.model_coercion_mode
 """
+
+from __future__ import annotations
+
+import math
+
+from pydantic import BaseModel, Field, model_validator
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_numeric_value_type import EnumNumericValueType
+from omnibase_core.models.common.model_coercion_mode import EnumCoercionMode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelNumericStringValue(BaseModel):

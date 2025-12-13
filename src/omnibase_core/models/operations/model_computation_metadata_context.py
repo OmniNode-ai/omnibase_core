@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field
-
 """
 Strongly-typed computation metadata context model.
 
@@ -9,10 +5,11 @@ Represents metadata context for computation operations.
 Follows ONEX strong typing principles and one-model-per-file architecture.
 """
 
+from __future__ import annotations
 
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelComputationMetadataContext(BaseModel):

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -13,7 +13,7 @@ class ModelBaseOutputState(BaseModel):
         description="Metadata for the output state",
     )
     timestamp: datetime = Field(
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(UTC),
         description="Timestamp when the output was created",
     )
     processing_time_ms: float | None = Field(

@@ -160,9 +160,10 @@ def normalize_contract(
     """Normalize a contract model for deterministic fingerprinting.
 
     Applies the normalization pipeline from CONTRACT_STABILITY_SPEC.md:
-    1. Remove null values (optional)
-    2. Canonical key ordering (optional)
-    3. Stable JSON serialization
+    1. Exclude self-referential fields (fingerprint, correlation_id)
+    2. Remove null values (optional)
+    3. Canonical key ordering (optional)
+    4. Stable JSON serialization
 
     Args:
         contract: Pydantic contract model (e.g., ModelContractCompute, ModelContractEffect)
@@ -173,6 +174,12 @@ def normalize_contract(
 
     Raises:
         ModelOnexError: If contract cannot be normalized
+
+    Note:
+        The 'fingerprint' field is excluded by default to prevent self-referential
+        hashing, where the fingerprint value would affect its own computation.
+        The 'correlation_id' field is also excluded as it's a runtime-generated
+        UUID that shouldn't affect contract identity.
     """
     if config is None:
         config = ModelContractNormalizationConfig()
@@ -189,6 +196,13 @@ def normalize_contract(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         normalized = converted
+
+        # Step 0.5: Exclude self-referential fields (fingerprint, correlation_id, etc.)
+        # This prevents the fingerprint value from affecting its own computation.
+        if config.exclude_fields:
+            normalized = {
+                k: v for k, v in normalized.items() if k not in config.exclude_fields
+            }
 
         # Step 1: Remove null values
         if config.remove_nulls:
@@ -249,7 +263,10 @@ def compute_contract_fingerprint(
         config = ModelContractNormalizationConfig()
 
     # Extract version from contract - use getattr for Pydantic model
+    # Try 'version' first, then fall back to 'contract_version' for YAML contracts
     version_data = getattr(contract, "version", None)
+    if version_data is None:
+        version_data = getattr(contract, "contract_version", None)
     if version_data is None:
         # Default to 0.0.0 if no version specified
         version = ModelContractVersion(major=0, minor=0, patch=0)
@@ -257,6 +274,20 @@ def compute_contract_fingerprint(
         version = ModelContractVersion.from_string(version_data)
     elif isinstance(version_data, ModelContractVersion):
         version = version_data
+    elif isinstance(version_data, dict):
+        # Handle dict format from YAML contracts: {major: 1, minor: 1, patch: 0}
+        version = ModelContractVersion(
+            major=version_data.get("major", 0),
+            minor=version_data.get("minor", 0),
+            patch=version_data.get("patch", 0),
+        )
+    elif hasattr(version_data, "major"):
+        # Handle ModelSemVer or similar with major/minor/patch attributes
+        version = ModelContractVersion(
+            major=getattr(version_data, "major", 0),
+            minor=getattr(version_data, "minor", 0),
+            patch=getattr(version_data, "patch", 0),
+        )
     else:
         raise ModelOnexError(
             message=f"Invalid version type in contract: {type(version_data).__name__}",

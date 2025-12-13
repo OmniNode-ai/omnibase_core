@@ -1,9 +1,3 @@
-from typing import Any
-
-from pydantic import BaseModel, Field
-
-from omnibase_core.types import SerializedDict
-
 """
 Model for representing advanced parameters with proper type safety.
 
@@ -11,7 +5,12 @@ This model replaces dictionary usage in CLI tool execution by providing
 a structured representation of advanced parameters.
 """
 
+from typing import Any
+
+from pydantic import BaseModel, Field
+
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.types import SerializedDict
 
 
 class ModelAdvancedParams(BaseModel):

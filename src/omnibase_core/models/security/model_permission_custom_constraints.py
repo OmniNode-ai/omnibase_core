@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 Permission Custom Constraints Model
 
 Type-safe custom constraints for permissions.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.service.model_custom_fields import ModelCustomFields
 

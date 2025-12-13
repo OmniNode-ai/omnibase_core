@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 ModelSigningPolicy: Signing policy configuration for signature chains.
 
@@ -7,7 +5,7 @@ This model defines the policy requirements for cryptographic signatures
 in the envelope routing chain with strongly typed configurations.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelSigningPolicy(BaseModel):

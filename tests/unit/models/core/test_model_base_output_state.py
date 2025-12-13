@@ -2,7 +2,11 @@
 Test suite for ModelBaseOutputState.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
+
+import pytest
+
+pytestmark = pytest.mark.unit
 
 from omnibase_core.models.core.model_base_output_state import ModelBaseOutputState
 from omnibase_core.models.primitives.model_semver import ModelSemVer
@@ -360,9 +364,9 @@ class TestModelBaseOutputState:
     def test_model_base_output_state_timestamp_default_factory(self):
         """Test ModelBaseOutputState timestamp default factory behavior."""
         # Test that timestamp defaults to current time
-        before = datetime.now()
+        before = datetime.now(UTC)
         state = ModelBaseOutputState(version=DEFAULT_VERSION)
-        after = datetime.now()
+        after = datetime.now(UTC)
 
         assert before <= state.timestamp <= after
 

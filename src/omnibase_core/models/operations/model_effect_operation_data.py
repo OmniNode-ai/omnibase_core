@@ -1,13 +1,12 @@
-from __future__ import annotations
-
-from pydantic import Field
-
 """
 Effect node operation data for external interactions.
 """
 
+from __future__ import annotations
 
 from typing import Literal
+
+from pydantic import Field
 
 from omnibase_core.enums.enum_node_type import EnumNodeType
 

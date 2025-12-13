@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 Cache Distribution Model.
 
 Model for distributed caching configuration in the ONEX caching system.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 

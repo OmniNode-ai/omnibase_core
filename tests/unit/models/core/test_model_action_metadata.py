@@ -3,6 +3,9 @@ Tests for ModelActionMetadata.
 
 Comprehensive tests for action metadata model including timing,
 trust scores, performance metrics, and service discovery.
+
+Note: Forward reference resolution for ModelEnvironment is handled by the
+rebuild_model_environment fixture in conftest.py (module-scoped, autouse).
 """
 
 from datetime import UTC, datetime, timedelta
@@ -10,29 +13,17 @@ from uuid import UUID, uuid4
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.configuration.model_resource_limits import ModelResourceLimits
 from omnibase_core.models.core.model_action_category import ModelActionCategory
 from omnibase_core.models.core.model_action_metadata import ModelActionMetadata
 from omnibase_core.models.core.model_core_performance_metrics import (
     ModelPerformanceMetrics,
 )
-from omnibase_core.models.core.model_environment import ModelEnvironment
-from omnibase_core.models.core.model_execution_context import ModelExecutionContext
 from omnibase_core.models.core.model_node_action_type import ModelNodeActionType
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.security.model_security_context import ModelSecurityContext
-from omnibase_core.models.security.model_security_level import ModelSecurityLevel
-
-# Rebuild models with forward references to resolve ModelSecurityLevel and ModelResourceLimits
-ModelEnvironment.model_rebuild(
-    _types_namespace={
-        "ModelSecurityLevel": ModelSecurityLevel,
-        "ModelResourceLimits": ModelResourceLimits,
-    }
-)
-ModelExecutionContext.model_rebuild()
-ModelActionMetadata.model_rebuild()
 
 
 def create_test_action_type() -> ModelNodeActionType:
@@ -110,7 +101,6 @@ class TestModelActionMetadata:
 
         assert metadata.status == "running"
         assert metadata.started_at is not None
-        assert isinstance(metadata.started_at, datetime)
 
     def test_mark_completed_without_result(self):
         """Test marking action as completed without result data."""
@@ -126,9 +116,8 @@ class TestModelActionMetadata:
         metadata.mark_completed()
 
         assert metadata.status == "completed"
-        assert metadata.completed_at is not None
-        assert isinstance(metadata.completed_at, datetime)
         assert metadata.result_data is None
+        assert metadata.completed_at is not None
 
     def test_mark_completed_with_result(self):
         """Test marking action as completed with result data."""

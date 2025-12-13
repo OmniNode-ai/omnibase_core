@@ -1,10 +1,10 @@
-from typing import Any
-
-from pydantic import BaseModel, Field
-
 """
 Workflow input model.
 """
+
+from typing import Any
+
+from pydantic import BaseModel, Field
 
 
 class ModelWorkflowInput(BaseModel):

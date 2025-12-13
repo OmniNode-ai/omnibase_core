@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Event Registry Configuration Model.
 
@@ -9,8 +7,7 @@ and registry integration for event management.
 Strict typing is enforced: No Any types allowed in implementation.
 """
 
-
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelEventRegistryConfig(BaseModel):

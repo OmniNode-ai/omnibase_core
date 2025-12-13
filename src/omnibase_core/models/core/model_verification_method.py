@@ -1,14 +1,10 @@
-from datetime import datetime
-
-from pydantic import Field
-
 """
 VerificationMethod model.
 """
 
-from datetime import UTC
+from datetime import UTC, datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelVerificationMethod(BaseModel):

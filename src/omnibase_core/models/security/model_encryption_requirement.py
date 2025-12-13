@@ -1,15 +1,13 @@
-from pydantic import Field, field_validator
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 ModelEncryptionRequirement: Encryption requirement configuration.
 
 This model defines encryption requirements and settings for payloads.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 from .model_encryption_algorithm import ModelEncryptionAlgorithm
 

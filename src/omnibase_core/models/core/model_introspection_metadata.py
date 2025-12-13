@@ -1,10 +1,8 @@
-from pydantic import Field
-
 """
 Model for complete introspection metadata.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_introspection_contract_info import (
     ModelIntrospectionContractInfo,

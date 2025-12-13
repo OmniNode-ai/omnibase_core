@@ -1,7 +1,3 @@
-from pydantic import Field
-
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Event Input State Model.
 
@@ -12,7 +8,9 @@ replacing Dict[str, Any] usage with proper model.
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelEventInputState(BaseModel):

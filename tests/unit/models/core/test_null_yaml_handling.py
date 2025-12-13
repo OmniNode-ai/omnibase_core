@@ -17,6 +17,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 from omnibase_core.models.core.model_mixin_metadata_collection import (
     ModelMixinMetadataCollection,
 )
@@ -247,7 +249,9 @@ mixin_test:
         collection = ModelMixinMetadataCollection.from_yaml(yaml_file)
         mixin = collection.get_mixin("mixin_test")
         assert mixin is not None
-        assert mixin.config_schema == {}
+        # Use isinstance and len checks instead of brittle Pydantic equality
+        assert isinstance(mixin.config_schema, dict)
+        assert len(mixin.config_schema) == 0
 
     def test_null_presets_becomes_empty_dict(self, tmp_path: Path) -> None:
         """Test that null presets is normalized to empty dict."""
@@ -265,7 +269,9 @@ mixin_test:
         collection = ModelMixinMetadataCollection.from_yaml(yaml_file)
         mixin = collection.get_mixin("mixin_test")
         assert mixin is not None
-        assert mixin.presets == {}
+        # Use isinstance and len checks instead of brittle Pydantic equality
+        assert isinstance(mixin.presets, dict)
+        assert len(mixin.presets) == 0
 
 
 class TestCompleteNullHandlingWorkflow:
@@ -295,10 +301,15 @@ mixin_minimal:
         assert mixin is not None
         assert mixin.code_patterns is not None
         assert mixin.performance is not None
-        assert mixin.config_schema == {}
-        assert mixin.presets == {}
-        assert mixin.usage_examples == []
-        assert mixin.implementation_notes == []
+        # Use isinstance and len checks instead of brittle Pydantic equality
+        assert isinstance(mixin.config_schema, dict)
+        assert len(mixin.config_schema) == 0
+        assert isinstance(mixin.presets, dict)
+        assert len(mixin.presets) == 0
+        assert isinstance(mixin.usage_examples, list)
+        assert len(mixin.usage_examples) == 0
+        assert isinstance(mixin.implementation_notes, list)
+        assert len(mixin.implementation_notes) == 0
 
     def test_mixed_nulls_and_values(self, tmp_path: Path) -> None:
         """Test loading mixture of null and non-null values."""

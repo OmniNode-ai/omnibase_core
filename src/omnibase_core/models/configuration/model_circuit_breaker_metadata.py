@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 Circuit Breaker Metadata Model
 
 Type-safe circuit breaker metadata that replaces Dict[str, Any] usage.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.service.model_custom_fields import ModelCustomFields
 

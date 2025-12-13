@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Model for registry factory representation in ONEX NodeBase implementation.
 
@@ -8,7 +6,7 @@ factory state management and configuration.
 
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_contract_content import ModelContractContent
 from omnibase_core.models.core.model_registry_cache_entry import ModelRegistryCacheEntry

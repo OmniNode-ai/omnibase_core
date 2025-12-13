@@ -269,8 +269,8 @@ class ProtocolHandler(Protocol):
                 causation chain tracking.
 
         Raises:
-            Exception: Handlers may raise exceptions for unrecoverable errors.
-                However, best practice is to catch exceptions and return an
+            ModelOnexError: Handlers may raise ModelOnexError for unrecoverable
+                errors. Best practice is to catch exceptions and return an
                 error envelope with success=False.
 
         Example:

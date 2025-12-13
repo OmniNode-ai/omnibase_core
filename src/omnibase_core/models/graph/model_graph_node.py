@@ -1,7 +1,3 @@
-from uuid import UUID
-
-from pydantic import Field
-
 """
 Graph Node Model
 
@@ -9,7 +5,9 @@ Type-safe graph node that replaces Dict[str, Any] usage
 in orchestrator graphs.
 """
 
-from pydantic import BaseModel
+from uuid import UUID
+
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.service.model_custom_fields import ModelCustomFields
 from omnibase_core.types.type_serializable_value import SerializedDict

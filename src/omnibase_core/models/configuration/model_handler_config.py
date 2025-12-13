@@ -1,4 +1,11 @@
-from pydantic import Field
+"""
+Pydantic model for file type handler configuration.
+
+This module provides structured configuration for file type handlers,
+including processing categories, patterns, and priority settings.
+"""
+
+from pydantic import BaseModel, ConfigDict, Field
 
 # === OmniNode:Metadata ===
 # author: OmniNode Team
@@ -22,15 +29,6 @@ from pydantic import Field
 # uuid: c6cae84d-f423-4d9b-a85c-12377cc25bcc
 # version: 1.0.0
 # === /OmniNode:Metadata ===
-
-"""
-Pydantic model for file type handler configuration.
-
-This module provides structured configuration for file type handlers,
-including processing categories, patterns, and priority settings.
-"""
-
-from pydantic import BaseModel, ConfigDict
 
 
 class ModelHandlerConfig(BaseModel):

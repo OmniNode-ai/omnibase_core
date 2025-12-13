@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """Service Model.
 
 Pydantic model for ONEX service instances.
@@ -7,7 +5,7 @@ Pydantic model for ONEX service instances.
 
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelService(BaseModel):

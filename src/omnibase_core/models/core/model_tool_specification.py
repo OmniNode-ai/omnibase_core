@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Model for tool specification representation in ONEX NodeBase implementation.
 
@@ -8,7 +6,7 @@ tool resolution from contract specifications.
 
 """
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelToolSpecification(BaseModel):

@@ -11,9 +11,22 @@ Normalization Process:
     4. Compact Serialization: JSON output uses minimal whitespace
     5. Hash Computation: SHA256 hash is computed from normalized content
 
-The default settings ensure maximum compatibility across different
-environments and deterministic hash computation regardless of field
-ordering in source files.
+Hash Length Analysis:
+    The default hash_length of 12 hex characters (48 bits) provides:
+
+    - **~281 trillion possible values** (2^48 = 281,474,976,710,656)
+    - **Birthday Paradox Analysis**: With N contracts, collision probability
+      is approximately N^2 / (2 * 2^48). For example:
+      - 1,000 contracts: ~0.0000002% collision chance
+      - 10,000 contracts: ~0.00002% collision chance
+      - 100,000 contracts: ~0.002% collision chance
+    - **Practical Registry Size**: Most contract registries contain hundreds
+      to low thousands of contracts, well within safe bounds.
+    - **Human Readability**: 12 chars is short enough for copy/paste and
+      visual inspection while long enough for uniqueness.
+
+    For higher security requirements (e.g., multi-tenant registries with
+    100k+ contracts), increase to 16 chars (64 bits) or higher.
 
 Typical Usage:
     The configuration is typically used by fingerprint computation utilities:
@@ -23,6 +36,8 @@ Typical Usage:
 
 See Also:
     CONTRACT_STABILITY_SPEC.md: Detailed specification for normalization rules.
+    docs/conventions/NAMING_CONVENTIONS.md: Fingerprint format specification.
+    scripts/README.md: Fingerprint tooling documentation.
 """
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -54,6 +69,10 @@ class ModelContractNormalizationConfig(BaseModel):
             Default: 12 (48 bits, ~281 trillion possibilities - sufficient
             for collision avoidance in typical contract registries while
             keeping fingerprints readable).
+        exclude_fields: Fields to exclude from normalization/hashing.
+            Default: {"fingerprint", "correlation_id"} - fingerprint is excluded
+            to prevent self-referential hashing; correlation_id is excluded because
+            it's a runtime-generated UUID that shouldn't affect contract identity.
 
     Example:
         >>> config = ModelContractNormalizationConfig(
@@ -84,6 +103,15 @@ class ModelContractNormalizationConfig(BaseModel):
         ge=8,
         le=64,
         description="Number of hex characters from SHA256 hash (default: 12)",
+    )
+    exclude_fields: frozenset[str] = Field(
+        default=frozenset({"fingerprint", "correlation_id"}),
+        description=(
+            "Fields to exclude from normalization/hashing. Default excludes 'fingerprint' "
+            "(to prevent self-referential hashing where fingerprint value affects its own "
+            "computation) and 'correlation_id' (runtime-generated UUID that changes per "
+            "instantiation and shouldn't affect contract identity)."
+        ),
     )
 
     model_config = ConfigDict(

@@ -1,18 +1,15 @@
-from __future__ import annotations
-
-from pydantic import Field
-
 """
 Progress Status Model.
 
 Model for overall workflow progress status in the ONEX workflow coordination system.
 """
 
+from __future__ import annotations
 
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 

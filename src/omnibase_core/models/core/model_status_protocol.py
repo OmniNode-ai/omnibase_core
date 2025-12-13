@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Status Protocol for enum migration operations.
 
@@ -7,6 +5,7 @@ This module defines the protocol that all status enums must implement
 to be compatible with the migration system.
 """
 
+from __future__ import annotations
 
 from typing import TYPE_CHECKING, Protocol
 
@@ -26,7 +25,6 @@ class EnumStatusProtocol(Protocol):
 
 # TypeVar for type-safe enum migration (ONEX compliant)
 StatusEnumType = type("StatusEnumType", (), {})  # Simple type variable
-
 
 # Export for use
 __all__ = [

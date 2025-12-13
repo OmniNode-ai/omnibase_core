@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field
-
 """
 Strongly-typed primitive input value model.
 
@@ -9,8 +5,9 @@ Represents primitive data inputs for computation operations.
 Follows ONEX strong typing principles and one-model-per-file architecture.
 """
 
+from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_input_data_type import EnumInputDataType
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue

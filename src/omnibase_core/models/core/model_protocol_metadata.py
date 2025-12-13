@@ -1,18 +1,15 @@
-from typing import TYPE_CHECKING, Optional
-
-from pydantic import Field
-
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Generic metadata model to replace Dict[str, Any] usage for metadata fields.
 
 Implements ProtocolMetadata from omnibase_spi for protocol compliance.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING, Optional
 
-from pydantic import BaseModel, ConfigDict, field_serializer
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
+
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 if TYPE_CHECKING:
     from omnibase_core.types.type_serializable_value import SerializedDict
@@ -37,7 +34,7 @@ class ModelGenericMetadata(BaseModel):
         description="Version information",
     )
     created_at: datetime = Field(
-        default_factory=datetime.now, description="Creation timestamp"
+        default_factory=lambda: datetime.now(UTC), description="Creation timestamp"
     )
     updated_at: datetime | None = Field(
         default=None, description="Last update timestamp"

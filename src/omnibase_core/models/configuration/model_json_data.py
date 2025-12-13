@@ -1,9 +1,3 @@
-from pydantic import Field
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 ONEX-Compliant JSON Data Model for Configuration System
 
@@ -13,11 +7,14 @@ Strong typing with generic container patterns following ONEX standards.
 
 from typing import Any
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 from pydantic_core.core_schema import ValidationInfo
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_json_value_type import EnumJsonValueType
 from omnibase_core.models.configuration.model_json_field import ModelJsonField
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelJsonData(BaseModel):

@@ -1,10 +1,8 @@
-from pydantic import Field
-
 """
 GitHubUser model.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelGitHubUser(BaseModel):

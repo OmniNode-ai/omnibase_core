@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field
-
 """
 Model for generic connection configuration.
 
@@ -9,7 +5,9 @@ This model serves as a fallback for unknown service types,
 providing a flexible but still typed structure.
 """
 
-from pydantic import BaseModel, ConfigDict
+from __future__ import annotations
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelGenericConnectionConfig(BaseModel):

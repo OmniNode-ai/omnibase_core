@@ -1,10 +1,8 @@
-from pydantic import Field
-
 """
 Request retry configuration model.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelRequestRetryConfig(BaseModel):

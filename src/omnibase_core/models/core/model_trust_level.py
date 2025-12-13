@@ -1,7 +1,3 @@
-from datetime import datetime
-
-from pydantic import Field
-
 """
 Trust Level Model
 
@@ -9,9 +5,9 @@ Nuanced trust level model that replaces hardcoded trust enums
 with flexible, verifiable trust scores and metadata.
 """
 
-from datetime import UTC
+from datetime import UTC, datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .model_verification_method import ModelVerificationMethod
 

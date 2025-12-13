@@ -1,10 +1,3 @@
-from typing import Optional, Union
-
-from pydantic import Field
-
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-from omnibase_core.types.type_serializable_value import SerializedDict
-
 """
 Model for representing JSON schema structures with proper type safety.
 
@@ -12,7 +5,12 @@ This model replaces dictionary usage when working with JSON schemas
 by providing a structured representation of schema data.
 """
 
-from pydantic import BaseModel
+from typing import Optional, Union
+
+from pydantic import BaseModel, Field
+
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelJsonSchema(BaseModel):

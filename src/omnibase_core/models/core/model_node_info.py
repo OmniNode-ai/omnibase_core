@@ -1,14 +1,12 @@
-from pydantic import Field
-
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Pydantic model for node information.
 
 Information about a discovered ONEX node, used in node discovery results.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelNodeInfo(BaseModel):

@@ -1,11 +1,8 @@
-from pydantic import Field
-
 """
 Workflow services model.
 """
 
-
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .model_service_container import ModelServiceContainer
 

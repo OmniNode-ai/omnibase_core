@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Strongly-typed text computation input model.
 
@@ -7,6 +5,7 @@ Represents text data inputs for computation operations.
 Follows ONEX strong typing principles and one-model-per-file architecture.
 """
 
+from __future__ import annotations
 
 from typing import Literal
 

@@ -1,8 +1,3 @@
-from pydantic import Field, field_validator
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Enterprise Missing Tool Model.
 
@@ -11,14 +6,16 @@ error analysis, and operational insights for ONEX registry validation systems.
 """
 
 import re
-from datetime import datetime
+from datetime import UTC, datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_tool_category import EnumToolCategory
 from omnibase_core.enums.enum_tool_criticality import EnumToolCriticality
 from omnibase_core.enums.enum_tool_missing_reason import EnumToolMissingReason
 from omnibase_core.models.core.model_protocol_metadata import ModelGenericMetadata
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.types.typed_dict_alert_data import TypedDictAlertData
 from omnibase_core.types.typed_dict_alert_metadata import TypedDictAlertMetadata
@@ -192,7 +189,7 @@ class ModelMissingTool(BaseModel):
     def validate_first_detected(cls, v: str | None) -> str | None:
         """Validate ISO timestamp format."""
         if v is None:
-            return datetime.now().isoformat()
+            return datetime.now(UTC).isoformat()
 
         try:
             datetime.fromisoformat(v.replace("Z", "+00:00"))

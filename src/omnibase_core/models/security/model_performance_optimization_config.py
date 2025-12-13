@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 ModelPerformanceOptimizationConfig: Performance optimization configuration.
 
 This model represents performance optimization settings for secret backends.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelPerformanceOptimizationConfig(BaseModel):

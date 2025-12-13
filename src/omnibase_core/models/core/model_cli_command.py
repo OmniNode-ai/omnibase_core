@@ -1,10 +1,8 @@
-from pydantic import Field
-
 """
 CLI command model for node command specification.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_cli_argument import ModelCLIArgument
 from omnibase_core.models.core.model_event_type import ModelEventType

@@ -1,11 +1,11 @@
-from __future__ import annotations
-
 """
 Function Relationships Model.
 
 Dependency and relationship information for functions.
 Part of the ModelFunctionNodeMetadata restructuring.
 """
+
+from __future__ import annotations
 
 from uuid import UUID
 

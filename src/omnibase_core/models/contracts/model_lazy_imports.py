@@ -1,5 +1,3 @@
-from typing import Any
-
 """
 Lazy Import Optimization Module
 
@@ -17,7 +15,7 @@ Usage:
 """
 
 import functools
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 
 # Type checking imports only - no runtime cost
 if TYPE_CHECKING:

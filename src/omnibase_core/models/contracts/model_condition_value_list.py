@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Model Condition Value List - Container for list[Any]of strongly-typed condition values.
 
@@ -9,7 +7,7 @@ that maintains type safety and provides utility methods for value checking.
 Strict typing is enforced: No string conditions or Any types allowed.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.types.constraints import PrimitiveValueType
 

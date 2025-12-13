@@ -1,10 +1,8 @@
-from pydantic import Field
-
 """
 PerformanceBenchmark model.
 """
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelPerformanceBenchmark(BaseModel):

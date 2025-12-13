@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 State model for reducer pattern.
 
@@ -7,7 +5,9 @@ Implements ProtocolState from omnibase_spi for proper protocol compliance.
 Follows ONEX strong typing principles and one-model-per-file architecture.
 """
 
-from datetime import datetime
+from __future__ import annotations
+
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
 
@@ -29,7 +29,7 @@ class ModelState(BaseModel):
         )
     )
     version: int = Field(default=0)
-    last_updated: datetime = Field(default_factory=datetime.now)
+    last_updated: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     model_config = {
         "extra": "forbid",

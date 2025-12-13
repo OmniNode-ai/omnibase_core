@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 ModelWorkflowFactory
 
@@ -13,6 +11,7 @@ Safe Runtime Imports (OK to import at module level):
 - Standard library modules only
 """
 
+from __future__ import annotations
 
 from typing import Any
 

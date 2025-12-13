@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Workflow Configuration Model.
 
@@ -9,8 +7,7 @@ and coordination strategies for complex workflows.
 Strict typing is enforced: No Any types allowed in implementation.
 """
 
-
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelWorkflowConfig(BaseModel):

@@ -1,25 +1,20 @@
-from pydantic import Field
-
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Dynamic Event Type Model.
-
 
 enables plugin extensibility and contract-driven event type registration.
 """
 
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_json_schema import ModelJsonSchema
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelEventType(BaseModel):
     """
     Dynamic event type model enabling plugin extensibility.
-
 
     to register their own event types dynamically.
     """

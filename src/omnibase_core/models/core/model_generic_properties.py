@@ -1,13 +1,10 @@
-from typing import Optional
-
-from pydantic import Field
-
 """
 Generic properties model to replace Dict[str, Any] usage for properties fields.
 """
 
+from typing import Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.types import PropertyValue
 

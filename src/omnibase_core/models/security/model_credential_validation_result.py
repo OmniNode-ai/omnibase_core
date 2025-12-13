@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 ModelCredentialValidationResult: Credential validation results.
 
 This model provides structured credential validation results without using Any types.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelCredentialValidationResult(BaseModel):

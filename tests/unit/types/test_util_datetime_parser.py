@@ -2,7 +2,7 @@
 Test suite for util_datetime_parser.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from omnibase_core.types.util_datetime_parser import parse_datetime
 
@@ -45,7 +45,7 @@ class TestUtilDatetimeParser:
         # Should fallback to current datetime
         assert isinstance(result, datetime)
         # Should be recent (within last minute)
-        now = datetime.now()
+        now = datetime.now(UTC)
         time_diff = abs((now - result).total_seconds())
         assert time_diff < 60  # Within 1 minute
 
@@ -56,7 +56,7 @@ class TestUtilDatetimeParser:
 
         # Should fallback to current datetime
         assert isinstance(result, datetime)
-        now = datetime.now()
+        now = datetime.now(UTC)
         time_diff = abs((now - result).total_seconds())
         assert time_diff < 60  # Within 1 minute
 
@@ -67,7 +67,7 @@ class TestUtilDatetimeParser:
 
         # Should fallback to current datetime
         assert isinstance(result, datetime)
-        now = datetime.now()
+        now = datetime.now(UTC)
         time_diff = abs((now - result).total_seconds())
         assert time_diff < 60  # Within 1 minute
 
@@ -77,7 +77,7 @@ class TestUtilDatetimeParser:
 
         # Should fallback to current datetime
         assert isinstance(result, datetime)
-        now = datetime.now()
+        now = datetime.now(UTC)
         time_diff = abs((now - result).total_seconds())
         assert time_diff < 60  # Within 1 minute
 
@@ -87,7 +87,7 @@ class TestUtilDatetimeParser:
 
         # Should fallback to current datetime
         assert isinstance(result, datetime)
-        now = datetime.now()
+        now = datetime.now(UTC)
         time_diff = abs((now - result).total_seconds())
         assert time_diff < 60  # Within 1 minute
 

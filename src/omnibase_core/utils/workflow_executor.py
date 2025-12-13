@@ -76,7 +76,7 @@ import json
 import logging
 import os
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -665,7 +665,7 @@ async def _execute_sequential(
                 )
 
             # Mark step as completed
-            context.completed_at = datetime.now()
+            context.completed_at = datetime.now(UTC)
             completed_steps.append(str(step.step_id))
             completed_step_ids.add(step.step_id)
 
@@ -1167,7 +1167,7 @@ def _validate_json_payload(
             # With strict=False (default), UUIDs and datetimes are allowed
             payload = {
                 "workflow_id": uuid4(),  # UUID object - serialized via str()
-                "timestamp": datetime.now(),  # datetime - serialized to ISO format
+                "timestamp": datetime.now(UTC),  # datetime - serialized to ISO format
                 "step_name": "process_data",
             }
             _validate_json_payload(payload, context="process_data")  # passes
@@ -1297,7 +1297,7 @@ def _create_action_for_step(
             "step_name": step.step_name,
             "correlation_id": str(step.correlation_id),
         },
-        created_at=datetime.now(),
+        created_at=datetime.now(UTC),
     )
 
     return (action, payload_size)

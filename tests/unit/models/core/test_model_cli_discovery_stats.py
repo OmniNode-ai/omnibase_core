@@ -5,8 +5,12 @@ This module tests discovery statistics tracking, health metrics calculation,
 and performance monitoring for CLI tool discovery operations.
 """
 
+import pytest
+
 from omnibase_core.models.core.model_cli_discovery_stats import ModelCliDiscoveryStats
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+pytestmark = pytest.mark.unit
 
 # Default version for test instances - required field after removing default_factory
 DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
@@ -19,6 +23,8 @@ class TestModelCliDiscoveryStatsCreation:
         """Test stats initializes with default values."""
         stats = ModelCliDiscoveryStats(version=DEFAULT_VERSION)
 
+        # Assert return type is ModelCliDiscoveryStats
+        assert isinstance(stats, ModelCliDiscoveryStats)
         assert stats.total_tools_discovered == 0
         assert stats.healthy_tools_count == 0
         assert stats.unhealthy_tools_count == 0
@@ -52,6 +58,8 @@ class TestModelCliDiscoveryStatsCreation:
             registries_total=5,
         )
 
+        # Assert return type is ModelCliDiscoveryStats
+        assert isinstance(stats, ModelCliDiscoveryStats)
         assert stats.total_tools_discovered == 50
         assert stats.healthy_tools_count == 45
         assert stats.unhealthy_tools_count == 5
@@ -79,7 +87,9 @@ class TestHealthPercentageProperty:
             unhealthy_tools_count=0,
         )
 
-        assert stats.health_percentage == 100.0
+        result = stats.health_percentage
+        assert isinstance(result, float)
+        assert result == 100.0
 
     def test_health_percentage_partial_healthy(self):
         """Test health percentage with partially healthy tools."""
@@ -159,7 +169,9 @@ class TestRegistryHealthPercentageProperty:
             registries_total=5,
         )
 
-        assert stats.registry_health_percentage == 100.0
+        result = stats.registry_health_percentage
+        assert isinstance(result, float)
+        assert result == 100.0
 
     def test_registry_health_percentage_partial_online(self):
         """Test registry health with partially online registries."""

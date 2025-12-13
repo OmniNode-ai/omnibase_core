@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Transaction Configuration Model.
 
@@ -7,7 +5,7 @@ Defines transaction isolation, rollback policies,
 and consistency guarantees for side-effect operations.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelTransactionConfig(BaseModel):

@@ -12,6 +12,8 @@ Tests all aspects of the namespace configuration model including:
 import pytest
 from pydantic import ValidationError
 
+pytestmark = pytest.mark.unit
+
 from omnibase_core.models.examples.model_namespace_config import ModelNamespaceConfig
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 

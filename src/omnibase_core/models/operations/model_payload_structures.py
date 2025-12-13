@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Strongly-typed payload structures.
 
@@ -7,6 +5,7 @@ Replaces dict[str, Any] usage in payloads and message data with structured typin
 Follows ONEX strong typing principles and one-model-per-file architecture.
 """
 
+from __future__ import annotations
 
 from .model_event_payload import ModelEventPayload
 

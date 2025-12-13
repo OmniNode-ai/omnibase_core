@@ -15,7 +15,7 @@ __all__ = [
 ]
 
 "\nTool metadata model.\n"
-from datetime import datetime
+from datetime import UTC, datetime
 
 from pydantic import BaseModel
 
@@ -33,7 +33,8 @@ class ModelToolMetadata(BaseModel):
     tool_class: str = Field(default=..., description="Tool class name")
     module_path: str = Field(default=..., description="Tool module path")
     registration_time: datetime = Field(
-        default_factory=datetime.now, description="When tool was registered"
+        default_factory=lambda: datetime.now(UTC),
+        description="When tool was registered",
     )
     status: EnumToolRegistrationStatus = Field(
         default=EnumToolRegistrationStatus.REGISTERED, description="Registration status"

@@ -41,7 +41,7 @@ This mixin handles:
 import asyncio
 import fnmatch
 import inspect
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -119,7 +119,7 @@ class MixinEventHandler:
                 calling_module=_COMPONENT_NAME,
                 calling_function="_setup_event_handlers",
                 calling_line=67,
-                timestamp=datetime.now().isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 node_id=(
                     UUID(node_id)
                     if isinstance(node_id, str) and node_id != "<unset>"
@@ -217,7 +217,7 @@ class MixinEventHandler:
                 calling_module=_COMPONENT_NAME,
                 calling_function="_handle_introspection_request",
                 calling_line=124,
-                timestamp=datetime.now().isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 node_id=(
                     UUID(node_id)
                     if isinstance(node_id, str) and node_id != "<unset>"
@@ -236,7 +236,7 @@ class MixinEventHandler:
                 calling_module=_COMPONENT_NAME,
                 calling_function="_handle_introspection_request",
                 calling_line=137,
-                timestamp=datetime.now().isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 node_id=(
                     UUID(node_id)
                     if isinstance(node_id, str) and node_id != "<unset>"
@@ -295,7 +295,7 @@ class MixinEventHandler:
                 calling_module=_COMPONENT_NAME,
                 calling_function="_handle_node_discovery_request",
                 calling_line=170,
-                timestamp=datetime.now().isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 node_id=(
                     UUID(node_id)
                     if isinstance(node_id, str) and node_id != "<unset>"
@@ -314,7 +314,7 @@ class MixinEventHandler:
                 calling_module=_COMPONENT_NAME,
                 calling_function="_handle_node_discovery_request",
                 calling_line=183,
-                timestamp=datetime.now().isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 node_id=(
                     UUID(node_id)
                     if isinstance(node_id, str) and node_id != "<unset>"
@@ -403,7 +403,7 @@ class MixinEventHandler:
                     calling_module=_COMPONENT_NAME,
                     calling_function="cleanup_event_handlers",
                     calling_line=248,
-                    timestamp=datetime.now().isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                     node_id=(
                         UUID(node_id)
                         if isinstance(node_id, str) and node_id != "<unset>"
@@ -421,7 +421,7 @@ class MixinEventHandler:
                     calling_module=_COMPONENT_NAME,
                     calling_function="cleanup_event_handlers",
                     calling_line=261,
-                    timestamp=datetime.now().isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                     node_id=(
                         UUID(node_id)
                         if isinstance(node_id, str) and node_id != "<unset>"

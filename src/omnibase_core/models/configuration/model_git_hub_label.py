@@ -1,15 +1,12 @@
-from uuid import UUID
-
-from pydantic import Field
-
 """
 GitHub Label Model
 
 Type-safe GitHub label that replaces Dict[str, Any] usage.
 """
 
+from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelGitHubLabel(BaseModel):

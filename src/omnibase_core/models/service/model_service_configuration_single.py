@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Service Configuration Model for ONEX Configuration-Driven Registry System.
 
@@ -8,7 +6,7 @@ Extracted from the multi-model file for modular architecture compliance.
 
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.detection.model_service_detection_config import (
     ModelServiceDetectionConfig,

@@ -1,12 +1,3 @@
-from __future__ import annotations
-
-import math
-
-from pydantic import Field, field_validator
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 ModelValueContainer
 
@@ -23,11 +14,17 @@ Safe Runtime Imports (OK to import at module level):
 - Standard library modules only
 """
 
+from __future__ import annotations
+
 import json
+import math
 from typing import Any
 
 # Import protocols from omnibase_spi
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Import standard type alias from ONEX common types
 from omnibase_core.models.types.model_onex_common_types import JsonSerializable

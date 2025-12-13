@@ -91,6 +91,7 @@ from .type_serializable_value import SerializableValue, SerializedDict
 from .typed_dict_access_control_config import TypedDictAccessControlConfig
 from .typed_dict_action_validation_context import TypedDictActionValidationContext
 from .typed_dict_action_validation_statistics import TypedDictActionValidationStatistics
+from .typed_dict_active_summary import TypedDictActiveSummary
 from .typed_dict_additional_fields import TypedDictAdditionalFields
 from .typed_dict_alert_data import TypedDictAlertData
 from .typed_dict_alert_metadata import TypedDictAlertMetadata
@@ -142,6 +143,7 @@ from .typed_dict_documentation_summary_filtered import (
 from .typed_dict_error_analysis import TypedDictErrorAnalysis
 from .typed_dict_error_data import TypedDictErrorData
 from .typed_dict_error_details import TypedDictErrorDetails
+from .typed_dict_error_summary import TypedDictErrorSummary
 from .typed_dict_event_info import TypedDictEventInfo
 from .typed_dict_event_type import TypedDictEventType
 from .typed_dict_execution_stats import TypedDictExecutionStats
@@ -169,6 +171,7 @@ from .typed_dict_legacy_health import TypedDictLegacyHealth
 from .typed_dict_legacy_stats import TypedDictLegacyStats
 from .typed_dict_lifecycle_event_fields import TypedDictLifecycleEventFields
 from .typed_dict_lifecycle_event_metadata import TypedDictLifecycleEventMetadata
+from .typed_dict_maintenance_summary import TypedDictMaintenanceSummary
 
 # YAML and path resolution TypedDict definitions
 from .typed_dict_mapping_result import MappingResultDict
@@ -511,6 +514,10 @@ __all__ = [
     "TypedDictNodeCapabilities",
     "TypedDictNodeIntrospection",
     "TypedDictNodeState",
+    # Node status summary TypedDict definitions
+    "TypedDictActiveSummary",
+    "TypedDictErrorSummary",
+    "TypedDictMaintenanceSummary",
     # YAML and path resolution types
     "MappingResultDict",
     "TypedDictPathResolutionContext",

@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Canonical Workflow Parameter Model
 
@@ -7,7 +5,7 @@ Single responsibility: Define type-safe workflow parameters with generic value t
 Replaces all duplicate ModelWorkflowParameter definitions across the codebase.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelWorkflowParameter[T](BaseModel):

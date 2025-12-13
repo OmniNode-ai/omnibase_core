@@ -1,13 +1,13 @@
-from datetime import datetime
-from uuid import UUID
-
-from pydantic import BaseModel, Field
-
 """
 ModelAuditData: Audit data representation.
 
 This model provides structured audit data without using Any types.
 """
+
+from datetime import datetime
+from uuid import UUID
+
+from pydantic import BaseModel, Field
 
 
 class ModelAuditData(BaseModel):

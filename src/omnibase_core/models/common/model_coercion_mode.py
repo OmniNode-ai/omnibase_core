@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-from enum import Enum
-
 """
 EnumCoercionMode
 
@@ -23,6 +19,10 @@ This module is part of a carefully managed import chain to avoid circular depend
 Safe Runtime Imports (OK to import at module level):
 - Standard library modules only
 """
+
+from __future__ import annotations
+
+from enum import Enum
 
 
 class EnumCoercionMode(str, Enum):

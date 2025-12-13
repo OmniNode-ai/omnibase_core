@@ -1,10 +1,8 @@
-from pydantic import Field
-
 """
 Model for Docker healthcheck configuration.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.docker.model_docker_healthcheck_test import (
     ModelDockerHealthcheckTest,

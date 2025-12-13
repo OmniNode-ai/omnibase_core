@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Performance Hints Model.
 
@@ -7,7 +5,7 @@ Type-safe performance optimization hints for node operations
 and load balancing decisions.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelPerformanceHints(BaseModel):

@@ -1,14 +1,12 @@
-from typing import Any
-
-from pydantic import Field
-
 """
 Serializable Dictionary Model for ONEX Configuration System.
 
 Strongly typed model for serializable dictionary data.
 """
 
-from pydantic import BaseModel
+from typing import Any
+
+from pydantic import BaseModel, Field
 
 
 class ModelSerializableDict(BaseModel):

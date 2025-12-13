@@ -1,7 +1,3 @@
-from pydantic import Field, model_validator
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Effect Retry Configuration Model.
 
@@ -11,10 +7,11 @@ breaker patterns for resilient side-effect operations.
 
 from typing import Self
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_retry_backoff_strategy import EnumRetryBackoffStrategy
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelEffectRetryConfig(BaseModel):

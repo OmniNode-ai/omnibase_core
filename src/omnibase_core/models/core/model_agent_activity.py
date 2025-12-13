@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -20,5 +20,6 @@ class ModelAgentActivity(BaseModel):
         default=None, description="Estimated completion time for current task"
     )
     last_activity: datetime = Field(
-        default_factory=datetime.now, description="Timestamp of last activity"
+        default_factory=lambda: datetime.now(UTC),
+        description="Timestamp of last activity",
     )

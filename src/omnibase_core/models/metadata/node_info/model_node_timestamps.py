@@ -1,3 +1,10 @@
+"""
+Node Timestamps Model.
+
+Timing and lifecycle information for nodes.
+Follows ONEX one-model-per-file architecture.
+"""
+
 from __future__ import annotations
 
 from datetime import UTC, datetime
@@ -5,13 +12,6 @@ from datetime import UTC, datetime
 from pydantic import BaseModel, Field
 
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
-
-"""
-Node Timestamps Model.
-
-Timing and lifecycle information for nodes.
-Follows ONEX one-model-per-file architecture.
-"""
 
 
 class ModelNodeTimestamps(BaseModel):
@@ -224,8 +224,11 @@ class ModelNodeTimestamps(BaseModel):
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol).
 
-        Raises:
-            Exception: If validation logic fails
+        Returns:
+            True if validation passes
+
+        Note:
+            Override in subclasses for custom validation logic.
         """
         # Basic validation - ensure required fields exist
         # Override in specific models for custom validation

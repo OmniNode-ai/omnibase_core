@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Base Collection Model.
 
@@ -7,6 +5,7 @@ Abstract base class for typed collections following ONEX one-model-per-file
 architecture.
 """
 
+from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING

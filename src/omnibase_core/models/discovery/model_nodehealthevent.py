@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, cast
 from uuid import UUID
 
@@ -212,7 +212,7 @@ class ModelNodeHealthEvent(ModelOnexEvent):
             success_rate=50.0,
             response_time_ms=2000.0,
             consecutive_errors=10,
-            last_error_timestamp=datetime.now(),
+            last_error_timestamp=datetime.now(UTC),
             custom_metrics={
                 "status": 0.0,
                 # Use deterministic hash for consistent error codes across Python sessions

@@ -5,7 +5,7 @@ Pydantic model for version-level metadata in the three-tier metadata system.
 Represents specific version implementations with contract compliance and validation.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -154,14 +154,14 @@ class ModelVersionManifest(BaseModel):
         """Check if version has deprecation status."""
         return self.status == EnumVersionStatus.DEPRECATED or (
             self.deprecation_date is not None
-            and self.deprecation_date <= datetime.now()
+            and self.deprecation_date <= datetime.now(UTC)
         )
 
     def is_end_of_life(self) -> bool:
         """Check if version has reached end of life."""
         return self.status == EnumVersionStatus.END_OF_LIFE or (
             self.end_of_life_date is not None
-            and self.end_of_life_date <= datetime.now()
+            and self.end_of_life_date <= datetime.now(UTC)
         )
 
     def is_contract_compliant(self) -> bool:

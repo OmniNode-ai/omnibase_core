@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Event Subscription Model.
 
@@ -9,7 +7,7 @@ and handler configuration for event subscriptions.
 Strict typing is enforced: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.types.constraints import PrimitiveValueType
 

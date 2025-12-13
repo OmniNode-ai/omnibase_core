@@ -1,8 +1,3 @@
-from pydantic import Field, field_validator
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Properly structured extension data model with validation.
 
@@ -14,8 +9,10 @@ ARCHITECTURAL PRINCIPLE: No dict[str, Any] - always use structured models
 
 from typing import Annotated
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.json_types import PrimitiveContainer
 
 

@@ -1,10 +1,8 @@
-from pydantic import Field
-
 """
 CanHandleResult model.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelCanHandleResult(BaseModel):

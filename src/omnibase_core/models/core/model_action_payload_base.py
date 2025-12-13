@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Action Payload Base Model.
 
@@ -8,7 +6,7 @@ Base class for action-specific payload types with common fields and validation.
 
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.core.model_node_action_type import ModelNodeActionType
 from omnibase_core.types.type_serializable_value import SerializedDict

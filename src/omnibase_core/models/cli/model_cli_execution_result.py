@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Model for CLI execution results.
 
@@ -7,6 +5,7 @@ This module provides the CLI execution result type using the simple
 ModelToolExecutionResult as the underlying implementation.
 """
 
+from __future__ import annotations
 
 from omnibase_core.models.tools.model_tool_execution_result import (
     ModelToolExecutionResult,
@@ -14,7 +13,6 @@ from omnibase_core.models.tools.model_tool_execution_result import (
 
 # CLI execution result type alias
 ModelCliExecutionResult = ModelToolExecutionResult
-
 
 # Export for use
 __all__ = [

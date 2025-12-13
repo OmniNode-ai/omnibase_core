@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 ModelPermissionCustomFields: Custom extension fields for permissions.
 
 This model provides structured custom fields for permissions without using Any types.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelPermissionCustomFields(BaseModel):

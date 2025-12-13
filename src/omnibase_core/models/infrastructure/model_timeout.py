@@ -1,9 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Timeout Model.
 
@@ -11,11 +5,12 @@ Clean timeout wrapper that delegates to ModelTimeBased with proper ONEX patterns
 This provides a convenient timeout interface built on the unified time-based model.
 """
 
+from __future__ import annotations
 
 from datetime import datetime, timedelta
 from functools import cached_property, lru_cache
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_runtime_category import EnumRuntimeCategory
@@ -23,6 +18,7 @@ from omnibase_core.enums.enum_time_unit import EnumTimeUnit
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 from .model_time_based import ModelTimeBased

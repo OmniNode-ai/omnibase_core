@@ -1,10 +1,8 @@
-from pydantic import Field
-
 """
 Model for Docker Compose service dictionary representation.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelComposeServiceDict(BaseModel):

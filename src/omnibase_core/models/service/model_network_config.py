@@ -1,10 +1,8 @@
-from pydantic import Field
-
 """
 Network configuration model for service deployment.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelNetworkConfig(BaseModel):

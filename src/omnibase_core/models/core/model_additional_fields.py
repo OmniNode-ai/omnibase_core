@@ -1,13 +1,10 @@
-from pydantic import Field
-
 """
 Additional Fields Model for ONEX Configuration System.
 
 Strongly typed model for additional metadata fields.
 """
 
-
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 

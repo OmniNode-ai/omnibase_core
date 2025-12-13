@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 ONEX ModelArchitecture validation tools.
 
@@ -8,6 +6,8 @@ This module provides validation functions for ONEX architectural principles:
 - Naming pattern validation
 - Structure validation
 """
+
+from __future__ import annotations
 
 import argparse
 import ast

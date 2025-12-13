@@ -1,9 +1,3 @@
-from uuid import UUID
-
-from pydantic import Field
-
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Model for ModelNodeBase representation in ONEX ModelNodeBase implementation.
 
@@ -13,11 +7,13 @@ universal node state management.
 """
 
 from pathlib import Path
+from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.core.model_container_reference import ModelContainerReference
 from omnibase_core.models.core.model_contract_content import ModelContractContent
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelNodeBase(BaseModel):

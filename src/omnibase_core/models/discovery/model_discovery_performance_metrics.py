@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 Performance Metrics Model
 
 Model for performance metrics of a node.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelPerformanceMetrics(BaseModel):

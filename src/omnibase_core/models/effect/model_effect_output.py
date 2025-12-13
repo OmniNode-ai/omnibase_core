@@ -40,7 +40,7 @@ See Also:
     - docs/guides/node-building/04_EFFECT_NODE_TUTORIAL.md: Effect node tutorial
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
@@ -120,4 +120,4 @@ class ModelEffectOutput(BaseModel):
     side_effects_applied: list[str] = Field(default_factory=list)
     rollback_operations: list[str] = Field(default_factory=list)
     metadata: dict[str, Any] = Field(default_factory=dict)
-    timestamp: datetime = Field(default_factory=datetime.now)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))

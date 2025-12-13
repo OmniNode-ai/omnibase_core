@@ -1,10 +1,3 @@
-from uuid import UUID, uuid4
-
-from pydantic import BaseModel, Field
-
-from omnibase_core.enums.enum_workflow_status import EnumWorkflowStatus
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Core Workflow Model.
 
@@ -13,6 +6,13 @@ Used across the workflow coordination, execution, and monitoring subsystems.
 
 Strict typing is enforced: No Any types allowed.
 """
+
+from uuid import UUID, uuid4
+
+from pydantic import BaseModel, Field
+
+from omnibase_core.enums.enum_workflow_status import EnumWorkflowStatus
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelWorkflow(BaseModel):

@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 Resource Limits Model
 
 Type-safe resource limits configuration for environments and execution contexts.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelResourceLimits(BaseModel):

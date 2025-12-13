@@ -8,6 +8,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 from omnibase_core.models.core.model_mixin_metadata_collection import (
     ModelMixinMetadataCollection,
 )
@@ -95,7 +97,9 @@ test_mixin:
         mixin = collection.get_mixin("test_mixin")
 
         assert mixin is not None
-        assert mixin.config_schema == {}
+        # Use isinstance and len checks instead of brittle Pydantic equality
+        assert isinstance(mixin.config_schema, dict)
+        assert len(mixin.config_schema) == 0
 
     def test_load_yaml_with_null_nested_methods(self, tmp_path: Path) -> None:
         """Test loading YAML with null code_patterns.methods normalizes to empty list."""
@@ -119,8 +123,11 @@ test_mixin:
         assert mixin is not None
         assert mixin.code_patterns is not None
         assert mixin.code_patterns.inheritance == "class Mixin:"
-        assert mixin.code_patterns.methods == []
-        assert mixin.code_patterns.properties == []
+        # Use isinstance and len checks instead of brittle Pydantic equality
+        assert isinstance(mixin.code_patterns.methods, list)
+        assert len(mixin.code_patterns.methods) == 0
+        assert isinstance(mixin.code_patterns.properties, list)
+        assert len(mixin.code_patterns.properties) == 0
 
     def test_load_yaml_with_null_performance_use_cases(self, tmp_path: Path) -> None:
         """Test loading YAML with null performance.typical_use_cases normalizes to empty list."""
@@ -142,7 +149,9 @@ test_mixin:
 
         assert mixin is not None
         assert mixin.performance is not None
-        assert mixin.performance.typical_use_cases == []
+        # Use isinstance and len checks instead of brittle Pydantic equality
+        assert isinstance(mixin.performance.typical_use_cases, list)
+        assert len(mixin.performance.typical_use_cases) == 0
         assert mixin.performance.overhead_per_call == "~1ms"
 
 

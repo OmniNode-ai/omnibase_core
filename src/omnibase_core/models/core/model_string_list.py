@@ -1,6 +1,6 @@
-from typing import Any
-
 """Model for managing list[Any]s of strings."""
+
+from typing import Any
 
 from pydantic import BaseModel, Field
 

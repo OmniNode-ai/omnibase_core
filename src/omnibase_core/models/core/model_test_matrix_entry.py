@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 Test matrix entry model.
 """
 
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelTestMatrixEntry(BaseModel):

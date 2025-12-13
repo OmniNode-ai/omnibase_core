@@ -15,13 +15,22 @@ providing clean separation between node logic and workflow coordination behavior
 
 Thread Safety:
     ModelWorkflowCoordinationSubcontract is immutable (frozen=True) after creation,
-    making it thread-safe for concurrent read access from multiple threads or async
-    tasks. This follows ONEX thread safety guidelines where configuration models are
-    frozen to prevent race conditions during workflow coordination. Note that this
-    provides shallow immutability - while the model's fields cannot be reassigned,
-    mutable field values (like dict/list contents) can still be modified. For full
-    thread safety with mutable nested data, use model_copy(deep=True) to create
-    independent copies.
+    providing thread-safe read access for top-level field values from multiple
+    threads or async tasks.
+
+    Safe Operations (thread-safe without synchronization):
+        - Reading any top-level field (max_concurrent_workflows, timeouts, etc.)
+        - Comparing instances for equality
+        - Creating copies via model_copy()
+
+    Unsafe Operations (require external synchronization):
+        - Modifying contents of mutable fields (applicable_node_types list)
+        - In-place mutation of any nested mutable objects
+
+    IMPORTANT: Shallow immutability means field references cannot be reassigned,
+    but mutable field contents (list values) CAN be modified by any thread.
+    For full thread safety with mutable nested data, use model_copy(deep=True)
+    to create independent copies before passing to other threads.
 
     To modify configuration, create a new instance using model_copy():
         new_config = existing_config.model_copy(update={"max_concurrent_workflows": 20})

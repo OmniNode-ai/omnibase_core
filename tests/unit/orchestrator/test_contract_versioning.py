@@ -354,8 +354,9 @@ class TestFingerprintStability:
         fp_str = str(fingerprint)
 
         # Pattern: X.Y.Z:12_hex_chars
-        pattern = r"^\d+\.\d+\.\d+:[a-f0-9]{12}$"
-        assert re.match(pattern, fp_str), f"Invalid format: {fp_str}"
+        # Using fullmatch for clarity - pattern must match entire string
+        pattern = r"\d+\.\d+\.\d+:[a-f0-9]{12}"
+        assert re.fullmatch(pattern, fp_str), f"Invalid format: {fp_str}"
 
     def test_fingerprint_format_components(
         self, orchestrator_contract: ModelTestOrchestratorContract

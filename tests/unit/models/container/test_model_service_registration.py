@@ -1,6 +1,6 @@
 """Tests for ModelServiceRegistration."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import uuid4
 
 import pytest
@@ -146,7 +146,7 @@ class TestModelServiceRegistration:
         assert sample_registration.last_access_time is None
         assert sample_registration.access_count == 0
 
-        initial_time = datetime.now()
+        initial_time = datetime.now(UTC)
         sample_registration.mark_accessed()
 
         assert sample_registration.last_access_time is not None

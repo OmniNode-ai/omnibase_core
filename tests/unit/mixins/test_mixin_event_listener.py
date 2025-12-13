@@ -127,7 +127,7 @@ class TestMixinEventListener:
         node = MockNode()
 
         # Create a mock contract file with required fields (ModelSemVer structure)
-        # Uses event_pattern and handler_function per ModelEventSubscription schema
+        # ModelEventSubscription requires: event_pattern, handler_function
         contract_path = tmp_path / "contract.yaml"
         contract_content = """
 contract_version:

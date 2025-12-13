@@ -1,8 +1,8 @@
-from typing import Generic
-
 """
 Results module - ONEX result models and related structures
 """
+
+from typing import Generic
 
 from omnibase_core.models.core.model_protocol_metadata import ModelGenericMetadata
 

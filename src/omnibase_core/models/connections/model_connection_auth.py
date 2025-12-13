@@ -1,11 +1,11 @@
-from __future__ import annotations
-
 """
 Connection Authentication Model.
 
 Authentication configuration for network connections.
 Part of the ModelConnectionInfo restructuring to reduce excessive string fields.
 """
+
+from __future__ import annotations
 
 import hashlib
 from uuid import UUID

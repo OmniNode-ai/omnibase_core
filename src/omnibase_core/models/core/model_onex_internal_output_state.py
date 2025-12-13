@@ -1,7 +1,3 @@
-from pydantic import Field
-
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Internal Output State Model for ONEX.
 
@@ -13,13 +9,14 @@ logic throughout the internal processing pipeline.
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 
 # Import for boundary state conversion
 from omnibase_core.models.core.model_onex_output_state import ModelOnexOutputState
 from omnibase_core.models.core.model_output_field import ModelOnexField
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelOnexInternalOutputState(BaseModel):

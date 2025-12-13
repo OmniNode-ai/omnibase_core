@@ -1,8 +1,3 @@
-from pydantic import Field, field_validator
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Action Category Model.
 
@@ -11,7 +6,10 @@ Defines the categories of node actions as a proper Pydantic model.
 
 from typing import ClassVar
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelActionCategory(BaseModel):

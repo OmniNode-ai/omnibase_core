@@ -1,15 +1,3 @@
-from __future__ import annotations
-
-import math
-from collections.abc import Callable
-from typing import Optional
-
-from pydantic import BaseModel, Field, model_validator
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.common.model_coercion_mode import EnumCoercionMode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 ModelOptionalInt
 
@@ -64,6 +52,18 @@ Safe Runtime Imports (OK to import at module level):
 - omnibase_core.models.common.model_coercion_mode (EnumCoercionMode)
 - pydantic modules
 """
+
+from __future__ import annotations
+
+import math
+from collections.abc import Callable
+from typing import Optional
+
+from pydantic import BaseModel, Field, model_validator
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.common.model_coercion_mode import EnumCoercionMode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelOptionalInt(BaseModel):

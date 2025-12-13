@@ -1,7 +1,3 @@
-from uuid import UUID
-
-from pydantic import Field
-
 """
 GitHub Milestone Model
 
@@ -9,8 +5,9 @@ Type-safe GitHub milestone that replaces Dict[str, Any] usage.
 """
 
 from datetime import datetime
+from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .model_git_hub_user import ModelGitHubUser
 

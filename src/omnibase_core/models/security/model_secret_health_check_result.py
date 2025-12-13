@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 ModelSecretHealthCheckResult: Health check result for secret configuration.
 
 This model represents the result of a health check on secret configuration.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelSecretHealthCheckResult(BaseModel):

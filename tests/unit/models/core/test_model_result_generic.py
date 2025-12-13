@@ -9,6 +9,8 @@ from typing import Any
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 from omnibase_core.models.infrastructure.model_result import (
     ModelResult,
     collect_results,

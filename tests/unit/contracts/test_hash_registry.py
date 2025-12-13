@@ -369,6 +369,116 @@ class TestFingerprintComputation:
 
         assert len(fingerprint.hash_prefix) == 16
 
+    def test_fingerprint_excluded_from_hash_calculation(self) -> None:
+        """Test that fingerprint field is excluded from hash calculation.
+
+        This is critical to prevent self-referential hashing where the
+        fingerprint value would affect its own computation. Running
+        fingerprint regeneration twice must produce the same result.
+
+        Addresses PR #168 review: fingerprint field must be excluded from
+        normalization to prevent self-referential hashing.
+        """
+
+        # Create a contract model with a fingerprint field
+        class ContractWithFingerprint(BaseModel):
+            name: str = Field(default="test")
+            version: ModelContractVersion = Field(
+                default_factory=lambda: ModelContractVersion(major=1, minor=0, patch=0)
+            )
+            fingerprint: str | None = Field(default=None)
+            correlation_id: str | None = Field(default=None)
+
+        # First: compute fingerprint with no existing fingerprint
+        contract1 = ContractWithFingerprint(
+            name="test_contract",
+            version=ModelContractVersion(major=1, minor=0, patch=0),
+            fingerprint=None,
+        )
+        fp1 = compute_contract_fingerprint(contract1)
+
+        # Second: compute fingerprint WITH an existing fingerprint value
+        contract2 = ContractWithFingerprint(
+            name="test_contract",
+            version=ModelContractVersion(major=1, minor=0, patch=0),
+            fingerprint=str(fp1),  # Set the computed fingerprint
+        )
+        fp2 = compute_contract_fingerprint(contract2)
+
+        # The fingerprints must be identical - the fingerprint field value
+        # should NOT affect the hash computation
+        assert str(fp1) == str(fp2), (
+            f"Fingerprint changed after setting fingerprint field: "
+            f"{fp1} != {fp2}. The fingerprint field is being included "
+            f"in the hash calculation (self-referential hashing bug)."
+        )
+
+    def test_correlation_id_excluded_from_hash_calculation(self) -> None:
+        """Test that correlation_id field is excluded from hash calculation.
+
+        correlation_id is a runtime-generated UUID that shouldn't affect
+        contract identity. Different instances should produce same fingerprint.
+        """
+
+        class ContractWithCorrelationId(BaseModel):
+            name: str = Field(default="test")
+            version: ModelContractVersion = Field(
+                default_factory=lambda: ModelContractVersion(major=1, minor=0, patch=0)
+            )
+            correlation_id: str | None = Field(default=None)
+
+        # Same content, different correlation_ids
+        contract1 = ContractWithCorrelationId(
+            name="test_contract",
+            correlation_id="11111111-1111-1111-1111-111111111111",
+        )
+        contract2 = ContractWithCorrelationId(
+            name="test_contract",
+            correlation_id="22222222-2222-2222-2222-222222222222",
+        )
+
+        fp1 = compute_contract_fingerprint(contract1)
+        fp2 = compute_contract_fingerprint(contract2)
+
+        # The fingerprints must be identical - correlation_id should NOT
+        # affect the hash computation
+        assert str(fp1) == str(fp2), (
+            f"Fingerprint changed with different correlation_ids: "
+            f"{fp1} != {fp2}. The correlation_id field is being included "
+            f"in the hash calculation."
+        )
+
+    def test_exclude_fields_config_respected(self) -> None:
+        """Test that custom exclude_fields config is respected."""
+
+        class ContractWithCustomField(BaseModel):
+            name: str = Field(default="test")
+            version: ModelContractVersion = Field(
+                default_factory=lambda: ModelContractVersion(major=1, minor=0, patch=0)
+            )
+            internal_ref: str | None = Field(default=None)
+
+        # Config that excludes internal_ref
+        config_with_exclusion = ModelContractNormalizationConfig(
+            exclude_fields=frozenset({"internal_ref", "fingerprint", "correlation_id"})
+        )
+        config_no_exclusion = ModelContractNormalizationConfig(
+            exclude_fields=frozenset()
+        )
+
+        contract1 = ContractWithCustomField(name="test", internal_ref="ref_1")
+        contract2 = ContractWithCustomField(name="test", internal_ref="ref_2")
+
+        # With exclusion, fingerprints should be identical
+        fp1_excluded = compute_contract_fingerprint(contract1, config_with_exclusion)
+        fp2_excluded = compute_contract_fingerprint(contract2, config_with_exclusion)
+        assert str(fp1_excluded) == str(fp2_excluded)
+
+        # Without exclusion, fingerprints should differ
+        fp1_included = compute_contract_fingerprint(contract1, config_no_exclusion)
+        fp2_included = compute_contract_fingerprint(contract2, config_no_exclusion)
+        assert str(fp1_included) != str(fp2_included)
+
 
 # =============================================================================
 # Fingerprint Parsing Tests
@@ -425,6 +535,72 @@ class TestFingerprintParsing:
             ModelContractFingerprint.from_string("1.0.0:")
 
         assert "Invalid hash prefix" in str(exc_info.value)
+
+    def test_parse_fingerprint_wrong_hash_length_short(self) -> None:
+        """Test that too-short hash prefix raises ModelOnexError."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelContractFingerprint.from_string("1.0.0:abc")  # Only 3 chars
+
+        assert "Invalid hash prefix" in str(exc_info.value)
+
+    def test_parse_fingerprint_multiple_colons_raises_error(self) -> None:
+        """Test that multiple colons raises ModelOnexError."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelContractFingerprint.from_string("1.0.0:abc:def123456")
+
+        # Should fail because the version part or hash part is malformed
+        assert "Invalid" in str(exc_info.value)
+
+    def test_hash_is_lowercase_hex_only_after_normalization(self) -> None:
+        """Test that hash is always normalized to lowercase hex.
+
+        This verifies case sensitivity: uppercase hex chars are normalized
+        to lowercase for consistent fingerprint comparison.
+        """
+        # Mixed case input should normalize to lowercase
+        fp_mixed = ModelContractFingerprint.from_string("1.0.0:AbCdEf123456")
+        assert fp_mixed.hash_prefix == "abcdef123456"
+        assert fp_mixed.hash_prefix.islower()
+
+        # All uppercase should normalize to lowercase
+        fp_upper = ModelContractFingerprint.from_string("1.0.0:FEDCBA987654")
+        assert fp_upper.hash_prefix == "fedcba987654"
+        assert fp_upper.hash_prefix.islower()
+
+        # All lowercase should remain lowercase
+        fp_lower = ModelContractFingerprint.from_string("1.0.0:fedcba987654")
+        assert fp_lower.hash_prefix == "fedcba987654"
+
+        # Verify equality after normalization
+        assert fp_upper.hash_prefix == fp_lower.hash_prefix
+
+    def test_fingerprint_regeneration_is_deterministic(
+        self, sample_contract: ModelTestContract
+    ) -> None:
+        """Test that same contract always produces same fingerprint.
+
+        This verifies the critical invariant: fingerprint computation
+        is deterministic and reproducible.
+        """
+        # Compute fingerprint multiple times
+        fingerprints = [
+            compute_contract_fingerprint(sample_contract) for _ in range(10)
+        ]
+
+        # All should be identical
+        first_str = str(fingerprints[0])
+        first_hash = fingerprints[0].full_hash
+
+        for i, fp in enumerate(fingerprints[1:], start=2):
+            assert str(fp) == first_str, (
+                f"Fingerprint regeneration {i} produced different string"
+            )
+            assert fp.full_hash == first_hash, (
+                f"Fingerprint regeneration {i} produced different hash"
+            )
+            assert fp.hash_prefix == fingerprints[0].hash_prefix, (
+                f"Fingerprint regeneration {i} produced different prefix"
+            )
 
 
 # =============================================================================

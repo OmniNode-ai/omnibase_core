@@ -1,23 +1,21 @@
-from pydantic import Field
-
 """
 Metadata tool analytics model.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelMetadataToolAnalytics(BaseModel):
     """Analytics and insights for metadata tool collections."""
 
     collection_created: datetime = Field(
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(UTC),
         description="Collection creation time",
     )
     last_modified: datetime = Field(
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(UTC),
         description="Last modification time",
     )
     total_tools: int = Field(

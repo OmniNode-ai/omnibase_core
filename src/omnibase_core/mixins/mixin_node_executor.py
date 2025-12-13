@@ -13,7 +13,7 @@ import asyncio
 import contextlib
 import signal
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 from uuid import UUID
@@ -451,7 +451,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             calling_module=_COMPONENT_NAME,
             calling_function="executor",
             calling_line=1,
-            timestamp=datetime.now().isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             node_id=UUID(node_id_raw) if isinstance(node_id_raw, str) else node_id_raw,
         )
         emit_log_event_sync(LogLevel.INFO, message, context=context)
@@ -465,7 +465,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             calling_module=_COMPONENT_NAME,
             calling_function="executor",
             calling_line=1,
-            timestamp=datetime.now().isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             node_id=UUID(node_id_raw) if isinstance(node_id_raw, str) else node_id_raw,
         )
         emit_log_event_sync(LogLevel.WARNING, message, context=context)
@@ -479,7 +479,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             calling_module=_COMPONENT_NAME,
             calling_function="executor",
             calling_line=1,
-            timestamp=datetime.now().isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             node_id=UUID(node_id_raw) if isinstance(node_id_raw, str) else node_id_raw,
         )
         emit_log_event_sync(LogLevel.ERROR, message, context=context)

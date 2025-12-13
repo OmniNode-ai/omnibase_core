@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Validation Rules Model.
 
@@ -12,7 +10,7 @@ Contract validation rules and constraint definitions providing:
 Strict typing is enforced: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelValidationRules(BaseModel):

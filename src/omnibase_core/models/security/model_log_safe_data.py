@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 ModelLogSafeData: Log-safe data representation.
 
 This model provides structured log-safe data without using Any types.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelLogSafeData(BaseModel):

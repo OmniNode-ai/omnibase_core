@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """Container Adapter Output model for ONEX Discovery & Integration Event Registry.
 
 This module defines the output model used by the Container Adapter tool
@@ -8,7 +6,7 @@ for ONEX Discovery & Integration Event Registry operations.
 
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.discovery.model_event_descriptor import (
     EnumDiscoveryPhase,

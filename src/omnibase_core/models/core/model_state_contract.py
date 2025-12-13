@@ -1,6 +1,29 @@
-from pydantic import Field, field_validator
+"""
+Pydantic model for ONEX state contracts.
 
+This module defines the canonical structure for state contract files (contract.yaml)
+that define the input/output interface for ONEX nodes. All contract files should
+follow this structure for consistency and validation.
+
+Schema Version: 1.0.0
+"""
+
+from pydantic import BaseModel, Field, field_validator
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.core.model_examples import ModelExample
+from omnibase_core.models.core.model_protocol_metadata import ModelGenericMetadata
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.metadata.model_metadata_constants import (
+    CONTRACT_SCHEMA_VERSION_KEY,
+    CONTRACT_VERSION_KEY,
+    NODE_VERSION_KEY,
+)
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.types import SerializedDict, TypedDictSemVer
+
+from .model_error_state import ModelErrorState
+from .model_state_schema import ModelStateSchema
 
 # === OmniNode:Metadata ===
 # author: OmniNode Team
@@ -25,31 +48,6 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 # version: 1.0.0
 # === /OmniNode:Metadata ===
 
-"""
-Pydantic model for ONEX state contracts.
-
-This module defines the canonical structure for state contract files (contract.yaml)
-that define the input/output interface for ONEX nodes. All contract files should
-follow this structure for consistency and validation.
-
-Schema Version: 1.0.0
-"""
-
-from pydantic import BaseModel
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.core.model_examples import ModelExample
-from omnibase_core.models.core.model_protocol_metadata import ModelGenericMetadata
-from omnibase_core.models.metadata.model_metadata_constants import (
-    CONTRACT_SCHEMA_VERSION_KEY,
-    CONTRACT_VERSION_KEY,
-    NODE_VERSION_KEY,
-)
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.types import SerializedDict, TypedDictSemVer
-
-from .model_error_state import ModelErrorState
-from .model_state_schema import ModelStateSchema
 
 # Compatibility aliases
 StateSchemaModel = ModelStateSchema

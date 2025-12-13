@@ -1,4 +1,13 @@
-from pydantic import Field
+"""
+Pydantic model for node template configuration.
+
+This module provides structured configuration for node template generation,
+including template metadata, file mappings, and generation options.
+"""
+
+from pydantic import BaseModel, Field
+
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 # === OmniNode:Metadata ===
 # author: OmniNode Team
@@ -22,17 +31,6 @@ from pydantic import Field
 # uuid: 84fe390c-7b09-4155-9833-42e47dd69e0c
 # version: 1.0.0
 # === /OmniNode:Metadata ===
-
-"""
-Pydantic model for node template configuration.
-
-This module provides structured configuration for node template generation,
-including template metadata, file mappings, and generation options.
-"""
-
-from pydantic import BaseModel
-
-from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelNodeTemplateConfig(BaseModel):

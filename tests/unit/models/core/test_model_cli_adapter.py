@@ -8,6 +8,10 @@ and error reporting functionality.
 from unittest.mock import patch
 from uuid import uuid4
 
+import pytest
+
+pytestmark = pytest.mark.unit
+
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus

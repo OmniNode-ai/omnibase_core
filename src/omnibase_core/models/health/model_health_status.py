@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 ModelHealthStatus - Rich health status model for comprehensive health tracking
 
@@ -9,7 +7,7 @@ supporting subsystem health, issues tracking, metrics, and trend analysis.
 
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .model_health_issue import ModelHealthIssue
 from .model_health_metadata import ModelHealthMetadata

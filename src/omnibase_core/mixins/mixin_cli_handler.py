@@ -15,7 +15,10 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 
@@ -343,8 +346,8 @@ class MixinCLIHandler[InputStateT, OutputStateT]:
             # Use tool's introspection method
             self.introspect()
         else:
-            # Basic introspection - use ModelSemVer for default version
-            default_version = ModelSemVer(major=1, minor=0, patch=0)
+            # Basic introspection - use default_model_version() for consistency
+            default_version = default_model_version()
             {
                 "tool_name": self.__class__.__name__,
                 "description": self.get_cli_description(),

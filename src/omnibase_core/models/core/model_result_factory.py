@@ -1,10 +1,10 @@
-from __future__ import annotations
-
 """
 Result Factory Pattern for Model Creation.
 
 Specialized factory for result-type models with success/error patterns.
 """
+
+from __future__ import annotations
 
 from typing import TypeVar, Unpack
 

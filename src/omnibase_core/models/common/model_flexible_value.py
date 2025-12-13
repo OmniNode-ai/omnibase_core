@@ -1,3 +1,10 @@
+"""
+Flexible Value Model - Discriminated Union for Mixed Type Values.
+
+Replaces dict[str, Any]| None, list[Any]| None, and other mixed-type unions
+with structured discriminated union pattern for type safety.
+"""
+
 from __future__ import annotations
 
 from uuid import UUID
@@ -10,13 +17,6 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 from .model_error_context import ModelErrorContext
 from .model_schema_value import ModelSchemaValue
-
-"""
-Flexible Value Model - Discriminated Union for Mixed Type Values.
-
-Replaces dict[str, Any]| None, list[Any]| None, and other mixed-type unions
-with structured discriminated union pattern for type safety.
-"""
 
 # Note: Previously had type aliases (FlexibleDictType, FlexibleListType, FlexibleValueType)
 # These were removed to comply with ONEX strong typing standards.
@@ -358,8 +358,11 @@ class ModelFlexibleValue(BaseModel):
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol).
 
-        Raises:
-            Exception: If validation logic fails
+        Returns:
+            True if validation passes
+
+        Note:
+            Override in subclasses for custom validation logic.
         """
         # Basic validation - ensure required fields exist
         # Override in specific models for custom validation

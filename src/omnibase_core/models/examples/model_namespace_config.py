@@ -1,9 +1,8 @@
-from __future__ import annotations
-
 """
 Namespace configuration model.
 """
 
+from __future__ import annotations
 
 from pydantic import BaseModel
 
@@ -49,8 +48,11 @@ class ModelNamespaceConfig(BaseModel):
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol).
 
-        Raises:
-            Exception: If validation logic fails
+        Returns:
+            True if validation passes
+
+        Note:
+            Override in subclasses for custom validation logic.
         """
         # Basic validation - ensure required fields exist
         # Override in specific models for custom validation

@@ -1,9 +1,3 @@
-from __future__ import annotations
-
-from collections.abc import Callable
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 ModelFieldConverterRegistry
 
@@ -20,11 +14,15 @@ Safe Runtime Imports (OK to import at module level):
 - Standard library modules only
 """
 
+from __future__ import annotations
+
+from collections.abc import Callable
 from enum import Enum
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.utils.util_field_converter import FieldConverter
 
 

@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Synchronization Point Model.
 
@@ -8,7 +6,7 @@ Model for synchronization points in workflow execution for the ONEX workflow coo
 
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 

@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 """
 Protocol Signature Extractor.
 
 AST NodeVisitor for extracting protocol signatures for comparison.
 """
 
+from __future__ import annotations
 
 import ast
 

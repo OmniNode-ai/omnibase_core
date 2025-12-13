@@ -1,10 +1,8 @@
-from pydantic import Field
-
 """
 OnexIgnoreSection model.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelOnexIgnoreSection(BaseModel):

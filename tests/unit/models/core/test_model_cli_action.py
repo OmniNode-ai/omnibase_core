@@ -14,6 +14,8 @@ from uuid import UUID, uuid4
 import pytest
 from pydantic import ValidationError
 
+pytestmark = pytest.mark.unit
+
 from omnibase_core.enums.enum_action_category import EnumActionCategory
 from omnibase_core.models.cli.model_cli_action import ModelCliAction
 from omnibase_core.models.errors.model_onex_error import ModelOnexError as OnexError

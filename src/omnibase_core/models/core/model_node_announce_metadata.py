@@ -1,19 +1,14 @@
-from typing import Optional
-
-from pydantic import Field
-
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """Node announce metadata model for ONEX event-driven architecture."""
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_node_status import EnumNodeStatus
 from omnibase_core.enums.enum_registry_execution_mode import EnumRegistryExecutionMode
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 if TYPE_CHECKING:
     from omnibase_core.models.core.model_io_block import ModelIOBlock

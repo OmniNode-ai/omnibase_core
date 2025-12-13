@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 ModelDebugData: Debug data representation.
 
 This model provides structured debug data without using Any types.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelDebugData(BaseModel):

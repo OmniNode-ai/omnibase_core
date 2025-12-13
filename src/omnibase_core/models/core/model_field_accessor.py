@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Base field accessor pattern for replacing dict[str, Any]-like interfaces.
 
@@ -7,6 +5,7 @@ Provides unified field access across CLI, Config, and Data domains with
 dot notation support and type safety.
 """
 
+from __future__ import annotations
 
 from pydantic import BaseModel
 

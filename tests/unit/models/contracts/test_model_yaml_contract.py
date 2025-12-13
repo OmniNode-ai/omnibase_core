@@ -104,7 +104,13 @@ class TestModelYamlContract:
         assert contract.description == "Effect contract"
 
     def test_extra_fields_allowed(self):
-        """Test that extra fields are allowed in contracts but ignored per model config."""
+        """Test that extra fields are allowed and preserved for fingerprinting.
+
+        Extra fields must be included in model_dump() to ensure complete
+        contract content is hashed for unique fingerprints. This prevents
+        different contracts with the same node_type and contract_version
+        from having identical fingerprints.
+        """
         contract_data = {
             "contract_version": {"major": 1, "minor": 0, "patch": 0},
             "node_type": "COMPUTE_GENERIC",
@@ -118,9 +124,17 @@ class TestModelYamlContract:
         assert contract.contract_version.major == 1
         assert contract.node_type == EnumNodeType.COMPUTE_GENERIC
         assert contract.description == "Test contract"
-        # Extra fields are ignored per model config (extra="ignore")
-        assert not hasattr(contract, "custom_field")
-        assert not hasattr(contract, "metadata")
+        # Extra fields are preserved per model config (extra="allow")
+        # This ensures complete contract content is available for fingerprinting
+        assert hasattr(contract, "custom_field")
+        assert contract.custom_field == "custom_value"
+        assert hasattr(contract, "metadata")
+        assert contract.metadata == {"author": "test"}
+
+        # Verify extra fields appear in model_dump for fingerprinting
+        dumped = contract.model_dump()
+        assert "custom_field" in dumped
+        assert "metadata" in dumped
 
 
 class TestDeprecationWarnings:

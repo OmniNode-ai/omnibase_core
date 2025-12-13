@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 ModelHealthMetadata - Health system metadata and configuration
 
@@ -9,7 +7,7 @@ environment context, and custom attributes.
 
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 

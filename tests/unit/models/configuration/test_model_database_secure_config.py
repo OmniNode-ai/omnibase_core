@@ -698,9 +698,10 @@ class TestSecurityAssessment:
             ssl_mode="verify-full",
         )
         assessment = config.get_security_assessment()
-        assert hasattr(assessment.compliance_status, "pci_dss")
-        assert hasattr(assessment.compliance_status, "hipaa")
-        assert hasattr(assessment.compliance_status, "gdpr")
+        compliance = assessment.compliance_status
+        assert hasattr(compliance, "pci_dss")
+        assert hasattr(compliance, "hipaa")
+        assert hasattr(compliance, "gdpr")
 
     def test_is_production_ready_without_ssl(self):
         """Test production readiness without SSL."""

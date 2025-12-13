@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Model for YAML schema object representation in ONEX NodeBase implementation.
 
@@ -8,7 +6,7 @@ strongly typed YAML schema object definitions.
 
 """
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.core.model_yaml_schema_property import ModelYamlSchemaProperty
 

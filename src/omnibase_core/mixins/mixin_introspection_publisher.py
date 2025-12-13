@@ -1,15 +1,18 @@
+"""
+Introspection Publisher Mixin.
+
+This mixin handles:
+- Gathering node introspection data from various sources
+- Publishing NODE_INTROSPECTION_EVENT for service discovery
+- Extracting actions, protocols, metadata from nodes
+- Retry logic for failed publishes
+"""
+
+import re
+from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 from uuid import UUID, uuid4
-
-from omnibase_core.models.discovery.model_nodeintrospectionevent import (
-    ModelNodeIntrospectionEvent,
-)
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
-"\nIntrospection Publisher Mixin.\n\nThis mixin handles:\n- Gathering node introspection data from various sources\n- Publishing NODE_INTROSPECTION_EVENT for service discovery\n- Extracting actions, protocols, metadata from nodes\n- Retry logic for failed publishes\n"
-import re
-from datetime import datetime
-from pathlib import Path
 
 from pydantic import ValidationError
 
@@ -19,11 +22,19 @@ from omnibase_core.logging.structured import emit_log_event_sync
 from omnibase_core.mixins.mixin_node_introspection_data import (
     MixinNodeIntrospectionData,
 )
+from omnibase_core.models.common.model_typed_metadata import (
+    ModelNodeCapabilitiesMetadata,
+)
 from omnibase_core.models.core.model_log_context import ModelLogContext
 from omnibase_core.models.discovery.model_node_introspection_event import (
     ModelNodeCapabilities,
 )
+from omnibase_core.models.discovery.model_nodeintrospectionevent import (
+    ModelNodeIntrospectionEvent,
+)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 _COMPONENT_NAME = Path(__file__).stem
 DEFAULT_AUTHOR = "ONEX"
@@ -59,6 +70,16 @@ class MixinIntrospectionPublisher:
                     message=f"Node {self.__class__.__name__} must implement get_node_type() "
                     "returning one of: effect, compute, reducer, orchestrator",
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    context={
+                        "node_class": self.__class__.__name__,
+                        "required_method": "get_node_type",
+                        "valid_return_values": [
+                            "effect",
+                            "compute",
+                            "reducer",
+                            "orchestrator",
+                        ],
+                    },
                 )
             node_type = self.get_node_type()
             # For creating the event, we need a valid UUID - generate one if unset
@@ -82,7 +103,7 @@ class MixinIntrospectionPublisher:
                 calling_module=_COMPONENT_NAME,
                 calling_function="_publish_introspection_event",
                 calling_line=71,
-                timestamp=datetime.now().isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 node_id=node_id_raw if isinstance(node_id_raw, UUID) else None,
             )
             emit_log_event_sync(
@@ -95,7 +116,7 @@ class MixinIntrospectionPublisher:
                 calling_module=_COMPONENT_NAME,
                 calling_function="_publish_introspection_event",
                 calling_line=95,
-                timestamp=datetime.now().isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 node_id=node_id_raw if isinstance(node_id_raw, UUID) else None,
             )
             emit_log_event_sync(
@@ -109,7 +130,7 @@ class MixinIntrospectionPublisher:
                 calling_module=_COMPONENT_NAME,
                 calling_function="_publish_introspection_event",
                 calling_line=95,
-                timestamp=datetime.now().isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 node_id=node_id_raw if isinstance(node_id_raw, UUID) else None,
             )
             emit_log_event_sync(
@@ -147,7 +168,7 @@ class MixinIntrospectionPublisher:
                 calling_module=_COMPONENT_NAME,
                 calling_function="_gather_introspection_data",
                 calling_line=127,
-                timestamp=datetime.now().isoformat(),
+                timestamp=datetime.now(UTC).isoformat(),
                 node_id=node_id_raw if isinstance(node_id_raw, UUID) else None,
             )
             emit_log_event_sync(
@@ -155,11 +176,6 @@ class MixinIntrospectionPublisher:
                 f"Failed to gather full introspection data for node {node_id}, using fallback: {e}",
                 context=context,
             )
-            # Import typed metadata model for proper Pydantic usage
-            from omnibase_core.models.common.model_typed_metadata import (
-                ModelNodeCapabilitiesMetadata,
-            )
-
             return MixinNodeIntrospectionData(
                 node_name=self.__class__.__name__.lower(),
                 version=ModelSemVer(major=1, minor=0, patch=0),
@@ -226,10 +242,6 @@ class MixinIntrospectionPublisher:
 
     def _extract_node_capabilities(self) -> ModelNodeCapabilities:
         """Extract capabilities from the node."""
-        from omnibase_core.models.common.model_typed_metadata import (
-            ModelNodeCapabilitiesMetadata,
-        )
-
         # Start with default metadata values
         author = DEFAULT_AUTHOR
         license_str: str | None = None
@@ -361,7 +373,6 @@ class MixinIntrospectionPublisher:
             return
         node_id_raw = getattr(self, "_node_id", None)
         node_id = node_id_raw if node_id_raw is not None else "<unset>"
-        from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
         source_node_id_str: str
         if isinstance(node_id_raw, UUID):
@@ -391,7 +402,7 @@ class MixinIntrospectionPublisher:
                         calling_module=_COMPONENT_NAME,
                         calling_function="_publish_with_retry",
                         calling_line=350,
-                        timestamp=datetime.now().isoformat(),
+                        timestamp=datetime.now(UTC).isoformat(),
                         node_id=node_id_raw if isinstance(node_id_raw, UUID) else None,
                     )
                     emit_log_event_sync(

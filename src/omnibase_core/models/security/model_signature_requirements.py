@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 ModelSignatureRequirements: Signature requirements for policy evaluation.
 
 This model defines the signature requirements evaluated by trust policies.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_trust_level import ModelTrustLevel
 

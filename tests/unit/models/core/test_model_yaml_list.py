@@ -5,6 +5,10 @@ Comprehensive tests for YAML list model including initialization,
 list handling, and edge cases.
 """
 
+import pytest
+
+pytestmark = pytest.mark.unit
+
 from omnibase_core.models.core.model_yaml_list import ModelYamlList
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 

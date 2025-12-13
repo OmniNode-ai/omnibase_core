@@ -154,7 +154,7 @@ class ProtocolContractLoader:
                     cache_key=f"{file_path_str}_{stat.st_mtime}",
                     file_path=file_path,
                     content=parsed_content,
-                    cached_at=datetime.now(),
+                    cached_at=datetime.now(UTC),
                     file_modified_at=datetime.fromtimestamp(stat.st_mtime, tz=UTC),
                     file_size=stat.st_size,
                     content_hash=hashlib.sha256(content_str.encode()).hexdigest(),

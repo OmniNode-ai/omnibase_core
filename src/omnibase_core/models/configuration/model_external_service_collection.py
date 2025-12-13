@@ -1,14 +1,12 @@
-from typing import Any
-
-from pydantic import Field
-
 """
 External Service Collection Model for ONEX Configuration System.
 
 Strongly typed model for external service configurations.
 """
 
-from pydantic import BaseModel
+from typing import Any
+
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.service.model_external_service_config import (
     ModelExternalServiceConfig,

@@ -5,9 +5,13 @@ Test suite for ModelRouteHop.
 from datetime import datetime
 from uuid import uuid4
 
+import pytest
+
 from omnibase_core.models.core.model_route_hop import ModelRouteHop
 from omnibase_core.models.core.model_route_hop_metadata import ModelRouteHopMetadata
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+pytestmark = pytest.mark.unit
 
 # Default version for test instances - required field after removing default_factory
 DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
@@ -35,7 +39,12 @@ class TestModelRouteHop:
         assert hop.processing_duration_ms is None
         assert hop.routing_decision is None
         assert hop.error_info is None
-        assert hop.metadata == ModelRouteHopMetadata()
+        assert isinstance(hop.metadata, ModelRouteHopMetadata)
+        # Verify metadata has only default values (no non-default fields set)
+        non_default_fields = hop.metadata.model_dump(exclude_defaults=True)
+        assert not non_default_fields, (
+            f"Expected empty metadata, got: {non_default_fields}"
+        )
         assert isinstance(hop.timestamp, datetime)
 
     def test_model_route_hop_creation_complete(self):
@@ -44,8 +53,9 @@ class TestModelRouteHop:
         node_id = uuid4()
         timestamp = datetime(2024, 1, 15, 10, 30, 45)
         metadata = ModelRouteHopMetadata(
-            route_version="1.0.0",
-            queue_wait_time_ms=123,
+            route_version="1.0",
+            routing_table_id="table-123",
+            custom_fields={"key1": "value1"},
         )
 
         hop = ModelRouteHop(
@@ -70,6 +80,9 @@ class TestModelRouteHop:
         assert hop.routing_decision == "route_to_queue_a"
         assert hop.error_info is None
         assert hop.metadata == metadata
+        assert hop.metadata.route_version == "1.0"
+        assert hop.metadata.routing_table_id == "table-123"
+        assert hop.metadata.custom_fields["key1"] == "value1"
 
     def test_model_route_hop_creation_with_error(self):
         """Test creating ModelRouteHop with error message."""
@@ -191,18 +204,18 @@ class TestModelRouteHop:
             assert hop.error_info == error_message
 
     def test_model_route_hop_metadata_types(self):
-        """Test ModelRouteHop with different metadata value types."""
+        """Test ModelRouteHop with different ModelRouteHopMetadata field types."""
         hop_id = uuid4()
         node_id = uuid4()
 
         metadata = ModelRouteHopMetadata(
             route_version="1.0.0",
-            routing_table_id="table-123",
+            routing_table_id="table-abc",
             queue_wait_time_ms=100,
             serialization_time_ms=50,
             message_size_bytes=1024,
             compression_ratio=0.75,
-            debug_trace="test trace",
+            debug_trace="trace info",
             tags=["tag1", "tag2", "tag3"],
             custom_fields={"custom_key": "custom_value"},
         )
@@ -216,17 +229,17 @@ class TestModelRouteHop:
         )
 
         assert hop.metadata.route_version == "1.0.0"
-        assert hop.metadata.routing_table_id == "table-123"
+        assert hop.metadata.routing_table_id == "table-abc"
         assert hop.metadata.queue_wait_time_ms == 100
         assert hop.metadata.serialization_time_ms == 50
         assert hop.metadata.message_size_bytes == 1024
         assert hop.metadata.compression_ratio == 0.75
-        assert hop.metadata.debug_trace == "test trace"
+        assert hop.metadata.debug_trace == "trace info"
         assert hop.metadata.tags == ["tag1", "tag2", "tag3"]
-        assert hop.metadata.custom_fields == {"custom_key": "custom_value"}
+        assert hop.metadata.custom_fields["custom_key"] == "custom_value"
 
     def test_model_route_hop_empty_metadata(self):
-        """Test ModelRouteHop with empty metadata."""
+        """Test ModelRouteHop with default (empty) metadata."""
         hop_id = uuid4()
         node_id = uuid4()
 
@@ -238,29 +251,31 @@ class TestModelRouteHop:
             metadata=ModelRouteHopMetadata(),
         )
 
-        assert hop.metadata == ModelRouteHopMetadata()
         assert isinstance(hop.metadata, ModelRouteHopMetadata)
-        # Verify all fields are at default values
-        assert hop.metadata.route_version is None
-        assert hop.metadata.routing_table_id is None
-        assert hop.metadata.tags == []
-        assert hop.metadata.custom_fields == {}
+        # Check that metadata has no non-default values set
+        non_default_fields = hop.metadata.model_dump(exclude_defaults=True)
+        assert not non_default_fields, (
+            f"Expected empty metadata, got: {non_default_fields}"
+        )
+        # Verify custom_fields is empty
+        assert not hop.metadata.custom_fields
 
-    def test_model_route_hop_metadata_with_custom_fields(self):
-        """Test ModelRouteHop with custom fields in metadata."""
+    def test_model_route_hop_nested_metadata(self):
+        """Test ModelRouteHop metadata with tags and custom_fields."""
         hop_id = uuid4()
         node_id = uuid4()
 
-        # ModelRouteHopMetadata supports custom_fields for extensibility
+        # ModelRouteHopMetadata has structured fields, not arbitrary nesting
+        # Use tags for list data and custom_fields for string key-value pairs
         custom_fields = {
-            "custom_key1": "value1",
-            "custom_key2": "value2",
-            "nested_json": '{"level": "deep"}',
+            "deep_value": "found",
+            "simple": "value",
+            "top_level": "value",
         }
 
         metadata = ModelRouteHopMetadata(
             route_version="2.0.0",
-            tags=["production", "high-priority"],
+            tags=["level1", "level2", "level3"],
             custom_fields=custom_fields,
         )
 
@@ -272,11 +287,11 @@ class TestModelRouteHop:
             metadata=metadata,
         )
 
-        assert hop.metadata.custom_fields["custom_key1"] == "value1"
-        assert hop.metadata.custom_fields["custom_key2"] == "value2"
-        assert hop.metadata.custom_fields["nested_json"] == '{"level": "deep"}'
-        assert hop.metadata.tags == ["production", "high-priority"]
         assert hop.metadata.route_version == "2.0.0"
+        assert hop.metadata.tags == ["level1", "level2", "level3"]
+        assert hop.metadata.custom_fields["deep_value"] == "found"
+        assert hop.metadata.custom_fields["simple"] == "value"
+        assert hop.metadata.custom_fields["top_level"] == "value"
 
     def test_model_route_hop_timestamp_formats(self):
         """Test ModelRouteHop with different timestamp formats."""
@@ -320,8 +335,8 @@ class TestModelRouteHop:
         node_id = uuid4()
         timestamp = datetime(2024, 1, 15, 10, 30, 45)
         metadata = ModelRouteHopMetadata(
-            debug_trace="test data",
-            queue_wait_time_ms=42,
+            route_version="1.0",
+            custom_fields={"test": "data"},
         )
 
         hop = ModelRouteHop(
@@ -353,8 +368,10 @@ class TestModelRouteHop:
         assert data["processing_duration_ms"] == 150
         assert data["hop_type"] == "router"
         assert data["routing_decision"] == "route_to_queue_a"
-        assert data["metadata"]["debug_trace"] == "test data"
-        assert data["metadata"]["queue_wait_time_ms"] == 42
+        # Metadata should serialize to a dict with ModelRouteHopMetadata fields
+        assert isinstance(data["metadata"], dict)
+        assert data["metadata"]["route_version"] == "1.0"
+        assert data["metadata"]["custom_fields"]["test"] == "data"
 
         # Test model_dump_json
         json_data = hop.model_dump_json()
@@ -367,10 +384,10 @@ class TestModelRouteHop:
         hop_id = uuid4()
         node_id = uuid4()
         timestamp = datetime(2024, 1, 15, 10, 30, 45)
-        metadata = ModelRouteHopMetadata(
-            debug_trace="test data",
-            queue_wait_time_ms=42,
-        )
+        metadata_dict = {
+            "route_version": "1.0",
+            "custom_fields": {"test": "data"},
+        }
 
         # Test from dict
         data = {
@@ -381,7 +398,7 @@ class TestModelRouteHop:
             "processing_duration_ms": 150,
             "hop_type": "router",
             "routing_decision": "route_to_queue_a",
-            "metadata": metadata.model_dump(),
+            "metadata": metadata_dict,
         }
         hop = ModelRouteHop.model_validate(data)
 
@@ -392,8 +409,10 @@ class TestModelRouteHop:
         assert hop.processing_duration_ms == 150
         assert hop.hop_type == "router"
         assert hop.routing_decision == "route_to_queue_a"
-        assert hop.metadata.debug_trace == "test data"
-        assert hop.metadata.queue_wait_time_ms == 42
+        # Metadata should be deserialized to ModelRouteHopMetadata
+        assert isinstance(hop.metadata, ModelRouteHopMetadata)
+        assert hop.metadata.route_version == "1.0"
+        assert hop.metadata.custom_fields["test"] == "data"
 
         # Test from JSON
         json_data = (
@@ -429,7 +448,7 @@ class TestModelRouteHop:
         assert hop.hop_type == "source"
 
     def test_model_route_hop_immutability(self):
-        """Test ModelRouteHop immutability."""
+        """Test ModelRouteHop mutability behavior."""
         hop_id = uuid4()
         node_id = uuid4()
 
@@ -440,9 +459,13 @@ class TestModelRouteHop:
             hop_type="source",
         )
 
-        # Should be able to modify metadata custom_fields (it's a dict within the model)
+        # Should be able to modify metadata custom_fields (it's a dict inside the model)
         hop.metadata.custom_fields["new_key"] = "new_value"
         assert hop.metadata.custom_fields["new_key"] == "new_value"
+
+        # Should be able to modify metadata attributes
+        hop.metadata.route_version = "2.0.0"
+        assert hop.metadata.route_version == "2.0.0"
 
         # Should be able to modify other fields
         hop.service_name = "updated_service"
@@ -575,11 +598,20 @@ class TestModelRouteHop:
             hop_type="source",
         )
 
-        # Both should have empty metadata (equivalent to default ModelRouteHopMetadata)
-        assert hop1.metadata == ModelRouteHopMetadata()
-        assert hop2.metadata == ModelRouteHopMetadata()
+        # Both should have default metadata (ModelRouteHopMetadata with empty custom_fields)
+        assert isinstance(hop1.metadata, ModelRouteHopMetadata)
+        assert isinstance(hop2.metadata, ModelRouteHopMetadata)
+        # Verify both have only default values
+        hop1_non_defaults = hop1.metadata.model_dump(exclude_defaults=True)
+        hop2_non_defaults = hop2.metadata.model_dump(exclude_defaults=True)
+        assert not hop1_non_defaults, (
+            f"Expected empty metadata, got: {hop1_non_defaults}"
+        )
+        assert not hop2_non_defaults, (
+            f"Expected empty metadata, got: {hop2_non_defaults}"
+        )
 
-        # But they should be different instances (test via custom_fields)
+        # But they should be different instances (modifying one doesn't affect the other)
         hop1.metadata.custom_fields["test"] = "value1"
         hop2.metadata.custom_fields["test"] = "value2"
 
@@ -607,37 +639,45 @@ class TestModelRouteHop:
         hop_id = uuid4()
         node_id = uuid4()
 
-        # Test with very large custom_fields in metadata
+        # Test with large custom_fields in metadata
         large_custom_fields = {f"key_{i}": f"value_{i}" for i in range(1000)}
+        metadata = ModelRouteHopMetadata(custom_fields=large_custom_fields)
         hop = ModelRouteHop(
             version=DEFAULT_VERSION,
             hop_id=hop_id,
             node_id=node_id,
             hop_type="router",
-            metadata=ModelRouteHopMetadata(custom_fields=large_custom_fields),
+            metadata=metadata,
         )
 
         assert len(hop.metadata.custom_fields) == 1000
         assert hop.metadata.custom_fields["key_0"] == "value_0"
         assert hop.metadata.custom_fields["key_999"] == "value_999"
 
-        # Test with unicode custom_fields in metadata
+        # Test with unicode custom_fields - using real unicode characters
         unicode_custom_fields = {
             "chinese": "测试",
-            "emoji": "rocket_symbol",
-            "special": "exclamation_at_hash",
+            "emoji": "\U0001f680",  # rocket emoji
+            "special": "!@#$%^&*()",
+            "japanese": "テスト",
+            "arabic": "اختبار",
+            "cyrillic": "тест",
         }
+        metadata = ModelRouteHopMetadata(custom_fields=unicode_custom_fields)
         hop = ModelRouteHop(
             version=DEFAULT_VERSION,
             hop_id=hop_id,
             node_id=node_id,
             hop_type="destination",
-            metadata=ModelRouteHopMetadata(custom_fields=unicode_custom_fields),
+            metadata=metadata,
         )
 
         assert hop.metadata.custom_fields["chinese"] == "测试"
-        assert hop.metadata.custom_fields["emoji"] == "rocket_symbol"
-        assert hop.metadata.custom_fields["special"] == "exclamation_at_hash"
+        assert hop.metadata.custom_fields["emoji"] == "\U0001f680"
+        assert hop.metadata.custom_fields["special"] == "!@#$%^&*()"
+        assert hop.metadata.custom_fields["japanese"] == "テスト"
+        assert hop.metadata.custom_fields["arabic"] == "اختبار"
+        assert hop.metadata.custom_fields["cyrillic"] == "тест"
 
         # Test with very large processing duration
         hop = ModelRouteHop(
@@ -649,12 +689,12 @@ class TestModelRouteHop:
         )
         assert hop.processing_duration_ms == 999999999
 
-        # Test with negative processing duration
-        hop = ModelRouteHop(
-            version=DEFAULT_VERSION,
-            hop_id=hop_id,
-            node_id=node_id,
-            hop_type="router",
-            processing_duration_ms=-100,
-        )
-        assert hop.processing_duration_ms == -100
+        # Test that negative processing duration is rejected (ge=0 constraint)
+        with pytest.raises(ValueError):
+            ModelRouteHop(
+                version=DEFAULT_VERSION,
+                hop_id=hop_id,
+                node_id=node_id,
+                hop_type="router",
+                processing_duration_ms=-100,
+            )

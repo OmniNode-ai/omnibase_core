@@ -13,7 +13,7 @@ Key Capabilities:
 
 """
 
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from time import monotonic
 from typing import Any
 
@@ -115,7 +115,7 @@ class ModelComputeCache:
 
         value, expiry, access_metric = self._cache[cache_key]
 
-        if datetime.now() > expiry:
+        if datetime.now(UTC) > expiry:
             del self._cache[cache_key]
             if self.enable_stats:
                 self._stats["misses"] += 1
@@ -153,7 +153,7 @@ class ModelComputeCache:
             self._evict()
 
         ttl = timedelta(minutes=ttl_minutes) if ttl_minutes is not None else self.ttl
-        expiry = datetime.now() + ttl
+        expiry = datetime.now(UTC) + ttl
 
         # Set initial access metric based on eviction policy
         if self.eviction_policy == EnumCacheEvictionPolicy.LRU:
@@ -218,7 +218,7 @@ class ModelComputeCache:
             - evictions: Eviction count (if stats enabled)
             - expirations: Expiration count (if stats enabled)
         """
-        now = datetime.now()
+        now = datetime.now(UTC)
         expired_count = sum(1 for _, expiry, _ in self._cache.values() if expiry <= now)
 
         stats: dict[str, int | float] = {

@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Execution data model for node operations.
 
@@ -7,7 +5,7 @@ Contains detailed execution information including results, errors,
 performance metrics, and node-specific artifacts.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.types.type_serializable_value import SerializedDict
 

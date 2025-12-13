@@ -11,6 +11,8 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
+pytestmark = pytest.mark.unit
+
 from omnibase_core.models.core.model_container import ModelContainer
 from omnibase_core.models.errors.model_onex_error import ModelOnexError as OnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer

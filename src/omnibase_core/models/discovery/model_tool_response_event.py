@@ -56,6 +56,7 @@ class ModelToolResponseEvent(ModelOnexEvent):
     event_type: str = Field(
         default=TOOL_RESPONSE,
         description="Event type identifier",
+        min_length=1,
     )
 
     # Response correlation

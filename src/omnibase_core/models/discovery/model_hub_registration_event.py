@@ -1,17 +1,14 @@
-from uuid import UUID
-
-from pydantic import Field
-
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """Hub Registration Event model for ONEX Discovery & Integration Event Registry.
 
 This module defines the Hub self-registration event for Consul service registry.
 """
 
 from datetime import datetime
+from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
+
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelHubRegistrationEvent(BaseModel):

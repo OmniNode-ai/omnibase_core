@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 Event Transformation Model.
 
 Model for event transformation specifications in the ONEX event-driven architecture system.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 

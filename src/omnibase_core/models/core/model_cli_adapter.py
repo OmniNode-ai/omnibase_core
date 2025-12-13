@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Base CLI adapter class that provides consistent exit code handling.
 
@@ -7,6 +5,7 @@ All CLI adapters should inherit from this class or implement similar
 exit code mapping functionality.
 """
 
+from __future__ import annotations
 
 import sys
 

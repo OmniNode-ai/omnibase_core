@@ -1,18 +1,14 @@
-from __future__ import annotations
-
-from pydantic import Field, model_validator
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Data handling declaration model.
 """
 
+from __future__ import annotations
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_data_classification import EnumDataClassification
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 
@@ -78,14 +74,14 @@ class ModelDataHandlingDeclaration(BaseModel):
         """Configure instance with provided parameters (Configurable protocol).
 
         Raises:
-            ModelOnexError: If configuration fails with details about the failure
+            ModelOnexError: If configuration fails due to attribute or type errors
         """
         try:
             for key, value in kwargs.items():
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception as e:
+        except (AttributeError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Configuration failed: {e}",
@@ -98,15 +94,16 @@ class ModelDataHandlingDeclaration(BaseModel):
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol).
 
-        Raises:
-            ModelOnexError: If validation fails with details about the failure
+        This base implementation always returns True because Pydantic's model
+        validators (like validate_data_handling_consistency) already enforce
+        all validation rules at construction time. This method exists to satisfy
+        the ProtocolValidatable protocol interface.
+
+        Returns:
+            True: Instance is valid (validation was enforced at construction)
+
+        Note:
+            Subclasses may override to add runtime validation beyond what
+            Pydantic validators provide at construction time.
         """
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception as e:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Instance validation failed: {e}",
-            ) from e
+        return True

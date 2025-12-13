@@ -1,6 +1,3 @@
-from pathlib import Path
-from typing import Any, Union
-
 """
 Comprehensive validation framework for omni* ecosystem.
 
@@ -27,6 +24,9 @@ Usage Examples:
     python -m omnibase_core.validation union-usage --strict
     python -m omnibase_core.validation all
 """
+
+from pathlib import Path
+from typing import Any, Union
 
 # Import models and enums
 from omnibase_core.enums.enum_import_status import EnumImportStatus
@@ -73,11 +73,11 @@ from .contracts import (
 from .fsm_analysis import analyze_fsm
 from .patterns import validate_patterns_directory, validate_patterns_file
 
-# Import reserved enum validator (OMN-669)
-from .reserved_enum_validator import RESERVED_EXECUTION_MODES
-from .reserved_enum_validator import (
-    validate_execution_mode as validate_reserved_execution_mode,
-)
+# Import reserved enum validator (OMN-669, OMN-675)
+# - validate_execution_mode takes EnumExecutionMode (type-safe, for validated enum values)
+# - Rejects CONDITIONAL/STREAMING modes reserved for future versions
+# - For string input (e.g., YAML config), use validate_execution_mode_string instead
+from .reserved_enum_validator import RESERVED_EXECUTION_MODES, validate_execution_mode
 from .types import validate_union_usage_directory, validate_union_usage_file
 from .validation_utils import ModelProtocolInfo
 
@@ -193,9 +193,9 @@ __all__ = [
     "validate_execution_mode_string",
     "validate_unique_step_ids",
     "validate_workflow_definition",
-    # Reserved enum validation (OMN-669)
-    # NOTE: validate_reserved_execution_mode takes EnumExecutionMode (type-safe)
+    # Reserved enum validation (OMN-669, OMN-675)
+    # NOTE: validate_execution_mode takes EnumExecutionMode (type-safe)
     # while validate_execution_mode_string takes str (for YAML/config parsing)
     "RESERVED_EXECUTION_MODES",
-    "validate_reserved_execution_mode",
+    "validate_execution_mode",
 ]

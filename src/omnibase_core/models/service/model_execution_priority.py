@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 ModelExecutionPriority - Flexible execution priority configuration
 
@@ -9,7 +7,7 @@ supporting priority values, preemption logic, resource allocation, and escalatio
 
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.configuration.model_priority_metadata import (
     ModelPriorityMetadata,

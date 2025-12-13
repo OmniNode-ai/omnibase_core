@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Model for health check details.
 
@@ -7,8 +5,7 @@ Structured model for health check details, replacing Dict[str, Any]
 with proper typing for health details.
 """
 
-
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelHealthDetails(BaseModel):

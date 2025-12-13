@@ -1,9 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field, ValidationInfo, field_validator
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 CLI Execution Context Model.
 
@@ -11,16 +5,18 @@ Represents custom execution context with proper validation.
 Replaces dict[str, Any] for custom context with structured typing.
 """
 
+from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_context_source import EnumContextSource
 from omnibase_core.enums.enum_context_type import EnumContextType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 
@@ -52,11 +48,11 @@ class ModelCliExecutionContext(BaseModel):
 
     # Tracking
     created_at: datetime = Field(
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(UTC),
         description="Context creation time",
     )
     updated_at: datetime = Field(
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(UTC),
         description="Context last update time",
     )
 
@@ -105,7 +101,7 @@ class ModelCliExecutionContext(BaseModel):
     def update_value(self, new_value: object) -> None:
         """Update the context value and timestamp."""
         self.value = new_value
-        self.updated_at = datetime.now()
+        self.updated_at = datetime.now(UTC)
 
     model_config = {
         "extra": "ignore",

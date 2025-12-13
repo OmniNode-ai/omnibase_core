@@ -5,7 +5,7 @@ Validates CLI execution context model functionality including
 validation, serialization, type checking, and protocol implementations.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from uuid import UUID, uuid4
 
@@ -39,8 +39,8 @@ class TestModelCliExecutionContextBasic:
 
     def test_full_context_creation(self):
         """Test creating context with all fields."""
-        created = datetime.now()
-        updated = datetime.now()
+        created = datetime.now(UTC)
+        updated = datetime.now(UTC)
 
         context = ModelCliExecutionContext(
             key="full_key",
@@ -235,7 +235,7 @@ class TestModelCliExecutionContextMethods:
         """Test checking if value is datetime when it is."""
         context = ModelCliExecutionContext(
             key="test",
-            value=datetime.now(),
+            value=datetime.now(UTC),
             context_type=EnumContextType.SYSTEM,
         )
 

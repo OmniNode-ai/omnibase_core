@@ -4,6 +4,10 @@ Tests for ModelValidationResult.
 This module tests the generic validation result model for common use.
 """
 
+import pytest
+
+pytestmark = pytest.mark.unit
+
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 

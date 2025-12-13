@@ -1,7 +1,3 @@
-from uuid import UUID, uuid4
-
-from pydantic import Field
-
 """
 ModelPermissionConstraints - Permission constraints configuration
 
@@ -10,8 +6,9 @@ including usage limits, approval requirements, delegation rules, and audit requi
 """
 
 from datetime import UTC, datetime, timedelta
+from uuid import UUID, uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .model_approval_requirements import ModelApprovalRequirements
 from .model_audit_requirements import ModelAuditRequirements

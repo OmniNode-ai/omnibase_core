@@ -1,9 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field, model_validator
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Regex Flags Model.
 
@@ -11,13 +5,15 @@ Discriminated union for regex flags to replace Union[re.DOTALL, re.IGNORECASE, r
 patterns commonly used in validation scripts and text processing.
 """
 
+from __future__ import annotations
 
 import re
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_regex_flag_type import EnumRegexFlagType
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 

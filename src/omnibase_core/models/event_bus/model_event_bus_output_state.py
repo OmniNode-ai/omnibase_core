@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any, ClassVar
 from uuid import UUID
 
@@ -554,7 +554,7 @@ class ModelEventBusOutputState(BaseModel):
     ) -> ModelEventBusOutputState:
         """Create output state for retry scenarios."""
         next_retry_at = (
-            datetime.now() + timedelta(seconds=next_retry_delay_seconds)
+            datetime.now(UTC) + timedelta(seconds=next_retry_delay_seconds)
         ).isoformat()
         return cls(
             version=(

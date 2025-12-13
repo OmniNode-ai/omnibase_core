@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Node state dataclass for ONEX nodes.
 
@@ -9,6 +5,7 @@ Simple state holder for node metadata and configuration.
 Follows ONEX strong typing principles and one-model-per-file architecture.
 """
 
+from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -16,6 +13,7 @@ from typing import TYPE_CHECKING
 from uuid import UUID
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 from .model_initialization_metadata import ModelInitializationMetadata
 

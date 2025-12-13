@@ -1,11 +1,3 @@
-from __future__ import annotations
-
-from typing import Any
-
-from pydantic import Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Metrics data model.
 
@@ -13,10 +5,14 @@ Clean, strongly-typed replacement for custom metrics union types.
 Follows ONEX one-model-per-file naming conventions.
 """
 
+from __future__ import annotations
+
+from typing import Any
+
 # Union import removed - using strongly-typed discriminated unions
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_flexible_value_type import EnumFlexibleValueType
@@ -26,6 +22,7 @@ from omnibase_core.enums.enum_metrics_category import EnumMetricsCategory
 # Import from common layer instead of metadata layer to avoid circular dependency
 from omnibase_core.models.common.model_flexible_value import ModelFlexibleValue
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 from .model_metric import ModelMetric
