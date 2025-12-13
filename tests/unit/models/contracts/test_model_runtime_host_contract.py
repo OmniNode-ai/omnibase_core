@@ -136,6 +136,7 @@ class TestModelRuntimeHandlerConfigAllHandlerTypes:
             EnumHandlerType.GRAPH_DATABASE,
             EnumHandlerType.REDIS,
             EnumHandlerType.EVENT_BUS,
+            EnumHandlerType.LOCAL,
         ]
         assert len(list(EnumHandlerType)) == len(expected_types)
 

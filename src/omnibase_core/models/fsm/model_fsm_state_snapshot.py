@@ -184,8 +184,11 @@ class ModelFSMStateSnapshot(BaseModel):
             >>> snapshot.context
             {'result': 'ok'}
         """
+        # Always create a new dict to prevent aliasing of mutable context
+        # Even when new_context is None, we copy self.context to avoid
+        # accidental mutations affecting the original snapshot
         updated_context = (
-            self.context if new_context is None else {**self.context, **new_context}
+            {**self.context} if new_context is None else {**self.context, **new_context}
         )
         return ModelFSMStateSnapshot(
             current_state=new_state,

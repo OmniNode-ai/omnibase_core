@@ -257,58 +257,106 @@ class TestParseExpressionUnsupportedOperator:
 
 
 class TestParseExpressionErrorContext:
-    """Tests for error context information."""
+    """Tests for error context information in ModelOnexError.
 
-    def test_error_includes_expression(self) -> None:
-        """Should include original expression in error context."""
+    These tests verify that parse_expression provides rich error context
+    to aid debugging. Error context is stored in ModelOnexError.context
+    under additional_context.context (the keyword arguments passed to the error).
+    """
+
+    def test_error_includes_expression_in_context(self) -> None:
+        """Should include original expression in error context for debugging."""
+        test_expression = "too many tokens here"
         with pytest.raises(ModelOnexError) as exc_info:
-            parse_expression("too many tokens here")
-        # The error should contain the expression for debugging
+            parse_expression(test_expression)
         error = exc_info.value
         assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
-    def test_error_includes_token_count(self) -> None:
-        """Should include token count in error message."""
+        # Verify the original expression is in the error context
+        inner_context = error.context.get("additional_context", {})
+        assert "expression" in inner_context
+        assert inner_context["expression"] == test_expression
+
+    def test_error_includes_token_count_in_context(self) -> None:
+        """Should include token count in error context."""
         with pytest.raises(ModelOnexError) as exc_info:
             parse_expression("a b c d e")
-        assert "got 5" in str(exc_info.value)
+        error = exc_info.value
 
-    def test_error_includes_tokens(self) -> None:
-        """Should include parsed tokens in error for debugging."""
+        # Verify token count is both in message and context
+        assert "got 5" in str(error)
+        inner_context = error.context.get("additional_context", {})
+        assert "token_count" in inner_context
+        assert inner_context["token_count"] == 5
+
+    def test_error_includes_parsed_tokens_in_context(self) -> None:
+        """Should include parsed tokens list in error context for debugging."""
         with pytest.raises(ModelOnexError) as exc_info:
             parse_expression("a b")
-        error_msg = str(exc_info.value)
-        assert "2" in error_msg  # token count
+        error = exc_info.value
+
+        # Verify tokens are in context, not just that "2" appears in message
+        inner_context = error.context.get("additional_context", {})
+        assert "tokens" in inner_context
+        assert inner_context["tokens"] == ["a", "b"]
+        assert "token_count" in inner_context
+        assert inner_context["token_count"] == 2
+
+    def test_unsupported_operator_error_includes_operator_in_context(self) -> None:
+        """Should include invalid operator and supported operators in error context."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            parse_expression("field invalid_op value")
+        error = exc_info.value
+
+        inner_context = error.context.get("additional_context", {})
+        assert "operator" in inner_context
+        assert inner_context["operator"] == "invalid_op"
+        assert "supported_operators" in inner_context
+        assert isinstance(inner_context["supported_operators"], list)
+        # Verify supported_operators matches canonical set
+        assert set(inner_context["supported_operators"]) == SUPPORTED_OPERATORS
 
 
 class TestAllSupportedOperators:
-    """Tests to verify all supported operators are accepted."""
+    """Tests to verify all supported operators are accepted.
 
-    @pytest.mark.parametrize(
-        "operator",
-        [
-            "equals",
-            "not_equals",
-            "greater_than",
-            "less_than",
-            "greater_than_or_equal",
-            "less_than_or_equal",
-            "min_length",
-            "max_length",
-            "exists",
-            "not_exists",
-            "in",
-            "not_in",
-            "contains",
-            "matches",
-        ],
-    )
-    def test_supported_operator(self, operator: str) -> None:
-        """Should accept all supported operators."""
+    These tests use the canonical SUPPORTED_OPERATORS set from the source module
+    to ensure the test stays in sync with the implementation. This prevents
+    test rot when operators are added/removed from the canonical set.
+    """
+
+    @pytest.mark.parametrize("operator", sorted(SUPPORTED_OPERATORS))
+    def test_all_canonical_operators_accepted(self, operator: str) -> None:
+        """Should accept all operators in the canonical SUPPORTED_OPERATORS set.
+
+        This test parametrizes over SUPPORTED_OPERATORS directly to ensure
+        we test every operator defined in the source module.
+        """
         field, op, value = parse_expression(f"field {operator} value")
         assert field == "field"
         assert op == operator
         assert value == "value"
+
+    def test_supported_operators_count(self) -> None:
+        """Should have exactly 20 operators in SUPPORTED_OPERATORS.
+
+        This test documents the expected operator count and will fail if
+        operators are added/removed, prompting review of test coverage.
+
+        Current operators (20 total):
+        - Equality: equals, not_equals, ==, !=
+        - Comparison: greater_than, less_than, greater_than_or_equal, less_than_or_equal, >, <, >=, <=
+        - Length: min_length, max_length
+        - Existence: exists, not_exists
+        - Containment: in, not_in, contains
+        - Pattern: matches
+        """
+        assert len(SUPPORTED_OPERATORS) == 20, (
+            f"Expected 20 operators, got {len(SUPPORTED_OPERATORS)}. "
+            f"If operators were added/removed, update this test and ensure "
+            f"all new operators have proper test coverage. "
+            f"Current operators: {sorted(SUPPORTED_OPERATORS)}"
+        )
 
 
 class TestValidateExpression:
@@ -344,24 +392,64 @@ class TestGetSupportedOperators:
         result = get_supported_operators()
         assert isinstance(result, frozenset)
 
-    def test_contains_expected_operators(self) -> None:
-        """Should contain all expected operators."""
-        operators = get_supported_operators()
-        expected = {
-            "equals",
-            "not_equals",
-            "greater_than",
-            "less_than",
-            "min_length",
-            "max_length",
-            "exists",
-            "not_exists",
-        }
-        assert expected.issubset(operators)
+    def test_returns_canonical_supported_operators(self) -> None:
+        """Should return the same set as SUPPORTED_OPERATORS constant.
 
-    def test_same_as_module_constant(self) -> None:
-        """Should return the same set as SUPPORTED_OPERATORS constant."""
-        assert get_supported_operators() is SUPPORTED_OPERATORS
+        This verifies the function returns the canonical operator set,
+        not a modified or filtered version.
+        """
+        operators = get_supported_operators()
+        assert operators == SUPPORTED_OPERATORS
+        # Also verify it's the same object (identity), not just equal
+        assert operators is SUPPORTED_OPERATORS
+
+    def test_contains_all_operator_categories(self) -> None:
+        """Should contain operators from all documented categories.
+
+        This test verifies that operators from each semantic category
+        are present in the canonical set. Categories:
+        - Equality (textual and symbolic)
+        - Comparison (textual and symbolic)
+        - Length
+        - Existence
+        - Containment
+        - Pattern matching
+        """
+        operators = get_supported_operators()
+
+        # Equality operators (textual)
+        assert "equals" in operators
+        assert "not_equals" in operators
+        # Equality operators (symbolic)
+        assert "==" in operators
+        assert "!=" in operators
+
+        # Comparison operators (textual)
+        assert "greater_than" in operators
+        assert "less_than" in operators
+        assert "greater_than_or_equal" in operators
+        assert "less_than_or_equal" in operators
+        # Comparison operators (symbolic)
+        assert ">" in operators
+        assert "<" in operators
+        assert ">=" in operators
+        assert "<=" in operators
+
+        # Length operators
+        assert "min_length" in operators
+        assert "max_length" in operators
+
+        # Existence operators
+        assert "exists" in operators
+        assert "not_exists" in operators
+
+        # Containment operators
+        assert "in" in operators
+        assert "not_in" in operators
+        assert "contains" in operators
+
+        # Pattern matching
+        assert "matches" in operators
 
 
 class TestSupportedOperatorsConstant:
@@ -375,12 +463,29 @@ class TestSupportedOperatorsConstant:
         """Should not be empty."""
         assert len(SUPPORTED_OPERATORS) > 0
 
-    def test_contains_core_operators(self) -> None:
-        """Should contain core comparison operators."""
+    def test_contains_textual_equality_operators(self) -> None:
+        """Should contain textual equality operators."""
         assert "equals" in SUPPORTED_OPERATORS
         assert "not_equals" in SUPPORTED_OPERATORS
+
+    def test_contains_symbolic_equality_operators(self) -> None:
+        """Should contain symbolic equality operators."""
+        assert "==" in SUPPORTED_OPERATORS
+        assert "!=" in SUPPORTED_OPERATORS
+
+    def test_contains_textual_comparison_operators(self) -> None:
+        """Should contain textual comparison operators."""
         assert "greater_than" in SUPPORTED_OPERATORS
         assert "less_than" in SUPPORTED_OPERATORS
+        assert "greater_than_or_equal" in SUPPORTED_OPERATORS
+        assert "less_than_or_equal" in SUPPORTED_OPERATORS
+
+    def test_contains_symbolic_comparison_operators(self) -> None:
+        """Should contain symbolic comparison operators."""
+        assert ">" in SUPPORTED_OPERATORS
+        assert "<" in SUPPORTED_OPERATORS
+        assert ">=" in SUPPORTED_OPERATORS
+        assert "<=" in SUPPORTED_OPERATORS
 
     def test_contains_length_operators(self) -> None:
         """Should contain length operators."""
@@ -391,6 +496,16 @@ class TestSupportedOperatorsConstant:
         """Should contain existence operators."""
         assert "exists" in SUPPORTED_OPERATORS
         assert "not_exists" in SUPPORTED_OPERATORS
+
+    def test_contains_containment_operators(self) -> None:
+        """Should contain containment operators."""
+        assert "in" in SUPPORTED_OPERATORS
+        assert "not_in" in SUPPORTED_OPERATORS
+        assert "contains" in SUPPORTED_OPERATORS
+
+    def test_contains_pattern_matching_operators(self) -> None:
+        """Should contain pattern matching operators."""
+        assert "matches" in SUPPORTED_OPERATORS
 
 
 class TestEdgeCases:
@@ -564,6 +679,26 @@ class TestOperatorSynchronization:
                 f"Expected value '{expected_value}' but got '{value}' "
                 f"for expression: {expression}"
             )
+
+    def test_all_symbolic_operators_in_canonical_set(self) -> None:
+        """Should have all 6 symbolic operators in SUPPORTED_OPERATORS.
+
+        Symbolic operators provide concise syntax alternatives to textual operators:
+        - == (equals)
+        - != (not_equals)
+        - > (greater_than)
+        - < (less_than)
+        - >= (greater_than_or_equal)
+        - <= (less_than_or_equal)
+        """
+        expected_symbolic_operators = {"==", "!=", ">", "<", ">=", "<="}
+        actual_symbolic_operators = {
+            op for op in SUPPORTED_OPERATORS if not op.replace("_", "").isalpha()
+        }
+        assert actual_symbolic_operators == expected_symbolic_operators, (
+            f"Expected symbolic operators {expected_symbolic_operators}, "
+            f"but found {actual_symbolic_operators}"
+        )
 
 
 class TestFieldNameValidationSecurity:
