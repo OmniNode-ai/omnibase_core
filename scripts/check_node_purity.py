@@ -1559,7 +1559,7 @@ class PurityAnalyzer(ast.NodeVisitor):
 #    - Example: `Callable[..., Any]` for computation registry functions
 #
 # 2. Type Aliases for Circular Import Avoidance:
-#    - `ContractComputeType = Any` avoids circular imports at module level
+#    - [REMOVED in v0.5.0] ContractComputeType type alias (was unnecessary - no circular import)
 #    - These are TYPE_CHECKING-guarded imports but need runtime aliases
 #
 # 3. Framework vs User Code Distinction:

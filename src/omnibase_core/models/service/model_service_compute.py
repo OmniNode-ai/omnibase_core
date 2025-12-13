@@ -22,14 +22,14 @@ Usage Example:
 
         async def execute_compute(self, contract: ModelContractCompute) -> dict:
             # Check cache first (automatic via MixinCaching)
-            cache_key = self.generate_cache_key(contract.input_data)
+            cache_key = self.generate_cache_key(contract.input_state)
             cached_result = await self.get_cached(cache_key)
 
             if cached_result:
                 return cached_result
 
             # Perform computation
-            result = await self._transform_data(contract.input_data)
+            result = await self._transform_data(contract.input_state)
 
             # Cache result automatically
             await self.set_cached(cache_key, result, ttl_seconds=600)
