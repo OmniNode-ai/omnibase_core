@@ -33,7 +33,7 @@
 node_type: EFFECT_GENERIC
 contract_version: {major: 1, minor: 1, patch: 0}
 # Fingerprint: SHA-256 hash of canonical contract content (node_type, effect, metadata.description)
-fingerprint: "1.1.0:40237a75742a"
+fingerprint: "v1.1.0:40237a75742a"
 # Effect Subcontract
 # NOTE: This contract uses `effect` (single-operation schema) rather than
 # `effect_operations` (multi-operation schema) because it defines a single
@@ -209,15 +209,16 @@ health_check:
 
 # Event subscriptions (what this node listens to)
 subscriptions:
-  - topic: onex.runtime.node_graph.ready
-    description: Triggered when node graph is fully instantiated
-    handler: wire_all_subscriptions
-  - topic: onex.runtime.node.registered
-    description: Handle new node registration for hot reload
-    handler: wire_single_subscription
-  - topic: onex.runtime.node.unregistered
-    description: Handle node removal
-    handler: remove_subscription
+  topics:
+    - topic: onex.runtime.node_graph.ready
+      description: Triggered when node graph is fully instantiated
+      handler: wire_all_subscriptions
+    - topic: onex.runtime.node.registered
+      description: Handle new node registration for hot reload
+      handler: wire_single_subscription
+    - topic: onex.runtime.node.unregistered
+      description: Handle node removal
+      handler: remove_subscription
 
 # Events published by this node
 publications:
@@ -233,6 +234,21 @@ publications:
   - topic: onex.runtime.wiring.error
     description: Wiring encountered a critical error
     payload_schema: ModelWiringErrorEvent
+
+# v1.1.0 Required Fields
+handlers:
+  required:
+    - type: ProtocolEventBus
+      version: {major: 1, minor: 0, patch: 0}
+  optional:
+    - type: ProtocolLogger
+      version: {major: 1, minor: 0, patch: 0}
+
+profile_tags:
+  - runtime
+  - effect
+  - event-bus
+  - wiring
 
 # Metadata
 metadata:

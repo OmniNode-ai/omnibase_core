@@ -19,7 +19,7 @@
 node_type: EFFECT_GENERIC
 contract_version: {major: 1, minor: 1, patch: 0}
 # Fingerprint: SHA-256 hash of canonical contract content (node_type, effect_operations, metadata.description)
-fingerprint: "1.1.0:0ce5689d8ebd"
+fingerprint: "v1.1.0:0ce5689d8ebd"
 # Effect Subcontract
 # NOTE: This contract uses `effect_operations` (multi-operation schema) rather than
 # `effect` (single-operation schema) because it defines multiple filesystem operations
@@ -201,6 +201,24 @@ effect_operations:
     log_response: false  # Contract contents may be large
     emit_metrics: true
     trace_propagation: true
+
+# v1.1.0 Required Fields
+handlers:
+  required: []
+  optional:
+    - type: ProtocolLogger
+      version: {major: 1, minor: 0, patch: 0}
+    - type: ProtocolFileSystem
+      version: {major: 1, minor: 0, patch: 0}
+
+profile_tags:
+  - runtime
+  - effect
+  - contracts
+  - discovery
+
+subscriptions:
+  topics: []
 
 # Metadata
 metadata:

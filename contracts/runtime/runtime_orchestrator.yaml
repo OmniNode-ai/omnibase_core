@@ -51,7 +51,7 @@
 node_type: ORCHESTRATOR_GENERIC
 contract_version: {major: 1, minor: 1, patch: 0}
 # Fingerprint: SHA-256 hash of canonical contract content (node_type, workflow_coordination, metadata.description)
-fingerprint: "1.1.0:5efd212d2b9c"
+fingerprint: "v1.1.0:5efd212d2b9c"
 # Workflow Coordination Subcontract
 workflow_coordination:
   version: {major: 1, minor: 1, patch: 0}
@@ -463,6 +463,21 @@ performance_benchmarks:
   regression_thresholds:
     warning_multiplier: 1.5  # Flag if 50% slower than target
     critical_multiplier: 2.0  # Fail if 2x slower than target
+
+# v1.1.0 Required Fields
+handlers:
+  required:
+    - type: ProtocolEventBus
+      version: {major: 1, minor: 0, patch: 0}
+  optional:
+    - type: ProtocolLogger
+      version: {major: 1, minor: 0, patch: 0}
+
+profile_tags:
+  - runtime
+  - orchestrator
+  - kernel
+  - lifecycle
 
 # Metadata
 metadata:

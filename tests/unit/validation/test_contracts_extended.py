@@ -843,7 +843,17 @@ class TestValidateYamlFileErrors:
         from unittest.mock import patch
 
         yaml_file = tmp_path / "test.yaml"
-        yaml_file.write_text("version: '1.0'\ncontract_id: test\noperations: []")
+        # Use valid contract structure (though stat will fail)
+        yaml_file.write_text(
+            """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: COMPUTE
+description: Test contract
+""",
+        )
 
         # Mock stat to raise OSError after exists() passes
         original_stat = yaml_file.stat
@@ -882,11 +892,15 @@ class TestValidateYamlFileErrors:
             pytest.skip("Permission tests not supported on Windows")
 
         yaml_file = tmp_path / "test.yaml"
+        # Use valid contract structure (though permissions will prevent reading)
         yaml_file.write_text(
             """
-version: "1.0"
-contract_id: test
-operations: []
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: COMPUTE
+description: Test contract
 """,
         )
 
@@ -915,15 +929,25 @@ operations: []
         from unittest.mock import patch
 
         yaml_file = tmp_path / "test.yaml"
-        yaml_file.write_text("version: '1.0'\ncontract_id: test\noperations: []")
+        # Use valid contract structure (though it won't be read due to mock)
+        yaml_file.write_text(
+            """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: COMPUTE
+description: Test contract
+""",
+        )
 
-        # Mock open to raise an exception
-        with patch("builtins.open", side_effect=RuntimeError("Read error")):
+        # Mock open to raise an OSError (realistic for file I/O issues)
+        with patch("builtins.open", side_effect=OSError("Read error")):
             errors = validate_yaml_file(yaml_file)
 
         # Should handle exception gracefully
         assert len(errors) > 0
-        assert any("Error reading file" in error for error in errors)
+        assert any("OS error reading file" in error for error in errors)
 
 
 class TestValidateContractsCLI:

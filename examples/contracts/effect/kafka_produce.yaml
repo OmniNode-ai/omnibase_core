@@ -66,7 +66,7 @@ contract_version:
   minor: 1
   patch: 0
 # Fingerprint: SHA-256 hash of canonical contract content (node_type, effect_operations, metadata.description)
-fingerprint: "1.1.0:2fc793ee6257"
+fingerprint: "v1.1.0:2fc793ee6257"
 node_type: effect
 
 # ---------------------------------------------------------------------------

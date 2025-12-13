@@ -2,7 +2,7 @@
 node_type: REDUCER_GENERIC
 contract_version: {major: 1, minor: 1, patch: 0}
 # Fingerprint: SHA-256 hash of canonical contract content (node_type, state_transitions, metadata.description)
-fingerprint: "1.1.0:adb6c8f6d107"
+fingerprint: "v1.1.0:adb6c8f6d107"
 state_transitions:
   version: {major: 1, minor: 1, patch: 0}
   state_machine_version: {major: 1, minor: 0, patch: 0}

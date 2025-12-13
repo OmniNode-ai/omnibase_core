@@ -2,7 +2,7 @@
 node_type: REDUCER_GENERIC
 contract_version: {major: 1, minor: 1, patch: 0}
 # Fingerprint: SHA-256 hash of canonical contract content (node_type, state_transitions, metadata.description)
-fingerprint: "1.1.0:aed34309d49e"
+fingerprint: "v1.1.0:aed34309d49e"
 state_transitions:
   version: {major: 1, minor: 0, patch: 0}
   state_machine_version: {major: 1, minor: 0, patch: 0}
@@ -282,6 +282,22 @@ state_transitions:
           trigger: undo_clear
       version: {major: 1, minor: 0, patch: 0}
       operation_type: administrative
+
+# v1.1.0 Required Fields
+handlers:
+  required: []
+  optional:
+    - type: ProtocolLogger
+      version: {major: 1, minor: 0, patch: 0}
+    - type: ProtocolEventBus
+      version: {major: 1, minor: 0, patch: 0}
+
+profile_tags:
+  - runtime
+  - reducer
+  - contracts
+  - registry
+
 metadata:
   version: {major: 1, minor: 1, patch: 0}
   author: ONEX Framework Team
