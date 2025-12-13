@@ -83,6 +83,16 @@ repos:
         pass_filenames: true  # Only check changed files, not entire codebase
         stages: [pre-push]  # Moved to pre-push: ~1-5s for changed files only
 
+      - id: pyright-type-check
+        name: pyright (type checking - basic)
+        entry: poetry run pyright
+        language: system
+        types: [python]
+        files: ^src/omnibase_core/.*\.py$
+        exclude: ^(tests/|src/omnibase_core/examples|archive/|archived/).*\.py$
+        pass_filenames: false  # pyright handles file discovery via pyrightconfig.json
+        stages: [pre-push]  # Runs alongside mypy for dual-checker coverage
+
       # Cleanup: Clear tmp/ directory before commits
       # Prevents accumulation of temporary files from custom commands
       - id: clean-tmp-directory

@@ -256,6 +256,9 @@ ignore = [
 "src/omnibase_core/types/constraints.py" = ["I001"]  # Import order to avoid circular dependencies (lazy imports)
 
 [tool.mypy]
+# Strict mode enables: warn_return_any, warn_unused_configs, disallow_untyped_defs,
+# disallow_incomplete_defs, check_untyped_defs, disallow_untyped_decorators,
+# no_implicit_optional, warn_redundant_casts, warn_unused_ignores, strict_equality, and more
 strict = true
 plugins = ["pydantic.mypy"]
 python_version = "3.12"
