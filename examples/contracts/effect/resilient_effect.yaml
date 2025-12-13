@@ -60,7 +60,7 @@
 #
 # 📚 For comprehensive security guidance, see: SECURITY.md in this directory
 #
-# v1.1.0 Contract Schema Version
+# v1.0 Contract Schema Version
 # ============================================================================
 
 # ---------------------------------------------------------------------------
@@ -71,40 +71,10 @@ contract_version:
   major: 1
   minor: 1
   patch: 0
-
-# Contract fingerprint for drift detection (format: v{version}:{12-char-hash})
-# The 12-character hash is a truncated SHA256 of the normalized contract content
-# (excluding the fingerprint field itself to avoid circular dependency)
-# Regenerate when contract content changes using: poetry run python scripts/compute_contract_fingerprint.py
-fingerprint: "v1.1.0:bf6e50f7086f"
-
+# Fingerprint: SHA-256 hash of canonical normalized contract content (excluding fingerprint field).
+# See docs/architecture/CONTRACT_STABILITY_SPEC.md for normalization specification.
+fingerprint: "1.1.0:c8bf04e22bd2"
 node_type: effect
-
-# Handler requirements for this effect contract
-# Effects perform external I/O and require handlers for their operations
-handlers:
-  required:
-    # HTTP handler required for payment gateway API calls
-    - type: http
-      version: ">=1.0.0"
-  optional:
-    # Database handler optional for payment transaction persistence
-    - type: db
-      version: ">=1.0.0"
-    # Kafka handler optional for publishing payment events
-    - type: kafka
-      version: ">=1.0.0"
-
-# Kafka topic subscriptions (none for this effect)
-subscriptions:
-  topics: []
-
-# Profile tags for categorization
-profile_tags:
-  - resilience
-  - circuit-breaker
-  - payment-processing
-  - production-ready
 
 # ---------------------------------------------------------------------------
 # EFFECT SUBCONTRACT: Defines resilient external operations
@@ -112,7 +82,7 @@ profile_tags:
 
 effect_operations:
   # Schema version for forward compatibility - must use dict format for ModelSemVer
-  version: {major: 1, minor: 0, patch: 0}
+  version: {major: 1, minor: 1, patch: 0}
 
   # Unique subcontract name (required by ModelEffectSubcontract)
   subcontract_name: "resilient_payment_effect"

@@ -32,54 +32,16 @@
 # Contract Metadata
 node_type: EFFECT_GENERIC
 contract_version: {major: 1, minor: 1, patch: 0}
-
-# Contract fingerprint for drift detection (format: v{version}:{12-char-hash})
-# The 12-character hash is a truncated SHA256 of the normalized contract content
-# (excluding the fingerprint field itself to avoid circular dependency)
-# Regenerate when contract content changes using: poetry run python scripts/compute_contract_fingerprint.py
-fingerprint: "v1.1.0:dccda0974f39"
-
-# Handler requirements for this effect contract
-# Effects perform external I/O and require handlers for their operations
-handlers:
-  required:
-    # Local handler required for in-memory event bus wiring operations
-    - type: local
-      version: ">=1.0.0"
-  optional:
-    # Kafka handler optional for distributed event bus deployments
-    - type: kafka
-      version: ">=1.0.0"
-
-# Kafka topic subscriptions for this effect
-# This node subscribes to these topics to receive events for wiring operations
-subscriptions:
-  topics:
-    - topic: onex.runtime.node_graph.ready
-      description: Triggered when node graph is fully instantiated
-      handler: wire_all_subscriptions
-    - topic: onex.runtime.node.registered
-      description: Handle new node registration for hot reload
-      handler: wire_single_subscription
-    - topic: onex.runtime.node.unregistered
-      description: Handle node removal
-      handler: remove_subscription
-
-# Profile tags for categorization
-profile_tags:
-  - runtime
-  - event-bus
-  - subscriptions
-  - self-hosted
-  - wiring
-
+# Fingerprint: SHA-256 hash of canonical normalized contract content (excluding fingerprint field).
+# See docs/architecture/CONTRACT_STABILITY_SPEC.md for normalization specification.
+fingerprint: "1.1.0:5fece4cb7a20"
 # Effect Subcontract
 # NOTE: This contract uses `effect` (single-operation schema) rather than
 # `effect_operations` (multi-operation schema) because it defines a single
 # event bus wiring operation. Contracts with multiple operations use
 # `effect_operations:` with an operations list (e.g., contract_loader_effect.yaml).
 effect:
-  version: {major: 1, minor: 0, patch: 0}
+  version: {major: 1, minor: 1, patch: 0}
 
   # Operation identification
   operation_name: event_bus_wiring
@@ -246,6 +208,31 @@ health_check:
       critical: false
       threshold_ms: 1000
 
+# Event subscriptions (what this node listens to)
+# NOTE: Each subscription defines a `handler` field that references a method that MUST be
+# implemented by the runtime or node implementation. These handlers are NOT protocol-based
+# dependencies (those go in the `handlers` section below). Instead, subscription handlers
+# are callback methods that the event bus invokes when matching events arrive.
+#
+# Handler Implementation Requirements:
+# - wire_all_subscriptions: Receives ModelNodeGraphReadyEvent, wires all nodes to their subscriptions
+# - wire_single_subscription: Receives ModelNodeRegisteredEvent, wires a single new node
+# - remove_subscription: Receives ModelNodeUnregisteredEvent, removes subscription for a node
+#
+# These handlers are implemented by the NodeEventBusWiringEffect class or provided by the
+# runtime's built-in subscription handler executor. See docs/architecture/SUBSCRIPTION_HANDLERS.md.
+subscriptions:
+  topics:
+    - topic: onex.runtime.node_graph.ready
+      description: Triggered when node graph is fully instantiated
+      handler: wire_all_subscriptions
+    - topic: onex.runtime.node.registered
+      description: Handle new node registration for hot reload
+      handler: wire_single_subscription
+    - topic: onex.runtime.node.unregistered
+      description: Handle node removal
+      handler: remove_subscription
+
 # Events published by this node
 publications:
   - topic: onex.runtime.ready
@@ -260,6 +247,21 @@ publications:
   - topic: onex.runtime.wiring.error
     description: Wiring encountered a critical error
     payload_schema: ModelWiringErrorEvent
+
+# v1.1.0 Required Fields
+handlers:
+  required:
+    - type: ProtocolEventBus
+      version: {major: 1, minor: 0, patch: 0}
+  optional:
+    - type: ProtocolLogger
+      version: {major: 1, minor: 0, patch: 0}
+
+profile_tags:
+  - runtime
+  - effect
+  - event-bus
+  - wiring
 
 # Metadata
 metadata:

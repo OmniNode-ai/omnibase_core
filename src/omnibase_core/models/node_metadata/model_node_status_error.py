@@ -6,7 +6,7 @@ Error node status with error details for discriminated union pattern.
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.types.typed_dict_status_summaries import TypedDictErrorSummary
+from omnibase_core.types.typed_dict_error_summary import TypedDictErrorSummary
 
 
 class ModelNodeStatusError(BaseModel):
