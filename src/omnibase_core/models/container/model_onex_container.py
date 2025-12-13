@@ -16,7 +16,6 @@ import asyncio
 import os
 import tempfile
 import time
-from datetime import datetime
 from pathlib import Path
 
 # Import needed for type annotations
@@ -262,7 +261,7 @@ class ModelONEXContainer:
             cached_service: T = self._service_cache[cache_key]
             return cached_service
 
-        # Try ServiceRegistry first (new DI system)
+        # Use ServiceRegistry (new DI system) - fail fast if enabled
         if self._enable_service_registry and self._service_registry is not None:
             try:
                 service_instance = await self._service_registry.resolve_service(
@@ -289,101 +288,37 @@ class ModelONEXContainer:
                 return typed_service
 
             except Exception as registry_error:
-                # Log but don't fail - fall through to legacy resolution
+                # Fail fast - ServiceRegistry is the only resolution mechanism when enabled
                 emit_log_event(
-                    LogLevel.DEBUG,
-                    f"ServiceRegistry resolution failed, trying legacy: {protocol_name}",
-                    {"error": str(registry_error)},
+                    LogLevel.ERROR,
+                    f"ServiceRegistry resolution failed: {protocol_name}",
+                    {
+                        "error": str(registry_error),
+                        "correlation_id": str(final_correlation_id),
+                    },
                 )
-
-        # Fallback resolution if registry lookup fails
-        try:
-            start_time = datetime.now()
-
-            # TODO: Ready to implement using ProtocolServiceResolver from omnibase_spi.protocols.container
-            # Note: ProtocolServiceResolver available in omnibase_spi v0.2.0
-            # Use protocol service resolver for external dependencies
-            if protocol_name in [
-                "ProtocolServiceDiscovery",
-                "ProtocolDatabaseConnection",
-            ]:
-                # service_resolver = get_service_resolver()
-                # service_instance = await service_resolver.resolve_service(protocol_type)
                 raise ModelOnexError(
                     error_code=EnumCoreErrorCode.DEPENDENCY_UNAVAILABLE,
-                    message=f"Protocol service resolution not yet implemented: {protocol_name}",
-                    protocol_type=protocol_name,
-                    service_name=service_name or "",
-                    note="Requires omnibase-spi protocol integration",
-                    correlation_id=final_correlation_id,
-                )
-            # Map common protocol names to container providers
-            provider_map = {
-                "ProtocolLogger": "enhanced_logger",
-                "Logger": "enhanced_logger",
-            }
+                    message=f"Service resolution failed for {protocol_name}: {registry_error!s}",
+                    context={
+                        "protocol_type": protocol_name,
+                        "service_name": service_name or "",
+                        "correlation_id": str(final_correlation_id),
+                        "hint": "Ensure the service is registered in ServiceRegistry",
+                    },
+                ) from registry_error
 
-            if protocol_name in provider_map:
-                provider_name = provider_map[protocol_name]
-                provider = getattr(self._base_container, provider_name, None)
-                if provider:
-                    service_instance = provider()
-                else:
-                    raise ModelOnexError(
-                        error_code=EnumCoreErrorCode.DEPENDENCY_UNAVAILABLE,
-                        message=f"Provider not found: {provider_name}",
-                        protocol_type=protocol_name,
-                        correlation_id=final_correlation_id,
-                    )
-            else:
-                raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.DEPENDENCY_UNAVAILABLE,
-                    message=f"Unable to resolve service for protocol {protocol_name}",
-                    protocol_type=protocol_name,
-                    service_name=service_name or "",
-                    correlation_id=final_correlation_id,
-                )
-
-            end_time = datetime.now()
-            resolution_time_ms = int((end_time - start_time).total_seconds() * 1000)
-
-            # Cache successful resolution
-            self._service_cache[cache_key] = service_instance
-
-            emit_log_event(
-                LogLevel.INFO,
-                f"Service resolved successfully (legacy): {protocol_name}",
-                {
-                    "protocol_type": protocol_name,
-                    "service_name": service_name,
-                    "resolution_time_ms": resolution_time_ms,
-                    "correlation_id": str(final_correlation_id),
-                    "source": "legacy",
-                },
-            )
-
-            # Use object cast since T is a TypeVar resolved at runtime
-            legacy_service = cast(T, service_instance)
-            return legacy_service
-
-        except Exception as e:
-            emit_log_event(
-                LogLevel.ERROR,
-                f"Service resolution failed: {protocol_name}",
-                {
-                    "protocol_type": protocol_name,
-                    "service_name": service_name,
-                    "error": str(e),
-                    "correlation_id": str(final_correlation_id),
-                },
-            )
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.DEPENDENCY_UNAVAILABLE,
-                message=f"Service resolution failed for {protocol_name}: {e!s}",
-                protocol_type=protocol_name,
-                service_name=service_name or "",
-                correlation_id=final_correlation_id,
-            ) from e
+        # ServiceRegistry not enabled - raise error (no legacy fallback)
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.DEPENDENCY_UNAVAILABLE,
+            message=f"Cannot resolve service {protocol_name}: ServiceRegistry is disabled",
+            context={
+                "protocol_type": protocol_name,
+                "service_name": service_name or "",
+                "correlation_id": str(final_correlation_id),
+                "hint": "Enable ServiceRegistry or register the service",
+            },
+        )
 
     def get_service_sync(
         self,
