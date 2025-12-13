@@ -6,7 +6,9 @@ Maintenance node status with estimated completion for discriminated union patter
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.types.typed_dict_status_summaries import TypedDictMaintenanceSummary
+from omnibase_core.types.typed_dict_maintenance_summary import (
+    TypedDictMaintenanceSummary,
+)
 
 
 class ModelNodeStatusMaintenance(BaseModel):

@@ -6,7 +6,7 @@ Active node status with uptime tracking for discriminated union pattern.
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.types.typed_dict_status_summaries import TypedDictActiveSummary
+from omnibase_core.types.typed_dict_active_summary import TypedDictActiveSummary
 
 
 class ModelNodeStatusActive(BaseModel):
