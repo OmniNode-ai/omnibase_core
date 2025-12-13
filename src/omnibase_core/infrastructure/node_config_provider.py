@@ -12,6 +12,7 @@ import os
 from omnibase_core.models.configuration.model_node_config_value import (
     ConfigValue,
     ModelNodeConfigSchema,
+    is_valid_value_type,
 )
 
 
@@ -266,9 +267,16 @@ class NodeConfigProvider:
         """
         schema: dict[str, ModelNodeConfigSchema] = {}
         for key, value in self._DEFAULTS.items():
+            type_name = type(value).__name__
+            # Type guard validates and narrows type_name to VALID_VALUE_TYPES
+            if not is_valid_value_type(type_name):
+                raise ValueError(  # error-ok: internal bootstrap validation before OnexError available
+                    f"Invalid config type '{type_name}' for key '{key}'. "
+                    f"Allowed types: ('int', 'float', 'bool', 'str')"
+                )
             schema[key] = ModelNodeConfigSchema(
                 key=key,
-                type=type(value).__name__,
+                type=type_name,
                 default=value,
             )
         return schema

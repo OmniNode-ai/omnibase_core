@@ -60,7 +60,7 @@ class TestPriorityClamping:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         assert action.priority == expected_action_priority
 
@@ -74,7 +74,7 @@ class TestPriorityClamping:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         assert action.priority == 10
 
@@ -88,7 +88,7 @@ class TestPriorityClamping:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         assert action.priority == 10
 
@@ -102,7 +102,7 @@ class TestPriorityClamping:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         assert action.priority == 10
 
@@ -116,7 +116,7 @@ class TestPriorityClamping:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         assert action.priority == 1
 
@@ -130,7 +130,7 @@ class TestPriorityClamping:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         # Default priority 100 should be clamped to 10
         assert action.priority == 10
@@ -149,7 +149,7 @@ class TestDependencyMapping:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         assert action.dependencies == []
 
@@ -164,7 +164,7 @@ class TestDependencyMapping:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         assert len(action.dependencies) == 1
         assert action.dependencies[0] == dep_id
@@ -180,7 +180,7 @@ class TestDependencyMapping:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         assert len(action.dependencies) == 3
         for dep_id in dep_ids:
@@ -197,7 +197,7 @@ class TestDependencyMapping:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         # Verify order is preserved
         assert action.dependencies == dep_ids
@@ -213,7 +213,7 @@ class TestDependencyMapping:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         assert all(isinstance(dep, UUID) for dep in action.dependencies)
 
@@ -230,7 +230,7 @@ class TestActionIdGeneration:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         assert action.action_id is not None
 
@@ -243,7 +243,7 @@ class TestActionIdGeneration:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         assert isinstance(action.action_id, UUID)
 
@@ -257,7 +257,7 @@ class TestActionIdGeneration:
         workflow_id = uuid4()
 
         # Create multiple actions from the same step
-        actions = [_create_action_for_step(step, workflow_id) for _ in range(10)]
+        actions = [_create_action_for_step(step, workflow_id)[0] for _ in range(10)]
 
         # All action_ids should be unique
         action_ids = [action.action_id for action in actions]
@@ -273,7 +273,7 @@ class TestActionIdGeneration:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         assert action.action_id != step_id
 
@@ -286,7 +286,7 @@ class TestActionIdGeneration:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         # UUID string representation should be 36 characters (8-4-4-4-12)
         uuid_str = str(action.action_id)
@@ -318,7 +318,7 @@ class TestActionTypeMapping:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         assert action.action_type == expected_action_type
 
@@ -331,7 +331,7 @@ class TestActionTypeMapping:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         assert action.action_type == EnumActionType.COMPUTE
 
@@ -344,7 +344,7 @@ class TestActionTypeMapping:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         assert action.action_type == EnumActionType.EFFECT
 
@@ -357,7 +357,7 @@ class TestActionTypeMapping:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         assert action.action_type == EnumActionType.REDUCE
 
@@ -370,7 +370,7 @@ class TestActionTypeMapping:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         assert action.action_type == EnumActionType.ORCHESTRATE
 
@@ -383,7 +383,7 @@ class TestActionTypeMapping:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         assert action.action_type == EnumActionType.CUSTOM
 
@@ -396,7 +396,7 @@ class TestActionTypeMapping:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         # Unknown types fall back to CUSTOM
         assert action.action_type == EnumActionType.CUSTOM
@@ -410,7 +410,7 @@ class TestActionTypeMapping:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         # Unknown types fall back to CUSTOM
         assert action.action_type == EnumActionType.CUSTOM
@@ -440,7 +440,7 @@ class TestTargetNodeTypeMapping:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         assert action.target_node_type == expected_target_node_type
 
@@ -453,7 +453,7 @@ class TestTargetNodeTypeMapping:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         assert action.target_node_type == "NodeCustom"
 
@@ -471,7 +471,7 @@ class TestActionFieldPropagation:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         assert action.timeout_ms == 60000
 
@@ -484,7 +484,7 @@ class TestActionFieldPropagation:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         # Default is 30000ms
         assert action.timeout_ms == 30000
@@ -499,7 +499,7 @@ class TestActionFieldPropagation:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         assert action.retry_count == 5
 
@@ -512,7 +512,7 @@ class TestActionFieldPropagation:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         # Step default is 3
         assert action.retry_count == 3
@@ -526,7 +526,7 @@ class TestActionFieldPropagation:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         assert "step_name" in action.metadata
         assert action.metadata["step_name"] == "metadata_step"
@@ -540,7 +540,7 @@ class TestActionFieldPropagation:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         assert "correlation_id" in action.metadata
         # Correlation ID should be string representation of UUID
@@ -555,7 +555,7 @@ class TestActionFieldPropagation:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         assert action.lease_id is not None
         assert isinstance(action.lease_id, UUID)
@@ -569,7 +569,7 @@ class TestActionFieldPropagation:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         assert action.epoch == 0
 
@@ -582,7 +582,7 @@ class TestActionFieldPropagation:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         assert action.created_at is not None
         assert isinstance(action.created_at, datetime)
@@ -600,7 +600,7 @@ class TestActionPayload:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         assert "workflow_id" in action.payload
         assert action.payload["workflow_id"] == str(workflow_id)
@@ -615,7 +615,7 @@ class TestActionPayload:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         assert "step_id" in action.payload
         assert action.payload["step_id"] == str(step_id)
@@ -629,7 +629,7 @@ class TestActionPayload:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         assert "step_name" in action.payload
         assert action.payload["step_name"] == "name_payload_step"
@@ -645,7 +645,7 @@ class TestActionPayload:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         # Should not raise
         json_str = json.dumps(action.payload)
@@ -668,7 +668,7 @@ class TestActionModelIntegrity:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         assert isinstance(action, ModelAction)
 
@@ -681,7 +681,7 @@ class TestActionModelIntegrity:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         # Attempting to modify should raise ValidationError for frozen models
         with pytest.raises(Exception):
@@ -696,7 +696,7 @@ class TestActionModelIntegrity:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         # Should not raise
         action_dict = action.model_dump()
@@ -714,7 +714,7 @@ class TestActionModelIntegrity:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
         original_priority = action.priority
 
         # Create modified copy
@@ -739,7 +739,7 @@ class TestEdgeCases:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         assert action.payload["step_name"] == long_name
 
@@ -753,7 +753,7 @@ class TestEdgeCases:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         assert action.timeout_ms == 100
 
@@ -767,7 +767,7 @@ class TestEdgeCases:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         assert action.timeout_ms == 300000
 
@@ -781,7 +781,7 @@ class TestEdgeCases:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         assert action.retry_count == 10
 
@@ -795,7 +795,7 @@ class TestEdgeCases:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         assert action.retry_count == 0
 
@@ -810,7 +810,7 @@ class TestEdgeCases:
         )
         workflow_id = uuid4()
 
-        action = _create_action_for_step(step, workflow_id)
+        action, _ = _create_action_for_step(step, workflow_id)
 
         assert len(action.dependencies) == 50
         assert action.dependencies == dep_ids

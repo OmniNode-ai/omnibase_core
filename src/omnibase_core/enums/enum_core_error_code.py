@@ -144,6 +144,11 @@ class EnumCoreErrorCode(EnumOnexErrorCode):
     NODE_EXECUTION_ERROR = "ONEX_CORE_273_NODE_EXECUTION_ERROR"
     UNSUPPORTED_CAPABILITY_ERROR = "ONEX_CORE_274_UNSUPPORTED_CAPABILITY_ERROR"
 
+    # Workflow execution limit errors (281-290)
+    WORKFLOW_STEP_LIMIT_EXCEEDED = "ONEX_CORE_281_WORKFLOW_STEP_LIMIT_EXCEEDED"
+    WORKFLOW_PAYLOAD_SIZE_EXCEEDED = "ONEX_CORE_282_WORKFLOW_PAYLOAD_SIZE_EXCEEDED"
+    WORKFLOW_TOTAL_PAYLOAD_EXCEEDED = "ONEX_CORE_283_WORKFLOW_TOTAL_PAYLOAD_EXCEEDED"
+
     def get_component(self) -> str:
         """Get the component identifier for this error code."""
         return "CORE"
@@ -258,6 +263,10 @@ CORE_ERROR_CODE_TO_EXIT_CODE: dict[EnumCoreErrorCode, EnumCLIExitCode] = {
     EnumCoreErrorCode.PURITY_VIOLATION_ERROR: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.NODE_EXECUTION_ERROR: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.UNSUPPORTED_CAPABILITY_ERROR: EnumCLIExitCode.ERROR,
+    # Workflow execution limit errors -> ERROR
+    EnumCoreErrorCode.WORKFLOW_STEP_LIMIT_EXCEEDED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.WORKFLOW_PAYLOAD_SIZE_EXCEEDED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.WORKFLOW_TOTAL_PAYLOAD_EXCEEDED: EnumCLIExitCode.ERROR,
 }
 
 
@@ -375,5 +384,8 @@ def get_core_error_description(error_code: EnumCoreErrorCode) -> str:
         EnumCoreErrorCode.PURITY_VIOLATION_ERROR: "Purity violation in pure node",
         EnumCoreErrorCode.NODE_EXECUTION_ERROR: "Node execution failed",
         EnumCoreErrorCode.UNSUPPORTED_CAPABILITY_ERROR: "Unsupported capability requested",
+        EnumCoreErrorCode.WORKFLOW_STEP_LIMIT_EXCEEDED: "Workflow step count exceeds maximum limit",
+        EnumCoreErrorCode.WORKFLOW_PAYLOAD_SIZE_EXCEEDED: "Workflow step payload size exceeds maximum limit",
+        EnumCoreErrorCode.WORKFLOW_TOTAL_PAYLOAD_EXCEEDED: "Workflow total payload size exceeds maximum limit",
     }
     return descriptions.get(error_code, "Unknown error")

@@ -9,8 +9,15 @@ from .model_cli_config import (
     ModelTierConfig,
 )
 from .model_compute_cache_config import ModelComputeCacheConfig
+from .model_git_hub_comment_change import ModelGitHubCommentChange
+from .model_git_hub_issue_comment_changes import ModelGitHubIssueCommentChanges
+from .model_git_hub_issue_comment_event import ModelGitHubIssueCommentEvent
 from .model_node_config_entry import ConfigValue, ModelNodeConfigEntry
 from .model_node_config_value import ModelNodeConfigSchema
+from .model_priority_metadata import ModelPriorityMetadata
+from .model_priority_metadata_summary import ModelPriorityMetadataSummary
+from .model_throttle_response import ModelThrottleResponse
+from .model_throttling_behavior import ModelThrottlingBehavior
 
 __all__ = [
     "ConfigValue",
@@ -18,9 +25,16 @@ __all__ = [
     "ModelCLIConfig",
     "ModelComputeCacheConfig",
     "ModelDatabaseConfig",
+    "ModelGitHubCommentChange",
+    "ModelGitHubIssueCommentChanges",
+    "ModelGitHubIssueCommentEvent",
     "ModelMonitoringConfig",
     "ModelNodeConfigEntry",
     "ModelNodeConfigSchema",
     "ModelOutputConfig",
+    "ModelPriorityMetadata",
+    "ModelPriorityMetadataSummary",
+    "ModelThrottleResponse",
+    "ModelThrottlingBehavior",
     "ModelTierConfig",
 ]

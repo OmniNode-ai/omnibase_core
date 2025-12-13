@@ -10,6 +10,7 @@ This module provides validation functions for contract files:
 from __future__ import annotations
 
 import argparse
+import logging
 import os
 import signal
 import sys
@@ -114,6 +115,10 @@ def validate_yaml_file(file_path: Path) -> list[str]:
         except ModelOnexError as e:
             # Collect structured validation errors
             errors.append(f"Contract validation failed: {e.message}")
+        except Exception as e:
+            # Fallback for unexpected errors - log full traceback for debugging
+            logging.exception(f"Unexpected error during contract validation: {e}")
+            errors.append(f"Contract validation failed: {e}")
 
         # All validation is now handled by Pydantic model
         # Manual validation removed for ONEX compliance
