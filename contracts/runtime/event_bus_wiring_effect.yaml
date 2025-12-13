@@ -209,16 +209,15 @@ health_check:
 
 # Event subscriptions (what this node listens to)
 subscriptions:
-  topics:
-    - topic: onex.runtime.node_graph.ready
-      description: Triggered when node graph is fully instantiated
-      handler: wire_all_subscriptions
-    - topic: onex.runtime.node.registered
-      description: Handle new node registration for hot reload
-      handler: wire_single_subscription
-    - topic: onex.runtime.node.unregistered
-      description: Handle node removal
-      handler: remove_subscription
+  - topic: onex.runtime.node_graph.ready
+    description: Triggered when node graph is fully instantiated
+    handler: wire_all_subscriptions
+  - topic: onex.runtime.node.registered
+    description: Handle new node registration for hot reload
+    handler: wire_single_subscription
+  - topic: onex.runtime.node.unregistered
+    description: Handle node removal
+    handler: remove_subscription
 
 # Events published by this node
 publications:
