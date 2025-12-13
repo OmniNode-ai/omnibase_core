@@ -10,6 +10,7 @@ This module provides validation functions for contract files:
 from __future__ import annotations
 
 import argparse
+import logging
 import os
 import signal
 import sys
@@ -17,6 +18,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import yaml
+from pydantic import ValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_validation_metadata import (
@@ -110,9 +112,12 @@ def validate_yaml_file(file_path: Path) -> list[str]:
         except ModelOnexError as e:
             # Collect structured validation errors
             errors.append(f"Contract validation failed: {e.message}")
+        except ValidationError as e:
+            # Pydantic validation errors
+            errors.append(f"Contract validation failed: {e}")
         except Exception as e:
-            # Catch any other validation errors (e.g., Pydantic ValidationError)
-            # to ensure graceful handling of malformed YAML contracts
+            # Fallback for unexpected errors - log full traceback for debugging
+            logging.exception(f"Unexpected error during contract validation: {e}")
             errors.append(f"Contract validation failed: {e}")
 
         # All validation is now handled by Pydantic model
