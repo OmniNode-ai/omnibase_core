@@ -13,6 +13,34 @@ env:
   CACHE_VERSION: "0.1.4"
 
 jobs:
+  # =============================================================================
+  # JOB ORDERING RATIONALE (Fail-Fast Optimization)
+  # =============================================================================
+  #
+  # Phase 1 - Quick Validation (parallel, ~5-10 min):
+  #   - smoke-test: Basic import/syntax checks
+  #   - lint: Code quality (ruff format, ruff check, mypy strict)
+  #   - pyright: Type checking (complementary to mypy)
+  #   - exports-validation: __all__ exports validation
+  #   - docs-validation: Documentation link validation
+  #   - node-purity-check: Declarative node purity guarantees
+  #   - mypy-validation-scripts: Type check validation scripts
+  #
+  # Phase 2 - Expensive Tests (after Phase 1 completes):
+  #   - test-parallel: 20 splits of full test suite (~3 min each)
+  #     Depends on: smoke-test, lint, pyright, exports-validation
+  #     This ensures type errors and lint failures are caught BEFORE
+  #     spawning 20 parallel test runners (saves ~60 runner-minutes on failure)
+  #
+  # Phase 3 - Aggregation:
+  #   - test-summary: Aggregates all job results
+  #
+  # This ordering ensures:
+  #   1. Fast feedback on code quality issues (type errors, lint, exports)
+  #   2. No wasted compute on test splits when validation fails
+  #   3. All Phase 1 jobs run in parallel for speed
+  # =============================================================================
+
   # Quick smoke test - fails fast on basic issues (5-10s)
   smoke-test:
     name: Smoke Tests
@@ -74,14 +102,22 @@ jobs:
 
   # Parallel test execution - split into 20 groups for speed and memory management
   # Split strategy rationale:
-  #   - 12,198 total tests ÷ 20 splits = ~610 tests/split
+  #   - 12,198 total tests / 20 splits = ~610 tests/split
   #   - Target: 1.5-3 minutes per split (prevents runner timeouts/cancellations)
   #   - 20x parallelization speedup vs sequential execution
   #   - Increased from 16 to 20 splits to eliminate Split 10 timeout issues
   #   - Shorter per-split runtime reduces probability of external runner shutdown
+  #
+  # Dependency rationale (fail-fast optimization):
+  #   - smoke-test: Catches basic import/syntax errors before expensive splits
+  #   - lint: Catches formatting, linting, and mypy errors early
+  #   - pyright: Catches type errors that mypy might miss
+  #   - exports-validation: Ensures __all__ exports are valid before tests
+  #   These 4 jobs run in parallel (~10 min total) and must all pass before
+  #   spawning 20 test runners. This saves ~60 runner-minutes on validation failures.
   test-parallel:
     name: Tests (Split ${{ matrix.split }}/20)
-    needs: smoke-test
+    needs: [smoke-test, lint, pyright, exports-validation]
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
@@ -163,6 +199,8 @@ jobs:
           path: junit-${{ matrix.split }}.xml
           retention-days: 7
 
+  # Phase 1 validation job - runs in parallel with smoke-test, pyright, exports-validation
+  # Must complete before test-parallel starts (fail-fast optimization)
   lint:
     name: Code Quality
     runs-on: ubuntu-latest
@@ -215,7 +253,103 @@ jobs:
       - name: Run mypy type checking (strict)
         run: poetry run mypy src/omnibase_core
 
-  # Separate job for validation scripts mypy
+  # Phase 1 validation job - runs in parallel with smoke-test, lint, exports-validation
+  # Must complete before test-parallel starts (fail-fast optimization)
+  # Pyright complements mypy (in lint job) - catches different type error categories
+  pyright:
+    name: Pyright Type Checking
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: >-
+            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
+            ${{ hashFiles('**/poetry.lock') }}-
+            ${{ env.CACHE_VERSION }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}-${{ env.CACHE_VERSION }}
+
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root
+
+      - name: Install project
+        run: poetry install --no-interaction
+
+      - name: Run pyright type checking
+        run: poetry run pyright src/omnibase_core
+
+  # Phase 1 validation job - runs in parallel with smoke-test, lint, pyright
+  # Must complete before test-parallel starts (fail-fast optimization)
+  # Quick check (~5 min) ensures __all__ exports are valid before expensive test splits
+  exports-validation:
+    name: Exports Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: >-
+            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-
+            ${{ hashFiles('**/poetry.lock') }}-
+            ${{ env.CACHE_VERSION }}
+          restore-keys: |
+            venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('**/poetry.lock') }}-${{ env.CACHE_VERSION }}
+
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root
+
+      - name: Install project
+        run: poetry install --no-interaction
+
+      - name: Validate __all__ exports
+        run: poetry run python scripts/validation/validate-all-exports.py
+
+  # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
+  # Separate job for validation scripts mypy (not blocking test-parallel)
+  # Rationale: These scripts are CI tooling, not core library code
   mypy-validation-scripts:
     name: Mypy Validation Scripts
     runs-on: ubuntu-latest
@@ -369,6 +503,9 @@ jobs:
             echo "- Full scan: Skipped (not targeting protected branch)" >> $GITHUB_STEP_SUMMARY
           fi
 
+  # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
+  # Quick documentation check (not blocking test-parallel)
+  # Rationale: Doc link validation is independent of code correctness
   docs-validation:
     name: Documentation Validation
     runs-on: ubuntu-latest
@@ -393,7 +530,9 @@ jobs:
           echo "## Documentation Validation" >> $GITHUB_STEP_SUMMARY
           echo "✅ All documentation links validated" >> $GITHUB_STEP_SUMMARY
 
-  # Node Purity Validation (OMN-203)
+  # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
+  # Node Purity Validation (OMN-203) - not blocking test-parallel
+  # Rationale: Currently non-blocking (continue-on-error: true) due to tech debt
   # Ensures declarative nodes (COMPUTE, REDUCER) maintain purity guarantees
   node-purity-check:
     name: Node Purity Check
@@ -456,10 +595,13 @@ jobs:
           echo "- No class-level mutable state" >> $GITHUB_STEP_SUMMARY
           echo "- No caching decorators that introduce state" >> $GITHUB_STEP_SUMMARY
 
+  # Phase 3 - Aggregation job
+  # Waits for ALL jobs (Phase 1 validation + Phase 2 tests) to complete
+  # Provides unified pass/fail status for branch protection rules
   test-summary:
     name: Test Summary
     runs-on: ubuntu-latest
-    needs: [smoke-test, test-parallel, lint, mypy-validation-scripts, docs-validation, node-purity-check]
+    needs: [smoke-test, test-parallel, lint, pyright, exports-validation, mypy-validation-scripts, docs-validation, node-purity-check]
     if: always()
 
     steps:
@@ -468,6 +610,8 @@ jobs:
           smoke="${{ needs.smoke-test.result }}"
           parallel="${{ needs.test-parallel.result }}"
           lint="${{ needs.lint.result }}"
+          pyright="${{ needs.pyright.result }}"
+          exports="${{ needs.exports-validation.result }}"
           mypy_scripts="${{ needs.mypy-validation-scripts.result }}"
           docs="${{ needs.docs-validation.result }}"
           purity="${{ needs.node-purity-check.result }}"
@@ -475,6 +619,8 @@ jobs:
           if [[ "$smoke" == "success" ]] && \
              [[ "$parallel" == "success" ]] && \
              [[ "$lint" == "success" ]] && \
+             [[ "$pyright" == "success" ]] && \
+             [[ "$exports" == "success" ]] && \
              [[ "$mypy_scripts" == "success" ]] && \
              [[ "$docs" == "success" ]] && \
              [[ "$purity" == "success" ]]; then
@@ -482,6 +628,8 @@ jobs:
             echo "Smoke Tests: ✅ Passed"
             echo "Parallel Tests (20 splits): ✅ Passed"
             echo "Code Quality: ✅ Passed"
+            echo "Pyright Type Checking: ✅ Passed"
+            echo "Exports Validation: ✅ Passed"
             echo "Mypy Validation Scripts: ✅ Passed"
             echo "Documentation: ✅ Passed"
             echo "Node Purity: ✅ Passed"
@@ -491,6 +639,8 @@ jobs:
             echo "Smoke Tests: $smoke"
             echo "Parallel Tests: $parallel"
             echo "Lint: $lint"
+            echo "Pyright: $pyright"
+            echo "Exports: $exports"
             echo "Mypy Scripts: $mypy_scripts"
             echo "Documentation: $docs"
             echo "Node Purity: $purity"

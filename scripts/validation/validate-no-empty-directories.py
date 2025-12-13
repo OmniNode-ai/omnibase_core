@@ -64,6 +64,7 @@ class EmptyDirectoryValidator:
         ".egg-info",
         "archived",
         "archive",
+        "fixtures",  # Test fixtures often have nested directory structures
     }
 
     # Metadata files to ignore when checking if directory is empty

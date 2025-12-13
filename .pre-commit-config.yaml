@@ -60,7 +60,7 @@ repos:
         entry: poetry run ruff format
         language: system
         types: [python]
-        exclude: ^(tests/fixtures/validation/edge_cases/syntax_error\.py|\.github/workflows/|archived/).*$
+        exclude: ^(tests/fixtures/validation/(edge_cases|exports)/syntax_error\.py|\.github/workflows/|archived/).*$
         stages: [pre-commit]
 
       - id: ruff-fix
@@ -68,7 +68,7 @@ repos:
         entry: poetry run ruff check --fix --exit-non-zero-on-fix
         language: system
         types: [python]
-        exclude: ^(tests/fixtures/validation/edge_cases/syntax_error\.py|\.github/workflows/|archived/).*$
+        exclude: ^(tests/fixtures/validation/(edge_cases|exports)/syntax_error\.py|\.github/workflows/|archived/).*$
         stages: [pre-commit]
         # Note: --exit-non-zero-on-fix ensures pre-commit fails if files were modified,
         # forcing you to re-stage the changes. This keeps pre-commit and CI in sync.
@@ -82,6 +82,34 @@ repos:
         exclude: ^(tests/|src/omnibase_core/examples|archive/|archived/).*\.py$
         pass_filenames: true  # Only check changed files, not entire codebase
         stages: [pre-push]  # Moved to pre-push: ~1-5s for changed files only
+
+      # PYRIGHT CHANGED-FILES-ONLY (pass_filenames: true)
+      # ===========================================================
+      # STRATEGY: Fast local check + comprehensive CI
+      # - Pre-push: Check only changed files (~1-5s)
+      # - CI: Full codebase scan catches cross-file type issues
+      #
+      # TRADEOFF:
+      # Changed-files-only may miss cross-file type issues (e.g., if you
+      # change a function signature in file A, file B that imports it won't
+      # be checked locally). CI catches these comprehensively.
+      #
+      # CONFIGURATION:
+      # See pyrightconfig.json for strictness settings (currently: basic mode)
+      # See OMN-200 for phase timeline to enable stricter rules
+      #
+      # DUAL-CHECKER RATIONALE:
+      # Both mypy (strict) and pyright (basic) check changed files only.
+      # CI runs both on full codebase for comprehensive coverage.
+      - id: pyright-type-check
+        name: pyright (type checking - basic)
+        entry: poetry run pyright
+        language: system
+        types: [python]
+        files: ^src/omnibase_core/.*\.py$
+        exclude: ^(tests/|src/omnibase_core/examples|archive/|archived/).*\.py$
+        pass_filenames: true  # Only check changed files, CI does full scan
+        stages: [pre-push]  # ~1-5s for changed files only
 
       # Cleanup: Clear tmp/ directory before commits
       # Prevents accumulation of temporary files from custom commands
