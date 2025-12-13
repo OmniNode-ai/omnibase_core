@@ -1,0 +1,73 @@
+{
+  "_comment": "OMN-200: Pyright Migration Timeline - See _phase_* fields for details",
+  "_phase_1_current": "Q4 2024 - CURRENT: Baseline establishment with basic mode. All strict rules disabled to establish baseline without CI failures.",
+  "_phase_2_q1_2025": "Q1 2025: Enable reportReturnType, reportArgumentType, reportAssignmentType. Target: Fix ~500 type errors.",
+  "_phase_3_q2_2025": "Q2 2025: Enable reportGeneralTypeIssues, reportCallIssue, reportIndexIssue, reportOperatorIssue. Target: Fix ~1000 type errors.",
+  "_phase_4_q3_2025": "Q3 2025: Move to 'standard' typeCheckingMode. Enable remaining strict rules. Target: Full pyright compliance.",
+  "_rule_groupings": {
+    "phase_2_rules": ["reportReturnType", "reportArgumentType", "reportAssignmentType"],
+    "phase_3_rules": ["reportGeneralTypeIssues", "reportCallIssue", "reportIndexIssue", "reportOperatorIssue"],
+    "phase_4_rules": ["reportUnknownParameterType", "reportUnknownArgumentType", "reportUnknownMemberType", "reportUnknownVariableType", "reportUnknownLambdaType"],
+    "low_priority": ["reportMissingImports", "reportMissingTypeStubs", "reportUntypedFunctionDecorator", "reportPrivateUsage"]
+  },
+
+  "include": ["src/omnibase_core"],
+  "exclude": [
+    "**/__pycache__",
+    "**/.venv",
+    "**/node_modules",
+    "tmp",
+    "**/tests/**"
+  ],
+
+  "typeCheckingMode": "basic",
+  "pythonVersion": "3.12",
+  "pythonPlatform": "Linux",
+
+  "_section_phase_1_baseline": "=== PHASE 1 BASELINE (Current) - Rules kept at warning or false ===",
+
+  "reportUnusedVariable": "warning",
+  "reportPossiblyUnbound": "warning",
+  "reportIncompatibleMethodOverride": "warning",
+
+  "_section_phase_2": "=== PHASE 2 (Q1 2025) - Core type safety rules ===",
+  "_phase_2_note": "These rules catch return type mismatches, argument type errors, and assignment issues. ~500 errors expected.",
+
+  "reportReturnType": false,
+  "reportArgumentType": false,
+  "reportAssignmentType": false,
+
+  "_section_phase_3": "=== PHASE 3 (Q2 2025) - Advanced type checking ===",
+  "_phase_3_note": "These rules catch general type issues, call signature problems, and index access errors. ~1000 errors expected.",
+
+  "reportGeneralTypeIssues": false,
+  "reportCallIssue": false,
+  "reportIndexIssue": false,
+  "reportOperatorIssue": false,
+  "reportRedeclaration": false,
+  "reportInvalidTypeForm": false,
+
+  "_section_phase_4": "=== PHASE 4 (Q3 2025) - Unknown type elimination ===",
+  "_phase_4_note": "These rules eliminate 'Unknown' types from the codebase. Requires explicit type annotations everywhere.",
+
+  "reportUnknownParameterType": false,
+  "reportUnknownArgumentType": false,
+  "reportUnknownMemberType": false,
+  "reportUnknownVariableType": false,
+  "reportUnknownLambdaType": false,
+
+  "_section_low_priority": "=== LOW PRIORITY - Enable as needed ===",
+  "_low_priority_note": "These rules are lower priority and may remain disabled. Enable based on team needs.",
+
+  "reportMissingImports": false,
+  "reportMissingTypeStubs": false,
+  "reportUnusedImport": false,
+  "reportUnsupportedDunderAll": false,
+  "reportAttributeAccessIssue": false,
+  "reportUnnecessaryComparison": false,
+  "reportUnnecessaryIsInstance": false,
+  "reportConstantRedefinition": false,
+  "reportUntypedFunctionDecorator": false,
+  "reportPrivateUsage": false,
+  "reportTypedDictNotRequiredAccess": false
+}
