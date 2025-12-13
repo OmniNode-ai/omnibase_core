@@ -1071,6 +1071,19 @@ class TestAllowDictAnyDecoratorExclusion:
             "@allow_dict_any should exclude function from DICT_ANY checks"
         )
 
+        # CRITICAL: @allow_dict_any should NOT affect Any import detection
+        # The `from typing import Any` should STILL be flagged as a violation
+        any_import_violations = [
+            v
+            for v in analyzer.violations
+            if v.violation_type == ViolationType.ANY_IMPORT
+        ]
+        assert len(any_import_violations) >= 1, (
+            "@allow_dict_any should NOT suppress ANY_IMPORT violations - "
+            "the decorator only excludes Dict[str, Any] type hints, "
+            "not the import of Any itself"
+        )
+
     def test_allow_dict_any_decorator_excludes_class(
         self, analyze_source: Callable[[str], PurityAnalyzer]
     ) -> None:
@@ -1097,6 +1110,19 @@ class TestAllowDictAnyDecoratorExclusion:
         ]
         assert len(dict_any_violations) == 0, (
             "@allow_dict_any on class should exclude all methods"
+        )
+
+        # CRITICAL: @allow_dict_any should NOT affect Any import detection
+        # The `from typing import Any` should STILL be flagged as a violation
+        any_import_violations = [
+            v
+            for v in analyzer.violations
+            if v.violation_type == ViolationType.ANY_IMPORT
+        ]
+        assert len(any_import_violations) >= 1, (
+            "@allow_dict_any on class should NOT suppress ANY_IMPORT violations - "
+            "the decorator only excludes Dict[str, Any] type hints, "
+            "not the import of Any itself"
         )
 
     def test_allow_dict_any_does_not_affect_other_functions(
@@ -1151,6 +1177,19 @@ class TestAllowDictAnyDecoratorExclusion:
         ]
         assert len(dict_any_violations) == 0, (
             "@allow_dict_str_any should exclude function from DICT_ANY checks"
+        )
+
+        # CRITICAL: @allow_dict_str_any should NOT affect Any import detection
+        # The `from typing import Any` should STILL be flagged as a violation
+        any_import_violations = [
+            v
+            for v in analyzer.violations
+            if v.violation_type == ViolationType.ANY_IMPORT
+        ]
+        assert len(any_import_violations) >= 1, (
+            "@allow_dict_str_any should NOT suppress ANY_IMPORT violations - "
+            "the decorator only excludes Dict[str, Any] type hints, "
+            "not the import of Any itself"
         )
 
 
@@ -1259,6 +1298,84 @@ class TestAnyTypeHintDetectionInDeclarativeNodes:
             v.violation_type in (ViolationType.ANY_IMPORT, ViolationType.ANY_TYPE_HINT)
             for v in analyzer.violations
         ), "Expected violation for Callable with Any"
+
+    def test_detects_callable_any_in_argument_list_only(
+        self, analyze_source: Callable[[str], PurityAnalyzer]
+    ) -> None:
+        """Test that Any in Callable argument list is detected even with typed return.
+
+        Regression test: Ensures the AST walker properly traverses the ast.List
+        inside Callable[[...], ...] to find Any in argument positions.
+        """
+        source = """
+        from typing import Callable, Any
+        from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+
+        class NodeMyCompute(NodeCoreBase):
+            callback: Callable[[Any], str]
+        """
+        analyzer = analyze_source(source)
+
+        any_type_violations = [
+            v
+            for v in analyzer.violations
+            if v.violation_type == ViolationType.ANY_TYPE_HINT
+        ]
+        assert len(any_type_violations) >= 1, (
+            "Expected ANY_TYPE_HINT violation for Callable[[Any], str]"
+        )
+
+    def test_detects_callable_any_in_return_type_only(
+        self, analyze_source: Callable[[str], PurityAnalyzer]
+    ) -> None:
+        """Test that Any in Callable return type is detected even with typed args.
+
+        Regression test: Ensures the AST walker properly checks return type
+        in Callable[[Args], ReturnType] patterns.
+        """
+        source = """
+        from typing import Callable, Any
+        from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+
+        class NodeMyCompute(NodeCoreBase):
+            callback: Callable[[str, int], Any]
+        """
+        analyzer = analyze_source(source)
+
+        any_type_violations = [
+            v
+            for v in analyzer.violations
+            if v.violation_type == ViolationType.ANY_TYPE_HINT
+        ]
+        assert len(any_type_violations) >= 1, (
+            "Expected ANY_TYPE_HINT violation for Callable[[str, int], Any]"
+        )
+
+    def test_detects_callable_any_in_middle_of_argument_list(
+        self, analyze_source: Callable[[str], PurityAnalyzer]
+    ) -> None:
+        """Test that Any in middle of Callable argument list is detected.
+
+        Regression test: Ensures all elements of the Callable argument list
+        are properly inspected, not just the first or last.
+        """
+        source = """
+        from typing import Callable, Any
+        from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+
+        class NodeMyCompute(NodeCoreBase):
+            callback: Callable[[str, Any, int], str]
+        """
+        analyzer = analyze_source(source)
+
+        any_type_violations = [
+            v
+            for v in analyzer.violations
+            if v.violation_type == ViolationType.ANY_TYPE_HINT
+        ]
+        assert len(any_type_violations) >= 1, (
+            "Expected ANY_TYPE_HINT violation for Callable[[str, Any, int], str]"
+        )
 
 
 @pytest.mark.unit
@@ -1519,6 +1636,201 @@ class TestTypeCheckingBlockExclusion:
         # Design decision: TYPE_CHECKING block imports should be allowed
         assert len(any_import_violations) == 0, (
             "TYPE_CHECKING block imports should be allowed (no runtime impact)"
+        )
+
+    def test_type_checking_block_networking_import_handling(
+        self, analyze_source: Callable[[str], PurityAnalyzer]
+    ) -> None:
+        """Test handling of networking module import inside TYPE_CHECKING block.
+
+        Networking imports (like 'import requests') are normally forbidden in
+        pure nodes, but inside TYPE_CHECKING blocks they should be allowed
+        since they're only used for type hints, not runtime I/O.
+        """
+        source = """
+        from typing import TYPE_CHECKING
+        from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+
+        if TYPE_CHECKING:
+            import requests
+
+        class NodeMyCompute(NodeCoreBase):
+            pass
+        """
+        analyzer = analyze_source(source)
+
+        # Networking imports inside TYPE_CHECKING should be allowed
+        networking_violations = [
+            v
+            for v in analyzer.violations
+            if v.violation_type == ViolationType.NETWORKING_IMPORT
+        ]
+        assert len(networking_violations) == 0, (
+            "Networking imports inside TYPE_CHECKING should be allowed "
+            "(no runtime I/O impact)"
+        )
+
+    def test_type_checking_block_event_bus_import_handling(
+        self, analyze_source: Callable[[str], PurityAnalyzer]
+    ) -> None:
+        """Test handling of event bus imports inside TYPE_CHECKING block.
+
+        Event bus imports are normally forbidden in declarative nodes, but
+        inside TYPE_CHECKING blocks they should be allowed for type hints.
+        """
+        source = """
+        from typing import TYPE_CHECKING
+        from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+
+        if TYPE_CHECKING:
+            from omnibase_core.models.events import ModelEventEnvelope
+
+        class NodeMyCompute(NodeCoreBase):
+            pass
+        """
+        analyzer = analyze_source(source)
+
+        # Event bus imports inside TYPE_CHECKING should be allowed
+        event_bus_violations = [
+            v
+            for v in analyzer.violations
+            if v.violation_type == ViolationType.EVENT_BUS_IMPORT
+        ]
+        assert len(event_bus_violations) == 0, (
+            "Event bus imports inside TYPE_CHECKING should be allowed "
+            "(no runtime side effects)"
+        )
+
+    def test_typing_dot_type_checking_syntax(
+        self, analyze_source: Callable[[str], PurityAnalyzer]
+    ) -> None:
+        """Test handling of 'if typing.TYPE_CHECKING:' syntax.
+
+        Both 'if TYPE_CHECKING:' and 'if typing.TYPE_CHECKING:' should work.
+        """
+        source = """
+        import typing
+        from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+
+        if typing.TYPE_CHECKING:
+            from typing import Any
+            import requests
+
+        class NodeMyCompute(NodeCoreBase):
+            pass
+        """
+        analyzer = analyze_source(source)
+
+        # Both Any and networking imports inside typing.TYPE_CHECKING should be allowed
+        any_violations = [
+            v
+            for v in analyzer.violations
+            if v.violation_type == ViolationType.ANY_IMPORT
+        ]
+        networking_violations = [
+            v
+            for v in analyzer.violations
+            if v.violation_type == ViolationType.NETWORKING_IMPORT
+        ]
+        assert len(any_violations) == 0, (
+            "typing.TYPE_CHECKING syntax should work for Any imports"
+        )
+        assert len(networking_violations) == 0, (
+            "typing.TYPE_CHECKING syntax should work for networking imports"
+        )
+
+    def test_type_checking_block_multiple_imports(
+        self, analyze_source: Callable[[str], PurityAnalyzer]
+    ) -> None:
+        """Test handling of multiple imports inside TYPE_CHECKING block.
+
+        Multiple forbidden imports inside TYPE_CHECKING should all be allowed.
+        """
+        source = """
+        from typing import TYPE_CHECKING
+        from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+
+        if TYPE_CHECKING:
+            from typing import Any
+            import requests
+            import subprocess
+            from omnibase_core.models.events import ModelEventEnvelope
+
+        class NodeMyCompute(NodeCoreBase):
+            pass
+        """
+        analyzer = analyze_source(source)
+
+        # All imports inside TYPE_CHECKING should be allowed
+        relevant_violations = [
+            v
+            for v in analyzer.violations
+            if v.violation_type
+            in (
+                ViolationType.ANY_IMPORT,
+                ViolationType.NETWORKING_IMPORT,
+                ViolationType.SUBPROCESS_IMPORT,
+                ViolationType.EVENT_BUS_IMPORT,
+            )
+        ]
+        assert len(relevant_violations) == 0, (
+            f"All imports inside TYPE_CHECKING should be allowed, "
+            f"but found {len(relevant_violations)} violations: "
+            f"{[v.violation_type for v in relevant_violations]}"
+        )
+
+    def test_imports_outside_type_checking_still_flagged(
+        self, analyze_source: Callable[[str], PurityAnalyzer]
+    ) -> None:
+        """Test that imports outside TYPE_CHECKING are still properly flagged.
+
+        This ensures TYPE_CHECKING exclusion doesn't accidentally disable all
+        import checking. Imports inside TYPE_CHECKING should be allowed, but
+        the same imports outside should still be flagged.
+        """
+        source = """
+        from typing import TYPE_CHECKING, Any
+        from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+        import requests
+
+        if TYPE_CHECKING:
+            import subprocess  # This should NOT be flagged
+
+        class NodeMyCompute(NodeCoreBase):
+            pass
+        """
+        analyzer = analyze_source(source)
+
+        # Imports OUTSIDE TYPE_CHECKING should still be flagged
+        any_violations = [
+            v
+            for v in analyzer.violations
+            if v.violation_type == ViolationType.ANY_IMPORT
+        ]
+        networking_violations = [
+            v
+            for v in analyzer.violations
+            if v.violation_type == ViolationType.NETWORKING_IMPORT
+        ]
+
+        # 'from typing import Any' is outside TYPE_CHECKING - should be flagged
+        assert len(any_violations) == 1, (
+            "'from typing import Any' outside TYPE_CHECKING should be flagged"
+        )
+
+        # 'import requests' is outside TYPE_CHECKING - should be flagged
+        assert len(networking_violations) == 1, (
+            "'import requests' outside TYPE_CHECKING should be flagged"
+        )
+
+        # subprocess inside TYPE_CHECKING should NOT be flagged
+        subprocess_violations = [
+            v
+            for v in analyzer.violations
+            if v.violation_type == ViolationType.SUBPROCESS_IMPORT
+        ]
+        assert len(subprocess_violations) == 0, (
+            "'import subprocess' inside TYPE_CHECKING should NOT be flagged"
         )
 
 

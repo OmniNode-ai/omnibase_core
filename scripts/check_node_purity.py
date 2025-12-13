@@ -409,6 +409,124 @@ VALID_NODE_BASE_CLASSES = frozenset(
 
 
 # ==============================================================================
+# AST HELPER FUNCTIONS (SHARED)
+# ==============================================================================
+#
+# These module-level helper functions are shared between NodeTypeFinder and
+# PurityAnalyzer to avoid code duplication. They provide pure utility operations
+# for extracting information from AST nodes.
+# ==============================================================================
+
+
+def _get_base_class_name(base: ast.expr) -> str | None:
+    """Extract base class name from AST expression.
+
+    This is a shared utility function used by both NodeTypeFinder and
+    PurityAnalyzer to extract class names from inheritance declarations.
+
+    Args:
+        base: AST expression representing a base class.
+
+    Returns:
+        String name of the base class, or None if cannot be extracted.
+
+    Examples:
+        - ast.Name("NodeCompute") -> "NodeCompute"
+        - ast.Attribute(module.NodeCompute) -> "NodeCompute"
+        - ast.Subscript(Generic[T]) -> "Generic"
+    """
+    if isinstance(base, ast.Name):
+        return base.id
+    if isinstance(base, ast.Attribute):
+        return base.attr
+    if isinstance(base, ast.Subscript):
+        # Generic[T] case
+        if isinstance(base.value, ast.Name):
+            return base.value.id
+    return None
+
+
+def _is_onex_node_class(node: ast.ClassDef) -> bool:
+    """Check if class is an ONEX Node class.
+
+    This is a shared utility function used by both NodeTypeFinder and
+    PurityAnalyzer to identify ONEX node classes based on their inheritance.
+
+    Args:
+        node: AST class definition node to check.
+
+    Returns:
+        True if class inherits from a Node base class (NodeCoreBase,
+        NodeCompute, NodeEffect, NodeReducer, NodeOrchestrator, or any
+        class starting with "Node").
+    """
+    for base in node.bases:
+        base_name = _get_base_class_name(base)
+        if base_name in (
+            "NodeCoreBase",
+            "NodeCompute",
+            "NodeEffect",
+            "NodeReducer",
+            "NodeOrchestrator",
+        ):
+            return True
+        if base_name and base_name.startswith("Node"):
+            return True
+    return False
+
+
+def _determine_onex_node_type(node: ast.ClassDef) -> str | None:
+    """Determine the type of node from class name or base classes.
+
+    This is a shared utility function used by NodeTypeFinder to classify
+    node type for purity requirement determination.
+
+    The function first checks the class name for type keywords (compute,
+    effect, reducer, orchestrator), then falls back to checking base class
+    names if no match is found.
+
+    Args:
+        node: AST class definition node to analyze.
+
+    Returns:
+        Node type string ('compute', 'effect', 'reducer', 'orchestrator')
+        or None if type cannot be determined.
+
+    Examples:
+        - class NodeMyCompute(NodeCoreBase) -> "compute"
+        - class MyNode(NodeEffect) -> "effect"
+        - class UnknownClass(object) -> None
+    """
+    class_name = node.name.lower()
+
+    # Check class name first (most specific)
+    if "compute" in class_name:
+        return "compute"
+    if "effect" in class_name:
+        return "effect"
+    if "reducer" in class_name:
+        return "reducer"
+    if "orchestrator" in class_name:
+        return "orchestrator"
+
+    # Fall back to checking base class names
+    for base in node.bases:
+        base_name = _get_base_class_name(base)
+        if base_name:
+            base_lower = base_name.lower()
+            if "compute" in base_lower:
+                return "compute"
+            if "effect" in base_lower:
+                return "effect"
+            if "reducer" in base_lower:
+                return "reducer"
+            if "orchestrator" in base_lower:
+                return "orchestrator"
+
+    return None
+
+
+# ==============================================================================
 # AST VISITORS
 # ==============================================================================
 
@@ -419,6 +537,9 @@ class NodeTypeFinder(ast.NodeVisitor):
     This visitor scans the AST to identify ONEX node classes and determine
     whether they should be subject to purity checks. COMPUTE and REDUCER
     nodes require purity; EFFECT and ORCHESTRATOR nodes do not.
+
+    Uses shared helper functions (_is_onex_node_class, _determine_onex_node_type,
+    _get_base_class_name) to avoid code duplication with PurityAnalyzer.
 
     Attributes:
         node_class_name: Name of the node class found, if any.
@@ -438,94 +559,11 @@ class NodeTypeFinder(ast.NodeVisitor):
         Args:
             node: AST class definition node to analyze.
         """
-        if self._is_node_class(node):
+        if _is_onex_node_class(node):
             self.node_class_name = node.name
-            self.node_type = self._determine_node_type(node)
+            self.node_type = _determine_onex_node_type(node)
             self.is_pure_node = self.node_type in ("compute", "reducer")
         self.generic_visit(node)
-
-    def _is_node_class(self, node: ast.ClassDef) -> bool:
-        """Check if class is an ONEX Node class (first pass).
-
-        Used during the initial AST traversal to identify node classes
-        for purity requirement determination.
-
-        Args:
-            node: AST class definition node to check.
-
-        Returns:
-            True if class inherits from a Node base class.
-        """
-        for base in node.bases:
-            base_name = self._get_base_name(base)
-            if base_name in (
-                "NodeCoreBase",
-                "NodeCompute",
-                "NodeEffect",
-                "NodeReducer",
-                "NodeOrchestrator",
-            ):
-                return True
-            if base_name and base_name.startswith("Node"):
-                return True
-        return False
-
-    def _determine_node_type(self, node: ast.ClassDef) -> str | None:
-        """Determine the type of node from class name or base classes (first pass).
-
-        Used during initial AST traversal to classify node type for
-        purity requirement determination.
-
-        Args:
-            node: AST class definition node to analyze.
-
-        Returns:
-            Node type string ('compute', 'effect', 'reducer', 'orchestrator')
-            or None if type cannot be determined.
-        """
-        class_name = node.name.lower()
-
-        if "compute" in class_name:
-            return "compute"
-        if "effect" in class_name:
-            return "effect"
-        if "reducer" in class_name:
-            return "reducer"
-        if "orchestrator" in class_name:
-            return "orchestrator"
-
-        for base in node.bases:
-            base_name = self._get_base_name(base)
-            if base_name:
-                base_lower = base_name.lower()
-                if "compute" in base_lower:
-                    return "compute"
-                if "effect" in base_lower:
-                    return "effect"
-                if "reducer" in base_lower:
-                    return "reducer"
-                if "orchestrator" in base_lower:
-                    return "orchestrator"
-
-        return None
-
-    def _get_base_name(self, base: ast.expr) -> str | None:
-        """Extract base class name from AST expression (first pass helper).
-
-        Args:
-            base: AST expression representing a base class.
-
-        Returns:
-            String name of the base class, or None if cannot be extracted.
-        """
-        if isinstance(base, ast.Name):
-            return base.id
-        if isinstance(base, ast.Attribute):
-            return base.attr
-        if isinstance(base, ast.Subscript):
-            if isinstance(base.value, ast.Name):
-                return base.value.id
-        return None
 
 
 @dataclass
@@ -717,7 +755,7 @@ class PurityAnalyzer(ast.NodeVisitor):
         self.class_allow_dict_any = self._has_allow_dict_any_decorator(node)
 
         # Check if this is the node class (check inheritance)
-        if self._is_node_class(node):
+        if _is_onex_node_class(node):
             self._check_inheritance(node)
 
         # Check for class-level mutable data in all classes
@@ -903,7 +941,7 @@ class PurityAnalyzer(ast.NodeVisitor):
             node: AST class definition node to check.
         """
         for base in node.bases:
-            base_name = self._get_base_name(base)
+            base_name = _get_base_class_name(base)
             if base_name and base_name not in VALID_NODE_BASE_CLASSES:
                 # Check if it's a Mixin (allowed)
                 if not base_name.startswith("Mixin"):
@@ -976,86 +1014,10 @@ class PurityAnalyzer(ast.NodeVisitor):
                     "Use ModelComputeCache from container or remove caching",
                 )
 
-    def _is_node_class(self, node: ast.ClassDef) -> bool:
-        """Check if class is an ONEX Node class.
-
-        Args:
-            node: AST class definition node to check.
-
-        Returns:
-            True if class inherits from a Node base class.
-        """
-        # Check if it inherits from NodeCoreBase or Node* classes
-        for base in node.bases:
-            base_name = self._get_base_name(base)
-            if base_name in (
-                "NodeCoreBase",
-                "NodeCompute",
-                "NodeEffect",
-                "NodeReducer",
-                "NodeOrchestrator",
-            ):
-                return True
-            if base_name and base_name.startswith("Node"):
-                return True
-        return False
-
-    def _determine_node_type(self, node: ast.ClassDef) -> str | None:
-        """Determine the type of node from class name or base classes.
-
-        Args:
-            node: AST class definition node to analyze.
-
-        Returns:
-            Node type string ('compute', 'effect', 'reducer', 'orchestrator')
-            or None if type cannot be determined.
-        """
-        class_name = node.name.lower()
-
-        # Check class name
-        if "compute" in class_name:
-            return "compute"
-        if "effect" in class_name:
-            return "effect"
-        if "reducer" in class_name:
-            return "reducer"
-        if "orchestrator" in class_name:
-            return "orchestrator"
-
-        # Check base classes
-        for base in node.bases:
-            base_name = self._get_base_name(base)
-            if base_name:
-                base_lower = base_name.lower()
-                if "compute" in base_lower:
-                    return "compute"
-                if "effect" in base_lower:
-                    return "effect"
-                if "reducer" in base_lower:
-                    return "reducer"
-                if "orchestrator" in base_lower:
-                    return "orchestrator"
-
-        return None
-
-    def _get_base_name(self, base: ast.expr) -> str | None:
-        """Extract base class name from AST expression.
-
-        Args:
-            base: AST expression representing a base class.
-
-        Returns:
-            String name of the base class, or None if cannot be extracted.
-        """
-        if isinstance(base, ast.Name):
-            return base.id
-        if isinstance(base, ast.Attribute):
-            return base.attr
-        if isinstance(base, ast.Subscript):
-            # Generic[T] case
-            if isinstance(base.value, ast.Name):
-                return base.value.id
-        return None
+    # NOTE: _is_node_class, _determine_node_type, and _get_base_name have been
+    # consolidated into module-level functions (_is_onex_node_class,
+    # _determine_onex_node_type, _get_base_class_name) to avoid code duplication.
+    # See the "AST HELPER FUNCTIONS (SHARED)" section above.
 
     def _get_decorator_name(self, decorator: ast.expr) -> str:
         """Extract decorator name from AST expression.
@@ -1520,11 +1482,49 @@ class PurityAnalyzer(ast.NodeVisitor):
 # ==============================================================================
 
 
-# Base node files that are exempt from purity checks (framework code)
-# These files legitimately need Any for generic type parameters
+# ==============================================================================
+# BASE NODE FILE EXEMPTIONS
+# ==============================================================================
+#
+# These base node files are exempt from purity checks because they are
+# FRAMEWORK code that provides the generic base classes for user nodes.
+#
+# WHY THESE EXEMPTIONS ARE NECESSARY:
+#
+# 1. Generic Type Parameters Require Any:
+#    - NodeCompute[T_Input, T_Output] must use Any for unbounded generic types
+#    - NodeReducer[T_Input, T_Output] has the same requirement
+#    - Example: `ModelComputeInput[Any]` is the base type before specialization
+#    - Example: `Callable[..., Any]` for computation registry functions
+#
+# 2. Type Aliases for Circular Import Avoidance:
+#    - `ContractComputeType = Any` avoids circular imports at module level
+#    - These are TYPE_CHECKING-guarded imports but need runtime aliases
+#
+# 3. Framework vs User Code Distinction:
+#    - Base classes define the contract; user subclasses implement specifics
+#    - User nodes MUST use concrete types; base classes MUST remain generic
+#    - The purity linter enforces this by checking user code, not framework code
+#
+# WHAT IS CHECKED VS SKIPPED:
+#    - SKIPPED: All purity violations (because these are framework files)
+#    - CHECKED: Syntax validity (always parsed to verify no syntax errors)
+#    - CHECKED: Class metadata extraction (for reporting purposes)
+#
+# IF YOU ADD A NEW BASE NODE FILE:
+#    1. Verify it truly needs Any for generic type handling
+#    2. Ensure the file uses ONEX_EXCLUDE comments for specific Any usages
+#    3. Add it here with a comment explaining the specific requirement
+#    4. Update this documentation block
+#
+# RELATED: ONEX_EXCLUDE comments can exempt specific lines in user code
+# when legitimate Any usage is required (e.g., external API contracts).
+#
+# See: docs/guides/node-building/03_COMPUTE_NODE_TUTORIAL.md for user guidance
+# ==============================================================================
 BASE_NODE_FILES_SKIP = {
-    "node_compute.py",  # Base class needs Any for ModelComputeInput[Any]
-    "node_reducer.py",  # Base class needs Any for generic type handling
+    "node_compute.py",  # Generic base: NodeCompute[T_Input, T_Output], Callable[..., Any]
+    "node_reducer.py",  # Generic base: NodeReducer[T_Input, T_Output], FSM type handling
 }
 
 
@@ -1536,13 +1536,33 @@ def analyze_file(file_path: Path) -> PurityCheckResult:
     1. First pass: Determine if file contains pure node classes
     2. Second pass: Check for purity violations if pure nodes found
 
+    Base File Exemptions:
+        Files in BASE_NODE_FILES_SKIP (e.g., node_compute.py, node_reducer.py)
+        are exempt from purity checks because they are framework code that
+        legitimately requires Any for generic type parameters. However:
+
+        - Syntax errors are STILL reported (framework code must be valid)
+        - I/O errors are STILL reported (files must be readable)
+        - Encoding errors are STILL reported (files must be valid UTF-8)
+        - Class metadata is STILL extracted (for reporting purposes)
+
+        See BASE_NODE_FILES_SKIP documentation for full explanation of why
+        these exemptions are necessary.
+
     Args:
         file_path: Path to the Python file
 
     Returns:
         PurityCheckResult with violations and analysis
+
+    Error Handling:
+        - SyntaxError: Reported as ERROR violation with line number
+        - OSError: Reported as ERROR violation (file access issues)
+        - UnicodeDecodeError: Reported as ERROR violation (encoding issues)
     """
-    # For base node files, still extract class info but skip purity checks
+    # For base node files, still extract class info but skip purity checks.
+    # These are framework files that legitimately need Any for generic types.
+    # See BASE_NODE_FILES_SKIP documentation above for full explanation.
     if file_path.name in BASE_NODE_FILES_SKIP:
         try:
             source = file_path.read_text(encoding="utf-8")
@@ -1560,15 +1580,66 @@ def analyze_file(file_path: Path) -> PurityCheckResult:
                 is_pure=True,
                 skip_reason="Base node file (framework code with legitimate generic types)",
             )
-        except (SyntaxError, Exception):
-            # If parsing fails, return with None values
+        except SyntaxError as e:
+            # Syntax errors in base files are REAL errors that must be reported.
+            # Framework code must be syntactically valid.
             return PurityCheckResult(
                 file_path=file_path,
                 node_class_name=None,
                 node_type=None,
-                violations=[],
-                is_pure=True,
-                skip_reason="Base node file (framework code with legitimate generic types)",
+                violations=[
+                    PurityViolation(
+                        file_path=file_path,
+                        line_number=e.lineno or 0,
+                        column=e.offset or 0,
+                        violation_type=ViolationType.FORBIDDEN_IMPORT,
+                        severity=Severity.ERROR,
+                        message=f"Syntax error in base node file: {e.msg}",
+                        suggestion="Fix the syntax error - base files must be valid Python",
+                    )
+                ],
+                is_pure=False,
+                skip_reason=f"Syntax error in base node file: {e.msg}",
+            )
+        except OSError as e:
+            # I/O errors (file not found, permission denied, etc.) are real errors.
+            return PurityCheckResult(
+                file_path=file_path,
+                node_class_name=None,
+                node_type=None,
+                violations=[
+                    PurityViolation(
+                        file_path=file_path,
+                        line_number=0,
+                        column=0,
+                        violation_type=ViolationType.FORBIDDEN_IMPORT,
+                        severity=Severity.ERROR,
+                        message=f"I/O error reading base node file: {e}",
+                        suggestion="Check file exists and is readable",
+                    )
+                ],
+                is_pure=False,
+                skip_reason=f"I/O error: {e}",
+            )
+        except UnicodeDecodeError as e:
+            # Encoding errors indicate corrupted or non-UTF-8 files.
+            return PurityCheckResult(
+                file_path=file_path,
+                node_class_name=None,
+                node_type=None,
+                violations=[
+                    PurityViolation(
+                        file_path=file_path,
+                        line_number=0,
+                        column=0,
+                        violation_type=ViolationType.FORBIDDEN_IMPORT,
+                        severity=Severity.ERROR,
+                        message=f"Encoding error in base node file: {e}",
+                        suggestion="Ensure file is valid UTF-8 encoded",
+                    )
+                ],
+                is_pure=False,
+                skip_reason=f"Encoding error: {e}",
             )
 
     try:

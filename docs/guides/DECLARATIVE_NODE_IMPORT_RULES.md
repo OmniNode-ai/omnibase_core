@@ -30,6 +30,8 @@ Purity in this context means:
 
 ## Node Types and Purity Requirements
 
+<!-- markdownlint-disable MD058 -->
+
 | Node Type | Purity Required | Import Restrictions | Rationale |
 |-----------|-----------------|---------------------|-----------|
 | `NodeCompute` | **YES** | Full restrictions | Pure computation - no side effects, deterministic |
@@ -107,6 +109,7 @@ def process(self, data: ModelComputeInput) -> ModelComputeOutput:
 - Make testing difficult (requires mocking event bus)
 
 **Blocked Mixins**:
+
 | Mixin | Reason |
 |-------|--------|
 | `MixinEventBus` | Publishes events - side effect |
@@ -393,7 +396,7 @@ def legacy_bridge(data: Any) -> Any:  # noqa: ONEX001
 
 ### Pre-push Hook
 
-The purity linter runs automatically on pre-push when node files are modified:
+The purity linter runs automatically on every pre-push. The script internally scans all node files in `src/omnibase_core/nodes/` and `infrastructure/`, so it runs unconditionally to ensure comprehensive coverage:
 
 ```yaml
 # .pre-commit-config.yaml
@@ -405,7 +408,7 @@ repos:
         entry: poetry run python scripts/check_node_purity.py
         language: system
         pass_filenames: false
-        files: ^src/omnibase_core/nodes/
+        always_run: true
         stages: [pre-push]
 ```
 
@@ -432,7 +435,7 @@ The linter runs in CI via GitHub Actions:
 
 ### Example Linter Output
 
-```
+```text
 src/nodes/node_my_processor_compute.py:15:1: ONEX001 Disallowed import: 'typing.Any' in pure node
 src/nodes/node_my_processor_compute.py:23:5: ONEX002 Disallowed type: 'Dict[str, Any]' - use typed alternative
 src/nodes/node_my_processor_compute.py:45:1: ONEX003 Blocked mixin 'MixinEventBus' in pure node - use NodeEffect for event operations
@@ -611,7 +614,7 @@ poetry run mypy src/omnibase_core/nodes/
 
 ### Decision Tree
 
-```
+```text
 Is your node doing pure computation or FSM state management?
   |
   +-- YES --> Use NodeCompute or NodeReducer
