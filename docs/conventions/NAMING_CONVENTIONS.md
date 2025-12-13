@@ -201,15 +201,27 @@ version = ModelSemVer(major=1, minor=0, patch=0)  # 1.0.0
 
 ## Profile Tags
 
-### Tag Format
+### Tag Formats
 
-Profile tags follow a hierarchical naming convention:
+Profile tags support two formats:
+
+#### 1. Hierarchical Format (Recommended for Metadata)
+
+Use `category:value` format for structured metadata that supports filtering:
 
 ```text
 <category>:<value>
 ```
 
-### Standard Categories
+#### 2. Simple String Format (For Categorization)
+
+Use simple strings without colons for basic categorization tags:
+
+```text
+<tag-name>
+```
+
+### Standard Hierarchical Categories
 
 | Category | Purpose | Examples |
 |----------|---------|----------|
@@ -219,7 +231,19 @@ Profile tags follow a hierarchical naming convention:
 | `team` | Owning team | `team:platform`, `team:data`, `team:ml` |
 | `capability` | Feature capabilities | `capability:async`, `capability:batch` |
 
-### Tag Usage
+### Common Simple Tags
+
+Simple tags are useful for categorization without structured filtering:
+
+| Tag | Purpose |
+|-----|---------|
+| `runtime` | Runtime-related functionality |
+| `effect` | Effect node functionality |
+| `contracts` | Contract-related functionality |
+| `validation` | Validation functionality |
+| `discovery` | Discovery-related functionality |
+
+### Tag Usage in Python
 
 ```python
 from omnibase_core.models.container.model_service_metadata import (
@@ -233,6 +257,7 @@ metadata = ModelServiceMetadata(
     service_implementation="ComputeProcessor",
     version=ModelSemVer(major=1, minor=0, patch=0),
     tags=[
+        # Hierarchical tags for filtering
         "env:production",
         "tier:critical",
         "team:platform",
@@ -241,12 +266,36 @@ metadata = ModelServiceMetadata(
 )
 ```
 
+### Tag Usage in YAML Contracts
+
+Both formats are valid in YAML `profile_tags` arrays:
+
+```yaml
+# Example with hierarchical tags
+profile_tags:
+  - "env:production"
+  - "tier:critical"
+  - "team:platform"
+
+# Example with simple categorization tags
+profile_tags:
+  - "runtime"
+  - "effect"
+  - "contracts"
+
+# Mixed usage (valid but hierarchical preferred for consistency)
+profile_tags:
+  - "env:production"
+  - "runtime"
+```
+
 ### Tag Best Practices
 
 1. **Lowercase**: Use lowercase for consistency
-2. **Hierarchical**: Use colons for category separation
-3. **Specific**: Be specific enough for filtering
-4. **Documented**: Document custom tags in your project
+2. **Hierarchical for Filtering**: Use `category:value` format when you need to filter by category
+3. **Simple for Categorization**: Use simple strings for basic categorization without filtering needs
+4. **Consistent Within Project**: Choose one format per use case and apply consistently
+5. **Documented**: Document custom tags in your project
 
 ---
 
@@ -319,9 +368,11 @@ event_handling = ModelEventHandlingSubcontract(
 ```
 
 **Components:**
-- `semver`: Semantic version (e.g., `1.0.0`, `0.4.0-beta.1`)
+- `semver`: Semantic version **without 'v' prefix** (e.g., `1.0.0`, `0.4.0-beta.1`)
 - `:`: Separator (single colon)
 - `hash`: First N hex characters of SHA256 (default: 12)
+
+**Important:** The semver component must NOT include a 'v' prefix. Use `1.0.0`, not `v1.0.0`.
 
 ### Examples
 

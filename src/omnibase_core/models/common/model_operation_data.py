@@ -4,7 +4,7 @@ Typed operation data model for effect input.
 This module provides strongly-typed operation data for effect patterns.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelOperationData(BaseModel):
@@ -13,7 +13,12 @@ class ModelOperationData(BaseModel):
 
     Replaces dict[str, Any] operation_data field in ModelEffectInput
     with explicit typed fields for effect operations.
+
+    Note: Dict fields use dict[str, str] per ONEX strict typing standards.
+    For complex values, serialize to JSON strings.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     # Common fields across all effect types
     action: str | None = Field(
@@ -36,7 +41,7 @@ class ModelOperationData(BaseModel):
     )
     parameters: dict[str, str] = Field(
         default_factory=dict,
-        description="Query parameters",
+        description="Query parameters as string key-value pairs",
     )
 
     # API call fields
@@ -50,7 +55,7 @@ class ModelOperationData(BaseModel):
     )
     headers: dict[str, str] = Field(
         default_factory=dict,
-        description="HTTP headers",
+        description="HTTP headers as string key-value pairs",
     )
     body: str | None = Field(
         default=None,
@@ -80,7 +85,7 @@ class ModelOperationData(BaseModel):
     # Event envelope payload (for event-driven processing)
     envelope_payload: dict[str, str] = Field(
         default_factory=dict,
-        description="Event envelope payload data",
+        description="Event envelope payload data as string key-value pairs",
     )
 
 

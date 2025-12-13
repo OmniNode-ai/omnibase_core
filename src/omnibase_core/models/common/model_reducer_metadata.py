@@ -6,7 +6,7 @@ This module provides strongly-typed metadata for reducer patterns.
 
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelReducerMetadata(BaseModel):
@@ -15,7 +15,13 @@ class ModelReducerMetadata(BaseModel):
 
     Replaces dict[str, Any] metadata field in ModelReducerInput
     with explicit typed fields for reducer metadata.
+
+    Note: All fields are optional as metadata may be partially populated
+    depending on the source and context. This is intentional for metadata
+    models that aggregate information from multiple sources.
     """
+
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     source: str | None = Field(
         default=None,

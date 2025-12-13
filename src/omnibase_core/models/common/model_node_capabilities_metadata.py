@@ -4,7 +4,7 @@ Typed metadata model for node capabilities.
 This module provides strongly-typed metadata for node capability patterns.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelNodeCapabilitiesMetadata(BaseModel):
@@ -13,7 +13,13 @@ class ModelNodeCapabilitiesMetadata(BaseModel):
 
     Replaces dict[str, Any] metadata field in ModelNodeCapabilities
     with explicit typed fields for common node metadata.
+
+    Note: All fields are optional as metadata may be partially populated
+    depending on the source and context. This is intentional for metadata
+    models that aggregate information from multiple sources.
     """
+
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     description: str | None = Field(
         default=None,

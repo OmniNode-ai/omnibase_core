@@ -4,7 +4,7 @@ Typed metadata model for discovered tools.
 This module provides strongly-typed metadata for tool discovery patterns.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelToolMetadataFields(BaseModel):
@@ -13,7 +13,13 @@ class ModelToolMetadataFields(BaseModel):
 
     Replaces dict[str, Any] metadata field in ModelDiscoveredTool
     with explicit typed fields for common tool metadata.
+
+    Note: All fields are optional as metadata may be partially populated
+    depending on the source and context. This is intentional for metadata
+    models that aggregate information from multiple sources.
     """
+
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     author: str | None = Field(
         default=None,

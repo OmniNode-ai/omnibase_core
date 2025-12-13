@@ -4,7 +4,7 @@ Typed event subscription configuration model.
 This module provides strongly-typed configuration for event subscription patterns.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelEventSubscriptionConfig(BaseModel):
@@ -14,6 +14,8 @@ class ModelEventSubscriptionConfig(BaseModel):
     Replaces list[dict[str, Any]] event_subscriptions field in ModelYamlContract
     with explicit typed fields for event subscriptions.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     event_type: str = Field(
         ...,
