@@ -1,26 +1,24 @@
-from typing import Any
-
-from pydantic import Field, field_validator
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.enums.enum_health_check_type import EnumHealthCheckType
-from omnibase_core.enums.enum_health_check_type import (
-    EnumHealthCheckType as HealthCheckType,
-)
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Health Check Configuration Model for ONEX Configuration-Driven Registry System.
 
 This module provides the ModelHealthCheck for strongly typed health check configuration.
 Provides scalable health check patterns instead of weak string typing.
-
 """
 
+# Standard library imports
+from typing import Any
 
-from pydantic import BaseModel, HttpUrl
+# Third-party imports
+from pydantic import BaseModel, Field, HttpUrl, field_validator
 
+# Local imports
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_health_check_type import EnumHealthCheckType
+from omnibase_core.enums.enum_health_check_type import (
+    EnumHealthCheckType as HealthCheckType,
+)
 from omnibase_core.models.core.model_protocol_metadata import ModelGenericMetadata
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelHealthCheck(BaseModel):

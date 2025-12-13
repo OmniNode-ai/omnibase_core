@@ -1,8 +1,3 @@
-from pydantic import Field
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Parsed Arguments Model
 
@@ -12,7 +7,10 @@ and parsing metadata for complete argument handling.
 
 from typing import TYPE_CHECKING, Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 if TYPE_CHECKING:
     from omnibase_core.types.type_serializable_value import SerializedDict
@@ -153,7 +151,7 @@ class ModelParsedArguments(BaseModel):
             )
 
         # Start with the argument map dictionary
-        result: SerializedDict = self.arguments.to_dict()  # type: ignore[assignment]
+        result: SerializedDict = self.arguments.to_dict()
 
         # Add command metadata
         result["_command_name"] = self.command_definition.command_name

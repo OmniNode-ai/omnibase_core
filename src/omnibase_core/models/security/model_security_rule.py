@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 Security rule model for individual security rules.
 """
 
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelSecurityRule(BaseModel):

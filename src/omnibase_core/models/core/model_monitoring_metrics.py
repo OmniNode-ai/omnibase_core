@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Monitoring metrics model to replace Dict[str, Any] usage for metrics.
 """
@@ -7,7 +5,7 @@ Monitoring metrics model to replace Dict[str, Any] usage for metrics.
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, field_serializer
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 from omnibase_core.models.discovery.model_metric_value import (
     AnyMetricValue,

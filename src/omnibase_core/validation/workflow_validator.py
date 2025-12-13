@@ -45,6 +45,7 @@ from collections.abc import Set as AbstractSet
 from uuid import UUID
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_workflow_execution import EnumExecutionMode
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.contracts.subcontracts.model_workflow_definition import (
     ModelWorkflowDefinition,
@@ -65,6 +66,7 @@ from omnibase_core.models.validation.model_unique_name_result import (
 from omnibase_core.models.validation.model_workflow_validation_result import (
     ModelWorkflowValidationResult,
 )
+from omnibase_core.validation.reserved_enum_validator import validate_execution_mode
 
 # Type aliases for clarity (Python 3.12+ syntax)
 type StepIdToName = Mapping[UUID, str]
@@ -963,8 +965,7 @@ def validate_execution_mode_string(mode: str) -> None:
 
     This function validates raw string execution modes, typically from YAML configs
     or user input. For type-safe validation when you already have an EnumExecutionMode
-    instance, use validate_reserved_execution_mode (aliased from validate_execution_mode
-    in reserved_enum_validator) instead.
+    instance, use validate_execution_mode (from reserved_enum_validator) instead.
 
     **When to use which function:**
 
@@ -973,7 +974,7 @@ def validate_execution_mode_string(mode: str) -> None:
       to an enum yet. This is the appropriate choice for ModelWorkflowDefinition
       validation where execution_mode is stored as a string.
 
-    - ``validate_reserved_execution_mode(mode: EnumExecutionMode)``: Use when you
+    - ``validate_execution_mode(mode: EnumExecutionMode)``: Use when you
       already have a typed EnumExecutionMode value (e.g., from a Pydantic model
       with enum field). Provides compile-time type safety.
 
@@ -1007,22 +1008,33 @@ def validate_execution_mode_string(mode: str) -> None:
         mode: The execution mode string to validate. Case-insensitive.
 
     Raises:
-        ModelOnexError: If the execution mode is CONDITIONAL or STREAMING.
-            The error uses EnumCoreErrorCode.VALIDATION_ERROR and includes
-            a clear message indicating which reserved mode was used.
-            Error context includes:
-            - mode: The invalid mode that was provided
-            - reserved_modes: List of reserved mode names
-            - accepted_modes: List of accepted mode names
+        ModelOnexError: In two cases (two-step validation):
+            1. **Step 1 - Unrecognized mode**: If the mode string is not a valid
+               EnumExecutionMode value. Error code: VALIDATION_ERROR with
+               "Unrecognized execution mode" message. This means the mode is
+               completely unknown (e.g., "foobar", "invalid"). Error context includes:
+               - mode: The unrecognized mode that was provided
+               - reserved_modes: List of reserved mode names
+               - accepted_modes: List of accepted mode names
+
+            2. **Step 2 - Reserved mode**: If the execution mode is
+               CONDITIONAL or STREAMING (reserved for future ONEX versions).
+               These are valid enum values but not accepted in v1.0.
+               This step delegates to ``validate_execution_mode`` (from
+               ``reserved_enum_validator``) which raises the error.
+               Error code: VALIDATION_ERROR with "reserved" message. Error context:
+               - mode: The reserved mode value
+               - reserved_modes: List of reserved mode names
+               - accepted_modes: List of accepted mode names
+               - version: The version the mode is reserved for (e.g., "v1.1+", "v1.2+")
 
     Complexity:
         Time: O(1) - set lookup
         Space: O(1) - constant storage
 
     See Also:
-        validate_reserved_execution_mode: Type-safe validation for EnumExecutionMode.
-            Located in omnibase_core.validation.reserved_enum_validator and re-exported
-            from omnibase_core.validation as validate_reserved_execution_mode.
+        validate_execution_mode: Type-safe validation for EnumExecutionMode.
+            Located in omnibase_core.validation.reserved_enum_validator.
 
     Example:
         Valid modes::
@@ -1031,12 +1043,17 @@ def validate_execution_mode_string(mode: str) -> None:
             validate_execution_mode_string("parallel")    # OK
             validate_execution_mode_string("batch")       # OK
 
-        Reserved modes::
+        Unrecognized mode strings (completely unknown modes)::
 
-            validate_execution_mode_string("conditional")  # Raises ModelOnexError
-            validate_execution_mode_string("streaming")    # Raises ModelOnexError
+            validate_execution_mode_string("foobar")  # Raises "Unrecognized execution mode"
+            validate_execution_mode_string("unknown")  # Raises "Unrecognized execution mode"
 
-        Handling reserved mode errors::
+        Reserved modes (valid enum values but not accepted in v1.0)::
+
+            validate_execution_mode_string("conditional")  # Raises "reserved for v1.1+"
+            validate_execution_mode_string("streaming")    # Raises "reserved for v1.2+"
+
+        Handling validation errors::
 
             try:
                 validate_execution_mode_string(workflow.execution_mode)
@@ -1046,16 +1063,26 @@ def validate_execution_mode_string(mode: str) -> None:
     """
     mode_lower = mode.lower()
 
-    # Use module-level constants for reserved and accepted modes
-    # This ensures consistency across the module and enables external access
-    if mode_lower in RESERVED_EXECUTION_MODES:
+    # Step 1: Validate that the string is a valid EnumExecutionMode value
+    try:
+        mode_enum = EnumExecutionMode(mode_lower)
+    except ValueError:
+        # Unrecognized mode string - not a valid execution mode
+        # Note: "Unrecognized" means the mode is not a valid EnumExecutionMode value
+        # at all. This is different from "reserved" modes which are valid enum values
+        # but not accepted in v1.0.
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=(
-                f"Execution mode '{mode}' is reserved for future implementation. "
-                f"Currently supported modes: {', '.join(ACCEPTED_EXECUTION_MODES)}"
+                f"Unrecognized execution mode '{mode}'. "
+                f"Accepted modes: {', '.join(ACCEPTED_EXECUTION_MODES)}. "
+                f"Reserved for future versions: {', '.join(sorted(RESERVED_EXECUTION_MODES))}"
             ),
             mode=mode,
             reserved_modes=list(RESERVED_EXECUTION_MODES),
             accepted_modes=list(ACCEPTED_EXECUTION_MODES),
         )
+
+    # Step 2: Delegate to the enum-based validator for reserved mode validation
+    # This follows DRY principle - single source of truth for reserved mode logic
+    validate_execution_mode(mode_enum)

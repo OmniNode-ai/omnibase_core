@@ -13,6 +13,8 @@ Tests all aspects of the FSM transition condition model including:
 import pytest
 from pydantic import ValidationError
 
+pytestmark = pytest.mark.unit
+
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.fsm.model_fsm_transition_condition import (
     ModelFSMTransitionCondition,
@@ -836,9 +838,11 @@ class TestModelFSMTransitionConditionEdgeCases:
         """Test that invalid operators in expression raise ModelOnexError.
 
         Only the following operators are valid:
-        ==, !=, <, >, <=, >=, in, not_in, contains, matches
+        ==, !=, <, >, <=, >=, in, not_in, contains, matches,
+        equals, not_equals, greater_than, less_than,
+        greater_than_or_equal, less_than_or_equal
         """
-        invalid_operators = ["INVALID", "equals", "is", "===", "!==", "and", "or"]
+        invalid_operators = ["INVALID", "is", "===", "!==", "and", "or"]
         for invalid_op in invalid_operators:
             with pytest.raises(ModelOnexError) as exc_info:
                 ModelFSMTransitionCondition(
@@ -853,7 +857,12 @@ class TestModelFSMTransitionConditionEdgeCases:
     def test_valid_operators(self):
         """Test that all valid operators are accepted.
 
-        Valid operators: ==, !=, <, >, <=, >=, in, not_in, contains, matches
+        Valid operators:
+        - Symbol-based: ==, !=, <, >, <=, >=
+        - Word-based: in, not_in, contains, matches
+        - Word-based equality: equals, not_equals
+        - Word-based comparison: greater_than, less_than,
+          greater_than_or_equal, less_than_or_equal
         """
         valid_operators = [
             "==",
@@ -866,6 +875,14 @@ class TestModelFSMTransitionConditionEdgeCases:
             "not_in",
             "contains",
             "matches",
+            # Word-based equality operators
+            "equals",
+            "not_equals",
+            # Word-based comparison operators
+            "greater_than",
+            "less_than",
+            "greater_than_or_equal",
+            "less_than_or_equal",
         ]
         for valid_op in valid_operators:
             condition = ModelFSMTransitionCondition(

@@ -1,14 +1,3 @@
-from __future__ import annotations
-
-import json
-
-# no typing imports needed
-from pydantic import BaseModel, Field, model_validator
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.enums.enum_discriminated_value_type import EnumDiscriminatedValueType
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 ModelDiscriminatedValue
 
@@ -50,6 +39,17 @@ Safe Runtime Imports (OK to import at module level):
 - omnibase_core.enums
 - omnibase_core.errors
 """
+
+from __future__ import annotations
+
+import json
+
+# no typing imports needed
+from pydantic import BaseModel, Field, model_validator
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_discriminated_value_type import EnumDiscriminatedValueType
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelDiscriminatedValue(BaseModel):

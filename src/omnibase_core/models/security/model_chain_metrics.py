@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 ModelChainMetrics: Metrics for signature chain operations.
 
@@ -7,7 +5,7 @@ This model tracks performance and operational metrics for signature chains
 with structured metric fields.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelChainMetrics(BaseModel):

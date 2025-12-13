@@ -1,10 +1,3 @@
-from typing import Optional
-
-from pydantic import Field, field_validator
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Node Action Type Model.
 
@@ -12,11 +5,13 @@ Rich action type model that replaces EnumNodeActionType with full metadata suppo
 Self-contained action definitions with built-in categorization and validation.
 """
 
-from typing import ClassVar
+from typing import ClassVar, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.core.model_action_category import ModelActionCategory
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelNodeActionType(BaseModel):

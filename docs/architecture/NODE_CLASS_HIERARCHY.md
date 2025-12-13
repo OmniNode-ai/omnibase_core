@@ -682,6 +682,11 @@ class MyNode(
 
 ### Complete Example: Custom Node Type
 
+> **Note**: For standard EFFECT/COMPUTE/REDUCER/ORCHESTRATOR nodes, use the v0.4.0 top-level API:
+> `from omnibase_core.nodes import NodeCompute, NodeEffect, NodeReducer, NodeOrchestrator`
+>
+> `NodeCoreBase` is intentionally NOT exported from the top-level API because it's for expert use cases only (building entirely new node types).
+
 ```python
 """Custom VALIDATOR node type using NodeCoreBase."""
 
@@ -814,7 +819,12 @@ class NodeCustomValidator(NodeCoreBase):
 
 ### Adding Features to NodeCoreBase
 
-To add features, **compose with mixins manually**. This pattern forms the foundation for ONEX's upcoming declarative node architecture (v0.4.0), where nodes define their behavior through configuration rather than inheritance. See [ONEX Four-Node Architecture](ONEX_FOUR_NODE_ARCHITECTURE.md#declarative-patterns) for the declarative approach.
+To add features, **compose with mixins manually**. This pattern forms the foundation for ONEX's declarative node architecture (v0.4.0), where nodes define their behavior through configuration rather than inheritance. See [ONEX Four-Node Architecture](ONEX_FOUR_NODE_ARCHITECTURE.md#declarative-patterns) for the declarative approach.
+
+> **v0.4.0 Recommendation**: For most use cases, prefer the top-level API:
+> `from omnibase_core.nodes import NodeCompute, NodeEffect, NodeReducer, NodeOrchestrator`
+>
+> Only use `NodeCoreBase` directly when building entirely new node types outside the 4-node architecture.
 
 ```python
 """NodeCoreBase with manual mixin composition."""
@@ -1208,6 +1218,9 @@ class NodeRealtimeAnalyticsCompute(
 - Framework experimentation
 
 **Solution**: **Tier 3 - NodeCoreBase**
+
+> **Note**: For standard EFFECT/COMPUTE/REDUCER/ORCHESTRATOR nodes, use the v0.4.0 top-level API instead:
+> `from omnibase_core.nodes import NodeCompute, NodeEffect, NodeReducer, NodeOrchestrator`
 
 ```python
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase

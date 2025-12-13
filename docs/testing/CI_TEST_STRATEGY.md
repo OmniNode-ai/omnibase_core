@@ -55,10 +55,10 @@ poetry run pytest tests/ \
 ```
 
 **Split Strategy Rationale**:
-- 10,987 tests ÷ 16 = ~610 tests/split
+- 12,198 tests ÷ 20 = ~610 tests/split
 - Target: 2-4 minutes per split (reduces runner cancellation)
-- 16x parallelization vs sequential execution
-- Increased from 12 to 16 to reduce Split 7 cancellations
+- 20x parallelization vs sequential execution
+- Increased from 12 to 16 to 20 to reduce split cancellations and improve resource distribution
 - `-n auto` for additional parallelism within each split
 
 #### Why 20 splits?
@@ -101,12 +101,12 @@ poetry run pytest tests/ \
 
 ### 4. Code Quality (Lint) (5-10 min)
 **Purpose**: Enforce code quality standards
-**Scope**: Black, isort, mypy strict mode
+**Scope**: Ruff formatting, Ruff linting, mypy strict mode
 **Trigger**: All pushes and PRs
 **Configuration**:
 ```
-poetry run black --check src/ tests/
-poetry run isort --check-only src/ tests/
+poetry run ruff format --check src/ tests/
+poetry run ruff check src/ tests/
 poetry run mypy src/omnibase_core  # Strict mode: 0 errors across 1865 files
 ```
 
@@ -225,7 +225,7 @@ poetry run pytest tests/ --cov=src/omnibase_core --cov-report=term-missing
 ### Phase 1: Implemented ✅
 - ✅ pytest-testmon for local development
 - ✅ Coverage conditional on branch (main only)
-- ✅ 16 parallel splits for optimal speed
+- ✅ 20 parallel splits for optimal speed
 - ✅ Smoke tests for fail-fast validation
 
 ### Phase 2: Planned (Q2 2025)
@@ -245,7 +245,7 @@ poetry run pytest tests/ --cov=src/omnibase_core --cov-report=term-missing
 ### ✅ Recommended Strategy (Current)
 
 **PRs & Feature Branches**: Full suite (20 splits)
-- **Rationale**: 10,987 tests run in ~4 min with parallelism (acceptable speed)
+- **Rationale**: 12,198 tests run in ~4 min with parallelism (acceptable speed)
 - **Benefit**: Catch issues early, prevent broken merges
 - **Cost**: ~7 min per develop PR, ~20 min per main PR
 

@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 Audit Requirements Model
 
 Type-safe audit requirements configuration.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelAuditRequirements(BaseModel):

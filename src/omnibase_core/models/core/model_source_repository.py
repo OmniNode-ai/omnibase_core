@@ -1,12 +1,9 @@
-from collections.abc import Callable
-from typing import Any
-
 """
 Source repository model.
 """
 
-from collections.abc import Iterator
-from typing import Annotated
+from collections.abc import Callable, Iterator
+from typing import Annotated, Any
 
 from pydantic import BaseModel, StringConstraints
 

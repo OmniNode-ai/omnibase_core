@@ -891,6 +891,10 @@ class TestLintIntegration:
         version_dict = version.model_dump()
 
         # Create multiple isolated nodes to trigger W005 warnings
+        # IMPORTANT: Convert model instances to dicts to avoid Pydantic class identity
+        # issues in pytest-xdist parallel execution. With frozen=True models,
+        # Pydantic 2.12 may reject instances when model classes are imported
+        # differently across workers.
         isolated_nodes = [
             ModelWorkflowNode(
                 version=version_dict,
@@ -898,7 +902,7 @@ class TestLintIntegration:
                 node_type=EnumNodeType.COMPUTE_GENERIC,
                 node_requirements={"step_name": f"isolated_{i}"},
                 dependencies=[],
-            )
+            ).model_dump(mode="python")
             for i in range(3)
         ]
 
@@ -972,9 +976,6 @@ class TestWarningAggregation:
         without calling _aggregate_warnings_by_code, preserving full count.
         """
         from omnibase_core.enums.enum_node_type import EnumNodeType
-        from omnibase_core.models.contracts.subcontracts.model_workflow_node import (
-            ModelWorkflowNode,
-        )
 
         # Create two linters: one with aggregation, one without
         linter_with_agg = WorkflowLinter(
@@ -991,14 +992,17 @@ class TestWarningAggregation:
 
         # Create workflow with many isolated nodes (will trigger W005 warnings)
         # We need 5+ isolated nodes to exceed the threshold of 2
-        isolated_nodes = [
-            ModelWorkflowNode(
-                version=version_dict,
-                node_id=uuid4(),
-                node_type=EnumNodeType.COMPUTE_GENERIC,
-                node_requirements={"step_name": f"isolated_step_{i}"},
-                dependencies=[],
-            )
+        # NOTE: Use dicts for nodes instead of ModelWorkflowNode instances to avoid
+        # class identity issues when nodes are re-validated by ModelExecutionGraph
+        # in pytest-split CI environment
+        isolated_node_dicts = [
+            {
+                "version": version_dict,
+                "node_id": str(uuid4()),
+                "node_type": EnumNodeType.COMPUTE_GENERIC.value,
+                "node_requirements": {"step_name": f"isolated_step_{i}"},
+                "dependencies": [],
+            }
             for i in range(5)
         ]
 
@@ -1013,7 +1017,7 @@ class TestWarningAggregation:
             ),
             execution_graph=ModelExecutionGraph(
                 version=version_dict,
-                nodes=isolated_nodes,
+                nodes=isolated_node_dicts,
             ),
         )
 

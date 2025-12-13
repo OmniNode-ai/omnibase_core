@@ -18,6 +18,8 @@ Deep Immutability:
 import pytest
 from pydantic import ValidationError
 
+pytestmark = pytest.mark.unit
+
 from omnibase_core.models.fsm.model_fsm_state import ModelFsmState
 
 

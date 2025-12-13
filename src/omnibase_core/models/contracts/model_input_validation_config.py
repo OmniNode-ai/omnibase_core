@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Input Validation Configuration Model.
 
@@ -9,7 +7,7 @@ constraints, and transformation logic for input data processing.
 Strict typing is enforced: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelInputValidationConfig(BaseModel):

@@ -1,7 +1,3 @@
-from pydantic import Field
-
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Metadata Base Model.
 
@@ -11,9 +7,10 @@ providing common fields and functionality.
 
 from datetime import UTC, datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_tag import ModelTag
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelMetadataBase(BaseModel):

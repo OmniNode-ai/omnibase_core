@@ -45,9 +45,13 @@ class TestValidateExecutionMode:
 
         error = exc_info.value
         assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        # Check for specific reserved mode message format (not just substring match)
         assert "conditional" in error.message.lower()
         assert "reserved" in error.message.lower()
-        assert "v1.1+" in error.message or "future" in error.message.lower()
+        assert "not accepted" in error.message.lower()  # Must indicate not accepted
+        assert "v1.1+" in error.message  # Specific version, not just "future"
+        # Ensure it doesn't say "Unrecognized" (that's for unknown modes)
+        assert "unrecognized" not in error.message.lower()
 
     def test_streaming_mode_rejected(self) -> None:
         """Test that STREAMING execution mode raises ModelOnexError."""
@@ -56,9 +60,13 @@ class TestValidateExecutionMode:
 
         error = exc_info.value
         assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        # Check for specific reserved mode message format (not just substring match)
         assert "streaming" in error.message.lower()
         assert "reserved" in error.message.lower()
-        assert "v1.2+" in error.message or "future" in error.message.lower()
+        assert "not accepted" in error.message.lower()  # Must indicate not accepted
+        assert "v1.2+" in error.message  # Specific version, not just "future"
+        # Ensure it doesn't say "Unrecognized" (that's for unknown modes)
+        assert "unrecognized" not in error.message.lower()
 
     def test_conditional_error_context(self) -> None:
         """Test that CONDITIONAL error includes proper context."""
@@ -190,34 +198,42 @@ class TestErrorMessageQuality:
         with pytest.raises(ModelOnexError) as exc_info:
             validate_execution_mode(EnumExecutionMode.CONDITIONAL)
 
-        message = exc_info.value.message.lower()
+        message = exc_info.value.message
 
-        # Message should explain what's wrong
-        assert "conditional" in message
-        assert "reserved" in message
+        # Message should explain what's wrong (exact wording check)
+        assert "conditional" in message.lower()
+        assert "reserved" in message.lower()
 
-        # Message should indicate when it's available
-        assert "v1.1" in message or "future" in message
+        # Message MUST indicate when it's available (exact version, not just "future")
+        assert "v1.1+" in message
 
-        # Message should indicate it's not accepted now
-        assert "not accepted" in message or "not available" in message
+        # Message MUST indicate it's not accepted now (exact wording)
+        assert "not accepted" in message.lower()
+        assert "v1.0" in message.lower()
+
+        # Should NOT be confused with "Unrecognized" errors
+        assert "unrecognized" not in message.lower()
 
     def test_streaming_error_message_clarity(self) -> None:
         """Test that STREAMING error message is clear and actionable."""
         with pytest.raises(ModelOnexError) as exc_info:
             validate_execution_mode(EnumExecutionMode.STREAMING)
 
-        message = exc_info.value.message.lower()
+        message = exc_info.value.message
 
-        # Message should explain what's wrong
-        assert "streaming" in message
-        assert "reserved" in message
+        # Message should explain what's wrong (exact wording check)
+        assert "streaming" in message.lower()
+        assert "reserved" in message.lower()
 
-        # Message should indicate when it's available
-        assert "v1.2" in message or "future" in message
+        # Message MUST indicate when it's available (exact version, not just "future")
+        assert "v1.2+" in message
 
-        # Message should indicate it's not accepted now
-        assert "not accepted" in message or "not available" in message
+        # Message MUST indicate it's not accepted now (exact wording)
+        assert "not accepted" in message.lower()
+        assert "v1.0" in message.lower()
+
+        # Should NOT be confused with "Unrecognized" errors
+        assert "unrecognized" not in message.lower()
 
     def test_error_context_provides_alternatives(self) -> None:
         """Test that error context lists accepted alternatives."""
@@ -264,8 +280,12 @@ class TestValidateExecutionModeString:
 
         error = exc_info.value
         assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        # Reserved mode errors should NOT say "Unrecognized" - that's for unknown modes
+        assert "unrecognized" not in error.message.lower()
+        # Must explicitly mention "reserved" and the mode name
         assert "conditional" in error.message.lower()
         assert "reserved" in error.message.lower()
+        assert "not accepted" in error.message.lower()
 
     def test_streaming_mode_string_rejected(self) -> None:
         """Test that 'streaming' string execution mode raises ModelOnexError."""
@@ -274,8 +294,12 @@ class TestValidateExecutionModeString:
 
         error = exc_info.value
         assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        # Reserved mode errors should NOT say "Unrecognized" - that's for unknown modes
+        assert "unrecognized" not in error.message.lower()
+        # Must explicitly mention "reserved" and the mode name
         assert "streaming" in error.message.lower()
         assert "reserved" in error.message.lower()
+        assert "not accepted" in error.message.lower()
 
     def test_case_insensitive_validation(self) -> None:
         """Test that string mode validation is case-insensitive."""
@@ -400,3 +424,299 @@ class TestStringModeEdgeCases:
             pass  # Expected
         except Exception:
             pytest.fail("Expected ModelOnexError, got generic Exception")
+
+
+# =============================================================================
+# Consolidation Tests (OMN-675)
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestValidatorConsolidation:
+    """
+    Test consolidation of validate_execution_mode validators.
+
+    Per OMN-675, validates that:
+    - Both validators enforce the same reserved modes
+    - Both validators accept the same valid modes
+    - Both validators produce consistent error codes
+    - Public API exports are correct
+    """
+
+    def test_both_validators_reject_same_reserved_modes(self) -> None:
+        """Test that both validators reject the same reserved modes."""
+        # CONDITIONAL should be rejected by both
+        with pytest.raises(ModelOnexError):
+            validate_execution_mode(EnumExecutionMode.CONDITIONAL)
+        with pytest.raises(ModelOnexError):
+            validate_execution_mode_string("conditional")
+
+        # STREAMING should be rejected by both
+        with pytest.raises(ModelOnexError):
+            validate_execution_mode(EnumExecutionMode.STREAMING)
+        with pytest.raises(ModelOnexError):
+            validate_execution_mode_string("streaming")
+
+    def test_both_validators_accept_same_valid_modes(self) -> None:
+        """Test that both validators accept the same valid modes."""
+        # SEQUENTIAL
+        validate_execution_mode(EnumExecutionMode.SEQUENTIAL)
+        validate_execution_mode_string("sequential")
+
+        # PARALLEL
+        validate_execution_mode(EnumExecutionMode.PARALLEL)
+        validate_execution_mode_string("parallel")
+
+        # BATCH
+        validate_execution_mode(EnumExecutionMode.BATCH)
+        validate_execution_mode_string("batch")
+
+    def test_both_validators_use_same_error_code(self) -> None:
+        """Test that both validators use VALIDATION_ERROR code."""
+        # Enum validator
+        with pytest.raises(ModelOnexError) as exc_info_enum:
+            validate_execution_mode(EnumExecutionMode.CONDITIONAL)
+
+        # String validator
+        with pytest.raises(ModelOnexError) as exc_info_string:
+            validate_execution_mode_string("conditional")
+
+        # Both should use VALIDATION_ERROR
+        assert exc_info_enum.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert exc_info_string.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+
+    def test_reserved_modes_constant_consistency(self) -> None:
+        """Test that reserved modes constants are consistent."""
+        from omnibase_core.validation.workflow_validator import (
+            RESERVED_EXECUTION_MODES as STRING_RESERVED_MODES,
+        )
+
+        # The string-based constant should contain lowercase versions
+        assert "conditional" in STRING_RESERVED_MODES
+        assert "streaming" in STRING_RESERVED_MODES
+
+        # The enum-based constant should contain enum values
+        assert EnumExecutionMode.CONDITIONAL in RESERVED_EXECUTION_MODES
+        assert EnumExecutionMode.STREAMING in RESERVED_EXECUTION_MODES
+
+    def test_accepted_modes_constant_exists_in_workflow_validator(self) -> None:
+        """Test that ACCEPTED_EXECUTION_MODES constant exists and is correct."""
+        from omnibase_core.validation.workflow_validator import ACCEPTED_EXECUTION_MODES
+
+        assert "sequential" in ACCEPTED_EXECUTION_MODES
+        assert "parallel" in ACCEPTED_EXECUTION_MODES
+        assert "batch" in ACCEPTED_EXECUTION_MODES
+        # Reserved modes should NOT be in accepted list
+        assert "conditional" not in ACCEPTED_EXECUTION_MODES
+        assert "streaming" not in ACCEPTED_EXECUTION_MODES
+
+
+@pytest.mark.unit
+class TestPublicAPIExports:
+    """
+    Test public API exports from validation __init__.py.
+
+    Validates that all expected symbols are exported correctly (OMN-675).
+    """
+
+    def test_validate_execution_mode_exported_from_validation(self) -> None:
+        """Test that validate_execution_mode is exported from validation module."""
+        from omnibase_core.validation import validate_execution_mode
+
+        # Valid modes should not raise
+        validate_execution_mode(EnumExecutionMode.SEQUENTIAL)
+        validate_execution_mode(EnumExecutionMode.PARALLEL)
+        validate_execution_mode(EnumExecutionMode.BATCH)
+
+        # Reserved modes should raise
+        with pytest.raises(ModelOnexError):
+            validate_execution_mode(EnumExecutionMode.CONDITIONAL)
+        with pytest.raises(ModelOnexError):
+            validate_execution_mode(EnumExecutionMode.STREAMING)
+
+    def test_validate_execution_mode_string_exported_from_validation(self) -> None:
+        """Test that validate_execution_mode_string is exported from validation module."""
+        from omnibase_core.validation import validate_execution_mode_string as v_string
+
+        # Valid modes should not raise
+        v_string("sequential")
+        v_string("parallel")
+        v_string("batch")
+
+        # Reserved modes should raise
+        with pytest.raises(ModelOnexError):
+            v_string("conditional")
+        with pytest.raises(ModelOnexError):
+            v_string("streaming")
+
+    def test_reserved_execution_modes_constant_exported(self) -> None:
+        """Test that RESERVED_EXECUTION_MODES is exported from validation module."""
+        from omnibase_core.validation import RESERVED_EXECUTION_MODES as EXPORTED_CONST
+
+        # Should contain the enum values
+        assert EnumExecutionMode.CONDITIONAL in EXPORTED_CONST
+        assert EnumExecutionMode.STREAMING in EXPORTED_CONST
+
+    def test_validate_execution_mode_same_function(self) -> None:
+        """Test that validate_execution_mode from validation and reserved_enum_validator are the same."""
+        from omnibase_core.validation import validate_execution_mode as v1
+        from omnibase_core.validation.reserved_enum_validator import (
+            validate_execution_mode as v2,
+        )
+
+        # They should be the exact same function (no aliases, direct re-export)
+        assert v1 is v2
+
+
+@pytest.mark.unit
+class TestInvalidInputHandling:
+    """
+    Test handling of invalid inputs by validators.
+
+    These tests ensure proper error handling for edge cases.
+    """
+
+    def test_string_validator_rejects_unknown_modes(self) -> None:
+        """
+        Test string validator behavior with unknown mode strings.
+
+        The validator first validates that the mode is a valid EnumExecutionMode,
+        then checks if it's reserved. Unknown modes should raise ModelOnexError
+        with "Unrecognized execution mode" message (not "Invalid" - that's too
+        generic and could match other errors).
+        """
+        # Unknown modes should raise - they're not valid execution modes
+        with pytest.raises(ModelOnexError) as exc_info:
+            validate_execution_mode_string("unknown_mode")
+        # Specifically check for "Unrecognized" (not just "Invalid") to distinguish
+        # from reserved mode errors which say "reserved"
+        assert "Unrecognized execution mode" in exc_info.value.message
+        assert "unknown_mode" in exc_info.value.message
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            validate_execution_mode_string("foobar")
+        assert "Unrecognized execution mode" in exc_info.value.message
+        assert "foobar" in exc_info.value.message
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            validate_execution_mode_string("")  # Empty string is not valid
+        assert "Unrecognized execution mode" in exc_info.value.message
+
+    def test_string_validator_normalizes_to_lowercase_in_error_for_reserved(
+        self,
+    ) -> None:
+        """
+        Test that error context contains mode information for reserved modes.
+
+        The validator stores the lowercase version in context for consistency.
+        """
+        test_cases = ["CONDITIONAL", "Conditional", "conditional"]
+
+        for mode in test_cases:
+            with pytest.raises(ModelOnexError) as exc_info:
+                validate_execution_mode_string(mode)
+
+            # Error should mention the reserved mode
+            assert "reserved" in exc_info.value.message.lower()
+
+    def test_string_validator_whitespace_raises_unrecognized_mode(self) -> None:
+        """
+        Test string validator with whitespace in mode strings.
+
+        Modes with leading/trailing whitespace are not valid EnumExecutionMode values,
+        so they should raise "Unrecognized execution mode" (not "reserved").
+        """
+        # These should raise as unrecognized modes (whitespace makes them invalid)
+        with pytest.raises(ModelOnexError) as exc_info:
+            validate_execution_mode_string(" conditional")
+        assert "Unrecognized execution mode" in exc_info.value.message
+        assert " conditional" in exc_info.value.message
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            validate_execution_mode_string("conditional ")
+        assert "Unrecognized execution mode" in exc_info.value.message
+        assert "conditional " in exc_info.value.message
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            validate_execution_mode_string(" conditional ")
+        assert "Unrecognized execution mode" in exc_info.value.message
+        assert " conditional " in exc_info.value.message
+
+    def test_enum_validator_error_includes_version_info(self) -> None:
+        """Test that enum validator error includes version information."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            validate_execution_mode(EnumExecutionMode.CONDITIONAL)
+
+        context = exc_info.value.context.get("additional_context", {})
+        assert "version" in context
+        assert "v1.1" in context["version"]
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            validate_execution_mode(EnumExecutionMode.STREAMING)
+
+        context = exc_info.value.context.get("additional_context", {})
+        assert "version" in context
+        assert "v1.2" in context["version"]
+
+    def test_string_validator_error_lists_valid_modes(self) -> None:
+        """Test that string validator error for unrecognized mode lists valid options."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            validate_execution_mode_string("invalid_mode")
+
+        message = exc_info.value.message
+        # Should be "Unrecognized" (not just "Invalid") to distinguish from reserved
+        assert "Unrecognized execution mode" in message
+        assert "invalid_mode" in message
+        # Should clearly distinguish accepted modes from reserved modes
+        assert "Accepted modes:" in message
+        assert "sequential" in message
+        assert "parallel" in message
+        assert "batch" in message
+        assert "Reserved for future versions:" in message
+
+
+@pytest.mark.unit
+class TestCanonicalImportPaths:
+    """
+    Test canonical import paths for validators (OMN-675).
+
+    Ensures all validators are accessible from their canonical locations.
+    No aliases, no backwards compatibility shims - clean imports only.
+    """
+
+    def test_direct_import_from_reserved_enum_validator(self) -> None:
+        """Test that direct import from reserved_enum_validator works."""
+        from omnibase_core.validation.reserved_enum_validator import (
+            RESERVED_EXECUTION_MODES,
+            validate_execution_mode,
+        )
+
+        # Should work
+        validate_execution_mode(EnumExecutionMode.SEQUENTIAL)
+        assert EnumExecutionMode.CONDITIONAL in RESERVED_EXECUTION_MODES
+
+    def test_direct_import_from_workflow_validator(self) -> None:
+        """Test that direct import from workflow_validator works."""
+        from omnibase_core.validation.workflow_validator import (
+            ACCEPTED_EXECUTION_MODES,
+            RESERVED_EXECUTION_MODES,
+            validate_execution_mode_string,
+        )
+
+        # Should work
+        validate_execution_mode_string("sequential")
+        assert "conditional" in RESERVED_EXECUTION_MODES
+        assert "sequential" in ACCEPTED_EXECUTION_MODES
+
+    def test_import_from_validation_init(self) -> None:
+        """Test that import from validation __init__ works correctly."""
+        from omnibase_core.validation import (
+            RESERVED_EXECUTION_MODES,
+            validate_execution_mode,
+            validate_execution_mode_string,
+        )
+
+        # All imports should work with canonical names (no aliases)
+        validate_execution_mode(EnumExecutionMode.SEQUENTIAL)
+        validate_execution_mode_string("sequential")
+        assert EnumExecutionMode.CONDITIONAL in RESERVED_EXECUTION_MODES

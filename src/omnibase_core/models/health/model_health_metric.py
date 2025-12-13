@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 ModelHealthMetric - Health metrics tracking model
 
@@ -9,7 +7,7 @@ with thresholds, trends, and temporal tracking.
 
 from datetime import UTC, datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelHealthMetric(BaseModel):

@@ -1,12 +1,10 @@
-from pydantic import Field
-
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
-
 """
 Audit field change model for tracking individual field changes.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
 class ModelAuditFieldChange(BaseModel):

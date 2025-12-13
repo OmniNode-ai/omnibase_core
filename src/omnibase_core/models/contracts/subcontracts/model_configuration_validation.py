@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 Configuration Validation Model.
 
 Model for configuration validation rules and constraints in the ONEX configuration management system.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 

@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 Performance Metrics Model.
 
 Structured performance metrics for action execution.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelPerformanceMetrics(BaseModel):

@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-from typing import Any
-
 """
 ONEX Common Type Definitions
 
@@ -28,6 +24,9 @@ Migration Examples:
     NEW: value: ModelExtensionData  # For extensions (preferred)
 """
 
+from __future__ import annotations
+
+from typing import Any
 
 # DEPRECATED: JsonSerializable - Do not use in new code
 # JSON-serializable value types (most common replacement for Any)

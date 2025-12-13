@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Base Action Model
 
@@ -10,7 +8,7 @@ Provides UUID correlation tracking, trust scores, and service metadata.
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 

@@ -1,19 +1,16 @@
-from pydantic import field_validator
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Custom Action Payload Model.
 
 Payload for custom actions that don't fit standard categories.
 """
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.core.model_action_payload_base import ModelActionPayloadBase
 from omnibase_core.models.core.model_custom_parameters import ModelCustomParameters
 from omnibase_core.models.core.model_node_action_type import ModelNodeActionType
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelCustomActionPayload(ModelActionPayloadBase):

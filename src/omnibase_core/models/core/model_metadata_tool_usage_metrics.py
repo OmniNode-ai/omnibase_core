@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 Metadata tool usage metrics model.
 """
 
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelMetadataToolUsageMetrics(BaseModel):

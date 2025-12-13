@@ -1,8 +1,3 @@
-from pydantic import Field, field_validator, model_validator
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Model Workflow Dependency Specification.
 
@@ -15,13 +10,15 @@ Strict typing is enforced: No Any types, string fallbacks, or dict[str, Any]conf
 # NO Any imports - Strict typing is enforced for Any types
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_workflow_dependency_type import EnumWorkflowDependencyType
 from omnibase_core.models.contracts.model_workflow_condition import (
     ModelWorkflowCondition,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelWorkflowDependency(BaseModel):

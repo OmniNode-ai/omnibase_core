@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 Monitoring Thresholds Model.
 
 Monitoring and alerting thresholds for priority levels.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelMonitoringThresholds(BaseModel):
