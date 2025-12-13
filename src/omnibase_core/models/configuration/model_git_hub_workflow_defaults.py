@@ -12,6 +12,7 @@ class ModelGitHubWorkflowDefaults(BaseModel):
         frozen=False,
         strict=False,
         extra="forbid",
+        from_attributes=True,
     )
 
     run: dict[str, str] | None = Field(

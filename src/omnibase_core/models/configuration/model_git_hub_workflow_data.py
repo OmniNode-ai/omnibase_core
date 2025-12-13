@@ -12,12 +12,13 @@ class ModelGitHubWorkflowData(BaseModel):
         frozen=False,
         strict=False,
         extra="forbid",
+        from_attributes=True,
     )
 
     name: str
-    on: dict[str, object] | None = None
+    on: str | list[str] | dict[str, object] | None = None
     jobs: dict[str, dict[str, object]]
     env: dict[str, str] | None = None
     defaults: dict[str, object] | None = None
-    concurrency: dict[str, object] | None = None
-    permissions: dict[str, str] | None = None
+    concurrency: str | dict[str, object] | None = None
+    permissions: str | dict[str, str] | None = None

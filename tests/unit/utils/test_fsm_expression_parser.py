@@ -6,6 +6,8 @@ Tests the 3-token expression parser for FSM condition evaluation.
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.utils.fsm_expression_parser import (
@@ -472,3 +474,236 @@ class TestConsistencyWithFSMExecutor:
             assert op in SUPPORTED_OPERATORS, (
                 f"Operator '{op}' not in SUPPORTED_OPERATORS"
             )
+
+
+class TestFieldNameValidationSecurity:
+    """Tests for field name validation security features.
+
+    These tests verify that underscore-prefixed field names are rejected by default
+    to prevent unintended access to private/internal context fields.
+    """
+
+    def test_reject_single_underscore_prefix(self) -> None:
+        """Should reject field names starting with single underscore."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            parse_expression("_private equals secret")
+        error = exc_info.value
+        assert "cannot start with underscore" in str(error)
+        assert "_private" in str(error)
+        assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+
+    def test_reject_double_underscore_prefix(self) -> None:
+        """Should reject field names starting with double underscore (dunder)."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            parse_expression("__class__ equals MyClass")
+        error = exc_info.value
+        assert "cannot start with underscore" in str(error)
+        assert "__class__" in str(error)
+        assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+
+    def test_reject_dunder_dict(self) -> None:
+        """Should reject __dict__ field name."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            parse_expression("__dict__ exists _")
+        error = exc_info.value
+        assert "cannot start with underscore" in str(error)
+        assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+
+    def test_reject_internal_field(self) -> None:
+        """Should reject _internal_field style field names."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            parse_expression("_internal_data equals value")
+        assert "cannot start with underscore" in str(exc_info.value)
+
+    def test_allow_underscore_in_middle(self) -> None:
+        """Should allow underscores in the middle of field names."""
+        field, operator, value = parse_expression("my_field_name equals test")
+        assert field == "my_field_name"
+        assert operator == "equals"
+        assert value == "test"
+
+    def test_allow_underscore_at_end(self) -> None:
+        """Should allow underscores at the end of field names."""
+        field, _operator, _value = parse_expression("field_ equals test")
+        assert field == "field_"
+
+    def test_allow_multiple_underscores_in_middle(self) -> None:
+        """Should allow multiple underscores in the middle of field names."""
+        field, _operator, _value = parse_expression("my__field__name equals test")
+        assert field == "my__field__name"
+
+    def test_reject_nested_path_with_underscore_prefix_segment(self) -> None:
+        """Should reject nested paths where a segment starts with underscore."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            parse_expression("user._private equals secret")
+        error = exc_info.value
+        assert "cannot start with underscore" in str(error)
+        assert "_private" in str(error)
+        assert "user._private" in str(error)
+        assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+
+    def test_reject_nested_path_with_dunder_segment(self) -> None:
+        """Should reject nested paths where a segment is a dunder name."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            parse_expression("obj.__class__.__name__ equals MyClass")
+        error = exc_info.value
+        assert "cannot start with underscore" in str(error)
+
+    def test_allow_nested_path_normal_fields(self) -> None:
+        """Should allow nested paths with normal field names."""
+        field, operator, value = parse_expression("user.email equals test@example.com")
+        assert field == "user.email"
+        assert operator == "equals"
+        assert value == "test@example.com"
+
+    def test_allow_nested_path_with_underscores_in_middle(self) -> None:
+        """Should allow nested paths where segments have underscores in middle."""
+        field, _op, _val = parse_expression("user.first_name equals John")
+        assert field == "user.first_name"
+
+    def test_reject_empty_segment_in_nested_path(self) -> None:
+        """Should reject nested paths with empty segments (consecutive dots)."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            parse_expression("user..email equals test")
+        error = exc_info.value
+        assert "empty segment" in str(error)
+        assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+
+    def test_reject_leading_dot_in_field(self) -> None:
+        """Should reject field names starting with dot."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            parse_expression(".field equals value")
+        error = exc_info.value
+        assert "empty segment" in str(error)
+
+    def test_reject_trailing_dot_in_field(self) -> None:
+        """Should reject field names ending with dot."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            parse_expression("field. equals value")
+        error = exc_info.value
+        assert "empty segment" in str(error)
+
+    def test_error_message_includes_security_guidance(self) -> None:
+        """Should include guidance about allow_private_fields parameter."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            parse_expression("_secret equals value")
+        error_msg = str(exc_info.value)
+        assert "allow_private_fields=True" in error_msg
+        assert "security" in error_msg.lower()
+
+
+class TestAllowPrivateFieldsParameter:
+    """Tests for the allow_private_fields parameter."""
+
+    def test_allow_single_underscore_prefix_when_enabled(self) -> None:
+        """Should allow single underscore prefix when allow_private_fields=True."""
+        field, operator, value = parse_expression(
+            "_private equals secret", allow_private_fields=True
+        )
+        assert field == "_private"
+        assert operator == "equals"
+        assert value == "secret"
+
+    def test_allow_double_underscore_prefix_when_enabled(self) -> None:
+        """Should allow double underscore prefix when allow_private_fields=True."""
+        field, operator, value = parse_expression(
+            "__class__ equals MyClass", allow_private_fields=True
+        )
+        assert field == "__class__"
+        assert operator == "equals"
+        assert value == "MyClass"
+
+    def test_allow_dunder_dict_when_enabled(self) -> None:
+        """Should allow __dict__ when allow_private_fields=True."""
+        field, operator, value = parse_expression(
+            "__dict__ exists _", allow_private_fields=True
+        )
+        assert field == "__dict__"
+        assert operator == "exists"
+        assert value == "_"
+
+    def test_allow_nested_path_with_underscore_when_enabled(self) -> None:
+        """Should allow nested paths with underscore prefix when enabled."""
+        field, operator, value = parse_expression(
+            "obj._internal equals value", allow_private_fields=True
+        )
+        assert field == "obj._internal"
+        assert operator == "equals"
+        assert value == "value"
+
+    def test_validate_expression_rejects_underscore_by_default(self) -> None:
+        """validate_expression should reject underscore fields by default."""
+        assert validate_expression("_private equals secret") is False
+        assert validate_expression("user._private equals secret") is False
+
+    def test_validate_expression_allows_underscore_when_enabled(self) -> None:
+        """validate_expression should allow underscore when enabled."""
+        assert (
+            validate_expression("_private equals secret", allow_private_fields=True)
+            is True
+        )
+        assert (
+            validate_expression(
+                "user._private equals secret", allow_private_fields=True
+            )
+            is True
+        )
+
+    def test_normal_fields_work_with_allow_private_fields(self) -> None:
+        """Normal fields should work regardless of allow_private_fields setting."""
+        # With allow_private_fields=False (default)
+        field1, _op1, _val1 = parse_expression("count equals 5")
+        assert field1 == "count"
+
+        # With allow_private_fields=True
+        field2, _op2, _val2 = parse_expression(
+            "count equals 5", allow_private_fields=True
+        )
+        assert field2 == "count"
+
+
+class TestFieldNameValidationEdgeCases:
+    """Edge cases for field name validation."""
+
+    def test_single_character_field(self) -> None:
+        """Should accept single character field names."""
+        field, _op, _val = parse_expression("x equals 1")
+        assert field == "x"
+
+    def test_single_underscore_only_field(self) -> None:
+        """Should reject field name that is just underscore."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            parse_expression("_ equals value")
+        assert "cannot start with underscore" in str(exc_info.value)
+
+    def test_double_underscore_only_field(self) -> None:
+        """Should reject field name that is just double underscore."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            parse_expression("__ equals value")
+        assert "cannot start with underscore" in str(exc_info.value)
+
+    def test_field_with_numbers_and_underscores(self) -> None:
+        """Should accept field names with numbers and underscores (not at start)."""
+        field, _op, _val = parse_expression("field_123_name equals value")
+        assert field == "field_123_name"
+
+    def test_deeply_nested_path(self) -> None:
+        """Should accept deeply nested paths."""
+        field, _op, _val = parse_expression("a.b.c.d.e equals value")
+        assert field == "a.b.c.d.e"
+
+    def test_deeply_nested_path_with_underscore_in_last_segment(self) -> None:
+        """Should reject if last segment starts with underscore."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            parse_expression("a.b.c._d equals value")
+        error = exc_info.value
+        assert "_d" in str(error)
+        assert "cannot start with underscore" in str(error)
+
+    def test_deeply_nested_path_with_underscore_in_middle_segment(self) -> None:
+        """Should reject if middle segment starts with underscore."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            parse_expression("a._b.c.d equals value")
+        error = exc_info.value
+        assert "_b" in str(error)
+        assert "cannot start with underscore" in str(error)

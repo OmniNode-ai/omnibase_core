@@ -14,6 +14,11 @@ Usage:
     ('name', 'exists', '_')
 
     >>> parse_expression("too many tokens here")  # Raises ModelOnexError
+
+Security:
+    Field names are validated to prevent access to private/internal context fields.
+    By default, field names starting with underscore(s) are rejected.
+    Use allow_private_fields=True to allow underscore-prefixed fields if needed.
 """
 
 from typing import Final
@@ -49,7 +54,79 @@ SUPPORTED_OPERATORS: Final[frozenset[str]] = frozenset(
 )
 
 
-def parse_expression(expression: str) -> tuple[str, str, str]:
+def _validate_field_name(
+    field: str, expression: str, *, allow_private_fields: bool = False
+) -> None:
+    """
+    Validate a field name for security and correctness.
+
+    Args:
+        field: The field name to validate
+        expression: The original expression (for error context)
+        allow_private_fields: If True, allows underscore-prefixed fields
+
+    Raises:
+        ModelOnexError: If field name is invalid
+    """
+    # Check for empty field name
+    if not field:
+        raise ModelOnexError(
+            message="Field name cannot be empty",
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            expression=expression,
+            field=field,
+        )
+
+    # Security check: reject underscore-prefixed fields by default
+    # This prevents unintended access to private/internal context fields like
+    # __class__, __dict__, _internal_field, etc.
+    if not allow_private_fields:
+        # Check if field or any segment starts with underscore
+        if field.startswith("_"):
+            raise ModelOnexError(
+                message=(
+                    f"Field name '{field}' cannot start with underscore. "
+                    "Underscore-prefixed fields are restricted for security. "
+                    "Use allow_private_fields=True if access to private fields is "
+                    "intentionally required."
+                ),
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                expression=expression,
+                field=field,
+            )
+
+        # For nested paths like user.email, check each segment
+        if "." in field:
+            segments = field.split(".")
+            for segment in segments:
+                if not segment:
+                    raise ModelOnexError(
+                        message=(
+                            f"Field name '{field}' contains empty segment. "
+                            "Field paths cannot have consecutive dots or start/end with dots."
+                        ),
+                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        expression=expression,
+                        field=field,
+                    )
+                if segment.startswith("_"):
+                    raise ModelOnexError(
+                        message=(
+                            f"Field segment '{segment}' in '{field}' cannot start with "
+                            "underscore. Underscore-prefixed fields are restricted for security. "
+                            "Use allow_private_fields=True if access to private fields is "
+                            "intentionally required."
+                        ),
+                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        expression=expression,
+                        field=field,
+                        invalid_segment=segment,
+                    )
+
+
+def parse_expression(
+    expression: str, *, allow_private_fields: bool = False
+) -> tuple[str, str, str]:
     """
     Parse a 3-token FSM condition expression.
 
@@ -60,15 +137,23 @@ def parse_expression(expression: str) -> tuple[str, str, str]:
     2. operator: The comparison operator (must be in SUPPORTED_OPERATORS)
     3. value: The expected value to compare against (use "_" for existence checks)
 
+    Security:
+        By default, field names starting with underscore(s) are rejected to prevent
+        unintended access to private/internal context fields (e.g., __class__, _internal).
+        Use allow_private_fields=True if access to underscore-prefixed fields is
+        intentionally required.
+
     Args:
         expression: The expression string to parse
+        allow_private_fields: If True, allows field names starting with underscore.
+            Default is False for security.
 
     Returns:
         Tuple of (field, operator, value)
 
     Raises:
         ModelOnexError: If expression is empty, doesn't have exactly 3 tokens,
-                       or operator is not supported
+                       operator is not supported, or field name is invalid
 
     Examples:
         >>> parse_expression("count equals 5")
@@ -82,6 +167,10 @@ def parse_expression(expression: str) -> tuple[str, str, str]:
 
         >>> parse_expression("data_count min_length 1")
         ('data_count', 'min_length', '1')
+
+        >>> parse_expression("_private equals secret")  # Raises ModelOnexError
+        >>> parse_expression("_private equals secret", allow_private_fields=True)
+        ('_private', 'equals', 'secret')
     """
     # Handle empty or whitespace-only expression
     if not expression or not expression.strip():
@@ -110,6 +199,9 @@ def parse_expression(expression: str) -> tuple[str, str, str]:
 
     field, operator, value = tokens
 
+    # Validate field name (security check for underscore-prefixed fields)
+    _validate_field_name(field, expression, allow_private_fields=allow_private_fields)
+
     # Validate operator is supported
     if operator not in SUPPORTED_OPERATORS:
         raise ModelOnexError(
@@ -126,7 +218,7 @@ def parse_expression(expression: str) -> tuple[str, str, str]:
     return field, operator, value
 
 
-def validate_expression(expression: str) -> bool:
+def validate_expression(expression: str, *, allow_private_fields: bool = False) -> bool:
     """
     Validate an FSM condition expression without raising exceptions.
 
@@ -134,6 +226,8 @@ def validate_expression(expression: str) -> bool:
 
     Args:
         expression: The expression string to validate
+        allow_private_fields: If True, allows field names starting with underscore.
+            Default is False for security.
 
     Returns:
         True if expression is valid, False otherwise
@@ -147,9 +241,15 @@ def validate_expression(expression: str) -> bool:
 
         >>> validate_expression("")
         False
+
+        >>> validate_expression("_private equals secret")
+        False
+
+        >>> validate_expression("_private equals secret", allow_private_fields=True)
+        True
     """
     try:
-        parse_expression(expression)
+        parse_expression(expression, allow_private_fields=allow_private_fields)
         return True
     except ModelOnexError:
         return False

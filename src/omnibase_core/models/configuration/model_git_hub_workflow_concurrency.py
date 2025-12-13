@@ -12,6 +12,7 @@ class ModelGitHubWorkflowConcurrency(BaseModel):
         frozen=False,
         strict=False,
         extra="forbid",
+        from_attributes=True,
     )
 
     group: str = Field(default=..., description="Concurrency group name")

@@ -18,6 +18,8 @@ Coverage targets:
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.utils.fsm_operators import (
     evaluate_equals,

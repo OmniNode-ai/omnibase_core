@@ -15,6 +15,8 @@ from pydantic import ValidationError
 
 from omnibase_core.models.fsm.model_fsm_state_snapshot import ModelFSMStateSnapshot
 
+pytestmark = pytest.mark.unit
+
 
 @pytest.mark.unit
 class TestModelFSMStateSnapshotInstantiation:
@@ -442,7 +444,3 @@ class TestModelFSMStateSnapshotEdgeCases:
         repr_str = repr(snapshot)
         assert "ModelFSMStateSnapshot" in repr_str
         assert "test" in repr_str
-
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
