@@ -297,6 +297,6 @@ For operational guidance on monitoring CI health, detecting performance regressi
 
 ---
 
-**Last Updated**: 2025-11-01
-**Test Suite Version**: 0.2.0 (12,198 tests)
+**Last Updated**: 2025-12-13
+**Test Suite Version**: 0.4.0 (12,198 tests)
 **CI Strategy Version**: v2.1 (20 splits + conditional coverage + monitoring)

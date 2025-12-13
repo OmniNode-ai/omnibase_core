@@ -452,8 +452,11 @@ class TestFingerprintConsistency:
             compute_fingerprint_for_contract(contract_data) for _ in range(5)
         ]
 
-        # Filter out None results and check consistency
-        valid_fingerprints = [fp for fp in fingerprints if fp is not None]
+        # Filter out results with None fingerprint and check consistency
+        # Note: fp is FingerprintResult, need to check fp.fingerprint attribute
+        valid_fingerprints = [
+            fp.fingerprint for fp in fingerprints if fp.fingerprint is not None
+        ]
         if valid_fingerprints:
             first = str(valid_fingerprints[0])
             assert all(str(fp) == first for fp in valid_fingerprints)
@@ -1099,6 +1102,92 @@ fingerprint: '1.0.0:oldvalue1234'
         assert 'fingerprint: "1.0.0:newvalue5678"' in updated
         assert "oldvalue1234" not in updated
 
+    def test_add_fingerprint_after_dict_style_version(self) -> None:
+        """Test adding fingerprint after dict-style version block.
+
+        PR #180 Requirement: Handle version blocks like:
+        version:
+          major: 1
+          minor: 0
+          patch: 0
+        """
+        content = """name: TestContract
+version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: COMPUTE_GENERIC
+description: Test contract
+"""
+        new_fp = "1.0.0:abcdef123456"
+
+        updated = update_fingerprint_in_yaml(content, new_fp)
+
+        # Fingerprint should be added after version block
+        assert 'fingerprint: "1.0.0:abcdef123456"' in updated
+        # Fingerprint should come after patch field
+        version_block_end = updated.find("patch: 0")
+        fingerprint_pos = updated.find("fingerprint:")
+        assert fingerprint_pos > version_block_end
+
+    def test_add_fingerprint_after_contract_version(self) -> None:
+        """Test adding fingerprint after contract_version field.
+
+        PR #180 Requirement: Handle contract_version for flexible contracts.
+        """
+        content = """name: TestFlexibleContract
+contract_version: "1.0"
+node_type: COMPUTE_GENERIC
+description: Flexible contract
+"""
+        new_fp = "1.0.0:abcdef123456"
+
+        updated = update_fingerprint_in_yaml(content, new_fp)
+
+        # Fingerprint should be added after contract_version
+        assert 'fingerprint: "1.0.0:abcdef123456"' in updated
+        contract_version_pos = updated.find("contract_version:")
+        fingerprint_pos = updated.find("fingerprint:")
+        assert fingerprint_pos > contract_version_pos
+
+    def test_add_fingerprint_after_name_when_no_version(self) -> None:
+        """Test adding fingerprint after name field when no version exists."""
+        content = """name: TestNoVersion
+node_type: COMPUTE_GENERIC
+description: No version field
+"""
+        new_fp = "0.0.0:abcdef123456"
+
+        updated = update_fingerprint_in_yaml(content, new_fp)
+
+        # Fingerprint should be added after name
+        assert 'fingerprint: "0.0.0:abcdef123456"' in updated
+        name_pos = updated.find("name:")
+        fingerprint_pos = updated.find("fingerprint:")
+        assert fingerprint_pos > name_pos
+
+    def test_dict_style_version_preserves_node_type(self) -> None:
+        """Test that dict-style version handling doesn't corrupt other fields."""
+        content = """name: TestContract
+version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: COMPUTE_GENERIC
+description: Test
+"""
+        new_fp = "1.0.0:abcdef123456"
+
+        updated = update_fingerprint_in_yaml(content, new_fp)
+
+        # All original content should be preserved
+        assert "name: TestContract" in updated
+        assert "major: 1" in updated
+        assert "minor: 0" in updated
+        assert "patch: 0" in updated
+        assert "node_type: COMPUTE_GENERIC" in updated
+        assert "description: Test" in updated
+
 
 # =============================================================================
 # Fingerprint Computation Edge Cases
@@ -1121,11 +1210,12 @@ class TestFingerprintComputationEdgeCases:
             "description": "Test",
         }
 
-        fingerprint = compute_fingerprint_for_contract(contract_data)
+        result = compute_fingerprint_for_contract(contract_data)
 
-        # Should return None on validation error (not raise)
-        # Note: actual behavior depends on implementation
-        # This test documents expected behavior
+        # Should return FingerprintResult with error (not raise)
+        assert result.fingerprint is None
+        assert result.error is not None
+        assert "validation" in result.error.lower() or "error" in result.error.lower()
 
     def test_compute_fingerprint_with_missing_required_fields(self) -> None:
         """Test fingerprint computation with missing required fields."""
@@ -1135,9 +1225,15 @@ class TestFingerprintComputationEdgeCases:
             # Missing other required fields
         }
 
-        fingerprint = compute_fingerprint_for_contract(contract_data)
+        result = compute_fingerprint_for_contract(contract_data)
 
-        # Should return None or handle gracefully
+        # Should return FingerprintResult with error (missing required fields)
+        # The contract falls back to ModelYamlContract which is more permissive
+        # but still requires certain fields for fingerprint computation
+        assert result is not None
+        # Either fingerprint is computed (if model is permissive) or error is set
+        if result.fingerprint is None:
+            assert result.error is not None
 
     def test_fingerprint_result_changed_is_false_when_matches(
         self, temp_dir: Path, valid_compute_contract_yaml: str

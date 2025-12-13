@@ -15,7 +15,7 @@ class ModelEventSubscriptionConfig(BaseModel):
     with explicit typed fields for event subscriptions.
     """
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     event_type: str = Field(
         ...,

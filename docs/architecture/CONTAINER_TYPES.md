@@ -1,8 +1,8 @@
 # Container Types in omnibase_core
 
 **Status**: ✅ Complete
-**Version**: 0.2.0
-**Last Updated**: 2025-11-03
+**Version**: 0.4.0
+**Last Updated**: 2025-12-13
 
 ---
 

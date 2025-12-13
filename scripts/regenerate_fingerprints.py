@@ -235,11 +235,68 @@ def compute_fingerprint_for_contract(
         )
 
 
+def _find_version_block_end(content: str, version_start: int) -> int:
+    """Find the end of a version block (dict-style or inline).
+
+    For dict-style version blocks like:
+        version:
+          major: 1
+          minor: 0
+          patch: 0
+
+    Returns the position after the last line of the block.
+
+    Args:
+        content: Full YAML content.
+        version_start: Start position of the 'version:' line.
+
+    Returns:
+        Position after the version block ends.
+    """
+    lines = content[version_start:].split("\n")
+    if not lines:
+        return version_start
+
+    # Check the first line to get version: line indent
+    first_line = lines[0]
+    version_indent = len(first_line) - len(first_line.lstrip())
+
+    # Check if it's inline (version: "1.0.0") or dict-style (version:\n  major:)
+    version_line_content = first_line.strip()
+    if ":" in version_line_content:
+        after_colon = version_line_content.split(":", 1)[1].strip()
+        if after_colon:
+            # Inline version like `version: "1.0.0"` or `version: 1.0.0`
+            # Return end of this line
+            return version_start + len(first_line)
+
+    # Dict-style version block - find where indentation returns to same or less level
+    pos = version_start + len(first_line)
+    for line in lines[1:]:
+        if not line.strip():
+            # Empty line - continue
+            pos += len(line) + 1
+            continue
+
+        line_indent = len(line) - len(line.lstrip())
+        if line_indent <= version_indent:
+            # Back to same or lower indentation - block ended
+            break
+        pos += len(line) + 1
+
+    return pos
+
+
 def update_fingerprint_in_yaml(
     content: str,
     new_fingerprint: str,
 ) -> str:
     """Update fingerprint field in YAML content while preserving formatting.
+
+    Handles multiple YAML version formats:
+    - Inline version: `version: "1.0.0"`
+    - Dict-style version: `version:\\n  major: 1\\n  minor: 0\\n  patch: 0`
+    - contract_version blocks: `contract_version: "1.0"`
 
     Args:
         content: Original YAML file content.
@@ -248,9 +305,10 @@ def update_fingerprint_in_yaml(
     Returns:
         Updated YAML content with new fingerprint.
     """
-    # Pattern to match existing fingerprint field
+    # Pattern to match existing fingerprint field (at root level, no indentation)
+    # More specific: must be at start of line with optional whitespace
     fingerprint_pattern = re.compile(
-        r'^(\s*)fingerprint:\s*["\']?[\w.:/-]+["\']?\s*$',
+        r'^(\s*)fingerprint:\s*["\']?[\w.:/-]*["\']?\s*$',
         re.MULTILINE,
     )
 
@@ -263,21 +321,71 @@ def update_fingerprint_in_yaml(
             content,
         )
 
-    # No existing fingerprint - add after version field
-    version_pattern = re.compile(
-        r'^(\s*)(version:\s*["\']?[\w./-]+["\']?\s*)$',
+    # No existing fingerprint - find best insertion point after version field
+    # Try multiple patterns in order of preference:
+
+    # 1. Try inline version first: `version: "1.0.0"` or `version: 1.0.0`
+    inline_version_pattern = re.compile(
+        r'^(\s*)(version:\s*["\']?[\w./-]+["\']?)\s*$',
         re.MULTILINE,
     )
-    version_match = version_pattern.search(content)
-    if version_match:
-        indent = version_match.group(1)
-        version_line = version_match.group(0)
+    inline_match = inline_version_pattern.search(content)
+    if inline_match:
+        indent = inline_match.group(1)
+        version_line = inline_match.group(0)
         return content.replace(
             version_line,
             f'{version_line}\n{indent}fingerprint: "{new_fingerprint}"',
+            1,  # Replace only first occurrence
         )
 
-    # Fallback: add at end of file
+    # 2. Try dict-style version block: `version:\n  major: 1\n  ...`
+    dict_version_pattern = re.compile(
+        r"^(\s*)version:\s*$",
+        re.MULTILINE,
+    )
+    dict_match = dict_version_pattern.search(content)
+    if dict_match:
+        indent = dict_match.group(1)
+        block_end = _find_version_block_end(content, dict_match.start())
+        # Insert fingerprint after the version block
+        return (
+            content[:block_end].rstrip()
+            + f'\n{indent}fingerprint: "{new_fingerprint}"\n'
+            + content[block_end:].lstrip("\n")
+        )
+
+    # 3. Try contract_version (for flexible contracts)
+    contract_version_pattern = re.compile(
+        r'^(\s*)(contract_version:\s*["\']?[\w./-]+["\']?)\s*$',
+        re.MULTILINE,
+    )
+    contract_match = contract_version_pattern.search(content)
+    if contract_match:
+        indent = contract_match.group(1)
+        version_line = contract_match.group(0)
+        return content.replace(
+            version_line,
+            f'{version_line}\n{indent}fingerprint: "{new_fingerprint}"',
+            1,
+        )
+
+    # 4. Try to insert after name field (common first field)
+    name_pattern = re.compile(
+        r'^(\s*)(name:\s*["\']?[\w./-]+["\']?)\s*$',
+        re.MULTILINE,
+    )
+    name_match = name_pattern.search(content)
+    if name_match:
+        indent = name_match.group(1)
+        name_line = name_match.group(0)
+        return content.replace(
+            name_line,
+            f'{name_line}\n{indent}fingerprint: "{new_fingerprint}"',
+            1,
+        )
+
+    # 5. Fallback: add at end of file (should rarely happen for valid contracts)
     return content.rstrip() + f'\nfingerprint: "{new_fingerprint}"\n'
 
 

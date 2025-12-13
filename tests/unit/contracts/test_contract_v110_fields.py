@@ -6,7 +6,7 @@ This module provides comprehensive validation tests for the v1.1.0 contract fiel
 introduced in the unified contract upgrade (OMN-258, OMN-259, OMN-260).
 
 v1.1.0 Fields Tested:
-    - fingerprint: Format "v{version}:{12-char-hash}" for drift detection
+    - fingerprint: Format "{version}:{12-char-hash}" for drift detection (no 'v' prefix)
     - handlers: Required/optional handler specifications
     - profile_tags: Categorization tags list
     - subscriptions: Kafka topic subscriptions

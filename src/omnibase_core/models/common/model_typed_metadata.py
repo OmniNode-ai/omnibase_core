@@ -5,7 +5,19 @@ This module provides strongly-typed models for common metadata patterns
 found across discovery, effect, reducer, and other model modules.
 """
 
+from typing import Self
+from uuid import UUID
+
 from pydantic import BaseModel, Field, model_validator
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.common.model_envelope_payload import ModelEnvelopePayload
+from omnibase_core.models.common.model_graph_node_parameters import (
+    ModelGraphNodeParameters,
+)
+from omnibase_core.models.common.model_output_mapping import ModelOutputMapping
+from omnibase_core.models.common.model_query_parameters import ModelQueryParameters
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelToolMetadataFields(BaseModel):
@@ -183,7 +195,7 @@ class ModelConfigSchemaProperty(BaseModel):
 
     type: str = Field(
         default="string",
-        description="Property type (string, number, boolean, array, object)",
+        description="Property type (string, number, integer, boolean, array, object)",
     )
     description: str | None = Field(
         default=None,
@@ -209,6 +221,93 @@ class ModelConfigSchemaProperty(BaseModel):
         default=None,
         description="Maximum value for numeric types",
     )
+
+    @model_validator(mode="after")
+    def validate_type_default_consistency(self) -> Self:
+        """Validate that default value type matches declared type.
+
+        Enforces type consistency between the 'type' field and 'default' value:
+        - type="string" requires default to be str
+        - type="number" or type="float" requires default to be int or float
+        - type="integer" or type="int" requires default to be int (not float)
+        - type="boolean" or type="bool" requires default to be bool
+
+        Note: int is acceptable for float/number types (widening conversion),
+        but bool is NOT acceptable for int types (even though bool is int subclass).
+
+        Raises:
+            ModelOnexError: If default value type doesn't match declared type.
+        """
+        if self.default is None:
+            return self
+
+        declared_type = self.type.lower()
+        actual_type = type(self.default)
+        actual_type_name = actual_type.__name__
+
+        # Define type mappings: declared_type -> (valid_types, description)
+        type_validations: dict[str, tuple[tuple[type, ...], str]] = {
+            "string": ((str,), "string"),
+            "str": ((str,), "string"),
+            "number": ((int, float), "number (int or float)"),
+            "float": ((int, float), "number (int or float)"),
+            "integer": ((int,), "integer"),
+            "int": ((int,), "integer"),
+            "boolean": ((bool,), "boolean"),
+            "bool": ((bool,), "boolean"),
+        }
+
+        if declared_type in type_validations:
+            valid_types, type_desc = type_validations[declared_type]
+
+            # Special case: bool is subclass of int, but we don't want bool for int/integer
+            if declared_type in ("integer", "int") and isinstance(self.default, bool):
+                raise ModelOnexError(
+                    message=(
+                        f"Type mismatch: default value has type '{actual_type_name}' "
+                        f"but declared type is '{self.type}'. "
+                        f"Boolean values are not valid for integer type."
+                    ),
+                    error_code=EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH,
+                    context={
+                        "declared_type": self.type,
+                        "actual_type": actual_type_name,
+                        "default_value": str(self.default),
+                    },
+                )
+
+            # For number/float types, also reject bool (bool is int subclass)
+            if declared_type in ("number", "float") and isinstance(self.default, bool):
+                raise ModelOnexError(
+                    message=(
+                        f"Type mismatch: default value has type '{actual_type_name}' "
+                        f"but declared type is '{self.type}'. "
+                        f"Boolean values are not valid for numeric types."
+                    ),
+                    error_code=EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH,
+                    context={
+                        "declared_type": self.type,
+                        "actual_type": actual_type_name,
+                        "default_value": str(self.default),
+                    },
+                )
+
+            if not isinstance(self.default, valid_types):
+                raise ModelOnexError(
+                    message=(
+                        f"Type mismatch: default value has type '{actual_type_name}' "
+                        f"but declared type is '{self.type}'. "
+                        f"Expected {type_desc}."
+                    ),
+                    error_code=EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH,
+                    context={
+                        "declared_type": self.type,
+                        "actual_type": actual_type_name,
+                        "default_value": str(self.default),
+                    },
+                )
+
+        return self
 
 
 class ModelMixinConfigSchema(BaseModel):
@@ -279,8 +378,8 @@ class ModelOperationData(BaseModel):
         default=None,
         description="Database query string",
     )
-    parameters: dict[str, str] = Field(
-        default_factory=dict,
+    parameters: ModelQueryParameters = Field(
+        default_factory=ModelQueryParameters,
         description="Query parameters",
     )
 
@@ -323,8 +422,8 @@ class ModelOperationData(BaseModel):
     )
 
     # Event envelope payload (for event-driven processing)
-    envelope_payload: dict[str, str] = Field(
-        default_factory=dict,
+    envelope_payload: ModelEnvelopePayload = Field(
+        default_factory=ModelEnvelopePayload,
         description="Event envelope payload data",
     )
 
@@ -475,11 +574,11 @@ class ModelReducerMetadata(BaseModel):
         default=None,
         description="Key for grouping operations",
     )
-    partition_id: str | None = Field(
+    partition_id: UUID | None = Field(
         default=None,
         description="Partition identifier for distributed processing",
     )
-    window_id: str | None = Field(
+    window_id: UUID | None = Field(
         default=None,
         description="Window identifier for streaming operations",
     )
@@ -601,7 +700,9 @@ class ModelGraphNodeData(BaseModel):
     )
     priority: int | None = Field(
         default=None,
-        description="Node execution priority",
+        description="Node execution priority (0-100, higher = more urgent)",
+        ge=0,
+        le=100,
     )
     timeout_ms: int | None = Field(
         default=None,
@@ -635,17 +736,17 @@ class ModelGraphNodeInputs(BaseModel):
     with explicit typed fields for graph node inputs.
     """
 
-    parameters: dict[str, str] = Field(
-        default_factory=dict,
+    parameters: ModelGraphNodeParameters = Field(
+        default_factory=ModelGraphNodeParameters,
         description="Input parameters as key-value pairs",
     )
-    from_outputs: dict[str, str] = Field(
-        default_factory=dict,
+    from_outputs: ModelOutputMapping = Field(
+        default_factory=ModelOutputMapping,
         description="Mappings from other node outputs",
     )
     constants: dict[str, str] = Field(
         default_factory=dict,
-        description="Constant input values",
+        description="Constant input values as strings",
     )
     environment_vars: list[str] = Field(
         default_factory=list,
@@ -709,7 +810,9 @@ class ModelEventSubscriptionConfig(BaseModel):
     )
     priority: int = Field(
         default=0,
-        description="Subscription priority",
+        description="Subscription priority (0-100, higher = more urgent)",
+        ge=0,
+        le=100,
     )
     batch_size: int | None = Field(
         default=None,

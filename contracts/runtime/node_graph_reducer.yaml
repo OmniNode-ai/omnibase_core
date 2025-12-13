@@ -109,7 +109,7 @@ state_transitions:
       description: Node registry is loaded and ready, begin wiring nodes
       conditions:
         - condition_name: registry_loaded
-          expression: node_registry is_not_empty
+          expression: node_registry min_length 1
           required: true
           description: Node registry must contain at least one node definition
           version: {major: 1, minor: 0, patch: 0}

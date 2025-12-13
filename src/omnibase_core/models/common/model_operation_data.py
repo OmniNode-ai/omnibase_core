@@ -1,10 +1,17 @@
 """
 Typed operation data model for effect input.
 
-This module provides strongly-typed operation data for effect patterns.
+This module provides strongly-typed operation data for effect patterns,
+using ModelQueryParameters and ModelEnvelopePayload for type-safe
+parameter and event payload handling.
 """
 
+from __future__ import annotations
+
 from pydantic import BaseModel, ConfigDict, Field
+
+from omnibase_core.models.common.model_envelope_payload import ModelEnvelopePayload
+from omnibase_core.models.common.model_query_parameters import ModelQueryParameters
 
 
 class ModelOperationData(BaseModel):
@@ -14,11 +21,12 @@ class ModelOperationData(BaseModel):
     Replaces dict[str, Any] operation_data field in ModelEffectInput
     with explicit typed fields for effect operations.
 
-    Note: Dict fields use dict[str, str] per ONEX strict typing standards.
-    For complex values, serialize to JSON strings.
+    Uses strongly-typed models for:
+    - parameters: ModelQueryParameters with typed values and query string support
+    - envelope_payload: ModelEnvelopePayload with event-specific typed fields
     """
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     # Common fields across all effect types
     action: str | None = Field(
@@ -39,9 +47,9 @@ class ModelOperationData(BaseModel):
         default=None,
         description="Database query string",
     )
-    parameters: dict[str, str] = Field(
-        default_factory=dict,
-        description="Query parameters as string key-value pairs",
+    parameters: ModelQueryParameters = Field(
+        default_factory=ModelQueryParameters,
+        description="Query parameters with typed values and query string support",
     )
 
     # API call fields
@@ -83,9 +91,9 @@ class ModelOperationData(BaseModel):
     )
 
     # Event envelope payload (for event-driven processing)
-    envelope_payload: dict[str, str] = Field(
-        default_factory=dict,
-        description="Event envelope payload data as string key-value pairs",
+    envelope_payload: ModelEnvelopePayload = Field(
+        default_factory=ModelEnvelopePayload,
+        description="Event envelope payload with typed event fields",
     )
 
 
