@@ -53,7 +53,7 @@ class ModelItemSummary(BaseModel):
     # Status and metadata
     is_enabled: bool = Field(default=True, description="Whether item is enabled")
     is_valid: bool = Field(default=True, description="Whether item is valid")
-    priority: int = Field(default=0, description="Item priority")
+    priority: int = Field(default=0, description="Item priority", ge=0)
 
     # Timestamps
     created_at: datetime | None = Field(default=None, description="Creation timestamp")

@@ -5,9 +5,13 @@ Test suite for ModelRouteHop.
 from datetime import datetime
 from uuid import uuid4
 
+import pytest
+
 from omnibase_core.models.core.model_route_hop import ModelRouteHop
 from omnibase_core.models.core.model_route_hop_metadata import ModelRouteHopMetadata
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+pytestmark = pytest.mark.unit
 
 # Default version for test instances - required field after removing default_factory
 DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
@@ -36,7 +40,11 @@ class TestModelRouteHop:
         assert hop.routing_decision is None
         assert hop.error_info is None
         assert isinstance(hop.metadata, ModelRouteHopMetadata)
-        assert hop.metadata.model_dump(exclude_defaults=True) == {}
+        # Verify metadata has only default values (no non-default fields set)
+        non_default_fields = hop.metadata.model_dump(exclude_defaults=True)
+        assert not non_default_fields, (
+            f"Expected empty metadata, got: {non_default_fields}"
+        )
         assert isinstance(hop.timestamp, datetime)
 
     def test_model_route_hop_creation_complete(self):
@@ -73,6 +81,7 @@ class TestModelRouteHop:
         assert hop.error_info is None
         assert hop.metadata == metadata
         assert hop.metadata.route_version == "1.0"
+        assert hop.metadata.routing_table_id == "table-123"
         assert hop.metadata.custom_fields["key1"] == "value1"
 
     def test_model_route_hop_creation_with_error(self):
@@ -244,9 +253,12 @@ class TestModelRouteHop:
 
         assert isinstance(hop.metadata, ModelRouteHopMetadata)
         # Check that metadata has no non-default values set
-        assert hop.metadata.model_dump(exclude_defaults=True) == {}
-        # Check that custom_fields dict is empty
-        assert len(hop.metadata.custom_fields) == 0
+        non_default_fields = hop.metadata.model_dump(exclude_defaults=True)
+        assert not non_default_fields, (
+            f"Expected empty metadata, got: {non_default_fields}"
+        )
+        # Verify custom_fields is empty
+        assert not hop.metadata.custom_fields
 
     def test_model_route_hop_nested_metadata(self):
         """Test ModelRouteHop metadata with tags and custom_fields."""
@@ -589,8 +601,15 @@ class TestModelRouteHop:
         # Both should have default metadata (ModelRouteHopMetadata with empty custom_fields)
         assert isinstance(hop1.metadata, ModelRouteHopMetadata)
         assert isinstance(hop2.metadata, ModelRouteHopMetadata)
-        assert hop1.metadata.model_dump(exclude_defaults=True) == {}
-        assert hop2.metadata.model_dump(exclude_defaults=True) == {}
+        # Verify both have only default values
+        hop1_non_defaults = hop1.metadata.model_dump(exclude_defaults=True)
+        hop2_non_defaults = hop2.metadata.model_dump(exclude_defaults=True)
+        assert not hop1_non_defaults, (
+            f"Expected empty metadata, got: {hop1_non_defaults}"
+        )
+        assert not hop2_non_defaults, (
+            f"Expected empty metadata, got: {hop2_non_defaults}"
+        )
 
         # But they should be different instances (modifying one doesn't affect the other)
         hop1.metadata.custom_fields["test"] = "value1"
@@ -664,12 +683,12 @@ class TestModelRouteHop:
         )
         assert hop.processing_duration_ms == 999999999
 
-        # Test with negative processing duration
-        hop = ModelRouteHop(
-            version=DEFAULT_VERSION,
-            hop_id=hop_id,
-            node_id=node_id,
-            hop_type="router",
-            processing_duration_ms=-100,
-        )
-        assert hop.processing_duration_ms == -100
+        # Test that negative processing duration is rejected (ge=0 constraint)
+        with pytest.raises(ValueError):
+            ModelRouteHop(
+                version=DEFAULT_VERSION,
+                hop_id=hop_id,
+                node_id=node_id,
+                hop_type="router",
+                processing_duration_ms=-100,
+            )

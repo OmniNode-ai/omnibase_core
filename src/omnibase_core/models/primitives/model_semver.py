@@ -213,7 +213,16 @@ def parse_input_state_version(input_state: SerializedDict) -> "ModelSemVer":
         ModelSemVer instance
 
     Raises:
-        ValueError: If version is missing, is a string, or has invalid format
+        ModelOnexError: If version is missing, is an invalid type, or has invalid format
+
+    Type Handling:
+        - None: Rejected - version is required
+        - str: Rejected - use structured format instead
+        - bool: Rejected - bool is not a valid version type (even though bool is int subclass)
+        - int/float: Rejected - scalar numbers are not valid versions
+        - ModelSemVer: Returned as-is
+        - dict: Parsed as {major, minor, patch} structure
+        - Other types: Rejected with descriptive error
     """
     v = input_state.get("version")
 
@@ -228,6 +237,28 @@ def parse_input_state_version(input_state: SerializedDict) -> "ModelSemVer":
         msg = (
             f"String versions are not allowed. Use structured format: "
             f"{{major: X, minor: Y, patch: Z}}. Got string: {v}"
+        )
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=msg,
+        )
+
+    # Check bool BEFORE int (bool is subclass of int in Python)
+    if isinstance(v, bool):
+        msg = (
+            f"Boolean is not a valid version type. Use structured format: "
+            f"{{major: X, minor: Y, patch: Z}}. Got bool: {v}"
+        )
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=msg,
+        )
+
+    # Reject scalar numbers (int, float) - they're not valid version formats
+    if isinstance(v, (int, float)):
+        msg = (
+            f"Scalar numbers are not valid version types. Use structured format: "
+            f"{{major: X, minor: Y, patch: Z}}. Got {type(v).__name__}: {v}"
         )
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,

@@ -5,14 +5,23 @@ Orchestrator-issued Action with lease semantics for single-writer guarantees.
 Converted from NamedTuple to Pydantic BaseModel for better validation.
 
 Thread Safety:
-    ModelAction is immutable (frozen=True) after creation, making it thread-safe
-    for concurrent read access from multiple threads or async tasks. This follows
-    ONEX thread safety guidelines where action models are frozen to ensure lease
-    semantics and epoch tracking remain consistent during distributed coordination.
-    Note that this provides shallow immutability - while the model's fields cannot
-    be reassigned, mutable field values (like dict/list contents) can still be
-    modified. For full thread safety with mutable nested data, use
-    model_copy(deep=True) to create independent copies.
+    ModelAction is immutable (frozen=True) after creation, providing thread-safe
+    read access for top-level field values from multiple threads or async tasks.
+
+    Safe Operations (thread-safe without synchronization):
+        - Reading any top-level field (action_type, priority, epoch, etc.)
+        - Comparing instances for equality
+        - Hashing instances (for use as dict keys)
+        - Creating copies via model_copy()
+
+    Unsafe Operations (require external synchronization):
+        - Modifying contents of mutable fields (payload dict, dependencies list)
+        - In-place mutation of nested objects within payload
+
+    IMPORTANT: Shallow immutability means field references cannot be reassigned,
+    but mutable field contents (dict/list values) CAN be modified by any thread.
+    For full thread safety with mutable nested data, use model_copy(deep=True)
+    to create independent copies before passing to other threads.
 
     To create a modified copy (e.g., for retry with incremented retry_count):
         new_action = action.model_copy(update={"retry_count": action.retry_count + 1})

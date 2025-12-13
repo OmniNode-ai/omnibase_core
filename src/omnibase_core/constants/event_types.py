@@ -77,3 +77,31 @@ def normalize_legacy_event_type(event_type: str | TypedDictEventType | object) -
 
     # Fallback to string conversion
     return str(event_type)
+
+
+__all__ = [
+    # Tool-related events
+    "TOOL_INVOCATION",
+    "TOOL_RESPONSE",
+    "TOOL_DISCOVERY_REQUEST",
+    "TOOL_DISCOVERY_RESPONSE",
+    # Introspection and discovery events
+    "NODE_INTROSPECTION_EVENT",
+    "REQUEST_REAL_TIME_INTROSPECTION",
+    "REAL_TIME_INTROSPECTION_RESPONSE",
+    # Additional core events
+    "NODE_HEALTH_CHECK",
+    "NODE_HEALTH_EVENT",
+    "NODE_SHUTDOWN_EVENT",
+    "SERVICE_DISCOVERY",
+    # Node lifecycle events
+    "NODE_START",
+    "NODE_SUCCESS",
+    "NODE_FAILURE",
+    # Logging and audit events
+    "LOGGING_APPLICATION_EVENT",
+    "LOGGING_AUDIT_EVENT",
+    "LOGGING_SECURITY_EVENT",
+    # Utility functions
+    "normalize_legacy_event_type",
+]

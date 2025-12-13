@@ -29,6 +29,7 @@ class ModelRequestIntrospectionEvent(ModelOnexEvent):
     event_type: str = Field(
         default=REQUEST_REAL_TIME_INTROSPECTION,
         description="Event type identifier",
+        min_length=1,
     )
 
     # Request control

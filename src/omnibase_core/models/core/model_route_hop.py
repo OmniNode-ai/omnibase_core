@@ -38,6 +38,7 @@ class ModelRouteHop(BaseModel):
     )
     processing_duration_ms: int | None = Field(
         default=None,
+        ge=0,
         description="Time spent processing at this hop in milliseconds",
     )
 

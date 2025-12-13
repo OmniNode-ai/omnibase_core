@@ -13,7 +13,9 @@ from pydantic import BaseModel
 class ModelThrottleResponse(BaseModel):
     """Typed response for throttled requests."""
 
-    status_code: int = Field(default=429, description="HTTP status code")
+    status_code: int = Field(
+        default=429, description="HTTP status code", ge=100, le=599
+    )
     headers: dict[str, str] = Field(
         default_factory=dict, description="Response headers"
     )

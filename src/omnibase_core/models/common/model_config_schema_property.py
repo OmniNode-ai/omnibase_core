@@ -23,9 +23,9 @@ class ModelConfigSchemaProperty(BaseModel):
         default=None,
         description="Property description",
     )
-    default: str | None = Field(
+    default: str | int | float | bool | None = Field(
         default=None,
-        description="Default value as string",
+        description="Default value (type should match the 'type' field)",
     )
     enum: list[str] | None = Field(
         default=None,

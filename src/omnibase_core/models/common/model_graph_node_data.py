@@ -4,7 +4,7 @@ Typed data model for graph nodes.
 This module provides strongly-typed data for graph node patterns.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelGraphNodeData(BaseModel):
@@ -22,6 +22,7 @@ class ModelGraphNodeData(BaseModel):
     priority: int | None = Field(
         default=None,
         description="Node execution priority",
+        ge=0,
     )
     timeout_ms: int | None = Field(
         default=None,
@@ -44,6 +45,11 @@ class ModelGraphNodeData(BaseModel):
     error_handler: str | None = Field(
         default=None,
         description="Error handler node ID",
+    )
+
+    model_config = ConfigDict(
+        extra="forbid",  # Prevent silent field drops during migration
+        validate_assignment=True,
     )
 
 

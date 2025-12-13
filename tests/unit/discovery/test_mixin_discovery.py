@@ -9,6 +9,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.mixins.mixin_discovery import MixinDiscovery
 from omnibase_core.models.common.model_typed_metadata import (
@@ -47,16 +49,13 @@ class TestModelMixinInfo:
 
     def test_mixin_info_creation_with_all_fields(self) -> None:
         """Test ModelMixinInfo creation with all fields."""
-        # Note: default="3" is a string because ModelConfigSchemaProperty.default
-        # is typed as str | None - all defaults are stored as string representations
-        # for JSON Schema compatibility (converted at runtime when used)
         config_schema = ModelMixinConfigSchema(
             properties={
                 "max_retries": ModelConfigSchemaProperty(
                     type="integer",
                     min_value=0,
                     max_value=10,
-                    default="3",
+                    default=3,
                 )
             },
         )

@@ -7,6 +7,8 @@ Provides reusable fixtures for:
 - Model forward reference resolution
 """
 
+from collections.abc import Callable
+
 import pytest
 
 from omnibase_core.models.configuration.model_resource_limits import ModelResourceLimits
@@ -29,23 +31,35 @@ def rebuild_model_environment() -> None:
 
     The _types_namespace parameter provides the types that were imported under
     TYPE_CHECKING in the model module.
+
+    Raises:
+        RuntimeError: If model_rebuild fails, indicating forward references
+            cannot be resolved (usually a missing type in _types_namespace).
     """
-    ModelEnvironment.model_rebuild(
-        _types_namespace={
-            "ModelResourceLimits": ModelResourceLimits,
-            "ModelSecurityLevel": ModelSecurityLevel,
-        }
-    )
+    try:
+        ModelEnvironment.model_rebuild(
+            _types_namespace={
+                "ModelResourceLimits": ModelResourceLimits,
+                "ModelSecurityLevel": ModelSecurityLevel,
+            }
+        )
+    except Exception as e:
+        raise RuntimeError(
+            f"Failed to rebuild ModelEnvironment forward references: {e}. "
+            "Check that all TYPE_CHECKING imports are included in _types_namespace."
+        ) from e
 
 
 @pytest.fixture
-def default_version():
+def default_version() -> ModelSemVer:
     """Provide default SemVer version for tests."""
     return ModelSemVer(major=1, minor=0, patch=0)
 
 
 @pytest.fixture
-def create_test_command(default_version):
+def create_test_command(
+    default_version: ModelSemVer,
+) -> Callable[[str, str, str], ModelCliCommandDefinition]:
     """Factory fixture to create test command definitions.
 
     Returns a factory function that creates ModelCliCommandDefinition instances.

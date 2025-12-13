@@ -354,13 +354,16 @@ class TestModelItemSummary:
 
     def test_priority_edge_cases(self):
         """Test priority field with edge cases."""
+        from pydantic import ValidationError
+
         # Zero priority
         item1 = ModelItemSummary(priority=0)
         assert item1.priority == 0
 
-        # Negative priority (should be allowed as int)
-        item2 = ModelItemSummary(priority=-5)
-        assert item2.priority == -5
+        # Negative priority - now rejected (ge=0 constraint)
+        with pytest.raises(ValidationError) as exc_info:
+            ModelItemSummary(priority=-5)
+        assert "greater than or equal to 0" in str(exc_info.value)
 
         # Large priority
         item3 = ModelItemSummary(priority=99999)

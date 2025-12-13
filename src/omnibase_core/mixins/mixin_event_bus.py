@@ -1,13 +1,5 @@
-from collections.abc import Callable
-from typing import Any, cast
-
-from pydantic import Field
-
-from omnibase_core.errors import OnexError
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
-Unified Event Bus Mixin for ONEX Nodes
+Unified Event Bus Mixin for ONEX Nodes.
 
 Provides comprehensive event bus capabilities including:
 - Event subscription and listening
@@ -20,14 +12,18 @@ This mixin replaces and unifies MixinEventListener and MixinEventBusCompletion.
 """
 
 import threading
+from collections.abc import Callable
+from typing import Any, cast
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, StrictStr, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, StrictStr, ValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.errors import OnexError
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.protocols import ProtocolEventEnvelope
 
 # Local imports from extracted classes

@@ -421,12 +421,13 @@ class TestParseInputStateVersion:
         assert "Invalid version dict" in exc_info.value.message
 
     def test_parse_invalid_type(self):
-        """Test error with invalid version type."""
+        """Test error with invalid version type (scalar number)."""
         input_state = {"version": 123}
         with pytest.raises(ModelOnexError) as exc_info:
             parse_input_state_version(input_state)
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
-        assert "ModelSemVer instance or dict" in exc_info.value.message
+        # Scalar numbers now get a specific error message
+        assert "Scalar numbers are not valid version types" in exc_info.value.message
 
     def test_parse_none_version(self):
         """Test error when version is None."""
@@ -445,6 +446,22 @@ class TestParseInputStateVersion:
         assert version.major == 1
         assert version.minor == 2
         assert version.patch == 3
+
+    def test_parse_bool_version(self):
+        """Test error when version is bool (bool is subclass of int)."""
+        input_state = {"version": True}
+        with pytest.raises(ModelOnexError) as exc_info:
+            parse_input_state_version(input_state)
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "Boolean is not a valid version type" in exc_info.value.message
+
+    def test_parse_float_version(self):
+        """Test error when version is float."""
+        input_state = {"version": 1.5}
+        with pytest.raises(ModelOnexError) as exc_info:
+            parse_input_state_version(input_state)
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "Scalar numbers are not valid version types" in exc_info.value.message
 
 
 class TestSemVerFieldAlias:

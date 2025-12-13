@@ -49,7 +49,7 @@ class ModelCliResultData(BaseModel):
         default_factory=lambda: ModelSchemaValue.from_value(0),
         description="Execution time in milliseconds",
     )
-    status_code: int = Field(description="Status code")
+    status_code: int = Field(description="Status code", ge=0)
     warnings: list[str] = Field(description="Warning messages")
     metadata: ModelCustomProperties = Field(description="Execution metadata")
 

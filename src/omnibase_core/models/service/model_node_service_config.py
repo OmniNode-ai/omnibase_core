@@ -1,17 +1,19 @@
-from uuid import UUID
+"""
+ONEX Node Service Configuration Model.
 
-from pydantic import Field, field_validator, model_validator
+This module provides a comprehensive Pydantic schema for ONEX node service configuration,
+supporting Docker, Kubernetes, and compose file generation from contracts.
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import ModelSemVer
+Author: OmniNode Team
+"""
 
-"\nONEX Node Service Configuration Model.\n\nThis module provides a comprehensive Pydantic schema for ONEX node service configuration,\nsupporting Docker, Kubernetes, and compose file generation from contracts.\n\nAuthor: OmniNode Team\n"
 import os
 from typing import Any
+from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator, model_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_service_mode import EnumServiceMode
 from omnibase_core.models.configuration.model_event_bus_config import (
@@ -21,8 +23,10 @@ from omnibase_core.models.configuration.model_monitoring_config import (
     ModelMonitoringConfig,
 )
 from omnibase_core.models.configuration.model_resource_limits import ModelResourceLimits
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.examples.model_security_config import ModelSecurityConfig
 from omnibase_core.models.health.model_health_check_config import ModelHealthCheckConfig
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.service.model_network_config import ModelNetworkConfig
 from omnibase_core.utils.util_decorators import allow_dict_str_any
 
@@ -105,7 +109,12 @@ class ModelNodeServiceConfig(BaseModel):
         if not v.replace("_", "").replace("-", "").isalnum():
             msg = "Node name must contain only alphanumeric characters, hyphens, and underscores"
             raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+                context={
+                    "node_name": v,
+                    "validation": "alphanumeric_with_hyphens_underscores",
+                },
             )
         return v
 
@@ -117,7 +126,9 @@ class ModelNodeServiceConfig(BaseModel):
         if network_port and metrics_port and (network_port == metrics_port):
             msg = "Network port and metrics port cannot be the same"
             raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+                context={"network_port": network_port, "metrics_port": metrics_port},
             )
         return self
 
@@ -198,7 +209,7 @@ class ModelNodeServiceConfig(BaseModel):
         """
         env_config = {
             "node_name": node_name,
-            "node_version": os.getenv("NODE_VERSION", "1.0.0"),
+            "node_version": ModelSemVer.parse(os.getenv("NODE_VERSION", "1.0.0")),
             "node_id": os.getenv("NODE_ID"),
             "log_level": os.getenv("LOG_LEVEL", LogLevel.INFO.value),
             "debug_mode": os.getenv("DEBUG_MODE", "false").lower() == "true",
