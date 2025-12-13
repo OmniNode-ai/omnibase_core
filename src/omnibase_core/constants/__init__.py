@@ -1,6 +1,10 @@
 """Constants module for omnibase_core."""
 
-from omnibase_core.constants import constants_contract_fields, constants_effect
+from omnibase_core.constants import (
+    constants_contract_fields,
+    constants_effect,
+    handler_capabilities,
+)
 from omnibase_core.constants.constants_contract_fields import (
     BACKEND_KEY,
     CUSTOM_KEY,
@@ -56,10 +60,20 @@ from omnibase_core.constants.event_types import (
     TOOL_RESPONSE,
     normalize_legacy_event_type,
 )
+from omnibase_core.constants.handler_capabilities import (
+    COMPUTE_CAPABILITIES,
+    EFFECT_CAPABILITIES,
+    NODE_TYPE_REQUIREMENTS,
+    ORCHESTRATOR_CAPABILITIES,
+    REDUCER_CAPABILITIES,
+    get_capabilities_by_node_kind,
+    validate_capabilities,
+)
 
 __all__ = [
     "constants_contract_fields",
     "constants_effect",
+    "handler_capabilities",
     "normalize_legacy_event_type",
     # Event type constants
     "NODE_FAILURE",
@@ -110,4 +124,12 @@ __all__ = [
     "EFFECT_TIMEOUT_DEFAULT_MS",
     "EFFECT_TIMEOUT_MAX_MS",
     "EFFECT_TIMEOUT_MIN_MS",
+    # Handler capability constants
+    "COMPUTE_CAPABILITIES",
+    "EFFECT_CAPABILITIES",
+    "NODE_TYPE_REQUIREMENTS",
+    "ORCHESTRATOR_CAPABILITIES",
+    "REDUCER_CAPABILITIES",
+    "get_capabilities_by_node_kind",
+    "validate_capabilities",
 ]
