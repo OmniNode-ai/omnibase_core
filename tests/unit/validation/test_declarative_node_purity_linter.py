@@ -43,9 +43,9 @@ from collections.abc import Callable
 
 import pytest
 
-# Import types from conftest for use in tests
+# Import types from the helper module (not conftest - that's an anti-pattern)
 # The fixture `analyze_source` is auto-discovered by pytest from conftest.py
-from tests.unit.validation.conftest import (
+from tests.unit.validation.purity_test_helpers import (
     PurityAnalyzer,
     Severity,
     ViolationType,

@@ -472,30 +472,29 @@ def legacy_bridge(data: Any) -> Any:  # noqa: ONEX001
 
 ### Pre-push Hook
 
-The purity linter runs automatically on every pre-push. The script internally scans all node files in `src/omnibase_core/nodes/` and `infrastructure/`, so it runs unconditionally to ensure comprehensive coverage:
+The purity linter runs automatically on every pre-push. The script internally discovers and scans ALL node files in `src/omnibase_core/nodes/` and `infrastructure/` (~2-5s runtime), running unconditionally to ensure comprehensive coverage:
 
 ```yaml
-# .pre-commit-config.yaml
-repos:
-  - repo: local
-    hooks:
-      - id: check-node-purity
-        name: ONEX Node Purity Validation
-        entry: poetry run python scripts/check_node_purity.py
-        language: system
-        pass_filenames: false
-        always_run: true
-        stages: [pre-push]
+# .pre-commit-config.yaml (excerpt)
+- id: check-node-purity
+  name: ONEX Node Purity Validation
+  entry: poetry run python scripts/check_node_purity.py
+  language: system
+  pass_filenames: false
+  always_run: true
+  stages: [pre-push]
 ```
+
+**Note**: The hook is configured with `always_run: true` and `pass_filenames: false` because the script handles its own file discovery. This ensures all node files are checked on every push, not just changed files.
 
 ### CI Pipeline
 
 The linter runs in CI via GitHub Actions:
 
 ```yaml
-# .github/workflows/test.yml
+# .github/workflows/test.yml (excerpt)
 - name: Run purity linter
-  run: poetry run python scripts/check_node_purity.py src/
+  run: poetry run python scripts/check_node_purity.py --verbose
 ```
 
 ### Error Codes
@@ -529,13 +528,19 @@ Run the linter to find all violations:
 
 ```bash
 # Check specific file
-poetry run python scripts/check_node_purity.py src/omnibase_core/nodes/node_my_compute.py
+poetry run python scripts/check_node_purity.py --file src/omnibase_core/nodes/node_my_compute.py
 
-# Check all nodes
-poetry run python scripts/check_node_purity.py src/omnibase_core/nodes/
+# Check all nodes (default: src/omnibase_core)
+poetry run python scripts/check_node_purity.py
 
-# Generate report
-poetry run python scripts/check_node_purity.py src/ --output report.json
+# Check with verbose output
+poetry run python scripts/check_node_purity.py --verbose
+
+# Generate JSON report
+poetry run python scripts/check_node_purity.py --json
+
+# Strict mode (treat warnings as errors)
+poetry run python scripts/check_node_purity.py --strict
 ```
 
 ### Step 2: Replace `Any` with Typed Alternatives
@@ -643,8 +648,8 @@ class NodeMetricsReducer(NodeReducer, MixinIntentPublisher):
 After migration, verify:
 
 ```bash
-# Run linter - should pass
-poetry run python scripts/check_node_purity.py src/omnibase_core/nodes/
+# Run linter - should pass (scans all node files automatically)
+poetry run python scripts/check_node_purity.py
 
 # Run tests - should pass
 poetry run pytest tests/unit/nodes/ -v

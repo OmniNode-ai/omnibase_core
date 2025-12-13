@@ -4,8 +4,10 @@ Shared fixtures for validation tests.
 This module provides common fixtures for purity linter tests, including the
 analyze_source fixture that is used by test_declarative_node_purity_linter.py.
 
-The module uses the same sys.path approach as test_node_purity.py for compatibility
-with mypy type checking (dynamic module loading via importlib causes mypy issues).
+IMPORTANT: This module should only contain pytest fixtures, not type exports.
+For shared types (PurityAnalyzer, Severity, ViolationType, etc.), import from
+purity_test_helpers.py instead. Importing from conftest.py as a regular module
+is an anti-pattern that should be avoided.
 
 Ticket: OMN-203
 """
@@ -13,25 +15,17 @@ Ticket: OMN-203
 from __future__ import annotations
 
 import ast
-import sys
 import textwrap
 from collections.abc import Callable
 from pathlib import Path
 
 import pytest
 
-# Add scripts directory to path for imports (same approach as test_node_purity.py)
-# This is necessary for mypy to resolve types correctly from the check_node_purity module
-_scripts_path = Path(__file__).parent.parent.parent.parent / "scripts"
-if str(_scripts_path) not in sys.path:
-    sys.path.insert(0, str(_scripts_path))
-
-# Now import from check_node_purity - mypy can resolve these types
-from check_node_purity import (
+# Import types from the helper module (not directly from scripts)
+# This avoids sys.path mutation in conftest.py
+from tests.unit.validation.purity_test_helpers import (
     NodeTypeFinder,
     PurityAnalyzer,
-    Severity,
-    ViolationType,
 )
 
 
@@ -116,12 +110,9 @@ def temp_node_file(tmp_path: Path) -> Callable[[str, str], Path]:
     return _create_file
 
 
-# Re-export the loaded classes for use in tests
+# Only export fixtures, not types
+# For types (PurityAnalyzer, Severity, ViolationType), import from purity_test_helpers.py
 __all__ = [
     "analyze_source",
     "temp_node_file",
-    "PurityAnalyzer",
-    "NodeTypeFinder",
-    "Severity",
-    "ViolationType",
 ]

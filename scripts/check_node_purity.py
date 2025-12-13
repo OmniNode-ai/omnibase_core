@@ -1259,20 +1259,27 @@ class PurityAnalyzer(ast.NodeVisitor):
     def _is_type_checking_block(self, node: ast.If) -> bool:
         """Check if an If statement is a TYPE_CHECKING block.
 
+        Only accepts `if TYPE_CHECKING:` (where TYPE_CHECKING was imported from typing)
+        or `if typing.TYPE_CHECKING:` (explicit module reference).
+
         Args:
             node: AST If node to check.
 
         Returns:
-            True if this is a `if TYPE_CHECKING:` block.
+            True if this is a `if TYPE_CHECKING:` or `if typing.TYPE_CHECKING:` block.
         """
         test = node.test
         # Handle: if TYPE_CHECKING:
+        # (assumes TYPE_CHECKING was imported from typing module)
         if isinstance(test, ast.Name) and test.id == "TYPE_CHECKING":
             return True
         # Handle: if typing.TYPE_CHECKING:
+        # Only accept typing.TYPE_CHECKING, not arbitrary X.TYPE_CHECKING
         if isinstance(test, ast.Attribute):
             if test.attr == "TYPE_CHECKING":
-                return True
+                # Verify the value is specifically "typing" module
+                if isinstance(test.value, ast.Name) and test.value.id == "typing":
+                    return True
         return False
 
     def _has_allow_dict_any_decorator(
@@ -1335,7 +1342,15 @@ class PurityAnalyzer(ast.NodeVisitor):
         for mixin_name in FORBIDDEN_LEGACY_MIXINS:
             # Convert MixinEventBus to mixin_event_bus pattern
             snake_case = self._camel_to_snake(mixin_name)
-            if f"mixins.{snake_case}" in module_name or f".{snake_case}" in module_name:
+            # Match patterns:
+            # 1. "mixins.mixin_event_bus" - standard mixin module path
+            # 2. Module ends with ".mixin_event_bus" - handles submodule imports
+            # 3. Module exactly equals "mixin_event_bus" - handles direct imports
+            if (
+                f"mixins.{snake_case}" in module_name
+                or module_name.endswith(f".{snake_case}")
+                or module_name == snake_case
+            ):
                 self._add_violation(
                     node,
                     ViolationType.LEGACY_MIXIN_IMPORT,
@@ -1457,7 +1472,7 @@ class PurityAnalyzer(ast.NodeVisitor):
             node: AST subscript node to check.
 
         Returns:
-            True if this is a Dict[str, Any] pattern.
+            True if this is a Dict[str, Any] pattern (key type must be str).
         """
         # Check if the base is Dict or dict
         base = node.value
@@ -1478,6 +1493,12 @@ class PurityAnalyzer(ast.NodeVisitor):
         if isinstance(slice_node, ast.Tuple):
             elts = slice_node.elts
             if len(elts) == 2:
+                # Verify the key type is str (ast.Name with id "str")
+                first = elts[0]
+                if not (isinstance(first, ast.Name) and first.id == "str"):
+                    # Key type is not str, so this is not Dict[str, Any]
+                    return False
+
                 # Check if second element is Any
                 second = elts[1]
                 if isinstance(second, ast.Name) and second.id == "Any":
