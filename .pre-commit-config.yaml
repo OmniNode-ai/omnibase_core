@@ -438,8 +438,9 @@ repos:
       # - No class-level mutable state
       # - No caching decorators that introduce state
       # EFFECT and ORCHESTRATOR nodes are excluded (allowed to have side effects)
-      # NOTE: The script internally scans ALL node files in src/omnibase_core/nodes/
-      # and infrastructure/, so we run on every push (~2-5s runtime)
+      # RUNS UNCONDITIONALLY: always_run=true ensures this runs on EVERY push
+      # regardless of which files changed. The script internally scans ALL node
+      # files in src/omnibase_core/nodes/ and infrastructure/ (~2-5s runtime).
       # NOTE: Base node classes (node_compute.py, node_reducer.py) have pre-existing
       # Any usages that need cleanup in a separate ticket
       - id: check-node-purity

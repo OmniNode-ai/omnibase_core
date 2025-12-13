@@ -30,8 +30,6 @@ Purity in this context means:
 
 ## Node Types and Purity Requirements
 
-<!-- markdownlint-disable MD058 -->
-
 | Node Type | Purity Required | Import Restrictions | Rationale |
 |-----------|-----------------|---------------------|-----------|
 | `NodeCompute` | **YES** | Full restrictions | Pure computation - no side effects, deterministic |
@@ -186,6 +184,71 @@ import aiohttp
 import psycopg2
 import sqlalchemy
 ```
+
+#### Risks and Best Practices for File Reading
+
+**Why Read Mode is Allowed**:
+Pure nodes often need to read configuration files, schemas, or static data files. Reading is considered "less impure" than writing because it doesn't modify external state - it only observes it.
+
+**Risks of Using `open()` in Read Mode** (developers should be aware):
+
+| Risk | Description | Mitigation |
+|------|-------------|------------|
+| **Non-Determinism** | File contents can change between runs, making node behavior non-deterministic | Use immutable config files, version schemas |
+| **External State Dependency** | Node correctness depends on filesystem state, violating pure function principles | Document dependencies explicitly |
+| **Testing Complexity** | Tests must mock file contents or use fixtures | Use dependency injection for file content |
+| **Deployment Sensitivity** | Nodes may behave differently across environments | Use container services for environment-aware loading |
+
+**Best Practices** (prefer these over direct `open()`):
+
+1. **Inject Configuration**: Pass config as input parameters rather than reading files inside the node. Let orchestrators load configs.
+   ```python
+   # PREFERRED: Config injected as parameter
+   class NodeMyCompute(NodeCompute):
+       def compute(self, input: ModelInput) -> ModelOutput:
+           config = input.config  # Loaded by orchestrator
+           return self._process_with_config(config)
+   ```
+
+2. **Use Container Services**: Abstract file access behind mockable interfaces.
+   ```python
+   # PREFERRED: Use container service
+   class NodeMyCompute(NodeCompute):
+       def __init__(self, container: ModelONEXContainer):
+           super().__init__(container)
+           self.config_loader = container.get_service("ProtocolConfigLoader")
+   ```
+
+3. **Load at Startup**: If files must be read, do it in `__init__` not in compute methods.
+   ```python
+   # ACCEPTABLE: Load once at init, document the dependency
+   class NodeMyCompute(NodeCompute):
+       """COMPUTE node that loads schema at initialization.
+
+       File Dependencies:
+           - schemas/my_schema.json: JSON schema for validation
+       """
+       def __init__(self, container: ModelONEXContainer):
+           super().__init__(container)
+           with open("schemas/my_schema.json") as f:
+               self._schema = json.load(f)  # Loaded once, reused
+   ```
+
+4. **Document File Dependencies**: If your node reads files, document this clearly.
+   ```python
+   class NodeMyCompute(NodeCompute):
+       """COMPUTE node for data transformation.
+
+       External Dependencies:
+           This node reads from the filesystem at initialization:
+           - config/rules.yaml: Business rules configuration
+
+       Testing Note:
+           Mock the file content or use pytest fixtures for testing.
+       """
+   ```
+
+**See Also**: `scripts/check_node_purity.py` `_is_write_mode_open()` for implementation details.
 
 ### 5. Non-Deterministic Operations
 

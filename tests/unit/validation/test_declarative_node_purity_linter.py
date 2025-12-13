@@ -1,119 +1,47 @@
 """
-Unit tests for declarative node purity linter - Legacy mixin import detection.
+Unit tests for node purity linter - Legacy mixin import detection.
 
-AST-based detection of forbidden legacy mixin imports in pure/declarative nodes.
+AST-based detection of forbidden legacy mixin imports in pure nodes.
 Pure nodes (NodeCompute, NodeReducer) must only use approved mixins
-that are compatible with the declarative architecture.
+that are compatible with the pure node architecture. Impure nodes
+(NodeEffect, NodeOrchestrator) may use additional mixins for I/O and
+event-driven coordination.
 
-FORBIDDEN MIXINS in declarative nodes:
-- MixinEventBus - Event bus access violates declarative purity
-- MixinEventDrivenNode - Event-driven patterns not compatible
-- MixinEventHandler - Event handling not allowed
-- MixinEventListener - Event listening not allowed
-- MixinServiceRegistry - Service registry access violates declarative purity
+FORBIDDEN MIXINS in pure nodes:
+- MixinEventBus - Event bus access violates purity
+- MixinEventDrivenNode - Event-driven patterns not compatible with purity
+- MixinEventHandler - Event handling not allowed in pure nodes
+- MixinEventListener - Event listening not allowed in pure nodes
+- MixinServiceRegistry - Service registry access violates purity
 
-ALLOWED MIXINS in declarative nodes:
+ALLOWED MIXINS in pure nodes:
 - MixinFSMExecution - FSM is core to reducers
 - MixinWorkflowExecution - Workflow is core to orchestrators
 - MixinContractMetadata - Contract metadata is allowed
 - MixinNodeLifecycle - Lifecycle is allowed
 - MixinDiscoveryResponder - Discovery is allowed
+- MixinNodeExecutor - Node execution is allowed
+- MixinRequestResponseIntrospection - Request/response introspection is allowed
+- MixinWorkflowSupport - Workflow support is allowed
 
 Ticket: OMN-203
+
+Note: The analyze_source fixture is provided by conftest.py in this directory.
 """
 
 from __future__ import annotations
 
-import ast
-import importlib.util
-import sys
-import textwrap
 from collections.abc import Callable
-from pathlib import Path
-from types import ModuleType
 
 import pytest
 
-
-def _load_check_node_purity_module() -> ModuleType:
-    """Load the check_node_purity module without modifying sys.path.
-
-    Uses importlib.util to load the script module directly from its file path.
-    This avoids mutating global sys.path state, which is problematic for:
-    - Parallel test execution (pytest-xdist)
-    - Test isolation
-    - Cleanup reliability
-
-    Note: The module is registered in sys.modules because dataclasses requires
-    the module to be findable via sys.modules[cls.__module__] during class
-    decoration. This is a minimal and safe modification compared to sys.path
-    manipulation.
-
-    Returns:
-        The loaded check_node_purity module.
-
-    Raises:
-        FileNotFoundError: If the script file doesn't exist.
-        ImportError: If the module cannot be loaded.
-    """
-    script_path = (
-        Path(__file__).parent.parent.parent.parent / "scripts" / "check_node_purity.py"
-    )
-    if not script_path.exists():
-        raise FileNotFoundError(f"Script not found: {script_path}")
-
-    spec = importlib.util.spec_from_file_location("check_node_purity", script_path)
-    if spec is None or spec.loader is None:
-        raise ImportError(f"Cannot create module spec for: {script_path}")
-
-    module = importlib.util.module_from_spec(spec)
-    # Register in sys.modules before exec_module - required for dataclasses
-    # to resolve the module's __dict__ during class decoration
-    sys.modules["check_node_purity"] = module
-    spec.loader.exec_module(module)
-    return module
-
-
-# Load module at module level for efficiency (loaded once per test session)
-_purity_module = _load_check_node_purity_module()
-
-# Extract the classes/enums we need from the loaded module
-NodeTypeFinder = _purity_module.NodeTypeFinder
-PurityAnalyzer = _purity_module.PurityAnalyzer
-Severity = _purity_module.Severity
-ViolationType = _purity_module.ViolationType
-
-# ==============================================================================
-# FIXTURES
-# ==============================================================================
-
-
-@pytest.fixture
-def analyze_source() -> Callable[[str], PurityAnalyzer]:
-    """Factory fixture to analyze source code directly using two-pass approach."""
-
-    def _analyze(source_code: str) -> PurityAnalyzer:
-        source = textwrap.dedent(source_code).strip()
-        source_lines = source.splitlines()
-        tree = ast.parse(source)
-
-        # First pass: Find node classes and determine if file contains pure nodes
-        finder = NodeTypeFinder()
-        finder.visit(tree)
-
-        # Second pass: Analyze for purity violations
-        analyzer = PurityAnalyzer(
-            file_path=Path("test.py"),
-            source_lines=source_lines,
-            node_type=finder.node_type,
-            node_class_name=finder.node_class_name,
-            is_pure_node=finder.is_pure_node,
-        )
-        analyzer.visit(tree)
-        return analyzer
-
-    return _analyze
-
+# Import types from conftest for use in tests
+# The fixture `analyze_source` is auto-discovered by pytest from conftest.py
+from tests.unit.validation.conftest import (
+    PurityAnalyzer,
+    Severity,
+    ViolationType,
+)
 
 # ==============================================================================
 # LEGACY MIXIN DETECTION TESTS
@@ -1831,6 +1759,118 @@ class TestTypeCheckingBlockExclusion:
         ]
         assert len(subprocess_violations) == 0, (
             "'import subprocess' inside TYPE_CHECKING should NOT be flagged"
+        )
+
+    def test_import_x_style_inside_type_checking(
+        self, analyze_source: Callable[[str], PurityAnalyzer]
+    ) -> None:
+        """Test that 'import X' style imports inside TYPE_CHECKING are NOT flagged.
+
+        This specifically tests the 'import X' syntax (not 'from X import Y')
+        to ensure the fix for visit_Import checking in_type_checking_block works.
+
+        Ticket: OMN-203
+        """
+        source = """
+        from typing import TYPE_CHECKING
+        from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+
+        if TYPE_CHECKING:
+            import typing  # 'import X' style - should NOT be flagged
+            import subprocess  # forbidden module, but inside TYPE_CHECKING
+            import requests  # networking module, but inside TYPE_CHECKING
+            import omnibase_core.events.event_bus  # event bus module
+
+        class NodeMyCompute(NodeCoreBase):
+            pass
+        """
+        analyzer = analyze_source(source)
+
+        # All 'import X' style imports inside TYPE_CHECKING should be allowed
+        relevant_violations = [
+            v
+            for v in analyzer.violations
+            if v.violation_type
+            in (
+                ViolationType.NETWORKING_IMPORT,
+                ViolationType.SUBPROCESS_IMPORT,
+                ViolationType.EVENT_BUS_IMPORT,
+            )
+        ]
+        assert len(relevant_violations) == 0, (
+            f"'import X' style imports inside TYPE_CHECKING should NOT be flagged, "
+            f"but found {len(relevant_violations)} violations: "
+            f"{[v.violation_type for v in relevant_violations]}"
+        )
+
+    def test_from_x_import_y_style_inside_type_checking(
+        self, analyze_source: Callable[[str], PurityAnalyzer]
+    ) -> None:
+        """Test that 'from X import Y' style imports inside TYPE_CHECKING are NOT flagged.
+
+        This specifically tests the 'from X import Y' syntax to ensure
+        visit_ImportFrom checking in_type_checking_block works.
+
+        Ticket: OMN-203
+        """
+        source = """
+        from typing import TYPE_CHECKING
+        from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+
+        if TYPE_CHECKING:
+            from typing import Any  # forbidden Any, but inside TYPE_CHECKING
+            from subprocess import run  # forbidden module, inside TYPE_CHECKING
+            from requests import get  # networking, inside TYPE_CHECKING
+
+        class NodeMyCompute(NodeCoreBase):
+            pass
+        """
+        analyzer = analyze_source(source)
+
+        # All 'from X import Y' style imports inside TYPE_CHECKING should be allowed
+        relevant_violations = [
+            v
+            for v in analyzer.violations
+            if v.violation_type
+            in (
+                ViolationType.ANY_IMPORT,
+                ViolationType.NETWORKING_IMPORT,
+                ViolationType.SUBPROCESS_IMPORT,
+            )
+        ]
+        assert len(relevant_violations) == 0, (
+            f"'from X import Y' style imports inside TYPE_CHECKING should NOT be flagged, "
+            f"but found {len(relevant_violations)} violations: "
+            f"{[v.violation_type for v in relevant_violations]}"
+        )
+
+    def test_regular_any_import_still_flagged(
+        self, analyze_source: Callable[[str], PurityAnalyzer]
+    ) -> None:
+        """Test that regular 'from typing import Any' outside TYPE_CHECKING IS flagged.
+
+        This is a regression test to ensure TYPE_CHECKING exclusion doesn't
+        accidentally disable all Any import checking.
+
+        Ticket: OMN-203
+        """
+        source = """
+        from typing import Any  # outside TYPE_CHECKING - SHOULD be flagged
+        from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+
+        class NodeMyCompute(NodeCoreBase):
+            pass
+        """
+        analyzer = analyze_source(source)
+
+        # Any import outside TYPE_CHECKING should be flagged
+        any_violations = [
+            v
+            for v in analyzer.violations
+            if v.violation_type == ViolationType.ANY_IMPORT
+        ]
+        assert len(any_violations) == 1, (
+            "'from typing import Any' outside TYPE_CHECKING SHOULD be flagged"
         )
 
 

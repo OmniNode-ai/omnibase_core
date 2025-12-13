@@ -1077,6 +1077,37 @@ class PurityAnalyzer(ast.NodeVisitor):
     def _is_write_mode_open(self, node: ast.Call) -> bool:
         """Check if open() call is in write mode.
 
+        POLICY: Read mode open() is ALLOWED; write modes are BLOCKED.
+
+        WHY READ MODE IS ALLOWED:
+            Pure nodes often need to read configuration files, schemas, or
+            static data files. Reading is considered "less impure" than writing
+            because it doesn't modify external state - it only observes it.
+
+        RISKS OF ALLOWING READ MODE (developers should be aware):
+            1. NON-DETERMINISM: File contents can change between runs, making
+               node behavior non-deterministic. The same input may produce
+               different outputs if the file changes.
+            2. EXTERNAL STATE DEPENDENCY: Node correctness depends on external
+               filesystem state, which violates pure function principles.
+            3. TESTING COMPLEXITY: Tests must mock file contents or use fixtures,
+               adding complexity to the test setup.
+            4. DEPLOYMENT SENSITIVITY: Nodes may behave differently across
+               environments if files differ (dev vs prod configurations).
+
+        BEST PRACTICES (prefer these over direct open()):
+            1. INJECT CONFIGURATION: Pass config as input parameters rather than
+               reading files inside the node. Let orchestrators load configs.
+               Example: `def compute(self, input: ModelInput, config: ConfigModel)`
+            2. USE CONTAINER SERVICES: Use `container.get_service("ConfigLoader")`
+               to abstract file access behind a mockable interface.
+            3. LOAD AT STARTUP: If files must be read, do it in __init__ not in
+               compute methods. This makes the dependency explicit and testable.
+            4. DOCUMENT FILE DEPENDENCIES: If your node reads files, document
+               this in the class docstring so users know about the dependency.
+
+        See: docs/guides/DECLARATIVE_NODE_IMPORT_RULES.md Section 4 for full policy.
+
         Args:
             node: AST call node for an open() call.
 
@@ -1220,6 +1251,9 @@ class PurityAnalyzer(ast.NodeVisitor):
         Returns:
             True if line is excluded from Any/Dict[Any] checks.
         """
+        # Type guard: ensure line_num is a valid positive integer
+        if not isinstance(line_num, int) or line_num < 1:
+            return False
         return line_num in self.excluded_lines
 
     def _is_type_checking_block(self, node: ast.If) -> bool:
@@ -1511,16 +1545,44 @@ class PurityAnalyzer(ast.NodeVisitor):
 #    - CHECKED: Syntax validity (always parsed to verify no syntax errors)
 #    - CHECKED: Class metadata extraction (for reporting purposes)
 #
-# IF YOU ADD A NEW BASE NODE FILE:
-#    1. Verify it truly needs Any for generic type handling
-#    2. Ensure the file uses ONEX_EXCLUDE comments for specific Any usages
-#    3. Add it here with a comment explaining the specific requirement
-#    4. Update this documentation block
+# DETAILED FILE-BY-FILE EXEMPTION RATIONALE:
+#
+#   node_compute.py:
+#     - Uses `Any` in: Generic type bounds (T_Input, T_Output), computation
+#       registry callbacks (Callable[..., Any]), base input/output models
+#     - Risk Level: LOW - These are framework-level abstractions that users
+#       never interact with directly; users override with concrete types
+#     - Alternatives Considered: Using TypeVar bounds, but this prevents
+#       flexibility for diverse user input/output models
+#
+#   node_reducer.py:
+#     - Uses `Any` in: FSM state handling (states can be any serializable type),
+#       generic event payloads, state transition type parameters
+#     - Risk Level: LOW - FSM systems require runtime type flexibility for
+#       state representation; user reducers define concrete state types
+#     - Alternatives Considered: Protocol-based state contracts, but this
+#       adds complexity without meaningful type safety gains
+#
+# CRITERIA FOR ADDING NEW FILES TO THIS SKIP LIST:
+#
+#   1. REQUIRED: File must be a base class that users extend (not instantiate)
+#   2. REQUIRED: Any usage must be for generic type parameters, not lazy typing
+#   3. REQUIRED: Document the specific Any usages in the file's docstrings
+#   4. REQUIRED: User subclasses must be able to use concrete types
+#   5. PREFERRED: Use ONEX_EXCLUDE comments for specific lines if possible
+#   6. PROHIBITED: Do NOT add files just because fixing Any is "too hard"
+#
+# RED FLAGS - DO NOT ADD FILES THAT:
+#   - Use Any for return types that could be typed with Union/Protocol
+#   - Use Any for parameters that accept specific known types
+#   - Use Any to avoid importing types (use TYPE_CHECKING instead)
+#   - Use Any because "the type is complex" (simplify the type instead)
 #
 # RELATED: ONEX_EXCLUDE comments can exempt specific lines in user code
 # when legitimate Any usage is required (e.g., external API contracts).
 #
 # See: docs/guides/node-building/03_COMPUTE_NODE_TUTORIAL.md for user guidance
+# See: docs/guides/DECLARATIVE_NODE_IMPORT_RULES.md for import policies
 # ==============================================================================
 BASE_NODE_FILES_SKIP = {
     "node_compute.py",  # Generic base: NodeCompute[T_Input, T_Output], Callable[..., Any]
