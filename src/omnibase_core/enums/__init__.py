@@ -267,7 +267,6 @@ __all__ = [
     "EnumValidationRuleType",
     # Effect domain (from nodes)
     "EnumCircuitBreakerState",
-    "EnumEffectCapability",
     "EnumEffectHandlerType",
     "EnumEffectType",
     "EnumTransactionState",
@@ -285,7 +284,6 @@ __all__ = [
     # Node domain
     "EnumNodeArchitectureType",
     "EnumNodeKind",
-    "EnumNodeRequirement",
     "EnumNodeType",
     "EnumOperationStatus",
     "EnumValidationLevel",
@@ -295,11 +293,9 @@ __all__ = [
     # Orchestrator domain (from nodes)
     "EnumActionType",
     "EnumBranchCondition",
-    "EnumOrchestratorCapability",
     "EnumWorkflowState",
     # Reducer domain (from nodes)
     "EnumConflictResolution",
-    "EnumReducerCapability",
     "EnumReductionType",
     "EnumStreamingMode",
     # Parameter and return type domain
@@ -354,8 +350,12 @@ __all__ = [
     "EnumTreeSyncStatus",
     # Response and reply domain
     "EnumOnexReplyStatus",
-    # Capability domain (handler capabilities)
+    # Capability enums (handler capabilities)
     "EnumComputeCapability",
+    "EnumEffectCapability",
+    "EnumNodeRequirement",
+    "EnumOrchestratorCapability",
+    "EnumReducerCapability",
     # Computation and processing domain
     "EnumComputationType",
     # Contract-driven NodeCompute v1.0 domain
