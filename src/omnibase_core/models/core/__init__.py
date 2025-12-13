@@ -52,6 +52,12 @@ from .model_onex_version import ModelOnexVersionInfo
 # Generic metadata pattern
 from .model_protocol_metadata import ModelGenericMetadata
 from .model_result_accessor import ModelResultAccessor
+
+# Tool integration models
+from .model_tool_integration import ModelToolIntegration
+from .model_tool_integration_summary import ModelToolIntegrationSummary
+from .model_tool_resource_requirements import ModelToolResourceRequirements
+from .model_tool_timeout_settings import ModelToolTimeoutSettings
 from .model_typed_accessor import ModelTypedAccessor
 from .model_typed_configuration import ModelTypedConfiguration
 
@@ -186,4 +192,9 @@ __all__ = [
     "ModelNodeVersionConstraints",
     # Workflow models
     "ModelWorkflow",
+    # Tool integration models
+    "ModelToolIntegration",
+    "ModelToolIntegrationSummary",
+    "ModelToolResourceRequirements",
+    "ModelToolTimeoutSettings",
 ]

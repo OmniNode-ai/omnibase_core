@@ -498,5 +498,9 @@ class ModelEnvironment(BaseModel):
         return env
 
 
-# NOTE: model_rebuild() moved to __init__.py after all imports are available
-# Forward references will be resolved when __init__.py imports ModelEnvironment
+# NOTE: model_rebuild() must be called lazily to avoid circular imports.
+# The forward references (ModelSecurityLevel, ModelResourceLimits) are resolved
+# either on first use or explicitly by calling:
+#   from omnibase_core.models.security.model_security_level import ModelSecurityLevel
+#   from omnibase_core.models.configuration.model_resource_limits import ModelResourceLimits
+#   ModelEnvironment.model_rebuild()

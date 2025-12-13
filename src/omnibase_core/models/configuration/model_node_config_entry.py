@@ -1,11 +1,12 @@
 """Model for node configuration entry."""
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
-# Type alias for valid configuration value types
-# IMPORTANT: bool MUST come before int because bool is a subclass of int in Python
-# If int comes first, Pydantic will match True/False as 1/0 integers
-ConfigValue = bool | int | float | str
+from omnibase_core.models.configuration.model_config_types import (
+    VALID_VALUE_TYPES,
+    ConfigValue,
+    validate_config_value_type,
+)
 
 
 class ModelNodeConfigEntry(BaseModel):
@@ -25,7 +26,7 @@ class ModelNodeConfigEntry(BaseModel):
         ...,
         description="Configuration key (e.g., 'compute.max_parallel_workers')",
     )
-    value_type: str = Field(
+    value_type: VALID_VALUE_TYPES = Field(
         ...,
         description="Type name of the value ('int', 'float', 'bool', 'str')",
     )
@@ -35,3 +36,9 @@ class ModelNodeConfigEntry(BaseModel):
     )
 
     model_config = {"frozen": True}
+
+    @model_validator(mode="after")
+    def validate_default_type(self) -> "ModelNodeConfigEntry":
+        """Ensure default value type matches declared value_type."""
+        validate_config_value_type(self.value_type, self.default)
+        return self

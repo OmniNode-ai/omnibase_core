@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 ModelThrottlingBehavior - Throttling behavior configuration for rate limiting
 
@@ -7,18 +5,11 @@ Throttling behavior model for defining how to handle requests when rate limits
 are exceeded, including blocking, queuing, delay, and custom responses.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-
-class ModelThrottleResponse(BaseModel):
-    """Typed response for throttled requests."""
-
-    status_code: int = Field(default=429, description="HTTP status code")
-    headers: dict[str, str] = Field(
-        default_factory=dict, description="Response headers"
-    )
-    message: str = Field(default="", description="Response message")
-    body: str | None = Field(default=None, description="Custom response body")
+from omnibase_core.models.configuration.model_throttle_response import (
+    ModelThrottleResponse,
+)
 
 
 class ModelThrottlingBehavior(BaseModel):

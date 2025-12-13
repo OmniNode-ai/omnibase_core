@@ -35,6 +35,50 @@ from omnibase_core.utils.workflow_executor import (
 )
 
 
+def _create_mock_workflow_step(
+    step_id: UUID | None = None,
+    step_name: str = "test_step",
+    step_type: str = "compute",
+    enabled: bool = True,
+    depends_on: list[UUID] | None = None,
+) -> ModelWorkflowStep:
+    """Create a ModelWorkflowStep using model_construct to bypass Pydantic validation.
+
+    This helper is used for tests that create many steps (1000+) where Pydantic
+    validation overhead becomes significant. Uses model_construct() to skip
+    validation while still creating proper ModelWorkflowStep instances.
+
+    Args:
+        step_id: Optional step ID (generates UUID if not provided)
+        step_name: Human-readable name for the step
+        step_type: Type of workflow step (compute, effect, etc.)
+        enabled: Whether the step is enabled
+        depends_on: List of step IDs this step depends on
+
+    Returns:
+        ModelWorkflowStep instance created without validation overhead
+    """
+    return ModelWorkflowStep.model_construct(
+        correlation_id=uuid4(),
+        step_id=step_id or uuid4(),
+        step_name=step_name,
+        step_type=step_type,
+        timeout_ms=30000,
+        retry_count=3,
+        enabled=enabled,
+        skip_on_failure=False,
+        continue_on_error=False,
+        error_action="stop",
+        max_memory_mb=None,
+        max_cpu_percent=None,
+        priority=100,
+        order_index=0,
+        depends_on=depends_on if depends_on is not None else [],
+        parallel_group=None,
+        max_parallel_instances=1,
+    )
+
+
 @pytest.fixture
 def simple_workflow_definition() -> ModelWorkflowDefinition:
     """Create simple workflow definition."""
@@ -1730,10 +1774,12 @@ class TestPriorityOrdering:
             # priority defaults to 100
         )
 
-        action = _create_action_for_step(step, uuid4())
+        action, payload_size = _create_action_for_step(step, uuid4())
 
         # Default priority (100) should be clamped to 10
         assert action.priority == 10
+        # Payload size should be returned and be positive
+        assert payload_size > 0
 
     def test_priority_none_handling_in_topological_order(self) -> None:
         """Test that _get_topological_order handles None priority defensively.
@@ -1789,10 +1835,12 @@ class TestPriorityOrdering:
         mock_step.correlation_id = uuid4()
 
         # Should not raise TypeError when priority is None
-        action = _create_action_for_step(mock_step, uuid4())
+        action, payload_size = _create_action_for_step(mock_step, uuid4())
 
         # None priority should default to 1
         assert action.priority == 1
+        # Payload size should be returned and be positive
+        assert payload_size > 0
 
 
 class TestWorkflowContextIntegration:
@@ -3041,3 +3089,453 @@ class TestWorkflowSizeLimits:
         assert EnumActionType.COMPUTE in action_types_found
         assert EnumActionType.REDUCE in action_types_found
         assert EnumActionType.ORCHESTRATE in action_types_found
+
+
+@pytest.mark.unit
+class TestWorkflowSizeLimitEnforcement:
+    """Tests for workflow size limit enforcement (OMN-670).
+
+    These tests verify the security hardening limits added in OMN-670:
+    - MAX_WORKFLOW_STEPS (1000): Maximum number of steps in a workflow
+    - MAX_STEP_PAYLOAD_SIZE_BYTES (64KB): Maximum size of individual step payload
+    - MAX_TOTAL_PAYLOAD_SIZE_BYTES (10MB): Maximum accumulated payload size
+
+    Limits are validated during workflow execution to prevent memory exhaustion.
+    """
+
+    @pytest.mark.asyncio
+    async def test_validate_workflow_definition_step_count_at_limit(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test workflow with exactly MAX_WORKFLOW_STEPS steps passes validation."""
+        from omnibase_core.utils.workflow_executor import MAX_WORKFLOW_STEPS
+
+        # Create workflow with exactly 1000 steps (at limit)
+        # Uses model_construct to bypass Pydantic validation for performance
+        steps = [
+            _create_mock_workflow_step(step_name=f"step_{i}")
+            for i in range(MAX_WORKFLOW_STEPS)
+        ]
+
+        # Validation should pass (empty error list)
+        errors = await validate_workflow_definition(simple_workflow_definition, steps)
+        assert len(errors) == 0, f"Expected no errors, got: {errors}"
+
+    @pytest.mark.asyncio
+    async def test_validate_workflow_definition_step_count_exceeds_limit(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test workflow exceeding MAX_WORKFLOW_STEPS fails validation."""
+        from omnibase_core.utils.workflow_executor import MAX_WORKFLOW_STEPS
+
+        # Create workflow with 1001 steps (exceeds limit)
+        # Uses model_construct to bypass Pydantic validation for performance
+        steps = [
+            _create_mock_workflow_step(step_name=f"step_{i}")
+            for i in range(MAX_WORKFLOW_STEPS + 1)
+        ]
+
+        # Validation should fail with step limit error
+        errors = await validate_workflow_definition(simple_workflow_definition, steps)
+        assert len(errors) > 0
+        assert any("exceeds maximum step limit" in error for error in errors), (
+            f"Expected 'exceeds maximum step limit' error, got: {errors}"
+        )
+
+    @pytest.mark.asyncio
+    async def test_step_payload_size_under_limit(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test step payload under MAX_STEP_PAYLOAD_SIZE_BYTES passes.
+
+        The payload includes workflow_id, step_id, and step_name fields.
+        We use a reasonable step_name that produces a payload well under 64KB.
+        """
+        # Create a step with a normal name (well under limit)
+        step = ModelWorkflowStep(
+            step_id=uuid4(),
+            step_name="normal_step_name",
+            step_type="effect",
+            enabled=True,
+        )
+
+        # Workflow should execute successfully with normal payload
+        result = await execute_workflow(
+            workflow_definition=simple_workflow_definition,
+            workflow_steps=[step],
+            workflow_id=uuid4(),
+        )
+
+        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert len(result.completed_steps) == 1
+        assert len(result.actions_emitted) == 1
+
+    def test_step_payload_size_exceeds_limit(self) -> None:
+        """Test step payload exceeding MAX_STEP_PAYLOAD_SIZE_BYTES raises error.
+
+        Note: ModelWorkflowStep.step_name has a max length of 200 characters,
+        so we cannot exceed 64KB with a real step. We test the _create_action_for_step
+        function directly using a mock step to verify the limit enforcement logic.
+        """
+        from unittest.mock import MagicMock
+
+        from omnibase_core.utils.workflow_executor import (
+            MAX_STEP_PAYLOAD_SIZE_BYTES,
+            _create_action_for_step,
+        )
+
+        # Create a mock step with an extremely long name (bypassing Pydantic validation)
+        mock_step = MagicMock(spec=ModelWorkflowStep)
+        mock_step.step_id = uuid4()
+        mock_step.step_name = "x" * (MAX_STEP_PAYLOAD_SIZE_BYTES + 1000)  # Exceeds 64KB
+        mock_step.step_type = "effect"
+        mock_step.priority = 1
+        mock_step.depends_on = []
+        mock_step.timeout_ms = 5000
+        mock_step.retry_count = 0
+        mock_step.correlation_id = uuid4()
+
+        # Should raise ModelOnexError with WORKFLOW_PAYLOAD_SIZE_EXCEEDED
+        with pytest.raises(ModelOnexError) as exc_info:
+            _create_action_for_step(mock_step, uuid4())
+
+        assert (
+            exc_info.value.error_code
+            == EnumCoreErrorCode.WORKFLOW_PAYLOAD_SIZE_EXCEEDED
+        )
+        assert "payload exceeds size limit" in exc_info.value.message.lower()
+
+    @pytest.mark.asyncio
+    async def test_total_payload_size_exceeds_limit_sequential(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test total payload exceeding limit in sequential execution is handled gracefully.
+
+        Note: With ModelWorkflowStep.step_name limited to 200 chars and
+        MAX_WORKFLOW_STEPS limited to 1000, the maximum possible total payload
+        is ~300KB (well under 10MB). We mock _create_action_for_step to return
+        actions with large payloads to trigger the limit.
+
+        In sequential execution, the limit error is caught by the step error handler
+        and treated as a step failure with 'continue' behavior (the default).
+        The workflow returns FAILED status rather than raising the error.
+        """
+        from unittest.mock import patch
+
+        from omnibase_core.utils.workflow_executor import (
+            MAX_TOTAL_PAYLOAD_SIZE_BYTES,
+            _create_action_for_step,
+        )
+
+        # Create a normal workflow (within all model limits)
+        num_steps = 20
+        steps = [
+            ModelWorkflowStep(
+                step_id=uuid4(),
+                step_name=f"step_{i}",
+                step_type="compute",
+                enabled=True,
+            )
+            for i in range(num_steps)
+        ]
+
+        # Each action will have a ~550KB payload, so 20 steps = ~11MB > 10MB limit
+        large_payload_size = MAX_TOTAL_PAYLOAD_SIZE_BYTES // (num_steps - 1)
+        call_count = 0
+
+        def mock_create_action(step, workflow_id):
+            """Create action with large payload to exceed total limit."""
+            nonlocal call_count
+            call_count += 1
+            action, _ = _create_action_for_step(step, workflow_id)
+            # Inject large data into payload (simulating future payload expansion)
+            action.payload["large_data"] = "x" * large_payload_size
+            # Return tuple with updated payload size
+            import json
+
+            new_payload_size = len(json.dumps(action.payload).encode("utf-8"))
+            return (action, new_payload_size)
+
+        with patch(
+            "omnibase_core.utils.workflow_executor._create_action_for_step",
+            side_effect=mock_create_action,
+        ):
+            # In sequential execution, the error is caught and handled gracefully
+            # The workflow returns with FAILED status
+            result = await execute_workflow(
+                workflow_definition=simple_workflow_definition,
+                workflow_steps=steps,
+                workflow_id=uuid4(),
+                execution_mode=EnumExecutionMode.SEQUENTIAL,
+            )
+
+        # Workflow should fail but not raise an exception
+        assert result.execution_status == EnumWorkflowState.FAILED
+        # Some steps should have completed before the limit was hit
+        assert len(result.completed_steps) > 0
+        # At least one step should have failed (the one that exceeded the limit)
+        assert len(result.failed_steps) > 0
+        # Verify some steps were processed before limit was hit
+        assert call_count > 1, "Multiple steps should be processed before limit is hit"
+
+    @pytest.mark.asyncio
+    async def test_total_payload_size_exceeds_limit_parallel(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test total payload exceeding limit in parallel execution raises error.
+
+        Note: Similar to sequential test, we mock _create_action_for_step to
+        return actions with large payloads to trigger the 10MB total limit.
+        """
+        from unittest.mock import patch
+
+        from omnibase_core.utils.workflow_executor import (
+            MAX_TOTAL_PAYLOAD_SIZE_BYTES,
+            _create_action_for_step,
+        )
+
+        # Create a normal workflow (within all model limits)
+        num_steps = 20
+        steps = [
+            ModelWorkflowStep(
+                step_id=uuid4(),
+                step_name=f"step_{i}",
+                step_type="compute",
+                enabled=True,
+            )
+            for i in range(num_steps)
+        ]
+
+        # Each action will have a ~550KB payload
+        large_payload_size = MAX_TOTAL_PAYLOAD_SIZE_BYTES // (num_steps - 1)
+        call_count = 0
+
+        def mock_create_action(step, workflow_id):
+            """Create action with large payload to exceed total limit."""
+            nonlocal call_count
+            call_count += 1
+            action, _ = _create_action_for_step(step, workflow_id)
+            action.payload["large_data"] = "x" * large_payload_size
+            # Return tuple with updated payload size
+            import json
+
+            new_payload_size = len(json.dumps(action.payload).encode("utf-8"))
+            return (action, new_payload_size)
+
+        with patch(
+            "omnibase_core.utils.workflow_executor._create_action_for_step",
+            side_effect=mock_create_action,
+        ):
+            with pytest.raises(ModelOnexError) as exc_info:
+                await execute_workflow(
+                    workflow_definition=simple_workflow_definition,
+                    workflow_steps=steps,
+                    workflow_id=uuid4(),
+                    execution_mode=EnumExecutionMode.PARALLEL,
+                )
+
+        assert (
+            exc_info.value.error_code
+            == EnumCoreErrorCode.WORKFLOW_TOTAL_PAYLOAD_EXCEEDED
+        )
+        assert "total payload exceeds limit" in exc_info.value.message.lower()
+        # Verify some steps were processed before limit was hit
+        assert call_count > 1, "Multiple steps should be processed before limit is hit"
+
+    @pytest.mark.asyncio
+    async def test_total_payload_size_exceeds_limit_batch(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test total payload exceeding limit in batch execution is handled gracefully.
+
+        Note: Batch mode internally uses sequential execution (see workflow_executor.py
+        line 742), so the behavior should be identical to sequential - the limit error
+        is caught and treated as a step failure with FAILED status returned.
+
+        This test verifies that batch mode correctly inherits the graceful error
+        handling from sequential execution rather than raising an exception.
+        """
+        from unittest.mock import patch
+
+        from omnibase_core.utils.workflow_executor import (
+            MAX_TOTAL_PAYLOAD_SIZE_BYTES,
+            _create_action_for_step,
+        )
+
+        # Create a normal workflow (within all model limits)
+        num_steps = 20
+        steps = [
+            ModelWorkflowStep(
+                step_id=uuid4(),
+                step_name=f"step_{i}",
+                step_type="compute",
+                enabled=True,
+            )
+            for i in range(num_steps)
+        ]
+
+        # Each action will have a ~550KB payload, so 20 steps = ~11MB > 10MB limit
+        large_payload_size = MAX_TOTAL_PAYLOAD_SIZE_BYTES // (num_steps - 1)
+        call_count = 0
+
+        def mock_create_action(step, workflow_id):
+            """Create action with large payload to exceed total limit."""
+            nonlocal call_count
+            call_count += 1
+            action, _ = _create_action_for_step(step, workflow_id)
+            # Inject large data into payload (simulating future payload expansion)
+            action.payload["large_data"] = "x" * large_payload_size
+            # Return tuple with updated payload size
+            import json
+
+            new_payload_size = len(json.dumps(action.payload).encode("utf-8"))
+            return (action, new_payload_size)
+
+        with patch(
+            "omnibase_core.utils.workflow_executor._create_action_for_step",
+            side_effect=mock_create_action,
+        ):
+            # In batch execution (which uses sequential internally), the error is
+            # caught and handled gracefully. The workflow returns with FAILED status.
+            result = await execute_workflow(
+                workflow_definition=simple_workflow_definition,
+                workflow_steps=steps,
+                workflow_id=uuid4(),
+                execution_mode=EnumExecutionMode.BATCH,
+            )
+
+        # Workflow should fail but not raise an exception
+        assert result.execution_status == EnumWorkflowState.FAILED
+        # Some steps should have completed before the limit was hit
+        assert len(result.completed_steps) > 0
+        # At least one step should have failed (the one that exceeded the limit)
+        assert len(result.failed_steps) > 0
+        # Verify some steps were processed before limit was hit
+        assert call_count > 1, "Multiple steps should be processed before limit is hit"
+        # Verify batch metadata is present (batch mode adds this)
+        assert result.metadata.get("execution_mode") == "batch"
+        assert result.metadata.get("batch_size") == num_steps
+
+    def test_constants_exported(self) -> None:
+        """Test that size limit constants are exported in __all__."""
+        from omnibase_core.utils.workflow_executor import (
+            MAX_STEP_PAYLOAD_SIZE_BYTES,
+            MAX_TOTAL_PAYLOAD_SIZE_BYTES,
+            MAX_WORKFLOW_STEPS,
+        )
+
+        assert MAX_WORKFLOW_STEPS == 1000
+        assert MAX_STEP_PAYLOAD_SIZE_BYTES == 64 * 1024  # 64KB
+        assert MAX_TOTAL_PAYLOAD_SIZE_BYTES == 10 * 1024 * 1024  # 10MB
+
+    def test_error_codes_available(self) -> None:
+        """Test that workflow limit error codes exist."""
+        assert hasattr(EnumCoreErrorCode, "WORKFLOW_STEP_LIMIT_EXCEEDED")
+        assert hasattr(EnumCoreErrorCode, "WORKFLOW_PAYLOAD_SIZE_EXCEEDED")
+        assert hasattr(EnumCoreErrorCode, "WORKFLOW_TOTAL_PAYLOAD_EXCEEDED")
+
+    @pytest.mark.asyncio
+    async def test_workflow_under_all_limits_succeeds(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test that workflow well under all limits executes successfully.
+
+        Verifies that normal workflows are not affected by the size limits.
+        """
+        # Create a normal workflow with 10 steps
+        steps = [
+            ModelWorkflowStep(
+                step_id=uuid4(),
+                step_name=f"normal_step_{i}",
+                step_type="compute",
+                enabled=True,
+            )
+            for i in range(10)
+        ]
+
+        result = await execute_workflow(
+            workflow_definition=simple_workflow_definition,
+            workflow_steps=steps,
+            workflow_id=uuid4(),
+        )
+
+        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert len(result.completed_steps) == 10
+        assert len(result.actions_emitted) == 10
+        assert len(result.failed_steps) == 0
+
+    @pytest.mark.asyncio
+    async def test_step_limit_validation_includes_count_in_error(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test that step limit validation error includes the actual count."""
+        from omnibase_core.utils.workflow_executor import MAX_WORKFLOW_STEPS
+
+        # Create workflow exceeding limit by 1 (minimum needed to trigger error)
+        # Uses model_construct to bypass Pydantic validation for performance
+        num_steps = MAX_WORKFLOW_STEPS + 1
+        steps = [
+            _create_mock_workflow_step(step_name=f"step_{i}") for i in range(num_steps)
+        ]
+
+        errors = await validate_workflow_definition(simple_workflow_definition, steps)
+
+        # Error should include both the actual count and the limit
+        assert len(errors) > 0
+        step_limit_error = next((e for e in errors if "maximum step limit" in e), None)
+        assert step_limit_error is not None
+        assert str(num_steps) in step_limit_error
+        assert str(MAX_WORKFLOW_STEPS) in step_limit_error
+
+    @pytest.mark.asyncio
+    async def test_step_limit_short_circuits_validation(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test that step limit validation short-circuits to prevent DoS.
+
+        When step count exceeds MAX_WORKFLOW_STEPS, validation should return
+        immediately with only the step count error. This prevents attackers from
+        causing CPU exhaustion by submitting workflows with millions of steps
+        that would otherwise trigger expensive cycle detection and per-step
+        validation.
+
+        Security: OMN-670 - DoS mitigation via validation short-circuit
+        """
+        from omnibase_core.utils.workflow_executor import MAX_WORKFLOW_STEPS
+
+        # Create workflow with steps that would have other validation errors
+        # (invalid dependencies) if validation continued past the step count check
+        # Uses model_construct to bypass Pydantic validation for performance
+        num_steps = MAX_WORKFLOW_STEPS + 1
+        invalid_dep_id = uuid4()  # Non-existent dependency
+        steps = [
+            _create_mock_workflow_step(
+                step_name=f"step_{i}",
+                depends_on=[
+                    invalid_dep_id
+                ],  # Would fail dep validation if not short-circuited
+            )
+            for i in range(num_steps)
+        ]
+
+        errors = await validate_workflow_definition(simple_workflow_definition, steps)
+
+        # Should return ONLY the step limit error due to short-circuit
+        # If validation continued, we would see additional errors for:
+        # - Invalid dependencies (num_steps errors - one per step)
+        # Without short-circuit, this would be 1 + num_steps errors
+        assert len(errors) == 1, (
+            f"Expected exactly 1 error (step limit), got {len(errors)} errors. "
+            f"Short-circuit validation failed - other validations ran. Errors: {errors[:5]}..."
+        )
+        assert "maximum step limit" in errors[0]
+        assert str(num_steps) in errors[0]
