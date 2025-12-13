@@ -516,25 +516,23 @@ class TestPublicAPIExports:
     """
     Test public API exports from validation __init__.py.
 
-    Validates that the consolidation maintains backward compatibility
-    by ensuring all expected symbols are exported correctly.
+    Validates that all expected symbols are exported correctly (OMN-675).
     """
 
-    def test_validate_reserved_execution_mode_exported_from_validation(self) -> None:
-        """Test that validate_reserved_execution_mode is exported from validation module."""
-        from omnibase_core.validation import validate_reserved_execution_mode
+    def test_validate_execution_mode_exported_from_validation(self) -> None:
+        """Test that validate_execution_mode is exported from validation module."""
+        from omnibase_core.validation import validate_execution_mode
 
-        # Should work the same as validate_execution_mode
         # Valid modes should not raise
-        validate_reserved_execution_mode(EnumExecutionMode.SEQUENTIAL)
-        validate_reserved_execution_mode(EnumExecutionMode.PARALLEL)
-        validate_reserved_execution_mode(EnumExecutionMode.BATCH)
+        validate_execution_mode(EnumExecutionMode.SEQUENTIAL)
+        validate_execution_mode(EnumExecutionMode.PARALLEL)
+        validate_execution_mode(EnumExecutionMode.BATCH)
 
         # Reserved modes should raise
         with pytest.raises(ModelOnexError):
-            validate_reserved_execution_mode(EnumExecutionMode.CONDITIONAL)
+            validate_execution_mode(EnumExecutionMode.CONDITIONAL)
         with pytest.raises(ModelOnexError):
-            validate_reserved_execution_mode(EnumExecutionMode.STREAMING)
+            validate_execution_mode(EnumExecutionMode.STREAMING)
 
     def test_validate_execution_mode_string_exported_from_validation(self) -> None:
         """Test that validate_execution_mode_string is exported from validation module."""
@@ -559,15 +557,15 @@ class TestPublicAPIExports:
         assert EnumExecutionMode.CONDITIONAL in EXPORTED_CONST
         assert EnumExecutionMode.STREAMING in EXPORTED_CONST
 
-    def test_validate_reserved_execution_mode_is_alias(self) -> None:
-        """Test that validate_reserved_execution_mode is an alias for validate_execution_mode."""
-        from omnibase_core.validation import validate_reserved_execution_mode
+    def test_validate_execution_mode_same_function(self) -> None:
+        """Test that validate_execution_mode from validation and reserved_enum_validator are the same."""
+        from omnibase_core.validation import validate_execution_mode as v1
         from omnibase_core.validation.reserved_enum_validator import (
-            validate_execution_mode,
+            validate_execution_mode as v2,
         )
 
-        # They should be the exact same function
-        assert validate_reserved_execution_mode is validate_execution_mode
+        # They should be the exact same function (no aliases, direct re-export)
+        assert v1 is v2
 
 
 @pytest.mark.unit
@@ -678,33 +676,34 @@ class TestInvalidInputHandling:
 
 
 @pytest.mark.unit
-class TestBackwardCompatibility:
+class TestCanonicalImportPaths:
     """
-    Test backward compatibility of validator consolidation.
+    Test canonical import paths for validators (OMN-675).
 
-    Ensures that code using the old API continues to work correctly.
+    Ensures all validators are accessible from their canonical locations.
+    No aliases, no backwards compatibility shims - clean imports only.
     """
 
     def test_direct_import_from_reserved_enum_validator(self) -> None:
-        """Test that direct import from reserved_enum_validator still works."""
+        """Test that direct import from reserved_enum_validator works."""
         from omnibase_core.validation.reserved_enum_validator import (
             RESERVED_EXECUTION_MODES,
             validate_execution_mode,
         )
 
-        # Should still work
+        # Should work
         validate_execution_mode(EnumExecutionMode.SEQUENTIAL)
         assert EnumExecutionMode.CONDITIONAL in RESERVED_EXECUTION_MODES
 
     def test_direct_import_from_workflow_validator(self) -> None:
-        """Test that direct import from workflow_validator still works."""
+        """Test that direct import from workflow_validator works."""
         from omnibase_core.validation.workflow_validator import (
             ACCEPTED_EXECUTION_MODES,
             RESERVED_EXECUTION_MODES,
             validate_execution_mode_string,
         )
 
-        # Should still work
+        # Should work
         validate_execution_mode_string("sequential")
         assert "conditional" in RESERVED_EXECUTION_MODES
         assert "sequential" in ACCEPTED_EXECUTION_MODES
@@ -713,11 +712,11 @@ class TestBackwardCompatibility:
         """Test that import from validation __init__ works correctly."""
         from omnibase_core.validation import (
             RESERVED_EXECUTION_MODES,
+            validate_execution_mode,
             validate_execution_mode_string,
-            validate_reserved_execution_mode,
         )
 
-        # All imports should work
-        validate_reserved_execution_mode(EnumExecutionMode.SEQUENTIAL)
+        # All imports should work with canonical names (no aliases)
+        validate_execution_mode(EnumExecutionMode.SEQUENTIAL)
         validate_execution_mode_string("sequential")
         assert EnumExecutionMode.CONDITIONAL in RESERVED_EXECUTION_MODES

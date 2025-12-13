@@ -66,9 +66,7 @@ from omnibase_core.models.validation.model_unique_name_result import (
 from omnibase_core.models.validation.model_workflow_validation_result import (
     ModelWorkflowValidationResult,
 )
-from omnibase_core.validation.reserved_enum_validator import (
-    validate_execution_mode as validate_execution_mode_enum,
-)
+from omnibase_core.validation.reserved_enum_validator import validate_execution_mode
 
 # Type aliases for clarity (Python 3.12+ syntax)
 type StepIdToName = Mapping[UUID, str]
@@ -1022,8 +1020,8 @@ def validate_execution_mode_string(mode: str) -> None:
             2. **Step 2 - Reserved mode**: If the execution mode is
                CONDITIONAL or STREAMING (reserved for future ONEX versions).
                These are valid enum values but not accepted in v1.0.
-               This step delegates to ``validate_execution_mode_enum`` (imported
-               from ``reserved_enum_validator``) which raises the error.
+               This step delegates to ``validate_execution_mode`` (from
+               ``reserved_enum_validator``) which raises the error.
                Error code: VALIDATION_ERROR with "reserved" message. Error context:
                - mode: The reserved mode value
                - reserved_modes: List of reserved mode names
@@ -1087,4 +1085,4 @@ def validate_execution_mode_string(mode: str) -> None:
 
     # Step 2: Delegate to the enum-based validator for reserved mode validation
     # This follows DRY principle - single source of truth for reserved mode logic
-    validate_execution_mode_enum(mode_enum)
+    validate_execution_mode(mode_enum)
