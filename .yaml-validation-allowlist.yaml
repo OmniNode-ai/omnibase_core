@@ -5,8 +5,8 @@
 #          These are legitimate utility functions and files that need to use yaml.safe_load()
 #          for valid architectural reasons (e.g., parsing before Pydantic validation).
 #
-# Review Cycle: Quarterly (check for stale entries, validate paths still exist)
-# Next Review: 2026-03-31
+# Review Cycle: Semi-Annual (check for stale entries, validate paths still exist)
+# Next Review: 2026-06-13
 #
 # Format Requirements:
 #   - reason: Architectural justification for allowing YAML parsing

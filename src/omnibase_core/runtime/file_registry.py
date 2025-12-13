@@ -242,9 +242,26 @@ class FileRegistry:
             3
 
         Note:
-            This method uses fail-fast behavior. If any file fails to load,
-            processing stops immediately and the error is raised. Successfully
-            loaded contracts before the failure are not returned.
+            **Design Decision - Fail-Fast Behavior**:
+            This method intentionally stops at the first error rather than collecting
+            all errors. Rationale:
+
+            1. **Deployment Safety**: Contracts are typically loaded at startup.
+               If ANY contract is invalid, the system should not start with partial
+               configuration. Partial loading would mask configuration errors and
+               lead to subtle runtime failures.
+
+            2. **Clear Error Context**: A single error with full context is more
+               actionable than a list of errors that may have cascading effects.
+               Fixing the first error often resolves dependent errors.
+
+            3. **Future Extension**: If batch validation is needed (e.g., for tooling
+               that reports "fix these 3 files"), a separate ``validate_all()`` method
+               can be added that collects all errors without loading. This would be
+               useful for CI/CD pipelines or IDE integrations that want to report
+               all issues at once.
+
+            Successfully loaded contracts before the failure are not returned.
         """
         # Check directory exists and is a directory
         if not directory.exists():
@@ -278,7 +295,10 @@ class FileRegistry:
         # Sort for deterministic ordering
         yaml_files.sort()
 
-        # Load each file with fail-fast behavior
+        # Load each file with fail-fast behavior.
+        # DESIGN: Fail-fast is intentional - for deployment, ALL contracts must be
+        # valid. If any contract fails, we stop immediately rather than returning
+        # partial results that could mask configuration errors.
         contracts: list[ModelRuntimeHostContract] = []
         for yaml_file in yaml_files:
             contract = self.load(yaml_file)
