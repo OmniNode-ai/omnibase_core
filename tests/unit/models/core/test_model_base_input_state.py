@@ -2,7 +2,7 @@
 Test suite for ModelBaseInputState.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 import pytest
 
@@ -254,9 +254,9 @@ class TestModelBaseInputState:
     def test_model_base_input_state_timestamp_default_factory(self):
         """Test ModelBaseInputState timestamp default factory behavior."""
         # Test that timestamp defaults to current time
-        before = datetime.now()
+        before = datetime.now(UTC)
         state = ModelBaseInputState(version=DEFAULT_VERSION)
-        after = datetime.now()
+        after = datetime.now(UTC)
 
         assert before <= state.timestamp <= after
 
