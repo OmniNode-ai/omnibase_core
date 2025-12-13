@@ -200,8 +200,7 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
         trigger = input_data.metadata.get("trigger", "process")
 
         # Build context from input data - context contains serializable values
-        # Type ignore: input_data.metadata is dict[str, object], SerializedDict is compatible
-        context: SerializedDict = {  # type: ignore[assignment]
+        context: SerializedDict = {
             "input_data": input_data.data,
             "reduction_type": input_data.reduction_type.value,
             "operation_id": str(input_data.operation_id),
@@ -279,12 +278,12 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
         """
         return self.get_current_fsm_state()
 
-    def get_state_history(self) -> tuple[str, ...]:
+    def get_state_history(self) -> list[str]:
         """
         Get FSM state transition history.
 
         Returns:
-            Tuple of previous state names in chronological order (immutable)
+            List of previous state names in chronological order
 
         Example:
             ```python
