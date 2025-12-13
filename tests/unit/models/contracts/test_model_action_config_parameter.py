@@ -203,7 +203,7 @@ class TestModelActionConfigParameterFull:
 
 @pytest.mark.timeout(30)
 @pytest.mark.unit
-class TestModelMvpActionConfigParameterTypes:
+class TestModelActionConfigParameterTypes:
     """Tests for each supported parameter type."""
 
     @pytest.mark.parametrize(
@@ -255,7 +255,7 @@ class TestModelMvpActionConfigParameterTypes:
 
 @pytest.mark.timeout(30)
 @pytest.mark.unit
-class TestModelMvpActionConfigParameterTypeValidation:
+class TestModelActionConfigParameterTypeValidation:
     """Tests for default value type validation."""
 
     def test_string_default_matches_string_type(self) -> None:
