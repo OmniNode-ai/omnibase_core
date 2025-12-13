@@ -267,7 +267,7 @@ class NodeConfigProvider:
             Dictionary describing configuration schema
         """
         schema: dict[str, ModelNodeConfigSchema] = {}
-        valid_types = get_args(VALID_VALUE_TYPES)
+        valid_types: tuple[str, ...] = get_args(VALID_VALUE_TYPES)
         for key, value in self._DEFAULTS.items():
             type_name = type(value).__name__
             # Validate type_name is one of the allowed values

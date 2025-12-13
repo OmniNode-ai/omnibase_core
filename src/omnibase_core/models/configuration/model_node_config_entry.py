@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field, model_validator
 from omnibase_core.models.configuration.model_config_types import (
     VALID_VALUE_TYPES,
     ConfigValue,
+    validate_config_value_type,
 )
 
 
@@ -39,18 +40,5 @@ class ModelNodeConfigEntry(BaseModel):
     @model_validator(mode="after")
     def validate_default_type(self) -> "ModelNodeConfigEntry":
         """Ensure default value type matches declared value_type."""
-        type_map: dict[str, type | tuple[type, ...]] = {
-            "int": int,
-            "float": (int, float),  # int is valid for float
-            "bool": bool,
-            "str": str,
-        }
-        expected = type_map[self.value_type]
-        # Strict bool check - don't allow int/float to match bool
-        if self.value_type == "bool" and not isinstance(self.default, bool):
-            raise ValueError(f"default must be bool, got {type(self.default).__name__}")
-        if not isinstance(self.default, expected):
-            raise ValueError(
-                f"default must be {self.value_type}, got {type(self.default).__name__}"
-            )
+        validate_config_value_type(self.value_type, self.default)
         return self

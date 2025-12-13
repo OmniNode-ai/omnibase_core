@@ -1774,10 +1774,12 @@ class TestPriorityOrdering:
             # priority defaults to 100
         )
 
-        action = _create_action_for_step(step, uuid4())
+        action, payload_size = _create_action_for_step(step, uuid4())
 
         # Default priority (100) should be clamped to 10
         assert action.priority == 10
+        # Payload size should be returned and be positive
+        assert payload_size > 0
 
     def test_priority_none_handling_in_topological_order(self) -> None:
         """Test that _get_topological_order handles None priority defensively.
@@ -1833,10 +1835,12 @@ class TestPriorityOrdering:
         mock_step.correlation_id = uuid4()
 
         # Should not raise TypeError when priority is None
-        action = _create_action_for_step(mock_step, uuid4())
+        action, payload_size = _create_action_for_step(mock_step, uuid4())
 
         # None priority should default to 1
         assert action.priority == 1
+        # Payload size should be returned and be positive
+        assert payload_size > 0
 
 
 class TestWorkflowContextIntegration:
@@ -3247,10 +3251,14 @@ class TestWorkflowSizeLimitEnforcement:
             """Create action with large payload to exceed total limit."""
             nonlocal call_count
             call_count += 1
-            action = _create_action_for_step(step, workflow_id)
+            action, _ = _create_action_for_step(step, workflow_id)
             # Inject large data into payload (simulating future payload expansion)
             action.payload["large_data"] = "x" * large_payload_size
-            return action
+            # Return tuple with updated payload size
+            import json
+
+            new_payload_size = len(json.dumps(action.payload).encode("utf-8"))
+            return (action, new_payload_size)
 
         with patch(
             "omnibase_core.utils.workflow_executor._create_action_for_step",
@@ -3311,9 +3319,13 @@ class TestWorkflowSizeLimitEnforcement:
             """Create action with large payload to exceed total limit."""
             nonlocal call_count
             call_count += 1
-            action = _create_action_for_step(step, workflow_id)
+            action, _ = _create_action_for_step(step, workflow_id)
             action.payload["large_data"] = "x" * large_payload_size
-            return action
+            # Return tuple with updated payload size
+            import json
+
+            new_payload_size = len(json.dumps(action.payload).encode("utf-8"))
+            return (action, new_payload_size)
 
         with patch(
             "omnibase_core.utils.workflow_executor._create_action_for_step",
@@ -3334,6 +3346,81 @@ class TestWorkflowSizeLimitEnforcement:
         assert "total payload exceeds limit" in exc_info.value.message.lower()
         # Verify some steps were processed before limit was hit
         assert call_count > 1, "Multiple steps should be processed before limit is hit"
+
+    @pytest.mark.asyncio
+    async def test_total_payload_size_exceeds_limit_batch(
+        self,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test total payload exceeding limit in batch execution is handled gracefully.
+
+        Note: Batch mode internally uses sequential execution (see workflow_executor.py
+        line 742), so the behavior should be identical to sequential - the limit error
+        is caught and treated as a step failure with FAILED status returned.
+
+        This test verifies that batch mode correctly inherits the graceful error
+        handling from sequential execution rather than raising an exception.
+        """
+        from unittest.mock import patch
+
+        from omnibase_core.utils.workflow_executor import (
+            MAX_TOTAL_PAYLOAD_SIZE_BYTES,
+            _create_action_for_step,
+        )
+
+        # Create a normal workflow (within all model limits)
+        num_steps = 20
+        steps = [
+            ModelWorkflowStep(
+                step_id=uuid4(),
+                step_name=f"step_{i}",
+                step_type="compute",
+                enabled=True,
+            )
+            for i in range(num_steps)
+        ]
+
+        # Each action will have a ~550KB payload, so 20 steps = ~11MB > 10MB limit
+        large_payload_size = MAX_TOTAL_PAYLOAD_SIZE_BYTES // (num_steps - 1)
+        call_count = 0
+
+        def mock_create_action(step, workflow_id):
+            """Create action with large payload to exceed total limit."""
+            nonlocal call_count
+            call_count += 1
+            action, _ = _create_action_for_step(step, workflow_id)
+            # Inject large data into payload (simulating future payload expansion)
+            action.payload["large_data"] = "x" * large_payload_size
+            # Return tuple with updated payload size
+            import json
+
+            new_payload_size = len(json.dumps(action.payload).encode("utf-8"))
+            return (action, new_payload_size)
+
+        with patch(
+            "omnibase_core.utils.workflow_executor._create_action_for_step",
+            side_effect=mock_create_action,
+        ):
+            # In batch execution (which uses sequential internally), the error is
+            # caught and handled gracefully. The workflow returns with FAILED status.
+            result = await execute_workflow(
+                workflow_definition=simple_workflow_definition,
+                workflow_steps=steps,
+                workflow_id=uuid4(),
+                execution_mode=EnumExecutionMode.BATCH,
+            )
+
+        # Workflow should fail but not raise an exception
+        assert result.execution_status == EnumWorkflowState.FAILED
+        # Some steps should have completed before the limit was hit
+        assert len(result.completed_steps) > 0
+        # At least one step should have failed (the one that exceeded the limit)
+        assert len(result.failed_steps) > 0
+        # Verify some steps were processed before limit was hit
+        assert call_count > 1, "Multiple steps should be processed before limit is hit"
+        # Verify batch metadata is present (batch mode adds this)
+        assert result.metadata.get("execution_mode") == "batch"
+        assert result.metadata.get("batch_size") == num_steps
 
     def test_constants_exported(self) -> None:
         """Test that size limit constants are exported in __all__."""

@@ -411,7 +411,33 @@ async def _execute_sequential(
     workflow_steps: list[ModelWorkflowStep],
     workflow_id: UUID,
 ) -> WorkflowExecutionResult:
-    """Execute workflow steps sequentially."""
+    """
+    Execute workflow steps sequentially.
+
+    Steps are executed one at a time in topological order (respecting dependencies).
+    Each step's output is available to subsequent steps via workflow context.
+
+    Args:
+        workflow_definition: Workflow definition from YAML contract.
+        workflow_steps: List of workflow steps to execute.
+        workflow_id: Unique workflow execution ID.
+
+    Returns:
+        WorkflowExecutionResult with completed/failed steps and emitted actions.
+
+    Raises:
+        ModelOnexError: If workflow validation fails during setup.
+
+    Note:
+        Total payload limit violations (MAX_TOTAL_PAYLOAD_SIZE_BYTES) are caught
+        by the step error handler and treated as step failures per the step's
+        error_action configuration (default: 'continue'). The workflow returns
+        FAILED status rather than raising the error. This differs from parallel
+        mode, which raises ModelOnexError immediately for payload limit violations.
+
+        Individual step payload limit violations (MAX_STEP_PAYLOAD_SIZE_BYTES) are
+        also caught and treated as step failures in the same manner.
+    """
     completed_steps: list[str] = []
     failed_steps: list[str] = []
     all_actions: list[ModelAction] = []
@@ -455,16 +481,14 @@ async def _execute_sequential(
                 step, workflow_id, completed_step_ids, workflow_context
             )
 
-            # Emit action for this step
-            action = _create_action_for_step(step, workflow_id)
+            # Emit action for this step (returns tuple with payload size to avoid
+            # redundant JSON serialization - OMN-670: Performance optimization)
+            action, action_payload_size = _create_action_for_step(step, workflow_id)
             all_actions.append(action)
 
             # Track total payload size (OMN-670: Security hardening)
-            action_payload_size = len(
-                json.dumps(action.payload, default=_json_default_for_workflow).encode(
-                    "utf-8"
-                )
-            )
+            # Note: action_payload_size comes from _create_action_for_step to avoid
+            # redundant json.dumps() call
             total_payload_size += action_payload_size
             if total_payload_size > MAX_TOTAL_PAYLOAD_SIZE_BYTES:
                 raise ModelOnexError(
@@ -551,7 +575,43 @@ async def _execute_parallel(
     workflow_steps: list[ModelWorkflowStep],
     workflow_id: UUID,
 ) -> WorkflowExecutionResult:
-    """Execute workflow steps in parallel (respecting dependencies)."""
+    """
+    Execute workflow steps in parallel (respecting dependencies).
+
+    Steps are executed in waves based on dependency order. Within each wave,
+    all steps with met dependencies run concurrently via asyncio.gather.
+    Steps in the same wave cannot see each other's outputs (they run in parallel),
+    but can access outputs from prior waves via workflow context.
+
+    Args:
+        workflow_definition: Workflow definition from YAML contract.
+        workflow_steps: List of workflow steps to execute.
+        workflow_id: Unique workflow execution ID.
+
+    Returns:
+        WorkflowExecutionResult with completed/failed steps and emitted actions.
+
+    Raises:
+        ModelOnexError: If workflow validation fails during setup, or if total
+            payload limit (MAX_TOTAL_PAYLOAD_SIZE_BYTES) is exceeded. Unlike
+            sequential mode, payload limit violations in parallel mode fail
+            the entire workflow immediately after all wave steps complete,
+            raising ModelOnexError rather than treating it as a step failure.
+
+    Note:
+        The error handling behavior differs from sequential mode:
+        - Sequential mode: Payload limit violations are caught and treated as
+          step failures per error_action configuration (workflow returns FAILED).
+        - Parallel mode: Payload limit violations raise ModelOnexError immediately
+          after the current wave completes (error propagates to caller).
+
+        This difference exists because parallel execution processes all steps in a
+        wave simultaneously, making per-step error handling less meaningful when
+        the aggregate payload exceeds the limit.
+
+        Individual step errors (including MAX_STEP_PAYLOAD_SIZE_BYTES violations)
+        are still handled per-step and respect the error_action configuration.
+    """
     completed_steps: list[str] = []
     failed_steps: list[str] = []
     all_actions: list[ModelAction] = []
@@ -568,7 +628,7 @@ async def _execute_parallel(
     async def execute_step(
         step: ModelWorkflowStep,
         wave_context: TypedDictWorkflowContext,
-    ) -> tuple[ModelWorkflowStep, ModelAction | None, Exception | None]:
+    ) -> tuple[ModelWorkflowStep, ModelAction | None, int, Exception | None]:
         """
         Execute a single workflow step asynchronously.
 
@@ -583,14 +643,18 @@ async def _execute_parallel(
                 enabling data flow between steps across wave boundaries.
 
         Returns:
-            A 3-tuple of (step, action, error) where:
+            A 4-tuple of (step, action, payload_size, error) where:
             - step: The original ModelWorkflowStep (always present for correlation)
             - action: ModelAction if execution succeeded, None if failed
+            - payload_size: Size in bytes of the JSON payload (0 if failed)
             - error: Exception if execution failed, None if succeeded
 
             Exactly one of action/error will be None (mutually exclusive).
             This tuple pattern allows the caller to process results from
             asyncio.gather without individual try/except blocks per task.
+
+            The payload_size is returned to avoid redundant JSON serialization
+            in the caller (OMN-670: Performance optimization).
 
         Note:
             This function catches all exceptions and returns them in the tuple
@@ -613,11 +677,12 @@ async def _execute_parallel(
                 step, workflow_id, completed_step_ids, wave_context
             )
 
-            # Create action for this step
-            action = _create_action_for_step(step, workflow_id)
-            return (step, action, None)
+            # Create action for this step (returns tuple with payload size to avoid
+            # redundant JSON serialization - OMN-670: Performance optimization)
+            action, payload_size = _create_action_for_step(step, workflow_id)
+            return (step, action, payload_size, None)
         except Exception as e:  # fallback-ok: parallel execution returns error in tuple for caller handling
-            return (step, None, e)
+            return (step, None, 0, e)
 
     # For parallel execution, we execute in waves based on dependencies
     # Filter out disabled steps entirely - they are skipped, not failed
@@ -651,15 +716,12 @@ async def _execute_parallel(
         results = await asyncio.gather(*tasks)
 
         # Process results from parallel execution
-        for step, action, error in results:
+        for step, action, action_payload_size, error in results:
             if error is None and action is not None:
                 # Step succeeded - check payload size BEFORE marking completed
                 # Track total payload size (OMN-670: Security hardening)
-                action_payload_size = len(
-                    json.dumps(
-                        action.payload, default=_json_default_for_workflow
-                    ).encode("utf-8")
-                )
+                # Note: action_payload_size comes from _create_action_for_step via execute_step
+                # to avoid redundant json.dumps() call (OMN-670: Performance optimization)
                 total_payload_size += action_payload_size
                 if total_payload_size > MAX_TOTAL_PAYLOAD_SIZE_BYTES:
                     raise ModelOnexError(
@@ -739,7 +801,29 @@ async def _execute_batch(
     workflow_steps: list[ModelWorkflowStep],
     workflow_id: UUID,
 ) -> WorkflowExecutionResult:
-    """Execute workflow with batching."""
+    """
+    Execute workflow with batching.
+
+    Delegates to sequential execution internally, adding batch-specific metadata.
+    Error handling behavior follows sequential mode semantics.
+
+    Args:
+        workflow_definition: Workflow definition from YAML contract.
+        workflow_steps: List of workflow steps to execute.
+        workflow_id: Unique workflow execution ID.
+
+    Returns:
+        WorkflowExecutionResult with batch metadata (execution_mode='batch', batch_size).
+
+    Raises:
+        ModelOnexError: If workflow validation fails during setup.
+
+    Note:
+        Since batch mode uses sequential execution internally, payload limit
+        violations (MAX_TOTAL_PAYLOAD_SIZE_BYTES) are handled as step failures
+        per the step's error_action configuration, not raised as exceptions.
+        See _execute_sequential for detailed error handling semantics.
+    """
     # For batch mode, use sequential execution with batching metadata
     result = await _execute_sequential(workflow_definition, workflow_steps, workflow_id)
     result.metadata["execution_mode"] = "batch"
@@ -926,7 +1010,7 @@ def _validate_json_payload(
 def _create_action_for_step(
     step: ModelWorkflowStep,
     workflow_id: UUID,
-) -> ModelAction:
+) -> tuple[ModelAction, int]:
     """
     Create action for workflow step.
 
@@ -938,7 +1022,9 @@ def _create_action_for_step(
         workflow_id: Parent workflow ID
 
     Returns:
-        ModelAction for step execution
+        Tuple of (ModelAction, payload_size_bytes) where payload_size_bytes is
+        the UTF-8 encoded size of the JSON payload. This avoids redundant
+        serialization in callers that need to track total payload size.
 
     Raises:
         ModelOnexError: If payload is not JSON-serializable or exceeds size limit
@@ -1005,7 +1091,7 @@ def _create_action_for_step(
             },
         )
 
-    return ModelAction(
+    action = ModelAction(
         action_id=uuid4(),
         action_type=action_type,
         target_node_type=target_node_type,
@@ -1022,6 +1108,8 @@ def _create_action_for_step(
         },
         created_at=datetime.now(),
     )
+
+    return (action, payload_size)
 
 
 def _dependencies_met(
