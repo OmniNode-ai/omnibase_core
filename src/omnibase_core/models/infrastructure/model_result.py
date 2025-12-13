@@ -150,7 +150,7 @@ class ModelResult[T, E](
                 EnumCoreErrorCode.VALIDATION_ERROR,
                 "Success result has None value",
             )
-        return cast("T", self.value)
+        return self.value
 
     def unwrap_or(self, default: T) -> T:
         """Unwrap the value or return default if error."""
@@ -160,7 +160,7 @@ class ModelResult[T, E](
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="Success result has None value",
                 )
-            return cast("T", self.value)
+            return self.value
         return default
 
     def unwrap_or_else(self, f: Callable[[E], T]) -> T:
@@ -171,7 +171,7 @@ class ModelResult[T, E](
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="Success result has None value",
                 )
-            return cast("T", self.value)
+            return self.value
         if self.error is None:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -199,7 +199,7 @@ class ModelResult[T, E](
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Success result has None value",
             )
-        return cast("T", self.value)
+        return self.value
 
     def map(self, f: Callable[[T], U]) -> ModelResult[U, object]:
         """

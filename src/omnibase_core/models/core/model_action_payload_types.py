@@ -123,7 +123,18 @@ def create_specific_action_payload(
     # Use category-based mapping
     payload_class = category_to_payload_map.get(action_type.category)
     if payload_class:
-        result = payload_class(action_type=action_type, **kwargs)
+        result: (
+            ModelLifecycleActionPayload
+            | ModelOperationalActionPayload
+            | ModelDataActionPayload
+            | ModelValidationActionPayload
+            | ModelManagementActionPayload
+            | ModelTransformationActionPayload
+            | ModelMonitoringActionPayload
+            | ModelRegistryActionPayload
+            | ModelFilesystemActionPayload
+            | ModelCustomActionPayload
+        ) = payload_class(action_type=action_type, **kwargs)
         return result
 
     msg = f"Unknown action type: {action_type.name}"
