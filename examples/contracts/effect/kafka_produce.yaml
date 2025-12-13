@@ -75,8 +75,9 @@ node_type: effect
 # ---------------------------------------------------------------------------
 
 effect_operations:
-  # Schema version for forward compatibility (v1.1.0) - must use dict format for ModelSemVer
-  # NOTE: Per-operation configs are parsed but NOT honored in v1.1.0 (uses subcontract-level defaults).
+  # Subcontract schema version - must use dict format for ModelSemVer
+  # NOTE: Per-operation configs (retry_policy, circuit_breaker, response_handling) are parsed
+  # but NOT honored at the operation level in v1.x. Only subcontract-level defaults apply.
   # Per-operation overrides will be fully implemented in v2.0. Tracking: OMN-467
   version: {major: 1, minor: 1, patch: 0}
 

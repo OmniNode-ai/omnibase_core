@@ -22,7 +22,7 @@ ONEX uses deterministic SHA256 fingerprints to track contract integrity and dete
 
 ### Fingerprint Format
 
-```text
+```plaintext
 <semver>:<sha256-first-12-hex-chars>
 Example: 0.4.0:8fa1e2b4c9d1
 ```

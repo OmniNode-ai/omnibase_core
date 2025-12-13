@@ -91,6 +91,7 @@ class ModelToolExecutionResult(BaseModel):
         "extra": "ignore",
         "use_enum_values": False,
         "validate_assignment": True,
+        "from_attributes": True,
     }
 
     @model_validator(mode="after")

@@ -4,8 +4,6 @@ Dictionary Configuration Model for ONEX Configuration System.
 Strongly typed model for dictionary return types.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 
@@ -13,7 +11,7 @@ class ModelDictConfig(BaseModel):
     """
     Strongly typed model for dictionary return types.
 
-    Represents configuration dict[str, Any]ionaries with proper type safety.
+    Represents configuration dictionaries with proper type safety.
     """
 
     data: dict[str, str] = Field(
@@ -33,6 +31,6 @@ class ModelDictConfig(BaseModel):
         """Check if key exists in configuration."""
         return key in self.data
 
-    def get_all_keys(self) -> list[Any]:
+    def get_all_keys(self) -> list[str]:
         """Get all configuration keys."""
         return list(self.data.keys())

@@ -81,7 +81,7 @@ class ModelComputeInput[T_Input](BaseModel):
             node may process items in parallel. Defaults to False.
         metadata: Additional context metadata as key-value pairs. Can be used
             for custom tracking, feature flags, or computation parameters.
-        timestamp: When this input was created. Auto-generated to current time.
+        timestamp: When this input was created. Auto-generated to current UTC time.
             Useful for audit trails and timeout calculations.
 
     Example:
@@ -104,6 +104,7 @@ class ModelComputeInput[T_Input](BaseModel):
     model_config = ConfigDict(
         extra="forbid",
         frozen=True,
+        from_attributes=True,
     )
 
     data: T_Input

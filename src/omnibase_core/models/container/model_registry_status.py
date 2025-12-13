@@ -3,7 +3,7 @@
 from datetime import UTC, datetime
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.protocols import (
     LiteralHealthStatus,
@@ -44,6 +44,10 @@ class ModelServiceRegistryStatus(BaseModel):
         print(f"Active instances: {status.active_instances}")
         ```
     """
+
+    model_config = ConfigDict(
+        from_attributes=True,
+    )
 
     registry_id: UUID = Field(description="Unique registry identifier")
     status: LiteralOperationStatus = Field(description="Operational status")

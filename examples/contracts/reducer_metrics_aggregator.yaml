@@ -2,7 +2,8 @@
 node_type: REDUCER_GENERIC
 contract_version: {major: 1, minor: 1, patch: 0}
 # Fingerprint: SHA-256 hash of canonical normalized contract content (excluding fingerprint field).
-# See docs/architecture/CONTRACT_STABILITY_SPEC.md for normalization specification.
+# Normalization includes: sorted keys, consistent spacing, excluded fields (fingerprint, metadata).
+# Full specification: docs/architecture/CONTRACT_STABILITY_SPEC.md
 fingerprint: "1.1.0:adb6c8f6d107"
 state_transitions:
   version: {major: 1, minor: 1, patch: 0}

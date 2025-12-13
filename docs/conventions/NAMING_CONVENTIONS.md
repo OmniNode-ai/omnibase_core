@@ -29,18 +29,18 @@ All ONEX event bus topics **MUST** use the `onex.` prefix to:
 
 Topics and event types follow a hierarchical naming structure:
 
-- **Topic name**: The full dot-separated path used for event bus routing (e.g., `onex.node.compute.completed`)
-- **Event type**: The action suffix that describes what happened (e.g., `completed`, `failed`, `started`)
+- **Topic name**: The full dot-separated path used for event bus routing (e.g., `onex.node.compute.completed`). This is what you subscribe to or publish on.
+- **Event type suffix**: The final segment that describes what happened (e.g., `completed`, `failed`, `started`). This is part of the topic name, not a separate identifier.
 
 ```text
-onex.<domain>.<entity>.<event-type>
+onex.<domain>.<entity>.<event-type-suffix>
 ```
 
 **Components:**
 - `onex.` - Required prefix (lowercase)
 - `<domain>` - Business domain (e.g., `node`, `workflow`, `discovery`)
 - `<entity>` - Specific entity type (e.g., `compute`, `effect`, `reducer`)
-- `<event-type>` - Event action suffix (e.g., `created`, `completed`, `failed`)
+- `<event-type-suffix>` - Event action suffix (e.g., `created`, `completed`, `failed`)
 
 ### Examples
 
@@ -61,9 +61,12 @@ onex.<domain>.<entity>.<event-type>
 "onex.introspection.request"
 "onex.introspection.response"
 
-# System events (use reserved topic prefixes)
+# System events (use reserved topic prefixes from table below)
+"onex.discovery.node.request"
+"onex.introspection.node.request"
 "onex.health.node.check"
 "onex.metrics.node.collected"
+"onex.dlq.compute.failed"
 ```
 
 ### Reserved Topics
@@ -128,6 +131,11 @@ Handlers are classified by `EnumHandlerType` for routing purposes:
 ### Handler Registration Example
 
 ```python
+"""Example handler implementation demonstrating ONEX conventions.
+
+Copy-paste safe: All imports and types are included.
+"""
+
 from omnibase_core.enums.enum_handler_type import EnumHandlerType
 from omnibase_core.models.core.model_onex_envelope import ModelOnexEnvelope
 from omnibase_core.models.primitives.model_semver import ModelSemVer
@@ -135,8 +143,12 @@ from omnibase_core.protocols.runtime import ProtocolHandler
 from omnibase_core.types.typed_dict_handler_metadata import TypedDictHandlerMetadata
 
 
-class MyHandler(ProtocolHandler):
-    """Custom HTTP handler implementation."""
+class MyHttpHandler(ProtocolHandler):
+    """Custom HTTP handler implementation.
+
+    This handler processes HTTP-related events through the ONEX event bus.
+    Implements the ProtocolHandler interface for runtime integration.
+    """
 
     @property
     def handler_type(self) -> EnumHandlerType:
@@ -150,22 +162,23 @@ class MyHandler(ProtocolHandler):
             envelope: The incoming event envelope to process.
 
         Returns:
-            The processed event envelope.
+            The processed event envelope with results.
         """
         # Implement your handler logic here
+        # Example: Process HTTP request data from envelope.payload
         return envelope
 
     def describe(self) -> TypedDictHandlerMetadata:
         """Provide handler metadata for discovery and routing.
 
         Returns:
-            Handler metadata dictionary.
+            Handler metadata dictionary with name, version, and capabilities.
         """
         return {
             "name": "my_http_handler",
             "version": ModelSemVer(major=1, minor=0, patch=0),
-            "description": "Custom HTTP handler",
-            "capabilities": ["GET", "POST"],
+            "description": "Custom HTTP handler for API integration",
+            "capabilities": ["GET", "POST", "PUT", "DELETE"],
         }
 ```
 

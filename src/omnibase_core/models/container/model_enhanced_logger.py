@@ -35,7 +35,9 @@ class ModelEnhancedLogger:
         if level.value >= self.level.value:
             from datetime import UTC, datetime
 
-            datetime.now(UTC).isoformat()
+            timestamp = datetime.now(UTC).isoformat()
+            # Store timestamp in kwargs for potential use by handlers
+            kwargs["_timestamp"] = timestamp
 
     async def emit_log_event_async(
         self,

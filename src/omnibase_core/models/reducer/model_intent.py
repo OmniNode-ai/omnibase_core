@@ -15,9 +15,9 @@ Design Pattern:
     Reducer function: delta(state, action) -> (new_state, intents[])
 
 Thread Safety:
-    ModelIntent has frozen fields (frozen=True) after creation, preventing field
-    reassignment and providing thread-safe read access for top-level field values
-    from multiple threads or async tasks.
+    ModelIntent uses frozen=True configuration, which prevents reassignment of
+    top-level fields after creation. This provides thread-safe read access for
+    field values from multiple threads or async tasks.
 
     Safe Operations (thread-safe without synchronization):
         - Reading any top-level field (intent_type, target, priority, etc.)
@@ -28,8 +28,10 @@ Thread Safety:
         - Modifying contents of the payload dict
         - In-place mutation of any nested mutable objects within payload
 
-    IMPORTANT: Shallow immutability means field references cannot be reassigned,
-    but mutable field contents (dict values) CAN be modified by any thread.
+    IMPORTANT: The frozen=True setting provides SHALLOW immutability only.
+    Field references cannot be reassigned (e.g., `intent.payload = {}` raises),
+    but the payload dict contents CAN still be modified by any thread (e.g.,
+    `intent.payload["key"] = value` is allowed but NOT thread-safe).
     For full thread safety with mutable nested data, use model_copy(deep=True)
     to create independent copies before passing to other threads.
 

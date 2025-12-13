@@ -338,7 +338,7 @@ def validate_configuration(self) -> "ModelConfig":
 
 ### Safety Decision Tree
 
-```text
+```plaintext
 Need from_attributes?
 ├── No → Don't enable it
 └── Yes → Is source object immutable?
