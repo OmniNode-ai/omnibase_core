@@ -34,6 +34,7 @@ from omnibase_core.models.fsm.model_fsm_transition_result import (
 )
 from omnibase_core.models.reducer.model_intent import ModelIntent
 from omnibase_core.types.type_fsm_context import FSMContextType
+from omnibase_core.utils.fsm_operators import evaluate_equals, evaluate_not_equals
 
 
 async def execute_transition(
@@ -342,7 +343,7 @@ def get_initial_state(fsm: ModelFSMSubcontract) -> FSMState:
                 context=state.context,
             )
     """
-    return FSMState(current_state=fsm.initial_state, context={}, history=())
+    return FSMState(current_state=fsm.initial_state, context={}, history=[])
 
 
 # Private helper functions
@@ -469,19 +470,15 @@ async def _evaluate_single_condition(
     # Evaluate based on operator
     # Standard operators (validated by ModelFSMTransitionCondition)
     if operator == "==" or operator == "equals":
-        # STRING-BASED COMPARISON: Both values are cast to str before comparison
-        # This is INTENTIONAL to handle YAML/JSON config values consistently
-        # Examples: 10 == "10" → True, True == "True" → True, None == "None" → True
-        # WARNING: Type information is lost! Use >/< operators for numeric checks
-        # See function docstring for complete type coercion behavior documentation
-        return str(field_value) == str(expected_value)
+        # STRING-BASED COMPARISON via fsm_operators module
+        # Both values are cast to str before comparison (INTENTIONAL)
+        # See fsm_operators.evaluate_equals docstring for type coercion behavior
+        return evaluate_equals(field_value, expected_value)
     elif operator == "!=" or operator == "not_equals":
-        # STRING-BASED COMPARISON: Both values are cast to str before comparison
-        # This is INTENTIONAL to handle YAML/JSON config values consistently
-        # Examples: 10 != "10" → False, True != "True" → False
-        # WARNING: Type information is lost! Use >/< operators for numeric checks
-        # See function docstring for complete type coercion behavior documentation
-        return str(field_value) != str(expected_value)
+        # STRING-BASED COMPARISON via fsm_operators module
+        # Both values are cast to str before comparison (INTENTIONAL)
+        # See fsm_operators.evaluate_not_equals docstring for type coercion behavior
+        return evaluate_not_equals(field_value, expected_value)
     elif operator == ">":
         try:
             # Cast to SupportsFloat - TypeError caught if not actually numeric

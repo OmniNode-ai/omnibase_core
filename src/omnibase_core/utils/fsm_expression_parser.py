@@ -1,0 +1,181 @@
+"""
+FSM Expression Parser for declarative state machine conditions.
+
+Parses 3-token FSM condition expressions used in FSM transitions.
+Strictly enforces "field operator value" grammar for predictable parsing.
+
+Usage:
+    >>> from omnibase_core.utils.fsm_expression_parser import parse_expression
+    >>> field, operator, value = parse_expression("count equals 5")
+    >>> print(field, operator, value)
+    count equals 5
+
+    >>> parse_expression("name exists _")
+    ('name', 'exists', '_')
+
+    >>> parse_expression("too many tokens here")  # Raises ModelOnexError
+"""
+
+from typing import Final
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
+# Supported operators for FSM condition expressions
+# These correspond to operators used in fsm_executor._evaluate_single_condition()
+SUPPORTED_OPERATORS: Final[frozenset[str]] = frozenset(
+    {
+        # Equality operators
+        "equals",
+        "not_equals",
+        # Comparison operators
+        "greater_than",
+        "less_than",
+        "greater_than_or_equal",
+        "less_than_or_equal",
+        # Length operators
+        "min_length",
+        "max_length",
+        # Existence operators
+        "exists",
+        "not_exists",
+        # Containment operators
+        "in",
+        "not_in",
+        "contains",
+        # Pattern matching
+        "matches",
+    }
+)
+
+
+def parse_expression(expression: str) -> tuple[str, str, str]:
+    """
+    Parse a 3-token FSM condition expression.
+
+    Format: "field operator value"
+
+    The expression must have exactly 3 whitespace-separated tokens:
+    1. field: The context field name to evaluate
+    2. operator: The comparison operator (must be in SUPPORTED_OPERATORS)
+    3. value: The expected value to compare against (use "_" for existence checks)
+
+    Args:
+        expression: The expression string to parse
+
+    Returns:
+        Tuple of (field, operator, value)
+
+    Raises:
+        ModelOnexError: If expression is empty, doesn't have exactly 3 tokens,
+                       or operator is not supported
+
+    Examples:
+        >>> parse_expression("count equals 5")
+        ('count', 'equals', '5')
+
+        >>> parse_expression("name exists _")
+        ('name', 'exists', '_')
+
+        >>> parse_expression("status in active,pending,processing")
+        ('status', 'in', 'active,pending,processing')
+
+        >>> parse_expression("data_count min_length 1")
+        ('data_count', 'min_length', '1')
+    """
+    # Handle empty or whitespace-only expression
+    if not expression or not expression.strip():
+        raise ModelOnexError(
+            message="Expression cannot be empty",
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            expression=expression,
+        )
+
+    # Split by whitespace (handles multiple spaces between tokens)
+    tokens = expression.split()
+
+    # Strict 3-token enforcement
+    token_count = len(tokens)
+    if token_count != 3:
+        raise ModelOnexError(
+            message=(
+                f"Expression must have exactly 3 tokens (field operator value), "
+                f"got {token_count}: {tokens!r}"
+            ),
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            expression=expression,
+            token_count=token_count,
+            tokens=tokens,
+        )
+
+    field, operator, value = tokens
+
+    # Validate operator is supported
+    if operator not in SUPPORTED_OPERATORS:
+        raise ModelOnexError(
+            message=(
+                f"Unsupported operator '{operator}'. "
+                f"Supported operators: {sorted(SUPPORTED_OPERATORS)}"
+            ),
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            expression=expression,
+            operator=operator,
+            supported_operators=sorted(SUPPORTED_OPERATORS),
+        )
+
+    return field, operator, value
+
+
+def validate_expression(expression: str) -> bool:
+    """
+    Validate an FSM condition expression without raising exceptions.
+
+    Useful for pre-validation where you want a boolean result instead of exceptions.
+
+    Args:
+        expression: The expression string to validate
+
+    Returns:
+        True if expression is valid, False otherwise
+
+    Examples:
+        >>> validate_expression("count equals 5")
+        True
+
+        >>> validate_expression("too many tokens here")
+        False
+
+        >>> validate_expression("")
+        False
+    """
+    try:
+        parse_expression(expression)
+        return True
+    except ModelOnexError:
+        return False
+
+
+def get_supported_operators() -> frozenset[str]:
+    """
+    Get the set of supported operators.
+
+    Returns:
+        Frozen set of supported operator strings
+
+    Examples:
+        >>> operators = get_supported_operators()
+        >>> "equals" in operators
+        True
+        >>> "invalid_op" in operators
+        False
+    """
+    return SUPPORTED_OPERATORS
+
+
+# Public API
+__all__ = [
+    "SUPPORTED_OPERATORS",
+    "get_supported_operators",
+    "parse_expression",
+    "validate_expression",
+]
