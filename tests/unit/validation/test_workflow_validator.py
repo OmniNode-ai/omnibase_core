@@ -19,8 +19,6 @@ import pytest
 
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
-# Import from target location - will fail until implementation exists (TDD)
 from omnibase_core.validation.workflow_validator import (
     MAX_DFS_ITERATIONS,
     ModelWorkflowValidationResult,

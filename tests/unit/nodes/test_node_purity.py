@@ -858,9 +858,12 @@ class TestFileAnalysis:
     """Test full file analysis."""
 
     def test_analyze_pure_node_file(self, temp_node_file):
-        """Test analyzing a pure node file."""
+        """Test analyzing a pure node file.
+
+        Note: This test uses strongly-typed code without Any to comply with
+        OMN-203 declarative node purity rules.
+        """
         source = """
-        from typing import Any
         from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 
         class NodePureCompute(NodeCoreBase):
@@ -868,7 +871,7 @@ class TestFileAnalysis:
                 super().__init__(container)
                 self.items = []  # Instance-level is fine
 
-            def compute(self, data: Any) -> Any:
+            def compute(self, data: str) -> str:
                 return data
         """
         file_path = temp_node_file(source, "node_pure_compute.py")

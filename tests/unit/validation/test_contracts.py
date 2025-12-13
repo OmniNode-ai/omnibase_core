@@ -93,15 +93,22 @@ class TestValidateYamlFile:
     def test_valid_yaml_file(self, tmp_path: Path):
         """Test validation of valid YAML file."""
         yaml_file = tmp_path / "valid.yaml"
-        # Create minimal contract structure
-        content = {"name": "TestContract", "version": "1.0.0", "description": "Test"}
-        yaml_file.write_text(yaml.dump(content))
+        # Create minimal valid contract structure with required fields
+        content = """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: COMPUTE
+operations: []
+"""
+        yaml_file.write_text(content)
 
         errors = validate_yaml_file(yaml_file)
 
-        # May have validation errors depending on contract schema
-        # but file should be readable and parseable
+        # Valid contract should have no errors
         assert isinstance(errors, list)
+        assert len(errors) == 0
 
     def test_invalid_yaml_syntax(self, tmp_path: Path):
         """Test validation of invalid YAML syntax."""
@@ -118,25 +125,45 @@ class TestValidateYamlFile:
         # Create file larger than MAX_FILE_SIZE (50MB)
         # For test purposes, we'll mock the file size check by creating
         # a normal file and checking the error message structure
-        large_file.write_text("test: data")
+        # Create minimal valid contract structure with required fields
+        content = """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: COMPUTE
+operations: []
+"""
+        large_file.write_text(content)
 
         # This test verifies the function can handle the file
         errors = validate_yaml_file(large_file)
 
-        # File is small, so should process normally
+        # File is small, so should process normally with no errors
         assert isinstance(errors, list)
+        assert len(errors) == 0
 
     def test_read_permission_handling(self, tmp_path: Path):
         """Test handling of files without read permission."""
         yaml_file = tmp_path / "no_read.yaml"
-        yaml_file.write_text("test: data")
+        # Create minimal valid contract structure with required fields
+        content = """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: COMPUTE
+operations: []
+"""
+        yaml_file.write_text(content)
 
         # On most systems, we can't easily test permission denied
         # but we can verify the function handles it gracefully
         errors = validate_yaml_file(yaml_file)
 
-        # File should be readable in test environment
+        # File should be readable in test environment with valid contract
         assert isinstance(errors, list)
+        assert len(errors) == 0
 
 
 class TestValidateNoManualYaml:
@@ -235,22 +262,49 @@ class TestValidateContractsDirectory:
     def test_directory_with_valid_yaml(self, tmp_path: Path):
         """Test directory with valid YAML files."""
         yaml_file = tmp_path / "test.yaml"
-        content = {"name": "Test", "version": "1.0.0"}
-        yaml_file.write_text(yaml.dump(content))
+        # Create minimal valid contract structure with required fields
+        content = """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: COMPUTE
+operations: []
+"""
+        yaml_file.write_text(content)
 
         result = validate_contracts_directory(tmp_path)
 
         assert result.metadata.files_processed == 1
         assert isinstance(result.errors, list)
+        assert result.is_valid is True
 
     def test_directory_with_multiple_yaml_extensions(self, tmp_path: Path):
         """Test directory with both .yaml and .yml files."""
-        (tmp_path / "test1.yaml").write_text("test: data1")
-        (tmp_path / "test2.yml").write_text("test: data2")
+        # Create minimal valid contract structure with required fields
+        content1 = """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: COMPUTE
+operations: []
+"""
+        content2 = """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: EFFECT
+operations: []
+"""
+        (tmp_path / "test1.yaml").write_text(content1)
+        (tmp_path / "test2.yml").write_text(content2)
 
         result = validate_contracts_directory(tmp_path)
 
         assert result.metadata.files_processed == 2
+        assert result.is_valid is True
 
     def test_excludes_pycache(self, tmp_path: Path):
         """Test that __pycache__ is excluded."""
@@ -287,7 +341,16 @@ class TestValidateContractsDirectory:
 
     def test_metadata_populated(self, tmp_path: Path):
         """Test that metadata is properly populated."""
-        (tmp_path / "test.yaml").write_text("test: data")
+        # Create minimal valid contract structure with required fields
+        content = """
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: COMPUTE
+operations: []
+"""
+        (tmp_path / "test.yaml").write_text(content)
 
         result = validate_contracts_directory(tmp_path)
 
@@ -300,7 +363,16 @@ class TestValidateContractsDirectory:
         """Test detection of manual YAML in restricted areas."""
         generated_dir = tmp_path / "generated"
         generated_dir.mkdir()
-        (generated_dir / "manual.yaml").write_text("# Manual\ntest: data")
+        # Create valid contract with manual indicator comment
+        content = """# Manual
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: COMPUTE
+operations: []
+"""
+        (generated_dir / "manual.yaml").write_text(content)
 
         result = validate_contracts_directory(tmp_path)
 
