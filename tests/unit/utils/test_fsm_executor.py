@@ -1060,31 +1060,38 @@ class TestExpressionValidation:
         self, fsm_for_expression_tests: ModelFSMSubcontract
     ):
         """Test that underscore-prefixed fields are rejected for security."""
-        # Add transition with underscore-prefixed field (security risk)
-        fsm_for_expression_tests.transitions.append(
-            ModelFSMStateTransition(
-                transition_name="unsafe_check",
-                from_state="idle",
-                to_state="active",
-                trigger="go",
-                priority=1,
-                conditions=[
-                    ModelFSMTransitionCondition(
-                        condition_name="private_field_check",
-                        condition_type="field_check",
-                        expression="_private_field equals secret",
-                        required=True,
-                    )
-                ],
-                version=ModelSemVer(major=1, minor=0, patch=0),
-            ),
+        # Create new FSM with transition containing underscore-prefixed field (security risk)
+        # Note: ModelFSMSubcontract is frozen, so we use model_copy instead of append
+        unsafe_transition = ModelFSMStateTransition(
+            transition_name="unsafe_check",
+            from_state="idle",
+            to_state="active",
+            trigger="go",
+            priority=1,
+            conditions=[
+                ModelFSMTransitionCondition(
+                    condition_name="private_field_check",
+                    condition_type="field_check",
+                    expression="_private_field equals secret",
+                    required=True,
+                )
+            ],
+            version=ModelSemVer(major=1, minor=0, patch=0),
+        )
+        fsm_with_unsafe_transition = fsm_for_expression_tests.model_copy(
+            update={
+                "transitions": [
+                    *fsm_for_expression_tests.transitions,
+                    unsafe_transition,
+                ]
+            }
         )
 
         context = {"_private_field": "secret"}
 
         # Should fail because underscore-prefixed fields are rejected
         result = await execute_transition(
-            fsm_for_expression_tests, "idle", "go", context
+            fsm_with_unsafe_transition, "idle", "go", context
         )
 
         assert not result.success
@@ -1095,31 +1102,37 @@ class TestExpressionValidation:
         self, fsm_for_expression_tests: ModelFSMSubcontract
     ):
         """Test that nested underscore-prefixed fields are rejected."""
-        fsm_for_expression_tests.transitions.append(
-            ModelFSMStateTransition(
-                transition_name="nested_unsafe_check",
-                from_state="idle",
-                to_state="active",
-                trigger="go",
-                priority=1,
-                conditions=[
-                    ModelFSMTransitionCondition(
-                        condition_name="nested_private_check",
-                        condition_type="field_check",
-                        expression="user._internal equals value",
-                        required=True,
-                    )
-                ],
-                version=ModelSemVer(major=1, minor=0, patch=0),
-            ),
+        # Create new FSM with transition containing nested underscore field
+        # Note: ModelFSMSubcontract is frozen, so we use model_copy instead of append
+        nested_unsafe_transition = ModelFSMStateTransition(
+            transition_name="nested_unsafe_check",
+            from_state="idle",
+            to_state="active",
+            trigger="go",
+            priority=1,
+            conditions=[
+                ModelFSMTransitionCondition(
+                    condition_name="nested_private_check",
+                    condition_type="field_check",
+                    expression="user._internal equals value",
+                    required=True,
+                )
+            ],
+            version=ModelSemVer(major=1, minor=0, patch=0),
+        )
+        fsm_with_nested_unsafe = fsm_for_expression_tests.model_copy(
+            update={
+                "transitions": [
+                    *fsm_for_expression_tests.transitions,
+                    nested_unsafe_transition,
+                ]
+            }
         )
 
         context = {"user": {"_internal": "value"}}
 
         # Should fail because nested underscore-prefixed fields are rejected
-        result = await execute_transition(
-            fsm_for_expression_tests, "idle", "go", context
-        )
+        result = await execute_transition(fsm_with_nested_unsafe, "idle", "go", context)
 
         assert not result.success
         assert result.new_state == "idle"
@@ -1129,30 +1142,36 @@ class TestExpressionValidation:
         self, fsm_for_expression_tests: ModelFSMSubcontract
     ):
         """Test that symbolic operators (>=, <=, etc.) work correctly."""
-        fsm_for_expression_tests.transitions.append(
-            ModelFSMStateTransition(
-                transition_name="symbolic_check",
-                from_state="idle",
-                to_state="active",
-                trigger="go",
-                priority=1,
-                conditions=[
-                    ModelFSMTransitionCondition(
-                        condition_name="count_check",
-                        condition_type="field_check",
-                        expression="count >= 5",
-                        required=True,
-                    )
-                ],
-                version=ModelSemVer(major=1, minor=0, patch=0),
-            ),
+        # Create new FSM with transition using symbolic operators
+        # Note: ModelFSMSubcontract is frozen, so we use model_copy instead of append
+        symbolic_transition = ModelFSMStateTransition(
+            transition_name="symbolic_check",
+            from_state="idle",
+            to_state="active",
+            trigger="go",
+            priority=1,
+            conditions=[
+                ModelFSMTransitionCondition(
+                    condition_name="count_check",
+                    condition_type="field_check",
+                    expression="count >= 5",
+                    required=True,
+                )
+            ],
+            version=ModelSemVer(major=1, minor=0, patch=0),
+        )
+        fsm_with_symbolic = fsm_for_expression_tests.model_copy(
+            update={
+                "transitions": [
+                    *fsm_for_expression_tests.transitions,
+                    symbolic_transition,
+                ]
+            }
         )
 
         # Test with condition met
         context = {"count": 10}
-        result = await execute_transition(
-            fsm_for_expression_tests, "idle", "go", context
-        )
+        result = await execute_transition(fsm_with_symbolic, "idle", "go", context)
         assert result.success
         assert result.new_state == "active"
 
@@ -1161,28 +1180,34 @@ class TestExpressionValidation:
         self, fsm_for_expression_tests: ModelFSMSubcontract
     ):
         """Test that textual operators (equals, not_equals, etc.) work correctly."""
-        fsm_for_expression_tests.transitions.append(
-            ModelFSMStateTransition(
-                transition_name="textual_check",
-                from_state="idle",
-                to_state="active",
-                trigger="go",
-                priority=1,
-                conditions=[
-                    ModelFSMTransitionCondition(
-                        condition_name="status_check",
-                        condition_type="field_check",
-                        expression="status equals ready",
-                        required=True,
-                    )
-                ],
-                version=ModelSemVer(major=1, minor=0, patch=0),
-            ),
+        # Create new FSM with transition using textual operators
+        # Note: ModelFSMSubcontract is frozen, so we use model_copy instead of append
+        textual_transition = ModelFSMStateTransition(
+            transition_name="textual_check",
+            from_state="idle",
+            to_state="active",
+            trigger="go",
+            priority=1,
+            conditions=[
+                ModelFSMTransitionCondition(
+                    condition_name="status_check",
+                    condition_type="field_check",
+                    expression="status equals ready",
+                    required=True,
+                )
+            ],
+            version=ModelSemVer(major=1, minor=0, patch=0),
+        )
+        fsm_with_textual = fsm_for_expression_tests.model_copy(
+            update={
+                "transitions": [
+                    *fsm_for_expression_tests.transitions,
+                    textual_transition,
+                ]
+            }
         )
 
         context = {"status": "ready"}
-        result = await execute_transition(
-            fsm_for_expression_tests, "idle", "go", context
-        )
+        result = await execute_transition(fsm_with_textual, "idle", "go", context)
         assert result.success
         assert result.new_state == "active"

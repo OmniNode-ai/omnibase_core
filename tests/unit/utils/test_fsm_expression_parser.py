@@ -467,9 +467,15 @@ class TestConsistencyWithFSMExecutor:
             "not_in",
             "contains",
             "matches",
-            # Note: fsm_executor also uses ==, !=, >, <, >=, <= but those are
-            # symbol-based. Our parser uses word-based operators.
+            # The parser supports both word-based operators (equals, not_equals, etc.)
+            # and symbolic operators (==, !=, >, <, >=, <=).
         }
+        # Also verify symbolic operators are supported
+        symbolic_operators = {"==", "!=", ">", "<", ">=", "<="}
+        for op in symbolic_operators:
+            assert op in SUPPORTED_OPERATORS, (
+                f"Symbolic operator '{op}' not in SUPPORTED_OPERATORS"
+            )
         for op in fsm_executor_operators:
             assert op in SUPPORTED_OPERATORS, (
                 f"Operator '{op}' not in SUPPORTED_OPERATORS"

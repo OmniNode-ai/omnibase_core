@@ -105,7 +105,7 @@ class ModelFSMStateSnapshot(BaseModel):
             )
     """
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     current_state: str = Field(..., description="Current FSM state name")
     context: FSMContextType = Field(
