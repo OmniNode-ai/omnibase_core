@@ -6,6 +6,8 @@ Tests the FSM execution mixin for declarative state machines.
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 from omnibase_core.mixins.mixin_fsm_execution import MixinFSMExecution
 from omnibase_core.models.contracts.subcontracts.model_fsm_state_definition import (
     ModelFSMStateDefinition,
@@ -177,7 +179,7 @@ class TestMixinFSMExecution:
         node.reset_fsm_state(test_fsm)
 
         assert node.get_current_fsm_state() == "idle"
-        assert node.get_fsm_state_history() == ()
+        assert node.get_fsm_state_history() == []
 
     @pytest.mark.asyncio
     async def test_mixin_initialize_state(self, test_fsm: ModelFSMSubcontract):

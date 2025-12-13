@@ -104,9 +104,9 @@ class MixinFSMExecution:
         # Update internal state if successful
         if result.success:
             # Create new FSMState with updated current state and history
-            # Use tuple concatenation to maintain immutability
-            previous_history = self._fsm_state.history if self._fsm_state else ()
-            new_history = previous_history + (result.old_state,)
+            # Use list spread to maintain immutability by creating new list
+            previous_history = self._fsm_state.history if self._fsm_state else []
+            new_history = [*previous_history, result.old_state]
             self._fsm_state = FSMState(
                 current_state=result.new_state,
                 context=context,
@@ -155,18 +155,18 @@ class MixinFSMExecution:
         """
         return self._fsm_state.current_state if self._fsm_state else None
 
-    def get_fsm_state_history(self) -> tuple[str, ...]:
+    def get_fsm_state_history(self) -> list[str]:
         """
         Get FSM state transition history.
 
         Returns:
-            Tuple of previous state names in chronological order (immutable)
+            List of previous state names in chronological order
 
         Example:
             history = self.get_fsm_state_history()
             print(f"State history: {' -> '.join(history)}")
         """
-        return self._fsm_state.history if self._fsm_state else ()
+        return self._fsm_state.history if self._fsm_state else []
 
     def reset_fsm_state(self, fsm_contract: ModelFSMSubcontract) -> None:
         """
@@ -202,7 +202,7 @@ class MixinFSMExecution:
         self._fsm_state = FSMState(
             current_state=fsm_contract.initial_state,
             context=context or {},
-            history=(),
+            history=[],
         )
 
     def is_terminal_state(self, fsm_contract: ModelFSMSubcontract) -> bool:
