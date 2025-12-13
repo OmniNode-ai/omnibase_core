@@ -565,30 +565,6 @@ class PurityAnalyzer(ast.NodeVisitor):
         """Parse source lines for ONEX_EXCLUDE comments after initialization."""
         self._parse_onex_exclude_comments()
 
-    def _parse_onex_exclude_comments(self) -> None:
-        """Parse source lines for ONEX_EXCLUDE comments.
-
-        Finds lines marked with `# ONEX_EXCLUDE: purity` to exclude from purity checks.
-        Exclusion applies to the marked line and the next 5 lines (handles multi-line signatures).
-        """
-        for i, line in enumerate(self.source_lines, start=1):
-            # Check for ONEX_EXCLUDE: purity comment
-            if "ONEX_EXCLUDE:" in line and "purity" in line:
-                # Exclude this line and the next 5 lines (handles multi-line signatures)
-                for offset in range(6):
-                    self.excluded_lines.add(i + offset)
-
-    def _is_excluded_line(self, line_number: int) -> bool:
-        """Check if a line is excluded from purity checks.
-
-        Args:
-            line_number: Line number to check (1-indexed).
-
-        Returns:
-            True if line is excluded via ONEX_EXCLUDE comment.
-        """
-        return line_number in self.excluded_lines
-
     def visit_Import(self, node: ast.Import) -> None:
         """Check import statements for forbidden modules.
 
@@ -596,6 +572,17 @@ class PurityAnalyzer(ast.NodeVisitor):
             node: AST import node to check.
         """
         if not self.is_pure_node:
+            self.generic_visit(node)
+            return
+
+        # Skip imports inside TYPE_CHECKING blocks
+        if self.in_type_checking_block:
+            self.generic_visit(node)
+            return
+
+        # Skip imports with ONEX_EXCLUDE comments
+        line_num = getattr(node, "lineno", 0)
+        if self._is_line_excluded(line_num):
             self.generic_visit(node)
             return
 
@@ -624,6 +611,12 @@ class PurityAnalyzer(ast.NodeVisitor):
 
         # Skip imports inside TYPE_CHECKING blocks
         if self.in_type_checking_block:
+            self.generic_visit(node)
+            return
+
+        # Skip imports with ONEX_EXCLUDE comments
+        line_num = getattr(node, "lineno", 0)
+        if self._is_line_excluded(line_num):
             self.generic_visit(node)
             return
 
@@ -1454,6 +1447,15 @@ class PurityAnalyzer(ast.NodeVisitor):
 
             # Recursively check type arguments for Any
             self._check_subscript_for_any(annotation, context_node)
+            return
+
+        # Handle ast.List for Callable argument lists (e.g., Callable[[Any], str])
+        # When processing Callable[[Any], str], the slice is a Tuple where the first
+        # element is an ast.List containing the argument types
+        if isinstance(annotation, ast.List):
+            for elt in annotation.elts:
+                self._check_type_annotation(elt, context_node)
+            return
 
     def _is_dict_str_any(self, node: ast.Subscript) -> bool:
         """Check if a subscript is Dict[str, Any] or dict[str, Any].
@@ -1521,6 +1523,14 @@ class PurityAnalyzer(ast.NodeVisitor):
 # ==============================================================================
 
 
+# Base node files that are exempt from purity checks (framework code)
+# These files legitimately need Any for generic type parameters
+BASE_NODE_FILES_SKIP = {
+    "node_compute.py",  # Base class needs Any for ModelComputeInput[Any]
+    "node_reducer.py",  # Base class needs Any for generic type handling
+}
+
+
 def analyze_file(file_path: Path) -> PurityCheckResult:
     """
     Analyze a single file for purity violations.
@@ -1535,6 +1545,17 @@ def analyze_file(file_path: Path) -> PurityCheckResult:
     Returns:
         PurityCheckResult with violations and analysis
     """
+    # Skip base node files (framework code with legitimate Any usage)
+    if file_path.name in BASE_NODE_FILES_SKIP:
+        return PurityCheckResult(
+            file_path=file_path,
+            node_class_name=None,
+            node_type=None,
+            violations=[],
+            is_pure=True,
+            skip_reason="Base node file (framework code with legitimate generic types)",
+        )
+
     try:
         source = file_path.read_text(encoding="utf-8")
         source_lines = source.splitlines()

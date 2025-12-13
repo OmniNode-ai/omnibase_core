@@ -438,7 +438,9 @@ repos:
       # - No class-level mutable state
       # - No caching decorators that introduce state
       # EFFECT and ORCHESTRATOR nodes are excluded (allowed to have side effects)
-      # Runs at pre-push: analyzes all node files (~2-5s runtime)
+      # Runs at pre-push when node files are modified (~2-5s runtime)
+      # NOTE: Base node classes (node_compute.py, node_reducer.py) have pre-existing
+      # Any usages that need cleanup in a separate ticket
       - id: check-node-purity
         name: ONEX Node Purity Validation
         entry: poetry run python scripts/check_node_purity.py

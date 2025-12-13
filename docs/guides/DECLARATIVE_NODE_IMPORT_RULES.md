@@ -222,8 +222,8 @@ from dataclasses import dataclass, field
 from enum import Enum, auto, IntEnum, StrEnum
 from collections import defaultdict, Counter, deque
 
-# Functional programming
-from functools import reduce, partial, lru_cache
+# Functional programming (NOTE: lru_cache is FORBIDDEN - introduces state)
+from functools import reduce, partial
 from itertools import chain, groupby, islice
 from operator import itemgetter, attrgetter
 

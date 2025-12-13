@@ -1,8 +1,8 @@
 """
 Unit tests for declarative node purity linter - Legacy mixin import detection.
 
-AST-based detection of forbidden legacy mixin imports in declarative nodes.
-Declarative nodes (NodeReducer, NodeOrchestrator) must only use approved mixins
+AST-based detection of forbidden legacy mixin imports in pure/declarative nodes.
+Pure nodes (NodeCompute, NodeReducer) must only use approved mixins
 that are compatible with the declarative architecture.
 
 FORBIDDEN MIXINS in declarative nodes:
@@ -692,16 +692,11 @@ class TestLegacyMixinInheritanceDetection:
 
 
 # ==============================================================================
-# ANY/DICT[ANY] IMPORT BLOCKING TESTS (TDD - OMN-203)
+# ANY/DICT[ANY] IMPORT BLOCKING TESTS (OMN-203)
 # ==============================================================================
 #
-# These tests define the expected behavior for blocking typing.Any and
-# Dict[str, Any] in declarative nodes (NodeCompute, NodeReducer).
-#
-# The implementation will add a new ViolationType.ANY_IMPORT or similar
-# to the existing purity checker.
-#
-# NOTE: These tests will FAIL until implementation is complete (TDD approach).
+# Tests for blocking typing.Any and Dict[str, Any] in declarative nodes
+# (NodeCompute, NodeReducer). Implementation complete.
 # ==============================================================================
 
 
@@ -1544,26 +1539,17 @@ class TestMixedValidAndInvalidTypeHints:
 
 
 # ==============================================================================
-# EVENT BUS COMPONENT DETECTION TESTS (TDD - OMN-203)
+# EVENT BUS COMPONENT DETECTION TESTS (OMN-203)
 # ==============================================================================
 #
-# These tests define the expected behavior for blocking event bus component
-# imports in declarative nodes (NodeCompute, NodeReducer).
+# Tests for blocking event bus component imports in declarative nodes
+# (NodeCompute, NodeReducer). Implementation complete.
 #
-# Event Bus Components to Block:
+# Event Bus Components Blocked:
 # - omnibase_core.events.* - All event system imports
 # - omnibase_core.models.event_bus.* - Event bus models
 # - omnibase_core.models.events.* - Event models
-# - ProtocolEventBus - Event bus protocol
-# - ModelEventEnvelope - Event envelope model
-# - ModelEventBusConfig - Event bus configuration
-#
-# Why Block These:
-# - Declarative nodes should be pure functions/state machines
-# - Event bus introduces side effects and external communication
-# - Effects (I/O, events) should go through EFFECT nodes
-#
-# NOTE: These tests will FAIL until implementation is complete (TDD approach).
+# - ProtocolEventBus, ModelEventEnvelope, ModelEventBusConfig
 # ==============================================================================
 
 
