@@ -625,28 +625,45 @@ For detailed guidance on monitoring CI health, detecting anomalies, and investig
 
 ### Type Checking
 
-**Status**: ✅ 100% strict mypy compliance (0 errors in 1865 source files)
+**Status**:
+- ✅ mypy: 100% strict mode compliance (0 errors in 1865 source files)
+- ✅ pyright: basic mode compliance (0 errors, warnings only)
+
+**Note**: Both mypy AND pyright must pass in CI. This dual-checker approach catches different categories of type errors.
 
 ```bash
-# Type check entire codebase
+# Type check with mypy (strict mode)
 poetry run mypy src/omnibase_core/
 
-# Type check specific file
+# Type check with pyright (basic mode)
+poetry run pyright src/omnibase_core/
+
+# Type check specific file with mypy
 poetry run mypy src/omnibase_core/models/common/model_typed_mapping.py
+
+# Type check specific file with pyright
+poetry run pyright src/omnibase_core/models/common/model_typed_mapping.py
 ```
 
-**Configuration**: See `[tool.mypy]` in pyproject.toml
+**Configuration**:
+- mypy: See `[tool.mypy]` in pyproject.toml
+- pyright: See `pyrightconfig.json` at repo root
 
-**Strict Mode Features**:
+**mypy Strict Mode Features**:
 - `disallow_untyped_defs = true` - All functions must have type annotations
 - `warn_return_any = true` - Warns on functions returning Any
 - `warn_unused_configs = true` - Detects unused mypy configuration
 - Pydantic plugin enabled for model validation
 
+**pyright Configuration**:
+- Basic type checking mode (planned migration to stricter settings per OMN-200)
+- Targets Python 3.12
+- Configured for Pydantic compatibility
+
 **Enforcement**:
-- ✅ Pre-commit hooks (strict configuration)
-- ✅ CI/CD pipeline (strict configuration)
-- ✅ Local development (strict configuration)
+- ✅ Pre-commit hooks (mypy strict, pyright basic)
+- ✅ CI/CD pipeline (both checkers must pass)
+- ✅ Local development (both checkers available)
 
 ### Formatting
 
