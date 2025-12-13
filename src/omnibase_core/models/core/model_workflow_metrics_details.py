@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Model for workflow metrics details.
 
@@ -7,8 +5,7 @@ Structured model for workflow metrics details, replacing Dict[str, Any]
 with proper typing for workflow metrics.
 """
 
-
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelWorkflowMetricsDetails(BaseModel):

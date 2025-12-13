@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Model for resource usage details.
 
@@ -7,8 +5,7 @@ Structured model for resource usage details, replacing Dict[str, Any]
 with proper typing for resource usage.
 """
 
-
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelResourceUsageDetails(BaseModel):

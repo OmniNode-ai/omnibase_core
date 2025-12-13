@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 CLI Command Registry
 
@@ -10,7 +8,7 @@ This replaces hardcoded command enums with flexible, contract-driven command dis
 from collections.abc import Mapping
 from pathlib import Path
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors import ModelOnexError

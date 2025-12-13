@@ -1,3 +1,9 @@
+"""
+Semantic Version Model
+
+Pydantic model for semantic versioning following SemVer specification.
+"""
+
 import re
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -13,12 +19,6 @@ from omnibase_core.types.type_serializable_value import SerializedDict
 _SEMVER_PATTERN = re.compile(
     r"^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:[-+].*)?$"
 )
-
-"""
-Semantic Version Model
-
-Pydantic model for semantic versioning following SemVer specification.
-"""
 
 
 class ModelSemVer(BaseModel):

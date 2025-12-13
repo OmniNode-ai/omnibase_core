@@ -1,11 +1,3 @@
-from __future__ import annotations
-
-from datetime import datetime
-
-from pydantic import Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Progress Timing Model.
 
@@ -13,12 +5,14 @@ Timing and duration calculations for progress tracking.
 Follows ONEX one-model-per-file architecture.
 """
 
+from __future__ import annotations
 
-from datetime import UTC, timedelta
+from datetime import UTC, datetime, timedelta
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.infrastructure.model_time_based import ModelTimeBased
 from omnibase_core.types.type_serializable_value import SerializedDict
 

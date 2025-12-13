@@ -1,10 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Function node data model.
 
@@ -12,11 +5,12 @@ Clean, strongly-typed replacement for the horrible FunctionNodeData union type.
 Follows ONEX one-model-per-file naming conventions.
 """
 
+from __future__ import annotations
 
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_config_type import EnumConfigType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -24,7 +18,9 @@ from omnibase_core.enums.enum_function_status import EnumFunctionStatus
 from omnibase_core.enums.enum_node_type import EnumNodeType
 from omnibase_core.enums.enum_standard_category import EnumStandardCategory
 from omnibase_core.enums.enum_standard_tag import EnumStandardTag
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.infrastructure.model_value import ModelValue
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
 from .model_nested_configuration import ModelNestedConfiguration

@@ -1,10 +1,9 @@
-from __future__ import annotations
-
 """
 Canonical error model for registry errors (tool/handler registries).
 Use this for all structured registry error reporting.
 """
 
+from __future__ import annotations
 
 from typing import Any
 

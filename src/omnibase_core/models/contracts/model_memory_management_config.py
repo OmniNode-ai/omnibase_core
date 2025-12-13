@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Memory Management Configuration Model.
 
@@ -10,7 +8,7 @@ efficient batch processing operations.
 Part of the "one model per file" convention for clean architecture.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelMemoryManagementConfig(BaseModel):

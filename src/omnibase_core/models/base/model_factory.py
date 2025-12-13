@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 """
 Base Factory Model.
 
 Abstract base class for typed factories following ONEX one-model-per-file architecture.
 """
 
+from __future__ import annotations
 
 from abc import ABC, abstractmethod
 

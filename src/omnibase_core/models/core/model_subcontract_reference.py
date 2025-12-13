@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Model for subcontract reference representation in ONEX contracts.
 
@@ -8,7 +6,7 @@ to link to subcontract files with integration fields.
 
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelSubcontractReference(BaseModel):

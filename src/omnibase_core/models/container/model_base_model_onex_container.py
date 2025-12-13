@@ -1,9 +1,8 @@
-from __future__ import annotations
-
 """
 Base dependency injection container.
 """
 
+from __future__ import annotations
 
 from typing import Any
 

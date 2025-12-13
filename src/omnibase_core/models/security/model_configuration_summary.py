@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 ModelConfigurationSummary: Configuration summary model.
 
 This model provides structured configuration summary without using Any types.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelConfigurationSummary(BaseModel):

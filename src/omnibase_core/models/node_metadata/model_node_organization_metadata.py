@@ -1,9 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Node Organization Metadata Model.
 
@@ -11,15 +5,17 @@ Organizational information for nodes including capabilities, tags, and relations
 Part of the ModelNodeMetadataInfo restructuring.
 """
 
+from __future__ import annotations
 
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_category import EnumCategory
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
 

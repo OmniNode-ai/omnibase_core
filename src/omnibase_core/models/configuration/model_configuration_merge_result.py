@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 Configuration Merge Result Model for ONEX Configuration System.
 
 Strongly typed model to replace dictionary usage in configuration merging.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.service.model_service_registry_config import (
     ModelServiceRegistryConfig,

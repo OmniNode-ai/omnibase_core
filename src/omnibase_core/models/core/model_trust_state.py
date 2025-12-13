@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Trust State Model.
 
@@ -9,7 +7,7 @@ rich metadata for trust verification and management.
 
 from datetime import UTC, datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .model_verification_method import ModelVerificationMethod
 

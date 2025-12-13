@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 ModelHealthCheckConfig - Health check configuration for load balancing
 
@@ -7,7 +5,7 @@ Health check configuration model for monitoring node health in a load
 balancing system with configurable intervals, timeouts, and failure handling.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .model_health_check_metadata import ModelHealthCheckMetadata
 

@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Event Output State Model.
 
@@ -9,7 +7,7 @@ replacing Dict[str, Any] usage with proper model.
 
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelEventOutputState(BaseModel):

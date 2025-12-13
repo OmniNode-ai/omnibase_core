@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 Risk Assessment Model
 
 Type-safe risk assessment information.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelRiskAssessment(BaseModel):

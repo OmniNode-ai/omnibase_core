@@ -1,10 +1,8 @@
-from pydantic import Field
-
 """Tool discovery result model with validation details."""
 
 from pathlib import Path
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.discovery.model_discovery_config import ModelDiscoveryConfig
 from omnibase_core.models.discovery.model_tool_discovery_error import (

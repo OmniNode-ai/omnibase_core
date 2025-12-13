@@ -1,12 +1,3 @@
-from __future__ import annotations
-
-import hashlib
-
-from pydantic import Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
 """
 Function Node Core Model.
 
@@ -14,17 +5,21 @@ Core function information and signature details.
 Part of the ModelFunctionNode restructuring to reduce excessive string fields.
 """
 
+from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_function_status import EnumFunctionStatus
 from omnibase_core.enums.enum_function_type import EnumFunctionType
 from omnibase_core.enums.enum_parameter_type import EnumParameterType
 from omnibase_core.enums.enum_return_type import EnumReturnType
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 
 

@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Model for contract reference representation in ONEX NodeBase implementation.
 
@@ -10,7 +8,7 @@ unified contract loading and $ref resolution.
 
 from pathlib import Path
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelContractReference(BaseModel):

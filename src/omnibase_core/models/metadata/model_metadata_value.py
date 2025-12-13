@@ -1,9 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Metadata value model.
 
@@ -11,12 +5,15 @@ Type-safe metadata value container that replaces Union[str, int, float, bool]
 with structured validation and proper type handling for metadata fields.
 """
 
-from pydantic import BaseModel, model_validator
+from __future__ import annotations
+
+from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_cli_value_type import EnumCliValueType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Use object for internal storage with field validator ensuring proper types
 # This avoids primitive union violations while maintaining type safety through validation

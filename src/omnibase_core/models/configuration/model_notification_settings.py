@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 Notification Settings Model.
 
 Notification settings for priority levels.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelNotificationSettings(BaseModel):

@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 Health Attributes Model
 
 Type-safe health attributes that replace Dict[str, Any] usage.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.service.model_custom_fields import ModelCustomFields
 

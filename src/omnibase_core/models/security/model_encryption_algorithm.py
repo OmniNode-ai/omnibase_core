@@ -1,12 +1,10 @@
-from pydantic import Field, field_validator
-
 """
 ModelEncryptionAlgorithm: Encryption algorithm configuration.
 
 This model represents encryption algorithm specifications and parameters.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 
 class ModelEncryptionAlgorithm(BaseModel):

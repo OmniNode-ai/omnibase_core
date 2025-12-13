@@ -1,11 +1,3 @@
-from __future__ import annotations
-
-from typing import TypeVar
-
-from pydantic import Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Output format options model for CLI operations.
 
@@ -13,14 +5,17 @@ Structured replacement for dict[str, str] output format options with proper typi
 Follows ONEX one-model-per-file naming conventions.
 """
 
-from typing import Any, cast
+from __future__ import annotations
 
-from pydantic import BaseModel
+from typing import Any, TypeVar, cast
+
+from pydantic import BaseModel, Field
 
 from omnibase_core.decorators import allow_dict_any
 from omnibase_core.enums.enum_color_scheme import EnumColorScheme
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_table_alignment import EnumTableAlignment
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.infrastructure.model_value import ModelValue
 from omnibase_core.models.utils.model_field_converter import ModelFieldConverterRegistry
 from omnibase_core.types.typed_dict_output_format_options_kwargs import (

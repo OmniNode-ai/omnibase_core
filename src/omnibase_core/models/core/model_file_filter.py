@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 FileFilter model.
 """
 
 from pathlib import Path
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums import EnumIgnorePatternSource, EnumTraversalMode
 

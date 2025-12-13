@@ -1,12 +1,10 @@
-from pydantic import Field
-
 """
 Trend data point model for time series data.
 """
 
 from datetime import datetime
 
-from pydantic import BaseModel, field_serializer
+from pydantic import BaseModel, Field, field_serializer
 
 
 class ModelTrendPoint(BaseModel):

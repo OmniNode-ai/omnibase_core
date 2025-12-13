@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 """
 Result field accessor for CLI results and output data.
 
 Specialized accessor for handling CLI execution results and metadata.
 """
 
+from __future__ import annotations
 
 from typing import Any
 

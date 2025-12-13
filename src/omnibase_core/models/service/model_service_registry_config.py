@@ -1,12 +1,3 @@
-from __future__ import annotations
-
-from typing import Any
-
-from pydantic import Field, field_validator
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Service Registry Configuration Model for ONEX Configuration-Driven Registry System.
 
@@ -15,11 +6,14 @@ Extracted from model_service_configuration.py for modular architecture complianc
 
 """
 
+from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 if TYPE_CHECKING:

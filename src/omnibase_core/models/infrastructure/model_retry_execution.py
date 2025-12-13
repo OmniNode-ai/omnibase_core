@@ -1,9 +1,3 @@
-from __future__ import annotations
-
-from datetime import datetime
-
-from pydantic import Field
-
 """
 Retry Execution Model.
 
@@ -11,10 +5,11 @@ Execution tracking and state management for retries.
 Part of the ModelRetryPolicy restructuring to reduce excessive string fields.
 """
 
+from __future__ import annotations
 
-from datetime import UTC, timedelta
+from datetime import UTC, datetime, timedelta
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.types.type_serializable_value import SerializedDict

@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 Execution Mode Model
 
@@ -7,8 +5,7 @@ Replaces EnumExecutionMode with a proper model that includes all properties
 as fields instead of methods.
 """
 
-
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ModelExecutionMode(BaseModel):

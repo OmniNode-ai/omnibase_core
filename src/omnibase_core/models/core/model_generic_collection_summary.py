@@ -1,10 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Generic collection summary model.
 
@@ -12,10 +5,15 @@ Strongly-typed summary for generic collections that replaces Dict[str, Any]
 anti-pattern with proper type safety.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelGenericCollectionSummary(BaseModel):

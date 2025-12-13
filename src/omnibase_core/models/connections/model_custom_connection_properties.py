@@ -1,9 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field, model_validator
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Custom connection properties model for connection configuration.
 
@@ -11,15 +5,17 @@ Restructured using composition to reduce string field violations.
 Each sub-model handles a specific concern area.
 """
 
+from __future__ import annotations
 
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_instance_type import EnumInstanceType
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types import SerializedDict
 
 from .model_cloud_service_properties import ModelCloudServiceProperties
