@@ -30,6 +30,11 @@ class TestEnumHandlerType:
         assert EnumHandlerType.REDIS == "redis"
         assert EnumHandlerType.EVENT_BUS == "event_bus"
 
+    def test_local_handler_type_value(self):
+        """Test that LOCAL handler type value is correct (v0.4.0+)."""
+        assert EnumHandlerType.LOCAL == "local"
+        assert EnumHandlerType.LOCAL.value == "local"
+
     def test_enum_inheritance(self):
         """Test that enum inherits from str and Enum."""
         assert issubclass(EnumHandlerType, str)
@@ -42,12 +47,13 @@ class TestEnumHandlerType:
         assert str(EnumHandlerType.NAMED) == "EnumHandlerType.NAMED"
         assert str(EnumHandlerType.HTTP) == "EnumHandlerType.HTTP"
         assert str(EnumHandlerType.DATABASE) == "EnumHandlerType.DATABASE"
+        assert str(EnumHandlerType.LOCAL) == "EnumHandlerType.LOCAL"
 
     def test_enum_iteration(self):
         """Test that we can iterate over enum values."""
         values = list(EnumHandlerType)
-        # 3 legacy + 9 concrete = 12 total
-        assert len(values) == 12
+        # 3 legacy + 9 concrete + 1 dev/test = 13 total
+        assert len(values) == 13
         # Legacy types
         assert EnumHandlerType.EXTENSION in values
         assert EnumHandlerType.SPECIAL in values
@@ -62,6 +68,8 @@ class TestEnumHandlerType:
         assert EnumHandlerType.GRAPH_DATABASE in values
         assert EnumHandlerType.REDIS in values
         assert EnumHandlerType.EVENT_BUS in values
+        # Dev/test types
+        assert EnumHandlerType.LOCAL in values
 
     def test_enum_membership(self):
         """Test membership testing."""
@@ -79,6 +87,8 @@ class TestEnumHandlerType:
         assert "graph_database" in EnumHandlerType
         assert "redis" in EnumHandlerType
         assert "event_bus" in EnumHandlerType
+        # Dev/test types
+        assert "local" in EnumHandlerType
         # Invalid
         assert "invalid" not in EnumHandlerType
 
@@ -89,6 +99,7 @@ class TestEnumHandlerType:
         assert EnumHandlerType.NAMED == "named"
         assert EnumHandlerType.HTTP == "http"
         assert EnumHandlerType.DATABASE == "database"
+        assert EnumHandlerType.LOCAL == "local"
 
     def test_enum_serialization(self):
         """Test enum serialization."""
@@ -106,6 +117,8 @@ class TestEnumHandlerType:
         assert EnumHandlerType.GRAPH_DATABASE.value == "graph_database"
         assert EnumHandlerType.REDIS.value == "redis"
         assert EnumHandlerType.EVENT_BUS.value == "event_bus"
+        # Dev/test types
+        assert EnumHandlerType.LOCAL.value == "local"
 
     def test_enum_deserialization(self):
         """Test enum deserialization."""
@@ -123,6 +136,8 @@ class TestEnumHandlerType:
         assert EnumHandlerType("graph_database") == EnumHandlerType.GRAPH_DATABASE
         assert EnumHandlerType("redis") == EnumHandlerType.REDIS
         assert EnumHandlerType("event_bus") == EnumHandlerType.EVENT_BUS
+        # Dev/test types
+        assert EnumHandlerType("local") == EnumHandlerType.LOCAL
 
     def test_enum_invalid_values(self):
         """Test that invalid values raise ValueError."""
@@ -147,6 +162,8 @@ class TestEnumHandlerType:
             "graph_database",
             "redis",
             "event_bus",
+            # Dev/test types
+            "local",
         ]
         assert set(all_values) == set(expected_values)
 
@@ -157,6 +174,8 @@ class TestEnumHandlerType:
             in EnumHandlerType.__doc__
         )
         assert "v0.3.6" in EnumHandlerType.__doc__
+        assert "v0.4.0" in EnumHandlerType.__doc__
+        assert "LOCAL" in EnumHandlerType.__doc__
 
     def test_handler_type_categories(self):
         """Test that handler types represent different categories."""
@@ -174,6 +193,8 @@ class TestEnumHandlerType:
         assert EnumHandlerType.GRAPH_DATABASE in EnumHandlerType
         assert EnumHandlerType.REDIS in EnumHandlerType
         assert EnumHandlerType.EVENT_BUS in EnumHandlerType
+        # Dev/test handler types
+        assert EnumHandlerType.LOCAL in EnumHandlerType
 
 
 class TestEnumHandlerTypeConcreteCategories:
@@ -208,6 +229,20 @@ class TestEnumHandlerTypeConcreteCategories:
         }
         for handler in system_handlers:
             assert handler in EnumHandlerType
+
+    def test_dev_test_handlers(self):
+        """Test handlers for development/testing operations (v0.4.0+)."""
+        dev_handlers = {
+            EnumHandlerType.LOCAL,
+        }
+        for handler in dev_handlers:
+            assert handler in EnumHandlerType
+
+    def test_local_handler_is_dev_test_only(self):
+        """Test that LOCAL handler is marked as dev/test only in docstring."""
+        # The LOCAL enum member should have a docstring warning about dev/test only
+        assert "dev/test" in EnumHandlerType.LOCAL.__doc__.lower()
+        assert "not for production" in EnumHandlerType.LOCAL.__doc__.lower()
 
     def test_backwards_compatibility(self):
         """Test that legacy enum values still work for backwards compatibility."""
