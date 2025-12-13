@@ -1,19 +1,21 @@
-from __future__ import annotations
-
-from pydantic import Field
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Strongly-typed FSM data structure model.
 
 Replaces dict[str, Any] usage in FSM operations with structured typing.
 Follows ONEX strong typing principles and one-model-per-file architecture.
+
+Deep Immutability:
+    This model uses frozen=True for Pydantic immutability, but also uses
+    immutable types (tuple instead of list, tuple-of-tuples instead of dict)
+    for deep immutability. This ensures that nested collections cannot be
+    modified after construction.
 """
 
-from pydantic import BaseModel
+from __future__ import annotations
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .model_fsm_state import ModelFsmState
 from .model_fsm_transition import ModelFsmTransition
@@ -21,13 +23,27 @@ from .model_fsm_transition import ModelFsmTransition
 
 class ModelFsmData(BaseModel):
     """
-    Strongly-typed FSM data structure.
+    Strongly-typed FSM data structure with deep immutability.
 
     Replaces dict[str, Any] with structured FSM model.
     Implements Core protocols:
     - Executable: Execution management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification
+
+    Deep Immutability:
+        All collection fields use immutable types:
+        - states/transitions/global_actions: tuple instead of list
+        - variables/metadata: tuple[tuple[str, str], ...] instead of dict
+
+        Validators automatically convert incoming lists/dicts to frozen types
+        for convenience during model construction.
+
+    Accessing dict-like fields:
+        For variables and metadata, use dict() to convert back:
+        >>> fsm = ModelFsmData(...)
+        >>> vars_dict = dict(fsm.variables)  # Convert to dict for lookup
+        >>> meta_dict = dict(fsm.metadata)
     """
 
     state_machine_name: str = Field(
@@ -35,19 +51,71 @@ class ModelFsmData(BaseModel):
     )
     description: str = Field(default="", description="State machine description")
     initial_state: str = Field(default=..., description="Initial state name")
-    states: list[ModelFsmState] = Field(default=..., description="List of states")
-    transitions: list[ModelFsmTransition] = Field(
-        default=..., description="List of transitions"
+    states: tuple[ModelFsmState, ...] = Field(
+        default=..., description="Tuple of states (immutable)"
     )
-    variables: dict[str, str] = Field(
-        default_factory=dict, description="State machine variables"
+    transitions: tuple[ModelFsmTransition, ...] = Field(
+        default=..., description="Tuple of transitions (immutable)"
     )
-    global_actions: list[str] = Field(
-        default_factory=list, description="Global actions available"
+    variables: tuple[tuple[str, str], ...] = Field(
+        default=(), description="State machine variables as frozen key-value pairs"
     )
-    metadata: dict[str, str] = Field(
-        default_factory=dict, description="Additional metadata"
+    global_actions: tuple[str, ...] = Field(
+        default=(), description="Global actions available (immutable)"
     )
+    metadata: tuple[tuple[str, str], ...] = Field(
+        default=(), description="Additional metadata as frozen key-value pairs"
+    )
+
+    @field_validator("states", mode="before")
+    @classmethod
+    def _convert_states_to_tuple(
+        cls, v: list[Any] | tuple[Any, ...] | Any
+    ) -> tuple[Any, ...]:
+        """Convert list of states to tuple for deep immutability."""
+        if isinstance(v, list):
+            return tuple(v)
+        return v
+
+    @field_validator("transitions", mode="before")
+    @classmethod
+    def _convert_transitions_to_tuple(
+        cls, v: list[Any] | tuple[Any, ...] | Any
+    ) -> tuple[Any, ...]:
+        """Convert list of transitions to tuple for deep immutability."""
+        if isinstance(v, list):
+            return tuple(v)
+        return v
+
+    @field_validator("global_actions", mode="before")
+    @classmethod
+    def _convert_global_actions_to_tuple(
+        cls, v: list[str] | tuple[str, ...] | Any
+    ) -> tuple[str, ...]:
+        """Convert list of global actions to tuple for deep immutability."""
+        if isinstance(v, list):
+            return tuple(v)
+        return v
+
+    @field_validator("variables", mode="before")
+    @classmethod
+    def _convert_variables_to_frozen(
+        cls, v: dict[str, str] | tuple[tuple[str, str], ...] | Any
+    ) -> tuple[tuple[str, str], ...]:
+        """Convert dict to tuple of tuples for deep immutability."""
+        if isinstance(v, dict):
+            return tuple(v.items())
+        return v
+
+    @field_validator("metadata", mode="before")
+    @classmethod
+    def _convert_metadata_to_frozen(
+        cls, v: dict[str, str] | tuple[tuple[str, str], ...] | Any
+    ) -> tuple[tuple[str, str], ...]:
+        """Convert dict to tuple of tuples for deep immutability."""
+        if isinstance(v, dict):
+            return tuple(v.items())
+        return v
 
     def get_state_by_name(self, name: str) -> ModelFsmState | None:
         """Get a state by name."""
@@ -90,43 +158,45 @@ class ModelFsmData(BaseModel):
 
         return errors
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        frozen=True,
+    )
 
     # Protocol method implementations
 
     def execute(self, **kwargs: object) -> bool:
-        """Execute or update execution status (Executable protocol)."""
-        try:
-            # Update any relevant execution fields
-            for key, value in kwargs.items():
-                if hasattr(self, key):
-                    setattr(self, key, value)
-            return True
-        except Exception as e:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Operation failed: {e}",
-            ) from e
+        """Execute or update execution status (Executable protocol).
+
+        Note: In v1.0, this method returns True without modification.
+        The model is frozen (immutable) for thread safety.
+        """
+        # v1.0: Model is frozen, so setattr is not allowed
+        _ = kwargs  # Explicitly mark as unused
+        return True
 
     def serialize(self) -> dict[str, object]:
         """Serialize to dictionary (Serializable protocol)."""
         return self.model_dump(exclude_none=False, by_alias=True)
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (ProtocolValidatable protocol)."""
-        try:
-            # Basic validation - ensure required fields exist
-            # Override in specific models for custom validation
-            return True
-        except Exception as e:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Operation failed: {e}",
-            ) from e
+        """Validate instance integrity (ProtocolValidatable protocol).
+
+        Validates that required fields have valid values:
+        - state_machine_name must be a non-empty, non-whitespace string
+        - initial_state must be a non-empty, non-whitespace string
+
+        Returns:
+            bool: True if validation passed, False otherwise
+        """
+        # Validate state_machine_name is non-empty
+        if not self.state_machine_name or not self.state_machine_name.strip():
+            return False
+        # Validate initial_state is non-empty
+        if not self.initial_state or not self.initial_state.strip():
+            return False
+        return True
 
 
 # Export for use

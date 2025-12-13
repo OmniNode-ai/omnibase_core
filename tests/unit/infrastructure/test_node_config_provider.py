@@ -322,7 +322,7 @@ class TestNodeConfigProviderSchema:
         compute_workers_schema = schema["compute.max_parallel_workers"]
         assert isinstance(compute_workers_schema, ModelNodeConfigSchema)
 
-        # Verify values using Pydantic model attribute access
+        # Verify values
         assert compute_workers_schema.key == "compute.max_parallel_workers"
         assert compute_workers_schema.type == "int"
         assert compute_workers_schema.default == 4

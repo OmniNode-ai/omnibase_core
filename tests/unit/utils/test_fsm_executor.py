@@ -15,13 +15,13 @@ from omnibase_core.models.contracts.subcontracts.model_fsm_state_transition impo
 from omnibase_core.models.contracts.subcontracts.model_fsm_subcontract import (
     ModelFSMSubcontract,
 )
-from omnibase_core.models.contracts.subcontracts.model_fsm_transition_condition import (
-    ModelFSMTransitionCondition,
-)
-from omnibase_core.models.contracts.subcontracts.model_fsmtransitionaction import (
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.fsm.model_fsm_transition_action import (
     ModelFSMTransitionAction,
 )
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.fsm.model_fsm_transition_condition import (
+    ModelFSMTransitionCondition,
+)
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.utils.fsm_executor import (
     FSMState,
@@ -134,9 +134,8 @@ def fsm_with_conditions() -> ModelFSMSubcontract:
                     ModelFSMTransitionCondition(
                         condition_name="has_data",
                         condition_type="field_check",
-                        expression="data_count min_length 1",
+                        expression="data_count_len >= 1",
                         required=True,
-                        version=ModelSemVer(major=1, minor=0, patch=0),
                     )
                 ],
                 version=ModelSemVer(major=1, minor=0, patch=0),
@@ -188,7 +187,6 @@ def fsm_with_actions() -> ModelFSMSubcontract:
                         action_type="setup",
                         execution_order=1,
                         is_critical=True,
-                        version=ModelSemVer(major=1, minor=0, patch=0),
                     )
                 ],
                 version=ModelSemVer(major=1, minor=0, patch=0),
@@ -273,7 +271,7 @@ class TestFSMConditions:
     @pytest.mark.asyncio
     async def test_condition_met(self, fsm_with_conditions: ModelFSMSubcontract):
         """Test transition when condition is met."""
-        context = {"data_count": [1, 2, 3]}  # Has data
+        context = {"data_count_len": 3}  # Has data (length >= 1)
 
         result = await execute_transition(fsm_with_conditions, "idle", "start", context)
 
@@ -283,7 +281,7 @@ class TestFSMConditions:
     @pytest.mark.asyncio
     async def test_condition_not_met(self, fsm_with_conditions: ModelFSMSubcontract):
         """Test transition when condition is not met."""
-        context = {"data_count": []}  # Empty list
+        context = {"data_count_len": 0}  # Empty (length < 1)
 
         result = await execute_transition(fsm_with_conditions, "idle", "start", context)
 
@@ -301,7 +299,7 @@ class TestFSMConditions:
         self, fsm_with_conditions: ModelFSMSubcontract
     ):
         """Test transition when condition field is missing."""
-        context = {}  # No data_count field
+        context = {}  # No data_count_len field
 
         result = await execute_transition(fsm_with_conditions, "idle", "start", context)
 
@@ -677,19 +675,19 @@ class TestFSMState:
         assert isinstance(state, FSMState)
         assert state.current_state == "idle"
         assert state.context == {}
-        assert state.history == []
+        assert state.history == ()
 
     def test_fsm_state_creation(self):
         """Test FSM state creation with context."""
         state = FSMState(
             current_state="running",
             context={"data": [1, 2, 3]},
-            history=["idle"],
+            history=("idle",),
         )
 
         assert state.current_state == "running"
         assert state.context["data"] == [1, 2, 3]
-        assert state.history == ["idle"]
+        assert state.history == ("idle",)
 
 
 class TestWildcardTransitions:
@@ -795,7 +793,7 @@ class TestPersistenceIntents:
         assert not fsm_with_conditions.persistence_enabled
 
         result = await execute_transition(
-            fsm_with_conditions, "idle", "start", {"data_count": [1, 2, 3]}
+            fsm_with_conditions, "idle", "start", {"data_count_len": 3}
         )
 
         persist_intents = [

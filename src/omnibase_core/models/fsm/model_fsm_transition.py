@@ -1,56 +1,92 @@
-from __future__ import annotations
-
-from pydantic import Field
-
 """
 Strongly-typed FSM transition model.
 
 Replaces dict[str, Any] usage in FSM transition operations with structured typing.
 Follows ONEX strong typing principles and one-model-per-file architecture.
+
+Deep Immutability:
+    This model uses frozen=True for Pydantic immutability, and also uses
+    immutable types (tuple instead of list) for deep immutability. This
+    ensures that nested collections cannot be modified after construction.
 """
 
+from __future__ import annotations
 
-from pydantic import BaseModel
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class ModelFsmTransition(BaseModel):
     """
-    Strongly-typed FSM transition.
+    Strongly-typed FSM transition with deep immutability.
+
     Implements Core protocols:
     - Executable: Execution management capabilities
     - Serializable: Data serialization/deserialization
     - Validatable: Validation and verification
+
+    Deep Immutability:
+        All collection fields use immutable types:
+        - conditions: tuple[str, ...] instead of list[str]
+        - actions: tuple[str, ...] instead of list[str]
+
+        Validators automatically convert incoming lists to frozen tuples
+        for convenience during model construction.
     """
 
-    from_state: str = Field(default=..., description="Source state of transition")
-    to_state: str = Field(default=..., description="Target state of transition")
-    trigger: str = Field(default=..., description="Event that triggers the transition")
-    conditions: list[str] = Field(
-        default_factory=list, description="Conditions for transition"
+    from_state: str = Field(
+        default=..., min_length=1, description="Source state of transition"
     )
-    actions: list[str] = Field(
-        default_factory=list, description="Actions to execute on transition"
+    to_state: str = Field(
+        default=..., min_length=1, description="Target state of transition"
+    )
+    trigger: str = Field(
+        default=..., min_length=1, description="Event that triggers the transition"
+    )
+    conditions: tuple[str, ...] = Field(
+        default=(), description="Conditions for transition"
+    )
+    actions: tuple[str, ...] = Field(
+        default=(), description="Actions to execute on transition"
     )
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    @field_validator("conditions", mode="before")
+    @classmethod
+    def _convert_conditions_to_tuple(
+        cls, v: list[Any] | tuple[Any, ...] | Any
+    ) -> tuple[str, ...]:
+        """Convert list of conditions to tuple for deep immutability."""
+        if isinstance(v, list):
+            return tuple(v)
+        return v
+
+    @field_validator("actions", mode="before")
+    @classmethod
+    def _convert_actions_to_tuple(
+        cls, v: list[Any] | tuple[Any, ...] | Any
+    ) -> tuple[str, ...]:
+        """Convert list of actions to tuple for deep immutability."""
+        if isinstance(v, list):
+            return tuple(v)
+        return v
+
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        frozen=True,
+    )
 
     # Protocol method implementations
 
     def execute(self, **kwargs: object) -> bool:
         """Execute or update execution status (Executable protocol).
 
-        Raises:
-            AttributeError: If setting an attribute fails
-            Exception: If execution logic fails
+        Note: In v1.0, this method returns True without modification.
+        The model is frozen (immutable) for thread safety.
         """
-        # Update any relevant execution fields
-        for key, value in kwargs.items():
-            if hasattr(self, key):
-                setattr(self, key, value)
+        # v1.0: Model is frozen, so setattr is not allowed
+        _ = kwargs  # Explicitly mark as unused
         return True
 
     def serialize(self) -> dict[str, object]:
@@ -60,14 +96,23 @@ class ModelFsmTransition(BaseModel):
     def validate_instance(self) -> bool:
         """Validate instance integrity (ProtocolValidatable protocol).
 
-        Returns:
-            True if validation passes
+        Validates that required fields have valid values:
+        - from_state must be a non-whitespace string (min_length enforced by Pydantic)
+        - to_state must be a non-whitespace string (min_length enforced by Pydantic)
+        - trigger must be a non-whitespace string (min_length enforced by Pydantic)
 
-        Note:
-            Override in subclasses for custom validation logic.
+        Returns:
+            bool: True if validation passed, False otherwise
         """
-        # Basic validation - ensure required fields exist
-        # Override in specific models for custom validation
+        # Validate from_state is not whitespace-only
+        if not self.from_state.strip():
+            return False
+        # Validate to_state is not whitespace-only
+        if not self.to_state.strip():
+            return False
+        # Validate trigger is not whitespace-only
+        if not self.trigger.strip():
+            return False
         return True
 
 

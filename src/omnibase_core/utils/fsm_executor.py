@@ -4,15 +4,13 @@ FSM execution utilities for declarative state machines.
 Pure functions for executing FSM transitions from ModelFSMSubcontract.
 No side effects - returns results and intents.
 
-Typing: Strongly typed with SerializedDict for runtime context.
-Context dictionaries use SerializedDict as they contain JSON-serializable execution data.
+Typing: Strongly typed with FSMContextType for runtime context flexibility.
+Context dictionaries use FSMContextType (dict[str, Any]) to allow dynamic execution data
+while maintaining type clarity for FSM-specific usage.
 """
 
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any
-
-if TYPE_CHECKING:
-    from omnibase_core.types.type_serializable_value import SerializedDict
+from typing import SupportsFloat, cast
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.contracts.subcontracts.model_fsm_state_definition import (
@@ -24,24 +22,25 @@ from omnibase_core.models.contracts.subcontracts.model_fsm_state_transition impo
 from omnibase_core.models.contracts.subcontracts.model_fsm_subcontract import (
     ModelFSMSubcontract,
 )
-from omnibase_core.models.contracts.subcontracts.model_fsm_transition_condition import (
-    ModelFSMTransitionCondition,
-)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.fsm.model_fsm_state_snapshot import (
     ModelFSMStateSnapshot as FSMState,
+)
+from omnibase_core.models.fsm.model_fsm_transition_condition import (
+    ModelFSMTransitionCondition,
 )
 from omnibase_core.models.fsm.model_fsm_transition_result import (
     ModelFSMTransitionResult as FSMTransitionResult,
 )
 from omnibase_core.models.reducer.model_intent import ModelIntent
+from omnibase_core.types.type_fsm_context import FSMContextType
 
 
 async def execute_transition(
     fsm: ModelFSMSubcontract,
     current_state: str,
     trigger: str,
-    context: "SerializedDict",
+    context: FSMContextType,
 ) -> FSMTransitionResult:
     """
     Execute FSM transition declaratively from YAML contract.
@@ -138,7 +137,7 @@ async def execute_transition(
             new_state=current_state,  # Stay in current state
             old_state=current_state,
             transition_name=transition.transition_name,
-            intents=intents,
+            intents=tuple(intents),  # Convert to tuple for immutability
             error="Transition conditions not met",
         )
 
@@ -206,11 +205,11 @@ async def execute_transition(
         new_state=transition.to_state,
         old_state=current_state,
         transition_name=transition.transition_name,
-        intents=intents,
-        metadata={
-            "conditions_evaluated": len(transition.conditions or []),
-            "actions_executed": len(transition.actions or []),
-        },
+        intents=tuple(intents),  # Convert to tuple for immutability
+        metadata=(
+            ("conditions_evaluated", len(transition.conditions or [])),
+            ("actions_executed", len(transition.actions or [])),
+        ),
     )
 
 
@@ -333,7 +332,7 @@ def get_initial_state(fsm: ModelFSMSubcontract) -> FSMState:
             state = get_initial_state(fsm)
             print(f"Starting in state: {state.current_state}")  # "start"
             print(f"Context: {state.context}")                  # {}
-            print(f"History: {state.history}")                  # []
+            print(f"History: {state.history}")                  # ()
 
             # Use state for first transition
             result = await execute_transition(
@@ -343,7 +342,7 @@ def get_initial_state(fsm: ModelFSMSubcontract) -> FSMState:
                 context=state.context,
             )
     """
-    return FSMState(current_state=fsm.initial_state, context={}, history=[])
+    return FSMState(current_state=fsm.initial_state, context={}, history=())
 
 
 # Private helper functions
@@ -378,7 +377,7 @@ def _find_transition(
 
 async def _evaluate_conditions(
     transition: ModelFSMStateTransition,
-    context: "SerializedDict",
+    context: FSMContextType,
 ) -> bool:
     """
     Evaluate all transition conditions.
@@ -409,7 +408,7 @@ async def _evaluate_conditions(
 
 async def _evaluate_single_condition(
     condition: ModelFSMTransitionCondition,
-    context: "SerializedDict",
+    context: FSMContextType,
 ) -> bool:
     """
     Evaluate a single transition condition.
@@ -468,48 +467,80 @@ async def _evaluate_single_condition(
     field_value = context.get(field_name)
 
     # Evaluate based on operator
-    if operator == "equals":
+    # Standard operators (validated by ModelFSMTransitionCondition)
+    if operator == "==" or operator == "equals":
         # STRING-BASED COMPARISON: Both values are cast to str before comparison
         # This is INTENTIONAL to handle YAML/JSON config values consistently
         # Examples: 10 == "10" → True, True == "True" → True, None == "None" → True
-        # WARNING: Type information is lost! Use greater_than/less_than for numeric checks
+        # WARNING: Type information is lost! Use >/< operators for numeric checks
         # See function docstring for complete type coercion behavior documentation
         return str(field_value) == str(expected_value)
-    elif operator == "not_equals":
+    elif operator == "!=" or operator == "not_equals":
         # STRING-BASED COMPARISON: Both values are cast to str before comparison
         # This is INTENTIONAL to handle YAML/JSON config values consistently
         # Examples: 10 != "10" → False, True != "True" → False
-        # WARNING: Type information is lost! Use greater_than/less_than for numeric checks
+        # WARNING: Type information is lost! Use >/< operators for numeric checks
         # See function docstring for complete type coercion behavior documentation
         return str(field_value) != str(expected_value)
-    elif operator == "min_length":
-        if not field_value:
-            return False
+    elif operator == ">":
         try:
-            return len(field_value) >= int(expected_value or "0")
+            # Cast to SupportsFloat - TypeError caught if not actually numeric
+            return float(cast(SupportsFloat, field_value) or 0) > float(
+                expected_value or "0"
+            )
         except (TypeError, ValueError):
             return False
-    elif operator == "max_length":
-        if not field_value:
+    elif operator == "<":
+        try:
+            # Cast to SupportsFloat - TypeError caught if not actually numeric
+            return float(cast(SupportsFloat, field_value) or 0) < float(
+                expected_value or "0"
+            )
+        except (TypeError, ValueError):
+            return False
+    elif operator == ">=":
+        try:
+            # Cast to SupportsFloat - TypeError caught if not actually numeric
+            return float(cast(SupportsFloat, field_value) or 0) >= float(
+                expected_value or "0"
+            )
+        except (TypeError, ValueError):
+            return False
+    elif operator == "<=":
+        try:
+            # Cast to SupportsFloat - TypeError caught if not actually numeric
+            return float(cast(SupportsFloat, field_value) or 0) <= float(
+                expected_value or "0"
+            )
+        except (TypeError, ValueError):
+            return False
+    elif operator == "in":
+        # Check if field_value is in expected_value (comma-separated list or iterable)
+        if expected_value is None:
+            return False
+        expected_list = [v.strip() for v in str(expected_value).split(",")]
+        return str(field_value) in expected_list
+    elif operator == "not_in":
+        # Check if field_value is NOT in expected_value (comma-separated list)
+        if expected_value is None:
             return True
-        try:
-            return len(field_value) <= int(expected_value or "0")
-        except (TypeError, ValueError):
+        expected_list = [v.strip() for v in str(expected_value).split(",")]
+        return str(field_value) not in expected_list
+    elif operator == "contains":
+        # Check if field_value contains expected_value as substring
+        if field_value is None:
             return False
-    elif operator == "greater_than":
-        try:
-            return float(field_value or 0) > float(expected_value or "0")
-        except (TypeError, ValueError):
+        return str(expected_value) in str(field_value)
+    elif operator == "matches":
+        # Regex match (basic pattern matching)
+        import re
+
+        if field_value is None:
             return False
-    elif operator == "less_than":
         try:
-            return float(field_value or 0) < float(expected_value or "0")
-        except (TypeError, ValueError):
+            return bool(re.match(str(expected_value), str(field_value)))
+        except re.error:
             return False
-    elif operator == "exists":
-        return field_name in context
-    elif operator == "not_exists":
-        return field_name not in context
 
     # Unknown operator - fail safe
     return False
@@ -519,7 +550,7 @@ async def _execute_state_actions(
     fsm: ModelFSMSubcontract,
     state: ModelFSMStateDefinition,
     action_type: str,  # "entry" or "exit"
-    context: "SerializedDict",
+    context: FSMContextType,
 ) -> list[ModelIntent]:
     """
     Execute state entry/exit actions, returning intents.
@@ -563,7 +594,7 @@ async def _execute_state_actions(
 
 async def _execute_transition_actions(
     transition: ModelFSMStateTransition,
-    context: "SerializedDict",
+    context: FSMContextType,
 ) -> list[ModelIntent]:
     """
     Execute transition actions, returning intents.

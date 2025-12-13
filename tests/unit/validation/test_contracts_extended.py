@@ -941,7 +941,8 @@ description: Test contract
 """,
         )
 
-        # Mock open to raise an OSError (realistic for file I/O issues)
+        # Mock open to raise an OSError (the appropriate exception for I/O errors)
+        # The validate_yaml_file function catches OSError for file reading errors
         with patch("builtins.open", side_effect=OSError("Read error")):
             errors = validate_yaml_file(yaml_file)
 

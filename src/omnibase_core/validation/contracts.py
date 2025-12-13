@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import yaml
+from pydantic import ValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_validation_metadata import (
@@ -107,6 +108,9 @@ def validate_yaml_file(file_path: Path) -> list[str]:
         except yaml.YAMLError as e:
             # Collect YAML parsing errors
             errors.append(f"YAML parsing failed: {e}")
+        except ValidationError as e:
+            # Collect Pydantic validation errors for missing/invalid fields
+            errors.append(f"Contract validation failed: {e}")
         except ModelOnexError as e:
             # Collect structured validation errors
             errors.append(f"Contract validation failed: {e.message}")
