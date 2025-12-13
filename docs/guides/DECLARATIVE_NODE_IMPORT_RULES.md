@@ -60,6 +60,7 @@ from omnibase_core.nodes import NodeCompute, NodeReducer, NodeOrchestrator, Node
 - Creates implicit dependencies that break determinism
 
 **Blocked Patterns**:
+
 ```python
 # BLOCKED - typing.Any
 from typing import Any
@@ -75,6 +76,7 @@ metadata: dict[str, Any] = {}
 ```
 
 **Correct Alternatives**:
+
 ```python
 # Use specific types
 from typing import TypedDict
@@ -117,6 +119,7 @@ def process(self, data: ModelComputeInput) -> ModelComputeOutput:
 | `MixinServiceRegistry` | Service registry access - external I/O |
 
 **Blocked Import Patterns**:
+
 ```python
 # BLOCKED in NodeCompute/NodeReducer
 from omnibase_core.mixins import MixinEventBus
@@ -135,6 +138,7 @@ from omnibase_core.mixins.mixin_event_bus import MixinEventBus
 - Violates 4-node architecture - effects belong in `NodeEffect`
 
 **Blocked Imports**:
+
 ```python
 # BLOCKED - Event bus protocols
 from omnibase_core.protocols import ProtocolEventBus
@@ -160,6 +164,7 @@ from omnibase_core.events import publish_event, subscribe_to_topic
 **Note on `open()` behavior**: The linter allows `open()` in **read mode** (default mode, or explicit `'r'`). Only write modes (`'w'`, `'a'`, `'x'`, `'+'`) are blocked.
 
 **Blocked Patterns**:
+
 ```python
 # BLOCKED - File I/O (write modes)
 with open("file.txt", "w") as f:  # Write mode - BLOCKED
@@ -202,6 +207,7 @@ Pure nodes often need to read configuration files, schemas, or static data files
 **Best Practices** (prefer these over direct `open()`):
 
 1. **Inject Configuration**: Pass config as input parameters rather than reading files inside the node. Let orchestrators load configs.
+
    ```python
    # PREFERRED: Config injected as parameter
    class NodeMyCompute(NodeCompute):
@@ -211,6 +217,7 @@ Pure nodes often need to read configuration files, schemas, or static data files
    ```
 
 2. **Use Container Services**: Abstract file access behind mockable interfaces.
+
    ```python
    # PREFERRED: Use container service
    class NodeMyCompute(NodeCompute):
@@ -220,6 +227,7 @@ Pure nodes often need to read configuration files, schemas, or static data files
    ```
 
 3. **Load at Startup**: If files must be read, do it in `__init__` not in compute methods.
+
    ```python
    # ACCEPTABLE: Load once at init, document the dependency
    class NodeMyCompute(NodeCompute):
@@ -235,6 +243,7 @@ Pure nodes often need to read configuration files, schemas, or static data files
    ```
 
 4. **Document File Dependencies**: If your node reads files, document this clearly.
+
    ```python
    class NodeMyCompute(NodeCompute):
        """COMPUTE node for data transformation.
@@ -260,6 +269,7 @@ Pure nodes often need to read configuration files, schemas, or static data files
 - `uuid` for identifier generation
 
 **Best Practice Guidance**:
+
 While these imports are allowed by the linter, consider injecting values for maximum testability:
 
 ```python
@@ -378,12 +388,15 @@ These mixins maintain purity and are allowed:
 | `MixinWorkflowSupport` | Workflow support utilities | Pure workflow logic |
 | `MixinYAMLSerialization` | YAML serialization | Pure transformation |
 
+**Important**: Event-related mixins (`MixinEventBus`, `MixinEventDrivenNode`, `MixinEventHandler`, `MixinEventListener`, `MixinServiceRegistry`) are **NOT** allowed in pure nodes. See "Blocked Mixins" section above.
+
 ```python
 # ALLOWED in pure nodes
 from omnibase_core.mixins import MixinFSMExecution
 from omnibase_core.mixins import MixinComputeExecution
 from omnibase_core.mixins import MixinHashComputation
 from omnibase_core.mixins import MixinSerializable
+from omnibase_core.mixins import MixinDiscoveryResponder  # ✅ Read-only metadata
 ```
 
 ### Third-Party Libraries (Pure)

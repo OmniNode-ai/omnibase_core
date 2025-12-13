@@ -393,12 +393,12 @@ VALID_NODE_BASE_CLASSES = frozenset(
         "NodeCoreBase",
         "Generic",
         "ABC",
-        # Mixins are allowed
+        # Mixins are allowed (except those in FORBIDDEN_LEGACY_MIXINS)
         "MixinFSMExecution",
         "MixinWorkflowExecution",
         "MixinDiscoveryResponder",
-        "MixinEventHandler",
-        "MixinEventListener",
+        # MixinEventHandler - REMOVED (in FORBIDDEN_LEGACY_MIXINS)
+        # MixinEventListener - REMOVED (in FORBIDDEN_LEGACY_MIXINS)
         "MixinNodeExecutor",
         "MixinNodeLifecycle",
         "MixinRequestResponseIntrospection",

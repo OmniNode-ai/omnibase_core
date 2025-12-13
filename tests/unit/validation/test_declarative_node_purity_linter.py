@@ -2,9 +2,17 @@
 Unit tests for node purity linter - Legacy mixin import detection.
 
 AST-based detection of forbidden legacy mixin imports in pure nodes.
-Pure nodes (NodeCompute, NodeReducer) must only use approved mixins
-that are compatible with the pure node architecture. Impure nodes
-(NodeEffect, NodeOrchestrator) may use additional mixins for I/O and
+
+PURE NODES (subject to purity checks):
+- NodeCompute - Pure data processing and transformation
+- NodeReducer - Pure FSM-driven state management
+
+IMPURE NODES (not subject to purity checks):
+- NodeEffect - External I/O and side effects
+- NodeOrchestrator - Workflow-driven coordination with I/O
+
+Pure nodes must only use approved mixins that are compatible with the pure
+node architecture. Impure nodes may use additional mixins for I/O and
 event-driven coordination.
 
 FORBIDDEN MIXINS in pure nodes:
@@ -1303,6 +1311,33 @@ class TestAnyTypeHintDetectionInDeclarativeNodes:
         ]
         assert len(any_type_violations) >= 1, (
             "Expected ANY_TYPE_HINT violation for Callable[[str, Any, int], str]"
+        )
+
+    def test_detects_callable_any_first_argument(
+        self, analyze_source: Callable[[str], PurityAnalyzer]
+    ) -> None:
+        """Test that Any as first argument in Callable is detected.
+
+        Regression test from PR #172 review: Ensures the AST walker properly
+        traverses into Callable[[Any, int], str] patterns where Any is the
+        first argument in a multi-argument list.
+        """
+        source = """
+        from typing import Callable, Any
+        from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+
+        class NodeMyCompute(NodeCoreBase):
+            callback: Callable[[Any, int], str]
+        """
+        analyzer = analyze_source(source)
+
+        any_type_violations = [
+            v
+            for v in analyzer.violations
+            if v.violation_type == ViolationType.ANY_TYPE_HINT
+        ]
+        assert len(any_type_violations) >= 1, (
+            "Expected ANY_TYPE_HINT violation for Callable[[Any, int], str]"
         )
 
 
