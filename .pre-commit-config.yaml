@@ -83,39 +83,24 @@ repos:
         pass_filenames: true  # Only check changed files, not entire codebase
         stages: [pre-push]  # Moved to pre-push: ~1-5s for changed files only
 
-      # PYRIGHT FULL-CODEBASE SCANNING (pass_filenames: false)
+      # PYRIGHT CHANGED-FILES-ONLY (pass_filenames: true)
       # ===========================================================
-      # WHY FULL-CODEBASE SCANNING IS NECESSARY:
-      # Unlike mypy which can check individual files in isolation, pyright
-      # performs cross-file type inference that requires analyzing the entire
-      # type graph. When checking a single file, pyright may miss:
-      # - Type narrowing from imports that changed in other files
-      # - Protocol implementations that depend on base class changes
-      # - Generic type parameter propagation across module boundaries
-      # - Overload resolution that depends on imported signatures
+      # STRATEGY: Fast local check + comprehensive CI
+      # - Pre-push: Check only changed files (~1-5s)
+      # - CI: Full codebase scan catches cross-file type issues
       #
-      # EXPECTED RUNTIME:
-      # - Full codebase (~1865 files): 1-3 minutes depending on system
-      # - This is acceptable for pre-push (not every commit)
-      # - Significantly faster than running full test suite
-      #
-      # ALTERNATIVE APPROACH:
-      # If local pre-push is too slow, you can:
-      # 1. Skip with: git push --no-verify (CI will still catch issues)
-      # 2. Run manually: poetry run pyright src/omnibase_core/
-      # 3. CI provides authoritative type checking regardless
+      # TRADEOFF:
+      # Changed-files-only may miss cross-file type issues (e.g., if you
+      # change a function signature in file A, file B that imports it won't
+      # be checked locally). CI catches these comprehensively.
       #
       # CONFIGURATION:
-      # See pyrightconfig.json at repo root for:
-      # - Type checking strictness settings (currently: basic mode)
-      # - Include/exclude patterns for file discovery
-      # - Python version and platform settings
-      # - Pydantic plugin configuration
+      # See pyrightconfig.json for strictness settings (currently: basic mode)
+      # See OMN-200 for phase timeline to enable stricter rules
       #
       # DUAL-CHECKER RATIONALE:
-      # Running both mypy (strict) and pyright (basic) catches different
-      # categories of type errors. mypy uses pass_filenames=true for speed
-      # on changed files; pyright uses pass_filenames=false for accuracy.
+      # Both mypy (strict) and pyright (basic) check changed files only.
+      # CI runs both on full codebase for comprehensive coverage.
       - id: pyright-type-check
         name: pyright (type checking - basic)
         entry: poetry run pyright
@@ -123,8 +108,8 @@ repos:
         types: [python]
         files: ^src/omnibase_core/.*\.py$
         exclude: ^(tests/|src/omnibase_core/examples|archive/|archived/).*\.py$
-        pass_filenames: false  # pyright handles file discovery via pyrightconfig.json
-        stages: [pre-push]  # Runs alongside mypy for dual-checker coverage
+        pass_filenames: true  # Only check changed files, CI does full scan
+        stages: [pre-push]  # ~1-5s for changed files only
 
       # Cleanup: Clear tmp/ directory before commits
       # Prevents accumulation of temporary files from custom commands
