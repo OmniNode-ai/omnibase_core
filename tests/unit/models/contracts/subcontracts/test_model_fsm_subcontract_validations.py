@@ -9,6 +9,8 @@ This module tests the new validation rules added in OMN-575:
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.contracts.subcontracts.model_fsm_state_definition import (
     ModelFSMStateDefinition,

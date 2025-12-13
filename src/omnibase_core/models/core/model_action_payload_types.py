@@ -58,18 +58,7 @@ SpecificActionPayload = Union[
 def create_specific_action_payload(
     action_type: ModelNodeActionType,
     **kwargs: Any,
-) -> Union[
-    ModelLifecycleActionPayload,
-    ModelOperationalActionPayload,
-    ModelDataActionPayload,
-    ModelValidationActionPayload,
-    ModelManagementActionPayload,
-    ModelTransformationActionPayload,
-    ModelMonitoringActionPayload,
-    ModelRegistryActionPayload,
-    ModelFilesystemActionPayload,
-    ModelCustomActionPayload,
-]:
+) -> SpecificActionPayload:
     # union-ok: Factory pattern legitimately needs union of all action payload types
     """
     Create the appropriate specific payload type for an action.
@@ -121,7 +110,7 @@ def create_specific_action_payload(
     # Use category-based mapping
     payload_class = category_to_payload_map.get(action_type.category)
     if payload_class:
-        result = payload_class(action_type=action_type, **kwargs)
+        result: SpecificActionPayload = payload_class(action_type=action_type, **kwargs)
         return result
 
     msg = f"Unknown action type: {action_type.name}"

@@ -370,10 +370,10 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             return serialized
         if hasattr(result, "__dict__"):
             # Cast __dict__ to SerializedDict as we expect serializable values
-            dict_result: SerializedDict = result.__dict__  # type: ignore[assignment]
+            dict_result: SerializedDict = result.__dict__
             return dict_result
         if isinstance(result, dict):
-            return result  # type: ignore[return-value]
+            return result
         return {"result": result}
 
     async def _emit_tool_response(self, response_event: ModelToolResponseEvent) -> None:

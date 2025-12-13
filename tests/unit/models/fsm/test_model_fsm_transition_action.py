@@ -15,6 +15,8 @@ Specification Reference: docs/architecture/CONTRACT_DRIVEN_NODEREDUCER_V1_0.md
 import pytest
 from pydantic import ValidationError
 
+pytestmark = pytest.mark.unit
+
 from omnibase_core.models.fsm.model_fsm_transition_action import (
     ModelFSMTransitionAction,
 )

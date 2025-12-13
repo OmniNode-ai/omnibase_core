@@ -8,6 +8,8 @@ uniqueness constraints on parameter names.
 import pytest
 from pydantic import ValidationError
 
+pytestmark = pytest.mark.unit
+
 from omnibase_core.models.contracts.model_action_config_parameter import (
     ModelActionConfigParameter,
 )
