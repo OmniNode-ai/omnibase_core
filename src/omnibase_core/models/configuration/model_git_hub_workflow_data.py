@@ -18,6 +18,6 @@ class ModelGitHubWorkflowData(BaseModel):
     on: dict[str, object] | None = None
     jobs: dict[str, dict[str, object]]
     env: dict[str, str] | None = None
-    defaults: dict[str, str] | None = None
+    defaults: dict[str, object] | None = None
     concurrency: dict[str, object] | None = None
     permissions: dict[str, str] | None = None

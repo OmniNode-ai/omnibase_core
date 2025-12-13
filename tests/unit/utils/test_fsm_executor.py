@@ -6,6 +6,8 @@ Tests the pure functions in utils/fsm_executor.py for FSM transition execution.
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 from omnibase_core.models.contracts.subcontracts.model_fsm_state_definition import (
     ModelFSMStateDefinition,
 )

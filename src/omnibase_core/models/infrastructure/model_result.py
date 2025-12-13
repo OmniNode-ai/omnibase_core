@@ -145,39 +145,43 @@ class ModelResult[T, E](
                 EnumCoreErrorCode.OPERATION_FAILED,
                 f"Called unwrap() on error result: {self.error}",
             )
-        if self.value is None:
+        value = self.value  # Local bind for type narrowing
+        if value is None:
             raise ModelOnexError(
                 EnumCoreErrorCode.VALIDATION_ERROR,
                 "Success result has None value",
             )
-        return self.value
+        return value
 
     def unwrap_or(self, default: T) -> T:
         """Unwrap the value or return default if error."""
         if self.success:
-            if self.value is None:
+            value = self.value  # Local bind for type narrowing
+            if value is None:
                 raise ModelOnexError(
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="Success result has None value",
                 )
-            return self.value
+            return value
         return default
 
     def unwrap_or_else(self, f: Callable[[E], T]) -> T:
         """Unwrap the value or compute from error using function."""
         if self.success:
-            if self.value is None:
+            value = self.value  # Local bind for type narrowing
+            if value is None:
                 raise ModelOnexError(
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message="Success result has None value",
                 )
-            return self.value
-        if self.error is None:
+            return value
+        error = self.error  # Local bind for type narrowing
+        if error is None:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Error result has None error",
             )
-        return f(self.error)
+        return f(error)
 
     def expect(self, msg: str) -> T:
         """
@@ -194,12 +198,13 @@ class ModelResult[T, E](
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"{msg}: {self.error}",
             )
-        if self.value is None:
+        value = self.value  # Local bind for type narrowing
+        if value is None:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message="Success result has None value",
             )
-        return self.value
+        return value
 
     def map(self, f: Callable[[T], U]) -> ModelResult[U, object]:
         """

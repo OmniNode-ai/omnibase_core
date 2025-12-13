@@ -111,15 +111,16 @@ class ModelFSMStateSnapshot(BaseModel):
         """
         Create initial snapshot with given state.
 
-        Factory method for creating a new FSM snapshot at the initial state
-        with empty context and history.
+        Factory method for creating a new FSM snapshot at the initial state.
+        Context and history are initialized to their defaults (empty dict and
+        empty list respectively) via default_factory.
 
         Args:
             initial_state: The initial state name for the FSM.
 
         Returns:
-            ModelFSMStateSnapshot initialized with the given state,
-            empty context dict, and empty history list.
+            ModelFSMStateSnapshot initialized with the given state and
+            default empty context and history.
 
         Example:
             >>> snapshot = ModelFSMStateSnapshot.create_initial("idle")
@@ -130,7 +131,7 @@ class ModelFSMStateSnapshot(BaseModel):
             >>> snapshot.history
             []
         """
-        return cls(current_state=initial_state, context={}, history=[])
+        return cls(current_state=initial_state)
 
 
 # Export for use
