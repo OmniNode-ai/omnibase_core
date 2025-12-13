@@ -40,12 +40,12 @@ service = container.get_service("MyService")
 
 #### ModelComputeInput
 
-**Location**: `omnibase_core.models.model_compute_input`
+**Location**: `omnibase_core.models.compute.model_compute_input`
 
 **Purpose**: Standard input model for COMPUTE nodes.
 
 ```
-from omnibase_core.models.model_compute_input import ModelComputeInput
+from omnibase_core.models.compute.model_compute_input import ModelComputeInput
 
 input_data = ModelComputeInput(
     computation_type="calculate",
@@ -56,12 +56,12 @@ input_data = ModelComputeInput(
 
 #### ModelComputeOutput
 
-**Location**: `omnibase_core.models.model_compute_output`
+**Location**: `omnibase_core.models.compute.model_compute_output`
 
 **Purpose**: Standard output model for COMPUTE nodes.
 
 ```
-from omnibase_core.models.model_compute_output import ModelComputeOutput
+from omnibase_core.models.compute.model_compute_output import ModelComputeOutput
 
 output_data = ModelComputeOutput(
     result={"sum": 15},
@@ -102,12 +102,12 @@ error = ModelOnexError(
 
 #### ModelEventEnvelope
 
-**Location**: `omnibase_core.models.model_event_envelope`
+**Location**: `omnibase_core.models.events.model_event_envelope`
 
 **Purpose**: Event envelope for inter-node communication.
 
 ```
-from omnibase_core.models.model_event_envelope import ModelEventEnvelope
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
 event = ModelEventEnvelope(
     event_type="computation_completed",
@@ -121,35 +121,43 @@ event = ModelEventEnvelope(
 
 #### ModelIntent
 
-**Location**: `omnibase_core.models.model_intent`
+**Location**: `omnibase_core.models.reducer.model_intent`
 
-**Purpose**: Intent model for side effect requests.
+**Purpose**: Intent model for side effect declarations from pure Reducer FSM.
+
+The Reducer is a pure function that emits Intents describing what side effects should occur. The Effect node consumes and executes these Intents.
 
 ```
-from omnibase_core.models.model_intent import ModelIntent
-from omnibase_core.enums.enum_intent_type import EnumIntentType
+from omnibase_core.models.reducer.model_intent import ModelIntent
 
 intent = ModelIntent(
-    intent_type=EnumIntentType.DATABASE_WRITE,
-    payload={"table": "users", "data": {"name": "John"}},
-    priority="high"
+    intent_type="emit_event",
+    target="user.created",
+    payload={"user_id": "123", "email": "user@example.com"},
+    priority=5
 )
 ```
 
+**Note**: `intent_type` is a string field (common values: "log", "emit_event", "write", "notify", "http_request").
+
 #### ModelAction
 
-**Location**: `omnibase_core.models.model_action`
+**Location**: `omnibase_core.models.orchestrator.model_action`
 
-**Purpose**: Action model for state transitions.
+**Purpose**: Orchestrator-issued Action with lease management for single-writer semantics.
 
 ```
-from omnibase_core.models.model_action import ModelAction
-from omnibase_core.enums.enum_action_type import EnumActionType
+from uuid import uuid4
+from omnibase_core.models.orchestrator.model_action import ModelAction
+from omnibase_core.enums.enum_workflow_execution import EnumActionType
 
 action = ModelAction(
-    action_type=EnumActionType.UPDATE_STATE,
-    payload={"field": "status", "value": "completed"},
-    timestamp=time.time()
+    action_type=EnumActionType.COMPUTE,
+    target_node_type="compute",
+    lease_id=uuid4(),
+    epoch=1,
+    priority=5,
+    payload={"field": "status", "value": "completed"}
 )
 ```
 
@@ -300,39 +308,45 @@ class MyOutputModel(BaseModel):
 
 ## Serialization Patterns
 
-### JSON Serialization
+### JSON Serialization (Pydantic v2)
 
 ```
-# Convert to JSON
-json_data = model.json()
+# Convert to JSON string
+json_data = model.model_dump_json()
 
-# Convert from JSON
-model = MyModel.parse_raw(json_data)
+# Convert from JSON string
+model = MyModel.model_validate_json(json_data)
 
 # Convert to dict
-dict_data = model.dict()
+dict_data = model.model_dump()
 
 # Convert from dict
+model = MyModel.model_validate(dict_data)
+# Or use keyword arguments
 model = MyModel(**dict_data)
 ```
 
 ### Custom Serialization
 
 ```
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
 from datetime import datetime
-from typing import Any
+from typing import Any, Dict
 
 class CustomModel(BaseModel):
     """Model with custom serialization."""
 
+    model_config = ConfigDict(
+        ser_json_timedelta="iso8601"
+    )
+
     timestamp: datetime = Field(default_factory=datetime.now)
     data: Dict[str, Any] = Field(default_factory=dict)
 
-    class Config:
-        json_encoders = {
-            datetime: lambda v: v.isoformat()
-        }
+    @field_serializer('timestamp')
+    def serialize_timestamp(self, value: datetime) -> str:
+        """Custom timestamp serialization."""
+        return value.isoformat()
 
     def to_api_dict(self) -> Dict[str, Any]:
         """Custom serialization for API responses."""

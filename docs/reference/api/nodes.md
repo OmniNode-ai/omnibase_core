@@ -96,7 +96,7 @@ class MetricsReducerNode(NodeReducer):
 - `__init__(container: ModelONEXContainer)` - Initialize with dependency injection container
 - `async process(input_data: Dict[str, Any]) -> Dict[str, Any]` - Main processing method
 - `get_current_state() -> Dict[str, Any]` - Get current state
-- `emit_intent(intent: ModelIntent)` - Emit intent for side effects
+- `emit_intent(intent: ModelIntent)` - Emit intent for side effects (import from `omnibase_core.models.reducer.model_intent`)
 
 #### Properties
 

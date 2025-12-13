@@ -6,14 +6,15 @@ This document explains the parallel coverage testing approach for Omnibase Core.
 
 **CRITICAL**: The parallel coverage script is resource-constrained for local execution.
 
-- **CI runs 12 splits on separate isolated runners** (horizontal scaling)
-- **Local runs splits with concurrency limits on one machine** (vertical scaling with constraints)
+- **CI runs 20 splits on separate isolated runners** (horizontal scaling)
+- **Local runs 12 splits with concurrency limits on one machine** (vertical scaling with constraints)
 - **Default configuration**: 3 concurrent splits × 4 workers = 12 total workers
+- **Clarification**: Local parallel testing uses 12 splits, CI uses 20 splits for optimal distribution
 - **See [PARALLEL_TESTING.md](PARALLEL_TESTING.md)** for detailed resource management and architecture
 
 ## Problem
 
-Running coverage tests sequentially on the entire test suite is slow (~30+ minutes). CI uses 12 parallel splits for speed but doesn't collect coverage data. We need a local solution that combines both approaches: parallel execution for speed and coverage collection for quality metrics.
+Running coverage tests sequentially on the entire test suite is slow (~30+ minutes). CI uses 20 parallel splits for speed but doesn't collect coverage data. We need a local solution that combines both approaches: parallel execution for speed and coverage collection for quality metrics.
 
 ## Solution: Resource-Constrained Parallel Coverage
 
@@ -178,7 +179,7 @@ The script uses 12 splits with resource constraints:
 - **Test distribution**: pytest-split ensures deterministic, balanced distribution (~1,016 tests per split for local)
 
 **Key Difference from CI**:
-- CI: 20 splits on 20 separate runners (~610 tests/split) with `-n auto` each (isolated resources)
+- CI: 20 splits on 20 separate isolated runners (~610 tests/split) with `-n auto` each (isolated resources)
 - Local: 12 splits batched (3 at a time, ~1,016 tests/split) with `-n 4` each (shared resources, constrained)
 
 ## Technical Details

@@ -4,7 +4,7 @@
 **Difficulty**: Intermediate
 **Prerequisites**: [What is a Node?](01_WHAT_IS_A_NODE.md), [Node Types](02_NODE_TYPES.md)
 
-## 🎯 Recommended Approach
+## Recommended Approach
 
 This tutorial shows **TWO approaches**:
 
@@ -26,11 +26,11 @@ See [Node Class Hierarchy Guide](../../architecture/NODE_CLASS_HIERARCHY.md) for
 
 In this tutorial, you'll build a production-ready **File Backup Node** that:
 
-✅ Performs atomic file operations with transaction support
-✅ Implements retry logic with exponential backoff
-✅ Uses circuit breaker patterns for resilience
-✅ Handles rollback scenarios gracefully
-✅ Provides comprehensive error handling
+- Performs atomic file operations with transaction support
+- Implements retry logic with exponential backoff
+- Uses circuit breaker patterns for resilience
+- Handles rollback scenarios gracefully
+- Provides comprehensive error handling
 
 **Why EFFECT Nodes?**
 
@@ -53,7 +53,7 @@ EFFECT nodes handle all external interactions in the ONEX architecture:
 
 Before starting, verify your environment:
 
-```
+```bash
 # Check Poetry is installed
 poetry --version
 
@@ -67,8 +67,8 @@ poetry install
 poetry run pytest tests/unit/nodes/test_node_effect.py -v -k "test_file_operation" --maxfail=1
 ```
 
-✅ **If tests pass**, you're ready to begin!
-⚠️ **If tests fail**, see [Troubleshooting](#troubleshooting) at the end of this guide.
+If tests pass, you're ready to begin!
+If tests fail, see [Troubleshooting](#troubleshooting) at the end of this guide.
 
 ---
 
@@ -78,12 +78,13 @@ poetry run pytest tests/unit/nodes/test_node_effect.py -v -k "test_file_operatio
 
 EFFECT nodes use **ModelEffectInput** as a base, but we'll create a domain-specific model for clarity:
 
-```
+```python
 """Input model for file backup EFFECT node."""
 
 from pathlib import Path
-from pydantic import BaseModel, Field
 from uuid import UUID, uuid4
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelFileBackupInput(BaseModel):
@@ -93,6 +94,8 @@ class ModelFileBackupInput(BaseModel):
     This model defines what data the EFFECT node receives
     to perform file backup operations with transaction support.
     """
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
 
     # Source file to back up
     source_path: Path = Field(
@@ -143,21 +146,14 @@ class ModelFileBackupInput(BaseModel):
         default_factory=dict,
         description="Additional metadata for operation tracing",
     )
-
-
-    class Config:
-        """Pydantic configuration."""
-
-        frozen = True  # Immutable after creation
-        extra = "forbid"  # Reject unknown fields
 ```
 
 **Key Points**:
-- ✅ Uses Pydantic for automatic validation
-- ✅ Immutable (`frozen=True`) for safety
-- ✅ Descriptive field documentation
-- ✅ Sensible defaults with validation constraints
-- ✅ UUID tracking for operations
+- Uses Pydantic v2 `ConfigDict` for configuration
+- Immutable (`frozen=True`) for safety
+- Descriptive field documentation
+- Sensible defaults with validation constraints
+- UUID tracking for operations
 
 ---
 
@@ -165,13 +161,14 @@ class ModelFileBackupInput(BaseModel):
 
 **File**: `src/your_project/nodes/model_file_backup_output.py`
 
-```
+```python
 """Output model for file backup EFFECT node."""
 
 from datetime import datetime
 from pathlib import Path
-from pydantic import BaseModel, Field
 from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelFileBackupOutput(BaseModel):
@@ -181,6 +178,8 @@ class ModelFileBackupOutput(BaseModel):
     This model defines what data the EFFECT node returns
     after completing backup operations.
     """
+
+    model_config = ConfigDict(frozen=True)
 
     # Operation result
     success: bool = Field(
@@ -262,32 +261,27 @@ class ModelFileBackupOutput(BaseModel):
         default=None,
         description="Error message if operation failed",
     )
-
-
-    class Config:
-        """Pydantic configuration."""
-
-        frozen = True  # Immutable after creation
 ```
 
 **Key Points**:
-- ✅ Comprehensive result information
-- ✅ Transaction tracking for rollback scenarios
-- ✅ Performance metrics included
-- ✅ Error details when failures occur
-- ✅ Verification results for data integrity
+- Uses Pydantic v2 `ConfigDict` for configuration
+- Comprehensive result information
+- Transaction tracking for rollback scenarios
+- Performance metrics included
+- Error details when failures occur
+- Verification results for data integrity
 
 ---
 
 ## Step 3: Implement the EFFECT Node
 
-### ✅ RECOMMENDED: Using ModelServiceEffect Wrapper
+### RECOMMENDED: Using ModelServiceEffect Wrapper
 
 For **95% of use cases**, use the production-ready `ModelServiceEffect` wrapper that includes all standard features:
 
 **File**: `src/your_project/nodes/node_file_backup_effect.py`
 
-```
+```python
 """
 File Backup EFFECT Node - Production Implementation.
 
@@ -299,20 +293,18 @@ Demonstrates EFFECT node capabilities:
 - Comprehensive error handling
 """
 
-import asyncio
 import hashlib
 import time
 from pathlib import Path
-from uuid import UUID
 
-from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.infrastructure.infrastructure_bases import ModelServiceEffect
-from omnibase_core.nodes import ModelEffectInput, ModelEffectOutput
-from omnibase_core.enums.enum_effect_types import EnumEffectType
-from omnibase_core.errors import ModelOnexError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
+from omnibase_core.enums.enum_effect_types import EnumEffectType
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.errors import ModelOnexError
+from omnibase_core.infrastructure.infrastructure_bases import ModelServiceEffect
+from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.nodes import ModelEffectInput, ModelEffectOutput
 
 from your_project.nodes.model_file_backup_input import ModelFileBackupInput
 from your_project.nodes.model_file_backup_output import ModelFileBackupOutput
@@ -345,7 +337,6 @@ class NodeFileBackupEffect(ModelServiceEffect):
             "failed_backups": 0,
             "total_bytes_backed_up": 0,
         }
-
 
     async def backup_file(
         self,
@@ -398,7 +389,7 @@ class NodeFileBackupEffect(ModelServiceEffect):
 
             emit_log_event(
                 LogLevel.INFO,
-                f"File backup successful: {input_data.source_path} → {input_data.backup_path}",
+                f"File backup successful: {input_data.source_path} -> {input_data.backup_path}",
                 {
                     "node_id": str(self.node_id),
                     "operation_id": str(input_data.operation_id),
@@ -441,7 +432,6 @@ class NodeFileBackupEffect(ModelServiceEffect):
                 error_message=e.message,
             )
 
-
     def _convert_to_effect_input(
         self,
         input_data: ModelFileBackupInput,
@@ -464,7 +454,6 @@ class NodeFileBackupEffect(ModelServiceEffect):
             circuit_breaker_enabled=True,
             metadata=input_data.metadata,
         )
-
 
     async def _execute_effect(
         self,
@@ -514,7 +503,6 @@ class NodeFileBackupEffect(ModelServiceEffect):
 
         return result
 
-
     async def _atomic_backup(
         self,
         source_path: Path,
@@ -543,6 +531,7 @@ class NodeFileBackupEffect(ModelServiceEffect):
 
             # Register rollback operation if transaction active
             if transaction and hasattr(transaction, "add_operation"):
+
                 def rollback_backup() -> None:
                     """Rollback function to delete backup on failure."""
                     if backup_path.exists():
@@ -561,7 +550,7 @@ class NodeFileBackupEffect(ModelServiceEffect):
             if verify:
                 backup_content = backup_path.read_bytes()
                 backup_checksum = hashlib.sha256(backup_content).hexdigest()
-                checksum_match = (source_checksum == backup_checksum)
+                checksum_match = source_checksum == backup_checksum
                 verified = True
 
                 if not checksum_match:
@@ -582,12 +571,11 @@ class NodeFileBackupEffect(ModelServiceEffect):
                 "backup_path": str(backup_path),
             }
 
-        except Exception as e:
+        except Exception:
             # Clean up temp file on error
             if temp_backup.exists():
                 temp_backup.unlink()
             raise
-
 
     async def _simple_backup(
         self,
@@ -606,7 +594,7 @@ class NodeFileBackupEffect(ModelServiceEffect):
             backup_content = backup_path.read_bytes()
             source_checksum = hashlib.sha256(source_content).hexdigest()
             backup_checksum = hashlib.sha256(backup_content).hexdigest()
-            checksum_match = (source_checksum == backup_checksum)
+            checksum_match = source_checksum == backup_checksum
             verified = True
 
         return {
@@ -617,63 +605,64 @@ class NodeFileBackupEffect(ModelServiceEffect):
             "backup_path": str(backup_path),
         }
 
-
     def get_backup_stats(self) -> dict[str, float]:
         """Get backup statistics for monitoring."""
         return {
             **self.backup_stats,
             "success_rate": (
-                self.backup_stats["successful_backups"] /
-                max(self.backup_stats["total_backups"], 1)
-            ) * 100,
+                self.backup_stats["successful_backups"]
+                / max(self.backup_stats["total_backups"], 1)
+            )
+            * 100,
         }
 ```
 
 **What `ModelServiceEffect` Provides**:
-- ✅ **Health Checks**: Built-in readiness and liveness endpoints
-- ✅ **Metrics**: Automatic prometheus-style metrics tracking
-- ✅ **Event Bus**: Kafka/Redpanda integration for event publishing
-- ✅ **Circuit Breaker**: Automatic failure protection
-- ✅ **Transaction Management**: Built-in `ModelEffectTransaction` with rollback support
-- ✅ **Retry Logic**: Exponential backoff retry mechanism
-- ✅ **Circuit Breakers**: Per-service circuit breaker patterns
-- ✅ **Effect Handlers**: Registry for custom effect operations
-- ✅ **Concurrency Control**: Semaphore for limiting concurrent effects
-- ✅ **Performance Tracking**: Built-in metrics for effect execution
-- ✅ **Configuration Support**: Automatic config loading from `NodeConfigProvider`
+- **Health Checks**: Built-in readiness and liveness endpoints
+- **Metrics**: Automatic prometheus-style metrics tracking
+- **Event Bus**: Kafka/Redpanda integration for event publishing
+- **Circuit Breaker**: Automatic failure protection
+- **Transaction Management**: Built-in `ModelEffectTransaction` with rollback support
+- **Retry Logic**: Exponential backoff retry mechanism
+- **Circuit Breakers**: Per-service circuit breaker patterns
+- **Effect Handlers**: Registry for custom effect operations
+- **Concurrency Control**: Semaphore for limiting concurrent effects
+- **Performance Tracking**: Built-in metrics for effect execution
+- **Configuration Support**: Automatic config loading from `NodeConfigProvider`
 
 **Key Implementation Features**:
 
-- ✅ **Atomic Operations**: Uses temp file + rename pattern for safety
-- ✅ **Transaction Support**: Automatic rollback on failures
-- ✅ **Retry Logic**: Inherited from base classes
-- ✅ **Circuit Breaker**: Prevents cascading failures
-- ✅ **Checksum Verification**: Ensures backup integrity
-- ✅ **Comprehensive Logging**: Full operation traceability
-- ✅ **Statistics Tracking**: Monitor performance and reliability
+- **Atomic Operations**: Uses temp file + rename pattern for safety
+- **Transaction Support**: Automatic rollback on failures
+- **Retry Logic**: Inherited from base classes
+- **Circuit Breaker**: Prevents cascading failures
+- **Checksum Verification**: Ensures backup integrity
+- **Comprehensive Logging**: Full operation traceability
+- **Statistics Tracking**: Monitor performance and reliability
 
 ### When to Use Which Approach
 
 | Feature | ModelServiceEffect | NodeEffect |
 |---------|-------------------|------------|
-| **Health Checks** | ✅ Included | ⚠️ Manual setup |
-| **Metrics** | ✅ Included | ⚠️ Manual setup |
-| **Event Bus** | ✅ Included | ⚠️ Manual setup |
-| **Circuit Breaker** | ✅ Included | ✅ Included |
-| **Transaction Support** | ✅ Included | ✅ Included |
+| **Health Checks** | Included | Manual setup |
+| **Metrics** | Included | Manual setup |
+| **Event Bus** | Included | Manual setup |
+| **Circuit Breaker** | Included | Included |
+| **Transaction Support** | Included | Included |
 | **Setup Complexity** | Minimal | Moderate |
-| **Production Ready** | ✅ Yes | ⚠️ Requires configuration |
+| **Production Ready** | Yes | Requires configuration |
 | **Use Case** | 95% of applications | Custom mixin composition |
 
-### 🔧 ADVANCED: Using NodeEffect Base Class
+### ADVANCED: Using NodeEffect Base Class
 
 For **5% of use cases** where you need custom mixin composition:
 
-```
+```python
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.nodes import NodeEffect
-from omnibase_core.mixins import MixinCustomTransactions
 
-class NodeFileBackupEffect(NodeEffect, MixinCustomTransactions):
+
+class NodeFileBackupEffect(NodeEffect):
     """
     EFFECT node with custom mixin composition.
 
@@ -687,9 +676,9 @@ class NodeFileBackupEffect(NodeEffect, MixinCustomTransactions):
         super().__init__(container)
 
         # Manually initialize effect-specific features
-        self.active_transactions = {}
-        self.circuit_breakers = {}
-        self.effect_handlers = {}
+        self.active_transactions: dict = {}
+        self.circuit_breakers: dict = {}
+        self.effect_handlers: dict = {}
         # ... rest of manual setup
 
     # ... rest of implementation (same as above)
@@ -714,18 +703,18 @@ class NodeFileBackupEffect(NodeEffect, MixinCustomTransactions):
 
 **File**: `tests/unit/nodes/test_node_file_backup_effect.py`
 
-```
+```python
 """Tests for NodeFileBackupEffect."""
 
-import pytest
 import tempfile
 from pathlib import Path
-from uuid import uuid4
+
+import pytest
 
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
-from your_project.nodes.node_file_backup_effect import NodeFileBackupEffect
 from your_project.nodes.model_file_backup_input import ModelFileBackupInput
+from your_project.nodes.node_file_backup_effect import NodeFileBackupEffect
 
 
 @pytest.fixture
@@ -743,7 +732,7 @@ def backup_node(container):
 @pytest.fixture
 def temp_source_file():
     """Create temporary source file for testing."""
-    with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt') as f:
+    with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".txt") as f:
         f.write("Test file content for backup\n" * 100)
         source_path = Path(f.name)
 
@@ -856,11 +845,11 @@ async def test_backup_statistics_tracking(backup_node, temp_source_file, tmp_pat
 
 **Testing Best Practices**:
 
-- ✅ **Fixtures** for reusable test setup
-- ✅ **Async tests** using `pytest.mark.asyncio`
-- ✅ **Edge cases** covered (missing files, directory creation)
-- ✅ **Statistics validation** confirms tracking works
-- ✅ **Cleanup** ensures no test pollution
+- **Fixtures** for reusable test setup
+- **Async tests** using `pytest.mark.asyncio`
+- **Edge cases** covered (missing files, directory creation)
+- **Statistics validation** confirms tracking works
+- **Cleanup** ensures no test pollution
 
 ---
 
@@ -868,12 +857,14 @@ async def test_backup_statistics_tracking(backup_node, temp_source_file, tmp_pat
 
 ### Basic File Backup
 
-```
+```python
 import asyncio
 from pathlib import Path
+
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from your_project.nodes.node_file_backup_effect import NodeFileBackupEffect
+
 from your_project.nodes.model_file_backup_input import ModelFileBackupInput
+from your_project.nodes.node_file_backup_effect import NodeFileBackupEffect
 
 
 async def backup_important_file():
@@ -892,12 +883,12 @@ async def backup_important_file():
     result = await backup_node.backup_file(input_data)
 
     if result.success:
-        print(f"✅ Backup successful!")
+        print("Backup successful!")
         print(f"   Size: {result.backup_size_bytes} bytes")
         print(f"   Verified: {result.checksum_match}")
         print(f"   Time: {result.processing_time_ms:.2f}ms")
     else:
-        print(f"❌ Backup failed: {result.error_message}")
+        print(f"Backup failed: {result.error_message}")
 
 
 asyncio.run(backup_important_file())
@@ -905,7 +896,15 @@ asyncio.run(backup_important_file())
 
 ### Batch Backup with Error Handling
 
-```
+```python
+from pathlib import Path
+
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+
+from your_project.nodes.model_file_backup_input import ModelFileBackupInput
+from your_project.nodes.node_file_backup_effect import NodeFileBackupEffect
+
+
 async def backup_multiple_files(file_list: list[Path], backup_dir: Path):
     """Backup multiple files with comprehensive error handling."""
     container = ModelONEXContainer()
@@ -929,14 +928,14 @@ async def backup_multiple_files(file_list: list[Path], backup_dir: Path):
     successful = sum(1 for _, r in results if r.success)
     failed = len(results) - successful
 
-    print(f"\n📊 Backup Summary:")
+    print("\nBackup Summary:")
     print(f"   Total: {len(results)}")
-    print(f"   ✅ Successful: {successful}")
-    print(f"   ❌ Failed: {failed}")
+    print(f"   Successful: {successful}")
+    print(f"   Failed: {failed}")
 
     # Get statistics
     stats = backup_node.get_backup_stats()
-    print(f"\n📈 Node Statistics:")
+    print("\nNode Statistics:")
     print(f"   Success Rate: {stats['success_rate']:.1f}%")
     print(f"   Total Bytes: {stats['total_bytes_backed_up']:,}")
 ```
@@ -950,7 +949,7 @@ async def backup_multiple_files(file_list: list[Path], backup_dir: Path):
 **Problem**: Tests fail with "container not configured"
 
 **Solution**:
-```
+```python
 # Ensure container has required services
 container = ModelONEXContainer()
 # Add any required service registrations
@@ -959,7 +958,7 @@ container = ModelONEXContainer()
 **Problem**: Permission errors during backup
 
 **Solution**:
-```
+```python
 # Use temp directories for tests
 import tempfile
 with tempfile.TemporaryDirectory() as tmpdir:
@@ -982,7 +981,7 @@ with tempfile.TemporaryDirectory() as tmpdir:
 
 ### Key Methods
 
-```
+```python
 # Core EFFECT methods
 await node.process(effect_input)  # Execute with retry/circuit breaker
 await node.execute_file_operation(...)  # File I/O helper
@@ -990,11 +989,39 @@ await node.emit_state_change_event(...)  # Event emission
 await node.transaction_context(operation_id)  # Transaction mgmt
 ```
 
+### v0.4.0 Import Pattern
+
+```python
+# All node classes and I/O models from omnibase_core.nodes
+from omnibase_core.nodes import (
+    NodeEffect,
+    ModelEffectInput,
+    ModelEffectOutput,
+    ModelEffectTransaction,
+)
+
+# Container for dependency injection
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+
+# Service wrapper for production use
+from omnibase_core.infrastructure.infrastructure_bases import ModelServiceEffect
+
+# Error handling
+from omnibase_core.errors import ModelOnexError
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
+# Effect types
+from omnibase_core.enums.enum_effect_types import (
+    EnumEffectType,
+    EnumTransactionState,
+)
+```
+
 ---
 
 ## Next Steps
 
-✅ **Congratulations!** You've built a production-ready EFFECT node!
+Congratulations! You've built a production-ready EFFECT node!
 
 **Continue your journey**:
 - [REDUCER Node Tutorial](05_REDUCER_NODE_TUTORIAL.md) - Learn data aggregation
@@ -1006,6 +1033,6 @@ await node.transaction_context(operation_id)  # Transaction mgmt
 
 ---
 
-**Last Updated**: 2025-12-05
+**Last Updated**: 2025-12-13
 **Framework Version**: omnibase_core 0.4.0+
 **Tutorial Status**: Complete

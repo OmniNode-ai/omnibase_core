@@ -31,7 +31,7 @@ Thank you for your interest in contributing to omnibase_core! This document prov
 
 2. **Explore the codebase**:
    - Review existing node implementations in `src/omnibase_core/`
-   - Study the base classes in `src/omnibase_core/core/`
+   - Study the base classes in `src/omnibase_core/nodes/`
    - Check out example implementations in `examples/`
 
 ## Development Setup
@@ -205,9 +205,8 @@ We welcome:
 
 ### Test Coverage
 
-- **Minimum**: 80% code coverage
-- **Target**: 90% code coverage
-- **Critical paths**: 100% coverage
+- **Minimum**: 60% code coverage (configured in pyproject.toml)
+- **Critical paths**: Higher coverage recommended
 
 ### Writing Tests
 
@@ -369,7 +368,8 @@ Brief description of changes
 
 - [Documentation](docs/INDEX.md)
 - [Node Building Guide](docs/guides/node-building/README.md)
-- [GitHub Issues](https://github.com/OWNER/omnibase_core/issues)
+- [Node Purity Failure Guide](docs/ci/CORE_PURITY_FAILURE.md) - Fixing CI purity check failures
+- [GitHub Issues](https://github.com/OmniNode-ai/omnibase_core/issues)
 
 ### Questions
 

@@ -21,7 +21,7 @@ A simple COMPUTE node that doubles numbers - demonstrating how to use ONEX conve
 
 ONEX v0.4.0 provides four pre-configured node classes for each architectural role. These eliminate 80+ lines of boilerplate initialization:
 
-> **Note**: In v0.4.0, `NodeReducer` is FSM-driven (finite state machine) and `NodeOrchestrator` is workflow-driven. Legacy implementations are available in `omnibase_core.nodes.legacy` if needed.
+> **Note**: In v0.4.0, `NodeReducer` is FSM-driven (finite state machine) and `NodeOrchestrator` is workflow-driven. These are the primary implementations and should be used for all new development.
 
 ### **NodeCompute** - Data Processing
 ```python

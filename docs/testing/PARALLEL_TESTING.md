@@ -10,14 +10,14 @@ Running all 12 test splits in parallel on a local machine causes resource exhaus
 
 **CI Environment (Correct)**:
 ```
-12 GitHub Actions runners (physically separate machines)
+20 GitHub Actions runners (physically separate machines)
 ├─ Runner 1: Split 1 with -n auto (8-12 workers) ✅ Isolated resources
 ├─ Runner 2: Split 2 with -n auto (8-12 workers) ✅ Isolated resources
 ├─ Runner 3: Split 3 with -n auto (8-12 workers) ✅ Isolated resources
 ...
-└─ Runner 12: Split 12 with -n auto (8-12 workers) ✅ Isolated resources
+└─ Runner 20: Split 20 with -n auto (8-12 workers) ✅ Isolated resources
 
-Total: 12 runners × ~10 workers = 120 workers across 12 SEPARATE machines ✅
+Total: 20 runners × ~10 workers = 200 workers across 20 SEPARATE machines ✅
 ```
 
 **Local Environment (WRONG - Before Fix)**:
@@ -169,9 +169,9 @@ The script automatically detects CPU count and warns if configuration is too agg
 # .github/workflows/test.yml
 strategy:
   matrix:
-    split: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    split: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
 
-# GitHub Actions provisions 12 separate runners
+# GitHub Actions provisions 20 separate runners
 # Each runner is a physically isolated VM with dedicated resources
 # No resource contention between splits
 ```
@@ -321,7 +321,7 @@ To test a specific split exactly as CI runs it:
 # CI runs each split in isolation with -n auto
 # Replicate this locally:
 COVERAGE_FILE=.coverage.1 poetry run pytest tests/ \
-  --splits 12 \
+  --splits 20 \
   --group 1 \
   -n auto \
   --timeout=60 \
