@@ -122,11 +122,18 @@ def check_docstring_prints(
                 ):
                     # Find print( in the docstring and report it
                     docstring_start = first_stmt.lineno
+                    # Detect if opening quotes are on separate line (accounts for off-by-one)
+                    opening_line = (
+                        source_lines[docstring_start - 1].strip()
+                        if docstring_start <= len(source_lines)
+                        else ""
+                    )
+                    offset = 1 if opening_line in ('"""', "'''") else 0
                     docstring_lines = docstring.split("\n")
 
                     for i, doc_line in enumerate(docstring_lines):
                         if "print(" in doc_line:
-                            actual_line = docstring_start + i
+                            actual_line = docstring_start + i + offset
                             line_content = (
                                 source_lines[actual_line - 1].strip()
                                 if actual_line <= len(source_lines)

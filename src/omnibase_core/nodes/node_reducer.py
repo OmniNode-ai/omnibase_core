@@ -178,6 +178,13 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
 
         Example:
             ```python
+            import logging
+
+            from omnibase_core.models.reducer import ModelReducerInput
+            from omnibase_core.enums.enum_reduction_type import EnumReductionType
+
+            logger = logging.getLogger(__name__)
+
             input_data = ModelReducerInput(
                 data=[...],
                 reduction_type=EnumReductionType.AGGREGATE,
@@ -252,6 +259,10 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
 
         Example:
             ```python
+            import logging
+
+            logger = logging.getLogger(__name__)
+
             errors = await node.validate_contract()
             if errors:
                 logger.warning("Contract validation failed: %s", errors)
@@ -273,6 +284,10 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
 
         Example:
             ```python
+            import logging
+
+            logger = logging.getLogger(__name__)
+
             state = node.get_current_state()
             if state == "completed":
                 logger.info("FSM has reached completion")
@@ -289,6 +304,10 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
 
         Example:
             ```python
+            import logging
+
+            logger = logging.getLogger(__name__)
+
             history = node.get_state_history()
             logger.debug("State progression: %s", ' -> '.join(history))
             ```
@@ -304,6 +323,10 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
 
         Example:
             ```python
+            import logging
+
+            logger = logging.getLogger(__name__)
+
             if node.is_complete():
                 logger.info("Workflow completed - no more transitions possible")
             ```

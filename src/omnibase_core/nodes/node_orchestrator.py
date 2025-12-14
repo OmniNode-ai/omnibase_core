@@ -95,6 +95,7 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
 
         Usage:
             ```python
+            import logging
             from uuid import uuid4
             from omnibase_core.models.contracts.subcontracts.model_workflow_definition import (
                 ModelWorkflowDefinition,
@@ -103,6 +104,8 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
         ModelOrchestratorInput,
     )
             from omnibase_core.enums.enum_workflow_execution import EnumExecutionMode
+
+            logger = logging.getLogger(__name__)
 
             # Create node from container
             node = NodeMyOrchestrator(container)
@@ -216,6 +219,11 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
 
         Example:
             ```python
+            import logging
+            from uuid import uuid4
+
+            logger = logging.getLogger(__name__)
+
             # Define workflow steps
             steps_config = [
                 {
@@ -279,6 +287,10 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
 
         Example:
             ```python
+            import logging
+
+            logger = logging.getLogger(__name__)
+
             errors = await node.validate_contract()
             if errors:
                 logger.warning("Contract validation failed: %s", errors)
@@ -337,6 +349,10 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
 
         Example:
             ```python
+            import logging
+
+            logger = logging.getLogger(__name__)
+
             steps = [ModelWorkflowStep(...), ModelWorkflowStep(...)]
             order = node.get_execution_order_for_steps(steps)
             logger.debug("Execution order: %s", order)
