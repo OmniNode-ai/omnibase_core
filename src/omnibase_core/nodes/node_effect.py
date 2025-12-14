@@ -142,9 +142,12 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
 
     Usage:
         ```python
+        import logging
         from omnibase_core.nodes import NodeEffect
         from omnibase_core.models.effect import ModelEffectInput
         from omnibase_core.enums.enum_effect_types import EnumEffectType
+
+        logger = logging.getLogger(__name__)
 
         # Create effect node
         node = NodeMyEffect(container)
@@ -177,9 +180,9 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
 
         # Access result
         if result.transaction_state == EnumTransactionState.COMMITTED:
-            print(f"Success: {result.result}")
+            logger.info("Effect succeeded: %s", result.result)
         else:
-            print(f"Failed: {result.metadata}")
+            logger.error("Effect failed: %s", result.metadata)
 
         # Example with minimal required fields:
         result = await node.process(ModelEffectInput(

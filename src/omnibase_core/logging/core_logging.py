@@ -80,6 +80,7 @@ class _SimpleFallbackLogger:
 
         # ERROR and CRITICAL levels go to stderr, others to stdout
         is_error = level in (LogLevel.ERROR, LogLevel.CRITICAL, LogLevel.FATAL)
+        # print-ok: fallback logger intentionally uses print when logging infra unavailable
         print(
             f"[{level.name}] {correlation_id}: {message}",
             file=sys.stderr if is_error else sys.stdout,

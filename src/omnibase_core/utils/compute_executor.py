@@ -54,13 +54,6 @@ from omnibase_core.types.typed_dict_mapping_result import MappingResultDict
 
 logger = logging.getLogger(__name__)
 
-# Track if validation warning has been emitted for session deduplication
-# TODO(): Refactor to context-based warning tracking instead of global state.
-# This global mutable state is a known exception to the "pure and stateless" principle.
-# It affects only warning output (not computation results) and pipeline execution
-# remains deterministic. See: docs/architecture/CONTRACT_DRIVEN_NODECOMPUTE_V1_0.md
-_validation_warning_emitted = False
-
 from omnibase_core.enums.enum_compute_step_type import EnumComputeStepType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.compute.model_compute_execution_context import (
@@ -287,16 +280,13 @@ def execute_validation_step(
     # - Add validation error messages with path information
     # See: docs/architecture/NODECOMPUTE_VERSIONING_ROADMAP.md
 
-    # Emit UserWarning once per session for validation steps
-    global _validation_warning_emitted
-    if not _validation_warning_emitted:
-        warnings.warn(
-            "Validation steps are pass-through in v1.0. "
-            "Schema validation will be implemented in v1.1.",
-            UserWarning,
-            stacklevel=2,
-        )
-        _validation_warning_emitted = True
+    # Emit UserWarning for validation steps (Python warnings module deduplicates automatically)
+    warnings.warn(
+        "Validation steps are pass-through in v1.0. "
+        "Schema validation will be implemented in v1.1.",
+        UserWarning,
+        stacklevel=2,
+    )
 
     # Log debug-level message for each step (for troubleshooting)
     logger.debug(
