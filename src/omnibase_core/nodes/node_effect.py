@@ -49,6 +49,17 @@ _WARN_PER_OP_CONFIG_NOT_HONORED = (
 )
 
 # Module-level flags to emit warnings only once per session (matching compute_executor pattern)
+#
+# Thread Safety Notes:
+# - These are Python interpreter-level singletons, shared across all NodeEffect instances
+# - In pytest-xdist parallel tests, each worker process has its own copy (isolated)
+# - NOT thread-safe: race condition possible if multiple threads create NodeEffect
+#   instances simultaneously during initialization
+# - This is acceptable because:
+#   1. ONEX nodes are NOT thread-safe by default (see CLAUDE.md Thread Safety Matrix)
+#   2. Pattern matches existing compute_executor.py behavior
+#   3. Worst case impact: a few duplicate warnings (not data corruption)
+# - If thread-safe "emit once" behavior is needed in future, use threading.Lock
 _per_op_retry_warning_emitted: bool = False
 _per_op_circuit_breaker_warning_emitted: bool = False
 _per_op_response_handling_warning_emitted: bool = False
