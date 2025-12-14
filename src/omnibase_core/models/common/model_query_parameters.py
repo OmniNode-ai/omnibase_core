@@ -84,10 +84,8 @@ class ModelQueryParameters(BaseModel):
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Parameter count ({len(self.items)}) exceeds maximum ({self.MAX_PARAMETERS})",
-                context={
-                    "parameter_count": len(self.items),
-                    "max_parameters": self.MAX_PARAMETERS,
-                },
+                parameter_count=len(self.items),
+                max_parameters=self.MAX_PARAMETERS,
             )
         return self
 

@@ -222,7 +222,7 @@ health_check:
 # These handlers are implemented by the NodeEventBusWiringEffect class or provided by the
 # runtime's built-in subscription handler executor. See docs/architecture/SUBSCRIPTION_HANDLERS.md.
 #
-# TODO(OMN-XXX): Implement subscription handler registration in the runtime:
+# TODO: Implement subscription handler registration in the runtime:
 #   1. Create SubscriptionHandlerRegistry to map handler names to implementations
 #   2. Implement wire_all_subscriptions in NodeEventBusWiringEffect or runtime executor
 #   3. Implement wire_single_subscription for hot-reload support
@@ -233,15 +233,15 @@ subscriptions:
     - topic: onex.runtime.node_graph.ready
       description: Triggered when node graph is fully instantiated
       handler: wire_all_subscriptions
-      # TODO: Handler not yet implemented - see OMN-XXX
+      # TODO: Handler not yet implemented
     - topic: onex.runtime.node.registered
       description: Handle new node registration for hot reload
       handler: wire_single_subscription
-      # TODO: Handler not yet implemented - see OMN-XXX
+      # TODO: Handler not yet implemented
     - topic: onex.runtime.node.unregistered
       description: Handle node removal
       handler: remove_subscription
-      # TODO: Handler not yet implemented - see OMN-XXX
+      # TODO: Handler not yet implemented
 
 # Events published by this node
 publications:

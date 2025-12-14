@@ -21,9 +21,9 @@ class ModelGraphNodeData(BaseModel):
     )
     priority: int | None = Field(
         default=None,
-        description="Node execution priority (0-100, higher = more urgent)",
+        description="Node execution priority (0-1000, higher = more urgent)",
         ge=0,
-        le=100,
+        le=1000,
     )
     timeout_ms: int | None = Field(
         default=None,
