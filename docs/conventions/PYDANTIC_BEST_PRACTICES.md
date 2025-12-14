@@ -360,5 +360,5 @@ Need from_attributes?
 
 ---
 
-**Last Updated**: 2025-12-12
-**Project**: omnibase_core v0.4.0
+**Last Updated**: 2025-12-14
+**Project**: omnibase_core v0.3.6

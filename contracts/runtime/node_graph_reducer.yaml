@@ -3,7 +3,7 @@ node_type: REDUCER_GENERIC
 contract_version: {major: 1, minor: 1, patch: 0}
 # Fingerprint: SHA-256 hash of canonical normalized contract content (excluding fingerprint field).
 # See docs/architecture/CONTRACT_STABILITY_SPEC.md for normalization specification.
-fingerprint: "1.1.0:a4f95b414375"
+fingerprint: "1.1.0:30605ad37d29"
 state_transitions:
   # NOTE: FSM version (1.0.0) intentionally differs from contract_version (1.1.0).
   # The contract version tracks overall contract changes (handlers, metadata, profile_tags),
@@ -83,6 +83,7 @@ state_transitions:
         - cleanup_graph_state
       exit_actions: []
       is_terminal: true
+      is_recoverable: false
       metadata:
         ui_color: '#6B7280'
         icon: stop-circle

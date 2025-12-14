@@ -459,5 +459,4 @@ class ModelFSMSubcontract(BaseModel):
         extra="ignore",  # Allow extra fields from YAML contracts
         frozen=True,  # Immutability after creation for thread safety
         use_enum_values=False,  # Keep enum objects, don't convert to strings
-        validate_assignment=True,  # Explicit for documentation - redundant with frozen=True but kept for clarity
     )

@@ -805,6 +805,103 @@ class TestEventBusWiringEffectContract:
             "Missing onex.runtime.ready publication"
         )
 
+    # =========================================================================
+    # Subscription Handler Status Tests (PR #180 feedback)
+    # =========================================================================
+    # These tests validate that subscription handlers are properly documented
+    # with implementation status to prevent orphaned handler references.
+    # =========================================================================
+
+    def test_subscription_handlers_have_status(self, wiring_data: dict) -> None:
+        """Test that subscription handlers have handler_status field.
+
+        Each subscription handler must declare its implementation status to prevent
+        orphaned handler references. Valid statuses are: planned, implemented, deprecated.
+
+        Related: PR #180 feedback on subscription handler implementation
+        """
+        subscriptions = wiring_data.get("subscriptions", {})
+        topics = subscriptions.get("topics", [])
+
+        assert len(topics) >= 1, "Expected at least one subscription topic"
+
+        valid_statuses = {"planned", "implemented", "deprecated"}
+        for topic_config in topics:
+            topic = topic_config.get("topic", "unknown")
+            handler = topic_config.get("handler", "unknown")
+
+            # Verify handler_status is present
+            assert "handler_status" in topic_config, (
+                f"Subscription handler '{handler}' for topic '{topic}' "
+                "must have handler_status field (planned|implemented|deprecated)"
+            )
+
+            # Verify handler_status is a valid value
+            status = topic_config.get("handler_status")
+            assert status in valid_statuses, (
+                f"Handler '{handler}' has invalid status '{status}'. "
+                f"Must be one of: {valid_statuses}"
+            )
+
+    def test_subscription_handlers_have_implementation_details(
+        self, wiring_data: dict
+    ) -> None:
+        """Test that subscription handlers have handler_implementation section.
+
+        Each handler must document its expected implementation class, method,
+        and schema contracts to enable runtime validation and code generation.
+
+        Related: PR #180 feedback on subscription handler implementation
+        """
+        subscriptions = wiring_data.get("subscriptions", {})
+        topics = subscriptions.get("topics", [])
+
+        for topic_config in topics:
+            topic = topic_config.get("topic", "unknown")
+            handler = topic_config.get("handler", "unknown")
+
+            # Verify handler_implementation is present
+            assert "handler_implementation" in topic_config, (
+                f"Subscription handler '{handler}' for topic '{topic}' "
+                "must have handler_implementation section"
+            )
+
+            impl = topic_config["handler_implementation"]
+
+            # Verify required implementation fields
+            assert "class" in impl, (
+                f"Handler '{handler}' implementation missing 'class' field"
+            )
+            assert "method" in impl, (
+                f"Handler '{handler}' implementation missing 'method' field"
+            )
+            assert "input_schema" in impl, (
+                f"Handler '{handler}' implementation missing 'input_schema' field"
+            )
+
+    def test_planned_handlers_are_documented(self, wiring_data: dict) -> None:
+        """Test that planned handlers are properly documented in contract comments.
+
+        The subscriptions section should have comments explaining that handlers
+        are contract-declared but not yet runtime-registered.
+
+        Related: PR #180 feedback on subscription handler implementation
+        """
+        # Load raw YAML to check for comments (yaml.safe_load strips comments)
+        contract_path = RUNTIME_CONTRACTS_DIR / "event_bus_wiring_effect.yaml"
+        with open(contract_path, encoding="utf-8") as f:
+            raw_content = f.read()
+
+        # Check for implementation status comment
+        assert "Implementation Status:" in raw_content, (
+            "Missing 'Implementation Status:' comment in subscriptions section"
+        )
+
+        # Check for tracking reference
+        assert "Tracking:" in raw_content or "OMN-" in raw_content, (
+            "Missing tracking ticket reference for planned handlers"
+        )
+
 
 @pytest.mark.unit
 class TestAllRuntimeContractsValidation:

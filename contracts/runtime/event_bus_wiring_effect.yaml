@@ -229,19 +229,43 @@ health_check:
 #   4. Implement remove_subscription for graceful node removal
 #   5. Add handler validation during contract loading to fail-fast on missing handlers
 subscriptions:
+  # Implementation Status: PLANNED
+  # These handlers are contract-declared but not yet runtime-registered.
+  # The runtime will validate handler availability during contract loading
+  # and emit warnings for unregistered handlers in non-strict mode.
+  #
+  # Tracking: OMN-XXX (create ticket for handler implementation)
   topics:
     - topic: onex.runtime.node_graph.ready
       description: Triggered when node graph is fully instantiated
       handler: wire_all_subscriptions
-      # TODO: Handler not yet implemented
+      handler_status: planned  # NOT_IMPLEMENTED - requires SubscriptionHandlerRegistry
+      handler_implementation:
+        class: NodeEventBusWiringEffect
+        method: _handle_node_graph_ready
+        input_schema: ModelNodeGraphReadyEvent
+        output_schema: ModelWiringResultEvent
+        idempotent: true
     - topic: onex.runtime.node.registered
       description: Handle new node registration for hot reload
       handler: wire_single_subscription
-      # TODO: Handler not yet implemented
+      handler_status: planned  # NOT_IMPLEMENTED - requires SubscriptionHandlerRegistry
+      handler_implementation:
+        class: NodeEventBusWiringEffect
+        method: _handle_node_registered
+        input_schema: ModelNodeRegisteredEvent
+        output_schema: ModelSubscriptionCreatedEvent
+        idempotent: true
     - topic: onex.runtime.node.unregistered
       description: Handle node removal
       handler: remove_subscription
-      # TODO: Handler not yet implemented
+      handler_status: planned  # NOT_IMPLEMENTED - requires SubscriptionHandlerRegistry
+      handler_implementation:
+        class: NodeEventBusWiringEffect
+        method: _handle_node_unregistered
+        input_schema: ModelNodeUnregisteredEvent
+        output_schema: ModelSubscriptionRemovedEvent
+        idempotent: true
 
 # Events published by this node
 publications:

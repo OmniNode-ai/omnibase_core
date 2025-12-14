@@ -294,9 +294,14 @@ def update_fingerprint_in_yaml(
     """Update fingerprint field in YAML content while preserving formatting.
 
     Handles multiple YAML version formats:
-    - Inline version: `version: "1.0.0"`
-    - Dict-style version: `version:\\n  major: 1\\n  minor: 0\\n  patch: 0`
-    - contract_version blocks: `contract_version: "1.0"`
+    - Flow-style dict version: `version: {major: 1, minor: 0, patch: 0}`
+    - Inline version: `version: "1.0.0"` or `version: 1.0.0`
+    - Block-style version: `version:\\n  major: 1\\n  minor: 0\\n  patch: 0`
+    - contract_version with flow-style dict: `contract_version: {major: 1, ...}`
+    - contract_version inline: `contract_version: "1.0"`
+
+    ONEX contracts typically use flow-style dict format for version fields:
+        contract_version: {major: 1, minor: 1, patch: 0}
 
     Args:
         content: Original YAML file content.
@@ -305,8 +310,8 @@ def update_fingerprint_in_yaml(
     Returns:
         Updated YAML content with new fingerprint.
     """
-    # Pattern to match existing fingerprint field (at root level, no indentation)
-    # More specific: must be at start of line with optional whitespace
+    # Pattern to match existing fingerprint field (handles various formats)
+    # Matches: fingerprint: "value", fingerprint: 'value', fingerprint: value
     fingerprint_pattern = re.compile(
         r'^(\s*)fingerprint:\s*["\']?[\w.:/-]*["\']?\s*$',
         re.MULTILINE,
@@ -322,32 +327,94 @@ def update_fingerprint_in_yaml(
         )
 
     # No existing fingerprint - find best insertion point after version field
-    # Try multiple patterns in order of preference:
+    # Try multiple patterns in order of preference for ONEX contracts:
 
-    # 1. Try inline version first: `version: "1.0.0"` or `version: 1.0.0`
-    inline_version_pattern = re.compile(
-        r'^(\s*)(version:\s*["\']?[\w./-]+["\']?)\s*$',
+    # 1. Try contract_version with flow-style dict: `contract_version: {major: ...}`
+    # This is the most common format in ONEX contracts
+    flow_contract_version_pattern = re.compile(
+        r"^(\s*)(contract_version:\s*\{[^}]+\})\s*$",
         re.MULTILINE,
     )
-    inline_match = inline_version_pattern.search(content)
-    if inline_match:
-        indent = inline_match.group(1)
-        version_line = inline_match.group(0)
+    flow_contract_match = flow_contract_version_pattern.search(content)
+    if flow_contract_match:
+        indent = flow_contract_match.group(1)
+        version_line = flow_contract_match.group(0)
         return content.replace(
             version_line,
             f'{version_line}\n{indent}fingerprint: "{new_fingerprint}"',
             1,  # Replace only first occurrence
         )
 
-    # 2. Try dict-style version block: `version:\n  major: 1\n  ...`
-    dict_version_pattern = re.compile(
+    # 2. Try inline contract_version: `contract_version: "1.0"` or `contract_version: 1.0`
+    inline_contract_version_pattern = re.compile(
+        r'^(\s*)(contract_version:\s*["\']?[\w./-]+["\']?)\s*$',
+        re.MULTILINE,
+    )
+    inline_contract_match = inline_contract_version_pattern.search(content)
+    if inline_contract_match:
+        indent = inline_contract_match.group(1)
+        version_line = inline_contract_match.group(0)
+        return content.replace(
+            version_line,
+            f'{version_line}\n{indent}fingerprint: "{new_fingerprint}"',
+            1,
+        )
+
+    # 3. Try block-style contract_version: `contract_version:\n  major: 1\n  ...`
+    block_contract_version_pattern = re.compile(
+        r"^(\s*)contract_version:\s*$",
+        re.MULTILINE,
+    )
+    block_contract_match = block_contract_version_pattern.search(content)
+    if block_contract_match:
+        indent = block_contract_match.group(1)
+        block_end = _find_version_block_end(content, block_contract_match.start())
+        # Insert fingerprint after the contract_version block
+        return (
+            content[:block_end].rstrip()
+            + f'\n{indent}fingerprint: "{new_fingerprint}"\n'
+            + content[block_end:].lstrip("\n")
+        )
+
+    # 4. Try version with flow-style dict: `version: {major: ...}`
+    flow_version_pattern = re.compile(
+        r"^(\s*)(version:\s*\{[^}]+\})\s*$",
+        re.MULTILINE,
+    )
+    flow_version_match = flow_version_pattern.search(content)
+    if flow_version_match:
+        indent = flow_version_match.group(1)
+        version_line = flow_version_match.group(0)
+        return content.replace(
+            version_line,
+            f'{version_line}\n{indent}fingerprint: "{new_fingerprint}"',
+            1,
+        )
+
+    # 5. Try inline version: `version: "1.0.0"` or `version: 1.0.0`
+    inline_version_pattern = re.compile(
+        r'^(\s*)(version:\s*["\']?[\w./-]+["\']?)\s*$',
+        re.MULTILINE,
+    )
+    inline_version_match = inline_version_pattern.search(content)
+    if inline_version_match:
+        indent = inline_version_match.group(1)
+        version_line = inline_version_match.group(0)
+        return content.replace(
+            version_line,
+            f'{version_line}\n{indent}fingerprint: "{new_fingerprint}"',
+            1,
+        )
+
+    # 6. Try block-style version: `version:\n  major: 1\n  ...`
+    block_version_pattern = re.compile(
         r"^(\s*)version:\s*$",
         re.MULTILINE,
     )
-    dict_match = dict_version_pattern.search(content)
-    if dict_match:
-        indent = dict_match.group(1)
-        block_end = _find_version_block_end(content, dict_match.start())
+    block_version_match = block_version_pattern.search(content)
+    if block_version_match:
+        indent = block_version_match.group(1)
+        block_end = _find_version_block_end(content, block_version_match.start())
         # Insert fingerprint after the version block
         return (
             content[:block_end].rstrip()
@@ -355,22 +422,22 @@ def update_fingerprint_in_yaml(
             + content[block_end:].lstrip("\n")
         )
 
-    # 3. Try contract_version (for flexible contracts)
-    contract_version_pattern = re.compile(
-        r'^(\s*)(contract_version:\s*["\']?[\w./-]+["\']?)\s*$',
+    # 7. Try to insert after node_type field (common in ONEX contracts)
+    node_type_pattern = re.compile(
+        r"^(\s*)(node_type:\s*[\w_]+)\s*$",
         re.MULTILINE,
     )
-    contract_match = contract_version_pattern.search(content)
-    if contract_match:
-        indent = contract_match.group(1)
-        version_line = contract_match.group(0)
+    node_type_match = node_type_pattern.search(content)
+    if node_type_match:
+        indent = node_type_match.group(1)
+        node_type_line = node_type_match.group(0)
         return content.replace(
-            version_line,
-            f'{version_line}\n{indent}fingerprint: "{new_fingerprint}"',
+            node_type_line,
+            f'{node_type_line}\n{indent}fingerprint: "{new_fingerprint}"',
             1,
         )
 
-    # 4. Try to insert after name field (common first field)
+    # 8. Try to insert after name field (common first field)
     name_pattern = re.compile(
         r'^(\s*)(name:\s*["\']?[\w./-]+["\']?)\s*$',
         re.MULTILINE,
@@ -385,7 +452,7 @@ def update_fingerprint_in_yaml(
             1,
         )
 
-    # 5. Fallback: add at end of file (should rarely happen for valid contracts)
+    # 9. Fallback: add at end of file (should rarely happen for valid contracts)
     return content.rstrip() + f'\nfingerprint: "{new_fingerprint}"\n'
 
 
@@ -444,6 +511,14 @@ def regenerate_fingerprint(
     # Read file
     try:
         content = file_path.read_text(encoding="utf-8")
+    except OSError as e:
+        return RegenerateResult(
+            file_path=file_path,
+            old_fingerprint=None,
+            new_fingerprint=None,
+            changed=False,
+            error=f"File read error: {e}",
+        )
     except UnicodeDecodeError as e:
         return RegenerateResult(
             file_path=file_path,
