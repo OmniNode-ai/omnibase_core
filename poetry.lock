@@ -2995,14 +2995,14 @@ windows-terminal = ["colorama (>=0.4.6)"]
 
 [[package]]
 name = "pypdf"
-version = "6.4.0"
+version = "6.4.1"
 description = "A pure-python PDF library capable of splitting, merging, cropping, and transforming PDF files"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "pypdf-6.4.0-py3-none-any.whl", hash = "sha256:55ab9837ed97fd7fcc5c131d52fcc2223bc5c6b8a1488bbf7c0e27f1f0023a79"},
-    {file = "pypdf-6.4.0.tar.gz", hash = "sha256:4769d471f8ddc3341193ecc5d6560fa44cf8cd0abfabf21af4e195cc0c224072"},
+    {file = "pypdf-6.4.1-py3-none-any.whl", hash = "sha256:1782ee0766f0b77defc305f1eb2bafe738a2ef6313f3f3d2ee85b4542ba7e535"},
+    {file = "pypdf-6.4.1.tar.gz", hash = "sha256:36eb0b52730fc3077d2b8d4122751e696d46af9ef9e5383db492df1ab0cc4647"},
 ]
 
 [package.extras]
@@ -4243,4 +4243,4 @@ full = ["psutil"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "b22592efdd29893cf00ebe1ed97e1e7dbee264fbd90eb9fee59fd595dff8d933"
+content-hash = "6b0af56b5f9a492d7e00446d35008d3b2ac1b24f30d7af76842203eba23bc98f"
