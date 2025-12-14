@@ -14,7 +14,9 @@ from omnibase_core.models.docker.model_docker_compose_config import (
 from omnibase_core.models.docker.model_docker_compose_generator_class import (
     ModelDockerComposeGenerator,
 )
-from omnibase_core.models.service.model_service_dependency import ModelServiceDependency
+from omnibase_core.models.services.model_service_dependency import (
+    ModelServiceDependency,
+)
 
 __all__ = [
     "ModelDockerComposeConfig",

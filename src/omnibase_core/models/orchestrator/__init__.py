@@ -68,7 +68,7 @@ See Also:
 
 from omnibase_core.models.graph import ModelGraph
 from omnibase_core.models.infrastructure.model_protocol_action import ModelAction
-from omnibase_core.models.service.model_plan import ModelPlan
+from omnibase_core.models.services.model_plan import ModelPlan
 
 # Re-export aggregator
 from .model_load_balancer import ModelLoadBalancer

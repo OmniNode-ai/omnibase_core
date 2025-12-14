@@ -260,10 +260,10 @@ omnibase_core (core framework)
 
 ### 1. Service Wrapper Pattern (Recommended)
 
-**Location**: `omnibase_core/src/omnibase_core/models/service/`
+**Location**: `omnibase_core/src/omnibase_core/models/services/`
 
 ```
-from omnibase_core.models.service import ModelServiceCompute
+from omnibase_core.models.services import ModelServiceCompute
 
 class MyComputeNode(ModelServiceCompute):
     """Production-ready compute node with all capabilities."""

@@ -31,7 +31,7 @@ from omnibase_core.models.contracts.model_contract_reducer import ModelContractR
 from omnibase_core.models.discovery.model_tool_invocation_event import (
     ModelToolInvocationEvent,
 )
-from omnibase_core.models.service.model_service_reducer import ModelServiceReducer
+from omnibase_core.models.services.model_service_reducer import ModelServiceReducer
 
 
 class ReducerNodeForIntegrationTest(ModelServiceReducer):

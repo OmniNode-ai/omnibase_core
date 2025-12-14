@@ -76,7 +76,10 @@ class TestContractFingerprintField:
 
     The fingerprint field provides drift detection capability by combining
     the contract version with a hash prefix of the contract content.
-    Format: "v{version}:{12-char-hash}" (e.g., "v1.1.0:8d00f09e22ec")
+    Format: "{version}:{12-char-hash}" (e.g., "1.1.0:8d00f09e22ec")
+
+    Note: Fingerprint version does NOT have 'v' prefix. This matches the
+    contract_version dict format {major: X, minor: Y, patch: Z}.
     """
 
     @pytest.fixture(params=V110_RUNTIME_CONTRACTS)
@@ -124,15 +127,17 @@ class TestContractFingerprintField:
         version_part, hash_part = parts
         assert version_part, f"{contract_name}: fingerprint version prefix is empty"
         assert hash_part, f"{contract_name}: fingerprint hash suffix is empty"
-        assert version_part.startswith("v"), (
-            f"{contract_name}: fingerprint version prefix should start with 'v', "
-            f"got '{version_part}'"
-        )
+        # Note: fingerprint version does NOT have 'v' prefix (e.g., "1.1.0:hash")
+        # This differs from semantic versioning convention but matches contract format
 
     def test_fingerprint_version_is_semver_format(
         self, contract_data: dict, contract_name: str
     ) -> None:
-        """Test that fingerprint version prefix is valid semver format with v prefix."""
+        """Test that fingerprint version prefix is valid semver format.
+
+        Note: Fingerprint version does NOT have 'v' prefix (e.g., "1.1.0:hash").
+        This is intentional to match the contract_version dict format.
+        """
         fingerprint = contract_data.get("fingerprint", "")
         if ":" not in fingerprint:
             pytest.fail(
@@ -141,11 +146,11 @@ class TestContractFingerprintField:
 
         version_part = fingerprint.split(":", 1)[0]
 
-        # Semver pattern with v prefix: vX.Y.Z
-        semver_pattern = r"v\d+\.\d+\.\d+"
+        # Semver pattern without v prefix: X.Y.Z
+        semver_pattern = r"\d+\.\d+\.\d+"
         assert re.fullmatch(semver_pattern, version_part), (
             f"{contract_name}: fingerprint version '{version_part}' "
-            f"is not valid semver (expected vX.Y.Z format)"
+            f"is not valid semver (expected X.Y.Z format)"
         )
 
     def test_fingerprint_hash_is_12_lowercase_hex_characters(
@@ -174,7 +179,11 @@ class TestContractFingerprintField:
     def test_fingerprint_version_matches_contract_version(
         self, contract_data: dict, contract_name: str
     ) -> None:
-        """Test that fingerprint version prefix matches contract_version field."""
+        """Test that fingerprint version prefix matches contract_version field.
+
+        Note: Fingerprint version does NOT have 'v' prefix (e.g., "1.1.0:hash").
+        This matches the contract_version dict format {major: X, minor: Y, patch: Z}.
+        """
         fingerprint = contract_data.get("fingerprint", "")
         contract_version = contract_data.get("contract_version", {})
 
@@ -190,9 +199,9 @@ class TestContractFingerprintField:
             )
 
         fingerprint_version = fingerprint.split(":", 1)[0]
-        # Expected format is v{major}.{minor}.{patch}
+        # Expected format is {major}.{minor}.{patch} (no 'v' prefix)
         expected_version = (
-            f"v{contract_version.get('major', 0)}."
+            f"{contract_version.get('major', 0)}."
             f"{contract_version.get('minor', 0)}."
             f"{contract_version.get('patch', 0)}"
         )
@@ -356,7 +365,7 @@ class TestFingerprintEdgeCases:
     def test_fingerprint_format_validation_wrong_hash_length(self) -> None:
         """Test that fingerprints with wrong hash length are invalid."""
         # Hash is too short (8 chars instead of 12)
-        short_hash_fingerprint = "v1.1.0:abc12345"
+        short_hash_fingerprint = "1.1.0:abc12345"
         parts = short_hash_fingerprint.split(":", 1)
         hash_part = parts[1] if len(parts) == 2 else ""
 
@@ -366,7 +375,7 @@ class TestFingerprintEdgeCases:
         )
 
         # Hash is too long (16 chars instead of 12)
-        long_hash_fingerprint = "v1.1.0:abc123456789abcd"
+        long_hash_fingerprint = "1.1.0:abc123456789abcd"
         parts = long_hash_fingerprint.split(":", 1)
         hash_part = parts[1] if len(parts) == 2 else ""
 
@@ -380,7 +389,7 @@ class TestFingerprintEdgeCases:
         Hash must be lowercase hex only (0-9a-f) for consistency.
         """
         # Uppercase hex should be rejected
-        uppercase_fingerprint = "v1.1.0:ABC123DEF456"
+        uppercase_fingerprint = "1.1.0:ABC123DEF456"
         parts = uppercase_fingerprint.split(":", 1)
         hash_part = parts[1] if len(parts) == 2 else ""
 
@@ -392,7 +401,7 @@ class TestFingerprintEdgeCases:
     def test_fingerprint_hash_rejects_non_hex_characters(self) -> None:
         """Test that non-hex characters in hash are invalid."""
         # Contains 'g' which is not valid hex
-        invalid_fingerprint = "v1.1.0:abc123ghijkl"
+        invalid_fingerprint = "1.1.0:abc123ghijkl"
         parts = invalid_fingerprint.split(":", 1)
         hash_part = parts[1] if len(parts) == 2 else ""
 
@@ -402,18 +411,21 @@ class TestFingerprintEdgeCases:
         )
 
     def test_valid_fingerprint_format_accepted(self) -> None:
-        """Test that properly formatted fingerprints are accepted."""
-        valid_fingerprint = "v1.1.0:8d00f09e22ec"
+        """Test that properly formatted fingerprints are accepted.
+
+        Note: Fingerprint version does NOT have 'v' prefix (e.g., "1.1.0:hash").
+        """
+        valid_fingerprint = "1.1.0:8d00f09e22ec"
         parts = valid_fingerprint.split(":", 1)
 
         assert len(parts) == 2, "Fingerprint should split into exactly 2 parts"
 
         version_part, hash_part = parts
 
-        # Version should be valid semver with v prefix
-        semver_pattern = r"v\d+\.\d+\.\d+"
+        # Version should be valid semver without v prefix (matches contract format)
+        semver_pattern = r"\d+\.\d+\.\d+"
         assert re.fullmatch(semver_pattern, version_part), (
-            f"Version '{version_part}' should be valid semver with v prefix"
+            f"Version '{version_part}' should be valid semver (X.Y.Z format)"
         )
 
         # Hash should be 12 lowercase hex chars

@@ -17,7 +17,7 @@ from omnibase_core.models.configuration.model_rest_api_connection_config import 
 from omnibase_core.models.core.model_retry_config import ModelRetryConfig
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.security.model_security_utils import ModelSecurityUtils
-from omnibase_core.models.service.model_masked_config import ModelMaskedConfig
+from omnibase_core.models.services.model_masked_config import ModelMaskedConfig
 
 
 class ModelExternalServiceConfig(BaseModel):

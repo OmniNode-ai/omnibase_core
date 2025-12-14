@@ -55,7 +55,7 @@ from omnibase_core.models.contracts.subcontracts.model_routing_subcontract impor
     ModelRoutingSubcontract,
 )
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.models.service.model_external_service_config import (
+from omnibase_core.models.services.model_external_service_config import (
     ModelExternalServiceConfig,
 )
 from omnibase_core.models.utils.model_subcontract_constraint_validator import (

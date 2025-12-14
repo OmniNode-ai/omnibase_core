@@ -264,7 +264,7 @@ except CircuitBreakerOpenException:
 ### 2. Implement Your Node
 Prefer a service wrapper to eliminate boilerplate and ensure correct mixin ordering:
 ```
-from omnibase_core.models.service import ModelServiceCompute
+from omnibase_core.models.services import ModelServiceCompute
 
 class MyComputeService(ModelServiceCompute):
     pass

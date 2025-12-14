@@ -19,7 +19,7 @@ from omnibase_core.enums.enum_service_health_status import EnumServiceHealthStat
 from omnibase_core.enums.enum_service_type import EnumServiceType
 from omnibase_core.errors import EnumCoreErrorCode, OnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.models.service.model_service_health import ModelServiceHealth
+from omnibase_core.models.services.model_service_health import ModelServiceHealth
 
 
 @pytest.mark.integration

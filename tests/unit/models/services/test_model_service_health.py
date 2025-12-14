@@ -26,7 +26,7 @@ from omnibase_core.enums.enum_service_health_status import EnumServiceHealthStat
 from omnibase_core.enums.enum_service_type import EnumServiceType
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.models.service.model_service_health import ModelServiceHealth
+from omnibase_core.models.services.model_service_health import ModelServiceHealth
 
 
 class TestModelServiceHealthInstantiation:
@@ -1080,7 +1080,7 @@ class TestModelServiceHealthBusinessIntelligence:
 class TestModelServiceHealthFactoryMethods:
     """Test factory methods."""
 
-    @patch("omnibase_core.models.service.model_service_health.datetime")
+    @patch("omnibase_core.models.services.model_service_health.datetime")
     def test_create_healthy(self, mock_datetime):
         """Test create_healthy() factory method."""
         mock_datetime.now.return_value.isoformat.return_value = "2024-01-15T10:30:00"
@@ -1100,7 +1100,7 @@ class TestModelServiceHealthFactoryMethods:
         assert service.consecutive_failures == 0
         assert service.last_check_time == "2024-01-15T10:30:00"
 
-    @patch("omnibase_core.models.service.model_service_health.datetime")
+    @patch("omnibase_core.models.services.model_service_health.datetime")
     def test_create_error(self, mock_datetime):
         """Test create_error() factory method."""
         mock_datetime.now.return_value.isoformat.return_value = "2024-01-15T10:30:00"
@@ -1121,7 +1121,7 @@ class TestModelServiceHealthFactoryMethods:
         assert service.consecutive_failures == 1
         assert service.last_check_time == "2024-01-15T10:30:00"
 
-    @patch("omnibase_core.models.service.model_service_health.datetime")
+    @patch("omnibase_core.models.services.model_service_health.datetime")
     def test_create_timeout(self, mock_datetime):
         """Test create_timeout() factory method."""
         mock_datetime.now.return_value.isoformat.return_value = "2024-01-15T10:30:00"

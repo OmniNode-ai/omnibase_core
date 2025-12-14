@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from omnibase_core.models.docker.model_docker_volume_config import (
         ModelDockerVolumeConfig,
     )
-    from omnibase_core.models.service.model_node_service_config import (
+    from omnibase_core.models.services.model_node_service_config import (
         ModelNodeServiceConfig,
     )
 

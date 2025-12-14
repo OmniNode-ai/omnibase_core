@@ -13,7 +13,7 @@ for compute nodes that perform data transformations, calculations, or pure funct
 
 Usage Example:
     ```python
-    from omnibase_core.models.service.model_service_compute import ModelServiceCompute
+    from omnibase_core.models.services.model_service_compute import ModelServiceCompute
     from omnibase_core.models.container.model_onex_container import ModelONEXContainer
     from omnibase_core.models.contracts.model_contract_compute import ModelContractCompute
 

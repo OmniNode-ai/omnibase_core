@@ -11,7 +11,7 @@ from omnibase_core.models.configuration.model_performance_hints import (
     ModelPerformanceHints,
 )
 from omnibase_core.models.core.model_capability import ModelCapability
-from omnibase_core.models.service.model_routing_preferences import (
+from omnibase_core.models.services.model_routing_preferences import (
     ModelRoutingPreferences,
 )
 
