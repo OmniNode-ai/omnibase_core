@@ -156,6 +156,30 @@ def test_workflow_processing():
 - [ ] Run tests to verify `pydantic.ValidationError` is not raised unexpectedly
 - [ ] Verify thread safety requirements are met (frozen models are now safe to share)
 
+#### Security: Deprecated MD5/SHA-1 Hash Algorithms [OMN-699]
+
+`ModelSessionAffinity` now deprecates MD5 and SHA-1 hash algorithms due to known cryptographic weaknesses. These algorithms are auto-converted to SHA-256 with a `DeprecationWarning`. **Support will be fully removed in v0.6.0.**
+
+**Impact**:
+- Configurations with `hash_algorithm: "md5"` or `hash_algorithm: "sha1"` will emit `DeprecationWarning` and auto-convert to SHA-256
+- Running with `-W error::DeprecationWarning` will convert these to errors (useful for CI/CD validation)
+- Only SHA-256, SHA-384, and SHA-512 are recommended for new configurations
+- **v0.6.0**: MD5/SHA-1 will be fully removed and raise `pydantic.ValidationError`
+
+**Migration**:
+```python
+# Current behavior (v0.5.0) - Deprecation warning + auto-conversion
+affinity = ModelSessionAffinity(hash_algorithm="md5")   # ⚠️ Warning, converts to sha256
+affinity = ModelSessionAffinity(hash_algorithm="sha1")  # ⚠️ Warning, converts to sha256
+
+# Recommended - Use secure algorithms (no warnings)
+affinity = ModelSessionAffinity(hash_algorithm="sha256")  # ✅ Default, recommended
+affinity = ModelSessionAffinity(hash_algorithm="sha384")  # ✅ Stronger
+affinity = ModelSessionAffinity(hash_algorithm="sha512")  # ✅ Strongest
+```
+
+**Recommendation**: Update configurations to use SHA-256 (default) before v0.6.0. Use SHA-384 or SHA-512 for high-security environments.
+
 ### Changed
 - Renamed `ModelOnexEnvelopeV1` to `ModelOnexEnvelope` ()
 - Renamed fields: `event_id`→`envelope_id`, `source_service`→`source_node`, `event_type`→`operation`
