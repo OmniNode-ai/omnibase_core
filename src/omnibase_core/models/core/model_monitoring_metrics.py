@@ -2,7 +2,7 @@
 Monitoring metrics model to replace Dict[str, Any] usage for metrics.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
@@ -98,7 +98,7 @@ class ModelMonitoringMetrics(BaseModel):
     )
     end_time: datetime | None = Field(default=None, description="Metrics window end")
     collection_timestamp: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="When metrics were collected",
     )
 

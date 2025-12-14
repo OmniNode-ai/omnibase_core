@@ -3,7 +3,7 @@
 This module defines the response model for event discovery queries.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -27,7 +27,7 @@ class ModelEventDiscoveryResponse(BaseModel):
 
     # Response Metadata
     response_timestamp: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="Response timestamp",
     )
     consul_query_time_ms: int | None = Field(

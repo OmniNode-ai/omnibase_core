@@ -24,7 +24,7 @@ class ModelParseMetadata(BaseModel):
     """
 
     parse_start_time: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="When parsing started",
     )
 

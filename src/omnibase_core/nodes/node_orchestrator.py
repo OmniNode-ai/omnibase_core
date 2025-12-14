@@ -27,6 +27,7 @@ from omnibase_core.utils.workflow_executor import WorkflowExecutionResult
 
 # Error messages
 _ERR_WORKFLOW_DEFINITION_NOT_LOADED = "Workflow definition not loaded"
+_ERR_FUTURE_TIMESTAMP = "Invalid workflow snapshot: timestamp is in the future"
 
 
 class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
@@ -447,6 +448,54 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
         """
         return self._workflow_state
 
+    def _validate_workflow_snapshot(
+        self,
+        snapshot: ModelWorkflowStateSnapshot,
+    ) -> None:
+        """
+        Validate workflow snapshot for basic sanity.
+
+        Ensures the restored snapshot represents a valid workflow state:
+        - Timestamp sanity check (created_at not in the future)
+
+        Unlike NodeReducer which validates state names against FSM contract states,
+        NodeOrchestrator's workflow definition doesn't have a fixed set of "valid
+        step indices" - the step index can be any non-negative integer (already
+        enforced by Field(ge=0) constraint in ModelWorkflowStateSnapshot).
+
+        Args:
+            snapshot: Workflow state snapshot to validate
+
+        Raises:
+            ModelOnexError: If snapshot fails validation (e.g., future timestamp)
+
+        Note:
+            This validation prevents injection of invalid snapshots during
+            restore operations, ensuring workflow consistency and integrity.
+        """
+        from datetime import UTC, datetime
+
+        # Timestamp sanity check: created_at should not be in the future
+        now = datetime.now(UTC)
+
+        # Handle naive datetime (assume UTC)
+        snapshot_time = snapshot.created_at
+        if snapshot_time.tzinfo is None:
+            snapshot_time = snapshot_time.replace(tzinfo=UTC)
+
+        if snapshot_time > now:
+            raise ModelOnexError(
+                message=_ERR_FUTURE_TIMESTAMP,
+                error_code=EnumCoreErrorCode.INVALID_STATE,
+                context={
+                    "snapshot_timestamp": str(snapshot_time),
+                    "current_time": str(now),
+                    "workflow_id": str(snapshot.workflow_id)
+                    if snapshot.workflow_id
+                    else None,
+                },
+            )
+
     def restore_workflow_state(self, snapshot: ModelWorkflowStateSnapshot) -> None:
         """
         Restore workflow state from snapshot.
@@ -454,8 +503,14 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
         Restores the internal workflow state from a previously captured snapshot.
         This enables workflow replay and recovery from persisted state.
 
+        Validation performed:
+            - Timestamp sanity check (created_at not in the future)
+
         Args:
             snapshot: The workflow state snapshot to restore.
+
+        Raises:
+            ModelOnexError: If snapshot fails validation (e.g., future timestamp)
 
         Example:
             ```python
@@ -477,6 +532,9 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
             is immutable (frozen=True), subsequent workflow operations will create
             new snapshots rather than modifying the restored one.
         """
+        # Validate snapshot before restoring
+        self._validate_workflow_snapshot(snapshot)
+
         self._workflow_state = snapshot
 
     def get_workflow_snapshot(self) -> dict[str, object] | None:

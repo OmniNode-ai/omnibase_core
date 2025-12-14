@@ -231,22 +231,26 @@ class TestNodeReducerStateSerialization:
 
         assert "FSM contract not loaded" in str(exc_info.value)
 
-    def test_get_state_snapshot_returns_model(
+    def test_get_state_snapshot_returns_dict(
         self,
         test_container: ModelONEXContainer,
         simple_fsm: ModelFSMSubcontract,
     ) -> None:
-        """Test get_state_snapshot returns strongly-typed model."""
+        """Test get_state_snapshot returns JSON-serializable dict.
+
+        Note: get_state_snapshot() returns dict[str, object] for JSON serialization.
+        For strongly-typed access, use snapshot_state() which returns ModelFSMStateSnapshot.
+        """
         node = NodeReducer(test_container)
         node.fsm_contract = simple_fsm
         node.initialize_fsm_state(simple_fsm, context={"key": "value"})
 
         snapshot = node.get_state_snapshot()
 
-        assert isinstance(snapshot, ModelFSMStateSnapshot)
-        assert snapshot.current_state == "idle"
-        assert snapshot.context == {"key": "value"}
-        assert snapshot.history == []
+        assert isinstance(snapshot, dict)
+        assert snapshot["current_state"] == "idle"
+        assert snapshot["context"] == {"key": "value"}
+        assert snapshot["history"] == []
 
     def test_get_state_snapshot_returns_none_when_not_initialized(
         self,
@@ -651,6 +655,205 @@ class TestNodeOrchestratorStateSerialization:
         )
         assert restored_snapshot.failed_step_ids == original_snapshot.failed_step_ids
         assert restored_snapshot.context == original_snapshot.context
+
+
+class TestNodeOrchestratorWorkflowSnapshotValidation:
+    """Tests for NodeOrchestrator workflow snapshot validation.
+
+    Tests the _validate_workflow_snapshot() method that ensures restored
+    snapshots are valid:
+    - Timestamp sanity check (created_at not in the future)
+    """
+
+    def test_restore_workflow_state_rejects_future_timestamp(
+        self,
+        test_container: ModelONEXContainer,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test restore_workflow_state raises error for snapshot with future timestamp."""
+        from datetime import UTC, timedelta
+
+        node = NodeOrchestrator(test_container)
+        node.workflow_definition = simple_workflow_definition
+
+        # Create snapshot with future timestamp
+        future_time = datetime.now(UTC) + timedelta(days=30)
+        workflow_id = uuid4()
+        snapshot_with_future_time = ModelWorkflowStateSnapshot(
+            workflow_id=workflow_id,
+            current_step_index=1,
+            completed_step_ids=[],
+            failed_step_ids=[],
+            context={},
+            created_at=future_time,
+        )
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            node.restore_workflow_state(snapshot_with_future_time)
+
+        assert "timestamp is in the future" in str(exc_info.value)
+
+    def test_restore_workflow_state_rejects_naive_future_timestamp(
+        self,
+        test_container: ModelONEXContainer,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test restore_workflow_state handles naive datetime timestamps correctly."""
+        from datetime import timedelta
+
+        node = NodeOrchestrator(test_container)
+        node.workflow_definition = simple_workflow_definition
+
+        # Create snapshot with naive future timestamp (no timezone info)
+        future_time = datetime.now() + timedelta(days=30)
+        workflow_id = uuid4()
+        snapshot_with_future_time = ModelWorkflowStateSnapshot(
+            workflow_id=workflow_id,
+            current_step_index=1,
+            completed_step_ids=[],
+            failed_step_ids=[],
+            context={},
+            created_at=future_time,
+        )
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            node.restore_workflow_state(snapshot_with_future_time)
+
+        assert "timestamp is in the future" in str(exc_info.value)
+
+    def test_restore_workflow_state_accepts_past_timestamp(
+        self,
+        test_container: ModelONEXContainer,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test restore_workflow_state accepts snapshot with past timestamp."""
+        from datetime import UTC
+
+        node = NodeOrchestrator(test_container)
+        node.workflow_definition = simple_workflow_definition
+
+        # Create snapshot with past timestamp
+        past_time = datetime(2020, 1, 1, 0, 0, 0, tzinfo=UTC)
+        workflow_id = uuid4()
+        step_id = uuid4()
+        snapshot_with_past_time = ModelWorkflowStateSnapshot(
+            workflow_id=workflow_id,
+            current_step_index=2,
+            completed_step_ids=[step_id],
+            failed_step_ids=[],
+            context={"restored": True},
+            created_at=past_time,
+        )
+
+        # Should not raise
+        node.restore_workflow_state(snapshot_with_past_time)
+
+        # Verify state was restored
+        current_snapshot = node.snapshot_workflow_state()
+        assert current_snapshot is not None
+        assert current_snapshot.workflow_id == workflow_id
+        assert current_snapshot.current_step_index == 2
+        assert current_snapshot.completed_step_ids == [step_id]
+
+    def test_restore_workflow_state_accepts_recent_timestamp(
+        self,
+        test_container: ModelONEXContainer,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test restore_workflow_state accepts snapshot with recent timestamp."""
+        from datetime import UTC, timedelta
+
+        node = NodeOrchestrator(test_container)
+        node.workflow_definition = simple_workflow_definition
+
+        # Create snapshot with timestamp from a second ago
+        recent_time = datetime.now(UTC) - timedelta(seconds=1)
+        workflow_id = uuid4()
+        snapshot = ModelWorkflowStateSnapshot(
+            workflow_id=workflow_id,
+            current_step_index=1,
+            completed_step_ids=[],
+            failed_step_ids=[],
+            context={},
+            created_at=recent_time,
+        )
+
+        # Should not raise
+        node.restore_workflow_state(snapshot)
+
+        # Verify state was restored
+        current_snapshot = node.snapshot_workflow_state()
+        assert current_snapshot is not None
+        assert current_snapshot.workflow_id == workflow_id
+
+    def test_restore_workflow_state_includes_context_in_error(
+        self,
+        test_container: ModelONEXContainer,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test restore_workflow_state error includes workflow_id in context."""
+        from datetime import UTC, timedelta
+
+        node = NodeOrchestrator(test_container)
+        node.workflow_definition = simple_workflow_definition
+
+        # Create snapshot with future timestamp and a workflow_id
+        future_time = datetime.now(UTC) + timedelta(days=30)
+        workflow_id = uuid4()
+        snapshot_with_future_time = ModelWorkflowStateSnapshot(
+            workflow_id=workflow_id,
+            current_step_index=1,
+            completed_step_ids=[],
+            failed_step_ids=[],
+            context={},
+            created_at=future_time,
+        )
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            node.restore_workflow_state(snapshot_with_future_time)
+
+        # Check that error model context includes workflow_id
+        error = exc_info.value
+        # Use model.context for full context (includes additional fields)
+        # The context dict is nested under an outer 'context' key due to how ModelOnexError works
+        assert error.model.context is not None
+        ctx = error.model.context.get("context", error.model.context)
+        assert "workflow_id" in ctx
+        assert ctx["workflow_id"] == str(workflow_id)
+
+    def test_restore_workflow_state_handles_none_workflow_id(
+        self,
+        test_container: ModelONEXContainer,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test restore_workflow_state handles snapshot with None workflow_id."""
+        from datetime import UTC, timedelta
+
+        node = NodeOrchestrator(test_container)
+        node.workflow_definition = simple_workflow_definition
+
+        # Create snapshot with future timestamp and no workflow_id
+        future_time = datetime.now(UTC) + timedelta(days=30)
+        snapshot_with_future_time = ModelWorkflowStateSnapshot(
+            workflow_id=None,
+            current_step_index=1,
+            completed_step_ids=[],
+            failed_step_ids=[],
+            context={},
+            created_at=future_time,
+        )
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            node.restore_workflow_state(snapshot_with_future_time)
+
+        # Check that error is raised and model context has None for workflow_id
+        error = exc_info.value
+        # Use model.context for full context (includes additional fields)
+        # The context dict is nested under an outer 'context' key due to how ModelOnexError works
+        assert error.model.context is not None
+        ctx = error.model.context.get("context", error.model.context)
+        assert "workflow_id" in ctx
+        assert ctx["workflow_id"] is None
 
 
 class TestModelWorkflowStateSnapshot:

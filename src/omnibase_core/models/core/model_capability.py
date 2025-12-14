@@ -68,7 +68,7 @@ class ModelCapability(BaseModel):
     )
 
     created_at: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="Creation timestamp",
     )
 

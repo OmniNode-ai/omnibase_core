@@ -1,7 +1,7 @@
 from pydantic import Field
 
 "\nSecurity policy model with structured data fields.\n"
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, field_serializer
@@ -30,10 +30,10 @@ class ModelSecurityPolicy(BaseModel):
         description="Policy version",
     )
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Creation time"
+        default_factory=lambda: datetime.now(UTC), description="Creation time"
     )
     updated_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Last update time"
+        default_factory=lambda: datetime.now(UTC), description="Last update time"
     )
     created_by: str | None = Field(default=None, description="Policy creator")
     description: str | None = Field(default=None, description="Policy description")

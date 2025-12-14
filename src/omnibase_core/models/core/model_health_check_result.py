@@ -3,7 +3,7 @@ from pydantic import Field
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 "\nHealth check result model to replace Dict[str, Any] usage for health checks.\n"
-from datetime import datetime
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, ConfigDict, field_serializer
 
@@ -25,7 +25,7 @@ class ModelHealthCheckResult(BaseModel):
         default=..., description="Overall health status (healthy/unhealthy/degraded)"
     )
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="Check timestamp"
+        default_factory=lambda: datetime.now(UTC), description="Check timestamp"
     )
     components: list[ModelHealthCheckComponent] = Field(
         default_factory=list, description="Individual component statuses"

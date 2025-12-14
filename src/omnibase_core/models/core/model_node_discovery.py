@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
 
@@ -16,7 +16,7 @@ class ModelNodeDiscovery(BaseModel):
         description="List of discovered nodes",
     )
     discovery_timestamp: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="When discovery occurred",
     )
     discovery_source: EnumDiscoverySource = Field(

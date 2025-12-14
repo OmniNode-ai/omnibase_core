@@ -5,7 +5,7 @@ Base class for all action models with tool-as-a-service support.
 Provides UUID correlation tracking, trust scores, and service metadata.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -29,7 +29,7 @@ class ModelActionBase(BaseModel):
         description="Unique correlation ID for tracking action definition",
     )
     action_created_at: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="Action model creation timestamp",
     )
     trust_level: float = Field(

@@ -46,10 +46,11 @@ class ModelSignatureChain(BaseModel):
         default_factory=list, description="Ordered list[Any]of signatures in the chain"
     )
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="When the chain was created (UTC)"
+        default_factory=lambda: datetime.now(UTC),
+        description="When the chain was created (UTC)",
     )
     last_modified: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="When the chain was last modified (UTC)",
     )
     chain_hash: str = Field(

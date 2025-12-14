@@ -5,7 +5,7 @@ This model provides a clean context for internal processing operations
 where all traceability information is guaranteed to be present.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
@@ -39,7 +39,7 @@ class ModelOnexInternalProcessingContext(BaseModel):
     node_name: str = Field(default=..., description="Node performing the processing")
     operation: str = Field(default=..., description="Operation being performed")
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="Processing timestamp",
     )
 

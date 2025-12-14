@@ -2,7 +2,7 @@
 Performance profile model to replace Dict[str, Any] usage for performance data.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
@@ -138,7 +138,7 @@ class ModelPerformanceProfile(BaseModel):
 
     # Profile metadata
     profile_timestamp: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="When profile was generated",
     )
     profile_duration_seconds: int | None = Field(

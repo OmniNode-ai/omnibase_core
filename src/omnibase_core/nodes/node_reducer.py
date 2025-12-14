@@ -346,13 +346,17 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
 
     def snapshot_state(self) -> ModelFSMStateSnapshot | None:
         """
-        Return current FSM state snapshot.
+        Return current FSM state as a strongly-typed snapshot model.
 
-        Provides read-only access to the current FSM state for serialization,
-        persistence, or inspection purposes. Does not modify state.
+        Returns the current FSM state as an immutable ``ModelFSMStateSnapshot``
+        that can be serialized and restored later. This enables FSM replay,
+        debugging, and state persistence with full type safety.
+
+        For JSON serialization use cases where a plain dict is preferred,
+        use ``get_state_snapshot()`` instead.
 
         Returns:
-            Current FSM state snapshot, or None if FSM not initialized
+            ModelFSMStateSnapshot if FSM is initialized, None otherwise.
 
         Example:
             ```python
@@ -365,9 +369,16 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
                 logger.info("Current state: %s", snapshot.current_state)
                 logger.debug("Context: %s", snapshot.context)
                 logger.debug("History: %s", snapshot.history)
+
+                # Can be restored later
+                node.restore_state(snapshot)
             else:
                 logger.warning("FSM not initialized")
             ```
+
+        See Also:
+            get_state_snapshot: Returns dict[str, object] for JSON serialization.
+            restore_state: Restores state from a ModelFSMStateSnapshot.
         """
         return self._fsm_state
 
@@ -511,16 +522,20 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
 
         self._fsm_state = snapshot
 
-    def get_state_snapshot(self) -> ModelFSMStateSnapshot | None:
+    def get_state_snapshot(self) -> dict[str, object] | None:
         """
-        Return FSM state snapshot for serialization or inspection.
+        Return FSM state as a JSON-serializable dictionary.
 
-        Provides the current FSM state as a strongly-typed model
-        suitable for inspection, serialization, or external storage.
+        Converts the current FSM state snapshot to a plain dictionary
+        suitable for JSON serialization, API responses, or external storage
+        systems that require dict format.
+
+        For strongly-typed access to FSM state, use ``snapshot_state()``
+        instead, which returns the ``ModelFSMStateSnapshot`` model directly.
 
         Returns:
-            ModelFSMStateSnapshot with current_state, context, and history,
-            or None if FSM not initialized.
+            dict[str, object] with FSM state data that can be serialized
+            to JSON, or None if FSM not initialized.
 
         Example:
             ```python
@@ -529,17 +544,23 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
 
             logger = logging.getLogger(__name__)
 
-            snapshot = node.get_state_snapshot()
-            if snapshot:
-                # Serialize for persistence
-                state_json = json.dumps(snapshot.model_dump())
-                logger.debug("Serialized state: %s", state_json)
+            snapshot_dict = node.get_state_snapshot()
+            if snapshot_dict:
+                # Direct JSON serialization
+                json_str = json.dumps(snapshot_dict, default=str)
+                logger.debug("FSM state JSON: %s", json_str)
 
-                # Store in database, cache, or message queue
-                await storage.save("fsm_state", state_json)
+                # Access fields as dict keys
+                logger.info("Current state: %s", snapshot_dict["current_state"])
+                logger.info("History: %d transitions", len(snapshot_dict["history"]))
 
-                # Or access typed fields directly
-                logger.info("Current state: %s", snapshot.current_state)
+                # For restoration, use snapshot_state() to get the model
             ```
+
+        See Also:
+            snapshot_state: Returns strongly-typed ModelFSMStateSnapshot.
+            restore_state: Restores state from a ModelFSMStateSnapshot.
         """
-        return self._fsm_state
+        if self._fsm_state is None:
+            return None
+        return self._fsm_state.model_dump()

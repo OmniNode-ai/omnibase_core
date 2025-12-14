@@ -5,7 +5,7 @@ This model replaces restrictive health enums with extensible health management
 supporting subsystem health, issues tracking, metrics, and trend analysis.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
 
@@ -56,7 +56,7 @@ class ModelHealthStatus(BaseModel):
     )
 
     last_check: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="Last health check timestamp",
     )
 

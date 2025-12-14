@@ -17,7 +17,7 @@ class ModelMetadataBase(BaseModel):
     """Base metadata model for all metadata types"""
 
     created_at: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="Creation timestamp",
     )
 

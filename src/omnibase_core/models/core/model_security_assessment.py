@@ -2,7 +2,7 @@
 Security assessment model to replace Dict[str, Any] usage for security data.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
@@ -34,7 +34,7 @@ class ModelSecurityAssessment(BaseModel):
         default=None, description="Security score (0-100)"
     )
     last_assessment_date: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="Last assessment date",
     )
 

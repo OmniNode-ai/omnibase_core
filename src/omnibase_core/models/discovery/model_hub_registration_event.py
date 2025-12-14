@@ -3,7 +3,7 @@
 This module defines the Hub self-registration event for Consul service registry.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -43,7 +43,7 @@ class ModelHubRegistrationEvent(BaseModel):
 
     # Registration Details
     registration_timestamp: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="Registration timestamp",
     )
     registration_required: bool = Field(

@@ -16,7 +16,7 @@ __all__ = [
 Business impact model to replace dictionary usage for business metrics.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, ConfigDict, field_serializer
 
@@ -126,7 +126,7 @@ class ModelBusinessImpact(BaseModel):
 
     # Metadata
     assessment_timestamp: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="When assessment was made",
     )
     assessed_by: str | None = Field(

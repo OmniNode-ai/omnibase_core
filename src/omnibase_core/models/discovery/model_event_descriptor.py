@@ -20,7 +20,7 @@ This module defines the core EventDescriptor structure used for event-driven ser
 discovery and Container Adapter coordination throughout the ONEX ecosystem.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, ConfigDict
 
@@ -166,7 +166,7 @@ class ModelEventDescriptor(BaseModel):
         description="Event execution context",
     )
     event_timestamp: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="Event creation timestamp",
     )
 
