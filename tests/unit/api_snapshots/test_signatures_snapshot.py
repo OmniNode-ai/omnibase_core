@@ -67,12 +67,18 @@ class TestNodeComputeSignatureSnapshot:
 
     @pytest.mark.unit
     def test_node_compute_init_return_type(self) -> None:
-        """Verify NodeCompute.__init__ return type annotation is None."""
+        """Verify NodeCompute.__init__ return type annotation is None.
+
+        Note: Due to PEP 563 (from __future__ import annotations), type annotations
+        are stored as strings. We check for both the actual type and string representation.
+        """
         from omnibase_core.nodes import NodeCompute
 
         sig = inspect.signature(NodeCompute.__init__)
 
-        assert sig.return_annotation is None or sig.return_annotation is type(None), (
+        # Handle both actual type and stringified annotation (PEP 563)
+        valid_none_annotations = (None, type(None), "None")
+        assert sig.return_annotation in valid_none_annotations, (
             f"NodeCompute.__init__ should return None, got {sig.return_annotation}"
         )
 
@@ -81,6 +87,9 @@ class TestNodeComputeSignatureSnapshot:
         """Verify container parameter type annotation.
 
         Pre-refactor: container is annotated as ModelONEXContainer.
+
+        Note: Due to PEP 563 (from __future__ import annotations), type annotations
+        are stored as strings. We check for both the actual type and string representation.
         """
         from omnibase_core.models.container.model_onex_container import (
             ModelONEXContainer,
@@ -90,8 +99,9 @@ class TestNodeComputeSignatureSnapshot:
         sig = inspect.signature(NodeCompute.__init__)
         container_param = sig.parameters["container"]
 
-        # Check annotation matches expected type
-        assert container_param.annotation is ModelONEXContainer, (
+        # Handle both actual type and stringified annotation (PEP 563)
+        valid_annotations = (ModelONEXContainer, "ModelONEXContainer")
+        assert container_param.annotation in valid_annotations, (
             f"NodeCompute.__init__ container should be annotated as ModelONEXContainer, "
             f"got {container_param.annotation}"
         )
@@ -151,12 +161,18 @@ class TestNodeEffectSignatureSnapshot:
 
     @pytest.mark.unit
     def test_node_effect_init_return_type(self) -> None:
-        """Verify NodeEffect.__init__ return type annotation is None."""
+        """Verify NodeEffect.__init__ return type annotation is None.
+
+        Note: Due to PEP 563 (from __future__ import annotations), type annotations
+        are stored as strings. We check for both the actual type and string representation.
+        """
         from omnibase_core.nodes import NodeEffect
 
         sig = inspect.signature(NodeEffect.__init__)
 
-        assert sig.return_annotation is None or sig.return_annotation is type(None), (
+        # Handle both actual type and stringified annotation (PEP 563)
+        valid_none_annotations = (None, type(None), "None")
+        assert sig.return_annotation in valid_none_annotations, (
             f"NodeEffect.__init__ should return None, got {sig.return_annotation}"
         )
 
@@ -165,6 +181,9 @@ class TestNodeEffectSignatureSnapshot:
         """Verify container parameter type annotation.
 
         Pre-refactor: container is annotated as ModelONEXContainer.
+
+        Note: Due to PEP 563 (from __future__ import annotations), type annotations
+        are stored as strings. We check for both the actual type and string representation.
         """
         from omnibase_core.models.container.model_onex_container import (
             ModelONEXContainer,
@@ -174,7 +193,9 @@ class TestNodeEffectSignatureSnapshot:
         sig = inspect.signature(NodeEffect.__init__)
         container_param = sig.parameters["container"]
 
-        assert container_param.annotation is ModelONEXContainer, (
+        # Handle both actual type and stringified annotation (PEP 563)
+        valid_annotations = (ModelONEXContainer, "ModelONEXContainer")
+        assert container_param.annotation in valid_annotations, (
             f"NodeEffect.__init__ container should be annotated as ModelONEXContainer, "
             f"got {container_param.annotation}"
         )
@@ -218,12 +239,18 @@ class TestNodeReducerSignatureSnapshot:
 
     @pytest.mark.unit
     def test_node_reducer_init_return_type(self) -> None:
-        """Verify NodeReducer.__init__ return type annotation is None."""
+        """Verify NodeReducer.__init__ return type annotation is None.
+
+        Note: Due to PEP 563 (from __future__ import annotations), type annotations
+        are stored as strings. We check for both the actual type and string representation.
+        """
         from omnibase_core.nodes import NodeReducer
 
         sig = inspect.signature(NodeReducer.__init__)
 
-        assert sig.return_annotation is None or sig.return_annotation is type(None), (
+        # Handle both actual type and stringified annotation (PEP 563)
+        valid_none_annotations = (None, type(None), "None")
+        assert sig.return_annotation in valid_none_annotations, (
             f"NodeReducer.__init__ should return None, got {sig.return_annotation}"
         )
 
@@ -232,6 +259,9 @@ class TestNodeReducerSignatureSnapshot:
         """Verify container parameter type annotation.
 
         Pre-refactor: container is annotated as ModelONEXContainer.
+
+        Note: Due to PEP 563 (from __future__ import annotations), type annotations
+        are stored as strings. We check for both the actual type and string representation.
         """
         from omnibase_core.models.container.model_onex_container import (
             ModelONEXContainer,
@@ -241,7 +271,9 @@ class TestNodeReducerSignatureSnapshot:
         sig = inspect.signature(NodeReducer.__init__)
         container_param = sig.parameters["container"]
 
-        assert container_param.annotation is ModelONEXContainer, (
+        # Handle both actual type and stringified annotation (PEP 563)
+        valid_annotations = (ModelONEXContainer, "ModelONEXContainer")
+        assert container_param.annotation in valid_annotations, (
             f"NodeReducer.__init__ container should be annotated as ModelONEXContainer, "
             f"got {container_param.annotation}"
         )
@@ -285,12 +317,18 @@ class TestNodeOrchestratorSignatureSnapshot:
 
     @pytest.mark.unit
     def test_node_orchestrator_init_return_type(self) -> None:
-        """Verify NodeOrchestrator.__init__ return type annotation is None."""
+        """Verify NodeOrchestrator.__init__ return type annotation is None.
+
+        Note: Due to PEP 563 (from __future__ import annotations), type annotations
+        are stored as strings. We check for both the actual type and string representation.
+        """
         from omnibase_core.nodes import NodeOrchestrator
 
         sig = inspect.signature(NodeOrchestrator.__init__)
 
-        assert sig.return_annotation is None or sig.return_annotation is type(None), (
+        # Handle both actual type and stringified annotation (PEP 563)
+        valid_none_annotations = (None, type(None), "None")
+        assert sig.return_annotation in valid_none_annotations, (
             f"NodeOrchestrator.__init__ should return None, got {sig.return_annotation}"
         )
 
@@ -299,6 +337,9 @@ class TestNodeOrchestratorSignatureSnapshot:
         """Verify container parameter type annotation.
 
         Pre-refactor: container is annotated as ModelONEXContainer.
+
+        Note: Due to PEP 563 (from __future__ import annotations), type annotations
+        are stored as strings. We check for both the actual type and string representation.
         """
         from omnibase_core.models.container.model_onex_container import (
             ModelONEXContainer,
@@ -308,7 +349,9 @@ class TestNodeOrchestratorSignatureSnapshot:
         sig = inspect.signature(NodeOrchestrator.__init__)
         container_param = sig.parameters["container"]
 
-        assert container_param.annotation is ModelONEXContainer, (
+        # Handle both actual type and stringified annotation (PEP 563)
+        valid_annotations = (ModelONEXContainer, "ModelONEXContainer")
+        assert container_param.annotation in valid_annotations, (
             f"NodeOrchestrator.__init__ container should be annotated as ModelONEXContainer, "
             f"got {container_param.annotation}"
         )
@@ -741,11 +784,12 @@ class TestNodeComputeProcessSignatureSnapshot:
 
         Pre-refactor: input_data is annotated as ModelComputeInput[T_Input].
 
-        Note: Due to generic type parameters and PEP 695 style generics, we check:
-        1. typing.get_origin() for standard generic subscripts
-        2. The annotation is the class itself
-        3. issubclass() for PEP 695 style generics where typing.get_origin() returns None
-           but the annotation is a specialized generic class with ModelComputeInput in its MRO
+        Note: Due to PEP 563 (from __future__ import annotations), type annotations
+        may be stored as strings. We check for:
+        1. String annotation containing "ModelComputeInput" (PEP 563)
+        2. typing.get_origin() for standard generic subscripts
+        3. The annotation is the class itself
+        4. issubclass() for PEP 695 style generics
         """
         import typing
 
@@ -756,21 +800,26 @@ class TestNodeComputeProcessSignatureSnapshot:
         input_param = sig.parameters["input_data"]
 
         annotation = input_param.annotation
-        origin = typing.get_origin(annotation)
 
-        # Accept:
-        # 1. Standard generic subscript where origin is ModelComputeInput
-        # 2. The class directly (annotation is ModelComputeInput)
-        # 3. PEP 695 style generics where annotation is a subclass of ModelComputeInput
-        #    (typing.get_origin returns None but issubclass returns True)
-        is_valid = (origin is ModelComputeInput) or (annotation is ModelComputeInput)
-        if not is_valid:
-            # Check for PEP 695 style generics using issubclass
-            try:
-                is_valid = issubclass(annotation, ModelComputeInput)
-            except TypeError:
-                # issubclass raises TypeError if annotation is not a class
-                is_valid = False
+        # Handle PEP 563 stringified annotations first
+        if isinstance(annotation, str):
+            is_valid = "ModelComputeInput" in annotation
+        else:
+            origin = typing.get_origin(annotation)
+            # Accept:
+            # 1. Standard generic subscript where origin is ModelComputeInput
+            # 2. The class directly (annotation is ModelComputeInput)
+            # 3. PEP 695 style generics where annotation is a subclass of ModelComputeInput
+            is_valid = (origin is ModelComputeInput) or (
+                annotation is ModelComputeInput
+            )
+            if not is_valid:
+                # Check for PEP 695 style generics using issubclass
+                try:
+                    is_valid = issubclass(annotation, ModelComputeInput)
+                except TypeError:
+                    # issubclass raises TypeError if annotation is not a class
+                    is_valid = False
 
         assert is_valid, (
             f"NodeCompute.process input_data should be annotated as ModelComputeInput[T_Input], "
@@ -783,11 +832,12 @@ class TestNodeComputeProcessSignatureSnapshot:
 
         Pre-refactor: Returns ModelComputeOutput[T_Output].
 
-        Note: Due to generic type parameters and PEP 695 style generics, we check:
-        1. typing.get_origin() for standard generic subscripts
-        2. The annotation is the class itself
-        3. issubclass() for PEP 695 style generics where typing.get_origin() returns None
-           but the annotation is a specialized generic class with ModelComputeOutput in its MRO
+        Note: Due to PEP 563 (from __future__ import annotations), type annotations
+        may be stored as strings. We check for:
+        1. String annotation containing "ModelComputeOutput" (PEP 563)
+        2. typing.get_origin() for standard generic subscripts
+        3. The annotation is the class itself
+        4. issubclass() for PEP 695 style generics
         """
         import typing
 
@@ -797,23 +847,25 @@ class TestNodeComputeProcessSignatureSnapshot:
         sig = inspect.signature(NodeCompute.process)
         return_annotation = sig.return_annotation
 
-        origin = typing.get_origin(return_annotation)
-
-        # Accept:
-        # 1. Standard generic subscript where origin is ModelComputeOutput
-        # 2. The class directly (return_annotation is ModelComputeOutput)
-        # 3. PEP 695 style generics where annotation is a subclass of ModelComputeOutput
-        #    (typing.get_origin returns None but issubclass returns True)
-        is_valid = (origin is ModelComputeOutput) or (
-            return_annotation is ModelComputeOutput
-        )
-        if not is_valid:
-            # Check for PEP 695 style generics using issubclass
-            try:
-                is_valid = issubclass(return_annotation, ModelComputeOutput)
-            except TypeError:
-                # issubclass raises TypeError if return_annotation is not a class
-                is_valid = False
+        # Handle PEP 563 stringified annotations first
+        if isinstance(return_annotation, str):
+            is_valid = "ModelComputeOutput" in return_annotation
+        else:
+            origin = typing.get_origin(return_annotation)
+            # Accept:
+            # 1. Standard generic subscript where origin is ModelComputeOutput
+            # 2. The class directly (return_annotation is ModelComputeOutput)
+            # 3. PEP 695 style generics where annotation is a subclass of ModelComputeOutput
+            is_valid = (origin is ModelComputeOutput) or (
+                return_annotation is ModelComputeOutput
+            )
+            if not is_valid:
+                # Check for PEP 695 style generics using issubclass
+                try:
+                    is_valid = issubclass(return_annotation, ModelComputeOutput)
+                except TypeError:
+                    # issubclass raises TypeError if return_annotation is not a class
+                    is_valid = False
 
         assert is_valid, (
             f"NodeCompute.process should return ModelComputeOutput[T_Output], "

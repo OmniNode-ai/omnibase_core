@@ -47,6 +47,13 @@ class ComputeNodeForIntegrationTest(ModelServiceCompute):
         if not hasattr(self, "_cache_enabled"):
             MixinCaching.__init__(self)
 
+        # Initialize NodeCompute's cache infrastructure for process() method
+        # This is separate from MixinCaching - NodeCompute uses ProtocolComputeCache
+        from omnibase_core.services.service_compute_cache import ServiceComputeCache
+
+        if self._cache is None:
+            self._cache = ServiceComputeCache(container.compute_cache_config)
+
     async def execute_compute(self, contract: ModelContractCompute) -> dict:
         """Simple compute execution for testing."""
         return {"result": "compute_complete", "data": contract.model_dump()}
@@ -492,9 +499,12 @@ class TestModelServiceComputeIntegration:
         assert hasattr(service, "_shutdown_requested")
 
         # Verify NodeCompute attributes
+        # Note: v0.4.0 moved infrastructure concerns to protocol injection
+        # computation_cache is now a property, _cache is the internal attribute
+        # max_parallel_workers is now on ProtocolParallelExecutor (via _parallel_executor)
         assert hasattr(service, "computation_cache")
         assert hasattr(service, "computation_registry")
-        assert hasattr(service, "max_parallel_workers")
+        assert hasattr(service, "_cache")  # Protocol injection point for caching
 
         # Verify MixinHealthCheck attributes
         assert hasattr(service, "health_check")
