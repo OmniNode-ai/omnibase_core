@@ -109,7 +109,7 @@ class TestContractFingerprintField:
     def test_fingerprint_format_version_colon_hash(
         self, contract_data: dict, contract_name: str
     ) -> None:
-        """Test that fingerprint follows 'v{version}:{12-char-hash}' format."""
+        """Test that fingerprint follows '{version}:{12-char-hash}' format."""
         fingerprint = contract_data.get("fingerprint", "")
         assert ":" in fingerprint, (
             f"{contract_name}: fingerprint should contain ':' separator, "
@@ -124,15 +124,11 @@ class TestContractFingerprintField:
         version_part, hash_part = parts
         assert version_part, f"{contract_name}: fingerprint version prefix is empty"
         assert hash_part, f"{contract_name}: fingerprint hash suffix is empty"
-        assert version_part.startswith("v"), (
-            f"{contract_name}: fingerprint version prefix should start with 'v', "
-            f"got '{version_part}'"
-        )
 
     def test_fingerprint_version_is_semver_format(
         self, contract_data: dict, contract_name: str
     ) -> None:
-        """Test that fingerprint version prefix is valid semver format with v prefix."""
+        """Test that fingerprint version prefix is valid semver format."""
         fingerprint = contract_data.get("fingerprint", "")
         if ":" not in fingerprint:
             pytest.fail(
@@ -141,11 +137,11 @@ class TestContractFingerprintField:
 
         version_part = fingerprint.split(":", 1)[0]
 
-        # Semver pattern with v prefix: vX.Y.Z
-        semver_pattern = r"v\d+\.\d+\.\d+"
+        # Semver pattern: X.Y.Z (no v prefix)
+        semver_pattern = r"\d+\.\d+\.\d+"
         assert re.fullmatch(semver_pattern, version_part), (
             f"{contract_name}: fingerprint version '{version_part}' "
-            f"is not valid semver (expected vX.Y.Z format)"
+            f"is not valid semver (expected X.Y.Z format)"
         )
 
     def test_fingerprint_hash_is_12_lowercase_hex_characters(
@@ -190,9 +186,9 @@ class TestContractFingerprintField:
             )
 
         fingerprint_version = fingerprint.split(":", 1)[0]
-        # Expected format is v{major}.{minor}.{patch}
+        # Expected format is {major}.{minor}.{patch} (no 'v' prefix)
         expected_version = (
-            f"v{contract_version.get('major', 0)}."
+            f"{contract_version.get('major', 0)}."
             f"{contract_version.get('minor', 0)}."
             f"{contract_version.get('patch', 0)}"
         )
