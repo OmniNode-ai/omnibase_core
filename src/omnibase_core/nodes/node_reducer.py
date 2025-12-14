@@ -403,16 +403,16 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
             )
         self._fsm_state = snapshot
 
-    def get_state_snapshot(self) -> dict[str, object]:
+    def get_state_snapshot(self) -> ModelFSMStateSnapshot | None:
         """
-        Return state as JSON-serializable dictionary.
+        Return FSM state snapshot for serialization or inspection.
 
-        Provides a dictionary representation of the current FSM state
-        suitable for JSON serialization, logging, or external storage.
+        Provides the current FSM state as a strongly-typed model
+        suitable for inspection, serialization, or external storage.
 
         Returns:
-            Dictionary with current_state, context, and history keys,
-            or empty dict if FSM not initialized
+            ModelFSMStateSnapshot with current_state, context, and history,
+            or None if FSM not initialized.
 
         Example:
             ```python
@@ -421,16 +421,17 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
 
             logger = logging.getLogger(__name__)
 
-            state_dict = node.get_state_snapshot()
-            if state_dict:
+            snapshot = node.get_state_snapshot()
+            if snapshot:
                 # Serialize for persistence
-                state_json = json.dumps(state_dict)
+                state_json = json.dumps(snapshot.model_dump())
                 logger.debug("Serialized state: %s", state_json)
 
                 # Store in database, cache, or message queue
                 await storage.save("fsm_state", state_json)
+
+                # Or access typed fields directly
+                logger.info("Current state: %s", snapshot.current_state)
             ```
         """
-        if not self._fsm_state:
-            return {}
-        return self._fsm_state.model_dump()
+        return self._fsm_state

@@ -468,17 +468,16 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
         """
         self._workflow_state = snapshot
 
-    def get_workflow_snapshot(self) -> dict[str, object]:
+    def get_workflow_snapshot(self) -> ModelWorkflowStateSnapshot | None:
         """
-        Return state as JSON-serializable dictionary.
+        Return workflow state snapshot for serialization or inspection.
 
-        Convenience method that returns the workflow state as a dictionary
-        suitable for JSON serialization. Uses Pydantic's model_dump() for
-        proper serialization of complex types like UUIDs and datetimes.
+        Provides the current workflow state as a strongly-typed model
+        suitable for inspection, serialization, or external storage.
 
         Returns:
-            Dictionary representation of the current workflow state.
-            Returns an empty dictionary if no workflow execution is in progress.
+            ModelWorkflowStateSnapshot with workflow state data,
+            or None if no workflow execution is in progress.
 
         Example:
             ```python
@@ -487,16 +486,18 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
 
             logger = logging.getLogger(__name__)
 
-            # Get state as dictionary for JSON serialization
-            state_dict = node.get_workflow_snapshot()
-            json_str = json.dumps(state_dict, default=str)
-            logger.debug("Workflow state JSON: %s", json_str)
+            snapshot = node.get_workflow_snapshot()
+            if snapshot:
+                # Serialize for persistence
+                json_str = json.dumps(snapshot.model_dump(), default=str)
+                logger.debug("Workflow state JSON: %s", json_str)
 
-            # Can be restored later via:
-            # snapshot = ModelWorkflowStateSnapshot(**state_dict)
-            # node.restore_workflow_state(snapshot)
+                # Or access typed fields directly
+                logger.info("Current step: %d", snapshot.current_step_index)
+                logger.info("Completed: %d steps", len(snapshot.completed_step_ids))
+
+                # Can be restored later via:
+                # node.restore_workflow_state(snapshot)
             ```
         """
-        if self._workflow_state is None:
-            return {}
-        return self._workflow_state.model_dump()
+        return self._workflow_state

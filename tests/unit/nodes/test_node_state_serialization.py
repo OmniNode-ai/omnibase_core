@@ -152,7 +152,7 @@ class TestNodeReducerStateSerialization:
     Tests the FSM state snapshot and restoration capabilities:
     - snapshot_state() returns current FSM state
     - restore_state() restores FSM state from snapshot
-    - get_state_snapshot() returns dict representation
+    - get_state_snapshot() returns strongly-typed model (or None)
     - Round-trip serialization maintains state integrity
     """
 
@@ -233,33 +233,33 @@ class TestNodeReducerStateSerialization:
 
         assert "FSM contract not loaded" in str(exc_info.value)
 
-    def test_get_state_snapshot_returns_dict(
+    def test_get_state_snapshot_returns_model(
         self,
         test_container: ModelONEXContainer,
         simple_fsm: ModelFSMSubcontract,
     ) -> None:
-        """Test get_state_snapshot returns dictionary representation."""
+        """Test get_state_snapshot returns strongly-typed model."""
         node = NodeReducer(test_container)
         node.fsm_contract = simple_fsm
         node.initialize_fsm_state(simple_fsm, context={"key": "value"})
 
-        state_dict = node.get_state_snapshot()
+        snapshot = node.get_state_snapshot()
 
-        assert isinstance(state_dict, dict)
-        assert state_dict["current_state"] == "idle"
-        assert state_dict["context"] == {"key": "value"}
-        assert state_dict["history"] == []
+        assert isinstance(snapshot, ModelFSMStateSnapshot)
+        assert snapshot.current_state == "idle"
+        assert snapshot.context == {"key": "value"}
+        assert snapshot.history == []
 
-    def test_get_state_snapshot_returns_empty_dict_when_not_initialized(
+    def test_get_state_snapshot_returns_none_when_not_initialized(
         self,
         test_container: ModelONEXContainer,
     ) -> None:
-        """Test get_state_snapshot returns empty dict when FSM not initialized."""
+        """Test get_state_snapshot returns None when FSM not initialized."""
         node = NodeReducer(test_container)
 
-        state_dict = node.get_state_snapshot()
+        snapshot = node.get_state_snapshot()
 
-        assert state_dict == {}
+        assert snapshot is None
 
     @pytest.mark.asyncio
     async def test_snapshot_restore_roundtrip(
@@ -304,7 +304,7 @@ class TestNodeOrchestratorStateSerialization:
     Tests the workflow state snapshot and restoration capabilities:
     - snapshot_workflow_state() returns current workflow state
     - restore_workflow_state() restores workflow state from snapshot
-    - get_workflow_snapshot() returns dict representation
+    - get_workflow_snapshot() returns strongly-typed model (or None)
     - Round-trip serialization maintains state integrity
     """
 
@@ -382,12 +382,12 @@ class TestNodeOrchestratorStateSerialization:
         assert current_snapshot.completed_step_ids == [step1_id, step2_id]
         assert current_snapshot.context == {"restored": True, "retry_count": 2}
 
-    def test_get_workflow_snapshot_returns_dict(
+    def test_get_workflow_snapshot_returns_model(
         self,
         test_container: ModelONEXContainer,
         simple_workflow_definition: ModelWorkflowDefinition,
     ) -> None:
-        """Test get_workflow_snapshot returns dictionary representation."""
+        """Test get_workflow_snapshot returns strongly-typed model."""
         node = NodeOrchestrator(test_container)
         node.workflow_definition = simple_workflow_definition
 
@@ -403,25 +403,25 @@ class TestNodeOrchestratorStateSerialization:
         )
         node.restore_workflow_state(test_state)
 
-        state_dict = node.get_workflow_snapshot()
+        snapshot = node.get_workflow_snapshot()
 
-        assert isinstance(state_dict, dict)
-        assert state_dict["workflow_id"] == workflow_id
-        assert state_dict["current_step_index"] == 2
-        assert state_dict["completed_step_ids"] == [step_id]
-        assert state_dict["context"] == {"key": "value"}
-        assert "created_at" in state_dict
+        assert isinstance(snapshot, ModelWorkflowStateSnapshot)
+        assert snapshot.workflow_id == workflow_id
+        assert snapshot.current_step_index == 2
+        assert snapshot.completed_step_ids == [step_id]
+        assert snapshot.context == {"key": "value"}
+        assert snapshot.created_at is not None
 
-    def test_get_workflow_snapshot_returns_empty_dict_when_not_initialized(
+    def test_get_workflow_snapshot_returns_none_when_not_initialized(
         self,
         test_container: ModelONEXContainer,
     ) -> None:
-        """Test get_workflow_snapshot returns empty dict when no workflow state."""
+        """Test get_workflow_snapshot returns None when no workflow state."""
         node = NodeOrchestrator(test_container)
 
-        state_dict = node.get_workflow_snapshot()
+        snapshot = node.get_workflow_snapshot()
 
-        assert state_dict == {}
+        assert snapshot is None
 
     def test_snapshot_restore_roundtrip(
         self,
