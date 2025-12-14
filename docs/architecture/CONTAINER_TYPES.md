@@ -421,4 +421,5 @@ async def test_service_resolution():
 ---
 
 **Version History**:
+- **v0.4.0** (2025-12-13): Updated documentation metadata, refined examples
 - v0.1.0 (2025-10-30) - Initial documentation created to clarify container type distinction

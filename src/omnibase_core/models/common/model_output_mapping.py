@@ -23,7 +23,7 @@ See Also:
     - :class:`ModelOutputReference`: Individual output reference model.
 """
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, model_validator
 
 from omnibase_core.models.common.model_output_reference import ModelOutputReference
 
@@ -39,6 +39,7 @@ class ModelOutputMapping(BaseModel):
     - Structured output references with validation
     - Source node and output name extraction
     - Conversion to/from dictionary format for interoperability
+    - O(1) lookup by local_name via internal cache
 
     Example:
         >>> mapping = ModelOutputMapping.from_dict({
@@ -58,6 +59,15 @@ class ModelOutputMapping(BaseModel):
         description="List of typed output references",
     )
 
+    # Private cache for O(1) lookup by local_name
+    _by_local_name: dict[str, ModelOutputReference] = PrivateAttr(default_factory=dict)
+
+    @model_validator(mode="after")
+    def _build_lookup_cache(self) -> "ModelOutputMapping":
+        """Build the lookup cache after model initialization."""
+        self._by_local_name = {ref.local_name: ref for ref in self.references}
+        return self
+
     def get_mapping_dict(self) -> dict[str, str]:
         """
         Convert to dictionary format (local_name -> source_reference).
@@ -71,20 +81,22 @@ class ModelOutputMapping(BaseModel):
         """
         Get the source reference for a local name.
 
+        O(1) lookup using internal cache.
+
         Args:
             local_name: Local name to look up
 
         Returns:
             The source reference string if found, None otherwise
         """
-        for ref in self.references:
-            if ref.local_name == local_name:
-                return ref.source_reference
-        return None
+        ref = self._by_local_name.get(local_name)
+        return ref.source_reference if ref is not None else None
 
     def get_reference(self, local_name: str) -> ModelOutputReference | None:
         """
         Get the full reference object for a local name.
+
+        O(1) lookup using internal cache.
 
         Args:
             local_name: Local name to look up
@@ -92,14 +104,13 @@ class ModelOutputMapping(BaseModel):
         Returns:
             The ModelOutputReference if found, None otherwise
         """
-        for ref in self.references:
-            if ref.local_name == local_name:
-                return ref
-        return None
+        return self._by_local_name.get(local_name)
 
     def has_reference(self, local_name: str) -> bool:
         """
         Check if a reference exists for the given local name.
+
+        O(1) lookup using internal cache.
 
         Args:
             local_name: Local name to check
@@ -107,7 +118,7 @@ class ModelOutputMapping(BaseModel):
         Returns:
             True if reference exists, False otherwise
         """
-        return any(ref.local_name == local_name for ref in self.references)
+        return local_name in self._by_local_name
 
     def get_source_nodes(self) -> set[str]:
         """

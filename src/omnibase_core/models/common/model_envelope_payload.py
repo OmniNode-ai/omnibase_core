@@ -31,9 +31,9 @@ See Also:
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Self
+from typing import ClassVar, Self
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 # Type alias for additional payload values (for data field)
 PayloadDataValue = str | int | float | bool | list[str] | None
@@ -54,6 +54,10 @@ class ModelEnvelopePayload(BaseModel):
     - correlation_id: Request tracing identifier
     - data: Additional event-specific payload data
 
+    Security:
+    - String fields have max_length=512 to prevent memory exhaustion
+    - Data dict has max 100 entries to prevent DoS attacks
+
     Example:
         >>> payload = ModelEnvelopePayload(
         ...     event_type="user.created",
@@ -68,22 +72,30 @@ class ModelEnvelopePayload(BaseModel):
 
     model_config = ConfigDict(extra="forbid", from_attributes=True)
 
+    # Security constants
+    MAX_FIELD_LENGTH: ClassVar[int] = 512
+    MAX_DATA_ENTRIES: ClassVar[int] = 100
+
     # Common event payload fields
     event_type: str | None = Field(
         default=None,
         description="Event type identifier (e.g., 'user.created', 'order.completed')",
+        max_length=512,
     )
     source: str | None = Field(
         default=None,
         description="Origin service or component that generated the event",
+        max_length=512,
     )
     timestamp: str | None = Field(
         default=None,
         description="ISO 8601 timestamp when the event occurred",
+        max_length=64,
     )
     correlation_id: str | None = Field(
         default=None,
         description="Correlation ID for distributed request tracing",
+        max_length=128,
     )
 
     # Flexible data container for event-specific attributes
@@ -91,6 +103,15 @@ class ModelEnvelopePayload(BaseModel):
         default_factory=dict,
         description="Additional event-specific payload data",
     )
+
+    @model_validator(mode="after")
+    def _validate_data_size(self) -> ModelEnvelopePayload:
+        """Validate data dict size to prevent DoS attacks."""
+        if len(self.data) > self.MAX_DATA_ENTRIES:
+            raise ValueError(
+                f"Data dict exceeds maximum size of {self.MAX_DATA_ENTRIES} entries"
+            )
+        return self
 
     @classmethod
     def from_dict(cls, data: dict[str, PayloadDataValue]) -> Self:

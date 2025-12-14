@@ -76,10 +76,12 @@ class ModelOutputReference(BaseModel):
     description: str | None = Field(
         default=None,
         description="Human-readable description of this reference",
+        max_length=1024,
     )
     transform: str | None = Field(
         default=None,
         description="Optional transformation to apply (e.g., 'json_parse', 'to_string')",
+        max_length=256,
     )
 
     @field_validator("source_reference")
