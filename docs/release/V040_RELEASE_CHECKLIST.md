@@ -11,6 +11,89 @@ All checks require **verifiable evidence**. No exceptions, no vibes.
 
 ---
 
+## Evidence Storage Guidelines
+
+### Primary Storage Location
+
+All release evidence MUST be stored in the **release tracking issue** on Linear:
+- Issue: [OMN-218](https://linear.app/omninode/issue/OMN-218) (or the corresponding release issue)
+- Create a comment thread per section (e.g., "Section 1: Code Quality Evidence")
+- Link to artifacts rather than embedding large outputs inline
+
+### Evidence Types and Storage
+
+| Evidence Type | Where to Store | Format |
+|---------------|----------------|--------|
+| **CI run links** | Release issue comment | Direct URL to GitHub Actions run |
+| **Command output** (<50 lines) | Release issue comment | Code block with timestamp |
+| **Command output** (>50 lines) | GitHub Gist | Link in release issue |
+| **Screenshots** | Release issue attachment | PNG with descriptive filename |
+| **Coverage reports** | CI artifacts + link | HTML report or term output |
+| **Test logs** | CI artifacts | Link to specific job/step |
+| **Contract fingerprint reports** | `artifacts/release/v0.4.0/` | JSON or text file |
+| **Replay logs** | `artifacts/release/v0.4.0/` | Timestamped log files |
+
+### Directory Structure for Artifacts
+
+```text
+artifacts/
+  release/
+    v0.4.0/
+      fingerprints/          # Contract fingerprint verification
+      coverage/              # Coverage HTML reports
+      replay-logs/           # Determinism replay outputs
+      fuzz-reports/          # Adapter fuzz test results
+      evidence-index.md      # Index of all evidence with links
+```
+
+### Naming Conventions
+
+- **Files**: `{section}-{gate}-{timestamp}.{ext}`
+  - Example: `01-code-quality-ast-check-20251214.txt`
+- **Gists**: `v0.4.0-{section}-{gate}-evidence`
+  - Example: `v0.4.0-testing-coverage-evidence`
+- **Screenshots**: `{section}-{description}-{timestamp}.png`
+  - Example: `02-testing-ci-splits-pass-20251214.png`
+
+### Evidence Requirements
+
+Each gate requires:
+1. **Timestamp**: When the verification was performed
+2. **Command/Action**: Exact command run or action taken
+3. **Output**: Result (success/failure with details)
+4. **Commit SHA**: Git commit at time of verification
+5. **Verifier**: Who performed the check
+
+### Example Evidence Reference
+
+```markdown
+### Gate: Strict type safety enforced
+- **Timestamp**: 2025-12-14 14:30 UTC
+- **Commit**: abc1234
+- **Command**: `poetry run mypy src/omnibase_core/ --strict`
+- **Result**: PASS (0 errors)
+- **CI Link**: https://github.com/OmniNode-ai/omnibase_core/actions/runs/12345
+- **Verifier**: @username
+```
+
+### Retention Policy
+
+- **Release artifacts**: Retained permanently in `artifacts/release/`
+- **CI logs**: Retained per GitHub Actions policy (90 days default)
+- **Linear comments**: Permanent (part of issue history)
+- **Gists**: Permanent unless manually deleted
+
+### Pre-Release Evidence Checklist
+
+Before marking a gate complete:
+1. Evidence is stored in the correct location
+2. Evidence includes all required fields (timestamp, commit, result)
+3. Links are accessible and not broken
+4. Large outputs are in Gists or artifacts (not inline)
+5. Evidence index is updated (`artifacts/release/v0.4.0/evidence-index.md`)
+
+---
+
 ## 1. Code Quality
 
 - [ ] **All nodes pure-checked (AST)**
@@ -152,10 +235,126 @@ All checks require **verifiable evidence**. No exceptions, no vibes.
 
 ## 9. Cross-Repository Compatibility
 
-- [ ] **Dependent repositories validated**
-  - API compatibility confirmed
-  - No breaking integration regressions
-  - Evidence: Downstream test results
+### 9.1 Public API Stability
+
+- [ ] **Public API exports unchanged or documented**
+  - Verify `omnibase_core.nodes.__all__` exports are stable
+  - Command: `poetry run python -c "from omnibase_core.nodes import *; print('API imports OK')"`
+  - Expected: No ImportError, prints "API imports OK"
+  - Evidence: Command output
+
+- [ ] **Core import paths verified**
+  - All documented import paths resolve correctly
+  - Commands:
+    ```bash
+    poetry run python -c "from omnibase_core.nodes import NodeCompute, NodeReducer, NodeOrchestrator, NodeEffect"
+    poetry run python -c "from omnibase_core.models.container.model_onex_container import ModelONEXContainer"
+    poetry run python -c "from omnibase_core.models.errors.model_onex_error import ModelOnexError"
+    poetry run python -c "from omnibase_core.enums import EnumNodeKind, EnumNodeType"
+    ```
+  - Expected: All imports succeed without error
+  - Evidence: Command outputs (all four commands)
+
+- [ ] **Breaking changes enumerated**
+  - List all removed/renamed exports
+  - List all changed method signatures
+  - List all removed classes/functions
+  - Evidence: CHANGELOG.md breaking changes section with explicit list
+
+### 9.2 Downstream Repository Testing
+
+- [ ] **omnibase_spi compatibility verified**
+  - Clone omnibase_spi repository
+  - Update omnibase_core dependency to v0.4.0 (or local editable)
+  - Commands:
+    ```bash
+    cd /tmp && git clone https://github.com/OmniNode-ai/omnibase_spi.git
+    cd omnibase_spi
+    poetry add ../path/to/omnibase_core --editable  # or: poetry add omnibase_core==0.4.0
+    poetry run pytest tests/
+    poetry run mypy src/
+    ```
+  - Expected: All tests pass, mypy reports 0 errors
+  - Evidence: Test output (pass count) and mypy report
+
+- [ ] **omninode_core compatibility verified** (if applicable)
+  - Clone omninode_core repository
+  - Update omnibase_core dependency to v0.4.0
+  - Commands:
+    ```bash
+    cd /tmp && git clone https://github.com/OmniNode-ai/omninode_core.git
+    cd omninode_core
+    poetry add ../path/to/omnibase_core --editable  # or: poetry add omnibase_core==0.4.0
+    poetry run pytest tests/
+    poetry run mypy src/
+    ```
+  - Expected: All tests pass, mypy reports 0 errors
+  - Evidence: Test output and mypy report
+
+- [ ] **Example projects verified** (if applicable)
+  - Any official example projects compile and run
+  - Expected: No runtime errors on documented examples
+  - Evidence: Example execution logs or "N/A - no example projects"
+
+### 9.3 Integration Contract Verification
+
+- [ ] **Protocol implementations compatible**
+  - All SPI protocols still satisfied by core implementations
+  - Command: `poetry run python -c "from omnibase_core.models.container.model_onex_container import ModelONEXContainer; c = ModelONEXContainer(); print('Container init OK')"`
+  - Expected: Container initializes without protocol violations
+  - Evidence: Command output showing "Container init OK"
+
+- [ ] **Event envelope compatibility verified**
+  - ModelEventEnvelope schema unchanged or migration documented
+  - Command: `poetry run python -c "from omnibase_core.models.event.model_event_envelope import ModelEventEnvelope; import json; print(json.dumps(ModelEventEnvelope.model_json_schema(), indent=2))"`
+  - Expected: Schema matches v0.3.x specification or changes documented
+  - Evidence: Schema output with diff against v0.3.x (if changed)
+
+- [ ] **Contract YAML schema compatibility**
+  - RuntimeHostContract YAML files from v0.3.x parse correctly
+  - Command: `poetry run python -c "from omnibase_core.runtime.file_registry import FileRegistry; r = FileRegistry(); print('FileRegistry OK')"`
+  - Expected: No schema validation errors for valid v0.3.x contracts
+  - Evidence: Command output showing "FileRegistry OK"
+
+### 9.4 Migration Verification
+
+- [ ] **Migration guide tested end-to-end**
+  - Create fresh project using v0.3.x patterns
+  - Follow migration guide step-by-step
+  - Verify tests pass after migration
+  - Commands:
+    ```bash
+    # Example migration test workflow
+    cd /tmp && mkdir migration-test && cd migration-test
+    poetry init --name migration-test --python "^3.12"
+    poetry add omnibase_core==0.3.6  # Start with old version
+    # Create test file using v0.3.x patterns
+    # Run migration steps from docs/guides/MIGRATING_TO_V040.md
+    poetry add omnibase_core==0.4.0  # Upgrade
+    poetry run pytest tests/
+    ```
+  - Expected: Migration completes successfully, tests pass
+  - Evidence: Migration test log or documented test results
+
+- [ ] **Deprecation warnings present**
+  - Deprecated APIs emit warnings when used
+  - Command: `poetry run python -W default::DeprecationWarning -c "from omnibase_core.nodes import NodeCompute; print('Deprecation check complete')"`
+  - Expected: Deprecation warnings shown for any deprecated APIs (or none if no deprecations)
+  - Evidence: Warning output (or confirmation of no deprecated APIs)
+
+### 9.5 CI/CD Integration
+
+- [ ] **GitHub Actions workflow compatible**
+  - Downstream repos' CI workflows pass with v0.4.0
+  - Verify by running downstream CI with v0.4.0 dependency
+  - Expected: All CI checks pass (tests, type checking, linting)
+  - Evidence: CI run links for each downstream repo
+
+- [ ] **Docker builds succeed**
+  - Downstream Docker images build with v0.4.0 dependency
+  - Command: `docker build -t test-downstream .` (in downstream repo)
+  - Expected: Build completes successfully
+  - Evidence: Docker build log or "N/A - no Docker builds"
 
 ---
 
