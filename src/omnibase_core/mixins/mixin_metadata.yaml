@@ -826,13 +826,13 @@ mixin_health_check:
                     return ModelHealthStatus(
                         status=EnumNodeHealthStatus.HEALTHY,
                         message="Database connection OK",
-                        timestamp=datetime.utcnow().isoformat()
+                        timestamp=datetime.now(timezone.utc).isoformat()
                     )
                 except Exception as e:
                     return ModelHealthStatus(
                         status=EnumNodeHealthStatus.UNHEALTHY,
                         message=f"Database connection failed: {e}",
-                        timestamp=datetime.utcnow().isoformat()
+                        timestamp=datetime.now(timezone.utc).isoformat()
                     )
 
             def _check_connection_pool(self) -> ModelHealthStatus:
@@ -850,7 +850,7 @@ mixin_health_check:
                 return ModelHealthStatus(
                     status=status,
                     message=f"Pool utilization: {utilization:.0%}",
-                    timestamp=datetime.utcnow().isoformat()
+                    timestamp=datetime.now(timezone.utc).isoformat()
                 )
 
     api_client_effect:

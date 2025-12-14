@@ -23,7 +23,19 @@ if TYPE_CHECKING:
 
 @dataclass
 class ModelNodeState:
-    """Simple state holder for node metadata and configuration."""
+    """Simple state holder for node metadata and configuration.
+
+    Thread Safety:
+        This dataclass is NOT thread-safe. It contains mutable fields that can
+        be modified after creation:
+
+        - **NOT Safe**: Sharing instances across threads without synchronization
+        - **NOT Safe**: Modifying fields from multiple threads concurrently
+
+        Each thread should have its own instance, or use external synchronization
+        (e.g., threading.Lock) when sharing. See docs/guides/THREADING.md for
+        thread-safe patterns.
+    """
 
     contract_path: Path
     node_id: UUID

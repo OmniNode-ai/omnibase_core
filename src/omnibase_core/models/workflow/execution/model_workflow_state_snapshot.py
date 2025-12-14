@@ -64,6 +64,19 @@ class ModelWorkflowStateSnapshot(BaseModel):
         - Workflow executors MUST create new snapshots rather than mutating existing ones
         - Extra fields are rejected (extra="forbid")
 
+    Thread Safety:
+        This model is immutable (frozen=True) after creation, making it thread-safe
+        for concurrent read access from multiple threads or async tasks. However:
+
+        - **Safe**: Reading any field from multiple threads simultaneously
+        - **Safe**: Passing snapshots between threads without synchronization
+        - **WARNING**: Do NOT mutate mutable containers (list/dict contents) - this
+          violates the immutability contract and could cause race conditions
+
+        For state management in NodeOrchestrator, note that while snapshots themselves
+        are thread-safe, the NodeOrchestrator instance that creates/restores them is
+        NOT thread-safe. See docs/guides/THREADING.md for details.
+
     Example:
         >>> from uuid import uuid4
         >>> workflow_id = uuid4()

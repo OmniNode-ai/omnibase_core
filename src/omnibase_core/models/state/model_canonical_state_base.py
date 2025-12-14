@@ -52,6 +52,19 @@ class ModelCanonicalStateBase(BaseModel):
     - Suffix-based naming: ModelCanonicalStateBase
     - Pydantic v2 with ConfigDict
     - Abstract pattern (no concrete backend specifics)
+
+    Thread Safety:
+        This model is NOT frozen by default and uses validate_assignment=True,
+        making it mutable after creation. It is NOT thread-safe.
+
+        - **NOT Safe**: Sharing instances across threads without synchronization
+        - **NOT Safe**: Modifying fields from multiple threads concurrently
+        - **Safe**: Reading fields after construction (before any modifications)
+
+        For optimistic concurrency control patterns (read-modify-commit), each
+        operation should be single-threaded. The version field provides conflict
+        detection at the persistence layer, not thread-safety at the model layer.
+        See docs/guides/THREADING.md for patterns.
     """
 
     model_config = ConfigDict(
