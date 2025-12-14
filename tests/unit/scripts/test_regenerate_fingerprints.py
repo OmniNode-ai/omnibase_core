@@ -695,6 +695,8 @@ description: Test
         # Fingerprint should be after version
         version_pos = updated.find("version:")
         fingerprint_pos = updated.find("fingerprint:")
+        assert version_pos != -1, "version: not found in output"
+        assert fingerprint_pos != -1, "fingerprint: not found in output"
         assert fingerprint_pos > version_pos
 
 
@@ -1130,6 +1132,8 @@ description: Test contract
         # Fingerprint should come after patch field
         version_block_end = updated.find("patch: 0")
         fingerprint_pos = updated.find("fingerprint:")
+        assert version_block_end != -1, "patch: 0 not found in output"
+        assert fingerprint_pos != -1, "fingerprint: not found in output"
         assert fingerprint_pos > version_block_end
 
     def test_add_fingerprint_after_contract_version(self) -> None:
@@ -1150,6 +1154,8 @@ description: Flexible contract
         assert 'fingerprint: "1.0.0:abcdef123456"' in updated
         contract_version_pos = updated.find("contract_version:")
         fingerprint_pos = updated.find("fingerprint:")
+        assert contract_version_pos != -1, "contract_version: not found in output"
+        assert fingerprint_pos != -1, "fingerprint: not found in output"
         assert fingerprint_pos > contract_version_pos
 
     def test_add_fingerprint_after_name_when_no_version(self) -> None:
@@ -1166,6 +1172,8 @@ description: No version field
         assert 'fingerprint: "0.0.0:abcdef123456"' in updated
         name_pos = updated.find("name:")
         fingerprint_pos = updated.find("fingerprint:")
+        assert name_pos != -1, "name: not found in output"
+        assert fingerprint_pos != -1, "fingerprint: not found in output"
         assert fingerprint_pos > name_pos
 
     def test_dict_style_version_preserves_node_type(self) -> None:
