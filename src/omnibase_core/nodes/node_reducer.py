@@ -23,6 +23,7 @@ from omnibase_core.models.contracts.subcontracts.model_fsm_subcontract import (
     ModelFSMSubcontract,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.fsm.model_fsm_state_snapshot import ModelFSMStateSnapshot
 from omnibase_core.models.reducer.model_reducer_input import ModelReducerInput
 from omnibase_core.models.reducer.model_reducer_output import ModelReducerOutput
 
@@ -334,3 +335,102 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
         if not self.fsm_contract:
             return False
         return self.is_terminal_state(self.fsm_contract)
+
+    def snapshot_state(self) -> ModelFSMStateSnapshot | None:
+        """
+        Return current FSM state snapshot.
+
+        Provides read-only access to the current FSM state for serialization,
+        persistence, or inspection purposes. Does not modify state.
+
+        Returns:
+            Current FSM state snapshot, or None if FSM not initialized
+
+        Example:
+            ```python
+            import logging
+
+            logger = logging.getLogger(__name__)
+
+            snapshot = node.snapshot_state()
+            if snapshot:
+                logger.info("Current state: %s", snapshot.current_state)
+                logger.debug("Context: %s", snapshot.context)
+                logger.debug("History: %s", snapshot.history)
+            else:
+                logger.warning("FSM not initialized")
+            ```
+        """
+        return self._fsm_state
+
+    def restore_state(self, snapshot: ModelFSMStateSnapshot) -> None:
+        """
+        Restore FSM state from a snapshot.
+
+        Replaces the current FSM state with the provided snapshot.
+        Useful for resuming workflows from persisted state or implementing
+        checkpoint/recovery patterns.
+
+        Args:
+            snapshot: FSM state snapshot to restore
+
+        Raises:
+            ModelOnexError: If FSM contract not loaded
+
+        Example:
+            ```python
+            import logging
+
+            logger = logging.getLogger(__name__)
+
+            # Save state before risky operation
+            saved_snapshot = node.snapshot_state()
+
+            try:
+                result = await node.process(input_data)
+            except Exception:
+                # Restore to previous state on failure
+                if saved_snapshot:
+                    node.restore_state(saved_snapshot)
+                    logger.info("Restored FSM state to: %s", saved_snapshot.current_state)
+                raise
+            ```
+        """
+        if not self.fsm_contract:
+            raise ModelOnexError(
+                message=_ERR_FSM_CONTRACT_NOT_LOADED,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
+        self._fsm_state = snapshot
+
+    def get_state_snapshot(self) -> dict[str, object]:
+        """
+        Return state as JSON-serializable dictionary.
+
+        Provides a dictionary representation of the current FSM state
+        suitable for JSON serialization, logging, or external storage.
+
+        Returns:
+            Dictionary with current_state, context, and history keys,
+            or empty dict if FSM not initialized
+
+        Example:
+            ```python
+            import json
+            import logging
+
+            logger = logging.getLogger(__name__)
+
+            state_dict = node.get_state_snapshot()
+            if state_dict:
+                # Serialize for persistence
+                state_json = json.dumps(state_dict)
+                logger.debug("Serialized state: %s", state_json)
+
+                # Store in database, cache, or message queue
+                await storage.save("fsm_state", state_json)
+            ```
+        """
+        if not self._fsm_state:
+            return {}
+        return self._fsm_state.model_dump()

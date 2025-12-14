@@ -18,6 +18,9 @@ from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.contracts.subcontracts.model_workflow_definition import (
     ModelWorkflowDefinition,
 )
+from omnibase_core.models.workflow.execution.model_workflow_state_snapshot import (
+    ModelWorkflowStateSnapshot,
+)
 from omnibase_core.utils.workflow_executor import (
     WorkflowExecutionResult,
     execute_workflow,
@@ -39,9 +42,17 @@ class MixinWorkflowExecution:
             pass
 
     Pattern:
-        This mixin is stateless - delegates all execution to pure functions.
-        Actions are emitted for orchestrated execution.
+        This mixin tracks workflow state via ModelWorkflowStateSnapshot.
+        Delegates execution to pure functions while maintaining state for
+        serialization and replay capabilities.
+
+    Attributes:
+        _workflow_state: Current workflow state snapshot, or None if no
+            workflow execution is in progress.
     """
+
+    # Type annotation for workflow state tracking
+    _workflow_state: ModelWorkflowStateSnapshot | None
 
     def __init__(self, **kwargs: Any) -> None:
         """
@@ -51,6 +62,8 @@ class MixinWorkflowExecution:
             **kwargs: Passed to super().__init__()
         """
         super().__init__(**kwargs)
+        # Initialize workflow state tracking
+        self._workflow_state = None
 
     async def execute_workflow_from_contract(
         self,

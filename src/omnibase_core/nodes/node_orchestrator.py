@@ -20,6 +20,9 @@ from omnibase_core.models.orchestrator import ModelOrchestratorOutput
 from omnibase_core.models.orchestrator.model_orchestrator_input import (
     ModelOrchestratorInput,
 )
+from omnibase_core.models.workflow.execution.model_workflow_state_snapshot import (
+    ModelWorkflowStateSnapshot,
+)
 from omnibase_core.utils.workflow_executor import WorkflowExecutionResult
 
 # Error messages
@@ -400,3 +403,100 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
                 "failed_count": float(len(workflow_result.failed_steps)),
             },
         )
+
+    # =========================================================================
+    # Workflow State Serialization Methods
+    # =========================================================================
+
+    def snapshot_workflow_state(self) -> ModelWorkflowStateSnapshot | None:
+        """
+        Return current workflow state snapshot.
+
+        Returns the current workflow state as an immutable snapshot that can be
+        serialized and restored later. This enables workflow replay and debugging.
+
+        Returns:
+            ModelWorkflowStateSnapshot if a workflow execution is in progress,
+            None otherwise.
+
+        Example:
+            ```python
+            import logging
+
+            logger = logging.getLogger(__name__)
+
+            # Get current state during workflow execution
+            snapshot = node.snapshot_workflow_state()
+            if snapshot:
+                logger.info("Workflow %s at step %d", snapshot.workflow_id, snapshot.current_step_index)
+                logger.info("Completed: %d, Failed: %d",
+                    len(snapshot.completed_step_ids),
+                    len(snapshot.failed_step_ids))
+            ```
+        """
+        return self._workflow_state
+
+    def restore_workflow_state(self, snapshot: ModelWorkflowStateSnapshot) -> None:
+        """
+        Restore workflow state from snapshot.
+
+        Restores the internal workflow state from a previously captured snapshot.
+        This enables workflow replay and recovery from persisted state.
+
+        Args:
+            snapshot: The workflow state snapshot to restore.
+
+        Example:
+            ```python
+            import logging
+
+            logger = logging.getLogger(__name__)
+
+            # Save state before shutdown
+            snapshot = node.snapshot_workflow_state()
+            # ... persist snapshot to storage ...
+
+            # Later, restore state
+            node.restore_workflow_state(snapshot)
+            logger.info("Restored workflow to step %d", snapshot.current_step_index)
+            ```
+
+        Note:
+            The restored snapshot is stored as-is. Since ModelWorkflowStateSnapshot
+            is immutable (frozen=True), subsequent workflow operations will create
+            new snapshots rather than modifying the restored one.
+        """
+        self._workflow_state = snapshot
+
+    def get_workflow_snapshot(self) -> dict[str, object]:
+        """
+        Return state as JSON-serializable dictionary.
+
+        Convenience method that returns the workflow state as a dictionary
+        suitable for JSON serialization. Uses Pydantic's model_dump() for
+        proper serialization of complex types like UUIDs and datetimes.
+
+        Returns:
+            Dictionary representation of the current workflow state.
+            Returns an empty dictionary if no workflow execution is in progress.
+
+        Example:
+            ```python
+            import json
+            import logging
+
+            logger = logging.getLogger(__name__)
+
+            # Get state as dictionary for JSON serialization
+            state_dict = node.get_workflow_snapshot()
+            json_str = json.dumps(state_dict, default=str)
+            logger.debug("Workflow state JSON: %s", json_str)
+
+            # Can be restored later via:
+            # snapshot = ModelWorkflowStateSnapshot(**state_dict)
+            # node.restore_workflow_state(snapshot)
+            ```
+        """
+        if self._workflow_state is None:
+            return {}
+        return self._workflow_state.model_dump()
