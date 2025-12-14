@@ -27,7 +27,27 @@ class ServiceComputeCache:
     providing a default implementation when no cache is injected.
 
     Thread Safety:
-        NOT thread-safe. See ModelComputeCache for details.
+        NOT thread-safe. This class wraps ModelComputeCache which uses
+        a standard Python dict internally. Concurrent access from multiple
+        threads may cause:
+
+        - Data corruption from non-atomic read-modify-write operations
+        - Race conditions during cache eviction
+        - Inconsistent cache statistics
+
+        For thread-safe usage:
+
+        - Use separate ServiceComputeCache instances per thread, OR
+        - Wrap all cache operations with threading.Lock::
+
+            import threading
+            lock = threading.Lock()
+            with lock:
+                cache.put("key", value)
+            with lock:
+                result = cache.get("key")
+
+        See docs/guides/THREADING.md for detailed guidelines.
 
     Example:
         >>> config = ModelComputeCacheConfig(max_size=256)

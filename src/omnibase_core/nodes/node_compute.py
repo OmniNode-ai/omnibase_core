@@ -159,35 +159,6 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
             self._cache = ServiceComputeCache(self.container.compute_cache_config)
         return self._cache
 
-    @property
-    def thread_pool(self) -> None:
-        """
-        Thread pool accessor (removed in v0.4.0).
-
-        Returns:
-            Always None. Use ProtocolParallelExecutor injection instead.
-
-        .. deprecated:: 0.4.0
-           Direct thread pool access is removed. Parallelization is now
-           handled via ProtocolParallelExecutor injection.
-        """
-        return None
-
-    @property
-    def max_parallel_workers(self) -> int:
-        """
-        Maximum parallel workers (removed in v0.4.0).
-
-        Returns:
-            Always 0. Parallelization configuration is now handled
-            by the injected ProtocolParallelExecutor.
-
-        .. deprecated:: 0.4.0
-           Direct configuration is removed. Configure the injected
-           ProtocolParallelExecutor instead.
-        """
-        return 0
-
     async def process(
         self, input_data: ModelComputeInput[T_Input]
     ) -> ModelComputeOutput[T_Output]:

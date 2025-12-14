@@ -548,10 +548,10 @@ class NodePriceCalculatorCompute(NodeCompute):
         super().__init__(container)
 
         # NodeCompute provides built-in features:
-        # - self.computation_cache (ModelComputeCache)
+        # - self.computation_cache (ProtocolComputeCache)
         # - self.computation_registry (dict of computation functions)
-        # - self.thread_pool (ThreadPoolExecutor for parallel processing)
         # - self.computation_metrics (performance tracking)
+        # - Parallelization via ProtocolParallelExecutor injection
 
         # Register custom computation if needed
         self.register_computation("price_calculation", self._calculate_price_func)
@@ -567,8 +567,8 @@ class NodePriceCalculatorCompute(NodeCompute):
 **When to use NodeCompute directly**:
 - Direct access to computation registry system
 - Custom computation types with register_computation()
-- Built-in caching via ModelComputeCache
-- Parallel processing via ThreadPoolExecutor
+- Built-in caching via ProtocolComputeCache
+- Parallelization via ProtocolParallelExecutor injection
 - You don't need the full production service wrapper
 
 **When to use ModelServiceCompute** (recommended):

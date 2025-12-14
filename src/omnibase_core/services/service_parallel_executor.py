@@ -26,6 +26,29 @@ class ServiceParallelExecutor:
     Provides parallel execution using Python's ThreadPoolExecutor,
     running computation functions in a thread pool.
 
+    Lifecycle:
+        1. Create instance: ``executor = ServiceParallelExecutor(max_workers=4)``
+        2. Use for parallel execution via ``execute()`` method
+        3. Call ``shutdown()`` when done to release thread pool resources
+
+        Warning:
+            Failing to call ``shutdown()`` will leak threads. The underlying
+            ThreadPoolExecutor maintains worker threads that will not be
+            released, leading to resource exhaustion if many executors are
+            created without cleanup. Always ensure ``shutdown()`` is called,
+            ideally in a try/finally block::
+
+                executor = ServiceParallelExecutor(max_workers=4)
+                try:
+                    result = await executor.execute(func, data)
+                finally:
+                    await executor.shutdown()
+
+        Note:
+            After ``shutdown()`` is called, the executor cannot be reused.
+            Any subsequent calls to ``execute()`` will raise ``ModelOnexError``.
+            Create a new instance if additional parallel execution is needed.
+
     Thread Safety:
         Thread-safe. ThreadPoolExecutor is designed for concurrent access.
 
@@ -65,6 +88,30 @@ class ServiceParallelExecutor:
         return await loop.run_in_executor(self._pool, func, *args)
 
     async def shutdown(self, wait: bool = True) -> None:
-        """Shutdown the executor."""
+        """
+        Shutdown the executor and release thread pool resources.
+
+        This method signals the executor that no more work will be submitted
+        and releases the underlying ThreadPoolExecutor resources.
+
+        Args:
+            wait: If True (default), blocks until all pending tasks complete.
+                If False, returns immediately; pending tasks may be interrupted.
+                Use ``wait=False`` only when you need immediate shutdown and
+                can tolerate incomplete work.
+
+        Note:
+            After shutdown, this executor instance cannot be reused. Any
+            subsequent calls to ``execute()`` will raise ``ModelOnexError``
+            with error code ``OPERATION_FAILED``. Create a new instance
+            if additional parallel execution is needed.
+
+        Example:
+            >>> # Graceful shutdown - wait for pending work
+            >>> await executor.shutdown(wait=True)
+            >>>
+            >>> # Immediate shutdown - may interrupt pending work
+            >>> await executor.shutdown(wait=False)
+        """
         self._shutdown = True
         self._pool.shutdown(wait=wait)
