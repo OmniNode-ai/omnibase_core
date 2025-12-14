@@ -26,7 +26,7 @@ Immutability Considerations:
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime, timezone
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -111,6 +111,13 @@ class ModelWorkflowStateSnapshot(BaseModel):
             )
     """
 
+    # from_attributes=True enables attribute-based validation for pytest-xdist compatibility.
+    # When tests run across parallel workers, each worker imports classes independently,
+    # causing class identity to differ (id(ModelWorkflowStateSnapshot) in Worker A !=
+    # id(ModelWorkflowStateSnapshot) in Worker B). Without from_attributes=True, Pydantic
+    # rejects already-valid instances because isinstance() checks fail. This setting allows
+    # Pydantic to accept objects with matching attributes regardless of class identity.
+    # See CLAUDE.md "Pydantic from_attributes=True for Value Objects" for details.
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     workflow_id: UUID | None = Field(default=None, description="Workflow execution ID")
@@ -126,7 +133,8 @@ class ModelWorkflowStateSnapshot(BaseModel):
         description="Workflow context - flexible runtime state storage",
     )
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Snapshot creation time"
+        default_factory=lambda: datetime.now(UTC),
+        description="Snapshot creation time",
     )
 
     @classmethod
