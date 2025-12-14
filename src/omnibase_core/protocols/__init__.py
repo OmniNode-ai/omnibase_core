@@ -68,6 +68,15 @@ from omnibase_core.protocols.base import (  # Literal Types; Protocols; Type Var
 )
 
 # =============================================================================
+# Compute Module Exports
+# =============================================================================
+from omnibase_core.protocols.compute import (
+    ProtocolComputeCache,
+    ProtocolParallelExecutor,
+    ProtocolTimingService,
+)
+
+# =============================================================================
 # Container Module Exports
 # =============================================================================
 from omnibase_core.protocols.container import (
@@ -243,6 +252,12 @@ __all__ = [
     # Core Module
     # ==========================================================================
     "ProtocolCanonicalSerializer",
+    # ==========================================================================
+    # Compute Module
+    # ==========================================================================
+    "ProtocolComputeCache",
+    "ProtocolParallelExecutor",
+    "ProtocolTimingService",
     # ==========================================================================
     # Runtime Module
     # ==========================================================================

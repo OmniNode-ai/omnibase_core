@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from omnibase_core.models.registry.model_registry_mode_config import (
         ModelRegistryModeConfig,
     )
-    from omnibase_core.models.service.model_service_configuration_single import (
+    from omnibase_core.models.services.model_service_configuration_single import (
         ModelServiceConfiguration,
     )
 

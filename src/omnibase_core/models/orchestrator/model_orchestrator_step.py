@@ -6,7 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from omnibase_core.models.service.model_custom_fields import ModelCustomFields
+from omnibase_core.models.services.model_custom_fields import ModelCustomFields
 from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 

@@ -950,8 +950,8 @@ class MyWorkflowOrchestrator(NodeOrchestrator):
         return result
 
 # SERVICE WRAPPERS: For production with standard mixins
-from omnibase_core.models.service.model_service_effect import ModelServiceEffect
-from omnibase_core.models.service.model_service_compute import ModelServiceCompute
-from omnibase_core.models.service.model_service_reducer import ModelServiceReducer
-from omnibase_core.models.service.model_service_orchestrator import ModelServiceOrchestrator
+from omnibase_core.models.services.model_service_effect import ModelServiceEffect
+from omnibase_core.models.services.model_service_compute import ModelServiceCompute
+from omnibase_core.models.services.model_service_reducer import ModelServiceReducer
+from omnibase_core.models.services.model_service_orchestrator import ModelServiceOrchestrator
 ```

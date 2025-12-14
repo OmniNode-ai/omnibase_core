@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 from omnibase_core.models.detection.model_service_detection_config import (
     ModelServiceDetectionConfig,
 )
-from omnibase_core.models.service.model_service_type import ModelServiceType
+from omnibase_core.models.services.model_service_type import ModelServiceType
 
 
 class ModelServiceConfiguration(BaseModel):

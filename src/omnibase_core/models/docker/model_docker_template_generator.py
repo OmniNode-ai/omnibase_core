@@ -8,10 +8,10 @@ enabling contract-driven deployment infrastructure.
 
 from pathlib import Path
 
-from omnibase_core.models.service.model_kubernetestemplategenerator import (
+from omnibase_core.models.services.model_kubernetestemplategenerator import (
     ModelKubernetesTemplateGenerator,
 )
-from omnibase_core.models.service.model_node_service_config import (
+from omnibase_core.models.services.model_node_service_config import (
     ModelNodeServiceConfig,
 )
 from omnibase_core.types.type_serializable_value import SerializedDict

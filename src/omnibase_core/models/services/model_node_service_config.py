@@ -23,7 +23,7 @@ from omnibase_core.models.configuration.model_monitoring_config import (
 from omnibase_core.models.configuration.model_resource_limits import ModelResourceLimits
 from omnibase_core.models.examples.model_security_config import ModelSecurityConfig
 from omnibase_core.models.health.model_health_check_config import ModelHealthCheckConfig
-from omnibase_core.models.service.model_network_config import ModelNetworkConfig
+from omnibase_core.models.services.model_network_config import ModelNetworkConfig
 from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 

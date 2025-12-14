@@ -7,7 +7,7 @@ and compliance with one-model-per-file naming conventions.
 
 # Import separated models
 from omnibase_core.models.graph import ModelGraph
-from omnibase_core.models.service.model_plan import ModelPlan
+from omnibase_core.models.services.model_plan import ModelPlan
 
 from .model_orchestrator_graph import ModelOrchestratorGraph
 from .model_orchestrator_plan import ModelOrchestratorPlan

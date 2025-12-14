@@ -11,7 +11,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
-    from omnibase_core.models.service.model_node_weights import ModelNodeWeights
+    from omnibase_core.models.services.model_node_weights import ModelNodeWeights
 
 from omnibase_core.models.health.model_health_check_config import ModelHealthCheckConfig
 from omnibase_core.types import SerializedDict

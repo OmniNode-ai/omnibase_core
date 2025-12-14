@@ -13,7 +13,7 @@ for orchestrator nodes that coordinate multi-node workflows and manage dependenc
 
 Usage Example:
     ```python
-    from omnibase_core.models.service.model_service_orchestrator import ModelServiceOrchestrator
+    from omnibase_core.models.services.model_service_orchestrator import ModelServiceOrchestrator
     from omnibase_core.models.container.model_onex_container import ModelONEXContainer
     from omnibase_core.models.contracts.model_contract_orchestrator import ModelContractOrchestrator
 

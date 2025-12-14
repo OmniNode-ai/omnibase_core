@@ -13,8 +13,8 @@ from omnibase_core.models.primitives.model_semver import (
     default_model_version,
     parse_semver_from_string,
 )
-from omnibase_core.models.service.model_custom_fields import ModelCustomFields
-from omnibase_core.models.service.model_retry_strategy import ModelRetryStrategy
+from omnibase_core.models.services.model_custom_fields import ModelCustomFields
+from omnibase_core.models.services.model_retry_strategy import ModelRetryStrategy
 
 
 class ModelEventBusInputState(BaseModel):

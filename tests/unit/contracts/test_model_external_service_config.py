@@ -9,7 +9,7 @@ import pytest
 from pydantic import ValidationError
 
 from omnibase_core.models.core.model_retry_config import ModelRetryConfig
-from omnibase_core.models.service import ModelExternalServiceConfig
+from omnibase_core.models.services import ModelExternalServiceConfig
 
 
 class TestModelExternalServiceConfigBasic:

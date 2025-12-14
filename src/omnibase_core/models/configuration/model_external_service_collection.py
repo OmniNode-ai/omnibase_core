@@ -8,7 +8,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.service.model_external_service_config import (
+from omnibase_core.models.services.model_external_service_config import (
     ModelExternalServiceConfig,
 )
 

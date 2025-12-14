@@ -27,7 +27,7 @@ from omnibase_core.models.registry.model_registry_component_performance import (
 from omnibase_core.models.registry.model_registry_sla_compliance import (
     ModelRegistrySlaCompliance,
 )
-from omnibase_core.models.service.model_service_health import ModelServiceHealth
+from omnibase_core.models.services.model_service_health import ModelServiceHealth
 
 
 class ModelRegistryHealthReport(BaseModel):

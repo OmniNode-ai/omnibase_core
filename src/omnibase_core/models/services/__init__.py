@@ -79,13 +79,13 @@ from .model_service_type import ModelServiceType
 #
 # Please update your imports to use the new locations.
 # Example:
-#   OLD: from omnibase_core.models.service import ModelDockerBuildConfig
+#   OLD: from omnibase_core.models.services import ModelDockerBuildConfig
 #   NEW: from omnibase_core.models.docker import ModelDockerBuildConfig
-#   OLD: from omnibase_core.models.service import ModelEventBusInputState
+#   OLD: from omnibase_core.models.services import ModelEventBusInputState
 #   NEW: from omnibase_core.models.event_bus import ModelEventBusInputState
-#   OLD: from omnibase_core.models.service import ModelOrchestratorOutput
+#   OLD: from omnibase_core.models.services import ModelOrchestratorOutput
 #   NEW: from omnibase_core.models.orchestrator import ModelOrchestratorOutput
-#   OLD: from omnibase_core.models.service import ModelWorkflowExecutionArgs
+#   OLD: from omnibase_core.models.services import ModelWorkflowExecutionArgs
 #   NEW: from omnibase_core.models.workflow import ModelWorkflowExecutionArgs
 
 __all__ = [

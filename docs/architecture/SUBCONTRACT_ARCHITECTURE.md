@@ -189,7 +189,7 @@ realtime_aggregation = ModelAggregationSubcontract(
 **Integration with REDUCER Nodes**:
 
 ```
-from omnibase_core.models.service.model_service_reducer import ModelServiceReducer
+from omnibase_core.models.services.model_service_reducer import ModelServiceReducer
 from omnibase_core.models.contracts.model_contract_reducer import ModelContractReducer
 
 class AggregationReducerService(ModelServiceReducer):
@@ -387,7 +387,7 @@ pipeline_fsm = ModelFSMSubcontract(
 **Integration with ORCHESTRATOR Nodes**:
 
 ```
-from omnibase_core.models.service.model_service_orchestrator import ModelServiceOrchestrator
+from omnibase_core.models.services.model_service_orchestrator import ModelServiceOrchestrator
 
 class FSMOrchestratorService(ModelServiceOrchestrator):
     """ORCHESTRATOR node with FSM subcontract support."""
