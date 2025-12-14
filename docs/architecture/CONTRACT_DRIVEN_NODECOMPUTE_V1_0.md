@@ -52,9 +52,7 @@ The core pipeline executor and transformation functions are designed to be **pur
 - Each `execute_compute_pipeline()` invocation operates on its own data without shared state
 - Safe for concurrent use from multiple threads
 
-**Known Limitation (v1.0)**: The validation step warning deduplication uses module-level state (`_validation_warning_emitted`) to prevent log spam. This is a minor exception to the pure function principle, affecting only warning output (not computation results). The pipeline execution itself remains deterministic and thread-safe.
-
-**TODO(v1.1)**: Refactor warning deduplication to use a context-based approach (e.g., per-execution context) rather than global state. See `compute_executor.py` for details.
+**Note (v1.0)**: Validation steps emit a UserWarning indicating pass-through behavior. Warning deduplication is handled by Python's built-in `warnings` module, maintaining the pure function principle throughout the module.
 
 ---
 

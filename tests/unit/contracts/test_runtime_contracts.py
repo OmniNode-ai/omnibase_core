@@ -132,6 +132,27 @@ EXPECTED_NODE_TYPES = {
 # These fixtures reduce duplication across contract-specific test classes.
 # The parameterized approach allows testing all contracts with shared logic
 # while maintaining clear test output that identifies which contract is tested.
+#
+# FIXTURE PATTERN DESIGN DECISION:
+#   The class-specific fixtures (e.g., orchestrator_data, loader_data) use the
+#   shared load_contract_data() helper. This pattern was chosen over alternatives:
+#
+#   1. Factory fixture pattern (pytest fixture factory):
+#      - Would allow `contract_loader("runtime_orchestrator.yaml")` syntax
+#      - Rejected: Adds indirection without significant benefit for 5 contracts
+#
+#   2. Single parameterized fixture across all classes:
+#      - Would eliminate class fixtures entirely
+#      - Rejected: Loses semantic naming (orchestrator_data vs generic contract_data)
+#
+#   3. Current pattern (explicit class fixtures calling shared helper):
+#      - Each fixture is 2 lines: docstring + return load_contract_data(name)
+#      - Provides clear, descriptive fixture names in test output
+#      - Maintains explicit contract-to-fixture mapping
+#      - Easy to understand for new contributors
+#
+#   The ~10 lines of "duplication" (5 fixtures x 2 lines each) provide clarity
+#   that outweighs the cost. This is intentional and acceptable per PR #137.
 # ==============================================================================
 
 
@@ -150,6 +171,10 @@ def all_contracts() -> dict[str, dict]:
 def load_contract_data(contract_name: str) -> dict:
     """
     Load contract data from a YAML file.
+
+    This helper function centralizes contract loading logic and is used by
+    all class-specific fixtures. It handles file existence checking and YAML
+    parsing in one place, reducing duplication while keeping fixtures simple.
 
     Args:
         contract_name: Name of the contract file (e.g., "runtime_orchestrator.yaml")

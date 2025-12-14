@@ -178,6 +178,13 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
 
         Example:
             ```python
+            import logging
+
+            from omnibase_core.models.reducer import ModelReducerInput
+            from omnibase_core.enums.enum_reduction_type import EnumReductionType
+
+            logger = logging.getLogger(__name__)
+
             input_data = ModelReducerInput(
                 data=[...],
                 reduction_type=EnumReductionType.AGGREGATE,
@@ -188,8 +195,8 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
             )
 
             result = await node.process(input_data)
-            print(f"New state: {result.metadata['fsm_state']}")
-            print(f"Intents emitted: {len(result.intents)}")
+            logger.debug("New state: %s", result.metadata['fsm_state'])
+            logger.debug("Intents emitted: %d", len(result.intents))
             ```
         """
         if not self.fsm_contract:
@@ -252,11 +259,15 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
 
         Example:
             ```python
+            import logging
+
+            logger = logging.getLogger(__name__)
+
             errors = await node.validate_contract()
             if errors:
-                print(f"Contract validation failed: {errors}")
+                logger.warning("Contract validation failed: %s", errors)
             else:
-                print("Contract is valid!")
+                logger.info("Contract is valid!")
             ```
         """
         if not self.fsm_contract:
@@ -273,9 +284,13 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
 
         Example:
             ```python
+            import logging
+
+            logger = logging.getLogger(__name__)
+
             state = node.get_current_state()
             if state == "completed":
-                print("FSM has reached completion")
+                logger.info("FSM has reached completion")
             ```
         """
         return self.get_current_fsm_state()
@@ -289,8 +304,12 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
 
         Example:
             ```python
+            import logging
+
+            logger = logging.getLogger(__name__)
+
             history = node.get_state_history()
-            print(f"State progression: {' -> '.join(history)}")
+            logger.debug("State progression: %s", ' -> '.join(history))
             ```
         """
         return self.get_fsm_state_history()
@@ -304,8 +323,12 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
 
         Example:
             ```python
+            import logging
+
+            logger = logging.getLogger(__name__)
+
             if node.is_complete():
-                print("Workflow completed - no more transitions possible")
+                logger.info("Workflow completed - no more transitions possible")
             ```
         """
         if not self.fsm_contract:
