@@ -19,6 +19,7 @@ from .execution import (
     ModelDependencyGraph,
     ModelWorkflowExecutionResult,
     ModelWorkflowInputState,
+    ModelWorkflowStateSnapshot,
     ModelWorkflowStepExecution,
 )
 
@@ -33,5 +34,6 @@ __all__ = [
     "ModelDependencyGraph",
     "ModelWorkflowExecutionResult",
     "ModelWorkflowInputState",
+    "ModelWorkflowStateSnapshot",
     "ModelWorkflowStepExecution",
 ]

@@ -64,6 +64,14 @@ class ModelWorkflowStateSnapshot(BaseModel):
         - Workflow executors MUST create new snapshots rather than mutating existing ones
         - Extra fields are rejected (extra="forbid")
 
+    Context Size Limits:
+        The context dict has no enforced size limit, but recommended limits are:
+        - **Max keys**: 100 (for performance during serialization/deserialization)
+        - **Max total size**: 1MB serialized (for efficient storage and transfer)
+        - **Max nesting depth**: 5 levels (for readability and debugging)
+        Exceeding these limits may cause performance degradation during workflow
+        replay and state persistence operations.
+
     Thread Safety:
         This model is immutable (frozen=True) after creation, making it thread-safe
         for concurrent read access from multiple threads or async tasks. However:
