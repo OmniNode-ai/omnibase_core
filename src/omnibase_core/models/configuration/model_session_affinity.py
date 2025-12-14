@@ -1,7 +1,7 @@
 import hashlib
 import warnings
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.models.configuration.model_session_affinity_metadata import (
     ModelSessionAffinityMetadata,
@@ -15,13 +15,13 @@ routing persistence in load balancing systems.
 
 Hash Algorithm Security Notes:
     - SHA-256 (default): Recommended for all new implementations
-    - SHA-512: Stronger security for high-sensitivity environments
-    - MD5: DEPRECATED - Only supported for legacy compatibility, emits DeprecationWarning
-    - SHA-1: DEPRECATED - Only supported for legacy compatibility, emits DeprecationWarning
+    - SHA-384: Strong security for high-sensitivity environments
+    - SHA-512: Strongest security option
 
-    When using deprecated hash algorithms (MD5/SHA-1), the system will emit
-    warnings at runtime. These algorithms have known cryptographic weaknesses
-    and should not be used in new implementations.
+    MD5 and SHA-1 are DEPRECATED due to known cryptographic weaknesses.
+    They are accepted during the deprecation period but auto-converted to SHA-256
+    with a DeprecationWarning. Support will be removed in v0.6.0.
+    Use SHA-256 or higher for all new implementations.
 """
 
 
@@ -88,12 +88,29 @@ class ModelSessionAffinity(BaseModel):
         default="sha256",
         description=(
             "Hash algorithm for IP/header hashing. "
-            "SHA-256 (default) or SHA-512 recommended. "
-            "MD5 and SHA-1 are DEPRECATED and emit warnings at runtime - "
-            "use only for legacy compatibility."
+            "SHA-256 (default), SHA-384, or SHA-512 recommended. "
+            "MD5 and SHA-1 are DEPRECATED and will be auto-converted to SHA-256. "
+            "Support will be removed in v0.6.0."
         ),
-        pattern="^(md5|sha1|sha256|sha512)$",
+        # Allow md5/sha1 for parsing, validator will deprecate and convert
+        pattern="^(md5|sha1|sha256|sha384|sha512)$",
     )
+
+    @model_validator(mode="after")
+    def _deprecate_legacy_hash_algorithms(self) -> "ModelSessionAffinity":
+        """Convert legacy hash algorithms to SHA-256 with deprecation warning."""
+        if self.hash_algorithm in ("md5", "sha1"):
+            warnings.warn(
+                f"hash_algorithm='{self.hash_algorithm}' is deprecated due to "
+                f"cryptographic weakness. Auto-converting to 'sha256'. "
+                f"Support for MD5/SHA-1 will be removed in v0.6.0. "
+                f"Update your configuration to use sha256, sha384, or sha512.",
+                DeprecationWarning,
+                stacklevel=3,  # Points to user code (past Pydantic __init__)
+            )
+            # Use object.__setattr__ since model may be frozen
+            object.__setattr__(self, "hash_algorithm", "sha256")
+        return self
 
     session_timeout_seconds: int | None = Field(
         default=None,
@@ -164,26 +181,15 @@ class ModelSessionAffinity(BaseModel):
         if not affinity_key or not available_nodes:
             return None
 
-        # Create hash of affinity key
-        if self.hash_algorithm == "md5":
-            warnings.warn(
-                "MD5 hash algorithm is deprecated and insecure. Use SHA256 or SHA512 instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            hash_obj = hashlib.md5(affinity_key.encode(), usedforsecurity=False)
-        elif self.hash_algorithm == "sha1":
-            warnings.warn(
-                "SHA1 hash algorithm is deprecated and insecure. Use SHA256 or SHA512 instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            hash_obj = hashlib.sha1(affinity_key.encode(), usedforsecurity=False)
-        elif self.hash_algorithm == "sha256":
+        # Create hash of affinity key using secure algorithms only
+        if self.hash_algorithm == "sha256":
             hash_obj = hashlib.sha256(affinity_key.encode())
+        elif self.hash_algorithm == "sha384":
+            hash_obj = hashlib.sha384(affinity_key.encode())
         elif self.hash_algorithm == "sha512":
             hash_obj = hashlib.sha512(affinity_key.encode())
         else:
+            # Should not reach here due to pattern validation, but handle gracefully
             return None
 
         # Convert to integer and select node
