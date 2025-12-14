@@ -11,6 +11,18 @@ All checks require **verifiable evidence**. No exceptions, no vibes.
 
 ---
 
+## Gate Severity Definitions
+
+| Severity | Meaning | Consequence |
+|----------|---------|-------------|
+| **🚫 BLOCKER** | Release cannot proceed | Must be resolved before ANY release artifacts are created |
+| **✅ REQUIRED** | Must pass before release | Can be worked in parallel, but all must pass before sign-off |
+| **📋 INFORMATIONAL** | Documented state | No pass/fail, just recorded for audit |
+
+**Enforcement Rule**: A single BLOCKER failure stops the entire release process. REQUIRED gates must all pass before the release manager can sign off.
+
+---
+
 ## Evidence Storage Guidelines
 
 ### Primary Storage Location
@@ -27,11 +39,33 @@ All release evidence MUST be stored in the **release tracking issue** on Linear:
 | **CI run links** | Release issue comment | Direct URL to GitHub Actions run |
 | **Command output** (<50 lines) | Release issue comment | Code block with timestamp |
 | **Command output** (>50 lines) | GitHub Gist | Link in release issue |
-| **Screenshots** | Release issue attachment | PNG with descriptive filename |
+| **Screenshots** | Release issue attachment | PNG with descriptive filename (⚠️ see note below) |
 | **Coverage reports** | CI artifacts + link | HTML report or term output |
 | **Test logs** | CI artifacts | Link to specific job/step |
 | **Contract fingerprint reports** | `artifacts/release/v0.4.0/` | JSON or text file |
 | **Replay logs** | `artifacts/release/v0.4.0/` | Timestamped log files |
+
+### ⚠️ Text Evidence Preferred
+
+**Terminal output MUST be stored as text unless impossible.**
+
+Screenshots should be explicitly discouraged for evidence that can be captured as text:
+- ❌ Screenshot of terminal output → ✅ Copy/paste text into code block
+- ❌ Screenshot of test results → ✅ Raw pytest output as text
+- ❌ Screenshot of mypy output → ✅ Plain text mypy output
+
+**Why text over screenshots:**
+- Diffable for regression detection
+- Searchable in audits
+- Version-controllable
+- Not subject to rendering differences
+- Machine-parseable for automation
+
+**Acceptable screenshot use cases:**
+- GUI-only artifacts (browser rendering, visual regression)
+- Diagrams that cannot be represented as text
+- External tool outputs that cannot be copied
+
 ### ⚠️ PII and Secrets Redaction
 
 **CRITICAL**: Before storing ANY evidence, you MUST redact sensitive information:
@@ -148,7 +182,7 @@ Before marking a gate complete:
 
 ## 1. Code Quality
 
-- [ ] **All nodes pure-checked (AST)**
+- [ ] **All nodes pure-checked (AST)** `✅ REQUIRED`
   - Run AST validation checks on all node implementations
   - **Note**: No dedicated `ast_checker` CLI exists. Use existing validation framework:
   - Commands:
@@ -183,34 +217,46 @@ Before marking a gate complete:
     ```
   - Expected: 0 violations in node implementations
   - Evidence: Release issue comment (OMN-218) or artifacts/release/v0.4.0/01-code-quality-ast-check-YYYYMMDD.txt
-  - **Future**: Consider creating `omnibase_core.tools.ast_checker` CLI (tracked in MVP_PLAN.md)
+  - **⚠️ IMPORTANT**: These commands MUST be executed explicitly. Test pass status does NOT constitute evidence.
+  - **Future**: Consider creating `omnibase_core.tools.ast_checker` CLI (tracked in MVP_PLAN.md, Beta scope)
 
-- [ ] **Strict type safety enforced**
+- [ ] **Strict type safety enforced** `🚫 BLOCKER`
   - Command: `poetry run mypy src/omnibase_core/ --strict`
   - Expected: 0 errors
-  - Evidence: Release issue comment (OMN-218) with CI run link or artifacts/release/v0.4.0/01-code-quality-mypy-YYYYMMDD.txt
+  - **⚠️ Version Lock**: Mypy version MUST be captured in evidence to prevent tool drift
+  - Commands:
+    ```bash
+    # Capture mypy version for reproducibility
+    poetry run mypy --version >> artifacts/release/v0.4.0/01-code-quality-mypy-version.txt
 
-- [ ] **Pre-commit hooks pass**
+    # Run type checking
+    poetry run mypy src/omnibase_core/ --strict
+    ```
+  - Evidence: Release issue comment (OMN-218) with CI run link AND mypy version or artifacts/release/v0.4.0/01-code-quality-mypy-YYYYMMDD.txt
+
+- [ ] **Pre-commit hooks pass** `✅ REQUIRED`
   - Command: `pre-commit run --all-files`
   - Hooks: black, isort, ruff, mypy
-  - Evidence: Release issue comment (OMN-218) with CI run link or screenshot attachment
+  - Evidence: Release issue comment (OMN-218) with CI run link or text output (NOT screenshot)
 
 ---
 
 ## 2. Testing
 
-- [ ] **CI passes all parallel test splits**
+- [ ] **CI passes all parallel test splits** `🚫 BLOCKER`
   - All splits succeed
   - No test flake retries allowed (pytest-rerunfailures disabled)
-  - **Note**: Flaky tests must be fixed, not retried
+  - **Note**: Flaky tests must be fixed, not retried. Expect pressure to weaken this later. Do not.
   - Expected runtime: 2m30s-3m30s per split
   - Evidence: Release issue comment (OMN-218) with GitHub Actions run link
 
-- [ ] **Adapter fuzz testing completed**
+- [ ] **Adapter fuzz testing completed** `✅ REQUIRED (MVP minimal)` / `🚫 BLOCKER (Beta full)`
   - All adapters fuzzed with randomized inputs using Hypothesis
   - No crashes or undefined behavior
   - **Tool**: Hypothesis `^6.148` (installed in pyproject.toml)
   - **Status**: Adapter fuzz tests planned in MVP_PLAN.md Issue 3.8, minimal tests exist currently
+  - **MVP Scope (v0.4.0)**: Minimum 3 adapter types fuzzed with 50+ examples each
+  - **Beta Scope (v0.5.0+)**: All adapters fuzzed with 200+ examples, crash recovery verified
   - Commands:
     ```bash
     # Run existing property-based tests
@@ -241,14 +287,16 @@ Before marking a gate complete:
   - Expected: All adapters handle malformed inputs gracefully (ValidationError, not crash)
   - Evidence: Release issue comment (OMN-218) or artifacts/release/v0.4.0/fuzz-reports/adapter-fuzz-YYYYMMDD.txt
   - **Gap**: Full adapter fuzz tests need implementation per MVP_PLAN.md Issue 3.8
+  - **⚠️ WARNING**: Without explicit MVP/Beta scope, someone will later claim fuzzing was "done" when it was not. The scopes above are enforceable bounds.
 
-- [ ] **Coverage threshold met**
+- [ ] **Coverage threshold met** `✅ REQUIRED`
   - Minimum: 60% line coverage
   - Enforcement: Coverage is enforced in CI via pytest-cov fail-under
   - Command: `poetry run pytest tests/ --cov=src/omnibase_core --cov-fail-under=60 --cov-report=term-missing`
+  - **Note**: Coverage is not correctness. This metric prevents metric worship—60% is a floor, not a goal.
   - Evidence: Release issue comment (OMN-218) with CI artifacts link or artifacts/release/v0.4.0/coverage/index.html
 
-- [ ] **Negative-path tests present**
+- [ ] **Negative-path tests present** `✅ REQUIRED`
   - At least one failure-mode test per contract class
   - Explicit assertions on error shape
   - Evidence: Release issue comment (OMN-218) with specific test file paths (e.g., tests/unit/test_negative_paths.py)
@@ -257,21 +305,34 @@ Before marking a gate complete:
 
 ## 3. Determinism & Replayability
 
-- [ ] **Deterministic execution verified**
+- [ ] **Deterministic execution verified** `🚫 BLOCKER`
   - Identical inputs produce identical outputs
   - Hash comparison of emitted ModelActions or events
+  - **Hash Scope Definition**: Hashes are computed over **canonicalized outputs**. The following are EXCLUDED from hash computation:
+    - Timestamps (creation time, modification time, execution time)
+    - UUIDs generated at runtime (correlation_id, trace_id)
+    - Dict ordering noise (canonicalize with sorted keys)
+    - Floating point precision beyond 6 decimal places
+  - **Hash Inclusion**: The following MUST be included in hashes:
+    - All business logic outputs (computed values, transformed data)
+    - State transitions (FSM states, workflow phases)
+    - Error codes and error messages
+    - Contract fingerprints
   - Evidence: Release issue comment (OMN-218) or artifacts/release/v0.4.0/replay-logs/determinism-hashes-YYYYMMDD.txt
 
-- [ ] **Replay validation completed**
+- [ ] **Replay validation completed** `✅ REQUIRED`
   - At least one representative workflow replayed end-to-end
   - Replay output matches original execution exactly
+  - **⚠️ REQUIRED**: At least ONE orchestrator-heavy replay (not just compute-only)
+    - Must include: Multiple node transitions, state reduction, at least one retry/recovery path
+    - Compute-only replays are the easy case and do not catch real bugs
   - Evidence: Release issue comment (OMN-218) or artifacts/release/v0.4.0/replay-logs/replay-comparison-YYYYMMDD.txt
 
 ---
 
 ## 4. Contracts & Architecture
 
-- [ ] **All contracts have valid fingerprints**
+- [ ] **All contracts have valid fingerprints** `✅ REQUIRED`
   - Every RuntimeHostContract YAML includes a fingerprint
   - Fingerprints verified against contract content
   - **Note**: Use existing scripts (no `omnibase_core.tools.verify_fingerprints` CLI)
@@ -292,9 +353,10 @@ Before marking a gate complete:
   - Expected: All fingerprints valid (exit code 0), no regeneration needed
   - Evidence: Release issue comment (OMN-218) or artifacts/release/v0.4.0/fingerprints/fingerprint-verification-YYYYMMDD.txt
 
-- [ ] **Fingerprint enforcement validated**
+- [ ] **Fingerprint enforcement validated** `🚫 BLOCKER`
   - Modified contract fails verification
   - No fallback or silent acceptance
+  - **🚫 PROHIBITION**: Runtime fingerprint regeneration is FORBIDDEN. Future contributors will try to be "helpful" by auto-regenerating fingerprints. This defeats the purpose of fingerprints as drift detection.
   - Commands:
     ```bash
     # Test that modified contract fails validation
@@ -330,19 +392,24 @@ Before marking a gate complete:
   - Expected: Modification causes fingerprint mismatch (drift detected)
   - Evidence: Release issue comment (OMN-218) with test output showing fingerprint validation failure
 
-- [ ] **All nodes are contract-driven**
+- [ ] **All nodes are contract-driven** `✅ REQUIRED`
   - No legacy node implementations remain
   - Command: `grep -rE "NodeComputeLegacy|NodeReducerLegacy|NodeOrchestratorLegacy" src/`
   - Alternative (ripgrep): `rg "NodeComputeLegacy|NodeReducerLegacy|NodeOrchestratorLegacy" src/`
   - Expected: Empty output
   - Evidence: Release issue comment (OMN-218) with command output
+  - **Future**: Automate this check in CI before Beta (currently grep-based is acceptable for MVP)
 
 ---
 
 ## 5. Registry & Discovery Integrity
 
-- [ ] **Registry loads all contracts**
+- [ ] **Registry loads all contracts** `🚫 BLOCKER`
   - No orphaned or unreachable contracts
+  - **⚠️ FAILURE SEMANTICS**: Registry load failure MUST be fatal. Partial loads are NOT allowed.
+    - If any contract fails to load, the entire registry initialization MUST fail
+    - Silent fallback to partial state is forbidden
+    - This ensures "all-or-nothing" contract loading
   - Commands:
     ```bash
     # Load all runtime contracts via FileRegistry
@@ -380,7 +447,7 @@ Before marking a gate complete:
   - Expected: All contracts load without errors, all FileRegistry tests pass
   - Evidence: Release issue comment (OMN-218) with command output or test results
 
-- [ ] **Contract-to-node resolution verified**
+- [ ] **Contract-to-node resolution verified** `✅ REQUIRED`
   - Every fingerprint resolves to a runnable node
   - Commands:
     ```bash
@@ -415,41 +482,75 @@ Before marking a gate complete:
 
 ## 6. Versioning & Upgrade Safety
 
-- [ ] **Semantic versioning enforced**
+- [ ] **Semantic versioning enforced** `✅ REQUIRED`
   - Version bump aligns with documented breaking changes
   - Evidence: CHANGELOG and tag comparison
 
-- [ ] **Upgrade behavior verified**
+- [ ] **Upgrade behavior verified** `✅ REQUIRED`
   - v0.3.x -> v0.4.0 upgrade path documented and tested
   - Evidence: Migration test or documented failure mode
 
-- [ ] **Downgrade behavior declared**
-  - Either:
-    - Downgrade tested and supported
-    - Downgrade explicitly unsupported and fails fast
+- [ ] **Downgrade behavior declared** `✅ REQUIRED`
+  - **EXPLICIT DECLARATION REQUIRED**: Either:
+    - Downgrade tested and supported (with evidence), OR
+    - Downgrade explicitly unsupported and fails fast (documented)
+  - Silence here will be misinterpreted as support. State the policy clearly.
   - Evidence: Documentation or test
 
 ---
 
 ## 7. Dependency & Build Reproducibility
 
-- [ ] **Dependency lock verified**
+- [ ] **Dependency lock verified** `✅ REQUIRED`
   - poetry.lock committed and intentional
   - No untracked dependency drift
-  - Evidence: Git diff
+  - **⚠️ Lock Hash Capture**: Capture poetry.lock hash in evidence to prevent silent re-lock drift
+  - Commands:
+    ```bash
+    # Verify lock file is committed
+    git status poetry.lock
 
-- [ ] **Reproducible install verified**
+    # Capture lock file hash for evidence
+    sha256sum poetry.lock >> artifacts/release/v0.4.0/07-dependencies-lock-hash.txt
+
+    # Verify no pending dependency changes
+    poetry lock --check
+    ```
+  - Evidence: Git diff AND lock file hash
+
+- [ ] **Reproducible install verified** `✅ REQUIRED`
+  - **⚠️ REQUIRED**: Fresh virtualenv smoke install (pip installs can lie)
   - Fresh environment install using lockfile only
   - Tests pass in clean environment
-  - Evidence: CI or local install log
+  - Commands:
+    ```bash
+    # Create fresh virtualenv for verification
+    python -m venv /tmp/v040-verify-env
+    source /tmp/v040-verify-env/bin/activate  # Linux/macOS
+    # Windows: /tmp/v040-verify-env/Scripts/activate
+
+    # Install from lock file only
+    pip install poetry
+    poetry install --no-root
+
+    # Run smoke tests
+    python -c "from omnibase_core.nodes import NodeCompute; print('Smoke OK')"
+    poetry run pytest tests/unit/ -x --tb=short -q
+
+    # Cleanup
+    deactivate
+    rm -rf /tmp/v040-verify-env
+    ```
+  - Evidence: CI or local install log from fresh environment
 
 ---
 
 ## 8. Observability & Diagnostics
 
-- [ ] **Structured error payloads enforced**
+- [ ] **Structured error payloads enforced** `✅ REQUIRED (MVP)` / `🚫 BLOCKER (Beta)`
   - Errors include: contract_id, fingerprint, node_id (via context kwargs)
-  - **Note**: These fields are passed via `**context` kwargs, not enforced as mandatory fields
+  - **MVP Note**: These fields are passed via `**context` kwargs, not enforced as mandatory fields
+  - **Beta Requirement**: Mandatory structured fields at model level (schema-enforced, not kwargs)
   - Commands:
     ```bash
     # Generate error object snapshot with all observability fields
@@ -485,9 +586,12 @@ Before marking a gate complete:
   - Expected: Error objects contain correlation_id, node_id, contract_id, fingerprint in context
   - Evidence: Release issue comment (OMN-218) with error object JSON snapshot
 
-- [ ] **Failure events emitted**
+- [ ] **Failure events emitted** `✅ REQUIRED`
   - Node failures emit observable events via `MixinNodeLifecycle.emit_node_failure()`
   - No silent failures
+  - **Emission Guarantees** (document in evidence):
+    - Synchronous vs buffered: State which applies
+    - Delivery guarantees: Best-effort vs guaranteed (at-least-once)
   - Commands:
     ```bash
     # Demonstrate NODE_FAILURE event emission structure
@@ -558,13 +662,21 @@ Before marking a gate complete:
 
 ### 9.1 Public API Stability
 
-- [ ] **Public API exports unchanged or documented**
+- [ ] **Public API exports unchanged or documented** `✅ REQUIRED`
   - Verify `omnibase_core.nodes.__all__` exports are stable
-  - Command: `poetry run python -c "from omnibase_core.nodes import *; print('API imports OK')"`
-  - Expected: No ImportError, prints "API imports OK"
-  - Evidence: Release issue comment (OMN-218) with command output
+  - **⚠️ Capture `__all__` diff automatically** as evidence
+  - Commands:
+    ```bash
+    # Capture current __all__ exports for evidence
+    poetry run python -c "from omnibase_core.nodes import __all__; print('\\n'.join(sorted(__all__)))" > artifacts/release/v0.4.0/09-api-exports.txt
 
-- [ ] **Core import paths verified**
+    # Verify wildcard import works
+    poetry run python -c "from omnibase_core.nodes import *; print('API imports OK')"
+    ```
+  - Expected: No ImportError, prints "API imports OK"
+  - Evidence: Release issue comment (OMN-218) with `__all__` export list AND command output
+
+- [ ] **Core import paths verified** `✅ REQUIRED`
   - All documented import paths resolve correctly
   - Commands:
     ```bash
@@ -576,7 +688,7 @@ Before marking a gate complete:
   - Expected: All imports succeed without error
   - Evidence: Command outputs (all four commands)
 
-- [ ] **Breaking changes enumerated**
+- [ ] **Breaking changes enumerated** `✅ REQUIRED`
   - List all removed/renamed exports
   - List all changed method signatures
   - List all removed classes/functions
@@ -584,7 +696,7 @@ Before marking a gate complete:
 
 ### 9.2 Downstream Repository Testing
 
-- [ ] **omnibase_spi compatibility verified**
+- [ ] **omnibase_spi compatibility verified** `🚫 BLOCKER`
   - Clone omnibase_spi repository to temporary directory
   - Update omnibase_core dependency to v0.4.0 (or local editable)
   - Commands (cross-platform):
@@ -601,7 +713,7 @@ Before marking a gate complete:
   - Expected: All tests pass, mypy reports 0 errors
   - Evidence: Test output (pass count) and mypy report
 
-- [ ] **omninode_core compatibility verified** (if applicable)
+- [ ] **omninode_core compatibility verified** (if applicable) `✅ REQUIRED`
   - Clone omninode_core repository to temporary directory
   - Update omnibase_core dependency to v0.4.0
   - Commands (cross-platform):
@@ -618,26 +730,26 @@ Before marking a gate complete:
   - Expected: All tests pass, mypy reports 0 errors
   - Evidence: Test output and mypy report
 
-- [ ] **Example projects verified** (if applicable)
+- [ ] **Example projects verified** (if applicable) `📋 INFORMATIONAL`
   - Any official example projects compile and run
   - Expected: No runtime errors on documented examples
   - Evidence: Example execution logs or "N/A - no example projects"
 
 ### 9.3 Integration Contract Verification
 
-- [ ] **Protocol implementations compatible**
+- [ ] **Protocol implementations compatible** `✅ REQUIRED`
   - All SPI protocols still satisfied by core implementations
   - Command: `poetry run python -c "from omnibase_core.models.container.model_onex_container import ModelONEXContainer; c = ModelONEXContainer(); print('Container init OK')"`
   - Expected: Container initializes without protocol violations
   - Evidence: Command output showing "Container init OK"
 
-- [ ] **Event envelope compatibility verified**
+- [ ] **Event envelope compatibility verified** `✅ REQUIRED`
   - ModelEventEnvelope schema unchanged or migration documented
   - Command: `poetry run python -c "from omnibase_core.models.event.model_event_envelope import ModelEventEnvelope; import json; print(json.dumps(ModelEventEnvelope.model_json_schema(), indent=2))"`
   - Expected: Schema matches v0.3.x specification or changes documented
   - Evidence: Schema output with diff against v0.3.x (if changed)
 
-- [ ] **Contract YAML schema compatibility**
+- [ ] **Contract YAML schema compatibility** `✅ REQUIRED`
   - RuntimeHostContract YAML files from v0.3.x parse correctly
   - Command: `poetry run python -c "from omnibase_core.runtime.file_registry import FileRegistry; r = FileRegistry(); print('FileRegistry OK')"`
   - Expected: No schema validation errors for valid v0.3.x contracts
@@ -645,7 +757,7 @@ Before marking a gate complete:
 
 ### 9.4 Migration Verification
 
-- [ ] **Migration guide tested end-to-end**
+- [ ] **Migration guide tested end-to-end** `✅ REQUIRED`
   - Create fresh project using v0.3.x patterns
   - Follow migration guide step-by-step
   - Verify tests pass after migration
@@ -666,7 +778,7 @@ Before marking a gate complete:
   - Expected: Migration completes successfully, tests pass
   - Evidence: Migration test log or documented test results
 
-- [ ] **Deprecation warnings present**
+- [ ] **Deprecation warnings present** `📋 INFORMATIONAL`
   - Deprecated APIs emit warnings when used
   - Command: `poetry run python -W default::DeprecationWarning -c "from omnibase_core.nodes import NodeCompute; print('Deprecation check complete')"`
   - Expected: Deprecation warnings shown for any deprecated APIs (or none if no deprecations)
@@ -674,13 +786,13 @@ Before marking a gate complete:
 
 ### 9.5 CI/CD Integration
 
-- [ ] **GitHub Actions workflow compatible**
+- [ ] **GitHub Actions workflow compatible** `✅ REQUIRED`
   - Downstream repos' CI workflows pass with v0.4.0
   - Verify by running downstream CI with v0.4.0 dependency
   - Expected: All CI checks pass (tests, type checking, linting)
   - Evidence: CI run links for each downstream repo
 
-- [ ] **Docker builds succeed**
+- [ ] **Docker builds succeed** `📋 INFORMATIONAL`
   - Downstream Docker images build with v0.4.0 dependency
   - Command: `docker build -t test-downstream .` (in downstream repo)
   - Expected: Build completes successfully
@@ -690,14 +802,15 @@ Before marking a gate complete:
 
 ## 10. Documentation
 
-- [ ] **Documentation updated**
+- [ ] **Documentation updated** `✅ REQUIRED`
   - CLAUDE.md reflects v0.4.0 architecture
   - Node building guides updated
   - Migration guide complete (if applicable)
   - CHANGELOG.md updated
-  - Evidence: Documentation PR or commit
+  - **⚠️ Doc Commit SHA**: Record the commit SHA of documentation freeze to prevent freeze-era doc drift
+  - Evidence: Documentation PR or commit SHA
 
-- [ ] **Breaking changes documented**
+- [ ] **Breaking changes documented** `🚫 BLOCKER`
   - Each breaking change listed
   - Explicit migration instructions provided
   - Evidence: CHANGELOG section
@@ -706,23 +819,25 @@ Before marking a gate complete:
 
 ## Verification Commands
 
+Commands grouped by section for faster evidence mapping during audits:
+
 ```bash
-# Type checking
+# =============================================================================
+# Section 1: Code Quality
+# =============================================================================
+poetry run mypy --version  # Capture version for evidence
 poetry run mypy src/omnibase_core/ --strict
-
-# Run tests
-poetry run pytest tests/
-
-# Coverage
-poetry run pytest tests/ --cov=src/omnibase_core --cov-report=term-missing
-
-# Pre-commit
 pre-commit run --all-files
 
-# Legacy pattern check (portable extended regex)
-grep -rE "NodeComputeLegacy|NodeReducerLegacy|NodeOrchestratorLegacy" src/
-# Alternative with ripgrep: rg "NodeComputeLegacy|NodeReducerLegacy|NodeOrchestratorLegacy" src/
+# =============================================================================
+# Section 2: Testing
+# =============================================================================
+poetry run pytest tests/
+poetry run pytest tests/ --cov=src/omnibase_core --cov-fail-under=60 --cov-report=term-missing
 
+# =============================================================================
+# Section 4: Contracts & Architecture
+# =============================================================================
 # Contract fingerprint verification (using existing scripts)
 poetry run python scripts/compute_contract_fingerprint.py contracts/runtime/ --validate --recursive
 poetry run python scripts/regenerate_fingerprints.py contracts/ --recursive --dry-run
@@ -730,9 +845,25 @@ poetry run python scripts/regenerate_fingerprints.py contracts/ --recursive --dr
 # Contract linting
 poetry run python scripts/lint_contract.py contracts/runtime/ --recursive --verbose
 
+# Legacy pattern check (portable extended regex)
+grep -rE "NodeComputeLegacy|NodeReducerLegacy|NodeOrchestratorLegacy" src/
+# Alternative with ripgrep: rg "NodeComputeLegacy|NodeReducerLegacy|NodeOrchestratorLegacy" src/
+
+# =============================================================================
+# Section 5: Registry & Discovery
+# =============================================================================
 # FileRegistry contract loading test
 poetry run pytest tests/unit/runtime/test_file_registry.py -v
 
+# =============================================================================
+# Section 7: Dependencies
+# =============================================================================
+sha256sum poetry.lock  # Capture lock hash
+poetry lock --check
+
+# =============================================================================
+# Section 8: Observability
+# =============================================================================
 # Error handling tests
 poetry run pytest tests/unit/exceptions/test_onex_error.py tests/unit/errors/test_declarative_errors.py -v
 ```
