@@ -583,7 +583,7 @@ class ModelOnexEnvelope(BaseModel):
                 "If an error is present, success should typically be False. "
                 f"[correlation_id={self.correlation_id}, operation={self.operation}]",
                 UserWarning,
-                stacklevel=2,
+                stacklevel=3,  # Skip: warn() -> validator -> Pydantic __init__ -> user code
             )
 
         # Rule 2: Response with success=False should have error message
@@ -593,7 +593,7 @@ class ModelOnexEnvelope(BaseModel):
                 "message. Failed responses should include an error for debugging. "
                 f"[correlation_id={self.correlation_id}, operation={self.operation}]",
                 UserWarning,
-                stacklevel=2,
+                stacklevel=3,  # Skip: warn() -> validator -> Pydantic __init__ -> user code
             )
 
         return self

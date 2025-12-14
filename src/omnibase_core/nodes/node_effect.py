@@ -43,10 +43,15 @@ _ERR_EFFECT_SUBCONTRACT_NOT_LOADED = "Effect subcontract not loaded"
 
 # Warning messages for v1.0 limitations
 _WARN_PER_OP_CONFIG_NOT_HONORED = (
-    "v1.0 LIMITATION: Per-operation '{config_name}' detected for operation "
-    "'{operation_name}' but will NOT be applied. Only subcontract-level defaults "
-    "are honored in v1.0. This will be fully implemented in v2.0. See: OMN-467"
+    "v1.0 LIMITATION: Per-operation '{config_name}' detected but will NOT be applied. "
+    "Only subcontract-level defaults are honored in v1.0. "
+    "This will be fully implemented in v2.0. See: OMN-467"
 )
+
+# Module-level flags to emit warnings only once per session (matching compute_executor pattern)
+_per_op_retry_warning_emitted: bool = False
+_per_op_circuit_breaker_warning_emitted: bool = False
+_per_op_response_handling_warning_emitted: bool = False
 
 
 class NodeEffect(NodeCoreBase, MixinEffectExecution):
@@ -395,33 +400,45 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
                 # v1.0 LIMITATION: Emit runtime warnings when per-operation configs
                 # are detected. These configs are parsed but NOT honored in v1.0.
                 # Only subcontract-level defaults are applied during execution.
-                if op.retry_policy is not None:
+                # Warnings are emitted once per session to avoid noise (matching
+                # compute_executor.py pattern).
+                global _per_op_retry_warning_emitted
+                global _per_op_circuit_breaker_warning_emitted
+                global _per_op_response_handling_warning_emitted
+
+                if op.retry_policy is not None and not _per_op_retry_warning_emitted:
                     warnings.warn(
                         _WARN_PER_OP_CONFIG_NOT_HONORED.format(
                             config_name="retry_policy",
-                            operation_name=op.operation_name,
                         ),
                         UserWarning,
                         stacklevel=2,
                     )
-                if op.circuit_breaker is not None:
+                    _per_op_retry_warning_emitted = True
+                if (
+                    op.circuit_breaker is not None
+                    and not _per_op_circuit_breaker_warning_emitted
+                ):
                     warnings.warn(
                         _WARN_PER_OP_CONFIG_NOT_HONORED.format(
                             config_name="circuit_breaker",
-                            operation_name=op.operation_name,
                         ),
                         UserWarning,
                         stacklevel=2,
                     )
-                if op.response_handling is not None:
+                    _per_op_circuit_breaker_warning_emitted = True
+                if (
+                    op.response_handling is not None
+                    and not _per_op_response_handling_warning_emitted
+                ):
                     warnings.warn(
                         _WARN_PER_OP_CONFIG_NOT_HONORED.format(
                             config_name="response_handling",
-                            operation_name=op.operation_name,
                         ),
                         UserWarning,
                         stacklevel=2,
                     )
+                    _per_op_response_handling_warning_emitted = True
 
                 op_dict: dict[str, object] = {
                     "operation_name": op.operation_name,

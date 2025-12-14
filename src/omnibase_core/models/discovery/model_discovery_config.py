@@ -1,8 +1,9 @@
 """Tool discovery configuration model with caching, depth control, and filtering options."""
 
+import warnings
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -135,16 +136,19 @@ class ModelDiscoveryConfig(BaseModel):
             )
         return v
 
-    @field_validator("max_depth")
-    @classmethod
-    def validate_max_depth_reasonable(cls, v: Any) -> Any:
-        """Ensure max_depth is reasonable for performance."""
-        if v is not None and v > 15:
-            import warnings
+    @model_validator(mode="after")
+    def warn_deep_max_depth(self) -> "ModelDiscoveryConfig":
+        """Emit warning for potentially problematic max_depth values.
 
+        This is a post-construction validator that emits a warning (not an error)
+        when max_depth exceeds 15, which may cause performance issues during
+        directory traversal.
+        """
+        if self.max_depth is not None and self.max_depth > 15:
             warnings.warn(
-                f"max_depth {v} may cause performance issues",
+                f"max_depth {self.max_depth} may cause performance issues. "
+                "Consider using max_depth <= 15 for optimal discovery performance.",
                 UserWarning,
-                stacklevel=2,
+                stacklevel=3,  # Account for Pydantic validator call stack
             )
-        return v
+        return self

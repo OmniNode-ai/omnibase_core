@@ -117,11 +117,11 @@ def _get_error_type(error: ModelOnexError) -> str:
     return str(error.error_code)
 
 
-# TODO(): Migrate to shared utility omnibase_core.utils.compute_path_resolver
-# The shared utility has been created with resolve_pipeline_path() which provides
-# equivalent functionality. Replace this function with a thin wrapper or direct import:
-#   from omnibase_core.utils.compute_path_resolver import resolve_pipeline_path
-# See: compute_path_resolver.py for unified path resolution logic with EBNF grammar docs
+# Use shared utility for path resolution - consolidates logic from both
+# resolve_mapping_path (here) and transform_json_path (compute_transformations.py)
+from omnibase_core.utils.compute_path_resolver import resolve_pipeline_path
+
+
 def resolve_mapping_path(
     path: str,
     input_data: Any,  # Any: accepts dict, Pydantic models, or other objects with attributes
@@ -184,78 +184,10 @@ def resolve_mapping_path(
         >>> resolve_mapping_path("$.steps.normalize.output", {}, step_results)
         'HELLO'
     """
-    if not path.startswith("$"):
-        raise ModelOnexError(
-            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-            message=f"Invalid path: must start with '$', got '{path}'",
-        )
-
-    if path == "$.input" or path == "$input":
-        return input_data
-
-    if path.startswith("$.input."):
-        # Navigate into input data
-        remaining = path[8:]  # Remove "$.input."
-        parts = remaining.split(".")
-        current = input_data
-
-        for part in parts:
-            if not part:
-                continue
-            if isinstance(current, dict):
-                if part not in current:
-                    raise ModelOnexError(
-                        error_code=EnumCoreErrorCode.OPERATION_FAILED,
-                        message=f"Path '{path}' not found: key '{part}' missing in input",
-                    )
-                current = current[part]
-            # Block private attribute access for security
-            elif part.startswith("_"):
-                raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message=f"Path '{path}' invalid: cannot access private attribute '{part}'",
-                )
-            elif hasattr(current, part):
-                current = getattr(current, part)
-            else:
-                raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.OPERATION_FAILED,
-                    message=f"Path '{path}' not found: cannot access '{part}'",
-                )
-        return current
-
-    if path.startswith("$.steps."):
-        # Navigate into step results
-        remaining = path[8:]  # Remove "$.steps."
-        parts = remaining.split(".", 1)
-        step_name = parts[0]
-
-        if step_name not in step_results:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.OPERATION_FAILED,
-                message=f"Step '{step_name}' not found in executed steps",
-            )
-
-        result = step_results[step_name]
-
-        if len(parts) == 1:
-            # Shorthand: $.steps.<name> returns output (convenience form)
-            return result.output
-
-        sub_path = parts[1]
-        if sub_path == "output":
-            # Explicit: $.steps.<name>.output returns output (explicit form)
-            return result.output
-        else:
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Invalid step path: only '.output' supported, got '.{sub_path}'",
-            )
-
-    raise ModelOnexError(
-        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-        message=f"Invalid path prefix: '{path}'. Must be '$.input' or '$.steps.<name>'",
-    )
+    # Delegate to shared path resolver utility
+    # The resolve_pipeline_path function handles all path formats and returns
+    # values compatible with the original resolve_mapping_path behavior
+    return resolve_pipeline_path(path, input_data, step_results)
 
 
 def execute_mapping_step(
