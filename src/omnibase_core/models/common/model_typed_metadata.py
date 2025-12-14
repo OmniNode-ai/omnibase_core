@@ -742,32 +742,6 @@ class ModelGraphNodeData(BaseModel):
     )
 
 
-class ModelGraphNodeInputs(BaseModel):
-    """
-    Typed inputs for graph nodes.
-
-    Replaces dict[str, Any] inputs field in ModelGraphNode
-    with explicit typed fields for graph node inputs.
-    """
-
-    parameters: ModelGraphNodeParameters = Field(
-        default_factory=ModelGraphNodeParameters,
-        description="Input parameters as key-value pairs",
-    )
-    from_outputs: ModelOutputMapping = Field(
-        default_factory=ModelOutputMapping,
-        description="Mappings from other node outputs",
-    )
-    constants: dict[str, str] = Field(
-        default_factory=dict,
-        description="Constant input values as strings",
-    )
-    environment_vars: list[str] = Field(
-        default_factory=list,
-        description="Environment variables to inject",
-    )
-
-
 class ModelToolResultData(BaseModel):
     """
     Typed result data for tool responses.
@@ -854,7 +828,6 @@ __all__ = [
     "ModelCustomHealthMetrics",
     "ModelIntrospectionCustomMetrics",
     "ModelGraphNodeData",
-    "ModelGraphNodeInputs",
     "ModelToolResultData",
     "ModelEventSubscriptionConfig",
 ]

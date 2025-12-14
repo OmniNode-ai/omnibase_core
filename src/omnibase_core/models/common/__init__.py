@@ -11,6 +11,7 @@ from .model_discriminated_value import ModelDiscriminatedValue
 from .model_envelope_payload import ModelEnvelopePayload, PayloadDataValue
 from .model_error_context import ModelErrorContext
 from .model_flexible_value import ModelFlexibleValue
+from .model_graph_node_inputs import ModelGraphNodeInputs
 from .model_graph_node_parameter import ModelGraphNodeParameter
 from .model_graph_node_parameters import ModelGraphNodeParameters
 from .model_multi_type_value import ModelMultiTypeValue
@@ -27,7 +28,6 @@ from .model_typed_metadata import (
     ModelEffectMetadata,
     ModelEventSubscriptionConfig,
     ModelGraphNodeData,
-    ModelGraphNodeInputs,
     ModelIntentPayload,
     ModelIntrospectionCustomMetrics,
     ModelMixinConfigSchema,
