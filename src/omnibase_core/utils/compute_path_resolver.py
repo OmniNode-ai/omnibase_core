@@ -89,6 +89,7 @@ See Also:
     - docs/guides/node-building/03_COMPUTE_NODE_TUTORIAL.md: Compute node tutorial
 """
 
+from collections.abc import Mapping
 from typing import Any
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -389,7 +390,7 @@ def resolve_input_path(
 
 def resolve_step_path(
     path: str,
-    step_results: dict[str, object],
+    step_results: Mapping[str, object],
 ) -> object:
     """
     Resolve a pipeline step path expression ($.steps prefix).
@@ -490,7 +491,7 @@ def resolve_step_path(
 def resolve_pipeline_path(
     path: str,
     input_data: Any,  # Any: input can be dict, Pydantic model, or arbitrary object
-    step_results: dict[str, object],
+    step_results: Mapping[str, object],
 ) -> object:
     """
     Resolve a pipeline path expression to its value.
