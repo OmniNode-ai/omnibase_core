@@ -6,11 +6,13 @@ This model represents the configuration parameters for different secret backends
 
 from pathlib import Path
 
-from pydantic import BaseModel, Field, SecretStr
+from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
 
 class ModelBackendConfig(BaseModel):
     """Configuration parameters for secret backends."""
+
+    model_config = ConfigDict(from_attributes=True)
 
     # Environment backend config
     env_prefix: str | None = Field(

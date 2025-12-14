@@ -23,8 +23,12 @@ See Also:
     - :class:`ModelOutputReference`: Individual output reference model.
 """
 
+from typing import Self
+
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, model_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors import ModelOnexError
 from omnibase_core.models.common.model_output_reference import ModelOutputReference
 
 
@@ -63,17 +67,19 @@ class ModelOutputMapping(BaseModel):
     _by_local_name: dict[str, ModelOutputReference] = PrivateAttr(default_factory=dict)
 
     @model_validator(mode="after")
-    def _build_lookup_cache(self) -> "ModelOutputMapping":
+    def _build_lookup_cache(self) -> Self:
         """Build the lookup cache after model initialization.
 
         Raises:
-            ValueError: If duplicate local_name values are found in references.
+            ModelOnexError: If duplicate local_name values are found in references.
         """
         seen: set[str] = set()
         for ref in self.references:
             if ref.local_name in seen:
-                raise ValueError(
-                    f"Duplicate local_name in references: {ref.local_name}"
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=f"Duplicate local_name in references: {ref.local_name}",
+                    duplicate_local_name=ref.local_name,
                 )
             seen.add(ref.local_name)
         self._by_local_name = {ref.local_name: ref for ref in self.references}
@@ -144,7 +150,7 @@ class ModelOutputMapping(BaseModel):
     def from_dict(
         cls,
         mapping_dict: dict[str, str],
-    ) -> "ModelOutputMapping":
+    ) -> Self:
         """
         Create from dictionary format (local_name -> source_reference).
 

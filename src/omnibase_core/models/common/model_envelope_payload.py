@@ -35,6 +35,9 @@ from typing import ClassVar, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors import ModelOnexError
+
 # Type alias for additional payload values (for data field)
 PayloadDataValue = str | int | float | bool | list[str] | None
 
@@ -105,11 +108,14 @@ class ModelEnvelopePayload(BaseModel):
     )
 
     @model_validator(mode="after")
-    def _validate_data_size(self) -> ModelEnvelopePayload:
+    def _validate_data_size(self) -> Self:
         """Validate data dict size to prevent DoS attacks."""
         if len(self.data) > self.MAX_DATA_ENTRIES:
-            raise ValueError(
-                f"Data dict exceeds maximum size of {self.MAX_DATA_ENTRIES} entries"
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Data dict exceeds maximum size of {self.MAX_DATA_ENTRIES} entries",
+                data_entries=len(self.data),
+                max_entries=self.MAX_DATA_ENTRIES,
             )
         return self
 
@@ -247,7 +253,7 @@ class ModelEnvelopePayload(BaseModel):
         """
         return self.data.get(key, default)
 
-    def set_data(self, key: str, value: PayloadDataValue) -> ModelEnvelopePayload:
+    def set_data(self, key: str, value: PayloadDataValue) -> Self:
         """Set a value in the data dictionary, returning a new instance.
 
         Args:
@@ -261,7 +267,7 @@ class ModelEnvelopePayload(BaseModel):
         new_data[key] = value
         return self.model_copy(update={"data": new_data})
 
-    def with_timestamp(self, timestamp: datetime | None = None) -> ModelEnvelopePayload:
+    def with_timestamp(self, timestamp: datetime | None = None) -> Self:
         """Create a new instance with updated timestamp.
 
         Args:
