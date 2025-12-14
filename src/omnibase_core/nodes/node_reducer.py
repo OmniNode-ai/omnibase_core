@@ -46,13 +46,27 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
     State transitions, conditions, and actions are all defined in FSM subcontracts.
 
     Thread Safety:
-        NodeReducer instances are NOT thread-safe due to mutable FSM state:
-        - Current state tracking
-        - State transition history
-        - Context accumulation
+        **MVP Design Decision**: NodeReducer uses mutable FSM state intentionally for
+        the MVP phase to enable stateful workflow processing with minimal complexity.
+        This is a documented trade-off.
 
-        Each thread should have its own NodeReducer instance, or implement
-        explicit synchronization. See docs/guides/THREADING.md for patterns.
+        **Mutable State Components**:
+        - `fsm_contract`: Loaded FSM subcontract reference
+        - FSM execution state (via MixinFSMExecution):
+          - Current state tracking
+          - State transition history
+          - Context accumulation
+
+        **Current Limitations**:
+        NodeReducer instances are NOT thread-safe. Concurrent access will corrupt
+        FSM state.
+
+        **Production Path**: Future versions will support stateless FSM execution
+        with external state stores. See docs/architecture/MUTABLE_STATE_STRATEGY.md
+        for the production improvement roadmap.
+
+        **Mitigation**: Each thread should have its own NodeReducer instance.
+        See docs/guides/THREADING.md for thread-local instance patterns.
 
     Pattern:
         class NodeMyReducer(NodeReducer):
