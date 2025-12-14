@@ -47,11 +47,12 @@ jobs:
   #   3. All Phase 1 jobs run in parallel for speed
   # =============================================================================
 
-  # Quick smoke test - fails fast on basic issues (5-10s)
+  # Smoke test - runs enum and error tests to catch basic issues fast
+  # Note: Currently ~2400 tests, takes ~5 min. Timeout set to 8 min for buffer.
   smoke-test:
     name: Smoke Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
 
     steps:
       - name: Checkout code
