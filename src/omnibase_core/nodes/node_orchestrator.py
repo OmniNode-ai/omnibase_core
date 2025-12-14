@@ -95,6 +95,7 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
 
         Usage:
             ```python
+            import logging
             from uuid import uuid4
             from omnibase_core.models.contracts.subcontracts.model_workflow_definition import (
                 ModelWorkflowDefinition,
@@ -103,6 +104,8 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
         ModelOrchestratorInput,
     )
             from omnibase_core.enums.enum_workflow_execution import EnumExecutionMode
+
+            logger = logging.getLogger(__name__)
 
             # Create node from container
             node = NodeMyOrchestrator(container)
@@ -146,8 +149,8 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
             )
 
             result = await node.process(input_data)
-            print(f"Completed steps: {len(result.completed_steps)}")
-            print(f"Actions emitted: {len(result.actions_emitted)}")
+            logger.debug("Completed steps: %d", len(result.completed_steps))
+            logger.debug("Actions emitted: %d", len(result.actions_emitted))
             ```
 
         Key Features:
@@ -216,6 +219,11 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
 
         Example:
             ```python
+            import logging
+            from uuid import uuid4
+
+            logger = logging.getLogger(__name__)
+
             # Define workflow steps
             steps_config = [
                 {
@@ -241,8 +249,8 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
                 workflow_id=uuid4()
             )
 
-            print(f"Status: {result.execution_status}")
-            print(f"Actions: {len(result.actions_emitted)}")
+            logger.debug("Status: %s", result.execution_status)
+            logger.debug("Actions: %d", len(result.actions_emitted))
             ```
         """
         if not self.workflow_definition:
@@ -279,11 +287,15 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
 
         Example:
             ```python
+            import logging
+
+            logger = logging.getLogger(__name__)
+
             errors = await node.validate_contract()
             if errors:
-                print(f"Contract validation failed: {errors}")
+                logger.warning("Contract validation failed: %s", errors)
             else:
-                print("Contract is valid!")
+                logger.info("Contract is valid!")
             ```
         """
         if not self.workflow_definition:
@@ -337,9 +349,13 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
 
         Example:
             ```python
+            import logging
+
+            logger = logging.getLogger(__name__)
+
             steps = [ModelWorkflowStep(...), ModelWorkflowStep(...)]
             order = node.get_execution_order_for_steps(steps)
-            print(f"Execution order: {order}")
+            logger.debug("Execution order: %s", order)
             ```
         """
         return self.get_workflow_execution_order(steps)

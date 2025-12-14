@@ -298,6 +298,21 @@ repos:
         exclude: ^(tests/|archived/|archive/).*\.py$
         stages: [pre-commit]
 
+      # Print Statement Prevention (OMN-701)
+      # Ensures production code uses structured logging instead of print()
+      # To allow specific prints (e.g., CLI tools), add: # print-ok: reason
+      # Excludes:
+      #   - validation/ (CLI tools that legitimately print to users)
+      #   - *example* files (demo/documentation files)
+      - id: check-no-print-statements
+        name: ONEX Print Statement Prevention
+        entry: poetry run python scripts/validation/check_no_print_statements.py
+        language: system
+        pass_filenames: true
+        files: ^src/.*\.py$
+        exclude: ^(tests/|archived/|archive/|scripts/validation/|src/omnibase_core/validation/|.*example.*).*\.py$
+        stages: [pre-commit]
+
       - id: validate-no-enhancement-prefixes
         name: ONEX Enhancement Prefix Anti-Pattern Detection
         entry: poetry run python scripts/validation/validate-no-enhancement-prefixes.py

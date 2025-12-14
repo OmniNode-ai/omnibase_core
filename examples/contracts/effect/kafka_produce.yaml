@@ -67,7 +67,7 @@ contract_version:
   patch: 0
 # Fingerprint: SHA-256 hash of canonical normalized contract content (excluding fingerprint field).
 # See docs/architecture/CONTRACT_STABILITY_SPEC.md for normalization specification.
-fingerprint: "1.1.0:2fc793ee6257"
+fingerprint: "v1.1.0:2fc793ee6257"
 node_type: effect
 
 # ---------------------------------------------------------------------------
