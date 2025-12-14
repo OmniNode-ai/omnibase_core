@@ -14,10 +14,12 @@ Security:
 
 from __future__ import annotations
 
-from typing import ClassVar
+from typing import ClassVar, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors import ModelOnexError
 from omnibase_core.models.common.model_envelope_payload import ModelEnvelopePayload
 from omnibase_core.models.common.model_query_parameters import ModelQueryParameters
 
@@ -124,21 +126,35 @@ class ModelOperationData(BaseModel):
     )
 
     @model_validator(mode="after")
-    def _validate_sizes(self) -> ModelOperationData:
+    def _validate_sizes(self) -> Self:
         """Validate size constraints to prevent DoS attacks."""
         if len(self.headers) > self.MAX_HEADERS:
-            raise ValueError(
-                f"Headers dict exceeds maximum size of {self.MAX_HEADERS} entries"
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Headers dict exceeds maximum size of {self.MAX_HEADERS} entries",
+                headers_count=len(self.headers),
+                max_headers=self.MAX_HEADERS,
             )
         if self.body is not None and len(self.body) > self.MAX_BODY_SIZE:
-            raise ValueError(f"Body exceeds maximum size of {self.MAX_BODY_SIZE} bytes")
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Body exceeds maximum size of {self.MAX_BODY_SIZE} bytes",
+                body_size=len(self.body),
+                max_body_size=self.MAX_BODY_SIZE,
+            )
         if self.content is not None and len(self.content) > self.MAX_CONTENT_SIZE:
-            raise ValueError(
-                f"Content exceeds maximum size of {self.MAX_CONTENT_SIZE} bytes"
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Content exceeds maximum size of {self.MAX_CONTENT_SIZE} bytes",
+                content_size=len(self.content),
+                max_content_size=self.MAX_CONTENT_SIZE,
             )
         if self.message is not None and len(self.message) > self.MAX_MESSAGE_SIZE:
-            raise ValueError(
-                f"Message exceeds maximum size of {self.MAX_MESSAGE_SIZE} bytes"
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Message exceeds maximum size of {self.MAX_MESSAGE_SIZE} bytes",
+                message_size=len(self.message),
+                max_message_size=self.MAX_MESSAGE_SIZE,
             )
         return self
 

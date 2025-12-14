@@ -30,7 +30,7 @@ See Also:
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime, timezone
 from typing import ClassVar, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -265,12 +265,12 @@ class ModelEnvelopePayload(BaseModel):
         """Create a new instance with updated timestamp.
 
         Args:
-            timestamp: Timestamp to set (defaults to now).
+            timestamp: Timestamp to set (defaults to UTC now).
 
         Returns:
             New ModelEnvelopePayload instance with timestamp.
         """
-        ts = timestamp or datetime.now()
+        ts = timestamp or datetime.now(UTC)
         return self.model_copy(update={"timestamp": ts.isoformat()})
 
     def has(self, key: str) -> bool:

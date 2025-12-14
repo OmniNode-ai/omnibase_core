@@ -241,7 +241,7 @@ class ModelQueryParameters(BaseModel):
 
         Args:
             key: Parameter name to retrieve.
-            default: Default value if parameter not found.
+            default: Default value if parameter not found or not convertible.
 
         Returns:
             Parameter value as bool or default.
@@ -252,7 +252,12 @@ class ModelQueryParameters(BaseModel):
         if isinstance(value, bool):
             return value
         if isinstance(value, str):
-            return value.lower() in ("true", "1", "yes", "on")
+            v = value.strip().lower()
+            if v in ("true", "1", "yes", "on"):
+                return True
+            if v in ("false", "0", "no", "off"):
+                return False
+            return default
         if isinstance(value, int):
             return value != 0
         return default

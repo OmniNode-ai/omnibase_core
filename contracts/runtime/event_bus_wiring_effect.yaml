@@ -234,7 +234,7 @@ subscriptions:
   # The runtime will validate handler availability during contract loading
   # and emit warnings for unregistered handlers in non-strict mode.
   #
-  # Tracking: OMN-XXX (create ticket for handler implementation)
+  # Tracking: Handler implementation pending - create Linear ticket when development begins
   topics:
     - topic: onex.runtime.node_graph.ready
       description: Triggered when node graph is fully instantiated

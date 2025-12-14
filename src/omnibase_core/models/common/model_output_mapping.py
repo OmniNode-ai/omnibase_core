@@ -64,7 +64,18 @@ class ModelOutputMapping(BaseModel):
 
     @model_validator(mode="after")
     def _build_lookup_cache(self) -> "ModelOutputMapping":
-        """Build the lookup cache after model initialization."""
+        """Build the lookup cache after model initialization.
+
+        Raises:
+            ValueError: If duplicate local_name values are found in references.
+        """
+        seen: set[str] = set()
+        for ref in self.references:
+            if ref.local_name in seen:
+                raise ValueError(
+                    f"Duplicate local_name in references: {ref.local_name}"
+                )
+            seen.add(ref.local_name)
         self._by_local_name = {ref.local_name: ref for ref in self.references}
         return self
 
