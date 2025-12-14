@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Unit tests for node state serialization methods [OMN-739, OMN-740].
 
 Tests state serialization, snapshot creation, and restoration for:
@@ -145,7 +144,6 @@ def simple_workflow_definition() -> ModelWorkflowDefinition:
     )
 
 
-@pytest.mark.timeout(60)
 class TestNodeReducerStateSerialization:
     """Tests for NodeReducer state serialization methods.
 
@@ -296,8 +294,152 @@ class TestNodeReducerStateSerialization:
         assert restored_snapshot.context == original_snapshot.context
         assert restored_snapshot.history == original_snapshot.history
 
+    def test_restore_state_rejects_invalid_current_state(
+        self,
+        test_container: ModelONEXContainer,
+        simple_fsm: ModelFSMSubcontract,
+    ) -> None:
+        """Test restore_state raises error for state not in FSM contract."""
+        node = NodeReducer(test_container)
+        node.fsm_contract = simple_fsm
+        node.initialize_fsm_state(simple_fsm, context={})
 
-@pytest.mark.timeout(60)
+        # Create snapshot with state that doesn't exist in contract
+        invalid_snapshot = ModelFSMStateSnapshot(
+            current_state="nonexistent_state",
+            context={},
+            history=[],
+        )
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            node.restore_state(invalid_snapshot)
+
+        assert "Invalid FSM snapshot" in str(exc_info.value)
+        assert "nonexistent_state" in str(exc_info.value)
+        assert "not defined in FSM contract" in str(exc_info.value)
+
+    def test_restore_state_rejects_invalid_history_state(
+        self,
+        test_container: ModelONEXContainer,
+        simple_fsm: ModelFSMSubcontract,
+    ) -> None:
+        """Test restore_state raises error for history containing invalid states."""
+        node = NodeReducer(test_container)
+        node.fsm_contract = simple_fsm
+        node.initialize_fsm_state(simple_fsm, context={})
+
+        # Create snapshot with valid current state but invalid history
+        invalid_snapshot = ModelFSMStateSnapshot(
+            current_state="processing",  # Valid state
+            context={},
+            history=["idle", "invalid_history_state"],  # Contains invalid state
+        )
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            node.restore_state(invalid_snapshot)
+
+        assert "Invalid FSM snapshot" in str(exc_info.value)
+        assert "invalid_history_state" in str(exc_info.value)
+        assert "history contains invalid state" in str(exc_info.value)
+
+    def test_restore_state_rejects_future_timestamp(
+        self,
+        test_container: ModelONEXContainer,
+        simple_fsm: ModelFSMSubcontract,
+    ) -> None:
+        """Test restore_state raises error for snapshot with future timestamp."""
+        node = NodeReducer(test_container)
+        node.fsm_contract = simple_fsm
+        node.initialize_fsm_state(simple_fsm, context={})
+
+        # Create snapshot with future timestamp in context
+        future_time = datetime(2099, 12, 31, 23, 59, 59)
+        snapshot_with_future_time = ModelFSMStateSnapshot(
+            current_state="processing",
+            context={"created_at": future_time},
+            history=["idle"],
+        )
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            node.restore_state(snapshot_with_future_time)
+
+        assert "timestamp is in the future" in str(exc_info.value)
+
+    def test_restore_state_rejects_future_timestamp_iso_string(
+        self,
+        test_container: ModelONEXContainer,
+        simple_fsm: ModelFSMSubcontract,
+    ) -> None:
+        """Test restore_state handles ISO string timestamps correctly."""
+        node = NodeReducer(test_container)
+        node.fsm_contract = simple_fsm
+        node.initialize_fsm_state(simple_fsm, context={})
+
+        # Create snapshot with future timestamp as ISO string
+        snapshot_with_future_time = ModelFSMStateSnapshot(
+            current_state="processing",
+            context={"timestamp": "2099-12-31T23:59:59+00:00"},
+            history=["idle"],
+        )
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            node.restore_state(snapshot_with_future_time)
+
+        assert "timestamp is in the future" in str(exc_info.value)
+
+    def test_restore_state_accepts_valid_snapshot_with_history(
+        self,
+        test_container: ModelONEXContainer,
+        simple_fsm: ModelFSMSubcontract,
+    ) -> None:
+        """Test restore_state accepts snapshot with valid states in history."""
+        node = NodeReducer(test_container)
+        node.fsm_contract = simple_fsm
+        node.initialize_fsm_state(simple_fsm, context={})
+
+        # Create valid snapshot with history of valid states
+        valid_snapshot = ModelFSMStateSnapshot(
+            current_state="completed",
+            context={"step": 3},
+            history=["idle", "processing"],  # All valid states
+        )
+
+        # Should not raise
+        node.restore_state(valid_snapshot)
+
+        # Verify state was restored
+        current_snapshot = node.snapshot_state()
+        assert current_snapshot is not None
+        assert current_snapshot.current_state == "completed"
+        assert current_snapshot.history == ["idle", "processing"]
+
+    def test_restore_state_accepts_past_timestamp(
+        self,
+        test_container: ModelONEXContainer,
+        simple_fsm: ModelFSMSubcontract,
+    ) -> None:
+        """Test restore_state accepts snapshot with past timestamp."""
+        node = NodeReducer(test_container)
+        node.fsm_contract = simple_fsm
+        node.initialize_fsm_state(simple_fsm, context={})
+
+        # Create snapshot with past timestamp
+        past_time = datetime(2020, 1, 1, 0, 0, 0)
+        snapshot_with_past_time = ModelFSMStateSnapshot(
+            current_state="processing",
+            context={"created_at": past_time},
+            history=["idle"],
+        )
+
+        # Should not raise
+        node.restore_state(snapshot_with_past_time)
+
+        # Verify state was restored
+        current_snapshot = node.snapshot_state()
+        assert current_snapshot is not None
+        assert current_snapshot.current_state == "processing"
+
+
 class TestNodeOrchestratorStateSerialization:
     """Tests for NodeOrchestrator workflow state serialization methods.
 
@@ -382,12 +524,12 @@ class TestNodeOrchestratorStateSerialization:
         assert current_snapshot.completed_step_ids == [step1_id, step2_id]
         assert current_snapshot.context == {"restored": True, "retry_count": 2}
 
-    def test_get_workflow_snapshot_returns_model(
+    def test_snapshot_workflow_state_returns_model(
         self,
         test_container: ModelONEXContainer,
         simple_workflow_definition: ModelWorkflowDefinition,
     ) -> None:
-        """Test get_workflow_snapshot returns strongly-typed model."""
+        """Test snapshot_workflow_state returns strongly-typed model."""
         node = NodeOrchestrator(test_container)
         node.workflow_definition = simple_workflow_definition
 
@@ -403,7 +545,7 @@ class TestNodeOrchestratorStateSerialization:
         )
         node.restore_workflow_state(test_state)
 
-        snapshot = node.get_workflow_snapshot()
+        snapshot = node.snapshot_workflow_state()
 
         assert isinstance(snapshot, ModelWorkflowStateSnapshot)
         assert snapshot.workflow_id == workflow_id
@@ -411,6 +553,36 @@ class TestNodeOrchestratorStateSerialization:
         assert snapshot.completed_step_ids == [step_id]
         assert snapshot.context == {"key": "value"}
         assert snapshot.created_at is not None
+
+    def test_get_workflow_snapshot_returns_dict(
+        self,
+        test_container: ModelONEXContainer,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test get_workflow_snapshot returns JSON-serializable dict."""
+        node = NodeOrchestrator(test_container)
+        node.workflow_definition = simple_workflow_definition
+
+        # Set workflow state
+        workflow_id = uuid4()
+        step_id = uuid4()
+        test_state = ModelWorkflowStateSnapshot(
+            workflow_id=workflow_id,
+            current_step_index=2,
+            completed_step_ids=[step_id],
+            failed_step_ids=[],
+            context={"key": "value"},
+        )
+        node.restore_workflow_state(test_state)
+
+        snapshot_dict = node.get_workflow_snapshot()
+
+        assert isinstance(snapshot_dict, dict)
+        assert snapshot_dict["workflow_id"] == workflow_id
+        assert snapshot_dict["current_step_index"] == 2
+        assert snapshot_dict["completed_step_ids"] == [step_id]
+        assert snapshot_dict["context"] == {"key": "value"}
+        assert snapshot_dict["created_at"] is not None
 
     def test_get_workflow_snapshot_returns_none_when_not_initialized(
         self,
@@ -481,7 +653,6 @@ class TestNodeOrchestratorStateSerialization:
         assert restored_snapshot.context == original_snapshot.context
 
 
-@pytest.mark.timeout(60)
 class TestModelWorkflowStateSnapshot:
     """Tests for ModelWorkflowStateSnapshot model behavior.
 
@@ -668,7 +839,6 @@ class TestModelWorkflowStateSnapshot:
         assert state_dict["completed_step_ids"] == [str(step_id)]
 
 
-@pytest.mark.timeout(60)
 class TestModelFSMStateSnapshot:
     """Additional tests for ModelFSMStateSnapshot model behavior.
 

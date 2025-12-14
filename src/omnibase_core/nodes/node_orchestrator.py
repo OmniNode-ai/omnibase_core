@@ -410,10 +410,14 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
 
     def snapshot_workflow_state(self) -> ModelWorkflowStateSnapshot | None:
         """
-        Return current workflow state snapshot.
+        Return current workflow state as a strongly-typed snapshot model.
 
-        Returns the current workflow state as an immutable snapshot that can be
-        serialized and restored later. This enables workflow replay and debugging.
+        Returns the current workflow state as an immutable ``ModelWorkflowStateSnapshot``
+        that can be serialized and restored later. This enables workflow replay,
+        debugging, and state persistence with full type safety.
+
+        For JSON serialization use cases where a plain dict is preferred,
+        use ``get_workflow_snapshot()`` instead.
 
         Returns:
             ModelWorkflowStateSnapshot if a workflow execution is in progress,
@@ -432,7 +436,14 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
                 logger.info("Completed: %d, Failed: %d",
                     len(snapshot.completed_step_ids),
                     len(snapshot.failed_step_ids))
+
+                # Can be restored later
+                node.restore_workflow_state(snapshot)
             ```
+
+        See Also:
+            get_workflow_snapshot: Returns dict[str, object] for JSON serialization.
+            restore_workflow_state: Restores state from a ModelWorkflowStateSnapshot.
         """
         return self._workflow_state
 
@@ -468,16 +479,20 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
         """
         self._workflow_state = snapshot
 
-    def get_workflow_snapshot(self) -> ModelWorkflowStateSnapshot | None:
+    def get_workflow_snapshot(self) -> dict[str, object] | None:
         """
-        Return workflow state snapshot for serialization or inspection.
+        Return workflow state as a JSON-serializable dictionary.
 
-        Provides the current workflow state as a strongly-typed model
-        suitable for inspection, serialization, or external storage.
+        Converts the current workflow state snapshot to a plain dictionary
+        suitable for JSON serialization, API responses, or external storage
+        systems that require dict format.
+
+        For strongly-typed access to workflow state, use ``snapshot_workflow_state()``
+        instead, which returns the ``ModelWorkflowStateSnapshot`` model directly.
 
         Returns:
-            ModelWorkflowStateSnapshot with workflow state data,
-            or None if no workflow execution is in progress.
+            dict[str, object] with workflow state data that can be serialized
+            to JSON, or None if no workflow execution is in progress.
 
         Example:
             ```python
@@ -486,18 +501,23 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
 
             logger = logging.getLogger(__name__)
 
-            snapshot = node.get_workflow_snapshot()
-            if snapshot:
-                # Serialize for persistence
-                json_str = json.dumps(snapshot.model_dump(), default=str)
+            snapshot_dict = node.get_workflow_snapshot()
+            if snapshot_dict:
+                # Direct JSON serialization
+                json_str = json.dumps(snapshot_dict, default=str)
                 logger.debug("Workflow state JSON: %s", json_str)
 
-                # Or access typed fields directly
-                logger.info("Current step: %d", snapshot.current_step_index)
-                logger.info("Completed: %d steps", len(snapshot.completed_step_ids))
+                # Access fields as dict keys
+                logger.info("Current step: %d", snapshot_dict["current_step_index"])
+                logger.info("Completed: %d steps", len(snapshot_dict["completed_step_ids"]))
 
-                # Can be restored later via:
-                # node.restore_workflow_state(snapshot)
+                # For restoration, use snapshot_workflow_state() to get the model
             ```
+
+        See Also:
+            snapshot_workflow_state: Returns strongly-typed ModelWorkflowStateSnapshot.
+            restore_workflow_state: Restores state from a ModelWorkflowStateSnapshot.
         """
-        return self._workflow_state
+        if self._workflow_state is None:
+            return None
+        return self._workflow_state.model_dump()

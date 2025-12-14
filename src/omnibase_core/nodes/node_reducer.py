@@ -6,6 +6,7 @@ Zero custom Python code required - all state transitions defined declaratively.
 """
 
 import time
+from datetime import UTC, datetime
 
 # ONEX_EXCLUDE: any - Base node class requires Any for generic type parameters [OMN-203]
 from typing import TYPE_CHECKING, Any, cast
@@ -29,6 +30,13 @@ from omnibase_core.models.reducer.model_reducer_output import ModelReducerOutput
 
 # Error messages
 _ERR_FSM_CONTRACT_NOT_LOADED = "FSM contract not loaded"
+_ERR_INVALID_SNAPSHOT_STATE = (
+    "Invalid FSM snapshot: state '{state}' is not defined in FSM contract"
+)
+_ERR_INVALID_HISTORY_STATE = (
+    "Invalid FSM snapshot: history contains invalid state '{state}'"
+)
+_ERR_FUTURE_TIMESTAMP = "Invalid FSM snapshot: timestamp is in the future"
 
 
 class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
@@ -363,19 +371,115 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
         """
         return self._fsm_state
 
+    def _validate_fsm_snapshot(
+        self,
+        snapshot: ModelFSMStateSnapshot,
+        contract: ModelFSMSubcontract,
+    ) -> None:
+        """
+        Validate FSM snapshot against the loaded contract.
+
+        Ensures the restored snapshot represents a valid FSM state:
+        - Current state must exist in contract state definitions
+        - All history states must exist in contract state definitions
+        - Timestamp sanity check (not in the future)
+
+        Args:
+            snapshot: FSM state snapshot to validate
+            contract: FSM contract defining valid states
+
+        Raises:
+            ModelOnexError: If snapshot state is invalid or not in contract
+
+        Note:
+            This validation prevents injection of impossible states during
+            restore operations, ensuring FSM consistency and integrity.
+        """
+        # Build set of valid state names from contract
+        valid_states: set[str] = {state.state_name for state in contract.states}
+
+        # Validate current state exists in contract
+        if snapshot.current_state not in valid_states:
+            raise ModelOnexError(
+                message=_ERR_INVALID_SNAPSHOT_STATE.format(
+                    state=snapshot.current_state
+                ),
+                error_code=EnumCoreErrorCode.INVALID_STATE,
+                context={
+                    "snapshot_state": snapshot.current_state,
+                    "valid_states": sorted(valid_states),
+                    "fsm_name": contract.state_machine_name,
+                },
+            )
+
+        # Validate all history states exist in contract
+        for history_state in snapshot.history:
+            if history_state not in valid_states:
+                raise ModelOnexError(
+                    message=_ERR_INVALID_HISTORY_STATE.format(state=history_state),
+                    error_code=EnumCoreErrorCode.INVALID_STATE,
+                    context={
+                        "invalid_history_state": history_state,
+                        "valid_states": sorted(valid_states),
+                        "fsm_name": contract.state_machine_name,
+                    },
+                )
+
+        # Timestamp sanity check: snapshot context may contain a timestamp
+        # Check if context has a 'created_at' or 'timestamp' field
+        timestamp_keys = ["created_at", "timestamp", "snapshot_time"]
+        for key in timestamp_keys:
+            if key in snapshot.context:
+                timestamp_value = snapshot.context[key]
+                # Handle both datetime objects and ISO strings
+                if isinstance(timestamp_value, datetime):
+                    snapshot_time = timestamp_value
+                elif isinstance(timestamp_value, str):
+                    try:
+                        snapshot_time = datetime.fromisoformat(
+                            timestamp_value.replace("Z", "+00:00")
+                        )
+                    except ValueError:
+                        # Skip validation if timestamp format is unrecognized
+                        continue
+                else:
+                    continue
+
+                # Ensure timezone-aware comparison
+                now = datetime.now(UTC)
+                if snapshot_time.tzinfo is None:
+                    snapshot_time = snapshot_time.replace(tzinfo=UTC)
+
+                if snapshot_time > now:
+                    raise ModelOnexError(
+                        message=_ERR_FUTURE_TIMESTAMP,
+                        error_code=EnumCoreErrorCode.INVALID_STATE,
+                        context={
+                            "snapshot_timestamp": str(snapshot_time),
+                            "current_time": str(now),
+                            "fsm_name": contract.state_machine_name,
+                        },
+                    )
+
     def restore_state(self, snapshot: ModelFSMStateSnapshot) -> None:
         """
         Restore FSM state from a snapshot.
 
-        Replaces the current FSM state with the provided snapshot.
-        Useful for resuming workflows from persisted state or implementing
-        checkpoint/recovery patterns.
+        Replaces the current FSM state with the provided snapshot after
+        validating that the snapshot represents a valid FSM state according
+        to the loaded contract. Useful for resuming workflows from persisted
+        state or implementing checkpoint/recovery patterns.
+
+        Validation performed:
+            - Current state exists in FSM contract state definitions
+            - All history states exist in FSM contract state definitions
+            - Timestamp is not in the future (sanity check)
 
         Args:
             snapshot: FSM state snapshot to restore
 
         Raises:
-            ModelOnexError: If FSM contract not loaded
+            ModelOnexError: If FSM contract not loaded or snapshot state invalid
 
         Example:
             ```python
@@ -401,6 +505,10 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
                 message=_ERR_FSM_CONTRACT_NOT_LOADED,
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
+
+        # Validate snapshot against contract before restoring
+        self._validate_fsm_snapshot(snapshot, self.fsm_contract)
+
         self._fsm_state = snapshot
 
     def get_state_snapshot(self) -> ModelFSMStateSnapshot | None:

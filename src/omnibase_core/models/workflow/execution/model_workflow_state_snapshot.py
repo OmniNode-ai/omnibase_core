@@ -121,7 +121,11 @@ class ModelWorkflowStateSnapshot(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     workflow_id: UUID | None = Field(default=None, description="Workflow execution ID")
-    current_step_index: int = Field(default=0, description="Current step index")
+    current_step_index: int = Field(
+        default=0,
+        ge=0,
+        description="Current step index (must be non-negative)",
+    )
     completed_step_ids: list[UUID] = Field(
         default_factory=list, description="Completed step IDs"
     )
