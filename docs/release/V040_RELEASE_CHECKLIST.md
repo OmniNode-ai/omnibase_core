@@ -32,6 +32,32 @@ All release evidence MUST be stored in the **release tracking issue** on Linear:
 | **Test logs** | CI artifacts | Link to specific job/step |
 | **Contract fingerprint reports** | `artifacts/release/v0.4.0/` | JSON or text file |
 | **Replay logs** | `artifacts/release/v0.4.0/` | Timestamped log files |
+### ⚠️ PII and Secrets Redaction
+
+**CRITICAL**: Before storing ANY evidence, you MUST redact sensitive information:
+
+| ⚠️ REDACT THIS | Example | Replacement |
+|---------------|---------|-------------|
+| **API keys, tokens, passwords** | `Authorization: Bearer sk_live_abc123` | `Authorization: Bearer [REDACTED]` |
+| **Internal hostnames/IPs** | `db.internal.omninode.ai:5432` | `db.[REDACTED]:5432` |
+| **Personal identifiable information** | `user_email: john@example.com` | `user_email: [REDACTED]` |
+| **Environment-specific secrets** | `DATABASE_URL=postgresql://...` | `DATABASE_URL=[REDACTED]` |
+| **AWS/GCP credentials** | `AWS_SECRET_ACCESS_KEY=wJalr...` | `AWS_SECRET_ACCESS_KEY=[REDACTED]` |
+| **Session tokens** | `session_id: 1a2b3c4d5e` | `session_id: [REDACTED]` |
+
+**Redaction Patterns**:
+- Use `[REDACTED]` for complete removal
+- Use `***` for partial masking (e.g., `sk_***abc` for API keys)
+- Use `user_<N>` for anonymized user references (e.g., `user_1`, `user_2`)
+
+**Tools**:
+- Manual: Search for patterns like `key`, `token`, `password`, `secret`, `@example.com`
+- Automated: Use `sed` or text replacement before storing: `sed 's/Bearer [a-zA-Z0-9_-]*/Bearer [REDACTED]/g'`
+
+**Remember**: Once evidence is posted to Linear or GitHub, it's permanent. Redact BEFORE posting.
+
+---
+
 
 ### Directory Structure for Artifacts
 
@@ -83,11 +109,37 @@ Each gate requires:
 - **Linear comments**: Permanent (part of issue history)
 - **Gists**: Permanent unless manually deleted
 
+### Toolchain Version Requirements
+
+All evidence must include toolchain version information for reproducibility:
+
+**Required Information**:
+- **Python version**: `python --version` (e.g., Python 3.12.5)
+- **Poetry version**: `poetry --version` (e.g., Poetry version 1.8.0)
+- **OS/Platform**: For platform-specific tests (e.g., Linux 5.15.0, macOS 14.0, Windows 11)
+
+**Example Evidence with Toolchain Versions**:
+
+```markdown
+### Gate: Strict type safety enforced
+- **Timestamp**: 2025-12-14 14:30 UTC
+- **Commit**: abc1234
+- **Python**: 3.12.5
+- **Poetry**: 1.8.0
+- **Platform**: Linux 5.15.0-x86_64
+- **Command**: `poetry run mypy src/omnibase_core/ --strict`
+- **Result**: PASS (0 errors)
+- **CI Link**: https://github.com/OmniNode-ai/omnibase_core/actions/runs/12345
+- **Verifier**: @username
+```
+
+**Rationale**: Toolchain versions ensure evidence is reproducible and helps diagnose platform-specific issues.
+
 ### Pre-Release Evidence Checklist
 
 Before marking a gate complete:
 1. Evidence is stored in the correct location
-2. Evidence includes all required fields (timestamp, commit, result)
+2. Evidence includes all required fields (timestamp, commit, result, **toolchain versions**)
 3. Links are accessible and not broken
 4. Large outputs are in Gists or artifacts (not inline)
 5. Evidence index is updated (`artifacts/release/v0.4.0/evidence-index.md`)
@@ -100,17 +152,17 @@ Before marking a gate complete:
   - Run AST purity checker on all node implementations
   - Command: `poetry run python -m omnibase_core.tools.ast_checker`
   - Expected: 0 violations
-  - Evidence: Attached output
+  - Evidence: Release issue comment (OMN-218) or artifacts/release/v0.4.0/01-code-quality-ast-check-YYYYMMDD.txt
 
 - [ ] **Strict type safety enforced**
   - Command: `poetry run mypy src/omnibase_core/ --strict`
   - Expected: 0 errors
-  - Evidence: CI run or local output
+  - Evidence: Release issue comment (OMN-218) with CI run link or artifacts/release/v0.4.0/01-code-quality-mypy-YYYYMMDD.txt
 
 - [ ] **Pre-commit hooks pass**
   - Command: `pre-commit run --all-files`
   - Hooks: black, isort, ruff, mypy
-  - Evidence: CI log or screenshot
+  - Evidence: Release issue comment (OMN-218) with CI run link or screenshot attachment
 
 ---
 
@@ -118,24 +170,26 @@ Before marking a gate complete:
 
 - [ ] **CI passes all parallel test splits**
   - All splits succeed
-  - No retries, no flaky allowances
+  - No test flake retries allowed (pytest-rerunfailures disabled)
+  - **Note**: Flaky tests must be fixed, not retried
   - Expected runtime: 2m30s-3m30s per split
-  - Evidence: CI link
+  - Evidence: Release issue comment (OMN-218) with GitHub Actions run link
 
 - [ ] **Adapter fuzz testing completed**
   - All adapters fuzzed with randomized inputs
   - No crashes or undefined behavior
-  - Evidence: Fuzz test report
+  - Evidence: Release issue comment (OMN-218) or artifacts/release/v0.4.0/fuzz-reports/adapter-fuzz-YYYYMMDD.txt
 
 - [ ] **Coverage threshold met**
   - Minimum: 60% line coverage
-  - Command: `poetry run pytest tests/ --cov=src/omnibase_core --cov-report=term-missing`
-  - Evidence: Coverage report
+  - Enforcement: Coverage is enforced in CI via pytest-cov fail-under
+  - Command: `poetry run pytest tests/ --cov=src/omnibase_core --cov-fail-under=60 --cov-report=term-missing`
+  - Evidence: Release issue comment (OMN-218) with CI artifacts link or artifacts/release/v0.4.0/coverage/index.html
 
 - [ ] **Negative-path tests present**
   - At least one failure-mode test per contract class
   - Explicit assertions on error shape
-  - Evidence: Test file references
+  - Evidence: Release issue comment (OMN-218) with specific test file paths (e.g., tests/unit/test_negative_paths.py)
 
 ---
 
@@ -144,12 +198,12 @@ Before marking a gate complete:
 - [ ] **Deterministic execution verified**
   - Identical inputs produce identical outputs
   - Hash comparison of emitted ModelActions or events
-  - Evidence: Test output with hashes
+  - Evidence: Release issue comment (OMN-218) or artifacts/release/v0.4.0/replay-logs/determinism-hashes-YYYYMMDD.txt
 
 - [ ] **Replay validation completed**
   - At least one representative workflow replayed end-to-end
   - Replay output matches original execution exactly
-  - Evidence: Replay log comparison
+  - Evidence: Release issue comment (OMN-218) or artifacts/release/v0.4.0/replay-logs/replay-comparison-YYYYMMDD.txt
 
 ---
 
@@ -158,18 +212,19 @@ Before marking a gate complete:
 - [ ] **All contracts have valid fingerprints**
   - Every RuntimeHostContract YAML includes a fingerprint
   - Fingerprints verified against contract content
-  - Evidence: Contract fingerprint report
+  - Evidence: Release issue comment (OMN-218) or artifacts/release/v0.4.0/fingerprints/fingerprint-verification-YYYYMMDD.txt
 
 - [ ] **Fingerprint enforcement validated**
   - Modified contract fails verification
   - No fallback or silent acceptance
-  - Evidence: Failing test output
+  - Evidence: Release issue comment (OMN-218) with test output showing fingerprint validation failure
 
 - [ ] **All nodes are contract-driven**
   - No legacy node implementations remain
-  - Command: `grep -r "NodeComputeLegacy\|NodeReducerLegacy\|NodeOrchestratorLegacy" src/`
+  - Command: `grep -rE "NodeComputeLegacy|NodeReducerLegacy|NodeOrchestratorLegacy" src/`
+  - Alternative (ripgrep): `rg "NodeComputeLegacy|NodeReducerLegacy|NodeOrchestratorLegacy" src/`
   - Expected: Empty output
-  - Evidence: Command output
+  - Evidence: Release issue comment (OMN-218) with command output
 
 ---
 
@@ -235,13 +290,18 @@ Before marking a gate complete:
 
 ## 9. Cross-Repository Compatibility
 
+**Verification Summary**:
+- **Repositories to verify**: 2-3 downstream repositories (omnibase_spi, omninode_core, example projects)
+- **Expected verification time**: 30-60 minutes (cloning, testing, type checking)
+- **Go/No-Go criteria**: All downstream tests must pass with 0 test failures and 0 mypy errors
+
 ### 9.1 Public API Stability
 
 - [ ] **Public API exports unchanged or documented**
   - Verify `omnibase_core.nodes.__all__` exports are stable
   - Command: `poetry run python -c "from omnibase_core.nodes import *; print('API imports OK')"`
   - Expected: No ImportError, prints "API imports OK"
-  - Evidence: Command output
+  - Evidence: Release issue comment (OMN-218) with command output
 
 - [ ] **Core import paths verified**
   - All documented import paths resolve correctly
@@ -264,30 +324,36 @@ Before marking a gate complete:
 ### 9.2 Downstream Repository Testing
 
 - [ ] **omnibase_spi compatibility verified**
-  - Clone omnibase_spi repository
+  - Clone omnibase_spi repository to temporary directory
   - Update omnibase_core dependency to v0.4.0 (or local editable)
-  - Commands:
+  - Commands (cross-platform):
     ```bash
-    cd /tmp && git clone https://github.com/OmniNode-ai/omnibase_spi.git
+    # Linux/macOS: Use $TMPDIR or /tmp
+    cd ${TMPDIR:-/tmp} && git clone https://github.com/OmniNode-ai/omnibase_spi.git
     cd omnibase_spi
-    poetry add ../path/to/omnibase_core --editable  # or: poetry add omnibase_core==0.4.0
+    # For editable install: Use absolute path to omnibase_core checkout
+    poetry add /absolute/path/to/omnibase_core --editable  # or: poetry add omnibase_core==0.4.0
     poetry run pytest tests/
     poetry run mypy src/
     ```
+    **Windows**: Use `%TEMP%` or `$env:TEMP` instead of `/tmp`, e.g., `cd $env:TEMP`
   - Expected: All tests pass, mypy reports 0 errors
   - Evidence: Test output (pass count) and mypy report
 
 - [ ] **omninode_core compatibility verified** (if applicable)
-  - Clone omninode_core repository
+  - Clone omninode_core repository to temporary directory
   - Update omnibase_core dependency to v0.4.0
-  - Commands:
+  - Commands (cross-platform):
     ```bash
-    cd /tmp && git clone https://github.com/OmniNode-ai/omninode_core.git
+    # Linux/macOS: Use $TMPDIR or /tmp
+    cd ${TMPDIR:-/tmp} && git clone https://github.com/OmniNode-ai/omninode_core.git
     cd omninode_core
-    poetry add ../path/to/omnibase_core --editable  # or: poetry add omnibase_core==0.4.0
+    # For editable install: Use absolute path to omnibase_core checkout
+    poetry add /absolute/path/to/omnibase_core --editable  # or: poetry add omnibase_core==0.4.0
     poetry run pytest tests/
     poetry run mypy src/
     ```
+    **Windows**: Use `%TEMP%` or `$env:TEMP` instead of `/tmp`, e.g., `cd $env:TEMP`
   - Expected: All tests pass, mypy reports 0 errors
   - Evidence: Test output and mypy report
 
@@ -322,10 +388,13 @@ Before marking a gate complete:
   - Create fresh project using v0.3.x patterns
   - Follow migration guide step-by-step
   - Verify tests pass after migration
-  - Commands:
+  - Commands (cross-platform):
     ```bash
     # Example migration test workflow
-    cd /tmp && mkdir migration-test && cd migration-test
+    # Linux/macOS: Use $TMPDIR or /tmp
+    cd ${TMPDIR:-/tmp} && mkdir migration-test && cd migration-test
+    # Windows: Use $env:TEMP, e.g., cd $env:TEMP; mkdir migration-test; cd migration-test
+
     poetry init --name migration-test --python "^3.12"
     poetry add omnibase_core==0.3.6  # Start with old version
     # Create test file using v0.3.x patterns
@@ -389,8 +458,9 @@ poetry run pytest tests/ --cov=src/omnibase_core --cov-report=term-missing
 # Pre-commit
 pre-commit run --all-files
 
-# Legacy pattern check
-grep -r "NodeComputeLegacy\|NodeReducerLegacy\|NodeOrchestratorLegacy" src/
+# Legacy pattern check (portable extended regex)
+grep -rE "NodeComputeLegacy|NodeReducerLegacy|NodeOrchestratorLegacy" src/
+# Alternative with ripgrep: rg "NodeComputeLegacy|NodeReducerLegacy|NodeOrchestratorLegacy" src/
 
 # Contract fingerprint verification
 poetry run python -m omnibase_core.tools.verify_fingerprints
@@ -436,8 +506,41 @@ poetry run python -m omnibase_core.tools.verify_fingerprints
 
 ## Post-Release Verification
 
-- [ ] PyPI package published successfully
-- [ ] Git tag created
-- [ ] GitHub release published
-- [ ] Documentation site updated
-- [ ] Dependent repositories updated
+- [ ] **PyPI package published and verified**
+  - Package install succeeds from PyPI
+  - Version number matches release
+  - Package integrity verified (hash comparison)
+  - Smoke test imports work
+  - Commands:
+    ```bash
+    # Install from PyPI
+    pip install omnibase_core==0.4.0 --index-url https://pypi.org/simple/
+
+    # Verify version
+    python -c "import omnibase_core; print(omnibase_core.__version__)"
+
+    # Verify package hash matches build artifact
+    pip hash omnibase_core-0.4.0-py3-none-any.whl
+
+    # Smoke test imports
+    python -c "from omnibase_core.nodes import NodeCompute, NodeReducer, NodeOrchestrator, NodeEffect; print('Import verification OK')"
+    ```
+  - Expected: All commands succeed, version prints "0.4.0", import prints "Import verification OK"
+  - Evidence: Command outputs and hash comparison
+
+- [ ] **Git tag created**
+  - Tag: v0.4.0
+  - Command: `git tag -l v0.4.0`
+  - Evidence: Tag exists in repository
+
+- [ ] **GitHub release published**
+  - Release page: https://github.com/OmniNode-ai/omnibase_core/releases/tag/v0.4.0
+  - Evidence: Release URL accessible
+
+- [ ] **Documentation site updated**
+  - Version 0.4.0 documentation live
+  - Evidence: Documentation URL
+
+- [ ] **Dependent repositories updated**
+  - Downstream repos migrated or documented
+  - Evidence: PR links or migration guide references
