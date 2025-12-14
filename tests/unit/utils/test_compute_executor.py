@@ -453,3 +453,33 @@ class TestPipelineExecutorLoggingDetails:
             # The logger.exception format string includes type(e).__name__
             log_args = call_args[0][1:]
             assert "ZeroDivisionError" in log_args
+
+
+@pytest.mark.unit
+@pytest.mark.timeout(5)
+class TestValidationStepWarning:
+    """Tests for validation step warning behavior."""
+
+    def test_validation_step_emits_warning(self) -> None:
+        """Test that validation steps emit a UserWarning about v1.0 pass-through.
+
+        Verifies that execute_validation_step emits a warning indicating
+        validation is pass-through in v1.0, informing users that schema
+        validation will be implemented in v1.1.
+        """
+        from omnibase_core.models.transformations.model_validation_step_config import (
+            ModelValidationStepConfig,
+        )
+        from omnibase_core.utils.compute_executor import execute_validation_step
+
+        step = ModelComputePipelineStep(
+            step_name="test_validation",
+            step_type=EnumComputeStepType.VALIDATION,
+            validation_config=ModelValidationStepConfig(schema_ref="test_schema"),
+        )
+
+        with pytest.warns(UserWarning, match="pass-through.*v1.1|v1.1.*pass-through"):
+            result = execute_validation_step(step, {"test": "data"})
+
+        # Verify pass-through behavior returns input unchanged
+        assert result == {"test": "data"}
