@@ -41,7 +41,9 @@ class ModelOperationData(BaseModel):
     - Body, content, and message fields have size limits
     """
 
-    model_config = ConfigDict(extra="forbid", from_attributes=True)
+    model_config = ConfigDict(
+        extra="forbid", from_attributes=True, validate_assignment=True
+    )
 
     # Security constants
     MAX_HEADERS: ClassVar[int] = 100

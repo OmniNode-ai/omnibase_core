@@ -9,6 +9,8 @@ from uuid import UUID, uuid4
 
 from pydantic import Field, model_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors import ModelOnexError
 from omnibase_core.models.events.model_node_graph_info import (
     ModelNodeGraphInfo,
 )
@@ -62,7 +64,10 @@ class ModelNodeGraphReadyEvent(ModelRuntimeEventBase):
                 f"node_count ({self.node_count}) does not match "
                 f"len(nodes) ({len(self.nodes)})"
             )
-            raise ValueError(msg)
+            raise ModelOnexError(
+                message=msg,
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
         return self
 
     @classmethod

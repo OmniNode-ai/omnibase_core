@@ -175,12 +175,12 @@ class ModelUnifiedHubContract(BaseModel):
     def get_managed_tools(self) -> list[UUID]:
         """Get managed tools from either format."""
         config = self.get_unified_config()
-        return config.managed_tool_ids or []
+        return config.managed_tool_ids if config.managed_tool_ids is not None else []
 
     def get_capabilities(self) -> list[EnumHubCapability]:
         """Get hub capabilities from either format."""
         config = self.get_unified_config()
-        return config.capabilities or []
+        return config.capabilities if config.capabilities is not None else []
 
     def get_coordination_mode(self) -> EnumCoordinationMode:
         """Get coordination mode from either format."""

@@ -19,6 +19,7 @@ from omnibase_core.models.common.model_query_parameters import (
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
+@pytest.mark.unit
 class TestModelQueryParametersCreation:
     """Test ModelQueryParameters creation methods."""
 
@@ -59,6 +60,7 @@ class TestModelQueryParametersCreation:
         assert params.items["tags"] == ["a", "b", "c"]
 
 
+@pytest.mark.unit
 class TestModelQueryParametersConversion:
     """Test conversion methods."""
 
@@ -117,6 +119,7 @@ class TestModelQueryParametersConversion:
         assert "tags=a%2Cb%2Cc" in result or "tags=a,b,c" in result
 
 
+@pytest.mark.unit
 class TestModelQueryParametersGetString:
     """Test get_string method."""
 
@@ -143,6 +146,7 @@ class TestModelQueryParametersGetString:
         assert params.get_string("archived") == "false"
 
 
+@pytest.mark.unit
 class TestModelQueryParametersGetInt:
     """Test get_int method."""
 
@@ -175,6 +179,7 @@ class TestModelQueryParametersGetInt:
         assert params.get_int("flag") is None
 
 
+@pytest.mark.unit
 class TestModelQueryParametersGetFloat:
     """Test get_float method."""
 
@@ -206,6 +211,7 @@ class TestModelQueryParametersGetFloat:
         assert params.get_float("ratio", 0.0) == 0.0
 
 
+@pytest.mark.unit
 class TestModelQueryParametersGetBool:
     """Test get_bool method."""
 
@@ -289,6 +295,7 @@ class TestModelQueryParametersGetBool:
         assert params.get_bool("flag") is False
 
 
+@pytest.mark.unit
 class TestModelQueryParametersOperations:
     """Test parameter operations."""
 
@@ -337,6 +344,7 @@ class TestModelQueryParametersOperations:
         assert new_params.items == {"a": 1}
 
 
+@pytest.mark.unit
 class TestModelQueryParametersSecurity:
     """Test security constraints."""
 
@@ -360,6 +368,7 @@ class TestModelQueryParametersSecurity:
         assert len(params) == ModelQueryParameters.MAX_PARAMETERS
 
 
+@pytest.mark.unit
 class TestModelQueryParametersDunder:
     """Test dunder methods."""
 

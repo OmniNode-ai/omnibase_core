@@ -59,7 +59,9 @@ class ModelOutputReference(BaseModel):
         'cleaned_data'
     """
 
-    model_config = ConfigDict(extra="forbid", from_attributes=True)
+    model_config = ConfigDict(
+        extra="forbid", from_attributes=True, validate_assignment=True
+    )
 
     source_reference: str = Field(
         default=...,

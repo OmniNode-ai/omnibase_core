@@ -6,7 +6,7 @@ This module provides strongly-typed configuration schemas for mixin patterns.
 
 from typing import Self
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from .model_config_schema_property import ModelConfigSchemaProperty
 
@@ -18,6 +18,8 @@ class ModelMixinConfigSchema(BaseModel):
     Replaces dict[str, Any] config_schema field in ModelMixinInfo
     with explicit typed fields for mixin configuration.
     """
+
+    model_config = ConfigDict(extra="forbid", validate_assignment=True)
 
     properties: dict[str, ModelConfigSchemaProperty] = Field(
         default_factory=dict,

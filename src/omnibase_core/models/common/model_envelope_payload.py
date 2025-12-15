@@ -96,7 +96,9 @@ class ModelEnvelopePayload(BaseModel):
         {'event_type': 'user.created', 'source': 'auth-service', ...}
     """
 
-    model_config = ConfigDict(extra="forbid", from_attributes=True)
+    model_config = ConfigDict(
+        extra="forbid", from_attributes=True, validate_assignment=True
+    )
 
     # Security constants
     MAX_FIELD_LENGTH: ClassVar[int] = 512
@@ -231,11 +233,50 @@ class ModelEnvelopePayload(BaseModel):
     def from_string_dict(cls, data: dict[str, str]) -> Self:
         """Create from a string dictionary.
 
+        This method parses a flat string dictionary into a ModelEnvelopePayload.
+        It recognizes typed fields (event_type, source, timestamp, correlation_id)
+        and places remaining keys in the data dictionary.
+
+        Warning:
+            **NOT Round-Trip Compatible with to_string_dict()**
+
+            This method and ``to_string_dict()`` are NOT guaranteed to be strict
+            round-trip compatible. The following transformations are NOT reversible:
+
+            1. **Reserved key prefixing**: ``to_string_dict()`` prefixes reserved
+               keys (event_type, source, etc.) found in the data dict with "data_".
+               ``from_string_dict()`` does NOT reverse this transformation, so
+               "data_event_type" becomes a data key, not the original "event_type".
+
+            2. **Boolean serialization**: ``to_string_dict()`` converts booleans
+               to "true"/"false" strings. ``from_string_dict()`` does NOT convert
+               them back to boolean type.
+
+            3. **List serialization**: ``to_string_dict()`` joins lists with commas.
+               ``from_string_dict()`` does NOT split them back into lists.
+
+            4. **Type information loss**: All values become strings; original types
+               (int, float, bool, list) are lost.
+
+            For strict round-trip serialization, use ``to_dict()`` and ``from_dict()``
+            with JSON serialization instead.
+
         Args:
             data: Dictionary of string key-value pairs.
 
         Returns:
             New ModelEnvelopePayload instance.
+
+        Example:
+            >>> # WARNING: Not round-trip compatible!
+            >>> original = ModelEnvelopePayload(
+            ...     event_type="test",
+            ...     data={"count": 42, "enabled": True}
+            ... )
+            >>> string_dict = original.to_string_dict()
+            >>> # string_dict = {"event_type": "test", "count": "42", "enabled": "true"}
+            >>> restored = ModelEnvelopePayload.from_string_dict(string_dict)
+            >>> # restored.data = {"count": "42", "enabled": "true"}  # strings, not int/bool!
         """
         # Convert to the wider type expected by from_dict
         converted: dict[str, PayloadDataValue | dict[str, PayloadDataValue]] = dict(
@@ -263,11 +304,35 @@ class ModelEnvelopePayload(BaseModel):
         return result
 
     def to_string_dict(self) -> dict[str, str]:
-        """Convert to dict[str, str] format.
+        """Convert to dict[str, str] format for HTTP transport.
 
-        Flattens the structure to a simple string dictionary.
+        Flattens the structure to a simple string dictionary suitable for
+        HTTP headers, query parameters, or other string-only contexts.
         Reserved keys in data dict are prefixed with "data_" to prevent
         collision with typed fields.
+
+        Warning:
+            **NOT Round-Trip Compatible with from_string_dict()**
+
+            This method and ``from_string_dict()`` are NOT guaranteed to be strict
+            round-trip compatible. Data transformations are ONE-WAY:
+
+            1. **Reserved key prefixing**: Keys matching typed field names
+               (event_type, source, timestamp, correlation_id, data) in the
+               data dict are prefixed with "data_". This is NOT reversed by
+               ``from_string_dict()``.
+
+            2. **Boolean serialization**: ``True`` -> "true", ``False`` -> "false".
+               NOT converted back to boolean by ``from_string_dict()``.
+
+            3. **List serialization**: ``["a", "b"]`` -> "a,b".
+               NOT split back into list by ``from_string_dict()``.
+
+            4. **Numeric serialization**: ``42`` -> "42", ``3.14`` -> "3.14".
+               NOT converted back to int/float by ``from_string_dict()``.
+
+            For strict round-trip serialization, use ``to_dict()`` and ``from_dict()``
+            with JSON serialization instead.
 
         Returns:
             Dictionary with string keys and values.
@@ -275,6 +340,14 @@ class ModelEnvelopePayload(BaseModel):
         Warns:
             UserWarning: When reserved keys in data dict are prefixed, or when
                 the prefixed key would collide with an existing data key.
+
+        Example:
+            >>> payload = ModelEnvelopePayload(
+            ...     event_type="test",
+            ...     data={"count": 42, "tags": ["a", "b"]}
+            ... )
+            >>> payload.to_string_dict()
+            {'event_type': 'test', 'count': '42', 'tags': 'a,b'}
         """
         result: dict[str, str] = {}
         if self.event_type is not None:

@@ -67,7 +67,9 @@ class ModelQueryParameters(BaseModel):
         'limit=10&offset=0'
     """
 
-    model_config = ConfigDict(extra="forbid", from_attributes=True)
+    model_config = ConfigDict(
+        extra="forbid", from_attributes=True, validate_assignment=True
+    )
 
     # Security constant - prevent DoS via large parameter sets
     MAX_PARAMETERS: ClassVar[int] = 100

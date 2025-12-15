@@ -156,7 +156,10 @@ class ModelSchemaValue(BaseModel):
         if self.value_type == "number":
             return self.number_value.to_python_value() if self.number_value else None
         if self.value_type == "array":
-            return [item.to_value() for item in (self.array_value or [])]
+            return [
+                item.to_value()
+                for item in (self.array_value if self.array_value is not None else [])
+            ]
         if self.value_type == "object":
             return {k: v.to_value() for k, v in (self.object_value or {}).items()}
         return None
@@ -334,7 +337,7 @@ class ModelSchemaValue(BaseModel):
 
             msg = f"Expected array value, got {self.value_type}"
             raise ModelOnexError(msg, error_code=EnumCoreErrorCode.TYPE_MISMATCH)
-        return self.array_value or []
+        return self.array_value if self.array_value is not None else []
 
     def get_object(self) -> dict[str, "ModelSchemaValue"]:
         """Get object value, raising error if not an object."""

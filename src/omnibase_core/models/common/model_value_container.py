@@ -21,7 +21,7 @@ import math
 from typing import Any
 
 # Import protocols from omnibase_spi
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -39,6 +39,8 @@ class ModelValueContainer(BaseModel):
     Replaces loose Union types with type-safe generic containers.
     No wrapper classes needed - uses Python's native types directly.
     """
+
+    model_config = ConfigDict(extra="forbid", validate_assignment=True)
 
     value: JsonSerializable = Field(default=..., description="The contained value")
     metadata: dict[str, str] = Field(

@@ -697,7 +697,7 @@ description: Test
         fingerprint_pos = updated.find("fingerprint:")
         assert version_pos != -1, "version: not found in output"
         assert fingerprint_pos != -1, "fingerprint: not found in output"
-        assert fingerprint_pos > version_pos
+        assert fingerprint_pos > version_pos, "fingerprint should appear after version"
 
 
 # =============================================================================
@@ -1134,7 +1134,9 @@ description: Test contract
         fingerprint_pos = updated.find("fingerprint:")
         assert version_block_end != -1, "patch: 0 not found in output"
         assert fingerprint_pos != -1, "fingerprint: not found in output"
-        assert fingerprint_pos > version_block_end
+        assert fingerprint_pos > version_block_end, (
+            "fingerprint should appear after version block"
+        )
 
     def test_add_fingerprint_after_contract_version(self) -> None:
         """Test adding fingerprint after contract_version field.
@@ -1156,7 +1158,9 @@ description: Flexible contract
         fingerprint_pos = updated.find("fingerprint:")
         assert contract_version_pos != -1, "contract_version: not found in output"
         assert fingerprint_pos != -1, "fingerprint: not found in output"
-        assert fingerprint_pos > contract_version_pos
+        assert fingerprint_pos > contract_version_pos, (
+            "fingerprint should appear after contract_version"
+        )
 
     def test_add_fingerprint_after_name_when_no_version(self) -> None:
         """Test adding fingerprint after name field when no version exists."""
@@ -1174,7 +1178,7 @@ description: No version field
         fingerprint_pos = updated.find("fingerprint:")
         assert name_pos != -1, "name: not found in output"
         assert fingerprint_pos != -1, "fingerprint: not found in output"
-        assert fingerprint_pos > name_pos
+        assert fingerprint_pos > name_pos, "fingerprint should appear after name"
 
     def test_dict_style_version_preserves_node_type(self) -> None:
         """Test that dict-style version handling doesn't corrupt other fields."""
