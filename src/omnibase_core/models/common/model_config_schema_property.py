@@ -31,7 +31,15 @@ class ModelConfigSchemaProperty(BaseModel):
     - 'int' is equivalent to 'integer'
     - 'bool' is equivalent to 'boolean'
     - 'float' is equivalent to 'number'
+
+    Supports both ONEX naming (min_value/max_value) and JSON Schema naming
+    (minimum/maximum) for numeric constraints. JSON Schema names are
+    automatically mapped to ONEX names during validation.
     """
+
+    # Use extra="ignore" to allow JSON Schema fields we don't explicitly model
+    # (like 'items' for arrays) without causing validation errors
+    model_config = {"extra": "ignore"}
 
     type: str = Field(
         default="string",
@@ -41,7 +49,7 @@ class ModelConfigSchemaProperty(BaseModel):
         default=None,
         description="Property description",
     )
-    default: str | int | float | bool | None = Field(
+    default: str | int | float | bool | list[str] | list[int] | None = Field(
         default=None,
         description="Default value (type should match the 'type' field)",
     )
@@ -62,6 +70,36 @@ class ModelConfigSchemaProperty(BaseModel):
         description="Maximum value for numeric types",
     )
 
+    @model_validator(mode="before")
+    @classmethod
+    def map_json_schema_fields(
+        cls, values: dict[str, object] | object
+    ) -> dict[str, object] | object:
+        """Map JSON Schema field names to ONEX field names.
+
+        JSON Schema uses 'minimum'/'maximum' for numeric constraints,
+        while ONEX uses 'min_value'/'max_value'. This validator maps
+        the JSON Schema field names to their ONEX equivalents.
+        """
+        if not isinstance(values, dict):
+            return values
+
+        # Map JSON Schema 'minimum' to ONEX 'min_value'
+        if "minimum" in values and "min_value" not in values:
+            values["min_value"] = values.pop("minimum")
+        elif "minimum" in values:
+            # Both present, remove 'minimum' as 'min_value' takes precedence
+            values.pop("minimum")
+
+        # Map JSON Schema 'maximum' to ONEX 'max_value'
+        if "maximum" in values and "max_value" not in values:
+            values["max_value"] = values.pop("maximum")
+        elif "maximum" in values:
+            # Both present, remove 'maximum' as 'max_value' takes precedence
+            values.pop("maximum")
+
+        return values
+
     @model_validator(mode="after")
     def validate_type_default_consistency(self) -> Self:
         """Validate that default value type matches declared type.
@@ -71,6 +109,7 @@ class ModelConfigSchemaProperty(BaseModel):
         - type="number" or type="float" requires default to be int or float
         - type="integer" or type="int" requires default to be int (not float)
         - type="boolean" or type="bool" requires default to be bool
+        - type="array" accepts list defaults (no element validation)
 
         Note: int is acceptable for float/number types (widening conversion),
         but bool is NOT acceptable for int types (even though bool is int subclass).
@@ -79,7 +118,24 @@ class ModelConfigSchemaProperty(BaseModel):
             ModelOnexError: If default value type doesn't match declared type.
         """
         if self.default is not None:
-            self._validate_value_type(self.default, "default")
+            # Handle list defaults - only valid for array type
+            if isinstance(self.default, list):
+                if self.type.lower() != "array":
+                    raise ModelOnexError(
+                        message=(
+                            f"Type mismatch: default value has type 'list' "
+                            f"but declared type is '{self.type}'. "
+                            f"List defaults are only valid for array type."
+                        ),
+                        error_code=EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH,
+                        context={
+                            "declared_type": self.type,
+                            "actual_type": "list",
+                            "default_value": str(self.default),
+                        },
+                    )
+            else:
+                self._validate_value_type(self.default, "default")
 
         return self
 
