@@ -21,6 +21,9 @@ from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.mixins.mixin_fsm_execution import MixinFSMExecution
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.contracts.subcontracts.model_fsm_state_definition import (
+    ModelFSMStateDefinition,
+)
 from omnibase_core.models.contracts.subcontracts.model_fsm_subcontract import (
     ModelFSMSubcontract,
 )
@@ -54,6 +57,20 @@ _ERR_FUTURE_TIMESTAMP = (
     "Invalid FSM snapshot: timestamp {snapshot_time} is in the future "
     "(current: {current_time}, difference: {difference_seconds:.3f}s, "
     "tolerance: {tolerance_seconds}s)"
+)
+_ERR_TERMINAL_STATE_RESTORE = (
+    "Invalid FSM snapshot: restoring to terminal state '{state}' is not allowed "
+    "(terminal states have no outgoing transitions). "
+    "Use validate=False to skip this check for replay/debugging scenarios."
+)
+_ERR_MISSING_REQUIRED_CONTEXT_KEYS = (
+    "Invalid FSM snapshot: state '{state}' requires context keys {required_keys}, "
+    "but snapshot context is missing: {missing_keys}"
+)
+_ERR_DUPLICATE_CONSECUTIVE_HISTORY = (
+    "Invalid FSM snapshot: history contains duplicate consecutive states at "
+    "position {position}: '{state}' -> '{state}'. This indicates an invalid "
+    "state transition sequence."
 )
 
 
@@ -426,13 +443,22 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
         Args:
             deep_copy: If True, returns a deep copy of the snapshot to prevent
                 any mutation of internal state. Defaults to False for performance.
+                When True, uses ``copy.deepcopy()`` to create fully independent
+                nested structures.
 
         Returns:
-            ModelFSMStateSnapshot if FSM is initialized, None otherwise.
-            When deep_copy=False, the returned snapshot is the internal state
-            reference - callers MUST NOT mutate the context dict contents
-            (see Thread Safety). When deep_copy=True, the returned snapshot
-            is fully independent of internal state.
+            ``ModelFSMStateSnapshot | None`` - The frozen, strongly-typed FSM
+            state snapshot if FSM is initialized, ``None`` otherwise.
+
+            When ``deep_copy=False`` (default):
+            - Returns internal state reference (O(1) operation)
+            - Callers MUST NOT mutate ``snapshot.context`` dict contents
+            - Suitable for read-only access in single-threaded contexts
+
+            When ``deep_copy=True``:
+            - Returns fully independent copy (O(n) operation)
+            - Safe for concurrent access and modification
+            - Recommended when isolation is required
 
         Thread Safety:
             The returned ``ModelFSMStateSnapshot`` is frozen (immutable fields)
@@ -534,6 +560,10 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
         self,
         snapshot: ModelFSMStateSnapshot,
         contract: ModelFSMSubcontract,
+        *,
+        allow_terminal_state: bool = False,
+        validate_required_context: bool = True,
+        validate_history_sequence: bool = True,
     ) -> None:
         """
         Validate FSM snapshot against the loaded contract.
@@ -542,6 +572,9 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
         - Current state must exist in contract state definitions
         - All history states must exist in contract state definitions
         - Timestamp sanity check (not too far in the future)
+        - Terminal state check (by default, cannot restore to terminal states)
+        - Required context keys validation (optional, based on state definition)
+        - History logical consistency (no duplicate consecutive states)
 
         Clock Skew Tolerance:
             A tolerance of ``SNAPSHOT_FUTURE_TOLERANCE_SECONDS`` (default: 60s)
@@ -550,13 +583,33 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
             timestamp, snapshot_time) up to this tolerance in the future are
             accepted.
 
+        Terminal State Behavior:
+            By default, restoring to a terminal state is NOT allowed because:
+            1. Terminal states have no outgoing transitions (FSM is "done")
+            2. Restoring to terminal could leave the FSM in an inoperable state
+            3. This prevents accidental injection of completed states
+
+            For replay/debugging scenarios where terminal state restoration is
+            intentional, set ``allow_terminal_state=True`` or use ``validate=False``
+            in ``restore_state()``.
+
         Args:
             snapshot: FSM state snapshot to validate
             contract: FSM contract defining valid states
+            allow_terminal_state: If True, allow restoring to terminal states.
+                Defaults to False for safety.
+            validate_required_context: If True, validate that snapshot context
+                contains all required_data keys defined in the state definition.
+                Defaults to True.
+            validate_history_sequence: If True, validate history has no duplicate
+                consecutive states. Defaults to True.
 
         Raises:
             ModelOnexError: If snapshot state is invalid or not in contract,
-                or if timestamp is too far in the future (beyond tolerance)
+                or if timestamp is too far in the future (beyond tolerance),
+                or if restoring to terminal state without allow_terminal_state,
+                or if required context keys are missing,
+                or if history contains duplicate consecutive states.
 
         Note:
             This validation prevents injection of impossible states during
@@ -564,6 +617,11 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
         """
         # Build set of valid state names from contract
         valid_states: set[str] = {state.state_name for state in contract.states}
+
+        # Build map of state definitions for additional validation
+        state_definitions: dict[str, ModelFSMStateDefinition] = {
+            state.state_name: state for state in contract.states
+        }
 
         # Validate current state exists in contract
         if snapshot.current_state not in valid_states:
@@ -591,6 +649,68 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
                         "fsm_name": contract.state_machine_name,
                     },
                 )
+
+        # Terminal state validation: prevent restoring to terminal unless explicitly allowed
+        if not allow_terminal_state:
+            current_state_def = state_definitions.get(snapshot.current_state)
+            is_terminal = (
+                current_state_def is not None and current_state_def.is_terminal
+            ) or snapshot.current_state in contract.terminal_states
+            if is_terminal:
+                raise ModelOnexError(
+                    message=_ERR_TERMINAL_STATE_RESTORE.format(
+                        state=snapshot.current_state
+                    ),
+                    error_code=EnumCoreErrorCode.INVALID_STATE,
+                    context={
+                        "snapshot_state": snapshot.current_state,
+                        "terminal_states": sorted(contract.terminal_states),
+                        "fsm_name": contract.state_machine_name,
+                        "suggestion": "Use validate=False or allow_terminal_state=True for replay/debugging",
+                    },
+                )
+
+        # Required context keys validation
+        if validate_required_context:
+            current_state_def = state_definitions.get(snapshot.current_state)
+            if current_state_def is not None and current_state_def.required_data:
+                required_keys = set(current_state_def.required_data)
+                context_keys = set(snapshot.context.keys())
+                missing_keys = required_keys - context_keys
+                if missing_keys:
+                    raise ModelOnexError(
+                        message=_ERR_MISSING_REQUIRED_CONTEXT_KEYS.format(
+                            state=snapshot.current_state,
+                            required_keys=sorted(required_keys),
+                            missing_keys=sorted(missing_keys),
+                        ),
+                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        context={
+                            "snapshot_state": snapshot.current_state,
+                            "required_keys": sorted(required_keys),
+                            "missing_keys": sorted(missing_keys),
+                            "provided_keys": sorted(context_keys),
+                            "fsm_name": contract.state_machine_name,
+                        },
+                    )
+
+        # History sequence validation: no duplicate consecutive states
+        if validate_history_sequence and len(snapshot.history) > 1:
+            for i in range(len(snapshot.history) - 1):
+                if snapshot.history[i] == snapshot.history[i + 1]:
+                    raise ModelOnexError(
+                        message=_ERR_DUPLICATE_CONSECUTIVE_HISTORY.format(
+                            position=i,
+                            state=snapshot.history[i],
+                        ),
+                        error_code=EnumCoreErrorCode.INVALID_STATE,
+                        context={
+                            "duplicate_state": snapshot.history[i],
+                            "position": i,
+                            "history": snapshot.history,
+                            "fsm_name": contract.state_machine_name,
+                        },
+                    )
 
         # Timestamp sanity check: snapshot context may contain a timestamp
         # Check if context has a 'created_at' or 'timestamp' field
@@ -638,7 +758,13 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
                         },
                     )
 
-    def restore_state(self, snapshot: ModelFSMStateSnapshot) -> None:
+    def restore_state(
+        self,
+        snapshot: ModelFSMStateSnapshot,
+        *,
+        validate: bool = True,
+        allow_terminal_state: bool = False,
+    ) -> None:
         """
         Restore FSM state from a snapshot.
 
@@ -647,23 +773,79 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
         to the loaded contract. Useful for resuming workflows from persisted
         state or implementing checkpoint/recovery patterns.
 
-        Validation performed:
+        Validation performed (when ``validate=True``):
             - Current state exists in FSM contract state definitions
             - All history states exist in FSM contract state definitions
-            - Timestamp is not in the future (sanity check)
+            - Timestamp is not in the future (sanity check with 60s tolerance)
+            - Not restoring to terminal state (unless ``allow_terminal_state=True``)
+            - Context contains required keys for the state (from state definition)
+            - History has no duplicate consecutive states
 
         Args:
-            snapshot: FSM state snapshot to restore. The snapshot is stored
-                as-is (not deep copied) - caller retains shared reference to
-                any mutable nested context data.
+            snapshot: ``ModelFSMStateSnapshot`` - FSM state snapshot to restore.
+                The snapshot is stored as-is (not deep copied) - caller retains
+                shared reference to any mutable nested context data.
+            validate: If ``True`` (default), perform full validation of the
+                snapshot against the FSM contract. Set to ``False`` to skip all
+                validation for replay/debugging scenarios where you need to
+                restore any snapshot including terminal states or invalid history.
+            allow_terminal_state: If ``True``, allow restoring to terminal states
+                even with validation enabled. By default (``False``), restoring
+                to terminal states raises an error because terminal states have
+                no outgoing transitions. This parameter is ignored when
+                ``validate=False``.
 
         Raises:
-            ModelOnexError: If FSM contract not loaded (VALIDATION_ERROR) or
-                snapshot state invalid (INVALID_STATE). Error codes:
-                - VALIDATION_ERROR: FSM contract not loaded
-                - INVALID_STATE: Snapshot state not in contract, or future timestamp
+            ModelOnexError: If FSM contract not loaded or snapshot state invalid.
+
+            Error codes:
+                - ``VALIDATION_ERROR``: FSM contract not loaded, or missing
+                  required context keys
+                - ``INVALID_STATE``: Snapshot state not in contract, future
+                  timestamp (beyond 60s tolerance), terminal state (unless
+                  ``allow_terminal_state=True``), or duplicate consecutive
+                  history states
 
         Thread Safety:
+            **WARNING: This method is NOT thread-safe.**
+
+            Modifies internal ``_fsm_state`` attribute with NO synchronization:
+
+            - **NOT Safe**: Calling from multiple threads simultaneously
+            - **NOT Safe**: Calling while another thread reads via ``snapshot_state()``
+            - **NOT Safe**: Calling while another thread executes ``process()``
+
+            **Recommended Patterns**:
+
+            1. **Separate Instances** (preferred)::
+
+                # Each thread gets its own NodeReducer instance
+                def worker():
+                    node = NodeReducer(container)
+                    node.restore_state(snapshot)
+                    asyncio.run(node.process(input_data))
+
+            2. **External Synchronization**::
+
+                # Use lock for shared instance
+                node = NodeReducer(container)
+                lock = threading.Lock()
+                def worker():
+                    with lock:
+                        node.restore_state(snapshot)
+                        asyncio.run(node.process(input_data))
+
+            The provided snapshot should not be mutated after calling this method,
+            as the node stores a direct reference (not a deep copy). For complete
+            isolation, create a deep copy before passing::
+
+                import copy
+                isolated = copy.deepcopy(snapshot)
+                node.restore_state(isolated)
+
+            See ``docs/guides/THREADING.md`` for comprehensive thread safety patterns.
+
+        Context Considerations:
             This method modifies the internal ``_fsm_state`` attribute, which
             is NOT thread-safe:
 
@@ -693,6 +875,21 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
                   )
                   node.restore_state(isolated)
 
+        Terminal State Restoration:
+            By default, restoring to a terminal state is NOT allowed because:
+
+            1. Terminal states have no outgoing transitions (FSM is "done")
+            2. Restoring to terminal could leave the FSM in an inoperable state
+            3. This prevents accidental injection of completed states
+
+            For replay/debugging scenarios::
+
+                # Option 1: Skip all validation
+                node.restore_state(terminal_snapshot, validate=False)
+
+                # Option 2: Allow terminal but keep other validation
+                node.restore_state(terminal_snapshot, allow_terminal_state=True)
+
         Example:
             ```python
             import logging
@@ -710,6 +907,12 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
                     node.restore_state(saved_snapshot)
                     logger.info("Restored FSM state to: %s", saved_snapshot.current_state)
                 raise
+
+            # For replay/debugging with terminal states:
+            node.restore_state(completed_snapshot, allow_terminal_state=True)
+
+            # For completely skipping validation:
+            node.restore_state(any_snapshot, validate=False)
             ```
 
         See Also:
@@ -722,8 +925,13 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 
-        # Validate snapshot against contract before restoring
-        self._validate_fsm_snapshot(snapshot, self.fsm_contract)
+        # Validate snapshot against contract before restoring (unless skipped)
+        if validate:
+            self._validate_fsm_snapshot(
+                snapshot,
+                self.fsm_contract,
+                allow_terminal_state=allow_terminal_state,
+            )
 
         self._fsm_state = snapshot
 
@@ -735,26 +943,50 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
 
         Converts the current FSM state snapshot to a plain dictionary
         suitable for JSON serialization, API responses, or external storage
-        systems that require dict format.
+        systems that require dict format. Uses Pydantic's ``mode="json"``
+        for proper JSON-native type conversion.
 
-        For strongly-typed access to FSM state, use ``snapshot_state()``
-        instead, which returns the ``ModelFSMStateSnapshot`` model directly.
+        **Key Difference from snapshot_state()**:
+            - ``get_state_snapshot()`` → ``dict[str, object]`` for JSON/external use
+            - ``snapshot_state()`` → ``ModelFSMStateSnapshot`` for type-safe internal use
+
+        For strongly-typed access to FSM state with validation and direct
+        restoration via ``restore_state()``, use ``snapshot_state()`` instead.
 
         Args:
-            deep_copy: If True, returns a deep copy of the snapshot dictionary
-                to prevent any mutation of nested structures. Defaults to False
-                for performance. Note: The dict returned by model_dump() is already
-                a new dict, but nested mutable objects (lists, dicts in context)
-                may still share references with the internal state.
+            deep_copy: If ``True``, returns a deep copy of the snapshot dictionary
+                to prevent any mutation of nested structures. Defaults to ``False``
+                for performance. When ``True``, uses ``copy.deepcopy()`` to create
+                fully independent nested structures.
+
+                Note: Pydantic's ``model_dump()`` creates a new dict, but nested
+                mutable objects (lists, dicts in context) may share references
+                with internal state when ``deep_copy=False``.
 
         Returns:
-            dict[str, object] with FSM state data that can be serialized
-            to JSON, or None if FSM not initialized. Uses ``mode="json"``
-            for JSON-native serialization (UUIDs become strings, datetimes
-            become ISO format strings). When deep_copy=False, the returned
-            dict is created by Pydantic's ``model_dump(mode="json")`` but
-            nested mutable objects may share references. When deep_copy=True,
-            all nested structures are fully independent.
+            ``dict[str, object] | None`` - Dictionary with JSON-serializable FSM
+            state data, or ``None`` if FSM not initialized.
+
+            Dictionary structure (when FSM initialized):
+                - ``current_state``: str - Current FSM state name
+                - ``context``: dict - FSM context data (arbitrary JSON values)
+                - ``history``: list[str] - State transition history
+
+            When ``deep_copy=False`` (default):
+            - Returns new dict from Pydantic ``model_dump(mode="json")``
+            - Nested mutable objects may share references with internal state
+            - Suitable for immediate JSON serialization
+            - O(n) operation for model_dump
+
+            When ``deep_copy=True``:
+            - Returns fully independent dict with deep-copied nested structures
+            - Safe for storing and modifying later
+            - O(n + m) operation (model_dump + deepcopy)
+
+            JSON-native type conversions applied (``mode="json"``):
+            - UUIDs → strings
+            - datetimes → ISO format strings
+            - All values are JSON-serializable without custom encoders
 
         Thread Safety:
             This method is thread-safe for the dict creation itself (Pydantic

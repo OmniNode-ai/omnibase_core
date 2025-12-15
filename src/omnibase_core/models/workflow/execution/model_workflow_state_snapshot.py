@@ -537,6 +537,132 @@ class ModelWorkflowStateSnapshot(BaseModel):
         return result
 
     @classmethod
+    def validate_no_pii(
+        cls,
+        context: WorkflowContextType,
+        *,
+        check_uuids: bool = False,
+        additional_patterns: list[tuple[str, str]] | None = None,
+    ) -> tuple[bool, list[str]]:
+        """
+        Validate that context contains no PII patterns, optionally raising on detection.
+
+        This method scans the context dict for common PII patterns and returns
+        a validation result. Use this for strict compliance scenarios where
+        PII must not be present in workflow context data.
+
+        Unlike ``sanitize_context_for_logging()`` which redacts PII, this method
+        only detects and reports PII without modifying the context.
+
+        Args:
+            context: The context dictionary to validate.
+            check_uuids: If True, also check for UUID patterns. Default is False
+                because UUIDs are often NOT PII - they may be system-generated
+                identifiers useful for debugging.
+            additional_patterns: Optional list of (regex_pattern, label) tuples
+                to check in addition to default PII patterns. The label is used
+                in the returned violation messages.
+
+        Returns:
+            A tuple of (is_valid, violations) where:
+            - is_valid: True if no PII patterns detected, False otherwise
+            - violations: List of violation messages describing detected PII
+
+        Example:
+            >>> context = {"email": "user@example.com", "name": "John"}
+            >>> is_valid, violations = ModelWorkflowStateSnapshot.validate_no_pii(context)
+            >>> is_valid
+            False
+            >>> violations
+            ['Detected PII pattern (EMAIL) at key: email']
+
+        Example with strict enforcement:
+            >>> context = {"phone": "555-123-4567"}
+            >>> is_valid, violations = ModelWorkflowStateSnapshot.validate_no_pii(context)
+            >>> if not is_valid:
+            ...     raise ValueError(f"PII detected: {violations}")
+
+        Note:
+            - This method performs recursive scanning on nested dicts and lists.
+            - Only string values are scanned; other types are ignored.
+            - Pattern detection uses the same patterns as ``sanitize_context_for_logging()``.
+            - For audit logging, consider using both methods: validate first, then
+              sanitize before logging if PII is found.
+        """
+        # Build pattern list with labels for reporting
+        pattern_labels: list[tuple[str, str, str]] = [
+            (r"\b[\w.+-]+@[\w.-]+\.\w{2,}\b", "EMAIL", "[EMAIL_REDACTED]"),
+            (r"\b(?:\d{4}[-\s]?){3}\d{4}\b", "CREDIT_CARD", "[CREDIT_CARD_REDACTED]"),
+            (
+                r"(?<!\d)(?:\+1[-.\s]?)?(?:\(\d{3}\)|\d{3})[-.\s]?\d{3}[-.\s]?\d{4}\b",
+                "PHONE",
+                "[PHONE_REDACTED]",
+            ),
+            (r"\b\d{3}[-\s]?\d{2}[-\s]?\d{4}\b", "SSN", "[SSN_REDACTED]"),
+            (r"\b(?:\d{1,3}\.){3}\d{1,3}\b", "IPV4", "[IP_REDACTED]"),
+            (
+                r"\b(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b"
+                r"|(?<![0-9a-fA-F:])::(?:[0-9a-fA-F]{1,4}:){0,6}[0-9a-fA-F]{1,4}\b"
+                r"|\b(?:[0-9a-fA-F]{1,4}:)+:(?:[0-9a-fA-F]{1,4}:)*[0-9a-fA-F]{1,4}\b"
+                r"|\b(?:[0-9a-fA-F]{1,4}:){1,7}:(?![0-9a-fA-F])"
+                r"|(?<![0-9a-fA-F:])::(?![0-9a-fA-F:])",
+                "IPV6",
+                "[IPV6_REDACTED]",
+            ),
+            (
+                r"\b(?:sk_(?:live|test)_[a-zA-Z0-9]{24,})\b"
+                r"|\b(?:pk_(?:live|test)_[a-zA-Z0-9]{24,})\b"
+                r"|\b(?:AKIA[0-9A-Z]{16})\b"
+                r"|\b(?:ghp_[a-zA-Z0-9]{36})\b"
+                r"|\b(?:gho_[a-zA-Z0-9]{36})\b"
+                r"|\b(?:github_pat_[a-zA-Z0-9_]{22,})\b"
+                r"|\b(?:xox[baprs]-[a-zA-Z0-9-]{10,})\b"
+                r"|\b(?:api[_-]?key[_-]?[a-zA-Z0-9]{20,})\b",
+                "API_KEY",
+                "[API_KEY_REDACTED]",
+            ),
+        ]
+
+        # Optionally include UUID pattern
+        if check_uuids:
+            pattern_labels.append(
+                (
+                    r"\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b",
+                    "UUID",
+                    "[UUID_REDACTED]",
+                )
+            )
+
+        # Add any custom patterns
+        if additional_patterns:
+            for pattern, label in additional_patterns:
+                pattern_labels.append((pattern, label, f"[{label}_REDACTED]"))
+
+        violations: list[str] = []
+
+        def _scan_value(value: Any, path: str) -> None:
+            """Recursively scan a value for PII patterns."""
+            if isinstance(value, str):
+                for pattern, label, _replacement in pattern_labels:
+                    if re.search(pattern, value):
+                        violations.append(
+                            f"Detected PII pattern ({label}) at path: {path}"
+                        )
+                        break  # Only report first match per value
+            elif isinstance(value, dict):
+                for k, v in value.items():
+                    new_path = f"{path}.{k}" if path else k
+                    _scan_value(v, new_path)
+            elif isinstance(value, (list, tuple)):
+                for i, item in enumerate(value):
+                    _scan_value(item, f"{path}[{i}]")
+            # Other types (int, float, bool, None, UUID, datetime) are not scanned
+
+        _scan_value(context, "")
+
+        return len(violations) == 0, violations
+
+    @classmethod
     def validate_context_size(
         cls,
         context: WorkflowContextType,
@@ -623,6 +749,11 @@ class ModelWorkflowStateSnapshot(BaseModel):
             warnings.append(f"Context serialization failed: {e}")
 
         # Check nesting depth
+        # NOTE: Depth only increments for dict nesting ({"a": {"b": ...}}).
+        # Lists/tuples do NOT increment depth - they are traversed but treated
+        # as "flat" containers. This is intentional: a list of 100 items at
+        # depth 1 is still depth 1, not depth 100. The concern is deeply nested
+        # dicts which make debugging harder, not large flat collections.
         def _max_depth(obj: Any, current: int = 0) -> int:
             if isinstance(obj, dict):
                 if not obj:
@@ -631,6 +762,7 @@ class ModelWorkflowStateSnapshot(BaseModel):
             elif isinstance(obj, (list, tuple)):
                 if not obj:
                     return current
+                # Lists/tuples: traverse items but do NOT increment depth
                 return max(_max_depth(item, current) for item in obj)
             return current
 

@@ -118,6 +118,10 @@ class ModelFSMStateSnapshot(BaseModel):
             )
     """
 
+    # from_attributes=True allows Pydantic to accept objects with matching
+    # attributes even when class identity differs (e.g., in pytest-xdist
+    # parallel execution where model classes are imported in separate workers).
+    # See CLAUDE.md section "Pydantic from_attributes=True for Value Objects".
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     current_state: str = Field(..., description="Current FSM state name")

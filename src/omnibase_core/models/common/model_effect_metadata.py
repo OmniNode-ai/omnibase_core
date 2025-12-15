@@ -21,6 +21,10 @@ class ModelEffectMetadata(BaseModel):
     models that aggregate information from multiple sources.
     """
 
+    # from_attributes=True allows Pydantic to accept objects with matching
+    # attributes even when class identity differs (e.g., in pytest-xdist
+    # parallel execution where model classes are imported in separate workers).
+    # See CLAUDE.md section "Pydantic from_attributes=True for Value Objects".
     model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     source: str | None = Field(

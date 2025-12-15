@@ -13,6 +13,7 @@ from .model_workflow_state_snapshot import (
     CONTEXT_MAX_KEYS,
     CONTEXT_MAX_NESTING_DEPTH,
     CONTEXT_MAX_SIZE_BYTES,
+    WORKFLOW_STATE_SNAPSHOT_SCHEMA_VERSION,
     ModelWorkflowStateSnapshot,
 )
 from .model_workflow_step_execution import ModelWorkflowStepExecution
@@ -21,6 +22,7 @@ __all__ = [
     "CONTEXT_MAX_KEYS",
     "CONTEXT_MAX_NESTING_DEPTH",
     "CONTEXT_MAX_SIZE_BYTES",
+    "WORKFLOW_STATE_SNAPSHOT_SCHEMA_VERSION",
     "ModelDeclarativeWorkflowResult",
     "ModelDeclarativeWorkflowStepContext",
     "ModelDependencyGraph",

@@ -437,13 +437,14 @@ class TestSanitizeContextForLoggingAPIKeyRedaction:
 
     def test_redacts_aws_access_key(self) -> None:
         """Test redaction of AWS access key."""
-        context = {"key": "AKIAIOSFODNN7EXAMPLE"}
+        context = {"key": "AKIAIOSFODNN7EXAMPLE"}  # gitleaks:allow
         result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
         assert result["key"] == "[API_KEY_REDACTED]"
 
     def test_redacts_github_pat(self) -> None:
         """Test redaction of GitHub personal access token."""
         # Pattern requires exactly 36 alphanumeric chars after ghp_ (use letters only)
+        # gitleaks:allow - intentional test fixture for PII redaction testing
         context = {"key": "ghp_abcdefghijklmnopqrstuvwxyzABCDEFGHIJ"}  # 36 chars
         result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
         assert result["key"] == "[API_KEY_REDACTED]"
@@ -451,6 +452,7 @@ class TestSanitizeContextForLoggingAPIKeyRedaction:
     def test_redacts_github_oauth_token(self) -> None:
         """Test redaction of GitHub OAuth token."""
         # Pattern requires exactly 36 alphanumeric chars after gho_ (use letters only)
+        # gitleaks:allow - intentional test fixture for PII redaction testing
         context = {"key": "gho_abcdefghijklmnopqrstuvwxyzABCDEFGHIJ"}  # 36 chars
         result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
         assert result["key"] == "[API_KEY_REDACTED]"
@@ -458,6 +460,7 @@ class TestSanitizeContextForLoggingAPIKeyRedaction:
     def test_redacts_slack_token(self) -> None:
         """Test redaction of Slack token."""
         # Use letters to avoid phone number pattern matching first
+        # gitleaks:allow - intentional test fixture for PII redaction testing
         context = {"key": "xoxb-abcdefghijk-lmnopqrstuv-wxyzABCDEFGH"}
         result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
         assert result["key"] == "[API_KEY_REDACTED]"
@@ -516,3 +519,200 @@ class TestSanitizeContextForLoggingUUIDRedaction:
             context, redact_uuids=True
         )
         assert result["workflow_id"] == test_uuid
+
+
+class TestSanitizeContextForLoggingGitHubFinegrainedPAT:
+    """Test GitHub fine-grained PAT redaction in sanitize_context_for_logging."""
+
+    def test_redacts_github_finegrained_pat(self) -> None:
+        """Test redaction of GitHub fine-grained personal access token."""
+        # Pattern requires github_pat_ prefix with 22+ alphanumeric/underscore chars
+        # Using letters only to avoid triggering phone number pattern
+        # gitleaks:allow - intentional test fixture for PII redaction testing
+        context = {"key": "github_pat_abcdefghijklmnopqrstuvwxyzAB"}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["key"] == "[API_KEY_REDACTED]"
+
+
+class TestSanitizeContextForLoggingGenericAPIKey:
+    """Test generic API key redaction in sanitize_context_for_logging."""
+
+    def test_redacts_generic_api_key_underscore(self) -> None:
+        """Test redaction of generic api_key_ prefix pattern."""
+        # gitleaks:allow - intentional test fixture for PII redaction testing
+        context = {"key": "api_key_abcdefghijklmnopqrstuvwxyz"}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["key"] == "[API_KEY_REDACTED]"
+
+    def test_redacts_generic_apikey_no_separator(self) -> None:
+        """Test redaction of generic apikey prefix pattern."""
+        # gitleaks:allow - intentional test fixture for PII redaction testing
+        context = {"key": "apikeyabcdefghijklmnopqrstuvwxyz"}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["key"] == "[API_KEY_REDACTED]"
+
+
+class TestValidateNoPII:
+    """Test the validate_no_pii() class method for PII detection."""
+
+    def test_detects_email_pattern(self) -> None:
+        """Test detection of email address pattern."""
+        context = {"email": "user@example.com"}
+        is_valid, violations = ModelWorkflowStateSnapshot.validate_no_pii(context)
+        assert is_valid is False
+        assert len(violations) == 1
+        assert "EMAIL" in violations[0]
+        assert "email" in violations[0]
+
+    def test_detects_phone_pattern(self) -> None:
+        """Test detection of phone number pattern."""
+        context = {"phone": "555-123-4567"}
+        is_valid, violations = ModelWorkflowStateSnapshot.validate_no_pii(context)
+        assert is_valid is False
+        assert len(violations) == 1
+        assert "PHONE" in violations[0]
+
+    def test_detects_ssn_pattern(self) -> None:
+        """Test detection of SSN pattern."""
+        context = {"ssn": "123-45-6789"}
+        is_valid, violations = ModelWorkflowStateSnapshot.validate_no_pii(context)
+        assert is_valid is False
+        assert len(violations) == 1
+        assert "SSN" in violations[0]
+
+    def test_detects_credit_card_pattern(self) -> None:
+        """Test detection of credit card pattern."""
+        context = {"card": "4111-1111-1111-1111"}
+        is_valid, violations = ModelWorkflowStateSnapshot.validate_no_pii(context)
+        assert is_valid is False
+        assert len(violations) == 1
+        assert "CREDIT_CARD" in violations[0]
+
+    def test_detects_ipv4_pattern(self) -> None:
+        """Test detection of IPv4 address pattern."""
+        context = {"ip": "192.168.1.100"}
+        is_valid, violations = ModelWorkflowStateSnapshot.validate_no_pii(context)
+        assert is_valid is False
+        assert len(violations) == 1
+        assert "IPV4" in violations[0]
+
+    def test_detects_ipv6_pattern(self) -> None:
+        """Test detection of IPv6 address pattern."""
+        context = {"ip": "2001:0db8:85a3:0000:0000:8a2e:0370:7334"}
+        is_valid, violations = ModelWorkflowStateSnapshot.validate_no_pii(context)
+        assert is_valid is False
+        assert len(violations) == 1
+        assert "IPV6" in violations[0]
+
+    def test_detects_api_key_pattern(self) -> None:
+        """Test detection of API key pattern."""
+        # gitleaks:allow - intentional test fixture for PII detection testing
+        context = {"key": "AKIAIOSFODNN7EXAMPLE"}
+        is_valid, violations = ModelWorkflowStateSnapshot.validate_no_pii(context)
+        assert is_valid is False
+        assert len(violations) == 1
+        assert "API_KEY" in violations[0]
+
+    def test_ignores_uuid_by_default(self) -> None:
+        """Test that UUIDs are NOT detected by default (check_uuids=False)."""
+        context = {"workflow_id": "550e8400-e29b-41d4-a716-446655440000"}
+        is_valid, violations = ModelWorkflowStateSnapshot.validate_no_pii(context)
+        assert is_valid is True
+        assert len(violations) == 0
+
+    def test_detects_uuid_when_enabled(self) -> None:
+        """Test that UUIDs are detected when check_uuids=True."""
+        context = {"user_id": "550e8400-e29b-41d4-a716-446655440000"}
+        is_valid, violations = ModelWorkflowStateSnapshot.validate_no_pii(
+            context, check_uuids=True
+        )
+        assert is_valid is False
+        assert len(violations) == 1
+        assert "UUID" in violations[0]
+
+    def test_returns_valid_for_clean_context(self) -> None:
+        """Test that clean context passes validation."""
+        context = {
+            "status": "active",
+            "count": 42,
+            "enabled": True,
+            "name": "test-workflow",
+        }
+        is_valid, violations = ModelWorkflowStateSnapshot.validate_no_pii(context)
+        assert is_valid is True
+        assert len(violations) == 0
+
+    def test_detects_nested_pii(self) -> None:
+        """Test detection of PII in nested structures."""
+        context = {"user": {"profile": {"contact": {"email": "nested@example.com"}}}}
+        is_valid, violations = ModelWorkflowStateSnapshot.validate_no_pii(context)
+        assert is_valid is False
+        assert len(violations) == 1
+        assert "user.profile.contact.email" in violations[0]
+
+    def test_detects_pii_in_list(self) -> None:
+        """Test detection of PII in list values."""
+        context = {"emails": ["user1@test.com", "user2@test.com"]}
+        is_valid, violations = ModelWorkflowStateSnapshot.validate_no_pii(context)
+        assert is_valid is False
+        # Should detect both emails
+        assert len(violations) == 2
+        assert "emails[0]" in violations[0]
+        assert "emails[1]" in violations[1]
+
+    def test_reports_multiple_violations(self) -> None:
+        """Test that multiple different PII types are all reported."""
+        context = {
+            "email": "user@test.com",
+            "phone": "555-123-4567",
+            "ip": "192.168.1.1",
+        }
+        is_valid, violations = ModelWorkflowStateSnapshot.validate_no_pii(context)
+        assert is_valid is False
+        assert len(violations) == 3
+
+    def test_supports_custom_patterns(self) -> None:
+        """Test that custom patterns can be added for validation."""
+        context = {"token": "CUSTOM-secret-12345"}
+        # Without custom pattern - should be valid
+        is_valid, violations = ModelWorkflowStateSnapshot.validate_no_pii(context)
+        assert is_valid is True
+
+        # With custom pattern - should detect
+        custom_patterns = [(r"CUSTOM-\w+-\d+", "CUSTOM_TOKEN")]
+        is_valid, violations = ModelWorkflowStateSnapshot.validate_no_pii(
+            context, additional_patterns=custom_patterns
+        )
+        assert is_valid is False
+        assert "CUSTOM_TOKEN" in violations[0]
+
+    def test_preserves_uuid_objects(self) -> None:
+        """Test that UUID objects are not scanned (only strings are scanned)."""
+        test_uuid = uuid4()
+        context = {"workflow_id": test_uuid}
+        # Even with check_uuids=True, UUID objects are not converted to strings
+        # and scanned - only string values are checked
+        is_valid, violations = ModelWorkflowStateSnapshot.validate_no_pii(
+            context, check_uuids=True
+        )
+        assert is_valid is True
+        assert len(violations) == 0
+
+    def test_empty_context_is_valid(self) -> None:
+        """Test that empty context passes validation."""
+        is_valid, violations = ModelWorkflowStateSnapshot.validate_no_pii({})
+        assert is_valid is True
+        assert len(violations) == 0
+
+    def test_only_reports_first_match_per_value(self) -> None:
+        """Test that only the first PII pattern match is reported per value.
+
+        This prevents redundant violations when a value matches multiple patterns.
+        """
+        # This value could match both CREDIT_CARD and PHONE patterns
+        # but should only report one violation per value
+        context = {"data": "Call me at 555-123-4567 or email me"}
+        is_valid, violations = ModelWorkflowStateSnapshot.validate_no_pii(context)
+        assert is_valid is False
+        # Should report exactly one violation for this single value
+        assert len(violations) == 1

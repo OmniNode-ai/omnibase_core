@@ -146,10 +146,10 @@ class TestNodeReducerStateSerialization:
     """Tests for NodeReducer state serialization methods.
 
     Tests the FSM state snapshot and restoration capabilities:
-    - snapshot_state() returns ModelFSMStateSnapshot | None
-    - restore_state() accepts ModelFSMStateSnapshot
-    - get_state_snapshot() returns dict[str, object] | None (for JSON serialization)
-    - Round-trip serialization maintains state integrity
+    - ``snapshot_state()`` returns ``ModelFSMStateSnapshot | None`` (strongly-typed)
+    - ``restore_state()`` accepts ``ModelFSMStateSnapshot`` for state restoration
+    - ``get_state_snapshot()`` returns ``dict[str, object] | None`` (JSON-serializable dict)
+    - Round-trip serialization maintains state integrity with validation
     """
 
     def test_snapshot_state_returns_none_when_not_initialized(
@@ -394,7 +394,11 @@ class TestNodeReducerStateSerialization:
         test_container: ModelONEXContainer,
         simple_fsm: ModelFSMSubcontract,
     ) -> None:
-        """Test restore_state accepts snapshot with valid states in history."""
+        """Test restore_state accepts snapshot with valid states in history.
+
+        Note: Since 'completed' is a terminal state, we need to explicitly
+        allow terminal state restoration for this test using allow_terminal_state=True.
+        """
         node = NodeReducer(test_container)
         node.fsm_contract = simple_fsm
         node.initialize_fsm_state(simple_fsm, context={})
@@ -406,8 +410,8 @@ class TestNodeReducerStateSerialization:
             history=["idle", "processing"],  # All valid states
         )
 
-        # Should not raise
-        node.restore_state(valid_snapshot)
+        # Should not raise - explicitly allow terminal state for replay scenarios
+        node.restore_state(valid_snapshot, allow_terminal_state=True)
 
         # Verify state was restored
         current_snapshot = node.snapshot_state()
@@ -441,17 +445,267 @@ class TestNodeReducerStateSerialization:
         assert current_snapshot is not None
         assert current_snapshot.current_state == "processing"
 
+    def test_restore_state_rejects_terminal_state_by_default(
+        self,
+        test_container: ModelONEXContainer,
+        simple_fsm: ModelFSMSubcontract,
+    ) -> None:
+        """Test restore_state rejects terminal states by default (security feature).
+
+        Restoring to terminal states is rejected by default because:
+        1. Terminal states have no outgoing transitions
+        2. Could leave FSM in inoperable state
+        3. Prevents accidental injection of 'completed' states
+        """
+        node = NodeReducer(test_container)
+        node.fsm_contract = simple_fsm
+        node.initialize_fsm_state(simple_fsm, context={})
+
+        # Create snapshot with terminal state
+        terminal_snapshot = ModelFSMStateSnapshot(
+            current_state="completed",  # Terminal state
+            context={},
+            history=["idle", "processing"],
+        )
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            node.restore_state(terminal_snapshot)
+
+        assert "terminal state" in str(exc_info.value)
+        assert "completed" in str(exc_info.value)
+        assert "validate=False" in str(exc_info.value)
+
+    def test_restore_state_accepts_terminal_state_with_explicit_flag(
+        self,
+        test_container: ModelONEXContainer,
+        simple_fsm: ModelFSMSubcontract,
+    ) -> None:
+        """Test restore_state accepts terminal states when allow_terminal_state=True."""
+        node = NodeReducer(test_container)
+        node.fsm_contract = simple_fsm
+        node.initialize_fsm_state(simple_fsm, context={})
+
+        # Create snapshot with terminal state
+        terminal_snapshot = ModelFSMStateSnapshot(
+            current_state="completed",
+            context={"finalized": True},
+            history=["idle", "processing"],
+        )
+
+        # Should not raise with allow_terminal_state=True
+        node.restore_state(terminal_snapshot, allow_terminal_state=True)
+
+        # Verify state was restored
+        current_snapshot = node.snapshot_state()
+        assert current_snapshot is not None
+        assert current_snapshot.current_state == "completed"
+
+    def test_restore_state_skips_validation_when_disabled(
+        self,
+        test_container: ModelONEXContainer,
+        simple_fsm: ModelFSMSubcontract,
+    ) -> None:
+        """Test restore_state skips all validation when validate=False.
+
+        This is useful for replay/debugging scenarios where any snapshot
+        should be restorable regardless of validity.
+        """
+        node = NodeReducer(test_container)
+        node.fsm_contract = simple_fsm
+        node.initialize_fsm_state(simple_fsm, context={})
+
+        # Create snapshot with terminal state AND invalid history
+        invalid_snapshot = ModelFSMStateSnapshot(
+            current_state="completed",
+            context={},
+            history=["idle", "idle"],  # Duplicate consecutive states normally invalid
+        )
+
+        # Should not raise with validate=False
+        node.restore_state(invalid_snapshot, validate=False)
+
+        # Verify state was restored
+        current_snapshot = node.snapshot_state()
+        assert current_snapshot is not None
+        assert current_snapshot.current_state == "completed"
+
+    def test_restore_state_rejects_duplicate_consecutive_history(
+        self,
+        test_container: ModelONEXContainer,
+        simple_fsm: ModelFSMSubcontract,
+    ) -> None:
+        """Test restore_state rejects history with duplicate consecutive states.
+
+        Duplicate consecutive states indicate an invalid transition sequence
+        (self-loops should not appear in history in typical FSM patterns).
+        """
+        node = NodeReducer(test_container)
+        node.fsm_contract = simple_fsm
+        node.initialize_fsm_state(simple_fsm, context={})
+
+        # Create snapshot with duplicate consecutive states in history
+        invalid_snapshot = ModelFSMStateSnapshot(
+            current_state="processing",
+            context={},
+            history=["idle", "idle"],  # Invalid: same state twice consecutively
+        )
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            node.restore_state(invalid_snapshot)
+
+        assert "duplicate consecutive states" in str(exc_info.value)
+        assert "idle" in str(exc_info.value)
+        assert "position" in str(exc_info.value)
+
+
+class TestNodeReducerRequiredContextValidation:
+    """Tests for required context key validation during restore_state.
+
+    These tests verify that restore_state validates snapshot context
+    contains all required_data keys defined in the state definition.
+    """
+
+    @pytest.fixture
+    def fsm_with_required_context(self) -> ModelFSMSubcontract:
+        """Create FSM contract with states that have required_data fields."""
+        return ModelFSMSubcontract(
+            state_machine_name="context_validation_fsm",
+            description="FSM with required context keys for testing",
+            state_machine_version=ModelSemVer(major=1, minor=0, patch=0),
+            version=ModelSemVer(major=1, minor=0, patch=0),
+            initial_state="idle",
+            states=[
+                ModelFSMStateDefinition(
+                    state_name="idle",
+                    state_type="operational",
+                    description="Initial state - no required data",
+                    version=ModelSemVer(major=1, minor=0, patch=0),
+                ),
+                ModelFSMStateDefinition(
+                    state_name="processing",
+                    state_type="operational",
+                    description="Processing state with required data",
+                    version=ModelSemVer(major=1, minor=0, patch=0),
+                    required_data=["job_id", "batch_size"],  # Required keys!
+                ),
+                ModelFSMStateDefinition(
+                    state_name="completed",
+                    state_type="terminal",
+                    description="Terminal state",
+                    version=ModelSemVer(major=1, minor=0, patch=0),
+                    is_terminal=True,
+                    is_recoverable=False,
+                ),
+            ],
+            transitions=[
+                ModelFSMStateTransition(
+                    transition_name="start",
+                    from_state="idle",
+                    to_state="processing",
+                    trigger="start_event",
+                    version=ModelSemVer(major=1, minor=0, patch=0),
+                ),
+                ModelFSMStateTransition(
+                    transition_name="complete",
+                    from_state="processing",
+                    to_state="completed",
+                    trigger="complete_event",
+                    version=ModelSemVer(major=1, minor=0, patch=0),
+                ),
+            ],
+            terminal_states=["completed"],
+        )
+
+    def test_restore_state_validates_required_context_keys(
+        self,
+        test_container: ModelONEXContainer,
+        fsm_with_required_context: ModelFSMSubcontract,
+    ) -> None:
+        """Test restore_state rejects snapshot missing required context keys."""
+        node = NodeReducer(test_container)
+        node.fsm_contract = fsm_with_required_context
+        node.initialize_fsm_state(fsm_with_required_context, context={})
+
+        # Create snapshot for 'processing' state missing required keys
+        snapshot_missing_keys = ModelFSMStateSnapshot(
+            current_state="processing",
+            context={"some_other_key": "value"},  # Missing job_id and batch_size
+            history=["idle"],
+        )
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            node.restore_state(snapshot_missing_keys)
+
+        assert "requires context keys" in str(exc_info.value)
+        assert "job_id" in str(exc_info.value)
+        assert "batch_size" in str(exc_info.value)
+
+    def test_restore_state_accepts_snapshot_with_all_required_keys(
+        self,
+        test_container: ModelONEXContainer,
+        fsm_with_required_context: ModelFSMSubcontract,
+    ) -> None:
+        """Test restore_state accepts snapshot with all required context keys."""
+        node = NodeReducer(test_container)
+        node.fsm_contract = fsm_with_required_context
+        node.initialize_fsm_state(fsm_with_required_context, context={})
+
+        # Create snapshot with all required keys
+        valid_snapshot = ModelFSMStateSnapshot(
+            current_state="processing",
+            context={
+                "job_id": "job-123",
+                "batch_size": 100,
+                "extra_key": "allowed",  # Extra keys are fine
+            },
+            history=["idle"],
+        )
+
+        # Should not raise
+        node.restore_state(valid_snapshot)
+
+        # Verify state was restored
+        current_snapshot = node.snapshot_state()
+        assert current_snapshot is not None
+        assert current_snapshot.current_state == "processing"
+        assert current_snapshot.context["job_id"] == "job-123"
+
+    def test_restore_state_accepts_state_without_required_data(
+        self,
+        test_container: ModelONEXContainer,
+        fsm_with_required_context: ModelFSMSubcontract,
+    ) -> None:
+        """Test restore_state accepts snapshot for state without required_data."""
+        node = NodeReducer(test_container)
+        node.fsm_contract = fsm_with_required_context
+        node.initialize_fsm_state(fsm_with_required_context, context={})
+
+        # Create snapshot for 'idle' state which has no required_data
+        valid_snapshot = ModelFSMStateSnapshot(
+            current_state="idle",
+            context={},  # Empty context is fine for states without required_data
+            history=[],
+        )
+
+        # Should not raise
+        node.restore_state(valid_snapshot)
+
+        # Verify state was restored
+        current_snapshot = node.snapshot_state()
+        assert current_snapshot is not None
+        assert current_snapshot.current_state == "idle"
+
 
 class TestNodeOrchestratorStateSerialization:
     """Tests for NodeOrchestrator workflow state serialization methods.
 
     Tests the workflow state snapshot and restoration capabilities:
-    - snapshot_workflow_state() returns ModelWorkflowStateSnapshot | None
-    - restore_workflow_state() accepts ModelWorkflowStateSnapshot
-    - get_workflow_snapshot() returns dict[str, object] | None (for JSON serialization)
-    - Round-trip serialization maintains state integrity
-    - update_workflow_state() manually updates workflow state
-    - execute_workflow_from_contract() automatically captures workflow state
+    - ``snapshot_workflow_state()`` returns ``ModelWorkflowStateSnapshot | None`` (strongly-typed)
+    - ``restore_workflow_state()`` accepts ``ModelWorkflowStateSnapshot`` for state restoration
+    - ``get_workflow_snapshot()`` returns ``dict[str, object] | None`` (JSON-serializable dict)
+    - Round-trip serialization maintains state integrity with validation
+    - ``update_workflow_state()`` manually updates workflow state tracking
+    - ``execute_workflow_from_contract()`` automatically captures workflow state post-execution
     """
 
     def test_snapshot_workflow_state_returns_none_when_not_initialized(
@@ -1247,9 +1501,7 @@ class TestNodeOrchestratorWorkflowSnapshotValidation:
         This prevents restoring snapshots from older/newer schema versions that may
         have incompatible field structures.
         """
-        from omnibase_core.models.workflow.execution.model_workflow_state_snapshot import (
-            WORKFLOW_STATE_SNAPSHOT_SCHEMA_VERSION,
-        )
+        from omnibase_core.models.workflow import WORKFLOW_STATE_SNAPSHOT_SCHEMA_VERSION
 
         node = NodeOrchestrator(test_container)
         node.workflow_definition = simple_workflow_definition

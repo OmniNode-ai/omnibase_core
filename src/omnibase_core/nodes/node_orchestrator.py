@@ -24,9 +24,9 @@ from omnibase_core.models.orchestrator import ModelOrchestratorOutput
 from omnibase_core.models.orchestrator.model_orchestrator_input import (
     ModelOrchestratorInput,
 )
-from omnibase_core.models.workflow import ModelWorkflowStateSnapshot
-from omnibase_core.models.workflow.execution.model_workflow_state_snapshot import (
+from omnibase_core.models.workflow import (
     WORKFLOW_STATE_SNAPSHOT_SCHEMA_VERSION,
+    ModelWorkflowStateSnapshot,
 )
 from omnibase_core.utils.workflow_executor import WorkflowExecutionResult
 
@@ -520,16 +520,25 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
                or ``restore_workflow_state()`` to restore from a persisted snapshot.
 
         Args:
-            deep_copy: If True, returns a deep copy of the snapshot to prevent
-                any mutation of internal state. Defaults to False for performance.
+            deep_copy: If ``True``, returns a deep copy of the snapshot to prevent
+                any mutation of internal state. Defaults to ``False`` for performance.
+                When ``True``, uses ``copy.deepcopy()`` to create fully independent
+                nested structures.
 
         Returns:
-            ModelWorkflowStateSnapshot if workflow state has been captured,
-            None if no workflow execution has occurred or state was not set.
-            When deep_copy=False, the returned snapshot is the internal state
-            reference - callers MUST NOT mutate the context dict contents
-            (see Thread Safety). When deep_copy=True, the returned snapshot
-            is fully independent of internal state.
+            ``ModelWorkflowStateSnapshot | None`` - The frozen, strongly-typed
+            workflow state snapshot if workflow state has been captured, ``None``
+            if no workflow execution has occurred or state was not set.
+
+            When ``deep_copy=False`` (default):
+            - Returns internal state reference (O(1) operation)
+            - Callers MUST NOT mutate ``snapshot.context`` dict contents
+            - Suitable for read-only access in single-threaded contexts
+
+            When ``deep_copy=True``:
+            - Returns fully independent copy (O(n) operation)
+            - Safe for concurrent access and modification
+            - Recommended when isolation is required
 
         Thread Safety:
             The returned ``ModelWorkflowStateSnapshot`` is frozen (immutable fields)
@@ -777,20 +786,67 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
         This enables workflow replay and recovery from persisted state.
 
         Validation performed:
-            - Timestamp sanity check (created_at not too far in the future)
+            - Schema version compatibility check
+            - Timestamp sanity check (``created_at`` not too far in the future,
+              with 60s clock skew tolerance)
             - Step IDs overlap check (a step cannot be both completed AND failed)
+            - Warnings for potentially terminal workflow states (all steps
+              completed/failed)
 
         Args:
-            snapshot: The workflow state snapshot to restore. The snapshot is
-                stored as-is (not deep copied) - caller retains shared reference
-                to any mutable nested context data.
+            snapshot: ``ModelWorkflowStateSnapshot`` - The workflow state snapshot
+                to restore. The snapshot is stored as-is (not deep copied) -
+                caller retains shared reference to any mutable nested context data.
 
         Raises:
-            ModelOnexError: If snapshot fails validation. Error codes:
-                - INVALID_STATE: Timestamp is in the future
-                - VALIDATION_ERROR: Step IDs overlap (both completed and failed)
+            ModelOnexError: If snapshot fails validation.
+
+            Error codes:
+                - ``VALIDATION_ERROR``: Schema version mismatch or step IDs overlap
+                  (a step cannot be both completed AND failed)
+                - ``INVALID_STATE``: Timestamp is in the future (beyond 60s
+                  clock skew tolerance)
 
         Thread Safety:
+            **WARNING: This method is NOT thread-safe.**
+
+            Modifies internal ``_workflow_state`` attribute with NO synchronization:
+
+            - **NOT Safe**: Calling from multiple threads simultaneously
+            - **NOT Safe**: Calling while another thread reads via ``snapshot_workflow_state()``
+            - **NOT Safe**: Calling while another thread executes ``process()``
+
+            **Recommended Patterns**:
+
+            1. **Separate Instances** (preferred)::
+
+                # Each thread gets its own NodeOrchestrator instance
+                def worker():
+                    node = NodeOrchestrator(container)
+                    node.restore_workflow_state(snapshot)
+                    asyncio.run(node.process(input_data))
+
+            2. **External Synchronization**::
+
+                # Use lock for shared instance
+                node = NodeOrchestrator(container)
+                lock = threading.Lock()
+                def worker():
+                    with lock:
+                        node.restore_workflow_state(snapshot)
+                        asyncio.run(node.process(input_data))
+
+            The provided snapshot should not be mutated after calling this method,
+            as the node stores a direct reference (not a deep copy). For complete
+            isolation, create a deep copy before passing::
+
+                from copy import deepcopy
+                isolated = deepcopy(snapshot)
+                node.restore_workflow_state(isolated)
+
+            See ``docs/guides/THREADING.md`` for comprehensive thread safety patterns.
+
+        Context Considerations:
             This method modifies the internal ``_workflow_state`` attribute, which
             is NOT thread-safe:
 
@@ -864,30 +920,58 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
 
         Converts the current workflow state snapshot to a plain dictionary
         suitable for JSON serialization, API responses, or external storage
-        systems that require dict format. Uses ``mode="json"`` for proper
-        JSON-native type conversion (e.g., UUIDs become strings, datetimes
-        become ISO format strings).
+        systems that require dict format. Uses Pydantic's ``mode="json"``
+        for proper JSON-native type conversion.
 
         **Key Difference from snapshot_workflow_state()**:
             - ``get_workflow_snapshot()`` → ``dict[str, object]`` for external use
               (JSON APIs, storage, logging, cross-service communication)
             - ``snapshot_workflow_state()`` → ``ModelWorkflowStateSnapshot`` for internal use
-              (type-safe access, Pydantic validation, direct restoration)
+              (type-safe access, Pydantic validation, direct restoration via
+              ``restore_workflow_state()``)
+
+        For strongly-typed access to workflow state with validation and direct
+        restoration, use ``snapshot_workflow_state()`` instead.
 
         Args:
-            deep_copy: If True, returns a deep copy of the snapshot dictionary
-                to prevent any mutation of nested structures. Defaults to False
-                for performance. Note: The dict returned by model_dump() is already
-                a new dict, but nested mutable objects (lists, dicts in context)
-                may still share references with the internal state.
+            deep_copy: If ``True``, returns a deep copy of the snapshot dictionary
+                to prevent any mutation of nested structures. Defaults to ``False``
+                for performance. When ``True``, uses ``copy.deepcopy()`` to create
+                fully independent nested structures.
+
+                Note: Pydantic's ``model_dump()`` creates a new dict, but nested
+                mutable objects (lists, dicts in context) may share references
+                with internal state when ``deep_copy=False``.
 
         Returns:
-            dict[str, object] with workflow state data that can be directly
-            serialized to JSON (all values are JSON-native types), or None
-            if no workflow execution is in progress. When deep_copy=False,
-            the returned dict is created by Pydantic's ``model_dump()`` but
-            nested mutable objects may share references. When deep_copy=True,
-            all nested structures are fully independent.
+            ``dict[str, object] | None`` - Dictionary with JSON-serializable
+            workflow state data, or ``None`` if no workflow execution is in progress.
+
+            Dictionary structure (when workflow state exists):
+                - ``workflow_id``: str | None - Workflow ID (UUID as string)
+                - ``current_step_index``: int - Current step index (0-based)
+                - ``completed_step_ids``: list[str] - Completed step IDs (UUIDs as strings)
+                - ``failed_step_ids``: list[str] - Failed step IDs (UUIDs as strings)
+                - ``context``: dict - Workflow context data (arbitrary JSON values)
+                - ``created_at``: str - Snapshot creation timestamp (ISO format)
+                - ``schema_version``: int - Snapshot schema version number
+
+            When ``deep_copy=False`` (default):
+            - Returns new dict from Pydantic ``model_dump(mode="json")``
+            - Nested mutable objects may share references with internal state
+            - Suitable for immediate JSON serialization
+            - O(n) operation for model_dump
+
+            When ``deep_copy=True``:
+            - Returns fully independent dict with deep-copied nested structures
+            - Safe for storing and modifying later
+            - O(n + m) operation (model_dump + deepcopy)
+
+            JSON-native type conversions applied (``mode="json"``):
+            - UUIDs → strings
+            - datetimes → ISO format strings
+            - tuples → lists
+            - All values are JSON-serializable without custom encoders
 
         Thread Safety:
             This method is thread-safe for the dict creation itself (Pydantic
