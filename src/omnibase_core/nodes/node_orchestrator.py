@@ -25,7 +25,11 @@ from omnibase_core.utils.workflow_executor import WorkflowExecutionResult
 
 # Error messages
 _ERR_WORKFLOW_DEFINITION_NOT_LOADED = "Workflow definition not loaded"
-_ERR_FUTURE_TIMESTAMP = "Invalid workflow snapshot: timestamp is in the future"
+_ERR_FUTURE_TIMESTAMP = (
+    "Invalid workflow snapshot: timestamp {snapshot_time} is in the future "
+    "(current: {current_time}, difference: {difference_seconds:.3f}s)"
+)
+_ERR_STEP_IDS_OVERLAP = "Step IDs cannot be both completed and failed"
 
 
 class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
@@ -418,9 +422,19 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
         For JSON serialization use cases where a plain dict is preferred,
         use ``get_workflow_snapshot()`` instead.
 
+        State Population:
+            The ``_workflow_state`` attribute is populated in two ways:
+
+            1. **Automatic** (recommended): After ``execute_workflow_from_contract()``
+               or ``process()`` completes, the workflow state is automatically captured
+               with execution results (completed/failed steps, execution metadata).
+
+            2. **Manual**: Via ``update_workflow_state()`` for custom state tracking,
+               or ``restore_workflow_state()`` to restore from a persisted snapshot.
+
         Returns:
-            ModelWorkflowStateSnapshot if a workflow execution is in progress,
-            None otherwise.
+            ModelWorkflowStateSnapshot if workflow state has been captured,
+            None if no workflow execution has occurred or state was not set.
 
         Example:
             ```python
@@ -428,7 +442,8 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
 
             logger = logging.getLogger(__name__)
 
-            # Get current state during workflow execution
+            # After workflow execution, state is automatically available
+            result = await node.process(input_data)
             snapshot = node.snapshot_workflow_state()
             if snapshot:
                 logger.info("Workflow %s at step %d", snapshot.workflow_id, snapshot.current_step_index)
@@ -443,6 +458,7 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
         See Also:
             get_workflow_snapshot: Returns dict[str, object] for JSON serialization.
             restore_workflow_state: Restores state from a ModelWorkflowStateSnapshot.
+            update_workflow_state: Manually updates workflow state.
         """
         return self._workflow_state
 
@@ -455,6 +471,7 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
 
         Ensures the restored snapshot represents a valid workflow state:
         - Timestamp sanity check (created_at not in the future)
+        - Step IDs overlap check (a step cannot be both completed AND failed)
 
         Unlike NodeReducer which validates state names against FSM contract states,
         NodeOrchestrator's workflow definition doesn't have a fixed set of "valid
@@ -465,7 +482,8 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
             snapshot: Workflow state snapshot to validate
 
         Raises:
-            ModelOnexError: If snapshot fails validation (e.g., future timestamp)
+            ModelOnexError: If snapshot fails validation (e.g., future timestamp,
+                overlapping step IDs between completed and failed sets)
 
         Note:
             This validation prevents injection of invalid snapshots during
@@ -482,12 +500,35 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
             snapshot_time = snapshot_time.replace(tzinfo=UTC)
 
         if snapshot_time > now:
+            difference_seconds = (snapshot_time - now).total_seconds()
             raise ModelOnexError(
-                message=_ERR_FUTURE_TIMESTAMP,
+                message=_ERR_FUTURE_TIMESTAMP.format(
+                    snapshot_time=snapshot_time.isoformat(),
+                    current_time=now.isoformat(),
+                    difference_seconds=difference_seconds,
+                ),
                 error_code=EnumCoreErrorCode.INVALID_STATE,
                 context={
-                    "snapshot_timestamp": str(snapshot_time),
-                    "current_time": str(now),
+                    "snapshot_timestamp": snapshot_time.isoformat(),
+                    "current_time": now.isoformat(),
+                    "difference_seconds": difference_seconds,
+                    "workflow_id": str(snapshot.workflow_id)
+                    if snapshot.workflow_id
+                    else None,
+                },
+            )
+
+        # Check for step_ids overlap: a step cannot be both completed AND failed
+        completed_set = set(snapshot.completed_step_ids)
+        failed_set = set(snapshot.failed_step_ids)
+        overlap = completed_set & failed_set
+
+        if overlap:
+            raise ModelOnexError(
+                message=f"{_ERR_STEP_IDS_OVERLAP}: {overlap}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={
+                    "overlapping_step_ids": [str(sid) for sid in overlap],
                     "workflow_id": str(snapshot.workflow_id)
                     if snapshot.workflow_id
                     else None,
@@ -503,12 +544,14 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
 
         Validation performed:
             - Timestamp sanity check (created_at not in the future)
+            - Step IDs overlap check (a step cannot be both completed AND failed)
 
         Args:
             snapshot: The workflow state snapshot to restore.
 
         Raises:
-            ModelOnexError: If snapshot fails validation (e.g., future timestamp)
+            ModelOnexError: If snapshot fails validation (e.g., future timestamp,
+                overlapping step IDs between completed and failed sets)
 
         Example:
             ```python

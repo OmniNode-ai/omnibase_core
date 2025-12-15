@@ -19,6 +19,7 @@ from omnibase_core.models.contracts.subcontracts.model_workflow_definition impor
     ModelWorkflowDefinition,
 )
 from omnibase_core.models.workflow import ModelWorkflowStateSnapshot
+from omnibase_core.types.type_workflow_context import WorkflowContextType
 from omnibase_core.utils.workflow_executor import (
     WorkflowExecutionResult,
     execute_workflow,
@@ -63,6 +64,60 @@ class MixinWorkflowExecution:
         # Initialize workflow state tracking
         self._workflow_state = None
 
+    def update_workflow_state(
+        self,
+        workflow_id: UUID | None,
+        current_step_index: int,
+        completed_step_ids: list[UUID] | tuple[UUID, ...] | None = None,
+        failed_step_ids: list[UUID] | tuple[UUID, ...] | None = None,
+        context: WorkflowContextType | None = None,
+    ) -> None:
+        """
+        Update workflow state tracking for serialization and replay.
+
+        Creates a new workflow state snapshot that can be retrieved via
+        `snapshot_workflow_state()`. This method is called automatically
+        after `execute_workflow_from_contract()` completes, but can also
+        be called manually to track intermediate workflow progress.
+
+        Args:
+            workflow_id: Unique workflow execution ID.
+            current_step_index: Index of the current/completed step.
+            completed_step_ids: Sequence of completed step UUIDs (list or tuple).
+            failed_step_ids: Sequence of failed step UUIDs (list or tuple).
+            context: Additional workflow context data.
+
+        Example:
+            ```python
+            from uuid import uuid4
+
+            # Manual state tracking during workflow execution
+            orchestrator.update_workflow_state(
+                workflow_id=uuid4(),
+                current_step_index=1,
+                completed_step_ids=[step1_id],
+                context={"key": "value"},
+            )
+
+            # State is now available for serialization
+            snapshot = orchestrator.snapshot_workflow_state()
+            assert snapshot is not None
+            assert snapshot.current_step_index == 1
+            ```
+
+        Note:
+            This method creates a new immutable snapshot. The previous
+            state is replaced, not merged. Step IDs are stored as tuples
+            for immutability.
+        """
+        self._workflow_state = ModelWorkflowStateSnapshot(
+            workflow_id=workflow_id,
+            current_step_index=current_step_index,
+            completed_step_ids=tuple(completed_step_ids) if completed_step_ids else (),
+            failed_step_ids=tuple(failed_step_ids) if failed_step_ids else (),
+            context=context or {},
+        )
+
     async def execute_workflow_from_contract(
         self,
         workflow_definition: ModelWorkflowDefinition,
@@ -75,6 +130,10 @@ class MixinWorkflowExecution:
 
         Pure function delegation: delegates to utils/workflow_executor.execute_workflow()
         which returns (result, actions) without side effects.
+
+        After execution completes, automatically updates the internal workflow state
+        (`_workflow_state`) with the execution results. This state can be retrieved
+        via `snapshot_workflow_state()` for serialization, debugging, or replay.
 
         Args:
             workflow_definition: Workflow definition from node contract
@@ -98,13 +157,38 @@ class MixinWorkflowExecution:
                 # Process actions (emitted to target nodes)
                 for action in result.actions_emitted:
                     print(f"Action: {action.action_type} -> {action.target_node_type}")
+
+            # Workflow state is automatically captured for serialization
+            snapshot = self.snapshot_workflow_state()
+            if snapshot:
+                print(f"Completed steps: {len(snapshot.completed_step_ids)}")
         """
-        return await execute_workflow(
+        result = await execute_workflow(
             workflow_definition,
             workflow_steps,
             workflow_id,
             execution_mode,
         )
+
+        # Automatically capture workflow state after execution for serialization/replay
+        # Convert string step IDs back to UUIDs for the snapshot
+        completed_ids = [UUID(step_id) for step_id in result.completed_steps]
+        failed_ids = [UUID(step_id) for step_id in result.failed_steps]
+
+        self.update_workflow_state(
+            workflow_id=workflow_id,
+            current_step_index=len(completed_ids) + len(failed_ids),
+            completed_step_ids=completed_ids,
+            failed_step_ids=failed_ids,
+            context={
+                "execution_status": result.execution_status.value,
+                "execution_time_ms": result.execution_time_ms,
+                "actions_count": len(result.actions_emitted),
+                **result.metadata,
+            },
+        )
+
+        return result
 
     async def validate_workflow_contract(
         self,

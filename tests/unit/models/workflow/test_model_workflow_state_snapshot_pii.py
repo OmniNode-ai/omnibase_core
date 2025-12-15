@@ -1,0 +1,391 @@
+"""
+Unit tests for ModelWorkflowStateSnapshot PII sanitization.
+
+Tests the sanitize_context_for_logging() class method including:
+- Email address redaction
+- Phone number redaction (various formats)
+- SSN redaction
+- Credit card number redaction
+- IP address redaction
+- Nested dict/list sanitization
+- Key-based redaction
+- Custom pattern support
+- Type preservation for non-string values
+"""
+
+from datetime import UTC, datetime
+from uuid import uuid4
+
+import pytest
+
+from omnibase_core.models.workflow.execution import ModelWorkflowStateSnapshot
+
+pytestmark = pytest.mark.unit
+
+
+class TestSanitizeContextForLoggingEmailRedaction:
+    """Test email address redaction in sanitize_context_for_logging."""
+
+    def test_redacts_simple_email(self) -> None:
+        """Test redaction of a simple email address."""
+        context = {"email": "john.doe@example.com"}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["email"] == "[EMAIL_REDACTED]"
+
+    def test_redacts_email_with_plus_sign(self) -> None:
+        """Test redaction of email with plus sign."""
+        context = {"email": "john+tag@example.com"}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["email"] == "[EMAIL_REDACTED]"
+
+    def test_redacts_email_with_subdomain(self) -> None:
+        """Test redaction of email with subdomain."""
+        context = {"email": "user@mail.company.co.uk"}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["email"] == "[EMAIL_REDACTED]"
+
+    def test_redacts_multiple_emails_in_string(self) -> None:
+        """Test redaction of multiple emails in a single string."""
+        context = {"message": "Contact john@test.com or jane@test.com"}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["message"] == "Contact [EMAIL_REDACTED] or [EMAIL_REDACTED]"
+
+    def test_preserves_non_email_strings(self) -> None:
+        """Test that non-email strings are preserved."""
+        context = {"name": "John Doe", "status": "active"}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["name"] == "John Doe"
+        assert result["status"] == "active"
+
+
+class TestSanitizeContextForLoggingPhoneRedaction:
+    """Test phone number redaction in sanitize_context_for_logging."""
+
+    def test_redacts_phone_with_dashes(self) -> None:
+        """Test redaction of phone number with dashes."""
+        context = {"phone": "555-123-4567"}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["phone"] == "[PHONE_REDACTED]"
+
+    def test_redacts_phone_with_dots(self) -> None:
+        """Test redaction of phone number with dots."""
+        context = {"phone": "555.123.4567"}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["phone"] == "[PHONE_REDACTED]"
+
+    def test_redacts_phone_with_spaces(self) -> None:
+        """Test redaction of phone number with spaces."""
+        context = {"phone": "555 123 4567"}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["phone"] == "[PHONE_REDACTED]"
+
+    def test_redacts_phone_with_parentheses(self) -> None:
+        """Test redaction of phone number with parentheses."""
+        context = {"phone": "(555) 123-4567"}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["phone"] == "[PHONE_REDACTED]"
+
+    def test_redacts_phone_with_country_code(self) -> None:
+        """Test redaction of phone number with +1 country code."""
+        context = {"phone": "+1-555-123-4567"}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["phone"] == "[PHONE_REDACTED]"
+
+    def test_redacts_plain_phone_number(self) -> None:
+        """Test redaction of plain 10-digit phone number."""
+        context = {"phone": "5551234567"}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["phone"] == "[PHONE_REDACTED]"
+
+
+class TestSanitizeContextForLoggingSSNRedaction:
+    """Test SSN redaction in sanitize_context_for_logging."""
+
+    def test_redacts_ssn_with_dashes(self) -> None:
+        """Test redaction of SSN with dashes."""
+        context = {"ssn": "123-45-6789"}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["ssn"] == "[SSN_REDACTED]"
+
+    def test_redacts_ssn_with_spaces(self) -> None:
+        """Test redaction of SSN with spaces."""
+        context = {"ssn": "123 45 6789"}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["ssn"] == "[SSN_REDACTED]"
+
+    def test_redacts_plain_ssn(self) -> None:
+        """Test redaction of plain 9-digit SSN."""
+        context = {"ssn": "123456789"}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["ssn"] == "[SSN_REDACTED]"
+
+
+class TestSanitizeContextForLoggingCreditCardRedaction:
+    """Test credit card number redaction in sanitize_context_for_logging."""
+
+    def test_redacts_credit_card_with_dashes(self) -> None:
+        """Test redaction of credit card with dashes."""
+        context = {"card": "4111-1111-1111-1111"}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["card"] == "[CREDIT_CARD_REDACTED]"
+
+    def test_redacts_credit_card_with_spaces(self) -> None:
+        """Test redaction of credit card with spaces."""
+        context = {"card": "4111 1111 1111 1111"}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["card"] == "[CREDIT_CARD_REDACTED]"
+
+    def test_redacts_plain_credit_card(self) -> None:
+        """Test redaction of plain 16-digit credit card."""
+        context = {"card": "4111111111111111"}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["card"] == "[CREDIT_CARD_REDACTED]"
+
+
+class TestSanitizeContextForLoggingIPRedaction:
+    """Test IP address redaction in sanitize_context_for_logging."""
+
+    def test_redacts_ipv4_address(self) -> None:
+        """Test redaction of IPv4 address."""
+        context = {"ip": "192.168.1.100"}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["ip"] == "[IP_REDACTED]"
+
+    def test_redacts_ip_in_log_message(self) -> None:
+        """Test redaction of IP address in log message."""
+        context = {"log": "Connection from 10.0.0.1 established"}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["log"] == "Connection from [IP_REDACTED] established"
+
+
+class TestSanitizeContextForLoggingNestedStructures:
+    """Test nested dict/list sanitization in sanitize_context_for_logging."""
+
+    def test_sanitizes_nested_dict(self) -> None:
+        """Test sanitization of nested dict."""
+        context = {
+            "user": {
+                "email": "user@test.com",
+                "profile": {"phone": "555-123-4567"},
+            }
+        }
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["user"]["email"] == "[EMAIL_REDACTED]"
+        assert result["user"]["profile"]["phone"] == "[PHONE_REDACTED]"
+
+    def test_sanitizes_list_of_strings(self) -> None:
+        """Test sanitization of list containing strings."""
+        context = {"emails": ["user1@test.com", "user2@test.com"]}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["emails"] == ["[EMAIL_REDACTED]", "[EMAIL_REDACTED]"]
+
+    def test_sanitizes_list_of_dicts(self) -> None:
+        """Test sanitization of list containing dicts."""
+        context = {
+            "users": [
+                {"email": "user1@test.com"},
+                {"email": "user2@test.com"},
+            ]
+        }
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["users"][0]["email"] == "[EMAIL_REDACTED]"
+        assert result["users"][1]["email"] == "[EMAIL_REDACTED]"
+
+    def test_sanitizes_tuple(self) -> None:
+        """Test sanitization of tuple values."""
+        context = {"emails": ("user1@test.com", "user2@test.com")}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["emails"] == ("[EMAIL_REDACTED]", "[EMAIL_REDACTED]")
+        assert isinstance(result["emails"], tuple)
+
+
+class TestSanitizeContextForLoggingKeyRedaction:
+    """Test key-based redaction in sanitize_context_for_logging."""
+
+    def test_redacts_specified_keys(self) -> None:
+        """Test that specified keys are fully redacted."""
+        context = {
+            "password": "secret123",
+            "api_key": "abc123xyz",
+            "normal_field": "visible",
+        }
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(
+            context, redact_keys=["password", "api_key"]
+        )
+        assert result["password"] == "[REDACTED]"
+        assert result["api_key"] == "[REDACTED]"
+        assert result["normal_field"] == "visible"
+
+    def test_key_redaction_is_case_insensitive(self) -> None:
+        """Test that key redaction is case-insensitive."""
+        context = {
+            "PASSWORD": "secret1",
+            "Password": "secret2",
+            "password": "secret3",
+        }
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(
+            context, redact_keys=["password"]
+        )
+        assert result["PASSWORD"] == "[REDACTED]"
+        assert result["Password"] == "[REDACTED]"
+        assert result["password"] == "[REDACTED]"
+
+    def test_key_redaction_in_nested_dict(self) -> None:
+        """Test key redaction in nested dict."""
+        context = {
+            "config": {
+                "api_key": "secret",
+                "url": "https://example.com",
+            }
+        }
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(
+            context, redact_keys=["api_key"]
+        )
+        assert result["config"]["api_key"] == "[REDACTED]"
+        assert result["config"]["url"] == "https://example.com"
+
+
+class TestSanitizeContextForLoggingCustomPatterns:
+    """Test custom pattern support in sanitize_context_for_logging."""
+
+    def test_applies_custom_patterns(self) -> None:
+        """Test that custom patterns are applied."""
+        context = {"token": "JWT-abc123xyz"}
+        custom_patterns = [(r"JWT-\w+", "[JWT_REDACTED]")]
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(
+            context, additional_patterns=custom_patterns
+        )
+        assert result["token"] == "[JWT_REDACTED]"
+
+    def test_custom_patterns_applied_after_defaults(self) -> None:
+        """Test that custom patterns are applied after default patterns."""
+        context = {"data": "email: user@test.com, token: abc123"}
+        custom_patterns = [(r"abc123", "[TOKEN_REDACTED]")]
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(
+            context, additional_patterns=custom_patterns
+        )
+        assert "[EMAIL_REDACTED]" in result["data"]
+        assert "[TOKEN_REDACTED]" in result["data"]
+
+
+class TestSanitizeContextForLoggingTypePreservation:
+    """Test that non-string types are preserved in sanitize_context_for_logging."""
+
+    def test_preserves_integers(self) -> None:
+        """Test that integer values are preserved."""
+        context = {"count": 42, "id": 12345}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["count"] == 42
+        assert result["id"] == 12345
+
+    def test_preserves_floats(self) -> None:
+        """Test that float values are preserved."""
+        context = {"ratio": 3.14, "percentage": 0.75}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["ratio"] == 3.14
+        assert result["percentage"] == 0.75
+
+    def test_preserves_booleans(self) -> None:
+        """Test that boolean values are preserved."""
+        context = {"active": True, "deleted": False}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["active"] is True
+        assert result["deleted"] is False
+
+    def test_preserves_none(self) -> None:
+        """Test that None values are preserved."""
+        context = {"optional_field": None}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["optional_field"] is None
+
+    def test_preserves_uuid(self) -> None:
+        """Test that UUID values are preserved."""
+        test_uuid = uuid4()
+        context = {"workflow_id": test_uuid}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["workflow_id"] == test_uuid
+
+    def test_preserves_datetime(self) -> None:
+        """Test that datetime values are preserved."""
+        test_dt = datetime.now(UTC)
+        context = {"created_at": test_dt}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["created_at"] == test_dt
+
+
+class TestSanitizeContextForLoggingOriginalPreservation:
+    """Test that original context is not modified by sanitize_context_for_logging."""
+
+    def test_does_not_modify_original_context(self) -> None:
+        """Test that the original context dict is not modified."""
+        original = {
+            "email": "user@test.com",
+            "nested": {"phone": "555-123-4567"},
+        }
+        original_copy = {
+            "email": "user@test.com",
+            "nested": {"phone": "555-123-4567"},
+        }
+
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(original)
+
+        # Original should be unchanged
+        assert original == original_copy
+        assert original["email"] == "user@test.com"
+        assert original["nested"]["phone"] == "555-123-4567"
+
+        # Result should be sanitized
+        assert result["email"] == "[EMAIL_REDACTED]"
+        assert result["nested"]["phone"] == "[PHONE_REDACTED]"
+
+
+class TestSanitizeContextForLoggingEdgeCases:
+    """Test edge cases for sanitize_context_for_logging."""
+
+    def test_empty_context(self) -> None:
+        """Test sanitization of empty context."""
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging({})
+        assert result == {}
+
+    def test_empty_string_value(self) -> None:
+        """Test sanitization of empty string value."""
+        context = {"empty": ""}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["empty"] == ""
+
+    def test_deeply_nested_structure(self) -> None:
+        """Test sanitization of deeply nested structure."""
+        context = {
+            "level1": {"level2": {"level3": {"level4": {"email": "deep@test.com"}}}}
+        }
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert (
+            result["level1"]["level2"]["level3"]["level4"]["email"]
+            == "[EMAIL_REDACTED]"
+        )
+
+    def test_mixed_types_in_list(self) -> None:
+        """Test sanitization of list with mixed types."""
+        context = {
+            "data": [
+                "user@test.com",
+                42,
+                True,
+                None,
+                {"phone": "555-123-4567"},
+            ]
+        }
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["data"][0] == "[EMAIL_REDACTED]"
+        assert result["data"][1] == 42
+        assert result["data"][2] is True
+        assert result["data"][3] is None
+        assert result["data"][4]["phone"] == "[PHONE_REDACTED]"
+
+    def test_no_additional_patterns_or_redact_keys(self) -> None:
+        """Test that default behavior works when optional params are None."""
+        context = {"email": "user@test.com"}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(
+            context, additional_patterns=None, redact_keys=None
+        )
+        assert result["email"] == "[EMAIL_REDACTED]"

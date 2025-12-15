@@ -36,7 +36,10 @@ _ERR_INVALID_SNAPSHOT_STATE = (
 _ERR_INVALID_HISTORY_STATE = (
     "Invalid FSM snapshot: history contains invalid state '{state}'"
 )
-_ERR_FUTURE_TIMESTAMP = "Invalid FSM snapshot: timestamp is in the future"
+_ERR_FUTURE_TIMESTAMP = (
+    "Invalid FSM snapshot: timestamp {snapshot_time} is in the future "
+    "(current: {current_time}, difference: {difference_seconds:.3f}s)"
+)
 
 
 class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
@@ -462,12 +465,18 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
                     snapshot_time = snapshot_time.replace(tzinfo=UTC)
 
                 if snapshot_time > now:
+                    difference_seconds = (snapshot_time - now).total_seconds()
                     raise ModelOnexError(
-                        message=_ERR_FUTURE_TIMESTAMP,
+                        message=_ERR_FUTURE_TIMESTAMP.format(
+                            snapshot_time=snapshot_time.isoformat(),
+                            current_time=now.isoformat(),
+                            difference_seconds=difference_seconds,
+                        ),
                         error_code=EnumCoreErrorCode.INVALID_STATE,
                         context={
-                            "snapshot_timestamp": str(snapshot_time),
-                            "current_time": str(now),
+                            "snapshot_timestamp": snapshot_time.isoformat(),
+                            "current_time": now.isoformat(),
+                            "difference_seconds": difference_seconds,
                             "fsm_name": contract.state_machine_name,
                         },
                     )

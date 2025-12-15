@@ -365,7 +365,7 @@ class TestNodeReducerStateSerialization:
         with pytest.raises(ModelOnexError) as exc_info:
             node.restore_state(snapshot_with_future_time)
 
-        assert "timestamp is in the future" in str(exc_info.value)
+        assert "is in the future" in str(exc_info.value)
 
     def test_restore_state_rejects_future_timestamp_iso_string(
         self,
@@ -387,7 +387,7 @@ class TestNodeReducerStateSerialization:
         with pytest.raises(ModelOnexError) as exc_info:
             node.restore_state(snapshot_with_future_time)
 
-        assert "timestamp is in the future" in str(exc_info.value)
+        assert "is in the future" in str(exc_info.value)
 
     def test_restore_state_accepts_valid_snapshot_with_history(
         self,
@@ -450,6 +450,8 @@ class TestNodeOrchestratorStateSerialization:
     - restore_workflow_state() restores workflow state from snapshot
     - get_workflow_snapshot() returns strongly-typed model (or None)
     - Round-trip serialization maintains state integrity
+    - update_workflow_state() manually updates workflow state
+    - execute_workflow_from_contract() automatically captures workflow state
     """
 
     def test_snapshot_workflow_state_returns_none_when_not_initialized(
@@ -463,6 +465,96 @@ class TestNodeOrchestratorStateSerialization:
         snapshot = node.snapshot_workflow_state()
 
         assert snapshot is None
+
+    def test_update_workflow_state_populates_snapshot(
+        self,
+        test_container: ModelONEXContainer,
+    ) -> None:
+        """Test update_workflow_state manually populates _workflow_state."""
+        node = NodeOrchestrator(test_container)
+
+        # Initially no workflow state
+        assert node.snapshot_workflow_state() is None
+
+        # Manually update workflow state
+        workflow_id = uuid4()
+        step1_id = uuid4()
+        node.update_workflow_state(
+            workflow_id=workflow_id,
+            current_step_index=1,
+            completed_step_ids=[step1_id],
+            context={"key": "value"},
+        )
+
+        # Verify snapshot is now available
+        snapshot = node.snapshot_workflow_state()
+        assert snapshot is not None
+        assert isinstance(snapshot, ModelWorkflowStateSnapshot)
+        assert snapshot.workflow_id == workflow_id
+        assert snapshot.current_step_index == 1
+        assert snapshot.completed_step_ids == (step1_id,)
+        assert snapshot.context == {"key": "value"}
+
+    def test_update_workflow_state_with_failed_steps(
+        self,
+        test_container: ModelONEXContainer,
+    ) -> None:
+        """Test update_workflow_state tracks failed steps."""
+        node = NodeOrchestrator(test_container)
+
+        workflow_id = uuid4()
+        step1_id = uuid4()
+        step2_id = uuid4()
+
+        node.update_workflow_state(
+            workflow_id=workflow_id,
+            current_step_index=2,
+            completed_step_ids=[step1_id],
+            failed_step_ids=[step2_id],
+            context={"error": "step2 failed"},
+        )
+
+        snapshot = node.snapshot_workflow_state()
+        assert snapshot is not None
+        assert snapshot.current_step_index == 2
+        assert snapshot.completed_step_ids == (step1_id,)
+        assert snapshot.failed_step_ids == (step2_id,)
+        assert snapshot.context == {"error": "step2 failed"}
+
+    def test_update_workflow_state_replaces_previous_state(
+        self,
+        test_container: ModelONEXContainer,
+    ) -> None:
+        """Test update_workflow_state replaces previous state (not merge)."""
+        node = NodeOrchestrator(test_container)
+
+        workflow_id = uuid4()
+        step1_id = uuid4()
+        step2_id = uuid4()
+
+        # First update
+        node.update_workflow_state(
+            workflow_id=workflow_id,
+            current_step_index=1,
+            completed_step_ids=[step1_id],
+            context={"first": True},
+        )
+
+        # Second update (replaces, not merges)
+        node.update_workflow_state(
+            workflow_id=workflow_id,
+            current_step_index=2,
+            completed_step_ids=[step1_id, step2_id],
+            context={"second": True},
+        )
+
+        snapshot = node.snapshot_workflow_state()
+        assert snapshot is not None
+        assert snapshot.current_step_index == 2
+        assert snapshot.completed_step_ids == (step1_id, step2_id)
+        # Context is replaced, not merged
+        assert snapshot.context == {"second": True}
+        assert "first" not in snapshot.context
 
     def test_snapshot_workflow_state_returns_current_state(
         self,
@@ -491,7 +583,7 @@ class TestNodeOrchestratorStateSerialization:
         assert isinstance(snapshot, ModelWorkflowStateSnapshot)
         assert snapshot.workflow_id == workflow_id
         assert snapshot.current_step_index == 1
-        assert snapshot.completed_step_ids == [step1_id]
+        assert snapshot.completed_step_ids == (step1_id,)
         assert snapshot.context == {"test_key": "test_value"}
 
     def test_restore_workflow_state_sets_state(
@@ -523,7 +615,7 @@ class TestNodeOrchestratorStateSerialization:
         assert current_snapshot is not None
         assert current_snapshot.workflow_id == workflow_id
         assert current_snapshot.current_step_index == 3
-        assert current_snapshot.completed_step_ids == [step1_id, step2_id]
+        assert current_snapshot.completed_step_ids == (step1_id, step2_id)
         assert current_snapshot.context == {"restored": True, "retry_count": 2}
 
     def test_snapshot_workflow_state_returns_model(
@@ -552,7 +644,7 @@ class TestNodeOrchestratorStateSerialization:
         assert isinstance(snapshot, ModelWorkflowStateSnapshot)
         assert snapshot.workflow_id == workflow_id
         assert snapshot.current_step_index == 2
-        assert snapshot.completed_step_ids == [step_id]
+        assert snapshot.completed_step_ids == (step_id,)
         assert snapshot.context == {"key": "value"}
         assert snapshot.created_at is not None
 
@@ -582,7 +674,7 @@ class TestNodeOrchestratorStateSerialization:
         assert isinstance(snapshot_dict, dict)
         assert snapshot_dict["workflow_id"] == workflow_id
         assert snapshot_dict["current_step_index"] == 2
-        assert snapshot_dict["completed_step_ids"] == [step_id]
+        assert snapshot_dict["completed_step_ids"] == (step_id,)
         assert snapshot_dict["context"] == {"key": "value"}
         assert snapshot_dict["created_at"] is not None
 
@@ -654,6 +746,169 @@ class TestNodeOrchestratorStateSerialization:
         assert restored_snapshot.failed_step_ids == original_snapshot.failed_step_ids
         assert restored_snapshot.context == original_snapshot.context
 
+    @pytest.mark.asyncio
+    async def test_execute_workflow_populates_workflow_state(
+        self,
+        test_container: ModelONEXContainer,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test execute_workflow_from_contract automatically populates _workflow_state.
+
+        This is the key test verifying that _workflow_state is populated during
+        workflow execution, not just during restore operations.
+        """
+        from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
+
+        node = NodeOrchestrator(test_container)
+        node.workflow_definition = simple_workflow_definition
+
+        # Initially no workflow state
+        assert node.snapshot_workflow_state() is None
+
+        # Create workflow steps
+        workflow_id = uuid4()
+        step1_id = uuid4()
+        step2_id = uuid4()
+        steps = [
+            ModelWorkflowStep(
+                step_id=step1_id,
+                step_name="step_1",
+                step_type="compute",
+                enabled=True,
+            ),
+            ModelWorkflowStep(
+                step_id=step2_id,
+                step_name="step_2",
+                step_type="compute",
+                enabled=True,
+            ),
+        ]
+
+        # Execute workflow
+        result = await node.execute_workflow_from_contract(
+            workflow_definition=simple_workflow_definition,
+            workflow_steps=steps,
+            workflow_id=workflow_id,
+        )
+
+        # Verify workflow state is now populated
+        snapshot = node.snapshot_workflow_state()
+        assert snapshot is not None
+        assert isinstance(snapshot, ModelWorkflowStateSnapshot)
+        assert snapshot.workflow_id == workflow_id
+
+        # Verify completed steps match result
+        assert len(snapshot.completed_step_ids) == len(result.completed_steps)
+
+        # Verify context contains execution metadata
+        assert "execution_status" in snapshot.context
+        assert "execution_time_ms" in snapshot.context
+        assert "actions_count" in snapshot.context
+
+    @pytest.mark.asyncio
+    async def test_execute_workflow_captures_state_for_serialization(
+        self,
+        test_container: ModelONEXContainer,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test execute_workflow_from_contract captures state for serialization."""
+        from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
+
+        node = NodeOrchestrator(test_container)
+        node.workflow_definition = simple_workflow_definition
+
+        # Create single step workflow
+        workflow_id = uuid4()
+        step1_id = uuid4()
+        steps_simple = [
+            ModelWorkflowStep(
+                step_id=step1_id,
+                step_name="step_1",
+                step_type="compute",
+                enabled=True,
+            ),
+        ]
+
+        result = await node.execute_workflow_from_contract(
+            workflow_definition=simple_workflow_definition,
+            workflow_steps=steps_simple,
+            workflow_id=workflow_id,
+        )
+
+        # Verify workflow state captures the result
+        snapshot = node.snapshot_workflow_state()
+        assert snapshot is not None
+        assert snapshot.workflow_id == workflow_id
+        assert snapshot.current_step_index == len(result.completed_steps) + len(
+            result.failed_steps
+        )
+
+    @pytest.mark.asyncio
+    async def test_workflow_state_available_after_multiple_executions(
+        self,
+        test_container: ModelONEXContainer,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test workflow state is updated after each execution."""
+        from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
+
+        node = NodeOrchestrator(test_container)
+        node.workflow_definition = simple_workflow_definition
+
+        # First execution
+        workflow_id_1 = uuid4()
+        step1_id = uuid4()
+        steps_1 = [
+            ModelWorkflowStep(
+                step_id=step1_id,
+                step_name="first_workflow_step",
+                step_type="compute",
+                enabled=True,
+            ),
+        ]
+
+        await node.execute_workflow_from_contract(
+            workflow_definition=simple_workflow_definition,
+            workflow_steps=steps_1,
+            workflow_id=workflow_id_1,
+        )
+
+        snapshot_1 = node.snapshot_workflow_state()
+        assert snapshot_1 is not None
+        assert snapshot_1.workflow_id == workflow_id_1
+
+        # Second execution (should replace first)
+        workflow_id_2 = uuid4()
+        step2_id = uuid4()
+        step3_id = uuid4()
+        steps_2 = [
+            ModelWorkflowStep(
+                step_id=step2_id,
+                step_name="second_workflow_step_1",
+                step_type="effect",
+                enabled=True,
+            ),
+            ModelWorkflowStep(
+                step_id=step3_id,
+                step_name="second_workflow_step_2",
+                step_type="effect",
+                enabled=True,
+            ),
+        ]
+
+        await node.execute_workflow_from_contract(
+            workflow_definition=simple_workflow_definition,
+            workflow_steps=steps_2,
+            workflow_id=workflow_id_2,
+        )
+
+        snapshot_2 = node.snapshot_workflow_state()
+        assert snapshot_2 is not None
+        assert snapshot_2.workflow_id == workflow_id_2
+        # Different workflow, different completed steps
+        assert snapshot_2.workflow_id != snapshot_1.workflow_id
+        assert len(snapshot_2.completed_step_ids) == 2
+
 
 class TestNodeOrchestratorWorkflowSnapshotValidation:
     """Tests for NodeOrchestrator workflow snapshot validation.
@@ -661,6 +916,7 @@ class TestNodeOrchestratorWorkflowSnapshotValidation:
     Tests the _validate_workflow_snapshot() method that ensures restored
     snapshots are valid:
     - Timestamp sanity check (created_at not in the future)
+    - Step IDs overlap check (a step cannot be both completed AND failed)
     """
 
     def test_restore_workflow_state_rejects_future_timestamp(
@@ -689,7 +945,7 @@ class TestNodeOrchestratorWorkflowSnapshotValidation:
         with pytest.raises(ModelOnexError) as exc_info:
             node.restore_workflow_state(snapshot_with_future_time)
 
-        assert "timestamp is in the future" in str(exc_info.value)
+        assert "is in the future" in str(exc_info.value)
 
     def test_restore_workflow_state_rejects_naive_future_timestamp(
         self,
@@ -717,7 +973,7 @@ class TestNodeOrchestratorWorkflowSnapshotValidation:
         with pytest.raises(ModelOnexError) as exc_info:
             node.restore_workflow_state(snapshot_with_future_time)
 
-        assert "timestamp is in the future" in str(exc_info.value)
+        assert "is in the future" in str(exc_info.value)
 
     def test_restore_workflow_state_accepts_past_timestamp(
         self,
@@ -751,7 +1007,7 @@ class TestNodeOrchestratorWorkflowSnapshotValidation:
         assert current_snapshot is not None
         assert current_snapshot.workflow_id == workflow_id
         assert current_snapshot.current_step_index == 2
-        assert current_snapshot.completed_step_ids == [step_id]
+        assert current_snapshot.completed_step_ids == (step_id,)
 
     def test_restore_workflow_state_accepts_recent_timestamp(
         self,
@@ -853,6 +1109,127 @@ class TestNodeOrchestratorWorkflowSnapshotValidation:
         assert "workflow_id" in ctx
         assert ctx["workflow_id"] is None
 
+    def test_restore_workflow_state_rejects_overlapping_step_ids(
+        self,
+        test_container: ModelONEXContainer,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test restore_workflow_state raises error when step is both completed AND failed."""
+        node = NodeOrchestrator(test_container)
+        node.workflow_definition = simple_workflow_definition
+
+        # Create snapshot with overlapping step IDs
+        workflow_id = uuid4()
+        overlapping_step_id = uuid4()
+        snapshot_with_overlap = ModelWorkflowStateSnapshot(
+            workflow_id=workflow_id,
+            current_step_index=2,
+            completed_step_ids=[overlapping_step_id],
+            failed_step_ids=[overlapping_step_id],  # Same step in both lists!
+            context={},
+        )
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            node.restore_workflow_state(snapshot_with_overlap)
+
+        assert "cannot be both completed and failed" in str(exc_info.value)
+
+    def test_restore_workflow_state_rejects_multiple_overlapping_step_ids(
+        self,
+        test_container: ModelONEXContainer,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test restore_workflow_state detects multiple overlapping step IDs."""
+        node = NodeOrchestrator(test_container)
+        node.workflow_definition = simple_workflow_definition
+
+        # Create snapshot with multiple overlapping step IDs
+        workflow_id = uuid4()
+        step1_id = uuid4()
+        step2_id = uuid4()
+        step3_id = uuid4()
+        snapshot_with_overlap = ModelWorkflowStateSnapshot(
+            workflow_id=workflow_id,
+            current_step_index=3,
+            completed_step_ids=[step1_id, step2_id],
+            failed_step_ids=[step2_id, step3_id],  # step2_id overlaps
+            context={},
+        )
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            node.restore_workflow_state(snapshot_with_overlap)
+
+        assert "cannot be both completed and failed" in str(exc_info.value)
+        # Check that overlapping step_id is included in error context
+        error = exc_info.value
+        assert error.model.context is not None
+        ctx = error.model.context.get("context", error.model.context)
+        assert "overlapping_step_ids" in ctx
+        # Verify the overlapping step is identified
+        overlapping_ids = ctx["overlapping_step_ids"]
+        assert str(step2_id) in overlapping_ids
+
+    def test_restore_workflow_state_accepts_non_overlapping_step_ids(
+        self,
+        test_container: ModelONEXContainer,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test restore_workflow_state accepts snapshot with no overlap."""
+        node = NodeOrchestrator(test_container)
+        node.workflow_definition = simple_workflow_definition
+
+        # Create valid snapshot with distinct step IDs
+        workflow_id = uuid4()
+        completed_step_id = uuid4()
+        failed_step_id = uuid4()
+        valid_snapshot = ModelWorkflowStateSnapshot(
+            workflow_id=workflow_id,
+            current_step_index=2,
+            completed_step_ids=[completed_step_id],
+            failed_step_ids=[failed_step_id],
+            context={"test": "value"},
+        )
+
+        # Should not raise
+        node.restore_workflow_state(valid_snapshot)
+
+        # Verify state was restored
+        current_snapshot = node.snapshot_workflow_state()
+        assert current_snapshot is not None
+        assert current_snapshot.workflow_id == workflow_id
+        # completed_step_ids and failed_step_ids are tuples in the model
+        assert completed_step_id in current_snapshot.completed_step_ids
+        assert failed_step_id in current_snapshot.failed_step_ids
+
+    def test_restore_workflow_state_overlap_error_includes_workflow_id(
+        self,
+        test_container: ModelONEXContainer,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test overlap error includes workflow_id in context."""
+        node = NodeOrchestrator(test_container)
+        node.workflow_definition = simple_workflow_definition
+
+        workflow_id = uuid4()
+        overlapping_step_id = uuid4()
+        snapshot_with_overlap = ModelWorkflowStateSnapshot(
+            workflow_id=workflow_id,
+            current_step_index=1,
+            completed_step_ids=[overlapping_step_id],
+            failed_step_ids=[overlapping_step_id],
+            context={},
+        )
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            node.restore_workflow_state(snapshot_with_overlap)
+
+        # Check that error model context includes workflow_id
+        error = exc_info.value
+        assert error.model.context is not None
+        ctx = error.model.context.get("context", error.model.context)
+        assert "workflow_id" in ctx
+        assert ctx["workflow_id"] == str(workflow_id)
+
 
 class TestModelWorkflowStateSnapshot:
     """Tests for ModelWorkflowStateSnapshot model behavior.
@@ -873,8 +1250,8 @@ class TestModelWorkflowStateSnapshot:
 
         assert snapshot.workflow_id == workflow_id
         assert snapshot.current_step_index == 0
-        assert snapshot.completed_step_ids == []
-        assert snapshot.failed_step_ids == []
+        assert snapshot.completed_step_ids == ()
+        assert snapshot.failed_step_ids == ()
         assert snapshot.context == {}
         assert isinstance(snapshot.created_at, datetime)
 
@@ -908,7 +1285,7 @@ class TestModelWorkflowStateSnapshot:
 
         # Original unchanged
         assert initial_snapshot.current_step_index == 0
-        assert initial_snapshot.completed_step_ids == []
+        assert initial_snapshot.completed_step_ids == ()
 
         # New snapshot updated
         assert updated_snapshot.current_step_index == 1
@@ -948,7 +1325,7 @@ class TestModelWorkflowStateSnapshot:
 
         # Original unchanged
         assert initial_snapshot.current_step_index == 0
-        assert initial_snapshot.failed_step_ids == []
+        assert initial_snapshot.failed_step_ids == ()
 
         # New snapshot updated
         assert updated_snapshot.current_step_index == 1
