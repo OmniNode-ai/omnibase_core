@@ -32,14 +32,28 @@ All release evidence MUST be stored in the **release tracking issue** on Linear:
 - Create a comment thread per section (e.g., "Section 1: Code Quality Evidence")
 - Link to artifacts rather than embedding large outputs inline
 
+> **ENFORCEMENT RULE**: Evidence without a canonical storage location is NOT valid evidence.
+> Before marking ANY gate complete, verify the evidence is stored in one of the three locations below.
+> "I ran the command locally" is NOT evidence. "Here is the output stored in OMN-218 comment #42" IS evidence.
+
 ### Evidence Types and Storage
+
+**CRITICAL RULE**: Evidence MUST be stored in one of three canonical locations:
+1. **Release issue comment** ([OMN-218](https://linear.app/omninode/issue/OMN-218)) - for command outputs, CI links, and inline evidence
+2. **GitHub Gist** - for large outputs (>50 lines) with link posted to release issue
+3. **`artifacts/release/v0.4.0/`** - for versioned files (fingerprints, coverage, logs)
+
+**"Attached output" Standardization**: When this checklist says "Evidence: Attached output", it means:
+- Post the command output as a code block in the release issue comment
+- Include timestamp, commit SHA, and toolchain versions
+- For outputs >50 lines, create a GitHub Gist and link it
 
 | Evidence Type | Where to Store | Format |
 |---------------|----------------|--------|
 | **CI run links** | Release issue comment | Direct URL to GitHub Actions run |
 | **Command output** (<50 lines) | Release issue comment | Code block with timestamp |
 | **Command output** (>50 lines) | GitHub Gist | Link in release issue |
-| **Screenshots** | Release issue attachment | PNG with descriptive filename (⚠️ see note below) |
+| **Screenshots** | Release issue attachment | PNG with descriptive filename (see note below) |
 | **Coverage reports** | CI artifacts + link | HTML report or term output |
 | **Test logs** | CI artifacts | Link to specific job/step |
 | **Contract fingerprint reports** | `artifacts/release/v0.4.0/` | JSON or text file |
@@ -90,8 +104,17 @@ Screenshots should be explicitly discouraged for evidence that can be captured a
 
 **Remember**: Once evidence is posted to Linear or GitHub, it's permanent. Redact BEFORE posting.
 
----
+> **CRITICAL WARNING FOR EVIDENCE STORAGE**: Logs, screenshots, gists, and any other evidence
+> artifacts MUST be scrubbed for PII and secrets BEFORE posting. This applies to:
+>
+> - Terminal output logs (may contain environment variables, paths with usernames)
+> - Screenshots (may show sensitive data in editor tabs, terminal history)
+> - GitHub Gists (publicly accessible by default)
+> - CI/CD logs (may contain build secrets, API tokens)
+>
+> **Review every artifact before posting. There is no "undo" for published secrets.**
 
+---
 
 ### Directory Structure for Artifacts
 
@@ -117,24 +140,39 @@ artifacts/
 
 ### Evidence Requirements
 
-Each gate requires:
-1. **Timestamp**: When the verification was performed
-2. **Command/Action**: Exact command run or action taken
+Each gate requires the following **MANDATORY** fields:
+
+1. **Timestamp**: When the verification was performed (ISO-8601 UTC format)
+2. **Command/Action**: Exact command run or action taken (copy-pasteable)
 3. **Output**: Result (success/failure with details)
-4. **Commit SHA**: Git commit at time of verification
-5. **Verifier**: Who performed the check
+4. **Commit SHA**: Git commit at time of verification (`git rev-parse HEAD`)
+5. **Verifier**: Who performed the check (@username or email)
+6. **Toolchain Versions**: Python, Poetry, and tool-specific versions (see below)
+
+**Toolchain Version Requirement**: Every evidence submission MUST include:
+- Python version (`python --version`)
+- Poetry version (`poetry --version`)
+- Tool-specific version (e.g., `poetry run mypy --version` for type checks)
+
+This ensures evidence is reproducible. "Works on my machine" is meaningless without version context.
 
 ### Example Evidence Reference
 
 ```markdown
 ### Gate: Strict type safety enforced
-- **Timestamp**: 2025-12-14 14:30 UTC
-- **Commit**: abc1234
+- **Timestamp**: 2025-12-14T14:30:00Z
+- **Commit**: abc1234def5678 (full SHA preferred)
+- **Toolchain**:
+  - Python: 3.12.5
+  - Poetry: 1.8.4
+  - mypy: 1.11.0
 - **Command**: `poetry run mypy src/omnibase_core/ --strict`
-- **Result**: PASS (0 errors)
-- **CI Link**: https://github.com/OmniNode-ai/omnibase_core/actions/runs/12345
+- **Result**: PASS (0 errors, 1865 source files checked)
+- **CI Link**: <https://github.com/OmniNode-ai/omnibase_core/actions/runs/12345>
 - **Verifier**: @username
 ```
+
+> **NOTE**: The example above shows all required fields. Missing any field makes the evidence INVALID.
 
 ### Retention Policy
 
@@ -151,23 +189,55 @@ All evidence must include toolchain version information for reproducibility:
 - **Python version**: `python --version` (e.g., Python 3.12.5)
 - **Poetry version**: `poetry --version` (e.g., Poetry version 1.8.0)
 - **OS/Platform**: For platform-specific tests (e.g., Linux 5.15.0, macOS 14.0, Windows 11)
+- **Tool-specific versions**: Capture version of verification tools (mypy, pytest, ruff, etc.)
+
+**Toolchain Version Capture Script**:
+
+Run this before any verification to establish baseline versions:
+
+```bash
+# =============================================================================
+# Toolchain Version Capture (run before verification)
+# =============================================================================
+echo "=== Toolchain Versions for Evidence ===" | tee artifacts/release/v0.4.0/00-toolchain-versions.txt
+echo "Timestamp: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" | tee -a artifacts/release/v0.4.0/00-toolchain-versions.txt
+echo "Commit: $(git rev-parse HEAD)" | tee -a artifacts/release/v0.4.0/00-toolchain-versions.txt
+echo "" | tee -a artifacts/release/v0.4.0/00-toolchain-versions.txt
+echo "Python: $(python --version)" | tee -a artifacts/release/v0.4.0/00-toolchain-versions.txt
+echo "Poetry: $(poetry --version)" | tee -a artifacts/release/v0.4.0/00-toolchain-versions.txt
+echo "Platform: $(uname -srm)" | tee -a artifacts/release/v0.4.0/00-toolchain-versions.txt
+echo "" | tee -a artifacts/release/v0.4.0/00-toolchain-versions.txt
+echo "=== Tool Versions ===" | tee -a artifacts/release/v0.4.0/00-toolchain-versions.txt
+poetry run mypy --version | tee -a artifacts/release/v0.4.0/00-toolchain-versions.txt
+poetry run pytest --version | tee -a artifacts/release/v0.4.0/00-toolchain-versions.txt
+poetry run ruff --version | tee -a artifacts/release/v0.4.0/00-toolchain-versions.txt
+poetry run black --version | tee -a artifacts/release/v0.4.0/00-toolchain-versions.txt
+poetry run isort --version | tee -a artifacts/release/v0.4.0/00-toolchain-versions.txt
+echo "" | tee -a artifacts/release/v0.4.0/00-toolchain-versions.txt
+echo "=== Dependency Lock Hash ===" | tee -a artifacts/release/v0.4.0/00-toolchain-versions.txt
+sha256sum poetry.lock | tee -a artifacts/release/v0.4.0/00-toolchain-versions.txt
+```
+
+**Rationale**: Tool versions drift over time. Capturing exact versions ensures evidence is reproducible and helps diagnose issues where "it worked on my machine" but fails in CI or production.
 
 **Example Evidence with Toolchain Versions**:
 
 ```markdown
 ### Gate: Strict type safety enforced
-- **Timestamp**: 2025-12-14 14:30 UTC
-- **Commit**: abc1234
-- **Python**: 3.12.5
-- **Poetry**: 1.8.0
-- **Platform**: Linux 5.15.0-x86_64
+- **Timestamp**: 2025-12-14T14:30:00Z
+- **Commit**: abc1234def56789012345678901234567890abcd
+- **Toolchain**:
+  - Python: 3.12.5
+  - Poetry: 1.8.4
+  - mypy: 1.11.0
+  - Platform: Linux 5.15.0-x86_64
 - **Command**: `poetry run mypy src/omnibase_core/ --strict`
-- **Result**: PASS (0 errors)
-- **CI Link**: https://github.com/OmniNode-ai/omnibase_core/actions/runs/12345
+- **Result**: PASS (0 errors, 1865 source files checked)
+- **CI Link**: <https://github.com/OmniNode-ai/omnibase_core/actions/runs/12345>
 - **Verifier**: @username
 ```
 
-**Rationale**: Toolchain versions ensure evidence is reproducible and helps diagnose platform-specific issues.
+**Rationale**: Toolchain versions ensure evidence is reproducible and helps diagnose platform-specific issues. The tool-specific version (mypy in this example) is REQUIRED because different mypy versions can produce different results.
 
 ### Pre-Release Evidence Checklist
 
@@ -245,8 +315,10 @@ Before marking a gate complete:
 
 - [ ] **CI passes all parallel test splits** `🚫 BLOCKER`
   - All splits succeed
-  - No test flake retries allowed (pytest-rerunfailures disabled)
-  - **Note**: Flaky tests must be fixed, not retried. Expect pressure to weaken this later. Do not.
+  - No test flakiness retries allowed (pytest-rerunfailures disabled for test execution)
+  - **Scope**: This prohibition applies specifically to masking flaky tests with automatic retries. Application-level retry patterns (e.g., network retries, circuit breakers) are unaffected and remain appropriate.
+  - **Rationale**: Flaky tests indicate non-deterministic behavior that must be fixed at the source. Retries mask real bugs and create false confidence. Tests must be deterministic.
+  - **Note**: Expect pressure to weaken this later. Do not.
   - Expected runtime: 2m30s-3m30s per split
   - Evidence: Release issue comment (OMN-218) with GitHub Actions run link
 
@@ -290,8 +362,9 @@ Before marking a gate complete:
   - **⚠️ WARNING**: Without explicit MVP/Beta scope, someone will later claim fuzzing was "done" when it was not. The scopes above are enforceable bounds.
 
 - [ ] **Coverage threshold met** `✅ REQUIRED`
-  - Minimum: 60% line coverage
-  - Enforcement: Coverage is enforced in CI via pytest-cov fail-under
+  - Minimum: 60% **line coverage** (not branch coverage)
+  - **Enforcement mechanism**: pytest-cov with `--cov-fail-under=60` flag causes CI to fail if threshold not met
+  - **Measurement**: Line coverage counts executed lines / total lines; branch coverage (not required) would count executed branches / total branches
   - Command: `poetry run pytest tests/ --cov=src/omnibase_core --cov-fail-under=60 --cov-report=term-missing`
   - **Note**: Coverage is not correctness. This metric prevents metric worship—60% is a floor, not a goal.
   - Evidence: Release issue comment (OMN-218) with CI artifacts link or artifacts/release/v0.4.0/coverage/index.html
@@ -312,7 +385,7 @@ Before marking a gate complete:
     - Timestamps (creation time, modification time, execution time)
     - UUIDs generated at runtime (correlation_id, trace_id)
     - Dict ordering noise (canonicalize with sorted keys)
-    - Floating point precision beyond 6 decimal places
+    - Floating-point precision beyond 6 decimal places
   - **Hash Inclusion**: The following MUST be included in hashes:
     - All business logic outputs (computed values, transformed data)
     - State transitions (FSM states, workflow phases)
@@ -394,9 +467,10 @@ Before marking a gate complete:
 
 - [ ] **All nodes are contract-driven** `✅ REQUIRED`
   - No legacy node implementations remain
-  - Command: `grep -rE "NodeComputeLegacy|NodeReducerLegacy|NodeOrchestratorLegacy" src/`
-  - Alternative (ripgrep): `rg "NodeComputeLegacy|NodeReducerLegacy|NodeOrchestratorLegacy" src/`
-  - Expected: Empty output
+  - **Preferred** (ripgrep): `rg "NodeComputeLegacy|NodeReducerLegacy|NodeOrchestratorLegacy" src/`
+  - **Alternative** (portable grep with extended regex): `grep -rE "NodeComputeLegacy|NodeReducerLegacy|NodeOrchestratorLegacy" src/`
+  - **Note**: The `-E` flag enables extended regex (required for `|` alternation). Basic `grep -r` without `-E` will not match correctly.
+  - Expected: Empty output (exit code 1 for grep/rg when no matches)
   - Evidence: Release issue comment (OMN-218) with command output
   - **Future**: Automate this check in CI before Beta (currently grep-based is acceptable for MVP)
 
@@ -655,10 +729,49 @@ Before marking a gate complete:
 
 ## 9. Cross-Repository Compatibility
 
-**Verification Summary**:
-- **Repositories to verify**: 2-3 downstream repositories (omnibase_spi, omninode_core, example projects)
-- **Expected verification time**: 30-60 minutes (cloning, testing, type checking)
-- **Go/No-Go criteria**: All downstream tests must pass with 0 test failures and 0 mypy errors
+### Verification Summary
+
+**Purpose**: Ensure v0.4.0 does not break downstream consumers.
+
+| Repository | Priority | Test Scope | Time Estimate |
+|------------|----------|------------|---------------|
+| `omnibase_spi` | BLOCKER | Full test suite + mypy | 15-20 min |
+| `omninode_core` | REQUIRED | Full test suite + mypy | 15-20 min |
+| Example projects | INFORMATIONAL | Smoke tests only | 5-10 min |
+
+**Total Expected Time**: 30-60 minutes (including clone/setup overhead)
+
+**Go/No-Go Criteria**:
+- **MUST PASS** (hard requirements):
+  - All downstream test suites pass with **0 test failures**
+  - All downstream mypy checks pass with **0 errors**
+  - All documented import paths resolve without ImportError
+  - Migration guide steps complete without manual intervention
+- **SHOULD PASS** (soft requirements):
+  - No new deprecation warnings introduced without documentation
+  - Docker builds succeed (if applicable)
+  - Example projects run without modification
+
+**Failure Handling**:
+- Any BLOCKER failure: Stop release, fix issue, restart verification
+- Any REQUIRED failure: Document issue, assess impact, decide proceed/stop
+- INFORMATIONAL failures: Document for release notes, proceed with release
+
+### Cross-Platform Temporary Directory Note
+
+> **IMPORTANT**: Commands in this section use temporary directories for isolated testing.
+> Choose the appropriate approach for your platform:
+>
+> | Platform | Temporary Directory | Example |
+> |----------|---------------------|---------|
+> | Linux | `${TMPDIR:-/tmp}` | `cd ${TMPDIR:-/tmp}` |
+> | macOS | `${TMPDIR:-/tmp}` | `cd ${TMPDIR:-/tmp}` |
+> | Windows (PowerShell) | `$env:TEMP` | `cd $env:TEMP` |
+> | Windows (CMD) | `%TEMP%` | `cd %TEMP%` |
+> | Project-local (any OS) | `./tmp` or `../_downstream_test` | `mkdir -p ../_downstream_test && cd ../_downstream_test` |
+>
+> **Recommendation**: Use project-local directories (e.g., `../_downstream_test`) for better reproducibility
+> and easier cleanup. These directories should be added to `.gitignore`.
 
 ### 9.1 Public API Stability
 
@@ -699,34 +812,80 @@ Before marking a gate complete:
 - [ ] **omnibase_spi compatibility verified** `🚫 BLOCKER`
   - Clone omnibase_spi repository to temporary directory
   - Update omnibase_core dependency to v0.4.0 (or local editable)
-  - Commands (cross-platform):
+  - Commands:
+
+    **Option A: Project-local directory (Recommended - works on all platforms)**
     ```bash
-    # Linux/macOS: Use $TMPDIR or /tmp
+    # From omnibase_core root directory
+    mkdir -p ../_downstream_test && cd ../_downstream_test
+    git clone https://github.com/OmniNode-ai/omnibase_spi.git
+    cd omnibase_spi
+    # Use absolute path to omnibase_core for editable install
+    poetry add "$(cd ../../omnibase_core && pwd)" --editable  # or: poetry add omnibase_core==0.4.0
+    poetry run pytest tests/
+    poetry run mypy src/
+    # Cleanup when done: rm -rf ../_downstream_test
+    ```
+
+    **Option B: Linux/macOS system temp**
+    ```bash
     cd ${TMPDIR:-/tmp} && git clone https://github.com/OmniNode-ai/omnibase_spi.git
     cd omnibase_spi
-    # For editable install: Use absolute path to omnibase_core checkout
     poetry add /absolute/path/to/omnibase_core --editable  # or: poetry add omnibase_core==0.4.0
     poetry run pytest tests/
     poetry run mypy src/
     ```
-    **Windows**: Use `%TEMP%` or `$env:TEMP` instead of `/tmp`, e.g., `cd $env:TEMP`
+
+    **Option C: Windows PowerShell**
+    ```powershell
+    cd $env:TEMP
+    git clone https://github.com/OmniNode-ai/omnibase_spi.git
+    cd omnibase_spi
+    poetry add C:\path\to\omnibase_core --editable  # or: poetry add omnibase_core==0.4.0
+    poetry run pytest tests/
+    poetry run mypy src/
+    ```
+
   - Expected: All tests pass, mypy reports 0 errors
   - Evidence: Test output (pass count) and mypy report
 
 - [ ] **omninode_core compatibility verified** (if applicable) `✅ REQUIRED`
   - Clone omninode_core repository to temporary directory
   - Update omnibase_core dependency to v0.4.0
-  - Commands (cross-platform):
+  - Commands:
+
+    **Option A: Project-local directory (Recommended - works on all platforms)**
     ```bash
-    # Linux/macOS: Use $TMPDIR or /tmp
+    # From omnibase_core root directory
+    mkdir -p ../_downstream_test && cd ../_downstream_test
+    git clone https://github.com/OmniNode-ai/omninode_core.git
+    cd omninode_core
+    # Use absolute path to omnibase_core for editable install
+    poetry add "$(cd ../../omnibase_core && pwd)" --editable  # or: poetry add omnibase_core==0.4.0
+    poetry run pytest tests/
+    poetry run mypy src/
+    # Cleanup when done: rm -rf ../_downstream_test
+    ```
+
+    **Option B: Linux/macOS system temp**
+    ```bash
     cd ${TMPDIR:-/tmp} && git clone https://github.com/OmniNode-ai/omninode_core.git
     cd omninode_core
-    # For editable install: Use absolute path to omnibase_core checkout
     poetry add /absolute/path/to/omnibase_core --editable  # or: poetry add omnibase_core==0.4.0
     poetry run pytest tests/
     poetry run mypy src/
     ```
-    **Windows**: Use `%TEMP%` or `$env:TEMP` instead of `/tmp`, e.g., `cd $env:TEMP`
+
+    **Option C: Windows PowerShell**
+    ```powershell
+    cd $env:TEMP
+    git clone https://github.com/OmniNode-ai/omninode_core.git
+    cd omninode_core
+    poetry add C:\path\to\omnibase_core --editable  # or: poetry add omnibase_core==0.4.0
+    poetry run pytest tests/
+    poetry run mypy src/
+    ```
+
   - Expected: All tests pass, mypy reports 0 errors
   - Evidence: Test output and mypy report
 
@@ -761,13 +920,24 @@ Before marking a gate complete:
   - Create fresh project using v0.3.x patterns
   - Follow migration guide step-by-step
   - Verify tests pass after migration
-  - Commands (cross-platform):
-    ```bash
-    # Example migration test workflow
-    # Linux/macOS: Use $TMPDIR or /tmp
-    cd ${TMPDIR:-/tmp} && mkdir migration-test && cd migration-test
-    # Windows: Use $env:TEMP, e.g., cd $env:TEMP; mkdir migration-test; cd migration-test
+  - Commands:
 
+    **Option A: Project-local directory (Recommended - works on all platforms)**
+    ```bash
+    # From omnibase_core root directory
+    mkdir -p ../_migration_test && cd ../_migration_test
+    poetry init --name migration-test --python "^3.12"
+    poetry add omnibase_core==0.3.6  # Start with old version
+    # Create test file using v0.3.x patterns
+    # Run migration steps from docs/guides/MIGRATING_TO_V040.md
+    poetry add omnibase_core==0.4.0  # Upgrade
+    poetry run pytest tests/
+    # Cleanup when done: rm -rf ../_migration_test
+    ```
+
+    **Option B: Linux/macOS system temp**
+    ```bash
+    cd ${TMPDIR:-/tmp} && mkdir migration-test && cd migration-test
     poetry init --name migration-test --python "^3.12"
     poetry add omnibase_core==0.3.6  # Start with old version
     # Create test file using v0.3.x patterns
@@ -775,6 +945,20 @@ Before marking a gate complete:
     poetry add omnibase_core==0.4.0  # Upgrade
     poetry run pytest tests/
     ```
+
+    **Option C: Windows PowerShell**
+    ```powershell
+    cd $env:TEMP
+    mkdir migration-test
+    cd migration-test
+    poetry init --name migration-test --python "^3.12"
+    poetry add omnibase_core==0.3.6  # Start with old version
+    # Create test file using v0.3.x patterns
+    # Run migration steps from docs/guides/MIGRATING_TO_V040.md
+    poetry add omnibase_core==0.4.0  # Upgrade
+    poetry run pytest tests/
+    ```
+
   - Expected: Migration completes successfully, tests pass
   - Evidence: Migration test log or documented test results
 
@@ -821,17 +1005,34 @@ Before marking a gate complete:
 
 Commands grouped by section for faster evidence mapping during audits:
 
+> **CRITICAL**: Run the **Toolchain Version Capture Script** (see Section "Toolchain Version Requirements")
+> BEFORE running ANY verification commands. This establishes baseline versions for reproducibility.
+> Store output in `artifacts/release/v0.4.0/00-toolchain-versions.txt` as your first evidence artifact.
+
 ```bash
+# =============================================================================
+# STEP 0: TOOLCHAIN VERSION CAPTURE (MANDATORY FIRST STEP)
+# =============================================================================
+# Create artifacts directory if it doesn't exist
+mkdir -p artifacts/release/v0.4.0
+
+# Run the toolchain version capture script from "Toolchain Version Requirements"
+# This captures: Python, Poetry, Platform, mypy, pytest, ruff, black, isort, poetry.lock hash
+# Store output as first evidence artifact: artifacts/release/v0.4.0/00-toolchain-versions.txt
+
 # =============================================================================
 # Section 1: Code Quality
 # =============================================================================
-poetry run mypy --version  # Capture version for evidence
+# NOTE: Version already captured in Step 0, but inline capture for CI logs:
+echo "=== mypy version ===" && poetry run mypy --version
 poetry run mypy src/omnibase_core/ --strict
+echo "=== ruff version ===" && poetry run ruff --version
 pre-commit run --all-files
 
 # =============================================================================
 # Section 2: Testing
 # =============================================================================
+echo "=== pytest version ===" && poetry run pytest --version
 poetry run pytest tests/
 poetry run pytest tests/ --cov=src/omnibase_core --cov-fail-under=60 --cov-report=term-missing
 
@@ -845,9 +1046,11 @@ poetry run python scripts/regenerate_fingerprints.py contracts/ --recursive --dr
 # Contract linting
 poetry run python scripts/lint_contract.py contracts/runtime/ --recursive --verbose
 
-# Legacy pattern check (portable extended regex)
+# Legacy pattern check
+# Preferred (ripgrep - faster, better defaults):
+rg "NodeComputeLegacy|NodeReducerLegacy|NodeOrchestratorLegacy" src/
+# Alternative (portable grep with -E for extended regex - required for | alternation):
 grep -rE "NodeComputeLegacy|NodeReducerLegacy|NodeOrchestratorLegacy" src/
-# Alternative with ripgrep: rg "NodeComputeLegacy|NodeReducerLegacy|NodeOrchestratorLegacy" src/
 
 # =============================================================================
 # Section 5: Registry & Discovery
@@ -908,35 +1111,141 @@ poetry run pytest tests/unit/exceptions/test_onex_error.py tests/unit/errors/tes
 
 ## Post-Release Verification
 
-- [ ] **PyPI package published and verified**
-  - Package install succeeds from PyPI
+### Post-Release Integrity Checks
+
+These checks verify that the published package is correct, complete, and functional.
+
+- [ ] **PyPI package published and installable** `🚫 BLOCKER`
+  - Package install succeeds from PyPI in a fresh environment
   - Version number matches release
-  - Package integrity verified (hash comparison)
-  - Smoke test imports work
+  - Package integrity verified (hash comparison against build artifact)
+  - All documented imports work
   - Commands:
     ```bash
-    # Install from PyPI
+    # =============================================================================
+    # Step 1: Create isolated verification environment
+    # =============================================================================
+    python -m venv /tmp/v040-pypi-verify
+    source /tmp/v040-pypi-verify/bin/activate  # Linux/macOS
+    # Windows: /tmp/v040-pypi-verify/Scripts/activate
+
+    # =============================================================================
+    # Step 2: Install from PyPI (NOT from local source)
+    # =============================================================================
     pip install omnibase_core==0.4.0 --index-url https://pypi.org/simple/
 
-    # Verify version
-    python -c "import omnibase_core; print(omnibase_core.__version__)"
+    # Verify installation succeeded
+    pip show omnibase_core
 
-    # Verify package hash matches build artifact
-    pip hash omnibase_core-0.4.0-py3-none-any.whl
+    # =============================================================================
+    # Step 3: Version verification
+    # =============================================================================
+    python -c "import omnibase_core; print(f'Version: {omnibase_core.__version__}')"
+    # Expected output: "Version: 0.4.0"
 
-    # Smoke test imports
-    python -c "from omnibase_core.nodes import NodeCompute, NodeReducer, NodeOrchestrator, NodeEffect; print('Import verification OK')"
+    # =============================================================================
+    # Step 4: Package hash verification (CRITICAL for supply chain security)
+    # =============================================================================
+    # Download wheel to verify hash
+    pip download omnibase_core==0.4.0 --no-deps -d /tmp/v040-wheel-verify/
+
+    # Compute hash of downloaded wheel
+    PYPI_HASH=$(sha256sum /tmp/v040-wheel-verify/omnibase_core-0.4.0-py3-none-any.whl | cut -d' ' -f1)
+    echo "PyPI wheel SHA256: ${PYPI_HASH}"
+
+    # Compare against build artifact hash from CI
+    # The canonical hash is stored in:
+    #   1. GitHub Actions artifact: "release-artifacts/wheel-sha256.txt"
+    #   2. GitHub Release attachment: "omnibase_core-0.4.0.sha256"
+    #   3. Release notes body: SHA256 checksum section
+    #
+    # Retrieve expected hash (example using GitHub CLI):
+    # gh release download v0.4.0 --pattern "*.sha256" --output /tmp/expected-hash.txt
+    # EXPECTED_HASH=$(cat /tmp/expected-hash.txt | grep ".whl" | cut -d' ' -f1)
+    #
+    # Verify match (MUST be exact):
+    # if [ "${PYPI_HASH}" = "${EXPECTED_HASH}" ]; then
+    #   echo "Hash verification: PASS"
+    # else
+    #   echo "Hash verification: FAIL - Supply chain compromise possible!"
+    #   exit 1
+    # fi
+
+    # =============================================================================
+    # Step 5: Smoke test imports (ALL core imports)
+    # =============================================================================
+    python -c "
+    # Core node imports
+    from omnibase_core.nodes import NodeCompute, NodeReducer, NodeOrchestrator, NodeEffect
+    print('Core nodes: OK')
+
+    # Container import
+    from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+    print('Container: OK')
+
+    # Error handling import
+    from omnibase_core.models.errors.model_onex_error import ModelOnexError
+    print('Errors: OK')
+
+    # Enum imports
+    from omnibase_core.enums import EnumNodeKind, EnumNodeType
+    print('Enums: OK')
+
+    # Event envelope import
+    from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+    print('Events: OK')
+
+    # Mixin imports
+    from omnibase_core.mixins.mixin_node_lifecycle import MixinNodeLifecycle
+    print('Mixins: OK')
+
+    print('\\nAll smoke test imports: PASS')
+    "
+
+    # =============================================================================
+    # Step 6: Functional smoke test (actually instantiate objects)
+    # =============================================================================
+    python -c "
+    from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+    from omnibase_core.models.errors.model_onex_error import ModelOnexError
+    from omnibase_core.enums import EnumNodeKind
+
+    # Test container instantiation
+    container = ModelONEXContainer()
+    print(f'Container instantiated: {type(container).__name__}')
+
+    # Test error instantiation
+    error = ModelOnexError(message='Test error', error_code='TEST_001')
+    print(f'Error instantiated: {error.error_code}')
+
+    # Test enum access
+    print(f'EnumNodeKind.COMPUTE: {EnumNodeKind.COMPUTE}')
+
+    print('\\nFunctional smoke test: PASS')
+    "
+
+    # =============================================================================
+    # Step 7: Cleanup
+    # =============================================================================
+    deactivate
+    rm -rf /tmp/v040-pypi-verify /tmp/v040-wheel-verify
     ```
-  - Expected: All commands succeed, version prints "0.4.0", import prints "Import verification OK"
-  - Evidence: Command outputs and hash comparison
+  - **Expected Results**:
+    - `pip install` completes without errors
+    - Version prints exactly "0.4.0"
+    - Package hash matches build artifact from CI
+    - All import statements succeed
+    - Object instantiation works without errors
+  - **Evidence**: Full command output with all steps, hash comparison result
+  - **Failure Handling**: If ANY step fails, DO NOT proceed with downstream notifications. Investigate and fix first.
 
-- [ ] **Git tag created**
+- [ ] **Git tag created** `✅ REQUIRED`
   - Tag: v0.4.0
   - Command: `git tag -l v0.4.0`
   - Evidence: Tag exists in repository
 
 - [ ] **GitHub release published**
-  - Release page: https://github.com/OmniNode-ai/omnibase_core/releases/tag/v0.4.0
+  - Release page: <https://github.com/OmniNode-ai/omnibase_core/releases/tag/v0.4.0>
   - Evidence: Release URL accessible
 
 - [ ] **Documentation site updated**
