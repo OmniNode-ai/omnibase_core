@@ -323,6 +323,7 @@ Before marking a gate complete:
   - Evidence: Release issue comment (OMN-218) with GitHub Actions run link
 
 - [ ] **Adapter fuzz testing completed** `✅ REQUIRED (MVP minimal)` / `🚫 BLOCKER (Beta full)`
+  - **Definition**: Adapters are components that bridge ONEX core with external systems or protocols. Examples in this codebase include: event bus adapters (Kafka/Redpanda backends via `ProtocolKafkaEventBusAdapter`), container adapters (service discovery integration), CLI adapters (`ModelCLIAdapter`), and contract adapters (YAML binding).
   - All adapters fuzzed with randomized inputs using Hypothesis
   - No crashes or undefined behavior
   - **Tool**: Hypothesis `^6.148` (installed in pyproject.toml)
@@ -397,6 +398,77 @@ Before marking a gate complete:
     - State transitions (FSM states, workflow phases)
     - Error codes and error messages
     - Contract fingerprints
+
+  - **Canonicalization Example**: The following snippet demonstrates how to canonicalize output data for deterministic hashing:
+
+    ```python
+    import hashlib
+    import json
+    from datetime import datetime
+    from uuid import UUID
+
+    # Fields excluded from hash computation (volatile/non-deterministic)
+    EXCLUDED_FIELDS = frozenset({
+        "timestamp", "created_at", "modified_at", "execution_time",
+        "correlation_id", "trace_id", "request_id", "uuid"
+    })
+
+    def canonicalize_for_hash(data: dict) -> str:
+        """Canonicalize data for deterministic hashing.
+
+        Applies ONEX canonicalization rules:
+        - Excludes timestamps and runtime-generated UUIDs
+        - Sorts dict keys alphabetically (recursive)
+        - Limits float precision to 6 decimal places
+        - Removes None values
+        """
+        def _clean(obj: object) -> object:
+            if isinstance(obj, dict):
+                return {
+                    k: _clean(v)
+                    for k, v in sorted(obj.items())
+                    if k not in EXCLUDED_FIELDS and v is not None
+                }
+            if isinstance(obj, (datetime, UUID)):
+                return None  # Excluded from hash
+            if isinstance(obj, float):
+                return round(obj, 6)  # 6 decimal precision
+            if isinstance(obj, list):
+                return [_clean(item) for item in obj if item is not None]
+            return obj
+
+        cleaned = _clean(data)
+        # Compact JSON with sorted keys for determinism
+        return json.dumps(cleaned, sort_keys=True, separators=(",", ":"))
+
+    def compute_output_hash(output_data: dict) -> str:
+        """Compute SHA256 hash of canonicalized output."""
+        canonical_str = canonicalize_for_hash(output_data)
+        return hashlib.sha256(canonical_str.encode("utf-8")).hexdigest()
+
+    # Usage example
+    output = {
+        "result": 42.123456789,  # Will be rounded to 42.123457
+        "state": "completed",
+        "items": [{"name": "b"}, {"name": "a"}],
+        "timestamp": "2025-01-01T00:00:00Z",  # Excluded
+        "correlation_id": "abc-123",  # Excluded
+    }
+    output_hash = compute_output_hash(output)
+    # Hash is deterministic: same output always produces same hash
+    ```
+
+    **Note**: For contract fingerprinting, use the existing utilities:
+    ```python
+    from omnibase_core.contracts.hash_registry import (
+        normalize_contract,
+        compute_contract_fingerprint,
+    )
+
+    fingerprint = compute_contract_fingerprint(contract_model)
+    # Returns: ModelContractFingerprint with version and hash_prefix
+    ```
+
   - Evidence: Release issue comment (OMN-218) or artifacts/release/v0.4.0/replay-logs/determinism-hashes-YYYYMMDD.txt
 
 - [ ] **Replay validation completed** `✅ REQUIRED`
@@ -415,21 +487,61 @@ Before marking a gate complete:
   - Every RuntimeHostContract YAML includes a fingerprint
   - Fingerprints verified against contract content
   - **Note**: Use existing scripts (no `omnibase_core.tools.verify_fingerprints` CLI)
+
+  **Script Capability Reference**:
+  | Script | `--recursive` Flag | File Discovery |
+  |--------|-------------------|----------------|
+  | `compute_contract_fingerprint.py` | No | Relies on shell glob expansion |
+  | `regenerate_fingerprints.py` | Yes (`-r`) | Internal Python `rglob()` |
+  | `lint_contract.py` | Yes (`-r`) | Internal Python `rglob()` |
+
+  **Cross-Platform Glob Expansion Notes**:
+  - Shell glob patterns (`*.yaml`, `**/*.yaml`) are expanded by the shell BEFORE Python sees them
+  - On **Unix/Linux/macOS**: Bash/Zsh handle `**/*.yaml` recursively (requires `shopt -s globstar` in Bash)
+  - On **Windows CMD**: Glob expansion does NOT work - patterns passed literally to Python
+  - On **Windows PowerShell**: Use `Get-ChildItem -Recurse -Filter *.yaml | ForEach-Object { ... }`
+  - **Recommendation**: Prefer scripts with `--recursive` flag for cross-platform compatibility
+
   - Commands:
     ```bash
-    # Validate all runtime contract fingerprints match content (using glob expansion)
-    poetry run python scripts/compute_contract_fingerprint.py contracts/runtime/*.yaml --validate
-
-    # Validate example contract fingerprints (using glob expansion)
-    poetry run python scripts/compute_contract_fingerprint.py examples/contracts/**/*.yaml --validate
+    # =============================================================================
+    # OPTION A: Cross-platform commands (RECOMMENDED)
+    # These use --recursive flag and work identically on all platforms
+    # =============================================================================
 
     # Check if any fingerprints need regeneration (dry-run)
-    # Note: regenerate_fingerprints.py DOES support --recursive flag
+    # regenerate_fingerprints.py supports --recursive - handles file discovery internally
     poetry run python scripts/regenerate_fingerprints.py contracts/ --recursive --dry-run
 
     # Lint all contracts (includes fingerprint validation)
-    # Note: lint_contract.py DOES support --recursive flag
-    poetry run python scripts/lint_contract.py contracts/runtime/ --recursive --verbose
+    # lint_contract.py supports --recursive - handles file discovery internally
+    poetry run python scripts/lint_contract.py contracts/ --recursive --verbose
+
+    # =============================================================================
+    # OPTION B: Unix/Linux/macOS only (shell glob expansion)
+    # compute_contract_fingerprint.py does NOT support --recursive
+    # These commands rely on shell glob expansion before Python sees the arguments
+    # =============================================================================
+
+    # Validate runtime contract fingerprints (requires shell glob expansion)
+    # Note: In Bash, you may need: shopt -s globstar (for ** patterns)
+    poetry run python scripts/compute_contract_fingerprint.py contracts/runtime/*.yaml --validate
+
+    # Validate example contract fingerprints recursively (Unix shells only)
+    poetry run python scripts/compute_contract_fingerprint.py examples/contracts/**/*.yaml --validate
+
+    # =============================================================================
+    # OPTION C: Windows alternatives
+    # =============================================================================
+
+    # Windows CMD - use for loop (single directory only):
+    # for %f in (contracts\runtime\*.yaml) do poetry run python scripts/compute_contract_fingerprint.py %f --validate
+
+    # Windows PowerShell - recursive with pipeline:
+    # Get-ChildItem -Path contracts -Recurse -Filter *.yaml | ForEach-Object { poetry run python scripts/compute_contract_fingerprint.py $_.FullName --validate }
+
+    # Windows (any shell) - use scripts with --recursive flag instead (RECOMMENDED):
+    # poetry run python scripts/lint_contract.py contracts/ --recursive --verbose
     ```
   - Expected: All fingerprints valid (exit code 0), no regeneration needed
   - Evidence: Release issue comment (OMN-218) or artifacts/release/v0.4.0/fingerprints/fingerprint-verification-YYYYMMDD.txt
