@@ -648,8 +648,10 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
 
         Returns:
             dict[str, object] with FSM state data that can be serialized
-            to JSON, or None if FSM not initialized. When deep_copy=False,
-            the returned dict is created by Pydantic's ``model_dump()`` but
+            to JSON, or None if FSM not initialized. Uses ``mode="json"``
+            for JSON-native serialization (UUIDs become strings, datetimes
+            become ISO format strings). When deep_copy=False, the returned
+            dict is created by Pydantic's ``model_dump(mode="json")`` but
             nested mutable objects may share references. When deep_copy=True,
             all nested structures are fully independent.
 
@@ -685,8 +687,8 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
 
             snapshot_dict = node.get_state_snapshot()
             if snapshot_dict:
-                # Direct JSON serialization
-                json_str = json.dumps(snapshot_dict, default=str)
+                # Direct JSON serialization (no default= needed with mode="json")
+                json_str = json.dumps(snapshot_dict)
                 logger.debug("FSM state JSON: %s", json_str)
 
                 # Access fields as dict keys
@@ -705,7 +707,11 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
         """
         if self._fsm_state is None:
             return None
-        result = self._fsm_state.model_dump()
+        # Use mode="json" for proper JSON-native serialization:
+        # - UUIDs become strings
+        # - datetimes become ISO format strings
+        # - All values are JSON-serializable without custom encoders
+        result = self._fsm_state.model_dump(mode="json")
         if deep_copy:
             return copy.deepcopy(result)
         return result

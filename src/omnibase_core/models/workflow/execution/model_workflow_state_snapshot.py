@@ -569,6 +569,7 @@ class ModelWorkflowStateSnapshot(BaseModel):
             {**self.context} if new_context is None else {**self.context, **new_context}
         )
         return ModelWorkflowStateSnapshot(
+            schema_version=self.schema_version,
             workflow_id=self.workflow_id,
             current_step_index=self.current_step_index + 1,
             completed_step_ids=(*self.completed_step_ids, step_id),
@@ -607,6 +608,7 @@ class ModelWorkflowStateSnapshot(BaseModel):
             {**self.context} if new_context is None else {**self.context, **new_context}
         )
         return ModelWorkflowStateSnapshot(
+            schema_version=self.schema_version,
             workflow_id=self.workflow_id,
             current_step_index=self.current_step_index + 1,
             completed_step_ids=self.completed_step_ids,  # Tuples are immutable, no copy needed

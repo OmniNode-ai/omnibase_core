@@ -1572,21 +1572,24 @@ class TestContextMutationProtection:
         assert snapshot.context["count"] == 10
         assert "new_key" not in snapshot.context
 
-    def test_fsm_snapshot_returned_context_mutation_protection(self) -> None:
-        """Test that mutating returned context does not affect FSM snapshot state."""
+    def test_fsm_snapshot_context_access_returns_consistent_value(self) -> None:
+        """Test that context access returns consistent value from frozen snapshot.
+
+        Note: Frozen Pydantic models guarantee field immutability but dictionary
+        contents may be mutable. This test verifies consistent read access.
+        For mutation protection of source dicts, see test_fsm_snapshot_context_mutation_protection.
+        """
         snapshot = ModelFSMStateSnapshot(
             current_state="idle",
             context={"key": "value"},
             history=[],
         )
 
-        # Get the context and try to mutate it
+        # Get the context - should return the stored value consistently
         retrieved_context = snapshot.context
-        # Note: frozen Pydantic models may still allow dict mutation
-        # depending on implementation details
 
-        # Create a new access to verify original is unchanged
-        # The key assertion is that the model maintains its state
+        # Verify consistent access to the same value
+        assert retrieved_context["key"] == "value"
         assert snapshot.context["key"] == "value"
 
     def test_workflow_snapshot_with_step_completed_context_isolation(self) -> None:
