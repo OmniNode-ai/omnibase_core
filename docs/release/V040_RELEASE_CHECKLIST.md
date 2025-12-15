@@ -262,11 +262,11 @@ Before marking a gate complete:
 
     # Run naming convention and pattern checks
     poetry run python -c "
-    from omnibase_core.validation.patterns import validate_directory
+    from omnibase_core.validation.patterns import validate_patterns_directory
     from pathlib import Path
-    results = validate_directory(Path('src/omnibase_core/nodes'))
-    print(f'Validation complete: {len(results)} issues found')
-    for r in results[:10]: print(f'  - {r}')
+    result = validate_patterns_directory(Path('src/omnibase_core/nodes'))
+    print(f'Validation complete: {len(result.errors)} issues found')
+    for err in result.errors[:10]: print(f'  - {err}')
     "
 
     # Check for purity violation patterns in node implementations
@@ -337,7 +337,7 @@ Before marking a gate complete:
     # Run all Hypothesis-based tests (search for @given decorator usage)
     poetry run pytest tests/ -v -k "property" --hypothesis-show-statistics
 
-    # Create adapter fuzz test evidence (example structure)
+    # Create adapter fuzz test evidence (runnable example)
     poetry run python -c "
     from hypothesis import given, strategies as st, settings
     from omnibase_core.models.contracts.model_runtime_host_contract import ModelRuntimeHostContract
@@ -353,8 +353,14 @@ Before marking a gate complete:
             # Should raise ValidationError, not crash
             assert 'validation' in str(type(e).__name__).lower() or 'error' in str(type(e).__name__).lower()
 
-    print('Fuzz test structure verified - implement in tests/unit/adapters/test_adapter_fuzz.py')
+    # IMPORTANT: Call the test function to actually execute Hypothesis
+    test_contract_handles_invalid_input()
+    print('Fuzz test: PASS (50 examples tested)')
+    print('Implement production tests in tests/unit/adapters/test_adapter_fuzz.py')
     "
+    # Expected output:
+    # Fuzz test: PASS (50 examples tested)
+    # Implement production tests in tests/unit/adapters/test_adapter_fuzz.py
     ```
   - Expected: All adapters handle malformed inputs gracefully (ValidationError, not crash)
   - Evidence: Release issue comment (OMN-218) or artifacts/release/v0.4.0/fuzz-reports/adapter-fuzz-YYYYMMDD.txt
@@ -411,16 +417,18 @@ Before marking a gate complete:
   - **Note**: Use existing scripts (no `omnibase_core.tools.verify_fingerprints` CLI)
   - Commands:
     ```bash
-    # Validate all runtime contract fingerprints match content
-    poetry run python scripts/compute_contract_fingerprint.py contracts/runtime/ --validate --recursive
+    # Validate all runtime contract fingerprints match content (using glob expansion)
+    poetry run python scripts/compute_contract_fingerprint.py contracts/runtime/*.yaml --validate
 
-    # Validate example contract fingerprints
-    poetry run python scripts/compute_contract_fingerprint.py examples/contracts/ --validate --recursive
+    # Validate example contract fingerprints (using glob expansion)
+    poetry run python scripts/compute_contract_fingerprint.py examples/contracts/**/*.yaml --validate
 
     # Check if any fingerprints need regeneration (dry-run)
+    # Note: regenerate_fingerprints.py DOES support --recursive flag
     poetry run python scripts/regenerate_fingerprints.py contracts/ --recursive --dry-run
 
     # Lint all contracts (includes fingerprint validation)
+    # Note: lint_contract.py DOES support --recursive flag
     poetry run python scripts/lint_contract.py contracts/runtime/ --recursive --verbose
     ```
   - Expected: All fingerprints valid (exit code 0), no regeneration needed
@@ -432,34 +440,40 @@ Before marking a gate complete:
   - **🚫 PROHIBITION**: Runtime fingerprint regeneration is FORBIDDEN. Future contributors will try to be "helpful" by auto-regenerating fingerprints. This defeats the purpose of fingerprints as drift detection.
   - Commands:
     ```bash
-    # Test that modified contract fails validation
+    # Method 1: Use regenerate_fingerprints in dry-run mode to detect drift
+    # Exit code 1 indicates fingerprints would change (drift detected)
+    poetry run python scripts/regenerate_fingerprints.py contracts/runtime/ --recursive --dry-run
+
+    # Method 2: Programmatic test showing fingerprint drift detection
     poetry run python -c "
     from pathlib import Path
-    from omnibase_core.contracts.hash_registry import compute_contract_fingerprint, detect_drift
+    from omnibase_core.contracts.hash_registry import compute_contract_fingerprint
+    from omnibase_core.models.contracts.model_yaml_contract import ModelYamlContract
     import yaml
-    import tempfile
+    import copy
 
     # Load a real contract
-    contract_path = Path('contracts/runtime/runtime_orchestrator.yaml')
-    original = yaml.safe_load(contract_path.read_text())
-    original_fp = original.get('fingerprint', '')
+    contract_path = Path('examples/contracts/compute/user_profile_normalizer.yaml')
+    original_data = yaml.safe_load(contract_path.read_text())
+    original_fp = original_data.get('fingerprint', '')
+
+    # Validate and compute fingerprint for original
+    original_contract = ModelYamlContract.model_validate(original_data)
+    computed_fp = compute_contract_fingerprint(original_contract)
+    print(f'Declared fingerprint: {original_fp}')
+    print(f'Computed fingerprint: {computed_fp}')
+    print(f'Match: {original_fp == str(computed_fp)}')
 
     # Modify content and verify drift detection
-    original['description'] = 'MODIFIED FOR TEST'
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
-        yaml.dump(original, f)
-        temp_path = Path(f.name)
-
-    # Verify fingerprint validation fails
-    from omnibase_core.models.contracts.model_runtime_host_contract import ModelRuntimeHostContract
-    modified = ModelRuntimeHostContract.model_validate(original)
-    new_fp = compute_contract_fingerprint(modified)
-    print(f'Original fingerprint: {original_fp}')
-    print(f'After modification:   {new_fp}')
-    print(f'Drift detected: {original_fp != new_fp}')
-    assert original_fp != new_fp, 'Fingerprint should change when contract modified'
+    modified_data = copy.deepcopy(original_data)
+    modified_data['metadata']['description'] = 'MODIFIED FOR TEST'
+    del modified_data['fingerprint']  # Remove fingerprint to recompute
+    modified_contract = ModelYamlContract.model_validate(modified_data)
+    modified_fp = compute_contract_fingerprint(modified_contract)
+    print(f'After modification:   {modified_fp}')
+    print(f'Drift detected: {original_fp != str(modified_fp)}')
+    assert original_fp != str(modified_fp), 'Fingerprint should change when contract modified'
     print('✅ Fingerprint enforcement working correctly')
-    temp_path.unlink()
     "
     ```
   - Expected: Modification causes fingerprint mismatch (drift detected)
@@ -470,7 +484,11 @@ Before marking a gate complete:
   - **Preferred** (ripgrep): `rg "NodeComputeLegacy|NodeReducerLegacy|NodeOrchestratorLegacy" src/`
   - **Alternative** (portable grep with extended regex): `grep -rE "NodeComputeLegacy|NodeReducerLegacy|NodeOrchestratorLegacy" src/`
   - **Note**: The `-E` flag enables extended regex (required for `|` alternation). Basic `grep -r` without `-E` will not match correctly.
-  - Expected: Empty output (exit code 1 for grep/rg when no matches)
+  - **grep/rg Exit Codes** (important for scripting and CI):
+    - Exit 0: Matches found (FAILURE for this check - legacy patterns still exist)
+    - Exit 1: No matches found (SUCCESS for this check - no legacy patterns remain)
+    - Exit 2: Error occurred (investigate - file not found, permission denied, etc.)
+  - Expected: Empty output with exit code 1 (no matches = success for legacy pattern removal verification)
   - Evidence: Release issue comment (OMN-218) with command output
   - **Future**: Automate this check in CI before Beta (currently grep-based is acceptable for MVP)
 
@@ -1040,17 +1058,20 @@ poetry run pytest tests/ --cov=src/omnibase_core --cov-fail-under=60 --cov-repor
 # Section 4: Contracts & Architecture
 # =============================================================================
 # Contract fingerprint verification (using existing scripts)
-poetry run python scripts/compute_contract_fingerprint.py contracts/runtime/ --validate --recursive
+# Note: compute_contract_fingerprint.py does NOT support --recursive, use glob expansion
+poetry run python scripts/compute_contract_fingerprint.py contracts/runtime/*.yaml --validate
 poetry run python scripts/regenerate_fingerprints.py contracts/ --recursive --dry-run
 
-# Contract linting
+# Contract linting (lint_contract.py supports --recursive)
 poetry run python scripts/lint_contract.py contracts/runtime/ --recursive --verbose
 
 # Legacy pattern check
+# Exit codes: 0=matches found (FAIL), 1=no matches (PASS), 2=error
 # Preferred (ripgrep - faster, better defaults):
 rg "NodeComputeLegacy|NodeReducerLegacy|NodeOrchestratorLegacy" src/
 # Alternative (portable grep with -E for extended regex - required for | alternation):
 grep -rE "NodeComputeLegacy|NodeReducerLegacy|NodeOrchestratorLegacy" src/
+# Expected: exit code 1 (no matches) = SUCCESS (no legacy patterns found)
 
 # =============================================================================
 # Section 5: Registry & Discovery
