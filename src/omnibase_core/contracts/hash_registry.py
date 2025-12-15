@@ -261,11 +261,13 @@ def compute_contract_fingerprint(
     elif isinstance(version_data, ModelContractVersion):
         version = version_data
     elif (
+        # Duck-typing pattern (ONEX protocol standard) - accept any object with
+        # major/minor/patch attributes rather than checking isinstance(). This
+        # allows flexibility for different version types (ModelSemVer, etc.)
         hasattr(version_data, "major")
         and hasattr(version_data, "minor")
         and hasattr(version_data, "patch")
     ):
-        # Handle ModelSemVer and other version-like objects with major/minor/patch
         version = ModelContractVersion(
             major=version_data.major,
             minor=version_data.minor,
