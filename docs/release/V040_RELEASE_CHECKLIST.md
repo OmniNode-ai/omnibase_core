@@ -574,10 +574,10 @@ sys.exit(0)  # Explicit success exit
   - Identical inputs produce identical outputs
   - Hash comparison of emitted ModelActions or events
   - **Hash Scope Definition**: Hashes are computed over **canonicalized outputs**. The following are EXCLUDED from hash computation:
-    - Timestamps (creation time, modification time, execution time)
-    - UUIDs generated at runtime (correlation_id, trace_id)
-    - Dict ordering noise (canonicalize with sorted keys)
-    - Floating-point precision beyond 6 decimal places
+    - **Timestamps** (creation time, modification time, execution time) - *Rationale: Change on every execution even with identical inputs; not part of functional behavior*
+    - **UUIDs generated at runtime** (correlation_id, trace_id, request_id) - *Rationale: Unique per request for observability; not part of business logic output*
+    - **Dict ordering noise** (canonicalize with sorted keys) - *Rationale: Python dict ordering is implementation detail, not semantic*
+    - **Floating-point precision beyond 6 decimal places** - *Rationale: Platform-specific floating-point representation differences; 6 decimals sufficient for business logic*
   - **Hash Inclusion**: The following MUST be included in hashes:
     - All business logic outputs (computed values, transformed data)
     - State transitions (FSM states, workflow phases)
@@ -593,8 +593,14 @@ sys.exit(0)  # Explicit success exit
     from uuid import UUID
 
     # Fields excluded from hash computation (volatile/non-deterministic)
+    # WHY EACH FIELD IS EXCLUDED:
+    # - Timestamps: Change on every execution even with identical inputs
+    # - UUIDs/IDs: Generated uniquely per request, not part of business logic
+    # - Trace IDs: Observability-only, not functional behavior
     EXCLUDED_FIELDS = frozenset({
+        # Time-based fields (different on every run)
         "timestamp", "created_at", "modified_at", "execution_time",
+        # Runtime-generated identifiers (unique per request)
         "correlation_id", "trace_id", "request_id", "uuid"
     })
 
@@ -695,7 +701,7 @@ sys.exit(0)  # Explicit success exit
 
   **Cross-Platform Glob Expansion Notes**:
   - Shell glob patterns (`*.yaml`, `**/*.yaml`) are expanded by the shell BEFORE Python sees them
-  - On **Unix/Linux/macOS**: Bash/Zsh handle `**/*.yaml` recursively (requires `shopt -s globstar` in Bash)
+  - On **Unix (Bash/Zsh)**: Handle `**/*.yaml` recursively (requires `shopt -s globstar` in Bash)
   - On **Windows CMD**: Glob expansion does NOT work - patterns passed literally to Python
   - On **Windows PowerShell**: Use `Get-ChildItem -Recurse -Filter *.yaml | ForEach-Object { ... }`
   - **Recommendation**: Prefer scripts with `--recursive` flag for cross-platform compatibility
@@ -716,7 +722,7 @@ sys.exit(0)  # Explicit success exit
     poetry run python scripts/lint_contract.py contracts/ --recursive --verbose
 
     # =============================================================================
-    # OPTION B: Unix/Linux/macOS only (shell glob expansion)
+    # OPTION B: Unix only (shell glob expansion)
     # compute_contract_fingerprint.py does NOT support --recursive
     # These commands rely on shell glob expansion before Python sees the arguments
     # =============================================================================
@@ -2070,7 +2076,9 @@ poetry run pytest tests/unit/exceptions/test_onex_error.py tests/unit/errors/tes
 
 ## Sign-off
 
-**MANDATORY**: Before signing off, complete the [Final Sign-off Evidence Verification](#final-sign-off-evidence-verification) checklist above.
+**MANDATORY**: Before signing off:
+1. Verify each gate was validated using the [Pre-Release Evidence Checklist](#pre-release-evidence-checklist) criteria
+2. Complete the [Final Sign-off Evidence Verification](#final-sign-off-evidence-verification) checklist above
 
 | Role | Name | Date | Signature |
 |------|------|------|-----------|
@@ -2079,10 +2087,12 @@ poetry run pytest tests/unit/exceptions/test_onex_error.py tests/unit/errors/tes
 | Release Manager | | | |
 
 **Release Manager Attestation**:
-- [ ] I have verified ALL gates have valid evidence per the Final Sign-off Evidence Verification checklist
+- [ ] I have verified each gate meets the [Pre-Release Evidence Checklist](#pre-release-evidence-checklist) requirements
+- [ ] I have completed the [Final Sign-off Evidence Verification](#final-sign-off-evidence-verification) checklist
 - [ ] All BLOCKER and REQUIRED gates are complete with documented evidence
 - [ ] Evidence index file is up-to-date and all links are accessible
 - [ ] All evidence includes required fields (timestamp, commit SHA, toolchain versions, result)
+- [ ] All evidence has been reviewed for PII/secrets redaction (see [Evidence Storage Guidelines](#evidence-storage-guidelines))
 
 ---
 
