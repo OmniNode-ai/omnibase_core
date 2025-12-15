@@ -129,6 +129,7 @@ from .typed_dict_connection_info import TypedDictConnectionInfo
 
 # Contract validation TypedDict definitions
 from .typed_dict_contract_data import TypedDictContractData
+from .typed_dict_converted_health import TypedDictConvertedHealth
 from .typed_dict_core_analytics import TypedDictCoreAnalytics
 from .typed_dict_core_data import TypedDictCoreData
 from .typed_dict_core_summary import TypedDictCoreSummary
@@ -444,6 +445,7 @@ __all__ = [
     "TypedDictEventInfo",
     "TypedDictConditionalBranch",
     "TypedDictConnectionInfo",
+    "TypedDictConvertedHealth",
     "TypedDictServiceInfo",
     "TypedDictDependencyInfo",
     "TypedDictCacheInfo",
