@@ -571,8 +571,8 @@ class ModelRegistryHealthReport(BaseModel):
         return cls(
             status=EnumRegistryHealthStatus.HEALTHY,
             tools_count=tools_count,
-            tools_health=tools_health or [],
-            services_health=services_health or [],
+            tools_health=tools_health if tools_health is not None else [],
+            services_health=services_health if services_health is not None else [],
             error_message=None,
             error_code=None,
             node_information=None,
@@ -595,8 +595,8 @@ class ModelRegistryHealthReport(BaseModel):
         return cls(
             status=EnumRegistryHealthStatus.CRITICAL,
             tools_count=tools_count,
-            tools_health=tools_health or [],
-            services_health=services_health or [],
+            tools_health=tools_health if tools_health is not None else [],
+            services_health=services_health if services_health is not None else [],
             error_message=error_message,
             error_code=error_code,
             node_information=None,
@@ -617,8 +617,8 @@ class ModelRegistryHealthReport(BaseModel):
         return cls(
             status=EnumRegistryHealthStatus.DEGRADED,
             tools_count=tools_count,
-            tools_health=tools_health or [],
-            services_health=services_health or [],
+            tools_health=tools_health if tools_health is not None else [],
+            services_health=services_health if services_health is not None else [],
             error_message=degradation_reason,
             error_code=None,
             node_information=None,

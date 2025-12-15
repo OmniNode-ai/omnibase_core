@@ -93,6 +93,7 @@ class ModelFSMTransitionCondition(BaseModel):
         extra="ignore",
         use_enum_values=False,
         frozen=True,
+        from_attributes=True,
     )
 
     # Valid operators for expression evaluation

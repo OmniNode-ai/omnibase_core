@@ -9,6 +9,26 @@ The ``ModelEnvelopePayload`` class provides immutable update methods
 (e.g., ``set_data()``, ``with_timestamp()``) that return new instances
 to maintain data integrity in event-driven workflows.
 
+Timezone Handling:
+    The ``timestamp`` field uses ``str`` type (not ``datetime``) because this model
+    is designed for serialization to string dictionaries (HTTP headers, query params).
+
+    To set a UTC timestamp, use the ``with_timestamp()`` method which:
+    1. Accepts an optional ``datetime`` object (defaults to UTC now)
+    2. Converts to ISO 8601 format with timezone information
+    3. Returns a new immutable instance
+
+    This differs from runtime event models (``ModelRuntimeEventBase`` and subclasses)
+    which use ``datetime`` type directly for internal processing and elapsed time
+    calculations. The string format here ensures compatibility with HTTP transport
+    and external system integration.
+
+    Example:
+        >>> payload = ModelEnvelopePayload(event_type="user.created")
+        >>> payload = payload.with_timestamp()  # Sets ISO 8601 UTC timestamp
+        >>> payload.timestamp
+        '2024-01-15T10:30:00+00:00'
+
 Example:
     >>> from omnibase_core.models.common.model_envelope_payload import (
     ...     ModelEnvelopePayload,
@@ -26,6 +46,7 @@ Example:
 
 See Also:
     - :class:`ModelQueryParameters`: Typed query parameters for effects.
+    - :class:`ModelRuntimeEventBase`: Base class using datetime type for runtime events.
 """
 
 from __future__ import annotations
@@ -97,9 +118,12 @@ class ModelEnvelopePayload(BaseModel):
         description="Origin service or component that generated the event",
         max_length=512,
     )
+    # NOTE: Uses str type (not datetime) for HTTP transport compatibility.
+    # Use with_timestamp() to set a UTC timestamp in ISO 8601 format.
+    # See module docstring "Timezone Handling" section for rationale.
     timestamp: str | None = Field(
         default=None,
-        description="ISO 8601 timestamp when the event occurred",
+        description="ISO 8601 timestamp with timezone (e.g., '2024-01-15T10:30:00+00:00')",
         max_length=64,
     )
     correlation_id: str | None = Field(
@@ -360,13 +384,22 @@ class ModelEnvelopePayload(BaseModel):
         return self.model_copy(update={"data": new_data})
 
     def with_timestamp(self, timestamp: datetime | None = None) -> Self:
-        """Create a new instance with updated timestamp.
+        """Create a new instance with updated timestamp in ISO 8601 format.
+
+        Converts the datetime to ISO 8601 string format for HTTP transport
+        compatibility. If no timestamp is provided, uses UTC now.
 
         Args:
-            timestamp: Timestamp to set (defaults to UTC now).
+            timestamp: Timezone-aware datetime to set. Defaults to ``datetime.now(UTC)``.
+                       Should be timezone-aware for consistent serialization.
 
         Returns:
-            New ModelEnvelopePayload instance with timestamp.
+            New ModelEnvelopePayload instance with timestamp as ISO 8601 string.
+
+        Example:
+            >>> payload = ModelEnvelopePayload(event_type="test")
+            >>> updated = payload.with_timestamp()
+            >>> updated.timestamp  # e.g., '2024-01-15T10:30:00+00:00'
         """
         ts = timestamp or datetime.now(UTC)
         return self.model_copy(update={"timestamp": ts.isoformat()})

@@ -135,7 +135,7 @@ class ModelIntrospectionResponseEvent(ModelOnexEvent):
             current_status=current_status,
             capabilities=capabilities,
             response_time_ms=response_time_ms,
-            tools=tools or [],
+            tools=tools if tools is not None else [],
             resource_usage=resource_usage,
             performance_metrics=performance_metrics,
             **kwargs,

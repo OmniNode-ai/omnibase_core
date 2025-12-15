@@ -137,4 +137,5 @@ class ModelIntent(BaseModel):
         frozen=True,
         use_enum_values=False,
         validate_assignment=True,
+        from_attributes=True,
     )

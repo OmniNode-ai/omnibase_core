@@ -158,4 +158,5 @@ class ModelAction(BaseModel):
         extra="forbid",
         frozen=True,
         use_enum_values=False,
+        from_attributes=True,
     )

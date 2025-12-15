@@ -129,7 +129,7 @@ class ModelValidationResult[T: object](BaseModel):
     ) -> "ModelValidationResult[T]":
         """Create a failed validation result."""
         # Handle both legacy errors list and new issues list
-        final_issues: list[ModelValidationIssue] = issues or []
+        final_issues: list[ModelValidationIssue] = issues if issues is not None else []
 
         if errors:
             # Convert legacy errors to issues
@@ -147,7 +147,7 @@ class ModelValidationResult[T: object](BaseModel):
         return cls(
             is_valid=False,
             issues=final_issues,
-            errors=errors or [],
+            errors=errors if errors is not None else [],
             summary=summary,
         )
 

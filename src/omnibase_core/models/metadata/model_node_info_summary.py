@@ -537,8 +537,8 @@ class ModelNodeInfoSummary(BaseModel):
         core = ModelNodeCore.create_minimal_node(node_name, node_type)
         timestamps = ModelNodeTimestamps.create_new()
         categorization = ModelNodeCategorization.create_comprehensive(
-            tags or [],
-            categories or [],
+            tags if tags is not None else [],
+            categories if categories is not None else [],
         )
         quality = ModelNodeQualityIndicators.create_excellent_quality()
         performance = ModelNodePerformanceMetrics.create_high_performance()

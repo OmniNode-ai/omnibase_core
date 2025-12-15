@@ -125,4 +125,5 @@ class ModelFSMStateTransition(BaseModel):
         extra="ignore",  # Allow extra fields from YAML contracts
         frozen=True,  # Immutability after creation for thread safety
         use_enum_values=False,  # Keep enum objects, don't convert to strings
+        from_attributes=True,  # Allow validation via attribute access for nested models
     )

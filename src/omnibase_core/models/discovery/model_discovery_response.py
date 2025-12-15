@@ -163,7 +163,7 @@ class ModelDiscoveryResponse(BaseModel):
             operation=operation,
             status="error",
             message=message,
-            errors=errors or [],
+            errors=errors if errors is not None else [],
             completed_at=datetime.now(),
             **kwargs,
         )
@@ -188,7 +188,7 @@ class ModelDiscoveryResponse(BaseModel):
         Returns:
             ModelDiscoveryResponse for timeout
         """
-        tools = partial_tools or []
+        tools = partial_tools if partial_tools is not None else []
 
         return cls(
             operation=operation,

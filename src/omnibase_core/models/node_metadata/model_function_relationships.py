@@ -116,7 +116,7 @@ class ModelFunctionRelationships(BaseModel):
         """Create relationships with tags and categories."""
         return cls(
             tags=tags,
-            categories=categories or [],
+            categories=categories if categories is not None else [],
         )
 
     @classmethod
@@ -128,7 +128,9 @@ class ModelFunctionRelationships(BaseModel):
         """Create relationships with dependencies."""
         return cls(
             dependencies=dependencies,
-            related_functions=related_functions or [],
+            related_functions=related_functions
+            if related_functions is not None
+            else [],
         )
 
     model_config = {

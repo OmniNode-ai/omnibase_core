@@ -128,7 +128,7 @@ class ModelNodeCapabilitiesInfo(BaseModel):
         """Create capabilities info with capabilities and operations."""
         return cls(
             capabilities=capabilities,
-            supported_operations=operations or [],
+            supported_operations=operations if operations is not None else [],
             performance_metrics=None,
         )
 

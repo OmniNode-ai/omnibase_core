@@ -170,7 +170,7 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
             version=version,
             node_type=node_type,
             capabilities=capabilities,
-            tags=tags or [],
+            tags=tags if tags is not None else [],
             node_role=node_role,
             **kwargs,
         )

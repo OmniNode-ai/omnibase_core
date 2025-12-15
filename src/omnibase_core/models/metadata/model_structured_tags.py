@@ -291,7 +291,7 @@ class ModelStructuredTags(BaseModel):
             tags_id=uuid_from_string("metadata_node_tags", "tags"),
             standard_tags=standard_tags,
             primary_category=EnumStandardCategory.DATA_PROCESSING,
-            custom_tags=custom_tags or [],
+            custom_tags=custom_tags if custom_tags is not None else [],
             tag_version=ModelSemVer(major=1, minor=0, patch=0),
         )
 
@@ -315,7 +315,7 @@ class ModelStructuredTags(BaseModel):
             tags_id=uuid_from_string("function_node_tags", "tags"),
             standard_tags=standard_tags,
             primary_category=function_category or EnumStandardCategory.BUSINESS_LOGIC,
-            custom_tags=custom_tags or [],
+            custom_tags=custom_tags if custom_tags is not None else [],
             tag_version=ModelSemVer(major=1, minor=0, patch=0),
         )
 
@@ -338,7 +338,7 @@ class ModelStructuredTags(BaseModel):
             tags_id=uuid_from_string("analytics_tags", "tags"),
             standard_tags=standard_tags,
             primary_category=EnumStandardCategory.ANALYTICS,
-            custom_tags=custom_tags or [],
+            custom_tags=custom_tags if custom_tags is not None else [],
             tag_version=ModelSemVer(major=1, minor=0, patch=0),
         )
 

@@ -114,7 +114,7 @@ class ModelToolDiscoveryResponse(ModelOnexEvent):
         Returns:
             ModelToolDiscoveryResponse for timeout
         """
-        tools = partial_tools or []
+        tools = partial_tools if partial_tools is not None else []
         correlation_uuid = request_correlation_id
         request_corr_uuid = request_correlation_id
         return cls(

@@ -30,7 +30,7 @@ class ModelDiscoveryError(Exception):
         """
         super().__init__(message)
         self.correlation_id = correlation_id
-        self.registry_errors = registry_errors or []
+        self.registry_errors = registry_errors if registry_errors is not None else []
 
     def has_registry_errors(self) -> bool:
         """Check if specific registry errors were reported"""

@@ -128,6 +128,7 @@ class ModelFSMTransitionResult(BaseModel):
         extra="ignore",
         frozen=True,
         use_enum_values=False,
+        from_attributes=True,
     )
 
     # Protocol method implementations
