@@ -38,7 +38,7 @@ class ModelOnexReply(BaseModel):
     reply_id: UUID = Field(default_factory=uuid4, description="Unique reply identifier")
     correlation_id: UUID = Field(description="Request correlation identifier")
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="Reply creation timestamp",
     )
 

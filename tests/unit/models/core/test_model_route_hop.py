@@ -591,7 +591,7 @@ class TestModelRouteHop:
         hop_id = uuid4()
         node_id = uuid4()
 
-        # Test that timestamp defaults to current time (using utcnow)
+        # Test that timestamp defaults to current UTC time
         hop = ModelRouteHop(
             version=DEFAULT_VERSION,
             hop_id=hop_id,

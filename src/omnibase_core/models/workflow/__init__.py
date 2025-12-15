@@ -16,9 +16,11 @@ from .api import (
 
 # Execution Models - Internal workflow execution and orchestration
 from .execution import (
+    WORKFLOW_STATE_SNAPSHOT_SCHEMA_VERSION,
     ModelDependencyGraph,
     ModelWorkflowExecutionResult,
     ModelWorkflowInputState,
+    ModelWorkflowStateSnapshot,
     ModelWorkflowStepExecution,
 )
 
@@ -30,8 +32,10 @@ __all__ = [
     "ModelWorkflowStatusResult",
     "ModelWorkflowStopArgs",
     # Execution Models
+    "WORKFLOW_STATE_SNAPSHOT_SCHEMA_VERSION",
     "ModelDependencyGraph",
     "ModelWorkflowExecutionResult",
     "ModelWorkflowInputState",
+    "ModelWorkflowStateSnapshot",
     "ModelWorkflowStepExecution",
 ]

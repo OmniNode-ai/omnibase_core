@@ -38,6 +38,16 @@ class ModelFsmState(BaseModel):
         Validators automatically convert incoming lists/dicts to frozen types
         for convenience during model construction.
 
+    Thread Safety:
+        This model uses frozen=True and deeply immutable types (tuples), making it
+        fully thread-safe for concurrent access from multiple threads or async tasks.
+
+        - **Safe**: Reading any field from multiple threads simultaneously
+        - **Safe**: Passing instances between threads without synchronization
+        - **Safe**: Using instances as dict keys or set members (hashable)
+
+        This is one of the few models that provides true deep immutability.
+
     Accessing dict-like fields:
         For properties, use dict() to convert back:
         >>> state = ModelFsmState(name="example", properties={"key": "value"})

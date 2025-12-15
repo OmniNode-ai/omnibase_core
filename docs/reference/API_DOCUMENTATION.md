@@ -978,9 +978,10 @@ except ValidationError as e:
 
 2. **Add Required Fields**:
    ```python
+   from datetime import UTC, datetime
    # Add correlation tracking
    correlation_id: UUID
-   created_at: datetime = Field(default_factory=datetime.utcnow)
+   created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
    ```
 
 3. **Update Configuration**:

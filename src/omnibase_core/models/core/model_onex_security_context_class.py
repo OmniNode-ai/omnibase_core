@@ -104,7 +104,7 @@ class ModelOnexSecurityContext(BaseModel):
         description="Security context identifier",
     )
     created_at: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="Context creation time",
     )
     last_validated: datetime | None = Field(

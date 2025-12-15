@@ -5,7 +5,7 @@ User-defined tag model that replaces hardcoded tag enums
 with flexible, extensible tagging system.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -40,7 +40,7 @@ class ModelTag(BaseModel):
     created_by: str = Field(default=..., description="Creator identifier")
 
     created_at: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="Creation timestamp",
     )
 

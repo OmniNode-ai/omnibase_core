@@ -1,6 +1,6 @@
 """Node announce metadata model for ONEX event-driven architecture."""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
@@ -68,7 +68,7 @@ class ModelNodeAnnounceMetadata(BaseModel):
     # TTL and timing
     ttl: int | None = Field(default=None, description="Time to live in seconds")
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="Timestamp of the announcement",
     )
 

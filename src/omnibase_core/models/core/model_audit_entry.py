@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
@@ -24,7 +24,7 @@ class ModelAuditEntry(BaseModel):
     # Core audit fields
     audit_id: UUID = Field(default=..., description="Unique audit entry ID")
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="When the action occurred",
     )
     action: EnumAuditAction = Field(default=..., description="Action performed")

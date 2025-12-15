@@ -5,7 +5,7 @@ This model tracks each hop in the routing path for audit and debugging purposes.
 Follows AMQP envelope pattern for distributed event routing.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -33,7 +33,7 @@ class ModelRouteHop(BaseModel):
 
     # Timing information
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="When this hop was processed",
     )
     processing_duration_ms: int | None = Field(

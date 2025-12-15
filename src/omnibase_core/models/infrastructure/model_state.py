@@ -20,6 +20,17 @@ class ModelState(BaseModel):
     State model implementing ProtocolState protocol.
 
     Provides reducer state with metadata, versioning, and validation.
+
+    Thread Safety:
+        This model is NOT thread-safe due to mutable fields (version, last_updated)
+        and validate_assignment=True which allows field modification after creation.
+
+        - **NOT Safe**: Sharing instances across threads without synchronization
+        - **NOT Safe**: Modifying fields from multiple threads concurrently
+        - **Safe**: Reading fields after construction (before any modifications)
+
+        For thread-safe state management, create new instances rather than modifying
+        existing ones, or use external synchronization. See docs/guides/THREADING.md.
     """
 
     # ProtocolState required fields

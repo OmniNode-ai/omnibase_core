@@ -23,6 +23,21 @@ class ModelStateUpdate(BaseModel):
 
     This model is returned by state computation tools and applied by
     the generated reducer to update the node's state.
+
+    Thread Safety:
+        This model is NOT thread-safe due to mutable fields (field_updates list)
+        and methods that mutate state (add_field_update, set_field, etc.).
+
+        - **NOT Safe**: Sharing instances across threads without synchronization
+        - **NOT Safe**: Calling mutating methods from multiple threads concurrently
+        - **Safe**: Reading fields after all mutations complete (before sharing)
+
+        For thread-safe usage:
+        1. Build the complete state update in a single thread before sharing
+        2. Use external synchronization if building collaboratively across threads
+        3. Create new instances rather than modifying shared ones
+
+        See docs/guides/THREADING.md for thread-safe patterns.
     """
 
     # Field updates to apply

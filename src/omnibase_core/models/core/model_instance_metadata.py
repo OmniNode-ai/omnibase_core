@@ -5,7 +5,7 @@ from pydantic import Field
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 "\nInstance Metadata Model\n\nAdditional metadata for node instances including deployment information,\nversion details, and custom attributes.\n"
-from datetime import datetime
+from datetime import UTC, datetime
 
 from pydantic import BaseModel
 
@@ -53,10 +53,12 @@ class ModelInstanceMetadata(BaseModel):
     owner: str | None = Field(default=None, description="Owner or team responsible")
     cost_center: str | None = Field(default=None, description="Cost center for billing")
     created_at: datetime = Field(
-        default_factory=datetime.utcnow, description="Instance creation timestamp"
+        default_factory=lambda: datetime.now(UTC),
+        description="Instance creation timestamp",
     )
     last_updated: datetime = Field(
-        default_factory=datetime.utcnow, description="Last metadata update timestamp"
+        default_factory=lambda: datetime.now(UTC),
+        description="Last metadata update timestamp",
     )
     maintenance_window: str | None = Field(
         default=None, description="Maintenance window specification"

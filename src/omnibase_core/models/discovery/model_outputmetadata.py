@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
 
@@ -13,7 +13,7 @@ class ModelOutputMetadata(BaseModel):
         description="List of typed output metadata items",
     )
     execution_timestamp: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="When metadata was created",
     )
 

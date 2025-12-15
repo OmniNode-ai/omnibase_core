@@ -291,7 +291,8 @@ markers = [
     "cache: Cache-related tests",
     "nodes: Node architecture tests",
     "validation: Validation framework tests",
-    "flaky: Marks tests as flaky and allows reruns (from pytest-rerunfailures)"
+    "flaky: Marks tests as flaky and allows reruns (from pytest-rerunfailures)",
+    "timeout: Timeout for individual tests using pytest-timeout plugin (e.g., @pytest.mark.timeout(60))"
 ]
 addopts = [
     "--strict-markers",

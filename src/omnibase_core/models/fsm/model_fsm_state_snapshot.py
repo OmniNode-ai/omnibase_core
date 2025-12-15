@@ -77,6 +77,19 @@ class ModelFSMStateSnapshot(BaseModel):
         - FSM executors MUST create new snapshots rather than mutating existing ones
         - Extra fields are rejected (extra="forbid")
 
+    Thread Safety:
+        This model is immutable (frozen=True) after creation, making it thread-safe
+        for concurrent read access from multiple threads or async tasks. However:
+
+        - **Safe**: Reading any field from multiple threads simultaneously
+        - **Safe**: Passing snapshots between threads without synchronization
+        - **WARNING**: Do NOT mutate mutable containers (dict/list contents) - this
+          violates the immutability contract and could cause race conditions
+
+        For state management in NodeReducer, note that while snapshots themselves
+        are thread-safe, the NodeReducer instance that creates/restores them is
+        NOT thread-safe. See docs/guides/THREADING.md for details.
+
     Example:
         >>> snapshot = ModelFSMStateSnapshot(
         ...     current_state="processing",
@@ -105,6 +118,10 @@ class ModelFSMStateSnapshot(BaseModel):
             )
     """
 
+    # from_attributes=True allows Pydantic to accept objects with matching
+    # attributes even when class identity differs (e.g., in pytest-xdist
+    # parallel execution where model classes are imported in separate workers).
+    # See CLAUDE.md section "Pydantic from_attributes=True for Value Objects".
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     current_state: str = Field(..., description="Current FSM state name")

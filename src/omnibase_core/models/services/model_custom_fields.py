@@ -50,7 +50,7 @@ class ModelCustomFields(BaseModel):
         description="Schema version",
     )
     last_modified: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="Last modification time",
     )
     modified_by: str | None = Field(default=None, description="Last modifier")

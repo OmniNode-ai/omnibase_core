@@ -13,7 +13,7 @@ Tests all aspects of the FSM state snapshot model including:
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.models.fsm.model_fsm_state_snapshot import ModelFSMStateSnapshot
+from omnibase_core.models.fsm import ModelFSMStateSnapshot
 
 pytestmark = pytest.mark.unit
 

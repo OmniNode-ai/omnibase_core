@@ -3,7 +3,7 @@ Error summary model to replace dictionary usage for get_error_summary() returns.
 """
 
 from collections.abc import Mapping
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Optional
 from uuid import UUID
 
@@ -23,7 +23,7 @@ class ModelErrorSummary(BaseModel):
 
     # Error context
     occurred_at: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="When error occurred",
     )
     component: str | None = Field(

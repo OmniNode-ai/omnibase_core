@@ -2,7 +2,7 @@
 Health check component model for individual component status.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field, field_serializer
 
@@ -17,7 +17,7 @@ class ModelHealthCheckComponent(BaseModel):
     )
     message: str | None = Field(default=None, description="Status message")
     last_check: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="Last check time",
     )
     response_time_ms: float | None = Field(

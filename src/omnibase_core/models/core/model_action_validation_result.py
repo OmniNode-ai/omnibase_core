@@ -4,7 +4,7 @@ Action Validation Result Model.
 Result of action validation with detailed information.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from pydantic import BaseModel, Field
 
@@ -42,6 +42,6 @@ class ModelActionValidationResult(BaseModel):
         description="Additional validation metadata",
     )
     validated_at: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="When validation was performed",
     )
