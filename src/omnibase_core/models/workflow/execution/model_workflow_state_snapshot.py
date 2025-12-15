@@ -224,8 +224,9 @@ class ModelWorkflowStateSnapshot(BaseModel):
         (r"\b(?:\d{4}[-\s]?){3}\d{4}\b", "[CREDIT_CARD_REDACTED]"),
         # US Phone numbers (various formats including +1, parentheses, dashes, dots, spaces)
         # Matches: +1-555-123-4567, (555) 123-4567, 555.123.4567, 5551234567, etc.
+        # (?<!\d) prevents matching digit sequences embedded in larger numbers (like UUIDs)
         (
-            r"(?:\+1[-.\s]?)?(?:\(\d{3}\)|\d{3})[-.\s]?\d{3}[-.\s]?\d{4}\b",
+            r"(?<!\d)(?:\+1[-.\s]?)?(?:\(\d{3}\)|\d{3})[-.\s]?\d{3}[-.\s]?\d{4}\b",
             "[PHONE_REDACTED]",
         ),
         # US Social Security Numbers (XXX-XX-XXXX or XXXXXXXXX)
@@ -233,14 +234,14 @@ class ModelWorkflowStateSnapshot(BaseModel):
         # IP addresses (v4)
         (r"\b(?:\d{1,3}\.){3}\d{1,3}\b", "[IP_REDACTED]"),
         # IPv6 addresses (full and compressed forms)
-        # Matches: 2001:0db8:85a3:0000:0000:8a2e:0370:7334, ::1, fe80::1, etc.
+        # Matches: 2001:0db8:85a3:0000:0000:8a2e:0370:7334, ::1, fe80::1, 2001:db8::1, etc.
+        # Uses lookahead/lookbehind instead of \b to handle :: correctly
         (
-            r"\b(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b"  # Full form
-            r"|\b(?:[0-9a-fA-F]{1,4}:){1,7}:\b"  # Compressed trailing
-            r"|\b(?:[0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}\b"  # One zero group
-            r"|\b::(?:[0-9a-fA-F]{1,4}:){0,5}[0-9a-fA-F]{1,4}\b"  # Leading ::
-            r"|\b[0-9a-fA-F]{1,4}::(?:[0-9a-fA-F]{1,4}:){0,5}[0-9a-fA-F]{1,4}\b"  # Middle ::
-            r"|\b::1\b|\b::\b",  # Loopback and unspecified
+            r"\b(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b"  # Full form (8 groups)
+            r"|(?<![0-9a-fA-F:])::(?:[0-9a-fA-F]{1,4}:){0,6}[0-9a-fA-F]{1,4}\b"  # Leading :: (::1, ::ffff:x)
+            r"|\b(?:[0-9a-fA-F]{1,4}:)+:(?:[0-9a-fA-F]{1,4}:)*[0-9a-fA-F]{1,4}\b"  # Middle :: (2001:db8::1)
+            r"|\b(?:[0-9a-fA-F]{1,4}:){1,7}:(?![0-9a-fA-F])"  # Trailing :: (2001:db8::)
+            r"|(?<![0-9a-fA-F:])::(?![0-9a-fA-F:])",  # Just :: (unspecified)
             "[IPV6_REDACTED]",
         ),
         # API keys (common formats: prefix + alphanumeric, or long hex/base64 strings)
