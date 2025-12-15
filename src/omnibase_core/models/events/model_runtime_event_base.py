@@ -5,7 +5,7 @@ Provides common fields for all ONEX runtime lifecycle events including
 correlation tracking, timestamps, and event identification.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -24,6 +24,7 @@ class ModelRuntimeEventBase(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
         validate_assignment=True,
+        from_attributes=True,
     )
 
     event_id: UUID = Field(
@@ -35,8 +36,8 @@ class ModelRuntimeEventBase(BaseModel):
         description="Correlation ID for request tracing across services",
     )
     timestamp: datetime = Field(
-        default_factory=datetime.now,
-        description="When this event was created",
+        default_factory=lambda: datetime.now(UTC),
+        description="When this event was created (UTC)",
     )
     source_node_id: UUID | None = Field(
         default=None,

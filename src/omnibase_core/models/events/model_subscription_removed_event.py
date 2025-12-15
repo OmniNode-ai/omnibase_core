@@ -5,7 +5,7 @@ Published when a subscription is removed,
 confirming a node has been unwired from an event bus topic.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID
 
 from pydantic import Field
@@ -43,8 +43,8 @@ class ModelSubscriptionRemovedEvent(ModelRuntimeEventBase):
         description="Topic the node was subscribed to",
     )
     removed_at: datetime = Field(
-        default_factory=datetime.now,
-        description="When the subscription was removed",
+        default_factory=lambda: datetime.now(UTC),
+        description="When the subscription was removed (UTC)",
     )
     reason: str = Field(
         default="unsubscribed",

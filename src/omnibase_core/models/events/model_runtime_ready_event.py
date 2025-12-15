@@ -5,7 +5,7 @@ Published when the ONEX runtime is fully initialized and all
 nodes are wired to their event bus subscriptions.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from pydantic import Field
@@ -46,8 +46,8 @@ class ModelRuntimeReadyEvent(ModelRuntimeEventBase):
         description="Total number of subscriptions created",
     )
     ready_at: datetime = Field(
-        default_factory=datetime.now,
-        description="When the runtime became ready",
+        default_factory=lambda: datetime.now(UTC),
+        description="When the runtime became ready (UTC)",
     )
     initialization_duration_ms: float | None = Field(
         default=None,
@@ -82,6 +82,6 @@ class ModelRuntimeReadyEvent(ModelRuntimeEventBase):
             subscription_count=subscription_count,
             initialization_duration_ms=initialization_duration_ms,
             event_bus_type=event_bus_type,
-            nodes_wired=nodes_wired or [],
+            nodes_wired=nodes_wired if nodes_wired is not None else [],
             correlation_id=correlation_id,
         )

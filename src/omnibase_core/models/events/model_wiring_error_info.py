@@ -23,6 +23,7 @@ class ModelWiringErrorInfo(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
         validate_assignment=True,
+        from_attributes=True,
     )
 
     node_id: UUID | None = Field(

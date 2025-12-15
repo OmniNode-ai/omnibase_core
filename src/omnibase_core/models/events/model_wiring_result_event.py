@@ -102,6 +102,6 @@ class ModelWiringResultEvent(ModelRuntimeEventBase):
             successful_subscriptions=successful_subscriptions,
             failed_subscriptions=failed_subscriptions,
             wiring_duration_ms=wiring_duration_ms,
-            errors=errors or [],
+            errors=errors if errors is not None else [],
             correlation_id=correlation_id,
         )

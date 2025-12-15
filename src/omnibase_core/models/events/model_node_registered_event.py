@@ -69,5 +69,7 @@ class ModelNodeRegisteredEvent(ModelRuntimeEventBase):
             node_type=node_type,
             correlation_id=correlation_id,
             contract_path=contract_path,
-            declared_subscriptions=declared_subscriptions or [],
+            declared_subscriptions=(
+                declared_subscriptions if declared_subscriptions is not None else []
+            ),
         )

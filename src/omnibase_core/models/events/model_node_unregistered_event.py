@@ -62,5 +62,7 @@ class ModelNodeUnregisteredEvent(ModelRuntimeEventBase):
             node_name=node_name,
             reason=reason,
             correlation_id=correlation_id,
-            active_subscriptions=active_subscriptions or [],
+            active_subscriptions=(
+                active_subscriptions if active_subscriptions is not None else []
+            ),
         )

@@ -5,7 +5,7 @@ Published when a subscription fails to be created,
 used for error tracking and retry coordination.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID
 
 from pydantic import Field
@@ -56,8 +56,8 @@ class ModelSubscriptionFailedEvent(ModelRuntimeEventBase):
         description="Whether this error is retryable",
     )
     failed_at: datetime = Field(
-        default_factory=datetime.now,
-        description="When the failure occurred",
+        default_factory=lambda: datetime.now(UTC),
+        description="When the failure occurred (UTC)",
     )
 
     @classmethod

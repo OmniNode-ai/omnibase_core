@@ -78,7 +78,7 @@ class ModelWiringErrorEvent(ModelRuntimeEventBase):
         return cls(
             error_code=error_code,
             error_message=error_message,
-            affected_nodes=affected_nodes or [],
+            affected_nodes=affected_nodes if affected_nodes is not None else [],
             partial_success=partial_success,
             successful_subscriptions=successful_subscriptions,
             failed_subscriptions=failed_subscriptions,

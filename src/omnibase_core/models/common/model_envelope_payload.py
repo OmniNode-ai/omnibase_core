@@ -60,6 +60,7 @@ class ModelEnvelopePayload(BaseModel):
     Security:
     - String fields have max_length=512 to prevent memory exhaustion
     - Data dict has max 100 entries to prevent DoS attacks
+    - Reserved keys in data dict are prefixed with "data_" to prevent collision
 
     Example:
         >>> payload = ModelEnvelopePayload(
@@ -78,6 +79,11 @@ class ModelEnvelopePayload(BaseModel):
     # Security constants
     MAX_FIELD_LENGTH: ClassVar[int] = 512
     MAX_DATA_ENTRIES: ClassVar[int] = 100
+
+    # Reserved keys that cannot be used in data dict (would collide with typed fields)
+    RESERVED_KEYS: ClassVar[frozenset[str]] = frozenset(
+        {"event_type", "source", "timestamp", "correlation_id", "data"}
+    )
 
     # Common event payload fields
     event_type: str | None = Field(
@@ -120,19 +126,25 @@ class ModelEnvelopePayload(BaseModel):
         return self
 
     @classmethod
-    def from_dict(cls, data: dict[str, PayloadDataValue]) -> Self:
+    def from_dict(
+        cls, data: dict[str, PayloadDataValue | dict[str, PayloadDataValue]]
+    ) -> Self:
         """Create from a dictionary of payload data.
 
         Extracts known fields (event_type, source, timestamp, correlation_id)
         and places remaining fields in the data dictionary.
 
+        Handles round-trip compatibility with to_dict() by recognizing
+        nested "data" dictionaries from to_dict() output.
+
         Args:
-            data: Dictionary of payload key-value pairs.
+            data: Dictionary of payload key-value pairs. May contain a nested
+                "data" dict from to_dict() output for round-trip support.
 
         Returns:
             New ModelEnvelopePayload instance.
         """
-        known_fields = {"event_type", "source", "timestamp", "correlation_id"}
+        known_fields = {"event_type", "source", "timestamp", "correlation_id", "data"}
 
         # Extract typed fields
         event_type_val = data.get("event_type")
@@ -140,11 +152,23 @@ class ModelEnvelopePayload(BaseModel):
         timestamp_val = data.get("timestamp")
         correlation_id_val = data.get("correlation_id")
 
-        # Collect unknown fields into data dict
+        # Handle nested "data" dict from to_dict() output for round-trip support
+        nested_data = data.get("data")
         extra_data: dict[str, PayloadDataValue] = {}
-        for key, value in data.items():
-            if key not in known_fields:
-                extra_data[key] = value
+
+        if isinstance(nested_data, dict):
+            # to_dict() output format: {"data": {...}}
+            for key, value in nested_data.items():
+                # Ensure value is PayloadDataValue (not nested dict)
+                if not isinstance(value, dict):
+                    extra_data[key] = value
+        else:
+            # Flat format: collect unknown fields into data dict
+            for key, raw_value in data.items():
+                if key not in known_fields and not isinstance(raw_value, dict):
+                    # After isinstance check, raw_value is PayloadDataValue
+                    # (dict type is excluded from the union)
+                    extra_data[key] = raw_value
 
         return cls(
             event_type=str(event_type_val) if event_type_val is not None else None,
@@ -166,8 +190,10 @@ class ModelEnvelopePayload(BaseModel):
         Returns:
             New ModelEnvelopePayload instance.
         """
-        # Convert to PayloadDataValue dict to satisfy type checker
-        converted: dict[str, PayloadDataValue] = dict(data)
+        # Convert to the wider type expected by from_dict
+        converted: dict[str, PayloadDataValue | dict[str, PayloadDataValue]] = dict(
+            data
+        )
         return cls.from_dict(converted)
 
     def to_dict(self) -> dict[str, PayloadDataValue | dict[str, PayloadDataValue]]:
@@ -193,6 +219,8 @@ class ModelEnvelopePayload(BaseModel):
         """Convert to dict[str, str] format.
 
         Flattens the structure to a simple string dictionary.
+        Reserved keys in data dict are prefixed with "data_" to prevent
+        collision with typed fields.
 
         Returns:
             Dictionary with string keys and values.
@@ -207,14 +235,17 @@ class ModelEnvelopePayload(BaseModel):
         if self.correlation_id is not None:
             result["correlation_id"] = self.correlation_id
         # Flatten data items as string values
+        # Reserved keys are prefixed with "data_" to prevent collision
         for key, value in self.data.items():
             if value is not None:
+                # Prefix reserved keys to prevent collision with typed fields
+                output_key = f"data_{key}" if key in self.RESERVED_KEYS else key
                 if isinstance(value, bool):
-                    result[key] = "true" if value else "false"
+                    result[output_key] = "true" if value else "false"
                 elif isinstance(value, list):
-                    result[key] = ",".join(value)
+                    result[output_key] = ",".join(value)
                 else:
-                    result[key] = str(value)
+                    result[output_key] = str(value)
         return result
 
     def get(self, key: str, default: PayloadDataValue = None) -> PayloadDataValue:

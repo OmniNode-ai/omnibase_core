@@ -5,7 +5,7 @@ Published when a subscription is successfully created,
 confirming a node has been wired to an event bus topic.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from pydantic import Field
@@ -47,8 +47,8 @@ class ModelSubscriptionCreatedEvent(ModelRuntimeEventBase):
         description="Name of the handler method for this subscription",
     )
     subscribed_at: datetime = Field(
-        default_factory=datetime.now,
-        description="When the subscription was created",
+        default_factory=lambda: datetime.now(UTC),
+        description="When the subscription was created (UTC)",
     )
     event_bus_type: str = Field(
         default="inmemory",

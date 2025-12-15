@@ -66,7 +66,7 @@ class ModelNodeGraphReadyEvent(ModelRuntimeEventBase):
         return cls(
             graph_id=graph_id or uuid4(),
             node_count=node_count,
-            nodes=nodes or [],
+            nodes=nodes if nodes is not None else [],
             instantiation_duration_ms=instantiation_duration_ms,
             correlation_id=correlation_id,
         )
