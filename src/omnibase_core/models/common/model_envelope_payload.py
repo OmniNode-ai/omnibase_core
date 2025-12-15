@@ -30,6 +30,7 @@ See Also:
 
 from __future__ import annotations
 
+import warnings
 from datetime import UTC, datetime
 from typing import ClassVar, Self
 
@@ -143,8 +144,13 @@ class ModelEnvelopePayload(BaseModel):
 
         Returns:
             New ModelEnvelopePayload instance.
+
+        Warns:
+            UserWarning: When dict values are encountered and skipped (potential
+                data loss). Nested dicts are not supported in PayloadDataValue.
         """
         known_fields = {"event_type", "source", "timestamp", "correlation_id", "data"}
+        skipped_keys: list[str] = []
 
         # Extract typed fields
         event_type_val = data.get("event_type")
@@ -160,15 +166,32 @@ class ModelEnvelopePayload(BaseModel):
             # to_dict() output format: {"data": {...}}
             for key, value in nested_data.items():
                 # Ensure value is PayloadDataValue (not nested dict)
-                if not isinstance(value, dict):
+                # Note: isinstance check is defensive - type system says dict values
+                # can't be dicts, but runtime may receive malformed input
+                if isinstance(value, dict):  # type: ignore[unreachable]
+                    skipped_keys.append(f"data.{key}")  # type: ignore[unreachable]
+                else:
                     extra_data[key] = value
         else:
             # Flat format: collect unknown fields into data dict
             for key, raw_value in data.items():
-                if key not in known_fields and not isinstance(raw_value, dict):
-                    # After isinstance check, raw_value is PayloadDataValue
-                    # (dict type is excluded from the union)
-                    extra_data[key] = raw_value
+                if key not in known_fields:
+                    if isinstance(raw_value, dict):
+                        skipped_keys.append(key)
+                    else:
+                        # After isinstance check, raw_value is PayloadDataValue
+                        # (dict type is excluded from the union)
+                        extra_data[key] = raw_value
+
+        # Warn about skipped dict values to prevent silent data loss
+        if skipped_keys:
+            warnings.warn(
+                f"ModelEnvelopePayload.from_dict() skipped {len(skipped_keys)} dict "
+                f"value(s) that cannot be represented in PayloadDataValue: "
+                f"{skipped_keys}. Nested dicts are not supported.",
+                UserWarning,
+                stacklevel=2,
+            )
 
         return cls(
             event_type=str(event_type_val) if event_type_val is not None else None,
@@ -224,6 +247,10 @@ class ModelEnvelopePayload(BaseModel):
 
         Returns:
             Dictionary with string keys and values.
+
+        Warns:
+            UserWarning: When reserved keys in data dict are prefixed, or when
+                the prefixed key would collide with an existing data key.
         """
         result: dict[str, str] = {}
         if self.event_type is not None:
@@ -234,18 +261,52 @@ class ModelEnvelopePayload(BaseModel):
             result["timestamp"] = self.timestamp
         if self.correlation_id is not None:
             result["correlation_id"] = self.correlation_id
+
+        # Track collisions for warning
+        prefixed_keys: list[str] = []
+        collision_keys: list[str] = []
+
         # Flatten data items as string values
         # Reserved keys are prefixed with "data_" to prevent collision
         for key, value in self.data.items():
             if value is not None:
                 # Prefix reserved keys to prevent collision with typed fields
-                output_key = f"data_{key}" if key in self.RESERVED_KEYS else key
+                if key in self.RESERVED_KEYS:
+                    output_key = f"data_{key}"
+                    prefixed_keys.append(key)
+                    # Check if prefixed key collides with another data key
+                    if output_key in self.data:
+                        collision_keys.append(output_key)
+                else:
+                    output_key = key
+
                 if isinstance(value, bool):
                     result[output_key] = "true" if value else "false"
                 elif isinstance(value, list):
                     result[output_key] = ",".join(value)
                 else:
                     result[output_key] = str(value)
+
+        # Warn about prefixed keys (potential data interpretation issues)
+        if prefixed_keys:
+            warnings.warn(
+                f"ModelEnvelopePayload.to_string_dict() prefixed {len(prefixed_keys)} "
+                f"reserved key(s) with 'data_': {prefixed_keys}. These keys collide "
+                f"with typed field names and have been renamed.",
+                UserWarning,
+                stacklevel=2,
+            )
+
+        # Warn about collision with existing data keys (data loss risk)
+        if collision_keys:
+            warnings.warn(
+                f"ModelEnvelopePayload.to_string_dict() detected key collision: "
+                f"prefixed keys {collision_keys} already exist in data dict. "
+                f"One value will overwrite the other, causing data loss.",
+                UserWarning,
+                stacklevel=2,
+            )
+
         return result
 
     def get(self, key: str, default: PayloadDataValue = None) -> PayloadDataValue:

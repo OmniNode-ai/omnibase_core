@@ -31,9 +31,9 @@ class ModelEventSubscriptionConfig(BaseModel):
     )
     priority: int = Field(
         default=0,
-        description="Subscription priority (0-100, higher = more urgent)",
+        description="Subscription priority (0-1000, higher = more urgent)",
         ge=0,
-        le=100,
+        le=1000,
     )
     batch_size: int | None = Field(
         default=None,

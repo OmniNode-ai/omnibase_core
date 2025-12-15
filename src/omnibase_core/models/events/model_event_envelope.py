@@ -10,7 +10,7 @@ Node Type: N/A (Data Model)
 """
 
 # Standard library imports (alphabetized)
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, cast
 from uuid import UUID, uuid4
 
@@ -76,7 +76,8 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
         default_factory=uuid4, description="Unique envelope identifier"
     )
     envelope_timestamp: datetime = Field(
-        default_factory=datetime.now, description="Envelope creation timestamp"
+        default_factory=lambda: datetime.now(UTC),
+        description="Envelope creation timestamp (UTC)",
     )
     correlation_id: UUID | None = Field(
         default=None, description="Correlation ID for request tracing"
@@ -286,7 +287,7 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
         """
         if self.timeout_seconds is None:
             return False
-        elapsed = (datetime.now() - self.envelope_timestamp).total_seconds()
+        elapsed = (datetime.now(UTC) - self.envelope_timestamp).total_seconds()
         return elapsed > self.timeout_seconds
 
     def is_retry(self) -> bool:
@@ -305,7 +306,7 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
         Returns:
             Elapsed time in seconds
         """
-        return (datetime.now() - self.envelope_timestamp).total_seconds()
+        return (datetime.now(UTC) - self.envelope_timestamp).total_seconds()
 
     def has_trace_context(self) -> bool:
         """

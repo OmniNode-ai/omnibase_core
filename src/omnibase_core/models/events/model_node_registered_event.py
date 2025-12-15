@@ -9,6 +9,7 @@ from uuid import UUID
 
 from pydantic import Field
 
+from omnibase_core.enums.enum_node_kind import EnumNodeKind
 from omnibase_core.models.events.model_runtime_event_base import (
     ModelRuntimeEventBase,
 )
@@ -38,7 +39,7 @@ class ModelNodeRegisteredEvent(ModelRuntimeEventBase):
         default=...,
         description="Human-readable name of the node",
     )
-    node_type: str = Field(
+    node_type: EnumNodeKind = Field(
         default=...,
         description="Type of node (EFFECT, COMPUTE, REDUCER, ORCHESTRATOR)",
     )
@@ -56,7 +57,7 @@ class ModelNodeRegisteredEvent(ModelRuntimeEventBase):
         cls,
         node_id: UUID,
         node_name: str,
-        node_type: str,
+        node_type: EnumNodeKind,
         *,
         correlation_id: UUID | None = None,
         contract_path: str | None = None,
