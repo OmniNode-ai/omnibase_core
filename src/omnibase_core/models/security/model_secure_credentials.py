@@ -428,7 +428,7 @@ class ModelSecureCredentials(BaseModel, ABC):
         fallback_prefixes: list[str] | None = None,
     ) -> T:
         """Create instance from environment with fallback prefixes."""
-        fallback_prefixes = fallback_prefixes or []
+        fallback_prefixes = fallback_prefixes if fallback_prefixes is not None else []
 
         # Helper to check if any env vars with prefix exist
         def has_env_vars(prefix: str) -> bool:

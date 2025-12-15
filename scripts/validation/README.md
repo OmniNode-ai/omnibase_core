@@ -786,6 +786,6 @@ default_timeout = 30  # Not DEFAULT_TIMEOUT
 
 ---
 
-**Last Updated**: 2025-11-06
-**Project**: omnibase_core v0.2.0
+**Last Updated**: 2025-12-13
+**Project**: omnibase_core v0.4.0
 **ONEX Framework**: Security Best Practices

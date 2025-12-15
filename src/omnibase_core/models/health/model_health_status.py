@@ -215,7 +215,7 @@ class ModelHealthStatus(BaseModel):
         return cls(
             status="degraded",
             health_score=score,
-            issues=issues or [],
+            issues=issues if issues is not None else [],
             check_count=1,
         )
 
@@ -229,7 +229,7 @@ class ModelHealthStatus(BaseModel):
         return cls(
             status="unhealthy",
             health_score=score,
-            issues=issues or [],
+            issues=issues if issues is not None else [],
             check_count=1,
         )
 

@@ -6,7 +6,7 @@ This module provides comprehensive validation tests for the v1.1.0 contract fiel
 introduced in the unified contract upgrade (OMN-258, OMN-259, OMN-260).
 
 v1.1.0 Fields Tested:
-    - fingerprint: Format "v{version}:{12-char-hash}" for drift detection
+    - fingerprint: Format "{version}:{12-char-hash}" for drift detection (no 'v' prefix)
     - handlers: Required/optional handler specifications
     - profile_tags: Categorization tags list
     - subscriptions: Kafka topic subscriptions
@@ -112,7 +112,7 @@ class TestContractFingerprintField:
     def test_fingerprint_format_version_colon_hash(
         self, contract_data: dict, contract_name: str
     ) -> None:
-        """Test that fingerprint follows 'v{version}:{12-char-hash}' format."""
+        """Test that fingerprint follows '{version}:{12-char-hash}' format."""
         fingerprint = contract_data.get("fingerprint", "")
         assert ":" in fingerprint, (
             f"{contract_name}: fingerprint should contain ':' separator, "

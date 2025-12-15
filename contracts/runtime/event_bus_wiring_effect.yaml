@@ -221,17 +221,52 @@ health_check:
 #
 # These handlers are implemented by the NodeEventBusWiringEffect class or provided by the
 # runtime's built-in subscription handler executor. See docs/architecture/SUBSCRIPTION_HANDLERS.md.
+#
+# TODO: Implement subscription handler registration in the runtime:
+#   1. Create SubscriptionHandlerRegistry to map handler names to implementations
+#   2. Implement wire_all_subscriptions in NodeEventBusWiringEffect or runtime executor
+#   3. Implement wire_single_subscription for hot-reload support
+#   4. Implement remove_subscription for graceful node removal
+#   5. Add handler validation during contract loading to fail-fast on missing handlers
 subscriptions:
+  # Implementation Status: PLANNED
+  # These handlers are contract-declared but not yet runtime-registered.
+  # The runtime will validate handler availability during contract loading
+  # and emit warnings for unregistered handlers in non-strict mode.
+  #
+  # Tracking: Planned for v1.2.0 - SubscriptionHandlerRegistry implementation
+  # Status: Handler implementation pending (not yet runtime-registered)
   topics:
     - topic: onex.runtime.node_graph.ready
       description: Triggered when node graph is fully instantiated
       handler: wire_all_subscriptions
+      handler_status: planned  # NOT_IMPLEMENTED - requires SubscriptionHandlerRegistry
+      handler_implementation:
+        class: NodeEventBusWiringEffect
+        method: _handle_node_graph_ready
+        input_schema: ModelNodeGraphReadyEvent
+        output_schema: ModelWiringResultEvent
+        idempotent: true
     - topic: onex.runtime.node.registered
       description: Handle new node registration for hot reload
       handler: wire_single_subscription
+      handler_status: planned  # NOT_IMPLEMENTED - requires SubscriptionHandlerRegistry
+      handler_implementation:
+        class: NodeEventBusWiringEffect
+        method: _handle_node_registered
+        input_schema: ModelNodeRegisteredEvent
+        output_schema: ModelSubscriptionCreatedEvent
+        idempotent: true
     - topic: onex.runtime.node.unregistered
       description: Handle node removal
       handler: remove_subscription
+      handler_status: planned  # NOT_IMPLEMENTED - requires SubscriptionHandlerRegistry
+      handler_implementation:
+        class: NodeEventBusWiringEffect
+        method: _handle_node_unregistered
+        input_schema: ModelNodeUnregisteredEvent
+        output_schema: ModelSubscriptionRemovedEvent
+        idempotent: true
 
 # Events published by this node
 publications:

@@ -128,8 +128,8 @@ class ModelNodeOrganizationMetadata(BaseModel):
         """Create organization metadata with tags and categories."""
         return cls(
             tags=tags,
-            categories=categories or [],
-            capabilities=capabilities or [],
+            categories=categories if categories is not None else [],
+            capabilities=capabilities if capabilities is not None else [],
         )
 
     @classmethod

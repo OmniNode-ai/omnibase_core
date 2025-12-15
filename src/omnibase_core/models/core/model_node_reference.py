@@ -79,7 +79,7 @@ class ModelNodeReference(BaseModel):
         return cls(
             node_name=node_name,
             node_type="local",
-            capabilities=capabilities or [],
+            capabilities=capabilities if capabilities is not None else [],
         )
 
     @classmethod
@@ -94,7 +94,7 @@ class ModelNodeReference(BaseModel):
             node_name=node_name,
             node_type="remote",
             endpoint=endpoint,
-            capabilities=capabilities or [],
+            capabilities=capabilities if capabilities is not None else [],
         )
 
     @classmethod
@@ -109,5 +109,5 @@ class ModelNodeReference(BaseModel):
             node_name=node_name,
             namespace=namespace,
             node_type="plugin",
-            capabilities=capabilities or [],
+            capabilities=capabilities if capabilities is not None else [],
         )

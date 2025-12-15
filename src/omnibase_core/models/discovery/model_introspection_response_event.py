@@ -135,7 +135,7 @@ class ModelIntrospectionResponseEvent(ModelOnexEvent):
             current_status=current_status,
             capabilities=capabilities,
             response_time_ms=response_time_ms,
-            tools=tools or [],
+            tools=tools if tools is not None else [],
             resource_usage=resource_usage,
             performance_metrics=performance_metrics,
             **kwargs,
@@ -221,7 +221,7 @@ class ModelIntrospectionResponseEvent(ModelOnexEvent):
         capabilities = ModelNodeCapabilities(
             actions=[],
             protocols=[],
-            metadata={"error": error_message},  # type: ignore[arg-type]
+            # Error message is stored in additional_info.error_message, not metadata
         )
         return cls(
             correlation_id=correlation_id,

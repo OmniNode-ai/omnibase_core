@@ -628,7 +628,7 @@ class ModelMissingTool(BaseModel):
             error_details=error_details,
             reason_category=EnumToolMissingReason.IMPORT_ERROR,
             criticality=EnumToolCriticality.HIGH,
-            dependencies=dependencies or [],
+            dependencies=dependencies if dependencies is not None else [],
             suggested_solution="Fix import issues and ensure all dependencies are available",
         )
 

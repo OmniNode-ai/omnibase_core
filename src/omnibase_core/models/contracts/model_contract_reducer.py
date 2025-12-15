@@ -539,7 +539,6 @@ class ModelContractReducer(MixinNodeTypeValidator, ModelContractBase):
         extra="forbid",  # Strict validation - reject unknown fields
         frozen=True,  # Thread safety and immutability - instances cannot be modified
         use_enum_values=False,  # Keep enum objects, don't convert to strings
-        validate_assignment=True,  # Explicit for documentation - redundant with frozen=True but kept for clarity
         str_strip_whitespace=True,  # Clean string inputs
         validate_default=True,  # Validate default values at model definition time
         populate_by_name=True,  # Allow both field name and alias for YAML flexibility

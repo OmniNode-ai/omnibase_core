@@ -74,7 +74,10 @@ class ModelYamlValue(BaseModel):
         if self.value_type == EnumYamlValueType.DICT:
             return {k: v.to_serializable() for k, v in (self.dict_value or {}).items()}
         if self.value_type == EnumYamlValueType.LIST:
-            return [v.to_serializable() for v in (self.list_value or [])]
+            return [
+                v.to_serializable()
+                for v in (self.list_value if self.list_value is not None else [])
+            ]
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"Invalid value_type: {self.value_type}",

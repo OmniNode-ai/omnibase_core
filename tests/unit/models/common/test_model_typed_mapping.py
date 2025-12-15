@@ -545,8 +545,10 @@ class TestModelTypedMapping:
 
     def test_model_deserialization(self):
         """Test model deserialization."""
+        # Use valid data structure matching ModelValueContainer schema
+        # (value + optional metadata dict, no value_type field)
         data = {
-            "data": {"test_key": {"value": "test_value", "value_type": "string"}},
+            "data": {"test_key": {"value": "test_value", "metadata": {}}},
             "current_depth": 0,
         }
 

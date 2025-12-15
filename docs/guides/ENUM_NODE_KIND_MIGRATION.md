@@ -1,7 +1,7 @@
 # EnumNodeKind Migration Guide
 
-> **Version**: 0.2.0
-> **Last Updated**: 2025-12-03
+> **Version**: 0.4.0
+> **Last Updated**: 2025-12-13
 > **Related**: [CLAUDE.md](../../CLAUDE.md), [ONEX Four-Node Architecture](../architecture/ONEX_FOUR_NODE_ARCHITECTURE.md)
 
 ---
@@ -266,5 +266,5 @@ def get_node_kind(cls, node_type: EnumNodeType) -> EnumNodeKind:
 
 ---
 
-**Last Updated**: 2025-12-03
-**Version**: 0.2.0
+**Last Updated**: 2025-12-13
+**Version**: 0.4.0

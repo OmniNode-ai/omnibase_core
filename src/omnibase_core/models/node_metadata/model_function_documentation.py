@@ -96,7 +96,7 @@ class ModelFunctionDocumentation(BaseModel):
         """Create documentation with docstring and examples."""
         return cls(
             docstring=docstring,
-            examples=examples or [],
+            examples=examples if examples is not None else [],
         )
 
     @classmethod

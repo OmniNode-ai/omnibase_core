@@ -298,7 +298,7 @@ class ModelToolHealth(BaseModel):
             version=version,
             configuration=configuration,
             metrics=metrics,
-            dependencies=dependencies or [],
+            dependencies=dependencies if dependencies is not None else [],
         )
 
     @classmethod
@@ -330,7 +330,7 @@ class ModelToolHealth(BaseModel):
             version=version,
             configuration=configuration,
             metrics=metrics,
-            dependencies=dependencies or [],
+            dependencies=dependencies if dependencies is not None else [],
         )
 
     # === Reliability Analysis ===
@@ -541,7 +541,7 @@ class ModelToolHealth(BaseModel):
             version=version,
             configuration=configuration,
             metrics=metrics,
-            dependencies=dependencies or [],
+            dependencies=dependencies if dependencies is not None else [],
         )
 
     @classmethod
@@ -572,7 +572,7 @@ class ModelToolHealth(BaseModel):
             version=version,
             configuration=configuration,
             metrics=metrics,
-            dependencies=dependencies or [],
+            dependencies=dependencies if dependencies is not None else [],
         )
 
     @classmethod
@@ -607,7 +607,7 @@ class ModelToolHealth(BaseModel):
             consecutive_failures=0 if is_callable else 1,
             configuration=configuration,
             metrics=metrics,
-            dependencies=dependencies or [],
+            dependencies=dependencies if dependencies is not None else [],
         )
 
 

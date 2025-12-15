@@ -136,7 +136,7 @@ filterwarnings = [
     "default::DeprecationWarning",
     "default::PendingDeprecationWarning",
     # Suppress specific unavoidable warning from dependency
-    # TODO(OMN-XXX): Remove when library-name >= X.Y.Z
+    # TODO(YOUR-TICKET): Remove when library-name >= X.Y.Z
     "ignore:specific warning message:DeprecationWarning:library_name",
 ]
 ```

@@ -124,7 +124,9 @@ class ModelMixinMetadataCollection(BaseModel):
 
                     methods = []
                     if "methods" in cp_data:
-                        methods_data = cp_data["methods"] or []
+                        methods_data = (
+                            cp_data["methods"] if cp_data["methods"] is not None else []
+                        )
                         if not isinstance(methods_data, list):
                             raise ModelOnexError(
                                 message=f"code_patterns.methods for mixin '{key}' must be a list, got {type(methods_data).__name__}",
@@ -135,7 +137,11 @@ class ModelMixinMetadataCollection(BaseModel):
 
                     properties = []
                     if "properties" in cp_data:
-                        properties_data = cp_data["properties"] or []
+                        properties_data = (
+                            cp_data["properties"]
+                            if cp_data["properties"] is not None
+                            else []
+                        )
                         if not isinstance(properties_data, list):
                             raise ModelOnexError(
                                 message=f"code_patterns.properties for mixin '{key}' must be a list, got {type(properties_data).__name__}",
@@ -163,7 +169,11 @@ class ModelMixinMetadataCollection(BaseModel):
 
                     use_cases = []
                     if "typical_use_cases" in perf_data:
-                        use_cases_data = perf_data["typical_use_cases"] or []
+                        use_cases_data = (
+                            perf_data["typical_use_cases"]
+                            if perf_data["typical_use_cases"] is not None
+                            else []
+                        )
                         if not isinstance(use_cases_data, list):
                             raise ModelOnexError(
                                 message=f"performance.typical_use_cases for mixin '{key}' must be a list, got {type(use_cases_data).__name__}",
@@ -182,19 +192,30 @@ class ModelMixinMetadataCollection(BaseModel):
                     )
 
                 # Create metadata
+                requires_val = mixin_data.get("requires")
+                compatible_val = mixin_data.get("compatible_with")
+                incompatible_val = mixin_data.get("incompatible_with")
+                usage_val = mixin_data.get("usage_examples")
+                impl_notes_val = mixin_data.get("implementation_notes")
                 metadata = ModelMixinMetadata(
                     name=mixin_data.get("name", key),
                     description=mixin_data.get("description", ""),
                     version=version,
                     category=mixin_data.get("category", "utility"),
-                    requires=mixin_data.get("requires") or [],
-                    compatible_with=mixin_data.get("compatible_with") or [],
-                    incompatible_with=mixin_data.get("incompatible_with") or [],
+                    requires=requires_val if requires_val is not None else [],
+                    compatible_with=compatible_val
+                    if compatible_val is not None
+                    else [],
+                    incompatible_with=incompatible_val
+                    if incompatible_val is not None
+                    else [],
                     config_schema=config_schema,
-                    usage_examples=mixin_data.get("usage_examples") or [],
+                    usage_examples=usage_val if usage_val is not None else [],
                     presets=presets,
                     code_patterns=code_patterns,
-                    implementation_notes=mixin_data.get("implementation_notes") or [],
+                    implementation_notes=impl_notes_val
+                    if impl_notes_val is not None
+                    else [],
                     performance=performance,
                     documentation_url=mixin_data.get("documentation_url"),
                 )

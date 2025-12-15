@@ -136,7 +136,12 @@ class ModelConnectionInfo(BaseModel):
         return self.security.is_secure_connection() or self.auth.is_secure_auth()
 
     def validate_configuration(self) -> bool:
-        """Validate the complete connection configuration."""
+        """Validate the complete connection configuration.
+
+        Note: Pool and security sub-models are validated at construction time
+        and on every field assignment (via validate_assignment=True), so
+        explicit re-validation is not needed here.
+        """
         # Validate endpoint path for connection type
         if not self.endpoint.validate_path_for_type():
             return False
@@ -145,17 +150,9 @@ class ModelConnectionInfo(BaseModel):
         if not self.auth.validate_auth_requirements():
             return False
 
-        # Validate pool configuration via the pool model's validator
-        try:
-            self.pool.model_validate(self.pool.model_dump())
-        except ValueError:
-            return False
-
-        # Validate security configuration via the security model's validator
-        try:
-            self.security.model_validate(self.security.model_dump())
-        except ValueError:
-            return False
+        # Pool and security models are already validated:
+        # - At construction via model_validator(mode="after")
+        # - On field assignment via validate_assignment=True in model_config
 
         return True
 

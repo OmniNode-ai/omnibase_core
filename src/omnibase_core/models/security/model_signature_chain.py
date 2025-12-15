@@ -368,7 +368,9 @@ class ModelSignatureChain(BaseModel):
             envelope_id=envelope_id,
             content_hash=content_hash,
             signing_policy=signing_policy,
-            compliance_frameworks=compliance_frameworks or [],
+            compliance_frameworks=compliance_frameworks
+            if compliance_frameworks is not None
+            else [],
             validation_status=EnumChainValidationStatus.INCOMPLETE,
             trust_level=EnumTrustLevel.UNTRUSTED,
         )

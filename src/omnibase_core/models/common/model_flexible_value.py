@@ -257,7 +257,10 @@ class ModelFlexibleValue(BaseModel):
         if self.value_type == EnumFlexibleValueType.DICT:
             return self.dict_value
         if self.value_type == EnumFlexibleValueType.LIST:
-            return [item.to_value() for item in (self.list_value or [])]
+            return [
+                item.to_value()
+                for item in (self.list_value if self.list_value is not None else [])
+            ]
         if self.value_type == EnumFlexibleValueType.UUID:
             return self.uuid_value
         if self.value_type == EnumFlexibleValueType.NONE:

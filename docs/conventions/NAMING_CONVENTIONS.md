@@ -368,7 +368,7 @@ event_handling = ModelEventHandlingSubcontract(
 ```
 
 **Components:**
-- `semver`: Semantic version **without 'v' prefix** (e.g., `1.0.0`, `0.4.0-beta.1`)
+- `semver`: Semantic version **without 'v' prefix** (e.g., `1.0.0`, `0.3.6-beta.1`)
 - `:`: Separator (single colon)
 - `hash`: First N hex characters of SHA256 (default: 12)
 
@@ -378,7 +378,7 @@ event_handling = ModelEventHandlingSubcontract(
 
 ```text
 1.0.0:8fa1e2b4c9d1
-0.4.0:abcdef123456
+0.3.6:abcdef123456
 2.1.3-beta.1:deadbeef0000
 ```
 
@@ -470,5 +470,5 @@ models/
 
 ---
 
-**Last Updated**: 2025-12-12
+**Last Updated**: 2025-12-14
 **Project**: omnibase_core v0.4.0

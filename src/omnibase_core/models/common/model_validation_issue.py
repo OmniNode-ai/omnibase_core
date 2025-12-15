@@ -1,7 +1,7 @@
 import re
 from pathlib import Path
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 # Import the existing enum from enums module
 from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
@@ -21,6 +21,8 @@ class ModelValidationIssue(BaseModel):
     Represents a specific issue found during validation with
     comprehensive metadata and suggestions.
     """
+
+    model_config = ConfigDict(extra="forbid", validate_assignment=True)
 
     severity: EnumValidationSeverity = Field(
         default=...,

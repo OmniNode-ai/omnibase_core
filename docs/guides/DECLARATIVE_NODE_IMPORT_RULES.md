@@ -427,7 +427,7 @@ from omnibase_core.decorators import allow_dict_any
 class NodeLegacyProcessor(NodeCompute):
     @allow_dict_any(
         reason="External API returns untyped JSON",
-        ticket="OMN-XXX",
+        ticket="YOUR-TICKET",
         migration_plan="Convert to typed model in v0.5.0"
     )
     def parse_external_response(self, response: dict[str, Any]) -> ModelParsedResponse:
@@ -437,7 +437,7 @@ class NodeLegacyProcessor(NodeCompute):
         This exemption is required because:
         1. External API does not provide OpenAPI schema
         2. Response structure varies by endpoint version
-        3. Typed wrapper being developed under OMN-XXX
+        3. Typed wrapper being developed under separate ticket
         """
         # Implementation
         ...
@@ -453,7 +453,7 @@ class NodeLegacyProcessor(NodeCompute):
 For legacy code during migration:
 
 ```python
-# ONEX_EXCLUDE: Legacy bridge code, migration tracked in OMN-XXX
+# ONEX_EXCLUDE: Legacy bridge code, migration tracked in YOUR-TICKET
 from typing import Any  # noqa: ONEX001
 
 def legacy_bridge(data: Any) -> Any:  # noqa: ONEX001

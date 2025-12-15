@@ -60,7 +60,9 @@ class ModelHubConfiguration(BaseModel):
 
         # Generate UUIDs for managed tools
         managed_tool_ids = []
-        tool_display_names = managed_tool_names or []
+        tool_display_names = (
+            managed_tool_names if managed_tool_names is not None else []
+        )
         for tool_name in tool_display_names:
             tool_hash = hashlib.sha256(tool_name.encode()).hexdigest()
             tool_id = UUID(

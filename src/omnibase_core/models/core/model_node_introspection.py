@@ -120,7 +120,7 @@ def create_node_introspection_response(
         state_models=state_models,
         error_codes=error_codes,
         dependencies=dependencies,
-        capabilities=capabilities or [],
+        capabilities=capabilities if capabilities is not None else [],
         event_channels=event_channels,
         introspection_version=introspection_version,
     )

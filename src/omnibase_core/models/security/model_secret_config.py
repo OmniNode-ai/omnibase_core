@@ -227,7 +227,7 @@ class ModelSecretConfig(BaseModel):
 
         # Validate primary backend configuration
         backend_config_data = self.get_backend_config_dict()
-        backend_config = ModelBackendConfig(**backend_config_data.model_dump())
+        backend_config = ModelBackendConfig.model_validate(backend_config_data)
         backend_validation = self.backend.validate_config(backend_config)
 
         if not backend_validation.is_valid:

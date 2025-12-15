@@ -61,11 +61,14 @@ class ModelGitHubActionsWorkflow(BaseModel):
         return ModelGitHubWorkflowData.model_validate(data)
 
     @classmethod
-    def from_serializable_dict(
+    def from_workflow_data(
         cls,
         data: ModelGitHubWorkflowData,
     ) -> Self:
         """
-        Create from a serializable dictionary.
+        Create from a ModelGitHubWorkflowData instance.
+
+        Uses direct model validation via from_attributes=True,
+        avoiding unnecessary dict serialization round-trip.
         """
-        return cls.model_validate(data.model_dump())
+        return cls.model_validate(data)

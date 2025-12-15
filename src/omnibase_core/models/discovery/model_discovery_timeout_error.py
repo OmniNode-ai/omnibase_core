@@ -32,7 +32,7 @@ class ModelDiscoveryTimeoutError(Exception):
         """
         super().__init__(message)
         self.timeout_seconds = timeout_seconds
-        self.partial_results = partial_results or []
+        self.partial_results = partial_results if partial_results is not None else []
 
     def has_partial_results(self) -> bool:
         """Check if any partial results were obtained before timeout"""

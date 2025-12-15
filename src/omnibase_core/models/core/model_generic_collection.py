@@ -189,9 +189,12 @@ class ModelGenericCollection[T: BaseModel](BaseModel):
         Returns:
             List of items that have the specified tag
         """
-        return self.filter_items(
-            lambda item: tag in (getattr(item, "tags", None) or []),
-        )
+
+        def _has_tag(item: T) -> bool:
+            tags = getattr(item, "tags", None)
+            return tag in (tags if tags is not None else [])
+
+        return self.filter_items(_has_tag)
 
     def item_count(self) -> int:
         """
