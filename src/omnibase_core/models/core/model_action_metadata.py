@@ -35,10 +35,14 @@ class ModelActionMetadata(BaseModel):
         default_factory=uuid4,
         description="Unique identifier for this action instance",
     )
-    action_type: ModelNodeActionType = Field(
-        default=..., description="Rich action type model"
+    action_type: ModelNodeActionType | None = Field(
+        default=None,
+        description="Rich action type model (optional for default construction)",
     )
-    action_name: str = Field(default=..., description="Human-readable action name")
+    action_name: str = Field(
+        default="",
+        description="Human-readable action name (empty for default construction)",
+    )
 
     # Correlation tracking
     correlation_id: UUID = Field(
@@ -183,7 +187,7 @@ class ModelActionMetadata(BaseModel):
         """Generate metadata for service discovery as JSON-serializable data."""
         return {
             "action_id": str(self.action_id),
-            "action_type": self.action_type.name,
+            "action_type": self.action_type.name if self.action_type else None,
             "action_name": self.action_name,
             "correlation_id": str(self.correlation_id),
             "trust_score": self.trust_score,

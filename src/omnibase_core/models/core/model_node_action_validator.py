@@ -242,7 +242,10 @@ class ModelNodeActionValidator:
             result.security_checks["not_expired"] = True
 
         # Validate action type consistency
-        if metadata.action_type != action.action_type:
+        if (
+            metadata.action_type is not None
+            and metadata.action_type != action.action_type
+        ):
             result.validation_errors.append(
                 f"Metadata action type '{metadata.action_type.name}' does not match "
                 f"action type '{action.action_type.name}'",

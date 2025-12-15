@@ -11,27 +11,23 @@ Node Type: N/A (Data Model)
 
 # Standard library imports (alphabetized)
 from datetime import UTC, datetime
-from typing import Annotated, Any, cast
+from typing import Any, cast
 from uuid import UUID, uuid4
 
 # Third-party imports (alphabetized)
 from pydantic import BaseModel, Field
-from pydantic.functional_validators import PlainValidator
 
 # Local imports (alphabetized)
+from omnibase_core.decorators.allow_dict_any import allow_dict_any
 from omnibase_core.mixins.mixin_lazy_evaluation import MixinLazyEvaluation
 from omnibase_core.models.core.model_envelope_metadata import ModelEnvelopeMetadata
 from omnibase_core.models.primitives.model_semver import (
     ModelSemVer,
     default_model_version,
 )
-from omnibase_core.utils.util_decorators import allow_dict_str_any
+from omnibase_core.models.security.model_security_context import ModelSecurityContext
 
 
-@allow_dict_str_any(
-    "Event envelope requires flexible metadata and security_context for "
-    "arbitrary event attributes and security information across services."
-)
 class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
     """
     ONEX-compatible envelope wrapper for all events.
@@ -90,20 +86,11 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
     target_tool: str | None = Field(
         default=None, description="Identifier of the intended recipient tool"
     )
-    metadata: Annotated[
-        ModelEnvelopeMetadata | dict[str, Any],
-        PlainValidator(
-            lambda v: (
-                {}  # Default to empty dict
-                if v is None
-                else v  # Preserve dict or ModelEnvelopeMetadata as-is
-            )
-        ),
-    ] = Field(
-        default_factory=dict,
-        description="Additional envelope metadata (typed ModelEnvelopeMetadata or dict)",
+    metadata: ModelEnvelopeMetadata = Field(
+        default_factory=ModelEnvelopeMetadata,
+        description="Envelope metadata with full type safety",
     )
-    security_context: dict[str, Any] | None = Field(
+    security_context: ModelSecurityContext | None = Field(
         default=None, description="Security context for the event"
     )
     priority: int = Field(
@@ -154,27 +141,20 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
         """
         return self.model_copy(update={"correlation_id": correlation_id})
 
-    def with_metadata(
-        self, metadata: ModelEnvelopeMetadata | dict[str, Any]
-    ) -> "ModelEventEnvelope[T]":
+    def with_metadata(self, metadata: ModelEnvelopeMetadata) -> "ModelEventEnvelope[T]":
         """
         Create a new envelope with updated metadata.
 
         Args:
-            metadata: New metadata (ModelEnvelopeMetadata or dict)
+            metadata: New metadata (ModelEnvelopeMetadata)
 
         Returns:
             New envelope instance with updated metadata
         """
-        # If both are dicts, merge them
-        if isinstance(self.metadata, dict) and isinstance(metadata, dict):
-            merged_metadata = {**self.metadata, **metadata}
-            return self.model_copy(update={"metadata": merged_metadata})
-        # Otherwise, replace (typed ModelEnvelopeMetadata doesn't merge)
         return self.model_copy(update={"metadata": metadata})
 
     def with_security_context(
-        self, security_context: dict[str, Any]
+        self, security_context: ModelSecurityContext
     ) -> "ModelEventEnvelope[T]":
         """
         Create a new envelope with updated security context.
@@ -285,11 +265,10 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
         Returns:
             Metadata value or default
         """
-        if isinstance(self.metadata, dict):
-            return self.metadata.get(key, default)
-        # For ModelEnvelopeMetadata, check tags first (legacy dict keys), then attributes
-        if hasattr(self.metadata, "tags") and key in self.metadata.tags:
+        # Check tags first (custom key-value pairs)
+        if key in self.metadata.tags:
             return self.metadata.tags[key]
+        # Then check attributes (trace_id, request_id, span_id, etc.)
         return getattr(self.metadata, key, default)
 
     def is_high_priority(self) -> bool:
@@ -359,6 +338,9 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
             context["request_id"] = str(self.request_id)
         return context
 
+    @allow_dict_any(
+        reason="Serialization method returning dictionary representation of envelope"
+    )
     def to_dict_lazy(self) -> dict[str, Any]:
         """
         Convert envelope to dictionary with lazy evaluation for nested objects.
@@ -388,12 +370,10 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
             "request_id": self.request_id,
             "trace_id": self.trace_id,
             "span_id": self.span_id,
-            "metadata": (
-                self.metadata.model_dump()
-                if isinstance(self.metadata, ModelEnvelopeMetadata)
-                else self.metadata
+            "metadata": self.metadata.model_dump(),
+            "security_context": (
+                self.security_context.model_dump() if self.security_context else None
             ),
-            "security_context": self.security_context,
             "onex_version": str(self.onex_version),
             "envelope_version": str(self.envelope_version),
         }

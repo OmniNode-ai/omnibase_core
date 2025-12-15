@@ -27,11 +27,12 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_workflow_execution import EnumActionType
+from omnibase_core.models.core.model_action_metadata import ModelActionMetadata
 from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 
 @allow_dict_str_any(
-    "Action model requires flexible payload and metadata for arbitrary action data "
+    "Action model requires flexible payload for arbitrary action data "
     "across different action types and workflow contexts."
 )
 class ModelAction(BaseModel):
@@ -61,7 +62,7 @@ class ModelAction(BaseModel):
         lease_id: Lease ID proving Orchestrator ownership (required).
         epoch: Monotonically increasing version number (>= 0, required).
         retry_count: Number of retry attempts on failure (0-10, default 0).
-        metadata: Additional metadata for action execution (default empty dict).
+        metadata: Action execution metadata with full type safety (default ModelActionMetadata()).
         created_at: Timestamp when action was created (auto-generated).
 
     Example:
@@ -144,9 +145,9 @@ class ModelAction(BaseModel):
         le=10,
     )
 
-    metadata: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Additional metadata for action execution",
+    metadata: ModelActionMetadata = Field(
+        default_factory=ModelActionMetadata,
+        description="Action execution metadata with full type safety",
     )
 
     created_at: datetime = Field(

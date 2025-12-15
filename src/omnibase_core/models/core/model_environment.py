@@ -24,6 +24,8 @@ This module can safely import error_codes because error_codes only imports
 from types.core_types (not from models or types.constraints).
 """
 
+from __future__ import annotations
+
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
@@ -87,7 +89,7 @@ class ModelEnvironment(BaseModel):
         description="Feature flag configuration",
     )
 
-    security_level: "ModelSecurityLevel | None" = Field(
+    security_level: ModelSecurityLevel | None = Field(
         default=None,
         description="Security requirements and configuration",
     )
@@ -118,7 +120,7 @@ class ModelEnvironment(BaseModel):
         pattern="^(DEBUG|INFO|WARNING|ERROR|CRITICAL)$",
     )
 
-    resource_limits: "ModelResourceLimits | None" = Field(
+    resource_limits: ModelResourceLimits | None = Field(
         default=None,
         description="Resource limits for this environment",
     )
@@ -283,7 +285,7 @@ class ModelEnvironment(BaseModel):
     # === Factory Methods ===
 
     @classmethod
-    def create_default(cls, name: str = "development") -> "ModelEnvironment":
+    def create_default(cls, name: str = "development") -> ModelEnvironment:
         """Create a default environment configuration."""
         display_names = {
             "development": "Development",
@@ -367,7 +369,7 @@ class ModelEnvironment(BaseModel):
         )
 
     @classmethod
-    def create_development(cls) -> "ModelEnvironment":
+    def create_development(cls) -> ModelEnvironment:
         """Create a development environment."""
         from omnibase_core.models.configuration.model_resource_limits import (
             ModelResourceLimits,
@@ -394,7 +396,7 @@ class ModelEnvironment(BaseModel):
         return env
 
     @classmethod
-    def create_staging(cls) -> "ModelEnvironment":
+    def create_staging(cls) -> ModelEnvironment:
         """Create a staging environment."""
         from omnibase_core.models.configuration.model_resource_limits import (
             ModelResourceLimits,
@@ -420,7 +422,7 @@ class ModelEnvironment(BaseModel):
         return env
 
     @classmethod
-    def create_production(cls) -> "ModelEnvironment":
+    def create_production(cls) -> ModelEnvironment:
         """Create a production environment."""
         from omnibase_core.models.configuration.model_resource_limits import (
             ModelResourceLimits,
@@ -464,9 +466,9 @@ class ModelEnvironment(BaseModel):
         auto_scaling_enabled: bool = False,
         monitoring_enabled: bool = True,
         logging_level: str = "INFO",
-        security_level: "ModelSecurityLevel | None" = None,
+        security_level: ModelSecurityLevel | None = None,
         configuration_url: HttpUrl | None = None,
-    ) -> "ModelEnvironment":
+    ) -> ModelEnvironment:
         """Create a custom environment configuration."""
         return cls(
             name=name,
@@ -483,12 +485,12 @@ class ModelEnvironment(BaseModel):
         )
 
     @classmethod
-    def create_testing(cls) -> "ModelEnvironment":
+    def create_testing(cls) -> ModelEnvironment:
         """Create a testing environment."""
         return cls.create_default("test")
 
     @classmethod
-    def create_local(cls) -> "ModelEnvironment":
+    def create_local(cls) -> ModelEnvironment:
         """Create a local development environment."""
         env = cls.create_default("local")
         env.feature_flags.enable("debug_mode")
@@ -498,9 +500,19 @@ class ModelEnvironment(BaseModel):
         return env
 
 
-# NOTE: model_rebuild() must be called lazily to avoid circular imports.
-# The forward references (ModelSecurityLevel, ModelResourceLimits) are resolved
-# either on first use or explicitly by calling:
-#   from omnibase_core.models.security.model_security_level import ModelSecurityLevel
-#   from omnibase_core.models.configuration.model_resource_limits import ModelResourceLimits
-#   ModelEnvironment.model_rebuild()
+# Rebuild model to resolve forward references
+# With `from __future__ import annotations`, this should not be needed,
+# but we do it explicitly to ensure Pydantic has all types available
+try:
+    from omnibase_core.models.configuration.model_resource_limits import (
+        ModelResourceLimits,
+    )
+    from omnibase_core.models.security.model_security_level import (
+        ModelSecurityLevel,
+    )
+
+    ModelEnvironment.model_rebuild()
+except ImportError:
+    # If imports fail (e.g., during initial module loading), skip rebuild
+    # The model will be rebuilt on first use
+    pass

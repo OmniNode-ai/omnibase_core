@@ -89,6 +89,7 @@ from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.contracts.subcontracts.model_workflow_definition import (
     ModelWorkflowDefinition,
 )
+from omnibase_core.models.core.model_action_metadata import ModelActionMetadata
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.orchestrator.model_action import ModelAction
 from omnibase_core.models.workflow.execution.model_declarative_workflow_result import (
@@ -1282,6 +1283,13 @@ def _create_action_for_step(
             },
         )
 
+    # Create typed metadata with step context
+    action_metadata = ModelActionMetadata()
+    action_metadata.parameters = {
+        "step_name": step.step_name,
+        "correlation_id": str(step.correlation_id),
+    }
+
     action = ModelAction(
         action_id=uuid4(),
         action_type=action_type,
@@ -1293,10 +1301,7 @@ def _create_action_for_step(
         lease_id=uuid4(),
         epoch=0,
         retry_count=step.retry_count,
-        metadata={
-            "step_name": step.step_name,
-            "correlation_id": str(step.correlation_id),
-        },
+        metadata=action_metadata,
         created_at=datetime.now(),
     )
 
