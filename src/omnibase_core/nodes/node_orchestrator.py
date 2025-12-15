@@ -73,13 +73,24 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
         Workflow steps, dependencies, and execution modes are all defined in workflow definitions.
 
         Thread Safety:
-            NodeOrchestrator instances are NOT thread-safe due to mutable workflow state:
-            - Active workflow execution tracking
-            - Step completion status
-            - Workflow context accumulation
+            **MVP Design Decision**: NodeOrchestrator uses mutable workflow state intentionally
+            for the MVP phase to enable workflow coordination with minimal complexity.
+            This is a documented trade-off.
 
-            Each thread should have its own NodeOrchestrator instance, or implement
-            explicit synchronization. See docs/guides/THREADING.md for detailed patterns.
+            **Mutable State Components**:
+            - `workflow_definition`: Loaded workflow definition reference
+            - Workflow execution state (via MixinWorkflowExecution):
+              - Active workflow execution tracking
+              - Step completion status
+              - Workflow context accumulation
+
+            **Current Limitations**:
+            NodeOrchestrator instances are NOT thread-safe. Concurrent access will corrupt
+            workflow execution state.
+
+            **Mitigation**: Each thread should have its own NodeOrchestrator instance,
+            or implement explicit synchronization. See docs/guides/THREADING.md for
+            thread-local instance patterns.
 
             Unsafe Pattern (DO NOT DO THIS)::
 
@@ -113,6 +124,10 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
                 # CORRECT - snapshots are immutable and safe to share
                 snapshot = node.snapshot_workflow_state(deep_copy=True)
                 # snapshot can be safely passed to any thread for reading
+
+            **Production Path**: Future versions will support stateless workflow execution
+            with external state stores and lease-based coordination. See
+            docs/architecture/MUTABLE_STATE_STRATEGY.md for the production improvement roadmap.
 
         Pattern:
             class NodeMyOrchestrator(NodeOrchestrator):

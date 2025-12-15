@@ -80,9 +80,23 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
         - Computation is executed sequentially
 
     Thread Safety:
-        - Instance is thread-safe in pure mode (no mutable state)
+        **MVP Design Decision**: NodeCompute uses mutable state intentionally for the MVP
+        phase to prioritize simplicity and rapid iteration. This is a documented trade-off.
+
+        **Mutable State Components**:
+        - ``_cache``: Optional compute cache (injected via ProtocolComputeCache)
+        - ``computation_registry``: Algorithm function registry (dict[str, Callable])
+        - ``computation_metrics``: Performance metrics dictionary (dict[str, dict[str, float]])
+
+        **Current Guarantees**:
+        - Instance is thread-safe in pure mode (no mutable state accessed)
         - If cache/executor are injected, thread safety depends on their implementations
-        - See docs/THREADING.md for production guidelines
+
+        **Production Path**: The protocol injection pattern (OMN-700) enables thread-safe
+        implementations to be injected. See ``docs/architecture/MUTABLE_STATE_STRATEGY.md``
+        for the production improvement roadmap.
+
+        See ``docs/guides/THREADING.md`` for thread-local instance patterns.
 
     .. versionchanged:: 0.4.0
        Made caching, timing, and parallelization optional via protocol injection.
