@@ -289,6 +289,12 @@ class ProtocolHttpClient(Protocol):
         await session.close()
     """
 
+    # TODO [OMN-XXX]: Add POST/HEAD/PUT methods if needed for advanced health checks
+    # Current implementation intentionally minimal (YAGNI) - only GET is required.
+    # Future use cases might include:
+    #   - POST for stateful health checks
+    #   - HEAD for lightweight pings
+    #   - Custom methods for specialized endpoints
     async def get(
         self,
         url: str,
