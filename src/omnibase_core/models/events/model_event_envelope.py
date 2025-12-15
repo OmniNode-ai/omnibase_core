@@ -11,14 +11,16 @@ Node Type: N/A (Data Model)
 
 # Standard library imports (alphabetized)
 from datetime import UTC, datetime
-from typing import Any, cast
+from typing import Annotated, Any, cast
 from uuid import UUID, uuid4
 
 # Third-party imports (alphabetized)
 from pydantic import BaseModel, Field
+from pydantic.functional_validators import PlainValidator
 
 # Local imports (alphabetized)
 from omnibase_core.mixins.mixin_lazy_evaluation import MixinLazyEvaluation
+from omnibase_core.models.core.model_envelope_metadata import ModelEnvelopeMetadata
 from omnibase_core.models.primitives.model_semver import (
     ModelSemVer,
     default_model_version,
@@ -88,8 +90,18 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
     target_tool: str | None = Field(
         default=None, description="Identifier of the intended recipient tool"
     )
-    metadata: dict[str, Any] = Field(
-        default_factory=dict, description="Additional envelope metadata"
+    metadata: Annotated[
+        ModelEnvelopeMetadata | dict[str, Any],
+        PlainValidator(
+            lambda v: (
+                {}  # Default to empty dict
+                if v is None
+                else v  # Preserve dict or ModelEnvelopeMetadata as-is
+            )
+        ),
+    ] = Field(
+        default_factory=dict,
+        description="Additional envelope metadata (typed ModelEnvelopeMetadata or dict)",
     )
     security_context: dict[str, Any] | None = Field(
         default=None, description="Security context for the event"
@@ -142,18 +154,24 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
         """
         return self.model_copy(update={"correlation_id": correlation_id})
 
-    def with_metadata(self, metadata: dict[str, Any]) -> "ModelEventEnvelope[T]":
+    def with_metadata(
+        self, metadata: ModelEnvelopeMetadata | dict[str, Any]
+    ) -> "ModelEventEnvelope[T]":
         """
-        Create a new envelope with merged metadata.
+        Create a new envelope with updated metadata.
 
         Args:
-            metadata: New metadata to merge with existing
+            metadata: New metadata (ModelEnvelopeMetadata or dict)
 
         Returns:
-            New envelope instance with merged metadata
+            New envelope instance with updated metadata
         """
-        merged_metadata = {**self.metadata, **metadata}
-        return self.model_copy(update={"metadata": merged_metadata})
+        # If both are dicts, merge them
+        if isinstance(self.metadata, dict) and isinstance(metadata, dict):
+            merged_metadata = {**self.metadata, **metadata}
+            return self.model_copy(update={"metadata": merged_metadata})
+        # Otherwise, replace (typed ModelEnvelopeMetadata doesn't merge)
+        return self.model_copy(update={"metadata": metadata})
 
     def with_security_context(
         self, security_context: dict[str, Any]
@@ -261,13 +279,18 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
         Get a metadata value by key.
 
         Args:
-            key: Metadata key to retrieve
+            key: Metadata key to retrieve (e.g., 'trace_id', 'request_id', or tags key)
             default: Default value if key not found
 
         Returns:
             Metadata value or default
         """
-        return self.metadata.get(key, default)
+        if isinstance(self.metadata, dict):
+            return self.metadata.get(key, default)
+        # For ModelEnvelopeMetadata, check tags first (legacy dict keys), then attributes
+        if hasattr(self.metadata, "tags") and key in self.metadata.tags:
+            return self.metadata.tags[key]
+        return getattr(self.metadata, key, default)
 
     def is_high_priority(self) -> bool:
         """
@@ -365,7 +388,11 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
             "request_id": self.request_id,
             "trace_id": self.trace_id,
             "span_id": self.span_id,
-            "metadata": self.metadata,
+            "metadata": (
+                self.metadata.model_dump()
+                if isinstance(self.metadata, ModelEnvelopeMetadata)
+                else self.metadata
+            ),
             "security_context": self.security_context,
             "onex_version": str(self.onex_version),
             "envelope_version": str(self.envelope_version),
