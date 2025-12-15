@@ -18,7 +18,7 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field
 
 # Local imports (alphabetized)
-from omnibase_core.decorators.allow_dict_any import allow_dict_any
+from omnibase_core.decorators import allow_dict_any
 from omnibase_core.mixins.mixin_lazy_evaluation import MixinLazyEvaluation
 from omnibase_core.models.core.model_envelope_metadata import ModelEnvelopeMetadata
 from omnibase_core.models.primitives.model_semver import (
