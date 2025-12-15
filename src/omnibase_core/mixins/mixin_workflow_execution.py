@@ -50,7 +50,7 @@ class MixinWorkflowExecution:
             workflow execution is in progress.
     """
 
-    # Type annotation for workflow state tracking
+    # Type annotation for workflow state tracking (see __init__ for population details)
     _workflow_state: ModelWorkflowStateSnapshot | None
 
     def __init__(self, **kwargs: Any) -> None:
@@ -63,6 +63,12 @@ class MixinWorkflowExecution:
         super().__init__(**kwargs)
         # Initialize workflow state tracking
         self._workflow_state = None
+        # NOTE: _workflow_state is populated by:
+        # 1. execute_workflow_from_contract() - automatically captures state after
+        #    each workflow step execution (completed/failed step IDs, context)
+        # 2. update_workflow_state() - manual state updates for custom workflows
+        # 3. restore_workflow_state() - restoring from a persisted snapshot
+        # The state remains None until one of these methods is called.
 
     def update_workflow_state(
         self,

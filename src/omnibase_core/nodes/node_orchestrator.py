@@ -5,6 +5,7 @@ Primary orchestrator implementation using workflow definitions for coordination.
 Zero custom Python code required - all coordination logic defined declaratively.
 """
 
+import copy
 from uuid import UUID
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -411,7 +412,9 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
     # Workflow State Serialization Methods
     # =========================================================================
 
-    def snapshot_workflow_state(self) -> ModelWorkflowStateSnapshot | None:
+    def snapshot_workflow_state(
+        self, *, deep_copy: bool = False
+    ) -> ModelWorkflowStateSnapshot | None:
         """
         Return current workflow state as a strongly-typed snapshot model.
 
@@ -436,11 +439,17 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
             2. **Manual**: Via ``update_workflow_state()`` for custom state tracking,
                or ``restore_workflow_state()`` to restore from a persisted snapshot.
 
+        Args:
+            deep_copy: If True, returns a deep copy of the snapshot to prevent
+                any mutation of internal state. Defaults to False for performance.
+
         Returns:
             ModelWorkflowStateSnapshot if workflow state has been captured,
             None if no workflow execution has occurred or state was not set.
-            The returned snapshot is the internal state reference - callers
-            MUST NOT mutate the context dict contents (see Thread Safety).
+            When deep_copy=False, the returned snapshot is the internal state
+            reference - callers MUST NOT mutate the context dict contents
+            (see Thread Safety). When deep_copy=True, the returned snapshot
+            is fully independent of internal state.
 
         Thread Safety:
             The returned ``ModelWorkflowStateSnapshot`` is frozen (immutable fields)
@@ -451,12 +460,16 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
             - **Safe**: Reading ``completed_step_ids`` and ``failed_step_ids`` (tuples)
             - **WARNING**: Do NOT mutate ``snapshot.context`` dict contents -
               this violates the immutability contract and affects the node state
-            - **WARNING**: This method returns the internal state reference,
-              not a deep copy. Mutating nested context structures affects the
-              node's actual state and may cause race conditions.
+            - **WARNING**: When deep_copy=False, this method returns the internal
+              state reference, not a deep copy. Mutating nested context structures
+              affects the node's actual state and may cause race conditions.
 
-            For isolation, create a deep copy::
+            For isolation, use deep_copy=True or create a deep copy manually::
 
+                # Option 1: Use deep_copy parameter (recommended)
+                isolated_snapshot = node.snapshot_workflow_state(deep_copy=True)
+
+                # Option 2: Manual deep copy
                 import copy
                 isolated_snapshot = copy.deepcopy(node.snapshot_workflow_state())
 
@@ -474,8 +487,8 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
               - Max nesting depth: 5 levels
 
             - **Deep Copy for Nested Structures**: If context contains nested
-              mutable objects (lists, dicts), the caller should deep copy if
-              isolation is required for concurrent access patterns.
+              mutable objects (lists, dicts), use deep_copy=True if isolation
+              is required for concurrent access patterns.
 
         Example:
             ```python
@@ -495,6 +508,9 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
 
                 # Can be restored later for workflow replay
                 node.restore_workflow_state(snapshot)
+
+            # For isolation (e.g., concurrent access), use deep_copy=True
+            safe_snapshot = node.snapshot_workflow_state(deep_copy=True)
             ```
 
         See Also:
@@ -503,6 +519,10 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
             restore_workflow_state: Restores state from a ModelWorkflowStateSnapshot.
             update_workflow_state: Manually updates workflow state.
         """
+        if self._workflow_state is None:
+            return None
+        if deep_copy:
+            return copy.deepcopy(self._workflow_state)
         return self._workflow_state
 
     def _validate_workflow_snapshot(
@@ -665,7 +685,9 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
 
         self._workflow_state = snapshot
 
-    def get_workflow_snapshot(self) -> dict[str, object] | None:
+    def get_workflow_snapshot(
+        self, *, deep_copy: bool = False
+    ) -> dict[str, object] | None:
         """
         Return workflow state as a JSON-serializable dictionary.
 
@@ -681,12 +703,20 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
             - ``snapshot_workflow_state()`` → ``ModelWorkflowStateSnapshot`` for internal use
               (type-safe access, Pydantic validation, direct restoration)
 
+        Args:
+            deep_copy: If True, returns a deep copy of the snapshot dictionary
+                to prevent any mutation of nested structures. Defaults to False
+                for performance. Note: The dict returned by model_dump() is already
+                a new dict, but nested mutable objects (lists, dicts in context)
+                may still share references with the internal state.
+
         Returns:
             dict[str, object] with workflow state data that can be directly
             serialized to JSON (all values are JSON-native types), or None
-            if no workflow execution is in progress. The returned dict is
-            a NEW dict created by Pydantic's ``model_dump()`` - modifications
-            do not affect the internal node state.
+            if no workflow execution is in progress. When deep_copy=False,
+            the returned dict is created by Pydantic's ``model_dump()`` but
+            nested mutable objects may share references. When deep_copy=True,
+            all nested structures are fully independent.
 
         Thread Safety:
             This method is thread-safe for the dict creation itself (Pydantic
@@ -738,6 +768,9 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
                 response = await client.post("/workflow/state", json=snapshot_dict)
 
                 # For restoration, use snapshot_workflow_state() to get the model
+
+            # For full isolation of nested structures, use deep_copy=True
+            safe_dict = node.get_workflow_snapshot(deep_copy=True)
             ```
 
         See Also:
@@ -751,4 +784,7 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
         # - UUIDs become strings
         # - datetimes become ISO format strings
         # - All values are JSON-serializable without custom encoders
-        return self._workflow_state.model_dump(mode="json")
+        result = self._workflow_state.model_dump(mode="json")
+        if deep_copy:
+            return copy.deepcopy(result)
+        return result

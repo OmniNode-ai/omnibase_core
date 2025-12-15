@@ -27,6 +27,7 @@ Immutability Considerations:
 from __future__ import annotations
 
 import json
+import os
 import re
 from datetime import UTC, datetime
 from typing import Any, ClassVar
@@ -52,6 +53,14 @@ CONTEXT_MAX_SIZE_BYTES: int = 1024 * 1024  # 1MB
 
 CONTEXT_MAX_NESTING_DEPTH: int = 5
 """Maximum recommended nesting depth of context dict (default: 5 levels)."""
+
+# Environment variable for strict context size enforcement
+CONTEXT_SIZE_STRICT_MODE_ENV: str = "ONEX_CONTEXT_SIZE_STRICT"
+"""Environment variable name for enabling strict context size enforcement.
+
+When set to '1', 'true', or 'yes' (case-insensitive), validate_context_size()
+will raise ModelOnexError when limits are exceeded instead of returning warnings.
+"""
 
 
 class ModelWorkflowStateSnapshot(BaseModel):
@@ -410,14 +419,13 @@ class ModelWorkflowStateSnapshot(BaseModel):
         max_keys: int = CONTEXT_MAX_KEYS,
         max_size_bytes: int = CONTEXT_MAX_SIZE_BYTES,
         max_depth: int = CONTEXT_MAX_NESTING_DEPTH,
+        enforce: bool | None = None,
     ) -> tuple[bool, list[str]]:
         """
         Validate context dict against size limits.
 
         This method checks the context dict against configurable size limits
         and returns validation status along with any warning messages.
-        Note: This method does NOT raise exceptions - it returns warnings
-        to allow callers to decide how to handle oversized contexts.
 
         Args:
             context: The context dictionary to validate.
@@ -426,11 +434,17 @@ class ModelWorkflowStateSnapshot(BaseModel):
                 (default: CONTEXT_MAX_SIZE_BYTES = 1MB).
             max_depth: Maximum allowed nesting depth
                 (default: CONTEXT_MAX_NESTING_DEPTH = 5).
+            enforce: If True, raises ModelOnexError when limits exceeded.
+                If False, only returns warnings. If None (default), checks
+                ONEX_CONTEXT_SIZE_STRICT environment variable for enforcement.
 
         Returns:
             A tuple of (is_valid, warnings) where:
             - is_valid: True if all limits are satisfied, False otherwise
             - warnings: List of warning messages for any exceeded limits
+
+        Raises:
+            ModelOnexError: When enforce=True (or env var set) and limits exceeded.
 
         Example:
             >>> context = {"key1": "value1", "key2": {"nested": "value"}}
@@ -499,6 +513,26 @@ class ModelWorkflowStateSnapshot(BaseModel):
         if depth > max_depth:
             warnings.append(
                 f"Context nesting depth {depth} exceeds recommended max of {max_depth}"
+            )
+
+        # Determine if enforcement is enabled
+        strict_mode = enforce
+        if strict_mode is None:
+            # Fall back to environment variable
+            strict_mode = os.getenv(CONTEXT_SIZE_STRICT_MODE_ENV, "").lower() in (
+                "1",
+                "true",
+                "yes",
+            )
+
+        if strict_mode and warnings:
+            from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+            from omnibase_core.errors import ModelOnexError
+
+            raise ModelOnexError(
+                message=f"Context size validation failed: {'; '.join(warnings)}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={"warnings": warnings, "context_keys": list(context.keys())},
             )
 
         return len(warnings) == 0, warnings
@@ -586,4 +620,5 @@ __all__ = [
     "CONTEXT_MAX_KEYS",
     "CONTEXT_MAX_SIZE_BYTES",
     "CONTEXT_MAX_NESTING_DEPTH",
+    "CONTEXT_SIZE_STRICT_MODE_ENV",
 ]

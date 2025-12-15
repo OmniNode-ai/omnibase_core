@@ -5,6 +5,7 @@ Primary reducer implementation using FSM subcontracts for state transitions.
 Zero custom Python code required - all state transitions defined declaratively.
 """
 
+import copy
 import time
 from datetime import UTC, datetime
 
@@ -347,7 +348,9 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
             return False
         return self.is_terminal_state(self.fsm_contract)
 
-    def snapshot_state(self) -> ModelFSMStateSnapshot | None:
+    def snapshot_state(
+        self, *, deep_copy: bool = False
+    ) -> ModelFSMStateSnapshot | None:
         """
         Return current FSM state as a strongly-typed snapshot model.
 
@@ -358,10 +361,16 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
         For JSON serialization use cases where a plain dict is preferred,
         use ``get_state_snapshot()`` instead.
 
+        Args:
+            deep_copy: If True, returns a deep copy of the snapshot to prevent
+                any mutation of internal state. Defaults to False for performance.
+
         Returns:
             ModelFSMStateSnapshot if FSM is initialized, None otherwise.
-            The returned snapshot is the internal state reference - callers
-            MUST NOT mutate the context dict contents (see Thread Safety).
+            When deep_copy=False, the returned snapshot is the internal state
+            reference - callers MUST NOT mutate the context dict contents
+            (see Thread Safety). When deep_copy=True, the returned snapshot
+            is fully independent of internal state.
 
         Thread Safety:
             The returned ``ModelFSMStateSnapshot`` is frozen (immutable fields)
@@ -371,12 +380,16 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
             - **Safe**: Serializing snapshot via ``model_dump()``
             - **WARNING**: Do NOT mutate ``snapshot.context`` dict contents -
               this violates the immutability contract and affects the node state
-            - **WARNING**: This method returns the internal state reference,
-              not a deep copy. Mutating nested context structures affects the
-              node's actual state and may cause race conditions.
+            - **WARNING**: When deep_copy=False, this method returns the internal
+              state reference, not a deep copy. Mutating nested context structures
+              affects the node's actual state and may cause race conditions.
 
-            For isolation, create a deep copy::
+            For isolation, use deep_copy=True or create a deep copy manually::
 
+                # Option 1: Use deep_copy parameter (recommended)
+                isolated_snapshot = node.snapshot_state(deep_copy=True)
+
+                # Option 2: Manual deep copy
                 import copy
                 isolated_snapshot = copy.deepcopy(node.snapshot_state())
 
@@ -394,8 +407,8 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
               - Max nesting depth: 5 levels
 
             - **Deep Copy for Nested Structures**: If context contains nested
-              mutable objects (lists, dicts), the caller should deep copy if
-              isolation is required for concurrent access patterns.
+              mutable objects (lists, dicts), use deep_copy=True if isolation
+              is required for concurrent access patterns.
 
         Example:
             ```python
@@ -413,12 +426,19 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
                 node.restore_state(snapshot)
             else:
                 logger.warning("FSM not initialized")
+
+            # For isolation (e.g., concurrent access), use deep_copy=True
+            safe_snapshot = node.snapshot_state(deep_copy=True)
             ```
 
         See Also:
             get_state_snapshot: Returns dict[str, object] for JSON serialization.
             restore_state: Restores state from a ModelFSMStateSnapshot.
         """
+        if self._fsm_state is None:
+            return None
+        if deep_copy:
+            return copy.deepcopy(self._fsm_state)
         return self._fsm_state
 
     def _validate_fsm_snapshot(
@@ -606,7 +626,9 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
 
         self._fsm_state = snapshot
 
-    def get_state_snapshot(self) -> dict[str, object] | None:
+    def get_state_snapshot(
+        self, *, deep_copy: bool = False
+    ) -> dict[str, object] | None:
         """
         Return FSM state as a JSON-serializable dictionary.
 
@@ -617,11 +639,19 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
         For strongly-typed access to FSM state, use ``snapshot_state()``
         instead, which returns the ``ModelFSMStateSnapshot`` model directly.
 
+        Args:
+            deep_copy: If True, returns a deep copy of the snapshot dictionary
+                to prevent any mutation of nested structures. Defaults to False
+                for performance. Note: The dict returned by model_dump() is already
+                a new dict, but nested mutable objects (lists, dicts in context)
+                may still share references with the internal state.
+
         Returns:
             dict[str, object] with FSM state data that can be serialized
-            to JSON, or None if FSM not initialized. The returned dict is
-            a NEW dict created by Pydantic's ``model_dump()`` - modifications
-            do not affect the internal node state.
+            to JSON, or None if FSM not initialized. When deep_copy=False,
+            the returned dict is created by Pydantic's ``model_dump()`` but
+            nested mutable objects may share references. When deep_copy=True,
+            all nested structures are fully independent.
 
         Thread Safety:
             This method is thread-safe for the dict creation itself (Pydantic
@@ -664,6 +694,9 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
                 logger.info("History: %d transitions", len(snapshot_dict["history"]))
 
                 # For restoration, use snapshot_state() to get the model
+
+            # For full isolation of nested structures, use deep_copy=True
+            safe_dict = node.get_state_snapshot(deep_copy=True)
             ```
 
         See Also:
@@ -672,4 +705,7 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
         """
         if self._fsm_state is None:
             return None
-        return self._fsm_state.model_dump()
+        result = self._fsm_state.model_dump()
+        if deep_copy:
+            return copy.deepcopy(result)
+        return result
