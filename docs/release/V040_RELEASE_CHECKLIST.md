@@ -216,10 +216,10 @@ All evidence must include toolchain version information for reproducibility:
 
 Run this before any verification to establish baseline versions:
 
-**Linux/macOS (Bash)**:
+**Unix (Bash)**:
 ```bash
 # =============================================================================
-# Toolchain Version Capture (run before verification) - Linux/macOS
+# Toolchain Version Capture (run before verification) - Unix
 # =============================================================================
 mkdir -p artifacts/release/v0.4.0
 echo "=== Toolchain Versions for Evidence ===" | tee artifacts/release/v0.4.0/00-toolchain-versions.txt
@@ -270,7 +270,7 @@ poetry run isort --version 2>&1 | Tee-Object -FilePath $outFile -Append
 
 **Cross-Platform Command Reference**:
 
-| Command | Linux/macOS | Windows PowerShell | Windows CMD |
+| Command | Unix | Windows PowerShell | Windows CMD |
 |---------|-------------|-------------------|-------------|
 | Timestamp (UTC) | `date -u '+%Y-%m-%d %H:%M:%S UTC'` | `Get-Date -Format 'yyyy-MM-dd HH:mm:ss'` | `echo %date% %time%` |
 | Platform info | `uname -srm` | `[System.Environment]::OSVersion.VersionString` | `ver` |
@@ -914,7 +914,7 @@ sys.exit(0)  # Explicit success exit
   3. Lock file was regenerated on a different platform/Poetry version (hash changes without intentional dependency updates)
   - Commands:
 
-    **Linux/macOS (Bash)**:
+    **Unix (Bash)**:
     ```bash
     # =============================================================================
     # Step 1: Detect uncommitted changes to lock file
@@ -1018,8 +1018,103 @@ sys.exit(0)  # Explicit success exit
     | Staged changes | `git diff --cached --name-only poetry.lock` | Empty output |
     | Lock/pyproject sync | `poetry check --lock` | "All set!" (exit 0) |
     | File tracked | `git ls-files --error-unmatch poetry.lock` | Exit 0 |
+    | Silent re-lock drift | Compare hash with previous release | Hash matches OR change documented |
 
-  - Evidence: Git diff output (should be empty) AND lock file hash AND `poetry check --lock` output
+  - **Silent Re-Lock Drift Detection**:
+
+    Silent re-lock drift occurs when `poetry lock` regenerates the lock file with different package hashes
+    even though no dependencies were intentionally changed. This can happen when:
+    - Different Poetry versions produce different lock file formats
+    - Package indexes return slightly different metadata
+    - Transitive dependency resolution produces different (but valid) solutions
+
+    **Detection Commands**:
+
+    **Unix (Bash)**:
+    ```bash
+    # =============================================================================
+    # Step 1: Capture current lock file hash
+    # =============================================================================
+    CURRENT_HASH=$(sha256sum poetry.lock | cut -d' ' -f1)
+    echo "Current lock hash: $CURRENT_HASH"
+
+    # =============================================================================
+    # Step 2: Compare with last tagged release (e.g., v0.3.6)
+    # =============================================================================
+    # Get hash from the last release tag
+    PREVIOUS_HASH=$(git show v0.3.6:poetry.lock 2>/dev/null | sha256sum | cut -d' ' -f1)
+    echo "Previous release hash (v0.3.6): $PREVIOUS_HASH"
+
+    # =============================================================================
+    # Step 3: Compare hashes
+    # =============================================================================
+    if [ "$CURRENT_HASH" = "$PREVIOUS_HASH" ]; then
+        echo "PASS: Lock file unchanged from v0.3.6 - no drift"
+    else
+        echo "WARNING: Lock file hash changed from v0.3.6"
+        echo "Verify this is intentional by checking git log for dependency changes:"
+        git log --oneline v0.3.6..HEAD -- pyproject.toml poetry.lock | head -10
+        echo ""
+        echo "If no intentional changes, this may be re-lock drift. Investigate before release."
+    fi
+
+    # =============================================================================
+    # Step 4: Verify no uncommitted poetry.lock changes after fresh lock
+    # =============================================================================
+    # This detects if running 'poetry lock' would change the committed file
+    # NOTE: This modifies poetry.lock temporarily - stash any local changes first
+    cp poetry.lock poetry.lock.backup
+    poetry lock --no-update  # Re-resolve without updating packages
+    if diff -q poetry.lock poetry.lock.backup > /dev/null 2>&1; then
+        echo "PASS: poetry lock --no-update produces identical file - no drift"
+    else
+        echo "WARNING: poetry lock --no-update produces different file - potential re-lock drift"
+        diff poetry.lock poetry.lock.backup | head -20
+    fi
+    mv poetry.lock.backup poetry.lock  # Restore original
+    ```
+
+    **Windows (PowerShell)**:
+    ```powershell
+    # =============================================================================
+    # Step 1: Capture current lock file hash
+    # =============================================================================
+    $currentHash = (Get-FileHash -Algorithm SHA256 poetry.lock).Hash.ToLower()
+    Write-Host "Current lock hash: $currentHash"
+
+    # =============================================================================
+    # Step 2: Compare with last tagged release
+    # =============================================================================
+    $previousContent = git show v0.3.6:poetry.lock 2>$null
+    if ($previousContent) {
+        $previousHash = [System.BitConverter]::ToString(
+            [System.Security.Cryptography.SHA256]::Create().ComputeHash(
+                [System.Text.Encoding]::UTF8.GetBytes($previousContent -join "`n")
+            )
+        ).Replace("-", "").ToLower()
+        Write-Host "Previous release hash (v0.3.6): $previousHash"
+
+        # Compare
+        if ($currentHash -eq $previousHash) {
+            Write-Host "PASS: Lock file unchanged from v0.3.6 - no drift"
+        } else {
+            Write-Host "WARNING: Lock file hash changed from v0.3.6"
+            git log --oneline v0.3.6..HEAD -- pyproject.toml poetry.lock | Select-Object -First 10
+        }
+    }
+    ```
+
+    **Acceptable Drift Scenarios** (document in evidence):
+    - Intentional dependency update (commit message references package change)
+    - Security patch update (CVE documented)
+    - Poetry version upgrade (documented in release notes)
+
+    **Unacceptable Drift** (blocks release):
+    - Hash changed with no corresponding pyproject.toml change
+    - No commit message explaining dependency change
+    - Multiple transitive dependency changes without root cause
+
+  - Evidence: Git diff output (should be empty) AND lock file hash AND `poetry check --lock` output AND re-lock drift comparison result
 
 - [ ] **Reproducible install verified** `✅ REQUIRED`
   - **⚠️ REQUIRED**: Fresh virtualenv smoke install (pip installs can lie)
@@ -1027,11 +1122,13 @@ sys.exit(0)  # Explicit success exit
   - Tests pass in clean environment
   - Commands:
 
-    **Linux/macOS (Bash)**:
+    **Unix (Bash)**:
     ```bash
     # Create fresh virtualenv for verification
-    python -m venv /tmp/v040-verify-env
-    source /tmp/v040-verify-env/bin/activate
+    # Uses TMPDIR if set, falls back to /tmp
+    VERIFY_DIR="${TMPDIR:-/tmp}/v040-verify-env"
+    python -m venv "$VERIFY_DIR"
+    source "$VERIFY_DIR/bin/activate"
 
     # Install from lock file only
     pip install poetry
@@ -1043,7 +1140,7 @@ sys.exit(0)  # Explicit success exit
 
     # Cleanup
     deactivate
-    rm -rf /tmp/v040-verify-env
+    rm -rf "$VERIFY_DIR"
     ```
 
     **Windows (PowerShell)**:
@@ -1253,7 +1350,7 @@ sys.exit(0)  # Explicit success exit
     4. Verify all documented imports resolve
   - **Commands**:
 
-    **Linux/macOS (Bash)**:
+    **Unix (Bash)**:
     ```bash
     # =============================================================================
     # Step 1: Capture current API exports for evidence
@@ -1439,21 +1536,31 @@ print('✅ Critical imports: PASS')
     # cd ../.. && rm -rf _downstream_test
     ```
 
-    **Option B: Linux/macOS system temp**
+    **Option B: Unix system temp**
     ```bash
-    cd ${TMPDIR:-/tmp} && git clone https://github.com/OmniNode-ai/omnibase_spi.git
+    # Get absolute path to omnibase_core BEFORE changing directories
+    OMNIBASE_CORE_PATH="$(cd /path/to/omnibase_core && pwd)"
+    # Or if you're currently in omnibase_core:
+    # OMNIBASE_CORE_PATH="$(pwd)"
+
+    cd "${TMPDIR:-/tmp}" && git clone https://github.com/OmniNode-ai/omnibase_spi.git
     cd omnibase_spi
-    poetry add /absolute/path/to/omnibase_core --editable  # or: poetry add omnibase_core==0.4.0
-    poetry run pytest tests/ --tb=short -v | tee /tmp/omnibase_spi_test.txt
-    poetry run mypy src/ | tee /tmp/omnibase_spi_mypy.txt
+    poetry add "$OMNIBASE_CORE_PATH" --editable  # or: poetry add omnibase_core==0.4.0
+    poetry run pytest tests/ --tb=short -v | tee "${TMPDIR:-/tmp}/omnibase_spi_test.txt"
+    poetry run mypy src/ | tee "${TMPDIR:-/tmp}/omnibase_spi_mypy.txt"
     ```
 
     **Option C: Windows PowerShell**
     ```powershell
+    # Get absolute path to omnibase_core BEFORE changing directories
+    $OmnibaseCoreAbsPath = (Get-Location).Path  # If currently in omnibase_core
+    # Or specify explicitly:
+    # $OmnibaseCoreAbsPath = (Resolve-Path "C:\path\to\omnibase_core").Path
+
     cd $env:TEMP
     git clone https://github.com/OmniNode-ai/omnibase_spi.git
     cd omnibase_spi
-    poetry add C:\absolute\path\to\omnibase_core --editable  # or: poetry add omnibase_core==0.4.0
+    poetry add $OmnibaseCoreAbsPath --editable  # or: poetry add omnibase_core==0.4.0
     poetry run pytest tests/ --tb=short -v | Tee-Object -FilePath "$env:TEMP\omnibase_spi_test.txt"
     poetry run mypy src/ | Tee-Object -FilePath "$env:TEMP\omnibase_spi_mypy.txt"
     ```
@@ -1524,21 +1631,31 @@ print('✅ Critical imports: PASS')
     # cd ../.. && rm -rf _downstream_test
     ```
 
-    **Option B: Linux/macOS system temp**
+    **Option B: Unix system temp**
     ```bash
-    cd ${TMPDIR:-/tmp} && git clone https://github.com/OmniNode-ai/omninode_core.git
+    # Get absolute path to omnibase_core BEFORE changing directories
+    OMNIBASE_CORE_PATH="$(cd /path/to/omnibase_core && pwd)"
+    # Or if you're currently in omnibase_core:
+    # OMNIBASE_CORE_PATH="$(pwd)"
+
+    cd "${TMPDIR:-/tmp}" && git clone https://github.com/OmniNode-ai/omninode_core.git
     cd omninode_core
-    poetry add /absolute/path/to/omnibase_core --editable  # or: poetry add omnibase_core==0.4.0
-    poetry run pytest tests/ --tb=short -v | tee /tmp/omninode_core_test.txt
-    poetry run mypy src/ | tee /tmp/omninode_core_mypy.txt
+    poetry add "$OMNIBASE_CORE_PATH" --editable  # or: poetry add omnibase_core==0.4.0
+    poetry run pytest tests/ --tb=short -v | tee "${TMPDIR:-/tmp}/omninode_core_test.txt"
+    poetry run mypy src/ | tee "${TMPDIR:-/tmp}/omninode_core_mypy.txt"
     ```
 
     **Option C: Windows PowerShell**
     ```powershell
+    # Get absolute path to omnibase_core BEFORE changing directories
+    $OmnibaseCoreAbsPath = (Get-Location).Path  # If currently in omnibase_core
+    # Or specify explicitly:
+    # $OmnibaseCoreAbsPath = (Resolve-Path "C:\path\to\omnibase_core").Path
+
     cd $env:TEMP
     git clone https://github.com/OmniNode-ai/omninode_core.git
     cd omninode_core
-    poetry add C:\absolute\path\to\omnibase_core --editable  # or: poetry add omnibase_core==0.4.0
+    poetry add $OmnibaseCoreAbsPath --editable  # or: poetry add omnibase_core==0.4.0
     poetry run pytest tests/ --tb=short -v | Tee-Object -FilePath "$env:TEMP\omninode_core_test.txt"
     poetry run mypy src/ | Tee-Object -FilePath "$env:TEMP\omninode_core_mypy.txt"
     ```
@@ -1740,9 +1857,9 @@ EOF
     # cd .. && rm -rf _migration_test
     ```
 
-    **Option B: Linux/macOS system temp**
+    **Option B: Unix system temp**
     ```bash
-    cd ${TMPDIR:-/tmp} && mkdir migration-test && cd migration-test
+    cd "${TMPDIR:-/tmp}" && mkdir migration-test && cd migration-test
     poetry init --name migration-test --python "^3.12" --no-interaction
     poetry add omnibase_core==0.3.6
     # ... create test file ...
@@ -1753,7 +1870,7 @@ EOF
     **Option C: Windows PowerShell**
     ```powershell
     cd $env:TEMP
-    mkdir migration-test
+    New-Item -ItemType Directory -Force -Path migration-test | Out-Null
     cd migration-test
     poetry init --name migration-test --python "^3.12" --no-interaction
     poetry add omnibase_core==0.3.6
@@ -1845,7 +1962,6 @@ print('✅ Deprecation check complete')
   - **Evidence**: Docker build log or "N/A - no Docker builds"
 
 ---
-
 
 ## 10. Documentation
 
@@ -2015,11 +2131,14 @@ These checks verify that the published package is correct, complete, and functio
     - [ ] Object instantiation works (container, error, enum access)
   - Commands:
 
-    **Linux/macOS (Bash)**:
+    **Unix (Bash)**:
     ```bash
     # Step 1: Create isolated verification environment
-    python -m venv /tmp/v040-pypi-verify
-    source /tmp/v040-pypi-verify/bin/activate
+    # Uses TMPDIR if set, falls back to /tmp
+    VERIFY_DIR="${TMPDIR:-/tmp}/v040-pypi-verify"
+    WHEEL_DIR="${TMPDIR:-/tmp}/v040-wheel-verify"
+    python -m venv "$VERIFY_DIR"
+    source "$VERIFY_DIR/bin/activate"
 
     # Step 2: Install from PyPI (NOT from local source)
     pip install omnibase_core==0.4.0 --index-url https://pypi.org/simple/
@@ -2029,8 +2148,9 @@ These checks verify that the published package is correct, complete, and functio
     python -c "import omnibase_core; print(f'Version: {omnibase_core.__version__}')"
 
     # Step 4: Package hash verification
-    pip download omnibase_core==0.4.0 --no-deps -d /tmp/v040-wheel-verify/
-    PYPI_HASH=$(sha256sum /tmp/v040-wheel-verify/omnibase_core-0.4.0-py3-none-any.whl | cut -d' ' -f1)
+    mkdir -p "$WHEEL_DIR"
+    pip download omnibase_core==0.4.0 --no-deps -d "$WHEEL_DIR"
+    PYPI_HASH=$(sha256sum "$WHEEL_DIR/omnibase_core-0.4.0-py3-none-any.whl" | cut -d' ' -f1)
     echo "PyPI wheel SHA256: ${PYPI_HASH}"
 
     # Step 5: Smoke test imports
@@ -2057,7 +2177,7 @@ These checks verify that the published package is correct, complete, and functio
 
     # Step 7: Cleanup
     deactivate
-    rm -rf /tmp/v040-pypi-verify /tmp/v040-wheel-verify
+    rm -rf "$VERIFY_DIR" "$WHEEL_DIR"
     ```
 
     **Windows (PowerShell)**:
