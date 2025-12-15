@@ -1026,9 +1026,13 @@ class TestAdditionalModelDetection:
 
         assert model == ModelContractEffect
 
-    def test_detect_with_contract_version_uses_yaml_contract(self) -> None:
-        """Test that contracts with contract_version use ModelYamlContract."""
-        from omnibase_core.models.contracts.model_yaml_contract import ModelYamlContract
+    def test_detect_with_contract_version_uses_yaml_contract_full(self) -> None:
+        """Test that contracts with contract_version use ModelYamlContractFull.
+
+        Note: We use ModelYamlContractFull (extra="allow") instead of ModelYamlContract
+        (extra="ignore") to ensure all fields are captured for fingerprint computation.
+        """
+        from regenerate_fingerprints import ModelYamlContractFull
 
         data = {
             "node_type": "COMPUTE_GENERIC",
@@ -1039,8 +1043,8 @@ class TestAdditionalModelDetection:
 
         model = detect_contract_model(data)
 
-        # Should fall back to flexible ModelYamlContract
-        assert model == ModelYamlContract
+        # Should fall back to ModelYamlContractFull for proper fingerprinting
+        assert model == ModelYamlContractFull
 
     def test_non_string_node_type_returns_none(self) -> None:
         """Test that non-string node_type returns None."""
