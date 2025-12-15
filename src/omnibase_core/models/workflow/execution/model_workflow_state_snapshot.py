@@ -30,10 +30,10 @@ import json
 import os
 import re
 from datetime import UTC, datetime
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Self
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.types.type_workflow_context import WorkflowContextType
 
@@ -60,6 +60,31 @@ CONTEXT_SIZE_STRICT_MODE_ENV: str = "ONEX_CONTEXT_SIZE_STRICT"
 
 When set to '1', 'true', or 'yes' (case-insensitive), validate_context_size()
 will raise ModelOnexError when limits are exceeded instead of returning warnings.
+"""
+
+# Environment variable for automatic context size warning on snapshot creation
+CONTEXT_SIZE_WARN_ON_CREATE_ENV: str = "ONEX_CONTEXT_SIZE_WARN_ON_CREATE"
+"""Environment variable to enable context size warnings on snapshot creation.
+
+When set to '1', 'true', or 'yes' (case-insensitive), snapshot creation will
+automatically validate context size and log warnings if limits are exceeded.
+
+This is a non-blocking validation that logs warnings but does not raise errors
+by default, allowing existing code to continue functioning while alerting
+developers to potential context size issues.
+
+The validation respects CONTEXT_MAX_KEYS, CONTEXT_MAX_SIZE_BYTES, and
+CONTEXT_MAX_NESTING_DEPTH limits, calling validate_context_size() internally.
+
+Example:
+    Set in environment to enable::
+
+        export ONEX_CONTEXT_SIZE_WARN_ON_CREATE=1
+
+    Or in Python before creating snapshots::
+
+        import os
+        os.environ["ONEX_CONTEXT_SIZE_WARN_ON_CREATE"] = "true"
 """
 
 
@@ -102,6 +127,20 @@ class ModelWorkflowStateSnapshot(BaseModel):
         Exceeding these limits may cause performance degradation during workflow
         replay and state persistence operations.
 
+    Automatic Context Size Validation:
+        When the environment variable ONEX_CONTEXT_SIZE_WARN_ON_CREATE is set to
+        '1', 'true', or 'yes', snapshot creation automatically validates context
+        size and logs warnings if limits are exceeded. This is a non-blocking
+        validation that does not raise errors by default, allowing existing code
+        to continue functioning while alerting developers to potential issues.
+
+        To enable::
+
+            export ONEX_CONTEXT_SIZE_WARN_ON_CREATE=1
+
+        When enabled, the model_validator calls validate_context_size() and emits
+        structured log warnings with workflow_id and specific limit violations.
+
     PII Handling:
         **WARNING**: The context dict may contain sensitive data. When storing or
         transmitting workflow snapshots:
@@ -119,7 +158,11 @@ class ModelWorkflowStateSnapshot(BaseModel):
         - Credit card numbers
         - IPv4 and IPv6 addresses
         - API keys (Stripe, AWS, GitHub, Slack, generic)
-        - UUIDs/GUIDs (optional - not always PII)
+
+        **UUID Redaction (Opt-In)**: UUIDs/GUIDs are NOT redacted by default because
+        they are often system-generated identifiers (workflow_id, step_id,
+        correlation_id) useful for debugging and tracing. To redact UUIDs, pass
+        ``redact_uuids=True`` to ``sanitize_context_for_logging()``.
 
         See method docstring for customization options.
 
@@ -257,15 +300,17 @@ class ModelWorkflowStateSnapshot(BaseModel):
             r"|\b(?:api[_-]?key[_-]?[a-zA-Z0-9]{20,})\b",  # Generic api_key prefix
             "[API_KEY_REDACTED]",
         ),
-        # GUIDs/UUIDs (standard format with dashes)
-        # Note: UUIDs are often NOT PII, but may identify users/sessions in some contexts.
-        # This pattern is included but workflows can customize redaction behavior.
-        # Matches: 550e8400-e29b-41d4-a716-446655440000
-        (
-            r"\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b",
-            "[UUID_REDACTED]",
-        ),
     ]
+
+    # UUID pattern is SEPARATE from default PII patterns (opt-in redaction).
+    # UUIDs are often NOT PII - they may be system-generated identifiers like
+    # workflow_id, step_id, correlation_id, etc. that are useful for debugging.
+    # Only redact UUIDs when they specifically identify users/sessions in your context.
+    # Matches: 550e8400-e29b-41d4-a716-446655440000
+    _UUID_PATTERN: ClassVar[tuple[str, str]] = (
+        r"\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b",
+        "[UUID_REDACTED]",
+    )
 
     # Schema version for migration support. Increment when making breaking changes.
     # See "Schema Versioning" in class docstring for version strategy.
@@ -294,6 +339,56 @@ class ModelWorkflowStateSnapshot(BaseModel):
         default_factory=lambda: datetime.now(UTC),
         description="Snapshot creation time",
     )
+
+    @model_validator(mode="after")
+    def _validate_context_size_on_create(self) -> Self:
+        """Optionally validate context size on snapshot creation.
+
+        When ONEX_CONTEXT_SIZE_WARN_ON_CREATE environment variable is set to
+        '1', 'true', or 'yes' (case-insensitive), this validator calls
+        validate_context_size() and logs warnings if limits are exceeded.
+
+        This is a non-blocking validation that does not raise errors by default,
+        allowing existing code to continue functioning while alerting developers
+        to potential context size issues during development and testing.
+
+        The validation respects the configured limits:
+        - CONTEXT_MAX_KEYS (default: 100)
+        - CONTEXT_MAX_SIZE_BYTES (default: 1MB)
+        - CONTEXT_MAX_NESTING_DEPTH (default: 5)
+
+        Returns:
+            Self: The validated model instance (unchanged).
+
+        Note:
+            Warnings are emitted via structured logging with workflow_id context.
+            Enable strict mode with ONEX_CONTEXT_SIZE_STRICT for error enforcement.
+        """
+        warn_on_create = os.getenv(CONTEXT_SIZE_WARN_ON_CREATE_ENV, "").lower() in (
+            "1",
+            "true",
+            "yes",
+        )
+        if warn_on_create:
+            # Use enforce=False to get warnings without raising errors
+            _is_valid, warnings = self.__class__.validate_context_size(
+                self.context, enforce=False
+            )
+            if warnings:
+                from omnibase_core.enums.enum_log_level import EnumLogLevel
+                from omnibase_core.logging import emit_log_event_sync
+
+                emit_log_event_sync(
+                    EnumLogLevel.WARNING,
+                    f"Context size warnings during snapshot creation: {'; '.join(warnings)}",
+                    {
+                        "workflow_id": str(self.workflow_id)
+                        if self.workflow_id
+                        else None,
+                        "warnings": warnings,
+                    },
+                )
+        return self
 
     @classmethod
     def create_initial(
@@ -331,6 +426,7 @@ class ModelWorkflowStateSnapshot(BaseModel):
         additional_patterns: list[tuple[str, str]] | None = None,
         *,
         redact_keys: list[str] | None = None,
+        redact_uuids: bool = False,
     ) -> WorkflowContextType:
         """
         Sanitize context dict for safe logging by redacting PII patterns.
@@ -348,6 +444,11 @@ class ModelWorkflowStateSnapshot(BaseModel):
             redact_keys: Optional list of key names to fully redact. If a key matches
                 (case-insensitive), its entire value is replaced with "[REDACTED]".
                 Useful for known sensitive fields like "password", "api_key", etc.
+            redact_uuids: If True, also redact UUIDs/GUIDs from string values.
+                Default is False because UUIDs are often NOT PII - they may be
+                system-generated identifiers (workflow_id, step_id, correlation_id)
+                that are useful for debugging and tracing. Only enable this when
+                UUIDs in your context specifically identify users or sessions.
 
         Returns:
             A new dict with PII patterns redacted. The original context is not modified.
@@ -375,6 +476,19 @@ class ModelWorkflowStateSnapshot(BaseModel):
             >>> safe["nested"]["email"]
             '[EMAIL_REDACTED]'
 
+        Example with UUID redaction:
+            >>> context = {"user_id": "550e8400-e29b-41d4-a716-446655440000"}
+            >>> # Without redact_uuids (default) - UUID preserved for debugging
+            >>> safe = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+            >>> safe["user_id"]
+            '550e8400-e29b-41d4-a716-446655440000'
+            >>> # With redact_uuids=True - UUID redacted
+            >>> safe = ModelWorkflowStateSnapshot.sanitize_context_for_logging(
+            ...     context, redact_uuids=True
+            ... )
+            >>> safe["user_id"]
+            '[UUID_REDACTED]'
+
         Note:
             - This method performs recursive sanitization on nested dicts and lists.
             - Non-string values (int, float, bool, None, UUID, datetime) are preserved.
@@ -383,8 +497,18 @@ class ModelWorkflowStateSnapshot(BaseModel):
               ``redact_keys`` for known sensitive fields.
             - For production systems, consider defining workflow-specific sanitization
               policies and using ``additional_patterns`` to extend coverage.
+            - UUID redaction is opt-in (``redact_uuids=False`` by default) because
+              UUIDs are typically system-generated identifiers useful for debugging,
+              not personally identifiable information.
         """
-        patterns = cls._PII_PATTERNS + (additional_patterns or [])
+        # Build pattern list: start with default PII patterns
+        patterns: list[tuple[str, str]] = list(cls._PII_PATTERNS)
+        # Optionally include UUID pattern
+        if redact_uuids:
+            patterns.append(cls._UUID_PATTERN)
+        # Add any custom patterns
+        if additional_patterns:
+            patterns.extend(additional_patterns)
         redact_keys_lower = {k.lower() for k in (redact_keys or [])}
 
         def _sanitize_value(value: Any, key: str | None = None) -> Any:
@@ -624,4 +748,5 @@ __all__ = [
     "CONTEXT_MAX_SIZE_BYTES",
     "CONTEXT_MAX_NESTING_DEPTH",
     "CONTEXT_SIZE_STRICT_MODE_ENV",
+    "CONTEXT_SIZE_WARN_ON_CREATE_ENV",
 ]

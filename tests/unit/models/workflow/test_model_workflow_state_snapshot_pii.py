@@ -464,30 +464,55 @@ class TestSanitizeContextForLoggingAPIKeyRedaction:
 
 
 class TestSanitizeContextForLoggingUUIDRedaction:
-    """Test UUID/GUID redaction in sanitize_context_for_logging."""
+    """Test UUID/GUID redaction in sanitize_context_for_logging.
+
+    NOTE: UUID redaction is opt-in (redact_uuids=False by default) because UUIDs
+    are often system-generated identifiers (workflow_id, step_id, correlation_id)
+    useful for debugging, not personally identifiable information.
+    """
 
     def test_redacts_standard_uuid(self) -> None:
-        """Test redaction of standard UUID format."""
+        """Test redaction of standard UUID format when redact_uuids=True."""
         context = {"id": "550e8400-e29b-41d4-a716-446655440000"}
-        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(
+            context, redact_uuids=True
+        )
         assert result["id"] == "[UUID_REDACTED]"
 
     def test_redacts_uppercase_uuid(self) -> None:
-        """Test redaction of uppercase UUID."""
+        """Test redaction of uppercase UUID when redact_uuids=True."""
         context = {"id": "550E8400-E29B-41D4-A716-446655440000"}
-        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(
+            context, redact_uuids=True
+        )
         assert result["id"] == "[UUID_REDACTED]"
 
     def test_redacts_uuid_in_text(self) -> None:
-        """Test redaction of UUID embedded in text."""
+        """Test redaction of UUID embedded in text when redact_uuids=True."""
         context = {"log": "User 550e8400-e29b-41d4-a716-446655440000 logged in"}
-        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(
+            context, redact_uuids=True
+        )
         assert result["log"] == "User [UUID_REDACTED] logged in"
 
+    def test_preserves_uuid_strings_by_default(self) -> None:
+        """Test that UUID strings are NOT redacted by default (redact_uuids=False).
+
+        UUIDs are often system-generated identifiers useful for debugging,
+        so they are preserved unless explicitly requested to be redacted.
+        """
+        context = {"workflow_id": "550e8400-e29b-41d4-a716-446655440000"}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        # UUID strings should be preserved by default
+        assert result["workflow_id"] == "550e8400-e29b-41d4-a716-446655440000"
+
     def test_preserves_uuid_objects(self) -> None:
-        """Test that UUID objects (not strings) are preserved."""
+        """Test that UUID objects (not strings) are preserved regardless of setting."""
         test_uuid = uuid4()
         context = {"workflow_id": test_uuid}
-        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
-        # UUID objects should be preserved, only string UUIDs are redacted
+        # Even with redact_uuids=True, UUID objects are preserved
+        # (only string representations are redacted)
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(
+            context, redact_uuids=True
+        )
         assert result["workflow_id"] == test_uuid

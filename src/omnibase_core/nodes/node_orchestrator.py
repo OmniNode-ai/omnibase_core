@@ -6,10 +6,13 @@ Zero custom Python code required - all coordination logic defined declaratively.
 """
 
 import copy
+from datetime import timedelta
 from uuid import UUID
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_log_level import EnumLogLevel
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
+from omnibase_core.logging.structured import emit_log_event_sync
 from omnibase_core.mixins.mixin_workflow_execution import MixinWorkflowExecution
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
@@ -22,15 +25,44 @@ from omnibase_core.models.orchestrator.model_orchestrator_input import (
     ModelOrchestratorInput,
 )
 from omnibase_core.models.workflow import ModelWorkflowStateSnapshot
+from omnibase_core.models.workflow.execution.model_workflow_state_snapshot import (
+    WORKFLOW_STATE_SNAPSHOT_SCHEMA_VERSION,
+)
 from omnibase_core.utils.workflow_executor import WorkflowExecutionResult
+
+# Clock skew tolerance for snapshot timestamp validation
+SNAPSHOT_FUTURE_TOLERANCE_SECONDS: int = 60
+"""Maximum allowed future timestamp tolerance in seconds.
+
+Allows for minor clock skew between distributed systems when validating
+snapshot timestamps. Snapshots with created_at up to this many seconds
+in the future are accepted to prevent false rejections due to clock drift.
+
+This tolerance is applied in ``_validate_workflow_snapshot()`` when
+checking the ``created_at`` timestamp of ``ModelWorkflowStateSnapshot``.
+"""
 
 # Error messages
 _ERR_WORKFLOW_DEFINITION_NOT_LOADED = "Workflow definition not loaded"
 _ERR_FUTURE_TIMESTAMP = (
     "Invalid workflow snapshot: timestamp {snapshot_time} is in the future "
-    "(current: {current_time}, difference: {difference_seconds:.3f}s)"
+    "(current: {current_time}, difference: {difference_seconds:.3f}s, "
+    "tolerance: {tolerance_seconds}s)"
 )
 _ERR_STEP_IDS_OVERLAP = "Step IDs cannot be both completed and failed"
+_ERR_SCHEMA_VERSION_MISMATCH = (
+    "Invalid workflow snapshot: schema_version {snapshot_version} does not match "
+    "current schema version {current_version}"
+)
+
+# Warning messages for terminal/problematic workflow states
+_WARN_WORKFLOW_APPEARS_COMPLETE = (
+    "Restoring workflow snapshot to potentially terminal state: "
+    "all tracked steps are either completed or failed"
+)
+_WARN_WORKFLOW_ALL_STEPS_FAILED = (
+    "Restoring workflow snapshot where all tracked steps have failed"
+)
 
 
 class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
@@ -47,7 +79,40 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
             - Workflow context accumulation
 
             Each thread should have its own NodeOrchestrator instance, or implement
-            explicit synchronization. See docs/guides/THREADING.md for patterns.
+            explicit synchronization. See docs/guides/THREADING.md for detailed patterns.
+
+            Unsafe Pattern (DO NOT DO THIS)::
+
+                # WRONG - shared mutable state causes race conditions
+                shared_node = NodeOrchestrator(container)
+                def worker():
+                    result = asyncio.run(shared_node.process(input_data))  # Race!
+                threads = [Thread(target=worker) for _ in range(4)]
+                for t in threads: t.start()
+
+            Safe Pattern 1 - Separate Instances::
+
+                # CORRECT - each thread has its own instance
+                def worker():
+                    node = NodeOrchestrator(container)  # Per-thread instance
+                    result = asyncio.run(node.process(input_data))
+                threads = [Thread(target=worker) for _ in range(4)]
+                for t in threads: t.start()
+
+            Safe Pattern 2 - External Synchronization::
+
+                # CORRECT - external lock for shared instance
+                node = NodeOrchestrator(container)
+                lock = threading.Lock()
+                def worker():
+                    with lock:
+                        result = asyncio.run(node.process(input_data))
+
+            Safe Pattern 3 - Immutable Snapshots::
+
+                # CORRECT - snapshots are immutable and safe to share
+                snapshot = node.snapshot_workflow_state(deep_copy=True)
+                # snapshot can be safely passed to any thread for reading
 
         Pattern:
             class NodeMyOrchestrator(NodeOrchestrator):
@@ -490,6 +555,33 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
               mutable objects (lists, dicts), use deep_copy=True if isolation
               is required for concurrent access patterns.
 
+        Performance Considerations:
+            - **Default (deep_copy=False)**: O(1) operation, returns internal reference.
+              Suitable for read-only access in single-threaded contexts.
+            - **With deep_copy=True**: O(n) where n is the serialized context size.
+              Creates a complete independent copy of all nested structures.
+
+            Approximate overhead for deep_copy=True:
+
+            - Context < 1KB: < 0.1ms (negligible)
+            - Context 1-10KB: 0.1-1ms
+            - Context 10-100KB: 1-10ms
+            - Context > 100KB: Consider restructuring to avoid large contexts
+
+            Recommendations:
+
+            - Use ``deep_copy=False`` (default) for hot paths and read-only access
+            - Use ``deep_copy=True`` when:
+
+              - Passing snapshots to untrusted code
+              - Concurrent access patterns require isolation
+              - Modifying context copy without affecting node state
+
+            Warning:
+                Large context dicts (>100KB) with ``deep_copy=True`` can impact
+                performance. Consider using ``validate_context_size()`` to enforce
+                size limits in production.
+
         Example:
             ```python
             import logging
@@ -533,48 +625,82 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
         Validate workflow snapshot for basic sanity.
 
         Ensures the restored snapshot represents a valid workflow state:
-        - Timestamp sanity check (created_at not in the future)
+        - Timestamp sanity check (created_at not too far in the future)
         - Step IDs overlap check (a step cannot be both completed AND failed)
+
+        Additionally, emits warnings (but does not block restore) for potentially
+        terminal workflow states:
+        - All tracked steps failed (workflow completely failed)
+        - Workflow appears complete (all steps either completed or failed)
 
         Unlike NodeReducer which validates state names against FSM contract states,
         NodeOrchestrator's workflow definition doesn't have a fixed set of "valid
         step indices" - the step index can be any non-negative integer (already
         enforced by Field(ge=0) constraint in ModelWorkflowStateSnapshot).
 
+        Clock Skew Tolerance:
+            A tolerance of ``SNAPSHOT_FUTURE_TOLERANCE_SECONDS`` (default: 60s)
+            is applied to future timestamp validation to account for minor clock
+            drift between distributed systems. Snapshots with timestamps up to
+            this tolerance in the future are accepted.
+
         Args:
             snapshot: Workflow state snapshot to validate
 
         Raises:
-            ModelOnexError: If snapshot fails validation (e.g., future timestamp,
-                overlapping step IDs between completed and failed sets)
+            ModelOnexError: If snapshot fails validation (e.g., future timestamp
+                beyond tolerance, overlapping step IDs between completed and failed sets)
 
         Note:
             This validation prevents injection of invalid snapshots during
             restore operations, ensuring workflow consistency and integrity.
+            Warnings for terminal states are logged but do not block the restore,
+            as there are legitimate use cases (e.g., replay, analysis, debugging).
         """
         from datetime import UTC, datetime
 
-        # Timestamp sanity check: created_at should not be in the future
+        # Schema version check: snapshot must be compatible with current version
+        if snapshot.schema_version != WORKFLOW_STATE_SNAPSHOT_SCHEMA_VERSION:
+            raise ModelOnexError(
+                message=_ERR_SCHEMA_VERSION_MISMATCH.format(
+                    snapshot_version=snapshot.schema_version,
+                    current_version=WORKFLOW_STATE_SNAPSHOT_SCHEMA_VERSION,
+                ),
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={
+                    "snapshot_schema_version": snapshot.schema_version,
+                    "current_schema_version": WORKFLOW_STATE_SNAPSHOT_SCHEMA_VERSION,
+                    "workflow_id": str(snapshot.workflow_id)
+                    if snapshot.workflow_id
+                    else None,
+                },
+            )
+
+        # Timestamp sanity check: created_at should not be too far in the future
+        # Allow tolerance for clock skew between distributed systems
         now = datetime.now(UTC)
+        tolerance = timedelta(seconds=SNAPSHOT_FUTURE_TOLERANCE_SECONDS)
 
         # Handle naive datetime (assume UTC)
         snapshot_time = snapshot.created_at
         if snapshot_time.tzinfo is None:
             snapshot_time = snapshot_time.replace(tzinfo=UTC)
 
-        if snapshot_time > now:
+        if snapshot_time > (now + tolerance):
             difference_seconds = (snapshot_time - now).total_seconds()
             raise ModelOnexError(
                 message=_ERR_FUTURE_TIMESTAMP.format(
                     snapshot_time=snapshot_time.isoformat(),
                     current_time=now.isoformat(),
                     difference_seconds=difference_seconds,
+                    tolerance_seconds=SNAPSHOT_FUTURE_TOLERANCE_SECONDS,
                 ),
                 error_code=EnumCoreErrorCode.INVALID_STATE,
                 context={
                     "snapshot_timestamp": snapshot_time.isoformat(),
                     "current_time": now.isoformat(),
                     "difference_seconds": difference_seconds,
+                    "tolerance_seconds": SNAPSHOT_FUTURE_TOLERANCE_SECONDS,
                     "workflow_id": str(snapshot.workflow_id)
                     if snapshot.workflow_id
                     else None,
@@ -598,6 +724,36 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
                 },
             )
 
+        # Warn about potentially terminal workflow states (but don't block restore)
+        # These warnings help identify restoration to states that may not progress further
+        completed_count = len(completed_set)
+        failed_count = len(failed_set)
+        total_tracked = completed_count + failed_count
+
+        # Build context for warnings
+        warning_context: dict[str, object] = {
+            "workflow_id": str(snapshot.workflow_id) if snapshot.workflow_id else None,
+            "current_step_index": snapshot.current_step_index,
+            "completed_count": completed_count,
+            "failed_count": failed_count,
+        }
+
+        # Check if all tracked steps failed (workflow completely failed)
+        if failed_count > 0 and completed_count == 0:
+            emit_log_event_sync(
+                level=EnumLogLevel.WARNING,
+                message=_WARN_WORKFLOW_ALL_STEPS_FAILED,
+                context=warning_context,
+            )
+        # Check if workflow appears complete (all steps either completed or failed)
+        # This heuristic: step_index >= total_tracked AND we have some tracked steps
+        elif total_tracked > 0 and snapshot.current_step_index >= total_tracked:
+            emit_log_event_sync(
+                level=EnumLogLevel.WARNING,
+                message=_WARN_WORKFLOW_APPEARS_COMPLETE,
+                context=warning_context,
+            )
+
     def restore_workflow_state(self, snapshot: ModelWorkflowStateSnapshot) -> None:
         """
         Restore workflow state from snapshot.
@@ -606,7 +762,7 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
         This enables workflow replay and recovery from persisted state.
 
         Validation performed:
-            - Timestamp sanity check (created_at not in the future)
+            - Timestamp sanity check (created_at not too far in the future)
             - Step IDs overlap check (a step cannot be both completed AND failed)
 
         Args:
@@ -746,6 +902,34 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
             - **JSON-Native Types**: All values are already converted to
               JSON-native types (strings, numbers, lists, dicts). No custom
               serializers needed.
+
+        Performance Considerations:
+            - **Default (deep_copy=False)**: O(n) operation for ``model_dump()``,
+              but nested mutable objects may share references with internal state.
+              Suitable for immediate serialization or single-threaded access.
+            - **With deep_copy=True**: O(n) + O(m) where n is model_dump cost and
+              m is deepcopy cost. Creates fully independent nested structures.
+
+            Approximate overhead for deep_copy=True (additional to model_dump):
+
+            - Context < 1KB: < 0.1ms (negligible)
+            - Context 1-10KB: 0.1-1ms
+            - Context 10-100KB: 1-10ms
+            - Context > 100KB: Consider restructuring to avoid large contexts
+
+            Recommendations:
+
+            - Use ``deep_copy=False`` (default) for immediate JSON serialization
+            - Use ``deep_copy=True`` when:
+
+              - Storing the dict for later modification
+              - Passing to code that may mutate nested structures
+              - Concurrent access patterns require isolation
+
+            Warning:
+                Large context dicts (>100KB) with ``deep_copy=True`` can impact
+                performance. Consider using ``validate_context_size()`` to enforce
+                size limits in production.
 
         Example:
             ```python

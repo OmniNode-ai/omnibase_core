@@ -1237,6 +1237,53 @@ class TestNodeOrchestratorWorkflowSnapshotValidation:
         assert "workflow_id" in ctx
         assert ctx["workflow_id"] == str(workflow_id)
 
+    def test_restore_workflow_state_rejects_schema_version_mismatch(
+        self,
+        test_container: ModelONEXContainer,
+        simple_workflow_definition: ModelWorkflowDefinition,
+    ) -> None:
+        """Test restore_workflow_state raises error for incompatible schema version.
+
+        This prevents restoring snapshots from older/newer schema versions that may
+        have incompatible field structures.
+        """
+        from omnibase_core.models.workflow.execution.model_workflow_state_snapshot import (
+            WORKFLOW_STATE_SNAPSHOT_SCHEMA_VERSION,
+        )
+
+        node = NodeOrchestrator(test_container)
+        node.workflow_definition = simple_workflow_definition
+
+        # Create snapshot with mismatched schema version (simulate future version)
+        workflow_id = uuid4()
+        future_schema_version = WORKFLOW_STATE_SNAPSHOT_SCHEMA_VERSION + 1
+        snapshot_with_wrong_version = ModelWorkflowStateSnapshot(
+            schema_version=future_schema_version,
+            workflow_id=workflow_id,
+            current_step_index=1,
+            completed_step_ids=(),
+            failed_step_ids=(),
+            context={},
+        )
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            node.restore_workflow_state(snapshot_with_wrong_version)
+
+        # Verify error message mentions schema version mismatch
+        assert "schema_version" in str(exc_info.value)
+        assert str(future_schema_version) in str(exc_info.value)
+        assert str(WORKFLOW_STATE_SNAPSHOT_SCHEMA_VERSION) in str(exc_info.value)
+
+        # Verify error context contains version information
+        error = exc_info.value
+        assert error.model.context is not None
+        ctx = error.model.context.get("context", error.model.context)
+        assert isinstance(ctx, dict)
+        assert "snapshot_schema_version" in ctx
+        assert ctx["snapshot_schema_version"] == future_schema_version
+        assert "current_schema_version" in ctx
+        assert ctx["current_schema_version"] == WORKFLOW_STATE_SNAPSHOT_SCHEMA_VERSION
+
 
 class TestModelWorkflowStateSnapshot:
     """Tests for ModelWorkflowStateSnapshot model behavior.

@@ -7,7 +7,7 @@ Zero custom Python code required - all state transitions defined declaratively.
 
 import copy
 import time
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 # ONEX_EXCLUDE: any - Base node class requires Any for generic type parameters [OMN-203]
 from typing import TYPE_CHECKING, Any, cast
@@ -29,6 +29,19 @@ from omnibase_core.models.fsm import ModelFSMStateSnapshot
 from omnibase_core.models.reducer.model_reducer_input import ModelReducerInput
 from omnibase_core.models.reducer.model_reducer_output import ModelReducerOutput
 
+# Clock skew tolerance for snapshot timestamp validation
+SNAPSHOT_FUTURE_TOLERANCE_SECONDS: int = 60
+"""Maximum allowed future timestamp tolerance in seconds.
+
+Allows for minor clock skew between distributed systems when validating
+snapshot timestamps. Snapshots with timestamps in context (created_at,
+timestamp, snapshot_time) up to this many seconds in the future are
+accepted to prevent false rejections due to clock drift.
+
+This tolerance is applied in ``_validate_fsm_snapshot()`` when checking
+timestamp fields in the snapshot's context dict.
+"""
+
 # Error messages
 _ERR_FSM_CONTRACT_NOT_LOADED = "FSM contract not loaded"
 _ERR_INVALID_SNAPSHOT_STATE = (
@@ -39,7 +52,8 @@ _ERR_INVALID_HISTORY_STATE = (
 )
 _ERR_FUTURE_TIMESTAMP = (
     "Invalid FSM snapshot: timestamp {snapshot_time} is in the future "
-    "(current: {current_time}, difference: {difference_seconds:.3f}s)"
+    "(current: {current_time}, difference: {difference_seconds:.3f}s, "
+    "tolerance: {tolerance_seconds}s)"
 )
 
 
@@ -65,7 +79,40 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
         - Context accumulation
 
         Each thread should have its own NodeReducer instance, or implement
-        explicit synchronization. See docs/guides/THREADING.md for patterns.
+        explicit synchronization. See docs/guides/THREADING.md for detailed patterns.
+
+        Unsafe Pattern (DO NOT DO THIS)::
+
+            # WRONG - shared mutable state causes race conditions
+            shared_node = NodeReducer(container)
+            def worker():
+                result = asyncio.run(shared_node.process(input_data))  # Race!
+            threads = [Thread(target=worker) for _ in range(4)]
+            for t in threads: t.start()
+
+        Safe Pattern 1 - Separate Instances::
+
+            # CORRECT - each thread has its own instance
+            def worker():
+                node = NodeReducer(container)  # Per-thread instance
+                result = asyncio.run(node.process(input_data))
+            threads = [Thread(target=worker) for _ in range(4)]
+            for t in threads: t.start()
+
+        Safe Pattern 2 - External Synchronization::
+
+            # CORRECT - external lock for shared instance
+            node = NodeReducer(container)
+            lock = threading.Lock()
+            def worker():
+                with lock:
+                    result = asyncio.run(node.process(input_data))
+
+        Safe Pattern 3 - Immutable Snapshots::
+
+            # CORRECT - snapshots are immutable and safe to share
+            snapshot = node.snapshot_state(deep_copy=True)
+            # snapshot can be safely passed to any thread for reading
 
     Pattern:
         class NodeMyReducer(NodeReducer):
@@ -410,6 +457,33 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
               mutable objects (lists, dicts), use deep_copy=True if isolation
               is required for concurrent access patterns.
 
+        Performance Considerations:
+            - **Default (deep_copy=False)**: O(1) operation, returns internal reference.
+              Suitable for read-only access in single-threaded contexts.
+            - **With deep_copy=True**: O(n) where n is the serialized context size.
+              Creates a complete independent copy of all nested structures.
+
+            Approximate overhead for deep_copy=True:
+
+            - Context < 1KB: < 0.1ms (negligible)
+            - Context 1-10KB: 0.1-1ms
+            - Context 10-100KB: 1-10ms
+            - Context > 100KB: Consider restructuring to avoid large contexts
+
+            Recommendations:
+
+            - Use ``deep_copy=False`` (default) for hot paths and read-only access
+            - Use ``deep_copy=True`` when:
+
+              - Passing snapshots to untrusted code
+              - Concurrent access patterns require isolation
+              - Modifying context copy without affecting node state
+
+            Warning:
+                Large context dicts (>100KB) with ``deep_copy=True`` can impact
+                performance. Consider using ``validate_context_size()`` to enforce
+                size limits in production.
+
         Example:
             ```python
             import logging
@@ -452,14 +526,22 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
         Ensures the restored snapshot represents a valid FSM state:
         - Current state must exist in contract state definitions
         - All history states must exist in contract state definitions
-        - Timestamp sanity check (not in the future)
+        - Timestamp sanity check (not too far in the future)
+
+        Clock Skew Tolerance:
+            A tolerance of ``SNAPSHOT_FUTURE_TOLERANCE_SECONDS`` (default: 60s)
+            is applied to future timestamp validation to account for minor clock
+            drift between distributed systems. Timestamps in context (created_at,
+            timestamp, snapshot_time) up to this tolerance in the future are
+            accepted.
 
         Args:
             snapshot: FSM state snapshot to validate
             contract: FSM contract defining valid states
 
         Raises:
-            ModelOnexError: If snapshot state is invalid or not in contract
+            ModelOnexError: If snapshot state is invalid or not in contract,
+                or if timestamp is too far in the future (beyond tolerance)
 
         Note:
             This validation prevents injection of impossible states during
@@ -497,7 +579,9 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
 
         # Timestamp sanity check: snapshot context may contain a timestamp
         # Check if context has a 'created_at' or 'timestamp' field
+        # Allow tolerance for clock skew between distributed systems
         timestamp_keys = ["created_at", "timestamp", "snapshot_time"]
+        tolerance = timedelta(seconds=SNAPSHOT_FUTURE_TOLERANCE_SECONDS)
         for key in timestamp_keys:
             if key in snapshot.context:
                 timestamp_value = snapshot.context[key]
@@ -520,19 +604,21 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
                 if snapshot_time.tzinfo is None:
                     snapshot_time = snapshot_time.replace(tzinfo=UTC)
 
-                if snapshot_time > now:
+                if snapshot_time > (now + tolerance):
                     difference_seconds = (snapshot_time - now).total_seconds()
                     raise ModelOnexError(
                         message=_ERR_FUTURE_TIMESTAMP.format(
                             snapshot_time=snapshot_time.isoformat(),
                             current_time=now.isoformat(),
                             difference_seconds=difference_seconds,
+                            tolerance_seconds=SNAPSHOT_FUTURE_TOLERANCE_SECONDS,
                         ),
                         error_code=EnumCoreErrorCode.INVALID_STATE,
                         context={
                             "snapshot_timestamp": snapshot_time.isoformat(),
                             "current_time": now.isoformat(),
                             "difference_seconds": difference_seconds,
+                            "tolerance_seconds": SNAPSHOT_FUTURE_TOLERANCE_SECONDS,
                             "fsm_name": contract.state_machine_name,
                         },
                     )
@@ -677,6 +763,34 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
             - **Safe for Persistence**: The returned dict is fully independent
               and can be safely stored, serialized, or transmitted without
               affecting node state.
+
+        Performance Considerations:
+            - **Default (deep_copy=False)**: O(n) operation for ``model_dump()``,
+              but nested mutable objects may share references with internal state.
+              Suitable for immediate serialization or single-threaded access.
+            - **With deep_copy=True**: O(n) + O(m) where n is model_dump cost and
+              m is deepcopy cost. Creates fully independent nested structures.
+
+            Approximate overhead for deep_copy=True (additional to model_dump):
+
+            - Context < 1KB: < 0.1ms (negligible)
+            - Context 1-10KB: 0.1-1ms
+            - Context 10-100KB: 1-10ms
+            - Context > 100KB: Consider restructuring to avoid large contexts
+
+            Recommendations:
+
+            - Use ``deep_copy=False`` (default) for immediate JSON serialization
+            - Use ``deep_copy=True`` when:
+
+              - Storing the dict for later modification
+              - Passing to code that may mutate nested structures
+              - Concurrent access patterns require isolation
+
+            Warning:
+                Large context dicts (>100KB) with ``deep_copy=True`` can impact
+                performance. Consider using ``validate_context_size()`` to enforce
+                size limits in production.
 
         Example:
             ```python
