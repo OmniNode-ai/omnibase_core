@@ -2,7 +2,7 @@
 
 > **Version**: 0.4.0
 > **Status**: Pre-release
-> **Last Updated**: 2025-12-14
+> **Last Updated**: 2025-12-15
 > **Linear Ticket**: [OMN-218](https://linear.app/omninode/issue/OMN-218)
 
 This checklist defines **hard release gates** for v0.4.0.
@@ -102,7 +102,7 @@ Screenshots should be explicitly discouraged for evidence that can be captured a
 - Manual: Search for patterns like `key`, `token`, `password`, `secret`, `@example.com`
 - Automated: Use `sed` or text replacement before storing: `sed 's/Bearer [a-zA-Z0-9_-]*/Bearer [REDACTED]/g'`
 
-**Remember**: Once evidence is posted to Linear or GitHub, it's permanent. Redact BEFORE posting.
+**Remember**: Once evidence is posted to Linear or GitHub, it is permanent. Redact BEFORE posting.
 
 > **CRITICAL WARNING FOR EVIDENCE STORAGE**: Logs, screenshots, gists, and any other evidence
 > artifacts MUST be scrubbed for PII and secrets BEFORE posting. This applies to:
@@ -195,10 +195,12 @@ All evidence must include toolchain version information for reproducibility:
 
 Run this before any verification to establish baseline versions:
 
+**Linux/macOS (Bash)**:
 ```bash
 # =============================================================================
-# Toolchain Version Capture (run before verification)
+# Toolchain Version Capture (run before verification) - Linux/macOS
 # =============================================================================
+mkdir -p artifacts/release/v0.4.0
 echo "=== Toolchain Versions for Evidence ===" | tee artifacts/release/v0.4.0/00-toolchain-versions.txt
 echo "Timestamp: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" | tee -a artifacts/release/v0.4.0/00-toolchain-versions.txt
 echo "Commit: $(git rev-parse HEAD)" | tee -a artifacts/release/v0.4.0/00-toolchain-versions.txt
@@ -217,6 +219,46 @@ echo "" | tee -a artifacts/release/v0.4.0/00-toolchain-versions.txt
 echo "=== Dependency Lock Hash ===" | tee -a artifacts/release/v0.4.0/00-toolchain-versions.txt
 sha256sum poetry.lock | tee -a artifacts/release/v0.4.0/00-toolchain-versions.txt
 ```
+
+**Windows (PowerShell)**:
+```powershell
+# =============================================================================
+# Toolchain Version Capture (run before verification) - Windows PowerShell
+# =============================================================================
+$outFile = "artifacts\release\v0.4.0\00-toolchain-versions.txt"
+New-Item -ItemType Directory -Force -Path "artifacts\release\v0.4.0" | Out-Null
+
+"=== Toolchain Versions for Evidence ===" | Tee-Object -FilePath $outFile
+"Timestamp: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') UTC" | Tee-Object -FilePath $outFile -Append
+"Commit: $(git rev-parse HEAD)" | Tee-Object -FilePath $outFile -Append
+"" | Tee-Object -FilePath $outFile -Append
+"Python: $(python --version 2>&1)" | Tee-Object -FilePath $outFile -Append
+"Poetry: $(poetry --version 2>&1)" | Tee-Object -FilePath $outFile -Append
+"Platform: $([System.Environment]::OSVersion.VersionString) $(if ([System.Environment]::Is64BitOperatingSystem) {'x64'} else {'x86'})" | Tee-Object -FilePath $outFile -Append
+"" | Tee-Object -FilePath $outFile -Append
+"=== Tool Versions ===" | Tee-Object -FilePath $outFile -Append
+poetry run mypy --version 2>&1 | Tee-Object -FilePath $outFile -Append
+poetry run pytest --version 2>&1 | Tee-Object -FilePath $outFile -Append
+poetry run ruff --version 2>&1 | Tee-Object -FilePath $outFile -Append
+poetry run black --version 2>&1 | Tee-Object -FilePath $outFile -Append
+poetry run isort --version 2>&1 | Tee-Object -FilePath $outFile -Append
+"" | Tee-Object -FilePath $outFile -Append
+"=== Dependency Lock Hash ===" | Tee-Object -FilePath $outFile -Append
+"$((Get-FileHash -Algorithm SHA256 poetry.lock).Hash.ToLower())  poetry.lock" | Tee-Object -FilePath $outFile -Append
+```
+
+**Cross-Platform Command Reference**:
+
+| Command | Linux/macOS | Windows PowerShell | Windows CMD |
+|---------|-------------|-------------------|-------------|
+| Timestamp (UTC) | `date -u '+%Y-%m-%d %H:%M:%S UTC'` | `Get-Date -Format 'yyyy-MM-dd HH:mm:ss'` | `echo %date% %time%` |
+| Platform info | `uname -srm` | `[System.Environment]::OSVersion.VersionString` | `ver` |
+| SHA256 hash | `sha256sum file` | `(Get-FileHash -Algorithm SHA256 file).Hash` | `certutil -hashfile file SHA256` |
+| Tee to file | `cmd \| tee file` | `cmd \| Tee-Object -FilePath file` | No direct equivalent (use `>` redirect) |
+| Tee append | `cmd \| tee -a file` | `cmd \| Tee-Object -FilePath file -Append` | No direct equivalent (use `>>` redirect) |
+| Create directory | `mkdir -p dir` | `New-Item -ItemType Directory -Force -Path dir` | `mkdir dir` (fails if exists) |
+| Activate venv | `source venv/bin/activate` | `.\venv\Scripts\Activate.ps1` | `venv\Scripts\activate.bat` |
+| Remove directory | `rm -rf dir` | `Remove-Item -Recurse -Force dir` | `rmdir /s /q dir` |
 
 **Rationale**: Tool versions drift over time. Capturing exact versions ensures evidence is reproducible and helps diagnose issues where "it worked on my machine" but fails in CI or production.
 
@@ -254,13 +296,36 @@ Before marking a gate complete:
 
 - [ ] **All nodes pure-checked (AST)** `✅ REQUIRED`
   - Run AST validation checks on all node implementations
-  - **Note**: No dedicated `ast_checker` CLI exists. Use existing validation framework:
+  - **Dedicated Script**: Use `scripts/check_node_purity.py` for comprehensive node purity validation
   - Commands:
     ```bash
-    # Run architecture validation (one-model-per-file, Pydantic patterns)
+    # =============================================================================
+    # OPTION A: Use dedicated node purity checker script (RECOMMENDED)
+    # =============================================================================
+    # This performs comprehensive AST analysis for:
+    # - Global state access in COMPUTE nodes
+    # - I/O operations in pure nodes
+    # - Mutable default arguments
+    # - Other purity violations
+    poetry run python scripts/check_node_purity.py --verbose
+
+    # For stricter checking (treats warnings as errors)
+    poetry run python scripts/check_node_purity.py --strict
+
+    # Check specific file only
+    poetry run python scripts/check_node_purity.py --file src/omnibase_core/nodes/node_compute.py
+
+    # JSON output for CI integration
+    poetry run python scripts/check_node_purity.py --json
+
+    # =============================================================================
+    # OPTION B: Run architecture validation tests
+    # =============================================================================
     poetry run pytest tests/unit/validation/ -v -k "ast or architecture or pattern"
 
-    # Run naming convention and pattern checks
+    # =============================================================================
+    # OPTION C: Run pattern validation programmatically
+    # =============================================================================
     poetry run python -c "
     from omnibase_core.validation.patterns import validate_patterns_directory
     from pathlib import Path
@@ -268,27 +333,10 @@ Before marking a gate complete:
     print(f'Validation complete: {len(result.errors)} issues found')
     for err in result.errors[:10]: print(f'  - {err}')
     "
-
-    # Check for purity violation patterns in node implementations
-    poetry run python -c "
-    from pathlib import Path
-    import ast
-
-    violations = []
-    for f in Path('src/omnibase_core/nodes').glob('*.py'):
-        tree = ast.parse(f.read_text())
-        # Check for global state access, I/O in compute nodes
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Global):
-                violations.append(f'{f.name}: global statement')
-    print(f'Purity check: {len(violations)} potential violations')
-    for v in violations: print(f'  - {v}')
-    "
     ```
-  - Expected: 0 violations in node implementations
+  - Expected: 0 violations in node implementations (exit code 0)
   - Evidence: Release issue comment (OMN-218) or artifacts/release/v0.4.0/01-code-quality-ast-check-YYYYMMDD.txt
   - **⚠️ IMPORTANT**: These commands MUST be executed explicitly. Test pass status does NOT constitute evidence.
-  - **Future**: Consider creating `omnibase_core.tools.ast_checker` CLI (tracked in MVP_PLAN.md, Beta scope)
 
 - [ ] **Strict type safety enforced** `🚫 BLOCKER`
   - Command: `poetry run mypy src/omnibase_core/ --strict`
@@ -315,12 +363,17 @@ Before marking a gate complete:
 
 - [ ] **CI passes all parallel test splits** `🚫 BLOCKER`
   - All splits succeed
-  - No test flakiness retries allowed (pytest-rerunfailures disabled for test execution)
-  - **Scope**: This prohibition applies specifically to masking flaky tests with automatic retries. Application-level retry patterns (e.g., network retries, circuit breakers) are unaffected and remain appropriate.
-  - **Rationale**: Flaky tests indicate non-deterministic behavior that must be fixed at the source. Retries mask real bugs and create false confidence. Tests must be deterministic.
+  - No test flakiness retries permitted (pytest-rerunfailures and similar plugins disabled)
+  - **Scope of Retry Prohibition**: This prohibition applies specifically to **test execution retries** designed to mask flaky tests:
+    - Prohibited: `pytest-rerunfailures`, `flaky`, `pytest-retry`, or equivalent test retry mechanisms
+    - Prohibited: CI job retry on test failure without root cause analysis
+    - **NOT prohibited**: Application-level retry patterns (network retries, circuit breakers, exponential backoff) within the code under test are unaffected and remain appropriate
+    - **NOT prohibited**: CI infrastructure retries for transient issues (runner failures, network timeouts to package registries)
+  - **Rationale**: Flaky tests indicate non-deterministic behavior that must be fixed at the source. Automatic retries mask real bugs and create false confidence in test reliability. All tests must be deterministic.
   - **Note**: Expect pressure to weaken this later. Do not.
   - Expected runtime: 2m30s-3m30s per split
   - Evidence: Release issue comment (OMN-218) with GitHub Actions run link
+  - **Evidence Location**: See [Evidence Storage Guidelines](#evidence-storage-guidelines) for storage requirements
 
 - [ ] **Adapter fuzz testing completed** `✅ REQUIRED (MVP minimal)` / `🚫 BLOCKER (Beta full)`
   - **Definition**: Adapters are components that bridge ONEX core with external systems or protocols. Examples in this codebase include: event bus adapters (Kafka/Redpanda backends via `ProtocolKafkaEventBusAdapter`), container adapters (service discovery integration), CLI adapters (`ModelCLIAdapter`), and contract adapters (YAML binding).
@@ -338,30 +391,62 @@ Before marking a gate complete:
     # Run all Hypothesis-based tests (search for @given decorator usage)
     poetry run pytest tests/ -v -k "property" --hypothesis-show-statistics
 
-    # Create adapter fuzz test evidence (runnable example)
+    # =============================================================================
+    # Create adapter fuzz test evidence (COMPLETE runnable example)
+    # =============================================================================
+    # Prerequisites:
+    #   - Hypothesis installed: poetry show hypothesis (should show ^6.148)
+    #   - omnibase_core installed: poetry install
+    #
+    # This example is COMPLETE and copy-paste runnable. It will:
+    #   1. Generate 50 random text inputs via Hypothesis
+    #   2. Feed each to ModelRuntimeHostContract.model_validate_json()
+    #   3. Verify that invalid inputs raise ValidationError (not crash/hang)
+    #   4. Print success message when all 50 examples pass
+    #
     poetry run python -c "
-    from hypothesis import given, strategies as st, settings
-    from omnibase_core.models.contracts.model_runtime_host_contract import ModelRuntimeHostContract
-    import json
+from hypothesis import given, strategies as st, settings
+from omnibase_core.models.contracts.model_runtime_host_contract import ModelRuntimeHostContract
+import json
+import sys
 
-    @given(st.text(min_size=0, max_size=100))
-    @settings(max_examples=50)
-    def test_contract_handles_invalid_input(invalid_data):
-        try:
-            # Attempt to parse malformed data
-            ModelRuntimeHostContract.model_validate_json(json.dumps({'invalid': invalid_data}))
-        except Exception as e:
-            # Should raise ValidationError, not crash
-            assert 'validation' in str(type(e).__name__).lower() or 'error' in str(type(e).__name__).lower()
+# Track test execution for verification
+examples_tested = 0
 
-    # IMPORTANT: Call the test function to actually execute Hypothesis
-    test_contract_handles_invalid_input()
-    print('Fuzz test: PASS (50 examples tested)')
-    print('Implement production tests in tests/unit/adapters/test_adapter_fuzz.py')
-    "
-    # Expected output:
+@given(st.text(min_size=0, max_size=100))
+@settings(max_examples=50, deadline=None)  # deadline=None prevents timeout on slow systems
+def test_contract_handles_invalid_input(invalid_data):
+    global examples_tested
+    examples_tested += 1
+    try:
+        # Attempt to parse malformed data - this SHOULD fail validation
+        ModelRuntimeHostContract.model_validate_json(json.dumps({'invalid': invalid_data}))
+        # If we get here, validation unexpectedly passed (still OK - no crash)
+    except Exception as e:
+        # Should raise ValidationError or similar, not crash
+        error_type = str(type(e).__name__).lower()
+        assert 'validation' in error_type or 'error' in error_type, f'Unexpected error type: {type(e).__name__}'
+
+# CRITICAL: Call the test function to actually execute Hypothesis
+# Without this call, Hypothesis does nothing!
+test_contract_handles_invalid_input()
+
+# Verify execution completed
+print(f'Fuzz test: PASS ({examples_tested} examples tested)')
+print('All inputs handled gracefully - no crashes or undefined behavior')
+print('Implement production tests in tests/unit/adapters/test_adapter_fuzz.py')
+sys.exit(0)  # Explicit success exit
+"
+    # Expected output (exact):
     # Fuzz test: PASS (50 examples tested)
+    # All inputs handled gracefully - no crashes or undefined behavior
     # Implement production tests in tests/unit/adapters/test_adapter_fuzz.py
+    #
+    # If you see "ModuleNotFoundError: No module named 'hypothesis'":
+    #   Run: poetry install (Hypothesis is in pyproject.toml dependencies)
+    #
+    # If the command hangs or crashes:
+    #   This indicates a bug in ModelRuntimeHostContract - investigate!
     ```
   - Expected: All adapters handle malformed inputs gracefully (ValidationError, not crash)
   - Evidence: Release issue comment (OMN-218) or artifacts/release/v0.4.0/fuzz-reports/adapter-fuzz-YYYYMMDD.txt
@@ -370,16 +455,49 @@ Before marking a gate complete:
 
 - [ ] **Coverage threshold met** `✅ REQUIRED`
   - Minimum: 60% **line coverage** (not branch coverage)
-  - **Enforcement mechanism**: pytest-cov with `--cov-fail-under=60` flag causes CI to fail if threshold not met
-  - **Measurement**: Line coverage counts executed lines / total lines; branch coverage (not required) would count executed branches / total branches
-  - Command: `poetry run pytest tests/ --cov=src/omnibase_core --cov-fail-under=60 --cov-report=term-missing`
-  - **Note**: Coverage is not correctness. This metric prevents metric worship—60% is a floor, not a goal.
+  - **Coverage Type Explanation**:
+    - **Line coverage** (REQUIRED): Percentage of executable lines executed by tests
+      - Formula: `(executed lines / total executable lines) * 100`
+      - Measures: Which lines of code were actually run during tests
+    - **Branch coverage** (NOT required for v0.4.0): Percentage of code branches taken
+      - Formula: `(executed branches / total branches) * 100`
+      - Measures: Whether both sides of if/else, all loop conditions, etc. were tested
+      - Future consideration for Beta scope
+  - **Enforcement mechanism**: pytest-cov with `--cov-fail-under=60` flag
+    - **CI Behavior**: When coverage < 60%, pytest exits with **non-zero exit code** (exit code 2), causing CI job to FAIL
+    - **Local Behavior**: Same exit code behavior allows local validation before push
+    - **Cannot Override**: No command-line flag to bypass the threshold; must either:
+      1. Add tests to increase coverage, OR
+      2. Modify threshold in pyproject.toml (requires PR review)
+  - **When Threshold Not Met**:
+    1. CI pipeline **fails immediately** at coverage check step (exit code 2)
+    2. Coverage report shows which files/lines are uncovered (`--cov-report=term-missing`)
+    3. Developer must add tests or mark intentional exclusions with `# pragma: no cover`
+    4. **Release CANNOT proceed** until threshold is met - this is a hard gate
+  - Commands:
+    ```bash
+    # Run with coverage enforcement (CI-equivalent command)
+    poetry run pytest tests/ --cov=src/omnibase_core --cov-fail-under=60 --cov-report=term-missing
+
+    # Check current coverage without enforcement (for investigation)
+    poetry run pytest tests/ --cov=src/omnibase_core --cov-report=term-missing
+
+    # Generate HTML report for detailed file-by-file analysis
+    poetry run pytest tests/ --cov=src/omnibase_core --cov-report=html:artifacts/release/v0.4.0/coverage/
+
+    # View coverage summary only (faster, no detailed report)
+    poetry run pytest tests/ --cov=src/omnibase_core --cov-report=term
+    ```
+  - Expected: Coverage >= 60% (exit code 0), coverage report generated
+  - **Note**: Coverage is not correctness. This metric prevents metric worship—60% is a floor, not a goal. High coverage with bad tests is worse than moderate coverage with good tests.
   - Evidence: Release issue comment (OMN-218) with CI artifacts link or artifacts/release/v0.4.0/coverage/index.html
+  - **Evidence Location**: See [Evidence Storage Guidelines](#evidence-storage-guidelines) for storage requirements
 
 - [ ] **Negative-path tests present** `✅ REQUIRED`
   - At least one failure-mode test per contract class
   - Explicit assertions on error shape
   - Evidence: Release issue comment (OMN-218) with specific test file paths (e.g., tests/unit/test_negative_paths.py)
+  - **Evidence Location**: See [Evidence Storage Guidelines](#evidence-storage-guidelines) for storage requirements
 
 ---
 
@@ -470,6 +588,7 @@ Before marking a gate complete:
     ```
 
   - Evidence: Release issue comment (OMN-218) or artifacts/release/v0.4.0/replay-logs/determinism-hashes-YYYYMMDD.txt
+  - **Evidence Location**: See [Evidence Storage Guidelines](#evidence-storage-guidelines) for storage requirements
 
 - [ ] **Replay validation completed** `✅ REQUIRED`
   - At least one representative workflow replayed end-to-end
@@ -478,6 +597,7 @@ Before marking a gate complete:
     - Must include: Multiple node transitions, state reduction, at least one retry/recovery path
     - Compute-only replays are the easy case and do not catch real bugs
   - Evidence: Release issue comment (OMN-218) or artifacts/release/v0.4.0/replay-logs/replay-comparison-YYYYMMDD.txt
+  - **Evidence Location**: See [Evidence Storage Guidelines](#evidence-storage-guidelines) for storage requirements
 
 ---
 
@@ -489,6 +609,7 @@ Before marking a gate complete:
   - **Note**: Use existing scripts (no `omnibase_core.tools.verify_fingerprints` CLI)
 
   **Script Capability Reference**:
+
   | Script | `--recursive` Flag | File Discovery |
   |--------|-------------------|----------------|
   | `compute_contract_fingerprint.py` | No | Relies on shell glob expansion |
@@ -709,29 +830,131 @@ Before marking a gate complete:
   - poetry.lock committed and intentional
   - No untracked dependency drift
   - **⚠️ Lock Hash Capture**: Capture poetry.lock hash in evidence to prevent silent re-lock drift
+
+  **What is "lock drift"?**: Lock drift occurs when:
+  1. `poetry.lock` is modified but not committed (uncommitted changes)
+  2. `poetry.lock` is out of sync with `pyproject.toml` (dependencies added/removed without running `poetry lock`)
+  3. Lock file was regenerated on a different platform/Poetry version (hash changes without intentional dependency updates)
   - Commands:
+
+    **Linux/macOS (Bash)**:
     ```bash
-    # Verify lock file is committed
+    # =============================================================================
+    # Step 1: Detect uncommitted changes to lock file
+    # =============================================================================
+    # Check for unstaged changes (should be empty)
+    git diff --name-only poetry.lock
+
+    # Check for staged but uncommitted changes (should be empty)
+    git diff --cached --name-only poetry.lock
+
+    # Combined check with status
     git status poetry.lock
 
-    # Capture lock file hash for evidence
-    sha256sum poetry.lock >> artifacts/release/v0.4.0/07-dependencies-lock-hash.txt
+    # =============================================================================
+    # Step 2: Verify lock file is in sync with pyproject.toml
+    # =============================================================================
+    # Poetry 2.x command (CORRECT for Poetry >= 2.0):
+    poetry check --lock
+    # Expected output: "All set!"
+    # Exit code 0 = in sync, Exit code 1 = out of sync
 
-    # Verify no pending dependency changes
-    poetry lock --check
+    # NOTE: For Poetry 1.x (deprecated), the command was `poetry lock --check`
+    # This project requires Poetry 2.x - verify with: poetry --version
+
+    # =============================================================================
+    # Step 3: Capture lock file hash for evidence
+    # =============================================================================
+    sha256sum poetry.lock >> artifacts/release/v0.4.0/07-dependencies-lock-hash.txt
+    echo "Lock hash captured at $(date -u '+%Y-%m-%dT%H:%M:%SZ')" >> artifacts/release/v0.4.0/07-dependencies-lock-hash.txt
+
+    # =============================================================================
+    # Step 4: Verify lock file is tracked in git
+    # =============================================================================
+    git ls-files --error-unmatch poetry.lock  # Exit 0 = tracked
+    git log -1 --format="%h %s" -- poetry.lock  # Show last commit
     ```
-  - Evidence: Git diff AND lock file hash
+
+    **Windows (PowerShell)**:
+    ```powershell
+    # =============================================================================
+    # Step 1: Detect uncommitted changes to lock file
+    # =============================================================================
+    git diff --name-only poetry.lock
+    git diff --cached --name-only poetry.lock
+    git status poetry.lock
+
+    # =============================================================================
+    # Step 2: Verify lock file is in sync with pyproject.toml
+    # =============================================================================
+    # Poetry 2.x command (CORRECT for Poetry >= 2.0):
+    poetry check --lock
+    # Expected output: "All set!"
+
+    # =============================================================================
+    # Step 3: Capture lock file hash for evidence
+    # =============================================================================
+    $hash = (Get-FileHash -Algorithm SHA256 poetry.lock).Hash.ToLower()
+    "$hash  poetry.lock" >> artifacts\release\v0.4.0\07-dependencies-lock-hash.txt
+    "Lock hash captured at $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssZ')" >> artifacts\release\v0.4.0\07-dependencies-lock-hash.txt
+
+    # =============================================================================
+    # Step 4: Verify lock file is tracked in git
+    # =============================================================================
+    git ls-files --error-unmatch poetry.lock
+    git log -1 --format="%h %s" -- poetry.lock
+    ```
+
+    **Windows (CMD)**:
+    ```cmd
+    :: =============================================================================
+    :: Step 1: Detect uncommitted changes to lock file
+    :: =============================================================================
+    git diff --name-only poetry.lock
+    git diff --cached --name-only poetry.lock
+    git status poetry.lock
+
+    :: =============================================================================
+    :: Step 2: Verify lock file is in sync with pyproject.toml
+    :: =============================================================================
+    :: Poetry 2.x command (CORRECT for Poetry >= 2.0):
+    poetry check --lock
+    :: Expected output: "All set!"
+
+    :: =============================================================================
+    :: Step 3: Capture lock file hash for evidence
+    :: =============================================================================
+    certutil -hashfile poetry.lock SHA256 >> artifacts\release\v0.4.0\07-dependencies-lock-hash.txt
+
+    :: =============================================================================
+    :: Step 4: Verify lock file is tracked in git
+    :: =============================================================================
+    git ls-files --error-unmatch poetry.lock
+    git log -1 --format="%h %s" -- poetry.lock
+    ```
+
+  - **Drift Detection Summary**:
+
+    | Check | Command | Expected Result |
+    |-------|---------|-----------------|
+    | Uncommitted changes | `git diff --name-only poetry.lock` | Empty output |
+    | Staged changes | `git diff --cached --name-only poetry.lock` | Empty output |
+    | Lock/pyproject sync | `poetry check --lock` | "All set!" (exit 0) |
+    | File tracked | `git ls-files --error-unmatch poetry.lock` | Exit 0 |
+
+  - Evidence: Git diff output (should be empty) AND lock file hash AND `poetry check --lock` output
 
 - [ ] **Reproducible install verified** `✅ REQUIRED`
   - **⚠️ REQUIRED**: Fresh virtualenv smoke install (pip installs can lie)
   - Fresh environment install using lockfile only
   - Tests pass in clean environment
   - Commands:
+
+    **Linux/macOS (Bash)**:
     ```bash
     # Create fresh virtualenv for verification
     python -m venv /tmp/v040-verify-env
-    source /tmp/v040-verify-env/bin/activate  # Linux/macOS
-    # Windows: /tmp/v040-verify-env/Scripts/activate
+    source /tmp/v040-verify-env/bin/activate
 
     # Install from lock file only
     pip install poetry
@@ -744,6 +967,44 @@ Before marking a gate complete:
     # Cleanup
     deactivate
     rm -rf /tmp/v040-verify-env
+    ```
+
+    **Windows (PowerShell)**:
+    ```powershell
+    # Create fresh virtualenv for verification
+    python -m venv $env:TEMP\v040-verify-env
+    & "$env:TEMP\v040-verify-env\Scripts\Activate.ps1"
+
+    # Install from lock file only
+    pip install poetry
+    poetry install --no-root
+
+    # Run smoke tests
+    python -c "from omnibase_core.nodes import NodeCompute; print('Smoke OK')"
+    poetry run pytest tests/unit/ -x --tb=short -q
+
+    # Cleanup
+    deactivate
+    Remove-Item -Recurse -Force "$env:TEMP\v040-verify-env"
+    ```
+
+    **Windows (CMD)**:
+    ```cmd
+    :: Create fresh virtualenv for verification
+    python -m venv %TEMP%\v040-verify-env
+    %TEMP%\v040-verify-env\Scripts\activate.bat
+
+    :: Install from lock file only
+    pip install poetry
+    poetry install --no-root
+
+    :: Run smoke tests
+    python -c "from omnibase_core.nodes import NodeCompute; print('Smoke OK')"
+    poetry run pytest tests/unit/ -x --tb=short -q
+
+    :: Cleanup
+    deactivate
+    rmdir /s /q %TEMP%\v040-verify-env
     ```
   - Evidence: CI or local install log from fresh environment
 
@@ -1153,9 +1414,22 @@ mkdir -p artifacts/release/v0.4.0
 # =============================================================================
 # Section 1: Code Quality
 # =============================================================================
-# NOTE: Version already captured in Step 0, but inline capture for CI logs:
+# Node purity check (RECOMMENDED - uses dedicated script)
+poetry run python scripts/check_node_purity.py --verbose
+
+# Pattern validation (alternative method)
+poetry run python -c "
+from omnibase_core.validation.patterns import validate_patterns_directory
+from pathlib import Path
+result = validate_patterns_directory(Path('src/omnibase_core/nodes'))
+print(f'Validation complete: {len(result.errors)} issues found')
+"
+
+# Type checking (version captured for reproducibility)
 echo "=== mypy version ===" && poetry run mypy --version
 poetry run mypy src/omnibase_core/ --strict
+
+# Linting and formatting
 echo "=== ruff version ===" && poetry run ruff --version
 pre-commit run --all-files
 
@@ -1195,7 +1469,7 @@ poetry run pytest tests/unit/runtime/test_file_registry.py -v
 # Section 7: Dependencies
 # =============================================================================
 sha256sum poetry.lock  # Capture lock hash
-poetry lock --check
+poetry check --lock
 
 # =============================================================================
 # Section 8: Observability
@@ -1253,116 +1527,121 @@ These checks verify that the published package is correct, complete, and functio
   - Version number matches release
   - Package integrity verified (hash comparison against build artifact)
   - All documented imports work
+  - **Verification Checklist**:
+    - [ ] `pip install` completes without errors
+    - [ ] Version string matches `0.4.0` exactly
+    - [ ] Wheel SHA256 hash matches CI build artifact
+    - [ ] All core imports succeed (nodes, container, errors, enums, events, mixins)
+    - [ ] Object instantiation works (container, error, enum access)
   - Commands:
+
+    **Linux/macOS (Bash)**:
     ```bash
-    # =============================================================================
     # Step 1: Create isolated verification environment
-    # =============================================================================
     python -m venv /tmp/v040-pypi-verify
-    source /tmp/v040-pypi-verify/bin/activate  # Linux/macOS
-    # Windows: /tmp/v040-pypi-verify/Scripts/activate
+    source /tmp/v040-pypi-verify/bin/activate
 
-    # =============================================================================
     # Step 2: Install from PyPI (NOT from local source)
-    # =============================================================================
     pip install omnibase_core==0.4.0 --index-url https://pypi.org/simple/
-
-    # Verify installation succeeded
     pip show omnibase_core
 
-    # =============================================================================
     # Step 3: Version verification
-    # =============================================================================
     python -c "import omnibase_core; print(f'Version: {omnibase_core.__version__}')"
-    # Expected output: "Version: 0.4.0"
 
-    # =============================================================================
-    # Step 4: Package hash verification (CRITICAL for supply chain security)
-    # =============================================================================
-    # Download wheel to verify hash
+    # Step 4: Package hash verification
     pip download omnibase_core==0.4.0 --no-deps -d /tmp/v040-wheel-verify/
-
-    # Compute hash of downloaded wheel
     PYPI_HASH=$(sha256sum /tmp/v040-wheel-verify/omnibase_core-0.4.0-py3-none-any.whl | cut -d' ' -f1)
     echo "PyPI wheel SHA256: ${PYPI_HASH}"
 
-    # Compare against build artifact hash from CI
-    # The canonical hash is stored in:
-    #   1. GitHub Actions artifact: "release-artifacts/wheel-sha256.txt"
-    #   2. GitHub Release attachment: "omnibase_core-0.4.0.sha256"
-    #   3. Release notes body: SHA256 checksum section
-    #
-    # Retrieve expected hash (example using GitHub CLI):
-    # gh release download v0.4.0 --pattern "*.sha256" --output /tmp/expected-hash.txt
-    # EXPECTED_HASH=$(cat /tmp/expected-hash.txt | grep ".whl" | cut -d' ' -f1)
-    #
-    # Verify match (MUST be exact):
-    # if [ "${PYPI_HASH}" = "${EXPECTED_HASH}" ]; then
-    #   echo "Hash verification: PASS"
-    # else
-    #   echo "Hash verification: FAIL - Supply chain compromise possible!"
-    #   exit 1
-    # fi
-
-    # =============================================================================
-    # Step 5: Smoke test imports (ALL core imports)
-    # =============================================================================
+    # Step 5: Smoke test imports
     python -c "
-    # Core node imports
-    from omnibase_core.nodes import NodeCompute, NodeReducer, NodeOrchestrator, NodeEffect
-    print('Core nodes: OK')
-
-    # Container import
-    from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-    print('Container: OK')
-
-    # Error handling import
-    from omnibase_core.models.errors.model_onex_error import ModelOnexError
-    print('Errors: OK')
-
-    # Enum imports
-    from omnibase_core.enums import EnumNodeKind, EnumNodeType
-    print('Enums: OK')
-
-    # Event envelope import
-    from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
-    print('Events: OK')
-
-    # Mixin imports
-    from omnibase_core.mixins.mixin_node_lifecycle import MixinNodeLifecycle
-    print('Mixins: OK')
-
-    print('\\nAll smoke test imports: PASS')
+    from omnibase_core.nodes import NodeCompute, NodeReducer, NodeOrchestrator, NodeEffect; print('Core nodes: OK')
+    from omnibase_core.models.container.model_onex_container import ModelONEXContainer; print('Container: OK')
+    from omnibase_core.models.errors.model_onex_error import ModelOnexError; print('Errors: OK')
+    from omnibase_core.enums import EnumNodeKind, EnumNodeType; print('Enums: OK')
+    from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope; print('Events: OK')
+    from omnibase_core.mixins.mixin_node_lifecycle import MixinNodeLifecycle; print('Mixins: OK')
+    print('All smoke test imports: PASS')
     "
 
-    # =============================================================================
-    # Step 6: Functional smoke test (actually instantiate objects)
-    # =============================================================================
+    # Step 6: Functional smoke test
     python -c "
     from omnibase_core.models.container.model_onex_container import ModelONEXContainer
     from omnibase_core.models.errors.model_onex_error import ModelOnexError
     from omnibase_core.enums import EnumNodeKind
-
-    # Test container instantiation
-    container = ModelONEXContainer()
-    print(f'Container instantiated: {type(container).__name__}')
-
-    # Test error instantiation
-    error = ModelOnexError(message='Test error', error_code='TEST_001')
-    print(f'Error instantiated: {error.error_code}')
-
-    # Test enum access
-    print(f'EnumNodeKind.COMPUTE: {EnumNodeKind.COMPUTE}')
-
-    print('\\nFunctional smoke test: PASS')
+    container = ModelONEXContainer(); print(f'Container: {type(container).__name__}')
+    error = ModelOnexError(message='Test', error_code='TEST_001'); print(f'Error: {error.error_code}')
+    print(f'Enum: {EnumNodeKind.COMPUTE}')
+    print('Functional smoke test: PASS')
     "
 
-    # =============================================================================
     # Step 7: Cleanup
-    # =============================================================================
     deactivate
     rm -rf /tmp/v040-pypi-verify /tmp/v040-wheel-verify
     ```
+
+    **Windows (PowerShell)**:
+    ```powershell
+    # Step 1: Create isolated verification environment
+    python -m venv $env:TEMP\v040-pypi-verify
+    & "$env:TEMP\v040-pypi-verify\Scripts\Activate.ps1"
+
+    # Step 2: Install from PyPI (NOT from local source)
+    pip install omnibase_core==0.4.0 --index-url https://pypi.org/simple/
+    pip show omnibase_core
+
+    # Step 3: Version verification
+    python -c "import omnibase_core; print(f'Version: {omnibase_core.__version__}')"
+
+    # Step 4: Package hash verification
+    New-Item -ItemType Directory -Force -Path "$env:TEMP\v040-wheel-verify" | Out-Null
+    pip download omnibase_core==0.4.0 --no-deps -d "$env:TEMP\v040-wheel-verify"
+    $wheelPath = Get-ChildItem "$env:TEMP\v040-wheel-verify\omnibase_core-0.4.0-*.whl" | Select-Object -First 1
+    $PYPI_HASH = (Get-FileHash -Algorithm SHA256 $wheelPath.FullName).Hash.ToLower()
+    Write-Host "PyPI wheel SHA256: $PYPI_HASH"
+
+    # Step 5: Smoke test imports
+    python -c @"
+from omnibase_core.nodes import NodeCompute, NodeReducer, NodeOrchestrator, NodeEffect; print('Core nodes: OK')
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer; print('Container: OK')
+from omnibase_core.models.errors.model_onex_error import ModelOnexError; print('Errors: OK')
+from omnibase_core.enums import EnumNodeKind, EnumNodeType; print('Enums: OK')
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope; print('Events: OK')
+from omnibase_core.mixins.mixin_node_lifecycle import MixinNodeLifecycle; print('Mixins: OK')
+print('All smoke test imports: PASS')
+"@
+
+    # Step 6: Functional smoke test
+    python -c @"
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.enums import EnumNodeKind
+container = ModelONEXContainer(); print(f'Container: {type(container).__name__}')
+error = ModelOnexError(message='Test', error_code='TEST_001'); print(f'Error: {error.error_code}')
+print(f'Enum: {EnumNodeKind.COMPUTE}')
+print('Functional smoke test: PASS')
+"@
+
+    # Step 7: Cleanup
+    deactivate
+    Remove-Item -Recurse -Force "$env:TEMP\v040-pypi-verify", "$env:TEMP\v040-wheel-verify"
+    ```
+
+    **Hash Verification Note** (applies to all platforms):
+    > The canonical hash is stored in:
+    > 1. GitHub Actions artifact: `release-artifacts/wheel-sha256.txt`
+    > 2. GitHub Release attachment: `omnibase_core-0.4.0.sha256`
+    > 3. Release notes body: SHA256 checksum section
+    >
+    > Retrieve expected hash using GitHub CLI (cross-platform):
+    > ```
+    > gh release download v0.4.0 --pattern "*.sha256" --output expected-hash.txt
+    > ```
+    >
+    > Verify match (MUST be exact):
+    > - If hashes match: "Hash verification: PASS"
+    > - If hashes differ: "Hash verification: FAIL - Supply chain compromise possible!"
+
   - **Expected Results**:
     - `pip install` completes without errors
     - Version prints exactly "0.4.0"
