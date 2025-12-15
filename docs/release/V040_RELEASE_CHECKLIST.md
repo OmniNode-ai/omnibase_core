@@ -44,9 +44,11 @@ All release evidence MUST be stored in the **release tracking issue** on Linear:
 3. **`artifacts/release/v0.4.0/`** - for versioned files (fingerprints, coverage, logs)
 
 **"Attached output" Standardization**: When this checklist says "Evidence: Attached output", it means:
-- Post the command output as a code block in the release issue comment
-- Include timestamp, commit SHA, and toolchain versions
-- For outputs >50 lines, create a GitHub Gist and link it
+- **Post the command output as a code block** in the release issue comment (NOT as a screenshot)
+- **Include mandatory metadata**: timestamp (ISO-8601 UTC), commit SHA (full 40-char), and toolchain versions (Python, Poetry, tool-specific)
+- **For outputs >50 lines**: Create a GitHub Gist and post the link to the release issue
+- **Format**: Use triple-backtick code fences with language hint (e.g., ```bash or ```python or ```text)
+- **Location**: Must be in one of the three canonical locations listed below (release issue, Gist, or artifacts/)
 
 | Evidence Type | Where to Store | Format |
 |---------------|----------------|--------|
@@ -58,6 +60,25 @@ All release evidence MUST be stored in the **release tracking issue** on Linear:
 | **Test logs** | CI artifacts | Link to specific job/step |
 | **Contract fingerprint reports** | `artifacts/release/v0.4.0/` | JSON or text file |
 | **Replay logs** | `artifacts/release/v0.4.0/` | Timestamped log files |
+
+**Evidence Location Summary** (Three Canonical Locations):
+
+1. **Linear Release Issue** ([OMN-218](https://linear.app/omninode/issue/OMN-218))
+   - **Use for**: Command outputs <50 lines, CI run links, short evidence snippets
+   - **Format**: Code block in comment with metadata (timestamp, commit SHA, toolchain versions)
+   - **Example**: Mypy output, pytest summary, linting results
+
+2. **GitHub Gist**
+   - **Use for**: Command outputs >50 lines that would clutter the issue
+   - **Format**: Create Gist, post link in release issue comment
+   - **Example**: Full pytest verbose output, complete coverage report, large test logs
+
+3. **Artifacts Directory** (`artifacts/release/v0.4.0/`)
+   - **Use for**: Versioned files, binary outputs, structured reports
+   - **Format**: Timestamped files with descriptive names (see naming conventions below)
+   - **Example**: Coverage HTML reports, fingerprint verification JSONs, replay logs
+
+**Evidence Validation Rule**: Before marking ANY gate complete, verify the evidence is in one of these three locations. "I ran the command locally" is NOT valid evidence.
 
 ### ⚠️ Text Evidence Preferred
 
@@ -290,6 +311,23 @@ Before marking a gate complete:
 4. Large outputs are in Gists or artifacts (not inline)
 5. Evidence index is updated (`artifacts/release/v0.4.0/evidence-index.md`)
 
+### Final Sign-off Evidence Verification
+
+**CRITICAL**: Before the release manager signs off, verify ALL gates have valid evidence:
+
+- [ ] **All gates have evidence in specified location**
+  - Check each gate status in Linear issue comments or artifacts/
+  - Verify no gates marked "pending" or "skipped"
+
+- [ ] **All evidence includes required fields**
+  - Every evidence item has: timestamp, commit SHA, result, toolchain versions
+  - No evidence items missing mandatory fields
+
+- [ ] **Evidence index file updated**
+  - File exists: `artifacts/release/v0.4.0/evidence-index.md`
+  - All gates listed with evidence links
+  - Index is current (no stale links)
+
 ---
 
 ## 1. Code Quality
@@ -365,11 +403,26 @@ Before marking a gate complete:
   - All splits succeed
   - No test flakiness retries permitted (pytest-rerunfailures and similar plugins disabled)
   - **Scope of Retry Prohibition**: This prohibition applies specifically to **test execution retries** designed to mask flaky tests:
-    - Prohibited: `pytest-rerunfailures`, `flaky`, `pytest-retry`, or equivalent test retry mechanisms
-    - Prohibited: CI job retry on test failure without root cause analysis
-    - **NOT prohibited**: Application-level retry patterns (network retries, circuit breakers, exponential backoff) within the code under test are unaffected and remain appropriate
-    - **NOT prohibited**: CI infrastructure retries for transient issues (runner failures, network timeouts to package registries)
-  - **Rationale**: Flaky tests indicate non-deterministic behavior that must be fixed at the source. Automatic retries mask real bugs and create false confidence in test reliability. All tests must be deterministic.
+    - **Prohibited** (test-level retries that mask flakiness):
+      - `pytest-rerunfailures` plugin or similar test retry mechanisms
+      - `flaky` decorator or equivalent test-specific retry logic
+      - `pytest-retry` or equivalent retry plugins
+      - CI job retry on test failure without documented root cause analysis and fix
+    - **NOT prohibited** (application-level retry logic being tested):
+      - Network retry logic within the code under test (e.g., exponential backoff for API calls)
+      - Circuit breaker patterns in production code
+      - Application-level error recovery and retry mechanisms
+      - Resilience patterns designed for production use
+    - **NOT prohibited** (infrastructure-level retries):
+      - CI infrastructure retries for transient runner failures (GitHub Actions runner crash)
+      - Package registry timeout retries (PyPI, npm registry connection failures)
+      - Docker pull retries for network issues
+  - **Rationale**: Flaky tests indicate non-deterministic behavior that must be fixed at the source. Automatic test retries mask real bugs and create false confidence in test reliability. All tests must be deterministic.
+  - **Concrete Example**:
+    - ❌ **Prohibited**: `pytest --reruns 3` (retries failing tests 3 times to work around flakiness)
+    - ✅ **Allowed**: Testing a function that implements retry logic: `retry_with_backoff(api_call, max_retries=3)`
+    - ❌ **Prohibited**: Re-running CI job because "tests are flaky sometimes"
+    - ✅ **Allowed**: Re-running CI job after fixing a known infrastructure issue (runner out of disk space)
   - **Note**: Expect pressure to weaken this later. Do not.
   - Expected runtime: 2m30s-3m30s per split
   - Evidence: Release issue comment (OMN-218) with GitHub Actions run link
@@ -407,46 +460,57 @@ Before marking a gate complete:
     poetry run python -c "
 from hypothesis import given, strategies as st, settings
 from omnibase_core.models.contracts.model_runtime_host_contract import ModelRuntimeHostContract
+from pydantic import ValidationError
 import json
 import sys
 
 # Track test execution for verification
 examples_tested = 0
+errors_caught = 0
 
 @given(st.text(min_size=0, max_size=100))
 @settings(max_examples=50, deadline=None)  # deadline=None prevents timeout on slow systems
 def test_contract_handles_invalid_input(invalid_data):
-    global examples_tested
+    \"\"\"Fuzz test: Contract should gracefully reject invalid input without crashing.\"\"\"
+    global examples_tested, errors_caught
     examples_tested += 1
     try:
         # Attempt to parse malformed data - this SHOULD fail validation
         ModelRuntimeHostContract.model_validate_json(json.dumps({'invalid': invalid_data}))
         # If we get here, validation unexpectedly passed (still OK - no crash)
+    except ValidationError:
+        # Expected - invalid data should raise ValidationError
+        errors_caught += 1
     except Exception as e:
-        # Should raise ValidationError or similar, not crash
-        error_type = str(type(e).__name__).lower()
-        assert 'validation' in error_type or 'error' in error_type, f'Unexpected error type: {type(e).__name__}'
+        # Unexpected error type - should be ValidationError
+        print(f'Unexpected error type: {type(e).__name__}: {e}', file=sys.stderr)
+        raise
 
 # CRITICAL: Call the test function to actually execute Hypothesis
 # Without this call, Hypothesis does nothing!
 test_contract_handles_invalid_input()
 
 # Verify execution completed
-print(f'Fuzz test: PASS ({examples_tested} examples tested)')
+print(f'Fuzz test: PASS ({examples_tested} examples tested, {errors_caught} validation errors caught)')
 print('All inputs handled gracefully - no crashes or undefined behavior')
 print('Implement production tests in tests/unit/adapters/test_adapter_fuzz.py')
 sys.exit(0)  # Explicit success exit
 "
     # Expected output (exact):
-    # Fuzz test: PASS (50 examples tested)
+    # Fuzz test: PASS (50 examples tested, N validation errors caught)
     # All inputs handled gracefully - no crashes or undefined behavior
     # Implement production tests in tests/unit/adapters/test_adapter_fuzz.py
+    #
+    # Where N = number of examples that raised ValidationError (typically most of them)
     #
     # If you see "ModuleNotFoundError: No module named 'hypothesis'":
     #   Run: poetry install (Hypothesis is in pyproject.toml dependencies)
     #
     # If the command hangs or crashes:
     #   This indicates a bug in ModelRuntimeHostContract - investigate!
+    #
+    # If you see "Unexpected error type: ...":
+    #   The contract raised a non-ValidationError exception - investigate!
     ```
   - Expected: All adapters handle malformed inputs gracefully (ValidationError, not crash)
   - Evidence: Release issue comment (OMN-218) or artifacts/release/v0.4.0/fuzz-reports/adapter-fuzz-YYYYMMDD.txt
@@ -455,25 +519,28 @@ sys.exit(0)  # Explicit success exit
 
 - [ ] **Coverage threshold met** `✅ REQUIRED`
   - Minimum: 60% **line coverage** (not branch coverage)
-  - **Coverage Type Explanation**:
-    - **Line coverage** (REQUIRED): Percentage of executable lines executed by tests
+  - **Coverage Type Specification**:
+    - **Line coverage** (REQUIRED for v0.4.0): Percentage of executable lines executed by tests
       - Formula: `(executed lines / total executable lines) * 100`
       - Measures: Which lines of code were actually run during tests
+      - **This is the enforced metric** for this release
     - **Branch coverage** (NOT required for v0.4.0): Percentage of code branches taken
       - Formula: `(executed branches / total branches) * 100`
       - Measures: Whether both sides of if/else, all loop conditions, etc. were tested
-      - Future consideration for Beta scope
-  - **Enforcement mechanism**: pytest-cov with `--cov-fail-under=60` flag
-    - **CI Behavior**: When coverage < 60%, pytest exits with **non-zero exit code** (exit code 2), causing CI job to FAIL
+      - Future consideration for Beta scope (v0.5.0+)
+  - **Enforcement Mechanism**: pytest-cov with `--cov-fail-under=60` flag
+    - **How it works**: pytest-cov compares total line coverage against threshold
+    - **CI Behavior**: When coverage < 60%, pytest exits with **non-zero exit code** (exit code 2), causing CI job to FAIL immediately
     - **Local Behavior**: Same exit code behavior allows local validation before push
     - **Cannot Override**: No command-line flag to bypass the threshold; must either:
-      1. Add tests to increase coverage, OR
-      2. Modify threshold in pyproject.toml (requires PR review)
-  - **When Threshold Not Met**:
-    1. CI pipeline **fails immediately** at coverage check step (exit code 2)
-    2. Coverage report shows which files/lines are uncovered (`--cov-report=term-missing`)
-    3. Developer must add tests or mark intentional exclusions with `# pragma: no cover`
-    4. **Release CANNOT proceed** until threshold is met - this is a hard gate
+      1. Add tests to increase coverage to ≥60%, OR
+      2. Modify threshold in `pyproject.toml` `[tool.pytest.ini_options]` (requires PR review)
+  - **What Happens When Threshold Not Met**:
+    1. **Immediate Failure**: CI pipeline fails at coverage check step (exit code 2)
+    2. **Detailed Report**: Coverage report shows which files/lines are uncovered (`--cov-report=term-missing`)
+    3. **Developer Action Required**: Must add tests or mark intentional exclusions with `# pragma: no cover`
+    4. **Hard Gate**: Release CANNOT proceed until threshold is met - this is non-negotiable
+    5. **No Workarounds**: Cannot merge PR or tag release until coverage passes
   - Commands:
     ```bash
     # Run with coverage enforcement (CI-equivalent command)
@@ -606,15 +673,25 @@ sys.exit(0)  # Explicit success exit
 - [ ] **All contracts have valid fingerprints** `✅ REQUIRED`
   - Every RuntimeHostContract YAML includes a fingerprint
   - Fingerprints verified against contract content
-  - **Note**: Use existing scripts (no `omnibase_core.tools.verify_fingerprints` CLI)
+  - **Note**: All scripts exist and are fully functional (verified 2025-12-15)
 
   **Script Capability Reference**:
 
-  | Script | `--recursive` Flag | File Discovery |
-  |--------|-------------------|----------------|
-  | `compute_contract_fingerprint.py` | No | Relies on shell glob expansion |
-  | `regenerate_fingerprints.py` | Yes (`-r`) | Internal Python `rglob()` |
-  | `lint_contract.py` | Yes (`-r`) | Internal Python `rglob()` |
+  | Script | `--recursive` Flag | File Discovery | Status |
+  |--------|-------------------|----------------|--------|
+  | `scripts/check_node_purity.py` | No (single file via `--file`) | Scans `src/omnibase_core` by default | ✅ Exists |
+  | `scripts/compute_contract_fingerprint.py` | No | Relies on shell glob expansion | ✅ Exists |
+  | `scripts/regenerate_fingerprints.py` | Yes (`-r`, `--recursive`) | Internal Python `rglob()` | ✅ Exists |
+  | `scripts/lint_contract.py` | Yes (`-r`, `--recursive`) | Internal Python `rglob()` | ✅ Exists |
+
+  **Module Path Reference**:
+
+  | Module | Expected Path | Status |
+  |--------|--------------|--------|
+  | Pattern validation | `omnibase_core.validation.patterns.validate_patterns_directory()` | ✅ Exists |
+  | Hash registry | `omnibase_core.contracts.hash_registry.compute_contract_fingerprint()` | ✅ Exists |
+  | Hash registry | `omnibase_core.contracts.hash_registry.normalize_contract()` | ✅ Exists |
+  | Hash registry class | `omnibase_core.contracts.hash_registry.ContractHashRegistry` | ✅ Exists |
 
   **Cross-Platform Glob Expansion Notes**:
   - Shell glob patterns (`*.yaml`, `**/*.yaml`) are expanded by the shell BEFORE Python sees them
@@ -1167,55 +1244,199 @@ sys.exit(0)  # Explicit success exit
 ### 9.1 Public API Stability
 
 - [ ] **Public API exports unchanged or documented** `✅ REQUIRED`
-  - Verify `omnibase_core.nodes.__all__` exports are stable
-  - **⚠️ Capture `__all__` diff automatically** as evidence
-  - Commands:
+  - **Time**: 5 minutes
+  - **Purpose**: Verify public API surface is stable and wildcard imports work
+  - **Verification Steps**:
+    1. Capture current API exports to artifact file
+    2. Compare with v0.3.x baseline (if available)
+    3. Test wildcard import functionality
+    4. Verify all documented imports resolve
+  - **Commands**:
+
+    **Linux/macOS (Bash)**:
     ```bash
-    # Capture current __all__ exports for evidence
+    # =============================================================================
+    # Step 1: Capture current API exports for evidence
+    # =============================================================================
+    mkdir -p artifacts/release/v0.4.0
     poetry run python -c "from omnibase_core.nodes import __all__; print('\\n'.join(sorted(__all__)))" > artifacts/release/v0.4.0/09-api-exports.txt
 
-    # Verify wildcard import works
-    poetry run python -c "from omnibase_core.nodes import *; print('API imports OK')"
+    # =============================================================================
+    # Step 2: Show count and sample (for inline evidence)
+    # =============================================================================
+    export_count=$(poetry run python -c "from omnibase_core.nodes import __all__; print(len(__all__))")
+    echo "Export count: ${export_count}"
+    echo "Sample exports:"
+    head -5 artifacts/release/v0.4.0/09-api-exports.txt
+
+    # =============================================================================
+    # Step 3: Verify wildcard import works
+    # =============================================================================
+    poetry run python -c "from omnibase_core.nodes import *; print('✅ Wildcard import: PASS')"
+
+    # =============================================================================
+    # Step 4: Test critical imports explicitly
+    # =============================================================================
+    poetry run python -c "
+from omnibase_core.nodes import NodeCompute, NodeReducer, NodeOrchestrator, NodeEffect
+from omnibase_core.nodes import ModelComputeInput, ModelReducerInput, ModelOrchestratorInput
+print('✅ Critical imports: PASS')
+"
     ```
-  - Expected: No ImportError, prints "API imports OK"
-  - Evidence: Release issue comment (OMN-218) with `__all__` export list AND command output
+
+    **Windows (PowerShell)**:
+    ```powershell
+    # =============================================================================
+    # Step 1: Capture current API exports for evidence
+    # =============================================================================
+    New-Item -ItemType Directory -Force -Path "artifacts\release\v0.4.0" | Out-Null
+    poetry run python -c "from omnibase_core.nodes import __all__; print('\\n'.join(sorted(__all__)))" | Out-File -Encoding utf8 artifacts\release\v0.4.0\09-api-exports.txt
+
+    # =============================================================================
+    # Step 2: Show count and sample
+    # =============================================================================
+    $exportCount = poetry run python -c "from omnibase_core.nodes import __all__; print(len(__all__))"
+    Write-Host "Export count: $exportCount"
+    Write-Host "Sample exports:"
+    Get-Content artifacts\release\v0.4.0\09-api-exports.txt -Head 5
+
+    # =============================================================================
+    # Step 3: Verify wildcard import works
+    # =============================================================================
+    poetry run python -c "from omnibase_core.nodes import *; print('✅ Wildcard import: PASS')"
+
+    # =============================================================================
+    # Step 4: Test critical imports explicitly
+    # =============================================================================
+    poetry run python -c @"
+from omnibase_core.nodes import NodeCompute, NodeReducer, NodeOrchestrator, NodeEffect
+from omnibase_core.nodes import ModelComputeInput, ModelReducerInput, ModelOrchestratorInput
+print('✅ Critical imports: PASS')
+"@
+    ```
+
+  - **Expected Results**:
+    - Export count > 0 (should be ~15-20 exports)
+    - Wildcard import prints "✅ Wildcard import: PASS"
+    - All critical imports succeed without ImportError
+    - File `artifacts/release/v0.4.0/09-api-exports.txt` created with sorted export list
+
+  - **Pass/Fail Criteria**:
+    - ✅ **PASS**: All imports succeed, export count > 0, no ImportError
+    - ❌ **FAIL**: Any ImportError, export count = 0, or missing exports
+
+  - **Evidence**: Release issue comment (OMN-218) with:
+    - Export count
+    - Sample exports (first 5 lines)
+    - Confirmation of wildcard import success
+    - Link to full export list in artifacts/release/v0.4.0/09-api-exports.txt
 
 - [ ] **Core import paths verified** `✅ REQUIRED`
-  - All documented import paths resolve correctly
-  - Commands:
+  - **Time**: 3 minutes
+  - **Purpose**: Verify all documented import paths resolve correctly
+  - **Commands**:
+
+    **Cross-platform (works on all platforms)**:
     ```bash
-    poetry run python -c "from omnibase_core.nodes import NodeCompute, NodeReducer, NodeOrchestrator, NodeEffect"
-    poetry run python -c "from omnibase_core.models.container.model_onex_container import ModelONEXContainer"
-    poetry run python -c "from omnibase_core.models.errors.model_onex_error import ModelOnexError"
-    poetry run python -c "from omnibase_core.enums import EnumNodeKind, EnumNodeType"
+    # Test each documented import path
+    poetry run python -c "from omnibase_core.nodes import NodeCompute, NodeReducer, NodeOrchestrator, NodeEffect; print('✅ Node imports: PASS')"
+    poetry run python -c "from omnibase_core.models.container.model_onex_container import ModelONEXContainer; print('✅ Container import: PASS')"
+    poetry run python -c "from omnibase_core.models.errors.model_onex_error import ModelOnexError; print('✅ Error import: PASS')"
+    poetry run python -c "from omnibase_core.enums import EnumNodeKind, EnumNodeType; print('✅ Enum imports: PASS')"
     ```
-  - Expected: All imports succeed without error
-  - Evidence: Command outputs (all four commands)
+
+  - **Expected Results**:
+    - All commands print "✅ ... : PASS"
+    - No ImportError, ModuleNotFoundError, or AttributeError
+
+  - **Pass/Fail Criteria**:
+    - ✅ **PASS**: All 4 import commands succeed
+    - ❌ **FAIL**: Any import command fails with error
+
+  - **Evidence**: Command outputs (all four commands)
 
 - [ ] **Breaking changes enumerated** `✅ REQUIRED`
-  - List all removed/renamed exports
-  - List all changed method signatures
-  - List all removed classes/functions
-  - Evidence: CHANGELOG.md breaking changes section with explicit list
+  - **Time**: 10 minutes (review CHANGELOG + code)
+  - **Purpose**: Ensure all breaking changes are documented for downstream migration
+  - **Verification Steps**:
+    1. Review CHANGELOG.md for breaking changes section
+    2. Verify each breaking change has migration instructions
+    3. Check for removed/renamed exports, changed signatures, removed classes
+  - **Commands**:
+    ```bash
+    # Check CHANGELOG.md for breaking changes section
+    grep -A 20 "## Breaking Changes" CHANGELOG.md
+
+    # Search for removed classes (example - adjust pattern as needed)
+    git log --all --full-history --source --format="%H %s" -- "**/NodeReducerDeclarative*" | head -5
+    ```
+
+  - **Expected Results**:
+    - CHANGELOG.md has "Breaking Changes" section with explicit list
+    - Each breaking change includes migration path
+    - All removed exports documented
+
+  - **Pass/Fail Criteria**:
+    - ✅ **PASS**: Breaking changes section exists, all changes documented
+    - ❌ **FAIL**: No breaking changes section OR undocumented removals
+
+  - **Evidence**: CHANGELOG.md breaking changes section with explicit list
 
 ### 9.2 Downstream Repository Testing
 
 - [ ] **omnibase_spi compatibility verified** `🚫 BLOCKER`
-  - Clone omnibase_spi repository to temporary directory
-  - Update omnibase_core dependency to v0.4.0 (or local editable)
-  - Commands:
+  - **Time**: 15-20 minutes (includes clone, install, test, mypy)
+  - **Purpose**: Verify SPI repository works with v0.4.0 core dependency
+  - **Verification Steps**:
+    1. Clone omnibase_spi to isolated directory
+    2. Update omnibase_core dependency to v0.4.0 (or local editable)
+    3. Run full test suite (pytest)
+    4. Run type checking (mypy)
+    5. Verify 0 failures and 0 errors
+  - **Commands**:
 
     **Option A: Project-local directory (Recommended - works on all platforms)**
     ```bash
+    # =============================================================================
+    # Step 1: Setup isolated test environment
+    # =============================================================================
     # From omnibase_core root directory
     mkdir -p ../_downstream_test && cd ../_downstream_test
+
+    # =============================================================================
+    # Step 2: Clone omnibase_spi
+    # =============================================================================
     git clone https://github.com/OmniNode-ai/omnibase_spi.git
     cd omnibase_spi
+
+    # =============================================================================
+    # Step 3: Update omnibase_core dependency to v0.4.0
+    # =============================================================================
     # Use absolute path to omnibase_core for editable install
     poetry add "$(cd ../../omnibase_core && pwd)" --editable  # or: poetry add omnibase_core==0.4.0
-    poetry run pytest tests/
-    poetry run mypy src/
-    # Cleanup when done: rm -rf ../_downstream_test
+
+    # =============================================================================
+    # Step 4: Run full test suite
+    # =============================================================================
+    poetry run pytest tests/ --tb=short -v 2>&1 | tee ../omnibase_spi_test_results.txt
+
+    # =============================================================================
+    # Step 5: Run type checking
+    # =============================================================================
+    poetry run mypy src/ 2>&1 | tee ../omnibase_spi_mypy_results.txt
+
+    # =============================================================================
+    # Step 6: Extract results for evidence
+    # =============================================================================
+    echo "=== TEST SUMMARY ==="
+    tail -10 ../omnibase_spi_test_results.txt | grep -E "(passed|failed|error)"
+    echo "=== MYPY SUMMARY ==="
+    tail -5 ../omnibase_spi_mypy_results.txt
+
+    # =============================================================================
+    # Cleanup when done
+    # =============================================================================
+    # cd ../.. && rm -rf _downstream_test
     ```
 
     **Option B: Linux/macOS system temp**
@@ -1223,8 +1444,8 @@ sys.exit(0)  # Explicit success exit
     cd ${TMPDIR:-/tmp} && git clone https://github.com/OmniNode-ai/omnibase_spi.git
     cd omnibase_spi
     poetry add /absolute/path/to/omnibase_core --editable  # or: poetry add omnibase_core==0.4.0
-    poetry run pytest tests/
-    poetry run mypy src/
+    poetry run pytest tests/ --tb=short -v | tee /tmp/omnibase_spi_test.txt
+    poetry run mypy src/ | tee /tmp/omnibase_spi_mypy.txt
     ```
 
     **Option C: Windows PowerShell**
@@ -1232,30 +1453,75 @@ sys.exit(0)  # Explicit success exit
     cd $env:TEMP
     git clone https://github.com/OmniNode-ai/omnibase_spi.git
     cd omnibase_spi
-    poetry add C:\path\to\omnibase_core --editable  # or: poetry add omnibase_core==0.4.0
-    poetry run pytest tests/
-    poetry run mypy src/
+    poetry add C:\absolute\path\to\omnibase_core --editable  # or: poetry add omnibase_core==0.4.0
+    poetry run pytest tests/ --tb=short -v | Tee-Object -FilePath "$env:TEMP\omnibase_spi_test.txt"
+    poetry run mypy src/ | Tee-Object -FilePath "$env:TEMP\omnibase_spi_mypy.txt"
     ```
 
-  - Expected: All tests pass, mypy reports 0 errors
-  - Evidence: Test output (pass count) and mypy report
+  - **Expected Results**:
+    - pytest: "X passed" (X > 0), **0 failed**
+    - mypy: "Success: no issues found" OR "Found 0 errors"
+    - No ImportError, ModuleNotFoundError, or missing dependency errors
+
+  - **Pass/Fail Criteria**:
+    - ✅ **PASS**: 0 test failures AND 0 mypy errors
+    - ❌ **FAIL**: Any test failures OR any mypy errors
+
+  - **Evidence**: Test output with pass count AND mypy report (both stored in artifacts or issue comment)
 
 - [ ] **omninode_core compatibility verified** (if applicable) `✅ REQUIRED`
-  - Clone omninode_core repository to temporary directory
-  - Update omnibase_core dependency to v0.4.0
-  - Commands:
+  - **Time**: 15-20 minutes (includes clone, install, test, mypy)
+  - **Purpose**: Verify omninode_core works with v0.4.0 core dependency
+  - **Verification Steps** (same as omnibase_spi, different repo):
+    1. Clone omninode_core to isolated directory
+    2. Update omnibase_core dependency to v0.4.0
+    3. Run full test suite (pytest)
+    4. Run type checking (mypy)
+    5. Verify 0 failures and 0 errors
+  - **Commands**:
 
     **Option A: Project-local directory (Recommended - works on all platforms)**
     ```bash
+    # =============================================================================
+    # Step 1: Setup isolated test environment
+    # =============================================================================
     # From omnibase_core root directory
     mkdir -p ../_downstream_test && cd ../_downstream_test
+
+    # =============================================================================
+    # Step 2: Clone omninode_core
+    # =============================================================================
     git clone https://github.com/OmniNode-ai/omninode_core.git
     cd omninode_core
+
+    # =============================================================================
+    # Step 3: Update omnibase_core dependency to v0.4.0
+    # =============================================================================
     # Use absolute path to omnibase_core for editable install
     poetry add "$(cd ../../omnibase_core && pwd)" --editable  # or: poetry add omnibase_core==0.4.0
-    poetry run pytest tests/
-    poetry run mypy src/
-    # Cleanup when done: rm -rf ../_downstream_test
+
+    # =============================================================================
+    # Step 4: Run full test suite
+    # =============================================================================
+    poetry run pytest tests/ --tb=short -v 2>&1 | tee ../omninode_core_test_results.txt
+
+    # =============================================================================
+    # Step 5: Run type checking
+    # =============================================================================
+    poetry run mypy src/ 2>&1 | tee ../omninode_core_mypy_results.txt
+
+    # =============================================================================
+    # Step 6: Extract results for evidence
+    # =============================================================================
+    echo "=== TEST SUMMARY ==="
+    tail -10 ../omninode_core_test_results.txt | grep -E "(passed|failed|error)"
+    echo "=== MYPY SUMMARY ==="
+    tail -5 ../omninode_core_mypy_results.txt
+
+    # =============================================================================
+    # Cleanup when done
+    # =============================================================================
+    # cd ../.. && rm -rf _downstream_test
     ```
 
     **Option B: Linux/macOS system temp**
@@ -1263,8 +1529,8 @@ sys.exit(0)  # Explicit success exit
     cd ${TMPDIR:-/tmp} && git clone https://github.com/OmniNode-ai/omninode_core.git
     cd omninode_core
     poetry add /absolute/path/to/omnibase_core --editable  # or: poetry add omnibase_core==0.4.0
-    poetry run pytest tests/
-    poetry run mypy src/
+    poetry run pytest tests/ --tb=short -v | tee /tmp/omninode_core_test.txt
+    poetry run mypy src/ | tee /tmp/omninode_core_mypy.txt
     ```
 
     **Option C: Windows PowerShell**
@@ -1272,68 +1538,215 @@ sys.exit(0)  # Explicit success exit
     cd $env:TEMP
     git clone https://github.com/OmniNode-ai/omninode_core.git
     cd omninode_core
-    poetry add C:\path\to\omnibase_core --editable  # or: poetry add omnibase_core==0.4.0
-    poetry run pytest tests/
-    poetry run mypy src/
+    poetry add C:\absolute\path\to\omnibase_core --editable  # or: poetry add omnibase_core==0.4.0
+    poetry run pytest tests/ --tb=short -v | Tee-Object -FilePath "$env:TEMP\omninode_core_test.txt"
+    poetry run mypy src/ | Tee-Object -FilePath "$env:TEMP\omninode_core_mypy.txt"
     ```
 
-  - Expected: All tests pass, mypy reports 0 errors
-  - Evidence: Test output and mypy report
+  - **Expected Results**:
+    - pytest: "X passed" (X > 0), **0 failed**
+    - mypy: "Success: no issues found" OR "Found 0 errors"
+
+  - **Pass/Fail Criteria**:
+    - ✅ **PASS**: 0 test failures AND 0 mypy errors
+    - ❌ **FAIL**: Any test failures OR any mypy errors
+
+  - **Evidence**: Test output and mypy report
 
 - [ ] **Example projects verified** (if applicable) `📋 INFORMATIONAL`
-  - Any official example projects compile and run
-  - Expected: No runtime errors on documented examples
-  - Evidence: Example execution logs or "N/A - no example projects"
+  - **Time**: 5-10 minutes
+  - **Purpose**: Verify official example projects run with v0.4.0
+  - **Commands** (example - adjust based on actual example projects):
+    ```bash
+    # If example projects exist in examples/ directory
+    cd examples/basic_compute_node
+    poetry add omnibase_core==0.4.0
+    poetry run python main.py  # or equivalent
+    ```
+  - **Expected Results**: No runtime errors on documented examples
+  - **Pass/Fail Criteria**:
+    - ✅ **PASS**: Examples run without runtime errors
+    - ❌ **INFORMATIONAL ONLY**: Document failure, proceed with release
+  - **Evidence**: Example execution logs or "N/A - no example projects"
 
 ### 9.3 Integration Contract Verification
 
 - [ ] **Protocol implementations compatible** `✅ REQUIRED`
-  - All SPI protocols still satisfied by core implementations
-  - Command: `poetry run python -c "from omnibase_core.models.container.model_onex_container import ModelONEXContainer; c = ModelONEXContainer(); print('Container init OK')"`
-  - Expected: Container initializes without protocol violations
-  - Evidence: Command output showing "Container init OK"
+  - **Time**: 2 minutes
+  - **Purpose**: Verify SPI protocols are satisfied by core implementations
+  - **Command**:
+    ```bash
+    # Test container initialization (verifies protocol compliance)
+    poetry run python -c "
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+c = ModelONEXContainer()
+print('✅ Container init: PASS')
+print(f'Container type: {type(c).__name__}')
+"
+    ```
+  - **Expected Results**: Prints "✅ Container init: PASS"
+  - **Pass/Fail Criteria**:
+    - ✅ **PASS**: Container initializes without protocol violations
+    - ❌ **FAIL**: Protocol violation error or AttributeError
+  - **Evidence**: Command output showing "Container init: PASS"
 
 - [ ] **Event envelope compatibility verified** `✅ REQUIRED`
-  - ModelEventEnvelope schema unchanged or migration documented
-  - Command: `poetry run python -c "from omnibase_core.models.event.model_event_envelope import ModelEventEnvelope; import json; print(json.dumps(ModelEventEnvelope.model_json_schema(), indent=2))"`
-  - Expected: Schema matches v0.3.x specification or changes documented
-  - Evidence: Schema output with diff against v0.3.x (if changed)
+  - **Time**: 5 minutes
+  - **Purpose**: Verify ModelEventEnvelope schema is backward compatible
+  - **Commands**:
+    ```bash
+    # =============================================================================
+    # Step 1: Capture current schema to artifact
+    # =============================================================================
+    mkdir -p artifacts/release/v0.4.0
+    poetry run python -c "
+from omnibase_core.models.event.model_event_envelope import ModelEventEnvelope
+import json
+schema = ModelEventEnvelope.model_json_schema()
+print(json.dumps(schema, indent=2))
+" > artifacts/release/v0.4.0/09-event-envelope-schema.json
+
+    # =============================================================================
+    # Step 2: Show required fields (for inline evidence)
+    # =============================================================================
+    poetry run python -c "
+from omnibase_core.models.event.model_event_envelope import ModelEventEnvelope
+schema = ModelEventEnvelope.model_json_schema()
+required = schema.get('required', [])
+print('Required fields:', ', '.join(required))
+"
+
+    # =============================================================================
+    # Step 3: Compare with v0.3.x (if baseline available)
+    # =============================================================================
+    # If you have v0.3.x schema saved, run:
+    # diff artifacts/release/v0.3.6/event-envelope-schema.json artifacts/release/v0.4.0/09-event-envelope-schema.json
+    ```
+  - **Expected Results**:
+    - Schema file created at artifacts/release/v0.4.0/09-event-envelope-schema.json
+    - Required fields unchanged from v0.3.x OR migration documented
+  - **Pass/Fail Criteria**:
+    - ✅ **PASS**: Schema unchanged OR breaking changes documented in CHANGELOG
+    - ❌ **FAIL**: Schema changed without migration docs
+  - **Evidence**: Schema output with diff against v0.3.x (if changed)
 
 - [ ] **Contract YAML schema compatibility** `✅ REQUIRED`
-  - RuntimeHostContract YAML files from v0.3.x parse correctly
-  - Command: `poetry run python -c "from omnibase_core.runtime.file_registry import FileRegistry; r = FileRegistry(); print('FileRegistry OK')"`
-  - Expected: No schema validation errors for valid v0.3.x contracts
-  - Evidence: Command output showing "FileRegistry OK"
+  - **Time**: 3 minutes
+  - **Purpose**: Verify v0.3.x contract YAML files parse correctly in v0.4.0
+  - **Commands**:
+    ```bash
+    # =============================================================================
+    # Step 1: Verify FileRegistry loads correctly
+    # =============================================================================
+    poetry run python -c "
+from omnibase_core.runtime.file_registry import FileRegistry
+r = FileRegistry()
+print('✅ FileRegistry init: PASS')
+print(f'Registry type: {type(r).__name__}')
+"
+
+    # =============================================================================
+    # Step 2: Test loading a v0.3.x contract (if available)
+    # =============================================================================
+    # If you have example v0.3.x contracts:
+    # poetry run python -c "
+    # from omnibase_core.runtime.file_registry import FileRegistry
+    # from pathlib import Path
+    # r = FileRegistry()
+    # contract = r.load(Path('examples/contracts/legacy_v036_contract.yaml'))
+    # print(f'✅ Legacy contract loaded: {contract.fingerprint}')
+    # "
+    ```
+  - **Expected Results**:
+    - FileRegistry initializes: prints "✅ FileRegistry init: PASS"
+    - No schema validation errors for valid v0.3.x contracts
+  - **Pass/Fail Criteria**:
+    - ✅ **PASS**: FileRegistry loads, v0.3.x contracts parse (if tested)
+    - ❌ **FAIL**: Validation error on valid v0.3.x contract
+  - **Evidence**: Command output showing "FileRegistry init: PASS"
 
 ### 9.4 Migration Verification
 
 - [ ] **Migration guide tested end-to-end** `✅ REQUIRED`
-  - Create fresh project using v0.3.x patterns
-  - Follow migration guide step-by-step
-  - Verify tests pass after migration
-  - Commands:
+  - **Time**: 15-20 minutes
+  - **Purpose**: Verify migration guide works as documented
+  - **Verification Steps**:
+    1. Create fresh project with v0.3.6
+    2. Write test code using v0.3.x patterns
+    3. Follow migration guide step-by-step
+    4. Upgrade to v0.4.0
+    5. Verify tests pass without manual fixes
+  - **Commands**:
 
     **Option A: Project-local directory (Recommended - works on all platforms)**
     ```bash
+    # =============================================================================
+    # Step 1: Create migration test project
+    # =============================================================================
     # From omnibase_core root directory
     mkdir -p ../_migration_test && cd ../_migration_test
-    poetry init --name migration-test --python "^3.12"
-    poetry add omnibase_core==0.3.6  # Start with old version
-    # Create test file using v0.3.x patterns
-    # Run migration steps from docs/guides/MIGRATING_TO_V040.md
-    poetry add omnibase_core==0.4.0  # Upgrade
-    poetry run pytest tests/
-    # Cleanup when done: rm -rf ../_migration_test
+    poetry init --name migration-test --python "^3.12" --no-interaction
+
+    # =============================================================================
+    # Step 2: Install v0.3.6 (old version)
+    # =============================================================================
+    poetry add omnibase_core==0.3.6
+
+    # =============================================================================
+    # Step 3: Create test file using v0.3.x patterns
+    # =============================================================================
+    mkdir -p tests
+    cat > tests/test_legacy_import.py << 'EOF'
+# Test using v0.3.x import patterns
+from omnibase_core.infrastructure.base import NodeCoreBase
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+
+def test_legacy_node_import():
+    """Test that v0.3.x imports work."""
+    container = ModelONEXContainer()
+    assert container is not None
+    print("✅ Legacy imports work")
+
+if __name__ == "__main__":
+    test_legacy_node_import()
+EOF
+
+    # =============================================================================
+    # Step 4: Verify v0.3.x pattern works
+    # =============================================================================
+    poetry add pytest
+    poetry run python tests/test_legacy_import.py
+
+    # =============================================================================
+    # Step 5: Run migration steps from docs/guides/MIGRATING_TO_V040.md
+    # =============================================================================
+    # Update imports to v0.4.0 patterns:
+    sed -i.bak 's/from omnibase_core.infrastructure.base/from omnibase_core.nodes/' tests/test_legacy_import.py
+
+    # =============================================================================
+    # Step 6: Upgrade to v0.4.0
+    # =============================================================================
+    poetry add omnibase_core==0.4.0
+
+    # =============================================================================
+    # Step 7: Verify migrated code works
+    # =============================================================================
+    poetry run python tests/test_legacy_import.py
+    poetry run pytest tests/ -v
+
+    # =============================================================================
+    # Cleanup when done
+    # =============================================================================
+    # cd .. && rm -rf _migration_test
     ```
 
     **Option B: Linux/macOS system temp**
     ```bash
     cd ${TMPDIR:-/tmp} && mkdir migration-test && cd migration-test
-    poetry init --name migration-test --python "^3.12"
-    poetry add omnibase_core==0.3.6  # Start with old version
-    # Create test file using v0.3.x patterns
-    # Run migration steps from docs/guides/MIGRATING_TO_V040.md
-    poetry add omnibase_core==0.4.0  # Upgrade
+    poetry init --name migration-test --python "^3.12" --no-interaction
+    poetry add omnibase_core==0.3.6
+    # ... create test file ...
+    poetry add omnibase_core==0.4.0
     poetry run pytest tests/
     ```
 
@@ -1342,38 +1755,97 @@ sys.exit(0)  # Explicit success exit
     cd $env:TEMP
     mkdir migration-test
     cd migration-test
-    poetry init --name migration-test --python "^3.12"
-    poetry add omnibase_core==0.3.6  # Start with old version
-    # Create test file using v0.3.x patterns
-    # Run migration steps from docs/guides/MIGRATING_TO_V040.md
-    poetry add omnibase_core==0.4.0  # Upgrade
+    poetry init --name migration-test --python "^3.12" --no-interaction
+    poetry add omnibase_core==0.3.6
+    # ... create test file ...
+    poetry add omnibase_core==0.4.0
     poetry run pytest tests/
     ```
 
-  - Expected: Migration completes successfully, tests pass
-  - Evidence: Migration test log or documented test results
+  - **Expected Results**:
+    - v0.3.6 test runs successfully
+    - Migration steps complete without errors
+    - v0.4.0 tests pass after migration
+
+  - **Pass/Fail Criteria**:
+    - ✅ **PASS**: Migration guide steps work, tests pass after upgrade
+    - ❌ **FAIL**: Migration requires manual intervention beyond documented steps
+
+  - **Evidence**: Migration test log showing:
+    - v0.3.6 test pass
+    - Migration command outputs
+    - v0.4.0 test pass
 
 - [ ] **Deprecation warnings present** `📋 INFORMATIONAL`
-  - Deprecated APIs emit warnings when used
-  - Command: `poetry run python -W default::DeprecationWarning -c "from omnibase_core.nodes import NodeCompute; print('Deprecation check complete')"`
-  - Expected: Deprecation warnings shown for any deprecated APIs (or none if no deprecations)
-  - Evidence: Warning output (or confirmation of no deprecated APIs)
+  - **Time**: 2 minutes
+  - **Purpose**: Verify deprecated APIs emit warnings to guide migration
+  - **Command**:
+    ```bash
+    # Enable all deprecation warnings
+    poetry run python -W default::DeprecationWarning -c "
+from omnibase_core.nodes import NodeCompute
+print('✅ Deprecation check complete')
+# If any deprecated imports exist, warnings will be shown
+"
+    ```
+  - **Expected Results**:
+    - Deprecation warnings shown for any deprecated APIs
+    - OR confirmation that no deprecated APIs exist
+  - **Pass/Fail Criteria**:
+    - ✅ **PASS**: Warnings shown OR no deprecated APIs
+    - ❌ **INFORMATIONAL ONLY**: Document any unexpected warnings
+  - **Evidence**: Warning output (or confirmation of no deprecated APIs)
 
 ### 9.5 CI/CD Integration
 
 - [ ] **GitHub Actions workflow compatible** `✅ REQUIRED`
-  - Downstream repos' CI workflows pass with v0.4.0
-  - Verify by running downstream CI with v0.4.0 dependency
-  - Expected: All CI checks pass (tests, type checking, linting)
-  - Evidence: CI run links for each downstream repo
+  - **Time**: 20-30 minutes (waiting for CI to run)
+  - **Purpose**: Verify downstream CI workflows pass with v0.4.0
+  - **Verification Steps**:
+    1. Create PR in downstream repo updating omnibase_core to v0.4.0
+    2. Wait for CI to run (tests, type checks, linting)
+    3. Verify all checks pass
+  - **Commands** (example workflow):
+    ```bash
+    # In downstream repo (omnibase_spi or omninode_core)
+    git checkout -b test/omnibase-core-v040-compatibility
+    poetry add omnibase_core==0.4.0
+    git add pyproject.toml poetry.lock
+    git commit -m "test: verify omnibase_core v0.4.0 compatibility"
+    git push origin test/omnibase-core-v040-compatibility
+    # Create PR via gh CLI or GitHub web UI
+    gh pr create --title "test: omnibase_core v0.4.0 compatibility" --body "Testing compatibility with omnibase_core v0.4.0"
+    ```
+  - **Expected Results**:
+    - All CI checks pass (tests, type checking, linting)
+    - No new failures introduced by v0.4.0 upgrade
+  - **Pass/Fail Criteria**:
+    - ✅ **PASS**: All CI checks pass
+    - ❌ **FAIL**: Any CI check fails
+  - **Evidence**: CI run links for each downstream repo (e.g., GitHub Actions URLs)
 
 - [ ] **Docker builds succeed** `📋 INFORMATIONAL`
-  - Downstream Docker images build with v0.4.0 dependency
-  - Command: `docker build -t test-downstream .` (in downstream repo)
-  - Expected: Build completes successfully
-  - Evidence: Docker build log or "N/A - no Docker builds"
+  - **Time**: 10-15 minutes (Docker build time)
+  - **Purpose**: Verify Docker images build with v0.4.0 dependency
+  - **Commands** (in downstream repo with Dockerfile):
+    ```bash
+    # Update pyproject.toml or requirements.txt to use omnibase_core==0.4.0
+    # Then build Docker image
+    docker build -t test-downstream:v040-compat .
+
+    # Verify build succeeded and image runs
+    docker run --rm test-downstream:v040-compat python -c "import omnibase_core; print(f'✅ Docker build: PASS (version {omnibase_core.__version__})')"
+    ```
+  - **Expected Results**:
+    - Docker build completes successfully
+    - Image runs and imports omnibase_core v0.4.0
+  - **Pass/Fail Criteria**:
+    - ✅ **PASS**: Build succeeds, image runs
+    - ❌ **INFORMATIONAL ONLY**: Document failure, proceed with release
+  - **Evidence**: Docker build log or "N/A - no Docker builds"
 
 ---
+
 
 ## 10. Documentation
 
@@ -1482,11 +1954,19 @@ poetry run pytest tests/unit/exceptions/test_onex_error.py tests/unit/errors/tes
 
 ## Sign-off
 
+**MANDATORY**: Before signing off, complete the [Final Sign-off Evidence Verification](#final-sign-off-evidence-verification) checklist above.
+
 | Role | Name | Date | Signature |
 |------|------|------|-----------|
 | Developer | | | |
 | Reviewer | | | |
 | Release Manager | | | |
+
+**Release Manager Attestation**:
+- [ ] I have verified ALL gates have valid evidence per the Final Sign-off Evidence Verification checklist
+- [ ] All BLOCKER and REQUIRED gates are complete with documented evidence
+- [ ] Evidence index file is up-to-date and all links are accessible
+- [ ] All evidence includes required fields (timestamp, commit SHA, toolchain versions, result)
 
 ---
 
