@@ -18,9 +18,7 @@ from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.contracts.subcontracts.model_workflow_definition import (
     ModelWorkflowDefinition,
 )
-from omnibase_core.models.workflow.execution.model_workflow_state_snapshot import (
-    ModelWorkflowStateSnapshot,
-)
+from omnibase_core.models.workflow import ModelWorkflowStateSnapshot
 from omnibase_core.utils.workflow_executor import (
     WorkflowExecutionResult,
     execute_workflow,

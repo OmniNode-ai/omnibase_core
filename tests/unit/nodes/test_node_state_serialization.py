@@ -39,11 +39,9 @@ from omnibase_core.models.contracts.subcontracts.model_workflow_definition_metad
     ModelWorkflowDefinitionMetadata,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.fsm.model_fsm_state_snapshot import ModelFSMStateSnapshot
+from omnibase_core.models.fsm import ModelFSMStateSnapshot
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.models.workflow.execution.model_workflow_state_snapshot import (
-    ModelWorkflowStateSnapshot,
-)
+from omnibase_core.models.workflow import ModelWorkflowStateSnapshot
 from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
 from omnibase_core.nodes.node_reducer import NodeReducer
 

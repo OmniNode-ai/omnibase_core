@@ -20,9 +20,7 @@ from omnibase_core.models.orchestrator import ModelOrchestratorOutput
 from omnibase_core.models.orchestrator.model_orchestrator_input import (
     ModelOrchestratorInput,
 )
-from omnibase_core.models.workflow.execution.model_workflow_state_snapshot import (
-    ModelWorkflowStateSnapshot,
-)
+from omnibase_core.models.workflow import ModelWorkflowStateSnapshot
 from omnibase_core.utils.workflow_executor import WorkflowExecutionResult
 
 # Error messages

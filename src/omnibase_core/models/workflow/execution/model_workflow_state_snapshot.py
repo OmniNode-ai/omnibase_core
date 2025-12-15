@@ -26,7 +26,7 @@ Immutability Considerations:
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -44,6 +44,8 @@ class ModelWorkflowStateSnapshot(BaseModel):
     - Testing and verification
 
     Attributes:
+        schema_version: Schema version for deserialization and migration support.
+            Increment when making breaking changes to the snapshot structure.
         workflow_id: Unique workflow execution ID.
         current_step_index: Index of current step being executed.
         completed_step_ids: List of completed step UUIDs.
@@ -71,6 +73,24 @@ class ModelWorkflowStateSnapshot(BaseModel):
         - **Max nesting depth**: 5 levels (for readability and debugging)
         Exceeding these limits may cause performance degradation during workflow
         replay and state persistence operations.
+
+    PII Handling:
+        **WARNING**: The context dict may contain sensitive data. When storing or
+        transmitting workflow snapshots:
+        - **Never log** context contents at INFO level or below
+        - **Sanitize** before persisting to external storage or logs
+        - **Encrypt** at rest if context may contain PII (user data, credentials)
+        - **Audit** context keys before serialization in production
+        Workflow implementations should define clear policies for what data types
+        are allowed in context to prevent accidental PII exposure.
+
+    Schema Versioning:
+        The schema_version field enables version-aware deserialization and migration.
+        Version strategy:
+        - **1** (current): Initial schema with core workflow state fields
+        - Future versions increment when adding/removing/changing field semantics
+        - Deserialization code should check schema_version and migrate as needed
+        - Breaking changes require version increment with documented upgrade steps
 
     Thread Safety:
         This model is immutable (frozen=True) after creation, making it thread-safe
@@ -128,6 +148,13 @@ class ModelWorkflowStateSnapshot(BaseModel):
     # See CLAUDE.md "Pydantic from_attributes=True for Value Objects" for details.
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
+    # Schema version for migration support. Increment when making breaking changes.
+    # See "Schema Versioning" in class docstring for version strategy.
+    schema_version: int = Field(
+        default=1,
+        ge=1,
+        description="Schema version for deserialization and migration (current: 1)",
+    )
     workflow_id: UUID | None = Field(default=None, description="Workflow execution ID")
     current_step_index: int = Field(
         default=0,
