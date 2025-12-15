@@ -30,11 +30,14 @@ import asyncio
 from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import Any, Union
+from urllib.parse import urlparse
+from uuid import uuid4
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_node_health_status import EnumNodeHealthStatus
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.health.model_health_status import ModelHealthStatus
+from omnibase_core.protocols.http import ProtocolHttpClient
 from omnibase_core.types.typed_dict_mixin_types import TypedDictHealthCheckStatus
 
 
@@ -790,6 +793,9 @@ async def check_http_service_health(
     service_url: str,
     timeout_seconds: float = 3.0,
     expected_status: int = 200,
+    http_client: ProtocolHttpClient | None = None,
+    headers: dict[str, str] | None = None,
+    track_duration: bool = False,
 ) -> ModelHealthStatus:
     """
     Check HTTP service health via health endpoint.
@@ -801,48 +807,149 @@ async def check_http_service_health(
         service_url: Base URL of the service or full health endpoint URL
         timeout_seconds: Request timeout
         expected_status: Expected HTTP status code (default: 200)
+        http_client: HTTP client implementing ProtocolHttpClient protocol.
+                     If None, returns UNHEALTHY status indicating no client available.
+        headers: Optional HTTP headers to include in the request (e.g., for authentication)
+        track_duration: If True, capture and include response time in check_duration_ms field
+                       (default: False). Useful for detecting service degradation via response
+                       time monitoring.
 
     Returns:
-        ModelHealthStatus with connectivity details
+        ModelHealthStatus with connectivity details. If track_duration=True, includes
+        response time in the check_duration_ms field (milliseconds).
+
+    Note:
+        This function catches all exceptions internally and returns appropriate
+        ModelHealthStatus objects. It never raises exceptions to the caller.
 
     Example:
         async def _check_metadata_service(self) -> ModelHealthStatus:
+            # Inject http_client from container or create implementation
+            http_client = container.get_service("ProtocolHttpClient")
             return await check_http_service_health(
                 "http://metadata-stamping:8057",
-                timeout_seconds=2.0
+                timeout_seconds=2.0,
+                http_client=http_client,
+                headers={"Authorization": "Bearer token"},
             )
+
+        # With duration tracking for performance monitoring
+        async def _check_metadata_service_with_timing(self) -> ModelHealthStatus:
+            http_client = container.get_service("ProtocolHttpClient")
+            status = await check_http_service_health(
+                "http://metadata-stamping:8057",
+                timeout_seconds=2.0,
+                http_client=http_client,
+                track_duration=True,
+            )
+            # Access duration: status.check_duration_ms
+            return status
     """
     from omnibase_core.models.health.model_health_issue import ModelHealthIssue
 
-    try:
-        import aiohttp
+    # Return unhealthy if no HTTP client is provided
+    if http_client is None:
+        return ModelHealthStatus.create_unhealthy(
+            score=0.0,
+            issues=[
+                ModelHealthIssue(
+                    issue_id=uuid4(),
+                    severity="critical",
+                    category="configuration",
+                    message="No HTTP client provided - inject ProtocolHttpClient implementation",
+                    first_detected=datetime.now(UTC),
+                    last_seen=datetime.now(UTC),
+                )
+            ],
+        )
 
+    # Validate URL format before making request
+    try:
+        parsed = urlparse(service_url)
+        if not parsed.scheme or not parsed.netloc:
+            return ModelHealthStatus.create_unhealthy(
+                score=0.0,
+                issues=[
+                    ModelHealthIssue(
+                        issue_id=uuid4(),
+                        severity="critical",
+                        category="configuration",
+                        message=f"Invalid service URL: {service_url}",
+                        first_detected=datetime.now(UTC),
+                        last_seen=datetime.now(UTC),
+                    )
+                ],
+            )
+        if parsed.scheme not in ("http", "https"):
+            return ModelHealthStatus.create_unhealthy(
+                score=0.0,
+                issues=[
+                    ModelHealthIssue(
+                        issue_id=uuid4(),
+                        severity="critical",
+                        category="configuration",
+                        message=f"Invalid URL scheme '{parsed.scheme}' - must be http or https",
+                        first_detected=datetime.now(UTC),
+                        last_seen=datetime.now(UTC),
+                    )
+                ],
+            )
+    except (
+        ValueError,
+        AttributeError,
+    ) as e:  # urlparse-specific errors: malformed URLs or invalid attribute access
+        return ModelHealthStatus.create_unhealthy(
+            score=0.0,
+            issues=[
+                ModelHealthIssue(
+                    issue_id=uuid4(),
+                    severity="critical",
+                    category="configuration",
+                    message=f"Failed to parse service URL: {e}",
+                    first_detected=datetime.now(UTC),
+                    last_seen=datetime.now(UTC),
+                )
+            ],
+        )
+
+    try:
         # Append /health if not already present
         health_url = (
             service_url if service_url.endswith("/health") else f"{service_url}/health"
         )
 
-        start_time = datetime.now(UTC)
+        # Capture start time if duration tracking is enabled
+        start_time = datetime.now(UTC) if track_duration else None
 
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                health_url,
-                timeout=aiohttp.ClientTimeout(total=timeout_seconds),
-            ) as response:
-                duration_ms = (datetime.now(UTC) - start_time).total_seconds() * 1000
+        response = await http_client.get(
+            health_url, timeout=timeout_seconds, headers=headers
+        )
 
-                if response.status == expected_status:
-                    return ModelHealthStatus.create_healthy(score=1.0)
-                else:
-                    return ModelHealthStatus.create_degraded(
-                        score=0.5,
-                        issues=[
-                            ModelHealthIssue.create_connectivity_issue(
-                                message=f"HTTP service returned {response.status}, expected {expected_status}",
-                                severity="medium",
-                            )
-                        ],
+        # Calculate duration if tracking is enabled
+        duration_ms = None
+        if track_duration and start_time is not None:
+            duration_ms = int((datetime.now(UTC) - start_time).total_seconds() * 1000)
+
+        if response.status == expected_status:
+            return ModelHealthStatus.create_healthy(score=1.0).model_copy(
+                update={"check_duration_ms": duration_ms}
+                if duration_ms is not None
+                else {}
+            )
+        else:
+            return ModelHealthStatus.create_degraded(
+                score=0.5,
+                issues=[
+                    ModelHealthIssue.create_connectivity_issue(
+                        message=f"HTTP service returned {response.status}, expected {expected_status}",
+                        severity="medium",
                     )
+                ],
+            ).model_copy(
+                update={"check_duration_ms": duration_ms}
+                if duration_ms is not None
+                else {}
+            )
 
     except TimeoutError:
         return ModelHealthStatus.create_degraded(
@@ -868,7 +975,7 @@ async def check_http_service_health(
             score=0.0,
             issues=[
                 ModelHealthIssue.create_connectivity_issue(
-                    message=f"HTTP service check failed: {e!s}",
+                    message=f"HTTP health check failed for {service_url}: {type(e).__name__}: {e!s}",
                     severity="critical",
                 )
             ],
