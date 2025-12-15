@@ -797,12 +797,19 @@ class ModelSemVer(BaseModel):
     patch: int
 ```
 
-**Models using this pattern**:
+**Key models using this pattern** (29 total in codebase):
 - `ModelSemVer` - Semantic versioning (`models/primitives/model_semver.py`)
-- `ModelWorkflowNode` - Workflow nodes (`models/workflow/model_workflow_node.py`)
-- `ModelExecutionGraph` - Execution graphs (`models/graph/model_execution_graph.py`)
-- `ModelWorkflowDefinitionMetadata` - Workflow metadata (`models/workflow/model_workflow_definition_metadata.py`)
-- `ModelServiceMetadata` - Service metadata (`models/service/model_service_metadata.py`)
+- `ModelWorkflowNode` - Workflow nodes (`models/contracts/subcontracts/model_workflow_node.py`)
+- `ModelExecutionGraph` - Execution graphs (`models/contracts/subcontracts/model_execution_graph.py`)
+- `ModelWorkflowDefinitionMetadata` - Workflow metadata (`models/contracts/subcontracts/model_workflow_definition_metadata.py`)
+- `ModelServiceMetadata` - Service metadata (`models/container/model_service_metadata.py`)
+- `ModelContractBase` - Base contract model (`models/contracts/model_contract_base.py`)
+- `ModelFSMStateSnapshot` - FSM state snapshots (`models/fsm/model_fsm_state_snapshot.py`)
+- Various metadata models in `models/common/` (effect, reducer, tool, node capabilities metadata)
+- Event models in `models/events/` (runtime event base, wiring error info, node graph info)
+- GitHub workflow configuration models in `models/configuration/`
+
+To find all models using this pattern: `grep -r "from_attributes.*True" src/omnibase_core/models/`
 
 **When NOT to use**:
 - Models that are never nested in other Pydantic models
