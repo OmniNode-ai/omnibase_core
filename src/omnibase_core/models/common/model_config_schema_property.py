@@ -1,20 +1,22 @@
 """
 Typed schema property model for mixin configuration.
 
-This module provides strongly-typed schema properties for configuration patterns.
+This module provides strongly-typed schema properties for configuration patterns,
+with full validation of type-default and type-enum consistency.
+
+Supports type aliases:
+- 'str' -> 'string'
+- 'int' -> 'integer'
+- 'bool' -> 'boolean'
+- 'float' -> 'number'
 """
 
-from typing import Literal
+from typing import Self
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, Field, model_validator
 
-# Valid JSON Schema types
-JsonSchemaType = Literal[
-    "string", "integer", "boolean", "number", "array", "object", "null"
-]
-
-# Valid enum value types (matches JSON Schema primitive types)
-EnumValue = str | int | float | bool | None
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelConfigSchemaProperty(BaseModel):
@@ -23,17 +25,17 @@ class ModelConfigSchemaProperty(BaseModel):
 
     Replaces nested dict[str, Any] in config_schema field
     with explicit typed fields for JSON Schema properties.
+
+    Supports type aliases for common Python type names:
+    - 'str' is equivalent to 'string'
+    - 'int' is equivalent to 'integer'
+    - 'bool' is equivalent to 'boolean'
+    - 'float' is equivalent to 'number'
     """
 
-    model_config = ConfigDict(
-        frozen=True,
-        strict=True,
-        extra="forbid",
-    )
-
-    type: JsonSchemaType = Field(
+    type: str = Field(
         default="string",
-        description="Property type (string, integer, boolean, number, array, object, null)",
+        description="Property type (string, number, integer, boolean, array, object)",
     )
     description: str | None = Field(
         default=None,
@@ -43,7 +45,7 @@ class ModelConfigSchemaProperty(BaseModel):
         default=None,
         description="Default value (type should match the 'type' field)",
     )
-    enum: list[EnumValue] | None = Field(
+    enum: list[str | int | float | bool | None] | None = Field(
         default=None,
         description="Allowed enum values (supports strings, numbers, booleans, and null)",
     )
@@ -61,46 +63,147 @@ class ModelConfigSchemaProperty(BaseModel):
     )
 
     @model_validator(mode="after")
-    def _validate_default_type_matches(self) -> "ModelConfigSchemaProperty":
-        """Validate that the default value type matches the declared type field."""
-        if self.default is None:
-            return self
+    def validate_type_default_consistency(self) -> Self:
+        """Validate that default value type matches declared type.
 
-        # Map JSON Schema types to Python types for validation
-        type_to_python: dict[str, type | tuple[type, ...]] = {
-            "string": str,
-            "integer": int,
-            "number": (int, float),
-            "boolean": bool,
-            "array": list,
-            "object": dict,
-            # Note: "null" type with non-None default is already handled above
-        }
+        Enforces type consistency between the 'type' field and 'default' value:
+        - type="string" requires default to be str
+        - type="number" or type="float" requires default to be int or float
+        - type="integer" or type="int" requires default to be int (not float)
+        - type="boolean" or type="bool" requires default to be bool
 
-        expected_types = type_to_python.get(self.type)
-        if expected_types is None:
-            # For "null" type, default should be None (already checked above)
-            if self.type == "null":
-                raise ValueError(
-                    f"Default value {self.default!r} is not valid for type 'null'. "
-                    "Null type can only have None as default."
-                )
-            return self
+        Note: int is acceptable for float/number types (widening conversion),
+        but bool is NOT acceptable for int types (even though bool is int subclass).
 
-        # Special handling: integer type should not accept float (unless it's a whole number)
-        if self.type == "integer" and isinstance(self.default, float):
-            if not self.default.is_integer():
-                raise ValueError(
-                    f"Default value {self.default!r} is a float but type is 'integer'. "
-                    "Use an integer value instead."
-                )
-        elif not isinstance(self.default, expected_types):
-            raise ValueError(
-                f"Default value {self.default!r} (type: {type(self.default).__name__}) "
-                f"does not match declared type '{self.type}'"
-            )
+        Raises:
+            ModelOnexError: If default value type doesn't match declared type.
+        """
+        if self.default is not None:
+            self._validate_value_type(self.default, "default")
 
         return self
 
+    @model_validator(mode="after")
+    def validate_type_enum_consistency(self) -> Self:
+        """Validate that all enum values match the declared type.
 
-__all__ = ["ModelConfigSchemaProperty", "EnumValue", "JsonSchemaType"]
+        Enforces type consistency between the 'type' field and 'enum' values:
+        - type="string" requires all enum values to be str or None
+        - type="number" or type="float" requires all enum values to be int, float, or None
+        - type="integer" or type="int" requires all enum values to be int or None
+        - type="boolean" or type="bool" requires all enum values to be bool or None
+
+        Note: int is acceptable for float/number types (widening conversion),
+        but bool is NOT acceptable for int types (even though bool is int subclass).
+
+        Raises:
+            ModelOnexError: If any enum value type doesn't match declared type.
+        """
+        if self.enum is None:
+            return self
+
+        for i, enum_value in enumerate(self.enum):
+            if enum_value is not None:
+                self._validate_value_type(enum_value, f"enum[{i}]", enum_index=i)
+
+        return self
+
+    def _validate_value_type(
+        self,
+        value: str | int | float | bool,
+        field_name: str,
+        enum_index: int | None = None,
+    ) -> None:
+        """Validate a single value against the declared type.
+
+        Args:
+            value: The value to validate.
+            field_name: Name of the field for error messages (e.g., 'default', 'enum[0]').
+            enum_index: Optional index if validating an enum value.
+
+        Raises:
+            ModelOnexError: If value type doesn't match declared type.
+        """
+        declared_type = self.type.lower()
+        actual_type = type(value)
+        actual_type_name = actual_type.__name__
+
+        # Define type mappings: declared_type -> (valid_types, description)
+        type_validations: dict[str, tuple[tuple[type, ...], str]] = {
+            "string": ((str,), "string"),
+            "str": ((str,), "string"),
+            "number": ((int, float), "number (int or float)"),
+            "float": ((int, float), "number (int or float)"),
+            "integer": ((int,), "integer"),
+            "int": ((int,), "integer"),
+            "boolean": ((bool,), "boolean"),
+            "bool": ((bool,), "boolean"),
+        }
+
+        if declared_type not in type_validations:
+            # Unknown type, skip validation
+            return
+
+        valid_types, type_desc = type_validations[declared_type]
+
+        # Special case: bool is subclass of int, but we don't want bool for int/integer
+        if declared_type in ("integer", "int") and isinstance(value, bool):
+            context: dict[str, str | int] = {
+                "declared_type": self.type,
+                "actual_type": actual_type_name,
+                f"{field_name}_value": str(value),
+            }
+            if enum_index is not None:
+                context["enum_index"] = enum_index
+
+            raise ModelOnexError(
+                message=(
+                    f"Type mismatch: {field_name} value has type '{actual_type_name}' "
+                    f"but declared type is '{self.type}'. "
+                    f"Boolean values are not valid for integer type."
+                ),
+                error_code=EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH,
+                context=context,
+            )
+
+        # For number/float types, also reject bool (bool is int subclass)
+        if declared_type in ("number", "float") and isinstance(value, bool):
+            context = {
+                "declared_type": self.type,
+                "actual_type": actual_type_name,
+                f"{field_name}_value": str(value),
+            }
+            if enum_index is not None:
+                context["enum_index"] = enum_index
+
+            raise ModelOnexError(
+                message=(
+                    f"Type mismatch: {field_name} value has type '{actual_type_name}' "
+                    f"but declared type is '{self.type}'. "
+                    f"Boolean values are not valid for numeric types."
+                ),
+                error_code=EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH,
+                context=context,
+            )
+
+        if not isinstance(value, valid_types):
+            context = {
+                "declared_type": self.type,
+                "actual_type": actual_type_name,
+                f"{field_name}_value": str(value),
+            }
+            if enum_index is not None:
+                context["enum_index"] = enum_index
+
+            raise ModelOnexError(
+                message=(
+                    f"Type mismatch: {field_name} value has type '{actual_type_name}' "
+                    f"but declared type is '{self.type}'. "
+                    f"Expected {type_desc}."
+                ),
+                error_code=EnumCoreErrorCode.PARAMETER_TYPE_MISMATCH,
+                context=context,
+            )
+
+
+__all__ = ["ModelConfigSchemaProperty"]
