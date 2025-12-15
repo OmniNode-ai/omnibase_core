@@ -249,7 +249,10 @@ def compute_contract_fingerprint(
         config = ModelContractNormalizationConfig()
 
     # Extract version from contract - use getattr for Pydantic model
-    version_data = getattr(contract, "version", None)
+    # Check both 'contract_version' (YAML contracts) and 'version' (strict contracts)
+    version_data = getattr(contract, "contract_version", None) or getattr(
+        contract, "version", None
+    )
     if version_data is None:
         # Default to 0.0.0 if no version specified
         version = ModelContractVersion(major=0, minor=0, patch=0)
@@ -257,6 +260,17 @@ def compute_contract_fingerprint(
         version = ModelContractVersion.from_string(version_data)
     elif isinstance(version_data, ModelContractVersion):
         version = version_data
+    elif (
+        hasattr(version_data, "major")
+        and hasattr(version_data, "minor")
+        and hasattr(version_data, "patch")
+    ):
+        # Handle ModelSemVer and other version-like objects with major/minor/patch
+        version = ModelContractVersion(
+            major=version_data.major,
+            minor=version_data.minor,
+            patch=version_data.patch,
+        )
     else:
         raise ModelOnexError(
             message=f"Invalid version type in contract: {type(version_data).__name__}",

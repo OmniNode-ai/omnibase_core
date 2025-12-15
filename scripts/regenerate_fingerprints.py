@@ -61,7 +61,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import yaml
-from pydantic import BaseModel  # noqa: TC002 - Used at runtime in type dict
+from pydantic import BaseModel
 
 from omnibase_core.contracts.hash_registry import compute_contract_fingerprint
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -73,6 +73,23 @@ from omnibase_core.models.contracts.model_contract_orchestrator import (
 from omnibase_core.models.contracts.model_contract_reducer import ModelContractReducer
 from omnibase_core.models.contracts.model_yaml_contract import ModelYamlContract
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+
+class ModelYamlContractFull(BaseModel):
+    """Full contract model for fingerprinting that captures ALL fields.
+
+    Unlike ModelYamlContract which uses extra="ignore", this model uses
+    extra="allow" to ensure all contract fields are included in the
+    fingerprint computation.
+    """
+
+    model_config = {"extra": "allow"}
+
+    # Minimal required fields - everything else captured by extra="allow"
+    contract_version: ModelSemVer | None = None
+    node_type: str | None = None
+
 
 if TYPE_CHECKING:
     from omnibase_core.models.contracts.model_contract_fingerprint import (
@@ -174,8 +191,10 @@ def detect_contract_model(contract_data: dict[str, object]) -> type[BaseModel] |
         if model_class is not None:
             return model_class
 
-    # Fall back to flexible ModelYamlContract
-    return ModelYamlContract
+    # Fall back to ModelYamlContractFull which captures ALL fields for fingerprinting
+    # Note: We use ModelYamlContractFull instead of ModelYamlContract because
+    # ModelYamlContract has extra="ignore" which would drop fields from the hash
+    return ModelYamlContractFull
 
 
 # ==============================================================================
