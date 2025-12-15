@@ -234,6 +234,7 @@ subscriptions:
   # The runtime will validate handler availability during contract loading
   # and emit warnings for unregistered handlers in non-strict mode.
   #
+  # Tracking: Planned for v1.2.0 - SubscriptionHandlerRegistry implementation
   # Status: Handler implementation pending (not yet runtime-registered)
   topics:
     - topic: onex.runtime.node_graph.ready
