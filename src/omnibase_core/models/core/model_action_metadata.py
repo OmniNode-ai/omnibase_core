@@ -28,6 +28,20 @@ class ModelActionMetadata(BaseModel):
 
     Provides comprehensive tracking for action execution with strong typing
     and support for tool-as-a-service architecture.
+
+    Optional Fields Rationale:
+        - action_type: Optional to allow default construction; should be set during
+          action initialization for type safety and introspection.
+        - parent_correlation_id/session_id: Optional for standalone actions without
+          parent context or session grouping.
+        - started_at/completed_at: Populated via mark_started()/mark_completed()
+          lifecycle methods, not at construction time.
+        - timeout_seconds: Optional for actions without timeout constraints.
+        - execution_context: Optional for actions not requiring environment context
+          (development vs. production, resource limits, etc.).
+        - result_data/error_details: Populated only after action completion or failure.
+        - mcp_endpoint/graphql_endpoint: Optional for nodes not exposing these
+          protocol endpoints.
     """
 
     # Core identification

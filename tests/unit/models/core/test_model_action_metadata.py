@@ -48,6 +48,7 @@ def create_test_action_type() -> ModelNodeActionType:
     )
 
 
+@pytest.mark.unit
 class TestModelActionMetadata:
     """Test suite for ModelActionMetadata."""
 
