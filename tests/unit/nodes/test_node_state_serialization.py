@@ -146,9 +146,9 @@ class TestNodeReducerStateSerialization:
     """Tests for NodeReducer state serialization methods.
 
     Tests the FSM state snapshot and restoration capabilities:
-    - snapshot_state() returns current FSM state
-    - restore_state() restores FSM state from snapshot
-    - get_state_snapshot() returns strongly-typed model (or None)
+    - snapshot_state() returns ModelFSMStateSnapshot | None
+    - restore_state() accepts ModelFSMStateSnapshot
+    - get_state_snapshot() returns dict[str, object] | None (for JSON serialization)
     - Round-trip serialization maintains state integrity
     """
 
@@ -446,9 +446,9 @@ class TestNodeOrchestratorStateSerialization:
     """Tests for NodeOrchestrator workflow state serialization methods.
 
     Tests the workflow state snapshot and restoration capabilities:
-    - snapshot_workflow_state() returns current workflow state
-    - restore_workflow_state() restores workflow state from snapshot
-    - get_workflow_snapshot() returns strongly-typed model (or None)
+    - snapshot_workflow_state() returns ModelWorkflowStateSnapshot | None
+    - restore_workflow_state() accepts ModelWorkflowStateSnapshot
+    - get_workflow_snapshot() returns dict[str, object] | None (for JSON serialization)
     - Round-trip serialization maintains state integrity
     - update_workflow_state() manually updates workflow state
     - execute_workflow_from_contract() automatically captures workflow state
