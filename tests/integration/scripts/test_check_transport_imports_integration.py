@@ -127,8 +127,8 @@ class TestTransportImportCheckerIntegration:
         assert result.returncode == 0
         assert "usage:" in result.stdout.lower() or "transport" in result.stdout.lower()
 
-    def test_script_detects_allowlisted_file(self, project_root: Path) -> None:
-        """Test that the script correctly identifies the allowlisted file."""
+    def test_script_reports_allowlisted_files_count(self, project_root: Path) -> None:
+        """Test that the script correctly reports allowlisted file count in summary."""
         result = subprocess.run(
             ["poetry", "run", "python", "scripts/check_transport_imports.py", "--json"],
             check=False,
@@ -139,10 +139,14 @@ class TestTransportImportCheckerIntegration:
         assert result.returncode == 0
         data = json.loads(result.stdout)
 
-        # The allowlisted file should be detected
+        # The allowlisted_files field should be present and non-negative
         summary = data["summary"]
-        # There should be at least the known allowlisted file
-        assert summary["allowlisted_files"] >= 1
+        assert "allowlisted_files" in summary
+        assert summary["allowlisted_files"] >= 0
+
+        # When allowlist is empty, count should be 0 (all violations fixed!)
+        # When allowlist has items, count should match the number of files with violations
+        assert isinstance(summary["allowlisted_files"], int)
 
     def test_exit_code_zero_with_only_allowlisted_violations(
         self, project_root: Path
@@ -182,8 +186,10 @@ class TestTransportImportCheckerIntegration:
         data = json.loads(result.stdout)
         assert "summary" in data
 
-    def test_results_contain_allowlisted_file_info(self, project_root: Path) -> None:
-        """Test that results include information about the allowlisted file."""
+    def test_results_contain_allowlisted_file_info_when_present(
+        self, project_root: Path
+    ) -> None:
+        """Test that results include information about allowlisted files when present."""
         result = subprocess.run(
             ["poetry", "run", "python", "scripts/check_transport_imports.py", "--json"],
             check=False,
@@ -194,15 +200,18 @@ class TestTransportImportCheckerIntegration:
         assert result.returncode == 0
         data = json.loads(result.stdout)
 
-        # Find the allowlisted file in results
+        # Find allowlisted files in results
         results = data["results"]
         allowlisted_results = [
             r for r in results if "Allowlisted" in r.get("skip_reason", "")
         ]
 
-        # Should have at least one allowlisted file
-        assert len(allowlisted_results) >= 1
+        # Allowlisted count in summary should match results with "Allowlisted" skip_reason
+        summary = data["summary"]
+        assert len(allowlisted_results) == summary["allowlisted_files"]
 
-        # The known allowlisted file should be present
-        allowlisted_files = [r["file"] for r in allowlisted_results]
-        assert any("mixin_health_check.py" in f for f in allowlisted_files)
+        # If there are allowlisted files, they should have proper skip_reason
+        for allowlisted in allowlisted_results:
+            assert "Allowlisted" in allowlisted["skip_reason"]
+            assert allowlisted["is_clean"] is True  # Allowlisted files are marked clean
+            assert allowlisted["violations"] == []  # Violations are suppressed

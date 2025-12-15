@@ -5,6 +5,7 @@ Tests health check capabilities, dependency checking, and async support.
 """
 
 import asyncio
+from typing import Any
 
 import pytest
 
@@ -441,3 +442,365 @@ class TestMixinHealthCheck:
 
             result = node.check_dependency_health("test_dependency", check_func)
             assert result.status == "unhealthy"
+
+
+# =============================================================================
+# Mock classes for HTTP client testing
+# =============================================================================
+
+
+class MockHttpResponse:
+    """Mock HTTP response object implementing ProtocolHttpResponse."""
+
+    def __init__(self, status: int) -> None:
+        self._status = status
+
+    @property
+    def status(self) -> int:
+        """HTTP status code of the response."""
+        return self._status
+
+    async def text(self) -> str:
+        """Get the response body as text."""
+        return ""
+
+    async def json(self) -> dict[str, Any]:
+        """Parse the response body as JSON."""
+        return {}
+
+
+class MockHttpClient:
+    """Mock HTTP client implementing ProtocolHttpClient."""
+
+    def __init__(
+        self,
+        response: MockHttpResponse | None = None,
+        exception: Exception | None = None,
+    ) -> None:
+        self._response = response
+        self._exception = exception
+        self.called_url: str | None = None
+        self.called_timeout: float | None = None
+        self.called_headers: dict[str, str] | None = None
+
+    @classmethod
+    def create_success(cls, status: int = 200) -> "MockHttpClient":
+        """Factory for successful responses."""
+        return cls(response=MockHttpResponse(status=status))
+
+    @classmethod
+    def create_timeout(cls) -> "MockHttpClient":
+        """Factory for timeout scenarios."""
+        return cls(exception=TimeoutError("Connection timed out"))
+
+    @classmethod
+    def create_connection_error(
+        cls, message: str = "Connection refused"
+    ) -> "MockHttpClient":
+        """Factory for connection error scenarios."""
+        return cls(exception=ConnectionError(message))
+
+    async def get(
+        self,
+        url: str,
+        timeout: float | None = None,
+        headers: dict[str, str] | None = None,
+    ) -> MockHttpResponse:
+        """Perform mock HTTP GET request."""
+        self.called_url = url
+        self.called_timeout = timeout
+        self.called_headers = headers
+        if self._exception:
+            raise self._exception
+        if self._response is None:
+            raise RuntimeError("No response configured")
+        return self._response
+
+
+# =============================================================================
+# Tests for check_http_service_health function
+# =============================================================================
+
+
+class TestCheckHttpServiceHealth:
+    """Test check_http_service_health function."""
+
+    @pytest.mark.asyncio
+    @pytest.mark.timeout(90)
+    async def test_check_http_service_health_no_client_returns_unhealthy(self) -> None:
+        """Test that calling without http_client returns UNHEALTHY status."""
+        from omnibase_core.mixins.mixin_health_check import check_http_service_health
+
+        result = await check_http_service_health("http://test.com")
+
+        assert result.status == "unhealthy"
+        assert result.health_score == 0.0
+        assert len(result.issues) > 0
+        assert any(
+            "No HTTP client provided" in issue.message for issue in result.issues
+        )
+
+    @pytest.mark.asyncio
+    @pytest.mark.timeout(90)
+    async def test_check_http_service_health_with_client_success(self) -> None:
+        """Test successful health check with mock HTTP client."""
+        from omnibase_core.mixins.mixin_health_check import check_http_service_health
+
+        # Using factory method for cleaner test setup
+        mock_client = MockHttpClient.create_success()
+
+        result = await check_http_service_health(
+            "http://test.com",
+            http_client=mock_client,
+        )
+
+        assert result.status == "healthy"
+        assert result.health_score == 1.0
+        assert len(result.issues) == 0
+
+    @pytest.mark.asyncio
+    @pytest.mark.timeout(90)
+    async def test_check_http_service_health_with_client_unexpected_status(
+        self,
+    ) -> None:
+        """Test health check with unexpected HTTP status returns DEGRADED."""
+        from omnibase_core.mixins.mixin_health_check import check_http_service_health
+
+        mock_response = MockHttpResponse(status=503)
+        mock_client = MockHttpClient(response=mock_response)
+
+        result = await check_http_service_health(
+            "http://test.com",
+            expected_status=200,
+            http_client=mock_client,
+        )
+
+        assert result.status == "degraded"
+        assert len(result.issues) > 0
+        assert any("503" in issue.message for issue in result.issues)
+        assert any("200" in issue.message for issue in result.issues)
+
+    @pytest.mark.asyncio
+    @pytest.mark.timeout(90)
+    async def test_check_http_service_health_with_client_timeout(self) -> None:
+        """Test health check with timeout returns DEGRADED status."""
+        from omnibase_core.mixins.mixin_health_check import check_http_service_health
+
+        mock_client = MockHttpClient(exception=TimeoutError("Connection timed out"))
+
+        result = await check_http_service_health(
+            "http://test.com",
+            http_client=mock_client,
+        )
+
+        assert result.status == "degraded"
+        assert len(result.issues) > 0
+        assert any("timed out" in issue.message for issue in result.issues)
+
+    @pytest.mark.asyncio
+    @pytest.mark.timeout(90)
+    async def test_check_http_service_health_with_client_connection_error(
+        self,
+    ) -> None:
+        """Test health check with connection error returns UNHEALTHY status."""
+        from omnibase_core.mixins.mixin_health_check import check_http_service_health
+
+        mock_client = MockHttpClient(exception=ConnectionError("Connection refused"))
+
+        result = await check_http_service_health(
+            "http://test.com",
+            http_client=mock_client,
+        )
+
+        assert result.status == "unhealthy"
+        assert result.health_score == 0.0
+        assert len(result.issues) > 0
+        assert any("failed" in issue.message.lower() for issue in result.issues)
+
+    @pytest.mark.asyncio
+    @pytest.mark.timeout(90)
+    async def test_check_http_service_health_appends_health_endpoint(self) -> None:
+        """Test that /health is appended to URLs without it."""
+        from omnibase_core.mixins.mixin_health_check import check_http_service_health
+
+        mock_response = MockHttpResponse(status=200)
+        mock_client = MockHttpClient(response=mock_response)
+
+        await check_http_service_health(
+            "http://test.com",
+            http_client=mock_client,
+        )
+
+        assert mock_client.called_url == "http://test.com/health"
+
+    @pytest.mark.asyncio
+    @pytest.mark.timeout(90)
+    async def test_check_http_service_health_preserves_health_endpoint(self) -> None:
+        """Test that /health is not doubled if already present."""
+        from omnibase_core.mixins.mixin_health_check import check_http_service_health
+
+        mock_response = MockHttpResponse(status=200)
+        mock_client = MockHttpClient(response=mock_response)
+
+        await check_http_service_health(
+            "http://test.com/health",
+            http_client=mock_client,
+        )
+
+        assert mock_client.called_url == "http://test.com/health"
+
+    @pytest.mark.asyncio
+    @pytest.mark.timeout(90)
+    async def test_check_http_service_health_passes_timeout(self) -> None:
+        """Test that timeout parameter is passed to the HTTP client."""
+        from omnibase_core.mixins.mixin_health_check import check_http_service_health
+
+        mock_response = MockHttpResponse(status=200)
+        mock_client = MockHttpClient(response=mock_response)
+
+        await check_http_service_health(
+            "http://test.com",
+            timeout_seconds=5.0,
+            http_client=mock_client,
+        )
+
+        assert mock_client.called_timeout == 5.0
+
+    @pytest.mark.asyncio
+    @pytest.mark.timeout(90)
+    async def test_check_http_service_health_custom_expected_status(self) -> None:
+        """Test health check with custom expected status code."""
+        from omnibase_core.mixins.mixin_health_check import check_http_service_health
+
+        mock_response = MockHttpResponse(status=204)
+        mock_client = MockHttpClient(response=mock_response)
+
+        result = await check_http_service_health(
+            "http://test.com",
+            expected_status=204,
+            http_client=mock_client,
+        )
+
+        assert result.status == "healthy"
+        assert result.health_score == 1.0
+
+    @pytest.mark.asyncio
+    @pytest.mark.timeout(90)
+    async def test_check_http_service_health_passes_headers(self) -> None:
+        """Test that headers parameter is passed to the HTTP client."""
+        from omnibase_core.mixins.mixin_health_check import check_http_service_health
+
+        mock_response = MockHttpResponse(status=200)
+        mock_client = MockHttpClient(response=mock_response)
+        test_headers = {
+            "Authorization": "Bearer test-token",
+            "X-Custom-Header": "value",
+        }
+
+        await check_http_service_health(
+            "http://test.com",
+            http_client=mock_client,
+            headers=test_headers,
+        )
+
+        assert mock_client.called_headers == test_headers
+
+    @pytest.mark.asyncio
+    @pytest.mark.timeout(90)
+    async def test_check_http_service_health_no_headers_passes_none(self) -> None:
+        """Test that not passing headers results in None being passed to client."""
+        from omnibase_core.mixins.mixin_health_check import check_http_service_health
+
+        mock_response = MockHttpResponse(status=200)
+        mock_client = MockHttpClient(response=mock_response)
+
+        await check_http_service_health(
+            "http://test.com",
+            http_client=mock_client,
+        )
+
+        assert mock_client.called_headers is None
+
+
+# =============================================================================
+# Tests for check_http_service_health URL validation
+# =============================================================================
+
+
+class TestCheckHttpServiceHealthInputValidation:
+    """Test input validation for check_http_service_health."""
+
+    @pytest.mark.asyncio
+    @pytest.mark.timeout(90)
+    async def test_invalid_url_no_scheme(self) -> None:
+        """Test that URLs without scheme return UNHEALTHY."""
+        from omnibase_core.mixins.mixin_health_check import check_http_service_health
+
+        mock_client = MockHttpClient(response=MockHttpResponse(status=200))
+        result = await check_http_service_health(
+            "test.com/health",  # Missing http://
+            http_client=mock_client,
+        )
+
+        assert result.status == "unhealthy"
+        assert any("Invalid" in issue.message for issue in result.issues)
+
+    @pytest.mark.asyncio
+    @pytest.mark.timeout(90)
+    async def test_invalid_url_no_host(self) -> None:
+        """Test that URLs without host return UNHEALTHY."""
+        from omnibase_core.mixins.mixin_health_check import check_http_service_health
+
+        mock_client = MockHttpClient(response=MockHttpResponse(status=200))
+        result = await check_http_service_health(
+            "http:///path",  # Missing host
+            http_client=mock_client,
+        )
+
+        assert result.status == "unhealthy"
+        assert any("Invalid" in issue.message for issue in result.issues)
+
+    @pytest.mark.asyncio
+    @pytest.mark.timeout(90)
+    async def test_invalid_url_scheme_ftp(self) -> None:
+        """Test that non-HTTP schemes return UNHEALTHY."""
+        from omnibase_core.mixins.mixin_health_check import check_http_service_health
+
+        mock_client = MockHttpClient(response=MockHttpResponse(status=200))
+        result = await check_http_service_health(
+            "ftp://test.com/health",  # FTP not allowed
+            http_client=mock_client,
+        )
+
+        assert result.status == "unhealthy"
+        assert any("scheme" in issue.message.lower() for issue in result.issues)
+
+    @pytest.mark.asyncio
+    @pytest.mark.timeout(90)
+    async def test_valid_https_url(self) -> None:
+        """Test that HTTPS URLs are accepted."""
+        from omnibase_core.mixins.mixin_health_check import check_http_service_health
+
+        mock_response = MockHttpResponse(status=200)
+        mock_client = MockHttpClient(response=mock_response)
+
+        result = await check_http_service_health(
+            "https://secure.test.com",
+            http_client=mock_client,
+        )
+
+        assert result.status == "healthy"
+
+    @pytest.mark.asyncio
+    @pytest.mark.timeout(90)
+    async def test_empty_url(self) -> None:
+        """Test that empty URL returns UNHEALTHY."""
+        from omnibase_core.mixins.mixin_health_check import check_http_service_health
+
+        mock_client = MockHttpClient(response=MockHttpResponse(status=200))
+        result = await check_http_service_health(
+            "",
+            http_client=mock_client,
+        )
+
+        assert result.status == "unhealthy"

@@ -94,6 +94,9 @@ from omnibase_core.protocols.container import (
 )
 
 # =============================================================================
+# Compute Module Exports
+# =============================================================================
+# =============================================================================
 # Core Module Exports
 # =============================================================================
 from omnibase_core.protocols.core import ProtocolCanonicalSerializer
@@ -113,6 +116,11 @@ from omnibase_core.protocols.event_bus import (
     ProtocolKafkaEventBusAdapter,
     ProtocolSyncEventBus,
 )
+
+# =============================================================================
+# HTTP Module Exports
+# =============================================================================
+from omnibase_core.protocols.http import ProtocolHttpClient, ProtocolHttpResponse
 
 # =============================================================================
 # Runtime Module Exports
@@ -258,6 +266,11 @@ __all__ = [
     "ProtocolComputeCache",
     "ProtocolParallelExecutor",
     "ProtocolTimingService",
+    # ==========================================================================
+    # HTTP Module
+    # ==========================================================================
+    "ProtocolHttpClient",
+    "ProtocolHttpResponse",
     # ==========================================================================
     # Runtime Module
     # ==========================================================================
