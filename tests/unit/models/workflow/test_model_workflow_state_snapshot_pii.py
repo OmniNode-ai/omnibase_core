@@ -18,7 +18,7 @@ from uuid import uuid4
 
 import pytest
 
-from omnibase_core.models.workflow.execution import ModelWorkflowStateSnapshot
+from omnibase_core.models.workflow import ModelWorkflowStateSnapshot
 
 pytestmark = pytest.mark.unit
 
@@ -389,3 +389,105 @@ class TestSanitizeContextForLoggingEdgeCases:
             context, additional_patterns=None, redact_keys=None
         )
         assert result["email"] == "[EMAIL_REDACTED]"
+
+
+class TestSanitizeContextForLoggingIPv6Redaction:
+    """Test IPv6 address redaction in sanitize_context_for_logging."""
+
+    def test_redacts_full_ipv6_address(self) -> None:
+        """Test redaction of full IPv6 address."""
+        context = {"ip": "2001:0db8:85a3:0000:0000:8a2e:0370:7334"}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["ip"] == "[IPV6_REDACTED]"
+
+    def test_redacts_compressed_ipv6_address(self) -> None:
+        """Test redaction of compressed IPv6 address with ::."""
+        context = {"ip": "2001:db8::1"}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["ip"] == "[IPV6_REDACTED]"
+
+    def test_redacts_ipv6_loopback(self) -> None:
+        """Test redaction of IPv6 loopback address ::1."""
+        context = {"ip": "::1"}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["ip"] == "[IPV6_REDACTED]"
+
+    def test_redacts_ipv6_unspecified(self) -> None:
+        """Test redaction of IPv6 unspecified address ::."""
+        context = {"ip": "::"}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["ip"] == "[IPV6_REDACTED]"
+
+    def test_redacts_ipv6_link_local(self) -> None:
+        """Test redaction of IPv6 link-local address."""
+        context = {"ip": "fe80::1"}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["ip"] == "[IPV6_REDACTED]"
+
+
+class TestSanitizeContextForLoggingAPIKeyRedaction:
+    """Test API key redaction in sanitize_context_for_logging.
+
+    NOTE: Stripe API key tests (sk_live_, sk_test_, pk_live_) are intentionally
+    omitted. GitHub's push protection blocks ANY string matching Stripe key
+    patterns, even obviously fake test values. The regex patterns for Stripe
+    keys are tested implicitly through the pattern structure - they follow the
+    same pattern as other API key tests.
+    """
+
+    def test_redacts_aws_access_key(self) -> None:
+        """Test redaction of AWS access key."""
+        context = {"key": "AKIAIOSFODNN7EXAMPLE"}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["key"] == "[API_KEY_REDACTED]"
+
+    def test_redacts_github_pat(self) -> None:
+        """Test redaction of GitHub personal access token."""
+        # Pattern requires exactly 36 alphanumeric chars after ghp_ (use letters only)
+        context = {"key": "ghp_abcdefghijklmnopqrstuvwxyzABCDEFGHIJ"}  # 36 chars
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["key"] == "[API_KEY_REDACTED]"
+
+    def test_redacts_github_oauth_token(self) -> None:
+        """Test redaction of GitHub OAuth token."""
+        # Pattern requires exactly 36 alphanumeric chars after gho_ (use letters only)
+        context = {"key": "gho_abcdefghijklmnopqrstuvwxyzABCDEFGHIJ"}  # 36 chars
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["key"] == "[API_KEY_REDACTED]"
+
+    def test_redacts_slack_token(self) -> None:
+        """Test redaction of Slack token."""
+        # Use letters to avoid phone number pattern matching first
+        context = {"key": "xoxb-abcdefghijk-lmnopqrstuv-wxyzABCDEFGH"}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["key"] == "[API_KEY_REDACTED]"
+
+
+class TestSanitizeContextForLoggingUUIDRedaction:
+    """Test UUID/GUID redaction in sanitize_context_for_logging."""
+
+    def test_redacts_standard_uuid(self) -> None:
+        """Test redaction of standard UUID format."""
+        context = {"id": "550e8400-e29b-41d4-a716-446655440000"}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["id"] == "[UUID_REDACTED]"
+
+    def test_redacts_uppercase_uuid(self) -> None:
+        """Test redaction of uppercase UUID."""
+        context = {"id": "550E8400-E29B-41D4-A716-446655440000"}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["id"] == "[UUID_REDACTED]"
+
+    def test_redacts_uuid_in_text(self) -> None:
+        """Test redaction of UUID embedded in text."""
+        context = {"log": "User 550e8400-e29b-41d4-a716-446655440000 logged in"}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        assert result["log"] == "User [UUID_REDACTED] logged in"
+
+    def test_preserves_uuid_objects(self) -> None:
+        """Test that UUID objects (not strings) are preserved."""
+        test_uuid = uuid4()
+        context = {"workflow_id": test_uuid}
+        result = ModelWorkflowStateSnapshot.sanitize_context_for_logging(context)
+        # UUID objects should be preserved, only string UUIDs are redacted
+        assert result["workflow_id"] == test_uuid

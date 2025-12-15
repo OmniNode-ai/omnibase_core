@@ -419,8 +419,12 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
         that can be serialized and restored later. This enables workflow replay,
         debugging, and state persistence with full type safety.
 
-        For JSON serialization use cases where a plain dict is preferred,
-        use ``get_workflow_snapshot()`` instead.
+        **Key Difference from get_workflow_snapshot()**:
+            - ``snapshot_workflow_state()`` → ``ModelWorkflowStateSnapshot`` for internal use
+              (type-safe access, Pydantic validation, direct restoration via
+              ``restore_workflow_state()``)
+            - ``get_workflow_snapshot()`` → ``dict[str, object]`` for external use
+              (JSON APIs, storage, logging, cross-service communication)
 
         State Population:
             The ``_workflow_state`` attribute is populated in two ways:
@@ -435,6 +439,43 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
         Returns:
             ModelWorkflowStateSnapshot if workflow state has been captured,
             None if no workflow execution has occurred or state was not set.
+            The returned snapshot is the internal state reference - callers
+            MUST NOT mutate the context dict contents (see Thread Safety).
+
+        Thread Safety:
+            The returned ``ModelWorkflowStateSnapshot`` is frozen (immutable fields)
+            and safe to pass between threads for read access. However:
+
+            - **Safe**: Passing snapshot to other threads for reading
+            - **Safe**: Serializing snapshot via ``model_dump()``
+            - **Safe**: Reading ``completed_step_ids`` and ``failed_step_ids`` (tuples)
+            - **WARNING**: Do NOT mutate ``snapshot.context`` dict contents -
+              this violates the immutability contract and affects the node state
+            - **WARNING**: This method returns the internal state reference,
+              not a deep copy. Mutating nested context structures affects the
+              node's actual state and may cause race conditions.
+
+            For isolation, create a deep copy::
+
+                import copy
+                isolated_snapshot = copy.deepcopy(node.snapshot_workflow_state())
+
+        Context Considerations:
+            The ``context`` field is a ``dict[str, Any]`` that may contain:
+
+            - **PII Risk**: User data, session info, or other sensitive data
+              may be stored in context by workflow implementations. Use
+              ``ModelWorkflowStateSnapshot.sanitize_context_for_logging()``
+              before logging or persisting to external systems.
+
+            - **Size Limits**: No enforced size limits, but recommended:
+              - Max keys: 100 (for serialization performance)
+              - Max total serialized size: 1MB
+              - Max nesting depth: 5 levels
+
+            - **Deep Copy for Nested Structures**: If context contains nested
+              mutable objects (lists, dicts), the caller should deep copy if
+              isolation is required for concurrent access patterns.
 
         Example:
             ```python
@@ -446,17 +487,19 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
             result = await node.process(input_data)
             snapshot = node.snapshot_workflow_state()
             if snapshot:
+                # Type-safe access to snapshot fields
                 logger.info("Workflow %s at step %d", snapshot.workflow_id, snapshot.current_step_index)
                 logger.info("Completed: %d, Failed: %d",
                     len(snapshot.completed_step_ids),
                     len(snapshot.failed_step_ids))
 
-                # Can be restored later
+                # Can be restored later for workflow replay
                 node.restore_workflow_state(snapshot)
             ```
 
         See Also:
-            get_workflow_snapshot: Returns dict[str, object] for JSON serialization.
+            get_workflow_snapshot: Returns dict[str, object] for JSON serialization
+                and external use.
             restore_workflow_state: Restores state from a ModelWorkflowStateSnapshot.
             update_workflow_state: Manually updates workflow state.
         """
@@ -547,11 +590,51 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
             - Step IDs overlap check (a step cannot be both completed AND failed)
 
         Args:
-            snapshot: The workflow state snapshot to restore.
+            snapshot: The workflow state snapshot to restore. The snapshot is
+                stored as-is (not deep copied) - caller retains shared reference
+                to any mutable nested context data.
 
         Raises:
-            ModelOnexError: If snapshot fails validation (e.g., future timestamp,
-                overlapping step IDs between completed and failed sets)
+            ModelOnexError: If snapshot fails validation. Error codes:
+                - INVALID_STATE: Timestamp is in the future
+                - VALIDATION_ERROR: Step IDs overlap (both completed and failed)
+
+        Thread Safety:
+            This method modifies the internal ``_workflow_state`` attribute, which
+            is NOT thread-safe:
+
+            - **NOT Safe**: Calling from multiple threads simultaneously
+            - **NOT Safe**: Calling while another thread reads via ``snapshot_workflow_state()``
+            - **Recommended**: Use external synchronization (lock) if concurrent
+              access is required, or use separate NodeOrchestrator instances per thread
+
+            The provided snapshot should not be mutated after calling this method,
+            as the node stores a direct reference (not a deep copy).
+
+        Context Considerations:
+            The restored snapshot's ``context`` dict may contain sensitive data:
+
+            - **PII Risk**: If restoring from external storage, validate that
+              context does not contain unexpected PII before processing. Use
+              ``ModelWorkflowStateSnapshot.sanitize_context_for_logging()`` if
+              you need to log the restored state.
+
+            - **Size Validation**: Large context dicts may impact performance;
+              consider validating size before restore in production.
+
+            - **No Deep Copy**: The snapshot is stored as-is. If caller needs
+              to continue modifying the snapshot's context, create a copy first::
+
+                  from copy import deepcopy
+                  isolated = ModelWorkflowStateSnapshot(
+                      workflow_id=snapshot.workflow_id,
+                      current_step_index=snapshot.current_step_index,
+                      completed_step_ids=snapshot.completed_step_ids,
+                      failed_step_ids=snapshot.failed_step_ids,
+                      context=deepcopy(snapshot.context),
+                      created_at=snapshot.created_at,
+                  )
+                  node.restore_workflow_state(isolated)
 
         Example:
             ```python
@@ -572,6 +655,10 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
             The restored snapshot is stored as-is. Since ModelWorkflowStateSnapshot
             is immutable (frozen=True), subsequent workflow operations will create
             new snapshots rather than modifying the restored one.
+
+        See Also:
+            snapshot_workflow_state: Capture current state as ModelWorkflowStateSnapshot.
+            _validate_workflow_snapshot: Internal validation logic details.
         """
         # Validate snapshot before restoring
         self._validate_workflow_snapshot(snapshot)
@@ -584,14 +671,51 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
 
         Converts the current workflow state snapshot to a plain dictionary
         suitable for JSON serialization, API responses, or external storage
-        systems that require dict format.
+        systems that require dict format. Uses ``mode="json"`` for proper
+        JSON-native type conversion (e.g., UUIDs become strings, datetimes
+        become ISO format strings).
 
-        For strongly-typed access to workflow state, use ``snapshot_workflow_state()``
-        instead, which returns the ``ModelWorkflowStateSnapshot`` model directly.
+        **Key Difference from snapshot_workflow_state()**:
+            - ``get_workflow_snapshot()`` → ``dict[str, object]`` for external use
+              (JSON APIs, storage, logging, cross-service communication)
+            - ``snapshot_workflow_state()`` → ``ModelWorkflowStateSnapshot`` for internal use
+              (type-safe access, Pydantic validation, direct restoration)
 
         Returns:
-            dict[str, object] with workflow state data that can be serialized
-            to JSON, or None if no workflow execution is in progress.
+            dict[str, object] with workflow state data that can be directly
+            serialized to JSON (all values are JSON-native types), or None
+            if no workflow execution is in progress. The returned dict is
+            a NEW dict created by Pydantic's ``model_dump()`` - modifications
+            do not affect the internal node state.
+
+        Thread Safety:
+            This method is thread-safe for the dict creation itself (Pydantic
+            model_dump creates a new dict). However, the underlying node state
+            access is NOT synchronized:
+
+            - **Safe**: The returned dict is independent of internal state
+            - **Safe**: The dict can be modified without affecting node state
+            - **Warning**: If another thread calls ``restore_workflow_state()``
+              during this call, results may be inconsistent
+            - **Recommended**: For concurrent scenarios, use external locking
+              or separate NodeOrchestrator instances per thread
+
+        Context Considerations:
+            The returned dict contains a copy of the ``context`` field:
+
+            - **PII Risk**: Before logging or sending to external systems,
+              sanitize the context. Since this returns a dict, you must
+              sanitize BEFORE calling this method using
+              ``ModelWorkflowStateSnapshot.sanitize_context_for_logging()``
+              on the model from ``snapshot_workflow_state()``.
+
+            - **Safe for Persistence**: The returned dict is fully independent
+              and can be safely stored, serialized, or transmitted without
+              affecting node state.
+
+            - **JSON-Native Types**: All values are already converted to
+              JSON-native types (strings, numbers, lists, dicts). No custom
+              serializers needed.
 
         Example:
             ```python
@@ -602,21 +726,29 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
 
             snapshot_dict = node.get_workflow_snapshot()
             if snapshot_dict:
-                # Direct JSON serialization
-                json_str = json.dumps(snapshot_dict, default=str)
+                # Direct JSON serialization - no default=str needed
+                json_str = json.dumps(snapshot_dict)
                 logger.debug("Workflow state JSON: %s", json_str)
 
                 # Access fields as dict keys
                 logger.info("Current step: %d", snapshot_dict["current_step_index"])
                 logger.info("Completed: %d steps", len(snapshot_dict["completed_step_ids"]))
 
+                # Send to external API
+                response = await client.post("/workflow/state", json=snapshot_dict)
+
                 # For restoration, use snapshot_workflow_state() to get the model
             ```
 
         See Also:
-            snapshot_workflow_state: Returns strongly-typed ModelWorkflowStateSnapshot.
+            snapshot_workflow_state: Returns strongly-typed ModelWorkflowStateSnapshot
+                for internal use and restoration.
             restore_workflow_state: Restores state from a ModelWorkflowStateSnapshot.
         """
         if self._workflow_state is None:
             return None
-        return self._workflow_state.model_dump()
+        # Use mode="json" for proper JSON-native serialization:
+        # - UUIDs become strings
+        # - datetimes become ISO format strings
+        # - All values are JSON-serializable without custom encoders
+        return self._workflow_state.model_dump(mode="json")

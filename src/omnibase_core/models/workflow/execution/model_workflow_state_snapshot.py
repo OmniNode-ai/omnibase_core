@@ -26,6 +26,7 @@ Immutability Considerations:
 
 from __future__ import annotations
 
+import json
 import re
 from datetime import UTC, datetime
 from typing import Any, ClassVar
@@ -41,6 +42,16 @@ WORKFLOW_STATE_SNAPSHOT_SCHEMA_VERSION: int = 1
 Increment when making breaking changes to the snapshot structure.
 See class docstring "Schema Versioning" for version strategy.
 """
+
+# Context size validation limits (configurable via class attributes)
+CONTEXT_MAX_KEYS: int = 100
+"""Maximum recommended number of keys in context dict (default: 100)."""
+
+CONTEXT_MAX_SIZE_BYTES: int = 1024 * 1024  # 1MB
+"""Maximum recommended serialized size of context dict in bytes (default: 1MB)."""
+
+CONTEXT_MAX_NESTING_DEPTH: int = 5
+"""Maximum recommended nesting depth of context dict (default: 5 levels)."""
 
 
 class ModelWorkflowStateSnapshot(BaseModel):
@@ -92,8 +103,16 @@ class ModelWorkflowStateSnapshot(BaseModel):
         - **Audit** context keys before serialization in production
 
         Use the ``sanitize_context_for_logging()`` class method to redact common
-        PII patterns (email, phone, SSN, credit card, IP address) from context data
-        before logging. See method docstring for customization options.
+        PII patterns from context data before logging. Default patterns include:
+        - Email addresses
+        - Phone numbers (US formats)
+        - Social Security Numbers
+        - Credit card numbers
+        - IPv4 and IPv6 addresses
+        - API keys (Stripe, AWS, GitHub, Slack, generic)
+        - UUIDs/GUIDs (optional - not always PII)
+
+        See method docstring for customization options.
 
         Workflow implementations should define clear policies for what data types
         are allowed in context to prevent accidental PII exposure.
@@ -152,13 +171,37 @@ class ModelWorkflowStateSnapshot(BaseModel):
             )
     """
 
-    # from_attributes=True enables attribute-based validation for pytest-xdist compatibility.
-    # When tests run across parallel workers, each worker imports classes independently,
-    # causing class identity to differ (id(ModelWorkflowStateSnapshot) in Worker A !=
-    # id(ModelWorkflowStateSnapshot) in Worker B). Without from_attributes=True, Pydantic
-    # rejects already-valid instances because isinstance() checks fail. This setting allows
-    # Pydantic to accept objects with matching attributes regardless of class identity.
-    # See CLAUDE.md "Pydantic from_attributes=True for Value Objects" for details.
+    # -------------------------------------------------------------------------
+    # ConfigDict Explanation:
+    # -------------------------------------------------------------------------
+    # - frozen=True: Prevents field reassignment after construction, providing
+    #   immutability at the Pydantic level. Note: This is convention-based for
+    #   mutable containers like dict - the context dict contents can still be
+    #   modified via context["key"] = value. See "Immutability Considerations"
+    #   in the module docstring and ADR-002 for the design rationale.
+    #
+    # - extra="forbid": Rejects extra fields during validation, ensuring strict
+    #   schema compliance and preventing accidental data injection.
+    #
+    # - from_attributes=True: Required for pytest-xdist parallel test execution.
+    #   When tests run across parallel workers, each worker imports classes
+    #   independently, causing class identity to differ:
+    #       id(ModelWorkflowStateSnapshot) in Worker A !=
+    #       id(ModelWorkflowStateSnapshot) in Worker B
+    #
+    #   Without from_attributes=True, Pydantic's default isinstance() validation
+    #   rejects already-valid instances because class identity differs. This
+    #   setting enables attribute-based validation instead, allowing Pydantic
+    #   to accept objects with matching attributes regardless of class identity.
+    #
+    #   Technical details:
+    #   - Default Pydantic validation uses isinstance() which checks class identity
+    #   - from_attributes=True enables ORM-style attribute extraction
+    #   - Essential for immutable value objects where equality = data, not class
+    #
+    #   See CLAUDE.md section "Pydantic from_attributes=True for Value Objects"
+    #   for the project-wide pattern and additional affected models.
+    # -------------------------------------------------------------------------
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     # Common PII patterns to redact from context data.
@@ -180,6 +223,38 @@ class ModelWorkflowStateSnapshot(BaseModel):
         (r"\b\d{3}[-\s]?\d{2}[-\s]?\d{4}\b", "[SSN_REDACTED]"),
         # IP addresses (v4)
         (r"\b(?:\d{1,3}\.){3}\d{1,3}\b", "[IP_REDACTED]"),
+        # IPv6 addresses (full and compressed forms)
+        # Matches: 2001:0db8:85a3:0000:0000:8a2e:0370:7334, ::1, fe80::1, etc.
+        (
+            r"\b(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b"  # Full form
+            r"|\b(?:[0-9a-fA-F]{1,4}:){1,7}:\b"  # Compressed trailing
+            r"|\b(?:[0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}\b"  # One zero group
+            r"|\b::(?:[0-9a-fA-F]{1,4}:){0,5}[0-9a-fA-F]{1,4}\b"  # Leading ::
+            r"|\b[0-9a-fA-F]{1,4}::(?:[0-9a-fA-F]{1,4}:){0,5}[0-9a-fA-F]{1,4}\b"  # Middle ::
+            r"|\b::1\b|\b::\b",  # Loopback and unspecified
+            "[IPV6_REDACTED]",
+        ),
+        # API keys (common formats: prefix + alphanumeric, or long hex/base64 strings)
+        # Matches: sk_live_abc123, api_key_xyz789, AKIA..., ghp_..., etc.
+        (
+            r"\b(?:sk_(?:live|test)_[a-zA-Z0-9]{24,})\b"  # Stripe keys
+            r"|\b(?:pk_(?:live|test)_[a-zA-Z0-9]{24,})\b"  # Stripe public keys
+            r"|\b(?:AKIA[0-9A-Z]{16})\b"  # AWS access keys
+            r"|\b(?:ghp_[a-zA-Z0-9]{36})\b"  # GitHub PAT
+            r"|\b(?:gho_[a-zA-Z0-9]{36})\b"  # GitHub OAuth
+            r"|\b(?:github_pat_[a-zA-Z0-9_]{22,})\b"  # GitHub fine-grained PAT
+            r"|\b(?:xox[baprs]-[a-zA-Z0-9-]{10,})\b"  # Slack tokens
+            r"|\b(?:api[_-]?key[_-]?[a-zA-Z0-9]{20,})\b",  # Generic api_key prefix
+            "[API_KEY_REDACTED]",
+        ),
+        # GUIDs/UUIDs (standard format with dashes)
+        # Note: UUIDs are often NOT PII, but may identify users/sessions in some contexts.
+        # This pattern is included but workflows can customize redaction behavior.
+        # Matches: 550e8400-e29b-41d4-a716-446655440000
+        (
+            r"\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b",
+            "[UUID_REDACTED]",
+        ),
     ]
 
     # Schema version for migration support. Increment when making breaking changes.
@@ -327,6 +402,107 @@ class ModelWorkflowStateSnapshot(BaseModel):
         assert isinstance(result, dict)
         return result
 
+    @classmethod
+    def validate_context_size(
+        cls,
+        context: WorkflowContextType,
+        *,
+        max_keys: int = CONTEXT_MAX_KEYS,
+        max_size_bytes: int = CONTEXT_MAX_SIZE_BYTES,
+        max_depth: int = CONTEXT_MAX_NESTING_DEPTH,
+    ) -> tuple[bool, list[str]]:
+        """
+        Validate context dict against size limits.
+
+        This method checks the context dict against configurable size limits
+        and returns validation status along with any warning messages.
+        Note: This method does NOT raise exceptions - it returns warnings
+        to allow callers to decide how to handle oversized contexts.
+
+        Args:
+            context: The context dictionary to validate.
+            max_keys: Maximum allowed number of keys (default: CONTEXT_MAX_KEYS = 100).
+            max_size_bytes: Maximum allowed serialized size in bytes
+                (default: CONTEXT_MAX_SIZE_BYTES = 1MB).
+            max_depth: Maximum allowed nesting depth
+                (default: CONTEXT_MAX_NESTING_DEPTH = 5).
+
+        Returns:
+            A tuple of (is_valid, warnings) where:
+            - is_valid: True if all limits are satisfied, False otherwise
+            - warnings: List of warning messages for any exceeded limits
+
+        Example:
+            >>> context = {"key1": "value1", "key2": {"nested": "value"}}
+            >>> is_valid, warnings = ModelWorkflowStateSnapshot.validate_context_size(
+            ...     context,
+            ...     max_keys=10,
+            ...     max_size_bytes=1024,
+            ...     max_depth=3,
+            ... )
+            >>> is_valid
+            True
+            >>> len(warnings)
+            0
+
+        Note:
+            - Key count includes all keys at all nesting levels
+            - Size is calculated using JSON serialization with default encoder
+            - For non-serializable values (UUID, datetime), size calculation uses
+              string representation which may slightly differ from actual storage
+        """
+        warnings: list[str] = []
+
+        # Count total keys at all levels
+        def _count_keys(obj: Any) -> int:
+            if isinstance(obj, dict):
+                count = len(obj)
+                for value in obj.values():
+                    count += _count_keys(value)
+                return count
+            elif isinstance(obj, (list, tuple)):
+                return sum(_count_keys(item) for item in obj)
+            return 0
+
+        total_keys = _count_keys(context)
+        if total_keys > max_keys:
+            warnings.append(
+                f"Context has {total_keys} keys, exceeds recommended max of {max_keys}"
+            )
+
+        # Calculate serialized size
+        try:
+            serialized = json.dumps(context, default=str)
+            size_bytes = len(serialized.encode("utf-8"))
+            if size_bytes > max_size_bytes:
+                size_kb = size_bytes / 1024
+                max_kb = max_size_bytes / 1024
+                warnings.append(
+                    f"Context size {size_kb:.1f}KB exceeds recommended max of {max_kb:.1f}KB"
+                )
+        except (TypeError, ValueError) as e:
+            warnings.append(f"Context serialization failed: {e}")
+
+        # Check nesting depth
+        def _max_depth(obj: Any, current: int = 0) -> int:
+            if isinstance(obj, dict):
+                if not obj:
+                    return current
+                return max(_max_depth(v, current + 1) for v in obj.values())
+            elif isinstance(obj, (list, tuple)):
+                if not obj:
+                    return current
+                return max(_max_depth(item, current) for item in obj)
+            return current
+
+        depth = _max_depth(context)
+        if depth > max_depth:
+            warnings.append(
+                f"Context nesting depth {depth} exceeds recommended max of {max_depth}"
+            )
+
+        return len(warnings) == 0, warnings
+
     def with_step_completed(
         self,
         step_id: UUID,
@@ -404,4 +580,10 @@ class ModelWorkflowStateSnapshot(BaseModel):
         )
 
 
-__all__ = ["ModelWorkflowStateSnapshot", "WORKFLOW_STATE_SNAPSHOT_SCHEMA_VERSION"]
+__all__ = [
+    "ModelWorkflowStateSnapshot",
+    "WORKFLOW_STATE_SNAPSHOT_SCHEMA_VERSION",
+    "CONTEXT_MAX_KEYS",
+    "CONTEXT_MAX_SIZE_BYTES",
+    "CONTEXT_MAX_NESTING_DEPTH",
+]

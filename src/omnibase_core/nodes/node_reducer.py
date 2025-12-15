@@ -360,6 +360,42 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
 
         Returns:
             ModelFSMStateSnapshot if FSM is initialized, None otherwise.
+            The returned snapshot is the internal state reference - callers
+            MUST NOT mutate the context dict contents (see Thread Safety).
+
+        Thread Safety:
+            The returned ``ModelFSMStateSnapshot`` is frozen (immutable fields)
+            and safe to pass between threads for read access. However:
+
+            - **Safe**: Passing snapshot to other threads for reading
+            - **Safe**: Serializing snapshot via ``model_dump()``
+            - **WARNING**: Do NOT mutate ``snapshot.context`` dict contents -
+              this violates the immutability contract and affects the node state
+            - **WARNING**: This method returns the internal state reference,
+              not a deep copy. Mutating nested context structures affects the
+              node's actual state and may cause race conditions.
+
+            For isolation, create a deep copy::
+
+                import copy
+                isolated_snapshot = copy.deepcopy(node.snapshot_state())
+
+        Context Considerations:
+            The ``context`` field is a ``dict[str, Any]`` that may contain:
+
+            - **PII Risk**: User data, session info, or other sensitive data
+              may be stored in context by FSM implementations. Use
+              ``ModelFSMStateSnapshot.sanitize_context_for_logging()`` or
+              similar sanitization before logging/persisting.
+
+            - **Size Limits**: No enforced size limits, but recommended:
+              - Max keys: 100 (for serialization performance)
+              - Max total serialized size: 1MB
+              - Max nesting depth: 5 levels
+
+            - **Deep Copy for Nested Structures**: If context contains nested
+              mutable objects (lists, dicts), the caller should deep copy if
+              isolation is required for concurrent access patterns.
 
         Example:
             ```python
@@ -496,10 +532,45 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
             - Timestamp is not in the future (sanity check)
 
         Args:
-            snapshot: FSM state snapshot to restore
+            snapshot: FSM state snapshot to restore. The snapshot is stored
+                as-is (not deep copied) - caller retains shared reference to
+                any mutable nested context data.
 
         Raises:
-            ModelOnexError: If FSM contract not loaded or snapshot state invalid
+            ModelOnexError: If FSM contract not loaded (VALIDATION_ERROR) or
+                snapshot state invalid (INVALID_STATE). Error codes:
+                - VALIDATION_ERROR: FSM contract not loaded
+                - INVALID_STATE: Snapshot state not in contract, or future timestamp
+
+        Thread Safety:
+            This method modifies the internal ``_fsm_state`` attribute, which
+            is NOT thread-safe:
+
+            - **NOT Safe**: Calling from multiple threads simultaneously
+            - **NOT Safe**: Calling while another thread reads via ``snapshot_state()``
+            - **Recommended**: Use external synchronization (lock) if concurrent
+              access is required, or use separate NodeReducer instances per thread
+
+            The provided snapshot should not be mutated after calling this method,
+            as the node stores a direct reference (not a deep copy).
+
+        Context Considerations:
+            The restored snapshot's ``context`` dict may contain sensitive data:
+
+            - **PII Risk**: If restoring from external storage, validate that
+              context does not contain unexpected PII before processing
+            - **Size Validation**: Large context dicts may impact performance;
+              consider validating size before restore in production
+            - **No Deep Copy**: The snapshot is stored as-is. If caller needs
+              to continue modifying the snapshot's context, create a copy first::
+
+                  import copy
+                  isolated = ModelFSMStateSnapshot(
+                      current_state=snapshot.current_state,
+                      context=copy.deepcopy(snapshot.context),
+                      history=list(snapshot.history),
+                  )
+                  node.restore_state(isolated)
 
         Example:
             ```python
@@ -519,6 +590,10 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
                     logger.info("Restored FSM state to: %s", saved_snapshot.current_state)
                 raise
             ```
+
+        See Also:
+            snapshot_state: Capture current state as ModelFSMStateSnapshot.
+            _validate_fsm_snapshot: Internal validation logic details.
         """
         if not self.fsm_contract:
             raise ModelOnexError(
@@ -544,7 +619,32 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
 
         Returns:
             dict[str, object] with FSM state data that can be serialized
-            to JSON, or None if FSM not initialized.
+            to JSON, or None if FSM not initialized. The returned dict is
+            a NEW dict created by Pydantic's ``model_dump()`` - modifications
+            do not affect the internal node state.
+
+        Thread Safety:
+            This method is thread-safe for the dict creation itself (Pydantic
+            model_dump creates a new dict). However, the underlying node state
+            access is NOT synchronized:
+
+            - **Safe**: The returned dict is independent of internal state
+            - **Warning**: If another thread calls ``restore_state()`` during
+              this call, results may be inconsistent
+            - **Recommended**: For concurrent scenarios, use external locking
+              or separate NodeReducer instances per thread
+
+        Context Considerations:
+            The returned dict contains a copy of the ``context`` field:
+
+            - **PII Risk**: Before logging or sending to external systems,
+              sanitize the context. The dict format loses access to
+              ``ModelFSMStateSnapshot.sanitize_context_for_logging()``,
+              so sanitize BEFORE calling this method if needed.
+
+            - **Safe for Persistence**: The returned dict is fully independent
+              and can be safely stored, serialized, or transmitted without
+              affecting node state.
 
         Example:
             ```python
