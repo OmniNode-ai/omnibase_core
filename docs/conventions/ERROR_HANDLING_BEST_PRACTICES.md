@@ -1592,6 +1592,63 @@ class TestServiceWithDegradation(GracefulDegradationMixin):
     pass
 ```
 
+## Validator Error Handling (Pydantic v2+)
+
+### Pattern: ModelOnexError in @field_validator
+
+**Decision**: Use `ModelOnexError` in Pydantic validators instead of `ValueError` or `PydanticCustomError`.
+
+**Rationale**:
+1. **Framework Consistency**: All ONEX errors use ModelOnexError (100% coverage across 200+ validators)
+2. **Structured Context**: Machine-readable error codes, rich debugging context
+3. **Future-Proof**: Compatible with Pydantic v2+, migration path documented for v3+
+
+**Example**:
+```python
+from pydantic import BaseModel, field_validator
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
+class ModelReducerOutput(BaseModel):
+    processing_time_ms: float
+
+    @field_validator("processing_time_ms")
+    @classmethod
+    def validate_processing_time_ms(cls, v: float) -> float:
+        """Validate processing_time_ms follows sentinel pattern.
+
+        Raises:
+            ModelOnexError: If validation fails
+        """
+        if v < -1.0:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"processing_time_ms must be >= 0.0 or exactly -1.0, got {v}",
+                context={
+                    "value": v,
+                    "field": "processing_time_ms",
+                    "sentinel_value": -1.0,
+                },
+            )
+        return v
+```
+
+**Pydantic Compatibility**:
+- Pydantic v2 propagates ModelOnexError directly (no wrapping in ValidationError)
+- Structured error context fully preserved (error_code, message, context dict)
+- Callers receive ModelOnexError instances with all metadata intact
+
+**Migration Strategy**:
+- **If Pydantic v3 breaks compatibility**: Use adapter pattern (`to_pydantic_error`)
+- **See**: [ADR-012: Validator Error Handling](../architecture/adr/ADR-012-VALIDATOR-ERROR-HANDLING.md)
+
+**Reference Implementation**:
+- `model_reducer_output.py` - Sentinel value validation
+- `model_typed_mapping.py` - Type validation (6 validators)
+- `model_event_bus_output_state.py` - State validation (3 validators)
+
+---
+
 ## Summary
 
 This error handling framework provides:
@@ -1601,6 +1658,7 @@ This error handling framework provides:
 3. **Recovery Strategies**: Multiple approaches to handle and recover from failures
 4. **Monitoring Integration**: Error metrics collection and alerting capabilities
 5. **Testing Framework**: Comprehensive testing patterns for all error scenarios
+6. **Validator Error Handling**: ModelOnexError pattern for Pydantic validators with future migration path
 
 All error handling follows ONEX principles with:
 - Complete correlation ID preservation
@@ -1608,6 +1666,13 @@ All error handling follows ONEX principles with:
 - Proper error classification
 - Recovery and monitoring capabilities
 - Zero tolerance for incomplete error information
+- Framework consistency (100% ModelOnexError coverage)
+
+### Related Documentation
+
+- [ADR-012: Validator Error Handling](../architecture/adr/ADR-012-VALIDATOR-ERROR-HANDLING.md) - Decision rationale and Pydantic compatibility
+- [Node Building Guide](../guides/node-building/README.md) - Node validation patterns
+- [Reducer Output Model](../../src/omnibase_core/models/reducer/model_reducer_output.py) - Reference implementation
 
 ---
 

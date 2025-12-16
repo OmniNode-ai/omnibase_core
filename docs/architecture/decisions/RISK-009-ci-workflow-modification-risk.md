@@ -1,6 +1,6 @@
 # RISK-009: CI Workflow Modification Risk
 
-**Status**: Mitigated
+**Status**: 🟢 **MITIGATED**
 **Date**: 2025-12-10
 **Owner**: Platform Team
 **Related**: PR #149, ADR-001-protocol-based-di-architecture.md
@@ -64,7 +64,7 @@ Without explicit protection, these modifications may not receive sufficient revi
 
 Add CODEOWNERS entry requiring platform team review for workflow changes:
 
-```
+```text
 # CI/CD workflow changes require platform team review
 /.github/workflows/ @OmniNode-ai/platform-team
 ```

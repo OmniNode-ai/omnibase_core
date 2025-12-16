@@ -13,6 +13,7 @@ import asyncio
 import concurrent.futures
 import threading
 import time
+from typing import Any
 from uuid import UUID, uuid4
 
 import pytest
@@ -141,8 +142,8 @@ class TestModelReducerOutputThreadSafety:
             items_processed=100,
         )
 
-        results = []
-        errors = []
+        results: list[dict[str, Any] | str] = []  # Can hold both dicts and JSON strings
+        errors: list[Exception] = []
 
         def serialize_to_dict():
             """Serialize to dictionary."""

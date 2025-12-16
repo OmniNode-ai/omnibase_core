@@ -1,10 +1,11 @@
-# Reducer Output Exception Consistency Analysis
+# ADR-003: Reducer Output Exception Consistency
 
 ## Document Metadata
 
 | Field | Value |
 |-------|-------|
 | **Document Type** | Architecture Decision Record (ADR) |
+| **Document Number** | ADR-003 |
 | **Status** | 🟢 **IMPLEMENTED** |
 | **Created** | 2025-12-16 |
 | **Last Updated** | 2025-12-16 |
@@ -608,7 +609,9 @@ Concurrency tests in separate file `tests/unit/models/reducer/test_model_reducer
 | 2025-12-16 | 1.1 | Claude Code | Fixed line number references to match actual implementation |
 | 2025-12-16 | 1.2 | Claude Code | Enhanced document header with metadata, purpose, audience, and usage guidance (PR #205 review feedback) |
 | 2025-12-16 | 1.3 | Claude Code | Replaced line number references with commit SHA references for maintainability |
+| 2025-12-16 | 1.4 | Claude Code | Comprehensive verification: All code snippets, language specifiers, and examples validated against implementation |
 
 ---
 
 **Document Status**: ✅ CURRENT - All code snippets verified against implementation as of 2025-12-16
+**Verification**: Comprehensive automated verification completed (7 code blocks, all with 'python' specifiers, all examples match implementation)

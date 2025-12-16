@@ -244,9 +244,14 @@ See these ADRs for reference implementations:
   - Good example of code references with commit SHAs
   - Clear structure with metadata and trade-offs
 
-- **REDUCER_OUTPUT_EXCEPTION_CONSISTENCY_ANALYSIS**:
+- **ADR-002**: Context Mutability Design Decision
+  - Good example of trade-off analysis
+  - Clear alternatives record
+
+- **ADR-003**: Reducer Output Exception Consistency
   - Good example of test coverage references
   - Clear implementation status tracking
+  - Comprehensive documentation of validation patterns
 
 ---
 
@@ -276,6 +281,7 @@ See these ADRs for reference implementations:
 **Last Updated**: 2025-12-16
 **Related Documents**:
 - ADR-001: Protocol-Based DI Architecture
-- REDUCER_OUTPUT_EXCEPTION_CONSISTENCY_ANALYSIS
+- ADR-002: Context Mutability Design Decision
+- ADR-003: Reducer Output Exception Consistency
 
 **Correlation ID**: `95cac850-05a3-43e2-9e57-ccbbef683f43`

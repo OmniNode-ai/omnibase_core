@@ -79,10 +79,14 @@ class ModelReducerOutput[T_Output](BaseModel):
         result: The new state after reduction (type determined by T_Output).
         operation_id: UUID from the corresponding ModelReducerInput for correlation.
         reduction_type: Type of reduction performed (FOLD, ACCUMULATE, MERGE, etc.).
-        processing_time_ms: Execution time in milliseconds. See "Negative Value Semantics"
-            above for detailed documentation of the -1.0 sentinel pattern.
-        items_processed: Number of items processed. See "Negative Value Semantics"
-            above for detailed documentation of the -1 sentinel pattern.
+        processing_time_ms: Execution time in milliseconds. Uses sentinel pattern:
+            -1.0 = timing measurement failed/unavailable (DO NOT use for errors),
+            >= 0.0 = actual measured time.
+            See "Negative Value Semantics" section above for full rationale and usage guide.
+        items_processed: Number of items processed. Uses sentinel pattern:
+            -1 = count unavailable due to error (DO NOT use for validation failures),
+            >= 0 = actual item count.
+            See "Negative Value Semantics" section above for full rationale and usage guide.
         conflicts_resolved: Number of conflicts resolved during reduction (default 0).
         streaming_mode: Processing mode used (BATCH, WINDOWED, CONTINUOUS).
         batches_processed: Number of batches processed (default 1).
@@ -130,10 +134,22 @@ class ModelReducerOutput[T_Output](BaseModel):
     reduction_type: EnumReductionType
 
     # Performance metrics - only -1 sentinel permitted for error signaling
-    processing_time_ms: (
-        float  # -1.0 ONLY = timing unavailable/failed, >= 0.0 = measured time
+    processing_time_ms: float = Field(
+        description=(
+            "Execution time in milliseconds. Uses sentinel pattern: "
+            "-1.0 = timing measurement failed/unavailable (sentinel), "
+            ">= 0.0 = actual measured time. "
+            "See class docstring 'Negative Value Semantics' for full details."
+        )
     )
-    items_processed: int  # -1 ONLY = count unavailable/error, >= 0 = normal count
+    items_processed: int = Field(
+        description=(
+            "Number of items processed during reduction. Uses sentinel pattern: "
+            "-1 = count unavailable due to error (sentinel), "
+            ">= 0 = actual item count. "
+            "See class docstring 'Negative Value Semantics' for full details."
+        )
+    )
 
     conflicts_resolved: int = 0
     streaming_mode: EnumStreamingMode = EnumStreamingMode.BATCH

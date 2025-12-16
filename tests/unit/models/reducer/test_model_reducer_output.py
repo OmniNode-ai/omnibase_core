@@ -1227,3 +1227,458 @@ class TestModelReducerOutputThreadSafety:
             for j in json_results
         )
         assert all('"count":42' in j or '"count": 42' in j for j in json_results)
+
+    def test_concurrent_metadata_access(self):
+        """Test concurrent access to nested metadata from multiple threads.
+
+        Validates that nested ModelReducerMetadata can be safely accessed
+        concurrently without race conditions."""
+        window_id = uuid4()
+        metadata = ModelReducerMetadata(
+            source="api_gateway",
+            trace_id="trace123",
+            correlation_id="corr456",
+            window_id=window_id,
+            tags=["production", "high_priority"],
+        )
+
+        output = ModelReducerOutput[int](
+            result=42,
+            operation_id=uuid4(),
+            reduction_type=EnumReductionType.AGGREGATE,
+            processing_time_ms=15.0,
+            items_processed=100,
+            metadata=metadata,
+        )
+
+        metadata_results = []
+
+        def read_metadata():
+            """Read metadata fields from multiple threads."""
+            for _ in range(100):
+                metadata_results.append(
+                    (
+                        output.metadata.source,
+                        output.metadata.trace_id,
+                        output.metadata.correlation_id,
+                        output.metadata.window_id,
+                        len(output.metadata.tags),
+                    )
+                )
+
+        threads = [threading.Thread(target=read_metadata) for _ in range(10)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+
+        # All reads should return consistent values
+        assert len(metadata_results) == 1000
+        assert all(r[0] == "api_gateway" for r in metadata_results)
+        assert all(r[1] == "trace123" for r in metadata_results)
+        assert all(r[2] == "corr456" for r in metadata_results)
+        assert all(r[3] == window_id for r in metadata_results)
+        assert all(r[4] == 2 for r in metadata_results)
+
+    def test_concurrent_intents_access(self):
+        """Test concurrent access to intents tuple from multiple threads.
+
+        Validates that the intents tuple can be safely accessed and iterated
+        from multiple threads without race conditions."""
+        intent1 = ModelIntent(intent_type="log", target="service1")
+        intent2 = ModelIntent(intent_type="emit", target="service2")
+
+        output = ModelReducerOutput[int](
+            result=42,
+            operation_id=uuid4(),
+            reduction_type=EnumReductionType.FOLD,
+            processing_time_ms=10.0,
+            items_processed=5,
+            intents=(intent1, intent2),
+        )
+
+        intents_results = []
+
+        def read_intents():
+            """Read intents from multiple threads."""
+            for _ in range(100):
+                intents_results.append(
+                    (
+                        len(output.intents),
+                        output.intents[0].target,
+                        output.intents[1].target,
+                    )
+                )
+
+        threads = [threading.Thread(target=read_intents) for _ in range(10)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+
+        # All reads should return consistent values
+        assert len(intents_results) == 1000
+        assert all(r[0] == 2 for r in intents_results)
+        assert all(r[1] == "service1" for r in intents_results)
+        assert all(r[2] == "service2" for r in intents_results)
+
+    def test_concurrent_model_dump_access(self):
+        """Test concurrent model_dump operations from multiple threads.
+
+        Validates that model_dump() can be called safely from multiple threads
+        without race conditions or data corruption."""
+        output = ModelReducerOutput[dict](
+            result={"total": 100, "average": 50.0},
+            operation_id=uuid4(),
+            reduction_type=EnumReductionType.AGGREGATE,
+            processing_time_ms=20.0,
+            items_processed=200,
+        )
+
+        dump_results = []
+
+        def dump_model():
+            """Dump model from multiple threads."""
+            for _ in range(50):
+                data = output.model_dump()
+                dump_results.append(data)
+
+        threads = [threading.Thread(target=dump_model) for _ in range(5)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+
+        # All dumps should be valid and consistent
+        assert len(dump_results) == 250
+        assert all(d["result"]["total"] == 100 for d in dump_results)
+        assert all(d["result"]["average"] == 50.0 for d in dump_results)
+        assert all(d["items_processed"] == 200 for d in dump_results)
+
+    def test_concurrent_complex_nested_access(self):
+        """Test concurrent access to complex nested result structures.
+
+        Validates that deeply nested result data can be safely accessed from
+        multiple threads without race conditions."""
+        complex_result = {
+            "data": {
+                "users": [
+                    {"id": 1, "name": "Alice", "scores": [10, 20, 30]},
+                    {"id": 2, "name": "Bob", "scores": [15, 25, 35]},
+                ],
+                "metadata": {
+                    "total": 2,
+                    "averages": {"Alice": 20.0, "Bob": 25.0},
+                },
+            }
+        }
+
+        output = ModelReducerOutput[dict](
+            result=complex_result,
+            operation_id=uuid4(),
+            reduction_type=EnumReductionType.AGGREGATE,
+            processing_time_ms=50.0,
+            items_processed=2,
+        )
+
+        nested_results = []
+
+        def read_nested():
+            """Read deeply nested fields from multiple threads."""
+            for _ in range(100):
+                nested_results.append(
+                    (
+                        output.result["data"]["users"][0]["name"],
+                        output.result["data"]["metadata"]["total"],
+                        output.result["data"]["metadata"]["averages"]["Alice"],
+                    )
+                )
+
+        threads = [threading.Thread(target=read_nested) for _ in range(10)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+
+        # All reads should return consistent values
+        assert len(nested_results) == 1000
+        assert all(r[0] == "Alice" for r in nested_results)
+        assert all(r[1] == 2 for r in nested_results)
+        assert all(r[2] == 20.0 for r in nested_results)
+
+    def test_no_race_conditions_on_frozen_fields(self):
+        """Test that frozen=True prevents race conditions from modifications.
+
+        Validates that any attempt to modify frozen fields from multiple threads
+        consistently raises ValidationError without race conditions."""
+        output = ModelReducerOutput[int](
+            result=42,
+            operation_id=uuid4(),
+            reduction_type=EnumReductionType.FOLD,
+            processing_time_ms=10.0,
+            items_processed=100,
+        )
+
+        errors = []
+
+        def attempt_modification():
+            """Attempt to modify frozen fields from multiple threads."""
+            for _ in range(50):
+                try:
+                    output.result = 999  # type: ignore[misc]  # Testing frozen field modification
+                except ValidationError as e:
+                    errors.append(e)
+
+        threads = [threading.Thread(target=attempt_modification) for _ in range(5)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+
+        # All modification attempts should fail with ValidationError
+        assert len(errors) == 250
+        assert all("frozen" in str(e).lower() for e in errors)
+
+    def test_concurrent_access_with_thread_pool_executor(self):
+        """Test concurrent access using ThreadPoolExecutor for realistic workload.
+
+        Validates thread safety under real-world concurrent execution patterns
+        using thread pool executor."""
+        output = ModelReducerOutput[int](
+            result=42,
+            operation_id=uuid4(),
+            reduction_type=EnumReductionType.FOLD,
+            processing_time_ms=10.0,
+            items_processed=100,
+        )
+
+        def read_and_serialize(iteration: int) -> tuple[int, str, float]:
+            """Read fields and serialize in a single operation."""
+            result = output.result
+            json_str = output.model_dump_json()
+            processing_time = output.processing_time_ms
+            return (result, json_str, processing_time)
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+            futures = [executor.submit(read_and_serialize, i) for i in range(100)]
+            results = [f.result() for f in concurrent.futures.as_completed(futures)]
+
+        # All operations should return consistent values
+        assert len(results) == 100
+        assert all(r[0] == 42 for r in results)
+        assert all('"result":42' in r[1] or '"result": 42' in r[1] for r in results)
+        assert all(r[2] == 10.0 for r in results)
+
+
+class TestModelReducerOutputImmutability:
+    """Test immutability guarantees of ModelReducerOutput."""
+
+    def test_frozen_prevents_result_modification(self):
+        """Test that frozen=True prevents result modification.
+
+        Validates that the result field cannot be modified after creation,
+        ensuring immutability of the primary output value."""
+        output = ModelReducerOutput[int](
+            result=42,
+            operation_id=uuid4(),
+            reduction_type=EnumReductionType.FOLD,
+            processing_time_ms=10.0,
+            items_processed=100,
+        )
+
+        with pytest.raises(ValidationError) as exc_info:
+            output.result = 999  # type: ignore[misc]  # Testing frozen field modification
+
+        assert "frozen" in str(exc_info.value).lower()
+
+    def test_frozen_prevents_operation_id_modification(self):
+        """Test that operation_id cannot be modified after creation.
+
+        Validates immutability of the operation correlation ID."""
+        output = ModelReducerOutput[int](
+            result=42,
+            operation_id=uuid4(),
+            reduction_type=EnumReductionType.FOLD,
+            processing_time_ms=10.0,
+            items_processed=100,
+        )
+
+        with pytest.raises(ValidationError) as exc_info:
+            output.operation_id = uuid4()  # type: ignore[misc]  # Testing frozen field modification
+
+        assert "frozen" in str(exc_info.value).lower()
+
+    def test_frozen_prevents_reduction_type_modification(self):
+        """Test that reduction_type cannot be modified after creation.
+
+        Validates immutability of the reduction operation type."""
+        output = ModelReducerOutput[int](
+            result=42,
+            operation_id=uuid4(),
+            reduction_type=EnumReductionType.FOLD,
+            processing_time_ms=10.0,
+            items_processed=100,
+        )
+
+        with pytest.raises(ValidationError) as exc_info:
+            output.reduction_type = EnumReductionType.ACCUMULATE  # type: ignore[misc]  # Testing frozen field modification
+
+        assert "frozen" in str(exc_info.value).lower()
+
+    def test_frozen_prevents_processing_time_ms_modification(self):
+        """Test that processing_time_ms cannot be modified after creation.
+
+        Validates immutability of the processing time metric."""
+        output = ModelReducerOutput[int](
+            result=42,
+            operation_id=uuid4(),
+            reduction_type=EnumReductionType.FOLD,
+            processing_time_ms=10.0,
+            items_processed=100,
+        )
+
+        with pytest.raises(ValidationError) as exc_info:
+            output.processing_time_ms = 20.0  # type: ignore[misc]  # Testing frozen field modification
+
+        assert "frozen" in str(exc_info.value).lower()
+
+    def test_frozen_prevents_items_processed_modification(self):
+        """Test that items_processed cannot be modified after creation.
+
+        Validates immutability of the items count metric."""
+        output = ModelReducerOutput[int](
+            result=42,
+            operation_id=uuid4(),
+            reduction_type=EnumReductionType.FOLD,
+            processing_time_ms=10.0,
+            items_processed=100,
+        )
+
+        with pytest.raises(ValidationError) as exc_info:
+            output.items_processed = 200  # type: ignore[misc]  # Testing frozen field modification
+
+        assert "frozen" in str(exc_info.value).lower()
+
+    def test_frozen_prevents_metadata_replacement(self):
+        """Test that metadata cannot be replaced after creation.
+
+        Validates that the metadata object reference is frozen."""
+        output = ModelReducerOutput[int](
+            result=42,
+            operation_id=uuid4(),
+            reduction_type=EnumReductionType.FOLD,
+            processing_time_ms=10.0,
+            items_processed=100,
+        )
+
+        new_metadata = ModelReducerMetadata(source="new_source")
+
+        with pytest.raises(ValidationError) as exc_info:
+            output.metadata = new_metadata  # type: ignore[misc]  # Testing frozen field modification
+
+        assert "frozen" in str(exc_info.value).lower()
+
+    def test_frozen_prevents_intents_replacement(self):
+        """Test that intents tuple cannot be replaced after creation.
+
+        Validates that the intents tuple reference is frozen."""
+        intent = ModelIntent(intent_type="log", target="service")
+        output = ModelReducerOutput[int](
+            result=42,
+            operation_id=uuid4(),
+            reduction_type=EnumReductionType.FOLD,
+            processing_time_ms=10.0,
+            items_processed=100,
+            intents=(intent,),
+        )
+
+        new_intent = ModelIntent(intent_type="emit", target="other_service")
+
+        with pytest.raises(ValidationError) as exc_info:
+            output.intents = (new_intent,)  # type: ignore[misc]  # Testing frozen field modification
+
+        assert "frozen" in str(exc_info.value).lower()
+
+    def test_frozen_prevents_timestamp_modification(self):
+        """Test that timestamp cannot be modified after creation.
+
+        Validates immutability of the creation timestamp."""
+        output = ModelReducerOutput[int](
+            result=42,
+            operation_id=uuid4(),
+            reduction_type=EnumReductionType.FOLD,
+            processing_time_ms=10.0,
+            items_processed=100,
+        )
+
+        with pytest.raises(ValidationError) as exc_info:
+            output.timestamp = datetime.now()  # type: ignore[misc]  # Testing frozen field modification
+
+        assert "frozen" in str(exc_info.value).lower()
+
+    def test_intents_tuple_immutability(self):
+        """Test that intents tuple is immutable.
+
+        Validates that the tuple structure prevents modification attempts."""
+        intent1 = ModelIntent(intent_type="log", target="service1")
+        intent2 = ModelIntent(intent_type="emit", target="service2")
+
+        output = ModelReducerOutput[int](
+            result=42,
+            operation_id=uuid4(),
+            reduction_type=EnumReductionType.FOLD,
+            processing_time_ms=10.0,
+            items_processed=100,
+            intents=(intent1, intent2),
+        )
+
+        # Tuples are immutable - assignment to index should fail
+        with pytest.raises(TypeError):
+            output.intents[0] = ModelIntent(intent_type="new", target="new")  # type: ignore[index]  # Testing tuple immutability
+
+    def test_intent_objects_frozen_after_creation(self):
+        """Test that ModelIntent objects in intents tuple are frozen.
+
+        Validates deep immutability for intent objects."""
+        intent = ModelIntent(intent_type="log", target="service")
+
+        output = ModelReducerOutput[int](
+            result=42,
+            operation_id=uuid4(),
+            reduction_type=EnumReductionType.FOLD,
+            processing_time_ms=10.0,
+            items_processed=100,
+            intents=(intent,),
+        )
+
+        # Intent objects should be frozen
+        with pytest.raises(ValidationError) as exc_info:
+            output.intents[0].target = "new_target"  # type: ignore[misc]  # Testing nested frozen field modification
+
+        assert "frozen" in str(exc_info.value).lower()
+
+    def test_immutability_with_complex_nested_result(self):
+        """Test immutability guarantees for complex nested result structures.
+
+        Validates that while the model is frozen, mutable result content
+        (dicts, lists) is NOT deeply frozen by Pydantic. This is expected
+        behavior - frozen applies to model fields, not their contents."""
+        nested_result = {"data": {"values": [1, 2, 3], "metadata": {"source": "test"}}}
+
+        output = ModelReducerOutput[dict](
+            result=nested_result,
+            operation_id=uuid4(),
+            reduction_type=EnumReductionType.AGGREGATE,
+            processing_time_ms=20.0,
+            items_processed=15,
+        )
+
+        # Cannot replace result field (frozen)
+        with pytest.raises(ValidationError):
+            output.result = {}  # type: ignore[misc]  # Testing frozen field modification
+
+        # However, result contents CAN be modified (not frozen by Pydantic)
+        # This is expected behavior - users must be aware that frozen applies
+        # to model fields, not the contents of those fields
+        output.result["data"]["values"].append(4)
+        assert output.result["data"]["values"] == [1, 2, 3, 4]

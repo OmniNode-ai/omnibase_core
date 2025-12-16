@@ -1,6 +1,6 @@
 # ADR-002: Context Mutability Design Decision
 
-**Status**: Accepted
+**Status**: 🟢 **IMPLEMENTED**
 **Date**: 2025-12-15
 **Deciders**: ONEX Framework Team
 **Related**: ADR-001-protocol-based-di-architecture.md, model_workflow_state_snapshot.py, model_fsm_state_snapshot.py

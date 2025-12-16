@@ -162,7 +162,7 @@ class TestModelReducerInputInstantiation:
 
         Validates that the generic type parameter system correctly handles int, str,
         dict, and list types, maintaining type integrity throughout instantiation."""
-        reducer_input = ModelReducerInput[type_param](
+        reducer_input = ModelReducerInput[type_param](  # type: ignore[valid-type]  # Runtime type parameter for testing
             data=data,
             reduction_type=reduction_type,
         )
@@ -256,7 +256,7 @@ class TestModelReducerInputValidation:
         # Invalid types should fail
         with pytest.raises(ValidationError) as exc_info:
             ModelReducerInput[int](
-                data="not a list",  # type: ignore[misc]
+                data="not a list",  # type: ignore[arg-type]  # Intentionally invalid for testing
                 reduction_type=EnumReductionType.FOLD,
             )
         assert "data" in str(exc_info.value).lower()
@@ -278,7 +278,7 @@ class TestModelReducerInputValidation:
         with pytest.raises(ValidationError) as exc_info:
             ModelReducerInput[int](
                 data=[1, 2],
-                reduction_type="invalid_reduction_type",  # type: ignore[misc]
+                reduction_type="invalid_reduction_type",  # type: ignore[arg-type]  # Intentionally invalid for testing
             )
         assert "reduction_type" in str(exc_info.value).lower()
 
@@ -353,7 +353,7 @@ class TestModelReducerInputValidation:
         # Invalid data type (not a list)
         with pytest.raises(ValidationError):
             ModelReducerInput[int](
-                data=123,  # type: ignore[misc]
+                data=123,  # type: ignore[arg-type]  # Intentionally invalid for testing
                 reduction_type=EnumReductionType.FOLD,
             )
 
@@ -361,7 +361,7 @@ class TestModelReducerInputValidation:
         with pytest.raises(ValidationError):
             ModelReducerInput[int](
                 data=[1, 2],
-                reduction_type="not_an_enum",  # type: ignore[misc]
+                reduction_type="not_an_enum",  # type: ignore[arg-type]  # Intentionally invalid for testing
             )
 
         # Invalid conflict_resolution
@@ -369,7 +369,7 @@ class TestModelReducerInputValidation:
             ModelReducerInput[int](
                 data=[1, 2],
                 reduction_type=EnumReductionType.FOLD,
-                conflict_resolution="invalid",  # type: ignore[misc]
+                conflict_resolution="invalid",  # type: ignore[arg-type]  # Intentionally invalid for testing
             )
 
         # Invalid streaming_mode
@@ -377,7 +377,7 @@ class TestModelReducerInputValidation:
             ModelReducerInput[int](
                 data=[1, 2],
                 reduction_type=EnumReductionType.FOLD,
-                streaming_mode="invalid",  # type: ignore[misc]
+                streaming_mode="invalid",  # type: ignore[arg-type]  # Intentionally invalid for testing
             )
 
     def test_extra_fields_rejected(self):
@@ -389,7 +389,7 @@ class TestModelReducerInputValidation:
             ModelReducerInput[int](
                 data=[1, 2],
                 reduction_type=EnumReductionType.FOLD,
-                extra_field="should_fail",  # type: ignore[misc]
+                extra_field="should_fail",  # type: ignore[call-arg]  # Intentionally invalid for testing
             )
         assert "extra_field" in str(exc_info.value).lower()
 
@@ -555,14 +555,14 @@ class TestModelReducerInputSerialization:
 
         Validates that data can be serialized to dict/JSON and back without loss
         of data or type information across int, str, dict, and list types."""
-        original = ModelReducerInput[type_param](
+        original = ModelReducerInput[type_param](  # type: ignore[valid-type]  # Runtime type parameter for testing
             data=data,
             reduction_type=reduction_type,
         )
 
         # Serialize and deserialize
         serialized = original.model_dump()
-        restored = ModelReducerInput[type_param].model_validate(serialized)
+        restored = ModelReducerInput[type_param].model_validate(serialized)  # type: ignore[valid-type]  # Runtime type parameter for testing
 
         assert restored.data == original.data
         assert restored.reduction_type == original.reduction_type
@@ -637,7 +637,7 @@ class TestModelReducerInputGenericTyping:
 
         Validates that int, str, and dict type parameters maintain their types
         throughout the model lifecycle without coercion or corruption."""
-        reducer_input = ModelReducerInput[type_param](
+        reducer_input = ModelReducerInput[type_param](  # type: ignore[valid-type]  # Runtime type parameter for testing
             data=data,
             reduction_type=EnumReductionType.FOLD,
         )
@@ -750,7 +750,7 @@ class TestModelReducerInputFrozenBehavior:
         )
 
         with pytest.raises(ValidationError) as exc_info:
-            reducer_input.new_field = "value"  # type: ignore[misc]
+            reducer_input.new_field = "value"  # type: ignore[attr-defined]  # Intentionally accessing non-existent field
 
         assert "frozen" in str(exc_info.value).lower()
 

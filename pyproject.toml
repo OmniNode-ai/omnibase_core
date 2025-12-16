@@ -120,6 +120,7 @@ pytest-rerunfailures = "^16.1"
 pytest-testmon = "^2.1.4"
 interrogate = "^1.7.0"
 hypothesis = "^6.148"
+psutil = "^7.1.3"
 
 [tool.ruff]
 target-version = "py312"

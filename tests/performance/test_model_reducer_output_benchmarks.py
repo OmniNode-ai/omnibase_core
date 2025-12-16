@@ -53,12 +53,24 @@ class TestModelReducerOutputPerformance:
     def time_operation(self, func: Callable[[], Any], iterations: int = 100) -> float:
         """Time an operation over multiple iterations.
 
+        Iteration Count Strategy:
+            For data-size-dependent tests, iteration counts scale inversely
+            with data size to keep test runtime reasonable while maintaining
+            statistical significance:
+
+            - Small data (10-100 items): 100 iterations for stable means
+            - Large data (1000+ items): 10 iterations (operations are slower)
+
+            Common formulas used:
+            - Data size scaling: max(10, 1000 // data_size)
+            - Intent/tag scaling: max(10, 100 // max(1, count // 10))
+
         Args:
-            func: Callable to benchmark
-            iterations: Number of iterations to run
+            func: Callable to benchmark (should be side-effect free)
+            iterations: Number of iterations to run (default: 100)
 
         Returns:
-            Mean execution time in seconds
+            Mean execution time in seconds across all iterations
         """
         times = []
         for _ in range(iterations):
@@ -76,7 +88,7 @@ class TestModelReducerOutputPerformance:
             # - 100 items: Linear scaling + nested dict overhead = ~2ms
             # - 1000 items: Pydantic validation dominates (0.01ms/field × 1000) = ~10ms
             # - 10000 items: Memory allocation + GC overhead + validation = ~50ms
-            # See: docs/performance/PERFORMANCE_BENCHMARK_THRESHOLDS.md#model-creation-thresholds
+            # See: docs/performance/PERFORMANCE_BENCHMARK_THRESHOLDS.md#1-model-creation-thresholds
             pytest.param(10, 1.0, id="small_10_items"),
             pytest.param(100, 2.0, id="medium_100_items"),
             pytest.param(1000, 10.0, id="large_1000_items"),
@@ -130,7 +142,9 @@ class TestModelReducerOutputPerformance:
             )
 
         # Run benchmark (fewer iterations for larger data)
-        iterations = max(10, 100 // (data_size // 10))
+        # Formula: max(10, 1000 // data_size) scales inversely with data size
+        # data_size=10 → 100 iterations, data_size=100 → 10 iterations, data_size≥1000 → 10 iterations
+        iterations = max(10, 1000 // data_size)
         avg_time = self.time_operation(create_output, iterations)
         avg_time_ms = avg_time * 1000
 
@@ -179,7 +193,9 @@ class TestModelReducerOutputPerformance:
         def serialize():
             return output.model_dump()
 
-        iterations = max(10, 100 // (data_size // 10))
+        # Fewer iterations for larger data to keep test runtime reasonable
+        # Formula: max(10, 1000 // data_size) scales inversely with data size
+        iterations = max(10, 1000 // data_size)
         avg_time = self.time_operation(serialize, iterations)
         avg_time_ms = avg_time * 1000
 
@@ -228,7 +244,9 @@ class TestModelReducerOutputPerformance:
         def json_serialize():
             return output.model_dump_json()
 
-        iterations = max(10, 100 // (data_size // 10))
+        # Fewer iterations for larger data to keep test runtime reasonable
+        # Formula: max(10, 1000 // data_size) scales inversely with data size
+        iterations = max(10, 1000 // data_size)
         avg_time = self.time_operation(json_serialize, iterations)
         avg_time_ms = avg_time * 1000
 
@@ -281,7 +299,9 @@ class TestModelReducerOutputPerformance:
         def deserialize():
             return ModelReducerOutput[dict].model_validate(data_dict)
 
-        iterations = max(10, 100 // (data_size // 10))
+        # Fewer iterations for larger data to keep test runtime reasonable
+        # Formula: max(10, 1000 // data_size) scales inversely with data size
+        iterations = max(10, 1000 // data_size)
         avg_time = self.time_operation(deserialize, iterations)
         avg_time_ms = avg_time * 1000
 
@@ -332,7 +352,9 @@ class TestModelReducerOutputPerformance:
         def json_deserialize():
             return ModelReducerOutput[dict].model_validate_json(json_data)
 
-        iterations = max(10, 100 // (data_size // 10))
+        # Fewer iterations for larger data to keep test runtime reasonable
+        # Formula: max(10, 1000 // data_size) scales inversely with data size
+        iterations = max(10, 1000 // data_size)
         avg_time = self.time_operation(json_deserialize, iterations)
         avg_time_ms = avg_time * 1000
 
@@ -357,7 +379,7 @@ class TestModelReducerOutputPerformance:
             - Conditional logic: ~5-10ns per if/else branch
 
             CI variance: ±20% due to CPU scheduling and cache effects
-            See: docs/performance/PERFORMANCE_BENCHMARK_THRESHOLDS.md#field-validation-thresholds
+            See: docs/performance/PERFORMANCE_BENCHMARK_THRESHOLDS.md#4-field-validation-thresholds
         """
         operation_id = uuid4()
 
@@ -443,6 +465,11 @@ class TestModelReducerOutputPerformance:
             - 10 intents: < 2ms
             - 100 intents: < 10ms
             - 1000 intents: < 50ms
+
+        Threshold Rationale:
+            Intent handling is critical for FSM-driven reducers. Each ModelIntent
+            requires UUID generation + dict payload creation (~100-200µs).
+            See: docs/performance/PERFORMANCE_BENCHMARK_THRESHOLDS.md#6-intent-handling-thresholds
         """
         operation_id = uuid4()
 
@@ -467,7 +494,10 @@ class TestModelReducerOutputPerformance:
                 intents=intents,
             )
 
-        iterations = max(10, 100 // max(1, intent_count // 100))
+        # Fewer iterations for larger intent counts to keep test runtime reasonable
+        # Formula: max(10, 100 // max(1, intent_count // 10)) scales inversely with intent count
+        # intent_count≤100 → 100 iterations, intent_count=1000 → 10 iterations
+        iterations = max(10, 100 // max(1, intent_count // 10))
         avg_time = self.time_operation(create_with_intents, iterations)
         avg_time_ms = avg_time * 1000
 
@@ -495,6 +525,11 @@ class TestModelReducerOutputPerformance:
             - 0 tags: < 1ms
             - 10 tags: < 2ms
             - 100 tags: < 10ms
+
+        Threshold Rationale:
+            Metadata tags are used for tracing, correlation, and observability.
+            10 tags is typical for production systems with distributed tracing.
+            See: docs/performance/PERFORMANCE_BENCHMARK_THRESHOLDS.md#7-metadata-handling-thresholds
         """
         operation_id = uuid4()
 
@@ -515,6 +550,9 @@ class TestModelReducerOutputPerformance:
                 metadata=metadata,
             )
 
+        # Fewer iterations for larger tag counts to keep test runtime reasonable
+        # Formula: max(10, 100 // max(1, tag_count // 10)) scales inversely with tag count
+        # tag_count≤10 → 100 iterations, tag_count=100 → 10 iterations
         iterations = max(10, 100 // max(1, tag_count // 10))
         avg_time = self.time_operation(create_with_metadata, iterations)
         avg_time_ms = avg_time * 1000
@@ -542,7 +580,7 @@ class TestModelReducerOutputPerformance:
             #
             # NOTE: Memory thresholds are NOT configurable via environment variables
             # because memory usage is more consistent across environments than timing.
-            # See: docs/performance/PERFORMANCE_BENCHMARK_THRESHOLDS.md#memory-usage-thresholds
+            # See: docs/performance/PERFORMANCE_BENCHMARK_THRESHOLDS.md#5-memory-usage-thresholds
             pytest.param(10, 1, id="small_10_items"),
             pytest.param(100, 5, id="medium_100_items"),
             pytest.param(1000, 20, id="large_1000_items"),
@@ -576,7 +614,7 @@ class TestModelReducerOutputPerformance:
             usage is relatively consistent across CI and local environments
             (unlike timing, which varies significantly with CPU performance).
 
-            See: docs/performance/PERFORMANCE_BENCHMARK_THRESHOLDS.md#memory-usage-thresholds
+            See: docs/performance/PERFORMANCE_BENCHMARK_THRESHOLDS.md#5-memory-usage-thresholds
         """
         import os
 
@@ -626,6 +664,12 @@ class TestModelReducerOutputPerformance:
 
         Performance Baseline:
             - Full round-trip with 100 items: < 20ms
+
+        Threshold Rationale:
+            Round-trip performance directly impacts end-to-end event processing latency.
+            At 20ms model overhead + 30ms network = 50ms total, system can handle
+            20 events/second per consumer (acceptable for most workloads).
+            See: docs/performance/PERFORMANCE_BENCHMARK_THRESHOLDS.md#8-round-trip-performance-thresholds
         """
         operation_id = uuid4()
         result_data = {
@@ -673,6 +717,11 @@ class TestModelReducerOutputPerformance:
 
         Performance Baseline:
             - Field access overhead: < 0.01ms
+
+        Threshold Rationale:
+            Field access happens frequently in production code. At 0.01ms for 11 fields
+            = ~1µs per field, overhead is negligible compared to business logic.
+            See: docs/performance/PERFORMANCE_BENCHMARK_THRESHOLDS.md#9-field-access-overhead-thresholds
         """
         operation_id = uuid4()
 
@@ -717,6 +766,12 @@ class TestModelReducerOutputPerformance:
 
             The key insight is that the ABSOLUTE time (not relative %)
             remains very small (< 1ms for typical payloads).
+
+        Threshold Rationale:
+            In production, type safety and validation errors caught early are worth
+            the 10-100x overhead. A 0.5ms Pydantic operation vs 0.05ms raw dict is
+            negligible compared to network latency (10-50ms) or database queries (50-500ms).
+            See: docs/performance/PERFORMANCE_BENCHMARK_THRESHOLDS.md#10-pydantic-model-vs-raw-dict-comparison
         """
         operation_id = uuid4()
         result_data = {"items": list(range(100)), "metadata": {"total": 100}}

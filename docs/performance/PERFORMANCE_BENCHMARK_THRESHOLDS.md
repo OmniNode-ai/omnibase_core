@@ -17,6 +17,17 @@ This document explains the rationale behind performance benchmark thresholds in 
 1. [Threshold Philosophy](#threshold-philosophy)
 2. [Environment Considerations](#environment-considerations)
 3. [Threshold Categories](#threshold-categories)
+   - [Model Creation Thresholds](#1-model-creation-thresholds)
+   - [Serialization Thresholds](#2-serialization-thresholds)
+   - [Deserialization Thresholds](#3-deserialization-thresholds)
+   - [Field Validation Thresholds](#4-field-validation-thresholds)
+   - [Memory Usage Thresholds](#5-memory-usage-thresholds)
+   - [Intent Handling Thresholds](#6-intent-handling-thresholds)
+   - [Metadata Handling Thresholds](#7-metadata-handling-thresholds)
+   - [Round-trip Performance Thresholds](#8-round-trip-performance-thresholds)
+   - [Field Access Overhead Thresholds](#9-field-access-overhead-thresholds)
+   - [Pydantic Model vs Raw Dict Comparison](#10-pydantic-model-vs-raw-dict-comparison)
+   - [Bulk Operation Thresholds](#11-bulk-operation-thresholds)
 4. [Configuration via Environment Variables](#configuration-via-environment-variables)
 5. [Adjusting Thresholds](#adjusting-thresholds)
 6. [CI Performance Degradation](#ci-performance-degradation)
@@ -195,7 +206,95 @@ unset ONEX_PERF_STRICTNESS  # or export ONEX_PERF_STRICTNESS=default
 
 **Note**: Memory thresholds are **NOT configurable** via environment variables because memory usage is more consistent across environments than timing.
 
-### 6. Bulk Operation Thresholds
+### 6. Intent Handling Thresholds
+
+**Operation**: Creating ModelReducerOutput with varying numbers of ModelIntent objects
+
+**Base Thresholds**:
+| Intent Count | Local (Strict) | Default | CI (Lenient) | Rationale |
+|--------------|---------------|---------|--------------|-----------|
+| 0 intents | < 0.5ms | < 1ms | < 2ms | Baseline creation without intents |
+| 10 intents | < 1ms | < 2ms | < 4ms | Small intent batches |
+| 100 intents | < 5ms | < 10ms | < 20ms | Medium intent batches |
+| 1000 intents | < 25ms | < 50ms | < 100ms | Large intent batches (state machine transitions) |
+
+**Why These Values?**:
+- **Intent Creation**: Each ModelIntent requires UUID generation + dict payload creation (~100-200µs)
+- **Tuple Construction**: Python tuple creation scales linearly with element count
+- **Memory Allocation**: Large intent tuples may trigger Python memory allocator overhead
+- **Validation Overhead**: Pydantic validates each intent in the tuple
+
+**Real-World Context**: Intent handling is critical for FSM-driven reducers. At 1000 intents with 50ms processing time, throughput = 20,000 intents/second (acceptable for state machine transitions).
+
+### 7. Metadata Handling Thresholds
+
+**Operation**: Creating ModelReducerOutput with ModelReducerMetadata containing varying tag counts
+
+**Base Thresholds**:
+| Tag Count | Local (Strict) | Default | CI (Lenient) | Rationale |
+|-----------|---------------|---------|--------------|-----------|
+| 0 tags | < 0.5ms | < 1ms | < 2ms | Baseline metadata creation |
+| 10 tags | < 1ms | < 2ms | < 4ms | Small tag sets (typical use case) |
+| 100 tags | < 5ms | < 10ms | < 20ms | Large tag sets (observability-heavy) |
+
+**Why These Values?**:
+- **String Allocation**: Each tag is a separate string in a list (~50-100µs per tag)
+- **List Creation**: Python list append operations are amortized O(1) but have memory overhead
+- **Validation**: Pydantic validates the entire list structure
+
+**Real-World Context**: Metadata tags are used for tracing, correlation, and observability. 10 tags is typical for production systems with distributed tracing.
+
+### 8. Round-trip Performance Thresholds
+
+**Operation**: Full event bus workflow: Create → Serialize to JSON → Deserialize from JSON → Access fields
+
+**Base Thresholds**:
+| Data Size | Local (Strict) | Default | CI (Lenient) | Rationale |
+|-----------|---------------|---------|--------------|-----------|
+| 100 items | < 10ms | < 20ms | < 40ms | End-to-end event processing |
+
+**Why These Values?**:
+- **Combined Operations**: Sum of creation (2ms) + JSON serialization (10ms) + JSON deserialization (10ms) = ~22ms base
+- **Field Access**: Accessing 5+ fields adds negligible overhead (<0.01ms)
+- **Real Event Bus**: Actual Kafka/Redpanda adds network latency (10-50ms), so model overhead must be minimal
+
+**Real-World Context**: Round-trip performance directly impacts end-to-end event processing latency. At 20ms model overhead + 30ms network = 50ms total, system can handle 20 events/second per consumer (acceptable for most workloads).
+
+### 9. Field Access Overhead Thresholds
+
+**Operation**: Accessing all fields of a frozen (immutable) Pydantic model
+
+**Base Thresholds**:
+| Operation | Local (Strict) | Default | CI (Lenient) | Rationale |
+|-----------|---------------|---------|--------------|-----------|
+| All field access | < 0.005ms | < 0.01ms | < 0.02ms | 11 fields accessed sequentially |
+
+**Why These Values?**:
+- **Frozen=True Overhead**: Pydantic's frozen models use `__setattr__` checks (~5-10ns per access)
+- **Attribute Lookup**: Python attribute access via `__getattribute__` (~20-50ns per access)
+- **Cache Benefits**: Repeated access benefits from CPU cache (first access slower than subsequent)
+
+**Real-World Context**: Field access happens frequently in production code. At 0.01ms for 11 fields = ~1µs per field, overhead is negligible compared to business logic.
+
+### 10. Pydantic Model vs Raw Dict Comparison
+
+**Operation**: Comparing performance of Pydantic ModelReducerOutput vs raw Python dict
+
+**Base Thresholds**:
+| Comparison | Threshold | Rationale |
+|------------|-----------|-----------|
+| Pydantic absolute time | < 1ms | Absolute time matters more than relative overhead |
+| Expected overhead | 10-100x slower | Validation and type checking are expensive but valuable |
+
+**Why These Values?**:
+- **Informational Only**: This benchmark is NOT a pass/fail criterion
+- **Type Safety Trade-off**: Pydantic's overhead is acceptable given the benefits (type safety, validation, IDE support)
+- **Absolute Time**: 1ms for 100-item payload is fast enough for event-driven systems
+- **Production Benefit**: Type errors caught at runtime save hours of debugging
+
+**Real-World Context**: In production, type safety and validation errors caught early are worth the 10-100x overhead. A 0.5ms Pydantic operation vs 0.05ms raw dict is negligible compared to network latency (10-50ms) or database queries (50-500ms).
+
+### 11. Bulk Operation Thresholds
 
 **Operation**: Creating/serializing many objects in a loop
 
