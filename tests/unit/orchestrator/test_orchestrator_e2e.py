@@ -1766,5 +1766,5 @@ class TestMetadataVerificationE2E:
         # Verify action metadata
         assert len(result.actions_emitted) == 1
         action = result.actions_emitted[0]
-        assert "correlation_id" in action.metadata
-        assert action.metadata["step_name"] == "single_step"
+        assert "correlation_id" in action.metadata.parameters
+        assert action.metadata.parameters["step_name"] == "single_step"

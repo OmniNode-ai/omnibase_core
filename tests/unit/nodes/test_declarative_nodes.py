@@ -195,8 +195,11 @@ class TestNodeReducer:
         result = await node.process(input_data)
 
         # Check FSM transition occurred
-        assert result.metadata["fsm_state"] == "processing"
-        assert result.metadata["fsm_success"] in (True, "True")  # Can be bool or string
+        assert getattr(result.metadata, "fsm_state", None) == "processing"
+        assert getattr(result.metadata, "fsm_success", None) in (
+            True,
+            "True",
+        )  # Can be bool or string
         assert len(result.intents) > 0  # Intents emitted
 
     @pytest.mark.asyncio
@@ -508,7 +511,7 @@ class TestDeclarativeNodesIntegration:
             metadata={"trigger": "start_event"},
         )
         result1 = await node.process(input1)
-        assert result1.metadata["fsm_state"] == "processing"
+        assert getattr(result1.metadata, "fsm_state", None) == "processing"
 
         # Transition to completed
         input2 = ModelReducerInput(
@@ -517,7 +520,7 @@ class TestDeclarativeNodesIntegration:
             metadata={"trigger": "complete_event"},
         )
         result2 = await node.process(input2)
-        assert result2.metadata["fsm_state"] == "completed"
+        assert getattr(result2.metadata, "fsm_state", None) == "completed"
         assert node.is_complete()
 
     @pytest.mark.asyncio
