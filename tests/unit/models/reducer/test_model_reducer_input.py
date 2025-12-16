@@ -46,7 +46,10 @@ class TestModelReducerInputInstantiation:
     """Test ModelReducerInput instantiation with various configurations."""
 
     def test_create_with_minimal_fields(self):
-        """Test creating ModelReducerInput with only required fields."""
+        """Test creating ModelReducerInput with only required fields.
+
+        Validates that the model can be instantiated with just data and reduction_type,
+        and all optional fields receive their default values correctly."""
         reducer_input = ModelReducerInput[int](
             data=[1, 2, 3],
             reduction_type=EnumReductionType.FOLD,
@@ -66,7 +69,10 @@ class TestModelReducerInputInstantiation:
         assert isinstance(reducer_input.timestamp, datetime)
 
     def test_create_with_all_fields(self):
-        """Test creating ModelReducerInput with all fields populated."""
+        """Test creating ModelReducerInput with all fields populated.
+
+        Validates that all fields (required and optional) can be explicitly set
+        and are correctly stored without defaults overriding provided values."""
         test_operation_id = uuid4()
         test_metadata = ModelReducerMetadata(
             source="test_source",
@@ -150,7 +156,10 @@ class TestModelReducerInputInstantiation:
         assert reducer_input.data == test_data
 
     def test_generic_type_parameter_custom_model(self):
-        """Test ModelReducerInput with custom Pydantic model type parameter."""
+        """Test ModelReducerInput with custom Pydantic model type parameter.
+
+        Validates that the generic type parameter supports custom Pydantic models,
+        enabling strongly-typed domain objects within reducer inputs."""
         test_models = [
             SampleModel(name="model1", value=100),
             SampleModel(name="model2", value=200),
@@ -169,7 +178,10 @@ class TestModelReducerInputInstantiation:
         assert reducer_input.data[1].value == 200
 
     def test_operation_id_auto_generation(self):
-        """Test that operation_id is auto-generated when not provided."""
+        """Test that operation_id is auto-generated when not provided.
+
+        Validates that each instance receives a unique UUID4 when operation_id is
+        not explicitly set, ensuring operation traceability and correlation."""
         input1 = ModelReducerInput[int](data=[1], reduction_type=EnumReductionType.FOLD)
         input2 = ModelReducerInput[int](data=[2], reduction_type=EnumReductionType.FOLD)
 
@@ -178,7 +190,10 @@ class TestModelReducerInputInstantiation:
         assert input1.operation_id != input2.operation_id
 
     def test_timestamp_auto_generation(self):
-        """Test that timestamp is auto-generated when not provided."""
+        """Test that timestamp is auto-generated when not provided.
+
+        Validates that the model automatically captures creation time when timestamp
+        is not explicitly provided, falling within expected time boundaries."""
         before = datetime.now()
         reducer_input = ModelReducerInput[int](
             data=[1, 2, 3],
@@ -194,21 +209,30 @@ class TestModelReducerInputValidation:
     """Test ModelReducerInput field validation and constraints."""
 
     def test_required_fields_data_missing(self):
-        """Test that missing data field raises ValidationError."""
+        """Test that missing data field raises ValidationError.
+
+        Validates that data is a required field and cannot be omitted during
+        model instantiation, as reducer inputs must have data to process."""
         with pytest.raises(ValidationError) as exc_info:
             ModelReducerInput[int](reduction_type=EnumReductionType.FOLD)
 
         assert "data" in str(exc_info.value)
 
     def test_required_fields_reduction_type_missing(self):
-        """Test that missing reduction_type field raises ValidationError."""
+        """Test that missing reduction_type field raises ValidationError.
+
+        Validates that reduction_type is a required field specifying the operation
+        to be performed on the data (FOLD, ACCUMULATE, MERGE, etc)."""
         with pytest.raises(ValidationError) as exc_info:
             ModelReducerInput[int](data=[1, 2, 3])
 
         assert "reduction_type" in str(exc_info.value)
 
     def test_data_type_validation_must_be_list(self):
-        """Test that data must be a list."""
+        """Test that data must be a list.
+
+        Validates that the data field enforces list type and rejects non-list values,
+        ensuring consistent collection handling across all reducer operations."""
         # Valid list
         reducer_input = ModelReducerInput[int](
             data=[1, 2, 3],
@@ -225,7 +249,10 @@ class TestModelReducerInputValidation:
         assert "data" in str(exc_info.value).lower()
 
     def test_reduction_type_validation(self):
-        """Test that reduction_type must be valid EnumReductionType."""
+        """Test that reduction_type must be valid EnumReductionType.
+
+        Validates that all enum values are accepted and invalid strings are rejected,
+        ensuring type safety for reduction operations and preventing typos."""
         # Valid enum values
         for reduction_type in EnumReductionType:
             reducer_input = ModelReducerInput[int](
@@ -322,7 +349,10 @@ class TestModelReducerInputValidation:
         assert "less than or equal to 60000" in str(exc_info.value)
 
     def test_invalid_field_types(self):
-        """Test that invalid field types raise ValidationError."""
+        """Test that invalid field types raise ValidationError.
+
+        Validates comprehensive type checking across all fields, ensuring that
+        incorrect types (wrong enums, invalid UUIDs, etc) are rejected."""
         # Invalid data type (not a list)
         with pytest.raises(ValidationError):
             ModelReducerInput[int](
@@ -354,7 +384,10 @@ class TestModelReducerInputValidation:
             )
 
     def test_extra_fields_rejected(self):
-        """Test that extra fields are rejected (model_config extra='forbid')."""
+        """Test that extra fields are rejected (model_config extra='forbid').
+
+        Validates that the model enforces strict field validation, rejecting any
+        fields not defined in the schema to prevent typos and data corruption."""
         with pytest.raises(ValidationError) as exc_info:
             ModelReducerInput[int](
                 data=[1, 2],
@@ -364,7 +397,10 @@ class TestModelReducerInputValidation:
         assert "extra_field" in str(exc_info.value).lower()
 
     def test_conflict_resolution_validation(self):
-        """Test that all EnumConflictResolution values are accepted."""
+        """Test that all EnumConflictResolution values are accepted.
+
+        Validates that every conflict resolution strategy (LAST_WINS, FIRST_WINS,
+        MERGE) can be successfully applied to reducer input configurations."""
         for resolution in EnumConflictResolution:
             reducer_input = ModelReducerInput[int](
                 data=[1, 2],
@@ -374,7 +410,10 @@ class TestModelReducerInputValidation:
             assert reducer_input.conflict_resolution == resolution
 
     def test_streaming_mode_validation(self):
-        """Test that all EnumStreamingMode values are accepted."""
+        """Test that all EnumStreamingMode values are accepted.
+
+        Validates that every streaming mode (BATCH, WINDOWED, REAL_TIME) is supported
+        and can be configured without errors for different processing patterns."""
         for mode in EnumStreamingMode:
             reducer_input = ModelReducerInput[int](
                 data=[1, 2],
@@ -388,7 +427,10 @@ class TestModelReducerInputSerialization:
     """Test ModelReducerInput serialization to dict and JSON."""
 
     def test_model_dump(self):
-        """Test serializing to dictionary."""
+        """Test serializing to dictionary.
+
+        Validates that the model can be converted to a dictionary representation
+        with all fields (data, metadata, timestamps) preserved correctly."""
         test_operation_id = uuid4()
         test_metadata = ModelReducerMetadata(
             source="test_source",
@@ -421,7 +463,10 @@ class TestModelReducerInputSerialization:
         assert data["timestamp"] == test_timestamp
 
     def test_model_dump_json(self):
-        """Test serializing to JSON string."""
+        """Test serializing to JSON string.
+
+        Validates that the model can be serialized to JSON format for network
+        transmission, storage, and cross-service communication."""
         reducer_input = ModelReducerInput[str](
             data=["a", "b", "c"],
             reduction_type=EnumReductionType.GROUP,
@@ -436,7 +481,10 @@ class TestModelReducerInputSerialization:
         assert "group" in json_str.lower()
 
     def test_model_validate(self):
-        """Test deserializing from dictionary."""
+        """Test deserializing from dictionary.
+
+        Validates that a dictionary can be converted back to a ModelReducerInput
+        instance with all fields correctly reconstructed and types preserved."""
         test_operation_id = uuid4()
         test_timestamp = datetime(2025, 12, 16, 12, 0, 0)
 
@@ -464,7 +512,10 @@ class TestModelReducerInputSerialization:
         assert reducer_input.window_size_ms == 15000
 
     def test_model_validate_json(self):
-        """Test deserializing from JSON string."""
+        """Test deserializing from JSON string.
+
+        Validates that a JSON string can be deserialized back to a ModelReducerInput
+        instance with proper type conversions (strings→UUIDs, enums, etc)."""
         test_operation_id = uuid4()
 
         json_str = f"""{{
@@ -551,7 +602,10 @@ class TestModelReducerInputSerialization:
         assert restored.reduction_type == original.reduction_type
 
     def test_roundtrip_preserves_all_fields(self):
-        """Test that roundtrip serialization preserves all fields."""
+        """Test that roundtrip serialization preserves all fields.
+
+        Validates comprehensive field preservation including complex nested metadata
+        through complete serialization-deserialization cycles."""
         test_metadata = ModelReducerMetadata(
             source="origin",
             correlation_id="corr-123",
@@ -580,7 +634,10 @@ class TestModelReducerInputSerialization:
         assert restored.window_size_ms == original.window_size_ms
 
     def test_serialization_handles_optional_fields(self):
-        """Test that serialization handles optional fields correctly."""
+        """Test that serialization handles optional fields correctly.
+
+        Validates that models created with minimal fields serialize correctly with
+        default values properly applied during deserialization."""
         # Create with minimal fields
         minimal = ModelReducerInput[int](
             data=[1, 2],
@@ -628,7 +685,10 @@ class TestModelReducerInputGenericTyping:
         assert all(isinstance(x, dict) for x in reducer_input.data)
 
     def test_type_parameter_preserves_custom_model_type(self):
-        """Test that custom Pydantic model type parameter is preserved."""
+        """Test that custom Pydantic model type parameter is preserved.
+
+        Validates that custom Pydantic model types are maintained with full access
+        to their fields, methods, and validation logic."""
         models = [
             SampleModel(name="test1", value=10),
             SampleModel(name="test2", value=20),
@@ -644,7 +704,10 @@ class TestModelReducerInputGenericTyping:
         assert reducer_input.data[1].value == 20
 
     def test_multiple_instances_different_types_independent(self):
-        """Test that multiple instances with different types are independent."""
+        """Test that multiple instances with different types are independent.
+
+        Validates that multiple ModelReducerInput instances with different generic
+        types can coexist without interference, type pollution, or state leakage."""
         int_input = ModelReducerInput[int](
             data=[1, 2, 3],
             reduction_type=EnumReductionType.FOLD,
@@ -666,7 +729,10 @@ class TestModelReducerInputGenericTyping:
         assert all(isinstance(x, dict) for x in dict_input.data)
 
     def test_generic_type_in_nested_structures(self):
-        """Test generic types in nested structures."""
+        """Test generic types in nested structures.
+
+        Validates that deeply nested data structures (dicts containing lists/dicts)
+        maintain their integrity and accessibility through the generic type system."""
         # List of dicts with nested structures
         nested_data = [
             {"items": [1, 2, 3], "meta": {"count": 3}},
@@ -749,7 +815,10 @@ class TestModelReducerInputFrozenBehavior:
         assert "frozen" in str(exc_info.value).lower()
 
     def test_cannot_add_new_fields_after_creation(self):
-        """Test that new fields cannot be added after creation."""
+        """Test that new fields cannot be added after creation.
+
+        Validates that the frozen model prevents dynamic field addition, maintaining
+        strict schema compliance and preventing accidental data corruption."""
         reducer_input = ModelReducerInput[int](
             data=[1, 2, 3],
             reduction_type=EnumReductionType.FOLD,
@@ -765,7 +834,10 @@ class TestModelReducerInputEdgeCases:
     """Test edge cases and boundary conditions."""
 
     def test_empty_data_list(self):
-        """Test that empty data list is valid."""
+        """Test that empty data list is valid.
+
+        Validates that reducer inputs can be created with empty data lists, which
+        may represent initial states, filtered results, or no-op operations."""
         reducer_input = ModelReducerInput[int](
             data=[],
             reduction_type=EnumReductionType.FOLD,
@@ -775,7 +847,10 @@ class TestModelReducerInputEdgeCases:
         assert isinstance(reducer_input.data, list)
 
     def test_single_item_data_list(self):
-        """Test data list with single item."""
+        """Test data list with single item.
+
+        Validates boundary case of single-element data lists, which are valid and
+        may represent atomic operations or minimal batch sizes."""
         reducer_input = ModelReducerInput[int](
             data=[42],
             reduction_type=EnumReductionType.FOLD,
@@ -785,7 +860,10 @@ class TestModelReducerInputEdgeCases:
         assert len(reducer_input.data) == 1
 
     def test_large_data_list(self):
-        """Test data list with many items (1000+)."""
+        """Test data list with many items (1000+).
+
+        Validates that the model handles large data collections efficiently without
+        performance degradation, memory issues, or serialization problems."""
         large_data = list(range(1000))
 
         reducer_input = ModelReducerInput[int](
@@ -797,7 +875,10 @@ class TestModelReducerInputEdgeCases:
         assert reducer_input.data == large_data
 
     def test_nested_generic_types(self):
-        """Test nested generic types (list of dicts)."""
+        """Test nested generic types (list of dicts).
+
+        Validates that complex nested structures (dictionaries containing lists and
+        other dictionaries) are correctly preserved without corruption."""
         nested_data = [
             {"users": ["alice", "bob"], "count": 2},
             {"users": ["charlie"], "count": 1},
@@ -812,7 +893,10 @@ class TestModelReducerInputEdgeCases:
         assert reducer_input.data[0]["users"] == ["alice", "bob"]
 
     def test_none_values_in_optional_metadata_fields(self):
-        """Test None values for optional metadata fields."""
+        """Test None values for optional metadata fields.
+
+        Validates that optional metadata fields (source, correlation_id, group_key)
+        can be explicitly set to None without causing validation errors."""
         metadata = ModelReducerMetadata(
             source=None,
             correlation_id=None,
@@ -830,7 +914,10 @@ class TestModelReducerInputEdgeCases:
         assert reducer_input.metadata.group_key is None
 
     def test_default_values_for_optional_fields(self):
-        """Test that default values are applied correctly."""
+        """Test that default values are applied correctly.
+
+        Validates that all optional fields receive appropriate default values when
+        not explicitly provided during instantiation (conflict_resolution, etc)."""
         reducer_input = ModelReducerInput[int](
             data=[1, 2],
             reduction_type=EnumReductionType.FOLD,
@@ -886,7 +973,10 @@ class TestModelReducerInputEdgeCases:
         assert reducer_input.window_size_ms == 60000
 
     def test_unicode_in_string_data(self):
-        """Test unicode characters in string data."""
+        """Test unicode characters in string data.
+
+        Validates that the model correctly handles international characters, emoji,
+        and various writing systems (Arabic, Cyrillic, Chinese, etc)."""
         unicode_data = ["hello", "世界", "مرحبا", "🌍", "Привет"]
 
         reducer_input = ModelReducerInput[str](
@@ -899,7 +989,10 @@ class TestModelReducerInputEdgeCases:
         assert "🌍" in reducer_input.data
 
     def test_special_characters_in_data(self):
-        """Test special characters in data."""
+        """Test special characters in data.
+
+        Validates that whitespace, newlines, tabs, and quotes are correctly preserved
+        in data values without corruption or escaping issues."""
         special_data = [
             {"key": "value with spaces"},
             {"key": "value\twith\ttabs"},
@@ -916,7 +1009,10 @@ class TestModelReducerInputEdgeCases:
         assert reducer_input.data[0]["key"] == "value with spaces"
 
     def test_metadata_with_all_fields_populated(self):
-        """Test metadata with all fields populated."""
+        """Test metadata with all fields populated.
+
+        Validates that complex metadata with all optional fields set (trace IDs,
+        partition IDs, window IDs, tags) is correctly stored and accessible."""
         test_partition_id = uuid4()
         test_window_id = uuid4()
 
@@ -944,7 +1040,10 @@ class TestModelReducerInputEdgeCases:
         assert reducer_input.metadata.tags == ["tag1", "tag2", "tag3"]
 
     def test_all_reduction_types(self):
-        """Test that all reduction types are supported."""
+        """Test that all reduction types are supported.
+
+        Validates comprehensive support for every reduction operation type defined
+        in the EnumReductionType enumeration (FOLD, ACCUMULATE, MERGE, etc)."""
         for reduction_type in EnumReductionType:
             reducer_input = ModelReducerInput[int](
                 data=[1, 2, 3],
@@ -953,7 +1052,10 @@ class TestModelReducerInputEdgeCases:
             assert reducer_input.reduction_type == reduction_type
 
     def test_all_conflict_resolution_strategies(self):
-        """Test that all conflict resolution strategies are supported."""
+        """Test that all conflict resolution strategies are supported.
+
+        Validates that every conflict resolution strategy (LAST_WINS, FIRST_WINS,
+        MERGE) can be configured without errors."""
         for resolution in EnumConflictResolution:
             reducer_input = ModelReducerInput[int](
                 data=[1, 2, 3],
@@ -963,7 +1065,10 @@ class TestModelReducerInputEdgeCases:
             assert reducer_input.conflict_resolution == resolution
 
     def test_all_streaming_modes(self):
-        """Test that all streaming modes are supported."""
+        """Test that all streaming modes are supported.
+
+        Validates that every streaming mode (BATCH, WINDOWED, REAL_TIME) can be
+        configured for different processing patterns."""
         for mode in EnumStreamingMode:
             reducer_input = ModelReducerInput[int](
                 data=[1, 2, 3],

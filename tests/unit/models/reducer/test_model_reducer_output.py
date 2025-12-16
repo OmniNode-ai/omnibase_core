@@ -36,7 +36,10 @@ class TestModelReducerOutputInstantiation:
     """Test ModelReducerOutput instantiation with various configurations."""
 
     def test_create_with_minimal_fields(self):
-        """Test creating ModelReducerOutput with only required fields."""
+        """Test creating ModelReducerOutput with only required fields.
+
+        Validates that the model can be instantiated with required fields only,
+        and all optional fields receive their default values correctly."""
         operation_id = uuid4()
 
         output = ModelReducerOutput[int](
@@ -63,7 +66,10 @@ class TestModelReducerOutputInstantiation:
         assert isinstance(output.timestamp, datetime)
 
     def test_create_with_all_fields(self):
-        """Test creating ModelReducerOutput with all fields populated."""
+        """Test creating ModelReducerOutput with all fields populated.
+
+        Validates that all fields (required and optional) can be explicitly set
+        and are correctly stored without defaults overriding provided values."""
         operation_id = uuid4()
         intent_id = uuid4()
         window_id = uuid4()
@@ -171,7 +177,10 @@ class TestModelReducerOutputInstantiation:
         assert len(output.result) == 7
 
     def test_generic_type_parameter_custom_model(self):
-        """Test ModelReducerOutput with custom Pydantic model type parameter."""
+        """Test ModelReducerOutput with custom Pydantic model type parameter.
+
+        Validates that custom Pydantic models can be used as result types,
+        enabling strongly-typed domain objects in reducer outputs."""
         test_data = ModelTestData(value=42, label="answer")
 
         output = ModelReducerOutput[ModelTestData](
@@ -261,7 +270,10 @@ class TestModelReducerOutputValidation:
         assert "Field required" in error_msg
 
     def test_result_type_validation(self):
-        """Test that result field accepts correct type."""
+        """Test that result field accepts correct type.
+
+        Validates that the result field correctly stores values matching the
+        generic type parameter."""
         # Should accept int when typed as int
         output = ModelReducerOutput[int](
             result=42,
@@ -273,7 +285,10 @@ class TestModelReducerOutputValidation:
         assert output.result == 42
 
     def test_operation_id_uuid_validation(self):
-        """Test that operation_id must be a valid UUID."""
+        """Test that operation_id must be a valid UUID.
+
+        Validates UUID type enforcement and automatic conversion from string
+        representations to UUID objects."""
         valid_uuid = uuid4()
 
         output = ModelReducerOutput[int](
@@ -299,7 +314,10 @@ class TestModelReducerOutputValidation:
         assert isinstance(output2.operation_id, UUID)
 
     def test_reduction_type_validation(self):
-        """Test that reduction_type must be a valid EnumReductionType."""
+        """Test that reduction_type must be a valid EnumReductionType.
+
+        Validates that all enum values are accepted and invalid strings are rejected,
+        ensuring type safety for reduction operations."""
         # Test all valid reduction types
         for reduction_type in EnumReductionType:
             output = ModelReducerOutput[int](
@@ -324,7 +342,10 @@ class TestModelReducerOutputValidation:
         assert "reduction_type" in str(exc_info.value)
 
     def test_processing_time_ms_validation_negative(self):
-        """Test that negative processing_time_ms is accepted (no constraint)."""
+        """Test that negative processing_time_ms is accepted (no constraint).
+
+        Note: The model does not enforce non-negative constraints on processing time,
+        allowing flexibility for special cases or error conditions."""
         # Note: The model does not enforce non-negative constraint
         output = ModelReducerOutput[int](
             result=42,
@@ -337,7 +358,10 @@ class TestModelReducerOutputValidation:
         assert output.processing_time_ms == -1.0
 
     def test_processing_time_ms_validation_zero(self):
-        """Test that zero processing_time_ms is valid (instant processing)."""
+        """Test that zero processing_time_ms is valid (instant processing).
+
+        Validates that zero values are accepted, representing operations that
+        complete instantly or near-instantly."""
         output = ModelReducerOutput[int](
             result=42,
             operation_id=uuid4(),
@@ -349,7 +373,10 @@ class TestModelReducerOutputValidation:
         assert output.processing_time_ms == 0.0
 
     def test_processing_time_ms_validation_positive(self):
-        """Test that positive processing_time_ms is valid."""
+        """Test that positive processing_time_ms is valid.
+
+        Validates that typical positive values for processing time are correctly
+        stored and retrieved."""
         output = ModelReducerOutput[int](
             result=42,
             operation_id=uuid4(),
@@ -361,7 +388,10 @@ class TestModelReducerOutputValidation:
         assert output.processing_time_ms == 42.5
 
     def test_items_processed_validation_negative(self):
-        """Test that negative items_processed is accepted (no constraint)."""
+        """Test that negative items_processed is accepted (no constraint).
+
+        Note: The model does not enforce non-negative constraints on item counts,
+        allowing flexibility for special cases or rollback scenarios."""
         # Note: The model does not enforce non-negative constraint
         output = ModelReducerOutput[int](
             result=42,
@@ -374,7 +404,10 @@ class TestModelReducerOutputValidation:
         assert output.items_processed == -1
 
     def test_items_processed_validation_zero(self):
-        """Test that zero items_processed is valid (no items processed)."""
+        """Test that zero items_processed is valid (no items processed).
+
+        Validates that zero values are accepted, representing operations with
+        empty input sets or no-op reductions."""
         output = ModelReducerOutput[int](
             result=42,
             operation_id=uuid4(),
@@ -386,7 +419,10 @@ class TestModelReducerOutputValidation:
         assert output.items_processed == 0
 
     def test_items_processed_validation_positive(self):
-        """Test that positive items_processed is valid."""
+        """Test that positive items_processed is valid.
+
+        Validates that typical positive values for item counts are correctly
+        stored and retrieved."""
         output = ModelReducerOutput[int](
             result=42,
             operation_id=uuid4(),
@@ -398,7 +434,10 @@ class TestModelReducerOutputValidation:
         assert output.items_processed == 1000
 
     def test_invalid_field_types(self):
-        """Test that invalid field types are rejected."""
+        """Test that invalid field types are rejected.
+
+        Validates comprehensive type checking across all fields, ensuring that
+        incorrect types are rejected with clear validation error messages."""
         # Invalid result type (when model expects strict typing)
         # Note: Pydantic may coerce some types, so test truly incompatible types
 
@@ -434,7 +473,10 @@ class TestModelReducerOutputValidation:
             )
 
     def test_extra_fields_rejected(self):
-        """Test that extra fields are rejected (extra='forbid')."""
+        """Test that extra fields are rejected (extra='forbid').
+
+        Validates that the model enforces strict field validation, rejecting any
+        fields not defined in the schema to prevent typos and data corruption."""
         with pytest.raises(ValidationError) as exc_info:
             ModelReducerOutput[int](
                 result=42,
@@ -454,7 +496,10 @@ class TestModelReducerOutputSerialization:
     """Test ModelReducerOutput serialization and deserialization."""
 
     def test_model_dump(self):
-        """Test serializing output to dictionary."""
+        """Test serializing output to dictionary.
+
+        Validates that the model can be converted to a dictionary representation
+        with all fields (result, metadata, intents) preserved correctly."""
         operation_id = uuid4()
 
         output = ModelReducerOutput[int](
@@ -478,7 +523,10 @@ class TestModelReducerOutputSerialization:
         assert "timestamp" in data
 
     def test_model_dump_json(self):
-        """Test serializing output to JSON string."""
+        """Test serializing output to JSON string.
+
+        Validates that the model can be serialized to JSON format for network
+        transmission, storage, and cross-service communication."""
         output = ModelReducerOutput[str](
             result="success",
             operation_id=uuid4(),
@@ -498,7 +546,10 @@ class TestModelReducerOutputSerialization:
         assert "items_processed" in json_str
 
     def test_model_validate(self):
-        """Test deserializing output from dictionary."""
+        """Test deserializing output from dictionary.
+
+        Validates that a dictionary can be converted back to a ModelReducerOutput
+        instance with all fields correctly reconstructed and types preserved."""
         operation_id = uuid4()
 
         data = {
@@ -518,7 +569,10 @@ class TestModelReducerOutputSerialization:
         assert output.items_processed == 100
 
     def test_model_validate_json(self):
-        """Test deserializing output from JSON string."""
+        """Test deserializing output from JSON string.
+
+        Validates that a JSON string can be deserialized back to a ModelReducerOutput
+        instance with proper type conversions (strings→UUIDs, enums, etc)."""
         operation_id = str(uuid4())
 
         json_str = f"""{{
@@ -614,7 +668,10 @@ class TestModelReducerOutputSerialization:
         assert str(operation_id) in json_str
 
     def test_roundtrip_preserves_all_fields(self):
-        """Test that roundtrip serialization preserves all fields."""
+        """Test that roundtrip serialization preserves all fields.
+
+        Validates comprehensive field preservation including complex nested metadata,
+        intents, and all optional fields through complete serialization cycles."""
         operation_id = uuid4()
         window_id = uuid4()
 
@@ -659,7 +716,10 @@ class TestModelReducerOutputSerialization:
         assert restored.metadata.source == original.metadata.source
 
     def test_serialization_handles_optional_fields(self):
-        """Test that serialization correctly handles optional metadata fields."""
+        """Test that serialization correctly handles optional metadata fields.
+
+        Validates that models created with minimal fields serialize correctly with
+        default values properly applied during deserialization."""
         output = ModelReducerOutput[int](
             result=42,
             operation_id=uuid4(),
@@ -737,7 +797,10 @@ class TestModelReducerOutputGenericTyping:
         assert len(output.result) == 5
 
     def test_type_parameter_preserves_custom_model_type(self):
-        """Test that generic type parameter preserves custom model type."""
+        """Test that custom Pydantic model type parameter is preserved.
+
+        Validates that custom Pydantic model types are maintained with full access
+        to their fields, methods, and validation logic."""
         test_data = ModelTestData(value=100, label="test")
 
         output = ModelReducerOutput[ModelTestData](
@@ -753,7 +816,10 @@ class TestModelReducerOutputGenericTyping:
         assert output.result.label == "test"
 
     def test_multiple_instances_different_result_types_independent(self):
-        """Test that multiple instances with different result types are independent."""
+        """Test that multiple instances with different result types are independent.
+
+        Validates that multiple ModelReducerOutput instances with different generic
+        types can coexist without interference, type pollution, or state leakage."""
         output_int = ModelReducerOutput[int](
             result=42,
             operation_id=uuid4(),
@@ -788,7 +854,10 @@ class TestModelReducerOutputGenericTyping:
         assert output_str.operation_id != output_dict.operation_id
 
     def test_generic_type_in_nested_structures(self):
-        """Test generic type parameter with nested data structures."""
+        """Test generic type parameter with nested data structures.
+
+        Validates that deeply nested data structures (dicts containing lists/dicts)
+        maintain their integrity and accessibility through the generic type system."""
         nested_result = {
             "level1": {
                 "level2": {
@@ -925,7 +994,10 @@ class TestModelReducerOutputFrozenBehavior:
         assert "frozen" in str(exc_info.value).lower()
 
     def test_cannot_add_new_fields_after_creation(self):
-        """Test that new fields cannot be added after creation."""
+        """Test that new fields cannot be added after creation.
+
+        Validates that the frozen model prevents dynamic field addition, maintaining
+        strict schema compliance and preventing accidental data corruption."""
         output = ModelReducerOutput[int](
             result=42,
             operation_id=uuid4(),
@@ -942,7 +1014,10 @@ class TestModelReducerOutputEdgeCases:
     """Test edge cases and boundary conditions for ModelReducerOutput."""
 
     def test_zero_processing_time(self):
-        """Test edge case of zero processing time (instant processing)."""
+        """Test edge case of zero processing time (instant processing).
+
+        Validates that zero processing time is accepted for operations that
+        complete instantaneously or synchronously without measurable overhead."""
         output = ModelReducerOutput[int](
             result=42,
             operation_id=uuid4(),
@@ -954,7 +1029,10 @@ class TestModelReducerOutputEdgeCases:
         assert output.processing_time_ms == 0.0
 
     def test_zero_items_processed(self):
-        """Test edge case of zero items processed (no items)."""
+        """Test edge case of zero items processed (no items).
+
+        Validates that zero item counts are accepted for operations with
+        empty input sets, filters that match nothing, or no-op reductions."""
         output = ModelReducerOutput[int](
             result=42,
             operation_id=uuid4(),
@@ -966,7 +1044,10 @@ class TestModelReducerOutputEdgeCases:
         assert output.items_processed == 0
 
     def test_large_processing_time(self):
-        """Test edge case of very large processing time (millions of ms)."""
+        """Test edge case of very large processing time (millions of ms).
+
+        Validates that the model can handle extreme processing time values
+        without overflow, precision loss, or serialization issues."""
         output = ModelReducerOutput[int](
             result=42,
             operation_id=uuid4(),
@@ -978,7 +1059,10 @@ class TestModelReducerOutputEdgeCases:
         assert output.processing_time_ms == 999999999.99
 
     def test_large_items_processed(self):
-        """Test edge case of very large items_processed count."""
+        """Test edge case of very large items_processed count.
+
+        Validates that the model can handle extreme item counts (billions+)
+        without overflow or integer representation issues."""
         output = ModelReducerOutput[int](
             result=42,
             operation_id=uuid4(),
@@ -990,7 +1074,10 @@ class TestModelReducerOutputEdgeCases:
         assert output.items_processed == 999999999
 
     def test_complex_result_structures(self):
-        """Test edge case of complex nested result structures."""
+        """Test edge case of complex nested result structures.
+
+        Validates that deeply nested and complex result structures with multiple
+        levels of nesting are preserved correctly throughout the model lifecycle."""
         complex_result = {
             "data": {
                 "users": [
@@ -1016,7 +1103,10 @@ class TestModelReducerOutputEdgeCases:
         assert output.result["data"]["metadata"]["total"] == 2
 
     def test_none_values_for_optional_fields(self):
-        """Test that optional metadata fields can be None."""
+        """Test that optional metadata fields can be None.
+
+        Validates that optional metadata fields (source, trace_id, correlation_id)
+        can be explicitly set to None without causing validation errors."""
         metadata = ModelReducerMetadata(
             source=None,
             trace_id=None,
@@ -1036,7 +1126,10 @@ class TestModelReducerOutputEdgeCases:
         assert output.metadata.trace_id is None
 
     def test_metadata_with_nested_structures(self):
-        """Test metadata with all fields populated including complex tags."""
+        """Test metadata with all fields populated including complex tags.
+
+        Validates that complex metadata with all optional fields set (trace IDs,
+        window IDs, tags) is correctly stored and accessible through the reducer output."""
         window_id = uuid4()
         partition_id = uuid4()
 
@@ -1067,7 +1160,10 @@ class TestModelReducerOutputEdgeCases:
         assert "high_priority" in output.metadata.tags
 
     def test_multiple_intents(self):
-        """Test output with multiple intents in tuple."""
+        """Test output with multiple intents in tuple.
+
+        Validates that the model correctly stores and preserves multiple intents
+        in their specified order, maintaining intent chain integrity."""
         intent1 = ModelIntent(intent_type="log", target="service1")
         intent2 = ModelIntent(intent_type="emit", target="service2")
         intent3 = ModelIntent(intent_type="notify", target="service3")
@@ -1087,7 +1183,10 @@ class TestModelReducerOutputEdgeCases:
         assert output.intents[2].target == "service3"
 
     def test_uuid_string_conversion_roundtrip(self):
-        """Test UUID to string conversion and back in serialization."""
+        """Test UUID to string conversion and back in serialization.
+
+        Validates that UUID objects are correctly converted to strings during
+        JSON serialization and back to UUID objects during deserialization."""
         operation_id = uuid4()
 
         output = ModelReducerOutput[int](
@@ -1108,7 +1207,10 @@ class TestModelReducerOutputEdgeCases:
         assert restored.operation_id == operation_id
 
     def test_boundary_values_processing_time_ms(self):
-        """Test boundary values for processing_time_ms field."""
+        """Test boundary values for processing_time_ms field.
+
+        Validates that both minimum (zero) and extremely large processing time values
+        are correctly handled without overflow or precision issues."""
         # Test zero (minimum valid value)
         output_min = ModelReducerOutput[int](
             result=42,
@@ -1130,7 +1232,10 @@ class TestModelReducerOutputEdgeCases:
         assert output_max.processing_time_ms == float(10**9)
 
     def test_boundary_values_items_processed(self):
-        """Test boundary values for items_processed field."""
+        """Test boundary values for items_processed field.
+
+        Validates that both minimum (zero) and extremely large item count values
+        are correctly handled without integer overflow."""
         # Test zero (minimum valid value)
         output_min = ModelReducerOutput[int](
             result=42,
@@ -1152,7 +1257,10 @@ class TestModelReducerOutputEdgeCases:
         assert output_max.items_processed == 10**9
 
     def test_all_reduction_types(self):
-        """Test creating output with all valid reduction types."""
+        """Test creating output with all valid reduction types.
+
+        Validates comprehensive support for every reduction operation type defined
+        in the EnumReductionType enumeration (FOLD, ACCUMULATE, MERGE, etc)."""
         for reduction_type in EnumReductionType:
             output = ModelReducerOutput[int](
                 result=42,
@@ -1164,7 +1272,10 @@ class TestModelReducerOutputEdgeCases:
             assert output.reduction_type == reduction_type
 
     def test_all_streaming_modes(self):
-        """Test creating output with all valid streaming modes."""
+        """Test creating output with all valid streaming modes.
+
+        Validates that every streaming mode (BATCH, WINDOWED, REAL_TIME) can be
+        configured and persisted in output metadata for different processing patterns."""
         for streaming_mode in EnumStreamingMode:
             output = ModelReducerOutput[int](
                 result=42,
