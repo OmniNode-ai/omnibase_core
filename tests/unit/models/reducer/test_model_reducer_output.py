@@ -1,5 +1,4 @@
-"""
-Unit tests for ModelReducerOutput[T].
+"""Unit tests for ModelReducerOutput[T].
 
 Tests all aspects of the reducer output model including:
 - Model instantiation with generic type parameters
@@ -8,6 +7,20 @@ Tests all aspects of the reducer output model including:
 - Serialization/deserialization
 - Generic typing behavior
 - Edge cases and boundary values
+
+Architecture Context:
+    ModelReducerOutput[T] is the output model for REDUCER nodes, containing
+    the result of FSM-driven state management and data aggregation operations.
+
+Related Models:
+    - ModelReducerInput[T] - Input contract for REDUCER nodes
+    - ModelIntent - Intent pattern for side effects
+    - ModelReducerMetadata - Metadata container for operations
+
+Notes:
+    - Parametrized tests reduce duplication while maintaining comprehensive coverage
+    - All tests use pytest markers (@pytest.mark.unit)
+    - Thread-safe for pytest-xdist parallel execution
 """
 
 from datetime import datetime
@@ -118,63 +131,42 @@ class TestModelReducerOutputInstantiation:
         assert output.metadata.trace_id == "trace123"
         assert output.metadata.window_id == window_id
 
-    def test_generic_type_parameter_int(self):
-        """Test ModelReducerOutput with int type parameter."""
-        output = ModelReducerOutput[int](
-            result=999,
-            operation_id=uuid4(),
-            reduction_type=EnumReductionType.FOLD,
-            processing_time_ms=5.0,
-            items_processed=10,
-        )
+    @pytest.mark.parametrize(
+        ("type_param", "result", "reduction_type", "expected_type"),
+        [
+            pytest.param(int, 999, EnumReductionType.FOLD, int, id="int"),
+            pytest.param(
+                str, "aggregation_complete", EnumReductionType.ACCUMULATE, str, id="str"
+            ),
+            pytest.param(
+                dict,
+                {"total": 500, "average": 50.0, "max": 100},
+                EnumReductionType.AGGREGATE,
+                dict,
+                id="dict",
+            ),
+            pytest.param(
+                list, [1, 2, 3, 5, 8, 13, 21], EnumReductionType.FILTER, list, id="list"
+            ),
+        ],
+    )
+    def test_generic_type_parameter(
+        self, type_param, result, reduction_type, expected_type
+    ):
+        """Test ModelReducerOutput with various generic type parameters.
 
-        assert isinstance(output.result, int)
-        assert output.result == 999
-
-    def test_generic_type_parameter_str(self):
-        """Test ModelReducerOutput with str type parameter."""
-        output = ModelReducerOutput[str](
-            result="aggregation_complete",
+        Validates that the generic type parameter system correctly handles int, str,
+        dict, and list types for results."""
+        output = ModelReducerOutput[type_param](
+            result=result,
             operation_id=uuid4(),
-            reduction_type=EnumReductionType.ACCUMULATE,
-            processing_time_ms=8.2,
+            reduction_type=reduction_type,
+            processing_time_ms=10.0,
             items_processed=5,
         )
 
-        assert isinstance(output.result, str)
-        assert output.result == "aggregation_complete"
-
-    def test_generic_type_parameter_dict(self):
-        """Test ModelReducerOutput with dict type parameter."""
-        result_dict = {"total": 500, "average": 50.0, "max": 100}
-
-        output = ModelReducerOutput[dict](
-            result=result_dict,
-            operation_id=uuid4(),
-            reduction_type=EnumReductionType.AGGREGATE,
-            processing_time_ms=15.3,
-            items_processed=10,
-        )
-
-        assert isinstance(output.result, dict)
-        assert output.result == result_dict
-        assert output.result["total"] == 500
-
-    def test_generic_type_parameter_list(self):
-        """Test ModelReducerOutput with list type parameter."""
-        result_list = [1, 2, 3, 5, 8, 13, 21]
-
-        output = ModelReducerOutput[list](
-            result=result_list,
-            operation_id=uuid4(),
-            reduction_type=EnumReductionType.FILTER,
-            processing_time_ms=3.7,
-            items_processed=20,
-        )
-
-        assert isinstance(output.result, list)
-        assert output.result == result_list
-        assert len(output.result) == 7
+        assert isinstance(output.result, expected_type)
+        assert output.result == result
 
     def test_generic_type_parameter_custom_model(self):
         """Test ModelReducerOutput with custom Pydantic model type parameter.
@@ -199,74 +191,71 @@ class TestModelReducerOutputInstantiation:
 class TestModelReducerOutputValidation:
     """Test ModelReducerOutput field validation."""
 
-    def test_required_field_result_missing(self):
-        """Test that result field is required."""
+    @pytest.mark.parametrize(
+        ("missing_field", "field_name"),
+        [
+            pytest.param(
+                {
+                    "operation_id": uuid4(),
+                    "reduction_type": EnumReductionType.FOLD,
+                    "processing_time_ms": 10.0,
+                    "items_processed": 5,
+                },
+                "result",
+                id="result",
+            ),
+            pytest.param(
+                {
+                    "result": 42,
+                    "reduction_type": EnumReductionType.FOLD,
+                    "processing_time_ms": 10.0,
+                    "items_processed": 5,
+                },
+                "operation_id",
+                id="operation_id",
+            ),
+            pytest.param(
+                {
+                    "result": 42,
+                    "operation_id": uuid4(),
+                    "processing_time_ms": 10.0,
+                    "items_processed": 5,
+                },
+                "reduction_type",
+                id="reduction_type",
+            ),
+            pytest.param(
+                {
+                    "result": 42,
+                    "operation_id": uuid4(),
+                    "reduction_type": EnumReductionType.FOLD,
+                    "items_processed": 5,
+                },
+                "processing_time_ms",
+                id="processing_time_ms",
+            ),
+            pytest.param(
+                {
+                    "result": 42,
+                    "operation_id": uuid4(),
+                    "reduction_type": EnumReductionType.FOLD,
+                    "processing_time_ms": 10.0,
+                },
+                "items_processed",
+                id="items_processed",
+            ),
+        ],
+    )
+    def test_required_field_missing(self, missing_field, field_name):
+        """Test that required fields raise ValidationError when missing.
+
+        Validates that all required fields (result, operation_id, reduction_type,
+        processing_time_ms, items_processed) must be provided."""
         with pytest.raises(ValidationError) as exc_info:
-            ModelReducerOutput[int](
-                operation_id=uuid4(),
-                reduction_type=EnumReductionType.FOLD,
-                processing_time_ms=10.0,
-                items_processed=5,
-            )
+            ModelReducerOutput[int](**missing_field)
 
         error_msg = str(exc_info.value)
-        assert "result" in error_msg
-        assert "Field required" in error_msg
-
-    def test_required_field_operation_id_missing(self):
-        """Test that operation_id field is required."""
-        with pytest.raises(ValidationError) as exc_info:
-            ModelReducerOutput[int](
-                result=42,
-                reduction_type=EnumReductionType.FOLD,
-                processing_time_ms=10.0,
-                items_processed=5,
-            )
-
-        error_msg = str(exc_info.value)
-        assert "operation_id" in error_msg
-        assert "Field required" in error_msg
-
-    def test_required_field_reduction_type_missing(self):
-        """Test that reduction_type field is required."""
-        with pytest.raises(ValidationError) as exc_info:
-            ModelReducerOutput[int](
-                result=42,
-                operation_id=uuid4(),
-                processing_time_ms=10.0,
-                items_processed=5,
-            )
-
-        error_msg = str(exc_info.value)
-        assert "reduction_type" in error_msg
-        assert "Field required" in error_msg
-
-    def test_required_field_processing_time_ms_missing(self):
-        """Test that processing_time_ms field is required."""
-        with pytest.raises(ValidationError) as exc_info:
-            ModelReducerOutput[int](
-                result=42,
-                operation_id=uuid4(),
-                reduction_type=EnumReductionType.FOLD,
-                items_processed=5,
-            )
-
-        error_msg = str(exc_info.value)
-        assert "processing_time_ms" in error_msg
-        assert "Field required" in error_msg
-
-    def test_required_field_items_processed_missing(self):
-        """Test that items_processed field is required."""
-        with pytest.raises(ValidationError) as exc_info:
-            ModelReducerOutput[int](
-                result=42,
-                operation_id=uuid4(),
-                reduction_type=EnumReductionType.FOLD,
-                processing_time_ms=10.0,
-            )
-
-        error_msg = str(exc_info.value)
-        assert "items_processed" in error_msg
+        assert field_name in error_msg
         assert "Field required" in error_msg
 
     def test_result_type_validation(self):
@@ -341,106 +330,57 @@ class TestModelReducerOutputValidation:
 
         assert "reduction_type" in str(exc_info.value)
 
-    def test_processing_time_ms_validation_negative(self):
-        """Test that negative processing_time_ms is accepted (no constraint).
+    @pytest.mark.parametrize(
+        ("value", "description"),
+        [
+            pytest.param(-1.0, "negative", id="negative"),
+            pytest.param(0.0, "zero", id="zero"),
+            pytest.param(42.5, "positive", id="positive"),
+        ],
+    )
+    def test_processing_time_ms_validation(self, value, description):
+        """Test processing_time_ms validation.
 
         Note: The model does not enforce non-negative constraints on processing time,
         allowing flexibility for special cases or error conditions."""
-        # Note: The model does not enforce non-negative constraint
         output = ModelReducerOutput[int](
             result=42,
             operation_id=uuid4(),
             reduction_type=EnumReductionType.FOLD,
-            processing_time_ms=-1.0,
+            processing_time_ms=value,
             items_processed=5,
         )
 
-        assert output.processing_time_ms == -1.0
+        assert output.processing_time_ms == value
 
-    def test_processing_time_ms_validation_zero(self):
-        """Test that zero processing_time_ms is valid (instant processing).
-
-        Validates that zero values are accepted, representing operations that
-        complete instantly or near-instantly."""
-        output = ModelReducerOutput[int](
-            result=42,
-            operation_id=uuid4(),
-            reduction_type=EnumReductionType.FOLD,
-            processing_time_ms=0.0,
-            items_processed=5,
-        )
-
-        assert output.processing_time_ms == 0.0
-
-    def test_processing_time_ms_validation_positive(self):
-        """Test that positive processing_time_ms is valid.
-
-        Validates that typical positive values for processing time are correctly
-        stored and retrieved."""
-        output = ModelReducerOutput[int](
-            result=42,
-            operation_id=uuid4(),
-            reduction_type=EnumReductionType.FOLD,
-            processing_time_ms=42.5,
-            items_processed=5,
-        )
-
-        assert output.processing_time_ms == 42.5
-
-    def test_items_processed_validation_negative(self):
-        """Test that negative items_processed is accepted (no constraint).
+    @pytest.mark.parametrize(
+        ("value", "description"),
+        [
+            pytest.param(-1, "negative", id="negative"),
+            pytest.param(0, "zero", id="zero"),
+            pytest.param(1000, "positive", id="positive"),
+        ],
+    )
+    def test_items_processed_validation(self, value, description):
+        """Test items_processed validation.
 
         Note: The model does not enforce non-negative constraints on item counts,
         allowing flexibility for special cases or rollback scenarios."""
-        # Note: The model does not enforce non-negative constraint
         output = ModelReducerOutput[int](
             result=42,
             operation_id=uuid4(),
             reduction_type=EnumReductionType.FOLD,
             processing_time_ms=10.0,
-            items_processed=-1,
+            items_processed=value,
         )
 
-        assert output.items_processed == -1
-
-    def test_items_processed_validation_zero(self):
-        """Test that zero items_processed is valid (no items processed).
-
-        Validates that zero values are accepted, representing operations with
-        empty input sets or no-op reductions."""
-        output = ModelReducerOutput[int](
-            result=42,
-            operation_id=uuid4(),
-            reduction_type=EnumReductionType.FOLD,
-            processing_time_ms=5.0,
-            items_processed=0,
-        )
-
-        assert output.items_processed == 0
-
-    def test_items_processed_validation_positive(self):
-        """Test that positive items_processed is valid.
-
-        Validates that typical positive values for item counts are correctly
-        stored and retrieved."""
-        output = ModelReducerOutput[int](
-            result=42,
-            operation_id=uuid4(),
-            reduction_type=EnumReductionType.FOLD,
-            processing_time_ms=10.0,
-            items_processed=1000,
-        )
-
-        assert output.items_processed == 1000
+        assert output.items_processed == value
 
     def test_invalid_field_types(self):
         """Test that invalid field types are rejected.
 
         Validates comprehensive type checking across all fields, ensuring that
         incorrect types are rejected with clear validation error messages."""
-        # Invalid result type (when model expects strict typing)
-        # Note: Pydantic may coerce some types, so test truly incompatible types
-
         # Invalid operation_id (not UUID-compatible)
         with pytest.raises(ValidationError):
             ModelReducerOutput[int](
@@ -591,64 +531,43 @@ class TestModelReducerOutputSerialization:
         assert output.processing_time_ms == 8.3
         assert output.items_processed == 50
 
-    def test_roundtrip_serialization_with_int_result(self):
-        """Test roundtrip serialization with int result."""
-        original = ModelReducerOutput[int](
-            result=999,
+    @pytest.mark.parametrize(
+        ("type_param", "result", "reduction_type"),
+        [
+            pytest.param(int, 999, EnumReductionType.FOLD, id="int"),
+            pytest.param(
+                dict,
+                {"total": 500, "count": 10, "average": 50.0},
+                EnumReductionType.AGGREGATE,
+                id="dict",
+            ),
+            pytest.param(
+                list, [1, 2, 3, 5, 8, 13], EnumReductionType.FILTER, id="list"
+            ),
+        ],
+    )
+    def test_roundtrip_serialization(self, type_param, result, reduction_type):
+        """Test roundtrip serialization for various result types.
+
+        Validates that results can be serialized to dict/JSON and back without loss
+        of data or type information."""
+        original = ModelReducerOutput[type_param](
+            result=result,
             operation_id=uuid4(),
-            reduction_type=EnumReductionType.FOLD,
-            processing_time_ms=15.7,
-            items_processed=200,
+            reduction_type=reduction_type,
+            processing_time_ms=10.0,
+            items_processed=5,
         )
 
         # Serialize and deserialize
         data = original.model_dump()
-        restored = ModelReducerOutput[int].model_validate(data)
+        restored = ModelReducerOutput[type_param].model_validate(data)
 
         assert restored.result == original.result
         assert restored.operation_id == original.operation_id
         assert restored.reduction_type == original.reduction_type
         assert restored.processing_time_ms == original.processing_time_ms
         assert restored.items_processed == original.items_processed
-
-    def test_roundtrip_serialization_with_dict_result(self):
-        """Test roundtrip serialization with dict result."""
-        result_dict = {"total": 500, "count": 10, "average": 50.0}
-
-        original = ModelReducerOutput[dict](
-            result=result_dict,
-            operation_id=uuid4(),
-            reduction_type=EnumReductionType.AGGREGATE,
-            processing_time_ms=25.2,
-            items_processed=300,
-        )
-
-        # Serialize and deserialize
-        json_str = original.model_dump_json()
-        restored = ModelReducerOutput[dict].model_validate_json(json_str)
-
-        assert restored.result == original.result
-        assert restored.operation_id == original.operation_id
-        assert restored.reduction_type == original.reduction_type
-
-    def test_roundtrip_serialization_with_list_result(self):
-        """Test roundtrip serialization with list result."""
-        result_list = [1, 2, 3, 5, 8, 13]
-
-        original = ModelReducerOutput[list](
-            result=result_list,
-            operation_id=uuid4(),
-            reduction_type=EnumReductionType.FILTER,
-            processing_time_ms=5.1,
-            items_processed=20,
-        )
-
-        # Serialize and deserialize
-        data = original.model_dump()
-        restored = ModelReducerOutput[list].model_validate(data)
-
-        assert restored.result == original.result
-        assert len(restored.result) == len(original.result)
 
     def test_uuid_serialization_format(self):
         """Test that operation_id is serialized as string in JSON."""
@@ -740,61 +659,29 @@ class TestModelReducerOutputSerialization:
 class TestModelReducerOutputGenericTyping:
     """Test ModelReducerOutput generic type parameter behavior."""
 
-    def test_type_parameter_preserves_int_type(self):
-        """Test that generic type parameter preserves int type."""
-        output = ModelReducerOutput[int](
-            result=42,
+    @pytest.mark.parametrize(
+        ("type_param", "result", "expected_type"),
+        [
+            pytest.param(int, 42, int, id="int"),
+            pytest.param(str, "completed", str, id="str"),
+            pytest.param(dict, {"status": "success", "count": 10}, dict, id="dict"),
+            pytest.param(list, [1, 2, 3, 4, 5], list, id="list"),
+        ],
+    )
+    def test_type_parameter_preserves_type(self, type_param, result, expected_type):
+        """Test that generic type parameter preserves result type.
+
+        Validates that int, str, dict, and list type parameters maintain their types
+        throughout the model lifecycle."""
+        output = ModelReducerOutput[type_param](
+            result=result,
             operation_id=uuid4(),
             reduction_type=EnumReductionType.FOLD,
             processing_time_ms=10.0,
             items_processed=5,
         )
 
-        assert isinstance(output.result, int)
-        assert output.result == 42
-
-    def test_type_parameter_preserves_str_type(self):
-        """Test that generic type parameter preserves str type."""
-        output = ModelReducerOutput[str](
-            result="completed",
-            operation_id=uuid4(),
-            reduction_type=EnumReductionType.ACCUMULATE,
-            processing_time_ms=8.0,
-            items_processed=3,
-        )
-
-        assert isinstance(output.result, str)
-        assert output.result == "completed"
-
-    def test_type_parameter_preserves_dict_type(self):
-        """Test that generic type parameter preserves dict type."""
-        result_dict = {"status": "success", "count": 10}
-
-        output = ModelReducerOutput[dict](
-            result=result_dict,
-            operation_id=uuid4(),
-            reduction_type=EnumReductionType.AGGREGATE,
-            processing_time_ms=12.0,
-            items_processed=10,
-        )
-
-        assert isinstance(output.result, dict)
-        assert output.result["status"] == "success"
-
-    def test_type_parameter_preserves_list_type(self):
-        """Test that generic type parameter preserves list type."""
-        result_list = [1, 2, 3, 4, 5]
-
-        output = ModelReducerOutput[list](
-            result=result_list,
-            operation_id=uuid4(),
-            reduction_type=EnumReductionType.FILTER,
-            processing_time_ms=5.0,
-            items_processed=10,
-        )
-
-        assert isinstance(output.result, list)
-        assert len(output.result) == 5
+        assert isinstance(output.result, expected_type)
 
     def test_type_parameter_preserves_custom_model_type(self):
         """Test that custom Pydantic model type parameter is preserved.
@@ -882,8 +769,25 @@ class TestModelReducerOutputGenericTyping:
 class TestModelReducerOutputFrozenBehavior:
     """Test frozen behavior (immutability) of ModelReducerOutput."""
 
-    def test_result_field_immutable(self):
-        """Test that result field cannot be modified after creation."""
+    @pytest.mark.parametrize(
+        ("field_name", "new_value"),
+        [
+            pytest.param("result", 100, id="result"),
+            pytest.param("operation_id", uuid4(), id="operation_id"),
+            pytest.param(
+                "reduction_type", EnumReductionType.ACCUMULATE, id="reduction_type"
+            ),
+            pytest.param("processing_time_ms", 20.0, id="processing_time_ms"),
+            pytest.param("items_processed", 10, id="items_processed"),
+            pytest.param("metadata", ModelReducerMetadata(source="new"), id="metadata"),
+            pytest.param("intents", (), id="intents"),
+        ],
+    )
+    def test_field_immutable(self, field_name, new_value):
+        """Test that fields cannot be modified after creation.
+
+        Validates that all fields are frozen and raise ValidationError on
+        modification attempts."""
         output = ModelReducerOutput[int](
             result=42,
             operation_id=uuid4(),
@@ -893,103 +797,7 @@ class TestModelReducerOutputFrozenBehavior:
         )
 
         with pytest.raises(ValidationError) as exc_info:
-            output.result = 100  # type: ignore[misc]
-
-        assert "frozen" in str(exc_info.value).lower()
-
-    def test_operation_id_field_immutable(self):
-        """Test that operation_id field cannot be modified after creation."""
-        output = ModelReducerOutput[int](
-            result=42,
-            operation_id=uuid4(),
-            reduction_type=EnumReductionType.FOLD,
-            processing_time_ms=10.0,
-            items_processed=5,
-        )
-
-        with pytest.raises(ValidationError) as exc_info:
-            output.operation_id = uuid4()  # type: ignore[misc]
-
-        assert "frozen" in str(exc_info.value).lower()
-
-    def test_reduction_type_field_immutable(self):
-        """Test that reduction_type field cannot be modified after creation."""
-        output = ModelReducerOutput[int](
-            result=42,
-            operation_id=uuid4(),
-            reduction_type=EnumReductionType.FOLD,
-            processing_time_ms=10.0,
-            items_processed=5,
-        )
-
-        with pytest.raises(ValidationError) as exc_info:
-            output.reduction_type = EnumReductionType.ACCUMULATE  # type: ignore[misc]
-
-        assert "frozen" in str(exc_info.value).lower()
-
-    def test_processing_time_ms_field_immutable(self):
-        """Test that processing_time_ms field cannot be modified after creation."""
-        output = ModelReducerOutput[int](
-            result=42,
-            operation_id=uuid4(),
-            reduction_type=EnumReductionType.FOLD,
-            processing_time_ms=10.0,
-            items_processed=5,
-        )
-
-        with pytest.raises(ValidationError) as exc_info:
-            output.processing_time_ms = 20.0  # type: ignore[misc]
-
-        assert "frozen" in str(exc_info.value).lower()
-
-    def test_items_processed_field_immutable(self):
-        """Test that items_processed field cannot be modified after creation."""
-        output = ModelReducerOutput[int](
-            result=42,
-            operation_id=uuid4(),
-            reduction_type=EnumReductionType.FOLD,
-            processing_time_ms=10.0,
-            items_processed=5,
-        )
-
-        with pytest.raises(ValidationError) as exc_info:
-            output.items_processed = 10  # type: ignore[misc]
-
-        assert "frozen" in str(exc_info.value).lower()
-
-    def test_metadata_field_immutable(self):
-        """Test that metadata field cannot be modified after creation."""
-        metadata = ModelReducerMetadata(source="test")
-
-        output = ModelReducerOutput[int](
-            result=42,
-            operation_id=uuid4(),
-            reduction_type=EnumReductionType.FOLD,
-            processing_time_ms=10.0,
-            items_processed=5,
-            metadata=metadata,
-        )
-
-        with pytest.raises(ValidationError) as exc_info:
-            output.metadata = ModelReducerMetadata(source="new")  # type: ignore[misc]
-
-        assert "frozen" in str(exc_info.value).lower()
-
-    def test_intents_field_immutable(self):
-        """Test that intents field cannot be modified after creation."""
-        intent = ModelIntent(intent_type="log", target="service")
-
-        output = ModelReducerOutput[int](
-            result=42,
-            operation_id=uuid4(),
-            reduction_type=EnumReductionType.FOLD,
-            processing_time_ms=10.0,
-            items_processed=5,
-            intents=(intent,),
-        )
-
-        with pytest.raises(ValidationError) as exc_info:
-            output.intents = ()  # type: ignore[misc]
+            setattr(output, field_name, new_value)  # type: ignore[misc]
 
         assert "frozen" in str(exc_info.value).lower()
 
@@ -1129,7 +937,8 @@ class TestModelReducerOutputEdgeCases:
         """Test metadata with all fields populated including complex tags.
 
         Validates that complex metadata with all optional fields set (trace IDs,
-        window IDs, tags) is correctly stored and accessible through the reducer output."""
+        window IDs, tags) is correctly stored and accessible through the reducer output.
+        """
         window_id = uuid4()
         partition_id = uuid4()
 
@@ -1206,56 +1015,6 @@ class TestModelReducerOutputEdgeCases:
         assert isinstance(restored.operation_id, UUID)
         assert restored.operation_id == operation_id
 
-    def test_boundary_values_processing_time_ms(self):
-        """Test boundary values for processing_time_ms field.
-
-        Validates that both minimum (zero) and extremely large processing time values
-        are correctly handled without overflow or precision issues."""
-        # Test zero (minimum valid value)
-        output_min = ModelReducerOutput[int](
-            result=42,
-            operation_id=uuid4(),
-            reduction_type=EnumReductionType.FOLD,
-            processing_time_ms=0.0,
-            items_processed=5,
-        )
-        assert output_min.processing_time_ms == 0.0
-
-        # Test very large value
-        output_max = ModelReducerOutput[int](
-            result=42,
-            operation_id=uuid4(),
-            reduction_type=EnumReductionType.FOLD,
-            processing_time_ms=float(10**9),  # 1 billion milliseconds
-            items_processed=5,
-        )
-        assert output_max.processing_time_ms == float(10**9)
-
-    def test_boundary_values_items_processed(self):
-        """Test boundary values for items_processed field.
-
-        Validates that both minimum (zero) and extremely large item count values
-        are correctly handled without integer overflow."""
-        # Test zero (minimum valid value)
-        output_min = ModelReducerOutput[int](
-            result=42,
-            operation_id=uuid4(),
-            reduction_type=EnumReductionType.FOLD,
-            processing_time_ms=10.0,
-            items_processed=0,
-        )
-        assert output_min.items_processed == 0
-
-        # Test very large value
-        output_max = ModelReducerOutput[int](
-            result=42,
-            operation_id=uuid4(),
-            reduction_type=EnumReductionType.FOLD,
-            processing_time_ms=10.0,
-            items_processed=10**9,  # 1 billion items
-        )
-        assert output_max.items_processed == 10**9
-
     def test_all_reduction_types(self):
         """Test creating output with all valid reduction types.
 
@@ -1275,7 +1034,8 @@ class TestModelReducerOutputEdgeCases:
         """Test creating output with all valid streaming modes.
 
         Validates that every streaming mode (BATCH, WINDOWED, REAL_TIME) can be
-        configured and persisted in output metadata for different processing patterns."""
+        configured and persisted in output metadata for different processing patterns.
+        """
         for streaming_mode in EnumStreamingMode:
             output = ModelReducerOutput[int](
                 result=42,

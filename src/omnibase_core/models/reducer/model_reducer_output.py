@@ -14,10 +14,12 @@ Thread Safety:
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_reducer_types import EnumReductionType, EnumStreamingMode
 from omnibase_core.models.common.model_reducer_metadata import ModelReducerMetadata
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.reducer.model_intent import ModelIntent
 
 
@@ -41,24 +43,45 @@ class ModelReducerOutput[T_Output](BaseModel):
         For mutable workflows (rare), create a new ModelReducerOutput instance
         rather than modifying an existing one.
 
+    Negative Value Semantics (CRITICAL):
+        This model uses sentinel values to distinguish between normal operation
+        and error/unavailable states WITHOUT raising exceptions. This design allows
+        the reducer to complete successfully even when certain metrics cannot be
+        measured, avoiding cascading failures.
+
+        processing_time_ms sentinel behavior:
+            - >= 0.0: Normal operation - measured execution time in milliseconds
+            - -1.0: Sentinel value - timing measurement failed or unavailable
+            - Other negative values: INVALID - will raise ValidationError
+
+        items_processed sentinel behavior:
+            - >= 0: Normal operation - actual count of items processed
+            - -1: Sentinel value - count unavailable due to error
+            - Other negative values: INVALID - will raise ValidationError
+
+        Why -1 specifically?
+            - Common programming convention for "not found" or "unavailable"
+            - Easily distinguishable from valid counts/times (always non-negative)
+            - Single sentinel value simplifies validation and error handling
+            - Prevents confusion with other negative values that might represent
+              different error conditions
+
+        Alternative Design Considered:
+            Using Optional[float] / Optional[int] with None for unavailable values.
+            Rejected because:
+                1. None doesn't distinguish between "not measured" vs "measurement failed"
+                2. Requires callers to handle None in addition to numeric values
+                3. -1 sentinel is more explicit and self-documenting
+                4. Maintains consistency with common C/POSIX conventions
+
     Attributes:
         result: The new state after reduction (type determined by T_Output).
         operation_id: UUID from the corresponding ModelReducerInput for correlation.
         reduction_type: Type of reduction performed (FOLD, ACCUMULATE, MERGE, etc.).
-        processing_time_ms: Actual execution time in milliseconds. Negative values are
-            permitted to represent error conditions or unavailable timing data:
-            - Normal: >= 0.0 (measured execution time)
-            - Error sentinel: -1.0 (timing measurement failed)
-            - Unknown: -1.0 (timing not available or not measured)
-            This flexibility allows error handling without raising exceptions when timing
-            is non-critical but the reduction result is valid.
-        items_processed: Total number of items processed in the reduction. Negative values
-            are permitted to represent error conditions or rollback scenarios:
-            - Normal: >= 0 (actual count of items processed)
-            - Error sentinel: -1 (count unavailable due to error)
-            - Rollback: negative value (items rolled back or invalidated)
-            This allows reporting processing state even when counts are uncertain or
-            represent compensating operations.
+        processing_time_ms: Execution time in milliseconds. See "Negative Value Semantics"
+            above for detailed documentation of the -1.0 sentinel pattern.
+        items_processed: Number of items processed. See "Negative Value Semantics"
+            above for detailed documentation of the -1 sentinel pattern.
         conflicts_resolved: Number of conflicts resolved during reduction (default 0).
         streaming_mode: Processing mode used (BATCH, WINDOWED, CONTINUOUS).
         batches_processed: Number of batches processed (default 1).
@@ -105,13 +128,11 @@ class ModelReducerOutput[T_Output](BaseModel):
     operation_id: UUID
     reduction_type: EnumReductionType
 
-    # Performance metrics - negative values permitted for error signaling
+    # Performance metrics - only -1 sentinel permitted for error signaling
     processing_time_ms: (
-        float  # -1.0 = timing unavailable/failed, >= 0.0 = measured time
+        float  # -1.0 ONLY = timing unavailable/failed, >= 0.0 = measured time
     )
-    items_processed: (
-        int  # -1 = count unavailable, negative = rollback, >= 0 = normal count
-    )
+    items_processed: int  # -1 ONLY = count unavailable/error, >= 0 = normal count
 
     conflicts_resolved: int = 0
     streaming_mode: EnumStreamingMode = EnumStreamingMode.BATCH
@@ -129,3 +150,55 @@ class ModelReducerOutput[T_Output](BaseModel):
         "correlation_id, group_key, partition_id, window_id, tags, trigger)",
     )
     timestamp: datetime = Field(default_factory=datetime.now)
+
+    @field_validator("processing_time_ms")
+    @classmethod
+    def validate_processing_time_ms(cls, v: float) -> float:
+        """Validate processing_time_ms follows sentinel pattern.
+
+        Enforces that negative values are ONLY -1.0 (sentinel for unavailable/failed).
+        Any other negative value is invalid.
+
+        Args:
+            v: The processing time value to validate
+
+        Returns:
+            The validated processing time value
+
+        Raises:
+            ModelOnexError: If value is negative but not exactly -1.0
+        """
+        if v < 0.0 and v != -1.0:
+            msg = (
+                f"processing_time_ms must be >= 0.0 or exactly -1.0 (sentinel), got {v}"
+            )
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
+        return v
+
+    @field_validator("items_processed")
+    @classmethod
+    def validate_items_processed(cls, v: int) -> int:
+        """Validate items_processed follows sentinel pattern.
+
+        Enforces that negative values are ONLY -1 (sentinel for unavailable/error).
+        Any other negative value is invalid.
+
+        Args:
+            v: The items processed count to validate
+
+        Returns:
+            The validated items processed count
+
+        Raises:
+            ModelOnexError: If value is negative but not exactly -1
+        """
+        if v < 0 and v != -1:
+            msg = f"items_processed must be >= 0 or exactly -1 (sentinel), got {v}"
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
+        return v

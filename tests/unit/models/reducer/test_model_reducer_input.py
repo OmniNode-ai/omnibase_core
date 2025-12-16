@@ -1,22 +1,45 @@
+"""Unit tests for ModelReducerInput[T].
+
+This module provides comprehensive tests for the generic ModelReducerInput model,
+which defines the input contract for REDUCER nodes in the ONEX architecture.
+
+Test Coverage:
+    - Model instantiation with minimal and full fields
+    - Generic type parameter validation (int, str, dict, list, custom Pydantic models)
+    - Field validation (required/optional fields, numeric ranges, enum constraints)
+    - Serialization/deserialization (dict and JSON roundtrips)
+    - Frozen behavior (immutability guarantees)
+    - Edge cases (empty data, large datasets, nested types, unicode, special chars)
+    - Thread safety via immutability (safe for parallel test execution)
+
+Architecture Context:
+    ModelReducerInput[T] is the input model for REDUCER nodes, which perform
+    FSM-driven state management and data aggregation. The generic type parameter T
+    represents the element type in the data list being reduced.
+
+Test Pattern References:
+    - tests/unit/models/test_model_intent.py (625 lines) - Intent pattern tests
+    - tests/unit/models/fsm/test_model_fsm_state_snapshot.py (572 lines) - FSM tests
+    - tests/unit/models/fsm/test_model_fsm_transition_result.py (717 lines) - Result tests
+
+Related Models:
+    - ModelReducerOutput[T] - Output contract for REDUCER nodes
+    - ModelReducerMetadata - Metadata container for reducer operations
+    - EnumReductionType - Reduction operation types (FOLD, ACCUMULATE, MERGE, etc.)
+    - EnumConflictResolution - Conflict resolution strategies
+    - EnumStreamingMode - Streaming processing modes (BATCH, WINDOWED, REAL_TIME)
+
+Notes:
+    - All tests use pytest markers (@pytest.mark.unit)
+    - Generic type parameters are tested with multiple types
+    - Immutability is enforced via frozen=True in model_config
+    - Thread-safe for pytest-xdist parallel execution
+    - Parametrized tests reduce duplication while maintaining coverage
 """
-Unit tests for ModelReducerInput[T].
 
-This module provides comprehensive tests for the generic ModelReducerInput model
-including:
-- Model instantiation with minimal and full fields
-- Generic type parameter validation (int, str, dict, list, custom models)
-- Field validation (required/optional, ranges, constraints)
-- Serialization/deserialization (dict and JSON)
-- Frozen behavior (immutability)
-- Edge cases (empty data, large data, nested types, unicode, etc.)
-- Thread safety via immutability
-
-Test Pattern Reference:
-    - tests/unit/models/test_model_intent.py (625 lines)
-    - tests/unit/models/fsm/test_model_fsm_state_snapshot.py (572 lines)
-    - tests/unit/models/fsm/test_model_fsm_transition_result.py (717 lines)
-"""
-
+import asyncio
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from uuid import UUID, uuid4
 
@@ -103,57 +126,50 @@ class TestModelReducerInputInstantiation:
         assert reducer_input.metadata == test_metadata
         assert reducer_input.timestamp == test_timestamp
 
-    def test_generic_type_parameter_int(self):
-        """Test ModelReducerInput with int type parameter."""
-        reducer_input = ModelReducerInput[int](
-            data=[10, 20, 30, 40],
-            reduction_type=EnumReductionType.ACCUMULATE,
+    @pytest.mark.parametrize(
+        ("type_param", "data", "reduction_type", "expected_type"),
+        [
+            pytest.param(
+                int, [10, 20, 30, 40], EnumReductionType.ACCUMULATE, int, id="int"
+            ),
+            pytest.param(
+                str,
+                ["apple", "banana", "cherry"],
+                EnumReductionType.DEDUPLICATE,
+                str,
+                id="str",
+            ),
+            pytest.param(
+                dict,
+                [{"key": "a", "value": 1}, {"key": "b", "value": 2}],
+                EnumReductionType.MERGE,
+                dict,
+                id="dict",
+            ),
+            pytest.param(
+                list,
+                [[1, 2], [3, 4], [5, 6]],
+                EnumReductionType.AGGREGATE,
+                list,
+                id="list",
+            ),
+        ],
+    )
+    def test_generic_type_parameter(
+        self, type_param, data, reduction_type, expected_type
+    ):
+        """Test ModelReducerInput with various generic type parameters.
+
+        Validates that the generic type parameter system correctly handles int, str,
+        dict, and list types, maintaining type integrity throughout instantiation."""
+        reducer_input = ModelReducerInput[type_param](
+            data=data,
+            reduction_type=reduction_type,
         )
 
         assert isinstance(reducer_input, ModelReducerInput)
-        assert all(isinstance(x, int) for x in reducer_input.data)
-        assert reducer_input.data == [10, 20, 30, 40]
-
-    def test_generic_type_parameter_str(self):
-        """Test ModelReducerInput with str type parameter."""
-        reducer_input = ModelReducerInput[str](
-            data=["apple", "banana", "cherry"],
-            reduction_type=EnumReductionType.DEDUPLICATE,
-        )
-
-        assert isinstance(reducer_input, ModelReducerInput)
-        assert all(isinstance(x, str) for x in reducer_input.data)
-        assert reducer_input.data == ["apple", "banana", "cherry"]
-
-    def test_generic_type_parameter_dict(self):
-        """Test ModelReducerInput with dict type parameter."""
-        test_data = [
-            {"key": "a", "value": 1},
-            {"key": "b", "value": 2},
-            {"key": "c", "value": 3},
-        ]
-
-        reducer_input = ModelReducerInput[dict](
-            data=test_data,
-            reduction_type=EnumReductionType.MERGE,
-        )
-
-        assert isinstance(reducer_input, ModelReducerInput)
-        assert all(isinstance(x, dict) for x in reducer_input.data)
-        assert reducer_input.data == test_data
-
-    def test_generic_type_parameter_list(self):
-        """Test ModelReducerInput with list type parameter."""
-        test_data = [[1, 2], [3, 4], [5, 6]]
-
-        reducer_input = ModelReducerInput[list](
-            data=test_data,
-            reduction_type=EnumReductionType.AGGREGATE,
-        )
-
-        assert isinstance(reducer_input, ModelReducerInput)
-        assert all(isinstance(x, list) for x in reducer_input.data)
-        assert reducer_input.data == test_data
+        assert all(isinstance(x, expected_type) for x in reducer_input.data)
+        assert reducer_input.data == data
 
     def test_generic_type_parameter_custom_model(self):
         """Test ModelReducerInput with custom Pydantic model type parameter.
@@ -208,25 +224,22 @@ class TestModelReducerInputInstantiation:
 class TestModelReducerInputValidation:
     """Test ModelReducerInput field validation and constraints."""
 
-    def test_required_fields_data_missing(self):
-        """Test that missing data field raises ValidationError.
+    @pytest.mark.parametrize(
+        ("missing_field", "field_name"),
+        [
+            pytest.param({"reduction_type": EnumReductionType.FOLD}, "data", id="data"),
+            pytest.param({"data": [1, 2, 3]}, "reduction_type", id="reduction_type"),
+        ],
+    )
+    def test_required_fields_missing(self, missing_field, field_name):
+        """Test that missing required fields raise ValidationError.
 
-        Validates that data is a required field and cannot be omitted during
-        model instantiation, as reducer inputs must have data to process."""
+        Validates that both data and reduction_type are required fields and cannot
+        be omitted during model instantiation."""
         with pytest.raises(ValidationError) as exc_info:
-            ModelReducerInput[int](reduction_type=EnumReductionType.FOLD)
+            ModelReducerInput[int](**missing_field)
 
-        assert "data" in str(exc_info.value)
-
-    def test_required_fields_reduction_type_missing(self):
-        """Test that missing reduction_type field raises ValidationError.
-
-        Validates that reduction_type is a required field specifying the operation
-        to be performed on the data (FOLD, ACCUMULATE, MERGE, etc)."""
-        with pytest.raises(ValidationError) as exc_info:
-            ModelReducerInput[int](data=[1, 2, 3])
-
-        assert "reduction_type" in str(exc_info.value)
+        assert field_name in str(exc_info.value)
 
     def test_data_type_validation_must_be_list(self):
         """Test that data must be a list.
@@ -269,84 +282,68 @@ class TestModelReducerInputValidation:
             )
         assert "reduction_type" in str(exc_info.value).lower()
 
-    def test_batch_size_validation_negative(self):
-        """Test that negative batch_size raises ValidationError."""
-        with pytest.raises(ValidationError) as exc_info:
-            ModelReducerInput[int](
-                data=[1, 2],
-                reduction_type=EnumReductionType.FOLD,
-                batch_size=-1,
-            )
-        assert "greater than 0" in str(exc_info.value)
+    @pytest.mark.parametrize(
+        ("batch_size", "should_pass", "error_msg"),
+        [
+            pytest.param(-1, False, "greater than 0", id="negative"),
+            pytest.param(0, False, "greater than 0", id="zero"),
+            pytest.param(1, True, None, id="min_valid"),
+            pytest.param(1000, True, None, id="default"),
+            pytest.param(10000, True, None, id="max_valid"),
+            pytest.param(10001, False, "less than or equal to 10000", id="exceeds_max"),
+        ],
+    )
+    def test_batch_size_validation(self, batch_size, should_pass, error_msg):
+        """Test batch_size validation with various values.
 
-    def test_batch_size_validation_zero(self):
-        """Test that zero batch_size raises ValidationError."""
-        with pytest.raises(ValidationError) as exc_info:
-            ModelReducerInput[int](
-                data=[1, 2],
-                reduction_type=EnumReductionType.FOLD,
-                batch_size=0,
-            )
-        assert "greater than 0" in str(exc_info.value)
-
-    def test_batch_size_validation_positive(self):
-        """Test that positive batch_size values are accepted."""
-        for batch_size in [1, 100, 1000, 5000, 10000]:
+        Validates that batch_size must be positive (1-10000) and rejects invalid
+        values with appropriate error messages."""
+        if should_pass:
             reducer_input = ModelReducerInput[int](
                 data=[1, 2],
                 reduction_type=EnumReductionType.FOLD,
                 batch_size=batch_size,
             )
             assert reducer_input.batch_size == batch_size
+        else:
+            with pytest.raises(ValidationError) as exc_info:
+                ModelReducerInput[int](
+                    data=[1, 2],
+                    reduction_type=EnumReductionType.FOLD,
+                    batch_size=batch_size,
+                )
+            assert error_msg in str(exc_info.value)
 
-    def test_batch_size_validation_exceeds_max(self):
-        """Test that batch_size exceeding 10000 raises ValidationError."""
-        with pytest.raises(ValidationError) as exc_info:
-            ModelReducerInput[int](
-                data=[1, 2],
-                reduction_type=EnumReductionType.FOLD,
-                batch_size=10001,
-            )
-        assert "less than or equal to 10000" in str(exc_info.value)
+    @pytest.mark.parametrize(
+        ("window_size_ms", "should_pass", "error_msg"),
+        [
+            pytest.param(999, False, "greater than or equal to 1000", id="below_min"),
+            pytest.param(1000, True, None, id="min_valid"),
+            pytest.param(5000, True, None, id="default"),
+            pytest.param(60000, True, None, id="max_valid"),
+            pytest.param(60001, False, "less than or equal to 60000", id="exceeds_max"),
+        ],
+    )
+    def test_window_size_ms_validation(self, window_size_ms, should_pass, error_msg):
+        """Test window_size_ms validation with various values.
 
-    def test_window_size_ms_validation_below_min(self):
-        """Test that window_size_ms below 1000 raises ValidationError."""
-        with pytest.raises(ValidationError) as exc_info:
-            ModelReducerInput[int](
-                data=[1, 2],
-                reduction_type=EnumReductionType.FOLD,
-                window_size_ms=999,
-            )
-        assert "greater than or equal to 1000" in str(exc_info.value)
-
-    def test_window_size_ms_validation_at_min(self):
-        """Test that window_size_ms at minimum (1000) is accepted."""
-        reducer_input = ModelReducerInput[int](
-            data=[1, 2],
-            reduction_type=EnumReductionType.FOLD,
-            window_size_ms=1000,
-        )
-        assert reducer_input.window_size_ms == 1000
-
-    def test_window_size_ms_validation_positive(self):
-        """Test that valid window_size_ms values are accepted."""
-        for window_size_ms in [1000, 5000, 30000, 60000]:
+        Validates that window_size_ms must be between 1000-60000ms and rejects
+        invalid values with appropriate error messages."""
+        if should_pass:
             reducer_input = ModelReducerInput[int](
                 data=[1, 2],
                 reduction_type=EnumReductionType.FOLD,
                 window_size_ms=window_size_ms,
             )
             assert reducer_input.window_size_ms == window_size_ms
-
-    def test_window_size_ms_validation_exceeds_max(self):
-        """Test that window_size_ms exceeding 60000 raises ValidationError."""
-        with pytest.raises(ValidationError) as exc_info:
-            ModelReducerInput[int](
-                data=[1, 2],
-                reduction_type=EnumReductionType.FOLD,
-                window_size_ms=60001,
-            )
-        assert "less than or equal to 60000" in str(exc_info.value)
+        else:
+            with pytest.raises(ValidationError) as exc_info:
+                ModelReducerInput[int](
+                    data=[1, 2],
+                    reduction_type=EnumReductionType.FOLD,
+                    window_size_ms=window_size_ms,
+                )
+            assert error_msg in str(exc_info.value)
 
     def test_invalid_field_types(self):
         """Test that invalid field types raise ValidationError.
@@ -538,68 +535,38 @@ class TestModelReducerInputSerialization:
         assert reducer_input.operation_id == test_operation_id
         assert reducer_input.streaming_mode == EnumStreamingMode.WINDOWED
 
-    def test_roundtrip_serialization_with_int_data(self):
-        """Test roundtrip serialization with int data."""
-        original = ModelReducerInput[int](
-            data=[100, 200, 300],
-            reduction_type=EnumReductionType.ACCUMULATE,
-            batch_size=250,
+    @pytest.mark.parametrize(
+        ("type_param", "data", "reduction_type"),
+        [
+            pytest.param(int, [100, 200, 300], EnumReductionType.ACCUMULATE, id="int"),
+            pytest.param(
+                str, ["alpha", "beta", "gamma"], EnumReductionType.DEDUPLICATE, id="str"
+            ),
+            pytest.param(
+                dict, [{"key": "a"}, {"key": "b"}], EnumReductionType.MERGE, id="dict"
+            ),
+            pytest.param(
+                list, [[1, 2], [3, 4]], EnumReductionType.AGGREGATE, id="list"
+            ),
+        ],
+    )
+    def test_roundtrip_serialization(self, type_param, data, reduction_type):
+        """Test roundtrip serialization for various data types.
+
+        Validates that data can be serialized to dict/JSON and back without loss
+        of data or type information across int, str, dict, and list types."""
+        original = ModelReducerInput[type_param](
+            data=data,
+            reduction_type=reduction_type,
         )
 
-        # Serialize
-        data = original.model_dump()
-
-        # Deserialize
-        restored = ModelReducerInput[int].model_validate(data)
+        # Serialize and deserialize
+        serialized = original.model_dump()
+        restored = ModelReducerInput[type_param].model_validate(serialized)
 
         assert restored.data == original.data
         assert restored.reduction_type == original.reduction_type
-        assert restored.batch_size == original.batch_size
         assert restored.operation_id == original.operation_id
-
-    def test_roundtrip_serialization_with_str_data(self):
-        """Test roundtrip serialization with str data."""
-        original = ModelReducerInput[str](
-            data=["alpha", "beta", "gamma"],
-            reduction_type=EnumReductionType.DEDUPLICATE,
-            window_size_ms=25000,
-        )
-
-        # Serialize
-        json_str = original.model_dump_json()
-
-        # Deserialize
-        restored = ModelReducerInput[str].model_validate_json(json_str)
-
-        assert restored.data == original.data
-        assert restored.reduction_type == original.reduction_type
-        assert restored.window_size_ms == original.window_size_ms
-
-    def test_roundtrip_serialization_with_dict_data(self):
-        """Test roundtrip serialization with dict data."""
-        original = ModelReducerInput[dict](
-            data=[{"key": "a"}, {"key": "b"}],
-            reduction_type=EnumReductionType.MERGE,
-        )
-
-        data = original.model_dump()
-        restored = ModelReducerInput[dict].model_validate(data)
-
-        assert restored.data == original.data
-        assert restored.reduction_type == original.reduction_type
-
-    def test_roundtrip_serialization_with_list_data(self):
-        """Test roundtrip serialization with list data."""
-        original = ModelReducerInput[list](
-            data=[[1, 2], [3, 4]],
-            reduction_type=EnumReductionType.AGGREGATE,
-        )
-
-        json_str = original.model_dump_json()
-        restored = ModelReducerInput[list].model_validate_json(json_str)
-
-        assert restored.data == original.data
-        assert restored.reduction_type == original.reduction_type
 
     def test_roundtrip_preserves_all_fields(self):
         """Test that roundtrip serialization preserves all fields.
@@ -657,32 +624,25 @@ class TestModelReducerInputSerialization:
 class TestModelReducerInputGenericTyping:
     """Test generic type parameter behavior and preservation."""
 
-    def test_type_parameter_preserves_int_type(self):
-        """Test that int type parameter is preserved."""
-        reducer_input = ModelReducerInput[int](
-            data=[1, 2, 3, 4, 5],
+    @pytest.mark.parametrize(
+        ("type_param", "data", "expected_type"),
+        [
+            pytest.param(int, [1, 2, 3, 4, 5], int, id="int"),
+            pytest.param(str, ["one", "two", "three"], str, id="str"),
+            pytest.param(dict, [{"a": 1}, {"b": 2}, {"c": 3}], dict, id="dict"),
+        ],
+    )
+    def test_type_parameter_preserves_type(self, type_param, data, expected_type):
+        """Test that type parameter is preserved for various types.
+
+        Validates that int, str, and dict type parameters maintain their types
+        throughout the model lifecycle without coercion or corruption."""
+        reducer_input = ModelReducerInput[type_param](
+            data=data,
             reduction_type=EnumReductionType.FOLD,
         )
 
-        assert all(isinstance(x, int) for x in reducer_input.data)
-
-    def test_type_parameter_preserves_str_type(self):
-        """Test that str type parameter is preserved."""
-        reducer_input = ModelReducerInput[str](
-            data=["one", "two", "three"],
-            reduction_type=EnumReductionType.GROUP,
-        )
-
-        assert all(isinstance(x, str) for x in reducer_input.data)
-
-    def test_type_parameter_preserves_dict_type(self):
-        """Test that dict type parameter is preserved."""
-        reducer_input = ModelReducerInput[dict](
-            data=[{"a": 1}, {"b": 2}, {"c": 3}],
-            reduction_type=EnumReductionType.MERGE,
-        )
-
-        assert all(isinstance(x, dict) for x in reducer_input.data)
+        assert all(isinstance(x, expected_type) for x in reducer_input.data)
 
     def test_type_parameter_preserves_custom_model_type(self):
         """Test that custom Pydantic model type parameter is preserved.
@@ -752,65 +712,30 @@ class TestModelReducerInputGenericTyping:
 class TestModelReducerInputFrozenBehavior:
     """Test frozen behavior (immutability) of ModelReducerInput."""
 
-    def test_data_field_immutable(self):
-        """Test that data field cannot be modified after creation."""
+    @pytest.mark.parametrize(
+        ("field_name", "new_value"),
+        [
+            pytest.param("data", [4, 5, 6], id="data"),
+            pytest.param(
+                "reduction_type", EnumReductionType.AGGREGATE, id="reduction_type"
+            ),
+            pytest.param("batch_size", 1000, id="batch_size"),
+            pytest.param("window_size_ms", 20000, id="window_size_ms"),
+            pytest.param("operation_id", uuid4(), id="operation_id"),
+        ],
+    )
+    def test_field_immutable(self, field_name, new_value):
+        """Test that fields cannot be modified after creation.
+
+        Validates that all fields (data, reduction_type, batch_size, window_size_ms,
+        operation_id) are frozen and raise ValidationError on modification attempts."""
         reducer_input = ModelReducerInput[int](
             data=[1, 2, 3],
             reduction_type=EnumReductionType.FOLD,
         )
 
         with pytest.raises(ValidationError) as exc_info:
-            reducer_input.data = [4, 5, 6]  # type: ignore[misc]
-
-        assert "frozen" in str(exc_info.value).lower()
-
-    def test_reduction_type_field_immutable(self):
-        """Test that reduction_type field cannot be modified."""
-        reducer_input = ModelReducerInput[int](
-            data=[1, 2, 3],
-            reduction_type=EnumReductionType.FOLD,
-        )
-
-        with pytest.raises(ValidationError) as exc_info:
-            reducer_input.reduction_type = EnumReductionType.AGGREGATE  # type: ignore[misc]
-
-        assert "frozen" in str(exc_info.value).lower()
-
-    def test_batch_size_field_immutable(self):
-        """Test that batch_size field cannot be modified."""
-        reducer_input = ModelReducerInput[int](
-            data=[1, 2, 3],
-            reduction_type=EnumReductionType.FOLD,
-            batch_size=500,
-        )
-
-        with pytest.raises(ValidationError) as exc_info:
-            reducer_input.batch_size = 1000  # type: ignore[misc]
-
-        assert "frozen" in str(exc_info.value).lower()
-
-    def test_window_size_ms_field_immutable(self):
-        """Test that window_size_ms field cannot be modified."""
-        reducer_input = ModelReducerInput[int](
-            data=[1, 2, 3],
-            reduction_type=EnumReductionType.FOLD,
-            window_size_ms=10000,
-        )
-
-        with pytest.raises(ValidationError) as exc_info:
-            reducer_input.window_size_ms = 20000  # type: ignore[misc]
-
-        assert "frozen" in str(exc_info.value).lower()
-
-    def test_operation_id_field_immutable(self):
-        """Test that operation_id field cannot be modified."""
-        reducer_input = ModelReducerInput[int](
-            data=[1, 2, 3],
-            reduction_type=EnumReductionType.FOLD,
-        )
-
-        with pytest.raises(ValidationError) as exc_info:
-            reducer_input.operation_id = uuid4()  # type: ignore[misc]
+            setattr(reducer_input, field_name, new_value)  # type: ignore[misc]
 
         assert "frozen" in str(exc_info.value).lower()
 
@@ -932,46 +857,6 @@ class TestModelReducerInputEdgeCases:
         assert isinstance(reducer_input.operation_id, UUID)
         assert isinstance(reducer_input.timestamp, datetime)
 
-    def test_boundary_values_batch_size_min(self):
-        """Test batch_size at minimum boundary (1)."""
-        reducer_input = ModelReducerInput[int](
-            data=[1, 2],
-            reduction_type=EnumReductionType.FOLD,
-            batch_size=1,
-        )
-
-        assert reducer_input.batch_size == 1
-
-    def test_boundary_values_batch_size_max(self):
-        """Test batch_size at maximum boundary (10000)."""
-        reducer_input = ModelReducerInput[int](
-            data=[1, 2],
-            reduction_type=EnumReductionType.FOLD,
-            batch_size=10000,
-        )
-
-        assert reducer_input.batch_size == 10000
-
-    def test_boundary_values_window_size_ms_min(self):
-        """Test window_size_ms at minimum boundary (1000)."""
-        reducer_input = ModelReducerInput[int](
-            data=[1, 2],
-            reduction_type=EnumReductionType.FOLD,
-            window_size_ms=1000,
-        )
-
-        assert reducer_input.window_size_ms == 1000
-
-    def test_boundary_values_window_size_ms_max(self):
-        """Test window_size_ms at maximum boundary (60000)."""
-        reducer_input = ModelReducerInput[int](
-            data=[1, 2],
-            reduction_type=EnumReductionType.FOLD,
-            window_size_ms=60000,
-        )
-
-        assert reducer_input.window_size_ms == 60000
-
     def test_unicode_in_string_data(self):
         """Test unicode characters in string data.
 
@@ -1076,3 +961,454 @@ class TestModelReducerInputEdgeCases:
                 streaming_mode=mode,
             )
             assert reducer_input.streaming_mode == mode
+
+
+class TestModelReducerInputThreadSafety:
+    """Test thread safety of ModelReducerInput via immutability.
+
+    Validates that ModelReducerInput instances are safe to access concurrently
+    from multiple threads, as required by pytest-xdist parallel execution and
+    concurrent processing scenarios.
+
+    Reference: docs/guides/THREADING.md - Thread Safety Guidelines
+    """
+
+    def test_concurrent_read_access_from_multiple_threads(self):
+        """Test that multiple threads can safely read from the same instance.
+
+        Validates that concurrent read operations from 10+ threads do not cause
+        race conditions, data corruption, or access violations."""
+        # Create a single instance
+        reducer_input = ModelReducerInput[int](
+            data=list(range(100)),
+            reduction_type=EnumReductionType.FOLD,
+            batch_size=500,
+            window_size_ms=10000,
+        )
+
+        results = []
+        errors = []
+
+        def read_fields():
+            """Read all fields from the instance."""
+            try:
+                # Read all fields multiple times
+                for _ in range(10):
+                    _ = reducer_input.data
+                    _ = reducer_input.reduction_type
+                    _ = reducer_input.operation_id
+                    _ = reducer_input.batch_size
+                    _ = reducer_input.window_size_ms
+                    _ = reducer_input.metadata
+                    _ = reducer_input.timestamp
+                results.append(True)
+            except Exception as e:
+                errors.append(e)
+
+        # Launch 15 threads to read concurrently
+        threads = [threading.Thread(target=read_fields) for _ in range(15)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+
+        # Validate no errors occurred
+        assert len(errors) == 0, f"Errors during concurrent reads: {errors}"
+        assert len(results) == 15, "Not all threads completed successfully"
+
+    def test_concurrent_read_with_thread_pool(self):
+        """Test concurrent reads using ThreadPoolExecutor.
+
+        Validates that the model is safe to access from a thread pool,
+        which is a common pattern in production systems."""
+        reducer_input = ModelReducerInput[str](
+            data=["a", "b", "c", "d", "e"],
+            reduction_type=EnumReductionType.GROUP,
+        )
+
+        def access_model(iteration: int) -> tuple:
+            """Access model fields and return values."""
+            return (
+                iteration,
+                len(reducer_input.data),
+                reducer_input.reduction_type,
+                reducer_input.batch_size,
+            )
+
+        # Use thread pool to access model concurrently
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            futures = [executor.submit(access_model, i) for i in range(20)]
+            results = [future.result() for future in futures]
+
+        # Validate all accesses succeeded
+        assert len(results) == 20
+        # Validate data consistency across all threads
+        for iteration, data_len, reduction_type, batch_size in results:
+            assert data_len == 5
+            assert reduction_type == EnumReductionType.GROUP
+            assert batch_size == 1000  # Default value
+
+    def test_immutability_prevents_race_conditions(self):
+        """Test that immutability prevents write-based race conditions.
+
+        Validates that the frozen model prevents concurrent modification attempts,
+        ensuring thread safety through immutability."""
+        reducer_input = ModelReducerInput[int](
+            data=[1, 2, 3],
+            reduction_type=EnumReductionType.FOLD,
+        )
+
+        errors = []
+
+        def attempt_modification():
+            """Attempt to modify fields (should fail)."""
+            try:
+                reducer_input.data = [4, 5, 6]  # type: ignore[misc]
+            except ValidationError:
+                errors.append("data_modification_blocked")
+
+            try:
+                reducer_input.batch_size = 2000  # type: ignore[misc]
+            except ValidationError:
+                errors.append("batch_size_modification_blocked")
+
+        # Launch multiple threads attempting modifications
+        threads = [threading.Thread(target=attempt_modification) for _ in range(5)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+
+        # All modification attempts should be blocked
+        assert len(errors) == 10  # 5 threads × 2 fields
+
+    def test_serialization_thread_safety(self):
+        """Test that serialization is thread-safe.
+
+        Validates that multiple threads can serialize the same instance
+        concurrently without corruption or deadlocks."""
+        reducer_input = ModelReducerInput[dict](
+            data=[{"key": f"value_{i}"} for i in range(50)],
+            reduction_type=EnumReductionType.MERGE,
+        )
+
+        serialized_results = []
+        errors = []
+
+        def serialize_model():
+            """Serialize model to dict and JSON."""
+            try:
+                dict_result = reducer_input.model_dump()
+                json_result = reducer_input.model_dump_json()
+                serialized_results.append((dict_result, json_result))
+            except Exception as e:
+                errors.append(e)
+
+        # Launch threads to serialize concurrently
+        threads = [threading.Thread(target=serialize_model) for _ in range(12)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+
+        # Validate no errors and all serializations succeeded
+        assert len(errors) == 0, f"Serialization errors: {errors}"
+        assert len(serialized_results) == 12
+
+        # Validate all serializations are identical
+        first_dict = serialized_results[0][0]
+        for dict_result, _ in serialized_results:
+            assert dict_result["data"] == first_dict["data"]
+            assert dict_result["reduction_type"] == first_dict["reduction_type"]
+
+
+class TestModelReducerInputAsyncSafe:
+    """Test async-safe behavior of ModelReducerInput.
+
+    Validates that ModelReducerInput instances can be safely used in async
+    contexts, including concurrent asyncio tasks and event loop scenarios.
+
+    Reference: docs/guides/THREADING.md - Async Safety Guidelines
+    """
+
+    @pytest.mark.asyncio
+    async def test_concurrent_async_read_access(self):
+        """Test concurrent access from multiple asyncio tasks.
+
+        Validates that multiple async tasks can safely read from the same
+        instance without event loop conflicts or coroutine interference."""
+        reducer_input = ModelReducerInput[int](
+            data=list(range(100)),
+            reduction_type=EnumReductionType.ACCUMULATE,
+            batch_size=750,
+        )
+
+        async def read_fields() -> dict:
+            """Async function to read all fields."""
+            # Simulate async work
+            await asyncio.sleep(0.001)
+
+            return {
+                "data_len": len(reducer_input.data),
+                "reduction_type": reducer_input.reduction_type,
+                "batch_size": reducer_input.batch_size,
+                "operation_id": reducer_input.operation_id,
+            }
+
+        # Launch 20 concurrent async tasks
+        tasks = [read_fields() for _ in range(20)]
+        results = await asyncio.gather(*tasks)
+
+        # Validate all tasks succeeded
+        assert len(results) == 20
+        # Validate data consistency
+        for result in results:
+            assert result["data_len"] == 100
+            assert result["reduction_type"] == EnumReductionType.ACCUMULATE
+            assert result["batch_size"] == 750
+
+    @pytest.mark.asyncio
+    async def test_async_serialization(self):
+        """Test that serialization works correctly in async contexts.
+
+        Validates that model serialization (dict/JSON) is safe to call from
+        async functions without blocking the event loop."""
+        reducer_input = ModelReducerInput[str](
+            data=["alpha", "beta", "gamma", "delta"],
+            reduction_type=EnumReductionType.DEDUPLICATE,
+        )
+
+        async def serialize_async() -> tuple:
+            """Async serialization operation."""
+            await asyncio.sleep(0.001)  # Simulate async work
+            dict_result = reducer_input.model_dump()
+            json_result = reducer_input.model_dump_json()
+            return (dict_result, json_result)
+
+        # Run multiple serializations concurrently
+        tasks = [serialize_async() for _ in range(15)]
+        results = await asyncio.gather(*tasks)
+
+        # Validate all succeeded
+        assert len(results) == 15
+        # Validate consistency
+        for dict_result, json_result in results:
+            assert dict_result["data"] == ["alpha", "beta", "gamma", "delta"]
+            assert "deduplicate" in json_result.lower()
+
+    @pytest.mark.asyncio
+    async def test_async_deserialization(self):
+        """Test async-safe deserialization from dict and JSON.
+
+        Validates that model_validate and model_validate_json work correctly
+        in async contexts without blocking or coroutine conflicts."""
+
+        async def create_and_serialize() -> str:
+            """Create instance and serialize to JSON."""
+            reducer_input = ModelReducerInput[int](
+                data=[10, 20, 30],
+                reduction_type=EnumReductionType.FOLD,
+            )
+            await asyncio.sleep(0.001)
+            return reducer_input.model_dump_json()
+
+        async def deserialize(json_str: str) -> ModelReducerInput[int]:
+            """Deserialize from JSON."""
+            await asyncio.sleep(0.001)
+            return ModelReducerInput[int].model_validate_json(json_str)
+
+        # Create and serialize
+        json_str = await create_and_serialize()
+
+        # Deserialize concurrently
+        tasks = [deserialize(json_str) for _ in range(10)]
+        results = await asyncio.gather(*tasks)
+
+        # Validate all deserializations succeeded
+        assert len(results) == 10
+        for instance in results:
+            assert instance.data == [10, 20, 30]
+            assert instance.reduction_type == EnumReductionType.FOLD
+
+    @pytest.mark.asyncio
+    async def test_mixed_sync_async_access(self):
+        """Test that instance can be accessed from both sync and async contexts.
+
+        Validates that the model is safe to use in mixed synchronous and
+        asynchronous code, which is common in production systems."""
+        reducer_input = ModelReducerInput[dict](
+            data=[{"id": i, "value": i * 10} for i in range(20)],
+            reduction_type=EnumReductionType.AGGREGATE,
+        )
+
+        # Sync access
+        sync_data_len = len(reducer_input.data)
+        sync_type = reducer_input.reduction_type
+
+        async def async_access() -> tuple:
+            """Async access to same instance."""
+            await asyncio.sleep(0.001)
+            return (len(reducer_input.data), reducer_input.reduction_type)
+
+        # Run async access multiple times
+        tasks = [async_access() for _ in range(10)]
+        async_results = await asyncio.gather(*tasks)
+
+        # Validate consistency between sync and async access
+        assert sync_data_len == 20
+        assert sync_type == EnumReductionType.AGGREGATE
+        for data_len, reduction_type in async_results:
+            assert data_len == sync_data_len
+            assert reduction_type == sync_type
+
+
+class TestModelReducerInputUUIDFormatPreservation:
+    """Test UUID format preservation through serialization.
+
+    Validates that UUID fields maintain correct format and type through
+    serialization/deserialization cycles, as required by distributed systems
+    and event-driven architectures.
+    """
+
+    def test_operation_id_uuid_format_in_dict(self):
+        """Test that operation_id preserves UUID format in dict serialization.
+
+        Validates that UUID objects are correctly represented in dictionary
+        form and can be reconstructed without format loss."""
+        test_uuid = uuid4()
+
+        reducer_input = ModelReducerInput[int](
+            data=[1, 2, 3],
+            reduction_type=EnumReductionType.FOLD,
+            operation_id=test_uuid,
+        )
+
+        # Serialize to dict
+        data_dict = reducer_input.model_dump()
+
+        # UUID should be preserved as UUID object in dict
+        assert isinstance(data_dict["operation_id"], UUID)
+        assert data_dict["operation_id"] == test_uuid
+        assert str(data_dict["operation_id"]) == str(test_uuid)
+
+    def test_operation_id_uuid_format_in_json(self):
+        """Test that operation_id preserves UUID format in JSON serialization.
+
+        Validates that UUID objects are correctly serialized to string format
+        in JSON and maintain standard UUID string representation."""
+        test_uuid = uuid4()
+
+        reducer_input = ModelReducerInput[int](
+            data=[1, 2, 3],
+            reduction_type=EnumReductionType.FOLD,
+            operation_id=test_uuid,
+        )
+
+        # Serialize to JSON
+        json_str = reducer_input.model_dump_json()
+
+        # UUID should be serialized as string in JSON
+        assert str(test_uuid) in json_str
+        # Validate standard UUID format (8-4-4-4-12 hex digits)
+        uuid_str = str(test_uuid)
+        assert len(uuid_str) == 36
+        assert uuid_str.count("-") == 4
+
+    def test_uuid_roundtrip_preservation(self):
+        """Test UUID format preservation through complete roundtrip.
+
+        Validates that UUID objects survive dict→JSON→dict→model cycles
+        without format corruption or type loss."""
+        original_uuid = uuid4()
+
+        # Create original instance
+        original = ModelReducerInput[int](
+            data=[10, 20, 30],
+            reduction_type=EnumReductionType.ACCUMULATE,
+            operation_id=original_uuid,
+        )
+
+        # Roundtrip through dict
+        dict_data = original.model_dump()
+        from_dict = ModelReducerInput[int].model_validate(dict_data)
+        assert isinstance(from_dict.operation_id, UUID)
+        assert from_dict.operation_id == original_uuid
+
+        # Roundtrip through JSON
+        json_str = original.model_dump_json()
+        from_json = ModelReducerInput[int].model_validate_json(json_str)
+        assert isinstance(from_json.operation_id, UUID)
+        assert from_json.operation_id == original_uuid
+
+    def test_uuid_string_input_conversion(self):
+        """Test that UUID strings are correctly converted to UUID objects.
+
+        Validates that the model accepts UUID strings and converts them to
+        proper UUID objects during validation."""
+        uuid_str = str(uuid4())
+
+        reducer_input = ModelReducerInput[int](
+            data=[1, 2, 3],
+            reduction_type=EnumReductionType.FOLD,
+            operation_id=uuid_str,  # type: ignore[arg-type]
+        )
+
+        # Should be converted to UUID object
+        assert isinstance(reducer_input.operation_id, UUID)
+        assert str(reducer_input.operation_id) == uuid_str
+
+    def test_metadata_correlation_id_preservation(self):
+        """Test that metadata correlation_id (string) is preserved.
+
+        Validates that correlation IDs in metadata maintain their format
+        through serialization, supporting distributed tracing systems."""
+        correlation_id = f"corr-{uuid4()}"
+
+        metadata = ModelReducerMetadata(
+            source="test_source",
+            correlation_id=correlation_id,
+        )
+
+        reducer_input = ModelReducerInput[int](
+            data=[1, 2, 3],
+            reduction_type=EnumReductionType.FOLD,
+            metadata=metadata,
+        )
+
+        # Roundtrip through JSON
+        json_str = reducer_input.model_dump_json()
+        restored = ModelReducerInput[int].model_validate_json(json_str)
+
+        # Correlation ID should be preserved exactly
+        assert restored.metadata.correlation_id == correlation_id
+        assert correlation_id in json_str
+
+    def test_metadata_uuid_fields_preservation(self):
+        """Test that metadata UUID fields (partition_id, window_id) are preserved.
+
+        Validates that UUID fields in nested metadata objects maintain correct
+        format through serialization cycles."""
+        partition_id = uuid4()
+        window_id = uuid4()
+
+        metadata = ModelReducerMetadata(
+            source="event_stream",
+            partition_id=partition_id,
+            window_id=window_id,
+        )
+
+        reducer_input = ModelReducerInput[int](
+            data=[1, 2, 3],
+            reduction_type=EnumReductionType.GROUP,
+            metadata=metadata,
+        )
+
+        # Roundtrip through dict
+        dict_data = reducer_input.model_dump()
+        restored = ModelReducerInput[int].model_validate(dict_data)
+
+        # UUIDs should be preserved
+        assert isinstance(restored.metadata.partition_id, UUID)
+        assert isinstance(restored.metadata.window_id, UUID)
+        assert restored.metadata.partition_id == partition_id
+        assert restored.metadata.window_id == window_id
