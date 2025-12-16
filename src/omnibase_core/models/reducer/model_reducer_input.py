@@ -47,7 +47,6 @@ See Also:
 """
 
 from datetime import datetime
-from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -57,13 +56,9 @@ from omnibase_core.enums.enum_reducer_types import (
     EnumReductionType,
     EnumStreamingMode,
 )
-from omnibase_core.utils.util_decorators import allow_dict_str_any
+from omnibase_core.models.common.model_reducer_metadata import ModelReducerMetadata
 
 
-@allow_dict_str_any(
-    "Reducer metadata requires flexible dict for operation-specific tracking "
-    "and correlation context across reduction pipelines."
-)
 class ModelReducerInput[T_Input](BaseModel):
     """
     Input model for NodeReducer operations.
@@ -94,7 +89,8 @@ class ModelReducerInput[T_Input](BaseModel):
             Only relevant for BATCH mode. Defaults to 1000.
         window_size_ms: Window duration in milliseconds for WINDOWED mode.
             Data is aggregated within each window. Defaults to 5000 (5 seconds).
-        metadata: Additional context metadata for tracking and custom behavior.
+        metadata: Typed metadata for tracking and correlation (source, trace_id,
+            correlation_id, group_key, partition_id, window_id, tags).
         timestamp: When this input was created. Auto-generated to current time.
 
     Example:
@@ -119,5 +115,5 @@ class ModelReducerInput[T_Input](BaseModel):
     streaming_mode: EnumStreamingMode = EnumStreamingMode.BATCH
     batch_size: int = Field(default=1000, gt=0, le=10000)
     window_size_ms: int = Field(default=5000, ge=1000, le=60000)
-    metadata: dict[str, Any] = Field(default_factory=dict)
+    metadata: ModelReducerMetadata = Field(default_factory=ModelReducerMetadata)
     timestamp: datetime = Field(default_factory=datetime.now)

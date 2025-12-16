@@ -17,6 +17,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_reducer_types import EnumReductionType, EnumStreamingMode
+from omnibase_core.models.common.model_reducer_metadata import ModelReducerMetadata
 from omnibase_core.models.reducer.model_intent import ModelIntent
 
 
@@ -33,12 +34,53 @@ class ModelReducerOutput[T_Output](BaseModel):
 
     Thread Safety:
         This model is immutable (frozen=True) after creation. The intents tuple
-        and metadata dict are captured at construction time and cannot be modified.
+        and typed metadata are captured at construction time and cannot be modified.
         This ensures thread-safe sharing of output instances across concurrent
         readers without synchronization.
 
         For mutable workflows (rare), create a new ModelReducerOutput instance
         rather than modifying an existing one.
+
+    Attributes:
+        result: The new state after reduction (type determined by T_Output).
+        operation_id: UUID from the corresponding ModelReducerInput for correlation.
+        reduction_type: Type of reduction performed (FOLD, ACCUMULATE, MERGE, etc.).
+        processing_time_ms: Actual execution time in milliseconds.
+        items_processed: Total number of items processed in the reduction.
+        conflicts_resolved: Number of conflicts resolved during reduction (default 0).
+        streaming_mode: Processing mode used (BATCH, WINDOWED, CONTINUOUS).
+        batches_processed: Number of batches processed (default 1).
+        intents: Side effect intents emitted during reduction for Effect node execution.
+        metadata: Typed metadata for tracking and correlation (source, trace_id,
+            correlation_id, group_key, partition_id, window_id, tags, trigger).
+            Replaces dict[str, str] with ModelReducerMetadata for type safety.
+        timestamp: When this output was created (auto-generated).
+
+    Migration from dict[str, str] metadata:
+        Before (v0.3.x):
+            output = ModelReducerOutput(
+                result=state,
+                operation_id=uuid4(),
+                reduction_type=EnumReductionType.FOLD,
+                processing_time_ms=42.0,
+                items_processed=10,
+                metadata={"source": "api", "correlation_id": "abc123"}
+            )
+
+        After (v0.4.0+):
+            output = ModelReducerOutput(
+                result=state,
+                operation_id=uuid4(),
+                reduction_type=EnumReductionType.FOLD,
+                processing_time_ms=42.0,
+                items_processed=10,
+                metadata=ModelReducerMetadata(
+                    source="api",
+                    correlation_id="abc123"
+                )
+            )
+
+        The typed metadata provides compile-time type checking and better IDE support.
     """
 
     model_config = ConfigDict(
@@ -62,5 +104,9 @@ class ModelReducerOutput[T_Output](BaseModel):
         description="Side effect intents emitted during reduction (for Effect node)",
     )
 
-    metadata: dict[str, str] = Field(default_factory=dict)
+    metadata: ModelReducerMetadata = Field(
+        default_factory=ModelReducerMetadata,
+        description="Typed metadata for tracking and correlation (source, trace_id, "
+        "correlation_id, group_key, partition_id, window_id, tags, trigger)",
+    )
     timestamp: datetime = Field(default_factory=datetime.now)

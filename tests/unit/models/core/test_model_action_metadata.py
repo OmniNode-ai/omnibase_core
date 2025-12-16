@@ -48,6 +48,7 @@ def create_test_action_type() -> ModelNodeActionType:
     )
 
 
+@pytest.mark.unit
 class TestModelActionMetadata:
     """Test suite for ModelActionMetadata."""
 
@@ -374,3 +375,84 @@ class TestModelActionMetadata:
                 action_name="Test Action",
                 trust_score=-0.1,  # Out of bounds
             )
+
+    def test_create_action_metadata_with_execution_context(self):
+        """Test that ModelActionMetadata can be instantiated with ModelExecutionContext.
+
+        This test verifies the forward reference fix for ModelSecurityLevel.
+        Before the fix, this would raise:
+        'ModelActionMetadata is not fully defined; you should define ModelSecurityLevel'
+        """
+        # Create minimal valid objects
+        category = ModelActionCategory(
+            name="compute",
+            display_name="Compute Actions",
+            description="Compute node actions",
+        )
+
+        action_type = ModelNodeActionType(
+            name="transform",
+            category=category,
+            display_name="Transform",
+            description="Data transformation action",
+        )
+
+        # Use the factory method to create a valid environment
+        environment = ModelEnvironment.create_development()
+
+        execution_context = ModelExecutionContext(environment=environment)
+
+        # This should NOT raise Pydantic error after forward ref fix
+        metadata = ModelActionMetadata(
+            action_type=action_type,
+            action_name="TestAction",
+            execution_context=execution_context,
+        )
+
+        # Verify
+        assert metadata.action_name == "TestAction"
+        assert metadata.execution_context is not None
+        assert metadata.execution_context.environment.name == "development"
+
+    def test_create_action_metadata_minimal(self):
+        """Test minimal ModelActionMetadata creation without execution context."""
+        category = ModelActionCategory(
+            name="effect",
+            display_name="Effect Actions",
+            description="Effect node actions",
+        )
+
+        action_type = ModelNodeActionType(
+            name="invoke",
+            category=category,
+            display_name="Invoke",
+            description="Invoke action",
+        )
+
+        metadata = ModelActionMetadata(
+            action_type=action_type, action_name="MinimalAction"
+        )
+
+        assert metadata.action_name == "MinimalAction"
+        # execution_context should be None when not provided
+        assert metadata.execution_context is None
+
+    def test_create_action_metadata_with_security(self):
+        """Test ModelActionMetadata with security context."""
+        category = ModelActionCategory(
+            name="reducer", display_name="Reducer", description="Test"
+        )
+        action_type = ModelNodeActionType(
+            name="update", category=category, display_name="Update", description="Test"
+        )
+
+        security_ctx = ModelSecurityContext()  # Use defaults
+
+        metadata = ModelActionMetadata(
+            action_type=action_type,
+            action_name="SecureAction",
+            security_context=security_ctx,
+        )
+
+        assert metadata.security_context is not None
+        assert isinstance(metadata.security_context, ModelSecurityContext)

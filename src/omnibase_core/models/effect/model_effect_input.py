@@ -51,6 +51,7 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_effect_types import EnumEffectType
+from omnibase_core.models.common.model_effect_metadata import ModelEffectMetadata
 from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 
@@ -87,7 +88,8 @@ class ModelEffectInput(BaseModel):
             Defaults to False.
         timeout_ms: Maximum time to wait for operation completion in milliseconds.
             Operations exceeding this timeout are cancelled. Defaults to 30000 (30 seconds).
-        metadata: Additional context metadata for tracking, logging, or custom behavior.
+        metadata: Typed metadata for tracking, tracing, correlation, and operation context.
+            Includes fields like trace_id, correlation_id, environment, tags, and priority.
         timestamp: When this input was created. Auto-generated to current time.
 
     Example:
@@ -109,7 +111,7 @@ class ModelEffectInput(BaseModel):
     retry_delay_ms: int = 1000
     circuit_breaker_enabled: bool = False
     timeout_ms: int = 30000
-    metadata: dict[str, Any] = Field(default_factory=dict)
+    metadata: ModelEffectMetadata = Field(default_factory=ModelEffectMetadata)
     timestamp: datetime = Field(default_factory=datetime.now)
 
 

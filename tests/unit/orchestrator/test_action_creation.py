@@ -528,8 +528,8 @@ class TestActionFieldPropagation:
 
         action, _ = _create_action_for_step(step, workflow_id)
 
-        assert "step_name" in action.metadata
-        assert action.metadata["step_name"] == "metadata_step"
+        assert "step_name" in action.metadata.parameters
+        assert action.metadata.parameters["step_name"] == "metadata_step"
 
     def test_metadata_contains_correlation_id(self) -> None:
         """Test that action metadata contains correlation_id."""
@@ -542,9 +542,9 @@ class TestActionFieldPropagation:
 
         action, _ = _create_action_for_step(step, workflow_id)
 
-        assert "correlation_id" in action.metadata
+        assert "correlation_id" in action.metadata.parameters
         # Correlation ID should be string representation of UUID
-        assert action.metadata["correlation_id"] == str(step.correlation_id)
+        assert action.metadata.parameters["correlation_id"] == str(step.correlation_id)
 
     def test_lease_id_is_generated(self) -> None:
         """Test that lease_id is auto-generated for each action."""

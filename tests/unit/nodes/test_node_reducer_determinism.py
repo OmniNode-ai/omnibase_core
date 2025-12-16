@@ -244,7 +244,7 @@ class TestNodeReducerDeterministicTransitions:
             )
 
             result = await node.process(input_data)
-            results.append(result.metadata["fsm_state"])
+            results.append(getattr(result.metadata, "fsm_state", None))
 
         # All results should be identical
         assert all(state == "processing" for state in results)
@@ -439,9 +439,9 @@ class TestNodeReducerDeterministicOutput:
 
             # Extract deterministic fields (exclude timing and timestamps)
             output_snapshot = {
-                "fsm_state": result.metadata["fsm_state"],
-                "fsm_transition": result.metadata["fsm_transition"],
-                "fsm_success": result.metadata["fsm_success"],
+                "fsm_state": getattr(result.metadata, "fsm_state", None),
+                "fsm_transition": getattr(result.metadata, "fsm_transition", None),
+                "fsm_success": getattr(result.metadata, "fsm_success", None),
                 "operation_id": str(result.operation_id),
                 "reduction_type": result.reduction_type.value,
                 "items_processed": result.items_processed,
@@ -514,14 +514,14 @@ class TestNodeReducerDeterministicOutput:
         second_result = await node2.process(second_input)
 
         # Compare deterministic fields
-        assert first_result.metadata["fsm_state"] == second_result.metadata["fsm_state"]
-        assert (
-            first_result.metadata["fsm_transition"]
-            == second_result.metadata["fsm_transition"]
+        assert getattr(first_result.metadata, "fsm_state", None) == getattr(
+            second_result.metadata, "fsm_state", None
         )
-        assert (
-            first_result.metadata["fsm_success"]
-            == second_result.metadata["fsm_success"]
+        assert getattr(first_result.metadata, "fsm_transition", None) == getattr(
+            second_result.metadata, "fsm_transition", None
+        )
+        assert getattr(first_result.metadata, "fsm_success", None) == getattr(
+            second_result.metadata, "fsm_success", None
         )
         assert first_result.result == second_result.result
         assert first_result.items_processed == second_result.items_processed
@@ -615,8 +615,12 @@ class TestNodeReducerStateSerializationDeterminism:
             )
         )
 
-        assert result1.metadata["fsm_state"] == result2.metadata["fsm_state"]
-        assert result1.metadata["fsm_transition"] == result2.metadata["fsm_transition"]
+        assert getattr(result1.metadata, "fsm_state", None) == getattr(
+            result2.metadata, "fsm_state", None
+        )
+        assert getattr(result1.metadata, "fsm_transition", None) == getattr(
+            result2.metadata, "fsm_transition", None
+        )
 
     @pytest.mark.asyncio
     async def test_state_history_is_preserved_correctly(
@@ -681,9 +685,10 @@ class TestNodeReducerStateSerializationDeterminism:
 
         result = await node.process(input_data)
 
-        # Verify context fields appear in output metadata
-        assert result.metadata.get("user_id") == "user123"
-        assert result.metadata.get("request_id") == "req456"
+        # Verify context fields appear in output metadata (stored as extra fields)
+        # Since ModelReducerMetadata uses extra="allow", custom fields are accessible as attributes
+        assert getattr(result.metadata, "user_id", None) == "user123"
+        assert getattr(result.metadata, "request_id", None) == "req456"
 
 
 @pytest.mark.timeout(60)
@@ -713,9 +718,9 @@ class TestNodeReducerNoHiddenEntropy:
 
             # Extract FSM-related metadata (exclude trigger which is input)
             fsm_metadata = {
-                "fsm_state": result.metadata["fsm_state"],
-                "fsm_transition": result.metadata["fsm_transition"],
-                "fsm_success": result.metadata["fsm_success"],
+                "fsm_state": getattr(result.metadata, "fsm_state", None),
+                "fsm_transition": getattr(result.metadata, "fsm_transition", None),
+                "fsm_success": getattr(result.metadata, "fsm_success", None),
             }
             metadata_snapshots.append(fsm_metadata)
 
@@ -897,7 +902,9 @@ class TestNodeReducerDeterministicEdgeCases:
                 operation_id=UUID("12121212-1212-1212-1212-121212121212"),
             )
             result = await node.process(input_data)
-            results.append((result.metadata["fsm_state"], result.items_processed))
+            results.append(
+                (getattr(result.metadata, "fsm_state", None), result.items_processed)
+            )
 
         # All should produce same state and count
         assert all(r == ("processing", 0) for r in results)
@@ -923,7 +930,9 @@ class TestNodeReducerDeterministicEdgeCases:
                 operation_id=UUID("13131313-1313-1313-1313-131313131313"),
             )
             result = await node.process(input_data)
-            results.append((result.metadata["fsm_state"], result.items_processed))
+            results.append(
+                (getattr(result.metadata, "fsm_state", None), result.items_processed)
+            )
 
         # All should produce same state and count
         assert all(r == ("processing", 1000) for r in results)
