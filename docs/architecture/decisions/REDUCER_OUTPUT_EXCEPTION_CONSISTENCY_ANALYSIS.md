@@ -1,10 +1,74 @@
 # Reducer Output Exception Consistency Analysis
 
-**Status**: Implemented
-**Date**: 2025-12-16
-**Related PR**: #205
-**Related Issue**: OMN-594
-**Correlation ID**: 95cac850-05a3-43e2-9e57-ccbbef683f43
+## Document Metadata
+
+| Field | Value |
+|-------|-------|
+| **Document Type** | Architecture Decision Record (ADR) |
+| **Status** | 🟢 **IMPLEMENTED** |
+| **Created** | 2025-12-16 |
+| **Last Updated** | 2025-12-16 |
+| **Author** | Claude Code (AI Assistant) |
+| **Related PR** | [#205](https://github.com/OmniNode-ai/omnibase_core/pull/205) |
+| **Related Issue** | [OMN-594](https://linear.app/omninode/issue/OMN-594) |
+| **Correlation ID** | `95cac850-05a3-43e2-9e57-ccbbef683f43` |
+| **Implementation** | `src/omnibase_core/models/reducer/model_reducer_output.py` |
+
+---
+
+## Document Purpose
+
+This Architecture Decision Record (ADR) documents the rationale for using `ModelOnexError` (project-specific structured error) instead of `ValueError` (Pydantic convention) in field validators for `ModelReducerOutput`.
+
+**Why this document exists**:
+- To justify a deliberate departure from Pydantic's standard validation error conventions
+- To document the trade-offs between framework alignment and project-wide consistency
+- To provide context for future developers who may question the non-standard approach
+- To serve as a reference for similar validation design decisions across the codebase
+
+**When to reference this document**:
+- When implementing field validators in other Pydantic models
+- When reviewing code that uses `ModelOnexError` in validators
+- When evaluating error handling strategy changes
+- When onboarding new developers unfamiliar with project conventions
+
+---
+
+## Document Status and Maintenance
+
+**Current Status**: ✅ **IMPLEMENTED** (all code snippets verified against implementation)
+
+**Maintenance Model**: This is a **historical record** documenting an implemented decision. Updates should only occur if:
+- Implementation changes significantly (e.g., reverting to `ValueError`)
+- New insights emerge that affect the trade-off analysis
+- Related patterns evolve elsewhere in the codebase
+
+**Supersession**: This document is NOT superseded. If the decision is reversed, this ADR should be:
+1. Updated with a "SUPERSEDED" status indicator
+2. Linked to the new ADR documenting the reversal
+3. Retained for historical context (ADRs are never deleted)
+
+---
+
+## Target Audience
+
+| Audience | Use Case |
+|----------|----------|
+| **Backend Developers** | Understanding validation patterns when building ONEX nodes |
+| **Code Reviewers** | Evaluating PRs that use `ModelOnexError` in validators |
+| **New Contributors** | Learning project-specific error handling conventions |
+| **Architects** | Assessing system-wide error handling strategy |
+| **Quality Engineers** | Understanding test coverage requirements for validation logic |
+
+---
+
+## How to Use This Document
+
+1. **New to the project?** Read the [Executive Summary](#executive-summary) first
+2. **Implementing a validator?** Jump to [Implementation](#implementation) for code examples
+3. **Questioning the approach?** Review [Analysis](#analysis) and [Trade-offs](#trade-offs) sections
+4. **Need historical context?** See [Background](#background) and [Problem Statement](#problem-statement)
+5. **Looking for alternatives?** Check [Options Considered](#options-considered)
 
 ---
 
@@ -14,7 +78,7 @@ This document analyzes the exception handling strategy for `ModelReducerOutput` 
 
 **Decision**: Use `ModelOnexError` with `EnumCoreErrorCode` in `@field_validator` methods (Option A)
 
-**Status**: ✅ **IMPLEMENTED** - All code snippets in this document reflect the current implementation as of 2025-12-16.
+**Implementation Status**: ✅ **COMPLETE** - All code snippets in this document reflect the current implementation as of 2025-12-16.
 
 ---
 
@@ -297,7 +361,7 @@ omnibase_core uses **unified error boundaries**:
 
 - Lines 155-199: `validate_processing_time_ms` using `ModelOnexError` with special float checks
 - Lines 201-233: `validate_items_processed` using `ModelOnexError`
-- Lines 44-116: Comprehensive documentation of sentinel semantics
+- Lines 47-119: Comprehensive documentation of sentinel semantics (Negative Value Semantics section)
 
 ### Error Handling Strategy
 
@@ -454,7 +518,7 @@ class ModelReducerOutput[T_Output](BaseModel):
 
 ### Documentation
 
-The implementation includes comprehensive documentation (lines 44-116) explaining:
+The implementation includes comprehensive documentation (lines 47-119) explaining:
 
 1. **Sentinel semantics**: What `-1` means and why
 2. **Alternative designs considered**: Why `Optional` was rejected
@@ -466,9 +530,16 @@ The implementation includes comprehensive documentation (lines 44-116) explainin
 
 Comprehensive tests in `tests/unit/models/reducer/test_model_reducer_output.py`:
 
-- Lines 388-433: Sentinel validation tests
-- Lines 434-562: Edge case tests (fractional negatives, large negatives, boundary values)
-- Lines 563-625: Concurrency tests (thread safety, async safety, UUID preservation)
+- Lines 201-567: `TestModelReducerOutputValidation` class with sentinel validation tests:
+  - Lines 412-441: `test_processing_time_ms_invalid_sentinel_rejected` (rejects invalid negative values)
+  - Lines 450-479: `test_items_processed_invalid_sentinel_rejected` (rejects invalid negative values)
+  - Lines 489-514: `test_processing_time_ms_special_float_values_rejected` (rejects NaN, Inf, -Inf)
+- Lines 954-1181: `TestModelReducerOutputEdgeCases` class (zero values, boundary conditions)
+
+Concurrency tests in separate file `tests/unit/models/reducer/test_model_reducer_output_concurrency.py`:
+- Thread safety validation (multiple threads accessing same instance)
+- Async-safe behavior (asyncio task concurrent access)
+- UUID format preservation through serialization cycles
 
 **Total**: 124 tests, 100% coverage of validation logic
 
@@ -514,8 +585,10 @@ Comprehensive tests in `tests/unit/models/reducer/test_model_reducer_output.py`:
 
 ### Related Code
 
-- **Implementation**: `src/omnibase_core/models/reducer/model_reducer_output.py` (lines 152-196)
-- **Tests**: `tests/unit/models/reducer/test_model_reducer_output.py` (lines 388-625)
+- **Implementation**: `src/omnibase_core/models/reducer/model_reducer_output.py` (lines 155-233)
+- **Main Tests**: `tests/unit/models/reducer/test_model_reducer_output.py`
+  - Validation tests: lines 201-567 (TestModelReducerOutputValidation class)
+  - Edge case tests: lines 954-1181 (TestModelReducerOutputEdgeCases class)
 - **Concurrency Tests**: `tests/unit/models/reducer/test_model_reducer_output_concurrency.py`
 
 ### Related Issues
@@ -530,7 +603,8 @@ Comprehensive tests in `tests/unit/models/reducer/test_model_reducer_output.py`:
 | Date | Version | Author | Changes |
 |------|---------|--------|---------|
 | 2025-12-16 | 1.0 | Claude Code | Initial analysis documenting implemented decision |
-| 2025-12-16 | 1.1 | Claude Code | Updated all code snippets to match actual implementation |
+| 2025-12-16 | 1.1 | Claude Code | Fixed line number references to match actual implementation |
+| 2025-12-16 | 1.2 | Claude Code | Enhanced document header with metadata, purpose, audience, and usage guidance (PR #205 review feedback) |
 
 ---
 

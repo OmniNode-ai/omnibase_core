@@ -1,4 +1,4 @@
-"""Unit tests for ModelReducerOutput[T].
+"""Unit tests for ModelReducerOutput[T] - REFACTORED with parametrization.
 
 Tests all aspects of the reducer output model including:
 - Model instantiation with generic type parameters
@@ -343,7 +343,7 @@ class TestModelReducerOutputValidation:
     @pytest.mark.parametrize(
         ("value", "description"),
         [
-            pytest.param(-1.0, "negative", id="negative"),
+            pytest.param(-1.0, "sentinel", id="sentinel_negative_one"),
             pytest.param(0.0, "zero", id="zero"),
             pytest.param(42.5, "positive", id="positive"),
         ],
@@ -351,9 +351,16 @@ class TestModelReducerOutputValidation:
     def test_processing_time_ms_validation(self, value, description):
         """Test processing_time_ms validation with valid values.
 
-        The model enforces sentinel pattern: -1.0 is allowed as a sentinel value
-        indicating measurement failure or unavailability. All other negative values
-        are rejected. Zero and positive values represent actual measurements."""
+        The model enforces sentinel pattern for graceful degradation:
+        - -1.0: SENTINEL VALUE - Timing measurement failed or unavailable.
+                This allows the reducer to complete successfully even when
+                timing cannot be measured, preventing cascading failures.
+        - 0.0: Valid measurement - Operation completed instantaneously
+        - Positive values: Valid measurements - Actual processing time in milliseconds
+
+        This pattern follows the C/POSIX convention of -1 for "not found" or
+        "unavailable", enabling operations to succeed even when non-critical
+        metrics cannot be captured."""
         output = ModelReducerOutput[int](
             result=42,
             operation_id=uuid4(),
@@ -367,7 +374,7 @@ class TestModelReducerOutputValidation:
     @pytest.mark.parametrize(
         ("value", "description"),
         [
-            pytest.param(-1, "negative", id="negative"),
+            pytest.param(-1, "sentinel", id="sentinel_negative_one"),
             pytest.param(0, "zero", id="zero"),
             pytest.param(1000, "positive", id="positive"),
         ],
@@ -375,9 +382,16 @@ class TestModelReducerOutputValidation:
     def test_items_processed_validation(self, value, description):
         """Test items_processed validation with valid values.
 
-        The model enforces sentinel pattern: -1 is allowed as a sentinel value
-        indicating count unavailability or error. All other negative values are
-        rejected. Zero and positive values represent actual item counts."""
+        The model enforces sentinel pattern for graceful degradation:
+        - -1: SENTINEL VALUE - Count unavailable due to error or inability to measure.
+              Allows reducer to complete successfully even when item count cannot
+              be determined, preventing cascading failures.
+        - 0: Valid count - No items were processed (empty input, filtered out, etc.)
+        - Positive values: Valid counts - Actual number of items processed
+
+        This pattern follows the C/POSIX convention of -1 for "not found" or
+        "unavailable", enabling operations to succeed even when non-critical
+        metrics cannot be captured."""
         output = ModelReducerOutput[int](
             result=42,
             operation_id=uuid4(),
@@ -475,41 +489,45 @@ class TestModelReducerOutputValidation:
         error_lower = error.message.lower()
         assert "nan" in error_lower or "infinity" in error_lower or "inf" in error_lower
 
-    def test_invalid_field_types(self):
+    @pytest.mark.parametrize(
+        ("invalid_field", "invalid_value", "field_name"),
+        [
+            pytest.param(
+                "operation_id",
+                "not-a-uuid",
+                "operation_id",
+                id="invalid_uuid_string",
+            ),
+            pytest.param(
+                "processing_time_ms",
+                "not-a-number",
+                "processing_time_ms",
+                id="invalid_processing_time_type",
+            ),
+            pytest.param(
+                "items_processed",
+                "not-a-number",
+                "items_processed",
+                id="invalid_items_processed_type",
+            ),
+        ],
+    )
+    def test_invalid_field_types(self, invalid_field, invalid_value, field_name):
         """Test that invalid field types are rejected.
 
         Validates comprehensive type checking across all fields, ensuring that
         incorrect types are rejected with clear validation error messages."""
-        # Invalid operation_id (not UUID-compatible)
-        with pytest.raises(ValidationError):
-            ModelReducerOutput[int](
-                result=42,
-                operation_id="not-a-uuid",  # type: ignore[arg-type]  # Testing invalid UUID string
-                reduction_type=EnumReductionType.FOLD,
-                processing_time_ms=10.0,
-                items_processed=5,
-            )
+        base_params = {
+            "result": 42,
+            "operation_id": uuid4(),
+            "reduction_type": EnumReductionType.FOLD,
+            "processing_time_ms": 10.0,
+            "items_processed": 5,
+        }
+        base_params[invalid_field] = invalid_value  # type: ignore[assignment]  # Testing invalid type
 
-        # Invalid processing_time_ms (string)
         with pytest.raises(ValidationError):
-            ModelReducerOutput[int](
-                result=42,
-                operation_id=uuid4(),
-                reduction_type=EnumReductionType.FOLD,
-                processing_time_ms="not-a-number",  # type: ignore[arg-type]  # Testing invalid type
-                items_processed=5,
-            )
-
-        # Invalid items_processed (float instead of int)
-        # Note: Pydantic may coerce float to int, so use string
-        with pytest.raises(ValidationError):
-            ModelReducerOutput[int](
-                result=42,
-                operation_id=uuid4(),
-                reduction_type=EnumReductionType.FOLD,
-                processing_time_ms=10.0,
-                items_processed="not-a-number",  # type: ignore[arg-type]  # Testing invalid type
-            )
+            ModelReducerOutput[int](**base_params)
 
     def test_extra_fields_rejected(self):
         """Test that extra fields are rejected (extra='forbid').
@@ -920,65 +938,52 @@ class TestModelReducerOutputFrozenBehavior:
 class TestModelReducerOutputEdgeCases:
     """Test edge cases and boundary conditions for ModelReducerOutput."""
 
-    def test_zero_processing_time(self):
-        """Test edge case of zero processing time (instant processing).
+    @pytest.mark.parametrize(
+        ("processing_time_ms", "items_processed", "description"),
+        [
+            pytest.param(0.0, 5, "zero_processing_time", id="zero_processing_time"),
+            pytest.param(5.0, 0, "zero_items_processed", id="zero_items_processed"),
+            pytest.param(
+                999999999.99, 5, "large_processing_time", id="large_processing_time"
+            ),
+            pytest.param(
+                10.0, 999999999, "large_items_processed", id="large_items_processed"
+            ),
+            pytest.param(
+                -1.0, 100, "sentinel_processing_time", id="sentinel_processing_time"
+            ),
+            pytest.param(
+                10.0, -1, "sentinel_items_processed", id="sentinel_items_processed"
+            ),
+            pytest.param(-1.0, -1, "both_sentinels", id="both_sentinels"),
+            pytest.param(0.001, 1, "minimal_positive_values", id="minimal_positive"),
+            pytest.param(999999.999, 999999, "near_max_values", id="near_max_values"),
+        ],
+    )
+    def test_boundary_value_combinations(
+        self, processing_time_ms, items_processed, description
+    ):
+        """Test various boundary value combinations for numeric fields.
 
-        Validates that zero processing time is accepted for operations that
-        complete instantaneously or synchronously without measurable overhead."""
+        Validates that the model correctly handles:
+        - Zero values (instant processing, empty sets)
+        - Sentinel values (-1.0, -1 for unavailable/error states)
+        - Extreme values (large processing times, high item counts)
+        - Minimal non-zero values
+        - Combined edge cases (both sentinels simultaneously)
+
+        These test cases ensure robust handling of boundary conditions
+        without overflow, precision loss, or validation errors."""
         output = ModelReducerOutput[int](
             result=42,
             operation_id=uuid4(),
             reduction_type=EnumReductionType.FOLD,
-            processing_time_ms=0.0,
-            items_processed=5,
+            processing_time_ms=processing_time_ms,
+            items_processed=items_processed,
         )
 
-        assert output.processing_time_ms == 0.0
-
-    def test_zero_items_processed(self):
-        """Test edge case of zero items processed (no items).
-
-        Validates that zero item counts are accepted for operations with
-        empty input sets, filters that match nothing, or no-op reductions."""
-        output = ModelReducerOutput[int](
-            result=42,
-            operation_id=uuid4(),
-            reduction_type=EnumReductionType.FOLD,
-            processing_time_ms=5.0,
-            items_processed=0,
-        )
-
-        assert output.items_processed == 0
-
-    def test_large_processing_time(self):
-        """Test edge case of very large processing time (millions of ms).
-
-        Validates that the model can handle extreme processing time values
-        without overflow, precision loss, or serialization issues."""
-        output = ModelReducerOutput[int](
-            result=42,
-            operation_id=uuid4(),
-            reduction_type=EnumReductionType.FOLD,
-            processing_time_ms=999999999.99,
-            items_processed=5,
-        )
-
-        assert output.processing_time_ms == 999999999.99
-
-    def test_large_items_processed(self):
-        """Test edge case of very large items_processed count.
-
-        Validates that the model can handle extreme item counts (billions+)
-        without overflow or integer representation issues."""
-        output = ModelReducerOutput[int](
-            result=42,
-            operation_id=uuid4(),
-            reduction_type=EnumReductionType.FOLD,
-            processing_time_ms=10.0,
-            items_processed=999999999,
-        )
-
-        assert output.items_processed == 999999999
+        assert output.processing_time_ms == processing_time_ms
+        assert output.items_processed == items_processed
 
     def test_complex_result_structures(self):
         """Test edge case of complex nested result structures.
@@ -1145,3 +1150,80 @@ class TestModelReducerOutputEdgeCases:
                 streaming_mode=streaming_mode,
             )
             assert output.streaming_mode == streaming_mode
+
+
+class TestModelReducerOutputThreadSafety:
+    """Test thread safety and concurrent access patterns."""
+
+    def test_concurrent_read_access(self):
+        """Test that multiple threads can safely read the same output instance.
+
+        Validates thread-safe read access due to frozen (immutable) model design."""
+        output = ModelReducerOutput[int](
+            result=42,
+            operation_id=uuid4(),
+            reduction_type=EnumReductionType.FOLD,
+            processing_time_ms=10.0,
+            items_processed=100,
+        )
+
+        results = []
+
+        def read_output():
+            """Read output fields from multiple threads."""
+            for _ in range(100):
+                results.append(
+                    (
+                        output.result,
+                        output.operation_id,
+                        output.processing_time_ms,
+                        output.items_processed,
+                    )
+                )
+
+        threads = [threading.Thread(target=read_output) for _ in range(10)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+
+        # All reads should return consistent values
+        assert len(results) == 1000
+        assert all(r[0] == 42 for r in results)
+        assert all(r[2] == 10.0 for r in results)
+        assert all(r[3] == 100 for r in results)
+
+    def test_concurrent_serialization(self):
+        """Test concurrent serialization from multiple threads.
+
+        Validates that multiple threads can safely serialize the same output
+        instance without race conditions or data corruption."""
+        output = ModelReducerOutput[dict](
+            result={"status": "success", "count": 42},
+            operation_id=uuid4(),
+            reduction_type=EnumReductionType.AGGREGATE,
+            processing_time_ms=25.5,
+            items_processed=100,
+        )
+
+        json_results = []
+
+        def serialize_output():
+            """Serialize output from multiple threads."""
+            for _ in range(50):
+                json_str = output.model_dump_json()
+                json_results.append(json_str)
+
+        threads = [threading.Thread(target=serialize_output) for _ in range(5)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+
+        # All serializations should be valid and consistent
+        assert len(json_results) == 250
+        assert all(
+            '"status":"success"' in j or '"status": "success"' in j
+            for j in json_results
+        )
+        assert all('"count":42' in j or '"count": 42' in j for j in json_results)
