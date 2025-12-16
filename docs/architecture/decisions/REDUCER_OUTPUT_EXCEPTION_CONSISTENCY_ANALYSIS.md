@@ -10,9 +10,9 @@
 
 ## Executive Summary
 
-This document analyzes the exception handling strategy for `ModelReducerOutput` validation, specifically for the sentinel value pattern used in `processing_time_ms` and `items_processed` fields. The analysis compares two approaches: using Pydantic's `ValueError` convention vs. using the project's `ModelOnexError`, and documents the rationale for choosing `ValueError`.
+This document analyzes the exception handling strategy for `ModelReducerOutput` validation, specifically for the sentinel value pattern used in `processing_time_ms` and `items_processed` fields. The analysis compares two approaches: using Pydantic's `ValueError` convention vs. using the project's `ModelOnexError`, and documents the rationale for choosing `ModelOnexError`.
 
-**Decision**: Use Pydantic's `ValueError` in `@field_validator` methods (Option A)
+**Decision**: Use `ModelOnexError` with `EnumCoreErrorCode` in `@field_validator` methods (Option A)
 
 **Status**: ✅ **IMPLEMENTED** - All code snippets in this document reflect the current implementation as of 2025-12-16.
 
