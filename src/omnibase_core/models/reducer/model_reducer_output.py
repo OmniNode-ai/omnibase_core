@@ -45,8 +45,20 @@ class ModelReducerOutput[T_Output](BaseModel):
         result: The new state after reduction (type determined by T_Output).
         operation_id: UUID from the corresponding ModelReducerInput for correlation.
         reduction_type: Type of reduction performed (FOLD, ACCUMULATE, MERGE, etc.).
-        processing_time_ms: Actual execution time in milliseconds.
-        items_processed: Total number of items processed in the reduction.
+        processing_time_ms: Actual execution time in milliseconds. Negative values are
+            permitted to represent error conditions or unavailable timing data:
+            - Normal: >= 0.0 (measured execution time)
+            - Error sentinel: -1.0 (timing measurement failed)
+            - Unknown: -1.0 (timing not available or not measured)
+            This flexibility allows error handling without raising exceptions when timing
+            is non-critical but the reduction result is valid.
+        items_processed: Total number of items processed in the reduction. Negative values
+            are permitted to represent error conditions or rollback scenarios:
+            - Normal: >= 0 (actual count of items processed)
+            - Error sentinel: -1 (count unavailable due to error)
+            - Rollback: negative value (items rolled back or invalidated)
+            This allows reporting processing state even when counts are uncertain or
+            represent compensating operations.
         conflicts_resolved: Number of conflicts resolved during reduction (default 0).
         streaming_mode: Processing mode used (BATCH, WINDOWED, CONTINUOUS).
         batches_processed: Number of batches processed (default 1).
@@ -92,8 +104,15 @@ class ModelReducerOutput[T_Output](BaseModel):
     result: T_Output
     operation_id: UUID
     reduction_type: EnumReductionType
-    processing_time_ms: float
-    items_processed: int
+
+    # Performance metrics - negative values permitted for error signaling
+    processing_time_ms: (
+        float  # -1.0 = timing unavailable/failed, >= 0.0 = measured time
+    )
+    items_processed: (
+        int  # -1 = count unavailable, negative = rollback, >= 0 = normal count
+    )
+
     conflicts_resolved: int = 0
     streaming_mode: EnumStreamingMode = EnumStreamingMode.BATCH
     batches_processed: int = 1

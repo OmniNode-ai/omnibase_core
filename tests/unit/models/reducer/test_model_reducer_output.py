@@ -306,7 +306,7 @@ class TestModelReducerOutputValidation:
         uuid_str = str(uuid4())
         output2 = ModelReducerOutput[int](
             result=42,
-            operation_id=uuid_str,  # type: ignore[misc]
+            operation_id=uuid_str,  # type: ignore[arg-type]
             reduction_type=EnumReductionType.FOLD,
             processing_time_ms=10.0,
             items_processed=5,
@@ -334,7 +334,7 @@ class TestModelReducerOutputValidation:
             ModelReducerOutput[int](
                 result=42,
                 operation_id=uuid4(),
-                reduction_type="invalid_type",  # type: ignore[misc]
+                reduction_type="invalid_type",  # type: ignore[arg-type]
                 processing_time_ms=10.0,
                 items_processed=5,
             )
@@ -445,7 +445,7 @@ class TestModelReducerOutputValidation:
         with pytest.raises(ValidationError):
             ModelReducerOutput[int](
                 result=42,
-                operation_id="not-a-uuid",  # type: ignore[misc]
+                operation_id="not-a-uuid",  # type: ignore[arg-type]
                 reduction_type=EnumReductionType.FOLD,
                 processing_time_ms=10.0,
                 items_processed=5,
@@ -457,7 +457,7 @@ class TestModelReducerOutputValidation:
                 result=42,
                 operation_id=uuid4(),
                 reduction_type=EnumReductionType.FOLD,
-                processing_time_ms="not-a-number",  # type: ignore[misc]
+                processing_time_ms="not-a-number",  # type: ignore[arg-type]
                 items_processed=5,
             )
 
@@ -469,7 +469,7 @@ class TestModelReducerOutputValidation:
                 operation_id=uuid4(),
                 reduction_type=EnumReductionType.FOLD,
                 processing_time_ms=10.0,
-                items_processed="not-a-number",  # type: ignore[misc]
+                items_processed="not-a-number",  # type: ignore[arg-type]
             )
 
     def test_extra_fields_rejected(self):
@@ -1006,8 +1006,8 @@ class TestModelReducerOutputFrozenBehavior:
             items_processed=5,
         )
 
-        with pytest.raises((ValidationError, AttributeError)):
-            output.new_field = "value"  # type: ignore[misc]
+        with pytest.raises(ValidationError):
+            output.new_field = "value"  # type: ignore[attr-defined]
 
 
 class TestModelReducerOutputEdgeCases:
