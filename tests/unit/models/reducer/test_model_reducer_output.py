@@ -7,6 +7,10 @@ Tests all aspects of the reducer output model including:
 - Serialization/deserialization
 - Generic typing behavior
 - Edge cases and boundary values
+- Thread safety and concurrent access
+- UUID format preservation
+- Async-safe operations
+- Performance benchmarks
 
 Architecture Context:
     ModelReducerOutput[T] is the output model for REDUCER nodes, containing
@@ -23,14 +27,20 @@ Notes:
     - Thread-safe for pytest-xdist parallel execution
 """
 
+import asyncio
+import concurrent.futures
+import threading
+import time
 from datetime import datetime
 from uuid import UUID, uuid4
 
 import pytest
 from pydantic import BaseModel, ValidationError
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_reducer_types import EnumReductionType, EnumStreamingMode
 from omnibase_core.models.common.model_reducer_metadata import ModelReducerMetadata
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.reducer.model_intent import ModelIntent
 from omnibase_core.models.reducer.model_reducer_output import ModelReducerOutput
 
@@ -157,7 +167,7 @@ class TestModelReducerOutputInstantiation:
 
         Validates that the generic type parameter system correctly handles int, str,
         dict, and list types for results."""
-        output = ModelReducerOutput[type_param](
+        output = ModelReducerOutput[type_param](  # type: ignore[valid-type]  # Runtime type parameter in parametrized test
             result=result,
             operation_id=uuid4(),
             reduction_type=reduction_type,
@@ -295,7 +305,7 @@ class TestModelReducerOutputValidation:
         uuid_str = str(uuid4())
         output2 = ModelReducerOutput[int](
             result=42,
-            operation_id=uuid_str,  # type: ignore[arg-type]
+            operation_id=uuid_str,  # type: ignore[arg-type]  # Testing string UUID coercion
             reduction_type=EnumReductionType.FOLD,
             processing_time_ms=10.0,
             items_processed=5,
@@ -323,7 +333,7 @@ class TestModelReducerOutputValidation:
             ModelReducerOutput[int](
                 result=42,
                 operation_id=uuid4(),
-                reduction_type="invalid_type",  # type: ignore[arg-type]
+                reduction_type="invalid_type",  # type: ignore[arg-type]  # Testing invalid enum value
                 processing_time_ms=10.0,
                 items_processed=5,
             )
@@ -392,7 +402,7 @@ class TestModelReducerOutputValidation:
 
         Validates that the sentinel pattern enforcement correctly rejects invalid
         negative values while allowing only -1.0 as the error indicator."""
-        with pytest.raises(ValidationError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelReducerOutput[int](
                 result=42,
                 operation_id=uuid4(),
@@ -401,9 +411,10 @@ class TestModelReducerOutputValidation:
                 items_processed=5,
             )
 
-        error_msg = str(exc_info.value)
-        assert "processing_time_ms" in error_msg
-        assert "sentinel" in error_msg.lower() or "-1.0" in error_msg
+        error = exc_info.value
+        assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "processing_time_ms" in error.message
+        assert "sentinel" in error.message.lower() or "-1.0" in error.message
 
     @pytest.mark.parametrize(
         ("invalid_value", "description"),
@@ -419,7 +430,7 @@ class TestModelReducerOutputValidation:
 
         Validates that the sentinel pattern enforcement correctly rejects invalid
         negative values while allowing only -1 as the error indicator."""
-        with pytest.raises(ValidationError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelReducerOutput[int](
                 result=42,
                 operation_id=uuid4(),
@@ -428,9 +439,41 @@ class TestModelReducerOutputValidation:
                 items_processed=invalid_value,
             )
 
-        error_msg = str(exc_info.value)
-        assert "items_processed" in error_msg
-        assert "sentinel" in error_msg.lower() or "-1" in error_msg
+        error = exc_info.value
+        assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "items_processed" in error.message
+        assert "sentinel" in error.message.lower() or "-1" in error.message
+
+    @pytest.mark.parametrize(
+        ("special_value", "value_name"),
+        [
+            pytest.param(float("nan"), "NaN", id="nan"),
+            pytest.param(float("inf"), "positive_infinity", id="positive_inf"),
+            pytest.param(float("-inf"), "negative_infinity", id="negative_inf"),
+        ],
+    )
+    def test_processing_time_ms_special_float_values_rejected(
+        self, special_value, value_name
+    ):
+        """Test that processing_time_ms rejects special float values (NaN, Inf, -Inf).
+
+        Validates that special IEEE 754 float values are rejected to prevent
+        undefined behavior in calculations and comparisons."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelReducerOutput[int](
+                result=42,
+                operation_id=uuid4(),
+                reduction_type=EnumReductionType.FOLD,
+                processing_time_ms=special_value,
+                items_processed=5,
+            )
+
+        error = exc_info.value
+        assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "processing_time_ms" in error.message
+        # Check for specific error message about the special value type
+        error_lower = error.message.lower()
+        assert "nan" in error_lower or "infinity" in error_lower or "inf" in error_lower
 
     def test_invalid_field_types(self):
         """Test that invalid field types are rejected.
@@ -441,7 +484,7 @@ class TestModelReducerOutputValidation:
         with pytest.raises(ValidationError):
             ModelReducerOutput[int](
                 result=42,
-                operation_id="not-a-uuid",  # type: ignore[arg-type]
+                operation_id="not-a-uuid",  # type: ignore[arg-type]  # Testing invalid UUID string
                 reduction_type=EnumReductionType.FOLD,
                 processing_time_ms=10.0,
                 items_processed=5,
@@ -453,7 +496,7 @@ class TestModelReducerOutputValidation:
                 result=42,
                 operation_id=uuid4(),
                 reduction_type=EnumReductionType.FOLD,
-                processing_time_ms="not-a-number",  # type: ignore[arg-type]
+                processing_time_ms="not-a-number",  # type: ignore[arg-type]  # Testing invalid type
                 items_processed=5,
             )
 
@@ -465,7 +508,7 @@ class TestModelReducerOutputValidation:
                 operation_id=uuid4(),
                 reduction_type=EnumReductionType.FOLD,
                 processing_time_ms=10.0,
-                items_processed="not-a-number",  # type: ignore[arg-type]
+                items_processed="not-a-number",  # type: ignore[arg-type]  # Testing invalid type
             )
 
     def test_extra_fields_rejected(self):
@@ -480,7 +523,7 @@ class TestModelReducerOutputValidation:
                 reduction_type=EnumReductionType.FOLD,
                 processing_time_ms=10.0,
                 items_processed=5,
-                extra_field="should_fail",  # type: ignore[misc]
+                extra_field="should_fail",  # type: ignore[call-arg]  # Testing extra field rejection
             )
 
         error_msg = str(exc_info.value)
@@ -607,7 +650,7 @@ class TestModelReducerOutputSerialization:
 
         Validates that results can be serialized to dict/JSON and back without loss
         of data or type information."""
-        original = ModelReducerOutput[type_param](
+        original = ModelReducerOutput[type_param](  # type: ignore[valid-type]  # Runtime type parameter in parametrized test
             result=result,
             operation_id=uuid4(),
             reduction_type=reduction_type,
@@ -617,9 +660,9 @@ class TestModelReducerOutputSerialization:
 
         # Serialize and deserialize
         data = original.model_dump()
-        restored = ModelReducerOutput[type_param].model_validate(data)
+        restored = ModelReducerOutput[type_param].model_validate(data)  # type: ignore[valid-type]  # Runtime type parameter in parametrized test
 
-        assert restored.result == original.result
+        assert restored.result == original.result  # type: ignore[operator]  # Runtime type comparison in parametrized test
         assert restored.operation_id == original.operation_id
         assert restored.reduction_type == original.reduction_type
         assert restored.processing_time_ms == original.processing_time_ms
@@ -729,7 +772,7 @@ class TestModelReducerOutputGenericTyping:
 
         Validates that int, str, dict, and list type parameters maintain their types
         throughout the model lifecycle."""
-        output = ModelReducerOutput[type_param](
+        output = ModelReducerOutput[type_param](  # type: ignore[valid-type]  # Runtime type parameter in parametrized test
             result=result,
             operation_id=uuid4(),
             reduction_type=EnumReductionType.FOLD,
@@ -853,7 +896,7 @@ class TestModelReducerOutputFrozenBehavior:
         )
 
         with pytest.raises(ValidationError) as exc_info:
-            setattr(output, field_name, new_value)  # type: ignore[misc]
+            setattr(output, field_name, new_value)
 
         assert "frozen" in str(exc_info.value).lower()
 
@@ -871,7 +914,7 @@ class TestModelReducerOutputFrozenBehavior:
         )
 
         with pytest.raises(ValidationError):
-            output.new_field = "value"  # type: ignore[attr-defined]
+            output.new_field = "value"  # type: ignore[attr-defined]  # Testing attribute addition prevention
 
 
 class TestModelReducerOutputEdgeCases:

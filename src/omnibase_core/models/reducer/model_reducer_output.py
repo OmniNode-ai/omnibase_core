@@ -11,13 +11,16 @@ Thread Safety:
 
 """
 
+import math
 from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_reducer_types import EnumReductionType, EnumStreamingMode
 from omnibase_core.models.common.model_reducer_metadata import ModelReducerMetadata
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.reducer.model_intent import ModelIntent
 
 
@@ -152,10 +155,12 @@ class ModelReducerOutput[T_Output](BaseModel):
     @field_validator("processing_time_ms")
     @classmethod
     def validate_processing_time_ms(cls, v: float) -> float:
-        """Validate processing_time_ms follows sentinel pattern.
+        """Validate processing_time_ms follows sentinel pattern and rejects special float values.
 
-        Enforces that negative values are ONLY -1.0 (sentinel for unavailable/failed).
-        Any other negative value is invalid.
+        Enforces that:
+        1. Special float values (NaN, Inf, -Inf) are ALWAYS rejected
+        2. Negative values are ONLY -1.0 (sentinel for unavailable/failed)
+        3. Any other negative value is invalid
 
         Args:
             v: The processing time value to validate
@@ -164,13 +169,33 @@ class ModelReducerOutput[T_Output](BaseModel):
             The validated processing time value
 
         Raises:
-            ValueError: If value is negative but not exactly -1.0
+            ModelOnexError: If value is NaN, Inf, -Inf, or negative but not exactly -1.0
         """
-        if v < 0.0 and v != -1.0:
-            msg = (
-                f"processing_time_ms must be >= 0.0 or exactly -1.0 (sentinel), got {v}"
+        # Reject special float values first (NaN, Inf, -Inf)
+        if math.isnan(v):
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="processing_time_ms cannot be NaN (not a number)",
+                context={"value": str(v), "field": "processing_time_ms"},
             )
-            raise ValueError(msg)
+        if math.isinf(v):
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"processing_time_ms cannot be {'positive' if v > 0 else 'negative'} infinity",
+                context={"value": str(v), "field": "processing_time_ms"},
+            )
+
+        # Enforce sentinel pattern: only -1.0 is permitted as negative value
+        if v < 0.0 and v != -1.0:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"processing_time_ms must be >= 0.0 or exactly -1.0 (sentinel), got {v}",
+                context={
+                    "value": v,
+                    "field": "processing_time_ms",
+                    "sentinel_value": -1.0,
+                },
+            )
         return v
 
     @field_validator("items_processed")
@@ -181,6 +206,10 @@ class ModelReducerOutput[T_Output](BaseModel):
         Enforces that negative values are ONLY -1 (sentinel for unavailable/error).
         Any other negative value is invalid.
 
+        Note: Integer validation does not require special float value checks (NaN, Inf)
+        because Pydantic will reject those during int coercion. This validator only
+        enforces the sentinel pattern for negative integers.
+
         Args:
             v: The items processed count to validate
 
@@ -188,9 +217,17 @@ class ModelReducerOutput[T_Output](BaseModel):
             The validated items processed count
 
         Raises:
-            ValueError: If value is negative but not exactly -1
+            ModelOnexError: If value is negative but not exactly -1
         """
+        # Enforce sentinel pattern: only -1 is permitted as negative value
         if v < 0 and v != -1:
-            msg = f"items_processed must be >= 0 or exactly -1 (sentinel), got {v}"
-            raise ValueError(msg)
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"items_processed must be >= 0 or exactly -1 (sentinel), got {v}",
+                context={
+                    "value": v,
+                    "field": "items_processed",
+                    "sentinel_value": -1,
+                },
+            )
         return v

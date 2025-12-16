@@ -104,6 +104,17 @@ omnibase_core/docs/
 | [Effect Timeout Behavior](architecture/EFFECT_TIMEOUT_BEHAVIOR.md) | Timeout check points and retry behavior | ✅ Complete |
 | [Ecosystem Directory Structure](architecture/ECOSYSTEM_DIRECTORY_STRUCTURE.md) | Repository organization and patterns across ONEX ecosystem | ✅ Available |
 
+### Architecture Decision Records (ADRs)
+
+**Key architectural decisions and their rationale**
+
+| Document | Description | Status |
+|----------|-------------|--------|
+| [ADR-001: Protocol-Based DI](architecture/decisions/ADR-001-protocol-based-di-architecture.md) | Protocol-based dependency injection architecture | ✅ Complete |
+| [ADR-002: Context Mutability](architecture/decisions/ADR-002-context-mutability-design-decision.md) | Design decision on context mutability | ✅ Complete |
+| [Reducer Output Exception Consistency](architecture/decisions/REDUCER_OUTPUT_EXCEPTION_CONSISTENCY_ANALYSIS.md) | Sentinel value pattern and exception handling strategy | ✅ Complete |
+| [RISK-009: CI Workflow Modification](architecture/decisions/RISK-009-ci-workflow-modification-risk.md) | Risk assessment for CI workflow changes | ✅ Complete |
+
 ---
 
 ## 📋 Reference
