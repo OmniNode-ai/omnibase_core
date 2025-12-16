@@ -26,6 +26,9 @@ from .enum_case_mode import EnumCaseMode
 # Category filter enums
 from .enum_category_filter import EnumCategoryFilter
 
+# Circuit breaker state enum (standalone for cross-repo standardization)
+from .enum_circuit_breaker_state import EnumCircuitBreakerState
+
 # Error code enums
 from .enum_cli_exit_code import EnumCLIExitCode
 
@@ -59,7 +62,6 @@ from .enum_discriminated_value_type import EnumDiscriminatedValueType
 from .enum_effect_capability import EnumEffectCapability
 from .enum_effect_handler_type import EnumEffectHandlerType
 from .enum_effect_types import (
-    EnumCircuitBreakerState,
     EnumEffectType,
     EnumTransactionState,
 )

@@ -380,6 +380,11 @@ class TestModelCircuitBreakerAdapterConformance:
         assert adapter.failure_count == 0
 
 
+def _raise_value_error() -> None:
+    """Helper function to raise ValueError for testing."""
+    raise ValueError("fail")
+
+
 class TestProtocolUsagePatterns:
     """Test common usage patterns with protocols."""
 
@@ -410,10 +415,10 @@ class TestProtocolUsagePatterns:
 
         # Failed operations
         with pytest.raises(ValueError):
-            execute_with_breaker(cb, lambda: (_ for _ in ()).throw(ValueError("fail")))
+            execute_with_breaker(cb, _raise_value_error)
 
         with pytest.raises(ValueError):
-            execute_with_breaker(cb, lambda: (_ for _ in ()).throw(ValueError("fail")))
+            execute_with_breaker(cb, _raise_value_error)
 
         # Circuit should now be open
         assert cb.is_open
