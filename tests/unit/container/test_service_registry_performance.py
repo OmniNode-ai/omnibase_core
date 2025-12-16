@@ -95,6 +95,19 @@ class TestServiceRegistryPerformance:
         Performance Threshold:
         - Average registration time < 1ms per service
         - Total registration time < 1 second
+
+        Threshold Rationale:
+            - 1ms/service allows for 1000 registrations/second
+            - Registry operations: dict insertion (~O(1), ~1µs) + metadata (~10µs)
+            - Interface map update: ~50-100µs per registration
+            - Total overhead: ~100-200µs expected, 1ms threshold provides margin
+
+            CI considerations:
+            - GitHub Actions 2-core runners may show higher variance
+            - Async operations may queue during high load
+            - Threshold is 5x expected time for CI reliability
+
+            See: docs/performance/PERFORMANCE_BENCHMARK_THRESHOLDS.md
         """
         num_services = 1000
         registration_ids: list[UUID] = []

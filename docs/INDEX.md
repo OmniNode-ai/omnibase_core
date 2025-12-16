@@ -104,6 +104,18 @@ omnibase_core/docs/
 | [Effect Timeout Behavior](architecture/EFFECT_TIMEOUT_BEHAVIOR.md) | Timeout check points and retry behavior | ✅ Complete |
 | [Ecosystem Directory Structure](architecture/ECOSYSTEM_DIRECTORY_STRUCTURE.md) | Repository organization and patterns across ONEX ecosystem | ✅ Available |
 
+### Architecture Decision Records (ADRs)
+
+**Key architectural decisions and their rationale**
+
+| Document | Description | Status |
+|----------|-------------|--------|
+| [ADR-001: Protocol-Based DI](architecture/decisions/ADR-001-protocol-based-di-architecture.md) | Protocol-based dependency injection architecture | ✅ Complete |
+| [ADR-002: Context Mutability](architecture/decisions/ADR-002-context-mutability-design-decision.md) | Design decision on context mutability | ✅ Complete |
+| [**ADR-012: Validator Error Handling**](architecture/adr/ADR-012-VALIDATOR-ERROR-HANDLING.md) | ModelOnexError in Pydantic validators with future compatibility ⭐ **v0.4.0** | ✅ Complete |
+| [ADR-003: Reducer Output Exception Consistency](architecture/decisions/ADR-003-reducer-output-exception-consistency.md) | Sentinel value pattern and exception handling strategy | ✅ Complete |
+| [RISK-009: CI Workflow Modification](architecture/decisions/RISK-009-ci-workflow-modification-risk.md) | Risk assessment for CI workflow changes | ✅ Complete |
+
 ---
 
 ## 📋 Reference
@@ -149,6 +161,15 @@ omnibase_core/docs/
 | [Configuration Management](patterns/CONFIGURATION_MANAGEMENT.md) | Config patterns | ✅ Available |
 | [Performance Benchmarks](guides/PERFORMANCE_BENCHMARKS.md) | Performance testing | ✅ Available |
 
+### Performance & Optimization
+
+| Document | Description | Status |
+|----------|-------------|--------|
+| [**Performance Benchmark Thresholds**](performance/PERFORMANCE_BENCHMARK_THRESHOLDS.md) | Threshold rationale, CI vs local, environment configuration ⭐ **NEW** | ✅ Complete |
+| [Model Reducer Output Benchmarks](performance/MODEL_REDUCER_OUTPUT_BENCHMARKS.md) | ModelReducerOutput performance baselines | ✅ Complete |
+| [Source Node ID Benchmarks](performance/SOURCE_NODE_ID_BENCHMARKS.md) | source_node_id field overhead analysis | ✅ Complete |
+| [**Performance Benchmark CI Integration**](ci/PERFORMANCE_BENCHMARK_CI_INTEGRATION.md) | CI pipeline integration, threshold enforcement, regression detection ⭐ **NEW** | ✅ Complete |
+
 ### Changelog
 
 | Document | Description | Status |
@@ -185,6 +206,7 @@ omnibase_core/docs/
 | Document | Description | Status |
 |----------|-------------|--------|
 | [**CI Monitoring Guide**](ci/CI_MONITORING_GUIDE.md) | CI performance monitoring, alerting, and investigation | ✅ Complete |
+| [**Performance Benchmark CI Integration**](ci/PERFORMANCE_BENCHMARK_CI_INTEGRATION.md) | CI pipeline integration, threshold enforcement, regression detection ⭐ **NEW** | ✅ Complete |
 | [**Node Purity Failure Guide**](ci/CORE_PURITY_FAILURE.md) | Interpreting and fixing CI purity check failures | ✅ Complete |
 | [**Deprecation Warnings**](ci/DEPRECATION_WARNINGS.md) | Deprecation warning configuration and v0.5.0 migration path | ✅ Complete |
 | [CI Test Strategy](testing/CI_TEST_STRATEGY.md) | CI/CD test strategy and optimization | ✅ Complete |
@@ -232,6 +254,8 @@ omnibase_core/docs/
 | **Test my node** | [Testing Guide](guides/TESTING_GUIDE.md) |
 | **Monitor CI performance** | [CI Monitoring Guide](ci/CI_MONITORING_GUIDE.md) |
 | **Fix CI purity failures** | [Node Purity Failure Guide](ci/CORE_PURITY_FAILURE.md) |
+| **Understand performance thresholds** | [Performance Benchmark Thresholds](performance/PERFORMANCE_BENCHMARK_THRESHOLDS.md) |
+| **Fix slow performance tests** | [Performance Benchmark Thresholds](performance/PERFORMANCE_BENCHMARK_THRESHOLDS.md#ci-performance-degradation) |
 | **Debug async hangs** | [Async Hang Debugging](troubleshooting/ASYNC_HANG_DEBUGGING.md) |
 | **Understand contracts** | [Subcontract Architecture](architecture/SUBCONTRACT_ARCHITECTURE.md) |
 | **Validate mixin metadata** | [ModelMixinMetadata](../src/omnibase_core/models/core/model_mixin_metadata.py) - Mixin discovery & validation |

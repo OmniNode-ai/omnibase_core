@@ -1,6 +1,6 @@
 # ADR-001: Protocol-Based Dependency Injection Architecture
 
-**Status**: Accepted ✅
+**Status**: 🟢 **IMPLEMENTED**
 **Date**: 2025-10-30
 **Deciders**: ONEX Framework Team
 **Related**: REGISTRY_AUDIT_REPORT.md (2025-10-30)
@@ -56,7 +56,7 @@ We adopt **Protocol-Based Dependency Injection** via `ServiceRegistry` as the ex
 - `ModelServiceRegistration` - Service registration metadata (Pydantic BaseModel)
 
 **Usage Pattern**:
-```
+```python
 # Initialize registry
 config = create_default_registry_config()
 registry = ServiceRegistry(config)
@@ -73,7 +73,7 @@ logger = await registry.resolve_service(ProtocolLogger)
 ```
 
 **Integration with Container**:
-```
+```python
 # ModelONEXContainer integration (lines 125-149)
 self._service_registry = ServiceRegistry(registry_config)
 
@@ -135,7 +135,7 @@ These are **NOT dependency injection registries** - they serve business logic pu
 
 ### Dependency Injection (ServiceRegistry)
 
-```
+```text
 User Code
     │
     ▼
@@ -155,7 +155,7 @@ ServiceRegistry.resolve_service(ProtocolLogger)
 
 ### Business Registry (Action Discovery)
 
-```
+```text
 Node Contract (contract.yaml)
     │
     ▼
@@ -175,7 +175,7 @@ ModelActionRegistry.register_action(action)
 
 ### Runtime Discovery (MixinServiceRegistry)
 
-```
+```text
 Tool Node Starts
     │
     ▼
@@ -223,7 +223,7 @@ Store in self.service_registry[tool_id]
 
 ### Singleton (Default)
 
-```
+```python
 # Register singleton
 await registry.register_instance(
     interface=ProtocolLogger,
@@ -239,7 +239,7 @@ assert logger1 is logger2  # Same instance
 
 ### Transient (Planned v2.0)
 
-```
+```python
 # Register transient (requires factory support)
 await registry.register_factory(
     interface=ProtocolConnectionPool,
@@ -255,7 +255,7 @@ assert pool1 is not pool2  # Different instances
 
 ### Scoped (Planned v2.0)
 
-```
+```python
 # Register scoped service
 await registry.register_service(
     interface=ProtocolRequestContext,
@@ -279,7 +279,7 @@ async with registry.create_scope("request") as scope:
 
 The container supports both ServiceRegistry (new) and legacy fallback:
 
-```
+```python
 async def get_service_async(
     self,
     protocol_type: type[T],
@@ -334,7 +334,7 @@ async def get_service_async(
 ### Alternative 1: Concrete Class DI
 
 **Pattern**:
-```
+```python
 # Register by concrete class
 registry.register(LoggerImpl, singleton=True)
 
@@ -351,7 +351,7 @@ logger = registry.resolve(LoggerImpl)
 ### Alternative 2: String-Based Resolution
 
 **Pattern**:
-```
+```python
 # Register by string name
 registry.register("logger", logger_instance)
 
@@ -368,7 +368,7 @@ logger = registry.resolve("logger")
 ### Alternative 3: Decorator-Based DI
 
 **Pattern**:
-```
+```python
 @injectable(ProtocolLogger)
 class MyService:
     def __init__(self, logger: ProtocolLogger):
@@ -428,24 +428,24 @@ class MyService:
 
 The codebase contains TODO comments that are often misinterpreted as "legacy registry removal" tasks. These are actually **future protocol integration** placeholders:
 
-### model_onex_container.py Lines 58-61
+### Import Section - model_onex_container.py (commit 20d603dd)
 
 **Current**:
-```
+```python
 # TODO: These imports require omnibase-spi protocols that may not be available yet
 ```
 
 **Clarified**:
-```
+```python
 # FUTURE (v2.0): Protocol integrations now available in omnibase-spi v0.2.0
 # These protocols enable external service discovery and database pooling.
 # Ready for implementation - Tracking: https://github.com/OmniNode-ai/omnibase_spi/issues/42
 ```
 
-### model_onex_container.py Lines 304-305
+### get_service Method - model_onex_container.py (commit 20d603dd)
 
 **Current**:
-```
+```python
 # TODO: Ready to implement using ProtocolServiceResolver from omnibase_spi.protocols.container
 # Note: ProtocolServiceResolver available in omnibase_spi v0.2.0
 ```
@@ -455,10 +455,10 @@ ProtocolServiceResolver is now available in omnibase_spi v0.2.0 and ready for im
 This will enable automatic service discovery for ProtocolDatabaseConnection,
 ProtocolServiceDiscovery, and other external dependencies.
 
-### model_onex_container.py Lines 531-560
+### get_performance_stats Method - model_onex_container.py (commit 20d603dd)
 
 **Current**:
-```
+```python
 # TODO: Ready to implement using ProtocolServiceResolver from omnibase_spi.protocols.container
 # Note: ProtocolServiceResolver available in omnibase_spi v0.2.0
 ```
@@ -467,7 +467,6 @@ ProtocolServiceDiscovery, and other external dependencies.
 ProtocolServiceResolver is now available for implementation of external service health checks.
 Current behavior: Returns "unavailable" status message (graceful degradation).
 Implementation ready to proceed using omnibase_spi v0.2.0.
-```markdown
 
 ---
 
@@ -488,8 +487,8 @@ Implementation ready to proceed using omnibase_spi v0.2.0.
 ### Code References
 
 **Primary Implementation**:
-- `src/omnibase_core/container/service_registry.py` (Lines 39-896)
-- `src/omnibase_core/models/container/model_onex_container.py` (Lines 74-730)
+- `src/omnibase_core/container/service_registry.py` - ServiceRegistry implementation (commit f817fe2d)
+- `src/omnibase_core/models/container/model_onex_container.py` - ModelONEXContainer implementation (commit 20d603dd)
 
 **Protocol Definitions** (omnibase_spi):
 - `omnibase_spi.protocols.container.ProtocolServiceRegistry`
@@ -505,15 +504,15 @@ Implementation ready to proceed using omnibase_spi v0.2.0.
 
 ## Approval
 
-**Approved By**: ONEX Framework Team
+**Implemented By**: ONEX Framework Team
 **Date**: 2025-10-30
 **Version**: 1.0
 
-**Sign-offs**:
-- Architecture: ✅ Approved (protocol-based approach aligns with omnibase_spi)
-- Implementation: ✅ Approved (100% Pydantic validation, type-safe)
-- Testing: ✅ Approved (12,000+ tests cover framework functionality)
-- Documentation: ✅ Approved (comprehensive audit report + ADR)
+**Implementation Sign-offs**:
+- Architecture: ✅ Implemented (protocol-based approach aligns with omnibase_spi)
+- Implementation: ✅ Complete (100% Pydantic validation, type-safe)
+- Testing: ✅ Complete (12,000+ tests cover framework functionality)
+- Documentation: ✅ Complete (comprehensive audit report + ADR)
 
 ---
 
