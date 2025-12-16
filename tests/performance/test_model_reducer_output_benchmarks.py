@@ -71,6 +71,12 @@ class TestModelReducerOutputPerformance:
     @pytest.mark.parametrize(
         ("data_size", "max_time_ms"),
         [
+            # Threshold rationale:
+            # - 10 items: UUID generation (3 × 10µs) + validation (10 fields × 10µs) + dict creation (~500µs) = ~1ms
+            # - 100 items: Linear scaling + nested dict overhead = ~2ms
+            # - 1000 items: Pydantic validation dominates (0.01ms/field × 1000) = ~10ms
+            # - 10000 items: Memory allocation + GC overhead + validation = ~50ms
+            # See: docs/performance/PERFORMANCE_BENCHMARK_THRESHOLDS.md#model-creation-thresholds
             pytest.param(10, 1.0, id="small_10_items"),
             pytest.param(100, 2.0, id="medium_100_items"),
             pytest.param(1000, 10.0, id="large_1000_items"),
@@ -90,6 +96,18 @@ class TestModelReducerOutputPerformance:
             - 100 items: < 2ms
             - 1000 items: < 10ms
             - 10000 items: < 50ms
+
+        Threshold Rationale:
+            These thresholds are set for CI runners (GitHub Actions 2-core).
+            Local development typically runs 1.5-2x faster.
+
+            Key factors affecting performance:
+            - UUID generation: 3 UUIDs per model (~30µs total)
+            - Pydantic validation: ~10-100µs per field
+            - Nested structure traversal: ~0.5-5ms for dicts with lists
+            - Memory allocation: Increases with data size
+
+            See: docs/performance/PERFORMANCE_BENCHMARK_THRESHOLDS.md
         """
         operation_id = uuid4()
 
@@ -331,6 +349,15 @@ class TestModelReducerOutputPerformance:
 
         Performance Baseline:
             - Field validation: < 0.1ms per field
+
+        Threshold Rationale:
+            - 0.1ms per field allows for 10,000 validations/second per core
+            - Validator overhead: ~10-50µs (decorator + function call)
+            - Type checking: ~10-20ns per isinstance() call
+            - Conditional logic: ~5-10ns per if/else branch
+
+            CI variance: ±20% due to CPU scheduling and cache effects
+            See: docs/performance/PERFORMANCE_BENCHMARK_THRESHOLDS.md#field-validation-thresholds
         """
         operation_id = uuid4()
 
@@ -500,6 +527,22 @@ class TestModelReducerOutputPerformance:
     @pytest.mark.parametrize(
         ("data_size", "max_memory_mb"),
         [
+            # Memory threshold rationale:
+            # - Python object overhead: ~28-56 bytes per object
+            # - UUID storage: 16 bytes + wrapper (~72 bytes total per UUID)
+            # - Dict overhead: 30-70% of data size (hash table implementation)
+            # - String interning: Short strings may be deduplicated
+            # - GC timing: Garbage collector may not run immediately
+            #
+            # Thresholds are per 10 model instances:
+            # - 10 items: 10 models × ~100KB = ~1MB
+            # - 100 items: 10 models × ~500KB = ~5MB
+            # - 1000 items: 10 models × ~2MB = ~20MB
+            # - 10000 items: 10 models × ~10MB = ~100MB
+            #
+            # NOTE: Memory thresholds are NOT configurable via environment variables
+            # because memory usage is more consistent across environments than timing.
+            # See: docs/performance/PERFORMANCE_BENCHMARK_THRESHOLDS.md#memory-usage-thresholds
             pytest.param(10, 1, id="small_10_items"),
             pytest.param(100, 5, id="medium_100_items"),
             pytest.param(1000, 20, id="large_1000_items"),
@@ -521,6 +564,19 @@ class TestModelReducerOutputPerformance:
         Note:
             Memory measurements are approximate and may vary based on
             Python runtime, GC behavior, and system state.
+
+        Threshold Rationale:
+            Memory thresholds are based on RSS measurements which include:
+            - Python object overhead (~28-56 bytes per object)
+            - UUID storage (16 bytes data + ~56 bytes wrapper = ~72 bytes)
+            - Dict hash table overhead (30-70% of data size)
+            - String storage (with possible interning for short strings)
+
+            These thresholds are NOT environment-configurable because memory
+            usage is relatively consistent across CI and local environments
+            (unlike timing, which varies significantly with CPU performance).
+
+            See: docs/performance/PERFORMANCE_BENCHMARK_THRESHOLDS.md#memory-usage-thresholds
         """
         import os
 

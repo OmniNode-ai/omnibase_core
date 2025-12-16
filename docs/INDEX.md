@@ -160,6 +160,14 @@ omnibase_core/docs/
 | [Configuration Management](patterns/CONFIGURATION_MANAGEMENT.md) | Config patterns | ✅ Available |
 | [Performance Benchmarks](guides/PERFORMANCE_BENCHMARKS.md) | Performance testing | ✅ Available |
 
+### Performance & Optimization
+
+| Document | Description | Status |
+|----------|-------------|--------|
+| [**Performance Benchmark Thresholds**](performance/PERFORMANCE_BENCHMARK_THRESHOLDS.md) | Threshold rationale, CI vs local, environment configuration ⭐ **NEW** | ✅ Complete |
+| [Model Reducer Output Benchmarks](performance/MODEL_REDUCER_OUTPUT_BENCHMARKS.md) | ModelReducerOutput performance baselines | ✅ Complete |
+| [Source Node ID Benchmarks](performance/SOURCE_NODE_ID_BENCHMARKS.md) | source_node_id field overhead analysis | ✅ Complete |
+
 ### Changelog
 
 | Document | Description | Status |
@@ -243,6 +251,8 @@ omnibase_core/docs/
 | **Test my node** | [Testing Guide](guides/TESTING_GUIDE.md) |
 | **Monitor CI performance** | [CI Monitoring Guide](ci/CI_MONITORING_GUIDE.md) |
 | **Fix CI purity failures** | [Node Purity Failure Guide](ci/CORE_PURITY_FAILURE.md) |
+| **Understand performance thresholds** | [Performance Benchmark Thresholds](performance/PERFORMANCE_BENCHMARK_THRESHOLDS.md) |
+| **Fix slow performance tests** | [Performance Benchmark Thresholds](performance/PERFORMANCE_BENCHMARK_THRESHOLDS.md#ci-performance-degradation) |
 | **Debug async hangs** | [Async Hang Debugging](troubleshooting/ASYNC_HANG_DEBUGGING.md) |
 | **Understand contracts** | [Subcontract Architecture](architecture/SUBCONTRACT_ARCHITECTURE.md) |
 | **Validate mixin metadata** | [ModelMixinMetadata](../src/omnibase_core/models/core/model_mixin_metadata.py) - Mixin discovery & validation |

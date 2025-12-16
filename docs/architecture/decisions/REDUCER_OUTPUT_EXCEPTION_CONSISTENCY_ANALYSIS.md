@@ -359,9 +359,9 @@ omnibase_core uses **unified error boundaries**:
 
 ✅ **IMPLEMENTED** in `src/omnibase_core/models/reducer/model_reducer_output.py`:
 
-- Lines 155-199: `validate_processing_time_ms` using `ModelOnexError` with special float checks
-- Lines 201-233: `validate_items_processed` using `ModelOnexError`
-- Lines 47-119: Comprehensive documentation of sentinel semantics (Negative Value Semantics section)
+- `validate_processing_time_ms` method using `ModelOnexError` with special float checks (commit 4e97e09f)
+- `validate_items_processed` method using `ModelOnexError` (commit 4e97e09f)
+- Comprehensive documentation of sentinel semantics in the class docstring (commit 6f218db4)
 
 ### Error Handling Strategy
 
@@ -518,7 +518,7 @@ class ModelReducerOutput[T_Output](BaseModel):
 
 ### Documentation
 
-The implementation includes comprehensive documentation (lines 47-119) explaining:
+The implementation includes comprehensive documentation (commit 6f218db4) explaining:
 
 1. **Sentinel semantics**: What `-1` means and why
 2. **Alternative designs considered**: Why `Optional` was rejected
@@ -528,13 +528,13 @@ The implementation includes comprehensive documentation (lines 47-119) explainin
 
 ### Test Coverage
 
-Comprehensive tests in `tests/unit/models/reducer/test_model_reducer_output.py`:
+Comprehensive tests in `tests/unit/models/reducer/test_model_reducer_output.py` (commit bce11d16):
 
-- Lines 201-567: `TestModelReducerOutputValidation` class with sentinel validation tests:
-  - Lines 412-441: `test_processing_time_ms_invalid_sentinel_rejected` (rejects invalid negative values)
-  - Lines 450-479: `test_items_processed_invalid_sentinel_rejected` (rejects invalid negative values)
-  - Lines 489-514: `test_processing_time_ms_special_float_values_rejected` (rejects NaN, Inf, -Inf)
-- Lines 954-1181: `TestModelReducerOutputEdgeCases` class (zero values, boundary conditions)
+- `TestModelReducerOutputValidation` class with sentinel validation tests:
+  - `test_processing_time_ms_invalid_sentinel_rejected` - rejects invalid negative values
+  - `test_items_processed_invalid_sentinel_rejected` - rejects invalid negative values
+  - `test_processing_time_ms_special_float_values_rejected` - rejects NaN, Inf, -Inf
+- `TestModelReducerOutputEdgeCases` class - zero values, boundary conditions
 
 Concurrency tests in separate file `tests/unit/models/reducer/test_model_reducer_output_concurrency.py`:
 - Thread safety validation (multiple threads accessing same instance)
@@ -578,17 +578,19 @@ Concurrency tests in separate file `tests/unit/models/reducer/test_model_reducer
 
 ### Related Documentation
 
-- **CLAUDE.md**: Project-level guidelines (lines 600-650: Error Handling section)
+- **CLAUDE.md**: Project-level guidelines (Error Handling section)
 - **ERROR_HANDLING_BEST_PRACTICES.md**: Error handling conventions
 - **ONEX_FOUR_NODE_ARCHITECTURE.md**: Reducer node responsibilities
 - **THREADING.md**: Thread safety guidelines for Pydantic models
 
 ### Related Code
 
-- **Implementation**: `src/omnibase_core/models/reducer/model_reducer_output.py` (lines 155-233)
+- **Implementation**: `src/omnibase_core/models/reducer/model_reducer_output.py`
+  - Sentinel validation (commit 4e97e09f)
+  - Documentation (commit 6f218db4)
 - **Main Tests**: `tests/unit/models/reducer/test_model_reducer_output.py`
-  - Validation tests: lines 201-567 (TestModelReducerOutputValidation class)
-  - Edge case tests: lines 954-1181 (TestModelReducerOutputEdgeCases class)
+  - Validation tests: `TestModelReducerOutputValidation` class (commit bce11d16)
+  - Edge case tests: `TestModelReducerOutputEdgeCases` class (commit bce11d16)
 - **Concurrency Tests**: `tests/unit/models/reducer/test_model_reducer_output_concurrency.py`
 
 ### Related Issues
@@ -605,6 +607,7 @@ Concurrency tests in separate file `tests/unit/models/reducer/test_model_reducer
 | 2025-12-16 | 1.0 | Claude Code | Initial analysis documenting implemented decision |
 | 2025-12-16 | 1.1 | Claude Code | Fixed line number references to match actual implementation |
 | 2025-12-16 | 1.2 | Claude Code | Enhanced document header with metadata, purpose, audience, and usage guidance (PR #205 review feedback) |
+| 2025-12-16 | 1.3 | Claude Code | Replaced line number references with commit SHA references for maintainability |
 
 ---
 

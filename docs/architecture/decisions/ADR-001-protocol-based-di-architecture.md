@@ -428,7 +428,7 @@ class MyService:
 
 The codebase contains TODO comments that are often misinterpreted as "legacy registry removal" tasks. These are actually **future protocol integration** placeholders:
 
-### model_onex_container.py Lines 58-61
+### Import Section - model_onex_container.py (commit 20d603dd)
 
 **Current**:
 ```
@@ -442,7 +442,7 @@ The codebase contains TODO comments that are often misinterpreted as "legacy reg
 # Ready for implementation - Tracking: https://github.com/OmniNode-ai/omnibase_spi/issues/42
 ```
 
-### model_onex_container.py Lines 304-305
+### get_service Method - model_onex_container.py (commit 20d603dd)
 
 **Current**:
 ```
@@ -455,7 +455,7 @@ ProtocolServiceResolver is now available in omnibase_spi v0.2.0 and ready for im
 This will enable automatic service discovery for ProtocolDatabaseConnection,
 ProtocolServiceDiscovery, and other external dependencies.
 
-### model_onex_container.py Lines 531-560
+### get_performance_stats Method - model_onex_container.py (commit 20d603dd)
 
 **Current**:
 ```
@@ -467,7 +467,6 @@ ProtocolServiceDiscovery, and other external dependencies.
 ProtocolServiceResolver is now available for implementation of external service health checks.
 Current behavior: Returns "unavailable" status message (graceful degradation).
 Implementation ready to proceed using omnibase_spi v0.2.0.
-```markdown
 
 ---
 
@@ -488,8 +487,8 @@ Implementation ready to proceed using omnibase_spi v0.2.0.
 ### Code References
 
 **Primary Implementation**:
-- `src/omnibase_core/container/service_registry.py` (Lines 39-896)
-- `src/omnibase_core/models/container/model_onex_container.py` (Lines 74-730)
+- `src/omnibase_core/container/service_registry.py` - ServiceRegistry implementation (commit f817fe2d)
+- `src/omnibase_core/models/container/model_onex_container.py` - ModelONEXContainer implementation (commit 20d603dd)
 
 **Protocol Definitions** (omnibase_spi):
 - `omnibase_spi.protocols.container.ProtocolServiceRegistry`

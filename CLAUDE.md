@@ -857,6 +857,7 @@ To find all models using this pattern: `grep -r "from_attributes.*True" src/omni
 | **Reference & Templates** | [Node Templates](docs/reference/templates/COMPUTE_NODE_TEMPLATE.md) | - |
 | **Error Handling** | [Error Handling Best Practices](docs/conventions/ERROR_HANDLING_BEST_PRACTICES.md) | 20 min |
 | **Thread Safety** | [Threading Guide](docs/guides/THREADING.md) | 15 min |
+| **Performance Thresholds** | [Performance Benchmark Thresholds](docs/performance/PERFORMANCE_BENCHMARK_THRESHOLDS.md) | 20 min |
 
 ### Node Building Guide ⭐ CRITICAL
 
