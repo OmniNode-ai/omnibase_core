@@ -339,10 +339,11 @@ class TestModelReducerOutputValidation:
         ],
     )
     def test_processing_time_ms_validation(self, value, description):
-        """Test processing_time_ms validation.
+        """Test processing_time_ms validation with valid values.
 
-        Note: The model does not enforce non-negative constraints on processing time,
-        allowing flexibility for special cases or error conditions."""
+        The model enforces sentinel pattern: -1.0 is allowed as a sentinel value
+        indicating measurement failure or unavailability. All other negative values
+        are rejected. Zero and positive values represent actual measurements."""
         output = ModelReducerOutput[int](
             result=42,
             operation_id=uuid4(),
@@ -362,10 +363,11 @@ class TestModelReducerOutputValidation:
         ],
     )
     def test_items_processed_validation(self, value, description):
-        """Test items_processed validation.
+        """Test items_processed validation with valid values.
 
-        Note: The model does not enforce non-negative constraints on item counts,
-        allowing flexibility for special cases or rollback scenarios."""
+        The model enforces sentinel pattern: -1 is allowed as a sentinel value
+        indicating count unavailability or error. All other negative values are
+        rejected. Zero and positive values represent actual item counts."""
         output = ModelReducerOutput[int](
             result=42,
             operation_id=uuid4(),
@@ -375,6 +377,60 @@ class TestModelReducerOutputValidation:
         )
 
         assert output.items_processed == value
+
+    @pytest.mark.parametrize(
+        ("invalid_value", "description"),
+        [
+            pytest.param(-2.5, "float_negative", id="float_negative"),
+            pytest.param(-10.0, "large_negative", id="large_negative"),
+        ],
+    )
+    def test_processing_time_ms_invalid_sentinel_rejected(
+        self, invalid_value, description
+    ):
+        """Test that processing_time_ms rejects negative values other than -1.0.
+
+        Validates that the sentinel pattern enforcement correctly rejects invalid
+        negative values while allowing only -1.0 as the error indicator."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelReducerOutput[int](
+                result=42,
+                operation_id=uuid4(),
+                reduction_type=EnumReductionType.FOLD,
+                processing_time_ms=invalid_value,
+                items_processed=5,
+            )
+
+        error_msg = str(exc_info.value)
+        assert "processing_time_ms" in error_msg
+        assert "sentinel" in error_msg.lower() or "-1.0" in error_msg
+
+    @pytest.mark.parametrize(
+        ("invalid_value", "description"),
+        [
+            pytest.param(-2, "small_negative", id="small_negative"),
+            pytest.param(-100, "large_negative", id="large_negative"),
+        ],
+    )
+    def test_items_processed_invalid_sentinel_rejected(
+        self, invalid_value, description
+    ):
+        """Test that items_processed rejects negative values other than -1.
+
+        Validates that the sentinel pattern enforcement correctly rejects invalid
+        negative values while allowing only -1 as the error indicator."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelReducerOutput[int](
+                result=42,
+                operation_id=uuid4(),
+                reduction_type=EnumReductionType.FOLD,
+                processing_time_ms=10.0,
+                items_processed=invalid_value,
+            )
+
+        error_msg = str(exc_info.value)
+        assert "items_processed" in error_msg
+        assert "sentinel" in error_msg.lower() or "-1" in error_msg
 
     def test_invalid_field_types(self):
         """Test that invalid field types are rejected.

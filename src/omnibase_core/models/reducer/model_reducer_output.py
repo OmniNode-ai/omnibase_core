@@ -16,10 +16,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_reducer_types import EnumReductionType, EnumStreamingMode
 from omnibase_core.models.common.model_reducer_metadata import ModelReducerMetadata
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.reducer.model_intent import ModelIntent
 
 
@@ -166,16 +164,13 @@ class ModelReducerOutput[T_Output](BaseModel):
             The validated processing time value
 
         Raises:
-            ModelOnexError: If value is negative but not exactly -1.0
+            ValueError: If value is negative but not exactly -1.0
         """
         if v < 0.0 and v != -1.0:
             msg = (
                 f"processing_time_ms must be >= 0.0 or exactly -1.0 (sentinel), got {v}"
             )
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=msg,
-            )
+            raise ValueError(msg)
         return v
 
     @field_validator("items_processed")
@@ -193,12 +188,9 @@ class ModelReducerOutput[T_Output](BaseModel):
             The validated items processed count
 
         Raises:
-            ModelOnexError: If value is negative but not exactly -1
+            ValueError: If value is negative but not exactly -1
         """
         if v < 0 and v != -1:
             msg = f"items_processed must be >= 0 or exactly -1 (sentinel), got {v}"
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=msg,
-            )
+            raise ValueError(msg)
         return v
