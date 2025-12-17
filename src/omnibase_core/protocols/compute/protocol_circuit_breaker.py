@@ -21,7 +21,10 @@ Thread Safety:
 Usage:
     .. code-block:: python
 
+        from typing import Callable, TypeVar
         from omnibase_core.protocols.compute import ProtocolCircuitBreaker
+
+        T = TypeVar("T")
 
         def execute_with_circuit_breaker(
             circuit_breaker: ProtocolCircuitBreaker,
