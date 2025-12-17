@@ -111,8 +111,9 @@ class ModelCliNodeExecutionInput(BaseModel):
 
     model_config = {
         "extra": "ignore",
-        "use_enum_values": False,
+        "use_enum_values": True,
         "validate_assignment": True,
+        "from_attributes": True,
     }
 
     # Protocol method implementations
@@ -122,7 +123,7 @@ class ModelCliNodeExecutionInput(BaseModel):
         """Serialize to dictionary (Serializable protocol)."""
         return cast(
             TypedDictCliNodeExecutionInputSerialized,
-            self.model_dump(exclude_none=False, by_alias=True),
+            self.model_dump(exclude_none=False, by_alias=True, mode="json"),
         )
 
     def get_name(self) -> str:

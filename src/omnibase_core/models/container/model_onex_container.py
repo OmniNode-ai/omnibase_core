@@ -1,10 +1,15 @@
-from typing import Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
 from omnibase_core.types.typed_dict_performance_checkpoint_result import (
     TypedDictPerformanceCheckpointResult,
 )
+
+if TYPE_CHECKING:
+    from omnibase_core.protocols.compute.protocol_performance_monitor import (
+        ProtocolPerformanceMonitor,
+    )
 
 """
 Model ONEX Dependency Injection Container.
@@ -120,7 +125,7 @@ class ModelONEXContainer:
         # Optional performance enhancements
         self.enable_performance_cache = enable_performance_cache
         self.tool_cache: Any = None
-        self.performance_monitor: Any = None
+        self.performance_monitor: ProtocolPerformanceMonitor | None = None
 
         # Initialize ServiceRegistry (new DI system)
         self._service_registry: Any = None

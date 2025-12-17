@@ -293,14 +293,6 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
 
         try:
             event = self._build_event(event_type, data)
-            from omnibase_core.models.events.model_event_envelope import (
-                ModelEventEnvelope,
-            )
-
-            # Wrap event in envelope before publishing
-            _envelope: ModelEventEnvelope[ModelOnexEvent] = ModelEventEnvelope(
-                payload=event
-            )
             # Use synchronous publish method only (this is a sync method) - fail fast if missing
             if hasattr(bus, "publish"):
                 bus.publish(event)

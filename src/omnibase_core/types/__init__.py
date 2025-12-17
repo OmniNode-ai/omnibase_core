@@ -270,6 +270,7 @@ from .typed_dict_mixin_types import (
 from .typed_dict_model_class_info import TypedDictModelClassInfo
 from .typed_dict_model_field_info import TypedDictModelFieldInfo
 from .typed_dict_model_value_serialized import TypedDictModelValueSerialized
+from .typed_dict_monitoring_dashboard import TypedDictMonitoringDashboard
 from .typed_dict_monitoring_metrics import TypedDictMonitoringMetrics
 from .typed_dict_node_capabilities import TypedDictNodeCapabilities
 from .typed_dict_node_capabilities_summary import TypedDictNodeCapabilitiesSummary
@@ -476,6 +477,7 @@ __all__ = [
     "TypedDictAlertData",
     "TypedDictAlertMetadata",
     "TypedDictErrorAnalysis",
+    "TypedDictMonitoringDashboard",
     "TypedDictMonitoringMetrics",
     "TypedDictOperationalImpact",
     "TypedDictToolDetails",

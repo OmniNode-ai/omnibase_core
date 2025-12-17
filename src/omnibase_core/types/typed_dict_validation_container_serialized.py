@@ -18,7 +18,10 @@ providing type-safe dictionary representation for validation containers.
 class TypedDictValidationContainerSerialized(TypedDict):
     """TypedDict for serialized ModelValidationContainer.
 
-    Fields match the ModelValidationContainer model fields.
+    Fields match the ModelValidationContainer model fields. Both errors and
+    warnings have default_factory=list in the model, so they are always
+    present in the serialization output (as empty lists when not set).
+    Since serialize() uses exclude_none=False, all fields are always present.
     """
 
     errors: list[TypedDictValidationErrorSerialized]

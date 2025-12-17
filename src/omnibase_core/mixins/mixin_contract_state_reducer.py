@@ -215,9 +215,9 @@ class MixinContractStateReducer:
                 f"Error in contract state processing: {e!s}",
                 {"tool_name": tool_name, "error": str(e)},
             )
-            _msg = f"Contract state processing error: {e!s}"
+            msg = f"Contract state processing error: {e!s}"
             raise ModelOnexError(
-                message=_msg,
+                message=msg,
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
             ) from e
 

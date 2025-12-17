@@ -525,8 +525,6 @@ async def check_postgresql_health(
     from omnibase_core.models.health.model_health_issue import ModelHealthIssue
 
     try:
-        start_time = datetime.now(UTC)
-
         # Try asyncpg-style connection pool
         if hasattr(connection_pool, "execute"):
             # asyncpg pool
@@ -548,8 +546,6 @@ async def check_postgresql_health(
                 "PostgreSQL health check: Unknown connection pool type",
                 {"pool_type": type(connection_pool).__name__},
             )
-
-        _duration_ms = (datetime.now(UTC) - start_time).total_seconds() * 1000
 
         return ModelHealthStatus.create_healthy(score=1.0)
 
@@ -717,8 +713,6 @@ async def check_redis_health(
     from omnibase_core.models.health.model_health_issue import ModelHealthIssue
 
     try:
-        start_time = datetime.now(UTC)
-
         # Execute PING command
         if hasattr(redis_client, "ping"):
             result = await asyncio.wait_for(
@@ -736,8 +730,6 @@ async def check_redis_health(
                         )
                     ],
                 )
-
-            _duration_ms = (datetime.now(UTC) - start_time).total_seconds() * 1000
 
             return ModelHealthStatus.create_healthy(score=1.0)
 

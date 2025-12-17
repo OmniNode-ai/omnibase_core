@@ -1,9 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypedDict
-
-if TYPE_CHECKING:
-    from omnibase_core.enums.enum_validation_value_type import EnumValidationValueType
+from typing import TypedDict
 
 """
 TypedDict for ModelValidationValue.serialize() return type.
@@ -16,12 +13,13 @@ providing type-safe dictionary representation for validation values.
 class TypedDictValidationValueSerialized(TypedDict):
     """TypedDict for serialized ModelValidationValue.
 
-    Fields match the ModelValidationValue model fields. Since the model
-    uses use_enum_values=False, enum fields retain their enum type (not
-    converted to strings).
+    Fields match the ModelValidationValue model fields. Since
+    EnumValidationValueType is a StrEnum (str, Enum), it serializes to its
+    string value in model_dump() output for consistency with
+    TypedDictModelValueSerialized.
     """
 
-    value_type: EnumValidationValueType
+    value_type: str
     raw_value: object
 
 

@@ -397,10 +397,6 @@ class MixinNodeIntrospection(ABC):
         from omnibase_core.models.core.model_protocol_metadata import (
             ModelGenericMetadata,
         )
-
-        _input_class = cls.get_input_state_class()
-        _output_class = cls.get_output_state_class()
-
         from omnibase_core.models.primitives.model_semver import ModelSemVer
 
         state_models = ModelStates(
