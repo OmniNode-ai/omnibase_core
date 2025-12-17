@@ -706,6 +706,16 @@ class TestReducerIntegration:
         # Note: Conditions are evaluated against the context dict which includes
         # metadata fields. We use ModelReducerMetadata's extra="allow" to pass
         # the validation_status at the root context level where conditions can access it.
+        #
+        # WHY model_construct() IS USED HERE:
+        # -----------------------------------
+        # model_construct() bypasses Pydantic validation to inject arbitrary extra
+        # fields (validation_status) that are not defined in ModelReducerMetadata's
+        # schema. This is a TEST PATTERN ONLY that allows us to test FSM condition
+        # evaluation without defining custom metadata models for each test case.
+        #
+        # In production, use properly typed models with explicit field definitions.
+        # Bypassing validation can mask type errors and schema violations.
         input2_fail: ModelReducerInput[dict[str, str]] = ModelReducerInput(
             data=[{"item": "data"}],
             reduction_type=EnumReductionType.TRANSFORM,
@@ -729,7 +739,8 @@ class TestReducerIntegration:
         assert reducer.get_current_state() == "validating"
 
         # Step 4: Retry with correct data (validation_status == passed)
-        # Pass validation_status="passed" in metadata extra fields
+        # Pass validation_status="passed" in metadata extra fields.
+        # See comment in Step 2 above for why model_construct() is used here.
         input2_success: ModelReducerInput[dict[str, str]] = ModelReducerInput(
             data=[{"item": "data"}],
             reduction_type=EnumReductionType.TRANSFORM,
