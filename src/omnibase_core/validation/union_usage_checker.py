@@ -132,10 +132,14 @@ class UnionUsageChecker(ast.NodeVisitor):
         """Analyze a union pattern for potential issues.
 
         Checks for problematic patterns such as:
-        - Union[T, None] that should use Optional[T]
         - Primitive overload (4+ primitive types)
         - Mixed primitive/complex types
         - Overly broad "everything" unions
+
+        Note:
+            Per ONEX conventions, `T | None` is the PREFERRED syntax for nullable
+            types and is NOT flagged as a violation. The validator only flags
+            actually problematic patterns like primitive overload.
 
         Args:
             union_pattern: The ModelUnionPattern to analyze.
@@ -146,13 +150,9 @@ class UnionUsageChecker(ast.NodeVisitor):
         """
         types_set = frozenset(union_pattern.types)
 
-        # Check for Union[T, None] which should use Optional[T]
-        if "None" in union_pattern.types and union_pattern.type_count == 2:
-            non_none_types = [t for t in union_pattern.types if t != "None"]
-            self.issues.append(
-                f"Line {union_pattern.line}: Use Optional[{non_none_types[0]}] "
-                f"instead of {union_pattern.get_signature()}"
-            )
+        # NOTE: Per ONEX conventions, T | None is the PREFERRED pattern for nullable types.
+        # We do NOT flag simple nullable unions (T | None) as violations.
+        # Only complex unions with 3+ types are checked for problematic patterns.
 
         # Check for complex unions (configurable complexity threshold)
         if union_pattern.type_count >= 3:
@@ -177,14 +177,8 @@ class UnionUsageChecker(ast.NodeVisitor):
                             f"{union_pattern.get_signature()} should use a specific type, generic TypeVar, or proper domain model"
                         )
 
-        # Check for redundant None patterns
-        if "None" in union_pattern.types and union_pattern.type_count > 2:
-            non_none_types = [t for t in union_pattern.types if t != "None"]
-            if len(non_none_types) == 1:
-                self.issues.append(
-                    f"Line {union_pattern.line}: Use Optional[{non_none_types[0]}] "
-                    f"instead of {union_pattern.get_signature()}"
-                )
+        # NOTE: Per ONEX conventions, we do NOT flag nullable patterns (T | None)
+        # as violations. The T | None syntax is the PREFERRED pattern.
 
     def visit_Subscript(self, node: ast.Subscript) -> None:
         """Visit subscript nodes to detect Union[...] type definitions.
@@ -301,8 +295,9 @@ class UnionUsageChecker(ast.NodeVisitor):
         # Analyze the pattern
         self._analyze_union_pattern(union_pattern)
 
-        # Check for Union with None
+        # For Union[T, None] syntax, suggest T | None as the preferred ONEX pattern
         if len(union_types) == 2 and "None" in union_types:
+            non_none_types = [t for t in union_types if t != "None"]
             self.issues.append(
-                f"Line {line_no}: Use Optional[T] or T | None instead of T | None"
+                f"Line {line_no}: Use {non_none_types[0]} | None instead of Union[{non_none_types[0]}, None]"
             )

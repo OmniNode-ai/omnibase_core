@@ -71,6 +71,8 @@ from omnibase_core.protocols.base import (  # Literal Types; Protocols; Type Var
 # Compute Module Exports
 # =============================================================================
 from omnibase_core.protocols.compute import (
+    ProtocolAsyncCircuitBreaker,
+    ProtocolCircuitBreaker,
     ProtocolComputeCache,
     ProtocolParallelExecutor,
     ProtocolTimingService,
@@ -263,6 +265,8 @@ __all__ = [
     # ==========================================================================
     # Compute Module
     # ==========================================================================
+    "ProtocolAsyncCircuitBreaker",
+    "ProtocolCircuitBreaker",
     "ProtocolComputeCache",
     "ProtocolParallelExecutor",
     "ProtocolTimingService",

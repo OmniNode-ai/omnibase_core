@@ -199,8 +199,12 @@ def func(x: str | int | bool) -> None:
         assert len(checker.issues) > 0
         assert any("primitive types" in issue.lower() for issue in checker.issues)
 
-    def test_analyze_union_pattern_optional(self) -> None:
-        """Test analysis suggests Optional for Union[T, None]."""
+    def test_analyze_union_pattern_nullable_not_flagged(self) -> None:
+        """Test that T | None pattern is NOT flagged per ONEX conventions.
+
+        Per ONEX conventions, T | None is the PREFERRED syntax for nullable types
+        and should not generate issues from _analyze_union_pattern.
+        """
         pattern = ModelUnionPattern(
             types=["str", "None"],
             line=10,
@@ -210,9 +214,8 @@ def func(x: str | int | bool) -> None:
         checker = UnionUsageChecker("/test/file.py")
         checker._analyze_union_pattern(pattern)
 
-        # Should suggest Optional
-        assert len(checker.issues) > 0
-        assert any("Optional" in issue for issue in checker.issues)
+        # Per ONEX conventions, T | None is preferred - no issues should be raised
+        assert len(checker.issues) == 0
 
     def test_analyze_union_pattern_mixed_primitive_complex(self) -> None:
         """Test analysis of mixed primitive/complex types."""

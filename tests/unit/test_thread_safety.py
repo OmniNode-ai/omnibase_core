@@ -18,7 +18,7 @@ from typing import Any
 
 import pytest
 
-from omnibase_core.enums.enum_effect_types import EnumCircuitBreakerState
+from omnibase_core.enums.enum_circuit_breaker_state import EnumCircuitBreakerState
 from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.infrastructure.model_compute_cache import ModelComputeCache

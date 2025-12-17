@@ -6,6 +6,7 @@ cascade failures in load balancing systems.
 """
 
 from datetime import UTC, datetime, timedelta
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -163,6 +164,32 @@ class ModelCircuitBreaker(BaseModel):
         description="Additional circuit breaker metadata",
     )
 
+    # =========================================================================
+    # Protocol Conformance Properties and Methods
+    # =========================================================================
+    # These properties and methods enable ModelCircuitBreaker to conform to
+    # ProtocolCircuitBreaker for dependency injection and duck typing.
+    # See: src/omnibase_core/protocols/compute/protocol_circuit_breaker.py
+
+    @property
+    def is_open(self) -> bool:
+        """
+        Check if circuit breaker is currently open (rejecting requests).
+
+        This property enables conformance to ProtocolCircuitBreaker.
+        Returns True only when state is "open", not during half-open testing.
+
+        Returns:
+            True if circuit is open and requests should be rejected,
+            False if circuit is closed or half-open.
+
+        Related:
+            - ProtocolCircuitBreaker.is_open: Protocol definition
+            - state: Underlying state field
+            - get_current_state(): State with automatic transitions
+        """
+        return self.state == "open"
+
     def should_allow_request(self) -> bool:
         """Check if a request should be allowed through the circuit breaker"""
         if not self.enabled:
@@ -202,8 +229,23 @@ class ModelCircuitBreaker(BaseModel):
 
         self._cleanup_old_data(current_time)
 
-    def record_failure(self) -> None:
-        """Record a failed request"""
+    def record_failure(self, correlation_id: UUID | None = None) -> None:
+        """
+        Record a failed request.
+
+        This method enables conformance to ProtocolCircuitBreaker.
+
+        Args:
+            correlation_id: Optional UUID for correlating failures across
+                distributed systems. Currently unused but accepted for
+                protocol conformance. Future implementations may use this
+                for logging, tracing, or distributed circuit breaker
+                coordination.
+        """
+        # Note: correlation_id is accepted for protocol conformance but
+        # not currently used. Future enhancement: log with correlation_id
+        _ = correlation_id  # Unused parameter - protocol conformance
+
         if not self.enabled:
             return
 
@@ -266,6 +308,34 @@ class ModelCircuitBreaker(BaseModel):
         self.half_open_requests = 0
         self.last_failure_time = None
         self.last_state_change = datetime.now(UTC)
+
+    def reset(self) -> None:
+        """
+        Manually reset circuit breaker to closed state.
+
+        This method provides ProtocolCircuitBreaker conformance by
+        delegating to reset_state(). Both methods are functionally
+        equivalent and can be used interchangeably.
+
+        Resets all counters and state to initial values:
+        - State transitions to closed
+        - Failure and success counters reset to zero
+        - Any timing-related state is cleared
+
+        Use Cases:
+            - Manual recovery after fixing underlying issues
+            - Testing and development scenarios
+            - Forced recovery when automatic recovery isn't working
+
+        Warning:
+            Calling reset() while underlying issues persist may lead to
+            immediate re-opening of the circuit. Use with caution.
+
+        Related:
+            - ProtocolCircuitBreaker.reset: Protocol definition
+            - reset_state(): Internal method (identical behavior)
+        """
+        self.reset_state()
 
     def _should_open_circuit(self) -> bool:
         """Check if circuit should be opened based on failures"""
