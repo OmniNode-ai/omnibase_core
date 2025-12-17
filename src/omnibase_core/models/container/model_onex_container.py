@@ -576,9 +576,8 @@ class ModelONEXContainer:
                 error="Performance monitoring not enabled"
             )
 
-        # TODO: PerformanceMonitor.run_optimization_checkpoint() is expected to be
-        # implemented when the omnibase_core.monitoring module is created.
-        # Expected signature: async def run_optimization_checkpoint(phase_name: str) -> TypedDictPerformanceCheckpointResult
+        # Delegate to performance monitor implementation
+        # See ProtocolPerformanceMonitor for the expected interface
         result: TypedDictPerformanceCheckpointResult = (
             await self.performance_monitor.run_optimization_checkpoint(phase_name)
         )
