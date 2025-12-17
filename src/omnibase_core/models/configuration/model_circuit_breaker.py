@@ -169,6 +169,7 @@ class ModelCircuitBreaker(BaseModel):
     # =========================================================================
     # These properties and methods enable ModelCircuitBreaker to conform to
     # ProtocolCircuitBreaker for dependency injection and duck typing.
+    # See: src/omnibase_core/protocols/compute/protocol_circuit_breaker.py
 
     @property
     def is_open(self) -> bool:

@@ -27,6 +27,16 @@ from omnibase_core.protocols.compute import (
 )
 
 # =============================================================================
+# Test Helpers
+# =============================================================================
+
+
+def _raise_value_error() -> None:
+    """Helper function to raise ValueError for testing."""
+    raise ValueError("fail")
+
+
+# =============================================================================
 # Test Fixtures - Mock Implementations
 # =============================================================================
 
@@ -538,11 +548,6 @@ class TestModelCircuitBreakerAdapterConformance:
         adapter.reset()
 
         assert adapter.failure_count == 0
-
-
-def _raise_value_error() -> None:
-    """Helper function to raise ValueError for testing."""
-    raise ValueError("fail")
 
 
 class TestProtocolUsagePatterns:
