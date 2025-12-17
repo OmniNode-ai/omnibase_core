@@ -220,12 +220,8 @@ class ModelConfigurationSubcontract(BaseModel):
             src.priority for src in self.configuration_sources if src.required
         ]
         if len(required_priorities) != len(set(required_priorities)):
-            msg = "Required configuration sources cannot have duplicate priorities"
-            _duplicate_priorities = [
-                p for p in required_priorities if required_priorities.count(p) > 1
-            ]
             raise ModelOnexError(
-                message=msg,
+                message="Required configuration sources cannot have duplicate priorities",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
 

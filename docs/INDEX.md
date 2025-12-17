@@ -144,6 +144,40 @@ omnibase_core/docs/
 | [Enums API](reference/api/ENUMS.md) | Enumeration reference | ✅ Complete |
 | [Utils API](reference/api/UTILS.md) | Utility function reference | ✅ Complete |
 
+### TypedDict Types (Serialization Boundaries)
+
+**Location**: `omnibase_core.types`
+
+TypedDict types provide strongly-typed dictionary schemas for serialization boundaries, replacing `dict[str, Any]` with explicit type contracts. These types are used at API boundaries, event serialization, and inter-process communication.
+
+| Category | Types | Purpose |
+|----------|-------|---------|
+| **CLI Serialization** | `TypedDictCliActionSerialized`, `TypedDictCliAdvancedParamsSerialized`, `TypedDictCliCommandOptionSerialized`, `TypedDictCliExecutionCoreSerialized`, `TypedDictCliExecutionMetadataSerialized`, `TypedDictCliNodeExecutionInputSerialized` | CLI input/output serialization |
+| **Validation** | `TypedDictValidationContainerSerialized`, `TypedDictValidationErrorSerialized`, `TypedDictValidationValueSerialized` | Validation result serialization |
+| **Events** | `TypedDictEventEnvelopeDict` | Event envelope serialization |
+| **Kubernetes** | `TypedDictK8sResources`, `TypedDictK8sDeployment`, `TypedDictK8sService`, `TypedDictK8sConfigMap` (and related K8s types) | Kubernetes resource definitions |
+| **Performance** | `TypedDictPerformanceCheckpointResult`, `TypedDictLoadBalancerStats` | Performance metrics serialization |
+| **Migration** | `TypedDictMigrationReport` | Migration result reporting |
+| **Workflow** | `TypedDictWorkflowOutputs` | Workflow output serialization |
+| **Policy** | `TypedDictPolicyValueData` | Policy configuration serialization |
+| **Custom Fields** | `TypedDictCustomFields` | Extensible custom field serialization |
+| **Model Values** | `TypedDictModelValueSerialized`, `TypedDictOutputFormatOptionsSerialized` | Model value serialization |
+
+**Usage Pattern**:
+```python
+from omnibase_core.types import TypedDictValidationErrorSerialized
+
+def serialize_error(error: ModelOnexError) -> TypedDictValidationErrorSerialized:
+    """Serialize error with explicit type contract."""
+    return {
+        "error_code": error.error_code.value,
+        "message": error.message,
+        "context": error.context,
+    }
+```
+
+**See**: [Type System](architecture/TYPE_SYSTEM.md) for type philosophy and patterns.
+
 ### Architecture Research
 
 | Document | Description | Status |
@@ -258,6 +292,7 @@ omnibase_core/docs/
 | **Fix slow performance tests** | [Performance Benchmark Thresholds](performance/PERFORMANCE_BENCHMARK_THRESHOLDS.md#ci-performance-degradation) |
 | **Debug async hangs** | [Async Hang Debugging](troubleshooting/ASYNC_HANG_DEBUGGING.md) |
 | **Understand contracts** | [Subcontract Architecture](architecture/SUBCONTRACT_ARCHITECTURE.md) |
+| **Use TypedDict for serialization** | [TypedDict Types](#typeddict-types-serialization-boundaries) - Strongly-typed serialization boundaries |
 | **Validate mixin metadata** | [ModelMixinMetadata](../src/omnibase_core/models/core/model_mixin_metadata.py) - Mixin discovery & validation |
 | **Validate docker-compose.yaml** | [ModelDockerComposeManifest](../src/omnibase_core/models/docker/model_docker_compose_manifest.py) - Docker validation |
 
@@ -296,11 +331,11 @@ omnibase_core/docs/
 | **Getting Started** | 3 | 0 | 0 | 3 |
 | **Node Building** | 10 | 0 | 0 | 10 |
 | **Architecture** | 13 | 0 | 0 | 13 |
-| **Reference** | 13 | 0 | 0 | 13 |
+| **Reference** | 14 | 0 | 0 | 14 |
 | **Specialized** | 12 | 0 | 0 | 12 |
-| **TOTAL** | **51** | **0** | **0** | **51** |
+| **TOTAL** | **52** | **0** | **0** | **52** |
 
-**Overall Progress**: 100% complete (51/51 documents)
+**Overall Progress**: 100% complete (52/52 documents)
 
 ### Priority Items
 
@@ -377,7 +412,7 @@ See [Documentation Architecture](architecture/DOCUMENTATION_ARCHITECTURE.md) for
 
 ---
 
-**Last Updated**: 2025-12-06
+**Last Updated**: 2025-12-17
 **Documentation Version**: 1.1.0
 **Framework Version**: omnibase_core 0.4.0+
 

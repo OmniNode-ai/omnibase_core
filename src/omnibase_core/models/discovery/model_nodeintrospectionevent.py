@@ -100,13 +100,12 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
         if isinstance(v, ModelNodeCapability):
             return v
 
-        # Handle dict-like object with actions, protocols, metadata
+        # Handle dict-like object with actions
+        # Note: protocols and metadata fields are extracted but not currently used
+        # by ModelNodeCapability. They are kept for future compatibility when
+        # the capability model is extended to support these fields.
         if hasattr(v, "actions") or (isinstance(v, dict) and "actions" in v):
             actions = v.actions if hasattr(v, "actions") else v.get("actions", [])
-            _protocols = (
-                v.protocols if hasattr(v, "protocols") else v.get("protocols", [])
-            )
-            _metadata = v.metadata if hasattr(v, "metadata") else v.get("metadata", {})
 
             # Create a simple capability representation
             capability_str = f"capabilities_{','.join(actions)}"

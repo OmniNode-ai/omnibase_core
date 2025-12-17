@@ -567,13 +567,32 @@ class ModelONEXContainer:
     ) -> TypedDictPerformanceCheckpointResult:
         """Run comprehensive performance checkpoint.
 
-        Note: Requires omnibase_core.monitoring.performance_monitor.PerformanceMonitor
-        to be implemented with an async run_optimization_checkpoint(phase_name: str)
-        method that returns TypedDictPerformanceCheckpointResult.
+        This method delegates to a PerformanceMonitor implementation that satisfies
+        ProtocolPerformanceMonitor. When performance monitoring is not enabled or
+        the PerformanceMonitor module is not available, returns an error result.
+
+        Args:
+            phase_name: Name of the checkpoint phase (e.g., "production", "development")
+
+        Returns:
+            TypedDictPerformanceCheckpointResult containing either:
+            - Performance metrics, recommendations, and status when monitoring is enabled
+            - An error message when performance monitoring is not available
+
+        Note:
+            Performance monitoring requires omnibase_core.monitoring.performance_monitor.PerformanceMonitor
+            to be implemented. This module is optional and may not be present in all deployments.
+            When unavailable, this method returns a graceful error response rather than raising.
+
+        See Also:
+            - ProtocolPerformanceMonitor: Protocol defining the required interface
+            - TypedDictPerformanceCheckpointResult: Return type structure
         """
         if not self.performance_monitor:
             return TypedDictPerformanceCheckpointResult(
-                error="Performance monitoring not enabled"
+                error="Performance monitoring not enabled. "
+                "The omnibase_core.monitoring.performance_monitor module is not available. "
+                "Enable by implementing PerformanceMonitor satisfying ProtocolPerformanceMonitor."
             )
 
         # Delegate to performance monitor implementation

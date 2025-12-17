@@ -63,13 +63,12 @@ class ModelGitHubIssuesEvent(BaseModel):
     @field_validator("action")
     @classmethod
     def validate_action_context(cls, v: Any, info: ValidationInfo) -> Any:
-        """Validate action corresponds to appropriate context data."""
-        _label_actions = {"labeled", "unlabeled"}
-        _assignee_actions = {"assigned", "unassigned"}
+        """Validate action corresponds to appropriate context data.
 
-        # Label context validation would require label field validation
-        # Assignee context validation would require assignee field validation
-        # This validation ensures action is in expected format
+        Note: Label and assignee context validation happens in validate_label_context
+        and validate_assignee_context validators. This validator only ensures
+        the action is in expected format (already validated by Field pattern).
+        """
         return v
 
     @field_validator("label")

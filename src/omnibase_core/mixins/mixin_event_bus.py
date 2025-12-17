@@ -20,6 +20,7 @@ This mixin replaces and unifies MixinEventListener and MixinEventBusCompletion.
 """
 
 import threading
+import uuid
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, StrictStr, ValidationError
@@ -160,8 +161,6 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
 
     def get_node_id(self) -> UUID:
         """Get the UUID for this node (derived from node name)."""
-        import uuid
-
         # Try to get actual node_id if available, otherwise generate from name
         if hasattr(self, "_node_id") and isinstance(self._node_id, UUID):
             return self._node_id
