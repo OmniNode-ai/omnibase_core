@@ -2,6 +2,9 @@ from typing import Any, TypeVar, cast
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
+from omnibase_core.types.typed_dict_performance_checkpoint_result import (
+    TypedDictPerformanceCheckpointResult,
+)
 
 """
 Model ONEX Dependency Injection Container.
@@ -556,14 +559,16 @@ class ModelONEXContainer:
 
     async def run_performance_checkpoint(
         self, phase_name: str = "production"
-    ) -> dict[str, Any]:
+    ) -> TypedDictPerformanceCheckpointResult:
         """Run comprehensive performance checkpoint."""
         if not self.performance_monitor:
-            return {"error": "Performance monitoring not enabled"}
+            return TypedDictPerformanceCheckpointResult(
+                error="Performance monitoring not enabled"
+            )
 
-        result: dict[
-            str, Any
-        ] = await self.performance_monitor.run_optimization_checkpoint(phase_name)
+        result: TypedDictPerformanceCheckpointResult = (
+            await self.performance_monitor.run_optimization_checkpoint(phase_name)
+        )
         return result
 
     def close(self) -> None:

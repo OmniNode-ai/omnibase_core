@@ -107,7 +107,28 @@ from .typed_dict_binary_computation_summary import TypedDictBinaryComputationSum
 from .typed_dict_cache_info import TypedDictCacheInfo
 from .typed_dict_capability_factory_kwargs import TypedDictCapabilityFactoryKwargs
 from .typed_dict_categorization_update_data import TypedDictCategorizationUpdateData
+
+# CLI model serialization TypedDict definitions
+from .typed_dict_cli_action_serialized import TypedDictCliActionSerialized
+from .typed_dict_cli_advanced_params_serialized import (
+    TypedDictCliAdvancedParamsSerialized,
+)
+from .typed_dict_cli_command_option_serialized import (
+    TypedDictCliCommandOptionSerialized,
+)
+from .typed_dict_cli_execution_context_serialized import (
+    TypedDictCliExecutionContextSerialized,
+)
+from .typed_dict_cli_execution_core_serialized import (
+    TypedDictCliExecutionCoreSerialized,
+)
+from .typed_dict_cli_execution_metadata_serialized import (
+    TypedDictCliExecutionMetadataSerialized,
+)
 from .typed_dict_cli_input_dict import TypedDictCliInputDict
+from .typed_dict_cli_node_execution_input_serialized import (
+    TypedDictCliNodeExecutionInputSerialized,
+)
 from .typed_dict_collection_kwargs import (
     TypedDictCollectionCreateKwargs,
     TypedDictCollectionFromItemsKwargs,
@@ -133,6 +154,9 @@ from .typed_dict_converted_health import TypedDictConvertedHealth
 from .typed_dict_core_analytics import TypedDictCoreAnalytics
 from .typed_dict_core_data import TypedDictCoreData
 from .typed_dict_core_summary import TypedDictCoreSummary
+
+# Custom fields, policy value, and model-specific TypedDict definitions
+from .typed_dict_custom_fields import CustomFieldsDict, TypedDictCustomFieldsDict
 from .typed_dict_debug_info_data import TypedDictDebugInfoData
 from .typed_dict_default_output_state import TypedDictDefaultOutputState
 from .typed_dict_dependency_info import TypedDictDependencyInfo
@@ -145,6 +169,7 @@ from .typed_dict_error_analysis import TypedDictErrorAnalysis
 from .typed_dict_error_data import TypedDictErrorData
 from .typed_dict_error_details import TypedDictErrorDetails
 from .typed_dict_error_summary import TypedDictErrorSummary
+from .typed_dict_event_envelope import TypedDictEventEnvelopeDict
 from .typed_dict_event_info import TypedDictEventInfo
 from .typed_dict_event_type import TypedDictEventType
 from .typed_dict_execution_stats import TypedDictExecutionStats
@@ -167,11 +192,33 @@ from .typed_dict_handler_metadata import TypedDictHandlerMetadata
 from .typed_dict_health_status import TypedDictHealthStatus
 from .typed_dict_input_state_fields import TypedDictInputStateFields
 from .typed_dict_input_state_source_type import TypedDictInputStateSourceType
+
+# Kubernetes resource TypedDict definitions
+from .typed_dict_k8s_resources import (
+    TypedDictK8sConfigMap,
+    TypedDictK8sContainer,
+    TypedDictK8sContainerPort,
+    TypedDictK8sDeployment,
+    TypedDictK8sDeploymentSpec,
+    TypedDictK8sEnvVar,
+    TypedDictK8sHttpGetProbe,
+    TypedDictK8sLabelSelector,
+    TypedDictK8sMetadata,
+    TypedDictK8sPodSpec,
+    TypedDictK8sPodTemplateSpec,
+    TypedDictK8sProbe,
+    TypedDictK8sResourceLimits,
+    TypedDictK8sResourceRequirements,
+    TypedDictK8sService,
+    TypedDictK8sServicePort,
+    TypedDictK8sServiceSpec,
+)
 from .typed_dict_legacy_error import TypedDictLegacyError
 from .typed_dict_legacy_health import TypedDictLegacyHealth
 from .typed_dict_legacy_stats import TypedDictLegacyStats
 from .typed_dict_lifecycle_event_fields import TypedDictLifecycleEventFields
 from .typed_dict_lifecycle_event_metadata import TypedDictLifecycleEventMetadata
+from .typed_dict_load_balancer_stats import TypedDictLoadBalancerStats
 from .typed_dict_maintenance_summary import TypedDictMaintenanceSummary
 
 # YAML and path resolution TypedDict definitions
@@ -189,6 +236,10 @@ from .typed_dict_migration_duplicate_conflict_dict import (
     TypedDictMigrationDuplicateConflictDict,
 )
 from .typed_dict_migration_name_conflict_dict import TypedDictMigrationNameConflictDict
+from .typed_dict_migration_report import (
+    TypedDictMigrationReport,
+    TypedDictMigrationReportSummary,
+)
 from .typed_dict_migration_step_dict import TypedDictMigrationStepDict
 
 # Mixin-specific TypedDict definitions
@@ -218,6 +269,7 @@ from .typed_dict_mixin_types import (
 )
 from .typed_dict_model_class_info import TypedDictModelClassInfo
 from .typed_dict_model_field_info import TypedDictModelFieldInfo
+from .typed_dict_model_value_serialized import TypedDictModelValueSerialized
 from .typed_dict_monitoring_metrics import TypedDictMonitoringMetrics
 from .typed_dict_node_capabilities import TypedDictNodeCapabilities
 from .typed_dict_node_capabilities_summary import TypedDictNodeCapabilitiesSummary
@@ -241,12 +293,22 @@ from .typed_dict_operation_result import TypedDictOperationResult
 from .typed_dict_operation_summary import TypedDictOperationSummary
 from .typed_dict_operational_impact import TypedDictOperationalImpact
 from .typed_dict_output_format_options_kwargs import TypedDictOutputFormatOptionsKwargs
+from .typed_dict_output_format_options_serialized import (
+    TypedDictOutputFormatOptionsSerialized,
+)
 from .typed_dict_path_resolution_context import TypedDictPathResolutionContext
+from .typed_dict_performance_checkpoint_result import (
+    TypedDictPerformanceCheckpointResult,
+)
 from .typed_dict_performance_data import TypedDictPerformanceData
 from .typed_dict_performance_metric_data import TypedDictPerformanceMetricData
 from .typed_dict_performance_metrics import TypedDictPerformanceMetrics
 from .typed_dict_performance_metrics_report import TypedDictPerformanceMetricsReport
 from .typed_dict_performance_update_data import TypedDictPerformanceUpdateData
+from .typed_dict_policy_value_data import (
+    TypedDictPolicyValueData,
+    TypedDictPolicyValueInput,
+)
 from .typed_dict_property_metadata import TypedDictPropertyMetadata
 from .typed_dict_quality_data import TypedDictQualityData
 from .typed_dict_quality_update_data import TypedDictQualityUpdateData
@@ -288,10 +350,17 @@ from .typed_dict_tool_validation import TypedDictToolValidation
 from .typed_dict_trace_info_data import TypedDictTraceInfoData
 from .typed_dict_transition_config import TypedDictTransitionConfig
 from .typed_dict_usage_metadata import TypedDictUsageMetadata
+from .typed_dict_validation_base_serialized import TypedDictValidationBaseSerialized
+from .typed_dict_validation_container_serialized import (
+    TypedDictValidationContainerSerialized,
+)
+from .typed_dict_validation_error_serialized import TypedDictValidationErrorSerialized
 from .typed_dict_validation_metadata_type import TypedDictValidationMetadataType
 from .typed_dict_validation_result import TypedDictValidationResult
+from .typed_dict_validation_value_serialized import TypedDictValidationValueSerialized
 from .typed_dict_validator_info import TypedDictValidatorInfo
 from .typed_dict_workflow_context import TypedDictWorkflowContext
+from .typed_dict_workflow_outputs import TypedDictWorkflowOutputsDict
 from .typed_dict_workflow_state import TypedDictWorkflowState
 from .typed_dict_yaml_dump_kwargs import TypedDictYamlDumpKwargs
 
@@ -372,6 +441,16 @@ __all__ = [
     "TypedDictCapabilityFactoryKwargs",
     "TypedDictCategorizationUpdateData",
     "TypedDictCliInputDict",
+    # CLI model serialization TypedDict definitions
+    "TypedDictCliActionSerialized",
+    "TypedDictCliAdvancedParamsSerialized",
+    "TypedDictCliCommandOptionSerialized",
+    "TypedDictCliExecutionContextSerialized",
+    "TypedDictCliExecutionCoreSerialized",
+    "TypedDictCliExecutionMetadataSerialized",
+    "TypedDictCliNodeExecutionInputSerialized",
+    "TypedDictModelValueSerialized",
+    "TypedDictOutputFormatOptionsSerialized",
     "TypedDictCollectionCreateKwargs",
     "TypedDictCollectionFromItemsKwargs",
     "TypedDictCoreAnalytics",
@@ -535,6 +614,40 @@ __all__ = [
     # Action validation TypedDict definitions
     "TypedDictActionValidationContext",
     "TypedDictActionValidationStatistics",
+    # Validation serialization TypedDict definitions
+    "TypedDictMigrationReport",
+    "TypedDictMigrationReportSummary",
+    "TypedDictValidationBaseSerialized",
+    "TypedDictValidationContainerSerialized",
+    "TypedDictValidationErrorSerialized",
+    "TypedDictValidationValueSerialized",
+    # Custom fields, policy value, and model-specific TypedDict definitions
+    "CustomFieldsDict",
+    "TypedDictCustomFieldsDict",
+    "TypedDictEventEnvelopeDict",
+    "TypedDictLoadBalancerStats",
+    "TypedDictPerformanceCheckpointResult",
+    "TypedDictPolicyValueData",
+    "TypedDictPolicyValueInput",
+    "TypedDictWorkflowOutputsDict",
+    # Kubernetes resource TypedDict definitions
+    "TypedDictK8sConfigMap",
+    "TypedDictK8sContainer",
+    "TypedDictK8sContainerPort",
+    "TypedDictK8sDeployment",
+    "TypedDictK8sDeploymentSpec",
+    "TypedDictK8sEnvVar",
+    "TypedDictK8sHttpGetProbe",
+    "TypedDictK8sLabelSelector",
+    "TypedDictK8sMetadata",
+    "TypedDictK8sPodSpec",
+    "TypedDictK8sPodTemplateSpec",
+    "TypedDictK8sProbe",
+    "TypedDictK8sResourceLimits",
+    "TypedDictK8sResourceRequirements",
+    "TypedDictK8sService",
+    "TypedDictK8sServicePort",
+    "TypedDictK8sServiceSpec",
 ]
 
 

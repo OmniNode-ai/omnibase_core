@@ -279,8 +279,8 @@ class ModelNodeMetadataInfo(BaseModel):
     def get_summary(self) -> TypedDictNodeMetadataSummary:
         """Get node metadata summary."""
         # Combine summaries from all sub-models
-        core_summary = self.core.get_status_summary()
-        performance_summary = self.performance.get_performance_summary()
+        _core_summary = self.core.get_status_summary()
+        _performance_summary = self.performance.get_performance_summary()
         org_summary = self.organization.get_organization_summary()
 
         return {

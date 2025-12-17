@@ -221,7 +221,7 @@ class ModelConfigurationSubcontract(BaseModel):
         ]
         if len(required_priorities) != len(set(required_priorities)):
             msg = "Required configuration sources cannot have duplicate priorities"
-            duplicate_priorities = [
+            _duplicate_priorities = [
                 p for p in required_priorities if required_priorities.count(p) > 1
             ]
             raise ModelOnexError(

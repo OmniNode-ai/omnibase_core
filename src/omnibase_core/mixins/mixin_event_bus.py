@@ -166,7 +166,7 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
         # Generate deterministic UUID from node name
         import hashlib
 
-        namespace_uuid = UUID("6ba7b810-9dad-11d1-80b4-00c04fd430c8")  # DNS namespace
+        _namespace_uuid = UUID("6ba7b810-9dad-11d1-80b4-00c04fd430c8")  # DNS namespace
         return UUID(hashlib.sha256(self.node_name.encode()).hexdigest()[:32])
 
     def process(self, input_state: InputStateT) -> OutputStateT:
@@ -299,7 +299,7 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
             )
 
             # Wrap event in envelope before publishing
-            envelope: ModelEventEnvelope[ModelOnexEvent] = ModelEventEnvelope(
+            _envelope: ModelEventEnvelope[ModelOnexEvent] = ModelEventEnvelope(
                 payload=event
             )
             # Use synchronous publish method only (this is a sync method) - fail fast if missing

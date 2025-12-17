@@ -398,8 +398,8 @@ class MixinNodeIntrospection(ABC):
             ModelGenericMetadata,
         )
 
-        input_class = cls.get_input_state_class()
-        output_class = cls.get_output_state_class()
+        _input_class = cls.get_input_state_class()
+        _output_class = cls.get_output_state_class()
 
         from omnibase_core.models.primitives.model_semver import ModelSemVer
 

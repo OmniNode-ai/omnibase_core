@@ -360,16 +360,16 @@ class MixinIntrospectionPublisher:
         if not event_bus:
             return
         node_id_raw = getattr(self, "_node_id", None)
-        node_id = node_id_raw if node_id_raw is not None else "<unset>"
+        _node_id = node_id_raw if node_id_raw is not None else "<unset>"
         from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
-        source_node_id_str: str
+        _source_node_id_str: str
         if isinstance(node_id_raw, UUID):
-            source_node_id_str = str(node_id_raw)
+            _source_node_id_str = str(node_id_raw)
         elif isinstance(node_id_raw, str):
-            source_node_id_str = node_id_raw
+            _source_node_id_str = node_id_raw
         else:
-            source_node_id_str = "<unset>"
+            _source_node_id_str = "<unset>"
         # Ensure source_node_id is UUID
         if isinstance(node_id_raw, UUID):
             source_uuid = node_id_raw

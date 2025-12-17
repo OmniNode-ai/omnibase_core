@@ -345,7 +345,7 @@ class MixinCLIHandler[InputStateT, OutputStateT]:
         else:
             # Basic introspection - use ModelSemVer for default version
             default_version = ModelSemVer(major=1, minor=0, patch=0)
-            {
+            _ = {
                 "tool_name": self.__class__.__name__,
                 "description": self.get_cli_description(),
                 "version": getattr(self, "node_version", str(default_version)),

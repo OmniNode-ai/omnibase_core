@@ -549,7 +549,7 @@ async def check_postgresql_health(
                 {"pool_type": type(connection_pool).__name__},
             )
 
-        duration_ms = (datetime.now(UTC) - start_time).total_seconds() * 1000
+        _duration_ms = (datetime.now(UTC) - start_time).total_seconds() * 1000
 
         return ModelHealthStatus.create_healthy(score=1.0)
 
@@ -737,7 +737,7 @@ async def check_redis_health(
                     ],
                 )
 
-            duration_ms = (datetime.now(UTC) - start_time).total_seconds() * 1000
+            _duration_ms = (datetime.now(UTC) - start_time).total_seconds() * 1000
 
             return ModelHealthStatus.create_healthy(score=1.0)
 

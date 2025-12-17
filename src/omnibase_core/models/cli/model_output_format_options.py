@@ -7,7 +7,7 @@ Follows ONEX one-model-per-file naming conventions.
 
 from __future__ import annotations
 
-from typing import Any, TypeVar, cast
+from typing import TypeVar, cast
 
 from pydantic import BaseModel, Field
 
@@ -20,6 +20,9 @@ from omnibase_core.models.infrastructure.model_value import ModelValue
 from omnibase_core.models.utils.model_field_converter import ModelFieldConverterRegistry
 from omnibase_core.types.typed_dict_output_format_options_kwargs import (
     TypedDictOutputFormatOptionsKwargs,
+)
+from omnibase_core.types.typed_dict_output_format_options_serialized import (
+    TypedDictOutputFormatOptionsSerialized,
 )
 
 # Type alias for CLI option values - simplified to avoid primitive soup
@@ -278,9 +281,9 @@ class ModelOutputFormatOptions(BaseModel):
     # Protocol method implementations
 
     @allow_dict_any
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> TypedDictOutputFormatOptionsSerialized:
         """Serialize to dictionary (Serializable protocol)."""
-        return self.model_dump(exclude_none=False, by_alias=True)
+        return self.model_dump(exclude_none=False, by_alias=True)  # type: ignore[return-value]
 
     def get_name(self) -> str:
         """Get name (Nameable protocol)."""

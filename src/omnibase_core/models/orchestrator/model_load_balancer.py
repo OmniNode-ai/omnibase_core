@@ -49,9 +49,11 @@ See Also:
 
 import asyncio
 from datetime import datetime
-from typing import Any
 from uuid import UUID
 
+from omnibase_core.types.typed_dict_load_balancer_stats import (
+    TypedDictLoadBalancerStats,
+)
 from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 
@@ -138,16 +140,16 @@ class ModelLoadBalancer:
 
         return min(targets, key=lambda t: self.target_counts.get(t, 0))
 
-    def get_stats(self) -> dict[str, Any]:
+    def get_stats(self) -> TypedDictLoadBalancerStats:
         """Get load balancer statistics.
 
         Returns:
-            Dictionary containing active operations count, max concurrent limit,
+            TypedDictLoadBalancerStats containing active operations count, max concurrent limit,
             utilization percentage, and total operations processed.
         """
-        return {
-            "active_operations": len(self.active_operations),
-            "max_concurrent": self.max_concurrent_operations,
-            "utilization": len(self.active_operations) / self.max_concurrent_operations,
-            "total_operations": sum(self.operation_counts.values()),
-        }
+        return TypedDictLoadBalancerStats(
+            active_operations=len(self.active_operations),
+            max_concurrent=self.max_concurrent_operations,
+            utilization=len(self.active_operations) / self.max_concurrent_operations,
+            total_operations=sum(self.operation_counts.values()),
+        )

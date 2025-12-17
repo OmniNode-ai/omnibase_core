@@ -122,7 +122,7 @@ class ModelConnectionInfo(BaseModel):
 
     def get_connection_string(self) -> str:
         """Generate connection string."""
-        auth_header = self.auth.get_auth_header()
+        _auth_header = self.auth.get_auth_header()
         auth = ""
         if self.auth.username and self.auth.password:
             auth = f"{self.auth.username}:***@"

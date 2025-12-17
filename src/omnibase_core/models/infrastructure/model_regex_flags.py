@@ -52,7 +52,7 @@ class ModelRegexFlags(BaseModel):
                 )
         elif self.flag_type == EnumRegexFlagType.COMBINED:
             # For combined flags, just ensure it's a valid combination
-            valid_flags = {re.DOTALL, re.IGNORECASE, re.MULTILINE}
+            _valid_flags = {re.DOTALL, re.IGNORECASE, re.MULTILINE}
             if not isinstance(self.flag_value, int) or self.flag_value <= 0:
                 raise ModelOnexError(
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,

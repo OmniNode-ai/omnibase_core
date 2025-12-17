@@ -136,7 +136,7 @@ class MixinContractMetadata:
         )
 
         try:
-            with open(path) as f:
+            with open(path) as _f:
                 # Load and validate YAML using Pydantic model
 
                 yaml_model = load_and_validate_yaml_model(path, ModelGenericYaml)
@@ -173,7 +173,7 @@ class MixinContractMetadata:
         )
 
         try:
-            with open(path) as f:
+            with open(path) as _f:
                 # Load and validate YAML using Pydantic model
 
                 yaml_model = load_and_validate_yaml_model(path, ModelGenericYaml)

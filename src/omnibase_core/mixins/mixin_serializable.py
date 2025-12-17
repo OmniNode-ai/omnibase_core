@@ -22,11 +22,9 @@
 # === /OmniNode:Metadata ===
 
 
-from typing import Protocol, TypeVar
+from typing import Protocol, Self
 
 from omnibase_core.types.type_serializable_value import SerializedDict
-
-T = TypeVar("T", bound="MixinSerializable")
 
 
 class MixinSerializable(Protocol):
@@ -38,7 +36,7 @@ class MixinSerializable(Protocol):
     This protocol is foundational and should be implemented by any model intended for canonical serialization or deserialization.
     """
 
-    def to_serializable_dict(self: T) -> SerializedDict: ...
+    def to_serializable_dict(self) -> SerializedDict: ...
 
     @classmethod
-    def from_serializable_dict(cls: type[T], data: SerializedDict) -> T: ...
+    def from_serializable_dict(cls, data: SerializedDict) -> Self: ...

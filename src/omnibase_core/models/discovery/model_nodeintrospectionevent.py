@@ -103,10 +103,10 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
         # Handle dict-like object with actions, protocols, metadata
         if hasattr(v, "actions") or (isinstance(v, dict) and "actions" in v):
             actions = v.actions if hasattr(v, "actions") else v.get("actions", [])
-            protocols = (
+            _protocols = (
                 v.protocols if hasattr(v, "protocols") else v.get("protocols", [])
             )
-            metadata = v.metadata if hasattr(v, "metadata") else v.get("metadata", {})
+            _metadata = v.metadata if hasattr(v, "metadata") else v.get("metadata", {})
 
             # Create a simple capability representation
             capability_str = f"capabilities_{','.join(actions)}"
