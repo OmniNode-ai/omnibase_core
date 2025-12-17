@@ -104,7 +104,11 @@ class ModelNodeRegistrationMetadata(BaseModel):
         # Validate key format (simplified k8s pattern)
         for key in v:
             if not _LABEL_KEY_PATTERN.match(key.lower()):
-                raise ValueError(f"Invalid label key format: {key}")
+                raise ValueError(
+                    f"Invalid label key format: '{key}'. "
+                    f"Label keys must match pattern: {_LABEL_KEY_PATTERN.pattern} "
+                    "(lowercase alphanumeric, hyphens, dots allowed)"
+                )
         return {k.lower(): str(val) for k, val in v.items()}
 
 

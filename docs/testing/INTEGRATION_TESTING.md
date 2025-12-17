@@ -51,6 +51,7 @@ tests/integration/
 ├── test_compute_pipeline_integration.py     # Full compute pipeline scenarios
 ├── test_intent_publisher_integration.py     # Kafka intent publishing workflow
 ├── test_multi_module_workflows.py           # Cross-module coordination
+├── test_reducer_integration.py              # NodeReducer FSM state transitions
 ├── test_service_orchestration.py            # Service lifecycle management
 ├── test_validation_integration.py           # Validation across components
 ├── mixins/
@@ -426,6 +427,277 @@ class TestFeatureIntegration:
 
         assert exc_info.value.error_code == EnumCoreErrorCode.EXPECTED_ERROR
 ```
+
+### NodeReducer Integration Test Example
+
+NodeReducer tests verify FSM-driven state transitions with real data flows. The key components are:
+
+1. **FSM Contract Factory** - Creates test FSM configurations
+2. **TestableNodeReducer** - A test implementation that accepts an FSM contract
+3. **State Transition Verification** - Validates FSM state changes and output metadata
+
+#### Complete Working Example
+
+```python
+"""Integration tests for NodeReducer FSM state transitions."""
+
+import asyncio
+from collections.abc import Callable
+from typing import Any
+from unittest.mock import MagicMock
+from uuid import uuid4
+
+import pytest
+
+from omnibase_core.enums.enum_reducer_types import EnumReductionType
+from omnibase_core.models.common.model_reducer_metadata import ModelReducerMetadata
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.contracts.subcontracts.model_fsm_state_definition import (
+    ModelFSMStateDefinition,
+)
+from omnibase_core.models.contracts.subcontracts.model_fsm_state_transition import (
+    ModelFSMStateTransition,
+)
+from omnibase_core.models.contracts.subcontracts.model_fsm_subcontract import (
+    ModelFSMSubcontract,
+)
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.reducer.model_reducer_input import ModelReducerInput
+from omnibase_core.models.reducer.model_reducer_output import ModelReducerOutput
+from omnibase_core.nodes.node_reducer import NodeReducer
+
+# Version for test contracts
+V1_0_0 = ModelSemVer(major=1, minor=0, patch=0)
+
+
+def create_test_fsm_contract(
+    *,
+    name: str = "test_fsm",
+    initial_state: str = "idle",
+    states: list[dict[str, Any]] | None = None,
+    transitions: list[dict[str, Any]] | None = None,
+) -> ModelFSMSubcontract:
+    """Factory to create FSM contracts for testing.
+
+    Args:
+        name: State machine name
+        initial_state: Initial state name
+        states: List of state definition dicts (optional, defaults provided)
+        transitions: List of transition definition dicts (optional, defaults provided)
+
+    Returns:
+        ModelFSMSubcontract configured for testing
+    """
+    if states is None:
+        states = [
+            {
+                "version": V1_0_0,
+                "state_name": "idle",
+                "state_type": "operational",
+                "description": "Initial idle state",
+                "is_terminal": False,
+                "is_recoverable": True,
+            },
+            {
+                "version": V1_0_0,
+                "state_name": "processing",
+                "state_type": "operational",
+                "description": "Processing data",
+                "is_terminal": False,
+                "is_recoverable": True,
+            },
+            {
+                "version": V1_0_0,
+                "state_name": "completed",
+                "state_type": "terminal",
+                "description": "Processing completed",
+                "is_terminal": True,
+                "is_recoverable": False,
+            },
+        ]
+
+    if transitions is None:
+        transitions = [
+            {
+                "version": V1_0_0,
+                "transition_name": "start_processing",
+                "from_state": "idle",
+                "to_state": "processing",
+                "trigger": "start",
+            },
+            {
+                "version": V1_0_0,
+                "transition_name": "complete_processing",
+                "from_state": "processing",
+                "to_state": "completed",
+                "trigger": "complete",
+            },
+        ]
+
+    return ModelFSMSubcontract(
+        version=V1_0_0,
+        state_machine_name=name,
+        state_machine_version=V1_0_0,
+        description=f"Test FSM: {name}",
+        states=[ModelFSMStateDefinition(**s) for s in states],
+        initial_state=initial_state,
+        transitions=[ModelFSMStateTransition(**t) for t in transitions],
+        terminal_states=[],
+        error_states=[],
+    )
+
+
+class TestableNodeReducer(NodeReducer[Any, Any]):
+    """Test implementation of NodeReducer that accepts an FSM contract directly."""
+
+    def __init__(
+        self, container: ModelONEXContainer, fsm_contract: ModelFSMSubcontract
+    ) -> None:
+        """Initialize with explicit FSM contract.
+
+        Args:
+            container: ONEX container for dependency injection
+            fsm_contract: FSM subcontract to use for state machine
+        """
+        # Call NodeCoreBase.__init__ directly (bypass NodeReducer contract loading)
+        super(NodeReducer, self).__init__(container)
+
+        # Set FSM contract directly
+        self.fsm_contract = fsm_contract
+
+        # Initialize FSM state
+        self.initialize_fsm_state(fsm_contract, context={})
+
+
+# Type alias for reducer factory callable
+ReducerWithContractFactory = Callable[[ModelFSMSubcontract], NodeReducer[Any, Any]]
+
+
+@pytest.fixture
+def mock_container() -> ModelONEXContainer:
+    """Create a mock ONEX container for testing."""
+    container = MagicMock(spec=ModelONEXContainer)
+    container.get_service = MagicMock(return_value=MagicMock())
+    return container
+
+
+@pytest.fixture
+def reducer_with_contract_factory(
+    mock_container: ModelONEXContainer,
+) -> ReducerWithContractFactory:
+    """Factory fixture for creating NodeReducer instances with custom FSM contracts."""
+
+    def _create_reducer(fsm_contract: ModelFSMSubcontract) -> NodeReducer[Any, Any]:
+        return TestableNodeReducer(mock_container, fsm_contract)
+
+    return _create_reducer
+
+
+@pytest.mark.integration
+@pytest.mark.timeout(60)
+class TestReducerIntegration:
+    """Integration tests for NodeReducer FSM state transitions."""
+
+    def test_happy_path_state_transition(
+        self, reducer_with_contract_factory: ReducerWithContractFactory
+    ) -> None:
+        """Test basic FSM state transition from idle to processing.
+
+        Verifies:
+        - ModelReducerInput is processed correctly
+        - FSM state transitions from idle -> processing
+        - ModelReducerOutput contains correct metadata
+        - State history is tracked
+        """
+        # Arrange: Create FSM contract and reducer
+        fsm_contract = create_test_fsm_contract(name="happy_path_fsm")
+        reducer = reducer_with_contract_factory(fsm_contract)
+
+        # Verify initial state
+        assert reducer.get_current_state() == "idle"
+        assert reducer.get_state_history() == []
+
+        # Create input with trigger to transition idle -> processing
+        input_data: ModelReducerInput[dict[str, str]] = ModelReducerInput(
+            data=[{"key": "value1"}, {"key": "value2"}],
+            reduction_type=EnumReductionType.AGGREGATE,
+            metadata=ModelReducerMetadata(
+                trigger="start",
+                source="integration_test",
+                correlation_id=str(uuid4()),
+            ),
+        )
+
+        # Act: Process the input
+        result = asyncio.run(reducer.process(input_data))
+
+        # Assert: Verify output structure
+        assert isinstance(result, ModelReducerOutput)
+        assert result.operation_id == input_data.operation_id
+        assert result.reduction_type == EnumReductionType.AGGREGATE
+
+        # Assert: Verify FSM state transitioned
+        assert reducer.get_current_state() == "processing"
+        assert reducer.get_state_history() == ["idle"]
+
+        # Assert: Verify output metadata contains FSM info
+        assert result.metadata.model_extra.get("fsm_state") == "processing"
+        assert result.metadata.model_extra.get("fsm_success") is True
+
+    def test_invalid_transition_raises_error(
+        self, reducer_with_contract_factory: ReducerWithContractFactory
+    ) -> None:
+        """Test that invalid FSM trigger raises ModelOnexError.
+
+        Verifies:
+        - Invalid trigger results in ModelOnexError
+        - FSM state remains unchanged after failed transition
+        """
+        # Arrange
+        fsm_contract = create_test_fsm_contract(name="error_path_fsm")
+        reducer = reducer_with_contract_factory(fsm_contract)
+        initial_state = reducer.get_current_state()
+
+        # Create input with invalid trigger (no transition from idle with this trigger)
+        input_data: ModelReducerInput[str] = ModelReducerInput(
+            data=["item1", "item2"],
+            reduction_type=EnumReductionType.FOLD,
+            metadata=ModelReducerMetadata(
+                trigger="invalid_trigger",
+                source="error_test",
+            ),
+        )
+
+        # Act & Assert: Expect ModelOnexError
+        with pytest.raises(ModelOnexError) as exc_info:
+            asyncio.run(reducer.process(input_data))
+
+        # Verify error contains relevant info
+        error = exc_info.value
+        assert "no transition" in error.message.lower() or "invalid" in error.message.lower()
+
+        # Verify FSM state unchanged
+        assert reducer.get_current_state() == initial_state
+```
+
+#### Key Testing Patterns
+
+**1. FSM Contract Factory**: Use `create_test_fsm_contract()` to create minimal FSM configurations with default states and transitions. Override specific parameters as needed.
+
+**2. TestableNodeReducer**: Extends `NodeReducer` to accept FSM contracts directly in the constructor, bypassing the normal contract loading mechanism.
+
+**3. Fixture Factory Pattern**: The `reducer_with_contract_factory` fixture returns a callable that creates fresh reducer instances, allowing each test to have isolated state.
+
+**4. State Verification**: Always verify:
+   - Initial state before transition
+   - Current state after transition
+   - State history accumulation
+   - Output metadata containing FSM state info (`fsm_state`, `fsm_success`)
+
+**5. Error Path Testing**: Invalid triggers should raise `ModelOnexError` with descriptive messages, and the FSM state should remain unchanged.
+
+For the complete test suite with multi-step workflows, event-driven patterns, and recovery scenarios, see `tests/integration/test_reducer_integration.py`.
 
 ## Integration vs Unit Tests - Decision Guide
 

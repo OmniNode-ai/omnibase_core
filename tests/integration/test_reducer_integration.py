@@ -26,6 +26,7 @@ from uuid import uuid4
 
 import pytest
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_reducer_types import (
     EnumConflictResolution,
     EnumReductionType,
@@ -143,25 +144,78 @@ def create_test_fsm_contract(
 
 
 class TestableNodeReducer(NodeReducer[Any, Any]):
-    """Test implementation of NodeReducer that can accept an FSM contract."""
+    """Test implementation of NodeReducer that can accept an FSM contract.
+
+    This class exists solely for integration testing purposes. It allows tests
+    to inject arbitrary FSM contracts at runtime rather than relying on the
+    production contract loading mechanism (which requires class-level attributes
+    and YAML contract files).
+
+    WARNING: This pattern is for TESTING ONLY. Production code should always
+    use the standard NodeReducer initialization which loads contracts from
+    declarative YAML files via class attributes.
+    """
 
     def __init__(
         self, container: ModelONEXContainer, fsm_contract: ModelFSMSubcontract
     ) -> None:
-        """Initialize with explicit FSM contract.
+        """Initialize with explicit FSM contract injection.
+
+        This constructor intentionally bypasses the standard NodeReducer.__init__()
+        to enable direct FSM contract injection for testing. This is necessary
+        because the production NodeReducer expects contracts to be loaded from
+        class-level attributes and YAML files, which is not suitable for
+        integration tests that need to create dynamic FSM configurations.
 
         Args:
             container: ONEX container for dependency injection
             fsm_contract: FSM subcontract to use for state machine
+
+        Note:
+            The inheritance chain is:
+            TestableNodeReducer -> NodeReducer -> NodeCoreBase
+
+            By calling `super(NodeReducer, self).__init__(container)`, we skip
+            NodeReducer.__init__() entirely and call NodeCoreBase.__init__()
+            directly. This:
+            1. Avoids the production contract loading logic in NodeReducer
+            2. Still initializes all base class infrastructure from NodeCoreBase
+            3. Allows us to manually set fsm_contract and initialize FSM state
+
+            WHY THIS IS SAFE FOR TESTING:
+            - NodeCoreBase.__init__() handles container setup and core infrastructure
+            - We manually provide the fsm_contract that NodeReducer would load
+            - We call initialize_fsm_state() which NodeReducer would also call
+            - All FSM functionality works identically to production
+
+            WHY THIS IS NOT FOR PRODUCTION:
+            - Production nodes should use declarative YAML contracts
+            - Bypassing NodeReducer.__init__() skips validation and logging
+            - This pattern makes the contract source non-deterministic
+            - Contract loading should be centralized, not scattered
         """
-        # Call parent __init__ without relying on contract attribute
-        # We need to bypass the normal contract loading
+        # SUPER() BYPASS EXPLANATION:
+        # --------------------------
+        # Normal call: super().__init__(container) -> calls NodeReducer.__init__()
+        # Our call: super(NodeReducer, self).__init__(container) -> calls NodeCoreBase.__init__()
+        #
+        # We use the two-argument form of super() to explicitly skip one level
+        # in the inheritance hierarchy. This is a deliberate MRO (Method Resolution
+        # Order) manipulation that:
+        # - Starts resolution from NodeReducer's parent (NodeCoreBase)
+        # - Binds 'self' as the instance
+        # - Results in calling NodeCoreBase.__init__(container)
+        #
+        # This is a TEST PATTERN ONLY - never use in production code.
         super(NodeReducer, self).__init__(container)  # Call NodeCoreBase.__init__
 
-        # Set FSM contract directly
+        # Directly inject the FSM contract that would normally be loaded from
+        # a YAML file via class attributes in production NodeReducer.
         self.fsm_contract = fsm_contract
 
-        # Initialize FSM state
+        # Initialize FSM state using the injected contract.
+        # This is the same call that NodeReducer.__init__() would make,
+        # but we're making it ourselves after injecting our test contract.
         self.initialize_fsm_state(fsm_contract, context={})
 
 
@@ -293,12 +347,9 @@ class TestReducerIntegration:
         with pytest.raises(ModelOnexError) as exc_info:
             asyncio.run(reducer.process(input_data))
 
-        # Verify error details
+        # Verify error details using specific error code
         error = exc_info.value
-        assert (
-            "no transition" in error.message.lower()
-            or "invalid" in error.message.lower()
-        )
+        assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
         # Verify FSM state unchanged
         assert reducer.get_current_state() == initial_state
@@ -815,8 +866,11 @@ class TestReducerIntegrationEdgeCases:
             metadata=ModelReducerMetadata(trigger="any_trigger"),
         )
 
-        with pytest.raises(ModelOnexError):
+        with pytest.raises(ModelOnexError) as exc_info:
             asyncio.run(reducer.process(input3))
+
+        # Verify error code for invalid transition from terminal state
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
     def test_snapshot_and_restore_preserves_context(
         self, reducer_with_contract_factory: ReducerWithContractFactory
