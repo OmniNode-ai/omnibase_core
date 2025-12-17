@@ -244,7 +244,7 @@ class ModelCircuitBreaker(BaseModel):
         """
         # Note: correlation_id is accepted for protocol conformance but
         # not currently used. Future enhancement: log with correlation_id
-        del correlation_id  # Explicitly unused
+        _ = correlation_id  # Unused parameter - protocol conformance
 
         if not self.enabled:
             return

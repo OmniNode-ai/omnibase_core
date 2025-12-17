@@ -187,6 +187,17 @@ class ProtocolCircuitBreaker(Protocol):
                 distributed systems. Implementations may use this for
                 logging, tracing, or distributed circuit breaker coordination.
                 Pass None if correlation tracking is not needed.
+
+        Note:
+            The ``correlation_id`` parameter is optional and implementations may vary
+            in how they utilize it:
+
+            - Simple implementations may ignore it entirely
+            - Observability-focused implementations may log it for distributed tracing
+            - Analytics implementations may aggregate metrics by correlation_id
+
+            Protocol conformance requires accepting the parameter but does not
+            mandate any specific behavior.
         """
         ...
 
@@ -337,6 +348,16 @@ class ProtocolAsyncCircuitBreaker(Protocol):
         Note:
             Async to allow for distributed state updates or
             async logging/metrics reporting.
+
+            The ``correlation_id`` parameter is optional and implementations may vary
+            in how they utilize it:
+
+            - Simple implementations may ignore it entirely
+            - Observability-focused implementations may log it for distributed tracing
+            - Analytics implementations may aggregate metrics by correlation_id
+
+            Protocol conformance requires accepting the parameter but does not
+            mandate any specific behavior.
         """
         ...
 
