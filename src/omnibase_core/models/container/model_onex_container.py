@@ -560,12 +560,20 @@ class ModelONEXContainer:
     async def run_performance_checkpoint(
         self, phase_name: str = "production"
     ) -> TypedDictPerformanceCheckpointResult:
-        """Run comprehensive performance checkpoint."""
+        """Run comprehensive performance checkpoint.
+
+        Note: Requires omnibase_core.monitoring.performance_monitor.PerformanceMonitor
+        to be implemented with an async run_optimization_checkpoint(phase_name: str)
+        method that returns TypedDictPerformanceCheckpointResult.
+        """
         if not self.performance_monitor:
             return TypedDictPerformanceCheckpointResult(
                 error="Performance monitoring not enabled"
             )
 
+        # TODO: PerformanceMonitor.run_optimization_checkpoint() is expected to be
+        # implemented when the omnibase_core.monitoring module is created.
+        # Expected signature: async def run_optimization_checkpoint(phase_name: str) -> TypedDictPerformanceCheckpointResult
         result: TypedDictPerformanceCheckpointResult = (
             await self.performance_monitor.run_optimization_checkpoint(phase_name)
         )

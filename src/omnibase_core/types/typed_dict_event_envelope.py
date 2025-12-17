@@ -14,26 +14,27 @@ class TypedDictEventEnvelopeDict(TypedDict, total=False):
 
     Used for ModelEventEnvelope.to_dict_lazy() return type.
 
-    Note: This represents the serialized form where UUIDs become strings
-    and ModelSemVer becomes a string representation. Some fields are optional
-    (None values are preserved in the output).
+    Note: This represents the lazy-evaluated form where envelope_id and
+    correlation_id are converted to strings, but request_id, trace_id, and
+    span_id remain as UUID objects. ModelSemVer fields become string
+    representations. Some fields are optional (None values are preserved).
 
     Attributes:
-        envelope_id: Unique envelope identifier (as string)
-        envelope_timestamp: Envelope creation timestamp (ISO format)
-        correlation_id: Correlation ID for request tracing (as string, or None)
+        envelope_id: Unique envelope identifier (converted to string)
+        envelope_timestamp: Envelope creation timestamp (ISO format string)
+        correlation_id: Correlation ID for request tracing (converted to string, or None)
         source_tool: Identifier of source tool (or None)
         target_tool: Identifier of target tool (or None)
         priority: Request priority (1-10)
         timeout_seconds: Optional timeout in seconds (or None)
         retry_count: Number of retry attempts
-        request_id: Request identifier (UUID or None)
-        trace_id: Distributed trace identifier (UUID or None)
-        span_id: Trace span identifier (UUID or None)
+        request_id: Request identifier (UUID object or None, not converted)
+        trace_id: Distributed trace identifier (UUID object or None, not converted)
+        span_id: Trace span identifier (UUID object or None, not converted)
         metadata: Envelope metadata dictionary
         security_context: Security context dictionary (or None)
-        onex_version: ONEX standard version (as string)
-        envelope_version: Envelope schema version (as string)
+        onex_version: ONEX standard version (converted to string)
+        envelope_version: Envelope schema version (converted to string)
         payload: The wrapped event payload (lazily evaluated)
     """
 

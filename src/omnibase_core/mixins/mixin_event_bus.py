@@ -163,10 +163,9 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
         # Try to get actual node_id if available, otherwise generate from name
         if hasattr(self, "_node_id") and isinstance(self._node_id, UUID):
             return self._node_id
-        # Generate deterministic UUID from node name
+        # Generate deterministic UUID from node name using SHA-256 hash
         import hashlib
 
-        _namespace_uuid = UUID("6ba7b810-9dad-11d1-80b4-00c04fd430c8")  # DNS namespace
         return UUID(hashlib.sha256(self.node_name.encode()).hexdigest()[:32])
 
     def process(self, input_state: InputStateT) -> OutputStateT:

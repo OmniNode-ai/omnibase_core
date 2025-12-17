@@ -217,8 +217,9 @@ class MixinContractStateReducer:
             )
             _msg = f"Contract state processing error: {e!s}"
             raise ModelOnexError(
-                EnumCoreErrorCode.OPERATION_FAILED,
-            )
+                message=_msg,
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
+            ) from e
 
     def _apply_transition(
         self, transition: ModelStateTransition, input_state: Any

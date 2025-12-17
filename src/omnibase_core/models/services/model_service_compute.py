@@ -89,7 +89,7 @@ Migration Notes:
                 ...
 """
 
-from typing import Any, Generic, TypeVar
+from typing import Generic, TypeVar
 
 from omnibase_core.mixins.mixin_caching import MixinCaching
 from omnibase_core.mixins.mixin_health_check import MixinHealthCheck

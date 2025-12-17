@@ -136,12 +136,9 @@ class MixinContractMetadata:
         )
 
         try:
-            with open(path) as _f:
-                # Load and validate YAML using Pydantic model
-
-                yaml_model = load_and_validate_yaml_model(path, ModelGenericYaml)
-
-                data = yaml_model.model_dump()
+            # Load and validate YAML using Pydantic model
+            yaml_model = load_and_validate_yaml_model(path, ModelGenericYaml)
+            data = yaml_model.model_dump()
 
             # Create ModelNodeMetadata instance
             self._node_metadata = ModelNodeMetadata(**data)
@@ -173,12 +170,9 @@ class MixinContractMetadata:
         )
 
         try:
-            with open(path) as _f:
-                # Load and validate YAML using Pydantic model
-
-                yaml_model = load_and_validate_yaml_model(path, ModelGenericYaml)
-
-                self._contract_data = yaml_model.model_dump()
+            # Load and validate YAML using Pydantic model
+            yaml_model = load_and_validate_yaml_model(path, ModelGenericYaml)
+            self._contract_data = yaml_model.model_dump()
 
             # Extract key fields with explicit string conversion
             if self._contract_data:

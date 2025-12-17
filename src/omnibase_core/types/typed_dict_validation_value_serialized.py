@@ -16,8 +16,9 @@ providing type-safe dictionary representation for validation values.
 class TypedDictValidationValueSerialized(TypedDict):
     """TypedDict for serialized ModelValidationValue.
 
-    Fields match the ModelValidationValue model fields, with enum types
-    represented as their serialized forms when use_enum_values=False.
+    Fields match the ModelValidationValue model fields. Since the model
+    uses use_enum_values=False, enum fields retain their enum type (not
+    converted to strings).
     """
 
     value_type: EnumValidationValueType

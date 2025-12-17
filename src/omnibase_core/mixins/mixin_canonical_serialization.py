@@ -122,7 +122,7 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
                     )
             try:
                 metadata_block = NodeMetadataBlock(**metadata_block)
-            except (pydantic.ValidationError, TypeError) as _e:
+            except (pydantic.ValidationError, TypeError):
                 # Provide defaults for missing required fields to allow incomplete dicts
                 import uuid as uuid_lib
 

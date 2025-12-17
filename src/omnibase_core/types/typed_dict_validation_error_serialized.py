@@ -22,8 +22,9 @@ providing type-safe dictionary representation for validation errors.
 class TypedDictValidationErrorSerialized(TypedDict):
     """TypedDict for serialized ModelValidationError.
 
-    All fields match the ModelValidationError model fields, with enum types
-    represented as their serialized forms when use_enum_values=False.
+    All fields match the ModelValidationError model fields. Since the model
+    uses use_enum_values=False, enum fields retain their enum type (not
+    converted to strings). UUID fields also retain their UUID type.
     """
 
     message: str

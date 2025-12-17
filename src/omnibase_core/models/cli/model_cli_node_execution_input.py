@@ -7,6 +7,7 @@ for CLI node execution operations.
 
 from __future__ import annotations
 
+from typing import cast
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -119,7 +120,10 @@ class ModelCliNodeExecutionInput(BaseModel):
     @allow_dict_any
     def serialize(self) -> TypedDictCliNodeExecutionInputSerialized:
         """Serialize to dictionary (Serializable protocol)."""
-        return self.model_dump(exclude_none=False, by_alias=True)  # type: ignore[return-value]
+        return cast(
+            TypedDictCliNodeExecutionInputSerialized,
+            self.model_dump(exclude_none=False, by_alias=True),
+        )
 
     def get_name(self) -> str:
         """Get name (Nameable protocol)."""
