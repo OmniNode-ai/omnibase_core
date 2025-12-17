@@ -101,9 +101,12 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
             return v
 
         # Handle dict-like object with actions
-        # Note: protocols and metadata fields are extracted but not currently used
-        # by ModelNodeCapability. They are kept for future compatibility when
-        # the capability model is extended to support these fields.
+        # Note: The source object may contain 'protocols' (list of protocol interfaces
+        # the node implements, e.g., ProtocolEventBus) and 'metadata' (node-level
+        # metadata dict) fields. These are intentionally ignored because
+        # ModelNodeCapability represents a single capability definition, not a full
+        # node specification. Future versions may extend ModelNodeCapability or
+        # introduce a separate model to capture protocol implementations.
         if hasattr(v, "actions") or (isinstance(v, dict) and "actions" in v):
             actions = v.actions if hasattr(v, "actions") else v.get("actions", [])
 

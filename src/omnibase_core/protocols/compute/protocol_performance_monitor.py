@@ -115,12 +115,13 @@ class ProtocolPerformanceMonitor(Protocol):
                 async def run_optimization_checkpoint(
                     self, phase_name: str
                 ) -> TypedDictPerformanceCheckpointResult:
-                    return TypedDictPerformanceCheckpointResult(
-                        phase=phase_name,
-                        status="ok",
-                        metrics={"operations_tracked": len(self._operations)},
-                        recommendations=[],
-                    )
+                    # TypedDict is not callable - use dict literal syntax
+                    return {
+                        "phase": phase_name,
+                        "status": "ok",
+                        "metrics": {"operations_tracked": len(self._operations)},
+                        "recommendations": [],
+                    }
 
             # Verify protocol conformance
             monitor: ProtocolPerformanceMonitor = SimplePerformanceMonitor()
