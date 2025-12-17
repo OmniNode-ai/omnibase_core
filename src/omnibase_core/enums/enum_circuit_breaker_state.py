@@ -13,10 +13,10 @@ Related:
 
 from __future__ import annotations
 
-__all__ = ["EnumCircuitBreakerState"]
-
 from enum import Enum
 from typing import Never, NoReturn
+
+__all__ = ["EnumCircuitBreakerState"]
 
 
 class EnumCircuitBreakerState(Enum):

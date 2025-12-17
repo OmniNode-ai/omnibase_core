@@ -340,8 +340,141 @@ class TestMockAsyncCircuitBreakerBehavior:
         assert cb.failure_count == 1
 
 
+class TestModelCircuitBreakerDirectConformance:
+    """Test that ModelCircuitBreaker directly conforms to ProtocolCircuitBreaker."""
+
+    def test_model_directly_conforms_to_protocol(self):
+        """Verify ModelCircuitBreaker directly satisfies ProtocolCircuitBreaker."""
+        breaker = ModelCircuitBreaker()
+        assert isinstance(breaker, ProtocolCircuitBreaker)
+
+    def test_model_initial_state(self):
+        """Verify model reports correct initial state via protocol interface."""
+        breaker = ModelCircuitBreaker()
+        assert not breaker.is_open
+        assert breaker.failure_count == 0
+
+    def test_model_is_open_property(self):
+        """Verify is_open property correctly reflects state."""
+        breaker = ModelCircuitBreaker(failure_threshold=2, minimum_request_threshold=1)
+
+        # Initially closed
+        assert not breaker.is_open
+        assert breaker.state == "closed"
+
+        # After enough failures, should be open
+        breaker.record_failure()
+        breaker.record_failure()
+        assert breaker.is_open
+        assert breaker.state == "open"
+
+    def test_model_record_failure_with_correlation_id(self):
+        """Verify record_failure accepts optional correlation_id."""
+        breaker = ModelCircuitBreaker(failure_threshold=2, minimum_request_threshold=1)
+        correlation_id = uuid4()
+
+        # Should not raise
+        breaker.record_failure(correlation_id=correlation_id)
+        assert breaker.failure_count == 1
+
+        # Also test with None explicitly
+        breaker.record_failure(correlation_id=None)
+        assert breaker.failure_count == 2
+
+    def test_model_reset_method(self):
+        """Verify reset() method works and is equivalent to reset_state()."""
+        breaker = ModelCircuitBreaker(failure_threshold=2, minimum_request_threshold=1)
+
+        # Trigger failures to open circuit
+        breaker.record_failure()
+        breaker.record_failure()
+        assert breaker.is_open
+        assert breaker.failure_count == 2
+
+        # Reset via protocol method
+        breaker.reset()
+        assert not breaker.is_open
+        assert breaker.failure_count == 0
+        assert breaker.state == "closed"
+
+    def test_model_reset_and_reset_state_equivalent(self):
+        """Verify reset() and reset_state() are functionally equivalent."""
+        breaker1 = ModelCircuitBreaker(failure_threshold=2, minimum_request_threshold=1)
+        breaker2 = ModelCircuitBreaker(failure_threshold=2, minimum_request_threshold=1)
+
+        # Put both in same state
+        breaker1.record_failure()
+        breaker1.record_failure()
+        breaker2.record_failure()
+        breaker2.record_failure()
+
+        # Reset using different methods
+        breaker1.reset()
+        breaker2.reset_state()
+
+        # Both should have same end state
+        assert breaker1.state == breaker2.state == "closed"
+        assert breaker1.failure_count == breaker2.failure_count == 0
+        assert breaker1.success_count == breaker2.success_count == 0
+        assert breaker1.total_requests == breaker2.total_requests == 0
+
+    def test_model_protocol_usage_pattern(self):
+        """Test that ModelCircuitBreaker works in protocol-typed function."""
+
+        def execute_with_breaker(
+            cb: ProtocolCircuitBreaker,
+            operation: Callable[[], object],
+        ) -> object:
+            """Execute operation with circuit breaker protection."""
+            if cb.is_open:
+                raise RuntimeError("Circuit is open")
+
+            try:
+                result = operation()
+                cb.record_success()
+                return result
+            except Exception:
+                cb.record_failure()
+                raise
+
+        # Use ModelCircuitBreaker directly (no adapter needed)
+        # Note: ModelCircuitBreaker uses failure_rate_threshold (default 0.5) in
+        # addition to absolute failure_threshold. We set failure_rate_threshold=1.0
+        # to rely only on absolute failure count for predictable test behavior.
+        breaker: ProtocolCircuitBreaker = ModelCircuitBreaker(
+            failure_threshold=2,
+            minimum_request_threshold=1,
+            failure_rate_threshold=1.0,  # Disable rate-based tripping
+        )
+
+        # Successful operation
+        result = execute_with_breaker(breaker, lambda: "success")
+        assert result == "success"
+
+        # First failure - circuit still closed
+        with pytest.raises(ValueError):
+            execute_with_breaker(breaker, _raise_value_error)
+        assert not breaker.is_open
+
+        # Second failure - circuit should now open
+        with pytest.raises(ValueError):
+            execute_with_breaker(breaker, _raise_value_error)
+
+        # Circuit should now be open
+        assert breaker.is_open
+
+        with pytest.raises(RuntimeError, match="Circuit is open"):
+            execute_with_breaker(breaker, lambda: "should not run")
+
+        # Reset and retry
+        breaker.reset()
+        assert not breaker.is_open
+        result = execute_with_breaker(breaker, lambda: "recovered")
+        assert result == "recovered"
+
+
 class TestModelCircuitBreakerAdapterConformance:
-    """Test that ModelCircuitBreaker can conform via adapter."""
+    """Test that ModelCircuitBreaker can still conform via adapter (backwards compat)."""
 
     def test_adapter_conforms_to_protocol(self):
         """Verify adapter satisfies ProtocolCircuitBreaker."""

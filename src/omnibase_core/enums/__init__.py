@@ -267,8 +267,9 @@ __all__ = [
     "EnumEnvironmentValidationRuleType",
     "EnumErrorSeverity",
     "EnumValidationRuleType",
-    # Effect domain (from nodes)
+    # Circuit breaker domain (standalone for cross-repo standardization)
     "EnumCircuitBreakerState",
+    # Effect domain (from nodes)
     "EnumEffectHandlerType",
     "EnumEffectType",
     "EnumTransactionState",
