@@ -482,8 +482,12 @@ def func3(x: str | int | bool | float | list) -> None:
         assert len(issues) >= 3  # Should detect issues in all unions
         assert len(patterns) >= 3
 
-    def test_file_optional_suggestion_detected(self, tmp_path: Path) -> None:
-        """Test detection of Union[T, None] that should use Optional."""
+    def test_file_union_none_suggests_pep604_syntax(self, tmp_path: Path) -> None:
+        """Test that Union[T, None] suggests T | None per ONEX conventions.
+
+        Per ONEX conventions, Union[T, None] should be replaced with T | None.
+        The validator suggests the modern PEP 604 syntax.
+        """
         test_file = tmp_path / "optional.py"
         test_file.write_text(
             """
@@ -498,7 +502,9 @@ def func(x: Union[str, None]) -> None:
 
         assert union_count >= 1
         assert len(issues) >= 1
-        assert any("Optional" in issue for issue in issues)
+        # Should suggest T | None instead of Optional per ONEX conventions
+        assert any("str | None" in issue for issue in issues)
+        assert any("Union[str, None]" in issue for issue in issues)
 
 
 class TestValidateUnionUsageDirectory:
