@@ -149,6 +149,16 @@ class PythonASTValidator(ast.NodeVisitor):
             "policy_version",  # TypedDict for security policy config (serialization boundary)
             "correlation_id",  # TypedDict event metadata (OpenTelemetry-style correlation)
             "operation_id",  # TypedDict FSM context (reducer operation tracking)
+            # TYPED_DICT_CLI_SERIALIZED (TypedDicts for CLI model serialization output)
+            # See: src/omnibase_core/types/typed_dict_cli_*.py for TypedDict definitions
+            # These represent serialize() output - UUIDs and versions become strings in JSON
+            "option_id",  # TypedDict CLI command option ID (serialized UUID)
+            "envelope_id",  # TypedDict event envelope ID (serialized UUID)
+            "action_id",  # TypedDict CLI action ID (serialized UUID)
+            "command_name_id",  # TypedDict CLI command name ID (serialized UUID)
+            "target_node_id",  # TypedDict CLI target node ID (serialized UUID)
+            "onex_version",  # TypedDict ONEX version (serialized ModelSemVer)
+            "envelope_version",  # TypedDict envelope schema version (serialized ModelSemVer)
             # GENERIC_SERIALIZATION_FIELDS (used in TypedDicts for serialization)
             # NOTE: These generic names are allowed because:
             # 1. TypedDicts are serialization boundaries (JSON, logging, monitoring)

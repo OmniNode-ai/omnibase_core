@@ -157,6 +157,16 @@ def should_exclude_file(filepath: Path) -> bool:
     if filepath.name in legacy_multi_class_files:
         return True
 
+    # Exclude TypedDict collection files in types/ directory
+    # TypedDicts representing complex structures (K8s, nested data) are grouped together
+    typeddict_collection_files = {
+        "typed_dict_k8s_resources.py",  # 17 K8s resource TypedDicts (nested structure)
+        "typed_dict_migration_report.py",  # Summary nested in main report TypedDict
+        "typed_dict_policy_value_data.py",  # Data output and Input types
+    }
+    if filepath.name in typeddict_collection_files:
+        return True
+
     return False
 
 

@@ -217,8 +217,9 @@ class MixinContractStateReducer:
             )
             msg = f"Contract state processing error: {e!s}"
             raise ModelOnexError(
-                EnumCoreErrorCode.OPERATION_FAILED,
-            )
+                message=msg,
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
+            ) from e
 
     def _apply_transition(
         self, transition: ModelStateTransition, input_state: Any
@@ -328,11 +329,6 @@ class MixinContractStateReducer:
     ) -> TypedDictDefaultOutputState:
         """Create a default output state when no main tool is available."""
         # This is a fallback - each tool should implement proper processing
-        tool_name = getattr(self, "node_name", "unknown_tool")
-
-        # Try to create output state using the tool's output state model
-        f"Model{tool_name.replace('_', '').title()}OutputState"
-
         # Basic response structure
         # Use ModelSemVer for version field instead of string literal
         default_version = ModelSemVer(major=1, minor=0, patch=0)

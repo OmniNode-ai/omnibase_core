@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from typing import Any
-
 from omnibase_core.models.core.model_status_migrator import ModelEnumStatusMigrator
 from omnibase_core.types import TypedDictStatusMigrationResult
+from omnibase_core.types.typed_dict_migration_report import TypedDictMigrationReport
 from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 """
@@ -172,7 +171,7 @@ class ModelEnumStatusMigrationValidator:
         return conflicts
 
     @staticmethod
-    def generate_migration_report() -> dict[str, Any]:
+    def generate_migration_report() -> TypedDictMigrationReport:
         """
         Generate a comprehensive migration report.
 
@@ -181,10 +180,10 @@ class ModelEnumStatusMigrationValidator:
         """
         conflicts = ModelEnumStatusMigrationValidator.find_enum_conflicts()
 
-        return {
+        result: TypedDictMigrationReport = {
             "summary": {
                 "total_conflicts": len(conflicts),
-                "conflicting_values": list[Any](conflicts.keys()),
+                "conflicting_values": list(conflicts.keys()),
                 "affected_enums": (
                     set().union(*conflicts.values()) if conflicts else set()
                 ),
@@ -218,6 +217,7 @@ class ModelEnumStatusMigrationValidator:
                 "Add type hints for all status fields",
             ],
         }
+        return result
 
 
 # Export for use

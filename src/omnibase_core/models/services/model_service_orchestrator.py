@@ -20,25 +20,25 @@ Usage Example:
     class NodeWorkflowOrchestrator(ModelServiceOrchestrator):
         '''Workflow orchestrator with automatic event coordination and metrics.'''
 
-        async def execute_orchestration(self, contract: ModelContractOrchestrator) -> dict:
+        async def execute_orchestration(self, input_data: ModelOrchestratorInput) -> ModelOrchestratorOutput:
             # Emit workflow started event
             await self.publish_event(
                 event_type="workflow_started",
-                payload={"workflow_id": str(contract.workflow_id)},
-                correlation_id=contract.correlation_id
+                payload={"workflow_id": str(input_data.workflow_id)},
+                correlation_id=input_data.correlation_id
             )
 
             # Coordinate subnode execution
-            results = await self._execute_workflow(contract)
+            results = await self._execute_workflow(input_data)
 
             # Emit workflow completed event
             await self.publish_event(
                 event_type="workflow_completed",
                 payload={
-                    "workflow_id": str(contract.workflow_id),
-                    "steps_completed": len(results)
+                    "workflow_id": str(input_data.workflow_id),
+                    "steps_completed": len(results.completed_steps)
                 },
-                correlation_id=contract.correlation_id
+                correlation_id=input_data.correlation_id
             )
 
             return results

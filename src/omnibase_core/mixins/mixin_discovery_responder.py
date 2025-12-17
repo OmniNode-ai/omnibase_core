@@ -411,7 +411,7 @@ class MixinDiscoveryResponder:
             # Flatten the dict to a list of channel names
             event_channels_list: list[str] = []
             if channels_dict:
-                for key, values in channels_dict.items():
+                for _key, values in channels_dict.items():
                     if isinstance(values, list):
                         event_channels_list.extend(values)
 

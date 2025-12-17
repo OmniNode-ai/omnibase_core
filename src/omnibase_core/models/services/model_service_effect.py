@@ -20,18 +20,18 @@ Usage Example:
     class NodeDatabaseWriterEffect(ModelServiceEffect):
         '''Database writer with automatic health checks, events, and metrics.'''
 
-        async def execute_effect(self, contract: ModelContractEffect) -> dict:
+        async def execute_effect(self, input_data: ModelEffectInput) -> ModelEffectOutput:
             # Just write your business logic!
-            result = await self.database.write(contract.input_data)
+            result = await self.database.write(input_data.operation_data)
 
             # Emit event automatically tracked with metrics
             await self.publish_event(
                 event_type="write_completed",
                 payload={"records_written": result["count"]},
-                correlation_id=contract.correlation_id
+                correlation_id=input_data.correlation_id
             )
 
-            return {"status": "success", "data": result}
+            return ModelEffectOutput(...)
     ```
 
 Included Capabilities:

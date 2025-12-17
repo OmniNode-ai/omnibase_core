@@ -1,7 +1,15 @@
-from typing import Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar, cast
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
+from omnibase_core.types.typed_dict_performance_checkpoint_result import (
+    TypedDictPerformanceCheckpointResult,
+)
+
+if TYPE_CHECKING:
+    from omnibase_core.protocols.compute.protocol_performance_monitor import (
+        ProtocolPerformanceMonitor,
+    )
 
 """
 Model ONEX Dependency Injection Container.
@@ -117,7 +125,7 @@ class ModelONEXContainer:
         # Optional performance enhancements
         self.enable_performance_cache = enable_performance_cache
         self.tool_cache: Any = None
-        self.performance_monitor: Any = None
+        self.performance_monitor: ProtocolPerformanceMonitor | None = None
 
         # Initialize ServiceRegistry (new DI system)
         self._service_registry: Any = None
@@ -556,14 +564,42 @@ class ModelONEXContainer:
 
     async def run_performance_checkpoint(
         self, phase_name: str = "production"
-    ) -> dict[str, Any]:
-        """Run comprehensive performance checkpoint."""
-        if not self.performance_monitor:
-            return {"error": "Performance monitoring not enabled"}
+    ) -> TypedDictPerformanceCheckpointResult:
+        """Run comprehensive performance checkpoint.
 
-        result: dict[
-            str, Any
-        ] = await self.performance_monitor.run_optimization_checkpoint(phase_name)
+        This method delegates to a PerformanceMonitor implementation that satisfies
+        ProtocolPerformanceMonitor. When performance monitoring is not enabled or
+        the PerformanceMonitor module is not available, returns an error result.
+
+        Args:
+            phase_name: Name of the checkpoint phase (e.g., "production", "development")
+
+        Returns:
+            TypedDictPerformanceCheckpointResult containing either:
+            - Performance metrics, recommendations, and status when monitoring is enabled
+            - An error message when performance monitoring is not available
+
+        Note:
+            Performance monitoring requires omnibase_core.monitoring.performance_monitor.PerformanceMonitor
+            to be implemented. This module is optional and may not be present in all deployments.
+            When unavailable, this method returns a graceful error response rather than raising.
+
+        See Also:
+            - ProtocolPerformanceMonitor: Protocol defining the required interface
+            - TypedDictPerformanceCheckpointResult: Return type structure
+        """
+        if not self.performance_monitor:
+            return TypedDictPerformanceCheckpointResult(
+                error="Performance monitoring not enabled. "
+                "The omnibase_core.monitoring.performance_monitor module is not available. "
+                "Enable by implementing PerformanceMonitor satisfying ProtocolPerformanceMonitor."
+            )
+
+        # Delegate to performance monitor implementation
+        # See ProtocolPerformanceMonitor for the expected interface
+        result: TypedDictPerformanceCheckpointResult = (
+            await self.performance_monitor.run_optimization_checkpoint(phase_name)
+        )
         return result
 
     def close(self) -> None:

@@ -100,13 +100,15 @@ class ModelNodeIntrospectionEvent(ModelOnexEvent):
         if isinstance(v, ModelNodeCapability):
             return v
 
-        # Handle dict-like object with actions, protocols, metadata
+        # Handle dict-like object with actions
+        # Note: The source object may contain 'protocols' (list of protocol interfaces
+        # the node implements, e.g., ProtocolEventBus) and 'metadata' (node-level
+        # metadata dict) fields. These are intentionally ignored because
+        # ModelNodeCapability represents a single capability definition, not a full
+        # node specification. Future versions may extend ModelNodeCapability or
+        # introduce a separate model to capture protocol implementations.
         if hasattr(v, "actions") or (isinstance(v, dict) and "actions" in v):
             actions = v.actions if hasattr(v, "actions") else v.get("actions", [])
-            protocols = (
-                v.protocols if hasattr(v, "protocols") else v.get("protocols", [])
-            )
-            metadata = v.metadata if hasattr(v, "metadata") else v.get("metadata", {})
 
             # Create a simple capability representation
             capability_str = f"capabilities_{','.join(actions)}"

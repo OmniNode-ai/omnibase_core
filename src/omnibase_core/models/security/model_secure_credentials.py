@@ -377,7 +377,6 @@ class ModelSecureCredentials(BaseModel, ABC):
         warnings: list[str] = []
 
         strength_assessment = self.get_credential_strength_assessment()
-        classification = self.get_security_classification()
 
         # Check for empty required secrets
         for field_name, field_info in self.__class__.model_fields.items():

@@ -200,7 +200,7 @@ class MixinComputeExecution:
         executed_steps: set[str] = set()
         for step in contract.pipeline:
             if step.mapping_config is not None:
-                for field, path in step.mapping_config.field_mappings.items():
+                for _field, path in step.mapping_config.field_mappings.items():
                     if path.startswith("$.steps."):
                         # Extract step name from path
                         remaining = path[8:]  # Remove "$.steps."

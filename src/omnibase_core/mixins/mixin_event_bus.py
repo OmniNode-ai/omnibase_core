@@ -20,6 +20,7 @@ This mixin replaces and unifies MixinEventListener and MixinEventBusCompletion.
 """
 
 import threading
+import uuid
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, StrictStr, ValidationError
@@ -163,11 +164,9 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
         # Try to get actual node_id if available, otherwise generate from name
         if hasattr(self, "_node_id") and isinstance(self._node_id, UUID):
             return self._node_id
-        # Generate deterministic UUID from node name
-        import hashlib
-
-        namespace_uuid = UUID("6ba7b810-9dad-11d1-80b4-00c04fd430c8")  # DNS namespace
-        return UUID(hashlib.sha256(self.node_name.encode()).hexdigest()[:32])
+        # Generate deterministic UUID from node name using standard uuid5
+        # Uses DNS namespace as a well-known namespace for name-based UUIDs
+        return uuid.uuid5(uuid.NAMESPACE_DNS, self.node_name)
 
     def process(self, input_state: InputStateT) -> OutputStateT:
         """
@@ -231,17 +230,16 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
                 correlation_id=correlation_id,
             )
 
-            # Wrap in envelope
-            from omnibase_core.models.events.model_event_envelope import (
-                ModelEventEnvelope,
-            )
-
-            envelope: ModelEventEnvelope[ModelOnexEvent] = ModelEventEnvelope(
-                payload=event
-            )
-
             # Publish via event bus - fail fast if no publish method
             if hasattr(bus, "publish_async"):
+                # Wrap in envelope for async publishing
+                from omnibase_core.models.events.model_event_envelope import (
+                    ModelEventEnvelope,
+                )
+
+                envelope: ModelEventEnvelope[ModelOnexEvent] = ModelEventEnvelope(
+                    payload=event
+                )
                 await bus.publish_async(envelope)
             elif hasattr(bus, "publish"):
                 bus.publish(event)  # Synchronous method - no await
@@ -294,14 +292,6 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
 
         try:
             event = self._build_event(event_type, data)
-            from omnibase_core.models.events.model_event_envelope import (
-                ModelEventEnvelope,
-            )
-
-            # Wrap event in envelope before publishing
-            envelope: ModelEventEnvelope[ModelOnexEvent] = ModelEventEnvelope(
-                payload=event
-            )
             # Use synchronous publish method only (this is a sync method) - fail fast if missing
             if hasattr(bus, "publish"):
                 bus.publish(event)
@@ -344,17 +334,16 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
         try:
             event = self._build_event(event_type, data)
 
-            # Wrap event in envelope before publishing
-            from omnibase_core.models.events.model_event_envelope import (
-                ModelEventEnvelope,
-            )
-
-            envelope: ModelEventEnvelope[ModelOnexEvent] = ModelEventEnvelope(
-                payload=event
-            )
-
             # Prefer async publishing if available - fail fast if no publish method
             if hasattr(bus, "publish_async"):
+                # Wrap event in envelope for async publishing
+                from omnibase_core.models.events.model_event_envelope import (
+                    ModelEventEnvelope,
+                )
+
+                envelope: ModelEventEnvelope[ModelOnexEvent] = ModelEventEnvelope(
+                    payload=event
+                )
                 await bus.publish_async(envelope)
             # Fallback to sync method
             elif hasattr(bus, "publish"):

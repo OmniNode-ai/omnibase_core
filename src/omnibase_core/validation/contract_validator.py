@@ -322,7 +322,7 @@ class ProtocolContractValidator:
             score -= NO_MODEL_CLASSES_PENALTY
 
         # Step 4: Validate model against contract
-        contract_name = yaml_data.get("name", "")
+        _contract_name = yaml_data.get("name", "")
         input_model = yaml_data.get("input_model", "")
         output_model = yaml_data.get("output_model", "")
 

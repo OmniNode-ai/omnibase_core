@@ -11,13 +11,16 @@ Validation error model for tracking validation failures.
 """
 
 
-from typing import Any
+from typing import cast
 from uuid import UUID
 
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
+from omnibase_core.types.typed_dict_validation_error_serialized import (
+    TypedDictValidationErrorSerialized,
+)
 from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 from .model_validation_value import ModelValidationValue
@@ -192,9 +195,12 @@ class ModelValidationError(BaseModel):
                 message=f"Operation failed: {e}",
             ) from e
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> TypedDictValidationErrorSerialized:
         """Serialize to dictionary (Serializable protocol)."""
-        return self.model_dump(exclude_none=False, by_alias=True)
+        return cast(
+            TypedDictValidationErrorSerialized,
+            self.model_dump(exclude_none=False, by_alias=True),
+        )
 
 
 # Export for use

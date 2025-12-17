@@ -13,15 +13,12 @@ Design Principles:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Protocol, TypeVar, runtime_checkable
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 if TYPE_CHECKING:
     from omnibase_core.protocols.validation.protocol_validation_result import (
         ProtocolValidationResult,
     )
-
-T = TypeVar("T")
-P = TypeVar("P")
 
 
 @runtime_checkable
@@ -35,7 +32,7 @@ class ProtocolValidator(Protocol):
     strict_mode: bool
 
     async def validate_implementation(
-        self, implementation: T, protocol: type[P]
+        self, implementation: object, protocol: type[object]
     ) -> ProtocolValidationResult:
         """
         Validate that an implementation conforms to a protocol.

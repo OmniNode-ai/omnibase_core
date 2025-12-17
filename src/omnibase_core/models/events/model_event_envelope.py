@@ -26,6 +26,7 @@ from omnibase_core.models.primitives.model_semver import (
     default_model_version,
 )
 from omnibase_core.models.security.model_security_context import ModelSecurityContext
+from omnibase_core.types.typed_dict_event_envelope import TypedDictEventEnvelopeDict
 
 
 class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
@@ -341,7 +342,7 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
     @allow_dict_any(
         reason="Serialization method returning dictionary representation of envelope"
     )
-    def to_dict_lazy(self) -> dict[str, Any]:
+    def to_dict_lazy(self) -> TypedDictEventEnvelopeDict:
         """
         Convert envelope to dictionary with lazy evaluation for nested objects.
 
@@ -349,7 +350,7 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
         evaluation of expensive model_dump() operations on nested objects.
 
         Returns:
-            Dictionary representation with lazy-evaluated nested structures
+            TypedDictEventEnvelopeDict representation with lazy-evaluated nested structures
         """
         lazy_payload = self.lazy_string_conversion(
             cast(
@@ -358,7 +359,7 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
             ),
             "payload",
         )
-        result: dict[str, Any] = {
+        result: TypedDictEventEnvelopeDict = {
             "envelope_id": str(self.envelope_id),
             "envelope_timestamp": self.envelope_timestamp.isoformat(),
             "correlation_id": str(self.correlation_id) if self.correlation_id else None,

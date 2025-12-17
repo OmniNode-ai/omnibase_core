@@ -52,9 +52,6 @@ class MixinIntrospectFromContract:
         if not contract_path.exists():
             msg = f"No contract file found at {contract_path}"
             raise ModelOnexError(msg, EnumCoreErrorCode.FILE_NOT_FOUND)
-        with open(contract_path) as f:
-            # Load and validate YAML using Pydantic model
-
-            yaml_model = load_and_validate_yaml_model(contract_path, ModelGenericYaml)
-
-            return yaml_model.model_dump()
+        # Load and validate YAML using Pydantic model
+        yaml_model = load_and_validate_yaml_model(contract_path, ModelGenericYaml)
+        return yaml_model.model_dump()

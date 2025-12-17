@@ -102,7 +102,7 @@ def validate_yaml_file(file_path: Path) -> list[str]:
         # Use Pydantic model validation instead of manual YAML parsing
         try:
             # Use recognized YAML utility function for Pydantic validation
-            contract = load_and_validate_yaml_model(content)
+            _contract = load_and_validate_yaml_model(content)
 
             # Validation successful if we reach here
 
