@@ -53,6 +53,9 @@ from omnibase_core.models.reducer.model_reducer_input import ModelReducerInput
 from omnibase_core.models.reducer.model_reducer_output import ModelReducerOutput
 from omnibase_core.nodes.node_reducer import NodeReducer
 
+# Test configuration constants
+INTEGRATION_TEST_TIMEOUT_SECONDS: int = 60
+
 # Version for test contracts
 V1_0_0 = ModelSemVer(major=1, minor=0, patch=0)
 
@@ -251,7 +254,7 @@ def reducer_with_contract_factory(
 
 
 @pytest.mark.integration
-@pytest.mark.timeout(60)
+@pytest.mark.timeout(INTEGRATION_TEST_TIMEOUT_SECONDS)
 class TestReducerIntegration:
     """Integration tests for NodeReducer input -> output flows.
 
@@ -294,7 +297,9 @@ class TestReducerIntegration:
         )
 
         # Act: Process the input
-        result = asyncio.run(reducer.process(input_data))
+        result: ModelReducerOutput[dict[str, str]] = asyncio.run(
+            reducer.process(input_data)
+        )
 
         # Assert: Verify output structure and state transition
         assert isinstance(result, ModelReducerOutput)
@@ -443,7 +448,9 @@ class TestReducerIntegration:
             reduction_type=EnumReductionType.TRANSFORM,
             metadata=ModelReducerMetadata(trigger="submit"),
         )
-        result1 = asyncio.run(reducer.process(input1))
+        result1: ModelReducerOutput[dict[str, str]] = asyncio.run(
+            reducer.process(input1)
+        )
 
         assert result1.metadata.model_extra.get("fsm_state") == "review"
         assert reducer.get_current_state() == "review"
@@ -455,7 +462,9 @@ class TestReducerIntegration:
             reduction_type=EnumReductionType.TRANSFORM,
             metadata=ModelReducerMetadata(trigger="approve"),
         )
-        result2 = asyncio.run(reducer.process(input2))
+        result2: ModelReducerOutput[dict[str, str]] = asyncio.run(
+            reducer.process(input2)
+        )
 
         assert result2.metadata.model_extra.get("fsm_state") == "approved"
         assert reducer.get_current_state() == "approved"
@@ -467,7 +476,9 @@ class TestReducerIntegration:
             reduction_type=EnumReductionType.TRANSFORM,
             metadata=ModelReducerMetadata(trigger="deploy"),
         )
-        result3 = asyncio.run(reducer.process(input3))
+        result3: ModelReducerOutput[dict[str, str]] = asyncio.run(
+            reducer.process(input3)
+        )
 
         assert result3.metadata.model_extra.get("fsm_state") == "deployed"
         assert reducer.get_current_state() == "deployed"
@@ -556,7 +567,9 @@ class TestReducerIntegration:
             ),
         )
 
-        result = asyncio.run(reducer.process(input_data))
+        result: ModelReducerOutput[dict[str, Any]] = asyncio.run(
+            reducer.process(input_data)
+        )
 
         # Verify state transition
         assert reducer.get_current_state() == "processing_event"
@@ -703,7 +716,9 @@ class TestReducerIntegration:
         )
 
         # This should not raise but return failure result (conditions not met)
-        result_fail = asyncio.run(reducer.process(input2_fail))
+        result_fail: ModelReducerOutput[dict[str, str]] = asyncio.run(
+            reducer.process(input2_fail)
+        )
 
         # Transition fails - state stays at validating but we get a failure result
         assert result_fail.metadata.model_extra.get("fsm_success") is False
@@ -724,7 +739,9 @@ class TestReducerIntegration:
             ),
         )
 
-        result_success = asyncio.run(reducer.process(input2_success))
+        result_success: ModelReducerOutput[dict[str, str]] = asyncio.run(
+            reducer.process(input2_success)
+        )
 
         # Verify successful transition
         assert result_success.metadata.model_extra.get("fsm_success") is True
@@ -736,7 +753,9 @@ class TestReducerIntegration:
             reduction_type=EnumReductionType.TRANSFORM,
             metadata=ModelReducerMetadata(trigger="complete"),
         )
-        result_final = asyncio.run(reducer.process(input3))
+        result_final: ModelReducerOutput[dict[str, str]] = asyncio.run(
+            reducer.process(input3)
+        )
 
         assert result_final.metadata.model_extra.get("fsm_state") == "success"
         assert reducer.get_current_state() == "success"
@@ -744,7 +763,7 @@ class TestReducerIntegration:
 
 
 @pytest.mark.integration
-@pytest.mark.timeout(60)
+@pytest.mark.timeout(INTEGRATION_TEST_TIMEOUT_SECONDS)
 class TestReducerIntegrationEdgeCases:
     """Additional integration tests for edge cases and boundary conditions.
 
@@ -776,7 +795,9 @@ class TestReducerIntegrationEdgeCases:
             metadata=ModelReducerMetadata(trigger="start"),
         )
 
-        result = asyncio.run(reducer.process(input_data))
+        result: ModelReducerOutput[dict[str, Any]] = asyncio.run(
+            reducer.process(input_data)
+        )
 
         assert result.items_processed == 100
         assert result.streaming_mode == EnumStreamingMode.BATCH
@@ -800,7 +821,7 @@ class TestReducerIntegrationEdgeCases:
             ),
         )
 
-        result = asyncio.run(reducer.process(input_data))
+        result: ModelReducerOutput[str] = asyncio.run(reducer.process(input_data))
 
         # Verify metadata is preserved
         assert result.metadata.tags == ["test", "integration"]
@@ -825,7 +846,7 @@ class TestReducerIntegrationEdgeCases:
             ),
         )
 
-        result = asyncio.run(reducer.process(input_data))
+        result: ModelReducerOutput[int] = asyncio.run(reducer.process(input_data))
 
         assert result.streaming_mode == EnumStreamingMode.WINDOWED
         assert result.metadata.window_id == window_id
