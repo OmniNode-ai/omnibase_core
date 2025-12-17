@@ -97,12 +97,11 @@ class MockAsyncCircuitBreaker:
 
 class ModelCircuitBreakerAdapter:
     """
-    Adapter to make ModelCircuitBreaker conform to ProtocolCircuitBreaker.
+    Adapter to demonstrate protocol conformance patterns.
 
-    ModelCircuitBreaker uses different method names:
-    - reset_state() instead of reset()
-
-    This adapter demonstrates how existing implementations can conform.
+    While ModelCircuitBreaker now directly conforms to ProtocolCircuitBreaker,
+    this adapter shows how to wrap existing implementations that may have
+    different method names or interfaces.
     """
 
     def __init__(self, breaker: ModelCircuitBreaker | None = None):
@@ -120,7 +119,7 @@ class ModelCircuitBreakerAdapter:
         self._breaker.record_success()
 
     def record_failure(self, correlation_id: UUID | None = None) -> None:
-        self._breaker.record_failure()
+        self._breaker.record_failure(correlation_id)
 
     def reset(self) -> None:
         self._breaker.reset_state()
@@ -417,6 +416,34 @@ class TestModelCircuitBreakerDirectConformance:
         assert breaker1.failure_count == breaker2.failure_count == 0
         assert breaker1.success_count == breaker2.success_count == 0
         assert breaker1.total_requests == breaker2.total_requests == 0
+
+    def test_correlation_id_tracking_pattern(self):
+        """Demonstrate correlation_id usage for distributed tracing.
+
+        The correlation_id parameter enables tracking failures across
+        distributed systems by associating each failure with a trace ID.
+        This is useful for:
+        - Correlating circuit breaker state with distributed traces
+        - Aggregating failure metrics by request/trace
+        - Debugging which requests triggered state changes
+        """
+        breaker = ModelCircuitBreaker()
+        trace_id = uuid4()
+
+        # Record failure with correlation ID for tracing
+        breaker.record_failure(correlation_id=trace_id)
+
+        # Verify failure was recorded
+        assert breaker.failure_count == 1
+
+        # Multiple failures can share the same trace ID (e.g., retries)
+        breaker.record_failure(correlation_id=trace_id)
+        assert breaker.failure_count == 2
+
+        # Different trace IDs for independent requests
+        other_trace_id = uuid4()
+        breaker.record_failure(correlation_id=other_trace_id)
+        assert breaker.failure_count == 3
 
     def test_model_protocol_usage_pattern(self):
         """Test that ModelCircuitBreaker works in protocol-typed function."""
