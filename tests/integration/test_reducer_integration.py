@@ -18,6 +18,7 @@ Note:
     The integration marker is already registered in pyproject.toml.
 """
 
+import asyncio
 from collections.abc import Callable
 from typing import Any
 from unittest.mock import MagicMock
@@ -239,8 +240,6 @@ class TestReducerIntegration:
         )
 
         # Act: Process the input
-        import asyncio
-
         result = asyncio.run(reducer.process(input_data))
 
         # Assert: Verify output structure and state transition
@@ -291,8 +290,6 @@ class TestReducerIntegration:
         )
 
         # Act & Assert: Expect ModelOnexError for invalid transition
-        import asyncio
-
         with pytest.raises(ModelOnexError) as exc_info:
             asyncio.run(reducer.process(input_data))
 
@@ -388,7 +385,6 @@ class TestReducerIntegration:
         )
 
         reducer = reducer_with_contract_factory(fsm_contract)
-        import asyncio
 
         # Step 1: draft -> review
         input1: ModelReducerInput[dict[str, str]] = ModelReducerInput(
@@ -497,7 +493,6 @@ class TestReducerIntegration:
         )
 
         reducer = reducer_with_contract_factory(fsm_contract)
-        import asyncio
 
         # Trigger event-driven transition
         input_data: ModelReducerInput[dict[str, Any]] = ModelReducerInput(
@@ -526,6 +521,8 @@ class TestReducerIntegration:
         # - fsm_state_action for entry actions (start_event_processing, emit_event_received)
         # - persist_state for state persistence
         # - record_metric for monitoring
+        # NOTE: These intent types are part of the stable FSM contract API.
+        # See omnibase_core/models/fsm/ for the canonical intent type definitions.
         assert "fsm_state_action" in intent_types
         assert "persist_state" in intent_types
         assert "record_metric" in intent_types
@@ -626,7 +623,6 @@ class TestReducerIntegration:
         )
 
         reducer = reducer_with_contract_factory(fsm_contract)
-        import asyncio
 
         # Step 1: Transition to validating state
         input1: ModelReducerInput[dict[str, str]] = ModelReducerInput(
@@ -699,7 +695,17 @@ class TestReducerIntegration:
 @pytest.mark.integration
 @pytest.mark.timeout(60)
 class TestReducerIntegrationEdgeCases:
-    """Additional integration tests for edge cases and boundary conditions."""
+    """Additional integration tests for edge cases and boundary conditions.
+
+    Tests verify:
+    1. Streaming mode batch processing with large datasets
+    2. Conflict resolution metadata preservation
+    3. Windowed streaming with window metadata
+    4. Terminal state enforcement (no further transitions)
+    5. Snapshot/restore context preservation
+
+    Note: 60-second timeout protects against execution hangs.
+    """
 
     def test_streaming_mode_batch_processing(
         self, reducer_with_contract_factory: ReducerWithContractFactory
@@ -718,8 +724,6 @@ class TestReducerIntegrationEdgeCases:
             batch_size=1000,
             metadata=ModelReducerMetadata(trigger="start"),
         )
-
-        import asyncio
 
         result = asyncio.run(reducer.process(input_data))
 
@@ -744,8 +748,6 @@ class TestReducerIntegrationEdgeCases:
                 partition_id=uuid4(),
             ),
         )
-
-        import asyncio
 
         result = asyncio.run(reducer.process(input_data))
 
@@ -772,8 +774,6 @@ class TestReducerIntegrationEdgeCases:
             ),
         )
 
-        import asyncio
-
         result = asyncio.run(reducer.process(input_data))
 
         assert result.streaming_mode == EnumStreamingMode.WINDOWED
@@ -788,8 +788,6 @@ class TestReducerIntegrationEdgeCases:
             terminal_states=["completed"],
         )
         reducer = reducer_with_contract_factory(fsm_contract)
-
-        import asyncio
 
         # Transition to processing
         input1: ModelReducerInput[str] = ModelReducerInput(
@@ -826,8 +824,6 @@ class TestReducerIntegrationEdgeCases:
         """Test that snapshot/restore preserves full FSM context."""
         fsm_contract = create_test_fsm_contract(name="snapshot_context_test")
         reducer = reducer_with_contract_factory(fsm_contract)
-
-        import asyncio
 
         # Transition to processing
         input1: ModelReducerInput[dict[str, Any]] = ModelReducerInput(

@@ -27,6 +27,9 @@ from omnibase_core.models.common.model_mixin_config_schema import ModelMixinConf
 from omnibase_core.models.common.model_node_capabilities_metadata import (
     ModelNodeCapabilitiesMetadata,
 )
+from omnibase_core.models.common.model_node_registration_metadata import (
+    ModelNodeRegistrationMetadata,
+)
 from omnibase_core.models.common.model_operation_data import ModelOperationData
 from omnibase_core.models.common.model_reducer_metadata import ModelReducerMetadata
 from omnibase_core.models.common.model_request_metadata import ModelRequestMetadata
@@ -39,6 +42,7 @@ from omnibase_core.models.common.model_tool_result_data import ModelToolResultDa
 __all__ = [
     "ModelToolMetadataFields",
     "ModelNodeCapabilitiesMetadata",
+    "ModelNodeRegistrationMetadata",
     "ModelRequestMetadata",
     "ModelShutdownMetrics",
     "ModelConfigSchemaProperty",
