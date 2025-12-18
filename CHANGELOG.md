@@ -185,6 +185,74 @@ affinity = ModelSessionAffinity(hash_algorithm="sha512")  # ✅ Strongest
 - Renamed fields: `event_id`→`envelope_id`, `source_service`→`source_node`, `event_type`→`operation`
 - Added new fields: `causation_id`, `target_node`, `handler_type`, `metadata`, `is_response`, `success`, `error`
 
+## [0.5.0] - 2025-12-18
+
+### Added
+
+#### Registration Models [OMN-913]
+- **ModelRegistrationPayload**: Typed payload for registration intents with comprehensive validation
+  - PostgreSQL record storage with `ModelRegistrationRecordBase` type safety
+  - Consul service configuration (service ID, name, tags, health checks)
+  - Network and deployment metadata (environment, network ID, deployment ID)
+  - Field-level validation (min/max lengths, UUID types)
+  - Supports flexible Consul health check schema (`dict[str, Any]` for booleans, integers, nested objects)
+- **ModelDualRegistrationOutcome**: Registration outcome model with status consistency validation
+  - Three status types: `success`, `partial`, `failed`
+  - `@model_validator` ensures status consistency with operation flags
+  - Error message fields with 2000 character constraints
+  - Immutable with thread-safe design (`frozen=True`)
+- All models follow ONEX patterns: frozen, extra="forbid", from_attributes=True
+- Comprehensive test coverage: 60 tests covering construction, validation, serialization, edge cases
+
+#### Core Intent Discriminated Union [OMN-912]
+- Implemented discriminated union pattern for core intents using Pydantic's `Field(discriminator=...)`
+- Type-safe intent deserialization with automatic subclass selection
+- Enhanced IDE autocomplete and type checking for intent handling
+
+#### Concurrency Testing [OMN-863]
+- Comprehensive concurrency tests for all four node types (Effect, Compute, Reducer, Orchestrator)
+- Validates thread-safety and parallel execution behavior
+- Tests concurrent access patterns and race condition prevention
+
+#### Integration Testing [OMN-864]
+- Integration tests for `ModelReducerInput` → `ModelReducerOutput` flows
+- End-to-end validation of reducer state management
+- FSM transition testing with real workflow scenarios
+
+### Changed
+
+#### Type Safety Improvements [OMN-848]
+- Replaced `dict[str, Any]` with strongly typed models across codebase
+- Fixed pyright warnings for improved type checking
+- Enhanced IDE support and compile-time safety
+
+#### Protocol Standardization [OMN-861]
+- Added `ProtocolCircuitBreaker` interface for cross-repository standardization
+- Enables consistent circuit breaker patterns across ONEX ecosystem
+- Supports dependency injection with protocol-based service resolution
+
+#### Hybrid Type Elimination [OMN-847]
+- Eliminated hybrid dict types in favor of pure Pydantic models
+- Improved type safety and validation consistency
+- Enhanced serialization/deserialization reliability
+
+### Fixed
+- Code review feedback from PR #212 (all MAJOR and NITPICK issues resolved)
+- Type compliance issues for mypy strict mode (0 errors)
+- Pyright basic mode compliance (0 errors, 0 warnings)
+
+### Testing
+- Added 60 comprehensive tests for registration models
+- Added integration tests for reducer flows
+- Added concurrency tests for all node types
+- All 12,000+ tests passing across 20 parallel CI splits
+- Test execution time: 0.84s for registration models
+
+### Documentation
+- Enhanced registration model documentation with usage examples
+- Added FSM pattern documentation for discriminated unions
+- Updated thread safety guidelines for frozen models
+
 ## [0.4.0] - 2025-12-05
 
 > **WARNING**: This is a major release with significant breaking changes. Please review the migration guide before upgrading.
