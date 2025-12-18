@@ -22,6 +22,45 @@ Intent System Architecture:
        - Runtime validation
        - Use for: plugins, experimental features, third-party integrations
 
+Effect Pattern - Reducer to Effect Flow:
+    Core intents implement the ONEX "Intent -> Effect" pattern, which separates
+    pure state transitions (Reducer) from side effect execution (Effect).
+
+    **The Flow**:
+    ```
+    ┌──────────────────────────────────────────────────────────────────┐
+    │                         ONEX Intent Flow                         │
+    ├──────────────────────────────────────────────────────────────────┤
+    │                                                                  │
+    │   Action          Reducer                    Effect              │
+    │     │               │                          │                 │
+    │     │   dispatch    │                          │                 │
+    │     │──────────────>│                          │                 │
+    │     │               │   (state, intents[])     │                 │
+    │     │               │─────────────────────────>│                 │
+    │     │               │                          │   execute       │
+    │     │               │                          │   side effect   │
+    │     │               │                          │       │         │
+    │     │               │                          │<──────┘         │
+    │                                                                  │
+    └──────────────────────────────────────────────────────────────────┘
+    ```
+
+    1. **Action dispatched** to Reducer (e.g., StartupAction, ShutdownAction)
+    2. **Reducer is PURE** - computes new state AND emits typed intents
+       - NO side effects in Reducer
+       - Intents are data structures describing desired outcomes
+    3. **Effect receives intents** via discriminated union type
+       - Pattern matches on intent.kind discriminator
+       - Executes actual side effect (API calls, DB writes, etc.)
+    4. **Correlation ID** links the entire flow for distributed tracing
+
+    **Why This Pattern?**
+    - **Testability**: Reducers are pure functions, easy to unit test
+    - **Predictability**: Side effects isolated to Effect nodes
+    - **Type Safety**: Discriminated unions catch unhandled intents at compile time
+    - **Traceability**: correlation_id enables end-to-end request tracking
+
 Usage:
     >>> from omnibase_core.models.intents import (
     ...     ModelCoreIntent,
@@ -33,27 +72,50 @@ Usage:
 
 Example - Reducer emitting intents:
     >>> from uuid import uuid4
-    >>> intents: list[ModelCoreRegistrationIntent] = [
-    ...     ModelConsulRegisterIntent(
-    ...         service_id="node-123",
-    ...         service_name="onex-compute",
-    ...         tags=["node_type:compute"],
-    ...         correlation_id=uuid4(),
-    ...     ),
-    ... ]
+    >>>
+    >>> def reduce(state: NodeState, action: StartupAction) -> tuple[NodeState, list]:
+    ...     '''Pure reducer - returns new state and intents, NO side effects.'''
+    ...     new_state = state.with_status("registering")
+    ...     intents = [
+    ...         ModelConsulRegisterIntent(
+    ...             kind="consul.register",
+    ...             service_id=f"node-{state.node_id}",
+    ...             service_name="onex-compute",
+    ...             tags=["node_type:compute"],
+    ...             correlation_id=action.correlation_id,
+    ...         ),
+    ...         ModelPostgresUpsertRegistrationIntent(
+    ...             kind="postgres.upsert_registration",
+    ...             record=NodeRecord(node_id=state.node_id, status="active"),
+    ...             correlation_id=action.correlation_id,
+    ...         ),
+    ...     ]
+    ...     return (new_state, intents)
 
 Example - Effect pattern matching:
-    >>> def execute(intent: ModelCoreRegistrationIntent) -> None:
+    >>> async def execute(intent: ModelCoreRegistrationIntent) -> None:
+    ...     '''Effect node - performs actual side effects based on intent type.'''
     ...     match intent:
     ...         case ModelConsulRegisterIntent():
-    ...             register_with_consul(intent)
+    ...             await consul_client.register(
+    ...                 service_id=intent.service_id,
+    ...                 service_name=intent.service_name,
+    ...                 tags=intent.tags,
+    ...             )
     ...         case ModelConsulDeregisterIntent():
-    ...             deregister_from_consul(intent)
+    ...             await consul_client.deregister(intent.service_id)
     ...         case ModelPostgresUpsertRegistrationIntent():
-    ...             upsert_to_postgres(intent)
+    ...             await db.upsert_registration(intent.record)
+
+Performance Note:
+    The discriminator field (`kind`) is placed FIRST in all intent models for
+    optimal union type resolution. Pydantic checks fields in order when resolving
+    discriminated unions, so having the discriminator first speeds up type matching.
 
 See Also:
     - omnibase_core.models.reducer.model_intent: Extension intent system
+    - omnibase_core.nodes.NodeReducer: Reducer node implementation
+    - omnibase_core.nodes.NodeEffect: Effect node implementation
 """
 
 from typing import Annotated, Union
@@ -69,6 +131,9 @@ from omnibase_core.models.intents.model_consul_register_intent import (
 from omnibase_core.models.intents.model_core_intent_base import ModelCoreIntent
 from omnibase_core.models.intents.model_postgres_upsert_registration_intent import (
     ModelPostgresUpsertRegistrationIntent,
+)
+from omnibase_core.models.intents.model_registration_record_base import (
+    ModelRegistrationRecordBase,
 )
 
 # ---- Discriminated Union ----
@@ -95,8 +160,9 @@ Adding a new intent requires:
 """
 
 __all__ = [
-    # Base class
+    # Base classes
     "ModelCoreIntent",
+    "ModelRegistrationRecordBase",
     # Concrete intents
     "ModelConsulRegisterIntent",
     "ModelConsulDeregisterIntent",

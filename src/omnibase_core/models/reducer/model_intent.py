@@ -108,7 +108,9 @@ class ModelIntent(BaseModel):
         - Intent for experimental features
 
     See Also:
-        omnibase_core.models.intents.CoreRegistrationIntent: Core infrastructure intents
+        omnibase_core.models.intents.ModelCoreRegistrationIntent: Core infrastructure intents
+            (discriminated union for registration, persistence, lifecycle)
+        omnibase_core.models.intents.ModelCoreIntent: Base class for core intents
     """
 
     intent_id: UUID = Field(
