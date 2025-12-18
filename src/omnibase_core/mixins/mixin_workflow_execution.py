@@ -279,9 +279,6 @@ class MixinWorkflowExecution:
             ]
             steps = self.create_workflow_steps_from_config(steps_config)
         """
-        from omnibase_core.types.typed_dict_mixin_types import (
-            TypedDictWorkflowStepConfig,
-        )
 
         workflow_steps: list[ModelWorkflowStep] = []
 

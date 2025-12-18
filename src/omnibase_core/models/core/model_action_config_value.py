@@ -11,8 +11,6 @@ Strict typing is enforced: No Any types allowed in implementation.
 
 from __future__ import annotations
 
-from typing import Union
-
 from pydantic import Discriminator
 
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue

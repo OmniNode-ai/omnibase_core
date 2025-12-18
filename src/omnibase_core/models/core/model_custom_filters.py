@@ -1,6 +1,6 @@
 """Collection of custom filters model."""
 
-from typing import Any, Union
+from typing import Any
 
 from pydantic import BaseModel, Field
 

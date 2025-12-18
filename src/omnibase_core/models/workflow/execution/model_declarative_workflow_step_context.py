@@ -5,7 +5,7 @@ Context for a single step execution in declarative orchestration.
 Follows ONEX one-model-per-file architecture.
 """
 
-from datetime import UTC, datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID
 
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep

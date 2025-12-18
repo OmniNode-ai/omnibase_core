@@ -219,7 +219,6 @@ class ModelGenericFactory[T: BaseModel]:
 
     def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""
-        from omnibase_core.types.type_serializable_value import SerializedDict
 
         # Factory instances don't have model_dump - serialize factory state instead
         result: SerializedDict = {

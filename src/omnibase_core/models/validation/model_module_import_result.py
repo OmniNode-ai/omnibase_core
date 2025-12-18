@@ -5,7 +5,6 @@ Provides structured result type for individual module import validation attempts
 """
 
 from dataclasses import dataclass
-from typing import Optional
 
 from omnibase_core.enums.enum_import_status import EnumImportStatus
 

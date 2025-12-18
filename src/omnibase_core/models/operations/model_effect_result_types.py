@@ -3,7 +3,7 @@
 ONEX discriminated union types for effect result patterns.
 """
 
-from typing import Annotated, Any, Union
+from typing import Annotated, Any
 
 from pydantic import Discriminator, Field
 

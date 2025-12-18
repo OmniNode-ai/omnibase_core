@@ -10,7 +10,7 @@ import time
 from datetime import UTC, datetime, timedelta
 
 # ONEX_EXCLUDE: any - Base node class requires Any for generic type parameters [OMN-203]
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from omnibase_core.types.type_serializable_value import SerializedDict

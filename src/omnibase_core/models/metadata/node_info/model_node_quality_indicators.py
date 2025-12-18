@@ -7,8 +7,6 @@ Follows ONEX one-model-per-file architecture.
 
 from __future__ import annotations
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode

@@ -5,7 +5,6 @@ Strongly-typed summary models for security domain return values.
 These models replace dict[str, Any] return types with proper Pydantic models.
 """
 
-from typing import TYPE_CHECKING
 from uuid import UUID
 
 from pydantic import BaseModel, Field

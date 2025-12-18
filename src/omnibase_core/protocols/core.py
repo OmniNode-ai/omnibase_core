@@ -15,7 +15,7 @@ Design Principles:
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable
 
 from omnibase_core.protocols.base import ContextValue
 

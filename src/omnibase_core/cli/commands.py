@@ -19,7 +19,6 @@ from typing import TYPE_CHECKING
 import click
 
 from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel
 from omnibase_core.logging.structured import emit_log_event_sync
 from omnibase_core.models.errors.model_onex_error import ModelOnexError

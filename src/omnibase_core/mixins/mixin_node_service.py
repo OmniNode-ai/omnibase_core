@@ -49,7 +49,7 @@ from omnibase_core.models.discovery.model_tool_response_event import (
     ModelToolResponseEvent,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.types import TypedDictSerializedResult, TypedDictServiceHealth
+from omnibase_core.types import TypedDictServiceHealth
 
 # Component identifier for logging
 _COMPONENT_NAME = Path(__file__).stem

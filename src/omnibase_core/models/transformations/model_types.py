@@ -5,7 +5,7 @@ This module defines the ModelTransformationConfig union type that uses
 Pydantic's discriminated union feature for type-safe transformation config handling.
 """
 
-from typing import Annotated, Union
+from typing import Annotated
 
 from pydantic import Field
 

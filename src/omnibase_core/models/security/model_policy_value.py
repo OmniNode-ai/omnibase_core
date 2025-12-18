@@ -58,7 +58,7 @@ Safe Runtime Imports (OK to import at module level):
 from __future__ import annotations
 
 import math
-from typing import Any, Literal, Union
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
