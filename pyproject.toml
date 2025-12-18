@@ -151,7 +151,7 @@ ignore = [
     "TC003",     # Type checking imports (technical debt)
     "TC004",     # Type checking imports in __all__ re-exports (technical debt)
     "TC006",     # Quotes in typing.cast() (technical debt - runtime micro-optimization)
-    "UP038",     # Use X | Y in isinstance instead of (X, Y) (technical debt - will migrate separately)
+    "UP046",     # Use PEP 695 type parameters instead of Generic[T] (technical debt - requires Python 3.12+)
     "PLR0911",   # Too many returns (technical debt)
     "PLR0912",   # Too many branches (technical debt)
     "PLR0913",   # Too many arguments (technical debt)
