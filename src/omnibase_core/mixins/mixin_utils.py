@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 # === OmniNode:Metadata ===
 # author: OmniNode Team
 # copyright: OmniNode.ai
@@ -20,9 +22,7 @@
 # uuid: 1c1a1699-5733-4aff-b383-eb4b5fc2aea1
 # version: 1.0.0
 # === /OmniNode:Metadata ===
-
-
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any
 
 from omnibase_core.enums import EnumNodeMetadataField
 
@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 
 
 def canonicalize_metadata_block(
-    block: Union[dict[str, object], "NodeMetadataBlock"],
+    block: dict[str, object] | NodeMetadataBlock,
     volatile_fields: tuple[EnumNodeMetadataField, ...] = (
         EnumNodeMetadataField.HASH,
         EnumNodeMetadataField.LAST_MODIFIED_AT,

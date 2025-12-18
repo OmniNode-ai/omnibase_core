@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 # === OmniNode:Metadata ===
 # author: OmniNode Team
 # copyright: OmniNode.ai
@@ -20,7 +22,7 @@
 # uuid: f1f6dff2-153e-4b8a-9afe-9a64becb146f
 # version: 1.0.0
 # === /OmniNode:Metadata ===
-
+import types
 from collections.abc import Mapping
 from typing import Union
 
@@ -73,7 +75,7 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
 
     def canonicalize_metadata_block(
         self,
-        metadata_block: Union[Mapping[str, object], "NodeMetadataBlock"],
+        metadata_block: Mapping[str, object] | NodeMetadataBlock,
         volatile_fields: tuple[EnumNodeMetadataField, ...] = (
             EnumNodeMetadataField.HASH,
             EnumNodeMetadataField.LAST_MODIFIED_AT,
@@ -212,8 +214,10 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
                 continue
             origin = getattr(annotation, "__origin__", None)
 
-            # Check for Union types
-            if origin is Union and hasattr(annotation, "__args__"):
+            # Check for Union types (both typing.Union and PEP 604 | syntax)
+            if (origin is Union or origin is types.UnionType) and hasattr(
+                annotation, "__args__"
+            ):
                 args = annotation.__args__
                 if str in args:
                     string_fields.add(name)
