@@ -608,6 +608,178 @@ def func(x: str | int | bool) -> None:
 
 
 @pytest.mark.unit
+class TestPEP604UnionTypeDetection:
+    """Test types.UnionType detection for PEP 604 union syntax.
+
+    Verifies that isinstance(annotation, types.UnionType) correctly
+    identifies PEP 604 unions (str | None) as documented in CLAUDE.md.
+
+    This pattern is used in mixin_canonical_serialization.py (lines 221-225)
+    to detect PEP 604 union syntax at runtime, since PEP 604 unions do NOT
+    have __origin__ accessible via getattr() like typing.Union does.
+    """
+
+    def test_pep604_union_is_union_type(self):
+        """Test that str | int evaluates to types.UnionType at runtime.
+
+        PEP 604 unions create a types.UnionType object at runtime,
+        which can be detected using isinstance().
+        """
+        import types
+
+        # Create PEP 604 union at runtime
+        pep604_union = str | int
+
+        # Verify it IS a types.UnionType
+        assert isinstance(pep604_union, types.UnionType), (
+            "PEP 604 union (str | int) should be types.UnionType"
+        )
+
+    def test_typing_union_is_not_union_type(self):
+        """Test that typing.Union is NOT types.UnionType.
+
+        typing.Union creates a different type object that uses __origin__
+        for detection, not types.UnionType.
+        """
+        import types
+        from typing import Union
+
+        # Create typing.Union (intentional legacy syntax for testing)
+        typing_union = Union[str, int]  # noqa: UP007
+
+        # Verify it is NOT a types.UnionType
+        assert not isinstance(typing_union, types.UnionType), (
+            "typing.Union should NOT be types.UnionType"
+        )
+
+        # Verify it has __origin__ instead
+        assert hasattr(typing_union, "__origin__"), (
+            "typing.Union should have __origin__"
+        )
+        assert typing_union.__origin__ is Union, (
+            "typing.Union.__origin__ should be Union"
+        )
+
+    def test_pep604_union_with_none_is_union_type(self):
+        """Test that str | None (nullable) evaluates to types.UnionType."""
+        import types
+
+        # Create PEP 604 nullable union
+        nullable_union = str | None
+
+        # Verify it IS a types.UnionType
+        assert isinstance(nullable_union, types.UnionType), (
+            "PEP 604 nullable union (str | None) should be types.UnionType"
+        )
+
+        # Verify it has __args__
+        assert hasattr(nullable_union, "__args__"), "PEP 604 union should have __args__"
+        assert str in nullable_union.__args__, "str should be in union __args__"
+        assert type(None) in nullable_union.__args__, (
+            "NoneType should be in union __args__"
+        )
+
+    def test_pep604_union_lacks_origin_via_getattr(self):
+        """Test that PEP 604 unions do NOT have __origin__ via getattr().
+
+        This documents the key difference that requires using isinstance()
+        for PEP 604 detection instead of checking __origin__.
+        """
+        from typing import Union
+
+        # PEP 604 union
+        pep604_union = str | int
+
+        # typing.Union (intentional legacy syntax for testing)
+        typing_union = Union[str, int]  # noqa: UP007
+
+        # PEP 604 does NOT have __origin__ via getattr (returns None)
+        pep604_origin = getattr(pep604_union, "__origin__", None)
+        assert pep604_origin is None, (
+            "PEP 604 union should not have __origin__ via getattr"
+        )
+
+        # typing.Union DOES have __origin__ via getattr
+        typing_origin = getattr(typing_union, "__origin__", None)
+        assert typing_origin is Union, "typing.Union should have __origin__ via getattr"
+
+    def test_pep604_multi_type_union_is_union_type(self):
+        """Test that multi-type PEP 604 unions are types.UnionType."""
+        import types
+
+        # Create multi-type PEP 604 union
+        multi_union = str | int | float | bool
+
+        # Verify it IS a types.UnionType
+        assert isinstance(multi_union, types.UnionType), (
+            "Multi-type PEP 604 union should be types.UnionType"
+        )
+
+        # Verify all types are in __args__
+        assert len(multi_union.__args__) == 4, "Should have 4 type arguments"
+        assert str in multi_union.__args__
+        assert int in multi_union.__args__
+        assert float in multi_union.__args__
+        assert bool in multi_union.__args__
+
+    def test_combined_detection_pattern_for_both_union_syntaxes(self):
+        """Test the combined detection pattern used in mixin_canonical_serialization.py.
+
+        This tests the exact pattern from lines 221-226:
+            is_union = (
+                origin is Union  # Handles typing.Union
+                or isinstance(annotation, types.UnionType)  # Handles PEP 604
+            )
+        """
+        import types
+        from typing import Union
+
+        def is_union_type(annotation: object) -> bool:
+            """Detect both typing.Union and PEP 604 union syntax."""
+            origin = getattr(annotation, "__origin__", None)
+            return origin is Union or isinstance(annotation, types.UnionType)
+
+        # Test typing.Union detection (intentional legacy syntax for testing)
+        typing_union = Union[str, int]  # noqa: UP007
+        assert is_union_type(typing_union), "Should detect typing.Union"
+
+        # Test PEP 604 union detection
+        pep604_union = str | int
+        assert is_union_type(pep604_union), "Should detect PEP 604 union"
+
+        # Test PEP 604 nullable detection
+        nullable_union = str | None
+        assert is_union_type(nullable_union), "Should detect PEP 604 nullable union"
+
+        # Test non-union types are NOT detected
+        assert not is_union_type(str), "Should not detect plain str"
+        assert not is_union_type(int), "Should not detect plain int"
+        assert not is_union_type(list[str]), "Should not detect list[str]"
+
+    def test_union_type_args_accessibility(self):
+        """Test that both union syntaxes provide accessible __args__.
+
+        Both typing.Union and PEP 604 unions expose their type arguments
+        via the __args__ attribute, which is used for type inspection.
+        """
+        from typing import Union
+
+        # typing.Union (intentional legacy syntax for testing)
+        typing_union = Union[str, int, None]  # noqa: UP007
+        assert hasattr(typing_union, "__args__")
+        assert str in typing_union.__args__
+        assert int in typing_union.__args__
+        assert type(None) in typing_union.__args__
+
+        # PEP 604 union
+        pep604_union = str | int | None
+        assert hasattr(pep604_union, "__args__")
+        assert str in pep604_union.__args__
+        assert int in pep604_union.__args__
+        assert type(None) in pep604_union.__args__
+
+
+@pytest.mark.unit
 class TestExtractUnionFromBinOp:
     """Test extracting types from modern union syntax."""
 

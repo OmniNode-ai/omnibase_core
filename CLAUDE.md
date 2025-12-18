@@ -665,6 +665,8 @@ poetry run pyright src/omnibase_core/models/common/model_typed_mapping.py
 - ✅ CI/CD pipeline (both checkers must pass)
 - ✅ Local development (both checkers available)
 
+**See also**: [Type Annotation Style (PEP 604)](#type-annotation-style-pep-604) for union type syntax guidelines and the [`from __future__ import annotations` Policy](#from-__future__-import-annotations-policy) for annotation behavior.
+
 ### Formatting
 
 ```bash
