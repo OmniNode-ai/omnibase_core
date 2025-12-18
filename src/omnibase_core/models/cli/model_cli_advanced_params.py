@@ -7,12 +7,13 @@ Follows ONEX one-model-per-file naming conventions.
 
 from __future__ import annotations
 
-from typing import Any
-
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.decorators import allow_dict_any
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.types.typed_dict_cli_advanced_params_serialized import (
+    TypedDictCliAdvancedParamsSerialized,
+)
 
 # Use object type for values convertible to ModelValue via from_any() method.
 # This avoids primitive soup union anti-pattern while maintaining type safety
@@ -268,9 +269,9 @@ class ModelCliAdvancedParams(BaseModel):
     # Protocol method implementations
 
     @allow_dict_any
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> TypedDictCliAdvancedParamsSerialized:
         """Serialize to dictionary (Serializable protocol)."""
-        return self.model_dump(exclude_none=False, by_alias=True)
+        return self.model_dump(exclude_none=False, by_alias=True)  # type: ignore[return-value]
 
     def get_name(self) -> str:
         """Get name (Nameable protocol)."""

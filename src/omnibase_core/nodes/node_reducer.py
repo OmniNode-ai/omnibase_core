@@ -298,14 +298,17 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
             )
 
         # Extract trigger from metadata (default to generic 'process' trigger)
-        trigger = input_data.metadata.get("trigger", "process")
+        # If trigger is provided in metadata, use it; otherwise default to "process"
+        trigger = input_data.metadata.trigger or "process"
 
         # Build context from input data - context contains serializable values
+        # Convert metadata to dict for context (excluding None values)
+        metadata_dict = input_data.metadata.model_dump(exclude_none=True)
         context: SerializedDict = {
             "input_data": input_data.data,
             "reduction_type": input_data.reduction_type.value,
             "operation_id": str(input_data.operation_id),
-            **input_data.metadata,
+            **metadata_dict,
         }
 
         # Execute FSM transition with timing measurement
@@ -318,6 +321,20 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
         processing_time_ms = (time.perf_counter() - start_time) * 1000
 
         # Create reducer output with FSM result
+        # SAFETY: Preserve input metadata with NO data loss by using the typed model directly.
+        # ModelReducerOutput.metadata is now ModelReducerMetadata (typed), so we can copy
+        # the input metadata and add FSM-specific fields without lossy string conversion.
+        # This preserves UUIDs (partition_id, window_id), lists (tags), and other structured types.
+        output_metadata = input_data.metadata.model_copy(
+            update={
+                # Add FSM-specific fields to metadata
+                # Note: These are stored as extra fields via extra="allow" in ModelReducerMetadata
+                "fsm_state": fsm_result.new_state,
+                "fsm_transition": fsm_result.transition_name or "none",
+                "fsm_success": fsm_result.success,  # Keep as bool, not stringified
+            }
+        )
+
         output: ModelReducerOutput[T_Output] = ModelReducerOutput(
             result=cast(
                 "T_Output", input_data.data
@@ -332,12 +349,7 @@ class NodeReducer[T_Input, T_Output](NodeCoreBase, MixinFSMExecution):
             streaming_mode=input_data.streaming_mode,
             batches_processed=1,
             intents=fsm_result.intents,  # Emit FSM intents
-            metadata={
-                "fsm_state": fsm_result.new_state,
-                "fsm_transition": fsm_result.transition_name or "none",
-                "fsm_success": str(fsm_result.success),
-                **input_data.metadata,
-            },
+            metadata=output_metadata,  # Typed metadata with FSM fields
         )
 
         return output

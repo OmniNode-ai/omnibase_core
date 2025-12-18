@@ -916,7 +916,7 @@ class TestActionEmission:
         # Build lookup by step name
         actions_by_name: dict[str, ModelAction] = {}
         for action in result.actions_emitted:
-            step_name = action.metadata["step_name"]
+            step_name = action.metadata.parameters["step_name"]
             actions_by_name[str(step_name)] = action
 
         assert actions_by_name["effect_step"].action_type == EnumActionType.EFFECT
@@ -955,7 +955,7 @@ class TestActionEmission:
 
         actions_by_name: dict[str, ModelAction] = {}
         for action in result.actions_emitted:
-            step_name = action.metadata["step_name"]
+            step_name = action.metadata.parameters["step_name"]
             actions_by_name[str(step_name)] = action
 
         assert actions_by_name["effect_step"].target_node_type == "NodeEffect"
@@ -1000,8 +1000,10 @@ class TestActionEmission:
 
         action = result.actions_emitted[0]
 
-        assert "correlation_id" in action.metadata
-        assert action.metadata["correlation_id"] == str(single_step[0].correlation_id)
+        assert "correlation_id" in action.metadata.parameters
+        assert action.metadata.parameters["correlation_id"] == str(
+            single_step[0].correlation_id
+        )
 
     @pytest.mark.asyncio
     async def test_action_lease_and_epoch_set(

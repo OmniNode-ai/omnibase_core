@@ -847,7 +847,7 @@ class MixinEventListener[InputStateT, OutputStateT]:
                 loop = asyncio.get_running_loop()
                 # Schedule the coroutine as a fire-and-forget task
                 # Store reference to prevent garbage collection
-                task = loop.create_task(result)
+                _task = loop.create_task(result)
             except RuntimeError:
                 # No running event loop - skip async operation to prevent blocking
                 # In test contexts or synchronous code, event_bus is likely a Mock

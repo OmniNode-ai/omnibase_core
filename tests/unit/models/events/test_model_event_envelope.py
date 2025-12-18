@@ -21,9 +21,11 @@ from uuid import UUID, uuid4
 import pytest
 from pydantic import BaseModel, ValidationError
 
+from omnibase_core.models.core.model_envelope_metadata import ModelEnvelopeMetadata
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.security.model_security_context import ModelSecurityContext
 
 
 # Test payload models
@@ -56,7 +58,7 @@ class TestModelEventEnvelopeInstantiation:
         assert envelope.correlation_id is None
         assert envelope.source_tool is None
         assert envelope.target_tool is None
-        assert envelope.metadata == {}
+        assert isinstance(envelope.metadata, ModelEnvelopeMetadata)
         assert envelope.security_context is None
         assert envelope.priority == 5
         assert envelope.timeout_seconds is None
@@ -74,8 +76,15 @@ class TestModelEventEnvelopeInstantiation:
         request_id = uuid4()
         trace_id = uuid4()
         span_id = uuid4()
-        security_context = {"user": "test_user", "role": "admin"}
-        metadata = {"environment": "test", "version": "1.0"}
+        user_id = uuid4()
+        session_id = uuid4()
+        security_context = ModelSecurityContext(
+            user_id=user_id,
+            username="test_user",
+            roles=["admin"],
+            session_id=session_id,
+        )
+        metadata = ModelEnvelopeMetadata(tags={"environment": "test", "version": "1.0"})
 
         envelope = ModelEventEnvelope(
             payload=payload,
@@ -245,35 +254,41 @@ class TestModelEventEnvelopeCorrelation:
 class TestModelEventEnvelopeMetadata:
     """Test metadata management functionality."""
 
-    def test_with_metadata_merge(self):
-        """Test merging metadata with existing metadata."""
+    def test_with_metadata_replacement(self):
+        """Test replacing metadata with new metadata."""
         payload = SimplePayload(message="test", value=42)
-        initial_metadata = {"key1": "value1", "key2": "value2"}
+        initial_metadata = ModelEnvelopeMetadata(
+            tags={"key1": "value1", "key2": "value2"}
+        )
         envelope = ModelEventEnvelope(payload=payload, metadata=initial_metadata)
 
-        new_metadata = {"key2": "updated", "key3": "value3"}
+        new_metadata = ModelEnvelopeMetadata(tags={"key2": "updated", "key3": "value3"})
         new_envelope = envelope.with_metadata(new_metadata)
 
         # Original unchanged
         assert envelope.metadata == initial_metadata
 
-        # New envelope has merged metadata (new values override)
-        assert new_envelope.metadata == {
-            "key1": "value1",
-            "key2": "updated",
-            "key3": "value3",
-        }
+        # New envelope has new metadata (full replacement, not merge)
+        assert new_envelope.metadata == new_metadata
+        assert new_envelope.metadata.tags == {"key2": "updated", "key3": "value3"}
 
     def test_get_metadata_value(self):
         """Test retrieving metadata values."""
         payload = SimplePayload(message="test", value=42)
-        metadata = {"env": "production", "version": "1.0", "nested": {"key": "value"}}
+        metadata = ModelEnvelopeMetadata(
+            trace_id="trace-123",
+            request_id="req-456",
+            tags={"env": "production", "version": "1.0"},
+        )
         envelope = ModelEventEnvelope(payload=payload, metadata=metadata)
 
-        # Existing keys
+        # Existing tags keys
         assert envelope.get_metadata_value("env") == "production"
         assert envelope.get_metadata_value("version") == "1.0"
-        assert envelope.get_metadata_value("nested") == {"key": "value"}
+
+        # Existing attributes
+        assert envelope.get_metadata_value("trace_id") == "trace-123"
+        assert envelope.get_metadata_value("request_id") == "req-456"
 
         # Non-existing key with default
         assert envelope.get_metadata_value("missing", "default") == "default"
@@ -290,11 +305,11 @@ class TestModelEventEnvelopeSecurity:
 
         assert envelope.security_context is None
 
-        security_context = {
-            "user": "admin",
-            "role": "superuser",
-            "permissions": ["read", "write"],
-        }
+        security_context = ModelSecurityContext(
+            username="admin",
+            roles=["superuser"],
+            permissions=["read", "write"],
+        )
         new_envelope = envelope.with_security_context(security_context)
 
         # Original unchanged
@@ -312,7 +327,7 @@ class TestModelEventEnvelopeSecurity:
         assert envelope_no_sec.has_security_context() is False
 
         # With security context
-        security_context = {"user": "test"}
+        security_context = ModelSecurityContext(username="test")
         envelope_with_sec = ModelEventEnvelope(
             payload=payload, security_context=security_context
         )
@@ -787,21 +802,24 @@ class TestModelEventEnvelopeEdgeCases:
             # If rejected, this is also valid behavior
             pass
 
-    def test_empty_metadata(self):
-        """Test envelope with empty metadata dict."""
+    def test_default_metadata(self):
+        """Test envelope with default metadata (no args)."""
         payload = SimplePayload(message="test", value=42)
-        envelope = ModelEventEnvelope(payload=payload, metadata={})
+        envelope = ModelEventEnvelope(payload=payload)
 
-        assert envelope.metadata == {}
+        assert isinstance(envelope.metadata, ModelEnvelopeMetadata)
+        assert envelope.metadata.trace_id is None
+        assert envelope.metadata.request_id is None
+        assert envelope.metadata.tags == {}
         assert envelope.get_metadata_value("missing") is None
 
     def test_empty_security_context(self):
-        """Test envelope with empty security context dict."""
+        """Test envelope with default security context (None)."""
         payload = SimplePayload(message="test", value=42)
-        envelope = ModelEventEnvelope(payload=payload, security_context={})
+        envelope = ModelEventEnvelope(payload=payload, security_context=None)
 
-        assert envelope.security_context == {}
-        assert envelope.has_security_context() is True  # Empty dict still counts
+        assert envelope.security_context is None
+        assert envelope.has_security_context() is False
 
     def test_immutability_pattern(self):
         """Test that envelope methods return new instances (immutable pattern)."""
@@ -846,27 +864,29 @@ class TestModelEventEnvelopeEdgeCases:
         assert chained.target_tool == "target"
 
     def test_large_metadata(self):
-        """Test envelope with large metadata dict."""
+        """Test envelope with large metadata tags."""
         payload = SimplePayload(message="test", value=42)
-        large_metadata = {f"key_{i}": f"value_{i}" for i in range(1000)}
-        envelope = ModelEventEnvelope(payload=payload, metadata=large_metadata)
+        large_tags = {f"key_{i}": f"value_{i}" for i in range(1000)}
+        metadata = ModelEnvelopeMetadata(tags=large_tags)
+        envelope = ModelEventEnvelope(payload=payload, metadata=metadata)
 
-        assert len(envelope.metadata) == 1000
+        assert len(envelope.metadata.tags) == 1000
         assert envelope.get_metadata_value("key_500") == "value_500"
 
     def test_unicode_in_fields(self):
         """Test envelope with unicode characters in string fields."""
         payload = SimplePayload(message="测试 тест 🚀", value=42)
+        metadata = ModelEnvelopeMetadata(tags={"emoji": "🎉", "unicode": "你好"})
         envelope = ModelEventEnvelope(
             payload=payload,
             source_tool="源工具",
             target_tool="目标工具",
-            metadata={"emoji": "🎉", "unicode": "你好"},
+            metadata=metadata,
         )
 
         assert envelope.source_tool == "源工具"
         assert envelope.target_tool == "目标工具"
-        assert envelope.metadata["emoji"] == "🎉"
+        assert envelope.metadata.tags["emoji"] == "🎉"
 
     def test_multiple_retries(self):
         """Test multiple retry increments."""

@@ -10,6 +10,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.services.model_custom_fields import ModelCustomFields
+from omnibase_core.types.typed_dict_workflow_outputs import TypedDictWorkflowOutputsDict
 from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 
@@ -106,7 +107,7 @@ class ModelWorkflowOutputs(BaseModel):
             return default
         return self.custom_outputs.field_values.get(key, default)
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self) -> TypedDictWorkflowOutputsDict:
         """Convert to dictionary for current standards."""
         # Create dictionary with all standard fields and merge custom fields
         result: dict[str, Any] = {
@@ -132,4 +133,5 @@ class ModelWorkflowOutputs(BaseModel):
         if self.custom_outputs:
             result.update(self.custom_outputs.to_dict())
 
-        return result
+        # Cast to TypedDict - the structure matches TypedDictWorkflowOutputsDict
+        return TypedDictWorkflowOutputsDict(**result)  # type: ignore[typeddict-item]

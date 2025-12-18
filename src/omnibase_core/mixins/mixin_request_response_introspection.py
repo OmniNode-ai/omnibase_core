@@ -124,19 +124,19 @@ class MixinRequestResponseIntrospection:
                     f"Failed to teardown request-response introspection: {e}",
                 )
 
-    def _handle_introspection_request(self, envelope_or_event: Any) -> None:
+    def _handle_introspection_request(self, envelope: Any) -> None:
         """
         Handle incoming REQUEST_REAL_TIME_INTROSPECTION events.
 
         Args:
-            envelope_or_event: The envelope or event to handle
+            envelope: The envelope or event to handle
         """
 
         # Extract event from envelope if needed
-        if hasattr(envelope_or_event, "payload"):
-            event = envelope_or_event.payload
+        if hasattr(envelope, "payload"):
+            event = envelope.payload
         else:
-            event = envelope_or_event
+            event = envelope
 
         emit_log_event_sync(
             LogLevel.INFO,
@@ -145,7 +145,7 @@ class MixinRequestResponseIntrospection:
                 "event_type": getattr(event, "event_type", "unknown"),
                 "correlation_id": str(getattr(event, "correlation_id", "unknown")),
                 "node_name": getattr(self, "node_name", "unknown"),
-                "envelope_type": type(envelope_or_event).__name__,
+                "envelope_type": type(envelope).__name__,
                 "payload_type": type(event).__name__,
                 "expected_event_type": REQUEST_REAL_TIME_INTROSPECTION,
                 "event_bus_available": hasattr(self, "_event_bus")

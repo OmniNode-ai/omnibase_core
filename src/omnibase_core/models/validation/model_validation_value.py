@@ -12,12 +12,15 @@ with discriminated union patterns following ONEX strong typing standards.
 """
 
 
-from typing import Any
+from typing import cast
 
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_validation_value_type import EnumValidationValueType
+from omnibase_core.types.typed_dict_validation_value_serialized import (
+    TypedDictValidationValueSerialized,
+)
 from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 # ONEX validation values - use discriminated union pattern instead of broad unions
@@ -151,9 +154,12 @@ class ModelValidationValue(BaseModel):
                 message=f"Instance validation failed: {e}",
             ) from e
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> TypedDictValidationValueSerialized:
         """Serialize to dictionary (Serializable protocol)."""
-        return self.model_dump(exclude_none=False, by_alias=True)
+        return cast(
+            TypedDictValidationValueSerialized,
+            self.model_dump(exclude_none=False, by_alias=True),
+        )
 
 
 # Export for use

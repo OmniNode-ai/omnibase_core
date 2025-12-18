@@ -194,7 +194,7 @@ class ModelEnvelopePayload(BaseModel):
                 # Ensure value is PayloadDataValue (not nested dict)
                 # Note: isinstance check is defensive - type system says dict values
                 # can't be dicts, but runtime may receive malformed input
-                if isinstance(value, dict):  # type: ignore[unreachable]
+                if isinstance(value, dict):
                     skipped_keys.append(f"data.{key}")  # type: ignore[unreachable]
                 else:
                     extra_data[key] = value

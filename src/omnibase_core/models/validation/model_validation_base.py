@@ -10,10 +10,13 @@ methods that can be inherited by any model requiring validation.
 """
 
 
-from typing import Any
+from typing import cast
 
 from pydantic import BaseModel
 
+from omnibase_core.types.typed_dict_validation_base_serialized import (
+    TypedDictValidationBaseSerialized,
+)
 from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 from .model_validation_container import ModelValidationContainer
@@ -215,9 +218,12 @@ class ModelValidationBase(BaseModel):
 
     # Protocol method implementations
 
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> TypedDictValidationBaseSerialized:
         """Serialize to dictionary (Serializable protocol)."""
-        return self.model_dump(exclude_none=False, by_alias=True)
+        return cast(
+            TypedDictValidationBaseSerialized,
+            self.model_dump(exclude_none=False, by_alias=True),
+        )
 
     model_config = {
         "extra": "ignore",

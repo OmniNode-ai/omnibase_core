@@ -41,12 +41,12 @@ See Also:
 """
 
 from datetime import datetime
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_effect_types import EnumEffectType, EnumTransactionState
+from omnibase_core.models.common.model_effect_metadata import ModelEffectMetadata
 from omnibase_core.types.type_effect_result import EffectResultType
 from omnibase_core.utils.util_decorators import allow_dict_str_any
 
@@ -119,5 +119,5 @@ class ModelEffectOutput(BaseModel):
     )
     side_effects_applied: list[str] = Field(default_factory=list)
     rollback_operations: list[str] = Field(default_factory=list)
-    metadata: dict[str, Any] = Field(default_factory=dict)
+    metadata: ModelEffectMetadata = Field(default_factory=ModelEffectMetadata)
     timestamp: datetime = Field(default_factory=datetime.now)

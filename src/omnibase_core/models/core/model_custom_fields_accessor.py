@@ -92,13 +92,13 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
 
     def set_field(
         self,
-        key: str,
+        path: str,
         value: PrimitiveValueType | ModelSchemaValue | None,
     ) -> bool:
         """Set a field value with automatic type detection and storage."""
         try:
             # Handle nested field paths
-            if "." in key:
+            if "." in path:
                 # Convert value to parent-compatible type if needed
                 if value is None:
                     # Convert None to ModelSchemaValue for parent class compatibility
@@ -110,39 +110,39 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
                 else:
                     # For PrimitiveValueType (str, int, float, bool) - pass through directly
                     parent_value = value
-                return super().set_field(key, parent_value)
+                return super().set_field(path, parent_value)
             # Handle simple field names (no dots)
             # Store in appropriate typed field based on value type
             # Use runtime type checking to avoid MyPy type narrowing issues
             if value is None:
                 # Handle None by storing as empty string
-                self.string_fields[key] = ""
+                self.string_fields[path] = ""
             elif isinstance(value, ModelSchemaValue):
                 # Convert ModelSchemaValue to string representation
-                self.string_fields[key] = str(value.to_value())
+                self.string_fields[path] = str(value.to_value())
             else:
                 # Runtime type checking for primitive values
                 # NOTE: Check bool before int since bool is a subclass of int in Python
                 value_type = type(value)
                 if value_type is bool:
-                    self.bool_fields[key] = value  # type: ignore[assignment]
+                    self.bool_fields[path] = value  # type: ignore[assignment]
                 elif value_type is str:
-                    self.string_fields[key] = value  # type: ignore[assignment]
+                    self.string_fields[path] = value  # type: ignore[assignment]
                 elif value_type is int:
-                    self.int_fields[key] = value  # type: ignore[assignment]
+                    self.int_fields[path] = value  # type: ignore[assignment]
                 elif value_type is float:
-                    self.float_fields[key] = value  # type: ignore[assignment]
+                    self.float_fields[path] = value  # type: ignore[assignment]
                 elif isinstance(value, list):
-                    self.list_fields[key] = value
+                    self.list_fields[path] = value
                 else:
                     # Fallback to string storage for any other type
-                    self.string_fields[key] = str(value)
+                    self.string_fields[path] = str(value)
 
             return True
         except Exception:  # fallback-ok: set_field method signature returns bool for success/failure rather than raising
             return False
 
-    def get_field(self, key: str, default: Any = None) -> Any:
+    def get_field(self, path: str, default: Any = None) -> Any:
         """Get a field value from the appropriate typed storage.
 
         For simple field names, returns raw values from typed storages.
@@ -150,9 +150,9 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
         """
         try:
             # Handle nested field paths - return ModelResult for dot notation support
-            if "." in key:
+            if "." in path:
                 result = super().get_field(
-                    key,
+                    path,
                     (
                         ModelSchemaValue.from_value(default)
                         if default is not None
@@ -163,23 +163,23 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
 
             # For simple field names, return raw values from typed storages
             # Check each typed field storage
-            if key in self.string_fields:
-                return self.string_fields[key]
-            if key in self.int_fields:
-                return self.int_fields[key]
-            if key in self.bool_fields:
-                return self.bool_fields[key]
-            if key in self.list_fields:
-                return self.list_fields[key]
-            if key in self.float_fields:
-                return self.float_fields[key]
+            if path in self.string_fields:
+                return self.string_fields[path]
+            if path in self.int_fields:
+                return self.int_fields[path]
+            if path in self.bool_fields:
+                return self.bool_fields[path]
+            if path in self.list_fields:
+                return self.list_fields[path]
+            if path in self.float_fields:
+                return self.float_fields[path]
             if (
                 hasattr(self, "custom_fields")
                 and getattr(self, "custom_fields", None) is not None
-                and key in getattr(self, "custom_fields", {})
+                and path in getattr(self, "custom_fields", {})
             ):
                 custom_fields = getattr(self, "custom_fields", {})
-                return custom_fields[key]
+                return custom_fields[path]
             return default
         except Exception:  # fallback-ok: get_field returns default value on error for graceful field access
             return default
@@ -236,13 +236,13 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
             return float(value)  # Explicit cast for type safety
         return default
 
-    def has_field(self, key: str) -> bool:
+    def has_field(self, path: str) -> bool:
         """Check if a field exists in any typed storage."""
-        if "." in key:
-            return super().has_field(key)
+        if "." in path:
+            return super().has_field(path)
 
         # Special case for custom_fields - return False if None, True if has any fields
-        if key == "custom_fields":
+        if path == "custom_fields":
             custom_fields = getattr(self, "custom_fields", None)
             return (
                 hasattr(self, "custom_fields")
@@ -251,47 +251,47 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
             )
 
         return (
-            key in self.string_fields
-            or key in self.int_fields
-            or key in self.bool_fields
-            or key in self.list_fields
-            or key in self.float_fields
+            path in self.string_fields
+            or path in self.int_fields
+            or path in self.bool_fields
+            or path in self.list_fields
+            or path in self.float_fields
             or (
                 hasattr(self, "custom_fields")
                 and getattr(self, "custom_fields", None) is not None
-                and key in getattr(self, "custom_fields", {})
+                and path in getattr(self, "custom_fields", {})
             )
         )
 
-    def remove_field(self, key: str) -> bool:
+    def remove_field(self, path: str) -> bool:
         """Remove a field from the appropriate typed storage."""
         try:
-            if "." in key:
-                return super().remove_field(key)
+            if "." in path:
+                return super().remove_field(path)
 
             removed = False
-            if key in self.string_fields:
-                del self.string_fields[key]
+            if path in self.string_fields:
+                del self.string_fields[path]
                 removed = True
-            if key in self.int_fields:
-                del self.int_fields[key]
+            if path in self.int_fields:
+                del self.int_fields[path]
                 removed = True
-            if key in self.bool_fields:
-                del self.bool_fields[key]
+            if path in self.bool_fields:
+                del self.bool_fields[path]
                 removed = True
-            if key in self.list_fields:
-                del self.list_fields[key]
+            if path in self.list_fields:
+                del self.list_fields[path]
                 removed = True
-            if key in self.float_fields:
-                del self.float_fields[key]
+            if path in self.float_fields:
+                del self.float_fields[path]
                 removed = True
             if (
                 hasattr(self, "custom_fields")
                 and getattr(self, "custom_fields", None) is not None
-                and key in getattr(self, "custom_fields", {})
+                and path in getattr(self, "custom_fields", {})
             ):
                 custom_fields = getattr(self, "custom_fields", {})
-                del custom_fields[key]
+                del custom_fields[path]
                 removed = True
             return removed
         except Exception:  # fallback-ok: remove_field method signature returns bool for success/failure rather than raising

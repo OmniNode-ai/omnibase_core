@@ -10,7 +10,6 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -22,6 +21,9 @@ from omnibase_core.enums.enum_execution_status_v2 import (
     EnumExecutionStatusV2 as EnumExecutionStatus,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.types.typed_dict_cli_execution_core_serialized import (
+    TypedDictCliExecutionCoreSerialized,
+)
 
 from .model_cli_command_option import ModelCliCommandOption
 
@@ -206,9 +208,9 @@ class ModelCliExecutionCore(BaseModel):
     # Protocol method implementations
 
     @allow_dict_any
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> TypedDictCliExecutionCoreSerialized:
         """Serialize to dictionary (Serializable protocol)."""
-        return self.model_dump(exclude_none=False, by_alias=True)
+        return self.model_dump(exclude_none=False, by_alias=True)  # type: ignore[return-value]
 
     def get_name(self) -> str:
         """Get name (Nameable protocol)."""

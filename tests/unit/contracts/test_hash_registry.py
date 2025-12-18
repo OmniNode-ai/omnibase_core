@@ -26,7 +26,7 @@ from datetime import datetime
 from typing import ClassVar
 
 import pytest
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.contracts import (
     ContractHashRegistry,
@@ -368,6 +368,95 @@ class TestFingerprintComputation:
         fingerprint = compute_contract_fingerprint(sample_contract, config)
 
         assert len(fingerprint.hash_prefix) == 16
+
+    def test_compute_fingerprint_with_semver_duck_typing(self) -> None:
+        """Test fingerprint computation with ModelSemVer via duck-typing.
+
+        Verifies the hasattr-based version detection (hash_registry.py:263-273)
+        correctly handles ModelSemVer objects without using isinstance().
+        This tests the duck-typing path that checks for major/minor/patch attributes.
+        """
+        from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+        # Create a model that has contract_version as ModelSemVer
+        class ContractWithSemVer(BaseModel):
+            contract_version: ModelSemVer
+            node_type: str = "COMPUTE_GENERIC"
+            name: str = "test_contract"
+
+        contract = ContractWithSemVer(
+            contract_version=ModelSemVer(major=1, minor=2, patch=3),
+        )
+
+        fingerprint = compute_contract_fingerprint(contract)
+
+        # Should convert ModelSemVer -> ModelContractVersion correctly via duck-typing
+        assert fingerprint.version.major == 1
+        assert fingerprint.version.minor == 2
+        assert fingerprint.version.patch == 3
+        assert str(fingerprint).startswith("1.2.3:")
+
+    def test_compute_fingerprint_invalid_version_type_raises_error(self) -> None:
+        """Test that invalid version types raise ModelOnexError.
+
+        Verifies the error handling path (hash_registry.py:275-279) correctly
+        raises ModelOnexError for unsupported version types.
+        """
+
+        class ContractWithInvalidVersion(BaseModel):
+            contract_version: list[int] = Field(default=[1, 2, 3])
+            node_type: str = "COMPUTE_GENERIC"
+            name: str = "test_contract"
+
+        contract = ContractWithInvalidVersion()
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            compute_contract_fingerprint(contract)
+
+        assert "Invalid version type" in exc_info.value.message
+        assert "list" in exc_info.value.message
+
+    def test_compute_fingerprint_with_custom_version_object_duck_typing(self) -> None:
+        """Test fingerprint computation with custom version object via duck-typing.
+
+        Verifies that ANY Pydantic model with major/minor/patch attributes works,
+        not just ModelSemVer or ModelContractVersion specifically. This ensures
+        the duck-typing path (hash_registry.py:263-273) works with arbitrary
+        version-like objects that have the required attributes.
+
+        Note: The version object must be JSON-serializable since the entire
+        contract gets normalized to JSON during fingerprint computation.
+        """
+
+        class CustomVersionModel(BaseModel):
+            """A custom Pydantic version model that is NOT ModelSemVer or ModelContractVersion.
+
+            This model has major/minor/patch attributes but is a completely
+            different type, testing the duck-typing path in hash_registry.py.
+            """
+
+            major: int
+            minor: int
+            patch: int
+            # Extra field to prove this is different from standard version models
+            custom_metadata: str = "custom"
+
+        class ContractWithCustomVersion(BaseModel):
+            version: CustomVersionModel = Field(
+                default_factory=lambda: CustomVersionModel(major=2, minor=5, patch=1)
+            )
+            node_type: str = "COMPUTE_GENERIC"
+            name: str = "test_contract"
+
+        contract = ContractWithCustomVersion()
+
+        fingerprint = compute_contract_fingerprint(contract)
+
+        # Should extract version via duck-typing (hasattr checks)
+        assert fingerprint.version.major == 2
+        assert fingerprint.version.minor == 5
+        assert fingerprint.version.patch == 1
+        assert str(fingerprint).startswith("2.5.1:")
 
 
 # =============================================================================

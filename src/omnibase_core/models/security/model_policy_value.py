@@ -65,6 +65,7 @@ from pydantic import BaseModel, Field, model_validator
 from omnibase_core.decorators.pattern_exclusions import allow_dict_str_any
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.types.typed_dict_policy_value_data import TypedDictPolicyValueData
 
 
 @allow_dict_str_any(
@@ -408,12 +409,12 @@ class ModelPolicyValue(BaseModel):
         }
         return type_map[self.value_type]
 
-    def as_dict(self) -> dict[str, Any]:
+    def as_dict(self) -> TypedDictPolicyValueData:
         """
         Convert to dictionary representation.
 
         Returns:
-            dict[str, Any]: Dictionary with value, value_type, is_sensitive, and metadata
+            TypedDictPolicyValueData: Dictionary with value, value_type, is_sensitive, and metadata
 
         Security Notes:
             - Sensitive values are NOT masked in this output
@@ -427,12 +428,12 @@ class ModelPolicyValue(BaseModel):
             >>> assert data["value_type"] == "int"
             >>> assert data["is_sensitive"] is False
         """
-        return {
-            "value": self.value,
-            "value_type": self.value_type,
-            "is_sensitive": self.is_sensitive,
-            "metadata": self.metadata,
-        }
+        return TypedDictPolicyValueData(
+            value=self.value,
+            value_type=self.value_type,
+            is_sensitive=self.is_sensitive,
+            metadata=self.metadata,
+        )
 
     def is_primitive(self) -> bool:
         """

@@ -131,13 +131,15 @@ class UnionUsageChecker(ast.NodeVisitor):
     def _analyze_union_pattern(self, union_pattern: ModelUnionPattern) -> None:
         """Analyze a union pattern for potential issues.
 
-        Checks for problematic "soup" union patterns such as:
+        Checks for problematic patterns such as:
         - Primitive overload (4+ primitive types)
         - Mixed primitive/complex types
         - Overly broad "everything" unions
 
         Note:
-            Valid `T | None` patterns (PEP 604) are NOT flagged as issues.
+            Per ONEX conventions, `T | None` is the PREFERRED syntax for nullable
+            types and is NOT flagged as a violation. The validator only flags
+            actually problematic patterns like primitive overload.
 
         Args:
             union_pattern: The ModelUnionPattern to analyze.
@@ -148,8 +150,9 @@ class UnionUsageChecker(ast.NodeVisitor):
         """
         types_set = frozenset(union_pattern.types)
 
-        # Note: T | None patterns are valid PEP 604 syntax and should NOT be flagged.
-        # We only flag problematic "soup" unions with 3+ types.
+        # NOTE: Per ONEX conventions, T | None is the PREFERRED pattern for nullable types.
+        # We do NOT flag simple nullable unions (T | None) as violations.
+        # Only complex unions with 3+ types are checked for problematic patterns.
 
         # Check for complex unions (configurable complexity threshold)
         if union_pattern.type_count >= 3:
@@ -288,3 +291,10 @@ class UnionUsageChecker(ast.NodeVisitor):
 
         # Analyze the pattern (delegates to _analyze_union_pattern which checks for soup unions)
         self._analyze_union_pattern(union_pattern)
+
+        # For Union[T, None] syntax, suggest T | None as the preferred ONEX pattern
+        if len(union_types) == 2 and "None" in union_types:
+            non_none_types = [t for t in union_types if t != "None"]
+            self.issues.append(
+                f"Line {line_no}: Use {non_none_types[0]} | None instead of Union[{non_none_types[0]}, None]"
+            )

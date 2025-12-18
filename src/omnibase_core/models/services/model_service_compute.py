@@ -20,7 +20,7 @@ Usage Example:
     class NodeDataTransformerCompute(ModelServiceCompute):
         '''Data transformer with automatic caching and metrics.'''
 
-        async def execute_compute(self, contract: ModelContractCompute) -> dict:
+        async def execute_compute(self, contract: ModelContractCompute) -> ModelComputeOutput:
             # Check cache first (automatic via MixinCaching)
             cache_key = self.generate_cache_key(contract.input_state)
             cached_result = await self.get_cached(cache_key)
@@ -85,7 +85,7 @@ Migration Notes:
     .. code-block:: python
 
         class MyCompute(ModelServiceCompute[MyInput, MyOutput]):
-            async def execute_compute(self, contract: ModelContractCompute) -> dict:
+            async def execute_compute(self, contract: ModelContractCompute) -> ModelComputeOutput[MyOutput]:
                 ...
 """
 

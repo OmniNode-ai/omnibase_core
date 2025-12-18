@@ -186,7 +186,21 @@ class MixinServiceRegistry:
             if not isinstance(source_id, UUID):
                 source_id = uuid4()
 
-            # Create event envelope
+            # Create event envelope with typed metadata
+            from omnibase_core.models.core.model_envelope_metadata import (
+                ModelEnvelopeMetadata,
+            )
+
+            domain_filter_value = getattr(self, "domain_filter", None)
+            metadata = ModelEnvelopeMetadata(
+                tags={
+                    "request_type": "tool_discovery",
+                    "domain_filter": str(domain_filter_value)
+                    if domain_filter_value is not None
+                    else "",
+                }
+            )
+
             envelope: ModelEventEnvelope[ModelOnexEvent] = (
                 ModelEventEnvelope.create_broadcast(
                     payload=discovery_event,
@@ -194,11 +208,8 @@ class MixinServiceRegistry:
                     correlation_id=correlation_id,
                 )
             )
-            # Set metadata after creation
-            envelope.metadata = {
-                "request_type": "tool_discovery",
-                "domain_filter": getattr(self, "domain_filter", None),
-            }
+            # Update metadata using with_metadata()
+            envelope = envelope.with_metadata(metadata)
 
             logger.info(f"🔍 Sending discovery request envelope: {envelope}")
             self.event_bus.publish(envelope)
@@ -341,7 +352,18 @@ class MixinServiceRegistry:
             # Ensure target_node_id is UUID
             target_id = node_id if isinstance(node_id, UUID) else UUID(node_id)
 
-            # Create event envelope
+            # Create event envelope with typed metadata
+            from omnibase_core.models.core.model_envelope_metadata import (
+                ModelEnvelopeMetadata,
+            )
+
+            metadata = ModelEnvelopeMetadata(
+                tags={
+                    "target_node_id": str(node_id),
+                    "request_type": "introspection",
+                }
+            )
+
             envelope: ModelEventEnvelope[ModelOnexEvent] = (
                 ModelEventEnvelope.create_directed(
                     payload=introspection_event,
@@ -350,11 +372,8 @@ class MixinServiceRegistry:
                     correlation_id=correlation_id,
                 )
             )
-            # Set metadata after creation
-            envelope.metadata = {
-                "target_node_id": str(node_id),
-                "request_type": "introspection",
-            }
+            # Update metadata using with_metadata()
+            envelope = envelope.with_metadata(metadata)
 
             self.event_bus.publish(envelope)
 

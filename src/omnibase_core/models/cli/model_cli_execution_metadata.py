@@ -7,8 +7,6 @@ Part of the ModelCliExecution restructuring to reduce excessive string fields.
 
 from __future__ import annotations
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.decorators import allow_dict_any
@@ -16,6 +14,9 @@ from omnibase_core.enums.enum_context_source import EnumContextSource
 from omnibase_core.enums.enum_context_type import EnumContextType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.types.typed_dict_cli_execution_metadata_serialized import (
+    TypedDictCliExecutionMetadataSerialized,
+)
 
 from .model_cli_execution_context import ModelCliExecutionContext
 
@@ -123,9 +124,9 @@ class ModelCliExecutionMetadata(BaseModel):
     # Protocol method implementations
 
     @allow_dict_any
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> TypedDictCliExecutionMetadataSerialized:
         """Serialize to dictionary (Serializable protocol)."""
-        return self.model_dump(exclude_none=False, by_alias=True)
+        return self.model_dump(exclude_none=False, by_alias=True)  # type: ignore[return-value]
 
     def get_name(self) -> str:
         """Get name (Nameable protocol)."""

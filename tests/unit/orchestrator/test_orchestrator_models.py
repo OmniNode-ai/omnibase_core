@@ -54,6 +54,7 @@ from omnibase_core.models.contracts.subcontracts.model_workflow_definition_metad
 from omnibase_core.models.contracts.subcontracts.model_workflow_node import (
     ModelWorkflowNode,
 )
+from omnibase_core.models.core.model_action_metadata import ModelActionMetadata
 from omnibase_core.models.orchestrator.model_action import ModelAction
 from omnibase_core.models.orchestrator.model_orchestrator_input import (
     ModelOrchestratorInput,
@@ -462,6 +463,10 @@ class TestModelActionSerialization:
         """Test model serializes to valid JSON."""
         action_id = uuid4()
         lease_id = uuid4()
+        # Create typed metadata
+        test_metadata = ModelActionMetadata()
+        test_metadata.parameters = {"env": "test"}
+
         model = ModelAction(
             action_id=action_id,
             action_type=EnumActionType.COMPUTE,
@@ -473,7 +478,7 @@ class TestModelActionSerialization:
             priority=3,
             timeout_ms=60000,
             retry_count=2,
-            metadata={"env": "test"},
+            metadata=test_metadata,
         )
         json_str = model.model_dump_json()
         assert isinstance(json_str, str)
@@ -497,6 +502,10 @@ class TestModelActionSerialization:
     def test_json_round_trip_stability(self) -> None:
         """Test model -> JSON -> model produces equal result."""
         dep_id = uuid4()
+        # Create typed metadata
+        source_metadata = ModelActionMetadata()
+        source_metadata.parameters = {"source": "test"}
+
         model = ModelAction(
             action_type=EnumActionType.EFFECT,
             target_node_type="EFFECT",
@@ -507,7 +516,7 @@ class TestModelActionSerialization:
             priority=7,
             timeout_ms=120000,
             retry_count=5,
-            metadata={"source": "test"},
+            metadata=source_metadata,
         )
         json_str = model.model_dump_json()
         restored = ModelAction.model_validate_json(json_str)
@@ -553,7 +562,7 @@ class TestModelActionFieldValidation:
         assert model.priority == 1
         assert model.timeout_ms == 30000
         assert model.retry_count == 0
-        assert model.metadata == {}
+        assert isinstance(model.metadata, ModelActionMetadata)
         assert isinstance(model.action_id, UUID)
         assert isinstance(model.created_at, datetime)
 

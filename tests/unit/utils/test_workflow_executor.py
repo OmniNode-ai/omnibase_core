@@ -262,7 +262,7 @@ class TestWorkflowExecutionSuccess:
 
         # Map steps to actions
         actions_by_step_id = {
-            action.metadata["correlation_id"]: action
+            action.metadata.parameters["correlation_id"]: action
             for action in result.actions_emitted
         }
 
@@ -481,8 +481,8 @@ class TestStepMetadata:
             # Check step ID in payload
             assert "step_id" in action.payload
 
-            # Check step name in metadata
-            assert "step_name" in action.metadata
+            # Check step name in metadata parameters
+            assert "step_name" in action.metadata.parameters
 
 
 class TestActionTypes:

@@ -7,7 +7,7 @@ for CLI node execution operations.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import cast
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -18,6 +18,9 @@ from omnibase_core.enums.enum_cli_action import EnumCliAction
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_output_format import EnumOutputFormat
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.types.typed_dict_cli_node_execution_input_serialized import (
+    TypedDictCliNodeExecutionInputSerialized,
+)
 
 from .model_cli_advanced_params import ModelCliAdvancedParams
 
@@ -108,16 +111,20 @@ class ModelCliNodeExecutionInput(BaseModel):
 
     model_config = {
         "extra": "ignore",
-        "use_enum_values": False,
+        "use_enum_values": True,
         "validate_assignment": True,
+        "from_attributes": True,
     }
 
     # Protocol method implementations
 
     @allow_dict_any
-    def serialize(self) -> dict[str, Any]:
+    def serialize(self) -> TypedDictCliNodeExecutionInputSerialized:
         """Serialize to dictionary (Serializable protocol)."""
-        return self.model_dump(exclude_none=False, by_alias=True)
+        return cast(
+            TypedDictCliNodeExecutionInputSerialized,
+            self.model_dump(exclude_none=False, by_alias=True, mode="json"),
+        )
 
     def get_name(self) -> str:
         """Get name (Nameable protocol)."""

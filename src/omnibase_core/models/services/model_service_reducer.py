@@ -20,16 +20,16 @@ Usage Example:
     class NodeMetricsAggregatorReducer(ModelServiceReducer):
         '''Metrics aggregator with automatic caching and health checks.'''
 
-        async def execute_reduction(self, contract: ModelContractReducer) -> dict:
+        async def execute_reduction(self, input_data: ModelReducerInput) -> ModelReducerOutput:
             # Check cache for recent aggregation
-            cache_key = self.generate_cache_key(contract.aggregation_window)
+            cache_key = self.generate_cache_key(input_data.aggregation_window)
             cached_result = await self.get_cached(cache_key)
 
             if cached_result:
                 return cached_result
 
             # Perform aggregation
-            aggregated_data = await self._aggregate_metrics(contract.input_data)
+            aggregated_data = await self._aggregate_metrics(input_data.input_items)
 
             # Cache aggregated result
             await self.set_cached(cache_key, aggregated_data, ttl_seconds=300)

@@ -1,8 +1,8 @@
 """
 Effect-related enumerations for NodeEffect operations.
 
-Defines types of side effects, transaction states, and circuit breaker states
-for managing external interactions and resilience patterns.
+Defines types of side effects and transaction states for managing
+external interactions and resilience patterns.
 """
 
 from enum import Enum
@@ -11,7 +11,6 @@ from typing import Never, NoReturn
 __all__ = [
     "EnumEffectType",
     "EnumTransactionState",
-    "EnumCircuitBreakerState",
 ]
 
 
@@ -94,42 +93,6 @@ class EnumTransactionState(Enum):
                     handle_failed()
                 case _ as unreachable:
                     EnumTransactionState.assert_exhaustive(unreachable)
-
-        Args:
-            value: The unhandled enum value (typed as Never for exhaustiveness).
-
-        Raises:
-            AssertionError: Always raised if this code path is reached at runtime.
-        """
-        # error-ok: exhaustiveness check - enums cannot import models
-        raise AssertionError(f"Unhandled enum value: {value}")
-
-
-class EnumCircuitBreakerState(Enum):
-    """Circuit breaker states for failure handling."""
-
-    CLOSED = "closed"  # Normal operation
-    OPEN = "open"  # Failing, rejecting requests
-    HALF_OPEN = "half_open"  # Testing if service recovered
-
-    @staticmethod
-    def assert_exhaustive(value: Never) -> NoReturn:
-        """Ensures exhaustive handling of all enum values in match statements.
-
-        This method enables static type checkers to verify that all enum values
-        are handled in match/case statements. If a case is missing, mypy will
-        report an error at the call site.
-
-        Usage:
-            match circuit_state:
-                case EnumCircuitBreakerState.CLOSED:
-                    handle_closed()
-                case EnumCircuitBreakerState.OPEN:
-                    handle_open()
-                case EnumCircuitBreakerState.HALF_OPEN:
-                    handle_half_open()
-                case _ as unreachable:
-                    EnumCircuitBreakerState.assert_exhaustive(unreachable)
 
         Args:
             value: The unhandled enum value (typed as Never for exhaustiveness).

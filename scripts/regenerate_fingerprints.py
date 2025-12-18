@@ -61,7 +61,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import yaml
-from pydantic import BaseModel  # noqa: TC002 - Used at runtime in type dict
+from pydantic import BaseModel
 
 from omnibase_core.contracts.hash_registry import compute_contract_fingerprint
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -73,6 +73,49 @@ from omnibase_core.models.contracts.model_contract_orchestrator import (
 from omnibase_core.models.contracts.model_contract_reducer import ModelContractReducer
 from omnibase_core.models.contracts.model_yaml_contract import ModelYamlContract
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+
+class ModelYamlContractFull(BaseModel):
+    """Full contract model for fingerprinting that captures ALL fields.
+
+    This model is specifically designed for fingerprint computation and should
+    NOT be used for general contract validation.
+
+    Purpose:
+        Unlike ModelYamlContract which uses extra="ignore" (dropping unknown
+        fields for clean validation), this model uses extra="allow" to ensure
+        ALL contract fields are captured in the fingerprint hash.
+
+    Why This Exists:
+        When computing fingerprints, we need to include ALL fields from the
+        YAML contract to detect any changes. ModelYamlContract's extra="ignore"
+        setting would silently drop fields, causing fingerprint collisions
+        between contracts that differ only in "extra" fields.
+
+    When to Use:
+        - fingerprinting: Use ModelYamlContractFull (captures all fields)
+        - validation: Use ModelYamlContract (enforces clean structure)
+        - specific node types: Use ModelContractCompute, ModelContractEffect, etc.
+
+    Warning:
+        Do NOT replace ModelYamlContract with this class globally.
+        ModelYamlContract serves a different purpose (validation with strict
+        schema enforcement). This class is ONLY for fingerprinting where we
+        need to capture all fields regardless of schema.
+
+    See Also:
+        - ModelYamlContract: For contract validation with clean structure
+        - compute_contract_fingerprint: Uses this model for YAML contracts
+        - CONTRACT_STABILITY_SPEC.md: Fingerprint normalization specification
+    """
+
+    model_config = {"extra": "allow", "from_attributes": True}
+
+    # Minimal required fields - everything else captured by extra="allow"
+    contract_version: ModelSemVer | None = None
+    node_type: str | None = None
+
 
 if TYPE_CHECKING:
     from omnibase_core.models.contracts.model_contract_fingerprint import (
@@ -174,8 +217,11 @@ def detect_contract_model(contract_data: dict[str, object]) -> type[BaseModel] |
         if model_class is not None:
             return model_class
 
-    # Fall back to flexible ModelYamlContract
-    return ModelYamlContract
+    # Fall back to ModelYamlContractFull which captures ALL fields for fingerprinting
+    # IMPORTANT: We use ModelYamlContractFull instead of ModelYamlContract because
+    # ModelYamlContract has extra="ignore" which would drop fields from the hash,
+    # potentially causing fingerprint collisions between different contracts.
+    return ModelYamlContractFull
 
 
 # ==============================================================================
