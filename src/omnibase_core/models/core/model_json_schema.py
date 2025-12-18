@@ -5,7 +5,7 @@ This model replaces dictionary usage when working with JSON schemas
 by providing a structured representation of schema data.
 """
 
-from typing import Optional, Union
+from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
@@ -40,7 +40,7 @@ class ModelJsonSchema(BaseModel):
     multiple_of: int | float | None = Field(default=None, alias="multipleOf")
 
     # Array validation
-    items: Optional["ModelJsonSchema"] = Field(
+    items: ModelJsonSchema | None = Field(
         default=None, description="Array items schema"
     )
     min_items: int | None = Field(default=None, alias="minItems")
@@ -48,23 +48,23 @@ class ModelJsonSchema(BaseModel):
     unique_items: bool | None = Field(default=None, alias="uniqueItems")
 
     # Object validation
-    properties: dict[str, "ModelJsonSchema"] | None = Field(
+    properties: dict[str, ModelJsonSchema] | None = Field(
         default=None, description="Object properties"
     )
     required: list[str] | None = Field(default=None, description="Required properties")
-    additional_properties: Union[bool, "ModelJsonSchema"] | None = Field(
+    additional_properties: bool | ModelJsonSchema | None = Field(
         default=None, alias="additionalProperties"
     )
 
     # Composition
-    all_of: list["ModelJsonSchema"] | None = Field(default=None, alias="allOf")
-    any_of: list["ModelJsonSchema"] | None = Field(default=None, alias="anyOf")
-    one_of: list["ModelJsonSchema"] | None = Field(default=None, alias="oneOf")
-    not_schema: Optional["ModelJsonSchema"] = Field(default=None, alias="not")
+    all_of: list[ModelJsonSchema] | None = Field(default=None, alias="allOf")
+    any_of: list[ModelJsonSchema] | None = Field(default=None, alias="anyOf")
+    one_of: list[ModelJsonSchema] | None = Field(default=None, alias="oneOf")
+    not_schema: ModelJsonSchema | None = Field(default=None, alias="not")
 
     # References
     ref: str | None = Field(default=None, alias="$ref", description="Schema reference")
-    definitions: dict[str, "ModelJsonSchema"] | None = Field(
+    definitions: dict[str, ModelJsonSchema] | None = Field(
         default=None, description="Schema definitions"
     )
 
@@ -85,7 +85,7 @@ class ModelJsonSchema(BaseModel):
     write_only: bool | None = Field(default=None, alias="writeOnly")
 
     @classmethod
-    def from_dict(cls, schema_dict: SerializedDict) -> "ModelJsonSchema":
+    def from_dict(cls, schema_dict: SerializedDict) -> ModelJsonSchema:
         """
         Create ModelJsonSchema from a dictionary.
 

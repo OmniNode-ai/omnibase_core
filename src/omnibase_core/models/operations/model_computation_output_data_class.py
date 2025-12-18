@@ -4,39 +4,39 @@ Computation Output Data Model.
 Strongly-typed output data for computation operations with discriminated unions.
 """
 
-from typing import TYPE_CHECKING, Annotated, Union
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Annotated
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.operations.model_binary_computation_output import (
+    ModelBinaryComputationOutput,
+)
+from omnibase_core.models.operations.model_numeric_computation_output import (
+    ModelNumericComputationOutput,
+)
+from omnibase_core.models.operations.model_structured_computation_output import (
+    ModelStructuredComputationOutput,
+)
+from omnibase_core.models.operations.model_text_computation_output import (
+    ModelTextComputationOutput,
+)
 from omnibase_core.types.typed_dict_computation_output_data_summary import (
     TypedDictComputationOutputDataSummary,
 )
 
 if TYPE_CHECKING:
     from omnibase_core.enums.enum_computation_type import EnumComputationType
-    from omnibase_core.models.operations.model_binary_computation_output import (
-        ModelBinaryComputationOutput,
-    )
-    from omnibase_core.models.operations.model_numeric_computation_output import (
-        ModelNumericComputationOutput,
-    )
-    from omnibase_core.models.operations.model_structured_computation_output import (
-        ModelStructuredComputationOutput,
-    )
-    from omnibase_core.models.operations.model_text_computation_output import (
-        ModelTextComputationOutput,
-    )
 
 # Discriminated union type for computation output data (defined after constituent types)
 ModelComputationOutputUnion = Annotated[
-    Union[
-        "ModelNumericComputationOutput",
-        "ModelTextComputationOutput",
-        "ModelBinaryComputationOutput",
-        "ModelStructuredComputationOutput",
-    ],
+    ModelNumericComputationOutput
+    | ModelTextComputationOutput
+    | ModelBinaryComputationOutput
+    | ModelStructuredComputationOutput,
     Field(discriminator="computation_type"),
 ]
 
@@ -53,7 +53,7 @@ class ModelComputationOutputData(BaseModel):
     - Validatable: Validation and verification
     """
 
-    computation_type: "EnumComputationType" = Field(
+    computation_type: EnumComputationType = Field(
         default=...,
         description="Type of computation that was performed",
     )
@@ -78,20 +78,6 @@ class ModelComputationOutputData(BaseModel):
             return v
 
         computation_type = info.data["computation_type"]
-
-        # Import here to avoid circular imports
-        from omnibase_core.models.operations.model_binary_computation_output import (
-            ModelBinaryComputationOutput,
-        )
-        from omnibase_core.models.operations.model_numeric_computation_output import (
-            ModelNumericComputationOutput,
-        )
-        from omnibase_core.models.operations.model_structured_computation_output import (
-            ModelStructuredComputationOutput,
-        )
-        from omnibase_core.models.operations.model_text_computation_output import (
-            ModelTextComputationOutput,
-        )
 
         if computation_type == "numeric" and not isinstance(
             v,
@@ -180,7 +166,7 @@ class ModelComputationOutputData(BaseModel):
         except Exception:  # fallback-ok: Protocol method - graceful fallback for optional implementation
             return False
 
-    def add_processing_info(self, key: str, value: str) -> "ModelComputationOutputData":
+    def add_processing_info(self, key: str, value: str) -> ModelComputationOutputData:
         """Add processing information."""
         new_info = {**self.processing_info, key: value}
         return self.model_copy(update={"processing_info": new_info})

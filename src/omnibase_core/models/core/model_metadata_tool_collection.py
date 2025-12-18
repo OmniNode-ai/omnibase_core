@@ -9,9 +9,11 @@ and compliance with one-model-per-file naming conventions.
 # and _tool_info (dict[str, dict]). This heterogeneity necessitates Any type.
 """
 
+from __future__ import annotations
+
 import hashlib
 from datetime import datetime
-from typing import Any, Union
+from typing import Any
 from uuid import UUID
 
 from pydantic import RootModel, computed_field, model_validator
@@ -55,7 +57,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
     # ONEX_EXCLUDE: dict_str_any - Constructor accepts heterogeneous dict input
     def __init__(
         self,
-        root: Union[dict[str, Any], "ModelMetadataToolCollection", None] = None,
+        root: dict[str, Any] | ModelMetadataToolCollection | None = None,
         **kwargs: Any,
     ) -> None:
         """Initialize with enhanced enterprise features."""
@@ -119,7 +121,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
         return data or {}
 
     @model_validator(mode="after")
-    def check_function_names_and_enhance(self) -> "ModelMetadataToolCollection":
+    def check_function_names_and_enhance(self) -> ModelMetadataToolCollection:
         """Enhanced validation with analytics updates."""
         tool_count = 0
         tools_by_type: dict[str, int] = {}
@@ -662,7 +664,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
 
     # Factory methods for common scenarios
     @classmethod
-    def create_empty_collection(cls) -> "ModelMetadataToolCollection":
+    def create_empty_collection(cls) -> ModelMetadataToolCollection:
         """Create an empty metadata tool collection."""
         return cls({})
 
@@ -670,7 +672,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
     def create_from_function_tools(
         cls,
         tools_dict: dict[str, ModelFunctionTool],
-    ) -> "ModelMetadataToolCollection":
+    ) -> ModelMetadataToolCollection:
         """Create collection from existing ModelFunctionTool dictionary."""
         collection = cls(tools_dict)
 
@@ -698,7 +700,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
     def create_documentation_collection(
         cls,
         name: str = "documentation",
-    ) -> "ModelMetadataToolCollection":
+    ) -> ModelMetadataToolCollection:
         """Create a collection optimized for documentation tools."""
         collection = cls({})
 
