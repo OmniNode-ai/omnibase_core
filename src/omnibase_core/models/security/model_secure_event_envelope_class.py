@@ -67,7 +67,7 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
     )
 
     # Enhanced security context (override parent's dict type)
-    security_context: ModelSecurityContext | None = Field(  # type: ignore[assignment]
+    security_context: ModelSecurityContext | None = Field(
         default=None,
         description="Enhanced security context with JWT and RBAC",
     )

@@ -262,7 +262,7 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
     @allow_dict_any
     def model_dump(self, **kwargs: object) -> TypedDictCliActionSerialized:
         """Override model_dump to use aliases by default."""
-        kwargs.setdefault("by_alias", True)  # type: ignore[union-attr]
+        kwargs.setdefault("by_alias", True)
         return super().model_dump(**kwargs)  # type: ignore[return-value,arg-type]
 
     # Protocol method implementations
@@ -270,7 +270,7 @@ class ModelCliAction(BaseModel):  # Protocols removed temporarily for syntax val
     @allow_dict_any
     def serialize(self) -> TypedDictCliActionSerialized:
         """Serialize to dictionary (Serializable protocol)."""
-        return self.model_dump(exclude_none=False, by_alias=True)
+        return self.model_dump(exclude_none=False, by_alias=True)  # type: ignore[no-any-return]
 
     def get_name(self) -> str:
         """Get name (Nameable protocol)."""

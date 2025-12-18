@@ -11,6 +11,9 @@ from typing import TYPE_CHECKING, Annotated
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
+if TYPE_CHECKING:
+    from omnibase_core.enums.enum_computation_type import EnumComputationType
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.operations.model_binary_computation_output import (
     ModelBinaryComputationOutput,
@@ -27,9 +30,6 @@ from omnibase_core.models.operations.model_text_computation_output import (
 from omnibase_core.types.typed_dict_computation_output_data_summary import (
     TypedDictComputationOutputDataSummary,
 )
-
-if TYPE_CHECKING:
-    from omnibase_core.enums.enum_computation_type import EnumComputationType
 
 # Discriminated union type for computation output data (defined after constituent types)
 ModelComputationOutputUnion = Annotated[

@@ -109,7 +109,7 @@ class ModelCustomFields(BaseModel):
         # Custom compatibility logic - return just the field values
         # TypedDictCustomFieldsDict is a flexible TypedDict with total=False
         # Cast to TypedDict since the structure is intentionally dynamic
-        result: TypedDictCustomFieldsDict = {}  # type: ignore[typeddict-item]
+        result: TypedDictCustomFieldsDict = {}
         result.update(self.field_values)  # type: ignore[typeddict-item]
         return result
 

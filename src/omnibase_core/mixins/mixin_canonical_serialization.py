@@ -23,7 +23,6 @@ from __future__ import annotations
 # version: 1.0.0
 # === /OmniNode:Metadata ===
 import types
-from collections.abc import Mapping
 from typing import Union
 
 from omnibase_core.enums import EnumNodeMetadataField
@@ -75,7 +74,7 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
 
     def canonicalize_metadata_block(
         self,
-        metadata_block: Mapping[str, object] | NodeMetadataBlock,
+        metadata_block: dict[str, object] | NodeMetadataBlock,
         volatile_fields: tuple[EnumNodeMetadataField, ...] = (
             EnumNodeMetadataField.HASH,
             EnumNodeMetadataField.LAST_MODIFIED_AT,
@@ -147,7 +146,8 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
                     version_value = ModelSemVer(major=0, minor=1, patch=0)
 
                 # Validate hash field format - must be 64 hex characters
-                hash_value = original_dict.get("hash", "0" * 64)
+                hash_value_raw = original_dict.get("hash", "0" * 64)
+                hash_value = str(hash_value_raw) if hash_value_raw else "0" * 64
                 if hash_value and (
                     len(hash_value) != 64
                     or not all(c in "0123456789abcdefABCDEF" for c in hash_value)
@@ -156,7 +156,8 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
                     hash_value = "0" * 64
 
                 # Use deterministic UUID based on name for consistency (or random if no name)
-                name = original_dict.get("name", "unknown")
+                name_raw = original_dict.get("name", "unknown")
+                name = str(name_raw) if name_raw else "unknown"
                 default_uuid = str(uuid_lib.uuid5(uuid_lib.NAMESPACE_DNS, name))
 
                 defaults = {
