@@ -131,11 +131,13 @@ class UnionUsageChecker(ast.NodeVisitor):
     def _analyze_union_pattern(self, union_pattern: ModelUnionPattern) -> None:
         """Analyze a union pattern for potential issues.
 
-        Checks for problematic patterns such as:
-        - Union[T, None] that should use Optional[T]
+        Checks for problematic "soup" union patterns such as:
         - Primitive overload (4+ primitive types)
         - Mixed primitive/complex types
         - Overly broad "everything" unions
+
+        Note:
+            Valid `T | None` patterns (PEP 604) are NOT flagged as issues.
 
         Args:
             union_pattern: The ModelUnionPattern to analyze.
@@ -146,13 +148,8 @@ class UnionUsageChecker(ast.NodeVisitor):
         """
         types_set = frozenset(union_pattern.types)
 
-        # Check for Union[T, None] which should use Optional[T]
-        if "None" in union_pattern.types and union_pattern.type_count == 2:
-            non_none_types = [t for t in union_pattern.types if t != "None"]
-            self.issues.append(
-                f"Line {union_pattern.line}: Use Optional[{non_none_types[0]}] "
-                f"instead of {union_pattern.get_signature()}"
-            )
+        # Note: T | None patterns are valid PEP 604 syntax and should NOT be flagged.
+        # We only flag problematic "soup" unions with 3+ types.
 
         # Check for complex unions (configurable complexity threshold)
         if union_pattern.type_count >= 3:
@@ -176,15 +173,6 @@ class UnionUsageChecker(ast.NodeVisitor):
                             f"Line {union_pattern.line}: Overly broad Union "
                             f"{union_pattern.get_signature()} should use a specific type, generic TypeVar, or proper domain model"
                         )
-
-        # Check for redundant None patterns
-        if "None" in union_pattern.types and union_pattern.type_count > 2:
-            non_none_types = [t for t in union_pattern.types if t != "None"]
-            if len(non_none_types) == 1:
-                self.issues.append(
-                    f"Line {union_pattern.line}: Use Optional[{non_none_types[0]}] "
-                    f"instead of {union_pattern.get_signature()}"
-                )
 
     def visit_Subscript(self, node: ast.Subscript) -> None:
         """Visit subscript nodes to detect Union[...] type definitions.
@@ -298,11 +286,5 @@ class UnionUsageChecker(ast.NodeVisitor):
         union_pattern = ModelUnionPattern(union_types, line_no, self.file_path)
         self.union_patterns.append(union_pattern)
 
-        # Analyze the pattern
+        # Analyze the pattern (delegates to _analyze_union_pattern which checks for soup unions)
         self._analyze_union_pattern(union_pattern)
-
-        # Check for Union with None
-        if len(union_types) == 2 and "None" in union_types:
-            self.issues.append(
-                f"Line {line_no}: Use Optional[T] or T | None instead of T | None"
-            )

@@ -382,10 +382,10 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
 
     def get_tools_by_type(
         self, tool_type: EnumMetadataToolType
-    ) -> dict[str, Union[ModelFunctionTool, dict[str, object]]]:
+    ) -> dict[str, ModelFunctionTool | dict[str, object]]:
         """Get all tools of a specific type."""
         # Tool data values can be ModelFunctionTool or raw dict
-        tools: dict[str, Union[ModelFunctionTool, dict[str, object]]] = {}
+        tools: dict[str, ModelFunctionTool | dict[str, object]] = {}
         for name, tool_data in self.root.items():
             if name.startswith("_"):
                 continue
@@ -400,10 +400,10 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
 
     def get_tools_by_status(
         self, status: EnumMetadataToolStatus
-    ) -> dict[str, Union[ModelFunctionTool, dict[str, object]]]:
+    ) -> dict[str, ModelFunctionTool | dict[str, object]]:
         """Get all tools with a specific status."""
         # Tool data values can be ModelFunctionTool or raw dict
-        tools: dict[str, Union[ModelFunctionTool, dict[str, object]]] = {}
+        tools: dict[str, ModelFunctionTool | dict[str, object]] = {}
         for name, tool_data in self.root.items():
             if name.startswith("_"):
                 continue

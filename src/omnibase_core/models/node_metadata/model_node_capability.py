@@ -95,9 +95,7 @@ class ModelNodeCapability(BaseModel):
     example_config: (
         dict[
             str,
-            Union[
-                ModelNodeConfigurationStringValue, ModelNodeConfigurationNumericValue
-            ],
+            ModelNodeConfigurationStringValue | ModelNodeConfigurationNumericValue,
         ]
         | None
     ) = Field(

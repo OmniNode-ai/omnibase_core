@@ -29,12 +29,10 @@ def get_effect_result_discriminator(v: Any) -> str:
 
 # Type alias with discriminator for Pydantic validation
 ModelEffectResult = Annotated[
-    Union[
-        ModelEffectResultDict,
-        ModelEffectResultBool,
-        ModelEffectResultStr,
-        ModelEffectResultList,
-    ],
+    ModelEffectResultDict
+    | ModelEffectResultBool
+    | ModelEffectResultStr
+    | ModelEffectResultList,
     Field(discriminator="result_type"),
 ]
 

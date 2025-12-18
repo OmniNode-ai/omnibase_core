@@ -72,11 +72,11 @@ def from_numeric(value: ModelNumericValue) -> ModelActionConfigNumericValue:
 
 def from_value(
     value: object,
-) -> Union[
-    ModelActionConfigStringValue,
-    ModelActionConfigNumericValue,
-    ModelActionConfigBooleanValue,
-]:
+) -> (
+    ModelActionConfigStringValue
+    | ModelActionConfigNumericValue
+    | ModelActionConfigBooleanValue
+):
     """
     Create action config value from any supported type.
 

@@ -17,12 +17,10 @@ from .model_transform_unicode_config import ModelTransformUnicodeConfig
 
 # v1.0 Discriminated union - only 5 types (IDENTITY has no config)
 ModelTransformationConfig = Annotated[
-    Union[
-        ModelTransformRegexConfig,
-        ModelTransformCaseConfig,
-        ModelTransformTrimConfig,
-        ModelTransformUnicodeConfig,
-        ModelTransformJsonPathConfig,
-    ],
+    ModelTransformRegexConfig
+    | ModelTransformCaseConfig
+    | ModelTransformTrimConfig
+    | ModelTransformUnicodeConfig
+    | ModelTransformJsonPathConfig,
     Field(discriminator="config_type"),
 ]

@@ -116,7 +116,7 @@ class ModelPolicyValue(BaseModel):
     MAX_LIST_SIZE: int = 10000
     MAX_DICT_SIZE: int = 1000
 
-    value: Union[None, bool, int, float, str, list[Any], dict[str, Any]] = Field(
+    value: None | bool | int | float | str | list[Any] | dict[str, Any] = Field(
         description="The actual policy value (supports None for optional policies)",
     )
 
@@ -333,7 +333,7 @@ class ModelPolicyValue(BaseModel):
 
     def get_value(
         self,
-    ) -> Union[None, bool, int, float, str, list[Any], dict[str, Any]]:
+    ) -> None | bool | int | float | str | list[Any] | dict[str, Any]:
         """
         Get the stored policy value with proper type.
 

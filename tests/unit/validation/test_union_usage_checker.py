@@ -225,17 +225,21 @@ class TestExtractTypeName:
 class TestAnalyzeUnionPattern:
     """Test union pattern analysis."""
 
-    def test_union_with_none_two_types(
+    def test_union_with_none_two_types_is_valid(
         self, checker: UnionUsageChecker, test_file_path: str
     ):
-        """Test detection of Union[T, None] which should use Optional[T]."""
+        """Test that Union[T, None] is valid PEP 604 syntax and not flagged.
+
+        Per PEP 604, `T | None` is the preferred syntax for optional types.
+        The checker should NOT suggest Optional[T] as that contradicts
+        the codebase standard of using PEP 604 syntax.
+        """
         pattern = ModelUnionPattern(["str", "None"], 10, test_file_path)
 
         checker._analyze_union_pattern(pattern)
 
-        assert len(checker.issues) == 1
-        assert "Optional[str]" in checker.issues[0]
-        assert "Line 10" in checker.issues[0]
+        # T | None patterns should NOT generate any issues
+        assert len(checker.issues) == 0
 
     def test_complex_union_three_types(
         self, checker: UnionUsageChecker, test_file_path: str
@@ -285,18 +289,20 @@ class TestAnalyzeUnionPattern:
         # All issues should reference Line 30
         assert all("Line 30" in issue for issue in checker.issues)
 
-    def test_redundant_none_pattern(
+    def test_union_with_none_is_valid_pep604(
         self, checker: UnionUsageChecker, test_file_path: str
     ):
-        """Test detection of redundant None patterns."""
-        # Union[str, None] with more than 2 types but only 1 non-None type
+        """Test that Union[T, None] patterns are valid PEP 604 and not flagged.
+
+        Per PEP 604, `T | None` is the standard syntax for optional types.
+        These patterns should NOT be flagged as issues.
+        """
         pattern = ModelUnionPattern(["str", "None"], 35, test_file_path)
 
         checker._analyze_union_pattern(pattern)
 
-        # Should suggest Optional
-        assert len(checker.issues) == 1
-        assert "Optional[str]" in checker.issues[0]
+        # T | None is valid PEP 604 syntax - no issues should be raised
+        assert len(checker.issues) == 0
 
 
 @pytest.mark.unit
@@ -318,7 +324,12 @@ def func(x: Union[str, int]) -> None:
         assert len(checker.union_patterns) == 1
 
     def test_visit_union_subscript_with_none(self, checker: UnionUsageChecker):
-        """Test visiting Union[str, None] syntax."""
+        """Test visiting Union[str, None] syntax (valid PEP 604 equivalent).
+
+        Per PEP 604, `T | None` (and its Union[T, None] equivalent) is the
+        standard syntax for optional types. This pattern should be detected
+        as a union but NOT flagged as an issue.
+        """
         code = """
 from typing import Union
 
@@ -329,8 +340,8 @@ def func(x: Union[str, None]) -> None:
         checker.visit(tree)
 
         assert checker.union_count == 1
-        # Should have an issue suggesting Optional
-        assert len(checker.issues) >= 1
+        # Union[T, None] is valid (equivalent to T | None) - should NOT generate issues
+        assert len(checker.issues) == 0
 
     def test_visit_non_union_subscript(self, checker: UnionUsageChecker):
         """Test that non-Union subscripts are not counted."""
@@ -376,7 +387,11 @@ def func(x: str | int | float) -> None:
         assert checker.union_patterns[0].type_count == 3
 
     def test_visit_binop_with_none(self, checker: UnionUsageChecker):
-        """Test visiting str | None syntax."""
+        """Test visiting str | None syntax (valid PEP 604).
+
+        Per PEP 604, `T | None` is the standard syntax for optional types.
+        This pattern should be detected as a union but NOT flagged as an issue.
+        """
         code = """
 def func(x: str | None) -> None:
     pass
@@ -385,8 +400,8 @@ def func(x: str | None) -> None:
         checker.visit(tree)
 
         assert checker.union_count == 1
-        # Should have an issue suggesting Optional or T | None
-        assert len(checker.issues) >= 1
+        # T | None is valid PEP 604 syntax - should NOT generate issues
+        assert len(checker.issues) == 0
 
     def test_visit_non_union_binop(self, checker: UnionUsageChecker):
         """Test that non-union binary operations are not counted."""
@@ -509,19 +524,23 @@ def func3(z: Union[str, int, bool, float]) -> None:
         assert len(checker.union_patterns) == 3
 
     def test_complex_file_with_issues(self, checker: UnionUsageChecker):
-        """Test file with various problematic patterns."""
+        """Test file with various problematic 'soup' union patterns.
+
+        Note: T | None (or Union[T, None]) patterns are valid PEP 604 syntax
+        and should NOT be flagged. Only problematic 'soup' unions are flagged.
+        """
         code = """
 from typing import Union, Optional
 
-# Should suggest Optional
+# Valid T | None pattern - should NOT be flagged (PEP 604 compliant)
 def func1(x: Union[str, None]) -> None:
     pass
 
-# Primitive overload
+# Primitive overload - SHOULD be flagged (soup union)
 def func2(x: Union[str, int, bool, float]) -> None:
     pass
 
-# Mixed primitive/complex
+# Mixed primitive/complex - only flagged if matches problematic_combinations
 def func3(x: Union[str, int, dict]) -> None:
     pass
 
@@ -533,8 +552,11 @@ def func4(x: Union[str, int]) -> None:
         checker.visit(tree)
 
         assert checker.union_count == 4
-        # Should have multiple issues
-        assert len(checker.issues) >= 2
+        # Should have at least 1 issue (primitive overload)
+        # Union[str, None] is now valid PEP 604 syntax and not flagged
+        assert len(checker.issues) >= 1
+        # Verify the primitive overload is detected
+        assert any("primitive types" in issue for issue in checker.issues)
 
     def test_modern_and_legacy_syntax_mixed(self, checker: UnionUsageChecker):
         """Test file mixing modern (|) and legacy Union syntax."""
@@ -585,22 +607,29 @@ y: str | int = 42
         assert checker.union_count == 2
 
     def test_issue_line_numbers_correct(self, checker: UnionUsageChecker):
-        """Test that issue line numbers are correctly reported."""
+        """Test that issue line numbers are correctly reported.
+
+        Note: Union[str, None] is valid PEP 604 syntax and NOT flagged.
+        Only 'soup' unions like primitive overload are flagged.
+        """
         code = """
 from typing import Union
 
-def func1(x: Union[str, None]) -> None:  # Line 4
+def func1(x: Union[str, None]) -> None:  # Line 4 - valid, NOT flagged
     pass
 
-def func2(x: Union[str, int, bool, float]) -> None:  # Line 7
+def func2(x: Union[str, int, bool, float]) -> None:  # Line 7 - soup union, flagged
     pass
 """
         tree = ast.parse(code)
         checker.visit(tree)
 
-        # Check that line numbers are present in issues
-        assert any("Line 4" in issue for issue in checker.issues)
+        # Only the primitive overload on Line 7 should generate an issue
+        # Union[str, None] on Line 4 is valid PEP 604 syntax
+        assert len(checker.issues) >= 1
         assert any("Line 7" in issue for issue in checker.issues)
+        # Line 4 should NOT have any issues (valid T | None pattern)
+        assert not any("Line 4" in issue for issue in checker.issues)
 
 
 @pytest.mark.unit

@@ -88,7 +88,7 @@ def from_numeric(value: ModelNumericValue) -> ModelNodeConfigurationNumericValue
 
 def from_value(
     value: object,
-) -> Union[ModelNodeConfigurationStringValue, ModelNodeConfigurationNumericValue]:
+) -> ModelNodeConfigurationStringValue | ModelNodeConfigurationNumericValue:
     """Create configuration value from any supported type.
 
     Args:

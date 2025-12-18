@@ -210,7 +210,6 @@ ignore = [
     "S311",      # Suspicious non-cryptographic random usage (technical debt)
     "S324",      # Hashlib insecure hash function (technical debt)
     "PLR1714",   # Repeated equality comparison (technical debt)
-    "UP007",     # Non pep604 annotation (technical debt)
     "RUF012",    # Mutable class default (technical debt)
     "TRY401",    # Verbose log message (technical debt)
     "S105",      # Hardcoded password string (technical debt)

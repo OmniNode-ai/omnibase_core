@@ -25,15 +25,13 @@ class ModelCustomFilters(BaseModel):
     # union-ok: discriminated_model_union - All filter types share filter_type discriminator field
     filters: dict[
         str,
-        Union[
-            ModelStringFilter,
-            ModelNumericFilter,
-            ModelDateTimeFilter,
-            ModelListFilter,
-            ModelMetadataFilter,
-            ModelStatusFilter,
-            ModelComplexFilter,
-        ],
+        ModelStringFilter
+        | ModelNumericFilter
+        | ModelDateTimeFilter
+        | ModelListFilter
+        | ModelMetadataFilter
+        | ModelStatusFilter
+        | ModelComplexFilter,
     ] = Field(default_factory=dict, description="Named custom filters")
 
     def add_string_filter(self, name: str, pattern: str, **kwargs: Any) -> None:
@@ -70,15 +68,13 @@ class ModelCustomFilters(BaseModel):
     def get_filter(
         self, name: str
     ) -> (
-        Union[
-            ModelStringFilter,
-            ModelNumericFilter,
-            ModelDateTimeFilter,
-            ModelListFilter,
-            ModelMetadataFilter,
-            ModelStatusFilter,
-            ModelComplexFilter,
-        ]
+        ModelStringFilter
+        | ModelNumericFilter
+        | ModelDateTimeFilter
+        | ModelListFilter
+        | ModelMetadataFilter
+        | ModelStatusFilter
+        | ModelComplexFilter
         | None
     ):
         """Get a filter by name."""
@@ -99,15 +95,13 @@ class ModelCustomFilters(BaseModel):
         # union-ok: discriminated_model_union - All filter types share filter_type discriminator field
         filters: dict[
             str,
-            Union[
-                ModelStringFilter,
-                ModelNumericFilter,
-                ModelDateTimeFilter,
-                ModelListFilter,
-                ModelMetadataFilter,
-                ModelStatusFilter,
-                ModelComplexFilter,
-            ],
+            ModelStringFilter
+            | ModelNumericFilter
+            | ModelDateTimeFilter
+            | ModelListFilter
+            | ModelMetadataFilter
+            | ModelStatusFilter
+            | ModelComplexFilter,
         ] = {}
 
         for name, filter_data in data.items():

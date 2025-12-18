@@ -4,7 +4,7 @@ Action Payload Type Hierarchies.
 Re-exports all payload types from their individual files and provides factory functions.
 """
 
-from typing import Any, Union
+from typing import Any
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
@@ -41,18 +41,18 @@ from omnibase_core.models.core.model_validation_action_payload import (
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # union-ok: discriminated_model_union - Type alias for external consumers
-SpecificActionPayload = Union[
-    ModelLifecycleActionPayload,
-    ModelOperationalActionPayload,
-    ModelDataActionPayload,
-    ModelValidationActionPayload,
-    ModelManagementActionPayload,
-    ModelTransformationActionPayload,
-    ModelMonitoringActionPayload,
-    ModelRegistryActionPayload,
-    ModelFilesystemActionPayload,
-    ModelCustomActionPayload,
-]
+SpecificActionPayload = (
+    ModelLifecycleActionPayload
+    | ModelOperationalActionPayload
+    | ModelDataActionPayload
+    | ModelValidationActionPayload
+    | ModelManagementActionPayload
+    | ModelTransformationActionPayload
+    | ModelMonitoringActionPayload
+    | ModelRegistryActionPayload
+    | ModelFilesystemActionPayload
+    | ModelCustomActionPayload
+)
 
 
 def create_specific_action_payload(
