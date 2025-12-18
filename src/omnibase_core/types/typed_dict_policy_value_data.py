@@ -5,7 +5,7 @@ TypedDict for policy value data structures.
 Used by ModelPolicyValue.infer_value_type() and as_dict() methods.
 """
 
-from typing import Literal, TypedDict, Union
+from typing import Literal, TypedDict
 
 
 class TypedDictPolicyValueData(TypedDict, total=True):
@@ -23,7 +23,7 @@ class TypedDictPolicyValueData(TypedDict, total=True):
         metadata: Optional string metadata for audit and tracking
     """
 
-    value: Union[None, bool, int, float, str, list[object], dict[str, object]]
+    value: None | bool | int | float | str | list[object] | dict[str, object]
     value_type: Literal["none", "bool", "int", "float", "str", "list", "dict"]
     is_sensitive: bool
     metadata: dict[str, str]
@@ -43,7 +43,7 @@ class TypedDictPolicyValueInput(TypedDict, total=False):
         metadata: Optional metadata (optional)
     """
 
-    value: Union[None, bool, int, float, str, list[object], dict[str, object]]
+    value: None | bool | int | float | str | list[object] | dict[str, object]
     value_type: Literal["none", "bool", "int", "float", "str", "list", "dict"]
     is_sensitive: bool
     metadata: dict[str, str]
