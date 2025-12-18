@@ -28,7 +28,7 @@ Breaking this chain (e.g., adding runtime import from models.*) will cause circu
 """
 
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any
+from typing import Any
 from uuid import UUID, uuid4
 
 # Import required enums from the same package

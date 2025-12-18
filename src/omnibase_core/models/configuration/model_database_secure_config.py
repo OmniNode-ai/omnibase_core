@@ -11,10 +11,6 @@ from omnibase_core.models.configuration.model_connection_parse_result import (
     PoolRecommendations,
 )
 from omnibase_core.models.configuration.model_latency_profile import ModelLatencyProfile
-from omnibase_core.models.configuration.model_pool_recommendations import (
-    ModelPoolPerformanceProfile,
-    ModelPoolRecommendations,
-)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.security.model_secure_credentials import (
     ModelSecureCredentials,

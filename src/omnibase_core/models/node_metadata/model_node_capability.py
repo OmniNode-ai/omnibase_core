@@ -7,7 +7,6 @@ descriptions, and dependencies for each capability.
 
 from __future__ import annotations
 
-from typing import Union
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -95,9 +94,7 @@ class ModelNodeCapability(BaseModel):
     example_config: (
         dict[
             str,
-            Union[
-                ModelNodeConfigurationStringValue, ModelNodeConfigurationNumericValue
-            ],
+            ModelNodeConfigurationStringValue | ModelNodeConfigurationNumericValue,
         ]
         | None
     ) = Field(

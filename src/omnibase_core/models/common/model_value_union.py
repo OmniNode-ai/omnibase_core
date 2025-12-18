@@ -46,7 +46,7 @@ Safe Runtime Imports (OK to import at module level):
 from __future__ import annotations
 
 import math
-from typing import ClassVar, Literal, Union
+from typing import ClassVar, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -89,7 +89,7 @@ class ModelValueUnion(BaseModel):
     MAX_DICT_SIZE: ClassVar[int] = 1000
 
     # union-ok: discriminated_union - companion value_type Literal field provides type safety
-    value: Union[bool, int, float, str, list[object], dict[str, object]] = Field(
+    value: bool | int | float | str | list[object] | dict[str, object] = Field(
         description="The actual value",
     )
 
@@ -279,7 +279,7 @@ class ModelValueUnion(BaseModel):
     # union-ok: discriminated_union - return type matches discriminated value field
     def get_value(
         self,
-    ) -> Union[bool, int, float, str, list[object], dict[str, object]]:
+    ) -> bool | int | float | str | list[object] | dict[str, object]:
         """
         Get the stored value with proper type.
 

@@ -4,7 +4,7 @@ SchemaProperty model.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 

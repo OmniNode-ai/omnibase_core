@@ -8,8 +8,6 @@ step outputs where values are resolved from path expressions.
 
 from __future__ import annotations
 
-from typing import Any
-
 # Note: MappingResult values can be any type resolved from path expressions
 # (strings, numbers, dicts, lists, objects, etc.)
 # We use object as the value type since it's more specific than Any

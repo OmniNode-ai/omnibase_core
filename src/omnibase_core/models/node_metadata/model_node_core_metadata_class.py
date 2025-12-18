@@ -4,7 +4,7 @@ Node Core Metadata Model.
 Core node metadata with essential identification and status information.
 """
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field

@@ -9,9 +9,6 @@ from omnibase_core.models.primitives.model_semver import (
     parse_semver_from_string,
 )
 
-if TYPE_CHECKING:
-    from omnibase_core.types.type_serializable_value import SerializedDict
-
 
 class ModelSemVerConstraint(BaseModel):
     """Strongly typed semver constraint - no string support.

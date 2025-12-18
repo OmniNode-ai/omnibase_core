@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 # === OmniNode:Metadata ===
 # author: OmniNode Team
 # copyright: OmniNode.ai
@@ -20,8 +22,7 @@
 # uuid: f1f6dff2-153e-4b8a-9afe-9a64becb146f
 # version: 1.0.0
 # === /OmniNode:Metadata ===
-
-from collections.abc import Mapping
+import types
 from typing import Union
 
 from omnibase_core.enums import EnumNodeMetadataField
@@ -73,7 +74,7 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
 
     def canonicalize_metadata_block(
         self,
-        metadata_block: Union[Mapping[str, object], "NodeMetadataBlock"],
+        metadata_block: dict[str, object] | NodeMetadataBlock,
         volatile_fields: tuple[EnumNodeMetadataField, ...] = (
             EnumNodeMetadataField.HASH,
             EnumNodeMetadataField.LAST_MODIFIED_AT,
@@ -145,7 +146,8 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
                     version_value = ModelSemVer(major=0, minor=1, patch=0)
 
                 # Validate hash field format - must be 64 hex characters
-                hash_value = original_dict.get("hash", "0" * 64)
+                hash_value_raw = original_dict.get("hash", "0" * 64)
+                hash_value = str(hash_value_raw) if hash_value_raw else "0" * 64
                 if hash_value and (
                     len(hash_value) != 64
                     or not all(c in "0123456789abcdefABCDEF" for c in hash_value)
@@ -154,7 +156,8 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
                     hash_value = "0" * 64
 
                 # Use deterministic UUID based on name for consistency (or random if no name)
-                name = original_dict.get("name", "unknown")
+                name_raw = original_dict.get("name", "unknown")
+                name = str(name_raw) if name_raw else "unknown"
                 default_uuid = str(uuid_lib.uuid5(uuid_lib.NAMESPACE_DNS, name))
 
                 defaults = {
@@ -212,8 +215,16 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
                 continue
             origin = getattr(annotation, "__origin__", None)
 
-            # Check for Union types
-            if origin is Union and hasattr(annotation, "__args__"):
+            # Check for Union types (both typing.Union and PEP 604 | syntax)
+            # Note: PEP 604 unions (str | None) don't have __origin__ via getattr,
+            # so we use isinstance(annotation, types.UnionType) to detect them
+            is_union = (
+                origin is Union  # Handles typing.Union
+                or isinstance(
+                    annotation, types.UnionType
+                )  # Handles PEP 604 (str | None)
+            )
+            if is_union and hasattr(annotation, "__args__"):
                 args = annotation.__args__
                 if str in args:
                     string_fields.add(name)

@@ -22,7 +22,6 @@ from omnibase_core.constants.constants_effect_limits import (
 
 from .model_effect_circuit_breaker import ModelEffectCircuitBreaker
 from .model_effect_io_configs import (
-    EffectIOConfig,
     ModelDbIOConfig,
     ModelFilesystemIOConfig,
     ModelHttpIOConfig,

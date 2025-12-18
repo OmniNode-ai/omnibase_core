@@ -7,7 +7,7 @@ for proper type safety and validation of node configurations.
 
 from __future__ import annotations
 
-from typing import Any, Literal, Union
+from typing import Any, Literal
 
 from pydantic import BaseModel, Discriminator, Field
 
@@ -88,7 +88,7 @@ def from_numeric(value: ModelNumericValue) -> ModelNodeConfigurationNumericValue
 
 def from_value(
     value: object,
-) -> Union[ModelNodeConfigurationStringValue, ModelNodeConfigurationNumericValue]:
+) -> ModelNodeConfigurationStringValue | ModelNodeConfigurationNumericValue:
     """Create configuration value from any supported type.
 
     Args:

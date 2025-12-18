@@ -3,7 +3,7 @@
 ONEX discriminated union types for effect result patterns.
 """
 
-from typing import Annotated, Any, Union
+from typing import Annotated, Any
 
 from pydantic import Discriminator, Field
 
@@ -29,12 +29,10 @@ def get_effect_result_discriminator(v: Any) -> str:
 
 # Type alias with discriminator for Pydantic validation
 ModelEffectResult = Annotated[
-    Union[
-        ModelEffectResultDict,
-        ModelEffectResultBool,
-        ModelEffectResultStr,
-        ModelEffectResultList,
-    ],
+    ModelEffectResultDict
+    | ModelEffectResultBool
+    | ModelEffectResultStr
+    | ModelEffectResultList,
     Field(discriminator="result_type"),
 ]
 

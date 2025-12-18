@@ -5,7 +5,7 @@ Provides type-safe structure for monitoring dashboard statistics returned by
 ProtocolPerformanceMonitor.get_monitoring_dashboard().
 """
 
-from typing import NotRequired, TypedDict
+from typing import TypedDict
 
 
 class TypedDictMonitoringDashboard(TypedDict, total=False):
