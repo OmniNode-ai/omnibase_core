@@ -27,6 +27,7 @@ from uuid import UUID, uuid4
 import pytest
 from pydantic import BaseModel, ValidationError
 
+from omnibase_core.models.intents import ModelRegistrationRecordBase
 from omnibase_core.models.registration import (
     ModelDualRegistrationOutcome,
     ModelRegistrationPayload,
@@ -54,10 +55,10 @@ def correlation_id() -> UUID:
 
 
 @pytest.fixture
-def sample_record() -> BaseModel:
+def sample_record() -> ModelRegistrationRecordBase:
     """Provide a sample Pydantic record for payload tests."""
 
-    class SampleRecord(BaseModel):
+    class SampleRecord(ModelRegistrationRecordBase):
         node_id: str
         node_type: str
         status: str
@@ -67,7 +68,7 @@ def sample_record() -> BaseModel:
 
 @pytest.fixture
 def sample_payload(
-    node_id: UUID, deployment_id: UUID, sample_record: BaseModel
+    node_id: UUID, deployment_id: UUID, sample_record: ModelRegistrationRecordBase
 ) -> ModelRegistrationPayload:
     """Provide a fully populated ModelRegistrationPayload."""
     return ModelRegistrationPayload(
@@ -136,7 +137,10 @@ class TestModelRegistrationPayload:
     """Tests for ModelRegistrationPayload."""
 
     def test_valid_construction(
-        self, node_id: UUID, deployment_id: UUID, sample_record: BaseModel
+        self,
+        node_id: UUID,
+        deployment_id: UUID,
+        sample_record: ModelRegistrationRecordBase,
     ) -> None:
         """Test valid payload construction with all required fields."""
         payload = ModelRegistrationPayload(
@@ -161,7 +165,10 @@ class TestModelRegistrationPayload:
         assert payload.postgres_record == sample_record
 
     def test_default_consul_tags(
-        self, node_id: UUID, deployment_id: UUID, sample_record: BaseModel
+        self,
+        node_id: UUID,
+        deployment_id: UUID,
+        sample_record: ModelRegistrationRecordBase,
     ) -> None:
         """Test consul_tags defaults to empty list."""
         payload = ModelRegistrationPayload(
@@ -176,7 +183,10 @@ class TestModelRegistrationPayload:
         assert payload.consul_tags == []
 
     def test_default_health_check(
-        self, node_id: UUID, deployment_id: UUID, sample_record: BaseModel
+        self,
+        node_id: UUID,
+        deployment_id: UUID,
+        sample_record: ModelRegistrationRecordBase,
     ) -> None:
         """Test consul_health_check defaults to None."""
         payload = ModelRegistrationPayload(
@@ -210,7 +220,10 @@ class TestModelRegistrationPayload:
         assert "postgres_record" in str(exc_info.value)
 
     def test_environment_min_length(
-        self, node_id: UUID, deployment_id: UUID, sample_record: BaseModel
+        self,
+        node_id: UUID,
+        deployment_id: UUID,
+        sample_record: ModelRegistrationRecordBase,
     ) -> None:
         """Test environment minimum length validation."""
         with pytest.raises(ValidationError) as exc_info:
@@ -226,7 +239,10 @@ class TestModelRegistrationPayload:
         assert "environment" in str(exc_info.value)
 
     def test_network_id_min_length(
-        self, node_id: UUID, deployment_id: UUID, sample_record: BaseModel
+        self,
+        node_id: UUID,
+        deployment_id: UUID,
+        sample_record: ModelRegistrationRecordBase,
     ) -> None:
         """Test network_id minimum length validation."""
         with pytest.raises(ValidationError) as exc_info:
@@ -242,7 +258,10 @@ class TestModelRegistrationPayload:
         assert "network_id" in str(exc_info.value)
 
     def test_consul_service_id_min_length(
-        self, node_id: UUID, deployment_id: UUID, sample_record: BaseModel
+        self,
+        node_id: UUID,
+        deployment_id: UUID,
+        sample_record: ModelRegistrationRecordBase,
     ) -> None:
         """Test consul_service_id minimum length validation."""
         with pytest.raises(ValidationError) as exc_info:
@@ -258,7 +277,10 @@ class TestModelRegistrationPayload:
         assert "consul_service_id" in str(exc_info.value)
 
     def test_consul_service_name_min_length(
-        self, node_id: UUID, deployment_id: UUID, sample_record: BaseModel
+        self,
+        node_id: UUID,
+        deployment_id: UUID,
+        sample_record: ModelRegistrationRecordBase,
     ) -> None:
         """Test consul_service_name minimum length validation."""
         with pytest.raises(ValidationError) as exc_info:
@@ -274,7 +296,10 @@ class TestModelRegistrationPayload:
         assert "consul_service_name" in str(exc_info.value)
 
     def test_extra_fields_forbidden(
-        self, node_id: UUID, deployment_id: UUID, sample_record: BaseModel
+        self,
+        node_id: UUID,
+        deployment_id: UUID,
+        sample_record: ModelRegistrationRecordBase,
     ) -> None:
         """Test extra fields are rejected."""
         with pytest.raises(ValidationError) as exc_info:
@@ -292,7 +317,10 @@ class TestModelRegistrationPayload:
         assert "extra" in error_str or "unknown_field" in error_str
 
     def test_health_check_with_config(
-        self, node_id: UUID, deployment_id: UUID, sample_record: BaseModel
+        self,
+        node_id: UUID,
+        deployment_id: UUID,
+        sample_record: ModelRegistrationRecordBase,
     ) -> None:
         """Test payload with health check configuration."""
         health_config = {"http": "http://localhost:8080/health", "interval": "10s"}
@@ -309,7 +337,10 @@ class TestModelRegistrationPayload:
         assert payload.consul_health_check == health_config
 
     def test_multiple_tags(
-        self, node_id: UUID, deployment_id: UUID, sample_record: BaseModel
+        self,
+        node_id: UUID,
+        deployment_id: UUID,
+        sample_record: ModelRegistrationRecordBase,
     ) -> None:
         """Test payload with multiple consul tags."""
         tags = ["node_type:compute", "version:1.0", "env:prod"]
@@ -458,7 +489,7 @@ class TestSerializationRoundtrip:
         self, sample_payload: ModelRegistrationPayload
     ) -> None:
         """Test payload model_dump with mode='json' produces valid JSON types."""
-        data = sample_payload.model_dump(mode="json", serialize_as_any=True)
+        data = sample_payload.model_dump(mode="json")
         assert isinstance(data, dict)
         assert isinstance(data["node_id"], str)  # UUID as string
         assert isinstance(data["deployment_id"], str)
@@ -479,7 +510,10 @@ class TestSerializationRoundtrip:
         assert isinstance(data["consul_applied"], bool)
 
     def test_payload_roundtrip_serialization(
-        self, node_id: UUID, deployment_id: UUID, sample_record: BaseModel
+        self,
+        node_id: UUID,
+        deployment_id: UUID,
+        sample_record: ModelRegistrationRecordBase,
     ) -> None:
         """Test payload can be serialized and deserialized."""
         original = ModelRegistrationPayload(
@@ -493,7 +527,7 @@ class TestSerializationRoundtrip:
             consul_health_check={"http": "http://localhost/health"},
             postgres_record=sample_record,
         )
-        data = original.model_dump(mode="json", serialize_as_any=True)
+        data = original.model_dump(mode="json")
         restored = ModelRegistrationPayload.model_validate(data)
 
         assert str(restored.node_id) == str(original.node_id)
@@ -531,7 +565,7 @@ class TestSerializationRoundtrip:
         self, sample_payload: ModelRegistrationPayload
     ) -> None:
         """Test payload survives JSON string round-trip."""
-        json_str = sample_payload.model_dump_json(serialize_as_any=True)
+        json_str = sample_payload.model_dump_json()
         dict_data = json.loads(json_str)
         restored = ModelRegistrationPayload.model_validate(dict_data)
 
@@ -643,6 +677,205 @@ class TestONEXPatterns:
         assert outcome.postgres_applied is True
 
 
+# ---- Test Status Consistency Validation ----
+
+
+@pytest.mark.timeout(5)
+class TestStatusConsistencyValidation:
+    """Tests for status consistency validator in ModelDualRegistrationOutcome.
+
+    The validator enforces domain invariants that prevent construction of
+    inconsistent outcome states. It ensures the status field always matches
+    the actual operation outcomes (postgres_applied and consul_applied flags).
+    """
+
+    def test_success_status_requires_both_operations_succeeded(
+        self, node_id: UUID, correlation_id: UUID
+    ) -> None:
+        """Test status='success' requires both postgres_applied=True and consul_applied=True."""
+        outcome = ModelDualRegistrationOutcome(
+            node_id=node_id,
+            status="success",
+            postgres_applied=True,
+            consul_applied=True,
+            correlation_id=correlation_id,
+        )
+        assert outcome.status == "success"
+        assert outcome.postgres_applied is True
+        assert outcome.consul_applied is True
+
+    def test_success_status_postgres_failed_raises_validation_error(
+        self, node_id: UUID, correlation_id: UUID
+    ) -> None:
+        """Test status='success' with postgres_applied=False raises ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelDualRegistrationOutcome(
+                node_id=node_id,
+                status="success",
+                postgres_applied=False,  # Inconsistent with success
+                consul_applied=True,
+                correlation_id=correlation_id,
+            )
+        error_msg = str(exc_info.value)
+        assert "status='success' requires both" in error_msg
+        assert "postgres_applied and consul_applied to be True" in error_msg
+
+    def test_success_status_consul_failed_raises_validation_error(
+        self, node_id: UUID, correlation_id: UUID
+    ) -> None:
+        """Test status='success' with consul_applied=False raises ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelDualRegistrationOutcome(
+                node_id=node_id,
+                status="success",
+                postgres_applied=True,
+                consul_applied=False,  # Inconsistent with success
+                correlation_id=correlation_id,
+            )
+        error_msg = str(exc_info.value)
+        assert "status='success' requires both" in error_msg
+
+    def test_success_status_both_failed_raises_validation_error(
+        self, node_id: UUID, correlation_id: UUID
+    ) -> None:
+        """Test status='success' with both operations failed raises ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelDualRegistrationOutcome(
+                node_id=node_id,
+                status="success",
+                postgres_applied=False,  # Inconsistent
+                consul_applied=False,  # Inconsistent
+                correlation_id=correlation_id,
+            )
+        error_msg = str(exc_info.value)
+        assert "status='success' requires both" in error_msg
+
+    def test_failed_status_requires_both_operations_failed(
+        self, node_id: UUID, correlation_id: UUID
+    ) -> None:
+        """Test status='failed' requires both postgres_applied=False and consul_applied=False."""
+        outcome = ModelDualRegistrationOutcome(
+            node_id=node_id,
+            status="failed",
+            postgres_applied=False,
+            consul_applied=False,
+            postgres_error="DB connection lost",
+            consul_error="Service unavailable",
+            correlation_id=correlation_id,
+        )
+        assert outcome.status == "failed"
+        assert outcome.postgres_applied is False
+        assert outcome.consul_applied is False
+
+    def test_failed_status_postgres_succeeded_raises_validation_error(
+        self, node_id: UUID, correlation_id: UUID
+    ) -> None:
+        """Test status='failed' with postgres_applied=True raises ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelDualRegistrationOutcome(
+                node_id=node_id,
+                status="failed",
+                postgres_applied=True,  # Inconsistent with failed
+                consul_applied=False,
+                correlation_id=correlation_id,
+            )
+        error_msg = str(exc_info.value)
+        assert "status='failed' requires both" in error_msg
+        assert "postgres_applied and consul_applied to be False" in error_msg
+
+    def test_failed_status_consul_succeeded_raises_validation_error(
+        self, node_id: UUID, correlation_id: UUID
+    ) -> None:
+        """Test status='failed' with consul_applied=True raises ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelDualRegistrationOutcome(
+                node_id=node_id,
+                status="failed",
+                postgres_applied=False,
+                consul_applied=True,  # Inconsistent with failed
+                correlation_id=correlation_id,
+            )
+        error_msg = str(exc_info.value)
+        assert "status='failed' requires both" in error_msg
+
+    def test_failed_status_both_succeeded_raises_validation_error(
+        self, node_id: UUID, correlation_id: UUID
+    ) -> None:
+        """Test status='failed' with both operations succeeded raises ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelDualRegistrationOutcome(
+                node_id=node_id,
+                status="failed",
+                postgres_applied=True,  # Inconsistent
+                consul_applied=True,  # Inconsistent
+                correlation_id=correlation_id,
+            )
+        error_msg = str(exc_info.value)
+        assert "status='failed' requires both" in error_msg
+
+    def test_partial_status_postgres_succeeded_consul_failed(
+        self, node_id: UUID, correlation_id: UUID
+    ) -> None:
+        """Test status='partial' with postgres succeeded, consul failed."""
+        outcome = ModelDualRegistrationOutcome(
+            node_id=node_id,
+            status="partial",
+            postgres_applied=True,
+            consul_applied=False,
+            consul_error="Connection timeout",
+            correlation_id=correlation_id,
+        )
+        assert outcome.status == "partial"
+        assert outcome.postgres_applied is True
+        assert outcome.consul_applied is False
+
+    def test_partial_status_consul_succeeded_postgres_failed(
+        self, node_id: UUID, correlation_id: UUID
+    ) -> None:
+        """Test status='partial' with consul succeeded, postgres failed."""
+        outcome = ModelDualRegistrationOutcome(
+            node_id=node_id,
+            status="partial",
+            postgres_applied=False,
+            consul_applied=True,
+            postgres_error="Database locked",
+            correlation_id=correlation_id,
+        )
+        assert outcome.status == "partial"
+        assert outcome.postgres_applied is False
+        assert outcome.consul_applied is True
+
+    def test_partial_status_both_succeeded_raises_validation_error(
+        self, node_id: UUID, correlation_id: UUID
+    ) -> None:
+        """Test status='partial' with both operations succeeded raises ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelDualRegistrationOutcome(
+                node_id=node_id,
+                status="partial",
+                postgres_applied=True,  # Inconsistent - both succeeded
+                consul_applied=True,  # Inconsistent - both succeeded
+                correlation_id=correlation_id,
+            )
+        error_msg = str(exc_info.value)
+        assert "status='partial' requires exactly one operation to succeed" in error_msg
+
+    def test_partial_status_both_failed_raises_validation_error(
+        self, node_id: UUID, correlation_id: UUID
+    ) -> None:
+        """Test status='partial' with both operations failed raises ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelDualRegistrationOutcome(
+                node_id=node_id,
+                status="partial",
+                postgres_applied=False,  # Inconsistent - both failed
+                consul_applied=False,  # Inconsistent - both failed
+                correlation_id=correlation_id,
+            )
+        error_msg = str(exc_info.value)
+        assert "status='partial' requires exactly one operation to succeed" in error_msg
+
+
 # ---- Test Edge Cases ----
 
 
@@ -650,7 +883,9 @@ class TestONEXPatterns:
 class TestEdgeCases:
     """Tests for edge cases and boundary conditions."""
 
-    def test_uuid_as_string_accepted_payload(self, sample_record: BaseModel) -> None:
+    def test_uuid_as_string_accepted_payload(
+        self, sample_record: ModelRegistrationRecordBase
+    ) -> None:
         """Test UUID can be provided as string."""
         uuid_str = "12345678-1234-5678-1234-567812345678"
         payload = ModelRegistrationPayload(
@@ -676,7 +911,9 @@ class TestEdgeCases:
         )
         assert str(outcome.node_id) == uuid_str
 
-    def test_invalid_uuid_rejected(self, sample_record: BaseModel) -> None:
+    def test_invalid_uuid_rejected(
+        self, sample_record: ModelRegistrationRecordBase
+    ) -> None:
         """Test invalid UUID format is rejected."""
         with pytest.raises(ValidationError) as exc_info:
             ModelRegistrationPayload(
@@ -691,7 +928,10 @@ class TestEdgeCases:
         assert "node_id" in str(exc_info.value)
 
     def test_environment_at_max_length(
-        self, node_id: UUID, deployment_id: UUID, sample_record: BaseModel
+        self,
+        node_id: UUID,
+        deployment_id: UUID,
+        sample_record: ModelRegistrationRecordBase,
     ) -> None:
         """Test environment at max length (100)."""
         payload = ModelRegistrationPayload(
@@ -706,7 +946,10 @@ class TestEdgeCases:
         assert len(payload.environment) == 100
 
     def test_environment_over_max_length_rejected(
-        self, node_id: UUID, deployment_id: UUID, sample_record: BaseModel
+        self,
+        node_id: UUID,
+        deployment_id: UUID,
+        sample_record: ModelRegistrationRecordBase,
     ) -> None:
         """Test environment over max length is rejected."""
         with pytest.raises(ValidationError) as exc_info:
@@ -722,7 +965,10 @@ class TestEdgeCases:
         assert "environment" in str(exc_info.value)
 
     def test_empty_consul_health_check_dict(
-        self, node_id: UUID, deployment_id: UUID, sample_record: BaseModel
+        self,
+        node_id: UUID,
+        deployment_id: UUID,
+        sample_record: ModelRegistrationRecordBase,
     ) -> None:
         """Test empty health check dict is valid."""
         payload = ModelRegistrationPayload(
@@ -738,7 +984,10 @@ class TestEdgeCases:
         assert payload.consul_health_check == {}
 
     def test_special_characters_in_tags(
-        self, node_id: UUID, deployment_id: UUID, sample_record: BaseModel
+        self,
+        node_id: UUID,
+        deployment_id: UUID,
+        sample_record: ModelRegistrationRecordBase,
     ) -> None:
         """Test tags with special characters."""
         tags = ["env:prod", "team:platform/core", "version:1.0.0-beta+build.123"]
@@ -754,30 +1003,106 @@ class TestEdgeCases:
         )
         assert payload.consul_tags == tags
 
-    def test_long_error_message(self, node_id: UUID, correlation_id: UUID) -> None:
-        """Test long error message is accepted."""
-        long_error = "x" * 10000
+    def test_error_message_under_max_length(
+        self, node_id: UUID, correlation_id: UUID
+    ) -> None:
+        """Test error message under 2000 chars is accepted."""
+        error_msg = "x" * 1999
         outcome = ModelDualRegistrationOutcome(
             node_id=node_id,
             status="failed",
             postgres_applied=False,
             consul_applied=False,
-            postgres_error=long_error,
+            postgres_error=error_msg,
+            consul_error=error_msg,
             correlation_id=correlation_id,
         )
-        assert outcome.postgres_error == long_error
-        assert len(outcome.postgres_error) == 10000
+        assert outcome.postgres_error == error_msg
+        assert len(outcome.postgres_error) == 1999
+        assert outcome.consul_error == error_msg
+        assert len(outcome.consul_error) == 1999
+
+    def test_error_message_at_max_length(
+        self, node_id: UUID, correlation_id: UUID
+    ) -> None:
+        """Test error message exactly at 2000 chars is accepted."""
+        error_msg = "x" * 2000
+        outcome = ModelDualRegistrationOutcome(
+            node_id=node_id,
+            status="failed",
+            postgres_applied=False,
+            consul_applied=False,
+            postgres_error=error_msg,
+            consul_error=error_msg,
+            correlation_id=correlation_id,
+        )
+        assert outcome.postgres_error == error_msg
+        assert len(outcome.postgres_error) == 2000
+        assert outcome.consul_error == error_msg
+        assert len(outcome.consul_error) == 2000
+
+    def test_postgres_error_over_max_length_rejected(
+        self, node_id: UUID, correlation_id: UUID
+    ) -> None:
+        """Test postgres_error over 2000 chars raises ValidationError."""
+        error_msg = "x" * 2001
+        with pytest.raises(ValidationError) as exc_info:
+            ModelDualRegistrationOutcome(
+                node_id=node_id,
+                status="failed",
+                postgres_applied=False,
+                consul_applied=True,
+                postgres_error=error_msg,
+                correlation_id=correlation_id,
+            )
+        assert "postgres_error" in str(exc_info.value)
+
+    def test_consul_error_over_max_length_rejected(
+        self, node_id: UUID, correlation_id: UUID
+    ) -> None:
+        """Test consul_error over 2000 chars raises ValidationError."""
+        error_msg = "x" * 2001
+        with pytest.raises(ValidationError) as exc_info:
+            ModelDualRegistrationOutcome(
+                node_id=node_id,
+                status="failed",
+                postgres_applied=True,
+                consul_applied=False,
+                consul_error=error_msg,
+                correlation_id=correlation_id,
+            )
+        assert "consul_error" in str(exc_info.value)
 
     def test_outcome_all_status_values(
         self, node_id: UUID, correlation_id: UUID
     ) -> None:
-        """Test all valid status values."""
-        for status in ["success", "partial", "failed"]:
-            outcome = ModelDualRegistrationOutcome(
-                node_id=node_id,
-                status=status,
-                postgres_applied=True,
-                consul_applied=True,
-                correlation_id=correlation_id,
-            )
-            assert outcome.status == status
+        """Test all valid status values with correct applied flags."""
+        # Success: both operations succeeded
+        success = ModelDualRegistrationOutcome(
+            node_id=node_id,
+            status="success",
+            postgres_applied=True,
+            consul_applied=True,
+            correlation_id=correlation_id,
+        )
+        assert success.status == "success"
+
+        # Partial: one succeeded, one failed
+        partial = ModelDualRegistrationOutcome(
+            node_id=node_id,
+            status="partial",
+            postgres_applied=True,
+            consul_applied=False,
+            correlation_id=correlation_id,
+        )
+        assert partial.status == "partial"
+
+        # Failed: both operations failed
+        failed = ModelDualRegistrationOutcome(
+            node_id=node_id,
+            status="failed",
+            postgres_applied=False,
+            consul_applied=False,
+            correlation_id=correlation_id,
+        )
+        assert failed.status == "failed"

@@ -81,7 +81,7 @@ from __future__ import annotations
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class ModelDualRegistrationOutcome(BaseModel):
@@ -163,11 +163,13 @@ class ModelDualRegistrationOutcome(BaseModel):
     # ---- Error Information ----
     postgres_error: str | None = Field(
         default=None,
-        description="Error message if PostgreSQL registration failed.",
+        description="Error message if PostgreSQL registration failed (max 2000 characters).",
+        max_length=2000,
     )
     consul_error: str | None = Field(
         default=None,
-        description="Error message if Consul registration failed.",
+        description="Error message if Consul registration failed (max 2000 characters).",
+        max_length=2000,
     )
 
     # ---- Tracing ----
@@ -178,6 +180,75 @@ class ModelDualRegistrationOutcome(BaseModel):
             "to the originating request."
         ),
     )
+
+    @model_validator(mode="after")
+    def validate_status_consistency(self) -> ModelDualRegistrationOutcome:
+        """Validate that status field matches the applied flags.
+
+        This validator enforces domain invariants for the three possible status values:
+
+        1. status="success": Requires BOTH postgres_applied=True AND consul_applied=True
+           - Complete success means both operations succeeded
+           - Cannot have success status if either operation failed
+
+        2. status="failed": Requires BOTH postgres_applied=False AND consul_applied=False
+           - Complete failure means both operations failed
+           - Cannot have failed status if either operation succeeded
+
+        3. status="partial": Requires EXACTLY ONE operation to succeed (XOR condition)
+           - Partial means one succeeded and one failed
+           - Cannot have partial if both succeeded or both failed
+
+        These invariants ensure the model cannot be constructed in an inconsistent state,
+        preventing bugs where status doesn't match the actual operation outcomes.
+
+        Returns:
+            Self after validation passes.
+
+        Raises:
+            ValueError: If status doesn't match the applied flags.
+
+        Example:
+            >>> from uuid import uuid4
+            >>>
+            >>> # Valid: status="success" with both operations succeeded
+            >>> ModelDualRegistrationOutcome(
+            ...     node_id=uuid4(),
+            ...     status="success",
+            ...     postgres_applied=True,
+            ...     consul_applied=True,
+            ...     correlation_id=uuid4(),
+            ... )
+            >>>
+            >>> # Invalid: status="success" but Consul failed
+            >>> ModelDualRegistrationOutcome(
+            ...     node_id=uuid4(),
+            ...     status="success",  # Will raise ValueError
+            ...     postgres_applied=True,
+            ...     consul_applied=False,
+            ...     correlation_id=uuid4(),
+            ... )
+            Traceback (most recent call last):
+                ...
+            ValueError: status='success' requires both postgres_applied and consul_applied to be True
+        """
+        both_succeeded = self.postgres_applied and self.consul_applied
+        both_failed = not self.postgres_applied and not self.consul_applied
+
+        if self.status == "success" and not both_succeeded:
+            raise ValueError(
+                "status='success' requires both postgres_applied and consul_applied to be True"
+            )
+        if self.status == "failed" and not both_failed:
+            raise ValueError(
+                "status='failed' requires both postgres_applied and consul_applied to be False"
+            )
+        if self.status == "partial" and (both_succeeded or both_failed):
+            raise ValueError(
+                "status='partial' requires exactly one operation to succeed"
+            )
+
+        return self
 
 
 __all__ = ["ModelDualRegistrationOutcome"]

@@ -80,9 +80,12 @@ See Also:
 
 from __future__ import annotations
 
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
+
+from omnibase_core.models.intents import ModelRegistrationRecordBase
 
 
 class ModelRegistrationPayload(BaseModel):
@@ -178,13 +181,20 @@ class ModelRegistrationPayload(BaseModel):
         default_factory=list,
         description="List of tags for Consul service metadata.",
     )
-    consul_health_check: dict[str, str] | None = Field(
+    # ONEX_EXCLUDE: dict_str_any - Consul health check schema requires flexible types (booleans, integers, nested objects)
+    consul_health_check: dict[str, Any] | None = Field(
         default=None,
-        description="Optional health check configuration for Consul.",
+        description=(
+            "Optional health check configuration for Consul. "
+            "Supports full Consul health check schema including boolean fields "
+            "(e.g., tls_skip_verify, TCPUseTLS), integer fields "
+            "(e.g., SuccessBeforePassing), and nested objects/arrays "
+            "(e.g., header, body)."
+        ),
     )
 
     # ---- PostgreSQL Record (Source of Truth) ----
-    postgres_record: BaseModel = Field(
+    postgres_record: ModelRegistrationRecordBase = Field(
         ...,
         description=(
             "The registration record to persist in PostgreSQL. "
