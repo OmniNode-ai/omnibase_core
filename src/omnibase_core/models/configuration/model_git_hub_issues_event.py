@@ -63,11 +63,14 @@ class ModelGitHubIssuesEvent(BaseModel):
     @field_validator("action")
     @classmethod
     def validate_action_context(cls, v: Any, info: ValidationInfo) -> Any:
-        """Validate action corresponds to appropriate context data.
+        """Pass-through validator for action field (validation handled by Field pattern).
 
-        Note: Label and assignee context validation happens in validate_label_context
-        and validate_assignee_context validators. This validator only ensures
-        the action is in expected format (already validated by Field pattern).
+        The action field is already validated by the Field pattern constraint, which
+        enforces valid GitHub action strings. Context-specific validation (ensuring
+        label/assignee data is present for corresponding actions) happens in the
+        validate_label_context and validate_assignee_context validators.
+
+        This validator exists as a hook point for future cross-field validation if needed.
         """
         return v
 

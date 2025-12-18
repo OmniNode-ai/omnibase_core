@@ -690,6 +690,36 @@ poetry run ruff check --fix src/ tests/
 
 **Configuration**: See `[tool.ruff]` in pyproject.toml
 
+### Type Annotation Style (PEP 604)
+
+**Always use PEP 604 union syntax** (enforced by ruff rule UP007):
+
+```python
+# ✅ Correct - PEP 604 syntax
+def process(value: str | None) -> int | str:
+    ...
+
+def get_item(key: str) -> Item | None:
+    ...
+
+# ❌ Wrong - Legacy syntax
+from typing import Optional, Union
+
+def process(value: Optional[str]) -> Union[int, str]:  # Don't use
+    ...
+
+def get_item(key: str) -> Optional[Item]:  # Don't use
+    ...
+```
+
+**Why PEP 604?**
+- Cleaner, more readable syntax
+- Native Python 3.10+ feature (project requires 3.12+)
+- No imports needed from `typing` module for unions
+- Automatically enforced by ruff UP007 rule
+
+**Migration**: Run `poetry run ruff check --fix src/ tests/` to auto-convert legacy syntax.
+
 ### Pre-commit Hooks
 
 ```bash
