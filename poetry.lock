@@ -1502,19 +1502,19 @@ tenacity = ">=8.5.0,<10.0"
 
 [[package]]
 name = "llama-index"
-version = "0.14.7"
+version = "0.14.10"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.9"
 groups = ["main"]
 files = [
-    {file = "llama_index-0.14.7-py3-none-any.whl", hash = "sha256:80a5a1390f49e4c059ae733a95b7449a43cf90b56dab9100d78bfa9a1963a158"},
-    {file = "llama_index-0.14.7.tar.gz", hash = "sha256:cdc269b332e7946efb6d8f13a0eb38cecdea44cd69ebfe40e7ea9c716bdb736b"},
+    {file = "llama_index-0.14.10-py3-none-any.whl", hash = "sha256:6f03a2a8a82c059705ba54b92d4e96c8d8ba4ce70103b07825e55110452aec84"},
+    {file = "llama_index-0.14.10.tar.gz", hash = "sha256:49f539e4c68ddf77bb2a10f80f49bd950de3a91fe0e3ecd3b2d55a6fbc05c31e"},
 ]
 
 [package.dependencies]
 llama-index-cli = {version = ">=0.5.0,<0.6", markers = "python_version > \"3.9\""}
-llama-index-core = ">=0.14.7,<0.15.0"
+llama-index-core = ">=0.14.10,<0.15.0"
 llama-index-embeddings-openai = ">=0.5.0,<0.6"
 llama-index-indices-managed-llama-cloud = ">=0.4.0"
 llama-index-llms-openai = ">=0.6.0,<0.7"
@@ -1541,14 +1541,14 @@ llama-index-llms-openai = ">=0.6.0,<0.7"
 
 [[package]]
 name = "llama-index-core"
-version = "0.14.7"
+version = "0.14.10"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.9"
 groups = ["main"]
 files = [
-    {file = "llama_index_core-0.14.7-py3-none-any.whl", hash = "sha256:568591a27dd171f9d5299155920bfef6bac9e7fa59df200404877a57b7973765"},
-    {file = "llama_index_core-0.14.7.tar.gz", hash = "sha256:ceacf30131b84c72e4881748ef428f5392ab484adf1c0e7e0f1048b2b98eb70e"},
+    {file = "llama_index_core-0.14.10-py3-none-any.whl", hash = "sha256:ea0d563c777a7209664594588e3f0885a4784a1ae39dddaa28526867c79a3d65"},
+    {file = "llama_index_core-0.14.10.tar.gz", hash = "sha256:b930aac3161a5e145f4003e81ba94cbef062228a0d3ef39752e03471b0cb386b"},
 ]
 
 [package.dependencies]
@@ -4242,4 +4242,4 @@ full = ["psutil"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "8b14d5a1aa3cbc5d843c950157044622eaa8073feba22b82e5aea61cb3b60cbb"
+content-hash = "5126d4d515c5c1ee6b356a36f502776d046ff01d5f59aaa398caf586888983e3"
