@@ -53,3 +53,27 @@ def allow_dict_str_any(reason: str) -> Callable[[ClassType], ClassType]:
         return cls
 
     return decorator
+
+
+def allow_string_id(reason: str) -> Callable[[ClassType], ClassType]:
+    """
+    Decorator to allow string ID fields instead of UUID.
+
+    Use this when integrating with external systems that require string identifiers
+    (e.g., Consul service IDs, Kubernetes resource names, cloud provider resource IDs).
+
+    Args:
+        reason: Explanation for why string IDs are needed (e.g., external system constraint)
+
+    Returns:
+        The decorator function
+    """
+
+    def decorator(cls: ClassType) -> ClassType:
+        # Add metadata to the class for documentation
+        if not hasattr(cls, "_allow_string_id_reasons"):
+            cls._allow_string_id_reasons = []  # type: ignore[attr-defined]
+        cls._allow_string_id_reasons.append(reason)  # type: ignore[attr-defined]
+        return cls
+
+    return decorator

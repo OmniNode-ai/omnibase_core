@@ -515,7 +515,9 @@ class TestModelIntentMetadata:
     def test_model_docstring(self):
         """Test ModelIntent docstring."""
         assert ModelIntent.__doc__ is not None
-        assert "Intent declaration" in ModelIntent.__doc__
+        # ModelIntent is now for extension/plugin workflows
+        assert "intent declaration" in ModelIntent.__doc__.lower()
+        assert "extension" in ModelIntent.__doc__.lower()
 
     def test_model_class_name(self):
         """Test ModelIntent class name."""

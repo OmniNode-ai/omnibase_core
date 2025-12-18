@@ -16,6 +16,7 @@ Module Organization:
 - base/: Common type aliases and base protocols (ContextValue, SemVer, etc.)
 - container/: DI container and service registry protocols
 - event_bus/: Event-driven messaging protocols
+- intents/: Intent-related protocols (ProtocolRegistrationRecord)
 - runtime/: Runtime handler protocols (ProtocolHandler)
 - types/: Type constraint protocols (Configurable, Executable, etc.)
 - core.py: Core operation protocols (CanonicalSerializer)
@@ -123,6 +124,11 @@ from omnibase_core.protocols.event_bus import (
 # HTTP Module Exports
 # =============================================================================
 from omnibase_core.protocols.http import ProtocolHttpClient, ProtocolHttpResponse
+
+# =============================================================================
+# Intents Module Exports
+# =============================================================================
+from omnibase_core.protocols.intents import ProtocolRegistrationRecord
 
 # =============================================================================
 # Runtime Module Exports
@@ -275,6 +281,10 @@ __all__ = [
     # ==========================================================================
     "ProtocolHttpClient",
     "ProtocolHttpResponse",
+    # ==========================================================================
+    # Intents Module
+    # ==========================================================================
+    "ProtocolRegistrationRecord",
     # ==========================================================================
     # Runtime Module
     # ==========================================================================
