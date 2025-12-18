@@ -45,7 +45,7 @@ Validators:
 """
 
 # string-version-ok: Package metadata follows PEP 396 standard Python practice
-__version__ = "0.3.0"
+__version__ = "0.5.2"
 
 # Lazy import to avoid circular dependencies
 # Import error classes and validation functions only when accessed

@@ -5,10 +5,12 @@ Circuit breaker model for implementing fault tolerance and preventing
 cascade failures in load balancing systems.
 """
 
+import threading
 from datetime import UTC, datetime, timedelta
+from typing import ClassVar
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
 from .model_circuit_breaker_metadata import ModelCircuitBreakerMetadata
 
@@ -21,35 +23,29 @@ class ModelCircuitBreaker(BaseModel):
     failures by monitoring node health and temporarily disabling failing nodes.
 
     Thread Safety:
-        This class is NOT thread-safe. Mutable state includes:
-        - failure_count, success_count, total_requests, half_open_requests
-        - state, last_failure_time, last_state_change
+        This class IS thread-safe. All state-modifying operations are protected
+        by an internal threading.Lock. This includes:
+        - Counter updates (failure_count, success_count, total_requests, half_open_requests)
+        - State transitions (closed -> open -> half_open -> closed)
+        - All public methods that modify state
 
-        Concurrent access from multiple threads may cause:
-        - Counter corruption (missed increments)
-        - Incorrect state transitions (race between check and update)
-        - False circuit trips or resets
+        The lock is stored as a private attribute and is automatically created
+        when the model is instantiated.
 
-        Mitigation Options:
-        1. **Thread-local instances** (recommended): Each thread gets its own
-           circuit breaker via threading.local()
-        2. **Synchronized wrapper**: Wrap all methods with threading.Lock
-        3. **Single-threaded access**: Ensure only one thread accesses the instance
-
-        See docs/guides/THREADING.md for detailed examples of thread-safe
-        circuit breaker patterns including ThreadSafeCircuitBreaker wrapper.
-
-    Example (thread-safe usage):
-        >>> import threading
-        >>> thread_local = threading.local()
-        >>>
-        >>> def get_circuit_breaker(service_name: str) -> ModelCircuitBreaker:
-        ...     if not hasattr(thread_local, 'breakers'):
-        ...         thread_local.breakers = {}
-        ...     if service_name not in thread_local.breakers:
-        ...         thread_local.breakers[service_name] = ModelCircuitBreaker()
-        ...     return thread_local.breakers[service_name]
+    Example:
+        >>> breaker = ModelCircuitBreaker()
+        >>> # Safe to use from multiple threads
+        >>> breaker.record_failure()
+        >>> breaker.record_success()
+        >>> if breaker.should_allow_request():
+        ...     # Execute request
+        ...     pass
     """
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    # Private lock for thread-safe operations
+    _lock: threading.Lock = PrivateAttr(default_factory=threading.Lock)
 
     enabled: bool = Field(
         default=True,
@@ -195,39 +191,41 @@ class ModelCircuitBreaker(BaseModel):
         if not self.enabled:
             return True
 
-        current_time = datetime.now(UTC)
+        with self._lock:
+            current_time = datetime.now(UTC)
 
-        # Clean up old data outside window
-        self._cleanup_old_data(current_time)
+            # Clean up old data outside window
+            self._cleanup_old_data_unlocked(current_time)
 
-        if self.state == "closed":
-            return True
-        if self.state == "open":
-            # Check if timeout has elapsed to transition to half-open
-            if self._should_transition_to_half_open(current_time):
-                self._transition_to_half_open()
+            if self.state == "closed":
                 return True
-            return False
-        if self.state == "half_open":
-            # Allow limited requests in half-open state
-            return self.half_open_requests < self.half_open_max_requests
+            if self.state == "open":
+                # Check if timeout has elapsed to transition to half-open
+                if self._should_transition_to_half_open(current_time):
+                    self._transition_to_half_open_unlocked()
+                    return True
+                return False
+            if self.state == "half_open":
+                # Allow limited requests in half-open state
+                return self.half_open_requests < self.half_open_max_requests
 
-        return False
+            return False
 
     def record_success(self) -> None:
         """Record a successful request"""
         if not self.enabled:
             return
 
-        current_time = datetime.now(UTC)
-        self.total_requests += 1
+        with self._lock:
+            current_time = datetime.now(UTC)
+            self.total_requests += 1
 
-        if self.state == "half_open":
-            self.success_count += 1
-            if self.success_count >= self.success_threshold:
-                self._transition_to_closed()
+            if self.state == "half_open":
+                self.success_count += 1
+                if self.success_count >= self.success_threshold:
+                    self._transition_to_closed_unlocked()
 
-        self._cleanup_old_data(current_time)
+            self._cleanup_old_data_unlocked(current_time)
 
     def record_failure(self, correlation_id: UUID | None = None) -> None:
         """
@@ -249,20 +247,21 @@ class ModelCircuitBreaker(BaseModel):
         if not self.enabled:
             return
 
-        current_time = datetime.now(UTC)
-        self.failure_count += 1
-        self.total_requests += 1
-        self.last_failure_time = current_time
+        with self._lock:
+            current_time = datetime.now(UTC)
+            self.failure_count += 1
+            self.total_requests += 1
+            self.last_failure_time = current_time
 
-        if self.state == "half_open":
-            # Any failure in half-open transitions back to open
-            self._transition_to_open()
-        elif self.state == "closed":
-            # Check if we should open the circuit
-            if self._should_open_circuit():
-                self._transition_to_open()
+            if self.state == "half_open":
+                # Any failure in half-open transitions back to open
+                self._transition_to_open_unlocked()
+            elif self.state == "closed":
+                # Check if we should open the circuit
+                if self._should_open_circuit():
+                    self._transition_to_open_unlocked()
 
-        self._cleanup_old_data(current_time)
+            self._cleanup_old_data_unlocked(current_time)
 
     def record_slow_call(self, duration_ms: int) -> None:
         """Record a slow call (if slow call detection is enabled)"""
@@ -278,29 +277,44 @@ class ModelCircuitBreaker(BaseModel):
         if not self.enabled:
             return "disabled"
 
-        current_time = datetime.now(UTC)
+        with self._lock:
+            current_time = datetime.now(UTC)
 
-        if self.state == "open" and self._should_transition_to_half_open(current_time):
-            self._transition_to_half_open()
+            if self.state == "open" and self._should_transition_to_half_open(
+                current_time
+            ):
+                self._transition_to_half_open_unlocked()
 
-        return self.state
+            return self.state
 
     def get_failure_rate(self) -> float:
         """Calculate current failure rate"""
+        with self._lock:
+            return self._get_failure_rate_unlocked()
+
+    def _get_failure_rate_unlocked(self) -> float:
+        """Calculate current failure rate (internal, no lock)."""
         if self.total_requests == 0:
             return 0.0
         return self.failure_count / self.total_requests
 
     def force_open(self) -> None:
         """Force circuit breaker to open state"""
-        self._transition_to_open()
+        with self._lock:
+            self._transition_to_open_unlocked()
 
     def force_close(self) -> None:
         """Force circuit breaker to closed state"""
-        self._transition_to_closed()
+        with self._lock:
+            self._transition_to_closed_unlocked()
 
     def reset_state(self) -> None:
         """Reset circuit breaker to initial state"""
+        with self._lock:
+            self._reset_state_unlocked()
+
+    def _reset_state_unlocked(self) -> None:
+        """Reset circuit breaker to initial state (internal, no lock)."""
         self.state = "closed"
         self.failure_count = 0
         self.success_count = 0
@@ -338,7 +352,11 @@ class ModelCircuitBreaker(BaseModel):
         self.reset_state()
 
     def _should_open_circuit(self) -> bool:
-        """Check if circuit should be opened based on failures"""
+        """Check if circuit should be opened based on failures.
+
+        Note: This method is called from within locked sections, so it
+        must not acquire the lock itself to avoid deadlock.
+        """
         # Need minimum requests before considering failure rate
         if self.total_requests < self.minimum_request_threshold:
             return False
@@ -347,8 +365,8 @@ class ModelCircuitBreaker(BaseModel):
         if self.failure_count >= self.failure_threshold:
             return True
 
-        # Check failure rate
-        failure_rate = self.get_failure_rate()
+        # Check failure rate (use unlocked version to avoid deadlock)
+        failure_rate = self._get_failure_rate_unlocked()
         return failure_rate >= self.failure_rate_threshold
 
     def _should_transition_to_half_open(self, current_time: datetime) -> bool:
@@ -360,21 +378,36 @@ class ModelCircuitBreaker(BaseModel):
         return time_since_open.total_seconds() >= self.timeout_seconds
 
     def _transition_to_open(self) -> None:
-        """Transition circuit breaker to open state"""
+        """Transition circuit breaker to open state (thread-safe)."""
+        with self._lock:
+            self._transition_to_open_unlocked()
+
+    def _transition_to_open_unlocked(self) -> None:
+        """Transition circuit breaker to open state (internal, no lock)."""
         self.state = "open"
         self.last_state_change = datetime.now(UTC)
         self.half_open_requests = 0
         self.success_count = 0
 
     def _transition_to_half_open(self) -> None:
-        """Transition circuit breaker to half-open state"""
+        """Transition circuit breaker to half-open state (thread-safe)."""
+        with self._lock:
+            self._transition_to_half_open_unlocked()
+
+    def _transition_to_half_open_unlocked(self) -> None:
+        """Transition circuit breaker to half-open state (internal, no lock)."""
         self.state = "half_open"
         self.last_state_change = datetime.now(UTC)
         self.half_open_requests = 0
         self.success_count = 0
 
     def _transition_to_closed(self) -> None:
-        """Transition circuit breaker to closed state"""
+        """Transition circuit breaker to closed state (thread-safe)."""
+        with self._lock:
+            self._transition_to_closed_unlocked()
+
+    def _transition_to_closed_unlocked(self) -> None:
+        """Transition circuit breaker to closed state (internal, no lock)."""
         self.state = "closed"
         self.last_state_change = datetime.now(UTC)
         self.failure_count = 0
@@ -383,7 +416,12 @@ class ModelCircuitBreaker(BaseModel):
         self.half_open_requests = 0
 
     def _cleanup_old_data(self, current_time: datetime) -> None:
-        """Clean up old failure data outside the time window"""
+        """Clean up old failure data outside the time window (thread-safe)."""
+        with self._lock:
+            self._cleanup_old_data_unlocked(current_time)
+
+    def _cleanup_old_data_unlocked(self, current_time: datetime) -> None:
+        """Clean up old failure data outside the time window (internal, no lock)."""
         if not self.last_failure_time:
             return
 

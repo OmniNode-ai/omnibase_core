@@ -445,12 +445,25 @@ async def validate_workflow_definition(
         errors.append("Workflow has no steps defined")
         return errors
 
+    # Check for duplicate step IDs
+    step_id_list = [step.step_id for step in workflow_steps]
+    step_ids = set(step_id_list)
+    if len(step_id_list) != len(step_ids):
+        # Find the duplicate IDs
+        seen: set[UUID] = set()
+        duplicates: set[UUID] = set()
+        for step_id in step_id_list:
+            if step_id in seen:
+                duplicates.add(step_id)
+            seen.add(step_id)
+        duplicate_ids_str = ", ".join(str(dup) for dup in duplicates)
+        errors.append(f"Workflow contains duplicate step IDs: {duplicate_ids_str}")
+
     # Check for dependency cycles
     if _has_dependency_cycles(workflow_steps):
         errors.append("Workflow contains dependency cycles")
 
-    # Validate each step
-    step_ids = {step.step_id for step in workflow_steps}
+    # Validate each step (step_ids already computed above for duplicate check)
     for step in workflow_steps:
         # Check step name
         if not step.step_name:

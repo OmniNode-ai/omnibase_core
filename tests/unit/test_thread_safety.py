@@ -18,7 +18,6 @@ from typing import Any
 
 import pytest
 
-from omnibase_core.enums.enum_circuit_breaker_state import EnumCircuitBreakerState
 from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.infrastructure.model_compute_cache import ModelComputeCache
@@ -212,10 +211,10 @@ class TestCacheRaceConditions:
 @pytest.mark.timeout(60)
 class TestCircuitBreakerRaceConditions:
     """
-    Test suite demonstrating circuit breaker race conditions.
+    Test suite verifying circuit breaker thread safety.
 
-    Circuit breaker state transitions are not atomic, leading to potential
-    failures under concurrent load.
+    Circuit breaker state transitions and counter updates are protected
+    by internal locking, ensuring correct behavior under concurrent load.
 
     Note:
     - Marked as @slow due to concurrent thread operations
@@ -224,10 +223,10 @@ class TestCircuitBreakerRaceConditions:
 
     def test_circuit_breaker_failure_count_race(self):
         """
-        Demonstrate failure count race conditions.
+        Verify failure counts are thread-safe.
 
-        Multiple threads recording failures concurrently may result in
-        incorrect failure counts due to non-atomic increments.
+        Multiple threads recording failures concurrently should result in
+        correct failure counts due to thread-safe locking.
         """
         breaker = ModelCircuitBreaker()
         num_threads = 10
@@ -250,37 +249,39 @@ class TestCircuitBreakerRaceConditions:
         # Expected failure count: num_threads * failures_per_thread
         expected_failures = num_threads * failures_per_thread
 
-        # Actual failure count may be less due to race conditions
-        # (lost updates when multiple threads increment concurrently)
+        # With thread-safe locking, all failures should be recorded
         print(f"Expected failures: {expected_failures}")
         print(f"Actual failures: {breaker.failure_count}")
 
-        # This assertion may fail due to lost updates!
-        # That's the point - it demonstrates the race condition
+        # All failures should be recorded with thread-safe implementation
         assert breaker.failure_count == expected_failures, (
-            f"Lost {expected_failures - breaker.failure_count} failure updates due to race condition"
+            f"Lost {expected_failures - breaker.failure_count} failure updates"
         )
 
-    @pytest.mark.xfail(
-        reason="Unpredictable state transitions under races", strict=False
-    )
     def test_circuit_breaker_state_transition_race(self):
         """
-        Demonstrate circuit breaker state transition races.
+        Verify circuit breaker state transitions are thread-safe.
 
-        Concurrent success/failure recordings may cause incorrect state
-        transitions (e.g., OPEN -> HALF_OPEN -> CLOSED without proper checks).
+        With proper synchronization, concurrent success/failure recordings
+        should maintain state integrity and correct counter values.
         """
-        breaker = ModelCircuitBreaker()
+        # Use a breaker with lower minimum_request_threshold so it trips
+        # after reaching failure_threshold (5) failures
+        breaker = ModelCircuitBreaker(
+            failure_threshold=5,
+            minimum_request_threshold=5,  # Match failure_threshold
+        )
 
-        # Trip the breaker
+        # Trip the breaker by recording enough failures
         for _ in range(breaker.failure_threshold):
             breaker.record_failure()
 
-        assert breaker.state == EnumCircuitBreakerState.OPEN, "Breaker should be OPEN"
+        assert breaker.state == "open", "Breaker should be open"
 
         # Now concurrent threads try to record successes and failures
-        def mixed_operations(success_count: int, failure_count: int):
+        # Since the circuit is open, record_success won't transition states
+        # and record_failure won't change state either (already open)
+        def mixed_operations(success_count: int, failure_count: int) -> None:
             """Mix success and failure recordings."""
             for _ in range(success_count):
                 breaker.record_success()
@@ -288,22 +289,44 @@ class TestCircuitBreakerRaceConditions:
                 breaker.record_failure()
 
         threads = []
-        for _ in range(5):
+        num_threads = 5
+        successes_per_thread = 3
+        failures_per_thread = 2
+
+        for _ in range(num_threads):
             # Each thread records both successes and failures
-            thread = threading.Thread(target=mixed_operations, args=(3, 2))
+            thread = threading.Thread(
+                target=mixed_operations,
+                args=(successes_per_thread, failures_per_thread),
+            )
             threads.append(thread)
             thread.start()
 
         for thread in threads:
             thread.join()
 
-        # State transitions under concurrent load are unpredictable
-        # without proper synchronization
+        # With proper synchronization, state should still be open
+        # (circuit won't transition to half_open without timeout)
         print(f"Final breaker state: {breaker.state}")
         print(f"Final failure count: {breaker.failure_count}")
+        print(f"Final total requests: {breaker.total_requests}")
 
-        # We cannot make reliable assertions about final state
-        # due to race conditions - this is the problem we're demonstrating
+        # Verify thread-safe counter updates
+        # Initial failures: 5 (to trip breaker)
+        # Additional failures: 5 threads * 2 failures = 10
+        # Additional successes: 5 threads * 3 successes = 15
+        # Total requests should be: 5 + 10 + 15 = 30
+        expected_total = 5 + (
+            num_threads * (successes_per_thread + failures_per_thread)
+        )
+        assert breaker.total_requests == expected_total, (
+            f"Expected {expected_total} total requests, got {breaker.total_requests}"
+        )
+
+        # State should remain open (no timeout elapsed)
+        assert breaker.state == "open", (
+            f"State should be 'open' but was '{breaker.state}'"
+        )
 
 
 @pytest.mark.unit

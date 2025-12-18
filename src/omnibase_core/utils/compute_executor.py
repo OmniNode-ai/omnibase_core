@@ -48,6 +48,8 @@ import logging
 import time
 import warnings
 from collections.abc import Mapping
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FuturesTimeoutError
 from typing import Any
 
 from omnibase_core.types.typed_dict_mapping_result import MappingResultDict
@@ -362,73 +364,36 @@ def execute_pipeline_step(
         )
 
 
-# TODO(): Enforce pipeline_timeout_ms - currently declared in contract but not enforced.
-# Add asyncio.timeout or threading.Timer wrapper to abort pipeline if execution exceeds timeout.
-# See: docs/architecture/NODECOMPUTE_VERSIONING_ROADMAP.md
-def execute_compute_pipeline(
+def _execute_pipeline_steps(
     contract: ModelComputeSubcontract,
     input_data: Any,  # Any: pipeline input can be any JSON-compatible or Pydantic model
     context: ModelComputeExecutionContext,
+    start_time: float,
 ) -> ModelComputePipelineResult:
     """
-    Execute a compute pipeline with abort-on-first-failure semantics.
+    Internal helper that executes pipeline steps without timeout wrapper.
 
-    Processes input data through a series of transformation, mapping, and
-    validation steps defined in the contract. Execution stops at the first
-    failure, with full error context preserved in the result.
+    This function contains the core pipeline execution logic, separated from
+    the timeout enforcement to allow clean timeout handling without complex
+    exception propagation.
 
     Thread Safety:
         This function is pure and stateless - safe for concurrent use.
         Each invocation operates on its own copy of the data and results.
 
-    Execution Model:
-        1. Steps are executed in definition order
-        2. Disabled steps are skipped
-        3. Each step receives the output of the previous step as input
-        4. First failure aborts the pipeline immediately
-        5. All step results and timing metrics are captured
-
-    Error Handling:
-        This function never raises exceptions to the caller. All errors (both
-        expected ModelOnexError and unexpected exceptions) are captured in the
-        result object with success=False. This design enables:
-        - Orchestration layers to inspect errors programmatically
-        - Retry logic implementation by callers
-        - Partial result aggregation from multi-step pipelines
-        - Graceful degradation without try/except boilerplate at call sites
-
-        All errors are logged for observability (warning level for ModelOnexError,
-        exception level with full stack trace for unexpected errors).
-
     Args:
         contract: The compute subcontract defining the pipeline steps.
         input_data: Input data to process (dict, Pydantic model, or JSON-compatible).
-        context: Execution context with operation_id and optional correlation_id
-            for distributed tracing.
+        context: Execution context with operation_id and optional correlation_id.
+        start_time: The time.perf_counter() value when execution started.
 
     Returns:
-        ModelComputePipelineResult containing:
-            - success: Whether all steps completed successfully
-            - output: Final pipeline output (from last step), or None on failure
-            - processing_time_ms: Total execution time in milliseconds
-            - steps_executed: List of step names that were executed
-            - step_results: Dictionary of individual step results
-            - error_type, error_message, error_step: Error details on failure
+        ModelComputePipelineResult with execution results.
 
-    Example:
-        >>> from uuid import uuid4
-        >>> context = ModelComputeExecutionContext(
-        ...     operation_id=uuid4(),
-        ...     correlation_id=uuid4(),
-        ... )
-        >>> result = execute_compute_pipeline(contract, {"text": "hello"}, context)
-        >>> if result.success:
-        ...     print(f"Output: {result.output}")
-        ...     print(f"Completed in {result.processing_time_ms:.2f}ms")
-        ... else:
-        ...     print(f"Failed at step '{result.error_step}': {result.error_message}")
+    Note:
+        This is an internal function. Use execute_compute_pipeline() for the
+        public API with timeout enforcement.
     """
-    start_time = time.perf_counter()
     step_results: dict[str, ModelComputeStepResult] = {}
     steps_executed: list[str] = []
     current_data = input_data
@@ -601,6 +566,142 @@ def execute_compute_pipeline(
         steps_executed=steps_executed,
         step_results=step_results,
     )
+
+
+def execute_compute_pipeline(
+    contract: ModelComputeSubcontract,
+    input_data: Any,  # Any: pipeline input can be any JSON-compatible or Pydantic model
+    context: ModelComputeExecutionContext,
+) -> ModelComputePipelineResult:
+    """
+    Execute a compute pipeline with abort-on-first-failure semantics and timeout enforcement.
+
+    Processes input data through a series of transformation, mapping, and
+    validation steps defined in the contract. Execution stops at the first
+    failure or when the pipeline_timeout_ms limit is exceeded, with full
+    error context preserved in the result.
+
+    Thread Safety:
+        This function is pure and stateless - safe for concurrent use.
+        Each invocation operates on its own copy of the data and results.
+
+    Execution Model:
+        1. Steps are executed in definition order
+        2. Disabled steps are skipped
+        3. Each step receives the output of the previous step as input
+        4. First failure aborts the pipeline immediately
+        5. All step results and timing metrics are captured
+        6. If pipeline_timeout_ms is specified, execution is terminated when exceeded
+
+    Timeout Enforcement:
+        When contract.pipeline_timeout_ms is set (not None), the entire pipeline
+        execution is wrapped with a timeout. If the timeout is exceeded:
+        - A result with success=False is returned
+        - error_type is set to "timeout_exceeded"
+        - error_message describes the timeout and configured limit
+        - processing_time_ms reflects the actual elapsed time
+
+        Note: Timeout enforcement uses a thread pool executor which may allow
+        the underlying computation to continue briefly after timeout. For
+        CPU-bound operations, this is generally safe as the result is discarded.
+
+    Error Handling:
+        This function never raises exceptions to the caller. All errors (both
+        expected ModelOnexError and unexpected exceptions) are captured in the
+        result object with success=False. This design enables:
+        - Orchestration layers to inspect errors programmatically
+        - Retry logic implementation by callers
+        - Partial result aggregation from multi-step pipelines
+        - Graceful degradation without try/except boilerplate at call sites
+
+        All errors are logged for observability (warning level for ModelOnexError,
+        exception level with full stack trace for unexpected errors).
+
+    Args:
+        contract: The compute subcontract defining the pipeline steps.
+        input_data: Input data to process (dict, Pydantic model, or JSON-compatible).
+        context: Execution context with operation_id and optional correlation_id
+            for distributed tracing.
+
+    Returns:
+        ModelComputePipelineResult containing:
+            - success: Whether all steps completed successfully within timeout
+            - output: Final pipeline output (from last step), or None on failure/timeout
+            - processing_time_ms: Total execution time in milliseconds
+            - steps_executed: List of step names that were executed
+            - step_results: Dictionary of individual step results
+            - error_type, error_message, error_step: Error details on failure
+
+    Example:
+        >>> from uuid import uuid4
+        >>> context = ModelComputeExecutionContext(
+        ...     operation_id=uuid4(),
+        ...     correlation_id=uuid4(),
+        ... )
+        >>> result = execute_compute_pipeline(contract, {"text": "hello"}, context)
+        >>> if result.success:
+        ...     print(f"Output: {result.output}")
+        ...     print(f"Completed in {result.processing_time_ms:.2f}ms")
+        ... else:
+        ...     print(f"Failed at step '{result.error_step}': {result.error_message}")
+    """
+    start_time = time.perf_counter()
+
+    # If no timeout is configured, execute directly without wrapper overhead
+    if contract.pipeline_timeout_ms is None:
+        return _execute_pipeline_steps(contract, input_data, context, start_time)
+
+    # Convert timeout from milliseconds to seconds for concurrent.futures
+    timeout_seconds = contract.pipeline_timeout_ms / 1000.0
+
+    # Use ThreadPoolExecutor with timeout enforcement
+    # Note: We explicitly manage the executor lifecycle to avoid blocking on cleanup
+    # when a timeout occurs. The context manager form would wait for all threads
+    # to complete on exit, which defeats the purpose of timeout enforcement.
+    executor = ThreadPoolExecutor(max_workers=1)
+    try:
+        future = executor.submit(
+            _execute_pipeline_steps, contract, input_data, context, start_time
+        )
+        # Wait for result with timeout
+        return future.result(timeout=timeout_seconds)
+
+    except FuturesTimeoutError:
+        # Pipeline exceeded timeout - return failure result
+        # Capture elapsed time immediately on timeout detection
+        total_time = (time.perf_counter() - start_time) * 1000
+
+        # Log the timeout for observability
+        logger.warning(
+            "Pipeline execution timed out after %.2fms (limit: %dms, operation_id=%s, "
+            "correlation_id=%s, pipeline=%s)",
+            total_time,
+            contract.pipeline_timeout_ms,
+            context.operation_id,
+            context.correlation_id,
+            contract.operation_name,
+        )
+
+        return ModelComputePipelineResult(
+            success=False,
+            output=None,
+            processing_time_ms=total_time,
+            steps_executed=[],  # Cannot reliably know which steps completed
+            step_results={},  # Cannot access partial results from timed-out thread
+            error_type=EnumCoreErrorCode.TIMEOUT_EXCEEDED.value,
+            error_message=(
+                f"Pipeline execution exceeded timeout of {contract.pipeline_timeout_ms}ms "
+                f"(actual: {total_time:.2f}ms)"
+            ),
+            error_step=None,  # Unknown which step was running when timeout occurred
+        )
+
+    finally:
+        # Shutdown executor without waiting for pending futures
+        # This allows the background thread to continue (and eventually complete)
+        # without blocking the caller. The thread will be cleaned up by Python's
+        # garbage collection when it completes.
+        executor.shutdown(wait=False)
 
 
 __all__ = [

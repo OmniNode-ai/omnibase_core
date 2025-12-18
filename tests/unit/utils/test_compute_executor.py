@@ -483,3 +483,303 @@ class TestValidationStepWarning:
 
         # Verify pass-through behavior returns input unchanged
         assert result == {"test": "data"}
+
+
+@pytest.mark.unit
+@pytest.mark.timeout(30)  # Allow time for slow timeout tests
+class TestPipelineTimeoutEnforcement:
+    """Tests for pipeline_timeout_ms enforcement in execute_compute_pipeline.
+
+    These tests verify that the pipeline respects the configured timeout and
+    returns appropriate error results when execution exceeds the limit.
+    """
+
+    def test_pipeline_without_timeout_executes_normally(self) -> None:
+        """Test that pipelines without timeout configured execute without overhead.
+
+        Verifies that when pipeline_timeout_ms is None, the pipeline executes
+        normally without any timeout wrapper, ensuring backward compatibility.
+        """
+        contract = ModelComputeSubcontract(
+            operation_name="no_timeout_pipeline",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
+            pipeline=[
+                ModelComputePipelineStep(
+                    step_name="identity_step",
+                    step_type=EnumComputeStepType.TRANSFORMATION,
+                    transformation_type=EnumTransformationType.IDENTITY,
+                ),
+            ],
+            pipeline_timeout_ms=None,  # No timeout
+        )
+        context = ModelComputeExecutionContext(operation_id=uuid4())
+
+        result = execute_compute_pipeline(contract, "test_input", context)
+
+        assert result.success is True
+        assert result.output == "test_input"
+
+    def test_pipeline_with_timeout_completes_within_limit(self) -> None:
+        """Test that fast pipelines complete successfully within timeout.
+
+        Verifies that pipelines with timeout configured succeed when they
+        complete within the time limit.
+        """
+        contract = ModelComputeSubcontract(
+            operation_name="fast_pipeline",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
+            pipeline=[
+                ModelComputePipelineStep(
+                    step_name="identity_step",
+                    step_type=EnumComputeStepType.TRANSFORMATION,
+                    transformation_type=EnumTransformationType.IDENTITY,
+                ),
+            ],
+            pipeline_timeout_ms=5000,  # 5 second timeout - plenty of time
+        )
+        context = ModelComputeExecutionContext(operation_id=uuid4())
+
+        result = execute_compute_pipeline(contract, "test_input", context)
+
+        assert result.success is True
+        assert result.output == "test_input"
+
+    def test_pipeline_exceeding_timeout_returns_failure(self) -> None:
+        """Test that pipelines exceeding timeout return failure result.
+
+        Verifies that when execution exceeds pipeline_timeout_ms, the result
+        has success=False and appropriate error information.
+        """
+        import time as time_module
+
+        contract = ModelComputeSubcontract(
+            operation_name="slow_pipeline",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
+            pipeline=[
+                ModelComputePipelineStep(
+                    step_name="slow_step",
+                    step_type=EnumComputeStepType.TRANSFORMATION,
+                    transformation_type=EnumTransformationType.IDENTITY,
+                ),
+            ],
+            pipeline_timeout_ms=100,  # 100ms timeout
+        )
+        context = ModelComputeExecutionContext(operation_id=uuid4())
+
+        def slow_step(*args, **kwargs):
+            time_module.sleep(0.5)  # Sleep 500ms, exceeding 100ms timeout
+            return "should_not_reach"
+
+        with patch(
+            "omnibase_core.utils.compute_executor.execute_pipeline_step"
+        ) as mock_execute:
+            mock_execute.side_effect = slow_step
+
+            result = execute_compute_pipeline(contract, "test_input", context)
+
+        assert result.success is False
+        assert result.output is None
+
+    def test_timeout_error_type_is_timeout_exceeded(self) -> None:
+        """Test that timeout failures have correct error_type.
+
+        Verifies that timeout errors are classified with the TIMEOUT_EXCEEDED
+        error code value for consistent error categorization.
+        """
+        import time as time_module
+
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+
+        contract = ModelComputeSubcontract(
+            operation_name="timeout_pipeline",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
+            pipeline=[
+                ModelComputePipelineStep(
+                    step_name="slow_step",
+                    step_type=EnumComputeStepType.TRANSFORMATION,
+                    transformation_type=EnumTransformationType.IDENTITY,
+                ),
+            ],
+            pipeline_timeout_ms=50,  # 50ms timeout
+        )
+        context = ModelComputeExecutionContext(operation_id=uuid4())
+
+        def slow_step(*args, **kwargs):
+            time_module.sleep(0.3)  # Sleep 300ms
+            return "unreachable"
+
+        with patch(
+            "omnibase_core.utils.compute_executor.execute_pipeline_step"
+        ) as mock_execute:
+            mock_execute.side_effect = slow_step
+
+            result = execute_compute_pipeline(contract, "test_input", context)
+
+        assert result.error_type == EnumCoreErrorCode.TIMEOUT_EXCEEDED.value
+
+    def test_timeout_error_message_includes_limit(self) -> None:
+        """Test that timeout error message includes the configured limit.
+
+        Verifies that the error_message contains the configured timeout value
+        for diagnostic purposes.
+        """
+        import time as time_module
+
+        contract = ModelComputeSubcontract(
+            operation_name="timeout_pipeline",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
+            pipeline=[
+                ModelComputePipelineStep(
+                    step_name="slow_step",
+                    step_type=EnumComputeStepType.TRANSFORMATION,
+                    transformation_type=EnumTransformationType.IDENTITY,
+                ),
+            ],
+            pipeline_timeout_ms=75,  # 75ms timeout
+        )
+        context = ModelComputeExecutionContext(operation_id=uuid4())
+
+        def slow_step(*args, **kwargs):
+            time_module.sleep(0.3)
+            return "unreachable"
+
+        with patch(
+            "omnibase_core.utils.compute_executor.execute_pipeline_step"
+        ) as mock_execute:
+            mock_execute.side_effect = slow_step
+
+            result = execute_compute_pipeline(contract, "test_input", context)
+
+        assert "75ms" in result.error_message
+        assert "timeout" in result.error_message.lower()
+
+    def test_timeout_logs_warning(self) -> None:
+        """Test that timeout triggers a warning log.
+
+        Verifies that when timeout occurs, logger.warning is called with
+        relevant context for observability.
+        """
+        import time as time_module
+
+        contract = ModelComputeSubcontract(
+            operation_name="logged_timeout_pipeline",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
+            pipeline=[
+                ModelComputePipelineStep(
+                    step_name="slow_step",
+                    step_type=EnumComputeStepType.TRANSFORMATION,
+                    transformation_type=EnumTransformationType.IDENTITY,
+                ),
+            ],
+            pipeline_timeout_ms=50,
+        )
+        operation_id = uuid4()
+        correlation_id = uuid4()
+        context = ModelComputeExecutionContext(
+            operation_id=operation_id,
+            correlation_id=correlation_id,
+        )
+
+        def slow_step(*args, **kwargs):
+            time_module.sleep(0.3)
+            return "unreachable"
+
+        with (
+            patch(
+                "omnibase_core.utils.compute_executor.execute_pipeline_step"
+            ) as mock_execute,
+            patch("omnibase_core.utils.compute_executor.logger") as mock_logger,
+        ):
+            mock_execute.side_effect = slow_step
+
+            execute_compute_pipeline(contract, "test_input", context)
+
+            mock_logger.warning.assert_called()
+            call_args = mock_logger.warning.call_args
+            log_args = call_args[0][1:]
+            # Verify operation_id and correlation_id are logged
+            assert operation_id in log_args
+            assert correlation_id in log_args
+
+    def test_timeout_processing_time_reflects_actual_duration(self) -> None:
+        """Test that processing_time_ms reflects actual elapsed time on timeout.
+
+        Verifies that when timeout occurs, the processing_time_ms field
+        accurately reflects how long we waited before giving up (approximately
+        the configured timeout value, not the full operation duration).
+        """
+        import time as time_module
+
+        contract = ModelComputeSubcontract(
+            operation_name="timed_pipeline",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
+            pipeline=[
+                ModelComputePipelineStep(
+                    step_name="slow_step",
+                    step_type=EnumComputeStepType.TRANSFORMATION,
+                    transformation_type=EnumTransformationType.IDENTITY,
+                ),
+            ],
+            pipeline_timeout_ms=100,  # 100ms timeout
+        )
+        context = ModelComputeExecutionContext(operation_id=uuid4())
+
+        def slow_step(*args, **kwargs):
+            time_module.sleep(1.0)  # Sleep 1 second - well beyond timeout
+            return "unreachable"
+
+        with patch(
+            "omnibase_core.utils.compute_executor.execute_pipeline_step"
+        ) as mock_execute:
+            mock_execute.side_effect = slow_step
+
+            result = execute_compute_pipeline(contract, "test_input", context)
+
+        # processing_time_ms should be approximately the timeout value (100ms)
+        # Allow margin for thread scheduling overhead, but should not wait for full sleep
+        assert result.processing_time_ms >= 90  # At least 90% of configured timeout
+        # Should return much faster than the 1 second sleep
+        assert result.processing_time_ms < 500  # Well under the 1s sleep duration
+
+    def test_timeout_with_empty_steps_executed_and_step_results(self) -> None:
+        """Test that timeout results have empty steps_executed and step_results.
+
+        Verifies that when timeout occurs, we cannot reliably report which
+        steps completed, so empty collections are returned.
+        """
+        import time as time_module
+
+        contract = ModelComputeSubcontract(
+            operation_name="timeout_pipeline",
+            operation_version={"major": 1, "minor": 0, "patch": 0},
+            pipeline=[
+                ModelComputePipelineStep(
+                    step_name="step1",
+                    step_type=EnumComputeStepType.TRANSFORMATION,
+                    transformation_type=EnumTransformationType.IDENTITY,
+                ),
+                ModelComputePipelineStep(
+                    step_name="slow_step",
+                    step_type=EnumComputeStepType.TRANSFORMATION,
+                    transformation_type=EnumTransformationType.IDENTITY,
+                ),
+            ],
+            pipeline_timeout_ms=50,
+        )
+        context = ModelComputeExecutionContext(operation_id=uuid4())
+
+        def slow_step(*args, **kwargs):
+            time_module.sleep(0.3)
+            return "unreachable"
+
+        with patch(
+            "omnibase_core.utils.compute_executor.execute_pipeline_step"
+        ) as mock_execute:
+            mock_execute.side_effect = slow_step
+
+            result = execute_compute_pipeline(contract, "test_input", context)
+
+        # Cannot reliably know which steps completed when thread timed out
+        assert result.steps_executed == []
+        assert result.step_results == {}
+        assert result.error_step is None

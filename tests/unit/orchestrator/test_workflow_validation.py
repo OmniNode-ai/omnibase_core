@@ -582,38 +582,19 @@ class TestDuplicateStepValidation:
         assert len(name_errors) == 0, f"Duplicate names should be allowed: {errors}"
 
     @pytest.mark.asyncio
-    @pytest.mark.xfail(
-        reason="Duplicate step ID validation not yet implemented in workflow_executor. "
-        "validate_workflow_definition() does not currently check for duplicate step IDs. "
-        "When implemented, it should return an error when two steps share the same step_id.",
-        strict=True,
-    )
     async def test_duplicate_step_ids_detected(
         self, base_workflow_definition: ModelWorkflowDefinition
     ) -> None:
         """Test that duplicate step IDs are detected during validation.
 
-        Expected Behavior (Not Yet Implemented):
-        -----------------------------------------
-        When two or more workflow steps share the same step_id, the validation
-        function should detect this and return an error. Duplicate step IDs violate
-        workflow invariants because:
+        Validates that validate_workflow_definition() correctly detects when
+        two or more workflow steps share the same step_id. Duplicate step IDs
+        violate workflow invariants because:
         1. Step IDs are used to track execution state and results
         2. Duplicate IDs cause ambiguity in step lookup and routing
         3. Workflow graphs rely on unique step IDs for dependency resolution
 
-        Current Behavior:
-        -----------------
-        validate_workflow_definition() does not check for duplicate step IDs.
-        ModelWorkflowStep uses frozen=True, so uniqueness cannot be enforced
-        at the model level and must be validated at runtime.
-
-        Implementation Notes:
-        ---------------------
-        To fix this, validate_workflow_definition() should:
-        1. Collect all step_id values from the steps list
-        2. Check for duplicates (e.g., len(ids) != len(set(ids)))
-        3. Return an error message identifying the duplicate ID(s)
+        The validation returns an error message that identifies the duplicate ID(s).
         """
         duplicate_id = uuid4()
 
@@ -626,10 +607,9 @@ class TestDuplicateStepValidation:
 
         errors = await validate_workflow_definition(base_workflow_definition, steps)
 
-        # EXPECTED ASSERTIONS (will pass once validation is implemented):
-        # 1. At least one error should be returned for the duplicate ID
+        # Validation should detect the duplicate step ID
         assert len(errors) > 0, "Should detect duplicate step IDs"
-        # 2. The error message should clearly indicate a duplicate was found
+        # Error message should clearly indicate a duplicate was found
         assert any("duplicate" in error.lower() for error in errors), (
             f"Error should mention 'duplicate': {errors}"
         )
