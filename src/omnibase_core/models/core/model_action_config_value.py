@@ -11,8 +11,6 @@ Strict typing is enforced: No Any types allowed in implementation.
 
 from __future__ import annotations
 
-from typing import Union
-
 from pydantic import Discriminator
 
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue
@@ -72,11 +70,11 @@ def from_numeric(value: ModelNumericValue) -> ModelActionConfigNumericValue:
 
 def from_value(
     value: object,
-) -> Union[
-    ModelActionConfigStringValue,
-    ModelActionConfigNumericValue,
-    ModelActionConfigBooleanValue,
-]:
+) -> (
+    ModelActionConfigStringValue
+    | ModelActionConfigNumericValue
+    | ModelActionConfigBooleanValue
+):
     """
     Create action config value from any supported type.
 

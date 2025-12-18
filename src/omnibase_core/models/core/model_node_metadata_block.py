@@ -3,7 +3,7 @@ Node metadata block model.
 """
 
 import enum
-from typing import Annotated, Any, ClassVar, TypedDict
+from typing import Annotated, Any, ClassVar
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, StringConstraints, field_validator

@@ -46,8 +46,6 @@ Immutability Considerations:
 
 from __future__ import annotations
 
-from typing import Any
-
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.types.type_fsm_context import FSMContextType

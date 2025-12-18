@@ -8,16 +8,6 @@ from typing import Any
 
 from pydantic import Discriminator
 
-from omnibase_core.models.node_metadata.model_node_status_active import (
-    ModelNodeStatusActive,
-)
-from omnibase_core.models.node_metadata.model_node_status_error import (
-    ModelNodeStatusError,
-)
-from omnibase_core.models.node_metadata.model_node_status_maintenance import (
-    ModelNodeStatusMaintenance,
-)
-
 
 def get_node_status_discriminator(v: Any) -> str:
     """Extract discriminator value for node status union."""

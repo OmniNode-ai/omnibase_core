@@ -24,8 +24,12 @@ Example:
 """
 
 import ast
+import logging
 
 from omnibase_core.models.validation.model_union_pattern import ModelUnionPattern
+
+# Configure logger for this module
+logger = logging.getLogger(__name__)
 
 
 class UnionUsageChecker(ast.NodeVisitor):
@@ -177,9 +181,6 @@ class UnionUsageChecker(ast.NodeVisitor):
                             f"{union_pattern.get_signature()} should use a specific type, generic TypeVar, or proper domain model"
                         )
 
-        # NOTE: Per ONEX conventions, we do NOT flag nullable patterns (T | None)
-        # as violations. The T | None syntax is the PREFERRED pattern.
-
     def visit_Subscript(self, node: ast.Subscript) -> None:
         """Visit subscript nodes to detect Union[...] type definitions.
 
@@ -292,12 +293,31 @@ class UnionUsageChecker(ast.NodeVisitor):
         union_pattern = ModelUnionPattern(union_types, line_no, self.file_path)
         self.union_patterns.append(union_pattern)
 
-        # Analyze the pattern
+        # Analyze the pattern (delegates to _analyze_union_pattern which checks for soup unions)
         self._analyze_union_pattern(union_pattern)
 
         # For Union[T, None] syntax, suggest T | None as the preferred ONEX pattern
         if len(union_types) == 2 and "None" in union_types:
             non_none_types = [t for t in union_types if t != "None"]
-            self.issues.append(
-                f"Line {line_no}: Use {non_none_types[0]} | None instead of Union[{non_none_types[0]}, None]"
-            )
+            # Defensive validation: ensure exactly 1 non-None type exists
+            # Edge case: malformed union like Union[None, None] would have empty list
+            if len(non_none_types) == 1:
+                self.issues.append(
+                    f"Line {line_no}: Use {non_none_types[0]} | None instead of Union[{non_none_types[0]}, None]"
+                )
+            elif len(non_none_types) == 0:
+                # Malformed: Union[None, None] - both types are None
+                logger.warning(
+                    "Line %d: Malformed Union with duplicate None types in %s",
+                    line_no,
+                    self.file_path,
+                )
+            else:
+                # Unexpected: more than 1 non-None type after filtering 2-element union
+                # This shouldn't happen unless union_types has duplicates
+                logger.warning(
+                    "Line %d: Unexpected Union structure with %d non-None types in %s",
+                    line_no,
+                    len(non_none_types),
+                    self.file_path,
+                )

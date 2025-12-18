@@ -26,7 +26,7 @@ Usage Examples:
 """
 
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 
 # Import models and enums
 from omnibase_core.enums.enum_import_status import EnumImportStatus

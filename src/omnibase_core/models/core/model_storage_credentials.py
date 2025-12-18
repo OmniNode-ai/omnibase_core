@@ -4,8 +4,6 @@ Storage Credentials Model.
 Strongly-typed model for storage backend authentication credentials.
 """
 
-from typing import Optional
-
 from pydantic import BaseModel, Field, SecretStr
 
 

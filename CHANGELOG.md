@@ -185,6 +185,32 @@ affinity = ModelSessionAffinity(hash_algorithm="sha512")  # ✅ Strongest
 - Renamed fields: `event_id`→`envelope_id`, `source_service`→`source_node`, `event_type`→`operation`
 - Added new fields: `causation_id`, `target_node`, `handler_type`, `metadata`, `is_response`, `success`, `error`
 
+## [0.5.1] - 2025-12-18
+
+### Fixed
+
+#### PEP 604 Validator Fix for Dependent Repos [OMN-902]
+- Fixed `union_usage_checker.py` to correctly detect PEP 604 union types (`X | Y`) at runtime
+- Added `types.UnionType` detection alongside existing `typing.Union` handling
+- This fix enables dependent repositories (omnibase_spi, omnibase_nodes, etc.) to use the validator without false positives
+- Comprehensive test coverage added for `types.UnionType` detection scenarios
+
+#### UTC Import Fix
+- Fixed incorrect UTC import in `model_onex_envelope_v1.py` (was `from datetime import UTC`, now correctly uses `from datetime import timezone`)
+- Ensures compatibility across all Python 3.12+ environments
+
+### Testing
+- Added 553+ lines of new test coverage for `union_usage_checker.py`
+- Comprehensive `types.UnionType` test scenarios including:
+  - Direct `X | None` detection
+  - Nested unions in generic types
+  - Complex union combinations
+  - Edge cases with mixed typing styles
+
+### Documentation
+- Updated CLAUDE.md with cross-reference to `types.UnionType` behavior differences from `typing.Union`
+- Clarified that PEP 604 unions do NOT have `__origin__` accessible via `getattr()` - must use `isinstance(annotation, types.UnionType)` instead
+
 ## [0.5.0] - 2025-12-18
 
 ### Added

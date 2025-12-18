@@ -48,7 +48,7 @@ Safe Runtime Imports (OK to import at module level):
 from __future__ import annotations
 
 import math
-from typing import Literal, Union
+from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -95,7 +95,7 @@ class ModelMultiTypeValue(BaseModel):
     MAX_STRING_LENGTH: int = 1000000  # 1MB character limit
 
     # union-ok: discriminated_union - companion value_type Literal field provides type safety
-    value: Union[bool, int, float, str, list[object]] = Field(
+    value: bool | int | float | str | list[object] = Field(
         description="The actual value",
     )
 
@@ -267,7 +267,7 @@ class ModelMultiTypeValue(BaseModel):
         return self
 
     # union-ok: discriminated_union - return type matches discriminated value field
-    def get_value(self) -> Union[bool, int, float, str, list[object]]:
+    def get_value(self) -> bool | int | float | str | list[object]:
         """
         Get the stored value with proper type.
 

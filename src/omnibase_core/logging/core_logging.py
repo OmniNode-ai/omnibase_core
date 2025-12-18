@@ -10,7 +10,6 @@ This module provides the simplest possible logging interface:
 
 import asyncio
 import threading
-from functools import lru_cache
 from typing import Any
 from uuid import UUID, uuid4
 

@@ -81,7 +81,7 @@ include = [
 python = "^3.12"
 # NOTE: omnibase-spi removed in v0.3.6 - SPI now depends on Core (dependency inversion)
 pydantic = "^2.12.5"
-llama-index = "^0.14.0"  # Updated for pypdf 6.0+ security fix (CVE-2025-55197)
+llama-index = "^0.14.10"  # Updated for pypdf 6.0+ security fix (CVE-2025-55197)
 pypdf = "^6.4.1"  # Security fix for CVE-2025-55197
 fastapi = "^0.120.1"  # Updated to 0.120.1+ for starlette 0.49.x compatibility
 starlette = "^0.49.1"  # Security fix for CVE-2025-62727 (O(n^2) DoS via Range header)
@@ -94,7 +94,7 @@ redis = "^6.4.0"
 dependency-injector = "^4.48.1"
 
 # CLI Dependencies
-click = "^8.1.0"
+click = "^8.3.1"
 rich = "^13.7.0"
 aiohttp = "^3.9.0"
 
@@ -117,7 +117,7 @@ pytest-xdist = "^3.8.0"
 pytest-split = "^0.10.0"
 pytest-timeout = "^2.4.0"
 pytest-rerunfailures = "^16.1"
-pytest-testmon = "^2.1.4"
+pytest-testmon = "^2.2.0"
 interrogate = "^1.7.0"
 hypothesis = "^6.148"
 psutil = "^7.1.3"
@@ -149,7 +149,9 @@ ignore = [
     "E402",      # Module level import not at top (technical debt)
     "TC001",     # Type checking imports (technical debt)
     "TC003",     # Type checking imports (technical debt)
+    "TC004",     # Type checking imports in __all__ re-exports (technical debt)
     "TC006",     # Quotes in typing.cast() (technical debt - runtime micro-optimization)
+    "UP046",     # Use PEP 695 type parameters instead of Generic[T] (technical debt - requires Python 3.12+)
     "PLR0911",   # Too many returns (technical debt)
     "PLR0912",   # Too many branches (technical debt)
     "PLR0913",   # Too many arguments (technical debt)
@@ -211,7 +213,6 @@ ignore = [
     "S311",      # Suspicious non-cryptographic random usage (technical debt)
     "S324",      # Hashlib insecure hash function (technical debt)
     "PLR1714",   # Repeated equality comparison (technical debt)
-    "UP007",     # Non pep604 annotation (technical debt)
     "RUF012",    # Mutable class default (technical debt)
     "TRY401",    # Verbose log message (technical debt)
     "S105",      # Hardcoded password string (technical debt)

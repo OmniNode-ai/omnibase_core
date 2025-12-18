@@ -411,16 +411,6 @@ class TestHealthCheckHelpers:
         assert is_healthy is True
         assert "successful" in message.lower()
 
-    def test_check_core_imports_failure(self) -> None:
-        """Test _check_core_imports returns failure when imports fail."""
-        with patch(
-            "omnibase_core.cli.commands.EnumCoreErrorCode",
-            side_effect=ImportError("Test import error"),
-        ):
-            # Need to re-import or mock at the right level
-            # The function imports inside try block, so we mock at module level
-            pass  # Covered by success path - import errors are rare
-
     def test_check_validation_system_success(self) -> None:
         """Test _check_validation_system returns success when validation works."""
         is_healthy, message = _check_validation_system()

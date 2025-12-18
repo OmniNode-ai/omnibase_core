@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Health Check Mixin for ONEX Tool Nodes.
 
@@ -29,7 +31,7 @@ from types.core_types (not from models or types.constraints).
 import asyncio
 from collections.abc import Callable
 from datetime import UTC, datetime
-from typing import Any, Union
+from typing import Any
 from urllib.parse import urlparse
 from uuid import uuid4
 
@@ -79,9 +81,7 @@ class MixinHealthCheck:
 
     def get_health_checks(
         self,
-    ) -> list[
-        Callable[[], Union[ModelHealthStatus, "asyncio.Future[ModelHealthStatus]"]]
-    ]:
+    ) -> list[Callable[[], ModelHealthStatus | asyncio.Future[ModelHealthStatus]]]:
         """
         Get list[Any]of health check functions.
 

@@ -118,7 +118,7 @@ See Also:
     - omnibase_core.nodes.NodeEffect: Effect node implementation
 """
 
-from typing import Annotated, Union
+from typing import Annotated
 
 from pydantic import Field
 
@@ -139,11 +139,9 @@ from omnibase_core.models.intents.model_registration_record_base import (
 # ---- Discriminated Union ----
 
 ModelCoreRegistrationIntent = Annotated[
-    Union[
-        ModelConsulRegisterIntent,
-        ModelConsulDeregisterIntent,
-        ModelPostgresUpsertRegistrationIntent,
-    ],
+    ModelConsulRegisterIntent
+    | ModelConsulDeregisterIntent
+    | ModelPostgresUpsertRegistrationIntent,
     Field(discriminator="kind"),
 ]
 """Discriminated union of all core registration intents.

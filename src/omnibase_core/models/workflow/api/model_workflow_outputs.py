@@ -134,4 +134,4 @@ class ModelWorkflowOutputs(BaseModel):
             result.update(self.custom_outputs.to_dict())
 
         # Cast to TypedDict - the structure matches TypedDictWorkflowOutputsDict
-        return TypedDictWorkflowOutputsDict(**result)  # type: ignore[typeddict-item]
+        return TypedDictWorkflowOutputsDict(**result)  # type: ignore[typeddict-item, no-any-return]

@@ -7,7 +7,6 @@ Composed model that combines focused analytics components.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field

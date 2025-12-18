@@ -6,7 +6,6 @@ from pydantic import BaseModel, Field
 from omnibase_core.models.configuration.model_log_filter_config import (
     ModelLogFilterConfig,
 )
-from omnibase_core.types import SerializedDict
 
 
 class ModelLogFilter(BaseModel):

@@ -7,7 +7,7 @@ event-driven projection materialization.
 Version: 1.0.0
 """
 
-from datetime import UTC, datetime
+from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 

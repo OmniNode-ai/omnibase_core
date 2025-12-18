@@ -12,8 +12,6 @@ To avoid circular imports with error_codes, we use TYPE_CHECKING for type hints
 and runtime imports in methods that need to raise errors.
 """
 
-from typing import TYPE_CHECKING
-
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.common.model_numeric_value import ModelNumericValue

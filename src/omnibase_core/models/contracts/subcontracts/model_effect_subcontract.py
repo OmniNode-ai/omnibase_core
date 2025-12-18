@@ -19,7 +19,6 @@ from omnibase_core.constants.constants_effect_limits import (
     EFFECT_SUBCONTRACT_NAME_MAX_LENGTH,
 )
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.enums.enum_effect_handler_type import EnumEffectHandlerType
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 

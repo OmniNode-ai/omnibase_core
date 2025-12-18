@@ -17,7 +17,7 @@ Strict typing is enforced: No Any types allowed in implementation.
 from typing import ClassVar
 from uuid import UUID, uuid4
 
-from pydantic import ConfigDict, Field, field_validator
+from pydantic import ConfigDict, Field
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 

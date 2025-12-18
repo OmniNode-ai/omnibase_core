@@ -57,7 +57,6 @@ from __future__ import annotations
 
 import math
 from collections.abc import Callable
-from typing import Optional
 
 from pydantic import BaseModel, Field, model_validator
 

@@ -665,6 +665,8 @@ poetry run pyright src/omnibase_core/models/common/model_typed_mapping.py
 - ✅ CI/CD pipeline (both checkers must pass)
 - ✅ Local development (both checkers available)
 
+**See also**: [Type Annotation Style (PEP 604)](#type-annotation-style-pep-604) for union type syntax guidelines and the [`from __future__ import annotations` Policy](#from-__future__-import-annotations-policy) for annotation behavior.
+
 ### Formatting
 
 ```bash
@@ -689,6 +691,80 @@ poetry run ruff check --fix src/ tests/
 ```
 
 **Configuration**: See `[tool.ruff]` in pyproject.toml
+
+### Type Annotation Style (PEP 604)
+
+**Always use PEP 604 union syntax** (enforced by ruff rule UP007):
+
+```python
+# ✅ Correct - PEP 604 syntax
+def process(value: str | None) -> int | str:
+    ...
+
+def get_item(key: str) -> Item | None:
+    ...
+
+# ❌ Wrong - Legacy syntax
+from typing import Optional, Union
+
+def process(value: Optional[str]) -> Union[int, str]:  # Don't use
+    ...
+
+def get_item(key: str) -> Optional[Item]:  # Don't use
+    ...
+```
+
+**Why PEP 604?**
+- Cleaner, more readable syntax
+- Native Python 3.10+ feature (project requires 3.12+)
+- No imports needed from `typing` module for unions
+- Automatically enforced by ruff UP007 rule
+
+**Migration**: Run `poetry run ruff check --fix src/ tests/` to auto-convert legacy syntax.
+
+### `from __future__ import annotations` Policy
+
+**When to use `from __future__ import annotations`**:
+
+This import enables [PEP 563](https://peps.python.org/pep-0563/) postponed evaluation of annotations, which converts all annotations to strings at definition time and evaluates them lazily.
+
+**Use it when**:
+- **Forward references are needed** - When a class references itself or another class defined later in the file
+- **Circular import prevention** - When type hints would cause circular imports at runtime
+- **Performance-critical modules** - Prevents annotation evaluation at import time (marginal benefit)
+
+**Do NOT use it when**:
+- **Runtime type introspection is needed** - Pydantic models, FastAPI endpoints, and other frameworks that inspect types at runtime may have issues
+- **Simple modules** - If there are no forward references or circular imports, it adds unnecessary complexity
+
+**Project Convention**:
+- **Pydantic models**: Generally do NOT add `from __future__ import annotations` unless specifically needed, as Pydantic handles forward references via `model_rebuild()`
+- **Mixins and utilities**: May use it if forward references are required
+- **Test files**: Generally do NOT need it
+
+**Example - When to use**:
+```python
+from __future__ import annotations
+
+class TreeNode:
+    def __init__(self, children: list[TreeNode]) -> None:  # Forward reference to self
+        self.children = children
+```
+
+**Example - When NOT to use** (Pydantic model):
+```python
+# No __future__ import needed - Pydantic handles this
+from pydantic import BaseModel
+
+class User(BaseModel):
+    name: str
+    friend: User | None = None  # Pydantic handles forward refs automatically
+```
+
+**Runtime Union Detection Note**:
+PEP 604 unions (`str | None`) behave differently from `typing.Union` at runtime:
+- `typing.Union[str, None]` has `__origin__` accessible via `getattr()`
+- `str | None` (PEP 604) does NOT have `__origin__` via `getattr()` - use `isinstance(annotation, types.UnionType)` instead
 
 ### Pre-commit Hooks
 

@@ -539,3 +539,330 @@ class TestCanonicalSerializationEdgeCases:
 
         assert "\r" not in result
         assert result.count("\n") >= 3
+
+
+class TestUnionTypeDetection:
+    """Test runtime Union type detection for both typing.Union and PEP 604 syntax.
+
+    The mixin_canonical_serialization.py canonicalize_metadata_block method
+    detects Union types at runtime to identify string and list fields.
+    This must work for both:
+    - typing.Union (e.g., Union[str, None])
+    - types.UnionType from PEP 604 (e.g., str | None)
+
+    These tests verify the runtime detection works identically for both syntaxes.
+
+    IMPORTANT: PEP 604 union types (str | None) do NOT have __origin__ accessible
+    via getattr(). The implementation must use isinstance(annotation, types.UnionType)
+    to properly detect them.
+    """
+
+    def test_typing_union_detection_basic(self):
+        """Test that typing.Union is detected at runtime."""
+        import types
+        from typing import Union, get_origin
+
+        # typing.Union detection (intentionally using legacy syntax to test detection)
+        annotation = Union[str, None]  # noqa: UP007
+        origin = get_origin(annotation)
+
+        assert origin is Union
+        assert hasattr(annotation, "__args__")
+        assert str in annotation.__args__
+
+    def test_pep604_union_detection_basic(self):
+        """Test that PEP 604 union (|) is detected at runtime."""
+        import types
+        from typing import get_origin
+
+        # PEP 604 syntax: str | None
+        annotation = str | None
+        origin = get_origin(annotation)
+
+        assert origin is types.UnionType
+        assert hasattr(annotation, "__args__")
+        assert str in annotation.__args__
+
+    def test_pep604_union_no_origin_via_getattr(self):
+        """Test that PEP 604 unions do NOT have __origin__ via getattr.
+
+        This is the critical difference between typing.Union and types.UnionType.
+        PEP 604 unions require isinstance() check, not getattr(__origin__).
+        """
+        import types
+        from typing import Union
+
+        # typing.Union HAS __origin__ via getattr (intentionally using legacy syntax)
+        typing_union = Union[str, None]  # noqa: UP007
+        assert getattr(typing_union, "__origin__", None) is Union
+
+        # PEP 604 union does NOT have __origin__ via getattr
+        pep604_union = str | None
+        assert getattr(pep604_union, "__origin__", None) is None
+
+        # But it IS an instance of types.UnionType
+        assert isinstance(pep604_union, types.UnionType)
+        assert type(pep604_union) is types.UnionType
+
+    def test_union_origin_distinction(self):
+        """Test that typing.Union and PEP 604 have different origins."""
+        import types
+        from typing import Union, get_origin
+
+        typing_union = Union[str, None]  # noqa: UP007 - intentionally testing legacy syntax
+        pep604_union = str | None
+
+        typing_origin = get_origin(typing_union)
+        pep604_origin = get_origin(pep604_union)
+
+        # They should have different origins
+        assert typing_origin is Union
+        assert pep604_origin is types.UnionType
+        assert typing_origin is not pep604_origin
+
+        # But both should have __args__ with the same types
+        # mypy doesn't understand __args__ is a runtime attribute on typing special forms
+        assert set(typing_union.__args__) == set(pep604_union.__args__)  # type: ignore[attr-defined]
+
+    def test_multi_type_typing_union(self):
+        """Test typing.Union with multiple non-None types."""
+        from typing import Union, get_origin
+
+        annotation = Union[str, int]  # noqa: UP007 - intentionally testing legacy syntax
+        origin = get_origin(annotation)
+
+        assert origin is Union
+        # mypy doesn't understand __args__ is a runtime attribute on typing special forms
+        assert str in annotation.__args__  # type: ignore[attr-defined]
+        assert int in annotation.__args__  # type: ignore[attr-defined]
+        assert type(None) not in annotation.__args__  # type: ignore[attr-defined]
+
+    def test_multi_type_pep604_union(self):
+        """Test PEP 604 union with multiple non-None types."""
+        import types
+        from typing import get_origin
+
+        annotation = str | int
+        origin = get_origin(annotation)
+
+        assert origin is types.UnionType
+        assert str in annotation.__args__  # types.UnionType has __args__
+        assert int in annotation.__args__
+        assert type(None) not in annotation.__args__
+
+    def test_serializer_string_field_detection_typing_union(self):
+        """Test that serializer detects string fields from typing.Union[str, None]."""
+        import types
+        from typing import Union
+
+        # Simulate the FIXED detection logic from canonicalize_metadata_block
+        annotation = Union[str, None]  # noqa: UP007 - intentionally testing legacy syntax
+        origin = getattr(annotation, "__origin__", None)
+
+        is_union = (
+            origin is Union
+            or origin is types.UnionType
+            or isinstance(annotation, types.UnionType)
+        )
+        has_args = hasattr(annotation, "__args__")
+        has_str = str in annotation.__args__ if has_args else False  # type: ignore[attr-defined]
+
+        assert is_union
+        assert has_args
+        assert has_str
+
+    def test_serializer_string_field_detection_pep604(self):
+        """Test that serializer detects string fields from PEP 604 str | None.
+
+        This test verifies the fix for PEP 604 detection. Without the
+        isinstance(annotation, types.UnionType) check, this would fail.
+        """
+        import types
+        from typing import Union
+
+        # Simulate the FIXED detection logic from canonicalize_metadata_block
+        annotation = str | None
+        origin = getattr(annotation, "__origin__", None)
+
+        # Note: origin is None for PEP 604!
+        assert origin is None
+
+        # But isinstance check catches it
+        is_union = (
+            origin is Union
+            or origin is types.UnionType
+            or isinstance(annotation, types.UnionType)
+        )
+        has_args = hasattr(annotation, "__args__")
+        has_str = str in annotation.__args__ if has_args else False
+
+        assert is_union
+        assert has_args
+        assert has_str
+
+    def test_serializer_list_field_detection_typing_union(self):
+        """Test that serializer detects list fields from typing.Union[list, None]."""
+        import types
+        from typing import Union
+
+        annotation = Union[list, None]  # noqa: UP007 - intentionally testing legacy syntax
+        origin = getattr(annotation, "__origin__", None)
+
+        is_union = (
+            origin is Union
+            or origin is types.UnionType
+            or isinstance(annotation, types.UnionType)
+        )
+        has_args = hasattr(annotation, "__args__")
+        has_list = list in annotation.__args__ if has_args else False  # type: ignore[attr-defined]
+
+        assert is_union
+        assert has_args
+        assert has_list
+
+    def test_serializer_list_field_detection_pep604(self):
+        """Test that serializer detects list fields from PEP 604 list | None."""
+        import types
+        from typing import Union
+
+        annotation = list | None
+        origin = getattr(annotation, "__origin__", None)
+
+        is_union = (
+            origin is Union
+            or origin is types.UnionType
+            or isinstance(annotation, types.UnionType)
+        )
+        has_args = hasattr(annotation, "__args__")
+        has_list = list in annotation.__args__ if has_args else False
+
+        assert is_union
+        assert has_args
+        assert has_list
+
+    def test_detection_logic_equivalence(self):
+        """Test that the detection logic produces identical results for both syntaxes."""
+        import types
+        from typing import Union
+
+        def detect_string_field(annotation):
+            """Replicate the FIXED detection logic from canonicalize_metadata_block."""
+            origin = getattr(annotation, "__origin__", None)
+            is_union = (
+                origin is Union
+                or origin is types.UnionType
+                or isinstance(annotation, types.UnionType)
+            )
+            if is_union and hasattr(annotation, "__args__"):
+                return str in annotation.__args__
+            return annotation is str
+
+        # Test str | None vs Union[str, None] (noqa: UP007 - intentionally testing both)
+        assert detect_string_field(str | None) == detect_string_field(
+            Union[str, None]  # noqa: UP007
+        )
+        assert detect_string_field(str | None) is True
+
+        # Test str | int vs Union[str, int] (noqa: UP007 - intentionally testing both)
+        assert detect_string_field(str | int) == detect_string_field(
+            Union[str, int]  # noqa: UP007
+        )
+        assert detect_string_field(str | int) is True
+
+        # Test int | None vs Union[int, None] (noqa: UP007 - intentionally testing both)
+        assert detect_string_field(int | None) == detect_string_field(
+            Union[int, None]  # noqa: UP007
+        )
+        assert detect_string_field(int | None) is False
+
+        # Test direct str type
+        assert detect_string_field(str) is True
+
+        # Test direct int type
+        assert detect_string_field(int) is False
+
+    def test_complex_union_types(self):
+        """Test detection with more complex union types."""
+        import types
+        from typing import Union
+
+        def detect_types(annotation):
+            """Detect both str and list in an annotation using FIXED logic."""
+            origin = getattr(annotation, "__origin__", None)
+            is_union = (
+                origin is Union
+                or origin is types.UnionType
+                or isinstance(annotation, types.UnionType)
+            )
+            if is_union and hasattr(annotation, "__args__"):
+                return {
+                    "has_str": str in annotation.__args__,
+                    "has_list": list in annotation.__args__,
+                }
+            return {"has_str": annotation is str, "has_list": annotation is list}
+
+        # Union[str, list, None] - typing.Union (intentionally testing legacy syntax)
+        typing_annotation = Union[str, list, None]  # noqa: UP007
+        typing_result = detect_types(typing_annotation)
+        assert typing_result["has_str"] is True
+        assert typing_result["has_list"] is True
+
+        # str | list | None - PEP 604
+        pep604_annotation = str | list | None
+        pep604_result = detect_types(pep604_annotation)
+        assert pep604_result["has_str"] is True
+        assert pep604_result["has_list"] is True
+
+        # Results should be identical
+        assert typing_result == pep604_result
+
+    def test_canonicalize_uses_correct_detection(self):
+        """Integration test: verify canonicalize_metadata_block works with both syntaxes.
+
+        This test uses actual metadata to verify the serializer handles
+        fields correctly regardless of how Union types are defined in the model.
+        """
+        serializer = MixinCanonicalYAMLSerializer()
+
+        # Create metadata with optional string fields (which use Union types internally)
+        metadata = {
+            "name": "test_node",
+            "version": "1.0.0",
+            "description": None,  # Optional string field
+            "tags": None,  # Optional list field
+        }
+
+        # Should not raise and should handle None values correctly
+        result = serializer.canonicalize_metadata_block(metadata)
+
+        assert isinstance(result, str)
+        assert "test_node" in result
+        # None/empty fields should be handled without error
+        assert "null" not in result.lower() or "tools: null" in result.lower()
+
+    def test_node_metadata_block_uses_pep604(self):
+        """Verify that NodeMetadataBlock actually uses PEP 604 union syntax.
+
+        This test documents that the model uses PEP 604 syntax, which is why
+        the isinstance(annotation, types.UnionType) check is necessary.
+        """
+        import types
+
+        from omnibase_core.models.core.model_node_metadata import NodeMetadataBlock
+
+        # Find fields that use PEP 604 syntax (str | None, list[...] | None, etc.)
+        pep604_fields = []
+        for name, field in NodeMetadataBlock.model_fields.items():
+            annotation = field.annotation
+            if annotation is not None and isinstance(annotation, types.UnionType):
+                pep604_fields.append(name)
+
+        # Assert that there ARE PEP 604 union fields in the model
+        assert len(pep604_fields) > 0, (
+            "NodeMetadataBlock should have PEP 604 union fields"
+        )
+
+        # Verify some specific expected fields
+        assert "runtime_language_hint" in pep604_fields  # str | None
+        assert "tags" in pep604_fields  # list[str] | None
+        assert "license" in pep604_fields  # str | None

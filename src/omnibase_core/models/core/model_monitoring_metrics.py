@@ -3,7 +3,6 @@ Monitoring metrics model to replace Dict[str, Any] usage for metrics.
 """
 
 from datetime import UTC, datetime
-from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
