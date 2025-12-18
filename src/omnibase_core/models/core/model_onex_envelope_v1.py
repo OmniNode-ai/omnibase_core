@@ -10,10 +10,13 @@ Architecture:
     Lighter weight than ModelEventEnvelope which is for complex routing.
 
 Usage:
+    from datetime import UTC, datetime
+    from uuid import uuid4
+
     envelope = ModelOnexEnvelopeV1(
         envelope_version="1.0",
-        correlation_id=correlation_id,
-        event_id=event_id,
+        correlation_id=uuid4(),
+        event_id=uuid4(),
         event_type="EVENT_PUBLISH_INTENT",
         timestamp=datetime.now(UTC),
         source_service="my_service",
@@ -55,6 +58,9 @@ class ModelOnexEnvelopeV1(BaseModel):
         - payload: The actual event data (as dict)
 
     Example:
+        from datetime import UTC, datetime
+        from uuid import uuid4
+
         envelope = ModelOnexEnvelopeV1(
             envelope_version="1.0",
             correlation_id=uuid4(),
