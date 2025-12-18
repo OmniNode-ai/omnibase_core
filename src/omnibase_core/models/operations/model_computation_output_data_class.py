@@ -12,6 +12,12 @@ from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
+# NOTE: EnumComputationType must remain inside TYPE_CHECKING to avoid Pydantic
+# discriminated union validation error at import time. The discriminated union
+# in ModelComputationOutputUnion requires Literal types for discriminator fields,
+# but the constituent models use EnumComputationType. Moving this import outside
+# TYPE_CHECKING triggers the validation error during class definition.
+# See: https://errors.pydantic.dev/2.12/u/discriminator-needs-literal
 if TYPE_CHECKING:
     from omnibase_core.enums.enum_computation_type import EnumComputationType
 from omnibase_core.models.errors.model_onex_error import ModelOnexError

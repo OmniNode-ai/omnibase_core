@@ -358,6 +358,121 @@ def func(x: List[str]) -> None:
 
 
 @pytest.mark.unit
+class TestUnionToNoneSuggestions:
+    """Test Union[T, None] -> T | None suggestion feature per ONEX PEP 604 conventions.
+
+    Per PR #209 review recommendation: explicitly test that the validator suggests
+    modern PEP 604 syntax for nullable types when using legacy Union syntax.
+
+    ONEX PEP 604 Convention:
+    - Union[T, None] should be replaced with T | None
+    - This is enforced by ruff rule UP007
+    - The validator provides helpful suggestions for migration
+    """
+
+    def test_union_t_none_suggests_pep604_syntax(self, checker: UnionUsageChecker):
+        """Test that Union[T, None] suggests T | None replacement per ONEX PEP 604 conventions.
+
+        Per PR #209 review recommendation: explicitly test that the validator suggests
+        modern PEP 604 syntax for nullable types.
+        """
+        code = """
+from typing import Union
+
+class MyModel:
+    field: Union[int, None]
+"""
+        tree = ast.parse(code)
+        checker.visit(tree)
+
+        assert checker.union_count == 1
+        assert len(checker.issues) == 1
+        # Verify suggestion format
+        assert "int | None" in checker.issues[0]
+        assert "Union[int, None]" in checker.issues[0]
+        assert "Line" in checker.issues[0]
+
+    def test_union_str_none_suggests_str_pipe_none(self, checker: UnionUsageChecker):
+        """Test Union[str, None] specifically suggests str | None."""
+        code = """
+from typing import Union
+
+def process(value: Union[str, None]) -> None:
+    pass
+"""
+        tree = ast.parse(code)
+        checker.visit(tree)
+
+        assert checker.union_count == 1
+        assert len(checker.issues) == 1
+        assert "str | None" in checker.issues[0]
+        assert "Union[str, None]" in checker.issues[0]
+
+    def test_union_complex_type_none_suggests_pep604(self, checker: UnionUsageChecker):
+        """Test Union[ComplexType, None] suggests ComplexType | None."""
+        code = """
+from typing import Union, List
+
+def get_items() -> Union[List, None]:
+    return None
+"""
+        tree = ast.parse(code)
+        checker.visit(tree)
+
+        assert checker.union_count == 1
+        assert len(checker.issues) == 1
+        # Should suggest the PEP 604 syntax
+        assert "| None" in checker.issues[0]
+
+    def test_multiple_union_none_patterns_all_get_suggestions(
+        self, checker: UnionUsageChecker
+    ):
+        """Test that multiple Union[T, None] patterns each get suggestions."""
+        code = """
+from typing import Union
+
+class Config:
+    name: Union[str, None]
+    count: Union[int, None]
+    enabled: Union[bool, None]
+"""
+        tree = ast.parse(code)
+        checker.visit(tree)
+
+        assert checker.union_count == 3
+        # Each Union[T, None] should get a suggestion
+        assert len(checker.issues) == 3
+        # Verify each suggestion contains PEP 604 syntax
+        assert any("str | None" in issue for issue in checker.issues)
+        assert any("int | None" in issue for issue in checker.issues)
+        assert any("bool | None" in issue for issue in checker.issues)
+
+    def test_suggestion_message_format_is_actionable(self, checker: UnionUsageChecker):
+        """Test that suggestion message format is clear and actionable.
+
+        The message should include:
+        1. Line number for easy location
+        2. The original Union[T, None] pattern
+        3. The suggested T | None replacement
+        """
+        code = """
+from typing import Union
+
+value: Union[float, None]
+"""
+        tree = ast.parse(code)
+        checker.visit(tree)
+
+        assert len(checker.issues) == 1
+        issue = checker.issues[0]
+
+        # Message should be actionable with clear location and suggestion
+        assert "Line" in issue, "Message should include line number"
+        assert "Union[float, None]" in issue, "Message should show original pattern"
+        assert "float | None" in issue, "Message should show PEP 604 replacement"
+
+
+@pytest.mark.unit
 class TestVisitBinOp:
     """Test visiting modern union syntax (|) nodes."""
 
