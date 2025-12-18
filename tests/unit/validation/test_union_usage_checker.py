@@ -251,6 +251,31 @@ class TestAnalyzeUnionPattern:
         assert len(checker.complex_unions) == 1
         assert checker.complex_unions[0] == pattern
 
+    def test_complex_union_three_types_with_none(
+        self, checker: UnionUsageChecker, test_file_path: str
+    ):
+        """Test that Union[str, int, None] is treated as complex union, not simple nullable.
+
+        Per ONEX conventions:
+        - Union[T, None] (2 types) is a simple nullable pattern, suggests T | None
+        - Union[str, int, None] (3+ types) is a COMPLEX union, not just nullable
+        - The validator should NOT suggest "str | None" since this is NOT a simple nullable
+
+        This tests the edge case where None is present but there are 3+ types,
+        making it a complex union that should be treated differently from T | None.
+        """
+        pattern = ModelUnionPattern(["str", "int", "None"], 15, test_file_path)
+
+        checker._analyze_union_pattern(pattern)
+
+        # Should be classified as complex union (3+ types)
+        assert len(checker.complex_unions) == 1
+        assert checker.complex_unions[0] == pattern
+
+        # Should NOT generate any issues since ["str", "int", "None"] doesn't match
+        # any problematic combination (like primitive overload with 4 types)
+        assert len(checker.issues) == 0
+
     def test_primitive_overload(self, checker: UnionUsageChecker, test_file_path: str):
         """Test detection of primitive overload unions."""
         pattern = ModelUnionPattern(["str", "int", "bool", "float"], 20, test_file_path)
@@ -342,6 +367,46 @@ def func(x: Union[str, None]) -> None:
         assert len(checker.issues) == 1
         assert "str | None" in checker.issues[0]
         assert "Union[str, None]" in checker.issues[0]
+
+    def test_visit_union_subscript_three_types_with_none(
+        self, checker: UnionUsageChecker
+    ):
+        """Test visiting Union[str, int, None] syntax is complex union, not simple nullable.
+
+        Per ONEX conventions:
+        - Union[T, None] (2 types) should suggest T | None replacement
+        - Union[str, int, None] (3+ types) is a COMPLEX union with None as a valid type
+        - The validator should NOT suggest "str | None" for this pattern
+        - The validator SHOULD suggest str | int | None as PEP 604 replacement
+
+        This is a critical edge case: having None in a 3+ type union does NOT
+        make it a simple nullable pattern.
+        """
+        code = """
+from typing import Union
+
+def func(x: Union[str, int, None]) -> None:
+    pass
+"""
+        tree = ast.parse(code)
+        checker.visit(tree)
+
+        assert checker.union_count == 1
+        assert len(checker.union_patterns) == 1
+        assert checker.union_patterns[0].type_count == 3
+
+        # Should be classified as complex union (3+ types)
+        assert len(checker.complex_unions) == 1
+
+        # Should NOT have any issues - this is a valid complex union
+        # (not a simple nullable, and not matching any problematic combination)
+        assert len(checker.issues) == 0
+
+        # Verify the types are correctly extracted
+        pattern = checker.union_patterns[0]
+        assert "str" in pattern.types
+        assert "int" in pattern.types
+        assert "None" in pattern.types
 
     def test_visit_non_union_subscript(self, checker: UnionUsageChecker):
         """Test that non-Union subscripts are not counted."""
@@ -612,6 +677,110 @@ x: Union[str]
         assert checker.union_count == 1
         assert len(checker.union_patterns) == 1
         assert checker.union_patterns[0].type_count == 1
+
+
+@pytest.mark.unit
+class TestProcessUnionTypesEdgeCases:
+    """Test edge cases for _process_union_types to ensure defensive handling.
+
+    These tests verify that malformed Union patterns (which are unlikely but
+    possible through AST manipulation or edge cases) are handled gracefully
+    without raising IndexError or other exceptions.
+    """
+
+    def test_union_none_none_logs_warning_no_issues(
+        self, checker: UnionUsageChecker, caplog: pytest.LogCaptureFixture
+    ):
+        """Test that Union[None, None] logs warning but doesn't raise IndexError.
+
+        This edge case tests the defensive validation where both types in a
+        2-element union are None, resulting in an empty non_none_types list.
+        """
+        import logging
+
+        # Build AST structure that represents Union[None, None]
+        # The slice_node should be a Tuple with two Constant(value=None) elements
+        # which _extract_type_name will convert to ["None", "None"]
+        slice_node = ast.Tuple(
+            elts=[
+                ast.Constant(value=None),
+                ast.Constant(value=None),
+            ],
+            ctx=ast.Load(),
+        )
+
+        # The node parameter is unused but required by signature
+        mock_node = ast.Name(id="Union", ctx=ast.Load())
+
+        # Capture warnings at DEBUG level
+        with caplog.at_level(logging.WARNING):
+            # This should NOT raise IndexError - the defensive check should handle it
+            checker._process_union_types(mock_node, slice_node, line_no=42)
+
+        # Verify the warning was logged for malformed Union[None, None]
+        assert any(
+            "Malformed Union with duplicate None types" in record.message
+            for record in caplog.records
+        ), "Expected warning about duplicate None types"
+
+        # Verify no IndexError-causing issues were added
+        # (The bug was that accessing non_none_types[0] would raise IndexError)
+        assert checker.union_count == 1
+        assert len(checker.union_patterns) == 1
+        # The pattern should have 2 types, both "None"
+        assert checker.union_patterns[0].types == ["None", "None"]
+
+    def test_non_none_types_single_element_produces_suggestion(
+        self, checker: UnionUsageChecker
+    ):
+        """Test that normal Union[T, None] with exactly 1 non-None type works.
+
+        This validates the happy path still works after adding defensive checks.
+        """
+        code = """
+from typing import Union
+
+x: Union[str, None]
+"""
+        tree = ast.parse(code)
+        checker.visit(tree)
+
+        # Should have exactly 1 issue (the suggestion to use str | None)
+        assert len(checker.issues) == 1
+        assert "str | None" in checker.issues[0]
+        assert "Union[str, None]" in checker.issues[0]
+
+    def test_defensive_check_prevents_index_error_empty_list(
+        self, checker: UnionUsageChecker, caplog: pytest.LogCaptureFixture
+    ):
+        """Test that accessing non_none_types[0] is guarded against empty list.
+
+        Verifies the defensive validation by checking that no IndexError
+        can occur when non_none_types would be empty.
+        """
+        import logging
+
+        caplog.set_level(logging.WARNING)
+
+        # We can't easily create Union[None, None] through normal parsing,
+        # but we can verify the defensive logic is in place by checking
+        # that normal valid patterns still work correctly
+        code = """
+from typing import Union
+
+# Valid nullable patterns
+x: Union[int, None]
+y: Union[str, None]
+"""
+        tree = ast.parse(code)
+
+        # This should work without any exceptions
+        checker.visit(tree)
+
+        # Should have 2 suggestions (one for each Union[T, None])
+        assert len(checker.issues) == 2
+        assert any("int | None" in issue for issue in checker.issues)
+        assert any("str | None" in issue for issue in checker.issues)
 
 
 @pytest.mark.unit

@@ -216,9 +216,15 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
             origin = getattr(annotation, "__origin__", None)
 
             # Check for Union types (both typing.Union and PEP 604 | syntax)
-            if (origin is Union or origin is types.UnionType) and hasattr(
-                annotation, "__args__"
-            ):
+            # Note: PEP 604 unions (str | None) don't have __origin__ via getattr,
+            # so we use isinstance(annotation, types.UnionType) to detect them
+            is_union = (
+                origin is Union  # Handles typing.Union
+                or isinstance(
+                    annotation, types.UnionType
+                )  # Handles PEP 604 (str | None)
+            )
+            if is_union and hasattr(annotation, "__args__"):
                 args = annotation.__args__
                 if str in args:
                     string_fields.add(name)
