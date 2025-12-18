@@ -243,6 +243,7 @@ def serialize_error(error: ModelOnexError) -> TypedDictValidationErrorSerialized
 | [**Performance Benchmark CI Integration**](ci/PERFORMANCE_BENCHMARK_CI_INTEGRATION.md) | CI pipeline integration, threshold enforcement, regression detection ⭐ **NEW** | ✅ Complete |
 | [**Node Purity Failure Guide**](ci/CORE_PURITY_FAILURE.md) | Interpreting and fixing CI purity check failures | ✅ Complete |
 | [**Deprecation Warnings**](ci/DEPRECATION_WARNINGS.md) | Deprecation warning configuration and v0.5.0 migration path | ✅ Complete |
+| [**Integration Testing Guide**](testing/INTEGRATION_TESTING.md) | Integration test patterns, structure, and best practices | ✅ Complete |
 | [CI Test Strategy](testing/CI_TEST_STRATEGY.md) | CI/CD test strategy and optimization | ✅ Complete |
 | [Parallel Testing](testing/PARALLEL_TESTING.md) | Parallel test execution configuration | ✅ Complete |
 | [Testing Guide](guides/TESTING_GUIDE.md) | Comprehensive testing strategies | ✅ Complete |
@@ -286,6 +287,7 @@ def serialize_error(error: ModelOnexError) -> TypedDictValidationErrorSerialized
 | **Make nodes thread-safe** | [Threading Guide](guides/THREADING.md) |
 | **Understand the architecture** | [ONEX Four-Node Architecture](architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) |
 | **Test my node** | [Testing Guide](guides/TESTING_GUIDE.md) |
+| **Write integration tests** | [Integration Testing Guide](testing/INTEGRATION_TESTING.md) |
 | **Monitor CI performance** | [CI Monitoring Guide](ci/CI_MONITORING_GUIDE.md) |
 | **Fix CI purity failures** | [Node Purity Failure Guide](ci/CORE_PURITY_FAILURE.md) |
 | **Understand performance thresholds** | [Performance Benchmark Thresholds](performance/PERFORMANCE_BENCHMARK_THRESHOLDS.md) |
@@ -332,10 +334,10 @@ def serialize_error(error: ModelOnexError) -> TypedDictValidationErrorSerialized
 | **Node Building** | 10 | 0 | 0 | 10 |
 | **Architecture** | 13 | 0 | 0 | 13 |
 | **Reference** | 14 | 0 | 0 | 14 |
-| **Specialized** | 12 | 0 | 0 | 12 |
-| **TOTAL** | **52** | **0** | **0** | **52** |
+| **Specialized** | 13 | 0 | 0 | 13 |
+| **TOTAL** | **53** | **0** | **0** | **53** |
 
-**Overall Progress**: 100% complete (52/52 documents)
+**Overall Progress**: 100% complete (53/53 documents)
 
 ### Priority Items
 
@@ -344,6 +346,7 @@ def serialize_error(error: ModelOnexError) -> TypedDictValidationErrorSerialized
 - ✅ Getting Started guides (3/3 complete)
 - ✅ Architecture documentation (13/13 complete)
 - ✅ Testing Guide
+- ✅ Integration Testing Guide
 - ✅ All node tutorials (COMPUTE, EFFECT, REDUCER, ORCHESTRATOR)
 - ✅ Agent Templates (AI-optimized node templates)
 
