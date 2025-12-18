@@ -111,10 +111,10 @@ class ProtocolRegistrationRecord(Protocol):
         >>> isinstance(record, ProtocolRegistrationRecord)  # True
 
     Note:
-        The Any return type for model_dump is intentional to match Pydantic's
-        flexible serialization output. The dict[str, object] return type for
-        to_persistence_dict is more constrained as it's specifically for
-        database operations.
+        Both methods return dict[str, object] for ONEX type safety. The
+        to_persistence_dict method is specifically for database operations
+        where values should be JSON-serializable primitives. Implementations
+        using Pydantic BaseModel inherit model_dump() automatically.
     """
 
     def to_persistence_dict(self) -> dict[str, object]:
@@ -146,7 +146,6 @@ class ProtocolRegistrationRecord(Protocol):
         """
         ...
 
-    # NOTE: Implementations returning dict[str, Any] should use @allow_dict_any decorator
     def model_dump(
         self,
         *,
@@ -164,11 +163,11 @@ class ProtocolRegistrationRecord(Protocol):
     ) -> dict[str, object]:
         """Serialize the record to a dictionary.
 
-        Standard Pydantic-compatible serialization method. Implementations
-        using Pydantic BaseModel inherit this method automatically.
+        Standard Pydantic serialization method. Implementations using
+        Pydantic BaseModel inherit this method automatically.
 
         This method signature matches Pydantic v2's model_dump() to ensure
-        compatibility with Pydantic models used as registration records.
+        Pydantic models work correctly as registration records.
 
         Args:
             mode: Serialization mode ("python" or "json"). Defaults to "python".

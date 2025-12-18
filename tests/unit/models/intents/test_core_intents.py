@@ -1812,18 +1812,17 @@ class TestSerializationEdgeCases:
         assert data["health_check"]["list_val"] == [1, 2, 3]
         assert data["health_check"]["dict_val"] == {"nested": "value"}
 
-    def test_default_serialization_without_serialize_as_any(
+    def test_serialize_for_io_includes_polymorphic_fields(
         self, correlation_id: UUID
     ) -> None:
-        """Test default serialization behavior without serialize_as_any.
+        """Test serialize_for_io() properly serializes polymorphic BaseModel fields.
 
-        This test documents the current behavior where serialize_for_io() and
-        model_dump(mode="json") do not serialize subclass fields of the record
-        field. This is a known limitation when using BaseModel as a polymorphic
-        type hint.
+        ModelCoreIntent.serialize_for_io() uses serialize_as_any=True to ensure
+        subclass fields are properly serialized when the declared type is BaseModel.
 
-        The recommended approach is to use serialize_as_any=True when serializing
-        PostgreSQL intents with custom record types.
+        This is essential for ModelPostgresUpsertRegistrationIntent where the
+        `record` field is typed as BaseModel but actual subclasses with additional
+        fields are passed.
         """
 
         class TestRecord(BaseModel):
@@ -1836,11 +1835,12 @@ class TestSerializationEdgeCases:
             correlation_id=correlation_id,
         )
 
-        # Default serialization returns empty dict for polymorphic BaseModel field
-        default_data = intent.serialize_for_io()
-        assert default_data["record"] == {}  # Subclass fields not serialized
+        # serialize_for_io() now uses serialize_as_any=True, properly serializing subclass fields
+        data = intent.serialize_for_io()
+        assert data["record"]["node_id"] == "test-123"
+        assert data["record"]["value"] == 42
 
-        # With serialize_as_any=True, subclass fields are properly serialized
+        # model_dump with serialize_as_any=True produces the same result
         proper_data = intent.model_dump(mode="json", serialize_as_any=True)
         assert proper_data["record"]["node_id"] == "test-123"
         assert proper_data["record"]["value"] == 42

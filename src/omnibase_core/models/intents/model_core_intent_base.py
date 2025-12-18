@@ -112,7 +112,14 @@ class ModelCoreIntent(BaseModel):
         Called by Effects at the serialization boundary.
         Reducers MUST NOT call this method.
 
+        Uses `serialize_as_any=True` to properly serialize polymorphic BaseModel
+        fields. This ensures that when an intent contains a field typed as
+        `BaseModel` (e.g., `record: BaseModel` in ModelPostgresUpsertRegistrationIntent),
+        subclass fields are included in the serialized output rather than being
+        truncated to only the base class fields.
+
         Returns:
-            JSON-serializable dictionary representation.
+            JSON-serializable dictionary representation with full polymorphic
+            subclass serialization.
         """
-        return self.model_dump(mode="json")
+        return self.model_dump(mode="json", serialize_as_any=True)
