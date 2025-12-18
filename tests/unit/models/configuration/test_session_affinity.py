@@ -1,16 +1,14 @@
 """Tests for ModelSessionAffinity hash algorithm validation.
 
 These tests verify that:
-1. MD5 and SHA-1 are deprecated (emit warnings and auto-convert to sha256)
+1. MD5 and SHA-1 are REJECTED (not allowed due to cryptographic weaknesses)
 2. SHA-256, SHA-384, and SHA-512 are accepted
 3. Hash calculation produces consistent results
 4. Default algorithm is sha256
 
-Note: MD5/SHA-1 support will be fully removed in v0.6.0. Currently they
-trigger deprecation warnings and auto-convert to sha256.
+Security Note: MD5 and SHA-1 support was removed due to known cryptographic
+weaknesses. Only SHA-256 or stronger algorithms are allowed.
 """
-
-import warnings
 
 import pytest
 from pydantic import ValidationError
@@ -23,80 +21,38 @@ from omnibase_core.models.configuration.model_session_affinity import (
 class TestSessionAffinityHashAlgorithm:
     """Tests for hash algorithm field validation."""
 
-    def test_md5_deprecated_and_converted(self) -> None:
-        """MD5 should trigger deprecation warning and auto-convert to sha256."""
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            affinity = ModelSessionAffinity(hash_algorithm="md5")
+    def test_md5_rejected(self) -> None:
+        """MD5 should be rejected due to cryptographic weakness."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelSessionAffinity(hash_algorithm="md5")
 
-            # Should have emitted a DeprecationWarning
-            assert len(w) == 1
-            assert issubclass(w[0].category, DeprecationWarning)
-            assert "md5" in str(w[0].message)
-            assert "deprecated" in str(w[0].message).lower()
+        # Verify the error mentions the pattern constraint
+        error_str = str(exc_info.value)
+        assert "hash_algorithm" in error_str
 
-            # Should be auto-converted to sha256
-            assert affinity.hash_algorithm == "sha256"
+    def test_sha1_rejected(self) -> None:
+        """SHA-1 should be rejected due to cryptographic weakness."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelSessionAffinity(hash_algorithm="sha1")
 
-    def test_sha1_deprecated_and_converted(self) -> None:
-        """SHA-1 should trigger deprecation warning and auto-convert to sha256."""
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            affinity = ModelSessionAffinity(hash_algorithm="sha1")
+        # Verify the error mentions the pattern constraint
+        error_str = str(exc_info.value)
+        assert "hash_algorithm" in error_str
 
-            # Should have emitted a DeprecationWarning
-            assert len(w) == 1
-            assert issubclass(w[0].category, DeprecationWarning)
-            assert "sha1" in str(w[0].message)
-            assert "deprecated" in str(w[0].message).lower()
+    def test_sha256_accepted(self) -> None:
+        """SHA-256 should be accepted."""
+        affinity = ModelSessionAffinity(hash_algorithm="sha256")
+        assert affinity.hash_algorithm == "sha256"
 
-            # Should be auto-converted to sha256
-            assert affinity.hash_algorithm == "sha256"
+    def test_sha384_accepted(self) -> None:
+        """SHA-384 should be accepted."""
+        affinity = ModelSessionAffinity(hash_algorithm="sha384")
+        assert affinity.hash_algorithm == "sha384"
 
-    def test_sha256_accepted_no_warning(self) -> None:
-        """SHA-256 should be accepted without deprecation warning."""
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            affinity = ModelSessionAffinity(hash_algorithm="sha256")
-
-            # Should NOT emit any DeprecationWarnings
-            deprecation_warnings = [
-                warning
-                for warning in w
-                if issubclass(warning.category, DeprecationWarning)
-            ]
-            assert len(deprecation_warnings) == 0
-            assert affinity.hash_algorithm == "sha256"
-
-    def test_sha384_accepted_no_warning(self) -> None:
-        """SHA-384 should be accepted without deprecation warning."""
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            affinity = ModelSessionAffinity(hash_algorithm="sha384")
-
-            # Should NOT emit any DeprecationWarnings
-            deprecation_warnings = [
-                warning
-                for warning in w
-                if issubclass(warning.category, DeprecationWarning)
-            ]
-            assert len(deprecation_warnings) == 0
-            assert affinity.hash_algorithm == "sha384"
-
-    def test_sha512_accepted_no_warning(self) -> None:
-        """SHA-512 should be accepted without deprecation warning."""
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            affinity = ModelSessionAffinity(hash_algorithm="sha512")
-
-            # Should NOT emit any DeprecationWarnings
-            deprecation_warnings = [
-                warning
-                for warning in w
-                if issubclass(warning.category, DeprecationWarning)
-            ]
-            assert len(deprecation_warnings) == 0
-            assert affinity.hash_algorithm == "sha512"
+    def test_sha512_accepted(self) -> None:
+        """SHA-512 should be accepted."""
+        affinity = ModelSessionAffinity(hash_algorithm="sha512")
+        assert affinity.hash_algorithm == "sha512"
 
     def test_default_algorithm_is_sha256(self) -> None:
         """Default hash algorithm should be sha256."""

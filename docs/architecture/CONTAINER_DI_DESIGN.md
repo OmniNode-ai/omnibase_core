@@ -1,13 +1,21 @@
 # Container Dependency Injection Design
 
-**Version:** 1.0.0
-**Status:** Draft
+**Version:** 1.1.0
+**Status:** Draft (Updated for v0.4.0)
 **Author:** ONEX Framework Team
 **Date:** 2025-10-21
+**Updated:** 2025-12-18
+
+> **Note (v0.4.0)**: This document was originally written when `omnibase_core` depended on
+> `omnibase_spi` for protocol definitions. As of v0.3.6, the dependency was inverted - SPI
+> now depends on Core, not the reverse. Protocol definitions are now Core-native in
+> `omnibase_core.protocols`. References to `omnibase_spi` in this document are preserved
+> for historical context but should be understood as referring to the current
+> `omnibase_core.protocols` module.
 
 ## Executive Summary
 
-This document outlines the architecture for implementing `ProtocolServiceRegistry` from `omnibase_spi` to replace hardcoded service resolution in `omnibase_core` container domain with proper dependency injection patterns.
+This document outlines the architecture for implementing `ProtocolServiceRegistry` to replace hardcoded service resolution in `omnibase_core` container domain with proper dependency injection patterns.
 
 **Goal:** Transform the container from string-based service lookup to a full-featured dependency injection system with lifecycle management, health monitoring, and dependency graph tracking.
 
@@ -102,7 +110,7 @@ This document outlines the architecture for implementing `ProtocolServiceRegistr
 
 ### Protocol Requirements
 
-The `ProtocolServiceRegistry` from `omnibase_spi` requires implementing:
+The `ProtocolServiceRegistry` (now defined in `omnibase_core.protocols`) requires implementing:
 
 #### Core Service Management
 1. **Service Registration:**
@@ -286,7 +294,8 @@ Implement protocol-compliant models first:
 
 ```
 # Example: model_service_metadata.py
-from omnibase_spi import ProtocolDIServiceMetadata
+# Note: Protocol definitions now in omnibase_core.protocols
+from omnibase_core.protocols import ProtocolDIServiceMetadata
 from pydantic import BaseModel, Field
 from datetime import datetime
 
@@ -309,7 +318,8 @@ class ModelServiceMetadata(BaseModel):
 
 ```
 # service_registry.py outline
-from omnibase_spi import ProtocolServiceRegistry
+# Note: Protocol definitions now in omnibase_core.protocols
+from omnibase_core.protocols import ProtocolServiceRegistry
 from typing import TypeVar, Type
 
 T = TypeVar("T")
@@ -448,7 +458,8 @@ service = container.get_service("contract_validator_registry")
 #### New Approach (v1.0 - Compatible)
 ```
 # Protocol-based resolution (preferred)
-from omnibase_spi import ProtocolContractValidator
+# Note: Protocol definitions now in omnibase_core.protocols
+from omnibase_core.protocols import ProtocolContractValidator
 validator = await container.get_service_async(ProtocolContractValidator)
 
 # String-based still works (deprecated)
@@ -458,7 +469,8 @@ service = container.get_service("contract_validator_registry")  # Deprecation wa
 #### New Approach (v2.0 - Registry Only)
 ```
 # Direct registry access
-from omnibase_spi import ProtocolContractValidator
+# Note: Protocol definitions now in omnibase_core.protocols
+from omnibase_core.protocols import ProtocolContractValidator
 registry = container.service_registry
 validator = await registry.resolve_service(ProtocolContractValidator)
 ```
@@ -625,10 +637,14 @@ Content:
 
 ## References
 
-- `omnibase_spi` protocols: `/Volumes/PRO-G40/Code/omnibase_spi/src/omnibase_spi/protocols/container/`
+- Protocol definitions: `src/omnibase_core/protocols/` (Core-native as of v0.3.6)
 - Current implementation: `src/omnibase_core/container/container_service_resolver.py`
 - Container: `src/omnibase_core/models/container/model_onex_container.py`
 - ONEX patterns: `docs/patterns/`
+
+> **Note**: Prior to v0.3.6, protocol definitions were in `omnibase_spi`. The dependency
+> inversion in v0.3.6 moved protocol definitions to `omnibase_core.protocols`, making
+> Core the source of truth for protocol interfaces. SPI now depends on Core.
 
 ## Appendix A: Service Inventory
 

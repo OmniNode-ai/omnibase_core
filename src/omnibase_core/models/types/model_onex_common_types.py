@@ -9,40 +9,13 @@ ARCHITECTURAL PRINCIPLE: Strong Typing Only
 - NO loose Union fallbacks - choose one type and stick to it
 - NO "convenience" conversion methods - use proper types from the start
 
-DEPRECATION NOTICE - JsonSerializable:
-The JsonSerializable type alias is deprecated. It provides no real validation
-and is essentially a type-hinted Any. Instead:
-
-1. For extension/metadata values, use ModelExtensionData (proper Pydantic model)
-2. For specific use cases, use the more constrained type aliases below
-3. For new code, always define a proper Pydantic model with validation
-
-Migration Examples:
-    OLD: value: JsonSerializable
-    NEW: value: PropertyValue  # For simple key-value data
-    NEW: value: MetadataValue  # For metadata
-    NEW: value: ModelExtensionData  # For extensions (preferred)
+For JSON-serializable data:
+- Use JsonSerializable from omnibase_core.models.types (proper PEP 695 recursive type)
+- For specific use cases, use the more constrained type aliases below
+- For new code, prefer Pydantic models with validation when structure is known
 """
 
 from __future__ import annotations
-
-from typing import Any
-
-# DEPRECATED: JsonSerializable - Do not use in new code
-# JSON-serializable value types (most common replacement for Any)
-# Recursive type alias for JSON-compatible data structures
-#
-# WARNING: This type alias provides no validation and should be replaced
-# with proper Pydantic models or more specific type aliases below.
-JsonSerializable = (
-    str
-    | int
-    | float
-    | bool
-    | list[Any]  # Cannot be fully recursive in Python 3.11
-    | dict[str, Any]  # Cannot be fully recursive in Python 3.11
-    | None
-)
 
 # Property/metadata values (for generic containers)
 PropertyValue = str | int | float | bool | list[str] | dict[str, str]
@@ -80,22 +53,20 @@ type ResultValue = (
 #
 # When replacing Any types:
 # 1. Choose the most specific type alias that fits the use case
-# 2. Prefer JsonSerializable for general data interchange
+# 2. Use JsonSerializable (from omnibase_core.models.types) for general data interchange
 # 3. Use PropertyValue for key-value stores and property containers
 # 4. Use MetadataValue for metadata and context information
 # 5. Use ValidationValue for validation error contexts
 # 6. Create new specific aliases rather than reusing generic ones
 #
 # Avoid these patterns:
-# ❌ field: Any = Field(...)
-# ❌ **kwargs: Any
-# ❌ def method(value: Any) -> Any:
-# ❌ str | int | Any  # Any defeats the purpose
-# ❌ from typing import Union, , Any  # Use modern syntax, Any
+# - field: Any = Field(...)
+# - **kwargs: Any
+# - def method(value: Any) -> Any:
+# - str | int | Any  # Any defeats the purpose
 #
 # Prefer these patterns:
-# ✅ field: JsonSerializable = Field(...)
-# ✅ **kwargs: str  # or specific type
-# ✅ def method(value: PropertyValue) -> PropertyValue:
-# ✅ str | int | float | bool  # specific alternatives only
-# ✅ type JsonSerializable = ... | list[JsonSerializable]  # PEP 695 recursive type statement (Python 3.12+)
+# - field: JsonSerializable = Field(...)  # from omnibase_core.models.types
+# - **kwargs: str  # or specific type
+# - def method(value: PropertyValue) -> PropertyValue:
+# - str | int | float | bool  # specific alternatives only

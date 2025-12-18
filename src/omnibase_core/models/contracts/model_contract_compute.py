@@ -54,43 +54,24 @@ class ModelContractCompute(MixinNodeTypeValidator, ModelContractBase):
 
     Strict typing is enforced: No Any types allowed in implementation.
 
-    Field Extraction Precedence (used by NodeCompute._contract_to_input()):
-        The following field extraction order is used for robustness.
-        Warning logs are emitted when using non-preferred fallback sources.
+    Required Fields (used by NodeCompute._contract_to_input()):
+        **input_state** (for computation input):
+            The input_state field is REQUIRED and provides the data for computation.
+            An error is raised if input_state is not provided.
 
-        **input_state extraction** (for computation input):
-            - input_state (REQUIRED - canonical location)
-              The input_state field is the only supported source for computation input.
-              An error is raised if input_state is not provided.
+        **algorithm.algorithm_type** (for algorithm selection):
+            The algorithm_type field in ModelAlgorithmConfig specifies which
+            computation to execute. This is a required field.
 
-        **computation_type extraction** (for algorithm selection):
-            1. algorithm.algorithm_type (preferred - canonical location)
-               The algorithm_type field in ModelAlgorithmConfig is the canonical
-               location for specifying which computation to execute.
-            2. metadata["computation_type"] (fallback - legacy location)
-               Previously used before algorithm configuration was standardized.
-               Warning log emitted when this source is used.
-            3. contract.computation_type attribute (fallback - deprecated)
-               Direct attribute on contract, rarely used.
-               Warning log emitted when this source is used.
-            4. "default" (final fallback - implicit default)
-               Uses the built-in "default" computation type.
-               Warning log emitted recommending explicit configuration.
+    Example contract structure::
 
-        **Contract requirements**:
-            Ensure your contracts specify:
-            - input_state (required) for computation input
-            - algorithm.algorithm_type for computation type selection
-
-        Example of preferred contract structure::
-
-            algorithm:
-              algorithm_type: "my_computation"
-              factors:
-                factor_1:
-                  weight: 1.0
-            input_state:
-              data: "input value"
+        algorithm:
+          algorithm_type: "my_computation"
+          factors:
+            factor_1:
+              weight: 1.0
+        input_state:
+          data: "input value"
     """
 
     # Interface version for code generation stability

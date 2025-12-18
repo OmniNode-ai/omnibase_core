@@ -108,7 +108,7 @@ test_container.register_service("ProtocolLogger", MockLogger())
 ## Next Steps
 
 - [Container Implementation](../../src/omnibase_core/models/container/model_onex_container.py)
-- Protocol Definitions: See omnibase_spi repository (if available)
+- Protocol Definitions: See `omnibase_core.protocols` (Core-native as of v0.3.6)
 - [Node Building Guide](../guides/node-building/README.md)
 
 ---

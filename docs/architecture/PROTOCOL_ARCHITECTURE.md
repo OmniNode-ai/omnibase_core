@@ -1,23 +1,40 @@
 # Protocol Architecture Analysis
 **Phase 0.2: Protocol Architecture Audit**
 **Generated**: 2025-10-22
+**Updated**: 2025-12-18
 **Project**: omnibase_core (ONEX Framework)
-**Codebase Size**: 1,848 Python files
+**Codebase Size**: 1,848+ Python files
+
+---
+
+> **Note (v0.4.0 - Dependency Inversion)**: This document was originally written when
+> `omnibase_core` depended on `omnibase_spi` for protocol definitions. As of v0.3.6, the
+> dependency was **inverted** - SPI now depends on Core, not the reverse.
+>
+> **Current Architecture (v0.3.6+)**:
+> - **omnibase_core.protocols** now defines Core-native protocol interfaces
+> - **omnibase_spi** depends on Core and may extend protocols for cross-service use
+> - **omnibase_infra** implements SPI protocols using transport libraries
+>
+> Historical references to "importing from omnibase_spi" should be understood as now
+> importing from `omnibase_core.protocols`. See the [Import Compatibility Matrix](IMPORT_COMPATIBILITY_MATRIX.md)
+> for the current import paths.
 
 ---
 
 ## Executive Summary
 
-The omnibase_core project follows a **Service Provider Interface (SPI) separation pattern** where:
-- **omnibase_spi** (external package) defines 100+ protocol interfaces for cross-service contracts
-- **omnibase_core** defines only **3 internal protocols** for domain-specific needs
+The omnibase_core project follows a **protocol-driven architecture** where:
+- **omnibase_core.protocols** defines Core-native protocol interfaces (v0.3.6+)
+- **omnibase_core** defines internal protocols for domain-specific needs
 - Protocol-based dependency injection is used extensively (420+ method implementations)
 - Strong typing with runtime-checkable protocols for structural subtyping
 
 ### Key Findings
-✅ **Clean separation**: Core protocols minimal, SPI protocols comprehensive
+✅ **Clean separation**: Core protocols now native to omnibase_core
 ✅ **Type safety**: Runtime-checkable protocols with type guards
-✅ **Zero dependencies**: SPI protocols follow zero-dependency principle
+✅ **Zero external dependencies**: Core protocols are self-contained
+✅ **Dependency inversion**: SPI depends on Core (not reverse)
 ⚠️ **Limited documentation**: Protocol usage patterns not well documented
 ⚠️ **Discovery challenge**: Protocol implementations scattered across codebase
 
@@ -122,12 +139,17 @@ class EnumStatusProtocol(Protocol):
 
 ---
 
-### 2. External Protocols (omnibase_spi)
+### 2. Core-Native Protocols (omnibase_core.protocols)
+
+> **Note (v0.3.6+)**: These protocols are now defined in `omnibase_core.protocols`.
+> The section header and location references below have been updated from the original
+> `omnibase_spi` paths. See [Import Compatibility Matrix](IMPORT_COMPATIBILITY_MATRIX.md)
+> for current import paths.
 
 Total: **100+ protocols** across 20+ domains
 
 #### 2.1 Core Type Protocols
-**Location**: `omnibase_spi.protocols.types`
+**Location**: `omnibase_core.protocols` (formerly `omnibase_spi.protocols.types`)
 
 **Structural Protocols** (behavioral contracts):
 ```
@@ -152,8 +174,8 @@ ProtocolSemVer            # Semantic version structure
 
 **Usage in omnibase_core**:
 ```
-# From types/constraints.py
-from omnibase_spi.protocols.types import (
+# From types/constraints.py (v0.3.6+ - Core-native imports)
+from omnibase_core.protocols import (
     ProtocolConfigurable as Configurable,
     ProtocolExecutable as Executable,
     ProtocolIdentifiable as Identifiable,
@@ -166,7 +188,7 @@ from omnibase_spi.protocols.types import (
 ---
 
 #### 2.2 Event Bus Protocols
-**Location**: `omnibase_spi.protocols.event_bus`
+**Location**: `omnibase_core.protocols` (formerly `omnibase_spi.protocols.event_bus`)
 
 ```
 ProtocolEventBus              # Event bus interface
@@ -182,7 +204,7 @@ ProtocolEventOrchestrator     # Multi-event coordination
 ---
 
 #### 2.3 File Handling Protocols
-**Location**: `omnibase_spi.protocols.file_handling`
+**Location**: `omnibase_core.protocols` (formerly `omnibase_spi.protocols.file_handling`)
 
 ```
 ProtocolFileReader            # File reading interface
@@ -197,7 +219,7 @@ ProtocolFileProcessing        # Processing pipeline
 ---
 
 #### 2.4 Schema & Validation Protocols
-**Location**: `omnibase_spi.protocols.schema`
+**Location**: `omnibase_core.protocols` (formerly `omnibase_spi.protocols.schema`)
 
 ```
 ProtocolSchemaLoader          # Schema loading interface
@@ -210,7 +232,7 @@ ProtocolModelValidatable      # Model validation
 ---
 
 #### 2.5 MCP (Model Context Protocol)
-**Location**: `omnibase_spi.protocols.mcp`
+**Location**: `omnibase_core.protocols` (formerly `omnibase_spi.protocols.mcp`)
 
 ```
 ProtocolTool                  # MCP tool interface
@@ -224,7 +246,7 @@ ProtocolMCPValidator          # Tool validation
 ---
 
 #### 2.6 Workflow Orchestration Protocols
-**Location**: `omnibase_spi.protocols.workflow_orchestration`
+**Location**: `omnibase_core.protocols` (formerly `omnibase_spi.protocols.workflow_orchestration`)
 
 ```
 ProtocolWorkflowDefinition    # Workflow structure
@@ -243,7 +265,7 @@ ProtocolTaskConfiguration     # Task config
 **Use Case**: Polymorphic behavior without inheritance
 
 ```
-# Protocol definition (omnibase_spi)
+# Protocol definition (omnibase_core.protocols - v0.3.6+)
 class ProtocolSerializable(Protocol):
     def model_dump(self) -> dict[str, Any]: ...
 
@@ -351,8 +373,8 @@ def process_entity(
 **Use Case**: Avoiding naming conflicts
 
 ```
-# From types/constraints.py
-from omnibase_spi.protocols.types import (
+# From types/constraints.py (v0.3.6+ - Core-native imports)
+from omnibase_core.protocols import (
     ProtocolConfigurable as Configurable,
     ProtocolExecutable as Executable,
     ProtocolIdentifiable as Identifiable,
@@ -394,45 +416,23 @@ else:
 
 ### High-Level Architecture
 
+> **Note (v0.3.6+)**: The diagram below has been updated to reflect the dependency
+> inversion where omnibase_core is now the source of truth for protocols.
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                      omnibase_spi                            │
-│  (Protocol Definitions - Service Provider Interface)        │
-│                                                               │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │ types/                                               │   │
-│  │  ├── protocol_core_types.py (50+ protocols)        │   │
-│  │  ├── protocol_event_bus_types.py                   │   │
-│  │  ├── protocol_file_handling_types.py               │   │
-│  │  ├── protocol_workflow_orchestration_types.py      │   │
-│  │  └── ...                                             │   │
-│  └─────────────────────────────────────────────────────┘   │
-│                                                               │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │ protocols/ (Domain-specific)                        │   │
-│  │  ├── event_bus/                                     │   │
-│  │  ├── file_handling/                                 │   │
-│  │  ├── mcp/                                           │   │
-│  │  ├── workflow_orchestration/                        │   │
-│  │  └── ...                                             │   │
-│  └─────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              │ imports
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
 │                      omnibase_core                           │
-│  (Protocol Implementations + 3 Internal Protocols)           │
+│  (Protocol Definitions - Source of Truth)                   │
 │                                                               │
 │  ┌─────────────────────────────────────────────────────┐   │
-│  │ types/constraints.py                                │   │
-│  │  - Imports SPI protocols                           │   │
-│  │  - Creates TypeVars with protocol bounds          │   │
-│  │  - Provides type guards                            │   │
+│  │ protocols/                                          │   │
+│  │  ├── container/ (DI protocols)                     │   │
+│  │  ├── event_bus/ (Event bus protocols)              │   │
+│  │  ├── types/ (Core type protocols)                  │   │
+│  │  ├── validation/ (Validation protocols)            │   │
+│  │  └── ...                                             │   │
 │  └─────────────────────────────────────────────────────┘   │
-│                              │                               │
-│                              │ imports                       │
-│                              ▼                               │
+│                                                               │
 │  ┌─────────────────────────────────────────────────────┐   │
 │  │ models/* (1,800+ files)                            │   │
 │  │  - BaseModel classes                               │   │
@@ -445,6 +445,33 @@ else:
 │  │  ├── validation/patterns.py::PatternChecker       │   │
 │  │  ├── mixins/mixin_serializable.py::MixinSerializable│  │
 │  │  └── models/core/model_status_protocol.py::EnumStatusProtocol │
+│  └─────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+                              ▲
+                              │ imports (depends on)
+                              │
+┌─────────────────────────────────────────────────────────────┐
+│                      omnibase_spi                            │
+│  (Service Provider Interface - extends Core protocols)      │
+│                                                               │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │ Extends Core protocols for cross-service contracts │   │
+│  │  - May add SPI-specific protocol extensions       │   │
+│  │  - References Core models and types               │   │
+│  └─────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+                              ▲
+                              │ imports (depends on)
+                              │
+┌─────────────────────────────────────────────────────────────┐
+│                      omnibase_infra                          │
+│  (Protocol Implementations - Transport Libraries)           │
+│                                                               │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │ Implements protocols using transport libraries     │   │
+│  │  - Kafka for event bus                            │   │
+│  │  - PostgreSQL for persistence                      │   │
+│  │  - Redis for caching                              │   │
 │  └─────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -467,7 +494,7 @@ else:
 
 #### Chain 2: Event Bus Integration
 ```
-omnibase_spi.protocols.event_bus
+omnibase_core.protocols (Core-native - v0.3.6+)
   → ProtocolEventBus
     → omnibase_core.mixins.mixin_event_driven_node
       → Constructor injection: event_bus: ProtocolEventBus
@@ -476,7 +503,7 @@ omnibase_spi.protocols.event_bus
 
 #### Chain 3: Metadata Loading
 ```
-omnibase_spi.protocols.schema
+omnibase_core.protocols (Core-native - v0.3.6+)
   → ProtocolSchemaLoader
     → omnibase_core.mixins.mixin_event_driven_node
       → DI: metadata_loader: ProtocolSchemaLoader | None
@@ -615,7 +642,7 @@ class PatternChecker(Protocol):
 **Benefits**:
 - Enable isinstance() checks
 - Better runtime validation
-- Consistent with omnibase_spi patterns
+- Consistent with omnibase_core.protocols patterns
 
 ---
 
@@ -727,7 +754,7 @@ def test_serializable_mixin_protocol():
 **Priority**: LOW (already consistent)
 
 **Current Convention** (GOOD):
-- SPI protocols: `Protocol<Name>` (e.g., `ProtocolSerializable`)
+- Core protocols: `Protocol<Name>` (e.g., `ProtocolSerializable`)
 - Internal protocols: Descriptive names (e.g., `PatternChecker`, `MixinSerializable`)
 - Aliases: Short names (e.g., `Serializable`, `Configurable`)
 
@@ -957,11 +984,12 @@ grep -r "def model_dump\|def serialize\|def get_name" src/omnibase_core --includ
 - `validation/patterns.py` - Pattern validation protocols
 - `mixins/mixin_serializable.py` - Serialization protocol
 - `models/core/model_status_protocol.py` - Status migration protocol
+- `protocols/` - Core-native protocol definitions (v0.3.6+)
 
 ### External Resources
 - PEP 544 - Protocols: Structural subtyping (static duck typing)
-- omnibase_spi documentation (external package)
 - Python typing module documentation
+- [Import Compatibility Matrix](IMPORT_COMPATIBILITY_MATRIX.md) - Current import paths
 
 ---
 
@@ -972,7 +1000,7 @@ grep -r "def model_dump\|def serialize\|def get_name" src/omnibase_core --includ
 2. **MixinSerializable** - Recursive serialization
 3. **EnumStatusProtocol** - Status migration
 
-### omnibase_spi Protocol Categories (100+)
+### omnibase_core.protocols Categories (100+)
 1. **Core Types** (50+) - Basic interfaces (Serializable, Identifiable, etc.)
 2. **Event Bus** (15+) - Pub/sub messaging
 3. **File Handling** (12+) - File I/O operations
@@ -1001,7 +1029,9 @@ grep -r "def model_dump\|def serialize\|def get_name" src/omnibase_core --includ
 
 ---
 
-**Document Version**: 1.0
-**Last Updated**: 2025-10-22
+**Document Version**: 1.1
+**Last Updated**: 2025-12-18
 **Audit Scope**: Complete omnibase_core codebase
-**Next Steps**: Proceed to Phase 1 fixes based on recommendations above
+**Change History**:
+- v1.1 (2025-12-18): Updated for v0.3.6 dependency inversion - protocols now Core-native
+- v1.0 (2025-10-22): Initial audit

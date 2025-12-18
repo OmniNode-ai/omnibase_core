@@ -20,7 +20,7 @@ from typing import cast
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.types.model_onex_common_types import JsonSerializable
+from omnibase_core.models.types import JsonSerializable
 
 # Define PropertyValue locally to avoid dependency issues
 PropertyValue = JsonSerializable

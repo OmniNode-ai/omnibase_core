@@ -27,6 +27,7 @@ from pydantic import BaseModel, Field
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_value_container import ModelValueContainer
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.types import JsonSerializable
 
 
 class ModelTypedMapping(BaseModel):
@@ -71,11 +72,11 @@ class ModelTypedMapping(BaseModel):
         """Set a boolean value using ONEX-compatible direct __init__ calls."""
         self.data[key] = ModelValueContainer(value=value)
 
-    def set_list(self, key: str, value: list[object]) -> None:
+    def set_list(self, key: str, value: list[JsonSerializable]) -> None:
         """Set a list value using ONEX-compatible direct __init__ calls."""
         self.data[key] = ModelValueContainer(value=value)
 
-    def set_dict(self, key: str, value: dict[str, object]) -> None:
+    def set_dict(self, key: str, value: dict[str, JsonSerializable]) -> None:
         """Set a dict value with depth checking for security using ONEX-compatible direct __init__ calls."""
         if self.current_depth > self.MAX_DEPTH:
             raise ModelOnexError(
