@@ -1,0 +1,183 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 OmniNode Team
+"""Domain-level outcome of dual registration.
+
+This module provides ModelDualRegistrationOutcome, a pure domain model representing
+the logical result of registering a node to both Consul and PostgreSQL. This is a
+PURE domain model - it does NOT include infrastructure concerns like timing,
+retries, or telemetry.
+
+Design Pattern:
+    ModelDualRegistrationOutcome is the return type from Effect nodes that perform
+    dual registration. It captures the outcome of both registration operations
+    in a single, immutable model.
+
+    The model follows these principles:
+    - **Domain Purity**: Only captures domain-level outcomes, no infra concerns
+    - **Atomic Result**: Single model represents outcome of dual operation
+    - **Error Transparency**: Clear error fields when operations fail
+    - **Correlation**: Links to originating request via correlation_id
+
+Outcome States:
+    The `status` field represents the overall outcome:
+    - "success": Both Postgres and Consul registration succeeded
+    - "partial": One succeeded, one failed (check individual flags)
+    - "failed": Both registration attempts failed
+
+Data Flow:
+    ```
+    ┌──────────────────────────────────────────────────────────────────┐
+    │                   Registration Outcome Flow                       │
+    ├──────────────────────────────────────────────────────────────────┤
+    │                                                                  │
+    │   Effect Node                                 Orchestrator       │
+    │       │                                            │             │
+    │       │   register to Postgres                     │             │
+    │       │   register to Consul                       │             │
+    │       │                                            │             │
+    │       │   create DualRegistrationOutcome           │             │
+    │       │───────────────────────────────────────────>│             │
+    │       │                                            │ aggregate   │
+    │       │                                            │ outcomes    │
+    │                                                                  │
+    └──────────────────────────────────────────────────────────────────┘
+    ```
+
+Thread Safety:
+    ModelDualRegistrationOutcome is immutable (frozen=True) after creation,
+    making it thread-safe for concurrent read access.
+
+Example:
+    >>> from uuid import uuid4
+    >>> from omnibase_core.models.registration import ModelDualRegistrationOutcome
+    >>>
+    >>> # Successful dual registration
+    >>> outcome = ModelDualRegistrationOutcome(
+    ...     node_id=uuid4(),
+    ...     status="success",
+    ...     postgres_applied=True,
+    ...     consul_applied=True,
+    ...     correlation_id=uuid4(),
+    ... )
+    >>>
+    >>> # Partial failure (Postgres succeeded, Consul failed)
+    >>> partial = ModelDualRegistrationOutcome(
+    ...     node_id=uuid4(),
+    ...     status="partial",
+    ...     postgres_applied=True,
+    ...     consul_applied=False,
+    ...     consul_error="Connection timeout",
+    ...     correlation_id=uuid4(),
+    ... )
+
+See Also:
+    omnibase_core.models.registration.ModelRegistrationPayload: Input payload
+    omnibase_core.nodes.NodeEffect: Effect nodes that produce this outcome
+    omnibase_core.nodes.NodeOrchestrator: Orchestrator that aggregates outcomes
+"""
+
+from __future__ import annotations
+
+from typing import Literal
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class ModelDualRegistrationOutcome(BaseModel):
+    """Domain-level outcome of dual registration.
+
+    This is a PURE domain model representing the logical result of
+    registering a node to both Consul and PostgreSQL. It does NOT
+    include infrastructure concerns (timing, retries, telemetry).
+
+    This model is used by:
+    - Effect nodes (return this after performing registration)
+    - Orchestrator nodes (aggregate multiple outcomes)
+
+    Attributes:
+        node_id: The node that was registered (or attempted).
+        status: Overall outcome status ("success", "partial", "failed").
+        postgres_applied: Whether PostgreSQL registration succeeded.
+        consul_applied: Whether Consul registration succeeded.
+        postgres_error: Error message if PostgreSQL registration failed.
+        consul_error: Error message if Consul registration failed.
+        correlation_id: Correlation ID for distributed tracing.
+
+    Example:
+        >>> from uuid import uuid4
+        >>>
+        >>> # Complete success
+        >>> success = ModelDualRegistrationOutcome(
+        ...     node_id=uuid4(),
+        ...     status="success",
+        ...     postgres_applied=True,
+        ...     consul_applied=True,
+        ...     correlation_id=uuid4(),
+        ... )
+        >>>
+        >>> # Complete failure
+        >>> failure = ModelDualRegistrationOutcome(
+        ...     node_id=uuid4(),
+        ...     status="failed",
+        ...     postgres_applied=False,
+        ...     consul_applied=False,
+        ...     postgres_error="Database connection refused",
+        ...     consul_error="Service unavailable",
+        ...     correlation_id=uuid4(),
+        ... )
+    """
+
+    model_config = ConfigDict(
+        frozen=True,
+        extra="forbid",
+        from_attributes=True,
+        validate_assignment=True,
+    )
+
+    # ---- Identity ----
+    node_id: UUID = Field(
+        ...,
+        description="The node that was registered (or attempted).",
+    )
+
+    # ---- Overall Status ----
+    status: Literal["success", "partial", "failed"] = Field(
+        ...,
+        description=(
+            "Overall outcome status. 'success' means both operations succeeded, "
+            "'partial' means one succeeded and one failed, 'failed' means both failed."
+        ),
+    )
+
+    # ---- Individual Operation Results ----
+    postgres_applied: bool = Field(
+        ...,
+        description="Whether PostgreSQL registration succeeded.",
+    )
+    consul_applied: bool = Field(
+        ...,
+        description="Whether Consul registration succeeded.",
+    )
+
+    # ---- Error Information ----
+    postgres_error: str | None = Field(
+        default=None,
+        description="Error message if PostgreSQL registration failed.",
+    )
+    consul_error: str | None = Field(
+        default=None,
+        description="Error message if Consul registration failed.",
+    )
+
+    # ---- Tracing ----
+    correlation_id: UUID = Field(
+        ...,
+        description=(
+            "Correlation ID for distributed tracing. Links this outcome "
+            "to the originating request."
+        ),
+    )
+
+
+__all__ = ["ModelDualRegistrationOutcome"]

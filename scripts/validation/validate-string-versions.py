@@ -107,10 +107,12 @@ class PythonASTValidator(ast.NodeVisitor):
             "version_compatibility",  # Compatibility strings
             "execution_id",  # Some execution IDs may need to be strings for compatibility
             "version_str",  # Parameter names for parsing functions
-            # EXTERNAL_SYSTEMS (3 fields)
+            # EXTERNAL_SYSTEMS (5 fields)
             "external_id",  # External system identifiers (not ONEX-managed)
             "certificate_id",  # X.509 certificate IDs
             "service_id",  # Consul service identifiers (external system constraint)
+            "consul_service_id",  # Consul service identifiers (prefixed variant)
+            "network_id",  # Network identifiers (VPC, subnet names - external systems)
             # DISTRIBUTED_TRACING (4 unique fields - OpenTelemetry standard)
             "trace_id",  # OpenTelemetry trace identifier
             "span_id",  # OpenTelemetry span identifier
