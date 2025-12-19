@@ -17,7 +17,7 @@
 
 ## Document Purpose
 
-This Architecture Decision Record documents the architectural decision for how node registration can be triggered in the ONEX system. It establishes that event-driven registration (via `NodeIntrospected` EVENT) is the canonical/default path, while command-driven registration (via `RegisterNodeRequested` COMMAND) is an optional/gated path for administrative use cases.
+This Architecture Decision Record defines how node registration is triggered in the ONEX system. It establishes that event-driven registration (via `NodeIntrospected` EVENT) is the canonical/default path, while command-driven registration (via `RegisterNodeRequested` COMMAND) is an optional/gated path for administrative use cases.
 
 **Why this document exists**:
 - To establish clear architectural boundaries between automatic and administrative registration flows

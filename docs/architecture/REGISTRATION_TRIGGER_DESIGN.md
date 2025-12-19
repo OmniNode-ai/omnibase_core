@@ -26,7 +26,7 @@
 
 ## Overview
 
-ONEX node registration supports **two distinct trigger paths** that initiate the registration workflow. This design ensures both automatic discovery and controlled administrative registration while maintaining architectural purity through the Event/Command to Orchestrator execution shapes.
+ONEX node registration supports **two distinct trigger paths** that initiate the registration workflow. This design supports both automatic discovery and controlled administrative registration. It maintains architectural purity through the Event/Command to Orchestrator execution shapes.
 
 For the architectural decision rationale behind this design, see [ADR-004: Registration Trigger Architecture](decisions/ADR-004-registration-trigger-architecture.md).
 
@@ -125,7 +125,7 @@ For the architectural decision rationale behind this design, see [ADR-004: Regis
 
 ## Canonical Path: NodeIntrospected EVENT
 
-The **canonical path** is the primary registration mechanism triggered automatically when a node starts up and publishes its introspection event.
+The **canonical path** is the default registration mechanism, triggered automatically when a node starts up and publishes its introspection event.
 
 ### Trigger Model
 
