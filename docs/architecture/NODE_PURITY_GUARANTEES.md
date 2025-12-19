@@ -314,6 +314,7 @@ class NodeDataCompute(NodeCoreBase):
 ## Related Documentation
 
 - [ONEX Four-Node Architecture](ONEX_FOUR_NODE_ARCHITECTURE.md)
+- [Canonical Execution Shapes](CANONICAL_EXECUTION_SHAPES.md)
 - [Node Building Guide](../guides/node-building/README.md)
 - [Container Types](CONTAINER_TYPES.md)
 - [Error Handling Best Practices](../conventions/ERROR_HANDLING_BEST_PRACTICES.md)

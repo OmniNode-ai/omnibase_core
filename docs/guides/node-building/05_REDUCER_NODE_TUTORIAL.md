@@ -175,6 +175,17 @@ In this tutorial, you'll build a production-ready **Metrics Aggregation Node** a
 - **Emits Intents for side effects** (no direct execution)
 - **Maintains no mutable state** (pure functional pattern)
 
+## Execution Shape
+
+> **Canonical Execution Shape**: REDUCER nodes follow the **Event to Reducer** pattern.
+> They receive domain events, perform pure FSM state transitions, and emit Intents for side effects.
+> REDUCER nodes must NOT perform any I/O - all side effects are emitted as Intents.
+> See [Canonical Execution Shapes](../../architecture/CANONICAL_EXECUTION_SHAPES.md) for the complete pattern.
+
+See also [Node Purity Guarantees](../../architecture/NODE_PURITY_GUARANTEES.md) for enforcement details.
+
+---
+
 **Why Pure FSM REDUCER Nodes?**
 
 REDUCER nodes in ONEX are **pure finite state machines**:

@@ -92,6 +92,9 @@ omnibase_core/docs/
 |----------|-------------|--------|
 | [Architecture Overview](architecture/OVERVIEW.md) | High-level system design | ✅ Complete |
 | [**Four-Node Pattern**](architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) | Core ONEX architecture ⭐ **Excellent!** | ✅ Complete |
+| [**Canonical Execution Shapes**](architecture/CANONICAL_EXECUTION_SHAPES.md) | Allowed/forbidden data flow patterns ⭐ **NEW** | ✅ Complete |
+| [**Message Topic Mapping**](architecture/MESSAGE_TOPIC_MAPPING.md) | Event/Command/Intent to topic routing rules ⭐ **NEW** | ✅ Complete |
+| [**Node Purity Guarantees**](architecture/NODE_PURITY_GUARANTEES.md) | Purity enforcement for COMPUTE/REDUCER nodes | ✅ Complete |
 | [**Node Class Hierarchy**](architecture/NODE_CLASS_HIERARCHY.md) | ModelService* vs Node* vs NodeCoreBase ⭐ **CRITICAL** | ✅ Complete |
 | [**Container Types**](architecture/CONTAINER_TYPES.md) | ModelContainer vs ModelONEXContainer ⚠️ **CRITICAL** | ✅ Complete |
 | [Dependency Injection](architecture/DEPENDENCY_INJECTION.md) | ModelONEXContainer patterns | ✅ Complete |
@@ -332,12 +335,12 @@ def serialize_error(error: ModelOnexError) -> TypedDictValidationErrorSerialized
 |----------|----------|-------------|---------|-------|
 | **Getting Started** | 3 | 0 | 0 | 3 |
 | **Node Building** | 10 | 0 | 0 | 10 |
-| **Architecture** | 13 | 0 | 0 | 13 |
+| **Architecture** | 16 | 0 | 0 | 16 |
 | **Reference** | 14 | 0 | 0 | 14 |
 | **Specialized** | 13 | 0 | 0 | 13 |
-| **TOTAL** | **53** | **0** | **0** | **53** |
+| **TOTAL** | **56** | **0** | **0** | **56** |
 
-**Overall Progress**: 100% complete (53/53 documents)
+**Overall Progress**: 100% complete (56/56 documents)
 
 ### Priority Items
 

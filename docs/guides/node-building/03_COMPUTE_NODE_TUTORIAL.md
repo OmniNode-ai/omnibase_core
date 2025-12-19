@@ -22,6 +22,16 @@ This tutorial shows **TWO approaches**:
 
 See [Node Class Hierarchy Guide](../../architecture/NODE_CLASS_HIERARCHY.md) for detailed comparison.
 
+## Execution Shape
+
+> **Canonical Execution Shape**: COMPUTE nodes are **pure transformations** with no I/O.
+> They receive data from EFFECT nodes and pass results to REDUCER or ORCHESTRATOR nodes.
+> See [Canonical Execution Shapes](../../architecture/CANONICAL_EXECUTION_SHAPES.md) for the complete pattern.
+
+**Key Constraint**: COMPUTE nodes must not perform any I/O operations (no network calls, no file writes, no database access). All I/O should be handled by EFFECT nodes. See [Node Purity Guarantees](../../architecture/NODE_PURITY_GUARANTEES.md) for enforcement details.
+
+---
+
 ## Overview
 
 In this tutorial, you'll build a complete COMPUTE node that calculates prices with tax and discounts. You'll learn:

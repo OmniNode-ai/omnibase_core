@@ -71,6 +71,7 @@ from .enum_environment_validation_rule_type import EnumEnvironmentValidationRule
 
 # Execution-related enums
 from .enum_execution_mode import EnumExecutionMode
+from .enum_execution_shape import EnumExecutionShape, EnumMessageCategory
 from .enum_execution_trigger import EnumExecutionTrigger
 
 # Function-related enums
@@ -275,7 +276,9 @@ __all__ = [
     "EnumTransactionState",
     # Execution domain
     "EnumExecutionMode",
+    "EnumExecutionShape",
     "EnumExecutionTrigger",
+    "EnumMessageCategory",
     # Log level domain
     "EnumLogLevel",
     # Health and status domain

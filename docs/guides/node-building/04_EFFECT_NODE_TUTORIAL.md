@@ -32,6 +32,14 @@ In this tutorial, you'll build a production-ready **File Backup Node** that:
 - Handles rollback scenarios gracefully
 - Provides comprehensive error handling
 
+## Execution Shape
+
+> **Canonical Execution Shape**: EFFECT nodes execute **Intent to Effect** operations.
+> They receive Intents from REDUCER nodes or Actions from ORCHESTRATOR nodes and perform the actual I/O.
+> See [Canonical Execution Shapes](../../architecture/CANONICAL_EXECUTION_SHAPES.md) for the complete pattern.
+
+---
+
 **Why EFFECT Nodes?**
 
 EFFECT nodes handle all external interactions in the ONEX architecture:

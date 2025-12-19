@@ -149,6 +149,8 @@ class NodeMyServiceCompute(NodeCompute):
 
 **See**: [ONEX Four-Node Architecture](docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md)
 
+**Execution Shapes**: For allowed/forbidden data flow patterns (e.g., Event→Reducer, Intent→Effect), see [Canonical Execution Shapes](docs/architecture/CANONICAL_EXECUTION_SHAPES.md).
+
 ### Container Types: CRITICAL DISTINCTION
 
 ⚠️ **IMPORTANT**: omnibase_core has TWO different container types that are NOT interchangeable!
