@@ -30,7 +30,8 @@ Files          Algorithms       Intent Emit    Action Emit
 4. [Why These Constraints Matter](#why-these-constraints-matter)
 5. [Decision Matrix](#decision-matrix)
 6. [Enforcement](#enforcement)
-7. [Related Documentation](#related-documentation)
+7. [Registration-Specific Execution Shapes](#registration-specific-execution-shapes)
+8. [Related Documentation](#related-documentation)
 
 ---
 
@@ -853,6 +854,96 @@ All nodes must include tests demonstrating:
 
 ---
 
+## Registration-Specific Execution Shapes
+
+Node registration in ONEX follows two distinct paths, each using a different canonical execution shape. This section documents how the registration domain applies the general execution shapes defined above.
+
+### Canonical Registration (Event-Driven)
+
+The **canonical registration path** uses automatic event-driven discovery:
+
+| Aspect | Value |
+|--------|-------|
+| **Trigger** | `NodeIntrospected` EVENT (`NODE_INTROSPECTION_EVENT`) |
+| **Shape** | Shape 1 - Event to Orchestrator |
+| **Source** | `MixinIntrospectionPublisher` (automatic on node startup) |
+| **Topic** | `onex.registration.events` |
+
+```text
+    ┌──────────────┐          ┌─────────────────┐
+    │    Node      │          │  Registration   │
+    │   Startup    │─────────▶│  Orchestrator   │
+    │              │          │      [O]        │
+    │ publishes    │  EVENT   │                 │
+    │ NodeIntro-   │          │ Coordinates     │
+    │ spected      │          │ workflow via    │
+    │              │          │ ModelAction     │
+    └──────────────┘          └────────┬────────┘
+                                       │
+                                       ▼
+                              ┌────────────────────┐
+                              │ Actions to Effect  │
+                              │ nodes: Consul,     │
+                              │ PostgreSQL, Events │
+                              └────────────────────┘
+```
+
+**Use Cases**:
+- Default path for automatic node registration on startup
+- Zero-touch service discovery in production environments
+- Integration testing with automatic node lifecycle
+
+### Gated Registration (Command-Driven)
+
+The **gated registration path** is reserved for administrative or exceptional registration flows:
+
+| Aspect | Value |
+|--------|-------|
+| **Trigger** | `RegisterNodeRequested` COMMAND (planned) |
+| **Shape** | Shape 4 - Command to Orchestrator |
+| **Source** | Admin API, CLI, provisioning scripts (explicit) |
+| **Topic** | `onex.registration.commands` |
+
+```text
+    ┌──────────────┐          ┌─────────────────┐
+    │   Admin      │          │  Registration   │
+    │   System     │─────────▶│  Orchestrator   │
+    │              │          │      [O]        │
+    │ sends        │ COMMAND  │                 │
+    │ RegisterNode │          │ Validates auth, │
+    │ Requested    │          │ applies policy, │
+    │              │          │ coordinates     │
+    └──────────────┘          └────────┬────────┘
+                                       │
+                              ┌────────┴────────┐
+                              │                 │
+                              ▼                 ▼
+                      ┌──────────────┐  ┌──────────────┐
+                      │ Gate PASS:   │  │ Gate FAIL:   │
+                      │ Same workflow│  │ Emit         │
+                      │ as canonical │  │ Rejection    │
+                      └──────────────┘  └──────────────┘
+```
+
+**Use Cases**:
+- Administrative/exceptional registration requiring explicit authorization
+- Manual node onboarding in controlled environments
+- Bulk provisioning with operator oversight
+- Re-registration after infrastructure failures
+
+### Registration Shape Summary
+
+| Path | Trigger | Shape | Gate Required | Automation |
+|------|---------|-------|---------------|------------|
+| **Canonical** | `NodeIntrospected` EVENT | Shape 1 | No | Automatic |
+| **Gated** | `RegisterNodeRequested` COMMAND | Shape 4 | Yes | Manual |
+
+> **See Also**:
+> - [Registration Trigger Design](REGISTRATION_TRIGGER_DESIGN.md) for detailed implementation, FSM states, and sequence diagrams
+> - [ADR-004: Registration Trigger Architecture](decisions/ADR-004-registration-trigger-architecture.md) for architectural decision rationale
+
+---
+
 ## Related Documentation
 
 | Document | Purpose |
@@ -864,6 +955,8 @@ All nodes must include tests demonstrating:
 | [Node Purity Guarantees](NODE_PURITY_GUARANTEES.md) | Purity enforcement for COMPUTE/REDUCER |
 | [Node Types Guide](../guides/node-building/02_NODE_TYPES.md) | When to use each node type |
 | [Node Building Guide](../guides/node-building/README.md) | How to implement nodes |
+| [Registration Trigger Design](REGISTRATION_TRIGGER_DESIGN.md) | Registration workflow implementation details |
+| [ADR-004: Registration Trigger Architecture](decisions/ADR-004-registration-trigger-architecture.md) | Architectural decision for registration triggers |
 
 ### See Also
 
