@@ -490,23 +490,124 @@ def validate_envelope_fields(data: dict[str, object]) -> ModelValidationContaine
     return container
 
 
-def validate_causation_chain(envelopes: list[ModelEnvelope]) -> bool:
+def get_chain_depth(envelopes: list[ModelEnvelope]) -> int:
+    """Calculate the maximum depth of a causation chain.
+
+    Traverses the parent-child relationships via causation_id to find the
+    longest path from any root message (causation_id=None) to a leaf message.
+
+    The depth is defined as the number of edges in the longest path:
+    - Empty list: depth = 0
+    - Single root envelope: depth = 0 (no edges)
+    - Root -> Child: depth = 1 (one edge)
+    - Root -> Child -> Grandchild: depth = 2 (two edges)
+
+    Args:
+        envelopes: List of envelopes to analyze for chain depth
+
+    Returns:
+        The maximum depth of the causation chain (0 for empty or single-root chains)
+
+    Example:
+        >>> root = ModelEnvelope.create_root(uuid4(), "node-1")
+        >>> child = root.create_child()
+        >>> grandchild = child.create_child()
+        >>> get_chain_depth([root, child, grandchild])
+        2
+        >>> get_chain_depth([root])
+        0
+        >>> get_chain_depth([])
+        0
+    """
+    if not envelopes:
+        return 0
+
+    # Build lookup maps for efficient traversal
+    # message_id -> envelope
+    envelope_by_id: dict[UUID, ModelEnvelope] = {
+        env.message_id: env for env in envelopes
+    }
+    # causation_id -> list of children message_ids
+    children_by_parent: dict[UUID, list[UUID]] = {}
+    root_ids: list[UUID] = []
+
+    for env in envelopes:
+        if env.causation_id is None:
+            root_ids.append(env.message_id)
+        else:
+            if env.causation_id not in children_by_parent:
+                children_by_parent[env.causation_id] = []
+            children_by_parent[env.causation_id].append(env.message_id)
+
+    # If no roots found but envelopes exist, the chain is broken
+    # Still compute depth from all envelopes as potential starting points
+    if not root_ids:
+        # Start from envelopes whose causation_id is not in the set
+        # (orphaned children - their depth from an external parent)
+        for env in envelopes:
+            if env.causation_id is not None and env.causation_id not in envelope_by_id:
+                root_ids.append(env.message_id)
+
+    # If still no starting points, use all envelopes (handles cycles)
+    if not root_ids:
+        root_ids = list(envelope_by_id.keys())
+
+    def calculate_depth_from(message_id: UUID, visited: set[UUID]) -> int:
+        """Calculate depth starting from a given message_id using DFS."""
+        if message_id in visited:
+            # Cycle detected - return 0 to avoid infinite recursion
+            return 0
+        visited.add(message_id)
+
+        children = children_by_parent.get(message_id, [])
+        if not children:
+            return 0
+
+        max_child_depth = 0
+        for child_id in children:
+            child_depth = calculate_depth_from(child_id, visited.copy())
+            max_child_depth = max(max_child_depth, child_depth)
+
+        return 1 + max_child_depth
+
+    # Calculate maximum depth from all root nodes
+    max_depth = 0
+    for root_id in root_ids:
+        depth = calculate_depth_from(root_id, set())
+        max_depth = max(max_depth, depth)
+
+    return max_depth
+
+
+def validate_causation_chain(
+    envelopes: list[ModelEnvelope],
+    max_chain_depth: int | None = None,
+) -> bool:
     """Validate the integrity of a causation chain.
 
     Checks that each envelope's causation_id points to a valid message_id
     in the chain (except for root messages which have no causation_id).
+    Optionally validates that the chain depth does not exceed a maximum.
 
     Args:
         envelopes: List of envelopes that should form a valid causation chain
+        max_chain_depth: Optional maximum allowed chain depth. If provided,
+            returns False if any chain exceeds this depth. If None (default),
+            no depth validation is performed (backwards compatible).
 
     Returns:
-        True if the chain is valid, False otherwise
+        True if the chain is valid (and within depth limit if specified),
+        False otherwise
 
     Example:
         >>> root = ModelEnvelope.create_root(uuid4(), "node-1")
         >>> child = root.create_child()
         >>> validate_causation_chain([root, child])
         True
+        >>> validate_causation_chain([root, child], max_chain_depth=1)
+        True
+        >>> validate_causation_chain([root, child], max_chain_depth=0)
+        False
     """
     if not envelopes:
         return True
@@ -525,11 +626,18 @@ def validate_causation_chain(envelopes: list[ModelEnvelope]) -> bool:
     if len(correlation_ids) > 1:
         return False
 
+    # Validate chain depth if max_chain_depth is specified
+    if max_chain_depth is not None:
+        chain_depth = get_chain_depth(envelopes)
+        if chain_depth > max_chain_depth:
+            return False
+
     return True
 
 
 __all__ = [
     "ModelEnvelope",
+    "get_chain_depth",
     "validate_causation_chain",
     "validate_envelope_fields",
 ]

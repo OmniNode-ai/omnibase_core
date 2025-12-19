@@ -10,6 +10,7 @@ from .model_dict_value_union import ModelDictValueUnion
 from .model_discriminated_value import ModelDiscriminatedValue
 from .model_envelope import (
     ModelEnvelope,
+    get_chain_depth,
     validate_causation_chain,
     validate_envelope_fields,
 )
@@ -78,6 +79,7 @@ __all__ = [
     "ParameterValue",
     "PayloadDataValue",
     # Envelope validation helpers
+    "get_chain_depth",
     "validate_causation_chain",
     "validate_envelope_fields",
     # Typed metadata models

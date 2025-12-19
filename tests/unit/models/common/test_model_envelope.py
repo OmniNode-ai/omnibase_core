@@ -765,6 +765,228 @@ class TestValidateCausationChain:
         result = validate_causation_chain([root, child1, child2, child3])
         assert result is True
 
+    def test_validate_causation_chain_with_max_depth_none_backwards_compatible(
+        self,
+    ) -> None:
+        """Test that max_chain_depth=None preserves backwards compatible behavior."""
+        from omnibase_core.models.common.model_envelope import validate_causation_chain
+
+        correlation_id = uuid4()
+        root = ModelEnvelope.create_root(correlation_id, "node-1")
+        child1 = root.create_child()
+        child2 = child1.create_child()
+        child3 = child2.create_child()
+        child4 = child3.create_child()
+
+        # Long chain should pass with max_chain_depth=None (default)
+        result = validate_causation_chain([root, child1, child2, child3, child4])
+        assert result is True
+
+        result_explicit_none = validate_causation_chain(
+            [root, child1, child2, child3, child4], max_chain_depth=None
+        )
+        assert result_explicit_none is True
+
+    def test_validate_causation_chain_max_depth_pass(self) -> None:
+        """Test that chain within max_chain_depth passes."""
+        from omnibase_core.models.common.model_envelope import validate_causation_chain
+
+        correlation_id = uuid4()
+        root = ModelEnvelope.create_root(correlation_id, "node-1")
+        child = root.create_child()
+
+        # Chain depth is 1 (root -> child), should pass with max_chain_depth=1
+        result = validate_causation_chain([root, child], max_chain_depth=1)
+        assert result is True
+
+        # Should also pass with higher limit
+        result_higher = validate_causation_chain([root, child], max_chain_depth=5)
+        assert result_higher is True
+
+    def test_validate_causation_chain_max_depth_fail(self) -> None:
+        """Test that chain exceeding max_chain_depth fails."""
+        from omnibase_core.models.common.model_envelope import validate_causation_chain
+
+        correlation_id = uuid4()
+        root = ModelEnvelope.create_root(correlation_id, "node-1")
+        child = root.create_child()
+
+        # Chain depth is 1 (root -> child), should fail with max_chain_depth=0
+        result = validate_causation_chain([root, child], max_chain_depth=0)
+        assert result is False
+
+    def test_validate_causation_chain_max_depth_exact_boundary(self) -> None:
+        """Test max_chain_depth at exact boundary."""
+        from omnibase_core.models.common.model_envelope import validate_causation_chain
+
+        correlation_id = uuid4()
+        root = ModelEnvelope.create_root(correlation_id, "node-1")
+        child1 = root.create_child()
+        child2 = child1.create_child()
+
+        # Chain depth is 2 (root -> child1 -> child2)
+        # Should pass at exactly max_chain_depth=2
+        result_pass = validate_causation_chain(
+            [root, child1, child2], max_chain_depth=2
+        )
+        assert result_pass is True
+
+        # Should fail at max_chain_depth=1
+        result_fail = validate_causation_chain(
+            [root, child1, child2], max_chain_depth=1
+        )
+        assert result_fail is False
+
+    def test_validate_causation_chain_max_depth_empty_list(self) -> None:
+        """Test that empty list passes with any max_chain_depth."""
+        from omnibase_core.models.common.model_envelope import validate_causation_chain
+
+        result = validate_causation_chain([], max_chain_depth=0)
+        assert result is True
+
+        result_higher = validate_causation_chain([], max_chain_depth=10)
+        assert result_higher is True
+
+    def test_validate_causation_chain_max_depth_single_root(self) -> None:
+        """Test that single root (depth=0) passes with max_chain_depth=0."""
+        from omnibase_core.models.common.model_envelope import validate_causation_chain
+
+        root = ModelEnvelope.create_root(uuid4(), "node-1")
+
+        result = validate_causation_chain([root], max_chain_depth=0)
+        assert result is True
+
+
+class TestGetChainDepth:
+    """Tests for the get_chain_depth helper function."""
+
+    def test_get_chain_depth_empty_list(self) -> None:
+        """Test that empty list returns depth 0."""
+        from omnibase_core.models.common.model_envelope import get_chain_depth
+
+        result = get_chain_depth([])
+        assert result == 0
+
+    def test_get_chain_depth_single_root(self) -> None:
+        """Test that single root envelope returns depth 0."""
+        from omnibase_core.models.common.model_envelope import get_chain_depth
+
+        root = ModelEnvelope.create_root(uuid4(), "node-1")
+
+        result = get_chain_depth([root])
+        assert result == 0
+
+    def test_get_chain_depth_chain_of_two(self) -> None:
+        """Test chain of 2 envelopes (root -> child) returns depth 1."""
+        from omnibase_core.models.common.model_envelope import get_chain_depth
+
+        correlation_id = uuid4()
+        root = ModelEnvelope.create_root(correlation_id, "node-1")
+        child = root.create_child()
+
+        result = get_chain_depth([root, child])
+        assert result == 1
+
+    def test_get_chain_depth_chain_of_five(self) -> None:
+        """Test chain of 5 envelopes returns depth 4."""
+        from omnibase_core.models.common.model_envelope import get_chain_depth
+
+        correlation_id = uuid4()
+        root = ModelEnvelope.create_root(correlation_id, "node-1")
+        child1 = root.create_child()
+        child2 = child1.create_child()
+        child3 = child2.create_child()
+        child4 = child3.create_child()
+
+        result = get_chain_depth([root, child1, child2, child3, child4])
+        assert result == 4
+
+    def test_get_chain_depth_order_independent(self) -> None:
+        """Test that chain depth calculation is order-independent."""
+        from omnibase_core.models.common.model_envelope import get_chain_depth
+
+        correlation_id = uuid4()
+        root = ModelEnvelope.create_root(correlation_id, "node-1")
+        child1 = root.create_child()
+        child2 = child1.create_child()
+
+        # Different orderings should produce same depth
+        result_ordered = get_chain_depth([root, child1, child2])
+        result_reversed = get_chain_depth([child2, child1, root])
+        result_shuffled = get_chain_depth([child1, root, child2])
+
+        assert result_ordered == 2
+        assert result_reversed == 2
+        assert result_shuffled == 2
+
+    def test_get_chain_depth_branching_chains(self) -> None:
+        """Test depth calculation with branching (multiple children from one parent)."""
+        from omnibase_core.models.common.model_envelope import get_chain_depth
+
+        correlation_id = uuid4()
+        root = ModelEnvelope.create_root(correlation_id, "node-1")
+
+        # Two children from root (parallel branches)
+        child_a = root.create_child(entity_id="child-a")
+        child_b = root.create_child(entity_id="child-b")
+
+        # Branch A continues deeper
+        grandchild_a = child_a.create_child()
+
+        # The deepest path is: root -> child_a -> grandchild_a (depth 2)
+        result = get_chain_depth([root, child_a, child_b, grandchild_a])
+        assert result == 2
+
+    def test_get_chain_depth_multiple_roots(self) -> None:
+        """Test depth with multiple root envelopes (same correlation_id)."""
+        from omnibase_core.models.common.model_envelope import get_chain_depth
+
+        correlation_id = uuid4()
+        root1 = ModelEnvelope.create_root(correlation_id, "root-1")
+        root2 = ModelEnvelope.create_root(correlation_id, "root-2")
+
+        child1 = root1.create_child()
+        child2 = child1.create_child()
+
+        # root1 -> child1 -> child2 (depth 2)
+        # root2 has no children (depth 0 from root2)
+        # Max depth should be 2
+        result = get_chain_depth([root1, root2, child1, child2])
+        assert result == 2
+
+    def test_get_chain_depth_orphan_envelope(self) -> None:
+        """Test depth with orphan envelope (missing parent in list)."""
+        from omnibase_core.models.common.model_envelope import get_chain_depth
+
+        correlation_id = uuid4()
+        root = ModelEnvelope.create_root(correlation_id, "node-1")
+        child = root.create_child()
+
+        # Only include child (orphan - parent not in list)
+        # The child has no children, so depth from it is 0
+        result = get_chain_depth([child])
+        assert result == 0
+
+    def test_get_chain_depth_orphan_with_descendants(self) -> None:
+        """Test depth with orphan that has its own descendants."""
+        from omnibase_core.models.common.model_envelope import get_chain_depth
+
+        correlation_id = uuid4()
+        root = ModelEnvelope.create_root(correlation_id, "node-1")
+        child = root.create_child()
+        grandchild = child.create_child()
+
+        # Exclude root - child becomes orphan but has grandchild
+        # child -> grandchild (depth 1)
+        result = get_chain_depth([child, grandchild])
+        assert result == 1
+
+    def test_get_chain_depth_exported_in_all(self) -> None:
+        """Test that get_chain_depth is exported in __all__."""
+        from omnibase_core.models.common import model_envelope
+
+        assert "get_chain_depth" in model_envelope.__all__
+
 
 class TestModelEnvelopeSerialization:
     """Tests for serialization and deserialization."""
