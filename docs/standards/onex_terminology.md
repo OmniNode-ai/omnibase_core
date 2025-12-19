@@ -169,6 +169,8 @@ action = ModelAction(
 
 **Important Clarification**: "Command" is NOT a formal ONEX concept. Use "Action" for Orchestrator-issued commands. The term "command" may appear in documentation as an English noun describing what Actions represent, but `ModelAction` is the canonical model.
 
+> **Note**: `ModelAction` is primarily used internally by Orchestrator nodes. Application code typically interacts with Actions indirectly through workflow definitions in YAML contracts.
+
 ---
 
 ### 3. INTENT
@@ -419,6 +421,8 @@ class NodeDatabaseWriterEffect(NodeEffect):
 from omnibase_core.protocols.runtime import ProtocolHandler
 from omnibase_core.enums.enum_handler_type import EnumHandlerType
 from omnibase_core.models.core.model_onex_envelope import ModelOnexEnvelope
+from omnibase_core.types.typed_dict_handler_metadata import TypedDictHandlerMetadata
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 class HttpHandler:
     """HTTP handler implementation."""
