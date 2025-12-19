@@ -30,8 +30,9 @@ _VALID_TOPIC_TYPES = frozenset(
     {TOPIC_TYPE_COMMANDS, TOPIC_TYPE_EVENTS, TOPIC_TYPE_INTENTS, TOPIC_TYPE_SNAPSHOTS}
 )
 
-# Domain validation pattern: lowercase alphanumeric with hyphens, starting with letter
-_DOMAIN_PATTERN = re.compile(r"^[a-z][a-z0-9-]*$")
+# Domain validation pattern: lowercase alphanumeric with hyphens, starting with letter,
+# cannot end with hyphen (must end with letter or digit, or be single letter)
+_DOMAIN_PATTERN = re.compile(r"^[a-z][a-z0-9-]*[a-z0-9]$|^[a-z]$")
 
 # Domain Names
 DOMAIN_REGISTRATION = "registration"
@@ -68,7 +69,8 @@ def topic_name(domain: str, topic_type: str) -> str:
         # error-ok: ValueError is standard for input validation in constants modules
         raise ValueError(
             f"Invalid domain '{domain}': must be lowercase alphanumeric with hyphens, "
-            "starting with a letter (pattern: ^[a-z][a-z0-9-]*$)"
+            "starting with a letter, cannot end with hyphen "
+            "(pattern: ^[a-z][a-z0-9-]*[a-z0-9]$|^[a-z]$)"
         )
     if topic_type not in _VALID_TOPIC_TYPES:
         # error-ok: ValueError is standard for input validation in constants modules
@@ -104,9 +106,12 @@ CLEANUP_POLICY_SNAPSHOTS = "compact,delete"
 CLEANUP_POLICY_COMMANDS = "delete"
 CLEANUP_POLICY_INTENTS = "delete"
 
-# Retention Defaults (milliseconds)
-RETENTION_MS_DEFAULT = 604800000  # 7 days
-RETENTION_MS_AUDIT = 2592000000  # 30 days
+# Retention Defaults (milliseconds) - per ONEX topic taxonomy standard
+RETENTION_MS_COMMANDS = 604800000  # 7 days
+RETENTION_MS_EVENTS = 2592000000  # 30 days
+RETENTION_MS_INTENTS = 86400000  # 1 day (short-lived coordination)
+RETENTION_MS_SNAPSHOTS = 604800000  # 7 days
+RETENTION_MS_AUDIT = 2592000000  # 30 days (same as events for audit trails)
 
 __all__ = [
     # Type suffixes
@@ -143,6 +148,9 @@ __all__ = [
     "CLEANUP_POLICY_COMMANDS",
     "CLEANUP_POLICY_INTENTS",
     # Retention
-    "RETENTION_MS_DEFAULT",
+    "RETENTION_MS_COMMANDS",
+    "RETENTION_MS_EVENTS",
+    "RETENTION_MS_INTENTS",
+    "RETENTION_MS_SNAPSHOTS",
     "RETENTION_MS_AUDIT",
 ]

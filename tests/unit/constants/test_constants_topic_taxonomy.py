@@ -24,7 +24,10 @@ from omnibase_core.constants import (
     DOMAIN_REGISTRATION,
     DOMAIN_RUNTIME,
     RETENTION_MS_AUDIT,
-    RETENTION_MS_DEFAULT,
+    RETENTION_MS_COMMANDS,
+    RETENTION_MS_EVENTS,
+    RETENTION_MS_INTENTS,
+    RETENTION_MS_SNAPSHOTS,
     TOPIC_DISCOVERY_COMMANDS,
     TOPIC_DISCOVERY_EVENTS,
     TOPIC_DISCOVERY_INTENTS,
@@ -407,11 +410,23 @@ class TestCleanupPolicyConstants:
 
 
 class TestRetentionConstants:
-    """Test cases for retention default constants."""
+    """Test cases for retention constants by topic type."""
 
-    def test_retention_ms_default_value(self):
-        """Test RETENTION_MS_DEFAULT constant value."""
-        assert RETENTION_MS_DEFAULT == 604800000  # 7 days in milliseconds
+    def test_retention_ms_commands_value(self):
+        """Test RETENTION_MS_COMMANDS constant value."""
+        assert RETENTION_MS_COMMANDS == 604800000  # 7 days in milliseconds
+
+    def test_retention_ms_events_value(self):
+        """Test RETENTION_MS_EVENTS constant value."""
+        assert RETENTION_MS_EVENTS == 2592000000  # 30 days in milliseconds
+
+    def test_retention_ms_intents_value(self):
+        """Test RETENTION_MS_INTENTS constant value."""
+        assert RETENTION_MS_INTENTS == 86400000  # 1 day in milliseconds
+
+    def test_retention_ms_snapshots_value(self):
+        """Test RETENTION_MS_SNAPSHOTS constant value."""
+        assert RETENTION_MS_SNAPSHOTS == 604800000  # 7 days in milliseconds
 
     def test_retention_ms_audit_value(self):
         """Test RETENTION_MS_AUDIT constant value."""
@@ -419,27 +434,59 @@ class TestRetentionConstants:
 
     def test_retention_values_are_integers(self):
         """Test that retention values are integers."""
-        assert isinstance(RETENTION_MS_DEFAULT, int)
+        assert isinstance(RETENTION_MS_COMMANDS, int)
+        assert isinstance(RETENTION_MS_EVENTS, int)
+        assert isinstance(RETENTION_MS_INTENTS, int)
+        assert isinstance(RETENTION_MS_SNAPSHOTS, int)
         assert isinstance(RETENTION_MS_AUDIT, int)
 
     def test_retention_values_are_positive(self):
         """Test that retention values are positive."""
-        assert RETENTION_MS_DEFAULT > 0
+        assert RETENTION_MS_COMMANDS > 0
+        assert RETENTION_MS_EVENTS > 0
+        assert RETENTION_MS_INTENTS > 0
+        assert RETENTION_MS_SNAPSHOTS > 0
         assert RETENTION_MS_AUDIT > 0
 
-    def test_retention_default_is_7_days(self):
-        """Test that RETENTION_MS_DEFAULT equals 7 days."""
+    def test_retention_commands_is_7_days(self):
+        """Test that RETENTION_MS_COMMANDS equals 7 days."""
         seven_days_ms = 7 * 24 * 60 * 60 * 1000
-        assert seven_days_ms == RETENTION_MS_DEFAULT
+        assert seven_days_ms == RETENTION_MS_COMMANDS
+
+    def test_retention_events_is_30_days(self):
+        """Test that RETENTION_MS_EVENTS equals 30 days."""
+        thirty_days_ms = 30 * 24 * 60 * 60 * 1000
+        assert thirty_days_ms == RETENTION_MS_EVENTS
+
+    def test_retention_intents_is_1_day(self):
+        """Test that RETENTION_MS_INTENTS equals 1 day."""
+        one_day_ms = 1 * 24 * 60 * 60 * 1000
+        assert one_day_ms == RETENTION_MS_INTENTS
+
+    def test_retention_snapshots_is_7_days(self):
+        """Test that RETENTION_MS_SNAPSHOTS equals 7 days."""
+        seven_days_ms = 7 * 24 * 60 * 60 * 1000
+        assert seven_days_ms == RETENTION_MS_SNAPSHOTS
 
     def test_retention_audit_is_30_days(self):
         """Test that RETENTION_MS_AUDIT equals 30 days."""
         thirty_days_ms = 30 * 24 * 60 * 60 * 1000
         assert thirty_days_ms == RETENTION_MS_AUDIT
 
-    def test_audit_retention_longer_than_default(self):
-        """Test that audit retention is longer than default retention."""
-        assert RETENTION_MS_AUDIT > RETENTION_MS_DEFAULT
+    def test_events_and_audit_have_same_retention(self):
+        """Test that events and audit have the same retention (30 days)."""
+        assert RETENTION_MS_EVENTS == RETENTION_MS_AUDIT
+
+    def test_commands_and_snapshots_have_same_retention(self):
+        """Test that commands and snapshots have the same retention (7 days)."""
+        assert RETENTION_MS_COMMANDS == RETENTION_MS_SNAPSHOTS
+
+    def test_intents_have_shortest_retention(self):
+        """Test that intents have the shortest retention (1 day)."""
+        assert RETENTION_MS_INTENTS < RETENTION_MS_COMMANDS
+        assert RETENTION_MS_INTENTS < RETENTION_MS_EVENTS
+        assert RETENTION_MS_INTENTS < RETENTION_MS_SNAPSHOTS
+        assert RETENTION_MS_INTENTS < RETENTION_MS_AUDIT
 
 
 class TestTopicNamingConvention:
@@ -690,7 +737,10 @@ class TestModuleExports:
 
         all_exports = constants_topic_taxonomy.__all__
 
-        assert "RETENTION_MS_DEFAULT" in all_exports
+        assert "RETENTION_MS_COMMANDS" in all_exports
+        assert "RETENTION_MS_EVENTS" in all_exports
+        assert "RETENTION_MS_INTENTS" in all_exports
+        assert "RETENTION_MS_SNAPSHOTS" in all_exports
         assert "RETENTION_MS_AUDIT" in all_exports
 
 
