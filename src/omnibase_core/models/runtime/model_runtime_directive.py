@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2025 OmniNode Team
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """
 Runtime directive model (INTERNAL-ONLY).
 
@@ -11,24 +15,23 @@ Used for execution mechanics (scheduling, retries, delays).
 """
 
 from datetime import UTC, datetime
-from enum import StrEnum, unique
 from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.enums.enum_directive_type import EnumDirectiveType
+from omnibase_core.utils.util_decorators import allow_dict_str_any
 
-@unique
-class EnumDirectiveType(StrEnum):
-    """Runtime directive types (internal-only)."""
-
-    SCHEDULE_EFFECT = "schedule_effect"
-    ENQUEUE_HANDLER = "enqueue_handler"
-    RETRY_WITH_BACKOFF = "retry_with_backoff"
-    DELAY_UNTIL = "delay_until"
-    CANCEL_EXECUTION = "cancel_execution"
+__all__ = ["ModelRuntimeDirective"]
 
 
+@allow_dict_str_any(
+    "Directive payload structure is dynamic and depends on directive_type. "
+    "Each EnumDirectiveType has different payload requirements (e.g., retry config, "
+    "scheduling params, handler args). Defining a union of all possible payloads "
+    "would couple this model to all directive implementations."
+)
 class ModelRuntimeDirective(BaseModel):
     """
     Internal-only runtime directive.

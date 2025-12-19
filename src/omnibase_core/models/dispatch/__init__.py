@@ -85,7 +85,7 @@ See Also:
     omnibase_core.models.events.ModelEventEnvelope: Event wrapper with routing info
 """
 
-from omnibase_core.models.dispatch.enum_dispatch_status import EnumDispatchStatus
+from omnibase_core.enums.enum_dispatch_status import EnumDispatchStatus
 from omnibase_core.models.dispatch.model_dispatch_result import ModelDispatchResult
 from omnibase_core.models.dispatch.model_dispatch_route import ModelDispatchRoute
 from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput

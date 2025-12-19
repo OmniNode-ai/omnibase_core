@@ -13,9 +13,10 @@ Design Principles:
 
 Module Organization:
 - protocol_handler.py: Handler protocol for ONEX runtime handler interface
+- protocol_message_handler.py: Category-based message handler protocol
 
 Usage:
-    from omnibase_core.protocols.runtime import ProtocolHandler
+    from omnibase_core.protocols.runtime import ProtocolHandler, ProtocolMessageHandler
 
     class MyHandler(ProtocolHandler):
         @property
@@ -32,10 +33,14 @@ Usage:
 Related:
     - OMN-226: ProtocolHandler interface definition
     - OMN-228: EnvelopeRouter transport-agnostic orchestrator
+    - OMN-934: Handler registry for message dispatch engine
 
 .. versionadded:: 0.4.0
 """
 
 from omnibase_core.protocols.runtime.protocol_handler import ProtocolHandler
+from omnibase_core.protocols.runtime.protocol_message_handler import (
+    ProtocolMessageHandler,
+)
 
-__all__ = ["ProtocolHandler"]
+__all__ = ["ProtocolHandler", "ProtocolMessageHandler"]

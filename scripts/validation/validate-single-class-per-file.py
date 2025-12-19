@@ -21,17 +21,26 @@ from typing import Any
 
 
 class ClassDefinitionDetector(ast.NodeVisitor):
-    """AST visitor to detect class definitions in Python code."""
+    """AST visitor to detect top-level class definitions in Python code."""
 
     def __init__(self, filepath: str):
         self.filepath = filepath
         self.classes: list[tuple[int, str, bool]] = []  # (line_num, name, is_enum)
+        self._in_class = False  # Track if we're inside a class
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
-        """Check if class definition is an Enum."""
+        """Check if class definition is an Enum (only top-level classes)."""
+        # Skip nested classes (classes defined inside other classes)
+        if self._in_class:
+            return
+
         is_enum = self._is_enum_class(node)
         self.classes.append((node.lineno, node.name, is_enum))
+
+        # Mark that we're inside a class before visiting children
+        self._in_class = True
         self.generic_visit(node)
+        self._in_class = False
 
     def _is_enum_class(self, node: ast.ClassDef) -> bool:
         """Check if a class inherits from Enum."""

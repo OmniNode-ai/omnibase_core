@@ -81,12 +81,12 @@ import threading
 import time
 from collections.abc import Awaitable, Callable, Sequence
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, Literal
 from uuid import uuid4
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_dispatch_status import EnumDispatchStatus
 from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
-from omnibase_core.models.dispatch.enum_dispatch_status import EnumDispatchStatus
 from omnibase_core.models.dispatch.model_dispatch_metrics import ModelDispatchMetrics
 from omnibase_core.models.dispatch.model_dispatch_result import ModelDispatchResult
 from omnibase_core.models.dispatch.model_dispatch_route import ModelDispatchRoute
@@ -95,31 +95,30 @@ from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutpu
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.protocols.event_bus.protocol_event_bus import ProtocolEventBus
+from omnibase_core.types.typed_dict_legacy_dispatch_metrics import (
+    TypedDictLegacyDispatchMetrics,
+)
+from omnibase_core.types.typed_dict_log_context import TypedDictLogContext
 
 # Module-level logger for fallback when no custom logger is provided
 _module_logger = logging.getLogger(__name__)
 
+# Type alias for valid metric keys (must match TypedDictLegacyDispatchMetrics keys)
+MetricKey = Literal[
+    "dispatch_count",
+    "dispatch_success_count",
+    "dispatch_error_count",
+    "total_latency_ms",
+    "handler_execution_count",
+    "handler_error_count",
+    "routes_matched_count",
+    "no_handler_count",
+    "category_mismatch_count",
+]
+
 # Type alias for handler functions
 # Handlers can be sync or async, take an envelope and return Any (handler output)
 HandlerFunc = Callable[[ModelEventEnvelope[Any]], Any | Awaitable[Any]]
-
-
-class _HandlerEntry:
-    """Internal storage for handler registration metadata."""
-
-    __slots__ = ("category", "handler", "handler_id", "message_types")
-
-    def __init__(
-        self,
-        handler_id: str,
-        handler: HandlerFunc,
-        category: EnumMessageCategory,
-        message_types: set[str] | None,
-    ) -> None:
-        self.handler_id = handler_id
-        self.handler = handler
-        self.category = category
-        self.message_types = message_types  # None means "all types"
 
 
 class MessageDispatchEngine:
@@ -194,6 +193,23 @@ class MessageDispatchEngine:
     .. versionadded:: 0.4.0
     """
 
+    class _HandlerEntry:
+        """Internal storage for handler registration metadata."""
+
+        __slots__ = ("category", "handler", "handler_id", "message_types")
+
+        def __init__(
+            self,
+            handler_id: str,
+            handler: HandlerFunc,
+            category: EnumMessageCategory,
+            message_types: set[str] | None,
+        ) -> None:
+            self.handler_id = handler_id
+            self.handler = handler
+            self.category = category
+            self.message_types = message_types  # None means "all types"
+
     def __init__(
         self,
         logger: logging.Logger | None = None,
@@ -215,7 +231,7 @@ class MessageDispatchEngine:
         self._routes: dict[str, ModelDispatchRoute] = {}
 
         # Handler storage: handler_id -> _HandlerEntry
-        self._handlers: dict[str, _HandlerEntry] = {}
+        self._handlers: dict[str, MessageDispatchEngine._HandlerEntry] = {}
 
         # Index for fast handler lookup by category
         # category -> list of handler_ids
@@ -236,8 +252,8 @@ class MessageDispatchEngine:
         # Structured metrics (Pydantic model)
         self._structured_metrics: ModelDispatchMetrics = ModelDispatchMetrics()
 
-        # Legacy metrics dict (for backwards compatibility)
-        self._metrics: dict[str, Any] = {
+        # Dictionary metrics (alternative format for introspection)
+        self._metrics: TypedDictLegacyDispatchMetrics = {
             "dispatch_count": 0,
             "dispatch_success_count": 0,
             "dispatch_error_count": 0,
@@ -390,7 +406,7 @@ class MessageDispatchEngine:
                 )
 
             # Store handler entry
-            entry = _HandlerEntry(
+            entry = MessageDispatchEngine._HandlerEntry(
                 handler_id=handler_id,
                 handler=handler,
                 category=category,
@@ -470,7 +486,7 @@ class MessageDispatchEngine:
         """
         return self._frozen
 
-    def _increment_metric(self, key: str, value: int | float = 1) -> None:
+    def _increment_metric(self, key: MetricKey, value: int | float = 1) -> None:
         """
         Thread-safe increment of a metric value.
 
@@ -479,7 +495,7 @@ class MessageDispatchEngine:
         all metrics updates are protected by a lock.
 
         Args:
-            key: The metric key to increment (must exist in self._metrics)
+            key: The metric key to increment (must be a valid MetricKey literal)
             value: The value to add (default: 1)
 
         Note:
@@ -489,7 +505,7 @@ class MessageDispatchEngine:
         .. versionadded:: 0.4.0
         """
         with self._metrics_lock:
-            self._metrics[key] += value
+            self._metrics[key] += value  # type: ignore[literal-required]
 
     def _build_log_context(
         self,
@@ -502,7 +518,7 @@ class MessageDispatchEngine:
         correlation_id: str | None = None,
         trace_id: str | None = None,
         error_code: str | None = None,
-    ) -> dict[str, Any]:
+    ) -> TypedDictLogContext:
         """
         Build structured log context dictionary.
 
@@ -520,7 +536,7 @@ class MessageDispatchEngine:
         Returns:
             Dictionary with non-None values for structured logging.
         """
-        context: dict[str, Any] = {}
+        context: TypedDictLogContext = {}
         if topic is not None:
             context["topic"] = topic
         if category is not None:
@@ -876,14 +892,13 @@ class MessageDispatchEngine:
                 # Handlers now return ModelHandlerOutput (OMN-941)
                 if isinstance(result, ModelHandlerOutput):
                     handler_outputs.append(result)
-                    # For backwards compatibility, also track output count
-                    # in the legacy outputs list (as topic strings if available)
+                    # Track output count in the string outputs list for logging
                     output_count = result.output_count()
                     if output_count > 0:
                         outputs.append(
                             f"<{output_count} outputs from {handler_entry.handler_id}>"
                         )
-                # Legacy support: If handler returns a topic string or list of topics
+                # Handle string or list returns (topic strings)
                 elif isinstance(result, str) and result:
                     outputs.append(result)
                 elif isinstance(result, list):
@@ -939,11 +954,10 @@ class MessageDispatchEngine:
                 )
 
                 # Log error
-                self._logger.error(
+                self._logger.exception(
                     "Handler '%s' failed: %s",
                     handler_entry.handler_id,
                     e,
-                    exc_info=True,
                     extra=self._build_log_context(
                         topic=topic,
                         category=topic_category,
@@ -1076,7 +1090,7 @@ class MessageDispatchEngine:
         topic: str,
         category: EnumMessageCategory,
         message_type: str,
-    ) -> list[_HandlerEntry]:
+    ) -> list[MessageDispatchEngine._HandlerEntry]:
         """
         Find all handlers that match the given criteria.
 
@@ -1092,7 +1106,7 @@ class MessageDispatchEngine:
         Returns:
             List of matching handler entries (may be empty)
         """
-        matching_handlers: list[_HandlerEntry] = []
+        matching_handlers: list[MessageDispatchEngine._HandlerEntry] = []
         seen_handler_ids: set[str] = set()
 
         # Find all routes that match this topic and category
@@ -1137,7 +1151,7 @@ class MessageDispatchEngine:
 
     async def _execute_handler(
         self,
-        entry: _HandlerEntry,
+        entry: MessageDispatchEngine._HandlerEntry,
         envelope: ModelEventEnvelope[Any],
     ) -> Any:
         """
@@ -1305,7 +1319,7 @@ class MessageDispatchEngine:
 
         return published_count
 
-    def get_metrics(self) -> dict[str, Any]:
+    def get_metrics(self) -> TypedDictLegacyDispatchMetrics:
         """
         Get dispatch metrics for observability (legacy format).
 
@@ -1335,7 +1349,18 @@ class MessageDispatchEngine:
         .. versionadded:: 0.4.0
         """
         # Return a copy to prevent external modification
-        return dict(self._metrics)
+        # TypedDict cast is safe since _metrics is typed as TypedDictLegacyDispatchMetrics
+        return TypedDictLegacyDispatchMetrics(
+            dispatch_count=self._metrics["dispatch_count"],
+            dispatch_success_count=self._metrics["dispatch_success_count"],
+            dispatch_error_count=self._metrics["dispatch_error_count"],
+            total_latency_ms=self._metrics["total_latency_ms"],
+            handler_execution_count=self._metrics["handler_execution_count"],
+            handler_error_count=self._metrics["handler_error_count"],
+            routes_matched_count=self._metrics["routes_matched_count"],
+            no_handler_count=self._metrics["no_handler_count"],
+            category_mismatch_count=self._metrics["category_mismatch_count"],
+        )
 
     def get_structured_metrics(self) -> ModelDispatchMetrics:
         """

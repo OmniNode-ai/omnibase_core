@@ -2,16 +2,7 @@
 Output model for NodeReducer operations.
 
 Strongly typed output wrapper with reduction statistics, conflict resolution metadata,
-and projection emission for pure fold operations.
-
-Option A Semantics (OMN-941):
-    Reducers are PURE FOLDS - they compute new state from events without side effects.
-    - ALLOWED: projections[] - materialized view updates (primary output)
-    - FORBIDDEN: events[] - reducers cannot emit events (use orchestrator)
-    - FORBIDDEN: intents[] - reducers cannot emit intents (use orchestrator)
-
-    The `intents` field is DEPRECATED and will be removed in v0.5.0.
-    Use orchestrator nodes for intent-based side effects.
+and Intent emission for pure FSM pattern.
 
 Thread Safety:
     ModelReducerOutput is immutable (frozen=True) after creation, making it
@@ -21,17 +12,15 @@ Thread Safety:
 """
 
 import math
-import warnings
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_reducer_types import EnumReductionType, EnumStreamingMode
 from omnibase_core.models.common.model_reducer_metadata import ModelReducerMetadata
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.projection.model_projection_base import ModelProjectionBase
 from omnibase_core.models.reducer.model_intent import ModelIntent
 
 
@@ -40,25 +29,14 @@ class ModelReducerOutput[T_Output](BaseModel):
     Output model for NodeReducer operations.
 
     Strongly typed output wrapper with reduction statistics,
-    conflict resolution metadata, and projection emission list.
+    conflict resolution metadata, and Intent emission list.
 
-    Option A Pure Fold Semantics (OMN-941):
-        Reducers are PURE FOLDS - they deterministically compute new state from
-        events without side effects. This ensures:
-        - Replay safety: Same events always produce same state
-        - Testability: No mocking required for side effects
-        - Predictability: State transitions are deterministic
-
-        ALLOWED outputs:
-        - result: The new state after reduction (primary output)
-        - projections[]: Materialized view updates for read optimization
-
-        FORBIDDEN outputs (use Orchestrator instead):
-        - events[]: Reducers cannot emit new events
-        - intents[]: Reducers cannot emit side effect intents
+    Pure FSM Pattern:
+        result: The new state after reduction
+        intents: Side effects to be executed by Effect node
 
     Thread Safety:
-        This model is immutable (frozen=True) after creation. The projections tuple
+        This model is immutable (frozen=True) after creation. The intents tuple
         and typed metadata are captured at construction time and cannot be modified.
         This ensures thread-safe sharing of output instances across concurrent
         readers without synchronization.
@@ -112,11 +90,7 @@ class ModelReducerOutput[T_Output](BaseModel):
         conflicts_resolved: Number of conflicts resolved during reduction (default 0).
         streaming_mode: Processing mode used (BATCH, WINDOWED, CONTINUOUS).
         batches_processed: Number of batches processed (default 1).
-        projections: Projection updates emitted during reduction. These are materialized
-            view updates for read-optimized queries (Option A primary output).
-        intents: DEPRECATED in v0.4.0, removed in v0.5.0. Reducers are pure folds and
-            cannot emit side effect intents. Use Orchestrator nodes for intent-based
-            workflows. Emits DeprecationWarning if non-empty.
+        intents: Side effect intents emitted during reduction for Effect node execution.
         metadata: Typed metadata for tracking and correlation (source, trace_id,
             correlation_id, group_key, partition_id, window_id, tags, trigger).
             Replaces dict[str, str] with ModelReducerMetadata for type safety.
@@ -181,26 +155,10 @@ class ModelReducerOutput[T_Output](BaseModel):
     streaming_mode: EnumStreamingMode = EnumStreamingMode.BATCH
     batches_processed: int = 1
 
-    # Projection emission for pure fold pattern (Option A primary output)
-    projections: tuple[ModelProjectionBase, ...] = Field(
-        default=(),
-        description=(
-            "Projection updates emitted during reduction. These are materialized view "
-            "updates for read-optimized queries. Primary output for Option A pure fold "
-            "semantics where reducers compute state without side effects."
-        ),
-    )
-
-    # DEPRECATED: Intent emission - violates Option A pure fold semantics
+    # Intent emission for pure FSM pattern
     intents: tuple[ModelIntent, ...] = Field(
         default=(),
-        description=(
-            "DEPRECATED in v0.4.0, will be removed in v0.5.0. "
-            "Reducers are pure folds per Option A semantics (OMN-941) and cannot emit "
-            "side effect intents. Use Orchestrator nodes for intent-based workflows. "
-            "A DeprecationWarning is emitted if this field contains any intents."
-        ),
-        deprecated=True,
+        description="Side effect intents emitted during reduction (for Effect node)",
     )
 
     metadata: ModelReducerMetadata = Field(
@@ -289,29 +247,3 @@ class ModelReducerOutput[T_Output](BaseModel):
                 },
             )
         return v
-
-    @model_validator(mode="after")
-    def warn_on_deprecated_intents(self) -> "ModelReducerOutput[T_Output]":
-        """Emit deprecation warning if intents field is used.
-
-        Per Option A semantics (OMN-941), reducers are pure folds and cannot emit
-        side effect intents. This validator emits a DeprecationWarning when the
-        deprecated intents field contains any values.
-
-        The intents field will be removed in v0.5.0. Use Orchestrator nodes for
-        intent-based side effect workflows.
-
-        Returns:
-            self: The validated model instance (unmodified)
-        """
-        if self.intents:
-            warnings.warn(
-                "ModelReducerOutput.intents is deprecated in v0.4.0 and will be removed "
-                "in v0.5.0. Reducers are pure folds per Option A semantics (OMN-941) and "
-                "cannot emit side effect intents. Use Orchestrator nodes for intent-based "
-                f"workflows. Found {len(self.intents)} intent(s) that should be moved to "
-                "an Orchestrator.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-        return self

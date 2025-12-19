@@ -74,7 +74,7 @@ class ModelHandlerRegistration(BaseModel):
         healthy: Whether this handler is currently healthy.
         last_health_check: Timestamp of the last health check.
         registered_at: Timestamp when this handler was registered.
-        version: Handler version string for compatibility tracking.
+        version: Handler version string for identification.
         description: Human-readable description of the handler's purpose.
         tags: Optional tags for categorization and filtering.
         metadata: Optional additional metadata about the handler.
@@ -178,7 +178,7 @@ class ModelHandlerRegistration(BaseModel):
     )
     version: str | None = Field(
         default=None,
-        description="Handler version string for compatibility tracking.",
+        description="Handler version string for identification.",
         max_length=50,
     )
 

@@ -133,7 +133,7 @@ from omnibase_core.protocols.intents import ProtocolRegistrationRecord
 # =============================================================================
 # Runtime Module Exports
 # =============================================================================
-from omnibase_core.protocols.runtime import ProtocolHandler
+from omnibase_core.protocols.runtime import ProtocolHandler, ProtocolMessageHandler
 
 # =============================================================================
 # Schema Module Exports
@@ -289,6 +289,7 @@ __all__ = [
     # Runtime Module
     # ==========================================================================
     "ProtocolHandler",
+    "ProtocolMessageHandler",
     # ==========================================================================
     # Schema Module
     # ==========================================================================

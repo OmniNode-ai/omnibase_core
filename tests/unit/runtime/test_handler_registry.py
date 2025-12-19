@@ -23,9 +23,9 @@ from unittest.mock import MagicMock
 import pytest
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_dispatch_status import EnumDispatchStatus
 from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
 from omnibase_core.enums.enum_node_kind import EnumNodeKind
-from omnibase_core.models.dispatch.enum_dispatch_status import EnumDispatchStatus
 from omnibase_core.models.dispatch.model_dispatch_result import ModelDispatchResult
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.runtime.handler_registry import (

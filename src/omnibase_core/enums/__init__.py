@@ -55,8 +55,14 @@ from .enum_data_classification import EnumDataClassification
 # Detection and security enums
 from .enum_detection_type import EnumDetectionType
 
+# Directive type enum (runtime-internal)
+from .enum_directive_type import EnumDirectiveType
+
 # Value type enums
 from .enum_discriminated_value_type import EnumDiscriminatedValueType
+
+# Dispatch status enum
+from .enum_dispatch_status import EnumDispatchStatus
 
 # Effect-related enums (from nodes)
 from .enum_effect_capability import EnumEffectCapability
@@ -386,6 +392,10 @@ __all__ = [
     "EnumLanguageCode",
     # Detection and security domain
     "EnumDetectionType",
+    # Directive type domain (runtime-internal)
+    "EnumDirectiveType",
+    # Dispatch status domain
+    "EnumDispatchStatus",
     # Function-related domain
     "EnumFunctionLanguage",
     # Registry-related domain
