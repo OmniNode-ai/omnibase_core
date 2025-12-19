@@ -154,7 +154,9 @@ from omnibase_core.enums.enum_orchestrator_types import EnumActionType
 from uuid import uuid4
 from datetime import datetime, UTC
 
-# Orchestrator emits action with lease proof
+# NOTE: This is internal Orchestrator implementation.
+# Application developers typically define actions in YAML contracts.
+# Direct ModelAction instantiation is shown here for educational purposes.
 action = ModelAction(
     action_id=uuid4(),
     action_type=EnumActionType.COMPUTE,
@@ -324,7 +326,7 @@ class NodeDataPipelineOrchestrator(NodeOrchestrator):
 node = NodeDataPipelineOrchestrator(container)
 input_data = ModelOrchestratorInput(
     workflow_id=uuid4(),
-    steps=[
+    steps=[  # Simplified dict format (ModelWorkflowStep in production)
         {"step_id": uuid4(), "step_name": "Fetch", "step_type": "effect"},
         {"step_id": uuid4(), "step_name": "Validate", "step_type": "compute"},
     ],
@@ -427,6 +429,10 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 class HttpHandler:
     """HTTP handler implementation."""
 
+    def __init__(self, http_client) -> None:
+        """Initialize handler with HTTP client (injected via DI container)."""
+        self._http_client = http_client
+
     @property
     def handler_type(self) -> EnumHandlerType:
         return EnumHandlerType.HTTP
@@ -453,7 +459,7 @@ class HttpHandler:
         }
 
 # Verify protocol compliance
-handler: ProtocolHandler = HttpHandler()
+handler: ProtocolHandler = HttpHandler(http_client)  # http_client from DI container
 assert isinstance(handler, ProtocolHandler)  # True with @runtime_checkable
 ```
 
@@ -507,7 +513,7 @@ class ModelWorkflowProjection(ModelProjectionBase):
         description="Custom query indices",
     )
 
-# Usage in projection store
+# Usage example (proj_store injected via DI container)
 projection = await proj_store.get_state(
     key=workflow_key,
     required_version=5,  # Wait until projection reaches v5
@@ -720,7 +726,7 @@ Start
 | Four-Node Architecture | `docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md` |
 | Intent Architecture | `docs/architecture/MODEL_INTENT_ARCHITECTURE.md` |
 | Action Architecture | `docs/architecture/MODEL_ACTION_ARCHITECTURE.md` |
-| Terminology Guide | `docs/conventions/TERMINOLOGY_GUIDE.md` |
+| Terminology Style Guide | `docs/conventions/TERMINOLOGY_GUIDE.md` (contributor formatting conventions) |
 | Node Building Guide | `docs/guides/node-building/README.md` |
 | Pure FSM Pattern | `docs/patterns/PURE_FSM_REDUCER_PATTERN.md` |
 | Lease Management | `docs/patterns/LEASE_MANAGEMENT_PATTERN.md` |
