@@ -56,7 +56,7 @@ The Registration FSM defines 10 states across 4 categories:
 | `registering_postgres` | operational | No | Yes | Emitting PostgreSQL upsert intent. First phase of dual registration. |
 | `postgres_registered` | snapshot | No | Yes | PostgreSQL registration succeeded. Awaiting Consul registration. |
 | `registering_consul` | operational | No | Yes | Emitting Consul register intent. Second phase of dual registration. |
-| `registered` | terminal | Yes | No | Fully registered in both Consul and PostgreSQL. Terminal success state. |
+| `registered` | terminal | No | No | Fully registered in both Consul and PostgreSQL. Success state allowing graceful shutdown. |
 | `partial_registered` | error | No | Yes | Partial registration - one succeeded, one failed. Requires recovery. |
 | `deregistering` | operational | No | Yes | Emitting deregistration intents for graceful shutdown. |
 | `deregistered` | terminal | Yes | No | Fully deregistered from both systems. Terminal cleanup state. |
@@ -192,13 +192,13 @@ validation_rules:
 
 ---
 
-#### `registered` (Terminal Success State)
+#### `registered` (Success State)
 
 ```yaml
 state_name: registered
 state_type: terminal
 description: "Fully registered in both Consul and PostgreSQL."
-is_terminal: true
+is_terminal: false
 is_recoverable: false
 entry_actions:
   - "log_registration_complete"
@@ -213,7 +213,7 @@ validation_rules:
   - "consul_applied == true"
 ```
 
-**Purpose**: Terminal success state. Node is fully discoverable and registered. No outgoing transitions.
+**Purpose**: Success state. Node is fully discoverable and registered. Allows transition to `deregistering` for graceful shutdown via `DEREGISTER` trigger.
 
 ---
 
@@ -265,6 +265,8 @@ validation_rules: []
 
 **Purpose**: Graceful shutdown phase emitting deregistration intents. Cleans up both Consul and PostgreSQL.
 
+**Note**: The `emit_consul_deregister_intent` and `emit_postgres_deregister_intent` entry actions are emitted in parallel. The Orchestrator aggregates both deregistration outcomes before transitioning to `deregistered`.
+
 ---
 
 #### `deregistered` (Terminal Cleanup State)
@@ -308,7 +310,7 @@ optional_data:
 validation_rules: []
 ```
 
-**Purpose**: Complete failure state. Can be retried via `RETRY` trigger.
+**Purpose**: Complete failure state. The registration can be retried via the `RETRY` trigger.
 
 ---
 
@@ -485,6 +487,8 @@ actions:
       message: "Starting Consul registration"
 ```
 
+**Note**: The `CONTINUE` trigger is automatically emitted by the Reducer when entering the `postgres_registered` state. This is an internal trigger that does not require an external event. The Reducer implementation uses `CONTINUE` to represent automatic progression when no external input is needed.
+
 ---
 
 #### Transition 7: `consul_success`
@@ -643,7 +647,7 @@ actions:
       message: "Starting graceful deregistration"
 ```
 
-**Note**: This is the ONLY valid outgoing transition from `registered` state, but it requires an explicit `DEREGISTER` trigger. The `registered` state is functionally terminal until a shutdown signal is received.
+**Note**: This is the ONLY valid outgoing transition from `registered` state, requiring an explicit `DEREGISTER` trigger. The `registered` state is a success state that allows graceful shutdown when needed.
 
 ---
 
@@ -733,7 +737,7 @@ actions:
       message: "Fatal error during registration workflow"
 ```
 
-**Note**: Wildcard `from_state: "*"` enables this transition from any non-terminal state.
+**Note**: Wildcard `from_state: "*"` matches all non-terminal states. Terminal states (`deregistered`) cannot have outgoing transitions. The `registered` state is functionally terminal but has a single outgoing transition to `deregistering` for graceful shutdown, so it is still matched by the wildcard.
 
 ---
 
@@ -777,6 +781,75 @@ validation_result == passed
 consul_error exists true
 ```
 
+### Trigger Catalog
+
+The FSM uses the following triggers to drive state transitions:
+
+| Trigger | Source | Description |
+|---------|--------|-------------|
+| `REGISTER` | External | `IntrospectionEvent` received with registration payload. Initiates the registration workflow. |
+| `VALIDATION_PASSED` | Internal | Payload validation succeeded. Emitted by the Reducer after validating `ModelRegistrationPayload`. |
+| `VALIDATION_FAILED` | Internal | Payload validation failed. Emitted when required fields are missing or invalid. |
+| `POSTGRES_SUCCEEDED` | Effect | PostgreSQL Effect returned success. The upsert operation completed successfully. |
+| `POSTGRES_FAILED` | Effect | PostgreSQL Effect returned failure. Database error or constraint violation. |
+| `CONSUL_SUCCEEDED` | Effect | Consul Effect returned success. Service registration completed successfully. |
+| `CONSUL_FAILED` | Effect | Consul Effect returned failure. Network error or Consul unavailable. |
+| `CONTINUE` | Internal | Automatic transition trigger. Emitted by the Reducer when no external event is needed to progress. Used between `postgres_registered` and `registering_consul`. |
+| `RECOVERY_COMPLETE` | Orchestrator | Both components now registered. Emitted when partial registration is resolved through retry. |
+| `DEREGISTER` | External | Shutdown signal received. Initiates graceful deregistration from both systems. |
+| `DEREGISTRATION_COMPLETE` | Orchestrator | Both deregistrations succeeded. Emitted after Consul and PostgreSQL cleanup complete. |
+| `RETRY` | External/Internal | Retry after failure. Can be triggered by operator intervention or automatic retry policy. |
+| `RETRY_POSTGRES` | External | Retry PostgreSQL specifically. Used when Consul succeeded but PostgreSQL failed. |
+| `ABANDON` | External | Give up on registration. Transitions directly to `deregistered` without attempting cleanup. |
+| `FATAL_ERROR` | Internal | Unrecoverable error detected. Catches unexpected failures from any non-terminal state. |
+
+**Trigger Sources**:
+- **External**: Triggered by events from outside the FSM (user actions, lifecycle signals, introspection events)
+- **Internal**: Triggered by the Reducer itself based on internal logic or validation results
+- **Effect**: Triggered by Effect nodes returning execution results
+- **Orchestrator**: Triggered by the Orchestrator after aggregating multiple Effect outcomes
+
+### Guard Implementation Details
+
+#### Type Resolution
+
+Guard field types are inferred from FSM context at runtime:
+- **Boolean fields**: `postgres_applied`, `consul_applied` - direct boolean comparison
+- **Numeric fields**: `retry_count` - supports numeric comparison operators
+- **String fields**: `validation_result` - string equality comparison
+
+#### Field Resolution
+
+Guard fields are resolved from the FSM state context object:
+```python
+# Example context structure
+fsm_context = {
+    "postgres_applied": True,
+    "consul_applied": False,
+    "retry_count": 2,
+    "validation_result": "passed",
+}
+```
+
+#### Operator Semantics
+
+| Operator | Behavior | Example |
+|----------|----------|---------|
+| `==`, `equals` | Strict equality | `retry_count == 0` |
+| `!=`, `not_equals` | Strict inequality | `validation_result != failed` |
+| `<`, `>`, `<=`, `>=` | Numeric comparison | `retry_count < 3` |
+| `exists` | Field is present and not null | `consul_error exists true` |
+| `not_exists` | Field is null or absent | `postgres_error not_exists true` |
+| `in` | Value in array | `state in [registering_postgres, registering_consul]` |
+| `contains` | Array contains value | `tags contains production` |
+| `matches` | Regex pattern match | `service_name matches ^node-.*` |
+
+#### Error Handling
+
+- **Undefined field**: Guard evaluation returns `false`, transition blocked
+- **Unsupported operator**: Raises `ModelOnexError` with `GUARD_EVALUATION_ERROR` code
+- **Type mismatch**: Raises `ModelOnexError` with `GUARD_TYPE_ERROR` code
+
 ---
 
 ## State Diagram
@@ -810,7 +883,7 @@ stateDiagram-v2
     failed --> deregistered : ABANDON
 
     note right of registered
-        Terminal success state.
+        Success state (non-terminal).
         Only DEREGISTER trigger
         allows transition out.
     end note
@@ -1008,6 +1081,30 @@ During execution, the Reducer validates:
 5. **Retry Logic**: Implement exponential backoff in Effect nodes, not Reducer. Reducer just emits retry intents with incremented counter.
 
 6. **Correlation Tracking**: All intents must include `correlation_id` from the originating event for distributed tracing.
+
+### Retry Counter Management
+
+The FSM uses a retry counter to limit retry attempts and prevent infinite loops.
+
+```yaml
+retry_counter:
+  storage: fsm_state_context.retry_count
+  increment_on: [RETRY, RETRY_POSTGRES]
+  reset_on: [POSTGRES_SUCCEEDED, CONSUL_SUCCEEDED, VALIDATION_PASSED]
+  max_value: 3
+```
+
+**Semantics**:
+
+1. **Storage**: The retry counter is stored in `fsm_state_context.retry_count` and passed through `ModelReducerInput`.
+
+2. **Increment**: The counter is incremented by the Reducer when processing `RETRY` or `RETRY_POSTGRES` triggers, before emitting the retry intent.
+
+3. **Reset**: The counter is reset to 0 on successful operations (`POSTGRES_SUCCEEDED`, `CONSUL_SUCCEEDED`, `VALIDATION_PASSED`).
+
+4. **Guard Check**: Transitions 9, 10, and 14 include the guard `retry_count < 3` which prevents retry if the limit has been reached.
+
+5. **Exhaustion Handling**: When `retry_count >= 3`, the guard fails and no transition occurs. The caller should then trigger `ABANDON` to move to `deregistered` state.
 
 ### FSM Subcontract Configuration
 
