@@ -38,12 +38,21 @@ from omnibase_core.models.events.model_runtime_events import (
 )
 from omnibase_core.models.events.model_topic_config import ModelTopicConfig
 from omnibase_core.models.events.model_topic_manifest import ModelTopicManifest
+from omnibase_core.models.events.model_topic_naming import (
+    ModelTopicNaming,
+    get_topic_category,
+    validate_topic_matches_category,
+)
 
 __all__ = [
     # Intent events
     "ModelEventPublishIntent",
     "ModelIntentExecutionResult",
     "TOPIC_EVENT_PUBLISH_INTENT",
+    # Topic naming and routing
+    "ModelTopicNaming",
+    "get_topic_category",
+    "validate_topic_matches_category",
     # Runtime event type constants
     "NODE_GRAPH_READY_EVENT",
     "NODE_REGISTERED_EVENT",

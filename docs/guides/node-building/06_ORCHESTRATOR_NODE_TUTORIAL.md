@@ -15,6 +15,18 @@ In this tutorial, you'll build a production-ready **Data Processing Pipeline Orc
 - Uses lease-based single-writer semantics for distributed coordination
 - Provides comprehensive workflow monitoring
 
+## Execution Shape
+
+> **Canonical Execution Shapes**: ORCHESTRATOR nodes support multiple patterns:
+> - **Event to Orchestrator**: External events trigger workflow coordination
+> - **Command to Orchestrator**: API/CLI commands initiate workflows
+> - **Action to Effect**: Orchestrator emits Actions that Effect nodes execute
+>
+> ORCHESTRATOR nodes coordinate but do NOT perform direct I/O - they emit Actions.
+> See [Canonical Execution Shapes](../../architecture/CANONICAL_EXECUTION_SHAPES.md) for the complete pattern.
+
+---
+
 **Why ORCHESTRATOR Nodes?**
 
 ORCHESTRATOR nodes coordinate complex workflows in the ONEX architecture:

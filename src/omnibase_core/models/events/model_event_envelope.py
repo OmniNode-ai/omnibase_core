@@ -19,6 +19,7 @@ from pydantic import BaseModel, Field
 
 # Local imports (alphabetized)
 from omnibase_core.decorators import allow_dict_any
+from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
 from omnibase_core.mixins.mixin_lazy_evaluation import MixinLazyEvaluation
 from omnibase_core.models.core.model_envelope_metadata import ModelEnvelopeMetadata
 from omnibase_core.models.primitives.model_semver import (
@@ -319,6 +320,74 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
             True if both trace_id and span_id are set, False otherwise
         """
         return self.trace_id is not None and self.span_id is not None
+
+    def infer_category(self) -> EnumMessageCategory:
+        """
+        Infer the message category from envelope metadata or payload type.
+
+        This method determines the message category (EVENT, COMMAND, or INTENT)
+        by examining the envelope's metadata and payload type. It is used for
+        runtime validation when publishing to topics to ensure messages are
+        routed to appropriate topic types.
+
+        Priority:
+            1. Explicit category in metadata tags (key: "message_category")
+            2. Payload type name suffix (Command, Intent, Event)
+            3. Default to EVENT
+
+        Returns:
+            EnumMessageCategory: The inferred message category
+
+        Example:
+            >>> envelope = ModelEventEnvelope(payload=SomeCommand(...))
+            >>> envelope.infer_category()
+            <EnumMessageCategory.COMMAND: 'command'>
+
+            >>> envelope = ModelEventEnvelope(payload=UserCreatedEvent(...))
+            >>> envelope.infer_category()
+            <EnumMessageCategory.EVENT: 'event'>
+        """
+        # Check metadata tags first for explicit category
+        if self.metadata and self.metadata.tags:
+            category_str = self.metadata.tags.get("message_category")
+            if category_str:
+                # Try to match against enum values
+                category_lower = category_str.lower()
+                if category_lower == "command":
+                    return EnumMessageCategory.COMMAND
+                if category_lower == "intent":
+                    return EnumMessageCategory.INTENT
+                if category_lower == "event":
+                    return EnumMessageCategory.EVENT
+
+        # Infer from payload type name
+        payload_type_name = type(self.payload).__name__
+        if payload_type_name.endswith("Command") or "Command" in payload_type_name:
+            return EnumMessageCategory.COMMAND
+        if payload_type_name.endswith("Intent") or "Intent" in payload_type_name:
+            return EnumMessageCategory.INTENT
+
+        # Default to EVENT
+        return EnumMessageCategory.EVENT
+
+    @property
+    def message_category(self) -> EnumMessageCategory:
+        """
+        Get the message category for this envelope.
+
+        This property provides convenient access to the inferred message category.
+        It delegates to `infer_category()` which examines metadata tags and
+        payload type name to determine the appropriate category.
+
+        Returns:
+            EnumMessageCategory: The message category (EVENT, COMMAND, or INTENT)
+
+        Example:
+            >>> envelope = ModelEventEnvelope(payload=ProcessOrderCommand(...))
+            >>> envelope.message_category
+            <EnumMessageCategory.COMMAND: 'command'>
+        """
+        return self.infer_category()
 
     def get_trace_context(self) -> dict[str, str] | None:
         """

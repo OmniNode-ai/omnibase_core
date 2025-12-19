@@ -21,6 +21,7 @@ from uuid import UUID, uuid4
 import pytest
 from pydantic import BaseModel, ValidationError
 
+from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
 from omnibase_core.models.core.model_envelope_metadata import ModelEnvelopeMetadata
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
@@ -903,6 +904,196 @@ class TestModelEventEnvelopeEdgeCases:
         assert retry2.retry_count == 2
         assert retry3.retry_count == 3
         assert retry3.is_retry() is True
+
+
+class TestModelEventEnvelopeInferCategory:
+    """Tests for message category inference."""
+
+    def test_infer_category_default_is_event(self):
+        """Default category should be EVENT for generic payloads."""
+        payload = SimplePayload(message="test", value=42)
+        envelope = ModelEventEnvelope(payload=payload)
+        assert envelope.message_category == EnumMessageCategory.EVENT
+
+    def test_infer_category_dict_payload_is_event(self):
+        """Dict payload should default to EVENT category."""
+        envelope = ModelEventEnvelope(payload={"key": "value"})
+        assert envelope.infer_category() == EnumMessageCategory.EVENT
+
+    def test_infer_category_string_payload_is_event(self):
+        """String payload should default to EVENT category."""
+        envelope = ModelEventEnvelope(payload="simple string")
+        assert envelope.message_category == EnumMessageCategory.EVENT
+
+    def test_infer_category_from_payload_type_command(self):
+        """Payload with Command in name should infer COMMAND."""
+
+        class ProcessOrderCommand(BaseModel):
+            """Command payload model."""
+
+            order_id: UUID
+
+        payload = ProcessOrderCommand(order_id=uuid4())
+        envelope = ModelEventEnvelope(payload=payload)
+        assert envelope.infer_category() == EnumMessageCategory.COMMAND
+
+    def test_infer_category_from_payload_type_command_suffix(self):
+        """Payload ending with Command should infer COMMAND."""
+
+        class UserCreateCommand(BaseModel):
+            """Command model with suffix."""
+
+            username: str
+
+        payload = UserCreateCommand(username="test")
+        envelope = ModelEventEnvelope(payload=payload)
+        assert envelope.message_category == EnumMessageCategory.COMMAND
+
+    def test_infer_category_from_payload_type_command_in_middle(self):
+        """Payload with Command anywhere in name should infer COMMAND."""
+
+        class CommandProcessor(BaseModel):
+            """Model with Command in middle."""
+
+            data: str
+
+        payload = CommandProcessor(data="test")
+        envelope = ModelEventEnvelope(payload=payload)
+        assert envelope.infer_category() == EnumMessageCategory.COMMAND
+
+    def test_infer_category_from_payload_type_intent(self):
+        """Payload with Intent in name should infer INTENT."""
+
+        class CreateUserIntent(BaseModel):
+            """Intent payload model."""
+
+            username: str
+            email: str
+
+        payload = CreateUserIntent(username="test", email="test@example.com")
+        envelope = ModelEventEnvelope(payload=payload)
+        assert envelope.infer_category() == EnumMessageCategory.INTENT
+
+    def test_infer_category_from_payload_type_intent_suffix(self):
+        """Payload ending with Intent should infer INTENT."""
+
+        class ProcessOrderIntent(BaseModel):
+            """Intent model with suffix."""
+
+            order_id: UUID
+
+        payload = ProcessOrderIntent(order_id=uuid4())
+        envelope = ModelEventEnvelope(payload=payload)
+        assert envelope.message_category == EnumMessageCategory.INTENT
+
+    def test_infer_category_from_payload_type_intent_in_middle(self):
+        """Payload with Intent anywhere in name should infer INTENT."""
+
+        class IntentHandler(BaseModel):
+            """Model with Intent in middle."""
+
+            action: str
+
+        payload = IntentHandler(action="process")
+        envelope = ModelEventEnvelope(payload=payload)
+        assert envelope.infer_category() == EnumMessageCategory.INTENT
+
+    def test_infer_category_from_metadata_tag_event(self):
+        """Explicit EVENT category in metadata should take precedence."""
+
+        # Even though payload has Command in name, metadata overrides
+        class TestCommand(BaseModel):
+            """Command-like payload."""
+
+            data: str
+
+        metadata = ModelEnvelopeMetadata(tags={"message_category": "event"})
+        payload = TestCommand(data="test")
+        envelope = ModelEventEnvelope(payload=payload, metadata=metadata)
+        assert envelope.infer_category() == EnumMessageCategory.EVENT
+
+    def test_infer_category_from_metadata_tag_command(self):
+        """Explicit COMMAND category in metadata should take precedence."""
+        payload = SimplePayload(message="test", value=42)
+        metadata = ModelEnvelopeMetadata(tags={"message_category": "command"})
+        envelope = ModelEventEnvelope(payload=payload, metadata=metadata)
+        assert envelope.message_category == EnumMessageCategory.COMMAND
+
+    def test_infer_category_from_metadata_tag_intent(self):
+        """Explicit INTENT category in metadata should take precedence."""
+        payload = SimplePayload(message="test", value=42)
+        metadata = ModelEnvelopeMetadata(tags={"message_category": "intent"})
+        envelope = ModelEventEnvelope(payload=payload, metadata=metadata)
+        assert envelope.infer_category() == EnumMessageCategory.INTENT
+
+    def test_infer_category_metadata_tag_case_insensitive(self):
+        """Metadata category tag should be case-insensitive."""
+        payload = SimplePayload(message="test", value=42)
+
+        # Uppercase
+        metadata_upper = ModelEnvelopeMetadata(tags={"message_category": "COMMAND"})
+        envelope_upper = ModelEventEnvelope(payload=payload, metadata=metadata_upper)
+        assert envelope_upper.infer_category() == EnumMessageCategory.COMMAND
+
+        # Mixed case
+        metadata_mixed = ModelEnvelopeMetadata(tags={"message_category": "Intent"})
+        envelope_mixed = ModelEventEnvelope(payload=payload, metadata=metadata_mixed)
+        assert envelope_mixed.message_category == EnumMessageCategory.INTENT
+
+    def test_infer_category_metadata_takes_precedence_over_payload_type(self):
+        """Metadata category should override payload type inference."""
+
+        class SomeCommand(BaseModel):
+            """Command-like payload."""
+
+            value: int
+
+        # Payload suggests COMMAND, but metadata says INTENT
+        metadata = ModelEnvelopeMetadata(tags={"message_category": "intent"})
+        payload = SomeCommand(value=42)
+        envelope = ModelEventEnvelope(payload=payload, metadata=metadata)
+
+        # Metadata should win
+        assert envelope.infer_category() == EnumMessageCategory.INTENT
+
+    def test_infer_category_invalid_metadata_tag_falls_back(self):
+        """Invalid metadata category should fall back to payload inference."""
+
+        class TestIntent(BaseModel):
+            """Intent-like payload."""
+
+            data: str
+
+        # Invalid category value in metadata
+        metadata = ModelEnvelopeMetadata(tags={"message_category": "invalid"})
+        payload = TestIntent(data="test")
+        envelope = ModelEventEnvelope(payload=payload, metadata=metadata)
+
+        # Should fall back to payload type inference (INTENT from class name)
+        assert envelope.infer_category() == EnumMessageCategory.INTENT
+
+    def test_infer_category_empty_metadata_tags(self):
+        """Empty metadata tags should use payload type inference."""
+        payload = SimplePayload(message="test", value=42)
+        metadata = ModelEnvelopeMetadata(tags={})
+        envelope = ModelEventEnvelope(payload=payload, metadata=metadata)
+        assert envelope.message_category == EnumMessageCategory.EVENT
+
+    def test_message_category_property_returns_same_as_infer_category(self):
+        """message_category property should return same as infer_category()."""
+        payload = SimplePayload(message="test", value=42)
+        envelope = ModelEventEnvelope(payload=payload)
+
+        assert envelope.message_category == envelope.infer_category()
+
+    def test_infer_category_with_onex_event_payload(self):
+        """Test category inference with ModelOnexEvent payload."""
+        node_id = uuid4()
+        onex_event = ModelOnexEvent(event_type="core.node.start", node_id=node_id)
+        envelope = ModelEventEnvelope(payload=onex_event)
+
+        # ModelOnexEvent doesn't have Command/Intent in name, should be EVENT
+        assert envelope.infer_category() == EnumMessageCategory.EVENT
 
 
 if __name__ == "__main__":

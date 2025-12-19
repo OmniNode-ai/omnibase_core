@@ -1840,6 +1840,7 @@ This architecture documentation provides comprehensive coverage of the ONEX Four
 **Primary Maintainer**: ONEX Framework Team
 
 **Related Documentation**:
+- [Canonical Execution Shapes](CANONICAL_EXECUTION_SHAPES.md)
 - [Node Building Guide](../guides/node-building/README.md)
 - [Node Class Hierarchy](NODE_CLASS_HIERARCHY.md)
 - [Migration Guide](../guides/MIGRATING_TO_DECLARATIVE_NODES.md)

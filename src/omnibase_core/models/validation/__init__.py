@@ -12,9 +12,12 @@ Import validation models directly when needed:
 # Workflow validation models (OMN-176) - safe to import
 from .model_cycle_detection_result import ModelCycleDetectionResult
 from .model_dependency_validation_result import ModelDependencyValidationResult
+from .model_execution_shape import ModelExecutionShape
+from .model_execution_shape_validation import ModelExecutionShapeValidation
 from .model_isolated_step_result import ModelIsolatedStepResult
 from .model_lint_statistics import ModelLintStatistics
 from .model_migration_conflict_union import ModelMigrationConflictUnion
+from .model_shape_validation_result import ModelShapeValidationResult
 from .model_unique_name_result import ModelUniqueNameResult
 from .model_validation_base import ModelValidationBase
 from .model_validation_container import ModelValidationContainer
@@ -33,6 +36,10 @@ __all__ = [
     "ModelValidationContainer",
     "ModelValidationError",
     "ModelValidationValue",
+    # Execution shape validation models (OMN-933)
+    "ModelExecutionShape",
+    "ModelExecutionShapeValidation",
+    "ModelShapeValidationResult",
     # Workflow validation models (OMN-176)
     "ModelCycleDetectionResult",
     "ModelDependencyValidationResult",
