@@ -206,7 +206,10 @@ class ModelCircuitBreaker(BaseModel):
                 return False
             if self.state == "half_open":
                 # Allow limited requests in half-open state
-                return self.half_open_requests < self.half_open_max_requests
+                if self.half_open_requests < self.half_open_max_requests:
+                    self.half_open_requests += 1
+                    return True
+                return False
 
             return False
 

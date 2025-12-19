@@ -292,10 +292,10 @@ poetry run pytest tests/ --timeout=60                # With timeout protection
 
 ```bash
 # View tests in a specific split
-poetry run pytest --collect-only --split-splits=20 --split-group=<N>
+poetry run pytest --collect-only --splits=20 --group=<N>
 
 # Profile slow tests
-poetry run pytest --durations=10 --split-splits=20 --split-group=<N>
+poetry run pytest --durations=10 --splits=20 --group=<N>
 ```
 
 **Common Causes**: Test hangs (missing timeout), resource exhaustion, slow fixtures, network-dependent tests.
@@ -385,7 +385,7 @@ class MyNode(NodeCoreBase, MixinDiscoveryResponder):
     pass
 ```
 
-**Available Mixins**: `MixinDiscoveryResponder`, `MixinEventHandler`, `MixinEventListener`, `MixinNodeExecutor`, `MixinNodeLifecycle`, `MixinRequestResponseIntrospection`, `MixinWorkflowSupport`
+**Available Mixins**: `MixinDiscoveryResponder`, `MixinEventHandler`, `MixinEventListener`, `MixinNodeExecutor`, `MixinNodeLifecycle`, `MixinRequestResponseIntrospection`, `MixinWorkflowExecution`
 
 ### Pydantic `from_attributes=True` for Value Objects
 
@@ -457,7 +457,13 @@ To find models using this pattern: `grep -r "from_attributes.*True" src/omnibase
 1. **Skip base class initialization**
    ```python
    def __init__(self, container):
-       # Missing super().__init__(container)  # WRONG
+       pass  # WRONG - missing super().__init__(container)
+   ```
+
+   **Should be:**
+   ```python
+   def __init__(self, container: ModelONEXContainer):
+       super().__init__(container)  # ✅ CORRECT
    ```
 
 2. **Use generic Exception**
@@ -557,7 +563,7 @@ poetry add --group dev package-name        # Add dev dependency
 
 ---
 
-**Last Updated**: 2025-12-05 | **Version**: 0.4.0 | **Python**: 3.12+
+**Last Updated**: 2025-12-19 | **Version**: 0.4.0 | **Python**: 3.12+
 
 **Ready to build?** → [Node Building Guide](docs/guides/node-building/README.md)
 **Need help?** → [Documentation Index](docs/INDEX.md)
