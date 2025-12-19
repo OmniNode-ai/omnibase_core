@@ -13,27 +13,39 @@ The ONEX framework enforces strict **dependency inversion** to maintain clean ar
 
 ### Layer Separation
 
+> **Note (v0.3.6+)**: The dependency direction has been inverted. `omnibase_core` is now
+> the source of truth for protocol definitions, and `omnibase_spi` depends on Core.
+
 ```
 +--------------------------------------------------+
 |                  SERVICE LAYER                    |
 |    (Applications, APIs, Workers)                 |
 |    - Consumes protocols from omnibase_core       |
-|    - Uses implementations from omnibase_spi      |
+|    - Uses implementations from omnibase_infra    |
++--------------------------------------------------+
+                        |
+                        v
++--------------------------------------------------+
+|               omnibase_infra                      |
+|    (Infrastructure Layer)                        |
+|    - Concrete implementations of protocols       |
+|    - Transport library integrations              |
+|    - Infrastructure adapters (Kafka, Postgres)   |
 +--------------------------------------------------+
                         |
                         v
 +--------------------------------------------------+
 |               omnibase_spi                        |
 |    (Service Provider Interface)                  |
-|    - Concrete implementations of protocols       |
-|    - Transport library integrations              |
-|    - Infrastructure adapters                     |
+|    - May extend Core protocols                   |
+|    - Cross-service contract definitions          |
+|    - Depends on omnibase_core (NOT reverse)      |
 +--------------------------------------------------+
                         |
                         v
 +--------------------------------------------------+
 |               omnibase_core                       |
-|    (Core Abstractions)                           |
+|    (Core Abstractions - Source of Truth)         |
 |    - Protocol definitions (interfaces)           |
 |    - Domain models and contracts                 |
 |    - Base node implementations                   |
@@ -43,9 +55,10 @@ The ONEX framework enforces strict **dependency inversion** to maintain clean ar
 
 ### Dependency Direction
 
-- **omnibase_core**: Provides protocol abstractions (interfaces only)
-- **omnibase_spi**: Provides concrete implementations using transport libraries
-- **Services**: Depend on `omnibase_core` protocols, use `omnibase_spi` implementations
+- **omnibase_core**: Provides protocol abstractions (interfaces only) - Source of truth
+- **omnibase_spi**: Extends Core protocols, depends on Core (NOT the reverse)
+- **omnibase_infra**: Provides concrete implementations using transport libraries
+- **Services**: Depend on `omnibase_core` protocols, use `omnibase_infra` implementations
 
 This ensures that:
 1. Core logic is testable without infrastructure dependencies
@@ -129,7 +142,7 @@ Transport libraries can be swapped without modifying business logic:
 # Development: Use in-memory implementation
 container.register_service("ProtocolEventBus", InMemoryEventBus())
 
-# Production: Use Kafka implementation (from omnibase_spi)
+# Production: Use Kafka implementation (from omnibase_infra)
 container.register_service("ProtocolEventBus", KafkaEventBus(config))
 
 # Same node code works with both
@@ -146,7 +159,7 @@ class ProtocolEventBus(Protocol):
     async def publish(self, event: ModelEventEnvelope) -> None: ...
     async def subscribe(self, topic: str, handler: Callable) -> None: ...
 
-# omnibase_spi - Concrete implementation
+# omnibase_infra - Concrete implementation (transport libraries)
 class KafkaEventBus:
     """Kafka implementation of ProtocolEventBus."""
 
@@ -243,12 +256,12 @@ Transport import validation runs automatically in CI:
 
 ## Migration Guide
 
-### Moving Transport Code to omnibase_spi
+### Moving Transport Code to omnibase_infra
 
 If you have code that directly imports transport libraries:
 
 1. **Identify the protocol** that abstracts the transport
-2. **Move the implementation** to `omnibase_spi`
+2. **Move the implementation** to `omnibase_infra`
 3. **Update the consumer** to depend on the protocol
 4. **Register the implementation** in the service container
 
@@ -263,7 +276,7 @@ class MyService:
         self.producer = AIOKafkaProducer(...)
 ```
 
-**After** (protocol in omnibase_core, implementation in omnibase_spi):
+**After** (protocol in omnibase_core, implementation in omnibase_infra):
 
 ```python
 # GOOD: Protocol-based dependency
@@ -272,7 +285,7 @@ class MyService:
     def __init__(self, container: ModelONEXContainer):
         self.event_bus = container.get_service("ProtocolEventBus")
 
-# Implementation lives in omnibase_spi
+# Implementation lives in omnibase_infra (uses transport libraries)
 ```
 
 ### Temporary Allowlist

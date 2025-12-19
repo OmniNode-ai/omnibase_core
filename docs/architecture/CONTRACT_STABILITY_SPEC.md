@@ -301,17 +301,17 @@ CONTRACT_UNSUPPORTED_CAPABILITY: Capability not available (capabilities[0])
 
 ## Cross-Repository Usage
 
+### omnibase_core (Source of Truth)
+
+> **Note (v0.3.6+)**: Protocol definitions are now Core-native in `omnibase_core.protocols`.
+
+- Defines `ProtocolContractValidator` interface (Core-native)
+- Implements validation logic
+
 ### omnibase_spi
 
-- Defines `ProtocolContractValidator` interface
-- Does NOT implement validation logic
-
-### omnibase_core
-
-- Implements `ContractValidator`
-- Owns normalization pipeline
-- Owns fingerprint computation
-- Owns hash registry
+- Extends Core protocols for cross-service use
+- Depends on Core (not the reverse)
 
 ### omnibase_infra
 

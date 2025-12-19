@@ -70,14 +70,20 @@ poetry add omnibase_core
 
 Minimal example:
 ```python
-from omnibase_core.infrastructure.infrastructure_bases import ModelServiceCompute
+from omnibase_core.nodes import NodeCompute, ModelComputeInput, ModelComputeOutput
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_core.models.contracts.model_contract_compute import ModelContractCompute
 
-class NodeCalculator(ModelServiceCompute):
-    async def execute_compute(self, contract: ModelContractCompute) -> dict:
-        value = contract.input_data.get("value", 0)
-        return {"result": value * 2}
+class NodeCalculator(NodeCompute):
+    def __init__(self, container: ModelONEXContainer) -> None:
+        super().__init__(container)
+
+    async def process(self, input_data: ModelComputeInput) -> ModelComputeOutput:
+        value = input_data.data.get("value", 0)
+        return ModelComputeOutput(
+            result={"result": value * 2},
+            operation_id=input_data.operation_id,
+            computation_type=input_data.computation_type,
+        )
 ```
 
 Run tests:

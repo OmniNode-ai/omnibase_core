@@ -1,11 +1,31 @@
 # SPI Protocol Adoption Roadmap
 
-**Status:** Generated from SPI import analysis (2025-10-21)
-**Overall Alignment:** 96% (24/25 imports domain-aligned)
+**Status:** HISTORICAL - Superseded by Dependency Inversion (v0.3.6)
+**Original Date:** 2025-10-21
+**Updated:** 2025-12-18
 
-## Summary
+> **IMPORTANT (v0.3.6+)**: This document is **HISTORICAL** and no longer reflects the
+> current architecture. As of v0.3.6, the dependency was **inverted** - SPI now depends
+> on Core, not the reverse.
+>
+> **What Changed**:
+> - Protocol definitions moved from `omnibase_spi` to `omnibase_core.protocols`
+> - `omnibase_core` is now the source of truth for all protocol interfaces
+> - SPI imports Core protocols (not the other way around)
+>
+> **Current Documentation**:
+> - [Import Compatibility Matrix](IMPORT_COMPATIBILITY_MATRIX.md) - Current import paths
+> - [Protocol Architecture](PROTOCOL_ARCHITECTURE.md) - Updated protocol documentation
+> - [Dependency Inversion](DEPENDENCY_INVERSION.md) - Current architecture patterns
+>
+> The content below is preserved for historical reference only.
 
-omnibase_core has excellent domain alignment with omnibase_spi protocols. Only strategic protocol adoption needed in 3 areas.
+---
+
+## Summary (Historical)
+
+This roadmap was created when omnibase_core depended on omnibase_spi for protocol definitions.
+This is no longer the case - Core is now the source of truth for protocols.
 
 ---
 
@@ -19,7 +39,7 @@ omnibase_core has excellent domain alignment with omnibase_spi protocols. Only s
 
 **Recommended Action:**
 Implement `ProtocolServiceRegistry` from `omnibase_spi.protocols.container`:
-```
+```python
 from omnibase_spi.protocols.container import (
     ProtocolServiceRegistry,
     ProtocolServiceRegistration,
@@ -50,7 +70,7 @@ from omnibase_spi.protocols.container import (
 
 **Recommended Action:**
 Implement validation protocols for public interfaces:
-```
+```python
 from omnibase_spi.protocols.validation import (
     ProtocolComplianceValidator,
     ProtocolQualityValidator,
@@ -86,7 +106,7 @@ from omnibase_spi.protocols.validation import (
 
 **Recommended Action:**
 Add `ProtocolNodeConfiguration` support (externalize configs):
-```
+```python
 from omnibase_spi.protocols.node import ProtocolNodeConfiguration
 
 # Before

@@ -2,8 +2,15 @@
 
 **Status**: 🟢 **IMPLEMENTED**
 **Date**: 2025-10-30
+**Updated**: 2025-12-18
 **Deciders**: ONEX Framework Team
 **Related**: REGISTRY_AUDIT_REPORT.md (2025-10-30)
+
+> **Note (v0.3.6+)**: This ADR was written when `omnibase_core` depended on `omnibase_spi`
+> for protocol definitions. As of v0.3.6, the dependency was inverted - SPI now depends
+> on Core. Protocol definitions are now Core-native in `omnibase_core.protocols`.
+> References to `omnibase_spi` protocols should be understood as referring to the current
+> `omnibase_core.protocols` module.
 
 ---
 
@@ -11,7 +18,7 @@
 
 The omnibase_core framework requires a robust dependency injection (DI) system that supports:
 
-1. **Protocol-driven interfaces** (omnibase_spi protocols)
+1. **Protocol-driven interfaces** (Core-native protocols in `omnibase_core.protocols`)
 2. **Type-safe service resolution**
 3. **Multiple service lifecycles** (singleton, transient, scoped)
 4. **Observable service management** (health monitoring, performance tracking)
@@ -314,7 +321,7 @@ async def get_service_async(
 ✅ **Flexibility**: Multiple lifecycles (singleton, transient, scoped)
 ✅ **Validation**: Pydantic ensures configuration correctness
 ✅ **Consistency**: Single pattern for all dependency management
-✅ **Future-Proof**: Protocol-based design supports omnibase_spi evolution
+✅ **Future-Proof**: Protocol-based design supports Core protocol evolution
 
 ### Neutral
 
@@ -345,7 +352,7 @@ logger = registry.resolve(LoggerImpl)
 **Rejected Because**:
 - ❌ Tight coupling to implementation
 - ❌ Hard to mock in tests
-- ❌ Doesn't support omnibase_spi protocol architecture
+- ❌ Doesn't support Core protocol architecture
 - ❌ Violates Dependency Inversion Principle
 
 ### Alternative 2: String-Based Resolution
@@ -490,10 +497,10 @@ Implementation ready to proceed using omnibase_spi v0.2.0.
 - `src/omnibase_core/container/service_registry.py` - ServiceRegistry implementation (commit f817fe2d)
 - `src/omnibase_core/models/container/model_onex_container.py` - ModelONEXContainer implementation (commit 20d603dd)
 
-**Protocol Definitions** (omnibase_spi):
-- `omnibase_spi.protocols.container.ProtocolServiceRegistry`
-- `omnibase_spi.protocols.container.LiteralServiceLifecycle`
-- `omnibase_spi.protocols.container.LiteralInjectionScope`
+**Protocol Definitions** (v0.3.6+: Core-native in `omnibase_core.protocols`):
+- `omnibase_core.protocols.ProtocolServiceRegistry`
+- `omnibase_core.protocols.LiteralServiceLifecycle`
+- `omnibase_core.protocols.LiteralInjectionScope`
 
 **Business Registries**:
 - `src/omnibase_core/models/core/model_action_registry.py`
@@ -506,10 +513,10 @@ Implementation ready to proceed using omnibase_spi v0.2.0.
 
 **Implemented By**: ONEX Framework Team
 **Date**: 2025-10-30
-**Version**: 1.0
+**Version**: 1.1
 
 **Implementation Sign-offs**:
-- Architecture: ✅ Implemented (protocol-based approach aligns with omnibase_spi)
+- Architecture: ✅ Implemented (protocol-based approach, Core-native as of v0.3.6)
 - Implementation: ✅ Complete (100% Pydantic validation, type-safe)
 - Testing: ✅ Complete (12,000+ tests cover framework functionality)
 - Documentation: ✅ Complete (comprehensive audit report + ADR)
@@ -520,8 +527,9 @@ Implementation ready to proceed using omnibase_spi v0.2.0.
 
 | Version | Date | Changes | Author |
 |---------|------|---------|--------|
+| 1.1 | 2025-12-18 | Updated for v0.3.6 dependency inversion - protocols now Core-native | ONEX Team |
 | 1.0 | 2025-10-30 | Initial ADR following comprehensive registry audit | ONEX Team |
 
 ---
 
-**Next Review**: 2026-01-30 ✅ **Review triggered**: omnibase-spi v0.2.0 released 2025-10-31
+**Next Review**: 2026-03-30

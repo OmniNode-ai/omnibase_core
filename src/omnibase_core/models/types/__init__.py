@@ -42,13 +42,11 @@ See Also:
     - omnibase_core.models.types.model_onex_common_types: Common type definitions
 """
 
-from typing import Any
-
+from .model_json_serializable import JsonSerializable
 from .model_onex_common_types import (
     CliValue,
     ConfigValue,
     EnvValue,
-    JsonSerializable,
     MetadataValue,
     ParameterValue,
     PropertyValue,
@@ -56,9 +54,8 @@ from .model_onex_common_types import (
     ValidationValue,
 )
 
-# model_json_serializable.py contains a PEP 695 recursive type statement version of JsonSerializable
-# For the recursive definition, import directly:
-# from omnibase_core.models.types.model_json_serializable import JsonSerializable as JsonSerializableRecursive
+# JsonSerializable is now imported from model_json_serializable.py
+# which uses PEP 695 recursive type statements for proper type safety
 
 __all__ = [
     "CliValue",

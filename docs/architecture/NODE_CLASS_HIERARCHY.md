@@ -1383,7 +1383,7 @@ class NodeDatabaseWriterEffect(ModelServiceEffect):
 
 The node class hierarchy is used across the ONEX ecosystem:
 
-- **omnibase_spi** - Protocol definitions that nodes implement (`ProtocolNode`, `ProtocolService`)
+- **omnibase_core.protocols** - Protocol definitions that nodes implement (`ProtocolNode`, `ProtocolService`)
 - **omniintelligence** - AI/ML nodes using `ModelServiceCompute` for inference pipelines
 - **omniagent** - Agent nodes using `ModelServiceOrchestrator` for multi-step workflows
 - **omnimcp** - MCP server implementations using `ModelServiceEffect` for tool invocation

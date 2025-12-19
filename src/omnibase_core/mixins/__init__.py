@@ -1,5 +1,3 @@
-from pydantic import Field
-
 """
 ONEX Mixin Module
 
@@ -10,15 +8,8 @@ that can be composed into concrete node implementations.
 
 # Core mixins
 # Import protocols from omnibase_core (Core-native protocols)
-from omnibase_core.protocols import ProtocolEventBusRegistry as RegistryWithBus
+from omnibase_core.protocols import ProtocolEventBusRegistry
 from omnibase_core.protocols import ProtocolLogEmitter as LogEmitter
-
-# Protocol name transition: ProtocolRegistryWithBus → ProtocolEventBusRegistry
-# omnibase_spi v0.2.0 renamed ProtocolRegistryWithBus to ProtocolEventBusRegistry
-# Alias provided for smooth upgrade: use ProtocolEventBusRegistry in new code
-# This alias may be removed in future versions
-ProtocolEventBusRegistry = RegistryWithBus
-ProtocolRegistryWithBus = ProtocolEventBusRegistry  # Legacy name alias
 
 from omnibase_core.mixins.mixin_canonical_serialization import (
     MixinCanonicalYAMLSerializer,
@@ -108,9 +99,7 @@ __all__ = [
     "MixinCompletionData",
     "MixinLogData",
     "LogEmitter",
-    "RegistryWithBus",
-    "ProtocolEventBusRegistry",  # New canonical name (omnibase_spi v0.2.0+)
-    "ProtocolRegistryWithBus",  # DEPRECATED: Use ProtocolEventBusRegistry instead
+    "ProtocolEventBusRegistry",
     "MixinNodeIntrospection",
     "MixinSensitiveFieldRedaction",
     "MixinSerializable",

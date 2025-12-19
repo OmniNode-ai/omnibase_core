@@ -26,8 +26,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
-# Import standard type alias from ONEX common types
-from omnibase_core.models.types.model_onex_common_types import JsonSerializable
+# Import standard type alias from ONEX types
+from omnibase_core.models.types import JsonSerializable
 
 ValidatableValue = type("ValidatableValue", (object,), {})
 

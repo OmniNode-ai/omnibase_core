@@ -76,7 +76,8 @@ config_value.validate_with(
 **Example**:
 ```
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_spi import ProtocolLogger
+# v0.3.6+: Core-native protocol imports
+from omnibase_core.protocols import ProtocolLogger
 
 # Create DI container
 container = ModelONEXContainer(
@@ -201,11 +202,13 @@ Are you writing a node class?
 
 ---
 
-## Protocol Compliance (omnibase_spi)
+## Protocol Compliance (omnibase_core.protocols)
+
+> **Note (v0.3.6+)**: Protocol definitions are now Core-native in `omnibase_core.protocols`.
 
 ### ModelContainer[T] Protocol Implementations
 
-`ModelContainer` implements these omnibase_spi protocols:
+`ModelContainer` implements these Core-native protocols:
 - `ProtocolConfigurable` - Configuration management
 - `ProtocolSerializable` - Data serialization
 - `ProtocolValidatable` - Validation interface
@@ -214,11 +217,9 @@ Are you writing a node class?
 ### ModelONEXContainer Protocol Implementations
 
 `ModelONEXContainer` implements:
-- `ProtocolServiceResolver` (future) - Service resolution
-- `ProtocolLifecycleManager` (future) - Lifecycle management
-- `ProtocolServiceRegistry` (future) - Service registration
-
-**Note**: Full protocol compliance pending omnibase_spi v0.2.0 release.
+- `ProtocolServiceResolver` - Service resolution
+- `ProtocolLifecycleManager` - Lifecycle management
+- `ProtocolServiceRegistry` - Service registration
 
 ---
 
@@ -229,7 +230,8 @@ Are you writing a node class?
 ```
 from omnibase_core.infrastructure.node_core_base import NodeCoreBase
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
-from omnibase_spi import ProtocolLogger, ProtocolEventBus
+# v0.3.6+: Core-native protocol imports
+from omnibase_core.protocols import ProtocolLogger, ProtocolEventBus
 
 class NodeDataProcessor(NodeCoreBase):
     """Example node showing correct container usage."""

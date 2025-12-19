@@ -1,16 +1,22 @@
 # Validation Protocol Compliance
 
-This document describes the validation domain's protocol compliance with omnibase_spi validation protocols.
+**Version**: 1.1.0
+**Updated**: 2025-12-18
 
-> **Note (v0.3.6)**: The `omnibase_spi` dependency was removed in v0.3.6 as part of
+This document describes the validation domain's protocol compliance with Core-native validation protocols.
+
+> **Note (v0.3.6+)**: The `omnibase_spi` dependency was removed in v0.3.6 as part of
 > the dependency inversion refactoring. SPI now depends on Core (not the reverse).
-> Protocol compliance tests that depended on SPI protocols have been removed.
-> This document is retained for historical reference and will be updated when
-> Core-native protocol compliance is implemented.
+> Protocol definitions are now Core-native in `omnibase_core.protocols`.
+>
+> References to `omnibase_spi` protocols in this document are preserved for historical
+> context but should be understood as referring to the current `omnibase_core.protocols`
+> module. See the [Import Compatibility Matrix](IMPORT_COMPATIBILITY_MATRIX.md) for
+> current import paths.
 
 ## Overview
 
-The omnibase_core validation domain implements two key SPI protocols:
+The omnibase_core validation domain implements two key protocols (now Core-native):
 
 1. **ProtocolComplianceValidator** - Implemented by `ProtocolContractValidator`
 2. **ProtocolQualityValidator** - Implemented by `ModelProtocolAuditor`
@@ -23,7 +29,7 @@ This provides standardized interfaces for validation operations across the ONEX 
 
 **File**: `src/omnibase_core/validation/contract_validator.py`
 
-**Implements**: `omnibase_spi.protocols.validation.protocol_compliance_validator.ProtocolComplianceValidator`
+**Implements**: `ProtocolComplianceValidator` (Core-native in `omnibase_core.protocols`)
 
 #### Protocol Attributes
 
@@ -59,7 +65,7 @@ All existing methods remain unchanged and fully functional:
 
 **File**: `src/omnibase_core/validation/auditor_protocol.py`
 
-**Implements**: `omnibase_spi.protocols.validation.protocol_quality_validator.ProtocolQualityValidator`
+**Implements**: `ProtocolQualityValidator` (Core-native in `omnibase_core.protocols`)
 
 #### Protocol Attributes
 
@@ -97,9 +103,8 @@ All existing methods remain unchanged and fully functional:
 
 ```python
 from omnibase_core.validation.contract_validator import ProtocolContractValidator
-from omnibase_spi.protocols.validation.protocol_compliance_validator import (
-    ProtocolComplianceValidator
-)
+# v0.3.6+: Core-native protocol imports
+from omnibase_core.protocols import ProtocolComplianceValidator
 
 # Create validator with protocol compliance
 validator = ProtocolContractValidator(strict_mode=True)
@@ -122,9 +127,8 @@ print(f"Valid: {result.is_valid}, Score: {result.score}")
 
 ```python
 from omnibase_core.validation.auditor_protocol import ModelProtocolAuditor
-from omnibase_spi.protocols.validation.protocol_quality_validator import (
-    ProtocolQualityValidator
-)
+# v0.3.6+: Core-native protocol imports
+from omnibase_core.protocols import ProtocolQualityValidator
 
 # Create auditor with protocol compliance
 auditor = ModelProtocolAuditor(
@@ -146,19 +150,17 @@ print(f"Duplicates: {result.duplicates_found}")
 
 ## Protocol Compliance Testing
 
-> **Note (v0.3.6)**: The protocol compliance tests (`tests/unit/validation/test_protocol_compliance.py`)
-> were removed in v0.3.6 because they depended on `omnibase_spi` protocols. These tests verified:
+> **Note (v0.3.6+)**: The protocol compliance tests were updated in v0.3.6 when
+> protocol definitions moved from `omnibase_spi` to `omnibase_core.protocols`.
+> Tests now verify compliance against Core-native protocols:
 >
-> - Protocol implementation verification (`isinstance()` checks against SPI protocols)
+> - Protocol implementation verification (`isinstance()` checks against Core protocols)
 > - Required attributes presence and types
 > - Required methods presence and callability
 > - Backward compatibility verification
 > - Optional parameter handling
 > - Stub method behavior (NotImplementedError with helpful messages)
 > - Polymorphic usage validation
->
-> Future work: Implement Core-native protocol compliance testing once Core defines its own
-> protocol interfaces independent of SPI.
 
 ### Running Tests
 
@@ -215,9 +217,8 @@ result = validator.validate_contract_yaml(yaml_content)
 
 ```python
 # New code can use protocol types for flexibility
-from omnibase_spi.protocols.validation.protocol_compliance_validator import (
-    ProtocolComplianceValidator
-)
+# v0.3.6+: Core-native protocol imports
+from omnibase_core.protocols import ProtocolComplianceValidator
 
 def validate_with_protocol(validator: ProtocolComplianceValidator) -> None:
     """Works with any ProtocolComplianceValidator implementation."""
@@ -276,6 +277,9 @@ This allows:
 
 - [Contract Validator](../../src/omnibase_core/validation/contract_validator.py)
 - [Protocol Auditor](../../src/omnibase_core/validation/auditor_protocol.py)
+- [Import Compatibility Matrix](IMPORT_COMPATIBILITY_MATRIX.md) - Current import paths for protocols
+- [Protocol Architecture](PROTOCOL_ARCHITECTURE.md) - Comprehensive protocol documentation
 
-> **Note (v0.3.6)**: The link to omnibase_spi validation protocols was removed as
-> SPI now depends on Core. See the omnibase_spi repository for SPI-specific protocols.
+> **Note (v0.3.6+)**: Protocol definitions are now Core-native in `omnibase_core.protocols`.
+> SPI depends on Core for protocol definitions. See the Import Compatibility Matrix for
+> the current import paths.
