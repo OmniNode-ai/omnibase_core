@@ -121,7 +121,21 @@ class ModelEnvelope(BaseModel):
     @field_validator("entity_id", mode="before")
     @classmethod
     def validate_entity_id_not_empty(cls, v: object) -> str:
-        """Validate that entity_id is not empty or whitespace-only."""
+        """Validate that entity_id is not empty or whitespace-only.
+
+        This validator runs before Pydantic's type coercion and ensures that
+        the entity_id field contains a non-empty, non-whitespace string.
+        Whitespace is stripped from the value.
+
+        Args:
+            v: The raw value to validate (may be any type).
+
+        Returns:
+            The stripped string value.
+
+        Raises:
+            ModelOnexError: If the value is empty or contains only whitespace.
+        """
         if not isinstance(v, str):
             # Let Pydantic handle type coercion/validation for non-strings
             return str(v) if v is not None else ""
@@ -137,7 +151,18 @@ class ModelEnvelope(BaseModel):
 
     @model_validator(mode="after")
     def validate_no_self_reference(self) -> Self:
-        """Validate that causation_id does not equal message_id (self-reference)."""
+        """Validate that causation_id does not equal message_id (self-reference).
+
+        A message cannot be caused by itself. This validation prevents creating
+        envelopes where the causation_id points to the same message_id, which
+        would create an invalid self-referential causation chain.
+
+        Returns:
+            The validated envelope instance.
+
+        Raises:
+            ModelOnexError: If causation_id equals message_id.
+        """
         if self.causation_id is not None and self.causation_id == self.message_id:
             raise ModelOnexError(
                 message="causation_id cannot equal message_id (self-reference)",
