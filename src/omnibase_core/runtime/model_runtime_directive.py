@@ -11,7 +11,7 @@ Used for execution mechanics (scheduling, retries, delays).
 """
 
 from datetime import UTC, datetime
-from enum import Enum, unique
+from enum import StrEnum, unique
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -19,7 +19,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 @unique
-class EnumDirectiveType(str, Enum):
+class EnumDirectiveType(StrEnum):
     """Runtime directive types (internal-only)."""
 
     SCHEDULE_EFFECT = "schedule_effect"
@@ -27,9 +27,6 @@ class EnumDirectiveType(str, Enum):
     RETRY_WITH_BACKOFF = "retry_with_backoff"
     DELAY_UNTIL = "delay_until"
     CANCEL_EXECUTION = "cancel_execution"
-
-    def __str__(self) -> str:
-        return self.value
 
 
 class ModelRuntimeDirective(BaseModel):
@@ -67,4 +64,7 @@ class ModelRuntimeDirective(BaseModel):
     correlation_id: UUID = Field(
         ..., description="Trace back to originating intent/event"
     )
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC),
+        description="When this directive was created (UTC)",
+    )

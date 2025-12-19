@@ -90,8 +90,6 @@ Future Enhancement:
         - schema_ref: str | None (optional JSON schema reference)
 """
 
-from __future__ import annotations
-
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast
 
@@ -309,7 +307,7 @@ class ModelHandlerOutput(BaseModel, Generic[T]):
     )
 
     @model_validator(mode="after")
-    def validate_node_kind_constraints(self) -> ModelHandlerOutput[T]:
+    def validate_node_kind_constraints(self) -> "ModelHandlerOutput[T]":
         """
         Enforce Option A node-kind output constraints.
 
@@ -503,7 +501,7 @@ class ModelHandlerOutput(BaseModel, Generic[T]):
         metrics: dict[str, float] | None = None,
         logs: tuple[str, ...] = (),
         processing_time_ms: float = 0.0,
-    ) -> ModelHandlerOutput[None]:
+    ) -> "ModelHandlerOutput[None]":
         """
         Create output for an ORCHESTRATOR handler.
 
@@ -557,7 +555,7 @@ class ModelHandlerOutput(BaseModel, Generic[T]):
         metrics: dict[str, float] | None = None,
         logs: tuple[str, ...] = (),
         processing_time_ms: float = 0.0,
-    ) -> ModelHandlerOutput[None]:
+    ) -> "ModelHandlerOutput[None]":
         """
         Create output for a REDUCER handler.
 
@@ -608,7 +606,7 @@ class ModelHandlerOutput(BaseModel, Generic[T]):
         metrics: dict[str, float] | None = None,
         logs: tuple[str, ...] = (),
         processing_time_ms: float = 0.0,
-    ) -> ModelHandlerOutput[None]:
+    ) -> "ModelHandlerOutput[None]":
         """
         Create output for an EFFECT handler.
 
@@ -660,7 +658,7 @@ class ModelHandlerOutput(BaseModel, Generic[T]):
         metrics: dict[str, float] | None = None,
         logs: tuple[str, ...] = (),
         processing_time_ms: float = 0.0,
-    ) -> ModelHandlerOutput[T]:
+    ) -> "ModelHandlerOutput[T]":
         """
         Create output for a COMPUTE handler.
 
@@ -712,7 +710,7 @@ class ModelHandlerOutput(BaseModel, Generic[T]):
         metrics: dict[str, float] | None = None,
         logs: tuple[str, ...] = (),
         processing_time_ms: float = 0.0,
-    ) -> ModelHandlerOutput[None]:
+    ) -> "ModelHandlerOutput[None]":
         """
         Create output for a void COMPUTE handler (no result).
 
@@ -759,7 +757,7 @@ class ModelHandlerOutput(BaseModel, Generic[T]):
         handler_id: str,
         node_kind: EnumNodeKind,
         processing_time_ms: float = 0.0,
-    ) -> ModelHandlerOutput[None]:
+    ) -> "ModelHandlerOutput[None]":
         """
         Create an empty output with no events, intents, projections, or result.
 

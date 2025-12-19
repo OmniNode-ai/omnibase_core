@@ -346,6 +346,24 @@ class TestModelHandlerOutputOptionAConstraints:
             )
         assert "ORCHESTRATOR cannot emit projections[]" in str(exc_info.value)
 
+    def test_orchestrator_cannot_set_result(
+        self,
+        sample_envelope_id,
+        sample_correlation_id,
+        sample_handler_id,
+    ) -> None:
+        """ORCHESTRATOR cannot set result - use events[] and intents[] only."""
+        with pytest.raises(ValueError) as exc_info:
+            ModelHandlerOutput(
+                input_envelope_id=sample_envelope_id,
+                correlation_id=sample_correlation_id,
+                handler_id=sample_handler_id,
+                node_kind=EnumNodeKind.ORCHESTRATOR,
+                result={"some": "data"},
+            )
+        error_msg = str(exc_info.value)
+        assert "ORCHESTRATOR cannot set result" in error_msg
+
     # ---- REDUCER: projections[] allowed, events[] and intents[] forbidden ----
 
     def test_reducer_can_emit_projections(

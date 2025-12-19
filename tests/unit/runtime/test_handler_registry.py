@@ -18,7 +18,7 @@ Related:
 from __future__ import annotations
 
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -29,8 +29,8 @@ from omnibase_core.models.dispatch.enum_dispatch_status import EnumDispatchStatu
 from omnibase_core.models.dispatch.model_dispatch_result import ModelDispatchResult
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.runtime.handler_registry import (
-    ServiceHandlerRegistry,
     ProtocolMessageHandler,
+    ServiceHandlerRegistry,
 )
 
 
@@ -142,6 +142,7 @@ def intent_effect_handler() -> MockMessageHandler:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestProtocolMessageHandler:
     """Tests for ProtocolMessageHandler protocol."""
 
@@ -407,16 +408,22 @@ class TestExecutionShapeValidation:
 class TestFreezePattern:
     """Tests for freeze-after-init pattern."""
 
-    def test_initial_state_not_frozen(self, handler_registry: ServiceHandlerRegistry) -> None:
+    def test_initial_state_not_frozen(
+        self, handler_registry: ServiceHandlerRegistry
+    ) -> None:
         """Registry should start unfrozen."""
         assert handler_registry.is_frozen is False
 
-    def test_freeze_sets_frozen_flag(self, handler_registry: ServiceHandlerRegistry) -> None:
+    def test_freeze_sets_frozen_flag(
+        self, handler_registry: ServiceHandlerRegistry
+    ) -> None:
         """freeze() should set is_frozen to True."""
         handler_registry.freeze()
         assert handler_registry.is_frozen is True
 
-    def test_freeze_is_idempotent(self, handler_registry: ServiceHandlerRegistry) -> None:
+    def test_freeze_is_idempotent(
+        self, handler_registry: ServiceHandlerRegistry
+    ) -> None:
         """Calling freeze() multiple times should be safe."""
         handler_registry.freeze()
         handler_registry.freeze()  # Should not raise

@@ -2105,10 +2105,10 @@ class TestPublishingOrder:
         Verify node kind constraints prevent invalid output combinations.
 
         Per OMN-941: Each node kind has specific output restrictions:
-        - REDUCER: projections only (no events, no intents)
-        - EFFECT: events only (no intents, no projections)
-        - COMPUTE: events only (no intents, no projections)
-        - ORCHESTRATOR: events and intents only (no projections)
+        - REDUCER: projections only (no events, no intents, no result)
+        - EFFECT: events only (no intents, no projections, no result)
+        - COMPUTE: result only (no events, no intents, no projections)
+        - ORCHESTRATOR: events and intents only (no projections, no result)
         """
         from omnibase_core.enums.enum_node_kind import EnumNodeKind
         from omnibase_core.models.dispatch.model_handler_output import (

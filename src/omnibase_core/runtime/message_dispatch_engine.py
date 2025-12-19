@@ -229,6 +229,10 @@ class MessageDispatchEngine:
         self._frozen: bool = False
         self._registration_lock: threading.Lock = threading.Lock()
 
+        # Metrics lock for thread-safe metrics updates
+        # Python's += is NOT atomic - it's a read-modify-write operation
+        self._metrics_lock: threading.Lock = threading.Lock()
+
         # Structured metrics (Pydantic model)
         self._structured_metrics: ModelDispatchMetrics = ModelDispatchMetrics()
 
@@ -466,6 +470,27 @@ class MessageDispatchEngine:
         """
         return self._frozen
 
+    def _increment_metric(self, key: str, value: int | float = 1) -> None:
+        """
+        Thread-safe increment of a metric value.
+
+        Python's += operator is NOT atomic - it performs a read-modify-write
+        sequence that can race with concurrent updates. This helper ensures
+        all metrics updates are protected by a lock.
+
+        Args:
+            key: The metric key to increment (must exist in self._metrics)
+            value: The value to add (default: 1)
+
+        Note:
+            This method acquires _metrics_lock internally. Do not call while
+            already holding the lock to avoid deadlock.
+
+        .. versionadded:: 0.4.0
+        """
+        with self._metrics_lock:
+            self._metrics[key] += value
+
     def _build_log_context(
         self,
         topic: str | None = None,
@@ -594,15 +619,15 @@ class MessageDispatchEngine:
         )
         trace_id_str = str(envelope.trace_id) if envelope.trace_id else None
 
-        # Update dispatch count (atomic for simple int)
-        self._metrics["dispatch_count"] += 1
+        # Update dispatch count (thread-safe via _increment_metric)
+        self._increment_metric("dispatch_count")
 
         # Step 1: Parse topic to get category
         topic_category = EnumMessageCategory.from_topic(topic)
         if topic_category is None:
-            self._metrics["dispatch_error_count"] += 1
+            self._increment_metric("dispatch_error_count")
             duration_ms = (time.perf_counter() - start_time) * 1000
-            self._metrics["total_latency_ms"] += duration_ms
+            self._increment_metric("total_latency_ms", duration_ms)
 
             # Update structured metrics
             self._structured_metrics = self._structured_metrics.record_dispatch(
@@ -652,10 +677,10 @@ class MessageDispatchEngine:
         # Step 2: Validate envelope category matches topic category
         envelope_category = envelope.infer_category()
         if envelope_category != topic_category:
-            self._metrics["category_mismatch_count"] += 1
-            self._metrics["dispatch_error_count"] += 1
+            self._increment_metric("category_mismatch_count")
+            self._increment_metric("dispatch_error_count")
             duration_ms = (time.perf_counter() - start_time) * 1000
-            self._metrics["total_latency_ms"] += duration_ms
+            self._increment_metric("total_latency_ms", duration_ms)
 
             # Update structured metrics
             self._structured_metrics = self._structured_metrics.record_dispatch(
@@ -721,10 +746,10 @@ class MessageDispatchEngine:
         )
 
         if not matching_handlers:
-            self._metrics["no_handler_count"] += 1
-            self._metrics["dispatch_error_count"] += 1
+            self._increment_metric("no_handler_count")
+            self._increment_metric("dispatch_error_count")
             duration_ms = (time.perf_counter() - start_time) * 1000
-            self._metrics["total_latency_ms"] += duration_ms
+            self._increment_metric("total_latency_ms", duration_ms)
 
             # Update structured metrics
             self._structured_metrics = self._structured_metrics.record_dispatch(
@@ -773,7 +798,7 @@ class MessageDispatchEngine:
         executed_handler_ids: list[str] = []
 
         for handler_entry in matching_handlers:
-            self._metrics["handler_execution_count"] += 1
+            self._increment_metric("handler_execution_count")
             handler_start_time = time.perf_counter()
 
             # Log handler execution at DEBUG level
@@ -871,7 +896,7 @@ class MessageDispatchEngine:
                 raise
             except Exception as e:
                 handler_duration_ms = (time.perf_counter() - handler_start_time) * 1000
-                self._metrics["handler_error_count"] += 1
+                self._increment_metric("handler_error_count")
                 error_msg = f"Handler '{handler_entry.handler_id}' failed: {type(e).__name__}: {e}"
                 handler_errors.append(error_msg)
 
@@ -956,22 +981,22 @@ class MessageDispatchEngine:
 
         # Step 6: Build result
         duration_ms = (time.perf_counter() - start_time) * 1000
-        self._metrics["total_latency_ms"] += duration_ms
-        self._metrics["routes_matched_count"] += len(matching_handlers)
+        self._increment_metric("total_latency_ms", duration_ms)
+        self._increment_metric("routes_matched_count", len(matching_handlers))
 
         # Determine final status
         if handler_errors:
             if executed_handler_ids:
                 # Partial success - some handlers executed
                 status = EnumDispatchStatus.HANDLER_ERROR
-                self._metrics["dispatch_error_count"] += 1
+                self._increment_metric("dispatch_error_count")
             else:
                 # Total failure - no handlers executed
                 status = EnumDispatchStatus.HANDLER_ERROR
-                self._metrics["dispatch_error_count"] += 1
+                self._increment_metric("dispatch_error_count")
         else:
             status = EnumDispatchStatus.SUCCESS
-            self._metrics["dispatch_success_count"] += 1
+            self._increment_metric("dispatch_success_count")
 
         # Update structured metrics with final dispatch result
         self._structured_metrics = self._structured_metrics.record_dispatch(
