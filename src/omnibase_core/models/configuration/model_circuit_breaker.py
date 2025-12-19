@@ -7,7 +7,6 @@ cascade failures in load balancing systems.
 
 import threading
 from datetime import UTC, datetime, timedelta
-from typing import ClassVar
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr

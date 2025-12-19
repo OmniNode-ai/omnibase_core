@@ -39,7 +39,7 @@ This is no longer the case - Core is now the source of truth for protocols.
 
 **Recommended Action:**
 Implement `ProtocolServiceRegistry` from `omnibase_spi.protocols.container`:
-```
+```python
 from omnibase_spi.protocols.container import (
     ProtocolServiceRegistry,
     ProtocolServiceRegistration,
@@ -70,7 +70,7 @@ from omnibase_spi.protocols.container import (
 
 **Recommended Action:**
 Implement validation protocols for public interfaces:
-```
+```python
 from omnibase_spi.protocols.validation import (
     ProtocolComplianceValidator,
     ProtocolQualityValidator,
@@ -106,7 +106,7 @@ from omnibase_spi.protocols.validation import (
 
 **Recommended Action:**
 Add `ProtocolNodeConfiguration` support (externalize configs):
-```
+```python
 from omnibase_spi.protocols.node import ProtocolNodeConfiguration
 
 # Before

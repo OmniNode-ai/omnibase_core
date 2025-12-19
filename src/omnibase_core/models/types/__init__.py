@@ -42,8 +42,6 @@ See Also:
     - omnibase_core.models.types.model_onex_common_types: Common type definitions
 """
 
-from typing import Any
-
 from .model_json_serializable import JsonSerializable
 from .model_onex_common_types import (
     CliValue,

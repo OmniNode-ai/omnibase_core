@@ -49,7 +49,7 @@ Total: **3 protocols**
 #### 1.1 PatternChecker
 **Location**: `src/omnibase_core/validation/patterns.py:28`
 
-```
+```python
 class PatternChecker(Protocol):
     """Protocol for pattern checkers with issues tracking."""
 
@@ -78,7 +78,7 @@ class PatternChecker(Protocol):
 #### 1.2 MixinSerializable
 **Location**: `src/omnibase_core/mixins/mixin_serializable.py:30`
 
-```
+```python
 class MixinSerializable(Protocol):
     """
     Protocol for models that support recursive, protocol-driven serialization
@@ -111,7 +111,7 @@ class MixinSerializable(Protocol):
 #### 1.3 EnumStatusProtocol
 **Location**: `src/omnibase_core/models/core/model_status_protocol.py:17`
 
-```
+```python
 class EnumStatusProtocol(Protocol):
     """Protocol for status enums that can be migrated and converted to base status."""
 
@@ -152,7 +152,7 @@ Total: **100+ protocols** across 20+ domains
 **Location**: `omnibase_core.protocols` (formerly `omnibase_spi.protocols.types`)
 
 **Structural Protocols** (behavioral contracts):
-```
+```python
 ProtocolSerializable       # model_dump() method
 ProtocolIdentifiable       # id property
 ProtocolNameable          # get_name(), set_name() methods
@@ -163,7 +163,7 @@ ProtocolMetadataProvider  # metadata property
 ```
 
 **Data Protocols** (shape contracts):
-```
+```python
 ProtocolContextValue       # Union[primitive | list | dict]
 ProtocolSchemaValue        # Schema-validated values
 ProtocolHealthCheck        # Health check result structure
@@ -173,7 +173,7 @@ ProtocolSemVer            # Semantic version structure
 ```
 
 **Usage in omnibase_core**:
-```
+```python
 # From types/constraints.py (v0.3.6+ - Core-native imports)
 from omnibase_core.protocols import (
     ProtocolConfigurable as Configurable,
@@ -190,7 +190,7 @@ from omnibase_core.protocols import (
 #### 2.2 Event Bus Protocols
 **Location**: `omnibase_core.protocols` (formerly `omnibase_spi.protocols.event_bus`)
 
-```
+```python
 ProtocolEventBus              # Event bus interface
 ProtocolEventPublisher        # Event publishing
 ProtocolEventSubscription     # Subscription management
@@ -206,7 +206,7 @@ ProtocolEventOrchestrator     # Multi-event coordination
 #### 2.3 File Handling Protocols
 **Location**: `omnibase_core.protocols` (formerly `omnibase_spi.protocols.file_handling`)
 
-```
+```python
 ProtocolFileReader            # File reading interface
 ProtocolFileWriter            # File writing interface
 ProtocolFileTypeHandler       # MIME type handling
@@ -221,7 +221,7 @@ ProtocolFileProcessing        # Processing pipeline
 #### 2.4 Schema & Validation Protocols
 **Location**: `omnibase_core.protocols` (formerly `omnibase_spi.protocols.schema`)
 
-```
+```python
 ProtocolSchemaLoader          # Schema loading interface
 ProtocolValidationResult      # Validation output
 ProtocolModelValidatable      # Model validation
@@ -234,7 +234,7 @@ ProtocolModelValidatable      # Model validation
 #### 2.5 MCP (Model Context Protocol)
 **Location**: `omnibase_core.protocols` (formerly `omnibase_spi.protocols.mcp`)
 
-```
+```python
 ProtocolTool                  # MCP tool interface
 ProtocolMCPRegistry           # Tool registry
 ProtocolMCPDiscovery          # Tool discovery
@@ -248,7 +248,7 @@ ProtocolMCPValidator          # Tool validation
 #### 2.6 Workflow Orchestration Protocols
 **Location**: `omnibase_core.protocols` (formerly `omnibase_spi.protocols.workflow_orchestration`)
 
-```
+```python
 ProtocolWorkflowDefinition    # Workflow structure
 ProtocolWorkflowContext       # Execution context
 ProtocolWorkflowEvent         # Event-driven workflow
@@ -264,7 +264,7 @@ ProtocolTaskConfiguration     # Task config
 ### Pattern 1: Structural Subtyping (Duck Typing)
 **Use Case**: Polymorphic behavior without inheritance
 
-```
+```python
 # Protocol definition (omnibase_core.protocols - v0.3.6+)
 class ProtocolSerializable(Protocol):
     def model_dump(self) -> dict[str, Any]: ...
@@ -290,7 +290,7 @@ def serialize_model(obj: ProtocolSerializable) -> dict[str, Any]:
 ### Pattern 2: Dependency Injection
 **Use Case**: Constructor injection with protocol contracts
 
-```
+```python
 class MixinEventDrivenNode:
     def __init__(
         self,
@@ -321,7 +321,7 @@ class MixinEventDrivenNode:
 ### Pattern 3: Runtime Type Checking
 **Use Case**: Dynamic validation with type guards
 
-```
+```python
 # Type guards in types/constraints.py
 def is_serializable(obj: object) -> bool:
     """Check if object implements Serializable protocol."""
@@ -352,7 +352,7 @@ if is_serializable(unknown_obj):
 ### Pattern 4: Protocol Composition
 **Use Case**: Multiple protocol constraints
 
-```
+```python
 # TypeVars with protocol bounds
 SerializableType = TypeVar("SerializableType", bound=Serializable)
 IdentifiableType = TypeVar("IdentifiableType", bound=Identifiable)
@@ -372,7 +372,7 @@ def process_entity(
 ### Pattern 5: Protocol Aliasing
 **Use Case**: Avoiding naming conflicts
 
-```
+```python
 # From types/constraints.py (v0.3.6+ - Core-native imports)
 from omnibase_core.protocols import (
     ProtocolConfigurable as Configurable,
@@ -392,7 +392,7 @@ ExecutableType = TypeVar("ExecutableType", bound=Executable)
 ### Pattern 6: Lazy Protocol Imports
 **Use Case**: Breaking circular dependencies
 
-```
+```python
 # From types/constraints.py
 if TYPE_CHECKING:
     # Type hints only, not runtime
@@ -419,7 +419,7 @@ else:
 > **Note (v0.3.6+)**: The diagram below has been updated to reflect the dependency
 > inversion where omnibase_core is now the source of truth for protocols.
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                      omnibase_core                           │
 │  (Protocol Definitions - Source of Truth)                   │
@@ -481,7 +481,7 @@ else:
 ### Critical Import Chains
 
 #### Chain 1: Type Constraints (Circular Dependency Resolution)
-```
+```text
 1. types/core_types.py               (no external deps)
 2. errors/error_codes.py             → types/core_types
 3. models/common/model_schema_value  → errors/error_codes
@@ -493,7 +493,7 @@ else:
 **Key**: Step 4 uses `TYPE_CHECKING` to avoid runtime import, breaking the cycle.
 
 #### Chain 2: Event Bus Integration
-```
+```text
 omnibase_core.protocols (Core-native - v0.3.6+)
   → ProtocolEventBus
     → omnibase_core.mixins.mixin_event_driven_node
@@ -502,7 +502,7 @@ omnibase_core.protocols (Core-native - v0.3.6+)
 ```
 
 #### Chain 3: Metadata Loading
-```
+```text
 omnibase_core.protocols (Core-native - v0.3.6+)
   → ProtocolSchemaLoader
     → omnibase_core.mixins.mixin_event_driven_node
@@ -518,7 +518,7 @@ omnibase_core.protocols (Core-native - v0.3.6+)
 **Status**: NOT FOUND in audit
 
 **What to look for**:
-```
+```python
 # VIOLATION: Claims to satisfy protocol but missing method
 class BadImplementation:
     def model_dump(self) -> dict[str, Any]:
@@ -538,7 +538,7 @@ def process(obj: ProtocolSerializable):
 **Status**: NOT FOUND in audit
 
 **What to look for**:
-```
+```python
 # VIOLATION: Wrong return type
 class BadSerializer:
     def model_dump(self) -> str:  # Should be dict[str, Any]
@@ -553,7 +553,7 @@ class BadSerializer:
 **Status**: POTENTIAL ISSUE
 
 **Example**:
-```
+```python
 # From constraints.py - uses object instead of protocol
 PrimitiveValueType = object  # Runtime validation required
 ContextValueType = object    # Runtime validation required
@@ -574,7 +574,7 @@ PrimitiveValueType = TypeVar("PrimitiveValueType", str, int, float, bool)
 ### Violation Type 4: Mutable Protocol State ⚠️
 **Status**: FOUND in `PatternChecker`
 
-```
+```python
 class PatternChecker(Protocol):
     issues: list[str]  # ⚠️ Mutable state in protocol
 ```
@@ -585,7 +585,7 @@ class PatternChecker(Protocol):
 - Use `@dataclass` with `frozen=True` for immutable protocols
 - Or return issues instead of storing them
 
-```
+```python
 # Better design
 class PatternChecker(Protocol):
     def visit(self, node: ast.AST) -> None: ...
@@ -598,7 +598,7 @@ class PatternChecker(Protocol):
 **Status**: FOUND in internal protocols
 
 **Example**:
-```
+```python
 # Current: Not runtime checkable
 class PatternChecker(Protocol):
     issues: list[str]
@@ -624,7 +624,7 @@ if isinstance(obj, PatternChecker):
 ### Recommendation 1: Add @runtime_checkable to Internal Protocols
 **Priority**: HIGH
 
-```
+```python
 # Before
 class PatternChecker(Protocol):
     issues: list[str]
@@ -649,7 +649,7 @@ class PatternChecker(Protocol):
 ### Recommendation 2: Replace object with Proper Type Constraints
 **Priority**: MEDIUM
 
-```
+```python
 # Before (from constraints.py)
 PrimitiveValueType = object  # Runtime validation required
 ContextValueType = object    # Runtime validation required
@@ -682,7 +682,7 @@ Create `docs/PROTOCOL_PATTERNS.md` with:
 ### Recommendation 4: Extract Common Protocol Patterns
 **Priority**: MEDIUM
 
-```
+```python
 # Create common/protocol_patterns.py
 from typing import Protocol, runtime_checkable, TypeVar
 
@@ -711,7 +711,7 @@ class MixinSerializable(ProtocolTwoWaySerializer[T]):
 ### Recommendation 5: Add Protocol Tests
 **Priority**: HIGH
 
-```
+```python
 # tests/protocols/test_pattern_checker_protocol.py
 import pytest
 from typing import get_type_hints
@@ -771,7 +771,7 @@ Add docstrings to all protocols explaining:
 3. **Implementation**: What must implementers provide?
 4. **Examples**: Show concrete usage
 
-```
+```python
 @runtime_checkable
 class PatternChecker(Protocol):
     """
@@ -818,7 +818,7 @@ class PatternChecker(Protocol):
 ## Protocol Hierarchy
 
 ### Core Type Protocols
-```
+```text
 ProtocolSerializable (SPI)
   ↓
 MixinSerializable (omnibase_core)
@@ -829,7 +829,7 @@ ModelGitHubActionsWorkflow
 ```
 
 ### Status Protocols
-```
+```text
 EnumStatusProtocol (omnibase_core)
   ↓ (implementations)
 EnumScenarioStatusV2
@@ -839,7 +839,7 @@ EnumExecutionStatusV2
 ```
 
 ### Validation Protocols
-```
+```text
 PatternChecker (omnibase_core)
   ↓ (implementations)
 PydanticPatternChecker
@@ -880,7 +880,7 @@ GenericPatternChecker
 ## Anti-Patterns to Avoid
 
 ### ❌ Anti-Pattern 1: Protocol with Concrete Implementation
-```
+```python
 # BAD: Protocol with default implementation
 class BadProtocol(Protocol):
     def method(self) -> str:
@@ -892,7 +892,7 @@ class BadProtocol(Protocol):
 ---
 
 ### ❌ Anti-Pattern 2: Over-Specific Protocols
-```
+```python
 # BAD: Protocol that's too specific
 class ProtocolUserManagerWithDatabaseAndCacheAndLogging(Protocol):
     def get_user_from_database_with_cache_and_logging(self, id: int) -> User: ...
@@ -901,7 +901,7 @@ class ProtocolUserManagerWithDatabaseAndCacheAndLogging(Protocol):
 **Reason**: Protocols should be small, composable interfaces.
 
 **Better**:
-```
+```python
 class ProtocolUserRepository(Protocol):
     def get_user(self, id: int) -> User: ...
 
@@ -912,7 +912,7 @@ class ProtocolCacheable(Protocol):
 ---
 
 ### ❌ Anti-Pattern 3: Protocol Soup
-```
+```python
 # BAD: Every class uses different protocols
 def process(
     a: Protocol1,
@@ -930,7 +930,7 @@ def process(
 ---
 
 ### ❌ Anti-Pattern 4: Ignoring Type Checkers
-```
+```python
 # BAD: Ignoring mypy errors
 obj: ProtocolSerializable = some_object  # type: ignore
 ```
@@ -944,7 +944,7 @@ obj: ProtocolSerializable = some_object  # type: ignore
 ## Tools & Validation
 
 ### Static Type Checking
-```
+```bash
 # Run mypy with protocol checks
 poetry run mypy src/omnibase_core --strict-optional --check-untyped-defs
 
@@ -953,7 +953,7 @@ poetry run mypy src/omnibase_core --warn-redundant-casts --warn-unreachable
 ```
 
 ### Runtime Validation
-```
+```python
 # Use type guards
 from omnibase_core.types.constraints import is_serializable
 
@@ -964,7 +964,7 @@ else:
 ```
 
 ### Protocol Discovery
-```
+```bash
 # Find all protocol definitions
 grep -r "class.*Protocol" src/omnibase_core --include="*.py"
 

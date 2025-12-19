@@ -567,7 +567,7 @@ class TestPipelineTimeoutEnforcement:
         context = ModelComputeExecutionContext(operation_id=uuid4())
 
         def slow_step(*args, **kwargs):
-            time_module.sleep(0.5)  # Sleep 500ms, exceeding 100ms timeout
+            time_module.sleep(0.2)  # Sleep 200ms, exceeding 100ms timeout
             return "should_not_reach"
 
         with patch(

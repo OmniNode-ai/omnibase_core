@@ -604,6 +604,723 @@ Before deploying ONEX nodes in multi-threaded production environments:
 - [ ] **Load Testing Performed**: Test under realistic concurrent load to expose races
 - [ ] **Error Handling Verified**: Ensure error handling doesn't introduce race conditions
 - [ ] **Resource Cleanup Tested**: Verify cleanup works correctly under concurrent shutdown
+- [ ] **Timeout Thread Monitoring Configured**: Monitor thread accumulation from timeout operations (see below)
+
+## Compute Pipeline Timeout Thread Behavior
+
+This section documents how `execute_compute_pipeline` enforces timeouts using background threads, and the deployment implications of this design.
+
+### How Compute Timeout Enforcement Works
+
+When `pipeline_timeout_ms` is configured in a `ModelComputeSubcontract`, the `execute_compute_pipeline` function wraps execution in a `ThreadPoolExecutor`:
+
+```python
+# From src/omnibase_core/utils/compute_executor.py
+executor = ThreadPoolExecutor(max_workers=1)
+try:
+    future = executor.submit(_execute_pipeline_steps, contract, input_data, context, start_time)
+    return future.result(timeout=timeout_seconds)
+except FuturesTimeoutError:
+    # Return timeout failure result
+    return ModelComputePipelineResult(success=False, error_type="timeout_exceeded", ...)
+finally:
+    executor.shutdown(wait=False)  # Non-blocking shutdown
+```
+
+**Key Characteristics**:
+
+| Aspect | Behavior |
+|--------|----------|
+| **Thread Type** | Daemon thread (Python ThreadPoolExecutor default) |
+| **Thread Lifecycle** | Created per timeout-enabled pipeline execution |
+| **Pooling** | None - new executor per call, not pooled |
+| **Cleanup on Timeout** | `shutdown(wait=False)` - non-blocking |
+| **Background Continuation** | Thread may continue running after timeout |
+
+### Daemon Thread Behavior
+
+Python's `ThreadPoolExecutor` creates daemon threads by default. This has important implications:
+
+**Auto-Cleanup on Process Exit**:
+- Daemon threads are terminated when the main process exits
+- No explicit cleanup required - Python handles this automatically
+- If the process exits normally, any running timeout threads terminate immediately
+
+**Background Thread Continuation**:
+- When a timeout occurs, the background thread continues executing
+- `executor.shutdown(wait=False)` returns immediately without waiting
+- The thread eventually completes and is garbage collected
+- The result is discarded (since we've already returned a timeout error)
+
+```text
+Timeline: Timeout at 100ms, operation takes 500ms
+
+0ms:     Submit task to executor
+         Background thread starts executing pipeline
+100ms:   FuturesTimeoutError raised
+         Return timeout result to caller
+         executor.shutdown(wait=False) called
+         Background thread continues running (daemon)
+500ms:   Background thread completes
+         Result discarded (no one waiting)
+         Thread resources freed by GC
+```
+
+### Thread Lifecycle Details
+
+**Per-Timeout Creation** (Not Pooled):
+- Each call to `execute_compute_pipeline` with `pipeline_timeout_ms` set creates a new `ThreadPoolExecutor`
+- The executor is created inline and shut down after use
+- This design prioritizes simplicity over thread reuse
+
+**Why Not Pooled?**:
+1. **Isolation**: Each execution is independent - no shared state concerns
+2. **Simplicity**: No pool management, sizing, or lifecycle coordination
+3. **Timeout Safety**: Pool threads could block if timeouts occur frequently
+4. **Resource Reclaim**: Daemon threads are auto-cleaned on process exit
+
+**Thread Count**:
+- One thread per active timeout-enabled pipeline execution
+- Under heavy load, this could mean many concurrent daemon threads
+- Most deployments use asyncio which limits concurrent blocking operations
+
+### Memory and Resource Implications
+
+**During Normal Operation**:
+- Minimal overhead: one thread per timeout-enabled pipeline
+- Thread is released after pipeline completes or times out
+- GC cleans up completed threads
+
+**During Timeout Scenarios**:
+- The background thread continues consuming CPU/memory until completion
+- Result data is computed but discarded
+- For CPU-bound operations, the work continues to completion
+- For I/O-bound operations (rare in compute pipelines), connections may remain open
+
+**High-Concurrency Considerations**:
+- If many pipelines timeout simultaneously, daemon threads accumulate
+- All will complete eventually (or terminate on process exit)
+- Monitor thread count in production: `threading.active_count()`
+
+```python
+import threading
+
+# Monitor thread count for diagnostics
+active_threads = threading.active_count()
+if active_threads > expected_baseline + 10:
+    logger.warning(f"Elevated thread count: {active_threads} (possible timeout accumulation)")
+```
+
+### What Happens When Timeouts Trigger vs Complete Normally
+
+**Normal Completion (Within Timeout)**:
+```text
+1. Pipeline submitted to executor
+2. Background thread executes all steps
+3. future.result(timeout=X) returns with result
+4. executor.shutdown(wait=False) - thread already done
+5. Result returned to caller
+```
+
+**Timeout Triggered**:
+```text
+1. Pipeline submitted to executor
+2. Background thread starts executing
+3. future.result(timeout=X) raises FuturesTimeoutError
+4. executor.shutdown(wait=False) - returns immediately
+5. Timeout result returned to caller
+6. Background thread continues (daemon)
+7. Eventually completes and is garbage collected
+```
+
+**Process Exit During Timeout**:
+```text
+1. Pipeline submitted to executor
+2. Timeout triggers, timeout result returned
+3. Background thread still running
+4. Process receives SIGTERM/exits
+5. Daemon threads terminated immediately by Python
+6. No cleanup needed - Python handles this
+```
+
+### Best Practices for Timeout Configuration
+
+**Setting Appropriate Timeout Values**:
+
+```python
+# Good: Timeout accounts for expected operation duration + margin
+contract = ModelComputeSubcontract(
+    operation_name="data_transform",
+    pipeline=[...],
+    pipeline_timeout_ms=5000,  # 5s for typical 2-3s operations
+)
+
+# Risky: Timeout too close to expected duration
+contract = ModelComputeSubcontract(
+    operation_name="data_transform",
+    pipeline=[...],
+    pipeline_timeout_ms=2500,  # May timeout on normal variance
+)
+```
+
+**Consider the Cleanup Implications**:
+
+```python
+# For short-running operations, tight timeouts are safe
+# The background thread completes quickly even if timeout fires
+contract = ModelComputeSubcontract(
+    operation_name="quick_validation",
+    pipeline=[...],
+    pipeline_timeout_ms=100,  # 100ms - thread finishes fast
+)
+
+# For long-running operations, consider if background completion is acceptable
+# The thread will continue for the full duration after timeout
+contract = ModelComputeSubcontract(
+    operation_name="expensive_transform",
+    pipeline=[...],
+    pipeline_timeout_ms=1000,  # 1s timeout, but operation may take 10s
+)
+# Warning: If operation takes 10s, daemon thread runs for 10s after timeout
+```
+
+**Avoid Timeout in Resource-Constrained Environments**:
+
+```python
+# In memory-constrained environments, consider if timeout threads can accumulate
+if environment.memory_constrained:
+    # Option 1: Disable timeout (use external timeout mechanisms)
+    contract = ModelComputeSubcontract(
+        operation_name="resource_aware",
+        pipeline=[...],
+        pipeline_timeout_ms=None,  # No internal timeout
+    )
+
+    # Option 2: Use longer timeouts to reduce accumulation
+    contract = ModelComputeSubcontract(
+        operation_name="resource_aware",
+        pipeline=[...],
+        pipeline_timeout_ms=30000,  # 30s - fewer concurrent timeouts
+    )
+```
+
+### Deployment Checklist for Timeout-Enabled Pipelines
+
+- [ ] **Understand background continuation**: Accept that timeout does not cancel the underlying work
+- [ ] **Set appropriate timeout values**: Account for normal variance in operation duration
+- [ ] **Monitor thread count**: Track `threading.active_count()` for unexpected accumulation
+- [ ] **Test under load**: Verify behavior when multiple pipelines timeout simultaneously
+- [ ] **Consider memory budget**: Account for memory consumed by background threads
+- [ ] **Plan for graceful shutdown**: Process exit cleanly terminates daemon threads
+- [ ] **Log timeout events**: Enable observability for timeout patterns
+
+### Comparison: Compute vs Effect Timeout Mechanisms
+
+| Aspect | Compute Pipeline (`execute_compute_pipeline`) | Effect Execution (`execute_effect`) |
+|--------|-----------------------------------------------|-------------------------------------|
+| **Mechanism** | `ThreadPoolExecutor` with `future.result(timeout=X)` | `threading.Timer` with cancellation callback |
+| **Thread Type** | Worker thread in executor (daemon) | Timer thread (daemon) |
+| **On Timeout** | Returns immediately, thread continues | Callback fires, may cancel operation |
+| **Cleanup** | `shutdown(wait=False)` | Timer auto-cleanup |
+| **Use Case** | CPU-bound transformations | I/O-bound external operations |
+
+### Architecture Reference
+
+For related timeout documentation:
+- [EFFECT_TIMEOUT_BEHAVIOR.md](../architecture/EFFECT_TIMEOUT_BEHAVIOR.md) - Effect-level timeout checkpoints
+- [compute_executor.py](../../src/omnibase_core/utils/compute_executor.py) - Compute timeout implementation
+- [constants_effect.py](../../src/omnibase_core/constants/constants_effect.py) - Timeout constants
+
+---
+
+## Production Monitoring for Timeout Threads
+
+### Overview
+
+The timeout mechanism in ONEX effect execution creates **daemon threads** for each timeout operation. While daemon threads are automatically terminated when the main program exits, they can accumulate during long-running production services, potentially causing resource exhaustion.
+
+### Timeout Thread Creation Behavior
+
+When `MixinEffectExecution.execute_effect()` is called with a timeout:
+
+1. A new daemon thread is created via `threading.Timer`
+2. The thread sleeps for the timeout duration
+3. If the timeout expires before the operation completes, the thread executes the cancellation callback
+4. If the operation completes first, the thread is cancelled but may not be immediately garbage collected
+
+**Key Insight**: Each effect execution with a timeout creates at least one daemon thread. Under high load, this can result in hundreds or thousands of threads accumulating before cleanup.
+
+### Thread Lifecycle
+
+```text
+Effect Request       Thread Created      Operation Completes      Thread Cleanup
+     │                    │                      │                      │
+     ▼                    ▼                      ▼                      ▼
+ ┌──────┐            ┌──────┐              ┌──────────┐          ┌──────────┐
+ │Start │───────────▶│Timer │─────────────▶│ Cancel   │─────────▶│   GC     │
+ │Effect│            │Thread│              │  Timer   │          │(eventual)│
+ └──────┘            └──────┘              └──────────┘          └──────────┘
+                         │
+                         │ (if timeout expires)
+                         ▼
+                   ┌──────────┐
+                   │ Execute  │
+                   │ Callback │
+                   └──────────┘
+```
+
+### Metrics to Monitor
+
+#### Primary Metrics
+
+| Metric | Description | Collection Method |
+|--------|-------------|-------------------|
+| `onex_active_threads_total` | Total active threads in the process | `threading.active_count()` |
+| `onex_timeout_threads_active` | Threads specifically for timeouts | Custom counter (see below) |
+| `onex_thread_creation_rate` | Threads created per second | Delta of active_count over time |
+| `onex_effect_timeout_executions_total` | Total effect executions with timeout | Counter in execute_effect |
+
+#### Secondary Metrics
+
+| Metric | Description | Collection Method |
+|--------|-------------|-------------------|
+| `onex_thread_names` | Thread name distribution | `threading.enumerate()` analysis |
+| `onex_daemon_threads_total` | Count of daemon threads | Filter `enumerate()` by daemon flag |
+| `onex_max_threads_seen` | High-water mark for thread count | Track maximum of active_count |
+
+### Warning Thresholds
+
+Configure alerts based on your system's capacity:
+
+| Threshold Level | Thread Count | Action |
+|-----------------|--------------|--------|
+| **Normal** | < 100 | Nominal operation |
+| **Warning** | 100-500 | Log warning, monitor trend |
+| **Critical** | 500-1000 | Alert on-call, investigate |
+| **Emergency** | > 1000 | Immediate intervention required |
+
+**Threshold Calibration**: These are starting points. Adjust based on:
+- Available system memory (each thread consumes ~8MB stack by default on Linux)
+- CPU core count (context switching overhead increases with thread count)
+- Effect execution patterns (burst vs steady traffic)
+- Timeout duration distribution (longer timeouts = more concurrent threads)
+
+### Thread Accumulation Detection
+
+#### Symptom Indicators
+
+1. **Gradual memory increase** without corresponding workload increase
+2. **Increased context switching** visible in system metrics
+3. **Delayed thread cleanup** after traffic subsides
+4. **GC pressure** from thread object accumulation
+
+#### Monitoring Implementation
+
+```python
+import threading
+import time
+from collections import deque
+from dataclasses import dataclass
+from typing import Callable
+
+@dataclass
+class ThreadMetrics:
+    """Thread monitoring metrics snapshot."""
+    timestamp: float
+    active_count: int
+    daemon_count: int
+    timeout_thread_count: int
+    thread_names: dict[str, int]
+
+class ThreadMonitor:
+    """Production thread accumulation monitor.
+
+    Tracks thread creation patterns and detects accumulation issues.
+    Thread-safe for use in multi-threaded environments.
+
+    Example:
+        monitor = ThreadMonitor(
+            warning_threshold=100,
+            critical_threshold=500,
+            on_warning=lambda m: logger.warning(f"Thread warning: {m.active_count}"),
+            on_critical=lambda m: alert_oncall(m),
+        )
+
+        # Start background monitoring
+        monitor.start(interval_seconds=10)
+
+        # ... application runs ...
+
+        # Stop monitoring
+        monitor.stop()
+    """
+
+    def __init__(
+        self,
+        warning_threshold: int = 100,
+        critical_threshold: int = 500,
+        history_size: int = 60,
+        on_warning: Callable[[ThreadMetrics], None] | None = None,
+        on_critical: Callable[[ThreadMetrics], None] | None = None,
+    ):
+        self.warning_threshold = warning_threshold
+        self.critical_threshold = critical_threshold
+        self.history: deque[ThreadMetrics] = deque(maxlen=history_size)
+        self.on_warning = on_warning
+        self.on_critical = on_critical
+        self._stop_event = threading.Event()
+        self._monitor_thread: threading.Thread | None = None
+        self._lock = threading.Lock()
+
+    def collect_metrics(self) -> ThreadMetrics:
+        """Collect current thread metrics snapshot."""
+        threads = threading.enumerate()
+        thread_names: dict[str, int] = {}
+
+        daemon_count = 0
+        timeout_count = 0
+
+        for t in threads:
+            if t.daemon:
+                daemon_count += 1
+
+            # Identify timeout threads by name pattern
+            name = t.name or "unnamed"
+            if name.startswith("Timer-") or "timeout" in name.lower():
+                timeout_count += 1
+
+            # Group by name prefix for analysis
+            prefix = name.split("-")[0] if "-" in name else name
+            thread_names[prefix] = thread_names.get(prefix, 0) + 1
+
+        return ThreadMetrics(
+            timestamp=time.time(),
+            active_count=threading.active_count(),
+            daemon_count=daemon_count,
+            timeout_thread_count=timeout_count,
+            thread_names=thread_names,
+        )
+
+    def check_thresholds(self, metrics: ThreadMetrics) -> None:
+        """Check metrics against thresholds and trigger callbacks."""
+        if metrics.active_count >= self.critical_threshold:
+            if self.on_critical:
+                self.on_critical(metrics)
+        elif metrics.active_count >= self.warning_threshold:
+            if self.on_warning:
+                self.on_warning(metrics)
+
+    def _monitor_loop(self, interval_seconds: float) -> None:
+        """Background monitoring loop."""
+        while not self._stop_event.wait(interval_seconds):
+            metrics = self.collect_metrics()
+            with self._lock:
+                self.history.append(metrics)
+            self.check_thresholds(metrics)
+
+    def start(self, interval_seconds: float = 10.0) -> None:
+        """Start background monitoring thread."""
+        if self._monitor_thread is not None and self._monitor_thread.is_alive():
+            return
+
+        self._stop_event.clear()
+        self._monitor_thread = threading.Thread(
+            target=self._monitor_loop,
+            args=(interval_seconds,),
+            name="ThreadMonitor",
+            daemon=True,
+        )
+        self._monitor_thread.start()
+
+    def stop(self) -> None:
+        """Stop background monitoring."""
+        self._stop_event.set()
+        if self._monitor_thread:
+            self._monitor_thread.join(timeout=5.0)
+
+    def get_history(self) -> list[ThreadMetrics]:
+        """Get thread metrics history (thread-safe)."""
+        with self._lock:
+            return list(self.history)
+
+    def get_thread_growth_rate(self) -> float | None:
+        """Calculate thread growth rate per minute.
+
+        Returns:
+            Threads per minute growth rate, or None if insufficient data.
+        """
+        with self._lock:
+            if len(self.history) < 2:
+                return None
+
+            oldest = self.history[0]
+            newest = self.history[-1]
+
+            time_delta_minutes = (newest.timestamp - oldest.timestamp) / 60.0
+            if time_delta_minutes < 0.1:  # Less than 6 seconds
+                return None
+
+            count_delta = newest.active_count - oldest.active_count
+            return count_delta / time_delta_minutes
+```
+
+### Prometheus Integration
+
+Export thread metrics for Prometheus scraping:
+
+```python
+from prometheus_client import Gauge, Counter, Histogram
+
+# Define metrics
+ACTIVE_THREADS = Gauge(
+    "onex_active_threads_total",
+    "Total number of active threads in the process",
+)
+
+DAEMON_THREADS = Gauge(
+    "onex_daemon_threads_total",
+    "Total number of daemon threads in the process",
+)
+
+TIMEOUT_THREADS = Gauge(
+    "onex_timeout_threads_active",
+    "Number of active timeout-related threads",
+)
+
+THREAD_CREATION_RATE = Gauge(
+    "onex_thread_creation_rate_per_minute",
+    "Rate of thread creation per minute",
+)
+
+MAX_THREADS_SEEN = Gauge(
+    "onex_max_threads_seen",
+    "High-water mark for thread count since process start",
+)
+
+EFFECT_TIMEOUT_TOTAL = Counter(
+    "onex_effect_timeout_executions_total",
+    "Total number of effect executions with timeout configured",
+    ["effect_type", "timeout_triggered"],
+)
+
+
+class PrometheusThreadExporter:
+    """Export thread metrics to Prometheus.
+
+    Example:
+        exporter = PrometheusThreadExporter()
+        exporter.start()
+
+        # Metrics are now available at /metrics endpoint
+    """
+
+    def __init__(self):
+        self._max_threads = 0
+        self._last_count = 0
+        self._last_time = time.time()
+        self._lock = threading.Lock()
+
+    def update_metrics(self) -> None:
+        """Update all Prometheus metrics."""
+        metrics = self._collect()
+
+        ACTIVE_THREADS.set(metrics.active_count)
+        DAEMON_THREADS.set(metrics.daemon_count)
+        TIMEOUT_THREADS.set(metrics.timeout_thread_count)
+
+        with self._lock:
+            if metrics.active_count > self._max_threads:
+                self._max_threads = metrics.active_count
+            MAX_THREADS_SEEN.set(self._max_threads)
+
+            # Calculate rate
+            now = time.time()
+            time_delta = now - self._last_time
+            if time_delta >= 1.0:  # At least 1 second
+                rate = (metrics.active_count - self._last_count) / (time_delta / 60.0)
+                THREAD_CREATION_RATE.set(rate)
+                self._last_count = metrics.active_count
+                self._last_time = now
+
+    def _collect(self) -> ThreadMetrics:
+        """Collect thread metrics (reuse ThreadMonitor logic)."""
+        threads = threading.enumerate()
+        daemon_count = sum(1 for t in threads if t.daemon)
+        timeout_count = sum(
+            1 for t in threads
+            if t.name and (t.name.startswith("Timer-") or "timeout" in t.name.lower())
+        )
+        return ThreadMetrics(
+            timestamp=time.time(),
+            active_count=threading.active_count(),
+            daemon_count=daemon_count,
+            timeout_thread_count=timeout_count,
+            thread_names={},
+        )
+
+    def start(self, interval_seconds: float = 10.0) -> None:
+        """Start periodic metric updates."""
+        def update_loop():
+            while True:
+                self.update_metrics()
+                time.sleep(interval_seconds)
+
+        thread = threading.Thread(
+            target=update_loop,
+            name="PrometheusThreadExporter",
+            daemon=True,
+        )
+        thread.start()
+```
+
+### Logging and Observability Recommendations
+
+#### Structured Logging for Thread Events
+
+```python
+import logging
+import threading
+from datetime import datetime, timezone
+
+# Configure structured logging
+logger = logging.getLogger("onex.threading")
+
+def log_thread_metrics(metrics: ThreadMetrics, level: str = "info") -> None:
+    """Log thread metrics in structured format."""
+    log_data = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "event": "thread_metrics",
+        "active_count": metrics.active_count,
+        "daemon_count": metrics.daemon_count,
+        "timeout_thread_count": metrics.timeout_thread_count,
+        "top_thread_types": dict(
+            sorted(
+                metrics.thread_names.items(),
+                key=lambda x: x[1],
+                reverse=True
+            )[:5]
+        ),
+    }
+
+    if level == "warning":
+        logger.warning("Thread accumulation detected", extra=log_data)
+    elif level == "critical":
+        logger.critical("Critical thread accumulation", extra=log_data)
+    else:
+        logger.info("Thread metrics snapshot", extra=log_data)
+```
+
+#### Integration with OpenTelemetry
+
+```python
+from opentelemetry import metrics as otel_metrics
+from opentelemetry.sdk.metrics import MeterProvider
+
+# Initialize meter
+meter = otel_metrics.get_meter("onex.threading")
+
+# Create instruments
+active_threads_gauge = meter.create_observable_gauge(
+    name="onex.threads.active",
+    description="Number of active threads",
+    callbacks=[lambda: [(threading.active_count(), {})]],
+)
+
+timeout_threads_gauge = meter.create_observable_gauge(
+    name="onex.threads.timeout",
+    description="Number of timeout-related threads",
+    callbacks=[lambda: [(_count_timeout_threads(), {})]],
+)
+
+def _count_timeout_threads() -> int:
+    """Count timeout-related threads."""
+    return sum(
+        1 for t in threading.enumerate()
+        if t.name and (t.name.startswith("Timer-") or "timeout" in t.name.lower())
+    )
+```
+
+### Mitigation Strategies
+
+When thread accumulation is detected:
+
+1. **Reduce timeout duration**: Shorter timeouts mean threads complete faster
+2. **Implement timeout pooling**: Reuse timer threads instead of creating new ones
+3. **Rate limit effect executions**: Control the rate of new effect operations
+4. **Increase GC frequency**: More aggressive garbage collection for thread objects
+5. **Circuit breaker activation**: Trip circuit breakers to reduce load
+
+#### Example: Timeout Thread Pool
+
+```python
+from concurrent.futures import ThreadPoolExecutor
+from threading import Event
+from typing import Callable
+
+class TimeoutPool:
+    """Pooled timeout management to prevent thread accumulation.
+
+    Instead of creating a new thread per timeout, this uses a thread pool
+    to manage multiple timeouts efficiently.
+
+    Example:
+        pool = TimeoutPool(max_workers=10)
+
+        # Schedule a timeout
+        cancel_event = pool.schedule_timeout(
+            timeout_seconds=30.0,
+            callback=lambda: cancel_operation(),
+        )
+
+        # If operation completes early, cancel the timeout
+        cancel_event.set()
+    """
+
+    def __init__(self, max_workers: int = 10):
+        self._executor = ThreadPoolExecutor(
+            max_workers=max_workers,
+            thread_name_prefix="TimeoutPool",
+        )
+
+    def schedule_timeout(
+        self,
+        timeout_seconds: float,
+        callback: Callable[[], None],
+    ) -> Event:
+        """Schedule a timeout callback.
+
+        Args:
+            timeout_seconds: Timeout duration in seconds.
+            callback: Function to call when timeout expires.
+
+        Returns:
+            Event that can be set to cancel the timeout.
+        """
+        cancel_event = Event()
+
+        def timeout_task():
+            if not cancel_event.wait(timeout_seconds):
+                # Timeout expired without cancellation
+                callback()
+
+        self._executor.submit(timeout_task)
+        return cancel_event
+
+    def shutdown(self, wait: bool = True) -> None:
+        """Shutdown the timeout pool."""
+        self._executor.shutdown(wait=wait)
+```
+
+### Production Checklist Addition
+
+Add these items to your production deployment checklist:
+
+- [ ] **Thread monitoring configured**: `ThreadMonitor` or equivalent running
+- [ ] **Prometheus metrics exported**: Thread metrics available for scraping
+- [ ] **Alert thresholds set**: Warning at 100, Critical at 500 (adjust as needed)
+- [ ] **Runbook documented**: Steps to take when thread accumulation is detected
+- [ ] **Timeout durations reviewed**: Ensure timeouts are appropriate for operations
+- [ ] **Load testing completed**: Verified thread behavior under peak load
 
 ## Performance Considerations
 

@@ -613,6 +613,10 @@ class TestDuplicateStepValidation:
         assert any("duplicate" in error.lower() for error in errors), (
             f"Error should mention 'duplicate': {errors}"
         )
+        # Error message should include the actual duplicate ID for debugging
+        assert any(str(duplicate_id) in error for error in errors), (
+            f"Error should include the duplicate ID {duplicate_id}: {errors}"
+        )
 
 
 # ============================================================================
