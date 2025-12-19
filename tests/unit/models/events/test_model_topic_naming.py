@@ -17,10 +17,13 @@ Tests comprehensive topic naming functionality including:
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.events.model_topic_naming import (
     ModelTopicNaming,
     get_topic_category,
+    validate_message_topic_alignment,
     validate_topic_matches_category,
 )
 
@@ -790,6 +793,203 @@ class TestModelTopicNamingClassVars:
         assert hasattr(ModelTopicNaming, "ENVIRONMENT_VALUES")
         expected = {"dev", "staging", "prod", "test", "local"}
         assert frozenset(expected) == ModelTopicNaming.ENVIRONMENT_VALUES
+
+
+class TestValidateMessageTopicAlignment:
+    """Tests for validate_message_topic_alignment() function."""
+
+    def test_event_topic_with_event_category_passes(self):
+        """Event messages to event topics should pass without error."""
+        # Should not raise
+        validate_message_topic_alignment(
+            "dev.user.events.v1",
+            EnumMessageCategory.EVENT,
+        )
+
+    def test_command_topic_with_command_category_passes(self):
+        """Command messages to command topics should pass without error."""
+        # Should not raise
+        validate_message_topic_alignment(
+            "prod.payment.commands.v1",
+            EnumMessageCategory.COMMAND,
+        )
+
+    def test_intent_topic_with_intent_category_passes(self):
+        """Intent messages to intent topics should pass without error."""
+        # Should not raise
+        validate_message_topic_alignment(
+            "staging.order.intents.v1",
+            EnumMessageCategory.INTENT,
+        )
+
+    def test_topic_without_version_passes(self):
+        """Topics without version suffix should pass."""
+        # Should not raise
+        validate_message_topic_alignment(
+            "dev.user.events",
+            EnumMessageCategory.EVENT,
+        )
+        validate_message_topic_alignment(
+            "dev.user.commands",
+            EnumMessageCategory.COMMAND,
+        )
+
+    def test_event_topic_with_command_category_fails(self):
+        """Command messages to event topics should raise ModelOnexError."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            validate_message_topic_alignment(
+                "dev.user.events.v1",
+                EnumMessageCategory.COMMAND,
+            )
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "mismatch" in str(exc_info.value.message).lower()
+        # Context is stored in additional_context["context"]
+        context = exc_info.value.context
+        assert context is not None
+        additional = context.get("additional_context", {})
+        nested_context = additional.get("context", {})
+        assert nested_context.get("topic") == "dev.user.events.v1"
+
+    def test_event_topic_with_intent_category_fails(self):
+        """Intent messages to event topics should raise ModelOnexError."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            validate_message_topic_alignment(
+                "dev.user.events.v1",
+                EnumMessageCategory.INTENT,
+            )
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+
+    def test_command_topic_with_event_category_fails(self):
+        """Event messages to command topics should raise ModelOnexError."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            validate_message_topic_alignment(
+                "dev.user.commands.v1",
+                EnumMessageCategory.EVENT,
+            )
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "expected command" in str(exc_info.value.message).lower()
+
+    def test_command_topic_with_intent_category_fails(self):
+        """Intent messages to command topics should raise ModelOnexError."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            validate_message_topic_alignment(
+                "prod.payment.commands.v1",
+                EnumMessageCategory.INTENT,
+            )
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+
+    def test_intent_topic_with_event_category_fails(self):
+        """Event messages to intent topics should raise ModelOnexError."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            validate_message_topic_alignment(
+                "staging.order.intents.v1",
+                EnumMessageCategory.EVENT,
+            )
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+
+    def test_intent_topic_with_command_category_fails(self):
+        """Command messages to intent topics should raise ModelOnexError."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            validate_message_topic_alignment(
+                "test.workflow.intents.v1",
+                EnumMessageCategory.COMMAND,
+            )
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+
+    def test_invalid_topic_fails(self):
+        """Topics without valid category suffix should raise error."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            validate_message_topic_alignment(
+                "invalid-topic",
+                EnumMessageCategory.EVENT,
+            )
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "cannot determine" in str(exc_info.value.message).lower()
+
+    def test_empty_topic_fails(self):
+        """Empty topic should raise error."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            validate_message_topic_alignment(
+                "",
+                EnumMessageCategory.EVENT,
+            )
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+
+    def test_topic_with_unknown_suffix_fails(self):
+        """Topics with unknown suffix should raise error."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            validate_message_topic_alignment(
+                "dev.user.notifications.v1",
+                EnumMessageCategory.EVENT,
+            )
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+
+    def test_error_context_includes_message_type(self):
+        """Error context should include message_type when provided."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            validate_message_topic_alignment(
+                "dev.user.events.v1",
+                EnumMessageCategory.COMMAND,
+                message_type_name="ProcessOrderCommand",
+            )
+        context = exc_info.value.context
+        assert context is not None
+        additional = context.get("additional_context", {})
+        nested_context = additional.get("context", {})
+        assert nested_context.get("message_type") == "ProcessOrderCommand"
+
+    def test_error_context_without_message_type(self):
+        """Error context should handle None message_type."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            validate_message_topic_alignment(
+                "dev.user.events.v1",
+                EnumMessageCategory.COMMAND,
+            )
+        context = exc_info.value.context
+        assert context is not None
+        additional = context.get("additional_context", {})
+        nested_context = additional.get("context", {})
+        assert nested_context.get("message_type") is None
+
+    def test_case_insensitive_topic_matching(self):
+        """Topic category detection should be case-insensitive."""
+        # Should not raise - uppercase should still match
+        validate_message_topic_alignment(
+            "DEV.USER.EVENTS.V1",
+            EnumMessageCategory.EVENT,
+        )
+        validate_message_topic_alignment(
+            "PROD.PAYMENT.COMMANDS.V1",
+            EnumMessageCategory.COMMAND,
+        )
+
+    def test_all_valid_environments(self):
+        """Test validation passes for all valid environment prefixes."""
+        environments = ["dev", "staging", "prod", "test", "local"]
+        for env in environments:
+            validate_message_topic_alignment(
+                f"{env}.user.events.v1",
+                EnumMessageCategory.EVENT,
+            )
+            validate_message_topic_alignment(
+                f"{env}.user.commands.v1",
+                EnumMessageCategory.COMMAND,
+            )
+            validate_message_topic_alignment(
+                f"{env}.user.intents.v1",
+                EnumMessageCategory.INTENT,
+            )
+
+    def test_error_message_contains_expected_and_actual(self):
+        """Error message should contain both expected and actual category."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            validate_message_topic_alignment(
+                "dev.user.events.v1",
+                EnumMessageCategory.COMMAND,
+            )
+        error_msg = str(exc_info.value.message)
+        assert "event" in error_msg.lower()
+        assert "command" in error_msg.lower()
 
 
 if __name__ == "__main__":

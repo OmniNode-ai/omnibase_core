@@ -28,7 +28,9 @@ from typing import ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelTopicNaming(BaseModel):
@@ -342,3 +344,62 @@ def get_topic_category(topic: str) -> EnumMessageCategory | None:
         None
     """
     return EnumMessageCategory.from_topic(topic)
+
+
+def validate_message_topic_alignment(
+    topic: str,
+    message_category: EnumMessageCategory,
+    message_type_name: str | None = None,
+) -> None:
+    """
+    Validate that a message category matches the topic it's being published to.
+
+    This is a runtime enforcement function that ensures messages are published
+    to the correct topic type (events to .events topics, commands to .commands, etc.)
+
+    Args:
+        topic: Kafka topic name to publish to
+        message_category: The category of the message being published
+        message_type_name: Optional name of the message type for error context
+
+    Raises:
+        ModelOnexError: If the message category doesn't match the topic
+
+    Example:
+        >>> validate_message_topic_alignment(
+        ...     "dev.user.events.v1",
+        ...     EnumMessageCategory.EVENT,
+        ... )  # OK - no error
+
+        >>> validate_message_topic_alignment(
+        ...     "dev.user.events.v1",
+        ...     EnumMessageCategory.COMMAND,
+        ... )  # Raises ModelOnexError
+    """
+    topic_category = EnumMessageCategory.from_topic(topic)
+
+    if topic_category is None:
+        raise ModelOnexError(
+            message=f"Cannot determine message category from topic: {topic}",
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            context={
+                "topic": topic,
+                "message_category": str(message_category),
+                "message_type": message_type_name,
+            },
+        )
+
+    if topic_category != message_category:
+        raise ModelOnexError(
+            message=(
+                f"Message category mismatch with topic: expected {topic_category.value} "
+                f"for topic '{topic}', got {message_category.value}"
+            ),
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            context={
+                "topic": topic,
+                "expected_category": str(topic_category),
+                "actual_category": str(message_category),
+                "message_type": message_type_name,
+            },
+        )

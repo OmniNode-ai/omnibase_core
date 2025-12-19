@@ -26,9 +26,13 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, StrictStr, ValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
+from omnibase_core.models.events.model_topic_naming import (
+    validate_message_topic_alignment,
+)
 from omnibase_core.protocols import ProtocolEventEnvelope
 
 # Local imports from extracted classes
@@ -196,6 +200,49 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
         """Check if event bus is available."""
         return self._get_event_bus() is not None
 
+    def _validate_topic_alignment(
+        self,
+        topic: str,
+        envelope: Any,
+    ) -> None:
+        """
+        Validate that envelope's message category matches the topic.
+
+        This method enforces message-topic alignment at runtime, ensuring that
+        events are published to the correct topic type (e.g., events to .events
+        topics, commands to .commands topics).
+
+        Args:
+            topic: Target Kafka topic
+            envelope: Event envelope being published (must have message_category property)
+
+        Raises:
+            ModelOnexError: If message category doesn't match topic
+
+        Example:
+            >>> envelope = ModelEventEnvelope(payload=UserCreatedEvent(...))
+            >>> self._validate_topic_alignment("dev.user.events.v1", envelope)  # OK
+            >>> self._validate_topic_alignment("dev.user.commands.v1", envelope)  # Raises
+        """
+        # Import here to avoid circular imports at module level
+        from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+
+        # Only validate if envelope has message_category property
+        if not hasattr(envelope, "message_category"):
+            self._log_warn(
+                f"Envelope type {type(envelope).__name__} does not have message_category property, skipping topic alignment validation",
+                pattern="topic_alignment",
+            )
+            return
+
+        message_category: EnumMessageCategory = envelope.message_category
+        message_type_name = (
+            type(envelope.payload).__name__
+            if hasattr(envelope, "payload")
+            else type(envelope).__name__
+        )
+        validate_message_topic_alignment(topic, message_category, message_type_name)
+
     # --- Event Completion Publishing ----------------------------------------
 
     async def publish_event(
@@ -240,6 +287,9 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
                 envelope: ModelEventEnvelope[ModelOnexEvent] = ModelEventEnvelope(
                     payload=event
                 )
+                # TODO: Add topic validation when topic-based publishing is implemented
+                # When the event bus supports explicit topic routing, validate here:
+                # self._validate_topic_alignment(topic, envelope)
                 await bus.publish_async(envelope)
             elif hasattr(bus, "publish"):
                 bus.publish(event)  # Synchronous method - no await
@@ -293,6 +343,10 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
         try:
             event = self._build_event(event_type, data)
             # Use synchronous publish method only (this is a sync method) - fail fast if missing
+            # TODO: Add topic validation when topic-based publishing is implemented
+            # Sync publish doesn't use envelope, so validation would need to wrap event first:
+            # envelope = ModelEventEnvelope(payload=event)
+            # self._validate_topic_alignment(topic, envelope)
             if hasattr(bus, "publish"):
                 bus.publish(event)
             else:
@@ -344,6 +398,9 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
                 envelope: ModelEventEnvelope[ModelOnexEvent] = ModelEventEnvelope(
                     payload=event
                 )
+                # TODO: Add topic validation when topic-based publishing is implemented
+                # When the event bus supports explicit topic routing, validate here:
+                # self._validate_topic_alignment(topic, envelope)
                 await bus.publish_async(envelope)
             # Fallback to sync method
             elif hasattr(bus, "publish"):
