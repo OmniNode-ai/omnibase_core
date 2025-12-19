@@ -5,6 +5,7 @@
 > **Scope**: omnibase_core
 > **Last Updated**: 2025-12-07
 > **Revision**: R17 - Architectural audit complete (Core/SPI separation, registry pattern, execution semantics)
+> **See Also**: [ONEX Terminology Guide](../standards/onex_terminology.md) for canonical definitions of Effect, Handler, and other ONEX concepts.
 
 ---
 

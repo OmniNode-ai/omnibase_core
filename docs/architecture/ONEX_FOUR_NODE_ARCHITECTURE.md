@@ -4,6 +4,8 @@
 > **Last Updated**: 2025-12-05
 > **Status**: Production
 
+> **See Also**: [ONEX Terminology Guide](../standards/onex_terminology.md) for canonical definitions of all ONEX concepts.
+
 ## Overview
 
 The ONEX Four-Node Architecture is a foundational design pattern that provides structured, scalable, and maintainable microservice organization. Each node has specific responsibilities within the processing pipeline, enabling clear separation of concerns and optimal system performance.

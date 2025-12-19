@@ -669,11 +669,13 @@ class TestMixinIntentPublisher:
         """
         Test INTENT_TOPIC constant has correct value.
 
-        Validates topic naming convention.
+        Validates topic naming convention per ONEX topic taxonomy (OMN-939).
+        Topic format: onex.<domain>.<type>
         """
         assert test_node.INTENT_TOPIC == TOPIC_EVENT_PUBLISH_INTENT
-        assert "intent" in test_node.INTENT_TOPIC.lower()
-        assert "event-publish" in test_node.INTENT_TOPIC
+        assert test_node.INTENT_TOPIC == "onex.runtime.intents"
+        assert test_node.INTENT_TOPIC.startswith("onex.")
+        assert "intents" in test_node.INTENT_TOPIC
 
     @pytest.mark.asyncio
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests

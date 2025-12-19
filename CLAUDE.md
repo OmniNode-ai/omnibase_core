@@ -101,6 +101,8 @@ When spawning polymorphic agents or AI assistants:
 
 **v0.4.0**: `NodeReducer` and `NodeOrchestrator` are now the PRIMARY implementations. All nodes use declarative YAML contracts.
 
+> **Terminology Reference**: For canonical definitions of ONEX concepts (Event, Intent, Action, Reducer, Orchestrator, Effect, Handler, Projection, Runtime), see [ONEX Terminology Guide](docs/standards/onex_terminology.md).
+
 ### Protocol-Driven Dependency Injection
 
 ```python
