@@ -870,15 +870,25 @@ All nodes must include tests demonstrating:
 
 ### Allowed Execution Shapes
 
-| # | Shape | Purpose |
-|---|-------|---------|
-| 1 | Event → Orchestrator | Workflow triggers |
-| 2 | Event → Reducer | State change triggers |
-| 3 | Intent → Effect | Reducer-requested I/O |
-| 4 | Command → Orchestrator | Workflow commands |
-| 5 | Command → Effect | Direct I/O operations |
-| 6 | Action → Effect | Orchestrator-delegated I/O |
-| 7 | Full Pipeline | EFFECT → COMPUTE → REDUCER → ORCHESTRATOR |
+The following table shows all allowed message flow patterns. Shapes 1-5 are
+**canonical message-category shapes** defined in `EnumExecutionShape` and
+validated by `ModelExecutionShapeValidation`. Shapes 6-7 are **runtime
+coordination patterns** that describe orchestrator behavior and pipeline flow.
+
+| # | Shape | Purpose | Type |
+|---|-------|---------|------|
+| 1 | Event → Orchestrator | Workflow triggers | Canonical (enum) |
+| 2 | Event → Reducer | State change triggers | Canonical (enum) |
+| 3 | Intent → Effect | Reducer-requested I/O | Canonical (enum) |
+| 4 | Command → Orchestrator | Workflow commands | Canonical (enum) |
+| 5 | Command → Effect | Direct I/O operations | Canonical (enum) |
+| 6 | Action → Effect | Orchestrator-delegated I/O | Runtime pattern |
+| 7 | Full Pipeline | EFFECT → COMPUTE → REDUCER → ORCHESTRATOR | Composite pattern |
+
+**Note**: Only shapes 1-5 have corresponding `EnumExecutionShape` values
+(e.g., `event_to_orchestrator`, `intent_to_effect`). Shape 6 uses the
+`ModelAction` pattern for orchestrator-to-node coordination. Shape 7 represents
+the complete data pipeline, not a single message routing pattern.
 
 ### Forbidden Patterns
 

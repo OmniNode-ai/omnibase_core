@@ -2,6 +2,13 @@
 Shape Validation Result Model.
 
 Model for aggregated results of validating multiple execution shapes.
+This model provides summary statistics and detailed results when validating
+an entire system or component against ONEX canonical execution shapes.
+
+See Also:
+    - ModelExecutionShapeValidation: Individual validation results
+    - EnumExecutionShape: Defines the canonical shapes
+    - CANONICAL_EXECUTION_SHAPES.md: Full documentation of allowed/forbidden patterns
 """
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -20,18 +27,40 @@ class ModelShapeValidationResult(BaseModel):
     Aggregated result of validating multiple execution shapes.
 
     This model collects the results of validating multiple execution
-    shapes, providing summary statistics and detailed results.
+    shapes, providing summary statistics and detailed results. Use the
+    `from_validations` factory method to create instances from a list
+    of individual validation results.
+
+    Attributes:
+        validations: List of individual validation results
+        total_validated: Total number of shapes that were validated
+        allowed_count: Number of shapes that conform to canonical patterns
+        disallowed_count: Number of shapes that violate canonical patterns
+        is_fully_compliant: True if all validated shapes are allowed
+        errors: List of error messages for disallowed shapes
+        warnings: List of warning messages (e.g., deprecated patterns)
 
     Example:
-        >>> result = ModelShapeValidationResult(
-        ...     validations=[validation1, validation2],
-        ...     total_validated=2,
-        ...     allowed_count=1,
-        ...     disallowed_count=1,
-        ...     is_fully_compliant=False,
-        ... )
+        >>> from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
+        >>> from omnibase_core.enums.enum_node_kind import EnumNodeKind
+        >>> # Validate multiple shapes at once
+        >>> validations = [
+        ...     ModelExecutionShapeValidation.validate_shape(
+        ...         EnumMessageCategory.EVENT, EnumNodeKind.ORCHESTRATOR
+        ...     ),
+        ...     ModelExecutionShapeValidation.validate_shape(
+        ...         EnumMessageCategory.COMMAND, EnumNodeKind.REDUCER  # Invalid!
+        ...     ),
+        ... ]
+        >>> result = ModelShapeValidationResult.from_validations(validations)
         >>> result.is_fully_compliant
         False
+        >>> result.allowed_count
+        1
+        >>> result.disallowed_count
+        1
+        >>> len(result.errors)
+        1
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
@@ -73,11 +102,34 @@ class ModelShapeValidationResult(BaseModel):
         """
         Create a result from a list of validations.
 
+        This factory method aggregates multiple individual validation results
+        into a single summary. It automatically computes counts, compliance
+        status, and collects error messages from disallowed shapes.
+
         Args:
-            validations: List of individual validation results
+            validations: List of individual validation results from
+                ModelExecutionShapeValidation.validate_shape()
 
         Returns:
-            An aggregated ModelShapeValidationResult
+            An aggregated ModelShapeValidationResult with summary statistics
+            and the original validation details
+
+        Example:
+            >>> from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
+            >>> from omnibase_core.enums.enum_node_kind import EnumNodeKind
+            >>> validations = [
+            ...     ModelExecutionShapeValidation.validate_shape(
+            ...         EnumMessageCategory.EVENT, EnumNodeKind.ORCHESTRATOR
+            ...     ),
+            ...     ModelExecutionShapeValidation.validate_shape(
+            ...         EnumMessageCategory.EVENT, EnumNodeKind.REDUCER
+            ...     ),
+            ... ]
+            >>> result = ModelShapeValidationResult.from_validations(validations)
+            >>> result.is_fully_compliant
+            True
+            >>> result.total_validated
+            2
         """
         allowed = [v for v in validations if v.is_allowed]
         disallowed = [v for v in validations if not v.is_allowed]

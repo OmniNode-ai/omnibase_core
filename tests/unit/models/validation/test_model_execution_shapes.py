@@ -4,9 +4,11 @@ Test suite for execution shape validation models.
 Tests ModelExecutionShape, ModelExecutionShapeValidation, and ModelShapeValidationResult.
 """
 
-from __future__ import annotations
-
 import pytest
+
+# Module-level pytest marker for all tests in this file
+pytestmark = pytest.mark.unit
+
 from pydantic import ValidationError
 
 from omnibase_core.enums.enum_execution_shape import (

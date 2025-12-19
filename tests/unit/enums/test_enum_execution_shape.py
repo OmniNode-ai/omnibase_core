@@ -8,9 +8,12 @@ Tests all aspects of the execution shape and message category enums including:
 - Topic parsing and inference
 - Target and source mappings
 - Categorization logic
+- Property-based tests for invariants
 """
 
 import pytest
+from hypothesis import given, settings
+from hypothesis import strategies as st
 
 from omnibase_core.enums.enum_execution_shape import (
     EnumExecutionShape,
@@ -18,6 +21,7 @@ from omnibase_core.enums.enum_execution_shape import (
 )
 
 
+@pytest.mark.unit
 class TestEnumMessageCategory:
     """Test cases for EnumMessageCategory."""
 
@@ -106,6 +110,52 @@ class TestEnumMessageCategory:
         assert EnumMessageCategory.from_topic("events") is None  # No dot prefix
         assert EnumMessageCategory.from_topic("user.event") is None  # Singular
 
+    def test_try_from_topic_success(self):
+        """Test try_from_topic returns category and None error on success."""
+        category, error = EnumMessageCategory.try_from_topic("user.events")
+        assert category == EnumMessageCategory.EVENT
+        assert error is None
+
+        category, error = EnumMessageCategory.try_from_topic("dev.user.commands.v1")
+        assert category == EnumMessageCategory.COMMAND
+        assert error is None
+
+        category, error = EnumMessageCategory.try_from_topic(
+            "staging.workflow.intents.v2"
+        )
+        assert category == EnumMessageCategory.INTENT
+        assert error is None
+
+    def test_try_from_topic_case_insensitive(self):
+        """Test try_from_topic handles case-insensitive matching."""
+        category, error = EnumMessageCategory.try_from_topic("USER.EVENTS")
+        assert category == EnumMessageCategory.EVENT
+        assert error is None
+
+        category, error = EnumMessageCategory.try_from_topic("User.Commands")
+        assert category == EnumMessageCategory.COMMAND
+        assert error is None
+
+    def test_try_from_topic_failure_returns_error(self):
+        """Test try_from_topic returns None and error message on failure."""
+        category, error = EnumMessageCategory.try_from_topic("invalid.topic")
+        assert category is None
+        assert error is not None
+        assert "No message category pattern found" in error
+        assert "invalid.topic" in error
+
+    def test_try_from_topic_empty_string(self):
+        """Test try_from_topic handles empty string."""
+        category, error = EnumMessageCategory.try_from_topic("")
+        assert category is None
+        assert error == "Empty topic string provided"
+
+    def test_try_from_topic_whitespace_only(self):
+        """Test try_from_topic handles whitespace-only string."""
+        category, error = EnumMessageCategory.try_from_topic("   ")
+        assert category is None
+        assert error == "Topic string contains only whitespace"
+
     def test_is_fact_based(self):
         """Test is_fact_based method identifies EVENT as fact-based."""
         assert EnumMessageCategory.is_fact_based(EnumMessageCategory.EVENT) is True
@@ -175,6 +225,7 @@ class TestEnumMessageCategory:
         assert category_values == expected_values
 
 
+@pytest.mark.unit
 class TestEnumExecutionShape:
     """Test cases for EnumExecutionShape."""
 
@@ -492,6 +543,7 @@ class TestEnumExecutionShape:
                 assert EnumExecutionShape.targets_reducer(shape) is True
 
 
+@pytest.mark.unit
 class TestEnumMessageCategoryAndExecutionShapeIntegration:
     """Integration tests for EnumMessageCategory and EnumExecutionShape."""
 
@@ -539,6 +591,246 @@ class TestEnumMessageCategoryAndExecutionShapeIntegration:
             assert len(description) > 10, (
                 f"Category {category} has too short description"
             )
+
+
+@pytest.mark.unit
+class TestPropertyBasedExecutionShapes:
+    """Property-based tests for execution shapes using Hypothesis.
+
+    These tests verify invariants that must hold for all enum values,
+    providing stronger guarantees than example-based tests alone.
+    """
+
+    @given(st.sampled_from(list(EnumExecutionShape)))
+    @settings(max_examples=50)
+    def test_all_shapes_have_valid_source_category(
+        self, shape: EnumExecutionShape
+    ) -> None:
+        """Property: Every shape must have a valid source category."""
+        source = EnumExecutionShape.get_source_category(shape)
+        assert source in EnumMessageCategory
+        assert isinstance(source, EnumMessageCategory)
+
+    @given(st.sampled_from(list(EnumExecutionShape)))
+    @settings(max_examples=50)
+    def test_all_shapes_have_valid_target(self, shape: EnumExecutionShape) -> None:
+        """Property: Every shape must have a valid target node kind."""
+        target = EnumExecutionShape.get_target_node_kind(shape)
+        valid_targets = {"orchestrator", "reducer", "effect"}
+        assert target in valid_targets, f"Shape {shape} has invalid target: {target}"
+
+    @given(st.sampled_from(list(EnumExecutionShape)))
+    @settings(max_examples=50)
+    def test_shape_string_round_trip(self, shape: EnumExecutionShape) -> None:
+        """Property: Shape string serialization must round-trip correctly."""
+        # Serialize to string
+        shape_str = str(shape)
+        # Verify it matches the value
+        assert shape_str == shape.value
+        # Verify we can reconstruct from value
+        reconstructed = EnumExecutionShape(shape_str)
+        assert reconstructed == shape
+
+    @given(st.sampled_from(list(EnumExecutionShape)))
+    @settings(max_examples=50)
+    def test_target_predicate_exclusivity(self, shape: EnumExecutionShape) -> None:
+        """Property: Each shape targets exactly one node type."""
+        targets_orch = EnumExecutionShape.targets_coordinator(shape)
+        targets_eff = EnumExecutionShape.targets_effect(shape)
+        targets_red = EnumExecutionShape.targets_reducer(shape)
+
+        # Exactly one must be true
+        target_count = sum([targets_orch, targets_eff, targets_red])
+        assert target_count == 1, (
+            f"Shape {shape} targets {target_count} node types, expected exactly 1"
+        )
+
+    @given(st.sampled_from(list(EnumExecutionShape)))
+    @settings(max_examples=50)
+    def test_target_predicate_matches_target_kind(
+        self, shape: EnumExecutionShape
+    ) -> None:
+        """Property: Target predicates must be consistent with get_target_node_kind."""
+        target_kind = EnumExecutionShape.get_target_node_kind(shape)
+
+        if target_kind == "orchestrator":
+            assert EnumExecutionShape.targets_coordinator(shape) is True
+            assert EnumExecutionShape.targets_effect(shape) is False
+            assert EnumExecutionShape.targets_reducer(shape) is False
+        elif target_kind == "effect":
+            assert EnumExecutionShape.targets_coordinator(shape) is False
+            assert EnumExecutionShape.targets_effect(shape) is True
+            assert EnumExecutionShape.targets_reducer(shape) is False
+        elif target_kind == "reducer":
+            assert EnumExecutionShape.targets_coordinator(shape) is False
+            assert EnumExecutionShape.targets_effect(shape) is False
+            assert EnumExecutionShape.targets_reducer(shape) is True
+
+    @given(st.sampled_from(list(EnumExecutionShape)))
+    @settings(max_examples=50)
+    def test_shape_in_category_shapes(self, shape: EnumExecutionShape) -> None:
+        """Property: Every shape appears in its source category's shape list."""
+        source_category = EnumExecutionShape.get_source_category(shape)
+        shapes_for_category = EnumExecutionShape.get_shapes_for_category(
+            source_category
+        )
+        assert shape in shapes_for_category
+
+    @given(st.sampled_from(list(EnumExecutionShape)))
+    @settings(max_examples=50)
+    def test_shape_in_target_shapes(self, shape: EnumExecutionShape) -> None:
+        """Property: Every shape appears in its target's shape list."""
+        target_kind = EnumExecutionShape.get_target_node_kind(shape)
+        shapes_for_target = EnumExecutionShape.get_shapes_for_target(target_kind)
+        assert shape in shapes_for_target
+
+    @given(st.sampled_from(list(EnumExecutionShape)))
+    @settings(max_examples=50)
+    def test_shape_has_non_empty_description(self, shape: EnumExecutionShape) -> None:
+        """Property: Every shape must have a non-empty description."""
+        description = EnumExecutionShape.get_description(shape)
+        assert description is not None
+        assert len(description) > 0
+        assert description != "Unknown execution shape"
+
+
+@pytest.mark.unit
+class TestPropertyBasedMessageCategory:
+    """Property-based tests for message categories using Hypothesis."""
+
+    @given(st.sampled_from(list(EnumMessageCategory)))
+    @settings(max_examples=50)
+    def test_category_string_round_trip(self, category: EnumMessageCategory) -> None:
+        """Property: Category string serialization must round-trip correctly."""
+        # Serialize to string
+        category_str = str(category)
+        # Verify it matches the value
+        assert category_str == category.value
+        # Verify we can reconstruct from value
+        reconstructed = EnumMessageCategory(category_str)
+        assert reconstructed == category
+
+    @given(st.sampled_from(list(EnumMessageCategory)))
+    @settings(max_examples=50)
+    def test_topic_suffix_round_trip(self, category: EnumMessageCategory) -> None:
+        """Property: topic_suffix creates valid topic that parses back."""
+        suffix = category.topic_suffix
+        # Create a topic with the suffix
+        topic = f"test.{suffix}"
+        # Parse it back
+        parsed = EnumMessageCategory.from_topic(topic)
+        assert parsed == category
+
+    @given(st.sampled_from(list(EnumMessageCategory)))
+    @settings(max_examples=50)
+    def test_versioned_topic_round_trip(self, category: EnumMessageCategory) -> None:
+        """Property: Versioned topics parse correctly."""
+        suffix = category.topic_suffix
+        # Create a versioned topic
+        topic = f"dev.domain.{suffix}.v1"
+        # Parse it back
+        parsed = EnumMessageCategory.from_topic(topic)
+        assert parsed == category
+
+    @given(st.sampled_from(list(EnumMessageCategory)))
+    @settings(max_examples=50)
+    def test_category_has_non_empty_description(
+        self, category: EnumMessageCategory
+    ) -> None:
+        """Property: Every category must have a non-empty description."""
+        description = EnumMessageCategory.get_description(category)
+        assert description is not None
+        assert len(description) > 0
+        assert description != "Unknown message category"
+
+    @given(st.sampled_from(list(EnumMessageCategory)))
+    @settings(max_examples=50)
+    def test_category_classification_consistency(
+        self, category: EnumMessageCategory
+    ) -> None:
+        """Property: Classification methods must be logically consistent."""
+        is_fact = EnumMessageCategory.is_fact_based(category)
+        is_action = EnumMessageCategory.is_action_oriented(category)
+        is_goal = EnumMessageCategory.is_goal_oriented(category)
+
+        # EVENT is fact-based, not action-oriented, not goal-oriented
+        if category == EnumMessageCategory.EVENT:
+            assert is_fact is True
+            assert is_action is False
+            assert is_goal is False
+
+        # COMMAND is action-oriented but not goal-oriented or fact-based
+        if category == EnumMessageCategory.COMMAND:
+            assert is_fact is False
+            assert is_action is True
+            assert is_goal is False
+
+        # INTENT is goal-oriented and action-oriented but not fact-based
+        if category == EnumMessageCategory.INTENT:
+            assert is_fact is False
+            assert is_action is True
+            assert is_goal is True
+
+    @given(st.sampled_from(list(EnumMessageCategory)))
+    @settings(max_examples=50)
+    def test_category_has_at_least_one_shape(
+        self, category: EnumMessageCategory
+    ) -> None:
+        """Property: Every category must have at least one execution shape."""
+        shapes = EnumExecutionShape.get_shapes_for_category(category)
+        assert len(shapes) >= 1, f"Category {category} has no execution shapes"
+
+    @given(st.sampled_from(list(EnumMessageCategory)))
+    @settings(max_examples=50)
+    def test_topic_suffix_is_pluralized_value(
+        self, category: EnumMessageCategory
+    ) -> None:
+        """Property: Topic suffix must be pluralized form of value."""
+        suffix = category.topic_suffix
+        assert suffix == f"{category.value}s"
+
+
+@pytest.mark.unit
+class TestPropertyBasedCrossEnumInvariants:
+    """Property-based tests for cross-enum invariants."""
+
+    @given(
+        st.sampled_from(list(EnumMessageCategory)),
+        st.sampled_from(list(EnumExecutionShape)),
+    )
+    @settings(max_examples=100)
+    def test_shape_category_bidirectional_consistency(
+        self, category: EnumMessageCategory, shape: EnumExecutionShape
+    ) -> None:
+        """Property: Shape's source category lookup is consistent with get_shapes_for_category."""
+        source_category = EnumExecutionShape.get_source_category(shape)
+        shapes_for_source = EnumExecutionShape.get_shapes_for_category(source_category)
+
+        # The shape must be in the list of shapes for its source category
+        assert shape in shapes_for_source
+
+        # If shape is in category's shapes, source must be that category
+        if shape in EnumExecutionShape.get_shapes_for_category(category):
+            assert source_category == category
+
+    @given(st.sampled_from(["orchestrator", "effect", "reducer"]))
+    @settings(max_examples=50)
+    def test_valid_targets_have_shapes(self, target: str) -> None:
+        """Property: Each valid target must have at least one shape."""
+        shapes = EnumExecutionShape.get_shapes_for_target(target)
+        assert len(shapes) >= 1, f"Target {target} has no execution shapes"
+
+    @given(st.text(min_size=1, max_size=50))
+    @settings(max_examples=100)
+    def test_invalid_topics_return_none(self, random_text: str) -> None:
+        """Property: Random strings without category markers return None."""
+        # Only test strings that don't accidentally contain valid markers
+        if not any(
+            marker in random_text.lower()
+            for marker in [".events", ".commands", ".intents"]
+        ):
+            result = EnumMessageCategory.from_topic(random_text)
+            assert result is None
 
 
 if __name__ == "__main__":

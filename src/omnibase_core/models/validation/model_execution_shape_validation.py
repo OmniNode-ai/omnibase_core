@@ -2,6 +2,14 @@
 Execution Shape Validation Model.
 
 Model for validating execution shapes against canonical ONEX patterns.
+This model is used to check whether a proposed message flow pattern
+conforms to the architectural constraints defined by the ONEX four-node
+architecture.
+
+See Also:
+    - EnumExecutionShape: Defines the canonical shapes
+    - ModelShapeValidationResult: Aggregates multiple validation results
+    - CANONICAL_EXECUTION_SHAPES.md: Full documentation of allowed/forbidden patterns
 """
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -23,17 +31,35 @@ class ModelExecutionShapeValidation(BaseModel):
 
     This model captures the result of validating whether a specific
     combination of message category and target node type conforms
-    to the canonical ONEX execution shapes.
+    to the canonical ONEX execution shapes. Use the `validate_shape`
+    factory method to perform validation.
+
+    Attributes:
+        source_category: The message category being validated (EVENT, COMMAND, INTENT)
+        target_node_kind: The target node kind being validated (ORCHESTRATOR, REDUCER, EFFECT)
+        is_allowed: Whether this shape conforms to ONEX canonical patterns
+        matched_shape: The canonical shape that was matched, if allowed
+        rationale: Explanation for why the shape is allowed or disallowed
 
     Example:
-        >>> validation = ModelExecutionShapeValidation(
+        >>> # Validate an allowed shape
+        >>> validation = ModelExecutionShapeValidation.validate_shape(
         ...     source_category=EnumMessageCategory.EVENT,
         ...     target_node_kind=EnumNodeKind.ORCHESTRATOR,
-        ...     is_allowed=True,
-        ...     matched_shape=EnumExecutionShape.EVENT_TO_ORCHESTRATOR,
-        ...     rationale="Matches canonical EVENT_TO_ORCHESTRATOR shape",
         ... )
         >>> validation.is_allowed
+        True
+        >>> validation.matched_shape
+        <EnumExecutionShape.EVENT_TO_ORCHESTRATOR: 'event_to_orchestrator'>
+
+        >>> # Validate a forbidden shape
+        >>> validation = ModelExecutionShapeValidation.validate_shape(
+        ...     source_category=EnumMessageCategory.COMMAND,
+        ...     target_node_kind=EnumNodeKind.REDUCER,
+        ... )
+        >>> validation.is_allowed
+        False
+        >>> validation.matched_shape is None
         True
     """
 
@@ -69,12 +95,39 @@ class ModelExecutionShapeValidation(BaseModel):
         """
         Validate if a proposed execution shape is allowed.
 
+        Checks whether routing a message of the given category to the specified
+        node kind conforms to ONEX canonical execution shapes. This is the
+        primary validation method for enforcing architectural constraints.
+
         Args:
             source_category: The message category that initiates the flow
+                (EVENT, COMMAND, or INTENT)
             target_node_kind: The node kind that would receive the message
+                (ORCHESTRATOR, REDUCER, EFFECT, or COMPUTE)
 
         Returns:
-            A ModelExecutionShapeValidation indicating if the shape is valid
+            A ModelExecutionShapeValidation with:
+            - is_allowed=True and matched_shape set if the pattern is valid
+            - is_allowed=False and rationale explaining why if the pattern is invalid
+
+        Example:
+            >>> # Valid: Events can route to orchestrators
+            >>> result = ModelExecutionShapeValidation.validate_shape(
+            ...     EnumMessageCategory.EVENT,
+            ...     EnumNodeKind.ORCHESTRATOR,
+            ... )
+            >>> result.is_allowed
+            True
+
+            >>> # Invalid: Commands cannot route directly to reducers
+            >>> result = ModelExecutionShapeValidation.validate_shape(
+            ...     EnumMessageCategory.COMMAND,
+            ...     EnumNodeKind.REDUCER,
+            ... )
+            >>> result.is_allowed
+            False
+            >>> 'No canonical shape' in result.rationale
+            True
         """
         # Find matching canonical shape
         for shape in EnumExecutionShape:
