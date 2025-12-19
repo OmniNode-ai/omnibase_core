@@ -3,12 +3,25 @@ Orchestrator Output Model
 
 Type-safe orchestrator output that replaces Dict[str, Any] usage
 in orchestrator results.
+
+Option A Semantic Model (OMN-941):
+    ORCHESTRATOR nodes emit domain decision events and intents for desired effects.
+    The runtime translates intents to internal directives.
+
+    Allowed emissions:
+        - events[]: Domain decision events (facts about what happened)
+        - intents[]: Desired effects (what should happen next)
+
+    Forbidden emissions:
+        - projections[]: Orchestrators do not emit projections (that's for reducers)
 """
 
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+from omnibase_core.models.reducer.model_intent import ModelIntent
 from omnibase_core.models.services.model_custom_fields import ModelCustomFields
 from omnibase_core.utils.util_decorators import allow_dict_str_any
 
@@ -19,10 +32,20 @@ from omnibase_core.utils.util_decorators import allow_dict_str_any
 )
 class ModelOrchestratorOutput(BaseModel):
     """
-    Type-safe orchestrator output.
+    Type-safe orchestrator output with Option A semantics.
 
     Provides structured output storage for orchestrator execution
     results with type safety and validation.
+
+    Option A Semantic Model:
+        Orchestrators are domain decision coordinators. They:
+        1. Emit domain decision events (via events[]) recording facts
+        2. Emit intents (via intents[]) expressing desired effects
+        3. Do NOT emit projections (that's the reducer's responsibility)
+
+        The runtime translates intents to internal directives that drive
+        effect execution. This separation maintains clean boundaries between
+        domain logic (orchestrator) and side-effect execution (effects).
 
     This model is immutable (frozen=True) and thread-safe. Once created,
     instances cannot be modified. This ensures safe sharing across threads
@@ -34,12 +57,14 @@ class ModelOrchestratorOutput(BaseModel):
         time range. For the actual execution duration, use execution_time_ms instead.
 
     Example:
-        >>> # Create output result
+        >>> # Create output result with events and intents
         >>> result = ModelOrchestratorOutput(
         ...     execution_status="completed",
         ...     execution_time_ms=1500,
         ...     start_time="2025-01-01T00:00:00Z",
         ...     end_time="2025-01-01T00:00:01Z",
+        ...     events=(workflow_completed_event,),
+        ...     intents=(notify_user_intent,),
         ... )
         >>>
         >>> # To "update" a frozen model, use model_copy
@@ -115,10 +140,21 @@ class ModelOrchestratorOutput(BaseModel):
         description="Number of parallel execution batches completed",
     )
 
-    # Actions tracking
+    # Option A semantic outputs (OMN-941)
+    events: tuple[ModelEventEnvelope[Any], ...] = Field(
+        default=(),
+        description="Domain decision events emitted by orchestrator (facts about what happened)",
+    )
+    intents: tuple[ModelIntent, ...] = Field(
+        default=(),
+        description="Desired effects (what should happen), translated to runtime directives",
+    )
+
+    # Actions tracking (DEPRECATED)
     actions_emitted: list[Any] = Field(
         default_factory=list,
-        description="List of actions emitted during workflow execution",
+        description="DEPRECATED: Use events[] and intents[] instead. Will be removed in v0.5.0",
+        deprecated=True,
     )
 
     # Custom outputs for extensibility

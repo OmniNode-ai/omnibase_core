@@ -5,6 +5,18 @@ This module provides the ModelEffectOutput model that wraps side effect
 operation results with comprehensive transaction status, timing metrics,
 and execution metadata for observability and error recovery.
 
+Option A Semantic Model (ONEX Execution Shapes):
+    EFFECT nodes emit result events ONLY. Per the canonical execution shapes:
+    - events[] (result_events) - ALLOWED: Optional result events describing
+      what happened during effect execution (facts about the external world)
+    - intents[] - FORBIDDEN: Effects do not emit intents (no state change requests)
+    - projections[] - FORBIDDEN: Effects do not emit projections (no derived views)
+
+    Result events are facts about what happened during effect execution, such as:
+    - "EmailSent" after sending an email
+    - "FileWritten" after writing to disk
+    - "PaymentProcessed" after API call completion
+
 Thread Safety:
     ModelEffectOutput is mutable by default but should be treated as
     immutable after creation for thread-safe access.
@@ -14,6 +26,7 @@ Key Features:
     - Processing time measurement for performance analysis
     - Retry count tracking for debugging and alerting
     - Side effect and rollback operation audit trails
+    - Result events for downstream consumers
     - Metadata for custom tracking and correlation
 
 Example:
@@ -24,7 +37,7 @@ Example:
     ... )
     >>> from uuid import uuid4
     >>>
-    >>> # Successful database operation result
+    >>> # Successful database operation result with result event
     >>> output = ModelEffectOutput(
     ...     result={"rows_affected": 1},
     ...     operation_id=uuid4(),
@@ -32,21 +45,25 @@ Example:
     ...     transaction_state=EnumTransactionState.COMMITTED,
     ...     processing_time_ms=45.2,
     ...     side_effects_applied=["insert_user_record"],
+    ...     result_events=(),  # Optional: result events emitted
     ... )
 
 See Also:
     - omnibase_core.models.effect.model_effect_input: Corresponding input model
     - omnibase_core.nodes.node_effect: NodeEffect implementation
+    - docs/architecture/CANONICAL_EXECUTION_SHAPES.md: Execution shape rules
     - docs/guides/node-building/04_EFFECT_NODE_TUTORIAL.md: Effect node tutorial
 """
 
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_effect_types import EnumEffectType, EnumTransactionState
 from omnibase_core.models.common.model_effect_metadata import ModelEffectMetadata
+from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.types.type_effect_result import EffectResultType
 from omnibase_core.utils.util_decorators import allow_dict_str_any
 
@@ -64,6 +81,17 @@ class ModelEffectOutput(BaseModel):
     Strongly typed output wrapper containing the operation result along with
     transaction status, timing metrics, and execution audit trail. Created
     by NodeEffect after executing side effect operations.
+
+    Option A Semantic Model:
+        Per ONEX canonical execution shapes, EFFECT nodes emit result events ONLY:
+        - result_events: ALLOWED - Optional events describing what happened
+        - intents: FORBIDDEN - Effects do not emit state change requests
+        - projections: FORBIDDEN - Effects do not emit derived views
+
+        Result events are facts about completed effect execution, such as:
+        - "EmailSent" after sending an email
+        - "FileWritten" after writing to disk
+        - "PaymentProcessed" after API call completion
 
     Attributes:
         result: The operation result data. Type varies based on effect_type
@@ -93,6 +121,10 @@ class ModelEffectOutput(BaseModel):
             applied. Useful for audit trails and debugging.
         rollback_operations: List of rollback operation identifiers if transaction
             was rolled back. Empty list if transaction succeeded.
+        result_events: Optional tuple of result events emitted by this effect.
+            These are facts about what happened during effect execution (e.g.,
+            "EmailSent", "FileWritten"). Per Option A semantics, effects can ONLY
+            emit events - never intents or projections.
         metadata: Additional context metadata from the operation. May include
             effect-specific information like row counts or API response codes.
         timestamp: When this output was created. Auto-generated to current time.
@@ -102,6 +134,7 @@ class ModelEffectOutput(BaseModel):
         >>> if output.transaction_state == EnumTransactionState.COMMITTED:
         ...     print(f"Success: {output.result}")
         ...     print(f"Time: {output.processing_time_ms:.2f}ms")
+        ...     print(f"Events emitted: {len(output.result_events)}")
         ... else:
         ...     print(f"Rolled back: {output.rollback_operations}")
     """
@@ -119,5 +152,11 @@ class ModelEffectOutput(BaseModel):
     )
     side_effects_applied: list[str] = Field(default_factory=list)
     rollback_operations: list[str] = Field(default_factory=list)
+    result_events: tuple[ModelEventEnvelope[Any], ...] = Field(
+        default=(),
+        description="Optional result events emitted by effect execution. "
+        "Per Option A semantics, effects emit events ONLY (no intents or projections). "
+        "These are facts about what happened during execution (e.g., EmailSent, FileWritten).",
+    )
     metadata: ModelEffectMetadata = Field(default_factory=ModelEffectMetadata)
     timestamp: datetime = Field(default_factory=datetime.now)
