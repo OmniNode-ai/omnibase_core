@@ -204,6 +204,9 @@ from .enum_tool_category import EnumToolCategory
 from .enum_tool_status import EnumToolStatus
 from .enum_tool_type import EnumToolType
 
+# Topic taxonomy enums (OMN-939)
+from .enum_topic_taxonomy import EnumCleanupPolicy, EnumTopicType
+
 # Transformation types (contract-driven NodeCompute v1.0)
 from .enum_transformation_type import EnumTransformationType
 
@@ -393,6 +396,9 @@ __all__ = [
     # Tool-related domain
     "EnumToolCategory",
     "EnumToolType",
+    # Topic taxonomy domain (OMN-939)
+    "EnumCleanupPolicy",
+    "EnumTopicType",
     # GitHub Actions domain
     "EnumGithubActionEvent",
     "EnumGithubRunnerOs",
