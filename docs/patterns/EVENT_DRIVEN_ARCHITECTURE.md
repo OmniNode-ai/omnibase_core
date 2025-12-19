@@ -2,6 +2,8 @@
 
 **Status**: ✅ Available
 
+> **See Also**: [ONEX Terminology Guide](../standards/onex_terminology.md) for canonical definitions of Event, Intent, and other ONEX concepts.
+
 ## Overview
 
 Event-driven architecture patterns for ONEX services using ModelEventEnvelope and Intent emission.

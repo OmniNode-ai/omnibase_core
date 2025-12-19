@@ -5,6 +5,7 @@
 > **Status**: DRAFT - Ready for Implementation
 > **Ticket**: [OMN-496](https://linear.app/omninode/issue/OMN-496)
 > **Full Roadmap**: NODEORCHESTRATOR_VERSIONING_ROADMAP.md (to be created)
+> **See Also**: [ONEX Terminology Guide](../standards/onex_terminology.md) for canonical definitions of Orchestrator, Action, and other ONEX concepts.
 
 ---
 
