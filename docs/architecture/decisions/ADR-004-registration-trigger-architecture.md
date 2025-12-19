@@ -64,8 +64,9 @@ This Architecture Decision Record defines how node registration is triggered in 
 
 Node registration in ONEX can be triggered through two distinct mechanisms:
 
-1. **Event-Driven (Canonical)**: Nodes publish `NodeIntrospected` EVENTs on startup, which the Registration Orchestrator consumes to automatically register the node
-2. **Command-Driven (Gated/Optional)**: Administrative systems send `RegisterNodeRequested` COMMANDs for explicit registration control
+1. **Event-Driven (Canonical)**: Nodes publish `NodeIntrospected` EVENTs on startup, which the Registration Orchestrator consumes, automatically registering the node.
+
+2. **Command-Driven (Gated/Optional)**: Administrative systems send `RegisterNodeRequested` COMMANDs for explicit registration control.
 
 This ADR establishes that **event-driven registration is the canonical default**, aligning with ONEX's event-driven architecture and automatic startup flows. Command-driven registration is reserved for administrative, exceptional, or gated scenarios.
 
