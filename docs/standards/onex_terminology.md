@@ -25,7 +25,8 @@
 5. [When to Use Each Node Type](#when-to-use-each-node-type)
 6. [Concept Relationships](#concept-relationships)
 7. [Disambiguation Guide](#disambiguation-guide)
-8. [Related Documentation](#related-documentation)
+8. [Common Pitfalls](#common-pitfalls)
+9. [Related Documentation](#related-documentation)
 
 ---
 
@@ -150,7 +151,7 @@ if envelope.is_high_priority():  # priority >= 8
 
 ```python
 from omnibase_core.models.orchestrator.model_action import ModelAction
-from omnibase_core.enums.enum_orchestrator_types import EnumActionType
+from omnibase_core.nodes import EnumActionType  # Public API export
 from uuid import uuid4
 from datetime import datetime, UTC
 
@@ -247,8 +248,12 @@ return ModelReducerOutput(
 **Code Example**:
 
 ```python
-from omnibase_core.nodes import NodeReducer, ModelReducerInput, ModelReducerOutput
-from omnibase_core.enums.enum_reducer_types import EnumReductionType
+from omnibase_core.nodes import (
+    NodeReducer,
+    ModelReducerInput,
+    ModelReducerOutput,
+    EnumReductionType,
+)
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 class NodeOrderProcessingReducer(NodeReducer):
@@ -716,6 +721,29 @@ Start
 |------|-----------------|----------|
 | **NodeRuntime** (Core) | Pure, no event loop | Logic testing, deterministic execution |
 | **RuntimeHostProcess** (Infra) | Event loop, lifecycle | Production deployment |
+
+---
+
+## Common Pitfalls
+
+### Terminology Mistakes
+
+| Mistake | Correction |
+|---------|------------|
+| Using "Command" as a formal term | Use "Action" - Commands are informal, Actions are canonical |
+| Confusing `ModelEventEnvelope` with FSM events | `ModelEventEnvelope` is transport; FSM events are state triggers |
+| Calling Reducers directly for I/O | Reducers emit Intents; Effects execute I/O |
+| Using `ModelContainer` for DI | Use `ModelONEXContainer` - they are different types |
+
+### Implementation Mistakes
+
+| Mistake | Correction |
+|---------|------------|
+| Skipping `super().__init__(container)` | Always call base class constructor in nodes |
+| Sharing node instances across threads | Create thread-local or separate instances |
+| Using `isinstance` checks with protocols | Use duck typing with protocol interfaces |
+
+For comprehensive guidance, see: `docs/guides/node-building/08_COMMON_PITFALLS.md`
 
 ---
 
