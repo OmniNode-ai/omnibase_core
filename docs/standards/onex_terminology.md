@@ -22,9 +22,10 @@
    - [8. PROJECTION](#8-projection)
    - [9. RUNTIME](#9-runtime)
 4. [Quick Reference Table](#quick-reference-table)
-5. [Concept Relationships](#concept-relationships)
-6. [Disambiguation Guide](#disambiguation-guide)
-7. [Related Documentation](#related-documentation)
+5. [When to Use Each Node Type](#when-to-use-each-node-type)
+6. [Concept Relationships](#concept-relationships)
+7. [Disambiguation Guide](#disambiguation-guide)
+8. [Related Documentation](#related-documentation)
 
 ---
 
@@ -38,11 +39,13 @@ The ONEX (Open Node Execution) framework defines a structured vocabulary for bui
 - **Declarative Configuration**: YAML contracts define behavior without custom code
 - **Purity Preservation**: Reducers emit Intents instead of performing side effects
 
+> **Python Version**: 3.12+ required. Code examples use modern Python features including `datetime.UTC` and PEP 604 union syntax (`X | None`).
+
 ---
 
 ## Architectural Diagram
 
-```
+```text
                           ONEX Four-Node Architecture
 
     +-----------+     +-----------+     +-----------+     +---------------+
@@ -117,6 +120,7 @@ if envelope.is_high_priority():  # priority >= 8
 ```
 
 **Disambiguation**:
+
 | Context | Meaning | Model |
 |---------|---------|-------|
 | **Event (Envelope)** | Inter-service message wrapper | `ModelEventEnvelope[T]` |
@@ -179,7 +183,7 @@ action = ModelAction(
 
 **Role in Architecture**: Intents implement the Pure FSM pattern where Reducers describe side effects without executing them:
 
-```
+```text
 delta(state, action) -> (new_state, intents[])
 ```
 
@@ -240,6 +244,7 @@ return ModelReducerOutput(
 
 ```python
 from omnibase_core.nodes import NodeReducer, ModelReducerInput, ModelReducerOutput
+from omnibase_core.enums.enum_reducer_types import EnumReductionType
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
 class NodeOrderProcessingReducer(NodeReducer):
@@ -471,7 +476,7 @@ assert isinstance(handler, ProtocolHandler)  # True with @runtime_checkable
 ```python
 from omnibase_core.models.projection.model_projection_base import ModelProjectionBase
 from pydantic import Field
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Any
 
 class ModelWorkflowProjection(ModelProjectionBase):
@@ -490,7 +495,7 @@ class ModelWorkflowProjection(ModelProjectionBase):
         description="Multi-tenant isolation namespace",
     )
     updated_at: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(UTC),
         description="Last update timestamp",
     )
     indices: dict[str, Any] | None = Field(
@@ -576,9 +581,45 @@ response = await router.route(incoming_envelope)
 
 ---
 
+## When to Use Each Node Type
+
+Use this decision guide to select the appropriate node type for your use case:
+
+| If you need to... | Use | Example |
+|-------------------|-----|---------|
+| Read/write external data (DB, API, files) | **EFFECT** | Database queries, HTTP calls, file I/O |
+| Transform data without side effects | **COMPUTE** | Data validation, format conversion, calculations |
+| Manage state with FSM transitions | **REDUCER** | Order status workflow, user session state |
+| Coordinate multi-step workflows | **ORCHESTRATOR** | ETL pipelines, saga patterns, batch processing |
+
+### Decision Flowchart
+
+```text
+Start
+  |
+  +-- Does it involve external I/O? --Yes--> EFFECT
+  |
+  +-- Is it pure data transformation? --Yes--> COMPUTE
+  |
+  +-- Does it manage state transitions? --Yes--> REDUCER
+  |
+  +-- Does it coordinate multiple nodes? --Yes--> ORCHESTRATOR
+```
+
+### Common Patterns
+
+| Pattern | Node Combination | Description |
+|---------|------------------|-------------|
+| **Read-Transform-Write** | EFFECT -> COMPUTE -> EFFECT | Fetch data, transform, persist |
+| **Event-Sourced State** | EFFECT -> REDUCER | Event ingestion with FSM state |
+| **Orchestrated Pipeline** | ORCHESTRATOR -> (EFFECT, COMPUTE, REDUCER) | Workflow-driven processing |
+| **Pure Transformation** | COMPUTE only | Stateless data processing |
+
+---
+
 ## Concept Relationships
 
-```
+```text
                      Emits Actions
     +---------------+--------------->+---------------+
     | ORCHESTRATOR  |                |    Action     |
@@ -680,6 +721,8 @@ response = await router.route(incoming_envelope)
 | Pure FSM Pattern | `docs/patterns/PURE_FSM_REDUCER_PATTERN.md` |
 | Lease Management | `docs/patterns/LEASE_MANAGEMENT_PATTERN.md` |
 | Threading Guide | `docs/guides/THREADING.md` |
+| Declarative Nodes Migration | `docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md` |
+| EnumNodeKind Migration | `docs/guides/ENUM_NODE_KIND_MIGRATION.md` |
 
 ---
 
