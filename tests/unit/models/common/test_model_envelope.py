@@ -683,6 +683,22 @@ class TestModelEnvelopeValidationHelpers:
         result = validate_envelope_fields(invalid_data)
         assert result.has_errors()
 
+    def test_validate_envelope_fields_entity_id_too_long(self) -> None:
+        """Test that entity_id exceeding max length is detected."""
+        from omnibase_core.models.common.model_envelope import validate_envelope_fields
+
+        long_entity_id = "x" * 513  # Exceeds 512 char limit
+        invalid_data = {
+            "correlation_id": uuid4(),
+            "entity_id": long_entity_id,
+        }
+
+        result = validate_envelope_fields(invalid_data)
+        assert result.has_errors()
+        # Verify error mentions length
+        error_messages = [str(e) for e in result.errors]
+        assert any("length" in msg.lower() or "512" in msg for msg in error_messages)
+
 
 class TestValidateCausationChain:
     """Tests for the validate_causation_chain helper function."""
@@ -845,19 +861,20 @@ class TestModelEnvelopeEdgeCases:
         assert envelope.entity_id == "node-\u4e2d\u6587-123"
 
     def test_envelope_with_long_entity_id(self) -> None:
-        """Test behavior with very long entity_id."""
-        long_entity_id = "node-" + "x" * 1000
+        """Test that entity_id exceeding max_length=512 is rejected."""
+        long_entity_id = "x" * 513  # Exceeds 512 char limit
 
-        # Should accept long strings (unless there's a max_length constraint)
-        try:
-            envelope = ModelEnvelope(
+        with pytest.raises(ValidationError) as exc_info:
+            ModelEnvelope(
                 correlation_id=uuid4(),
                 entity_id=long_entity_id,
             )
-            assert len(envelope.entity_id) == len(long_entity_id)
-        except ValidationError:
-            # If there's a max_length, that's also valid behavior
-            pass
+
+        # Verify error mentions the constraint
+        error_str = str(exc_info.value).lower()
+        assert (
+            "512" in error_str or "string_too_long" in error_str or "max" in error_str
+        )
 
     def test_envelope_with_special_characters_in_entity_id(self) -> None:
         """Test that special characters in entity_id are handled."""

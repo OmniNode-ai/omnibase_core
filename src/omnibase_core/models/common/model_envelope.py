@@ -374,6 +374,13 @@ def validate_envelope_fields(data: dict[str, object]) -> ModelValidationContaine
                     field="entity_id",
                     error_code="EMPTY_VALUE",
                 )
+            # Check max length (512 chars) - security constraint for DB keys and message headers
+            elif len(entity_id.strip()) > 512:
+                container.add_error(
+                    message=f"entity_id exceeds maximum length of 512 characters (got {len(entity_id.strip())})",
+                    field="entity_id",
+                    error_code="VALUE_TOO_LONG",
+                )
         else:
             container.add_error(
                 message=f"entity_id must be a string, got {type(entity_id).__name__}",
