@@ -4,8 +4,6 @@ Execution Shape Model.
 Model for representing a canonical ONEX execution shape.
 """
 
-from __future__ import annotations
-
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_execution_shape import (
@@ -37,7 +35,7 @@ class ModelExecutionShape(BaseModel):
         <EnumExecutionShape.EVENT_TO_ORCHESTRATOR: 'event_to_orchestrator'>
     """
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     shape: EnumExecutionShape = Field(
         ...,
@@ -57,7 +55,7 @@ class ModelExecutionShape(BaseModel):
     )
 
     @classmethod
-    def from_shape(cls, shape: EnumExecutionShape) -> ModelExecutionShape:
+    def from_shape(cls, shape: EnumExecutionShape) -> "ModelExecutionShape":
         """
         Create a ModelExecutionShape from an EnumExecutionShape.
 
@@ -77,7 +75,7 @@ class ModelExecutionShape(BaseModel):
         )
 
     @classmethod
-    def get_all_shapes(cls) -> list[ModelExecutionShape]:
+    def get_all_shapes(cls) -> "list[ModelExecutionShape]":
         """
         Get all canonical execution shapes as model instances.
 

@@ -4,8 +4,6 @@ Execution Shape Validation Model.
 Model for validating execution shapes against canonical ONEX patterns.
 """
 
-from __future__ import annotations
-
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_execution_shape import (
@@ -39,7 +37,7 @@ class ModelExecutionShapeValidation(BaseModel):
         True
     """
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     source_category: EnumMessageCategory = Field(
         ...,
@@ -67,7 +65,7 @@ class ModelExecutionShapeValidation(BaseModel):
         cls,
         source_category: EnumMessageCategory,
         target_node_kind: EnumNodeKind,
-    ) -> ModelExecutionShapeValidation:
+    ) -> "ModelExecutionShapeValidation":
         """
         Validate if a proposed execution shape is allowed.
 

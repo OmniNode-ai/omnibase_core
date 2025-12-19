@@ -4,8 +4,6 @@ Shape Validation Result Model.
 Model for aggregated results of validating multiple execution shapes.
 """
 
-from __future__ import annotations
-
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.validation.model_execution_shape_validation import (
@@ -36,7 +34,7 @@ class ModelShapeValidationResult(BaseModel):
         False
     """
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     validations: list[ModelExecutionShapeValidation] = Field(
         default_factory=list,
@@ -71,7 +69,7 @@ class ModelShapeValidationResult(BaseModel):
     def from_validations(
         cls,
         validations: list[ModelExecutionShapeValidation],
-    ) -> ModelShapeValidationResult:
+    ) -> "ModelShapeValidationResult":
         """
         Create a result from a list of validations.
 

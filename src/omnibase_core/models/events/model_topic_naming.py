@@ -80,7 +80,6 @@ class ModelTopicNaming(BaseModel):
 
     # Validation patterns
     DOMAIN_PATTERN: ClassVar[re.Pattern[str]] = re.compile(r"^[a-z][a-z0-9\-]*$")
-    VERSION_PATTERN: ClassVar[re.Pattern[str]] = re.compile(r"^v\d+$")
     ENVIRONMENT_VALUES: ClassVar[frozenset[str]] = frozenset(
         {"dev", "staging", "prod", "test", "local"}
     )
