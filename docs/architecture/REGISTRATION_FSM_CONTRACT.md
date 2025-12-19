@@ -19,6 +19,15 @@ The Registration FSM provides:
 - **Failure recovery** with partial registration handling
 - **Graceful deregistration** with cleanup
 
+### Document Organization
+
+> **v1.0 Scope**: This document is comprehensive by design, providing a complete FSM contract specification for the Dual Registration Reducer.
+>
+> **Future Enhancement**: If the patterns in this document are reused across multiple FSMs, consider extracting reusable subsections into standalone guides:
+> - `docs/patterns/GUARD_EXPRESSION_REFERENCE.md` - Reusable guard syntax guide
+> - `docs/patterns/FSM_TIMEOUT_PATTERNS.md` - Reusable timeout handling patterns
+> - `docs/patterns/RETRY_LIMIT_ENFORCEMENT.md` - Reusable retry limit patterns
+
 ### Workflow Pattern
 
 ```text
@@ -607,6 +616,8 @@ actions:
 
 **CONTINUE Trigger Semantics**: The `CONTINUE` trigger enables automatic state progression without requiring an external event. Unlike external triggers (e.g., `REGISTER`, `DEREGISTER`) or Effect-sourced triggers (e.g., `POSTGRES_SUCCEEDED`), `CONTINUE` is a **synthetic internal trigger** that the Reducer emits to itself.
 
+> **TL;DR**: Use single-step execution (recommended for production, <10ms latency). Use two-step only for debugging (adds 50-100ms but makes checkpoint observable).
+
 **Implementation Pattern**:
 
 1. **When Emitted**: The Reducer emits `CONTINUE` synchronously as part of processing the `POSTGRES_SUCCEEDED` trigger. After transitioning to `postgres_registered`, the Reducer immediately evaluates if `CONTINUE` should fire.
@@ -1145,6 +1156,8 @@ def prepare_context_for_guards(
 - JSONPath-like syntax: `$.context.retry_count < 3`
 - Bracket notation: `response["status"] == "ok"`
 
+> **Tracking**: Nested field access enhancement is tracked for v2.0 consideration. If this becomes a strong requirement for your use case, please file an issue referencing OMN-938 to help prioritize this enhancement.
+
 This would require updates to the guard parser and contract validation logic.
 
 ### Guard Validation Rules
@@ -1389,6 +1402,8 @@ fsm_context = {
 ---
 
 ## State Diagram
+
+> **Rendering Note**: This diagram uses Mermaid `stateDiagram-v2` syntax, which renders correctly in GitHub's Markdown viewer. If rendering issues occur in other viewers, refer to the [Simplified Flow Diagram](#simplified-flow-diagram) below as a fallback.
 
 ```mermaid
 stateDiagram-v2
@@ -1642,6 +1657,8 @@ During execution, the Reducer validates:
 5. **Retry Logic**: Implement exponential backoff in Effect nodes, not Reducer. Reducer just emits retry intents with incremented counter.
 
 6. **Correlation Tracking**: All intents must include `correlation_id` from the originating event for distributed tracing.
+
+7. **Orphaned Resource Cleanup**: Implement garbage collection for orphaned registrations as described in the [Deregistration Failure Handling](#deregistration-failure-handling) section. This is critical for production systems where deregistration may time out during node shutdown.
 
 ### Retry Counter Management
 
