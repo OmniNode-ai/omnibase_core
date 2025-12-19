@@ -144,6 +144,9 @@ class PythonASTValidator(ast.NodeVisitor):
             # EXECUTION_CONTEXT_FIELDS (flexible identifiers)
             # See: src/omnibase_core/models/compute/model_compute_execution_context.py
             "node_id",  # Intentionally str: can be UUID, hostname, or custom identifier
+            # ENVELOPE_PARTITION_KEYS (ModelEnvelope partition/identity anchors)
+            # See: src/omnibase_core/models/common/model_envelope.py
+            "entity_id",  # Partition key: holds node_id or other string identifiers (OMN-936)
             # TYPED_DICT_SERIALIZATION_BOUNDARY (TypedDicts for logging/monitoring/introspection)
             # See: src/omnibase_core/types/ for TypedDict definitions
             # These TypedDicts are at serialization boundaries where string versions/IDs are appropriate
