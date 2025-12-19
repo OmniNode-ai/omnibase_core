@@ -8,6 +8,12 @@ and are not specific to any particular functionality area.
 from .model_coercion_mode import EnumCoercionMode
 from .model_dict_value_union import ModelDictValueUnion
 from .model_discriminated_value import ModelDiscriminatedValue
+from .model_envelope import (
+    ModelEnvelope,
+    get_chain_depth,
+    validate_causation_chain,
+    validate_envelope_fields,
+)
 from .model_envelope_payload import ModelEnvelopePayload, PayloadDataValue
 from .model_error_context import ModelErrorContext
 from .model_flexible_value import ModelFlexibleValue
@@ -51,6 +57,7 @@ __all__ = [
     "EnumCoercionMode",
     "ModelDictValueUnion",
     "ModelDiscriminatedValue",
+    "ModelEnvelope",
     "ModelEnvelopePayload",
     "ModelErrorContext",
     "ModelFlexibleValue",
@@ -71,6 +78,10 @@ __all__ = [
     # Type aliases
     "ParameterValue",
     "PayloadDataValue",
+    # Envelope validation helpers
+    "get_chain_depth",
+    "validate_causation_chain",
+    "validate_envelope_fields",
     # Typed metadata models
     "ModelConfigSchemaProperty",
     "ModelCustomHealthMetrics",
