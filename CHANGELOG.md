@@ -185,6 +185,61 @@ affinity = ModelSessionAffinity(hash_algorithm="sha512")  # ✅ Strongest
 - Renamed fields: `event_id`→`envelope_id`, `source_service`→`source_node`, `event_type`→`operation`
 - Added new fields: `causation_id`, `target_node`, `handler_type`, `metadata`, `is_response`, `success`, `error`
 
+## [0.5.3] - 2025-12-19
+
+### Changed
+- Version bump for release tagging (no functional changes from 0.5.2)
+
+## [0.5.2] - 2025-12-19
+
+### Fixed
+
+#### Tech Debt Resolution (P0/P1 Issues)
+
+**Thread Safety Fixes**:
+- Fixed circuit breaker race condition in `model_circuit_breaker.py`
+  - Added thread-safe locking to all state-modifying operations
+  - Created `_unlocked` internal methods to avoid deadlocks
+  - Fixed `half_open_requests` counter increment bug
+
+**Timeout Enforcement**:
+- Implemented `pipeline_timeout_ms` enforcement in `compute_executor.py`
+  - Uses `ThreadPoolExecutor` with timeout for synchronous execution
+  - Returns failure result with `TIMEOUT_EXCEEDED` error on timeout
+  - Added 8 new tests for timeout behavior
+
+**Workflow Validation**:
+- Fixed duplicate step ID validation in `workflow_executor.py`
+  - Added validation to detect duplicate step IDs in workflow definitions
+
+### Removed
+
+#### Deprecation Removals (v0.5.0 Announced)
+- Removed `computation_type` fallback chain in `node_compute.py` (~70 lines deprecated code)
+- Removed `ProtocolRegistryWithBus` alias from `mixins/__init__.py`
+- Removed deprecated `JsonSerializable` type alias from `model_onex_common_types.py`
+
+#### Security Hardening
+- Removed MD5/SHA-1 hash algorithm support in `model_session_affinity.py`
+  - SHA-256 is now the minimum required algorithm
+  - Previously deprecated algorithms now raise validation errors
+
+### Changed
+
+#### Documentation Improvements
+- Reduced CLAUDE.md from 1145 to 564 lines (51% reduction) while preserving critical information
+- Updated README.md import examples to v0.4.0+ patterns
+- Updated 10 architecture docs to reflect v0.3.6 dependency inversion (omnibase_spi dependency removal)
+- Marked `SPI_PROTOCOL_ADOPTION_ROADMAP.md` as HISTORICAL
+- Added timeout thread documentation to `THREADING.md`:
+  - Production monitoring for timeout threads
+  - Prometheus metrics and warning thresholds
+  - `ThreadMonitor` and `TimeoutPool` class implementations
+  - Daemon thread lifecycle and resource implications
+
+### Removed
+- Deleted stale `README_NODE_REDUCER_TESTS.md` (referenced non-existent file)
+
 ## [0.5.1] - 2025-12-18
 
 ### Fixed
