@@ -18,6 +18,8 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import pytest
+
 from omnibase_core.validation.cli import run_validation_cli
 
 if TYPE_CHECKING:
@@ -25,6 +27,7 @@ if TYPE_CHECKING:
     from _pytest.monkeypatch import MonkeyPatch
 
 
+@pytest.mark.unit
 class TestRunValidationCLIBasics:
     """Test basic CLI functionality."""
 
@@ -121,6 +124,7 @@ class TestRunValidationCLIBasics:
         assert "Files checked" in captured.out or "PASSED" in captured.out
 
 
+@pytest.mark.unit
 class TestRunValidationCLIValidationTypes:
     """Test CLI with different validation types."""
 
@@ -253,6 +257,7 @@ class ModelTest(BaseModel):
         assert "Final Result" in captured.out or "ALL VALIDATIONS" in captured.out
 
 
+@pytest.mark.unit
 class TestRunValidationCLIParameters:
     """Test CLI with various parameters."""
 
@@ -347,6 +352,7 @@ class TestRunValidationCLIParameters:
         assert exit_code == 0
 
 
+@pytest.mark.unit
 class TestRunValidationCLIMultipleDirectories:
     """Test CLI with multiple directories."""
 
@@ -420,6 +426,7 @@ class TestRunValidationCLIMultipleDirectories:
         assert "Directory not found" in captured.out
 
 
+@pytest.mark.unit
 class TestRunValidationCLIErrorHandling:
     """Test CLI error handling scenarios."""
 
@@ -529,6 +536,7 @@ class Model2(BaseModel):
         assert exit_code in [0, 1]
 
 
+@pytest.mark.unit
 class TestRunValidationCLIOutputFormatting:
     """Test CLI output formatting."""
 

@@ -30,6 +30,7 @@ from omnibase_core.validation.migrator_protocol import ProtocolMigrator
 from omnibase_core.validation.validation_utils import ModelProtocolInfo
 
 
+@pytest.mark.unit
 class TestProtocolMigratorInitialization:
     """Test ProtocolMigrator initialization."""
 
@@ -65,6 +66,7 @@ class TestProtocolMigratorInitialization:
         assert migrator.spi_path == custom_spi.resolve()
 
 
+@pytest.mark.unit
 class TestMigrationPlanCreation:
     """Test migration plan creation."""
 
@@ -179,6 +181,7 @@ class TestMigrationPlanCreation:
         assert any("Backup" in rec for rec in plan.recommendations)
 
 
+@pytest.mark.unit
 class TestConflictDetection:
     """Test conflict detection logic."""
 
@@ -287,6 +290,7 @@ class TestConflictDetection:
         assert len(conflicts) == 0
 
 
+@pytest.mark.unit
 class TestMigrationExecution:
     """Test migration execution."""
 
@@ -411,6 +415,7 @@ class TestProtocol(Protocol):
         assert len(result.files_deleted) > 0
 
 
+@pytest.mark.unit
 class TestMigrationSteps:
     """Test migration step generation."""
 
@@ -471,6 +476,7 @@ class TestMigrationSteps:
             assert step["estimated_minutes"] > 0
 
 
+@pytest.mark.unit
 class TestImportUpdates:
     """Test import update functionality."""
 
@@ -574,6 +580,7 @@ from .test_protocol import TestProtocol
         assert len(references) == 0
 
 
+@pytest.mark.unit
 class TestRollback:
     """Test rollback functionality."""
 
@@ -626,6 +633,7 @@ class TestRollback:
         assert not created_file.exists()  # Should be deleted
 
 
+@pytest.mark.unit
 class TestEdgeCases:
     """Test edge cases and error conditions."""
 
@@ -700,6 +708,7 @@ class TestEdgeCases:
         assert result.rollback_available is True
 
 
+@pytest.mark.unit
 class TestValidationErrors:
     """Test validation error handling."""
 

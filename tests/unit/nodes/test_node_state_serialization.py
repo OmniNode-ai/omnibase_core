@@ -142,6 +142,7 @@ def simple_workflow_definition() -> ModelWorkflowDefinition:
     )
 
 
+@pytest.mark.unit
 class TestNodeReducerStateSerialization:
     """Tests for NodeReducer state serialization methods.
 
@@ -558,6 +559,7 @@ class TestNodeReducerStateSerialization:
         assert "position" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestNodeReducerRequiredContextValidation:
     """Tests for required context key validation during restore_state.
 
@@ -696,6 +698,7 @@ class TestNodeReducerRequiredContextValidation:
         assert current_snapshot.current_state == "idle"
 
 
+@pytest.mark.unit
 class TestNodeOrchestratorStateSerialization:
     """Tests for NodeOrchestrator workflow state serialization methods.
 
@@ -1171,6 +1174,7 @@ class TestNodeOrchestratorStateSerialization:
         assert len(snapshot_2.completed_step_ids) == 2
 
 
+@pytest.mark.unit
 class TestNodeOrchestratorWorkflowSnapshotValidation:
     """Tests for NodeOrchestrator workflow snapshot validation.
 
@@ -1537,6 +1541,7 @@ class TestNodeOrchestratorWorkflowSnapshotValidation:
         assert ctx["current_schema_version"] == WORKFLOW_STATE_SNAPSHOT_SCHEMA_VERSION
 
 
+@pytest.mark.unit
 class TestModelWorkflowStateSnapshot:
     """Tests for ModelWorkflowStateSnapshot model behavior.
 
@@ -1723,6 +1728,7 @@ class TestModelWorkflowStateSnapshot:
         assert state_dict["completed_step_ids"] == [str(step_id)]
 
 
+@pytest.mark.unit
 class TestModelFSMStateSnapshot:
     """Additional tests for ModelFSMStateSnapshot model behavior.
 
@@ -1816,6 +1822,7 @@ class TestModelFSMStateSnapshot:
         assert isinstance(json_str, str)
 
 
+@pytest.mark.unit
 class TestContextMutationProtection:
     """Tests for context mutation protection in snapshot models.
 
@@ -1945,6 +1952,7 @@ class TestContextMutationProtection:
         assert initial_snapshot.context == {"existing": "value"}
 
 
+@pytest.mark.unit
 class TestConcurrentAccessSafety:
     """Tests for concurrent access to node state serialization.
 

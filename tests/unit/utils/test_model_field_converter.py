@@ -36,6 +36,7 @@ class SampleStatus(Enum):
     PENDING = "pending"
 
 
+@pytest.mark.unit
 class TestFieldConverter:
     """Test FieldConverter class."""
 
@@ -121,6 +122,7 @@ class TestFieldConverter:
         assert "Custom error" in exc_info.value.message
 
 
+@pytest.mark.unit
 class TestModelFieldConverterRegistry:
     """Test ModelFieldConverterRegistry class."""
 

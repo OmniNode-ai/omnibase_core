@@ -25,6 +25,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
+@pytest.mark.unit
 class TestModelNodeType:
     """Test cases for ModelNodeType."""
 
@@ -645,6 +646,7 @@ class TestModelNodeType:
             assert "Unknown node type" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestModelNodeTypeEdgeCases:
     """Test edge cases and error conditions for ModelNodeType."""
 

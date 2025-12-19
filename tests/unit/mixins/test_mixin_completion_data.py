@@ -8,6 +8,7 @@ from pydantic import ValidationError
 from omnibase_core.mixins.mixin_completion_data import MixinCompletionData
 
 
+@pytest.mark.unit
 class TestMixinCompletionData:
     """Test MixinCompletionData functionality."""
 

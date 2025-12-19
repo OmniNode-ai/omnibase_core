@@ -28,6 +28,7 @@ from omnibase_core.models.events.model_topic_naming import (
 )
 
 
+@pytest.mark.unit
 class TestModelTopicNamingInstantiation:
     """Test cases for ModelTopicNaming instantiation."""
 
@@ -81,6 +82,7 @@ class TestModelTopicNamingInstantiation:
         assert naming_intent.category == EnumMessageCategory.INTENT
 
 
+@pytest.mark.unit
 class TestModelTopicNamingConfig:
     """Test model_config settings (frozen, extra, from_attributes)."""
 
@@ -133,6 +135,7 @@ class TestModelTopicNamingConfig:
         assert naming.version == "v3"
 
 
+@pytest.mark.unit
 class TestModelTopicNamingEnvironmentValidation:
     """Test environment field validation."""
 
@@ -200,6 +203,7 @@ class TestModelTopicNamingEnvironmentValidation:
                 )
 
 
+@pytest.mark.unit
 class TestModelTopicNamingDomainValidation:
     """Test domain field validation."""
 
@@ -272,6 +276,7 @@ class TestModelTopicNamingDomainValidation:
             )
 
 
+@pytest.mark.unit
 class TestModelTopicNamingVersionValidation:
     """Test version field validation."""
 
@@ -316,6 +321,7 @@ class TestModelTopicNamingVersionValidation:
                 )
 
 
+@pytest.mark.unit
 class TestModelTopicNamingTopicName:
     """Test topic_name property."""
 
@@ -363,6 +369,7 @@ class TestModelTopicNamingTopicName:
             assert naming.topic_name == expected
 
 
+@pytest.mark.unit
 class TestModelTopicNamingTopicSuffix:
     """Test topic_suffix property."""
 
@@ -391,6 +398,7 @@ class TestModelTopicNamingTopicSuffix:
         assert naming.topic_suffix == "intents"
 
 
+@pytest.mark.unit
 class TestModelTopicNamingParseTopic:
     """Test parse_topic() classmethod."""
 
@@ -502,6 +510,7 @@ class TestModelTopicNamingParseTopic:
         assert parsed.version == original.version
 
 
+@pytest.mark.unit
 class TestModelTopicNamingFactoryMethods:
     """Test convenience factory methods."""
 
@@ -578,6 +587,7 @@ class TestModelTopicNamingFactoryMethods:
         assert naming.topic_name == "test.automation.intents.v4"
 
 
+@pytest.mark.unit
 class TestValidateTopicMatchesCategory:
     """Test validate_topic_matches_category() helper function."""
 
@@ -653,6 +663,7 @@ class TestValidateTopicMatchesCategory:
         )
 
 
+@pytest.mark.unit
 class TestGetTopicCategory:
     """Test get_topic_category() helper function."""
 
@@ -692,6 +703,7 @@ class TestGetTopicCategory:
         )
 
 
+@pytest.mark.unit
 class TestModelTopicNamingEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -768,6 +780,7 @@ class TestModelTopicNamingEdgeCases:
         assert naming.topic_name == "dev.user.events.v999"
 
 
+@pytest.mark.unit
 class TestModelTopicNamingClassVars:
     """Test ClassVar patterns and constants."""
 
@@ -795,6 +808,7 @@ class TestModelTopicNamingClassVars:
         assert frozenset(expected) == ModelTopicNaming.ENVIRONMENT_VALUES
 
 
+@pytest.mark.unit
 class TestValidateMessageTopicAlignment:
     """Tests for validate_message_topic_alignment() function."""
 

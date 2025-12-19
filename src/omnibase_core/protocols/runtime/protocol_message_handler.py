@@ -273,9 +273,10 @@ class ProtocolMessageHandler(Protocol):
                 - correlation_id: Copied from envelope.correlation_id
                 - handler_id: This handler's ID
                 - node_kind: This handler's node kind
-                - events: Event envelopes to publish (for ORCHESTRATOR, EFFECT, COMPUTE)
+                - events: Event envelopes to publish (for ORCHESTRATOR, EFFECT)
                 - intents: Intents for side-effect execution (for ORCHESTRATOR only)
                 - projections: Projection updates (for REDUCER only)
+                - result: Result value (for COMPUTE only)
                 - processing_time_ms: Time taken to process
 
         Example:

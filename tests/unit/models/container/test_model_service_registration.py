@@ -38,6 +38,7 @@ def sample_registration(sample_metadata):
     )
 
 
+@pytest.mark.unit
 class TestModelServiceRegistration:
     """Tests for ModelServiceRegistration model."""
 

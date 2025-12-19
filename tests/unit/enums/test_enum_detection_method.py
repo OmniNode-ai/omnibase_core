@@ -9,6 +9,7 @@ import pytest
 from omnibase_core.enums.enum_detection_method import EnumDetectionMethod
 
 
+@pytest.mark.unit
 class TestEnumDetectionMethod:
     """Test cases for EnumDetectionMethod enum."""
 

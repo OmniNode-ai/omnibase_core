@@ -18,6 +18,7 @@ from omnibase_core.models.node_metadata.model_function_documentation import (
 )
 
 
+@pytest.mark.unit
 class TestModelFunctionDocumentation:
     """Test cases for ModelFunctionDocumentation."""
 

@@ -1,8 +1,11 @@
 """Tests for ModelLogFormatting."""
 
+import pytest
+
 from omnibase_core.models.configuration.model_log_formatting import ModelLogFormatting
 
 
+@pytest.mark.unit
 class TestModelLogFormattingBasics:
     def test_create_default(self):
         fmt = ModelLogFormatting()
@@ -16,6 +19,7 @@ class TestModelLogFormattingBasics:
             assert fmt.format_type == ftype
 
 
+@pytest.mark.unit
 class TestModelLogFormattingMethods:
     def test_format_message_text(self):
         fmt = ModelLogFormatting(format_type="text")
@@ -62,6 +66,7 @@ class TestModelLogFormattingMethods:
         assert "format_checks" in analysis
 
 
+@pytest.mark.unit
 class TestModelLogFormattingCustomization:
     def test_field_order_customization(self):
         fmt = ModelLogFormatting(field_order=["level", "timestamp", "message"])
@@ -76,6 +81,7 @@ class TestModelLogFormattingCustomization:
         assert fmt.timestamp_format == "%Y-%m-%d"
 
 
+@pytest.mark.unit
 class TestModelLogFormattingSerialization:
     def test_serialization(self):
         fmt = ModelLogFormatting(format_type="json")

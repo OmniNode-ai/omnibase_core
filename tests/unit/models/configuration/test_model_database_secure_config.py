@@ -24,6 +24,7 @@ from omnibase_core.models.configuration.model_database_secure_config import (
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
+@pytest.mark.unit
 class TestModelDatabaseSecureConfigInstantiation:
     """Tests for ModelDatabaseSecureConfig instantiation and validation."""
 
@@ -124,6 +125,7 @@ class TestModelDatabaseSecureConfigInstantiation:
         assert config.application_name == "MyApp"
 
 
+@pytest.mark.unit
 class TestModelDatabaseSecureConfigValidation:
     """Tests for field validation."""
 
@@ -352,6 +354,7 @@ class TestModelDatabaseSecureConfigValidation:
         assert "Unsupported driver" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestConnectionStringGeneration:
     """Tests for connection string generation."""
 
@@ -542,6 +545,7 @@ class TestConnectionStringGeneration:
         assert "ssl=true" in conn_str
 
 
+@pytest.mark.unit
 class TestConnectionStringParsing:
     """Tests for connection string parsing."""
 
@@ -581,6 +585,7 @@ class TestConnectionStringParsing:
         assert parsed.database == "mydb"
 
 
+@pytest.mark.unit
 class TestSecurityAssessment:
     """Tests for security assessment functionality."""
 
@@ -743,6 +748,7 @@ class TestSecurityAssessment:
         assert config.is_production_ready() is True
 
 
+@pytest.mark.unit
 class TestPoolRecommendations:
     """Tests for connection pool recommendations."""
 
@@ -834,6 +840,7 @@ class TestPoolRecommendations:
         assert "performance_profile" in recommendations.model_dump()
 
 
+@pytest.mark.unit
 class TestPerformanceProfile:
     """Tests for performance profiling."""
 
@@ -928,6 +935,7 @@ class TestPerformanceProfile:
         assert any("SSL certificate expiration" in rec for rec in recommendations)
 
 
+@pytest.mark.unit
 class TestHealthAndTroubleshooting:
     """Tests for health checks and troubleshooting."""
 
@@ -1002,6 +1010,7 @@ class TestHealthAndTroubleshooting:
         assert any("bind-address" in tip for tip in guide["driver_specific"])
 
 
+@pytest.mark.unit
 class TestEnvironmentIntegration:
     """Tests for environment variable integration."""
 
@@ -1067,6 +1076,7 @@ class TestEnvironmentIntegration:
         assert config.ssl_cert_path == "/certs/client.crt"
 
 
+@pytest.mark.unit
 class TestFactoryMethods:
     """Tests for factory methods."""
 
@@ -1132,6 +1142,7 @@ class TestFactoryMethods:
         assert config.max_overflow == 30
 
 
+@pytest.mark.unit
 class TestEdgeCases:
     """Tests for edge cases and boundary conditions."""
 

@@ -8,6 +8,7 @@ import pytest
 from omnibase_core.enums.enum_priority_level import EnumPriorityLevel
 
 
+@pytest.mark.unit
 class TestEnumPriorityLevel:
     """Test suite for EnumPriorityLevel."""
 

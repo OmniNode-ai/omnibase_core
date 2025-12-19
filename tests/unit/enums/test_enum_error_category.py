@@ -9,6 +9,7 @@ import pytest
 from omnibase_core.enums.enum_error_category import EnumErrorCategory
 
 
+@pytest.mark.unit
 class TestEnumErrorCategory:
     """Test cases for EnumErrorCategory enum."""
 

@@ -38,6 +38,7 @@ class MockNode(MixinIntrospectionPublisher):
         return "compute"
 
 
+@pytest.mark.unit
 class TestMixinIntrospectionPublisher:
     """Test MixinIntrospectionPublisher functionality."""
 

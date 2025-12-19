@@ -9,7 +9,10 @@ Tests cover:
 - normalize_legacy_event_type function behavior
 """
 
+import pytest
 
+
+@pytest.mark.unit
 class TestEventTypeConstants:
     """Test event type constant definitions."""
 
@@ -105,6 +108,7 @@ class TestEventTypeConstants:
             assert " " not in event_type  # No spaces
 
 
+@pytest.mark.unit
 class TestEventTypeSpecificValues:
     """Test specific event type constant values."""
 
@@ -148,6 +152,7 @@ class TestEventTypeSpecificValues:
         assert event_types.NODE_FAILURE == "node_failure"
 
 
+@pytest.mark.unit
 class TestNormalizeLegacyEventType:
     """Test normalize_legacy_event_type function."""
 
@@ -229,6 +234,7 @@ class TestNormalizeLegacyEventType:
             assert result is test_str  # Same object
 
 
+@pytest.mark.unit
 class TestNormalizeLegacyEventTypeEdgeCases:
     """Test edge cases for normalize_legacy_event_type."""
 
@@ -283,6 +289,7 @@ class TestNormalizeLegacyEventTypeEdgeCases:
         assert result == "complex_event"
 
 
+@pytest.mark.unit
 class TestEventTypeSerialization:
     """Test event type serialization and usage."""
 
@@ -333,6 +340,7 @@ class TestEventTypeSerialization:
         assert len(event_handlers) == 3
 
 
+@pytest.mark.unit
 class TestEventTypeUsagePatterns:
     """Test common event type usage patterns."""
 
@@ -370,6 +378,7 @@ class TestEventTypeUsagePatterns:
         assert "health" in event_types.NODE_HEALTH_EVENT
 
 
+@pytest.mark.unit
 class TestEventTypeModuleStructure:
     """Test event_types module structure and documentation."""
 

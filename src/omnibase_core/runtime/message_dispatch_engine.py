@@ -297,22 +297,32 @@ class MessageDispatchEngine:
         """
         if route is None:
             raise ModelOnexError(
-                message="Cannot register None route. ModelDispatchRoute is required.",
+                message=(
+                    "Cannot register None route. "
+                    "Provide a valid ModelDispatchRoute instance with topic_pattern, handler_id, and message_category."
+                ),
                 error_code=EnumCoreErrorCode.INVALID_PARAMETER,
             )
 
         with self._registration_lock:
             if self._frozen:
                 raise ModelOnexError(
-                    message="Cannot register route: MessageDispatchEngine is frozen. "
-                    "Registration is not allowed after freeze() has been called.",
+                    message=(
+                        f"Cannot register route '{route.route_id}': MessageDispatchEngine is frozen. "
+                        "Registration is not allowed after freeze() has been called. "
+                        "Register all routes before calling freeze()."
+                    ),
                     error_code=EnumCoreErrorCode.INVALID_STATE,
                 )
 
             if route.route_id in self._routes:
+                existing_route = self._routes[route.route_id]
                 raise ModelOnexError(
-                    message=f"Route with ID '{route.route_id}' is already registered. "
-                    "Cannot register duplicate route ID.",
+                    message=(
+                        f"Route with ID '{route.route_id}' is already registered. "
+                        f"Existing route: pattern='{existing_route.topic_pattern}', handler='{existing_route.handler_id}'. "
+                        f"Use a unique route_id or unregister the existing route first."
+                    ),
                     error_code=EnumCoreErrorCode.DUPLICATE_REGISTRATION,
                 )
 
@@ -373,35 +383,51 @@ class MessageDispatchEngine:
         # Validate inputs before acquiring lock
         if not handler_id or not handler_id.strip():
             raise ModelOnexError(
-                message="Handler ID cannot be empty or whitespace.",
+                message=(
+                    "Handler ID cannot be empty or whitespace. "
+                    "Provide a unique, descriptive identifier for the handler (e.g., 'user-event-handler')."
+                ),
                 error_code=EnumCoreErrorCode.INVALID_PARAMETER,
             )
 
         if handler is None or not callable(handler):
             raise ModelOnexError(
-                message=f"Handler for '{handler_id}' must be callable. "
-                f"Got {type(handler).__name__}.",
+                message=(
+                    f"Handler for '{handler_id}' must be callable (function or async function). "
+                    f"Got {type(handler).__name__}. "
+                    f"Expected signature: (envelope: ModelEventEnvelope[Any]) -> Any"
+                ),
                 error_code=EnumCoreErrorCode.INVALID_PARAMETER,
             )
 
         if not isinstance(category, EnumMessageCategory):
             raise ModelOnexError(
-                message=f"Category must be EnumMessageCategory, got {type(category).__name__}.",
+                message=(
+                    f"Category must be EnumMessageCategory, got {type(category).__name__}. "
+                    f"Valid categories: {', '.join(c.value for c in EnumMessageCategory)}"
+                ),
                 error_code=EnumCoreErrorCode.INVALID_PARAMETER,
             )
 
         with self._registration_lock:
             if self._frozen:
                 raise ModelOnexError(
-                    message="Cannot register handler: MessageDispatchEngine is frozen. "
-                    "Registration is not allowed after freeze() has been called.",
+                    message=(
+                        f"Cannot register handler '{handler_id}': MessageDispatchEngine is frozen. "
+                        "Registration is not allowed after freeze() has been called. "
+                        "Register all handlers before calling freeze()."
+                    ),
                     error_code=EnumCoreErrorCode.INVALID_STATE,
                 )
 
             if handler_id in self._handlers:
+                existing_handler_info = self._handlers[handler_id]
                 raise ModelOnexError(
-                    message=f"Handler with ID '{handler_id}' is already registered. "
-                    "Cannot register duplicate handler ID.",
+                    message=(
+                        f"Handler with ID '{handler_id}' is already registered. "
+                        f"Existing handler: category={existing_handler_info.category.value}. "
+                        f"Use a unique handler_id or unregister the existing handler first."
+                    ),
                     error_code=EnumCoreErrorCode.DUPLICATE_REGISTRATION,
                 )
 
@@ -460,10 +486,13 @@ class MessageDispatchEngine:
             # Validate all routes reference existing handlers
             for route in self._routes.values():
                 if route.handler_id not in self._handlers:
+                    registered_handlers = sorted(self._handlers.keys())
                     raise ModelOnexError(
-                        message=f"Route '{route.route_id}' references handler "
-                        f"'{route.handler_id}' which is not registered. "
-                        "Register the handler before freezing.",
+                        message=(
+                            f"Route '{route.route_id}' references handler '{route.handler_id}' which is not registered. "
+                            f"Registered handlers: {', '.join(registered_handlers) if registered_handlers else 'none'}. "
+                            f"Register the handler using register_handler() before calling freeze()."
+                        ),
                         error_code=EnumCoreErrorCode.ITEM_NOT_REGISTERED,
                     )
 
@@ -506,6 +535,127 @@ class MessageDispatchEngine:
         """
         with self._metrics_lock:
             self._metrics[key] += value  # type: ignore[literal-required]
+
+    def _update_structured_metrics(
+        self,
+        duration_ms: float,
+        success: bool,
+        category: EnumMessageCategory | None = None,
+        no_handler: bool = False,
+        category_mismatch: bool = False,
+        handler_error: bool = False,
+        routes_matched: int = 0,
+        topic: str | None = None,
+        handler_id: str | None = None,
+        error_message: str | None = None,
+    ) -> None:
+        """
+        Thread-safe update of structured metrics.
+
+        Atomically updates _structured_metrics using record_dispatch() while
+        holding the metrics lock. This prevents data races during concurrent
+        dispatch operations.
+
+        Args:
+            duration_ms: Dispatch duration in milliseconds (required)
+            success: Whether dispatch succeeded (required)
+            category: Message category
+            no_handler: Whether no handler was found
+            category_mismatch: Whether category mismatch occurred
+            handler_error: Whether handler execution failed
+            routes_matched: Number of routes matched
+            topic: Topic being dispatched to
+            handler_id: Handler ID (if applicable)
+            error_message: Error message (if applicable)
+
+        Note:
+            This method acquires _metrics_lock internally. Do not call while
+            already holding the lock to avoid deadlock.
+
+        .. versionadded:: 0.4.0
+        """
+        with self._metrics_lock:
+            self._structured_metrics = self._structured_metrics.record_dispatch(
+                duration_ms=duration_ms,
+                success=success,
+                category=category,
+                no_handler=no_handler,
+                category_mismatch=category_mismatch,
+                handler_error=handler_error,
+                routes_matched=routes_matched,
+                topic=topic,
+                handler_id=handler_id,
+                error_message=error_message,
+            )
+
+    def _update_handler_metrics(
+        self,
+        handler_id: str,
+        duration_ms: float,
+        success: bool,
+        topic: str,
+        error_message: str | None = None,
+    ) -> None:
+        """
+        Thread-safe update of per-handler metrics.
+
+        Atomically updates handler-specific metrics while holding the metrics
+        lock. This prevents data races during concurrent handler executions.
+
+        Args:
+            handler_id: Handler's unique identifier
+            duration_ms: Handler execution duration in milliseconds
+            success: Whether handler execution succeeded
+            topic: Topic being processed
+            error_message: Error message if execution failed
+
+        Note:
+            This method acquires _metrics_lock internally. Do not call while
+            already holding the lock to avoid deadlock.
+
+        .. versionadded:: 0.4.0
+        """
+        with self._metrics_lock:
+            # Get existing handler metrics
+            existing_handler_metrics = self._structured_metrics.handler_metrics.get(
+                handler_id
+            )
+            if existing_handler_metrics is None:
+                existing_handler_metrics = ModelHandlerMetrics(handler_id=handler_id)
+
+            # Record new execution
+            new_handler_metrics = existing_handler_metrics.record_execution(
+                duration_ms=duration_ms,
+                success=success,
+                topic=topic,
+                error_message=error_message,
+            )
+
+            # Create updated metrics dict
+            new_handler_metrics_dict = dict(self._structured_metrics.handler_metrics)
+            new_handler_metrics_dict[handler_id] = new_handler_metrics
+
+            # Atomically update structured metrics with new handler metrics
+            # This creates a new ModelDispatchMetrics instance with updated handler data
+            self._structured_metrics = ModelDispatchMetrics(
+                total_dispatches=self._structured_metrics.total_dispatches,
+                successful_dispatches=self._structured_metrics.successful_dispatches,
+                failed_dispatches=self._structured_metrics.failed_dispatches,
+                no_handler_count=self._structured_metrics.no_handler_count,
+                category_mismatch_count=self._structured_metrics.category_mismatch_count,
+                handler_execution_count=self._structured_metrics.handler_execution_count
+                + 1,
+                handler_error_count=(
+                    self._structured_metrics.handler_error_count + (0 if success else 1)
+                ),
+                routes_matched_count=self._structured_metrics.routes_matched_count,
+                total_latency_ms=self._structured_metrics.total_latency_ms,
+                min_latency_ms=self._structured_metrics.min_latency_ms,
+                max_latency_ms=self._structured_metrics.max_latency_ms,
+                latency_histogram=self._structured_metrics.latency_histogram,
+                handler_metrics=new_handler_metrics_dict,
+                category_metrics=self._structured_metrics.category_metrics,
+            )
 
     def _build_log_context(
         self,
@@ -605,22 +755,31 @@ class MessageDispatchEngine:
         # Enforce freeze contract
         if not self._frozen:
             raise ModelOnexError(
-                message="dispatch() called before freeze(). "
-                "Registration MUST complete and freeze() MUST be called before dispatch. "
-                "This is required for thread safety.",
+                message=(
+                    "dispatch() called before freeze(). "
+                    "Registration MUST complete and freeze() MUST be called before dispatch. "
+                    "This is required for thread safety. "
+                    "Call engine.freeze() after all routes and handlers are registered."
+                ),
                 error_code=EnumCoreErrorCode.INVALID_STATE,
             )
 
         # Validate inputs
         if not topic or not topic.strip():
             raise ModelOnexError(
-                message="Topic cannot be empty or whitespace.",
+                message=(
+                    "Topic cannot be empty or whitespace. "
+                    "Provide a valid topic name (e.g., 'dev.user-service.events.v1')."
+                ),
                 error_code=EnumCoreErrorCode.INVALID_PARAMETER,
             )
 
         if envelope is None:
             raise ModelOnexError(
-                message="Cannot dispatch None envelope. ModelEventEnvelope is required.",
+                message=(
+                    "Cannot dispatch None envelope. "
+                    "Provide a valid ModelEventEnvelope instance with envelope_id, correlation_id, and payload."
+                ),
                 error_code=EnumCoreErrorCode.INVALID_PARAMETER,
             )
 
@@ -645,8 +804,8 @@ class MessageDispatchEngine:
             duration_ms = (time.perf_counter() - start_time) * 1000
             self._increment_metric("total_latency_ms", duration_ms)
 
-            # Update structured metrics
-            self._structured_metrics = self._structured_metrics.record_dispatch(
+            # Update structured metrics (thread-safe)
+            self._update_structured_metrics(
                 duration_ms=duration_ms,
                 success=False,
                 category=None,
@@ -698,8 +857,8 @@ class MessageDispatchEngine:
             duration_ms = (time.perf_counter() - start_time) * 1000
             self._increment_metric("total_latency_ms", duration_ms)
 
-            # Update structured metrics
-            self._structured_metrics = self._structured_metrics.record_dispatch(
+            # Update structured metrics (thread-safe)
+            self._update_structured_metrics(
                 duration_ms=duration_ms,
                 success=False,
                 category=topic_category,
@@ -730,9 +889,12 @@ class MessageDispatchEngine:
                 started_at=started_at,
                 completed_at=datetime.now(UTC),
                 duration_ms=duration_ms,
-                error_message=f"Envelope category '{envelope_category}' does not match "
-                f"topic category '{topic_category}'. Envelope payload type: "
-                f"{type(envelope.payload).__name__}",
+                error_message=(
+                    f"Category mismatch: envelope category '{envelope_category}' does not match "
+                    f"topic category '{topic_category}'. "
+                    f"Envelope payload type: {type(envelope.payload).__name__}. "
+                    f"Ensure the envelope category matches the topic's message category."
+                ),
                 error_code="CATEGORY_MISMATCH",
             )
 
@@ -767,8 +929,8 @@ class MessageDispatchEngine:
             duration_ms = (time.perf_counter() - start_time) * 1000
             self._increment_metric("total_latency_ms", duration_ms)
 
-            # Update structured metrics
-            self._structured_metrics = self._structured_metrics.record_dispatch(
+            # Update structured metrics (thread-safe)
+            self._update_structured_metrics(
                 duration_ms=duration_ms,
                 success=False,
                 category=topic_category,
@@ -836,40 +998,12 @@ class MessageDispatchEngine:
                 handler_duration_ms = (time.perf_counter() - handler_start_time) * 1000
                 executed_handler_ids.append(handler_entry.handler_id)
 
-                # Update per-handler metrics
-                existing_handler_metrics = self._structured_metrics.handler_metrics.get(
-                    handler_entry.handler_id
-                )
-                if existing_handler_metrics is None:
-                    existing_handler_metrics = ModelHandlerMetrics(
-                        handler_id=handler_entry.handler_id
-                    )
-                new_handler_metrics = existing_handler_metrics.record_execution(
+                # Update per-handler metrics (thread-safe)
+                self._update_handler_metrics(
+                    handler_id=handler_entry.handler_id,
                     duration_ms=handler_duration_ms,
                     success=True,
                     topic=topic,
-                )
-                new_handler_metrics_dict = dict(
-                    self._structured_metrics.handler_metrics
-                )
-                new_handler_metrics_dict[handler_entry.handler_id] = new_handler_metrics
-                # Update structured metrics with new handler metrics
-                self._structured_metrics = ModelDispatchMetrics(
-                    total_dispatches=self._structured_metrics.total_dispatches,
-                    successful_dispatches=self._structured_metrics.successful_dispatches,
-                    failed_dispatches=self._structured_metrics.failed_dispatches,
-                    no_handler_count=self._structured_metrics.no_handler_count,
-                    category_mismatch_count=self._structured_metrics.category_mismatch_count,
-                    handler_execution_count=self._structured_metrics.handler_execution_count
-                    + 1,
-                    handler_error_count=self._structured_metrics.handler_error_count,
-                    routes_matched_count=self._structured_metrics.routes_matched_count,
-                    total_latency_ms=self._structured_metrics.total_latency_ms,
-                    min_latency_ms=self._structured_metrics.min_latency_ms,
-                    max_latency_ms=self._structured_metrics.max_latency_ms,
-                    latency_histogram=self._structured_metrics.latency_histogram,
-                    handler_metrics=new_handler_metrics_dict,
-                    category_metrics=self._structured_metrics.category_metrics,
                 )
 
                 # Log handler completion at DEBUG level
@@ -915,42 +1049,13 @@ class MessageDispatchEngine:
                 error_msg = f"Handler '{handler_entry.handler_id}' failed: {type(e).__name__}: {e}"
                 handler_errors.append(error_msg)
 
-                # Update per-handler metrics with error
-                existing_handler_metrics = self._structured_metrics.handler_metrics.get(
-                    handler_entry.handler_id
-                )
-                if existing_handler_metrics is None:
-                    existing_handler_metrics = ModelHandlerMetrics(
-                        handler_id=handler_entry.handler_id
-                    )
-                new_handler_metrics = existing_handler_metrics.record_execution(
+                # Update per-handler metrics with error (thread-safe)
+                self._update_handler_metrics(
+                    handler_id=handler_entry.handler_id,
                     duration_ms=handler_duration_ms,
                     success=False,
                     topic=topic,
                     error_message=str(e),
-                )
-                new_handler_metrics_dict = dict(
-                    self._structured_metrics.handler_metrics
-                )
-                new_handler_metrics_dict[handler_entry.handler_id] = new_handler_metrics
-                # Update structured metrics with new handler metrics
-                self._structured_metrics = ModelDispatchMetrics(
-                    total_dispatches=self._structured_metrics.total_dispatches,
-                    successful_dispatches=self._structured_metrics.successful_dispatches,
-                    failed_dispatches=self._structured_metrics.failed_dispatches,
-                    no_handler_count=self._structured_metrics.no_handler_count,
-                    category_mismatch_count=self._structured_metrics.category_mismatch_count,
-                    handler_execution_count=self._structured_metrics.handler_execution_count
-                    + 1,
-                    handler_error_count=self._structured_metrics.handler_error_count
-                    + 1,
-                    routes_matched_count=self._structured_metrics.routes_matched_count,
-                    total_latency_ms=self._structured_metrics.total_latency_ms,
-                    min_latency_ms=self._structured_metrics.min_latency_ms,
-                    max_latency_ms=self._structured_metrics.max_latency_ms,
-                    latency_histogram=self._structured_metrics.latency_histogram,
-                    handler_metrics=new_handler_metrics_dict,
-                    category_metrics=self._structured_metrics.category_metrics,
                 )
 
                 # Log error
@@ -1012,8 +1117,8 @@ class MessageDispatchEngine:
             status = EnumDispatchStatus.SUCCESS
             self._increment_metric("dispatch_success_count")
 
-        # Update structured metrics with final dispatch result
-        self._structured_metrics = self._structured_metrics.record_dispatch(
+        # Update structured metrics with final dispatch result (thread-safe)
+        self._update_structured_metrics(
             duration_ms=duration_ms,
             success=status == EnumDispatchStatus.SUCCESS,
             category=topic_category,
@@ -1383,9 +1488,15 @@ class MessageDispatchEngine:
             >>> for handler_id, handler_metrics in metrics.handler_metrics.items():
             ...     print(f"Handler {handler_id}: {handler_metrics.execution_count} executions")
 
+        Note:
+            Thread-safe: Returns a snapshot of metrics at the time of call.
+            Pydantic models are immutable after creation, so the returned
+            instance is safe to use across threads.
+
         .. versionadded:: 0.4.0
         """
-        return self._structured_metrics
+        with self._metrics_lock:
+            return self._structured_metrics
 
     def reset_metrics(self) -> None:
         """
@@ -1399,24 +1510,24 @@ class MessageDispatchEngine:
             >>> assert engine.get_metrics()["dispatch_count"] == 0
             >>> assert engine.get_structured_metrics().total_dispatches == 0
 
-        Warning:
-            This method is NOT thread-safe. Call only during initialization
-            or when no dispatch operations are in progress.
+        Note:
+            Thread-safe: Protected by metrics lock to prevent races during reset.
 
         .. versionadded:: 0.4.0
         """
-        self._metrics = {
-            "dispatch_count": 0,
-            "dispatch_success_count": 0,
-            "dispatch_error_count": 0,
-            "total_latency_ms": 0.0,
-            "handler_execution_count": 0,
-            "handler_error_count": 0,
-            "routes_matched_count": 0,
-            "no_handler_count": 0,
-            "category_mismatch_count": 0,
-        }
-        self._structured_metrics = ModelDispatchMetrics()
+        with self._metrics_lock:
+            self._metrics = {
+                "dispatch_count": 0,
+                "dispatch_success_count": 0,
+                "dispatch_error_count": 0,
+                "total_latency_ms": 0.0,
+                "handler_execution_count": 0,
+                "handler_error_count": 0,
+                "routes_matched_count": 0,
+                "no_handler_count": 0,
+                "category_mismatch_count": 0,
+            }
+            self._structured_metrics = ModelDispatchMetrics()
         self._logger.debug("Metrics reset to initial state")
 
     def get_handler_metrics(self, handler_id: str) -> ModelHandlerMetrics | None:
@@ -1435,9 +1546,13 @@ class MessageDispatchEngine:
             ...     print(f"Executions: {metrics.execution_count}")
             ...     print(f"Error rate: {metrics.error_rate:.1%}")
 
+        Note:
+            Thread-safe: Protected by metrics lock to prevent races during read.
+
         .. versionadded:: 0.4.0
         """
-        return self._structured_metrics.handler_metrics.get(handler_id)
+        with self._metrics_lock:
+            return self._structured_metrics.handler_metrics.get(handler_id)
 
     @property
     def route_count(self) -> int:

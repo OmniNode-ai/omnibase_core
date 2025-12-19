@@ -8,6 +8,7 @@ import pytest
 from omnibase_core.enums.enum_protocol_event_type import EnumProtocolEventType
 
 
+@pytest.mark.unit
 class TestEnumProtocolEventType:
     """Test suite for EnumProtocolEventType."""
 

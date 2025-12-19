@@ -8,6 +8,7 @@ import pytest
 from omnibase_core.enums.enum_request_field import EnumRequestField
 
 
+@pytest.mark.unit
 class TestEnumRequestField:
     """Test suite for EnumRequestField."""
 

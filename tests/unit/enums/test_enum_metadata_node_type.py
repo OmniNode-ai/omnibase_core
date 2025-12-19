@@ -17,6 +17,7 @@ from pydantic import BaseModel, ValidationError
 from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
 
 
+@pytest.mark.unit
 class TestEnumMetadataNodeType:
     """Test cases for EnumMetadataNodeType."""
 

@@ -1,3 +1,5 @@
+import pytest
+
 #!/usr/bin/env python3
 """
 Performance tests for validation scripts.
@@ -20,7 +22,6 @@ import time
 from pathlib import Path
 
 import psutil
-import pytest
 
 sys.path.insert(
     0,
@@ -67,6 +68,7 @@ def memory_monitor():
     return MemoryMonitor()
 
 
+@pytest.mark.unit
 class TestLargeFilePerformance:
     """Test performance with large files."""
 
@@ -288,6 +290,7 @@ outputs:
         assert len(errors) == 0, f"Large YAML should be valid, got errors: {errors}"
 
 
+@pytest.mark.unit
 class TestManyFilesPerformance:
     """Test performance with many files."""
 
@@ -458,6 +461,7 @@ class ModelLevel{level}Item{i}(BaseModel):
         assert peak_memory < 200, f"Peak memory usage was {peak_memory:.1f}MB"
 
 
+@pytest.mark.unit
 class TestMemoryOptimization:
     """Test memory usage optimization."""
 
@@ -529,6 +533,7 @@ class ModelMemoryTest{i:03d}(BaseModel):
             pytest.skip("Cannot create large enough file due to memory constraints")
 
 
+@pytest.mark.unit
 class TestConcurrentPerformance:
     """Test performance under concurrent access."""
 
@@ -619,6 +624,7 @@ class ModelConcurrent{i:03d}(BaseModel):
         )
 
 
+@pytest.mark.unit
 class TestScalabilityLimits:
     """Test scalability limits and boundaries."""
 
@@ -707,6 +713,7 @@ class ModelSize{size_factor}_{i:03d}(BaseModel):
 
 
 @pytest.mark.slow
+@pytest.mark.unit
 class TestExtremeCases:
     """Test extreme cases that might occur in real usage."""
 

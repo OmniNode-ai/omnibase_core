@@ -5,6 +5,8 @@ Validates CLI execution metadata model functionality including
 tag management, custom context handling, and factory methods.
 """
 
+import pytest
+
 from omnibase_core.enums.enum_context_source import EnumContextSource
 from omnibase_core.enums.enum_context_type import EnumContextType
 from omnibase_core.models.cli.model_cli_execution_context import (
@@ -15,6 +17,7 @@ from omnibase_core.models.cli.model_cli_execution_metadata import (
 )
 
 
+@pytest.mark.unit
 class TestModelCliExecutionMetadataBasic:
     """Test basic CLI execution metadata functionality."""
 
@@ -47,6 +50,7 @@ class TestModelCliExecutionMetadataBasic:
         assert metadata.custom_context["test_key"] == context
 
 
+@pytest.mark.unit
 class TestModelCliExecutionMetadataTagManagement:
     """Test tag management methods."""
 
@@ -124,6 +128,7 @@ class TestModelCliExecutionMetadataTagManagement:
         assert metadata.execution_tags == []
 
 
+@pytest.mark.unit
 class TestModelCliExecutionMetadataContextManagement:
     """Test custom context management methods."""
 
@@ -262,6 +267,7 @@ class TestModelCliExecutionMetadataContextManagement:
         assert metadata.custom_context == {}
 
 
+@pytest.mark.unit
 class TestModelCliExecutionMetadataFailureHandling:
     """Test failure reason handling."""
 
@@ -319,6 +325,7 @@ class TestModelCliExecutionMetadataFailureHandling:
         assert failure_context.description == "Execution failure reason"
 
 
+@pytest.mark.unit
 class TestModelCliExecutionMetadataFactoryMethods:
     """Test factory methods."""
 
@@ -358,6 +365,7 @@ class TestModelCliExecutionMetadataFactoryMethods:
         assert metadata.custom_context == {}
 
 
+@pytest.mark.unit
 class TestModelCliExecutionMetadataProtocols:
     """Test protocol method implementations."""
 
@@ -397,6 +405,7 @@ class TestModelCliExecutionMetadataProtocols:
         assert result is True
 
 
+@pytest.mark.unit
 class TestModelCliExecutionMetadataSerialization:
     """Test serialization and deserialization."""
 
@@ -445,6 +454,7 @@ class TestModelCliExecutionMetadataSerialization:
         assert "key1" in restored.custom_context
 
 
+@pytest.mark.unit
 class TestModelCliExecutionMetadataEdgeCases:
     """Test edge cases and boundary conditions."""
 

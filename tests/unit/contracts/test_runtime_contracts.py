@@ -1,3 +1,5 @@
+import pytest
+
 #!/usr/bin/env python3
 """
 Unit Tests for Runtime Contracts.
@@ -29,7 +31,6 @@ import warnings
 from pathlib import Path
 from types import ModuleType
 
-import pytest
 import yaml
 
 # ---------------------------------------------------------------------------

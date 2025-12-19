@@ -155,9 +155,7 @@ class PythonASTValidator(ast.NodeVisitor):
             "route_id",  # Dispatch route identifier (human-readable, not UUID)
             "target_handler_id",  # Runtime directive target handler (human-readable, not UUID)
             "matched_route_id",  # Dispatch result matched route (human-readable)
-            "registration_id",  # Handler registration ID (human-readable)
-            # TEST_FIXTURES (test helper fields)
-            "user_id",  # Test fixture field for example payloads
+            # TEST_FIXTURES (test helper fields removed - production code should use UUID)
             # TYPED_DICT_SERIALIZATION_BOUNDARY (TypedDicts for logging/monitoring/introspection)
             # See: src/omnibase_core/types/ for TypedDict definitions
             # These TypedDicts are at serialization boundaries where string versions/IDs are appropriate

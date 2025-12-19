@@ -9,6 +9,7 @@ import pytest
 from omnibase_core.enums.enum_assembly_strategy import EnumAssemblyStrategy
 
 
+@pytest.mark.unit
 class TestEnumAssemblyStrategy:
     """Test cases for EnumAssemblyStrategy enum."""
 

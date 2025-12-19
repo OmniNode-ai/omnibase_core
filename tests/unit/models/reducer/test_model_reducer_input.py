@@ -30,7 +30,6 @@ Related Models:
     - EnumStreamingMode - Streaming processing modes (BATCH, WINDOWED, REAL_TIME)
 
 Notes:
-    - All tests use pytest markers (@pytest.mark.unit)
     - Generic type parameters are tested with multiple types
     - Immutability is enforced via frozen=True in model_config
     - Thread-safe for pytest-xdist parallel execution
@@ -65,6 +64,7 @@ class SampleModel(BaseModel):
     value: int
 
 
+@pytest.mark.unit
 class TestModelReducerInputInstantiation:
     """Test ModelReducerInput instantiation with various configurations."""
 
@@ -221,6 +221,7 @@ class TestModelReducerInputInstantiation:
         assert before <= reducer_input.timestamp <= after
 
 
+@pytest.mark.unit
 class TestModelReducerInputValidation:
     """Test ModelReducerInput field validation and constraints."""
 
@@ -420,6 +421,7 @@ class TestModelReducerInputValidation:
             assert reducer_input.streaming_mode == mode
 
 
+@pytest.mark.unit
 class TestModelReducerInputSerialization:
     """Test ModelReducerInput serialization to dict and JSON."""
 
@@ -621,6 +623,7 @@ class TestModelReducerInputSerialization:
         assert restored.window_size_ms == 5000
 
 
+@pytest.mark.unit
 class TestModelReducerInputGenericTyping:
     """Test generic type parameter behavior and preservation."""
 
@@ -709,6 +712,7 @@ class TestModelReducerInputGenericTyping:
         assert reducer_input.data[1]["meta"]["count"] == 2
 
 
+@pytest.mark.unit
 class TestModelReducerInputFrozenBehavior:
     """Test frozen behavior (immutability) of ModelReducerInput."""
 
@@ -755,6 +759,7 @@ class TestModelReducerInputFrozenBehavior:
         assert "frozen" in str(exc_info.value).lower()
 
 
+@pytest.mark.unit
 class TestModelReducerInputEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -963,6 +968,7 @@ class TestModelReducerInputEdgeCases:
             assert reducer_input.streaming_mode == mode
 
 
+@pytest.mark.unit
 class TestModelReducerInputThreadSafety:
     """Test thread safety of ModelReducerInput via immutability.
 
@@ -1122,6 +1128,7 @@ class TestModelReducerInputThreadSafety:
             assert dict_result["reduction_type"] == first_dict["reduction_type"]
 
 
+@pytest.mark.unit
 class TestModelReducerInputAsyncSafe:
     """Test async-safe behavior of ModelReducerInput.
 
@@ -1262,6 +1269,7 @@ class TestModelReducerInputAsyncSafe:
             assert reduction_type == sync_type
 
 
+@pytest.mark.unit
 class TestModelReducerInputUUIDFormatPreservation:
     """Test UUID format preservation through serialization.
 

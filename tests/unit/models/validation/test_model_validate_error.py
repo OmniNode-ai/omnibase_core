@@ -7,6 +7,7 @@ This module tests the validation error models and their compatibility aliases.
 import pytest
 
 
+@pytest.mark.unit
 class TestModelValidateErrorModule:
     """Test the model_validate_error module structure and imports."""
 

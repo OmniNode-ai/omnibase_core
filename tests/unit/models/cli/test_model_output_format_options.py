@@ -17,6 +17,7 @@ from omnibase_core.models.cli.model_output_format_options import (
 from omnibase_core.models.infrastructure.model_value import ModelValue
 
 
+@pytest.mark.unit
 class TestModelOutputFormatOptionsBasics:
     """Test basic initialization and defaults."""
 
@@ -97,6 +98,7 @@ class TestModelOutputFormatOptionsBasics:
             ModelOutputFormatOptions(page_size=0)
 
 
+@pytest.mark.unit
 class TestModelOutputFormatOptionsModes:
     """Test mode configuration methods."""
 
@@ -154,6 +156,7 @@ class TestModelOutputFormatOptionsModes:
         assert options.color_enabled is False
 
 
+@pytest.mark.unit
 class TestModelOutputFormatOptionsStyles:
     """Test style configuration methods."""
 
@@ -214,6 +217,7 @@ class TestModelOutputFormatOptionsStyles:
         assert options.color_enabled is False
 
 
+@pytest.mark.unit
 class TestModelOutputFormatOptionsCustomOptions:
     """Test custom option handling."""
 
@@ -270,6 +274,7 @@ class TestModelOutputFormatOptionsCustomOptions:
         assert "opt3" in options.custom_options
 
 
+@pytest.mark.unit
 class TestModelOutputFormatOptionsStringData:
     """Test creation from string data.
 
@@ -306,6 +311,7 @@ class TestModelOutputFormatOptionsStringData:
         assert options.line_width == 80
 
 
+@pytest.mark.unit
 class TestModelOutputFormatOptionsProtocols:
     """Test protocol method implementations."""
 
@@ -372,6 +378,7 @@ class TestModelOutputFormatOptionsProtocols:
         assert result is True
 
 
+@pytest.mark.unit
 class TestModelOutputFormatOptionsEdgeCases:
     """Test edge cases and boundaries."""
 

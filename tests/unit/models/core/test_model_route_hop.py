@@ -5,6 +5,8 @@ Test suite for ModelRouteHop.
 from datetime import datetime
 from uuid import uuid4
 
+import pytest
+
 from omnibase_core.models.core.model_route_hop import ModelRouteHop
 from omnibase_core.models.core.model_route_hop_metadata import ModelRouteHopMetadata
 from omnibase_core.models.primitives.model_semver import ModelSemVer
@@ -13,6 +15,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
+@pytest.mark.unit
 class TestModelRouteHop:
     """Test ModelRouteHop functionality."""
 

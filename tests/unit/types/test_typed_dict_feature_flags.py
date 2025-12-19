@@ -4,9 +4,12 @@ Test suite for TypedDictFeatureFlags.
 
 from datetime import datetime
 
+import pytest
+
 from omnibase_core.types.typed_dict_feature_flags import TypedDictFeatureFlags
 
 
+@pytest.mark.unit
 class TestTypedDictFeatureFlags:
     """Test TypedDictFeatureFlags functionality."""
 

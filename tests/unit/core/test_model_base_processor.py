@@ -10,6 +10,7 @@ import pytest
 from omnibase_core.models.base.model_processor import ModelServiceBaseProcessor
 
 
+@pytest.mark.unit
 class TestModelServiceBaseProcessor:
     """Test abstract base processor functionality."""
 

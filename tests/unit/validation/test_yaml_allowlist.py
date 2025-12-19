@@ -48,6 +48,7 @@ def allowed_functions(allowlist_config: dict[str, Any]) -> list[str]:
     return functions
 
 
+@pytest.mark.unit
 class TestAllowlistFileExistence:
     """Test that all files in the allowlist actually exist."""
 
@@ -77,6 +78,7 @@ class TestAllowlistFileExistence:
         )
 
 
+@pytest.mark.unit
 class TestAllowlistFunctionExistence:
     """Test that all functions in the allowlist actually exist."""
 
@@ -132,6 +134,7 @@ class TestAllowlistFunctionExistence:
         )
 
 
+@pytest.mark.unit
 class TestAllowlistFunctionUsesYamlSafeLoad:
     """Test that allowed functions actually use yaml.safe_load()."""
 
@@ -214,6 +217,7 @@ class TestAllowlistFunctionUsesYamlSafeLoad:
         )
 
 
+@pytest.mark.unit
 class TestAllowlistStructure:
     """Test the structure of the allowlist file itself."""
 
@@ -277,6 +281,7 @@ class TestAllowlistStructure:
         )
 
 
+@pytest.mark.unit
 class TestAllowlistCoverage:
     """Test that the allowlist covers all necessary functions."""
 
@@ -337,6 +342,7 @@ class TestAllowlistCoverage:
         )
 
 
+@pytest.mark.unit
 class TestAllowlistMetadata:
     """Test that allowlist entries have required metadata."""
 

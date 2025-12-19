@@ -8,6 +8,7 @@ from pydantic import ValidationError
 from omnibase_core.models.container.model_service import ModelService
 
 
+@pytest.mark.unit
 class TestModelService:
     """Tests for ModelService model."""
 

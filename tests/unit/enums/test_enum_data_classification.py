@@ -18,6 +18,7 @@ from pydantic import BaseModel, ValidationError
 from omnibase_core.enums.enum_data_classification import EnumDataClassification
 
 
+@pytest.mark.unit
 class TestEnumDataClassification:
     """Test cases for EnumDataClassification."""
 

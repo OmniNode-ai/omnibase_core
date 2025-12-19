@@ -9,6 +9,7 @@ from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 from omnibase_core.models.common.model_onex_warning import ModelOnexWarning
 
 
+@pytest.mark.unit
 class TestModelOnexWarning:
     """Tests for ModelOnexWarning model."""
 

@@ -19,6 +19,7 @@ from omnibase_core.models.results.model_unified_summary_details import (
 )
 
 
+@pytest.mark.unit
 class TestModelUnifiedSummaryBasicInstantiation:
     """Test basic instantiation with required fields."""
 
@@ -68,6 +69,7 @@ class TestModelUnifiedSummaryBasicInstantiation:
         assert summary.details.key == "detail_key"
 
 
+@pytest.mark.unit
 class TestModelUnifiedSummaryFieldValidation:
     """Test field validation and constraints."""
 
@@ -137,6 +139,7 @@ class TestModelUnifiedSummaryFieldValidation:
         assert summary.failed == 0
 
 
+@pytest.mark.unit
 class TestModelUnifiedSummaryCountFields:
     """Test individual count fields."""
 
@@ -220,6 +223,7 @@ class TestModelUnifiedSummaryCountFields:
         assert summary.warnings == 3
 
 
+@pytest.mark.unit
 class TestModelUnifiedSummaryNotesField:
     """Test notes field handling."""
 
@@ -268,6 +272,7 @@ class TestModelUnifiedSummaryNotesField:
         assert summary.notes == []
 
 
+@pytest.mark.unit
 class TestModelUnifiedSummaryDetailsField:
     """Test details field integration."""
 
@@ -303,6 +308,7 @@ class TestModelUnifiedSummaryDetailsField:
         assert summary.details is None
 
 
+@pytest.mark.unit
 class TestModelUnifiedSummarySerialization:
     """Test model serialization and deserialization."""
 
@@ -368,6 +374,7 @@ class TestModelUnifiedSummarySerialization:
         assert restored.notes == original.notes
 
 
+@pytest.mark.unit
 class TestModelUnifiedSummaryComplexScenarios:
     """Test complex usage scenarios."""
 
@@ -434,6 +441,7 @@ class TestModelUnifiedSummaryComplexScenarios:
         assert summary.passed > 900000
 
 
+@pytest.mark.unit
 class TestModelUnifiedSummaryEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -495,6 +503,7 @@ class TestModelUnifiedSummaryEdgeCases:
         assert summary.notes[0] == "Single note"
 
 
+@pytest.mark.unit
 class TestModelUnifiedSummaryCalculations:
     """Test summary calculations and relationships."""
 
@@ -542,6 +551,7 @@ class TestModelUnifiedSummaryCalculations:
             assert failure_rate == 25.0
 
 
+@pytest.mark.unit
 class TestModelUnifiedSummaryTypeSafety:
     """Test type safety - comprehensive testing required."""
 

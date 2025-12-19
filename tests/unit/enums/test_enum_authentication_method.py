@@ -1,8 +1,11 @@
 """Unit tests for EnumAuthenticationMethod."""
 
+import pytest
+
 from omnibase_core.enums.enum_authentication_method import EnumAuthenticationMethod
 
 
+@pytest.mark.unit
 class TestEnumAuthenticationMethod:
     """Test suite for EnumAuthenticationMethod enumeration."""
 

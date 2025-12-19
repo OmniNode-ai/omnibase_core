@@ -8,6 +8,8 @@ and error reporting functionality.
 from unittest.mock import patch
 from uuid import uuid4
 
+import pytest
+
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
@@ -19,6 +21,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
+@pytest.mark.unit
 class TestExitWithStatus:
     """Test exit_with_status functionality."""
 
@@ -143,6 +146,7 @@ class TestExitWithStatus:
         mock_sys_exit.assert_called_once_with(0)
 
 
+@pytest.mark.unit
 class TestExitWithError:
     """Test exit_with_error functionality."""
 
@@ -241,6 +245,7 @@ class TestExitWithError:
         assert error_code is None or isinstance(error_code, str)
 
 
+@pytest.mark.unit
 class TestAdapterStaticMethods:
     """Test adapter static methods."""
 
@@ -253,6 +258,7 @@ class TestAdapterStaticMethods:
         assert isinstance(ModelCLIAdapter.__dict__["exit_with_error"], staticmethod)
 
 
+@pytest.mark.unit
 class TestAdapterIntegration:
     """Test adapter integration scenarios."""
 
@@ -335,6 +341,7 @@ class TestAdapterIntegration:
         assert error_exit_code != 0
 
 
+@pytest.mark.unit
 class TestAdapterExportedSymbols:
     """Test adapter exports correct symbols."""
 

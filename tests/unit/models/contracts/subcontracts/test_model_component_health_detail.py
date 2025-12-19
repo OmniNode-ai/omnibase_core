@@ -26,6 +26,7 @@ from omnibase_core.models.contracts.subcontracts.model_component_health_detail i
 )
 
 
+@pytest.mark.unit
 class TestModelComponentHealthDetailBasics:
     """Test basic model instantiation and defaults."""
 
@@ -93,6 +94,7 @@ class TestModelComponentHealthDetailBasics:
         assert detail.timestamp_ms is None
 
 
+@pytest.mark.unit
 class TestModelComponentHealthDetailValidation:
     """Test field validation and constraints."""
 
@@ -224,6 +226,7 @@ class TestModelComponentHealthDetailValidation:
         assert detail_false.is_critical is False
 
 
+@pytest.mark.unit
 class TestModelComponentHealthDetailEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -360,6 +363,7 @@ class TestModelComponentHealthDetailEdgeCases:
         assert detail.detail_value == multiline_value
 
 
+@pytest.mark.unit
 class TestModelComponentHealthDetailConfigDict:
     """Test ConfigDict behavior."""
 
@@ -463,6 +467,7 @@ class TestModelComponentHealthDetailConfigDict:
         assert detail.timestamp_ms == 1234567890
 
 
+@pytest.mark.unit
 class TestModelComponentHealthDetailDocumentation:
     """Test documentation and interface guarantees."""
 
@@ -498,6 +503,7 @@ class TestModelComponentHealthDetailDocumentation:
         assert "timestamp_ms" not in required_fields
 
 
+@pytest.mark.unit
 class TestModelComponentHealthDetailUseCases:
     """Test real-world use case scenarios."""
 

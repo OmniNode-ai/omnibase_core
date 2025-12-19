@@ -201,7 +201,11 @@ class ServiceRegistry:
 
         except Exception as e:
             self._failed_registrations += 1
-            msg = f"Service registration failed: {e}"
+            msg = (
+                f"Failed to register service '{interface.__name__ if hasattr(interface, '__name__') else str(interface)}'. "
+                f"Error: {e}. "
+                f"Check that the interface type is valid and metadata is properly formatted."
+            )
             emit_log_event(EnumLogLevel.ERROR, msg, {"error": str(e)})
             raise ModelOnexError(
                 message=msg,
@@ -283,8 +287,24 @@ class ServiceRegistry:
 
         except Exception as e:
             self._failed_registrations += 1
-            msg = f"Instance registration failed: {e}"
-            emit_log_event(EnumLogLevel.ERROR, msg, {"error": str(e)})
+            interface_name = (
+                interface.__name__ if hasattr(interface, "__name__") else str(interface)
+            )
+            instance_type = type(instance).__name__
+            msg = (
+                f"Failed to register instance of type '{instance_type}' for interface '{interface_name}'. "
+                f"Error: {e}. "
+                f"Verify that the instance implements the interface protocol correctly."
+            )
+            emit_log_event(
+                EnumLogLevel.ERROR,
+                msg,
+                {
+                    "error": str(e),
+                    "interface": interface_name,
+                    "instance_type": instance_type,
+                },
+            )
             raise ModelOnexError(
                 message=msg,
                 error_code=EnumCoreErrorCode.REGISTRY_RESOLUTION_FAILED,
@@ -390,7 +410,12 @@ class ServiceRegistry:
 
             # Find registrations for interface
             if interface_name not in self._interface_map:
-                msg = f"No service registered for interface: {interface_name}"
+                available_interfaces = sorted(self._interface_map.keys())
+                msg = (
+                    f"No service registered for interface '{interface_name}'. "
+                    f"Available interfaces: {', '.join(available_interfaces) if available_interfaces else 'none'}. "
+                    f"Register a service using register_service() or register_instance() before attempting resolution."
+                )
                 raise ModelOnexError(
                     message=msg,
                     error_code=EnumCoreErrorCode.REGISTRY_RESOLUTION_FAILED,
@@ -398,7 +423,11 @@ class ServiceRegistry:
 
             registration_ids = self._interface_map[interface_name]
             if not registration_ids:
-                msg = f"No active registrations for interface: {interface_name}"
+                msg = (
+                    f"No active registrations for interface '{interface_name}'. "
+                    f"The interface was previously registered but all registrations have been removed. "
+                    f"Re-register a service implementation for this interface."
+                )
                 raise ModelOnexError(
                     message=msg,
                     error_code=EnumCoreErrorCode.REGISTRY_RESOLUTION_FAILED,
@@ -436,7 +465,14 @@ class ServiceRegistry:
         except ModelOnexError:
             raise
         except Exception as e:
-            msg = f"Service resolution failed: {e}"
+            interface_name = (
+                interface.__name__ if hasattr(interface, "__name__") else str(interface)
+            )
+            msg = (
+                f"Service resolution failed for interface '{interface_name}'. "
+                f"Error: {e}. "
+                f"Check that the service is properly registered and the interface type matches the registration."
+            )
             raise ModelOnexError(
                 message=msg,
                 error_code=EnumCoreErrorCode.REGISTRY_RESOLUTION_FAILED,
@@ -464,7 +500,12 @@ class ServiceRegistry:
         """
         # Look up by name in name_map
         if name not in self._name_map:
-            msg = f"No service registered with name: {name}"
+            available_names = sorted(self._name_map.keys())
+            msg = (
+                f"No service registered with name '{name}'. "
+                f"Available service names: {', '.join(available_names) if available_names else 'none'}. "
+                f"Use the exact service name from the registration."
+            )
             raise ModelOnexError(
                 message=msg,
                 error_code=EnumCoreErrorCode.REGISTRY_RESOLUTION_FAILED,
@@ -877,7 +918,11 @@ class ServiceRegistry:
             # Create new singleton instance
             # In v1.0, we don't have factory support, so this won't work for class-based registrations
             # Only instance-based registrations will work
-            msg = f"Singleton instance not found and cannot create (registration_id: {registration_id})"
+            msg = (
+                f"Singleton instance not found and cannot create (registration_id: {registration_id}). "
+                f"In v1.0, only instance-based registrations are supported. "
+                f"Use register_instance() instead of register_service() with a factory."
+            )
             raise ModelOnexError(
                 message=msg,
                 error_code=EnumCoreErrorCode.REGISTRY_RESOLUTION_FAILED,
@@ -886,13 +931,21 @@ class ServiceRegistry:
         if lifecycle == "transient":
             # Always create new instance
             # In v1.0, we don't have factory support, so this is not implemented
-            msg = "Transient lifecycle not yet supported (requires factory support in v2.0)"
+            msg = (
+                "Transient lifecycle not yet supported (requires factory support in v2.0). "
+                "Use 'singleton' lifecycle with register_instance() or wait for v2.0 factory support."
+            )
             raise ModelOnexError(
                 message=msg,
                 error_code=EnumCoreErrorCode.METHOD_NOT_IMPLEMENTED,
             )
 
-        msg = f"Unsupported lifecycle: {lifecycle}"
+        supported_lifecycles = ["singleton", "transient"]
+        msg = (
+            f"Unsupported lifecycle: '{lifecycle}'. "
+            f"Supported lifecycles: {', '.join(supported_lifecycles)}. "
+            f"Note: 'transient' requires v2.0 factory support."
+        )
         raise ModelOnexError(
             message=msg,
             error_code=EnumCoreErrorCode.METHOD_NOT_IMPLEMENTED,

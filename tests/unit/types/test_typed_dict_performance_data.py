@@ -2,9 +2,12 @@
 Test suite for TypedDictPerformanceData.
 """
 
+import pytest
+
 from omnibase_core.types.typed_dict_performance_data import TypedDictPerformanceData
 
 
+@pytest.mark.unit
 class TestTypedDictPerformanceData:
     """Test TypedDictPerformanceData functionality."""
 

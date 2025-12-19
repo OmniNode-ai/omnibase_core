@@ -20,6 +20,7 @@ from omnibase_core.validation.reserved_enum_validator import (
 from omnibase_core.validation.workflow_validator import validate_execution_mode_string
 
 
+@pytest.mark.unit
 class TestValidateExecutionMode:
     """Test suite for validate_execution_mode function."""
 
@@ -150,6 +151,7 @@ class TestValidateExecutionMode:
         assert EnumExecutionMode.BATCH not in RESERVED_EXECUTION_MODES
 
 
+@pytest.mark.unit
 class TestReservedEnumValidatorIntegration:
     """Integration tests for reserved enum validator with workflow executor."""
 
@@ -190,6 +192,7 @@ class TestReservedEnumValidatorIntegration:
             pytest.fail("Expected ModelOnexError, got generic Exception")
 
 
+@pytest.mark.unit
 class TestErrorMessageQuality:
     """Test quality and clarity of error messages."""
 

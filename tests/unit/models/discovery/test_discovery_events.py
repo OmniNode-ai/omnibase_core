@@ -27,6 +27,7 @@ from omnibase_core.models.discovery.model_tool_discovery_response import (
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
+@pytest.mark.unit
 class TestNodeIntrospectionEvent:
     """Test NODE_INTROSPECTION_EVENT model"""
 
@@ -73,6 +74,7 @@ class TestNodeIntrospectionEvent:
         assert len(event.tags) == 2
 
 
+@pytest.mark.unit
 class TestModelNodeIntrospectionEventNodeTypeEdgeCases:
     """
     Edge case tests for node_type validation in ModelNodeIntrospectionEvent.
@@ -259,6 +261,7 @@ class TestModelNodeIntrospectionEventNodeTypeEdgeCases:
         assert event.node_type == "reducer"
 
 
+@pytest.mark.unit
 class TestToolDiscoveryRequest:
     """Test TOOL_DISCOVERY_REQUEST model"""
 
@@ -301,6 +304,7 @@ class TestToolDiscoveryRequest:
         assert request.filters.health_status == "healthy"
 
 
+@pytest.mark.unit
 class TestToolDiscoveryResponse:
     """Test TOOL_DISCOVERY_RESPONSE model"""
 
@@ -368,6 +372,7 @@ class TestToolDiscoveryResponse:
         assert not response.timeout_occurred
 
 
+@pytest.mark.unit
 class TestNodeHealthEvent:
     """Test NODE_HEALTH_EVENT model"""
 
@@ -412,6 +417,7 @@ class TestNodeHealthEvent:
         assert event.needs_attention()
 
 
+@pytest.mark.unit
 class TestNodeShutdownEvent:
     """Test NODE_SHUTDOWN_EVENT model"""
 

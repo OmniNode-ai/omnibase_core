@@ -4,6 +4,7 @@ Tests for ModelResultFactory.
 Comprehensive tests for result factory pattern including success/error builders.
 """
 
+import pytest
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.core.model_result_factory import ModelResultFactory
@@ -28,6 +29,7 @@ class MinimalResultModel(BaseModel):
     error_message: str | None = None
 
 
+@pytest.mark.unit
 class TestModelResultFactory:
     """Test suite for ModelResultFactory."""
 
@@ -269,6 +271,7 @@ class TestModelResultFactory:
         assert not hasattr(result2, "data")
 
 
+@pytest.mark.unit
 class TestResultFactoryEdgeCases:
     """Edge case tests for ModelResultFactory."""
 

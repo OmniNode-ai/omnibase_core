@@ -24,6 +24,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 DEFAULT_VERSION = ModelSemVer(major=1, minor=5, patch=0)
 
 
+@pytest.mark.unit
 class TestModelFSMStateDefinitionImmutability:
     """Test frozen model configuration for immutability."""
 
@@ -73,6 +74,7 @@ class TestModelFSMStateDefinitionImmutability:
             state.is_recoverable = False  # type: ignore[misc]
 
 
+@pytest.mark.unit
 class TestModelFSMStateDefinitionTerminalRecoverableValidation:
     """Test validation rules for terminal and recoverable state combinations."""
 
@@ -163,6 +165,7 @@ class TestModelFSMStateDefinitionTerminalRecoverableValidation:
         assert state.is_recoverable is False
 
 
+@pytest.mark.unit
 class TestModelFSMStateDefinitionRequiredFields:
     """Test required field validation."""
 
@@ -235,6 +238,7 @@ class TestModelFSMStateDefinitionRequiredFields:
             )
 
 
+@pytest.mark.unit
 class TestModelFSMStateDefinitionDefaultValues:
     """Test default field values."""
 
@@ -258,6 +262,7 @@ class TestModelFSMStateDefinitionDefaultValues:
         assert state.validation_rules == []
 
 
+@pytest.mark.unit
 class TestModelFSMStateDefinitionOptionalFields:
     """Test optional field assignment."""
 
@@ -318,6 +323,7 @@ class TestModelFSMStateDefinitionOptionalFields:
             )
 
 
+@pytest.mark.unit
 class TestModelFSMStateDefinitionEdgeCases:
     """Test edge cases and boundary conditions."""
 

@@ -23,6 +23,7 @@ from omnibase_core.models.workflow import ModelWorkflowStateSnapshot
 pytestmark = pytest.mark.unit
 
 
+@pytest.mark.unit
 class TestSanitizeContextForLoggingEmailRedaction:
     """Test email address redaction in sanitize_context_for_logging."""
 
@@ -58,6 +59,7 @@ class TestSanitizeContextForLoggingEmailRedaction:
         assert result["status"] == "active"
 
 
+@pytest.mark.unit
 class TestSanitizeContextForLoggingPhoneRedaction:
     """Test phone number redaction in sanitize_context_for_logging."""
 
@@ -98,6 +100,7 @@ class TestSanitizeContextForLoggingPhoneRedaction:
         assert result["phone"] == "[PHONE_REDACTED]"
 
 
+@pytest.mark.unit
 class TestSanitizeContextForLoggingSSNRedaction:
     """Test SSN redaction in sanitize_context_for_logging."""
 
@@ -120,6 +123,7 @@ class TestSanitizeContextForLoggingSSNRedaction:
         assert result["ssn"] == "[SSN_REDACTED]"
 
 
+@pytest.mark.unit
 class TestSanitizeContextForLoggingCreditCardRedaction:
     """Test credit card number redaction in sanitize_context_for_logging."""
 
@@ -142,6 +146,7 @@ class TestSanitizeContextForLoggingCreditCardRedaction:
         assert result["card"] == "[CREDIT_CARD_REDACTED]"
 
 
+@pytest.mark.unit
 class TestSanitizeContextForLoggingIPRedaction:
     """Test IP address redaction in sanitize_context_for_logging."""
 
@@ -158,6 +163,7 @@ class TestSanitizeContextForLoggingIPRedaction:
         assert result["log"] == "Connection from [IP_REDACTED] established"
 
 
+@pytest.mark.unit
 class TestSanitizeContextForLoggingNestedStructures:
     """Test nested dict/list sanitization in sanitize_context_for_logging."""
 
@@ -199,6 +205,7 @@ class TestSanitizeContextForLoggingNestedStructures:
         assert isinstance(result["emails"], tuple)
 
 
+@pytest.mark.unit
 class TestSanitizeContextForLoggingKeyRedaction:
     """Test key-based redaction in sanitize_context_for_logging."""
 
@@ -245,6 +252,7 @@ class TestSanitizeContextForLoggingKeyRedaction:
         assert result["config"]["url"] == "https://example.com"
 
 
+@pytest.mark.unit
 class TestSanitizeContextForLoggingCustomPatterns:
     """Test custom pattern support in sanitize_context_for_logging."""
 
@@ -268,6 +276,7 @@ class TestSanitizeContextForLoggingCustomPatterns:
         assert "[TOKEN_REDACTED]" in result["data"]
 
 
+@pytest.mark.unit
 class TestSanitizeContextForLoggingTypePreservation:
     """Test that non-string types are preserved in sanitize_context_for_logging."""
 
@@ -313,6 +322,7 @@ class TestSanitizeContextForLoggingTypePreservation:
         assert result["created_at"] == test_dt
 
 
+@pytest.mark.unit
 class TestSanitizeContextForLoggingOriginalPreservation:
     """Test that original context is not modified by sanitize_context_for_logging."""
 
@@ -339,6 +349,7 @@ class TestSanitizeContextForLoggingOriginalPreservation:
         assert result["nested"]["phone"] == "[PHONE_REDACTED]"
 
 
+@pytest.mark.unit
 class TestSanitizeContextForLoggingEdgeCases:
     """Test edge cases for sanitize_context_for_logging."""
 
@@ -391,6 +402,7 @@ class TestSanitizeContextForLoggingEdgeCases:
         assert result["email"] == "[EMAIL_REDACTED]"
 
 
+@pytest.mark.unit
 class TestSanitizeContextForLoggingIPv6Redaction:
     """Test IPv6 address redaction in sanitize_context_for_logging."""
 
@@ -425,6 +437,7 @@ class TestSanitizeContextForLoggingIPv6Redaction:
         assert result["ip"] == "[IPV6_REDACTED]"
 
 
+@pytest.mark.unit
 class TestSanitizeContextForLoggingAPIKeyRedaction:
     """Test API key redaction in sanitize_context_for_logging.
 
@@ -466,6 +479,7 @@ class TestSanitizeContextForLoggingAPIKeyRedaction:
         assert result["key"] == "[API_KEY_REDACTED]"
 
 
+@pytest.mark.unit
 class TestSanitizeContextForLoggingUUIDRedaction:
     """Test UUID/GUID redaction in sanitize_context_for_logging.
 
@@ -521,6 +535,7 @@ class TestSanitizeContextForLoggingUUIDRedaction:
         assert result["workflow_id"] == test_uuid
 
 
+@pytest.mark.unit
 class TestSanitizeContextForLoggingGitHubFinegrainedPAT:
     """Test GitHub fine-grained PAT redaction in sanitize_context_for_logging."""
 
@@ -534,6 +549,7 @@ class TestSanitizeContextForLoggingGitHubFinegrainedPAT:
         assert result["key"] == "[API_KEY_REDACTED]"
 
 
+@pytest.mark.unit
 class TestSanitizeContextForLoggingGenericAPIKey:
     """Test generic API key redaction in sanitize_context_for_logging."""
 
@@ -552,6 +568,7 @@ class TestSanitizeContextForLoggingGenericAPIKey:
         assert result["key"] == "[API_KEY_REDACTED]"
 
 
+@pytest.mark.unit
 class TestValidateNoPII:
     """Test the validate_no_pii() class method for PII detection."""
 

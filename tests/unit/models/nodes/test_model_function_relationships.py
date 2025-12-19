@@ -20,6 +20,7 @@ from omnibase_core.models.node_metadata.model_function_relationships import (
 )
 
 
+@pytest.mark.unit
 class TestModelFunctionRelationships:
     """Test cases for ModelFunctionRelationships."""
 

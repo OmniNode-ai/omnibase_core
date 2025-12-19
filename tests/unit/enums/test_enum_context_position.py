@@ -9,6 +9,7 @@ import pytest
 from omnibase_core.enums.enum_context_position import EnumContextPosition
 
 
+@pytest.mark.unit
 class TestEnumContextPosition:
     """Test cases for EnumContextPosition enum."""
 

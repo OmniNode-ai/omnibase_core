@@ -1,3 +1,5 @@
+import pytest
+
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2025 OmniNode Team
 """
@@ -24,7 +26,6 @@ Timeout Protection:
 import json
 from uuid import UUID, uuid4
 
-import pytest
 from pydantic import BaseModel, ValidationError
 
 from omnibase_core.models.intents import ModelRegistrationRecordBase
@@ -133,6 +134,7 @@ def sample_failed_outcome(
 
 
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestModelRegistrationPayload:
     """Tests for ModelRegistrationPayload."""
 
@@ -362,6 +364,7 @@ class TestModelRegistrationPayload:
 
 
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestModelDualRegistrationOutcome:
     """Tests for ModelDualRegistrationOutcome."""
 
@@ -482,6 +485,7 @@ class TestModelDualRegistrationOutcome:
 
 
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestSerializationRoundtrip:
     """Tests for JSON serialization and round-trip."""
 
@@ -589,6 +593,7 @@ class TestSerializationRoundtrip:
 
 
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestONEXPatterns:
     """Tests for ONEX-specific patterns and configurations."""
 
@@ -681,6 +686,7 @@ class TestONEXPatterns:
 
 
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestStatusConsistencyValidation:
     """Tests for status consistency validator in ModelDualRegistrationOutcome.
 
@@ -880,6 +886,7 @@ class TestStatusConsistencyValidation:
 
 
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestEdgeCases:
     """Tests for edge cases and boundary conditions."""
 

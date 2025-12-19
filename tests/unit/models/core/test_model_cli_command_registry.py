@@ -27,6 +27,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
+@pytest.mark.unit
 class TestModelCliCommandRegistryCreation:
     """Test command registry initialization and basic properties."""
 
@@ -79,6 +80,7 @@ class TestModelCliCommandRegistryCreation:
         )
 
 
+@pytest.mark.unit
 class TestCommandRegistration:
     """Test command registration functionality."""
 
@@ -195,6 +197,7 @@ class TestCommandRegistration:
         )
 
 
+@pytest.mark.unit
 class TestCommandRetrieval:
     """Test command retrieval functionality."""
 
@@ -404,6 +407,7 @@ class TestCommandRetrieval:
         )
 
 
+@pytest.mark.unit
 class TestCommandDiscovery:
     """Test command discovery from contract files."""
 
@@ -599,6 +603,7 @@ cli_interface:
         assert command is None
 
 
+@pytest.mark.unit
 class TestRegistryClear:
     """Test registry clearing functionality."""
 
@@ -638,6 +643,7 @@ class TestRegistryClear:
 
 
 @pytest.mark.serial
+@pytest.mark.unit
 class TestGlobalRegistry:
     """Test global registry singleton pattern.
 

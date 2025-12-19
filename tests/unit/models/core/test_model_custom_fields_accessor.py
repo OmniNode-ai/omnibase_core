@@ -6,6 +6,7 @@ Tests the specialized accessor for managing custom fields with automatic initial
 
 from typing import Any
 
+import pytest
 from pydantic import Field
 
 from omnibase_core.models.core import ModelCustomFieldsAccessor
@@ -21,6 +22,7 @@ class SampleCustomFieldsModel(ModelCustomFieldsAccessor):
     custom_fields: dict[str, Any] | None = Field(default=None)
 
 
+@pytest.mark.unit
 class TestModelCustomFieldsAccessor:
     """Test cases for ModelCustomFieldsAccessor."""
 

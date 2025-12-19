@@ -20,6 +20,7 @@ from omnibase_core.models.node_metadata.model_node_feature_flags import (
 )
 
 
+@pytest.mark.unit
 class TestModelNodeFeatureFlags:
     """Test cases for ModelNodeFeatureFlags."""
 
@@ -247,6 +248,7 @@ class TestModelNodeFeatureFlags:
         assert flags.is_debug_mode() is True
 
 
+@pytest.mark.unit
 class TestModelNodeFeatureFlagsProtocols:
     """Test protocol implementations."""
 
@@ -299,6 +301,7 @@ class TestModelNodeFeatureFlagsProtocols:
         assert flags.validate_instance() is True
 
 
+@pytest.mark.unit
 class TestModelNodeFeatureFlagsEdgeCases:
     """Test edge cases and error scenarios."""
 

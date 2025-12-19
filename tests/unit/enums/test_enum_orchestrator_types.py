@@ -20,6 +20,7 @@ from omnibase_core.enums.enum_orchestrator_types import (
 )
 
 
+@pytest.mark.unit
 class TestEnumWorkflowState:
     """Test cases for EnumWorkflowState enum."""
 
@@ -128,6 +129,7 @@ class TestEnumWorkflowState:
         assert EnumWorkflowState.CANCELLED.name == "CANCELLED"
 
 
+@pytest.mark.unit
 class TestEnumExecutionMode:
     """Test cases for EnumExecutionMode enum."""
 
@@ -225,6 +227,7 @@ class TestEnumExecutionMode:
         assert EnumExecutionMode.STREAMING.name == "STREAMING"
 
 
+@pytest.mark.unit
 class TestEnumActionType:
     """Test cases for EnumActionType enum."""
 
@@ -335,6 +338,7 @@ class TestEnumActionType:
         assert EnumActionType.CUSTOM not in core_action_types
 
 
+@pytest.mark.unit
 class TestEnumBranchCondition:
     """Test cases for EnumBranchCondition enum."""
 
@@ -458,6 +462,7 @@ class TestEnumBranchCondition:
         assert len(outcome_conditions) == 3
 
 
+@pytest.mark.unit
 class TestEnumOrchestratorTypesIntegration:
     """Integration tests for orchestrator type enums."""
 

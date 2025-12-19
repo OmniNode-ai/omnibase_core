@@ -22,6 +22,7 @@ import pytest
 import omnibase_core.nodes as nodes
 
 
+@pytest.mark.unit
 class TestNodesAPISnapshot:
     """Snapshot tests for nodes module public API.
 
@@ -31,7 +32,6 @@ class TestNodesAPISnapshot:
     alerting developers to potential breaking changes.
     """
 
-    @pytest.mark.unit
     def test_nodes_all_defined(self) -> None:
         """Test that __all__ is defined in the nodes module.
 
@@ -42,7 +42,6 @@ class TestNodesAPISnapshot:
         assert isinstance(nodes.__all__, list), "__all__ must be a list"
         assert len(nodes.__all__) > 0, "__all__ must not be empty"
 
-    @pytest.mark.unit
     def test_nodes_exports_snapshot(self) -> None:
         """Verify public API exports match pre-refactor snapshot.
 
@@ -103,7 +102,6 @@ class TestNodesAPISnapshot:
             f"Expected: {sorted(expected_exports)}, Got: {sorted(actual_exports)}"
         )
 
-    @pytest.mark.unit
     def test_nodes_exports_count(self) -> None:
         """Verify the expected number of exports.
 
@@ -129,7 +127,6 @@ class TestNodesAPISnapshot:
             f"Review changes and update snapshot if intentional."
         )
 
-    @pytest.mark.unit
     def test_nodes_exports_accessible(self) -> None:
         """Verify all exports are actually accessible via getattr.
 
@@ -144,7 +141,6 @@ class TestNodesAPISnapshot:
             obj = getattr(nodes, name)
             assert obj is not None, f"Export '{name}' is None"
 
-    @pytest.mark.unit
     def test_nodes_no_private_exports(self) -> None:
         """Verify no private modules or attributes are exposed in __all__.
 
@@ -157,13 +153,13 @@ class TestNodesAPISnapshot:
             )
 
 
+@pytest.mark.unit
 class TestNodesNodeClassesSnapshot:
     """Snapshot tests for node class exports.
 
     These tests verify the four core node types are exported correctly.
     """
 
-    @pytest.mark.unit
     def test_node_classes_snapshot(self) -> None:
         """Verify all node classes are exported."""
         expected_node_classes = {
@@ -180,7 +176,6 @@ class TestNodesNodeClassesSnapshot:
             f"Missing node classes: {expected_node_classes - node_classes_in_exports}"
         )
 
-    @pytest.mark.unit
     def test_node_classes_are_types(self) -> None:
         """Verify node exports are actual class types."""
         node_names = ["NodeCompute", "NodeEffect", "NodeOrchestrator", "NodeReducer"]
@@ -189,7 +184,6 @@ class TestNodesNodeClassesSnapshot:
             obj = getattr(nodes, name)
             assert isinstance(obj, type), f"{name} should be a class, got {type(obj)}"
 
-    @pytest.mark.unit
     def test_node_classes_importable_directly(self) -> None:
         """Verify node classes can be imported directly from nodes module."""
         from omnibase_core.nodes import (
@@ -205,13 +199,13 @@ class TestNodesNodeClassesSnapshot:
         assert NodeReducer is not None
 
 
+@pytest.mark.unit
 class TestNodesModelExportsSnapshot:
     """Snapshot tests for model exports.
 
     These tests verify input/output models for all node types.
     """
 
-    @pytest.mark.unit
     def test_model_classes_snapshot(self) -> None:
         """Verify all model classes are exported."""
         expected_models = {
@@ -237,7 +231,6 @@ class TestNodesModelExportsSnapshot:
             f"Missing models: {expected_models - models_in_exports}"
         )
 
-    @pytest.mark.unit
     def test_model_classes_are_types(self) -> None:
         """Verify model exports are actual class types."""
         model_names = [
@@ -256,7 +249,6 @@ class TestNodesModelExportsSnapshot:
             obj = getattr(nodes, name)
             assert isinstance(obj, type), f"{name} should be a class, got {type(obj)}"
 
-    @pytest.mark.unit
     def test_model_classes_importable_directly(self) -> None:
         """Verify model classes can be imported directly from nodes module."""
         from omnibase_core.nodes import (
@@ -282,13 +274,13 @@ class TestNodesModelExportsSnapshot:
         assert ModelReducerOutput is not None
 
 
+@pytest.mark.unit
 class TestNodesEnumExportsSnapshot:
     """Snapshot tests for enum exports.
 
     These tests verify orchestrator and reducer enums are exported.
     """
 
-    @pytest.mark.unit
     def test_enum_classes_snapshot(self) -> None:
         """Verify all enum classes are exported."""
         expected_enums = {
@@ -310,7 +302,6 @@ class TestNodesEnumExportsSnapshot:
             f"Missing enums: {expected_enums - enums_in_exports}"
         )
 
-    @pytest.mark.unit
     def test_enum_classes_are_enum_types(self) -> None:
         """Verify enum exports have __members__ attribute (enum behavior)."""
         enum_names = [
@@ -329,7 +320,6 @@ class TestNodesEnumExportsSnapshot:
                 f"{name} should be an enum (have __members__), got {type(obj)}"
             )
 
-    @pytest.mark.unit
     def test_enum_classes_importable_directly(self) -> None:
         """Verify enum classes can be imported directly from nodes module."""
         from omnibase_core.nodes import (
@@ -351,6 +341,7 @@ class TestNodesEnumExportsSnapshot:
         assert EnumStreamingMode is not None
 
 
+@pytest.mark.unit
 class TestNodesInternalNotExposed:
     """Tests to verify internal implementation details are NOT exposed.
 
@@ -358,7 +349,6 @@ class TestNodesInternalNotExposed:
     internal and should NOT be exported.
     """
 
-    @pytest.mark.unit
     def test_internal_models_not_exported(self) -> None:
         """Verify internal models are NOT in __all__.
 
@@ -388,16 +378,15 @@ class TestNodesInternalNotExposed:
         )
 
 
+@pytest.mark.unit
 class TestNodesModuleDocumentation:
     """Tests for module documentation presence."""
 
-    @pytest.mark.unit
     def test_nodes_has_docstring(self) -> None:
         """Test that nodes module has a docstring."""
         assert nodes.__doc__ is not None, "nodes module must have a docstring"
         assert len(nodes.__doc__) > 0, "nodes module docstring must not be empty"
 
-    @pytest.mark.unit
     def test_nodes_docstring_mentions_version(self) -> None:
         """Test that docstring includes version information."""
         docstring = nodes.__doc__ or ""
@@ -412,7 +401,6 @@ class TestNodesModuleDocumentation:
             "nodes module docstring should mention version for stability guarantee"
         )
 
-    @pytest.mark.unit
     def test_nodes_docstring_mentions_stability(self) -> None:
         """Test that docstring includes stability guarantee."""
         docstring = nodes.__doc__ or ""

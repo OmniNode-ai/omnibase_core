@@ -24,6 +24,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
+@pytest.mark.unit
 class TestStandardErrorHandling:
     """Test standard_error_handling decorator."""
 
@@ -160,6 +161,7 @@ class TestStandardErrorHandling:
         assert result == {"a": 1, "b": 2, "c": 3}
 
 
+@pytest.mark.unit
 class TestValidationErrorHandling:
     """Test validation_error_handling decorator."""
 
@@ -258,6 +260,7 @@ class TestValidationErrorHandling:
             validate_email("invalid", strict=True)
 
 
+@pytest.mark.unit
 class TestIOErrorHandling:
     """Test io_error_handling decorator."""
 
@@ -356,6 +359,7 @@ class TestIOErrorHandling:
         assert "Database connection initialization failed" in exc_info.value.message
 
 
+@pytest.mark.unit
 class TestDecoratorStacking:
     """Test decorator composition and stacking."""
 
@@ -391,6 +395,7 @@ class TestDecoratorStacking:
         assert "Inner layer failed" in exc_info.value.message
 
 
+@pytest.mark.unit
 class TestErrorContextPreservation:
     """Test that error context is properly preserved."""
 
@@ -428,6 +433,7 @@ class TestErrorContextPreservation:
         assert "Field 'email' is required" in exc_info.value.message
 
 
+@pytest.mark.unit
 class TestEdgeCases:
     """Test edge cases and boundary conditions."""
 

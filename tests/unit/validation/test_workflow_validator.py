@@ -49,10 +49,10 @@ def create_step(
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestWorkflowValidatorTopologicalSort:
     """Tests for Kahn's algorithm topological sorting."""
 
-    @pytest.mark.unit
     def test_empty_workflow_returns_empty_order(self) -> None:
         """Test that an empty workflow returns an empty topological order."""
         validator = WorkflowValidator()
@@ -62,7 +62,6 @@ class TestWorkflowValidatorTopologicalSort:
 
         assert result == []
 
-    @pytest.mark.unit
     def test_single_step_workflow_returns_single_step(self) -> None:
         """Test that a single step workflow returns that step."""
         validator = WorkflowValidator()
@@ -74,7 +73,6 @@ class TestWorkflowValidatorTopologicalSort:
         assert len(result) == 1
         assert result[0] == step.step_id
 
-    @pytest.mark.unit
     def test_multiple_independent_steps_returns_all_steps(self) -> None:
         """Test that multiple independent steps (no dependencies) are all returned."""
         validator = WorkflowValidator()
@@ -89,7 +87,6 @@ class TestWorkflowValidatorTopologicalSort:
         assert len(result) == 3
         assert set(result) == {step_a.step_id, step_b.step_id, step_c.step_id}
 
-    @pytest.mark.unit
     def test_linear_chain_returns_correct_order(self) -> None:
         """Test linear chain dependency (A -> B -> C) returns correct topological order."""
         validator = WorkflowValidator()
@@ -111,7 +108,6 @@ class TestWorkflowValidatorTopologicalSort:
         assert result.index(step_a_id) < result.index(step_b_id)
         assert result.index(step_b_id) < result.index(step_c_id)
 
-    @pytest.mark.unit
     def test_diamond_pattern_returns_valid_order(self) -> None:
         """
         Test diamond dependency pattern returns valid topological order.
@@ -151,7 +147,6 @@ class TestWorkflowValidatorTopologicalSort:
         assert result.index(step_b_id) < result.index(step_d_id)
         assert result.index(step_c_id) < result.index(step_d_id)
 
-    @pytest.mark.unit
     def test_complex_dag_returns_valid_order(self) -> None:
         """
         Test complex DAG with multiple entry and exit points.
@@ -204,10 +199,10 @@ class TestWorkflowValidatorTopologicalSort:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestWorkflowValidatorCycleDetection:
     """Tests for cycle detection with step name reporting."""
 
-    @pytest.mark.unit
     def test_simple_cycle_detected(self) -> None:
         """Test simple cycle (A -> B -> A) is detected."""
         validator = WorkflowValidator()
@@ -223,7 +218,6 @@ class TestWorkflowValidatorCycleDetection:
 
         assert result.has_cycle is True
 
-    @pytest.mark.unit
     def test_simple_cycle_reports_step_names(self) -> None:
         """
         CRITICAL: Test simple cycle reports step NAMES (not just IDs).
@@ -246,7 +240,6 @@ class TestWorkflowValidatorCycleDetection:
         assert "process_data" in result.cycle_description
         assert "validate_data" in result.cycle_description
 
-    @pytest.mark.unit
     def test_multi_step_cycle_detected(self) -> None:
         """Test multi-step cycle (A -> B -> C -> A) is detected."""
         validator = WorkflowValidator()
@@ -264,7 +257,6 @@ class TestWorkflowValidatorCycleDetection:
 
         assert result.has_cycle is True
 
-    @pytest.mark.unit
     def test_multi_step_cycle_reports_all_step_names(self) -> None:
         """Test multi-step cycle reports all involved step names."""
         validator = WorkflowValidator()
@@ -288,7 +280,6 @@ class TestWorkflowValidatorCycleDetection:
         assert "transform_data" in result.cycle_description
         assert "store_data" in result.cycle_description
 
-    @pytest.mark.unit
     def test_self_reference_cycle_detected(self) -> None:
         """Test self-reference cycle (A -> A) is detected."""
         validator = WorkflowValidator()
@@ -302,7 +293,6 @@ class TestWorkflowValidatorCycleDetection:
         assert result.has_cycle is True
         assert "self_loop" in result.cycle_description
 
-    @pytest.mark.unit
     def test_no_cycle_in_valid_dag(self) -> None:
         """Test that valid DAG without cycles passes detection."""
         validator = WorkflowValidator()
@@ -321,7 +311,6 @@ class TestWorkflowValidatorCycleDetection:
         assert result.has_cycle is False
         assert result.cycle_description == ""
 
-    @pytest.mark.unit
     def test_cycle_in_subgraph_detected(self) -> None:
         """Test cycle in subgraph is detected even with valid portions."""
         validator = WorkflowValidator()
@@ -350,10 +339,10 @@ class TestWorkflowValidatorCycleDetection:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestWorkflowValidatorDependencyValidation:
     """Tests for dependency existence validation."""
 
-    @pytest.mark.unit
     def test_missing_dependency_detected(self) -> None:
         """Test that referencing non-existent step_id is detected."""
         validator = WorkflowValidator()
@@ -368,7 +357,6 @@ class TestWorkflowValidatorDependencyValidation:
         assert len(result.missing_dependencies) == 1
         assert non_existent_id in result.missing_dependencies
 
-    @pytest.mark.unit
     def test_multiple_missing_dependencies_detected(self) -> None:
         """Test that multiple missing dependencies are all reported."""
         validator = WorkflowValidator()
@@ -389,7 +377,6 @@ class TestWorkflowValidatorDependencyValidation:
         assert missing_id_2 in result.missing_dependencies
         assert missing_id_3 in result.missing_dependencies
 
-    @pytest.mark.unit
     def test_all_dependencies_exist_passes(self) -> None:
         """Test that valid dependencies pass validation."""
         validator = WorkflowValidator()
@@ -406,7 +393,6 @@ class TestWorkflowValidatorDependencyValidation:
         assert result.is_valid
         assert len(result.missing_dependencies) == 0
 
-    @pytest.mark.unit
     def test_empty_workflow_dependencies_valid(self) -> None:
         """Test that empty workflow has valid dependencies."""
         validator = WorkflowValidator()
@@ -417,7 +403,6 @@ class TestWorkflowValidatorDependencyValidation:
         assert result.is_valid
         assert len(result.missing_dependencies) == 0
 
-    @pytest.mark.unit
     def test_missing_dependency_reports_step_name(self) -> None:
         """Test that missing dependency error includes the step name that has the issue."""
         validator = WorkflowValidator()
@@ -438,10 +423,10 @@ class TestWorkflowValidatorDependencyValidation:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestWorkflowValidatorIsolatedSteps:
     """Tests for isolated step detection."""
 
-    @pytest.mark.unit
     def test_isolated_step_detected(self) -> None:
         """
         Test isolated step detection.
@@ -467,7 +452,6 @@ class TestWorkflowValidatorIsolatedSteps:
         assert len(result.isolated_steps) == 1
         assert result.isolated_steps[0] == step_isolated.step_id
 
-    @pytest.mark.unit
     def test_step_with_only_incoming_edges_not_isolated(self) -> None:
         """Test that a step with only incoming edges (endpoint) is NOT isolated."""
         validator = WorkflowValidator()
@@ -487,7 +471,6 @@ class TestWorkflowValidatorIsolatedSteps:
         # step_b has incoming edges, so it's not isolated
         assert step_b_id not in result.isolated_steps
 
-    @pytest.mark.unit
     def test_step_with_only_outgoing_edges_not_isolated(self) -> None:
         """Test that a step with only outgoing edges (start point) is NOT isolated."""
         validator = WorkflowValidator()
@@ -507,7 +490,6 @@ class TestWorkflowValidatorIsolatedSteps:
         # step_a has outgoing edges (step_b depends on it), so it's not isolated
         assert step_a_id not in result.isolated_steps
 
-    @pytest.mark.unit
     def test_single_step_workflow_not_isolated(self) -> None:
         """Test that a single-step workflow is not considered isolated."""
         validator = WorkflowValidator()
@@ -520,7 +502,6 @@ class TestWorkflowValidatorIsolatedSteps:
         # Single step workflows are exempt from isolation detection
         assert len(result.isolated_steps) == 0
 
-    @pytest.mark.unit
     def test_multiple_isolated_steps_detected(self) -> None:
         """Test multiple isolated steps are all detected."""
         validator = WorkflowValidator()
@@ -543,7 +524,6 @@ class TestWorkflowValidatorIsolatedSteps:
         assert isolated_1.step_id in result.isolated_steps
         assert isolated_2.step_id in result.isolated_steps
 
-    @pytest.mark.unit
     def test_empty_workflow_no_isolated_steps(self) -> None:
         """Test that empty workflow has no isolated steps."""
         validator = WorkflowValidator()
@@ -553,7 +533,6 @@ class TestWorkflowValidatorIsolatedSteps:
 
         assert len(result.isolated_steps) == 0
 
-    @pytest.mark.unit
     def test_isolated_step_reports_step_name(self) -> None:
         """Test that isolated step detection includes step names."""
         validator = WorkflowValidator()
@@ -580,10 +559,10 @@ class TestWorkflowValidatorIsolatedSteps:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestWorkflowValidatorUniqueNames:
     """Tests for unique step name validation."""
 
-    @pytest.mark.unit
     def test_duplicate_step_names_detected(self) -> None:
         """Test that duplicate step names are detected."""
         validator = WorkflowValidator()
@@ -597,7 +576,6 @@ class TestWorkflowValidatorUniqueNames:
         assert not result.is_valid
         assert "duplicate_name" in result.duplicate_names
 
-    @pytest.mark.unit
     def test_unique_step_names_pass(self) -> None:
         """Test that unique step names pass validation."""
         validator = WorkflowValidator()
@@ -612,7 +590,6 @@ class TestWorkflowValidatorUniqueNames:
         assert result.is_valid
         assert len(result.duplicate_names) == 0
 
-    @pytest.mark.unit
     def test_empty_workflow_unique_names_valid(self) -> None:
         """Test that empty workflow has valid unique names."""
         validator = WorkflowValidator()
@@ -623,7 +600,6 @@ class TestWorkflowValidatorUniqueNames:
         assert result.is_valid
         assert len(result.duplicate_names) == 0
 
-    @pytest.mark.unit
     def test_multiple_duplicate_names_all_reported(self) -> None:
         """Test that multiple sets of duplicates are all reported."""
         validator = WorkflowValidator()
@@ -642,7 +618,6 @@ class TestWorkflowValidatorUniqueNames:
         assert "name_b" in result.duplicate_names
         assert "unique_name" not in result.duplicate_names
 
-    @pytest.mark.unit
     def test_triple_duplicate_names_detected(self) -> None:
         """Test that three steps with same name are detected."""
         validator = WorkflowValidator()
@@ -663,10 +638,10 @@ class TestWorkflowValidatorUniqueNames:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestWorkflowValidatorIntegration:
     """Integration tests for complete workflow validation."""
 
-    @pytest.mark.unit
     def test_valid_dag_validation_returns_success_with_correct_topology(self) -> None:
         """
         Test that valid DAG passes all validation checks.
@@ -703,7 +678,6 @@ class TestWorkflowValidatorIntegration:
             step_a_id
         ) < result.topological_order.index(step_b_id)
 
-    @pytest.mark.unit
     def test_valid_workflow_passes_all_checks(self) -> None:
         """Test that a valid workflow passes all validation checks."""
         validator = WorkflowValidator()
@@ -726,7 +700,6 @@ class TestWorkflowValidatorIntegration:
         assert len(result.duplicate_names) == 0
         assert len(result.topological_order) == 3
 
-    @pytest.mark.unit
     def test_workflow_with_cycle_fails(self) -> None:
         """Test that workflow with cycle fails validation."""
         validator = WorkflowValidator()
@@ -744,7 +717,6 @@ class TestWorkflowValidatorIntegration:
         assert result.has_cycles
         assert len(result.errors) > 0
 
-    @pytest.mark.unit
     def test_workflow_with_missing_dependency_fails(self) -> None:
         """Test that workflow with missing dependency fails validation."""
         validator = WorkflowValidator()
@@ -759,7 +731,6 @@ class TestWorkflowValidatorIntegration:
         assert len(result.missing_dependencies) > 0
         assert len(result.errors) > 0
 
-    @pytest.mark.unit
     def test_workflow_with_duplicate_names_fails(self) -> None:
         """Test that workflow with duplicate names fails validation."""
         validator = WorkflowValidator()
@@ -774,7 +745,6 @@ class TestWorkflowValidatorIntegration:
         assert len(result.duplicate_names) > 0
         assert len(result.errors) > 0
 
-    @pytest.mark.unit
     def test_malformed_workflow_reports_all_validation_issues(self) -> None:
         """
         Test workflow with multiple validation issues reports all of them.
@@ -828,7 +798,6 @@ class TestWorkflowValidatorIntegration:
         assert len(result.isolated_steps) > 0
         assert len(result.warnings) > 0
 
-    @pytest.mark.unit
     def test_validation_result_contains_topological_order_for_valid_dag(self) -> None:
         """Test that valid DAG validation result contains topological order."""
         validator = WorkflowValidator()
@@ -848,7 +817,6 @@ class TestWorkflowValidatorIntegration:
             step_a_id
         ) < result.topological_order.index(step_b_id)
 
-    @pytest.mark.unit
     def test_validation_result_contains_warnings_for_isolated_steps(self) -> None:
         """Test that isolated steps generate warnings, not errors."""
         validator = WorkflowValidator()
@@ -877,10 +845,10 @@ class TestWorkflowValidatorIntegration:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestWorkflowValidatorEdgeCases:
     """Edge case tests for robust error handling."""
 
-    @pytest.mark.unit
     def test_step_depends_on_itself_and_others(self) -> None:
         """Test step that depends on itself and other valid steps."""
         validator = WorkflowValidator()
@@ -900,7 +868,6 @@ class TestWorkflowValidatorEdgeCases:
 
         assert result.has_cycle is True
 
-    @pytest.mark.unit
     def test_large_linear_chain_validates_with_correct_order(self) -> None:
         """
         Test validation of a large 100-step linear chain workflow.
@@ -936,7 +903,6 @@ class TestWorkflowValidatorEdgeCases:
         assert len(result.missing_dependencies) == 0
         assert len(result.duplicate_names) == 0
 
-    @pytest.mark.unit
     def test_parallel_branches_validates_with_correct_constraints(self) -> None:
         """
         Test workflow with multiple parallel execution branches.
@@ -997,10 +963,10 @@ class TestWorkflowValidatorEdgeCases:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestWorkflowValidatorResourceExhaustion:
     """Tests for resource exhaustion protection in cycle detection."""
 
-    @pytest.mark.unit
     def test_max_dfs_iterations_constant_is_exported(self) -> None:
         """Test that MAX_DFS_ITERATIONS constant is exported and has reasonable value."""
         # Verify the constant is exported and accessible
@@ -1009,7 +975,6 @@ class TestWorkflowValidatorResourceExhaustion:
         assert MAX_DFS_ITERATIONS > 1000  # Enough for normal workflows
         assert MAX_DFS_ITERATIONS < 1_000_000  # Not too high to cause real issues
 
-    @pytest.mark.unit
     def test_iteration_limit_raises_on_excessive_iterations(self) -> None:
         """
         Test that cycle detection raises ModelOnexError when iteration limit exceeded.
@@ -1034,7 +999,6 @@ class TestWorkflowValidatorResourceExhaustion:
             assert "exceeded" in error.message.lower()
             assert "iterations" in error.message.lower()
 
-    @pytest.mark.unit
     def test_error_context_includes_step_count(self) -> None:
         """
         Test that resource exhaustion error includes step count context.
@@ -1066,7 +1030,6 @@ class TestWorkflowValidatorResourceExhaustion:
             assert "max_iterations" in context
             assert "last_node" in context
 
-    @pytest.mark.unit
     def test_normal_workflow_does_not_trigger_limit(self) -> None:
         """
         Test that normal workflows don't trigger the iteration limit.
@@ -1091,7 +1054,6 @@ class TestWorkflowValidatorResourceExhaustion:
         result = validator.detect_cycles(steps)
         assert result.has_cycle is False
 
-    @pytest.mark.unit
     def test_complex_dag_does_not_trigger_limit(self) -> None:
         """
         Test that complex DAG structures don't trigger the iteration limit.

@@ -14,6 +14,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
+@pytest.mark.unit
 class TestModelEventTypeSubcontractValidation:
     """Test validation logic for event type subcontract."""
 
@@ -189,6 +190,7 @@ class TestModelEventTypeSubcontractValidation:
         assert subcontract.deduplication_window_ms == 60000
 
 
+@pytest.mark.unit
 class TestModelEventTypeSubcontractDefaults:
     """Test default values for event type subcontract."""
 
@@ -230,6 +232,7 @@ class TestModelEventTypeSubcontractDefaults:
         assert subcontract.event_filters == []
 
 
+@pytest.mark.unit
 class TestModelEventTypeSubcontractEdgeCases:
     """Test edge cases for event type subcontract."""
 

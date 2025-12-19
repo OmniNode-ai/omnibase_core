@@ -15,6 +15,7 @@ from omnibase_core.enums.enum_workflow_coordination import (
 )
 
 
+@pytest.mark.unit
 class TestEnumWorkflowStatus:
     """Tests for EnumWorkflowStatus enum."""
 
@@ -79,6 +80,7 @@ class TestEnumWorkflowStatus:
         assert isinstance(EnumWorkflowStatus.RUNNING, str)
 
 
+@pytest.mark.unit
 class TestEnumAssignmentStatus:
     """Tests for EnumAssignmentStatus enum."""
 
@@ -137,6 +139,7 @@ class TestEnumAssignmentStatus:
         assert isinstance(EnumAssignmentStatus.EXECUTING, str)
 
 
+@pytest.mark.unit
 class TestEnumExecutionPattern:
     """Tests for EnumExecutionPattern enum."""
 
@@ -212,6 +215,7 @@ class TestEnumExecutionPattern:
             assert pattern.value == pattern.value.lower()
 
 
+@pytest.mark.unit
 class TestEnumFailureRecoveryStrategy:
     """Tests for EnumFailureRecoveryStrategy enum."""
 
@@ -293,6 +297,7 @@ class TestEnumFailureRecoveryStrategy:
             assert strategy.value == strategy.value.upper()
 
 
+@pytest.mark.unit
 class TestEnumWorkflowCoordinationIntegration:
     """Integration tests for workflow coordination enums."""
 

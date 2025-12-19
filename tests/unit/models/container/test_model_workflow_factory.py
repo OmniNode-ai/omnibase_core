@@ -1,8 +1,11 @@
 """Tests for ModelWorkflowFactory."""
 
+import pytest
+
 from omnibase_core.models.container.model_workflow_factory import ModelWorkflowFactory
 
 
+@pytest.mark.unit
 class TestModelWorkflowFactory:
     """Tests for ModelWorkflowFactory."""
 

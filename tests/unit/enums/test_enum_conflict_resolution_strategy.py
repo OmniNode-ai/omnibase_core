@@ -11,6 +11,7 @@ from omnibase_core.enums.enum_conflict_resolution_strategy import (
 )
 
 
+@pytest.mark.unit
 class TestEnumConflictResolutionStrategy:
     """Test cases for EnumConflictResolutionStrategy enum."""
 

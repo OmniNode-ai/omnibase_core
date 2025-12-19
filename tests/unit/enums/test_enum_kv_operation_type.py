@@ -7,6 +7,7 @@ import pytest
 from omnibase_core.enums.enum_kv_operation_type import EnumKvOperationType
 
 
+@pytest.mark.unit
 class TestEnumKvOperationType:
     """Test cases for EnumKvOperationType"""
 

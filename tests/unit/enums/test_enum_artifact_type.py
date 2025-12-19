@@ -16,6 +16,7 @@ import pytest
 from omnibase_core.enums.enum_artifact_type import EnumArtifactType
 
 
+@pytest.mark.unit
 class TestEnumArtifactType:
     """Test cases for EnumArtifactType."""
 
@@ -163,6 +164,7 @@ class TestEnumArtifactType:
         """Test that enum works with Pydantic models."""
         from pydantic import BaseModel
 
+        @pytest.mark.unit
         class TestModel(BaseModel):
             artifact_type: EnumArtifactType
 
@@ -226,6 +228,7 @@ class TestEnumArtifactType:
         assert reconstructed.name == EnumArtifactType.TOOL
 
 
+@pytest.mark.unit
 class TestEnumArtifactTypeEdgeCases:
     """Test edge cases and error conditions for EnumArtifactType."""
 

@@ -18,6 +18,7 @@ from pydantic import BaseModel, ValidationError
 from omnibase_core.enums.enum_agent_capability import EnumAgentCapability
 
 
+@pytest.mark.unit
 class TestEnumAgentCapability:
     """Test basic enum functionality."""
 
@@ -99,6 +100,7 @@ class TestEnumAgentCapability:
         assert EnumAgentCapability.DOCUMENTATION.value == "documentation"
 
 
+@pytest.mark.unit
 class TestEnumAgentCapabilityInstanceMethods:
     """Test instance methods on enum values."""
 
@@ -184,6 +186,7 @@ class TestEnumAgentCapabilityInstanceMethods:
         assert EnumAgentCapability.FAST_INFERENCE.requires_large_model() is False
 
 
+@pytest.mark.unit
 class TestEnumAgentCapabilityIntegration:
     """Test integration with other systems."""
 
@@ -261,6 +264,7 @@ class TestEnumAgentCapabilityIntegration:
         assert json_str == '{"capability":"reasoning"}'
 
 
+@pytest.mark.unit
 class TestEnumAgentCapabilityEdgeCases:
     """Test edge cases and error conditions."""
 
@@ -301,6 +305,7 @@ class TestEnumAgentCapabilityEdgeCases:
             )
 
 
+@pytest.mark.unit
 class TestEnumAgentCapabilityComprehensiveScenarios:
     """Test comprehensive real-world scenarios."""
 

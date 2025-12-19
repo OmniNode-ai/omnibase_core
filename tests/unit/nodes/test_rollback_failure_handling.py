@@ -17,8 +17,8 @@ from omnibase_core.models.infrastructure.model_effect_transaction import (
 )
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestModelEffectTransactionRollbackFailures:
     """Test ModelEffectTransaction rollback failure handling."""
 

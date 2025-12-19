@@ -91,8 +91,8 @@ def all_assignment_status_values() -> list[str]:
 # ============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestEnumWorkflowState:
     """Tests for EnumWorkflowState from enum_orchestrator_types."""
 
@@ -216,8 +216,8 @@ class TestEnumWorkflowState:
 # ============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestEnumExecutionModeOrchestrator:
     """Tests for EnumExecutionMode from enum_orchestrator_types."""
 
@@ -346,8 +346,8 @@ class TestEnumExecutionModeOrchestrator:
 # ============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestEnumActionType:
     """Tests for EnumActionType from enum_orchestrator_types."""
 
@@ -444,8 +444,8 @@ class TestEnumActionType:
 # ============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestEnumFailureRecoveryStrategy:
     """Tests for EnumFailureRecoveryStrategy from enum_workflow_coordination."""
 
@@ -570,8 +570,8 @@ class TestEnumFailureRecoveryStrategy:
 # ============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestEnumBranchCondition:
     """Tests for EnumBranchCondition from enum_orchestrator_types."""
 
@@ -670,8 +670,8 @@ class TestEnumBranchCondition:
 # ============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestEnumExecutionPattern:
     """Tests for EnumExecutionPattern from enum_workflow_coordination."""
 
@@ -727,8 +727,8 @@ class TestEnumExecutionPattern:
 # ============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestEnumAssignmentStatus:
     """Tests for EnumAssignmentStatus from enum_workflow_coordination."""
 
@@ -784,8 +784,8 @@ class TestEnumAssignmentStatus:
 # ============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestEnumWorkflowStatusCoordination:
     """Tests for EnumWorkflowStatus from enum_workflow_coordination."""
 
@@ -843,8 +843,8 @@ class TestEnumWorkflowStatusCoordination:
 # ============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestOrchestratorEnumsIntegration:
     """Integration tests across orchestrator enums."""
 

@@ -9,6 +9,7 @@ import pytest
 from omnibase_core.enums.enum_compliance_framework import EnumComplianceFramework
 
 
+@pytest.mark.unit
 class TestEnumComplianceFramework:
     """Test cases for EnumComplianceFramework enum."""
 

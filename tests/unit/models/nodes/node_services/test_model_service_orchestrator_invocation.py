@@ -26,6 +26,7 @@ from omnibase_core.models.services.model_service_orchestrator import (
 )
 
 
+@pytest.mark.unit
 class TestModelServiceOrchestratorToolInvocation:
     """Test tool invocation handling for ModelServiceOrchestrator."""
 
@@ -574,6 +575,7 @@ class TestModelServiceOrchestratorToolInvocation:
         assert response.result["thunks_emitted"] == 2
 
 
+@pytest.mark.unit
 class TestModelServiceOrchestratorEdgeCases:
     """Test edge cases for orchestrator tool invocation handling."""
 

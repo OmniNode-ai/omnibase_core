@@ -1,5 +1,7 @@
 """Tests for isolation fixtures."""
 
+import pytest
+
 from omnibase_core.context.application_context import (
     _current_container,
     get_current_container,
@@ -21,6 +23,7 @@ class FakeContainer:
     """Fake container for testing."""
 
 
+@pytest.mark.unit
 class TestSingletonResetContext:
     """Tests for SingletonResetContext."""
 
@@ -85,6 +88,7 @@ class TestSingletonResetContext:
             assert ctx._clear_caches is False
 
 
+@pytest.mark.unit
 class TestClearAllCaches:
     """Tests for clear_all_caches function."""
 
@@ -101,6 +105,7 @@ class TestClearAllCaches:
         clear_all_caches()
 
 
+@pytest.mark.unit
 class TestIsolationFixtures:
     """Tests for pytest fixtures."""
 
@@ -132,6 +137,7 @@ class TestIsolationFixtures:
         # Just verify it runs without error
 
 
+@pytest.mark.unit
 class TestUtilityFunctions:
     """Tests for utility functions."""
 
@@ -215,6 +221,7 @@ class TestUtilityFunctions:
             _current_container.reset(token)
 
 
+@pytest.mark.unit
 class TestApplicationContext:
     """Tests for application context (contextvar) functionality."""
 

@@ -50,6 +50,7 @@ class AnotherServiceImplementation(IAnotherService):
         return f"Processed {self.name}"
 
 
+@pytest.mark.unit
 class TestServiceRegistryExtended:
     """Extended test suite for ServiceRegistry covering uncovered paths.
 
@@ -179,7 +180,7 @@ class TestServiceRegistryExtended:
             )
 
         # Verify error message
-        assert "Instance registration failed" in str(exc_info.value)
+        assert "Failed to register instance" in str(exc_info.value)
 
         # Verify failed registration count increased
         status = await registry.get_registry_status()

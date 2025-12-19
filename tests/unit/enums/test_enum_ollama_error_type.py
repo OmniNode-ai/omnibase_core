@@ -7,6 +7,7 @@ import pytest
 from omnibase_core.enums.enum_ollama_error_type import EnumOllamaErrorType
 
 
+@pytest.mark.unit
 class TestEnumOllamaErrorType:
     """Test cases for EnumOllamaErrorType"""
 

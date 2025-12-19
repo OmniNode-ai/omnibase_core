@@ -9,6 +9,7 @@ import pytest
 from omnibase_core.enums.enum_chain_validation_status import EnumChainValidationStatus
 
 
+@pytest.mark.unit
 class TestEnumChainValidationStatus:
     """Test cases for EnumChainValidationStatus enum."""
 

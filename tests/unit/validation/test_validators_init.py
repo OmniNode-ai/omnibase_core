@@ -5,7 +5,10 @@ Tests that all validators and related models are properly exported
 and accessible from the package level.
 """
 
+import pytest
 
+
+@pytest.mark.unit
 class TestValidationPackageExports:
     """Test validation package exports."""
 

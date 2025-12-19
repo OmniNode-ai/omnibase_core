@@ -22,6 +22,7 @@ from omnibase_core.models.contracts.subcontracts.model_environment_validation_ru
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
+@pytest.mark.unit
 class TestModelEnvironmentValidationRuleValidation:
     """Test validation rules for environment validation rules."""
 
@@ -102,6 +103,7 @@ class TestModelEnvironmentValidationRuleValidation:
         assert rule.allowed_values == []
 
 
+@pytest.mark.unit
 class TestModelEnvironmentValidationRuleCreation:
     """Test creation and field constraints."""
 
@@ -192,6 +194,7 @@ class TestModelEnvironmentValidationRuleCreation:
             assert rule.rule_type == rule_type
 
 
+@pytest.mark.unit
 class TestModelEnvironmentValidationRuleEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -439,6 +442,7 @@ class TestModelEnvironmentValidationRuleEdgeCases:
             )
 
 
+@pytest.mark.unit
 class TestModelEnvironmentValidationRuleFieldCombinationValidation:
     """Test validation of field combinations based on rule_type."""
 

@@ -7,6 +7,7 @@ import pytest
 from omnibase_core.models.health.model_health_metrics import ModelHealthMetrics
 
 
+@pytest.mark.unit
 class TestModelHealthMetricsBasics:
     """Test basic ModelHealthMetrics functionality."""
 
@@ -62,6 +63,7 @@ class TestModelHealthMetricsBasics:
         assert metrics.custom_metrics == {"custom_key": "custom_value"}
 
 
+@pytest.mark.unit
 class TestModelHealthMetricsValidation:
     """Test ModelHealthMetrics validation."""
 
@@ -136,6 +138,7 @@ class TestModelHealthMetricsValidation:
             ModelHealthMetrics(health_check_latency_ms=-1.0)
 
 
+@pytest.mark.unit
 class TestModelHealthMetricsHealthChecking:
     """Test health checking logic."""
 
@@ -206,6 +209,7 @@ class TestModelHealthMetricsHealthChecking:
         assert metrics.is_healthy() is True
 
 
+@pytest.mark.unit
 class TestModelHealthMetricsHealthScore:
     """Test health score calculation."""
 
@@ -265,6 +269,7 @@ class TestModelHealthMetricsHealthScore:
         assert 0.0 <= score <= 1.0
 
 
+@pytest.mark.unit
 class TestModelHealthMetricsCustomMetrics:
     """Test custom metrics management."""
 
@@ -310,6 +315,7 @@ class TestModelHealthMetricsCustomMetrics:
         assert metrics.get_custom_metric("queue_depth") == 10.0
 
 
+@pytest.mark.unit
 class TestModelHealthMetricsStatusProperty:
     """Test status property."""
 
@@ -360,6 +366,7 @@ class TestModelHealthMetricsStatusProperty:
         assert metrics.status == "warning"
 
 
+@pytest.mark.unit
 class TestModelHealthMetricsEdgeCases:
     """Test edge cases and boundary conditions."""
 

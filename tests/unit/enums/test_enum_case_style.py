@@ -9,6 +9,7 @@ import pytest
 from omnibase_core.enums.enum_case_style import EnumCaseStyle
 
 
+@pytest.mark.unit
 class TestEnumCaseStyle:
     """Test cases for EnumCaseStyle enum."""
 

@@ -9,6 +9,7 @@ import pytest
 from omnibase_core.enums.enum_content_type import EnumContentType
 
 
+@pytest.mark.unit
 class TestEnumContentType:
     """Test cases for EnumContentType enum."""
 

@@ -103,6 +103,26 @@ When spawning polymorphic agents or AI assistants:
 
 > **Terminology Reference**: For canonical definitions of ONEX concepts (Event, Intent, Action, Reducer, Orchestrator, Effect, Handler, Projection, Runtime), see [ONEX Terminology Guide](docs/standards/onex_terminology.md).
 
+**⚠️ CRITICAL: ORCHESTRATOR Result Constraint**
+
+ORCHESTRATOR nodes **CANNOT return typed results** - they can only emit **events** and **intents**. Only COMPUTE nodes return typed results. This enforces clear separation between coordination (ORCHESTRATOR) and transformation (COMPUTE).
+
+```python
+# ✅ CORRECT
+return ModelHandlerOutput[None](
+    node_kind=EnumNodeKind.ORCHESTRATOR,
+    events=[...], intents=[...], result=None
+)
+
+# ❌ WRONG - Raises ValueError
+return ModelHandlerOutput[dict](
+    node_kind=EnumNodeKind.ORCHESTRATOR,
+    result={"status": "done"}  # ERROR!
+)
+```
+
+See [ONEX Four-Node Architecture](docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md#4-orchestrator-node) for details.
+
 ### Protocol-Driven Dependency Injection
 
 ```python

@@ -19,6 +19,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
+@pytest.mark.unit
 class TestModelContainer:
     """Test generic container functionality with various types."""
 
@@ -299,6 +300,7 @@ class TestModelContainer:
         assert "is_validated=False" in repr_str
 
 
+@pytest.mark.unit
 class TestModelContainerSerialization:
     """Test serialization and deserialization capabilities."""
 
@@ -362,6 +364,7 @@ class TestModelContainerSerialization:
         assert deserialized.is_validated == original.is_validated
 
 
+@pytest.mark.unit
 class TestModelContainerEdgeCases:
     """Test edge cases and error conditions."""
 
@@ -465,6 +468,7 @@ class TestModelContainerEdgeCases:
         assert int_container.value == 42
 
 
+@pytest.mark.unit
 class TestModelContainerIntegration:
     """Test integration scenarios and real-world usage patterns."""
 

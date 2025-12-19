@@ -13,6 +13,7 @@ from pydantic import ValidationError
 from omnibase_core.models.examples.model_example import ModelExample
 
 
+@pytest.mark.unit
 class TestModelExample:
     """Test basic example model functionality."""
 
@@ -76,6 +77,7 @@ class TestModelExample:
         assert valid_example.name == "valid"
 
 
+@pytest.mark.unit
 class TestModelExampleEdgeCases:
     """Test edge cases and error conditions."""
 

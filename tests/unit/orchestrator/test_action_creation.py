@@ -23,6 +23,7 @@ from omnibase_core.models.orchestrator.model_action import ModelAction
 from omnibase_core.utils.workflow_executor import _create_action_for_step
 
 
+@pytest.mark.unit
 class TestPriorityClamping:
     """Test priority clamping from step priority (1-1000) to action priority (1-10)."""
 
@@ -136,6 +137,7 @@ class TestPriorityClamping:
         assert action.priority == 10
 
 
+@pytest.mark.unit
 class TestDependencyMapping:
     """Test that step dependencies map correctly to action dependencies."""
 
@@ -218,6 +220,7 @@ class TestDependencyMapping:
         assert all(isinstance(dep, UUID) for dep in action.dependencies)
 
 
+@pytest.mark.unit
 class TestActionIdGeneration:
     """Test action_id generation for uniqueness and format."""
 
@@ -294,6 +297,7 @@ class TestActionIdGeneration:
         assert uuid_str.count("-") == 4
 
 
+@pytest.mark.unit
 class TestActionTypeMapping:
     """Test step_type to EnumActionType mapping."""
 
@@ -416,6 +420,7 @@ class TestActionTypeMapping:
         assert action.action_type == EnumActionType.CUSTOM
 
 
+@pytest.mark.unit
 class TestTargetNodeTypeMapping:
     """Test step_type to target_node_type mapping."""
 
@@ -458,6 +463,7 @@ class TestTargetNodeTypeMapping:
         assert action.target_node_type == "NodeCustom"
 
 
+@pytest.mark.unit
 class TestActionFieldPropagation:
     """Test that step fields are correctly propagated to action fields."""
 
@@ -588,6 +594,7 @@ class TestActionFieldPropagation:
         assert isinstance(action.created_at, datetime)
 
 
+@pytest.mark.unit
 class TestActionPayload:
     """Test action payload construction and JSON serialization."""
 
@@ -656,6 +663,7 @@ class TestActionPayload:
         assert parsed == action.payload
 
 
+@pytest.mark.unit
 class TestActionModelIntegrity:
     """Test that created actions are valid ModelAction instances."""
 
@@ -726,6 +734,7 @@ class TestActionModelIntegrity:
         assert new_action.priority == 5
 
 
+@pytest.mark.unit
 class TestEdgeCases:
     """Test edge cases and boundary conditions."""
 

@@ -39,6 +39,7 @@ def validate_union_usage_module() -> ModuleType:
     return module
 
 
+@pytest.mark.unit
 class TestCompanionLiteralEdgeCases:
     """Test edge cases for companion Literal discriminator detection.
 
@@ -350,6 +351,7 @@ class MyModel(BaseModel):
         assert result is True, "Should detect with underscore-containing type names"
 
 
+@pytest.mark.unit
 class TestRegexPatternCompilation:
     """Test the pre-compiled regex patterns used in the validator."""
 
@@ -423,6 +425,7 @@ class TestRegexPatternCompilation:
         assert validator.FIELD_DISCRIMINATOR_PATTERN.search(test2) is not None
 
 
+@pytest.mark.unit
 class TestFullValidationWorkflow:
     """Test the complete validation workflow with companion Literal detection."""
 
@@ -480,6 +483,7 @@ class MyModel(BaseModel):
         assert result["pattern_type"] == "primitive_soup"
 
 
+@pytest.mark.unit
 class TestValidatorCompanionLiteralFalsePositives:
     """Test false positive prevention for companion literal discriminator detection.
 
@@ -664,6 +668,7 @@ class MyModel(BaseModel):
         assert result is True, "Should detect with case-insensitive matching"
 
 
+@pytest.mark.unit
 class TestTypeNormalizationDetails:
     """Detailed tests for type normalization logic."""
 

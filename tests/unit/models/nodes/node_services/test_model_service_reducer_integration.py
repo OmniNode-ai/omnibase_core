@@ -104,6 +104,7 @@ class ReducerNodeForIntegrationTest(ModelServiceReducer):
         """Mock cleanup."""
 
 
+@pytest.mark.unit
 class TestModelServiceReducerIntegration:
     """Integration tests for ModelServiceReducer with all mixins."""
 
@@ -696,6 +697,7 @@ class TestModelServiceReducerIntegration:
         assert "status" in health
 
 
+@pytest.mark.unit
 class TestModelServiceReducerMRODetails:
     """Detailed MRO and diamond problem tests."""
 

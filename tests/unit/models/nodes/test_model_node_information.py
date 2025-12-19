@@ -13,6 +13,8 @@ Tests all aspects of the node information model including:
 
 from uuid import uuid4
 
+import pytest
+
 from omnibase_core.enums.enum_metadata_node_status import EnumMetadataNodeStatus
 from omnibase_core.enums.enum_metadata_node_type import EnumMetadataNodeType
 from omnibase_core.enums.enum_registry_status import EnumRegistryStatus
@@ -29,6 +31,7 @@ from omnibase_core.models.node_metadata.model_node_information import (
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
+@pytest.mark.unit
 class TestModelNodeInformation:
     """Test cases for ModelNodeInformation."""
 

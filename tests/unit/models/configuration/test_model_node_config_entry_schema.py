@@ -19,6 +19,7 @@ from omnibase_core.models.configuration.model_node_config_schema import (
 )
 
 
+@pytest.mark.unit
 class TestModelNodeConfigEntry:
     """Test cases for ModelNodeConfigEntry."""
 
@@ -144,6 +145,7 @@ class TestModelNodeConfigEntry:
             entry.key = "new.key"  # type: ignore[misc]
 
 
+@pytest.mark.unit
 class TestModelNodeConfigSchema:
     """Test cases for ModelNodeConfigSchema."""
 

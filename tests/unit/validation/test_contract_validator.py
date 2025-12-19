@@ -17,6 +17,7 @@ from omnibase_core.validation.contract_validator import (
 )
 
 
+@pytest.mark.unit
 class TestContractValidator:
     """Test suite for ContractValidator."""
 
@@ -459,6 +460,7 @@ io_operations:
         assert any("Any" in w for w in result.warnings)
 
 
+@pytest.mark.unit
 class TestModelContractValidationResult:
     """Test ModelContractValidationResult model."""
 

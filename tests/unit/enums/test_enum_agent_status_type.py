@@ -9,6 +9,7 @@ import pytest
 from omnibase_core.enums.enum_agent_status_type import EnumAgentStatusType
 
 
+@pytest.mark.unit
 class TestEnumAgentStatusType:
     """Test cases for EnumAgentStatusType enum."""
 

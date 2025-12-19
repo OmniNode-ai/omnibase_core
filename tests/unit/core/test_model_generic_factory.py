@@ -44,6 +44,7 @@ class SampleValidationModel(BaseModel):
     error_code: str | None = None
 
 
+@pytest.mark.unit
 class TestModelGenericFactory:
     """Test the basic generic factory functionality."""
 
@@ -147,6 +148,7 @@ class TestModelGenericFactory:
         assert result.exit_code == 1
 
 
+@pytest.mark.unit
 class TestModelResultFactory:
     """Test the specialized result factory."""
 
@@ -187,6 +189,7 @@ class TestModelResultFactory:
         assert result.error_message == "validation failed"
 
 
+@pytest.mark.unit
 class TestModelCapabilityFactory:
     """Test the specialized capability factory."""
 
@@ -238,6 +241,7 @@ class TestModelCapabilityFactory:
         assert result.experimental is True
 
 
+@pytest.mark.unit
 class TestModelValidationErrorFactory:
     """Test the specialized validation error factory."""
 

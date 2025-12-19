@@ -9,6 +9,7 @@ import pytest
 from omnibase_core.enums.enum_complexity import EnumComplexity
 
 
+@pytest.mark.unit
 class TestEnumComplexity:
     """Test cases for EnumComplexity enum."""
 

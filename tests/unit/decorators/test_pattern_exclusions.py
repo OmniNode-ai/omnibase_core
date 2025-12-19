@@ -15,6 +15,8 @@ Target: 85%+ coverage for decorators/pattern_exclusions.py
 import tempfile
 from pathlib import Path
 
+import pytest
+
 from omnibase_core.decorators.pattern_exclusions import (
     ONEXPatternExclusion,
     allow_any_type,
@@ -28,6 +30,7 @@ from omnibase_core.decorators.pattern_exclusions import (
 )
 
 
+@pytest.mark.unit
 class TestONEXPatternExclusionClass:
     """Test the ONEXPatternExclusion class."""
 
@@ -83,6 +86,7 @@ class TestONEXPatternExclusionClass:
         )
 
         @exclusion
+        @pytest.mark.unit
         class TestClass:
             pass
 
@@ -135,6 +139,7 @@ class TestONEXPatternExclusionClass:
         assert "logging_call" in test_function._onex_pattern_exclusions
 
 
+@pytest.mark.unit
 class TestAllowAnyType:
     """Test allow_any_type decorator."""
 
@@ -171,6 +176,7 @@ class TestAllowAnyType:
         assert double_value("hello") == "hellohello"
 
 
+@pytest.mark.unit
 class TestAllowDictStrAny:
     """Test allow_dict_str_any decorator."""
 
@@ -195,6 +201,7 @@ class TestAllowDictStrAny:
         assert legacy_endpoint._onex_exclusion_reviewer == "tech_lead"
 
 
+@pytest.mark.unit
 class TestAllowMixedTypes:
     """Test allow_mixed_types decorator."""
 
@@ -218,6 +225,7 @@ class TestAllowMixedTypes:
         assert compatibility_layer._onex_exclusion_reviewer == "architect"
 
 
+@pytest.mark.unit
 class TestAllowLegacyPattern:
     """Test allow_legacy_pattern decorator."""
 
@@ -248,6 +256,7 @@ class TestAllowLegacyPattern:
             assert test_func._onex_exclusion_reason == reason
 
 
+@pytest.mark.unit
 class TestExcludeFromOnexStandards:
     """Test the generic exclude_from_onex_standards decorator."""
 
@@ -290,6 +299,7 @@ class TestExcludeFromOnexStandards:
         assert len(test_function._onex_pattern_exclusions) == 0
 
 
+@pytest.mark.unit
 class TestHasPatternExclusion:
     """Test has_pattern_exclusion utility function."""
 
@@ -324,6 +334,7 @@ class TestHasPatternExclusion:
         """Test pattern exclusion detection on classes."""
 
         @allow_dict_str_any("Class uses dynamic data")
+        @pytest.mark.unit
         class TestClass:
             pass
 
@@ -331,6 +342,7 @@ class TestHasPatternExclusion:
         assert has_pattern_exclusion(TestClass, "any_type") is False
 
 
+@pytest.mark.unit
 class TestGetExclusionInfo:
     """Test get_exclusion_info utility function."""
 
@@ -393,6 +405,7 @@ class TestGetExclusionInfo:
         assert info.reviewer == "tech_lead"
 
 
+@pytest.mark.unit
 class TestIsExcludedFromPatternCheck:
     """Test is_excluded_from_pattern_check file-based utility."""
 
@@ -550,6 +563,7 @@ def test_function():
             Path(temp_path).unlink()
 
 
+@pytest.mark.unit
 class TestEdgeCasesAndComplexScenarios:
     """Test edge cases and complex decorator scenarios."""
 

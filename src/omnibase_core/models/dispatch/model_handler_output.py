@@ -82,6 +82,38 @@ See Also:
     omnibase_core.models.dispatch.ModelHandlerRegistration: Handler metadata
     omnibase_core.enums.EnumNodeKind: Node type classification
 
+Builder Method Default Metrics Behavior:
+    All builder methods (for_orchestrator, for_reducer, for_effect, for_compute,
+    for_void_compute) accept an optional `metrics` parameter of type `dict[str, float] | None`.
+
+    **Default Behavior**:
+    - When `metrics=None` (default): Converted to empty dict `{}` via `metrics or {}`
+    - When `metrics={}` (explicit empty): Preserved as-is (already falsy, so `or {}` returns new `{}`)
+    - When `metrics={...}` (non-empty): Used directly without modification
+
+    **Why `metrics or {}` instead of `metrics if metrics is not None else {}`**:
+    - Both patterns produce identical behavior for this use case
+    - `metrics or {}` is more concise and Pythonic for optional dict parameters
+    - Empty dict `{}` is falsy, so `{} or {}` returns a new `{}`
+    - This ensures builders always pass a concrete dict to the model, never None
+
+    **Example**:
+        >>> # All three produce the same result:
+        >>> output1 = ModelHandlerOutput.for_compute(..., metrics=None)       # → {}
+        >>> output2 = ModelHandlerOutput.for_compute(..., metrics={})         # → {}
+        >>> output3 = ModelHandlerOutput.for_compute(...)                      # → {}
+        >>> assert output1.metrics == output2.metrics == output3.metrics == {}
+
+        >>> # Non-empty metrics preserved:
+        >>> output4 = ModelHandlerOutput.for_compute(..., metrics={"count": 5.0})
+        >>> assert output4.metrics == {"count": 5.0}
+
+    **Model Field Default**:
+    The underlying Pydantic model field uses `default_factory=dict` (line 292),
+    which means if you construct ModelHandlerOutput directly without `metrics`,
+    it will also default to an empty dict. Builder methods ensure consistency
+    by always passing an explicit dict value.
+
 Future Enhancement:
     ModelComputeResult wrapper for complex payloads:
         - value: Any (restricted to ledger-safe types)
@@ -92,6 +124,7 @@ Future Enhancement:
 
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -103,8 +136,6 @@ if TYPE_CHECKING:
         ModelProjectionBase,
     )
     from omnibase_core.models.reducer.model_intent import ModelIntent
-
-from uuid import UUID
 
 # Type variable for COMPUTE result
 T = TypeVar("T")
@@ -514,7 +545,8 @@ class ModelHandlerOutput(BaseModel, Generic[T]):
             handler_id: Unique identifier for this handler.
             events: Event envelopes to publish (optional).
             intents: Intents for side-effect execution (optional).
-            metrics: Handler-specific metrics (optional).
+            metrics: Handler-specific metrics (optional). Defaults to empty dict if None.
+                    See module docstring "Builder Method Default Metrics Behavior" for details.
             logs: Log messages generated during execution (optional).
             processing_time_ms: Processing time in milliseconds (optional).
 
@@ -567,7 +599,8 @@ class ModelHandlerOutput(BaseModel, Generic[T]):
             correlation_id: Correlation ID copied from the input envelope.
             handler_id: Unique identifier for this handler.
             projections: Projection updates (optional).
-            metrics: Handler-specific metrics (optional).
+            metrics: Handler-specific metrics (optional). Defaults to empty dict if None.
+                    See module docstring "Builder Method Default Metrics Behavior" for details.
             logs: Log messages generated during execution (optional).
             processing_time_ms: Processing time in milliseconds (optional).
 
@@ -619,7 +652,8 @@ class ModelHandlerOutput(BaseModel, Generic[T]):
             correlation_id: Correlation ID copied from the input envelope.
             handler_id: Unique identifier for this handler.
             events: Event envelopes to publish (optional).
-            metrics: Handler-specific metrics (optional).
+            metrics: Handler-specific metrics (optional). Defaults to empty dict if None.
+                    See module docstring "Builder Method Default Metrics Behavior" for details.
             logs: Log messages generated during execution (optional).
             processing_time_ms: Processing time in milliseconds (optional).
 
@@ -675,7 +709,8 @@ class ModelHandlerOutput(BaseModel, Generic[T]):
             correlation_id: Correlation ID copied from the input envelope.
             handler_id: Unique identifier for this handler.
             result: The typed result of the computation (REQUIRED).
-            metrics: Handler-specific metrics (optional).
+            metrics: Handler-specific metrics (optional). Defaults to empty dict if None.
+                    See module docstring "Builder Method Default Metrics Behavior" for details.
             logs: Log messages generated during execution (optional).
             processing_time_ms: Processing time in milliseconds (optional).
 
@@ -721,7 +756,8 @@ class ModelHandlerOutput(BaseModel, Generic[T]):
             input_envelope_id: ID of the input envelope that triggered this handler.
             correlation_id: Correlation ID copied from the input envelope.
             handler_id: Unique identifier for this handler.
-            metrics: Handler-specific metrics (optional).
+            metrics: Handler-specific metrics (optional). Defaults to empty dict if None.
+                    See module docstring "Builder Method Default Metrics Behavior" for details.
             logs: Log messages generated during execution (optional).
             processing_time_ms: Processing time in milliseconds (optional).
 

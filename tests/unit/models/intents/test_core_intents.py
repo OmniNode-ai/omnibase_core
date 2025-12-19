@@ -99,6 +99,7 @@ def sample_postgres_intent(
 
 
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestModelCoreIntent:
     """Tests for ModelCoreIntent base class."""
 
@@ -128,6 +129,7 @@ class TestModelCoreIntent:
 
 
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestModelConsulRegisterIntent:
     """Tests for ModelConsulRegisterIntent."""
 
@@ -292,6 +294,7 @@ class TestModelConsulRegisterIntent:
 
 
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestModelConsulDeregisterIntent:
     """Tests for ModelConsulDeregisterIntent."""
 
@@ -365,6 +368,7 @@ class TestModelConsulDeregisterIntent:
 
 
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestModelPostgresUpsertRegistrationIntent:
     """Tests for ModelPostgresUpsertRegistrationIntent."""
 
@@ -436,6 +440,7 @@ class TestModelPostgresUpsertRegistrationIntent:
 
 
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestModelCoreRegistrationIntentUnion:
     """Tests for ModelCoreRegistrationIntent discriminated union."""
 
@@ -538,6 +543,7 @@ class TestModelCoreRegistrationIntentUnion:
 
 
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestIntentSerialization:
     """Tests for intent serialization at I/O boundary."""
 
@@ -637,6 +643,7 @@ class TestIntentSerialization:
 
 
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestONEXPatterns:
     """Tests for ONEX-specific patterns and configurations."""
 
@@ -715,6 +722,7 @@ class TestONEXPatterns:
 
 
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestEdgeCases:
     """Tests for edge cases and boundary conditions."""
 
@@ -816,6 +824,7 @@ class TestEdgeCases:
 
 
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestTypeSafety:
     """Tests for type safety guarantees."""
 
@@ -886,6 +895,7 @@ class TestTypeSafety:
 
 
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestSerializationEdgeCases:
     """Comprehensive tests for serialization edge cases.
 
@@ -1825,6 +1835,7 @@ class TestSerializationEdgeCases:
         fields are passed.
         """
 
+        @pytest.mark.unit
         class TestRecord(BaseModel):
             node_id: str
             value: int
@@ -1850,6 +1861,7 @@ class TestSerializationEdgeCases:
 
 
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestModelRegistrationRecordBaseIntegration:
     """Tests for ModelRegistrationRecordBase with PostgreSQL intent.
 
@@ -1913,6 +1925,7 @@ class TestModelRegistrationRecordBaseIntegration:
         from omnibase_core.models.intents import ModelRegistrationRecordBase
         from omnibase_core.protocols.intents import ProtocolRegistrationRecord
 
+        @pytest.mark.unit
         class TestRecord(ModelRegistrationRecordBase):
             value: str
 

@@ -10,6 +10,7 @@ from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.errors.model_onex_error import ModelOnexError as OnexError
 
 
+@pytest.mark.unit
 class TestModelFlexibleValueInstantiation:
     """Tests for ModelFlexibleValue instantiation."""
 
@@ -52,6 +53,7 @@ class TestModelFlexibleValueInstantiation:
         assert value.is_none() is True
 
 
+@pytest.mark.unit
 class TestModelFlexibleValueCollections:
     """Tests for ModelFlexibleValue with collections."""
 
@@ -96,6 +98,7 @@ class TestModelFlexibleValueCollections:
         assert all(isinstance(item, ModelSchemaValue) for item in value.list_value)
 
 
+@pytest.mark.unit
 class TestModelFlexibleValueAutoDetection:
     """Tests for ModelFlexibleValue auto-detection."""
 
@@ -141,6 +144,7 @@ class TestModelFlexibleValueAutoDetection:
         assert value.value_type == EnumFlexibleValueType.NONE
 
 
+@pytest.mark.unit
 class TestModelFlexibleValueRetrieval:
     """Tests for retrieving values from ModelFlexibleValue."""
 
@@ -178,6 +182,7 @@ class TestModelFlexibleValueRetrieval:
         assert ModelFlexibleValue.from_none().get_python_type() == type(None)
 
 
+@pytest.mark.unit
 class TestModelFlexibleValueValidation:
     """Tests for ModelFlexibleValue validation."""
 
@@ -214,6 +219,7 @@ class TestModelFlexibleValueValidation:
         )
 
 
+@pytest.mark.unit
 class TestModelFlexibleValueComparison:
     """Tests for ModelFlexibleValue comparison."""
 
@@ -246,6 +252,7 @@ class TestModelFlexibleValueComparison:
         assert value == "test"
 
 
+@pytest.mark.unit
 class TestModelFlexibleValueTypeChecks:
     """Tests for ModelFlexibleValue type checking methods."""
 
@@ -269,6 +276,7 @@ class TestModelFlexibleValueTypeChecks:
         assert ModelFlexibleValue.from_string("test").is_collection() is False
 
 
+@pytest.mark.unit
 class TestModelFlexibleValueConversion:
     """Tests for ModelFlexibleValue conversion methods."""
 
@@ -280,6 +288,7 @@ class TestModelFlexibleValueConversion:
         assert schema_value.to_value() == "test"
 
 
+@pytest.mark.unit
 class TestModelFlexibleValueStringRepresentation:
     """Tests for ModelFlexibleValue string representation."""
 
@@ -299,6 +308,7 @@ class TestModelFlexibleValueStringRepresentation:
         assert "test_source" in repr_str
 
 
+@pytest.mark.unit
 class TestModelFlexibleValueSerialization:
     """Tests for ModelFlexibleValue serialization."""
 
@@ -315,6 +325,7 @@ class TestModelFlexibleValueSerialization:
         assert value.validate_instance() is True
 
 
+@pytest.mark.unit
 class TestModelFlexibleValueEdgeCases:
     """Tests for ModelFlexibleValue edge cases."""
 

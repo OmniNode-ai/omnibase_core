@@ -23,6 +23,7 @@ from omnibase_core.validation.types import (
 )
 
 
+@pytest.mark.unit
 class TestValidateUnionUsageCLI:
     """Extended tests for validate_union_usage_cli function."""
 
@@ -344,6 +345,7 @@ def func(x: Union[str, int, bool, float]) -> None:
         assert "Union validation" in captured.out
 
 
+@pytest.mark.unit
 class TestValidateUnionUsageFileExtended:
     """Extended tests for validate_union_usage_file exception handling."""
 
@@ -507,6 +509,7 @@ def func(x: Union[str, None]) -> None:
         assert any("Union[str, None]" in issue for issue in issues)
 
 
+@pytest.mark.unit
 class TestValidateUnionUsageDirectory:
     """Tests for validate_union_usage_directory function."""
 

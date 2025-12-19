@@ -10,8 +10,8 @@ from omnibase_core.enums.enum_trim_mode import EnumTrimMode
 from omnibase_core.enums.enum_unicode_form import EnumUnicodeForm
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestEnumComputeStepType:
     """Tests for EnumComputeStepType."""
 
@@ -31,8 +31,8 @@ class TestEnumComputeStepType:
         assert len(EnumComputeStepType) == 3
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestEnumTransformationType:
     """Tests for EnumTransformationType."""
 
@@ -55,8 +55,8 @@ class TestEnumTransformationType:
         assert len(EnumTransformationType) == 6
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestEnumCaseMode:
     """Tests for EnumCaseMode."""
 
@@ -76,8 +76,8 @@ class TestEnumCaseMode:
         assert len(EnumCaseMode) == 3
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestEnumRegexFlag:
     """Tests for EnumRegexFlag."""
 
@@ -97,8 +97,8 @@ class TestEnumRegexFlag:
         assert len(EnumRegexFlag) == 3
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestEnumUnicodeForm:
     """Tests for EnumUnicodeForm."""
 
@@ -119,8 +119,8 @@ class TestEnumUnicodeForm:
         assert len(EnumUnicodeForm) == 4
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestEnumTrimMode:
     """Tests for EnumTrimMode."""
 

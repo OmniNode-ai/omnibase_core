@@ -23,6 +23,7 @@ from omnibase_core.context.application_context import (
 )
 
 
+@pytest.mark.unit
 class TestGetCurrentContainer:
     """Tests for get_current_container function."""
 
@@ -49,6 +50,7 @@ class TestGetCurrentContainer:
         ctx.run(run_test)
 
 
+@pytest.mark.unit
 class TestSetCurrentContainer:
     """Tests for set_current_container function."""
 
@@ -84,6 +86,7 @@ class TestSetCurrentContainer:
         ctx.run(run_test)
 
 
+@pytest.mark.unit
 class TestResetContainer:
     """Tests for reset_container function."""
 
@@ -111,6 +114,7 @@ class TestResetContainer:
         ctx.run(run_test)
 
 
+@pytest.mark.unit
 class TestApplicationContextSync:
     """Tests for ApplicationContext sync context manager."""
 
@@ -186,6 +190,7 @@ class TestApplicationContextSync:
         assert ctx_mgr.container is mock_container
 
 
+@pytest.mark.unit
 class TestApplicationContextAsync:
     """Tests for ApplicationContext async context manager."""
 
@@ -240,6 +245,7 @@ class TestApplicationContextAsync:
         assert get_current_container() is original
 
 
+@pytest.mark.unit
 class TestRunWithContainer:
     """Tests for run_with_container async context manager."""
 
@@ -276,6 +282,7 @@ class TestRunWithContainer:
         assert get_current_container() is original
 
 
+@pytest.mark.unit
 class TestRunWithContainerSync:
     """Tests for run_with_container_sync context manager."""
 
@@ -307,6 +314,7 @@ class TestRunWithContainerSync:
         ctx.run(run_test)
 
 
+@pytest.mark.unit
 class TestThreadIsolation:
     """Tests for thread isolation of context variables."""
 
@@ -344,6 +352,7 @@ class TestThreadIsolation:
         assert results["thread2_sees"] is mock_container2
 
 
+@pytest.mark.unit
 class TestAsyncTaskIsolation:
     """Tests for async task isolation of context variables."""
 
@@ -380,6 +389,7 @@ class TestAsyncTaskIsolation:
             assert get_current_container() is mock_container1
 
 
+@pytest.mark.unit
 class TestApplicationContextProperties:
     """Tests for ApplicationContext properties."""
 

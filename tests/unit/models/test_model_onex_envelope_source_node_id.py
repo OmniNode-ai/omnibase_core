@@ -19,6 +19,8 @@ Related:
 from datetime import UTC, datetime
 from uuid import UUID
 
+import pytest
+
 from omnibase_core.models.core.model_onex_envelope import ModelOnexEnvelope
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -26,6 +28,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
+@pytest.mark.unit
 class TestSourceNodeIdFunctionality:
     """Unit tests for source_node_id field functionality."""
 

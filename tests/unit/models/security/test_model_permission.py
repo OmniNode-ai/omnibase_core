@@ -41,6 +41,7 @@ from omnibase_core.models.security.model_permission_evaluation_context import (
 DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
+@pytest.mark.unit
 class TestModelPermissionBasicInitialization:
     """Test basic ModelPermission initialization and field validation."""
 
@@ -131,6 +132,7 @@ class TestModelPermissionBasicInitialization:
         assert permission.updated_at >= original_created
 
 
+@pytest.mark.unit
 class TestModelPermissionFieldValidation:
     """Test field validation and constraints."""
 
@@ -263,6 +265,7 @@ class TestModelPermissionFieldValidation:
             assert permission.risk_level == risk_level
 
 
+@pytest.mark.unit
 class TestModelPermissionListValidators:
     """Test list field validators."""
 
@@ -458,6 +461,7 @@ class TestModelPermissionListValidators:
         assert exc_info.value.error_code.value == "ONEX_CORE_006_VALIDATION_ERROR"
 
 
+@pytest.mark.unit
 class TestModelPermissionResourceMatching:
     """Test resource matching logic."""
 
@@ -529,6 +533,7 @@ class TestModelPermissionResourceMatching:
         assert permission.matches_resource("other/test") is False
 
 
+@pytest.mark.unit
 class TestModelPermissionTemporalValidation:
     """Test temporal validation logic."""
 
@@ -669,6 +674,7 @@ class TestModelPermissionTemporalValidation:
         assert perm_no_start.is_active() is True
 
 
+@pytest.mark.unit
 class TestModelPermissionGeographicValidation:
     """Test geographic validation logic."""
 
@@ -716,6 +722,7 @@ class TestModelPermissionGeographicValidation:
         assert permission.is_geographically_valid(ip_address="172.16.0.1") is False
 
 
+@pytest.mark.unit
 class TestModelPermissionConditionEvaluation:
     """Test condition evaluation logic."""
 
@@ -769,6 +776,7 @@ class TestModelPermissionConditionEvaluation:
         assert permission.evaluate_conditions(context_fail) is False
 
 
+@pytest.mark.unit
 class TestModelPermissionUsageManagement:
     """Test usage management and limits."""
 
@@ -850,6 +858,7 @@ class TestModelPermissionUsageManagement:
         assert summary["hourly_remaining"] == "2"
 
 
+@pytest.mark.unit
 class TestModelPermissionUtilityMethods:
     """Test utility and helper methods."""
 
@@ -989,6 +998,7 @@ class TestModelPermissionUtilityMethods:
         assert mitigated.get_risk_score() < high_risk.get_risk_score()
 
 
+@pytest.mark.unit
 class TestModelPermissionFactoryMethods:
     """Test factory methods for common permission types."""
 
@@ -1081,6 +1091,7 @@ class TestModelPermissionFactoryMethods:
         assert abs(time_diff.total_seconds() - (48 * 3600)) < 60  # Within 1 minute
 
 
+@pytest.mark.unit
 class TestModelPermissionEdgeCases:
     """Test edge cases and error scenarios."""
 
@@ -1148,6 +1159,7 @@ class TestModelPermissionEdgeCases:
         assert permission.version.patch == 3
 
 
+@pytest.mark.unit
 class TestModelPermissionBranchCoverage:
     """Test specific conditional branches for comprehensive branch coverage."""
 

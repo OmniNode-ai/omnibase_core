@@ -16,6 +16,7 @@ from omnibase_core.validation import ExceptionConfigurationError, ModelProtocolA
 from omnibase_core.validation.auditor_protocol import ModelAuditResult
 
 
+@pytest.mark.unit
 class TestProtocolAuditorInitialization:
     """Test ProtocolAuditor initialization and validation."""
 
@@ -76,6 +77,7 @@ class TestProtocolAuditorInitialization:
             assert auditor.repository_path.exists()
 
 
+@pytest.mark.unit
 class TestProtocolAuditorValidation:
     """Test ProtocolAuditor validation methods."""
 
@@ -112,6 +114,7 @@ class TestProtocolAuditorValidation:
                     assert "spi protocols directory not found" in log_message.lower()
 
 
+@pytest.mark.unit
 class TestProtocolAuditorFunctional:
     """Functional tests for ProtocolAuditor operations."""
 
@@ -225,6 +228,7 @@ class {protocol_name}(Protocol):
                 assert "Extraction failed" in str(e)
 
 
+@pytest.mark.unit
 class TestProtocolAuditorLogging:
     """Test ProtocolAuditor logging behavior."""
 
@@ -259,6 +263,7 @@ class TestProtocolAuditorLogging:
                     assert "SPI protocols directory not found" in log_message
 
 
+@pytest.mark.unit
 class TestProtocolAuditorEdgeCases:
     """Test edge cases and error conditions."""
 
@@ -318,6 +323,7 @@ class TestProtocolAuditorEdgeCases:
             )
 
 
+@pytest.mark.unit
 class TestConfigurationErrorHandling:
     """Test configuration error handling and reporting."""
 

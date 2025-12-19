@@ -47,6 +47,7 @@ class MockLogContext:
         return self.data
 
 
+@pytest.mark.unit
 class TestPydanticModelSerialization:
     """Test Pydantic model serialization."""
 
@@ -104,6 +105,7 @@ class TestPydanticModelSerialization:
         assert parsed[2]["value"] == 2
 
 
+@pytest.mark.unit
 class TestUUIDSerialization:
     """Test UUID serialization."""
 
@@ -152,6 +154,7 @@ class TestUUIDSerialization:
         assert parsed["uuid_str"] == str(test_uuid)
 
 
+@pytest.mark.unit
 class TestLogContextSerialization:
     """Test ProtocolLogContext (to_dict method) serialization."""
 
@@ -202,6 +205,7 @@ class TestLogContextSerialization:
         assert parsed[1]["name"] == "context_1"
 
 
+@pytest.mark.unit
 class TestFallbackSerialization:
     """Test fallback to default encoder."""
 
@@ -256,6 +260,7 @@ class TestFallbackSerialization:
         assert parsed["text"] == "hello"
 
 
+@pytest.mark.unit
 class TestComplexSerializationScenarios:
     """Test complex serialization scenarios."""
 
@@ -325,6 +330,7 @@ class TestComplexSerializationScenarios:
         assert parsed[2]["event"] == "test"
 
 
+@pytest.mark.unit
 class TestEdgeCases:
     """Test edge cases and special scenarios."""
 
@@ -401,6 +407,7 @@ class TestEdgeCases:
         assert recreated.uuid == model.uuid
 
 
+@pytest.mark.unit
 class TestMockObjectSerialization:
     """Test unittest.mock.Mock and MagicMock serialization (deadlock prevention)."""
 
@@ -473,6 +480,7 @@ class TestMockObjectSerialization:
         assert "should" not in parsed["test"]
 
 
+@pytest.mark.unit
 class TestEncoderExportAndUsage:
     """Test encoder export and usage patterns."""
 

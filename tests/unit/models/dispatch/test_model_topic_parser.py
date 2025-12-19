@@ -109,13 +109,15 @@ class TestModelParsedTopic:
 
     def test_parsed_topic_immutable(self) -> None:
         """Test that ModelParsedTopic is immutable (frozen)."""
+        from pydantic import ValidationError
+
         parsed = ModelParsedTopic(
             raw_topic="onex.user.events",
             standard=EnumTopicStandard.ONEX_KAFKA,
             is_valid=True,
         )
 
-        with pytest.raises(Exception):  # ValidationError for frozen model
+        with pytest.raises(ValidationError, match="frozen"):
             parsed.domain = "changed"  # type: ignore[misc]
 
 

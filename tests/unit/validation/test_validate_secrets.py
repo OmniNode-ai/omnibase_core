@@ -26,6 +26,8 @@ import importlib.util
 import tempfile
 from pathlib import Path
 
+import pytest
+
 # Load the validator module dynamically (script uses hyphens in filename)
 _validator_path = (
     Path(__file__).parent.parent.parent.parent
@@ -41,6 +43,7 @@ PythonSecretValidator = _validator_module.PythonSecretValidator
 SecretValidator = _validator_module.SecretValidator
 
 
+@pytest.mark.unit
 class TestPythonSecretValidator:
     """Test suite for PythonSecretValidator AST visitor."""
 
@@ -569,6 +572,7 @@ aws_session_token = "AQoDYXdzEJr1234567890abcdefghijklmnop"
         assert len(validator.violations) == 2, "Should detect AWS session tokens"
 
 
+@pytest.mark.unit
 class TestSecretValidator:
     """Test suite for SecretValidator."""
 

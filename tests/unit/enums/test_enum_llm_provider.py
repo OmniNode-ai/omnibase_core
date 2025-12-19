@@ -7,6 +7,7 @@ import pytest
 from omnibase_core.enums.enum_llm_provider import EnumLlmProvider
 
 
+@pytest.mark.unit
 class TestEnumLlmProvider:
     """Test cases for EnumLlmProvider"""
 

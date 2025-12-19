@@ -335,7 +335,7 @@ class ModelDispatchResult(BaseModel):
 
         Args:
             outputs: Optional list of output topics
-            output_count: Optional count of outputs (defaults to len(outputs))
+            output_count: Optional count of outputs (defaults to len(outputs) if outputs provided, else 0)
 
         Returns:
             New ModelDispatchResult marked as SUCCESS
@@ -351,11 +351,14 @@ class ModelDispatchResult(BaseModel):
             ...     output_count=1,
             ... )
         """
-        count = (
-            output_count
-            if output_count is not None
-            else (len(outputs) if outputs else 0)
-        )
+        # If output_count explicitly provided, use it; otherwise derive from outputs
+        if output_count is not None:
+            count = output_count
+        elif outputs is not None:
+            count = len(outputs)
+        else:
+            count = 0
+
         return self.model_copy(
             update={
                 "status": EnumDispatchStatus.SUCCESS,

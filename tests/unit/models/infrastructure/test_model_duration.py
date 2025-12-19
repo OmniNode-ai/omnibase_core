@@ -7,6 +7,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError as OnexE
 from omnibase_core.models.infrastructure.model_duration import ModelDuration
 
 
+@pytest.mark.unit
 class TestModelDurationInstantiation:
     """Tests for ModelDuration instantiation."""
 
@@ -47,6 +48,7 @@ class TestModelDurationInstantiation:
         assert duration.is_zero()
 
 
+@pytest.mark.unit
 class TestModelDurationFactoryMethods:
     """Tests for ModelDuration factory methods."""
 
@@ -80,6 +82,7 @@ class TestModelDurationFactoryMethods:
         assert duration.milliseconds == 0
 
 
+@pytest.mark.unit
 class TestModelDurationConversions:
     """Tests for ModelDuration time unit conversions."""
 
@@ -111,6 +114,7 @@ class TestModelDurationConversions:
         assert duration.total_hours() == pytest.approx(0.0004166666)
 
 
+@pytest.mark.unit
 class TestModelDurationValidation:
     """Tests for ModelDuration validation."""
 
@@ -145,6 +149,7 @@ class TestModelDurationValidation:
         assert "must be a number" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestModelDurationProperties:
     """Tests for ModelDuration properties and methods."""
 
@@ -176,6 +181,7 @@ class TestModelDurationProperties:
         assert time_based.unit == EnumTimeUnit.MILLISECONDS
 
 
+@pytest.mark.unit
 class TestModelDurationSerialization:
     """Tests for ModelDuration serialization."""
 
@@ -193,6 +199,7 @@ class TestModelDurationSerialization:
         assert data["milliseconds"] == 120000
 
 
+@pytest.mark.unit
 class TestModelDurationProtocols:
     """Tests for ModelDuration protocol implementations."""
 
@@ -216,6 +223,7 @@ class TestModelDurationProtocols:
         assert len(str_repr) > 0
 
 
+@pytest.mark.unit
 class TestModelDurationEdgeCases:
     """Tests for ModelDuration edge cases."""
 

@@ -1,10 +1,12 @@
 """Tests for utility decorators."""
 
+import pytest
 from pydantic import BaseModel
 
 from omnibase_core.utils.util_decorators import allow_any_type, allow_dict_str_any
 
 
+@pytest.mark.unit
 class TestDecorators:
     """Test utility decorators."""
 
@@ -13,6 +15,7 @@ class TestDecorators:
         reason = "Testing any type allowance"
 
         @allow_any_type(reason)
+        @pytest.mark.unit
         class TestModel(BaseModel):
             field: str
 
@@ -27,6 +30,7 @@ class TestDecorators:
 
         @allow_any_type(reason1)
         @allow_any_type(reason2)
+        @pytest.mark.unit
         class TestModel(BaseModel):
             field: str
 
@@ -40,6 +44,7 @@ class TestDecorators:
         reason = "Testing dict[str, Any] allowance"
 
         @allow_dict_str_any(reason)
+        @pytest.mark.unit
         class TestModel(BaseModel):
             field: str
 
@@ -54,6 +59,7 @@ class TestDecorators:
 
         @allow_dict_str_any(reason1)
         @allow_dict_str_any(reason2)
+        @pytest.mark.unit
         class TestModel(BaseModel):
             field: str
 
@@ -69,6 +75,7 @@ class TestDecorators:
 
         @allow_any_type(any_reason)
         @allow_dict_str_any(dict_reason)
+        @pytest.mark.unit
         class TestModel(BaseModel):
             field: str
 
@@ -83,6 +90,7 @@ class TestDecorators:
         reason = "Testing functionality preservation"
 
         @allow_any_type(reason)
+        @pytest.mark.unit
         class TestModel(BaseModel):
             name: str
             value: int
@@ -144,6 +152,7 @@ class TestDecorators:
         reason = "Testing metadata persistence"
 
         @allow_any_type(reason)
+        @pytest.mark.unit
         class TestModel(BaseModel):
             field: str
 

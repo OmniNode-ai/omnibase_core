@@ -129,6 +129,7 @@ def parallel_steps() -> list[ModelWorkflowStep]:
     ]
 
 
+@pytest.mark.unit
 class TestMixinWorkflowExecution:
     """Test workflow execution mixin methods."""
 
@@ -239,6 +240,7 @@ class TestMixinWorkflowExecution:
         assert isinstance(result.execution_time_ms, int)
 
 
+@pytest.mark.unit
 class TestMixinWorkflowValidation:
     """Test workflow validation through mixin."""
 
@@ -320,6 +322,7 @@ class TestMixinWorkflowValidation:
         assert any("cycle" in error.lower() for error in errors)
 
 
+@pytest.mark.unit
 class TestMixinExecutionOrder:
     """Test execution order computation through mixin."""
 
@@ -393,6 +396,7 @@ class TestMixinExecutionOrder:
         assert "cycle" in str(exc_info.value).lower()
 
 
+@pytest.mark.unit
 class TestMixinStepCreation:
     """Test creating workflow steps from configuration."""
 
@@ -448,6 +452,7 @@ class TestMixinStepCreation:
         assert isinstance(steps, list)
 
 
+@pytest.mark.unit
 class TestMixinIntegration:
     """Test mixin integration with workflow executor."""
 

@@ -27,6 +27,7 @@ from omnibase_core.models.infrastructure.model_duration import ModelDuration
 from omnibase_core.models.validation.model_validation_error import ModelValidationError
 
 
+@pytest.mark.unit
 class TestModelCliResultFactoryMethods:
     """Test factory methods for creating CLI results."""
 
@@ -179,6 +180,7 @@ class TestModelCliResultFactoryMethods:
         assert result.error_message == "Validation failed"
 
 
+@pytest.mark.unit
 class TestModelCliResultStatusMethods:
     """Test status checking methods."""
 
@@ -344,6 +346,7 @@ class TestModelCliResultStatusMethods:
         assert result.has_critical_errors() is False
 
 
+@pytest.mark.unit
 class TestModelCliResultDurationMethods:
     """Test duration conversion methods."""
 
@@ -376,6 +379,7 @@ class TestModelCliResultDurationMethods:
         assert result.get_duration_seconds() == 2.5
 
 
+@pytest.mark.unit
 class TestModelCliResultErrorMethods:
     """Test error retrieval and management methods."""
 
@@ -606,6 +610,7 @@ class TestModelCliResultErrorMethods:
         assert result.validation_errors[0].message == "Validation error"
 
 
+@pytest.mark.unit
 class TestModelCliResultDataManagement:
     """Test data management methods (performance metrics, debug info, trace data, metadata)."""
 
@@ -796,6 +801,7 @@ class TestModelCliResultDataManagement:
         assert value == 42
 
 
+@pytest.mark.unit
 class TestModelCliResultOutputMethods:
     """Test output value methods."""
 
@@ -886,6 +892,7 @@ class TestModelCliResultOutputMethods:
         assert len(formatted) > 0
 
 
+@pytest.mark.unit
 class TestModelCliResultSummary:
     """Test summary generation."""
 
@@ -912,6 +919,7 @@ class TestModelCliResultSummary:
         assert summary.error_count == 0
 
 
+@pytest.mark.unit
 class TestModelCliResultProtocols:
     """Test protocol method implementations."""
 
@@ -961,6 +969,7 @@ class TestModelCliResultProtocols:
         assert is_valid is True
 
 
+@pytest.mark.unit
 class TestModelCliResultEdgeCases:
     """Test edge cases and error scenarios."""
 

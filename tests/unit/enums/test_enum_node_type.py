@@ -4,9 +4,12 @@ Unit tests for EnumNodeType.
 Test coverage for node type enumeration and helper methods.
 """
 
+import pytest
+
 from omnibase_core.enums import EnumNodeType
 
 
+@pytest.mark.unit
 class TestEnumNodeType:
     """Test cases for EnumNodeType."""
 

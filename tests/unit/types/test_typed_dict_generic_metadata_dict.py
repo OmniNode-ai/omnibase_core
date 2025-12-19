@@ -4,12 +4,15 @@ Test suite for TypedDictGenericMetadataDict.
 
 from uuid import UUID, uuid4
 
+import pytest
+
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.types.typed_dict_generic_metadata_dict import (
     TypedDictGenericMetadataDict,
 )
 
 
+@pytest.mark.unit
 class TestTypedDictGenericMetadataDict:
     """Test TypedDictGenericMetadataDict functionality."""
 

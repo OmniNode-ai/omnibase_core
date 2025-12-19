@@ -1,3 +1,5 @@
+import pytest
+
 #!/usr/bin/env python3
 """
 Comprehensive tests for YAML contract validation.
@@ -21,8 +23,6 @@ import sys
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
-
-import pytest
 
 sys.path.insert(
     0,

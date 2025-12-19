@@ -19,6 +19,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
+@pytest.mark.unit
 class TestModelHealthStatus:
     """Test suite for ModelHealthStatus."""
 
@@ -497,6 +498,7 @@ class TestModelHealthStatus:
         assert len(with_issues.issues) == 1
 
 
+@pytest.mark.unit
 class TestModelHealthStatusEdgeCases:
     """Edge case tests for ModelHealthStatus."""
 

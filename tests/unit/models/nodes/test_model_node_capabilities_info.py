@@ -19,6 +19,7 @@ from omnibase_core.models.node_metadata.model_node_capabilities_info import (
 )
 
 
+@pytest.mark.unit
 class TestModelNodeCapabilitiesInfo:
     """Test cases for ModelNodeCapabilitiesInfo."""
 

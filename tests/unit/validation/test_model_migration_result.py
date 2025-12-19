@@ -13,9 +13,12 @@ Tests cover:
 
 from __future__ import annotations
 
+import pytest
+
 from omnibase_core.models.validation.model_migration_result import ModelMigrationResult
 
 
+@pytest.mark.unit
 class TestModelMigrationResult:
     """Test ModelMigrationResult class."""
 

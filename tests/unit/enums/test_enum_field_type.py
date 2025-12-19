@@ -11,6 +11,7 @@ import pytest
 from omnibase_core.enums.enum_field_type import EnumFieldType
 
 
+@pytest.mark.unit
 class TestEnumFieldType:
     """Test class for EnumFieldType."""
 

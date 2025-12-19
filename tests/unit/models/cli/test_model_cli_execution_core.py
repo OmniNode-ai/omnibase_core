@@ -9,6 +9,8 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from uuid import UUID, uuid4
 
+import pytest
+
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
 from omnibase_core.enums.enum_execution_status_v2 import (
     EnumExecutionStatusV2 as EnumExecutionStatus,
@@ -16,6 +18,7 @@ from omnibase_core.enums.enum_execution_status_v2 import (
 from omnibase_core.models.cli.model_cli_execution_core import ModelCliExecutionCore
 
 
+@pytest.mark.unit
 class TestModelCliExecutionCoreBasic:
     """Test basic CLI execution core functionality."""
 
@@ -73,6 +76,7 @@ class TestModelCliExecutionCoreBasic:
         assert core.progress_percentage == 50.0
 
 
+@pytest.mark.unit
 class TestModelCliExecutionCoreGetters:
     """Test getter methods."""
 
@@ -126,6 +130,7 @@ class TestModelCliExecutionCoreGetters:
         assert core.get_target_node_name() is None
 
 
+@pytest.mark.unit
 class TestModelCliExecutionCoreTiming:
     """Test timing-related methods."""
 
@@ -170,6 +175,7 @@ class TestModelCliExecutionCoreTiming:
         assert 2.9 <= elapsed <= 3.1  # ~3 seconds with tolerance
 
 
+@pytest.mark.unit
 class TestModelCliExecutionCoreStatus:
     """Test status checking methods."""
 
@@ -280,6 +286,7 @@ class TestModelCliExecutionCoreStatus:
         assert core.is_successful() is False
 
 
+@pytest.mark.unit
 class TestModelCliExecutionCoreStateManagement:
     """Test state management methods."""
 
@@ -375,6 +382,7 @@ class TestModelCliExecutionCoreStateManagement:
         assert core.progress_percentage == 100.0
 
 
+@pytest.mark.unit
 class TestModelCliExecutionCoreFactoryMethods:
     """Test factory methods."""
 
@@ -408,6 +416,7 @@ class TestModelCliExecutionCoreFactoryMethods:
         assert core1.command_name_id == core2.command_name_id
 
 
+@pytest.mark.unit
 class TestModelCliExecutionCoreProtocols:
     """Test protocol method implementations."""
 
@@ -449,6 +458,7 @@ class TestModelCliExecutionCoreProtocols:
         assert result is True
 
 
+@pytest.mark.unit
 class TestModelCliExecutionCoreSerialization:
     """Test serialization and deserialization."""
 
@@ -487,6 +497,7 @@ class TestModelCliExecutionCoreSerialization:
         assert restored.progress_percentage == original.progress_percentage
 
 
+@pytest.mark.unit
 class TestModelCliExecutionCoreEdgeCases:
     """Test edge cases and boundary conditions."""
 

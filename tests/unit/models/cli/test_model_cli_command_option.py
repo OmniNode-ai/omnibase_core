@@ -8,10 +8,13 @@ and proper handling of CLI command options with type safety.
 import uuid
 from uuid import UUID
 
+import pytest
+
 from omnibase_core.enums.enum_cli_option_value_type import EnumCliOptionValueType
 from omnibase_core.models.cli.model_cli_command_option import ModelCliCommandOption
 
 
+@pytest.mark.unit
 class TestModelCliCommandOptionBasic:
     """Test basic option creation and configuration."""
 
@@ -106,6 +109,7 @@ class TestModelCliCommandOptionBasic:
         assert option.is_multiple is True
 
 
+@pytest.mark.unit
 class TestModelCliCommandOptionFactoryMethods:
     """Test factory methods for creating typed options."""
 
@@ -232,6 +236,7 @@ class TestModelCliCommandOptionFactoryMethods:
         assert option.valid_choices == []
 
 
+@pytest.mark.unit
 class TestModelCliCommandOptionValueValidation:
     """Test value type validation and type flexibility."""
 
@@ -334,6 +339,7 @@ class TestModelCliCommandOptionValueValidation:
         assert option.value == value_uuid
 
 
+@pytest.mark.unit
 class TestModelCliCommandOptionMethods:
     """Test option methods and computed properties."""
 
@@ -444,6 +450,7 @@ class TestModelCliCommandOptionMethods:
         assert option.option_name == expected
 
 
+@pytest.mark.unit
 class TestModelCliCommandOptionProtocols:
     """Test protocol method implementations."""
 
@@ -491,6 +498,7 @@ class TestModelCliCommandOptionProtocols:
         assert option.validate_instance() is True
 
 
+@pytest.mark.unit
 class TestModelCliCommandOptionEdgeCases:
     """Test edge cases and complex scenarios."""
 

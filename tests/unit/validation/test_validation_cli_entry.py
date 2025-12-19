@@ -11,6 +11,7 @@ from unittest.mock import patch
 import pytest
 
 
+@pytest.mark.unit
 class TestValidationCliEntry:
     """Test validation CLI entry point."""
 

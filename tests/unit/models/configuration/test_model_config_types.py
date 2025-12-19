@@ -12,6 +12,7 @@ from omnibase_core.models.configuration.model_config_types import (
 )
 
 
+@pytest.mark.unit
 class TestValidateConfigValueTypeValidCases:
     """Tests for valid type/value combinations."""
 
@@ -68,6 +69,7 @@ class TestValidateConfigValueTypeValidCases:
         validate_config_value_type("str", "hello world")  # Should not raise
 
 
+@pytest.mark.unit
 class TestValidateConfigValueTypeInvalidCases:
     """Tests for invalid type/value combinations."""
 
@@ -114,6 +116,7 @@ class TestValidateConfigValueTypeInvalidCases:
             validate_config_value_type("str", True)
 
 
+@pytest.mark.unit
 class TestValidateConfigValueTypeBoolEdgeCases:
     """Tests for boolean edge cases.
 
@@ -166,6 +169,7 @@ class TestValidateConfigValueTypeBoolEdgeCases:
             validate_config_value_type("bool", "")
 
 
+@pytest.mark.unit
 class TestValidateConfigValueTypeFloatEdgeCases:
     """Tests for float edge cases."""
 
@@ -190,6 +194,7 @@ class TestValidateConfigValueTypeFloatEdgeCases:
         validate_config_value_type("float", 1e300)  # Should not raise
 
 
+@pytest.mark.unit
 class TestValidateConfigValueTypeIntEdgeCases:
     """Tests for int edge cases."""
 
@@ -202,6 +207,7 @@ class TestValidateConfigValueTypeIntEdgeCases:
         validate_config_value_type("int", -(10**100))  # Should not raise
 
 
+@pytest.mark.unit
 class TestValidateConfigValueTypeStrEdgeCases:
     """Tests for string edge cases."""
 

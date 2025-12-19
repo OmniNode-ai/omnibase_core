@@ -9,6 +9,7 @@ import pytest
 from omnibase_core.enums.enum_file_stamp_status import EnumFileStampStatus
 
 
+@pytest.mark.unit
 class TestEnumFileStampStatus:
     """Test cases for EnumFileStampStatus enum."""
 

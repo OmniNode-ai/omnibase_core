@@ -57,6 +57,7 @@ DEFAULT_SCAN_PATH = validate_no_infra_imports.DEFAULT_SCAN_PATH
 pytestmark = [pytest.mark.unit, pytest.mark.timeout(30)]
 
 
+@pytest.mark.unit
 class TestInfraImportViolation:
     """Tests for the InfraImportViolation dataclass."""
 
@@ -76,6 +77,7 @@ class TestInfraImportViolation:
         assert violation.module_path == "omnibase_infra"
 
 
+@pytest.mark.unit
 class TestConstants:
     """Tests for module constants."""
 
@@ -88,6 +90,7 @@ class TestConstants:
         assert DEFAULT_SCAN_PATH == "src/omnibase_core"
 
 
+@pytest.mark.unit
 class TestInfraImportVisitorFromImports:
     """Tests for from import detection in InfraImportVisitor."""
 
@@ -142,6 +145,7 @@ from omnibase_infra.database.postgres import PostgresConnection
         assert "omnibase_infra.database.postgres" in visitor.violations[0].module_path
 
 
+@pytest.mark.unit
 class TestInfraImportVisitorRegularImports:
     """Tests for regular import detection in InfraImportVisitor."""
 
@@ -196,6 +200,7 @@ import omnibase_infra as infra
         assert visitor.violations[0].module_path == "omnibase_infra"
 
 
+@pytest.mark.unit
 class TestInfraImportVisitorCleanCode:
     """Tests for code that should NOT trigger violations."""
 
@@ -268,6 +273,7 @@ from omnibase_infra_utils import helper  # Different module
         assert len(visitor.violations) == 0
 
 
+@pytest.mark.unit
 class TestInfraImportVisitorMultipleViolations:
     """Tests for multiple violation detection."""
 
@@ -310,6 +316,7 @@ from omnibase_infra.kafka import KafkaProducer
         assert 5 in line_numbers  # from omnibase_infra.kafka
 
 
+@pytest.mark.unit
 class TestInfraImportVisitorSourceLines:
     """Tests for source line retrieval."""
 
@@ -334,6 +341,7 @@ class TestInfraImportVisitorSourceLines:
         assert visitor._get_source_line(999) == "<source unavailable>"
 
 
+@pytest.mark.unit
 class TestInfraImportValidator:
     """Tests for the InfraImportValidator class."""
 
@@ -501,6 +509,7 @@ def incomplete(
         assert validator.checked_files == 0
 
 
+@pytest.mark.unit
 class TestInfraImportValidatorReport:
     """Tests for the report generation."""
 
@@ -565,6 +574,7 @@ class TestInfraImportValidatorReport:
         assert "How to Fix" in captured.out
 
 
+@pytest.mark.unit
 class TestMainFunction:
     """Tests for the main() entry point."""
 
@@ -697,6 +707,7 @@ class TestMainFunction:
             os.chdir(original_cwd)
 
 
+@pytest.mark.unit
 class TestEdgeCases:
     """Tests for edge cases and error handling."""
 
@@ -820,6 +831,7 @@ from omnibase_infra import kafka
         assert "Permission denied" in validator.errors[0]
 
 
+@pytest.mark.unit
 class TestDiscoveryPatterns:
     """Tests for file discovery patterns."""
 

@@ -1,3 +1,5 @@
+import pytest
+
 # SPDX-FileCopyrightText: 2024 OmniNode Team
 #
 # SPDX-License-Identifier: Apache-2.0
@@ -15,7 +17,6 @@ These tests ensure:
 
 from uuid import uuid4
 
-import pytest
 from pydantic import ValidationError
 
 from omnibase_core.enums.enum_reducer_types import EnumReductionType
@@ -24,8 +25,8 @@ from omnibase_core.models.reducer.model_reducer_input import ModelReducerInput
 from omnibase_core.models.reducer.model_reducer_output import ModelReducerOutput
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelReducerInputHardening:
     """Tests for ModelReducerInput frozen and extra=forbid."""
 
@@ -114,8 +115,8 @@ class TestModelReducerInputHardening:
         assert config.get("extra") == "forbid"
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelReducerOutputHardening:
     """Tests for ModelReducerOutput frozen and extra=forbid."""
 
@@ -158,8 +159,8 @@ class TestModelReducerOutputHardening:
         assert config.get("extra") == "forbid"
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelIntentHardening:
     """Tests for ModelIntent frozen and extra=forbid."""
 

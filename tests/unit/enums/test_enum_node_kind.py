@@ -21,6 +21,7 @@ import pytest
 from omnibase_core.enums.enum_node_kind import EnumNodeKind
 
 
+@pytest.mark.unit
 class TestEnumNodeKind:
     """Test cases for EnumNodeKind."""
 
@@ -57,6 +58,7 @@ class TestEnumNodeKind:
             assert enum_member == expected_str  # Test equality with string
 
 
+@pytest.mark.unit
 class TestEnumNodeKindRuntimeHost:
     """Test cases specifically for RUNTIME_HOST enum value."""
 
@@ -100,6 +102,7 @@ class TestEnumNodeKindRuntimeHost:
         """Test that RUNTIME_HOST works with Pydantic models."""
         from pydantic import BaseModel
 
+        @pytest.mark.unit
         class TestModel(BaseModel):
             node_kind: EnumNodeKind
 
@@ -120,6 +123,7 @@ class TestEnumNodeKindRuntimeHost:
         assert new_model.node_kind == EnumNodeKind.RUNTIME_HOST
 
 
+@pytest.mark.unit
 class TestEnumNodeKindHelperMethods:
     """Test cases for EnumNodeKind helper methods."""
 
@@ -160,6 +164,7 @@ class TestEnumNodeKindHelperMethods:
             )
 
 
+@pytest.mark.unit
 class TestEnumNodeKindSerialization:
     """Test cases for EnumNodeKind serialization and deserialization."""
 
@@ -194,6 +199,7 @@ class TestEnumNodeKindSerialization:
         """Test that enum works with Pydantic models."""
         from pydantic import BaseModel
 
+        @pytest.mark.unit
         class TestModel(BaseModel):
             node_kind: EnumNodeKind
 
@@ -214,6 +220,7 @@ class TestEnumNodeKindSerialization:
         assert new_model.node_kind == EnumNodeKind.COMPUTE
 
 
+@pytest.mark.unit
 class TestEnumNodeKindBehavior:
     """Test cases for EnumNodeKind general behavior."""
 
@@ -313,6 +320,7 @@ class TestEnumNodeKindBehavior:
         assert "four-node architecture" in EnumNodeKind.__doc__
 
 
+@pytest.mark.unit
 class TestEnumNodeKindEdgeCases:
     """Test edge cases and error conditions for EnumNodeKind."""
 
@@ -368,6 +376,7 @@ class TestEnumNodeKindEdgeCases:
         assert isinstance(result2, bool)
 
 
+@pytest.mark.unit
 class TestEnumNodeKindPropertyBased:
     """Property-based tests using hypothesis for EnumNodeKind."""
 

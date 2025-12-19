@@ -15,6 +15,7 @@ from omnibase_core.models.cli.model_output_format_options import (
 )
 
 
+@pytest.mark.unit
 class TestModelCliAdvancedParams:
     """Test cases for ModelCliAdvancedParams."""
 

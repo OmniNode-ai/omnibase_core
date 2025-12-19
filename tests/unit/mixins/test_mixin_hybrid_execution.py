@@ -94,6 +94,7 @@ class MockToolWithComplexInput(
         return input_state
 
 
+@pytest.mark.unit
 class TestMixinInitialization:
     """Test mixin initialization."""
 
@@ -133,6 +134,7 @@ class TestMixinInitialization:
             )
 
 
+@pytest.mark.unit
 class TestDetermineExecutionMode:
     """Test execution mode determination logic."""
 
@@ -217,6 +219,7 @@ class TestDetermineExecutionMode:
         assert mode == ExecutionMode.DIRECT
 
 
+@pytest.mark.unit
 class TestExecuteWithModeSelection:
     """Test execute method with mode selection branches."""
 
@@ -333,6 +336,7 @@ class TestExecuteWithModeSelection:
         assert result.value == "processed: test"
 
 
+@pytest.mark.unit
 class TestExecuteDirect:
     """Test direct execution path."""
 
@@ -361,6 +365,7 @@ class TestExecuteDirect:
             assert any("DIRECT_EXECUTION" in msg for msg in log_messages)
 
 
+@pytest.mark.unit
 class TestExecuteWorkflow:
     """Test workflow execution path with multiple branches."""
 
@@ -458,6 +463,7 @@ class TestExecuteWorkflow:
         mock_loop.close.assert_called_once()
 
 
+@pytest.mark.unit
 class TestExecuteOrchestrated:
     """Test orchestrated execution path."""
 
@@ -487,6 +493,7 @@ class TestExecuteOrchestrated:
             assert result.value == "workflow: test"
 
 
+@pytest.mark.unit
 class TestCalculateComplexity:
     """Test complexity calculation branches."""
 
@@ -583,6 +590,7 @@ class TestCalculateComplexity:
         assert complexity == 0.0
 
 
+@pytest.mark.unit
 class TestGetSupportedModes:
     """Test supported modes detection."""
 
@@ -631,6 +639,7 @@ class TestGetSupportedModes:
         assert ExecutionMode.WORKFLOW in modes
 
 
+@pytest.mark.unit
 class TestSupportsMode:
     """Test supports_mode method."""
 
@@ -655,6 +664,7 @@ class TestSupportsMode:
         assert not tool.supports_mode(ExecutionMode.ORCHESTRATED)
 
 
+@pytest.mark.unit
 class TestPropertiesAccessors:
     """Test property accessors."""
 
@@ -696,6 +706,7 @@ class TestPropertiesAccessors:
         mock_loop.close.assert_called_once()
 
 
+@pytest.mark.unit
 class TestCreateWorkflowDefault:
     """Test default create_workflow implementation."""
 
@@ -723,6 +734,7 @@ class TestCreateWorkflowDefault:
             assert any("No workflow implementation" in msg for msg in log_messages)
 
 
+@pytest.mark.unit
 class TestProcessNotImplemented:
     """Test process method requirement."""
 
@@ -743,6 +755,7 @@ class TestProcessNotImplemented:
             tool.process(input_state)
 
 
+@pytest.mark.unit
 class TestEdgeCases:
     """Test edge cases and boundary conditions."""
 

@@ -12,6 +12,7 @@ import pytest
 from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 
 
+@pytest.mark.unit
 class TestModelCircuitBreakerInitialization:
     """Test ModelCircuitBreaker initialization."""
 
@@ -46,6 +47,7 @@ class TestModelCircuitBreakerInitialization:
         assert isinstance(cb, BaseModel)
 
 
+@pytest.mark.unit
 class TestModelCircuitBreakerValidation:
     """Test ModelCircuitBreaker field validation."""
 
@@ -125,6 +127,7 @@ class TestModelCircuitBreakerValidation:
             ModelCircuitBreaker(failure_rate_threshold=1.1)
 
 
+@pytest.mark.unit
 class TestModelCircuitBreakerSerialization:
     """Test ModelCircuitBreaker serialization."""
 
@@ -173,6 +176,7 @@ class TestModelCircuitBreakerSerialization:
         assert restored.timeout_seconds == original.timeout_seconds
 
 
+@pytest.mark.unit
 class TestModelCircuitBreakerStateManagement:
     """Test circuit breaker state management."""
 
@@ -214,6 +218,7 @@ class TestModelCircuitBreakerStateManagement:
             assert cb.should_allow_request() is False
 
 
+@pytest.mark.unit
 class TestModelCircuitBreakerFailureTracking:
     """Test circuit breaker failure tracking."""
 
@@ -270,6 +275,7 @@ class TestModelCircuitBreakerFailureTracking:
         assert cb.get_failure_rate() == 0.0
 
 
+@pytest.mark.unit
 class TestModelCircuitBreakerStateTransitions:
     """Test circuit breaker state transitions."""
 
@@ -332,6 +338,7 @@ class TestModelCircuitBreakerStateTransitions:
             assert cb.state == "open"
 
 
+@pytest.mark.unit
 class TestModelCircuitBreakerManualControl:
     """Test circuit breaker manual control methods."""
 
@@ -374,6 +381,7 @@ class TestModelCircuitBreakerManualControl:
             assert cb.total_requests == 0
 
 
+@pytest.mark.unit
 class TestModelCircuitBreakerFactoryMethods:
     """Test circuit breaker factory methods."""
 
@@ -401,6 +409,7 @@ class TestModelCircuitBreakerFactoryMethods:
         assert cb.enabled is False
 
 
+@pytest.mark.unit
 class TestModelCircuitBreakerEdgeCases:
     """Test circuit breaker edge cases."""
 
@@ -477,6 +486,7 @@ class TestModelCircuitBreakerEdgeCases:
             assert cb.failure_count == 0
 
 
+@pytest.mark.unit
 class TestModelCircuitBreakerAttributes:
     """Test circuit breaker attributes and metadata."""
 

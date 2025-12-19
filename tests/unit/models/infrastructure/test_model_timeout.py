@@ -10,6 +10,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError as OnexE
 from omnibase_core.models.infrastructure.model_timeout import ModelTimeout
 
 
+@pytest.mark.unit
 class TestModelTimeoutInstantiation:
     """Tests for ModelTimeout instantiation."""
 
@@ -45,6 +46,7 @@ class TestModelTimeoutInstantiation:
         assert timeout.extension_limit_seconds == 10
 
 
+@pytest.mark.unit
 class TestModelTimeoutValidation:
     """Tests for ModelTimeout validation."""
 
@@ -93,6 +95,7 @@ class TestModelTimeoutValidation:
             ModelTimeout(timeout_seconds=60, custom_metadata="invalid")
 
 
+@pytest.mark.unit
 class TestModelTimeoutProperties:
     """Tests for ModelTimeout property access."""
 
@@ -175,6 +178,7 @@ class TestModelTimeoutProperties:
         assert timeout.runtime_category is not None
 
 
+@pytest.mark.unit
 class TestModelTimeoutDeadlineCalculations:
     """Tests for ModelTimeout deadline calculations."""
 
@@ -210,6 +214,7 @@ class TestModelTimeoutDeadlineCalculations:
         assert warning_time is None
 
 
+@pytest.mark.unit
 class TestModelTimeoutExpirationChecks:
     """Tests for ModelTimeout expiration checks."""
 
@@ -266,6 +271,7 @@ class TestModelTimeoutExpirationChecks:
         assert progress == 50.0
 
 
+@pytest.mark.unit
 class TestModelTimeoutExtension:
     """Tests for ModelTimeout extension functionality."""
 
@@ -286,6 +292,7 @@ class TestModelTimeoutExtension:
         assert result is False
 
 
+@pytest.mark.unit
 class TestModelTimeoutCustomMetadata:
     """Tests for ModelTimeout custom metadata."""
 
@@ -319,6 +326,7 @@ class TestModelTimeoutCustomMetadata:
         assert props is not None
 
 
+@pytest.mark.unit
 class TestModelTimeoutFactoryMethods:
     """Tests for ModelTimeout factory methods."""
 
@@ -360,6 +368,7 @@ class TestModelTimeoutFactoryMethods:
         assert timeout.timeout_seconds > 0
 
 
+@pytest.mark.unit
 class TestModelTimeoutSerialization:
     """Tests for ModelTimeout serialization."""
 
@@ -389,6 +398,7 @@ class TestModelTimeoutSerialization:
         assert isinstance(data, dict)
 
 
+@pytest.mark.unit
 class TestModelTimeoutProtocols:
     """Tests for ModelTimeout protocol implementations."""
 
@@ -411,6 +421,7 @@ class TestModelTimeoutProtocols:
         assert result is True
 
 
+@pytest.mark.unit
 class TestModelTimeoutEdgeCases:
     """Tests for ModelTimeout edge cases."""
 

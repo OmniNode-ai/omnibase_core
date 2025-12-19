@@ -200,6 +200,7 @@ def fsm_with_actions() -> ModelFSMSubcontract:
     )
 
 
+@pytest.mark.unit
 class TestFSMTransitionSuccess:
     """Test successful FSM transitions."""
 
@@ -267,6 +268,7 @@ class TestFSMTransitionSuccess:
         )
 
 
+@pytest.mark.unit
 class TestFSMConditions:
     """Test FSM transition conditions."""
 
@@ -309,6 +311,7 @@ class TestFSMConditions:
         assert result.new_state == "idle"
 
 
+@pytest.mark.unit
 class TestFSMValidation:
     """Test FSM contract validation."""
 
@@ -606,6 +609,7 @@ class TestFSMValidation:
         assert len(errors) == 0
 
 
+@pytest.mark.unit
 class TestFSMErrors:
     """Test FSM error handling."""
 
@@ -667,6 +671,7 @@ class TestFSMErrors:
         )
 
 
+@pytest.mark.unit
 class TestFSMState:
     """Test FSM state management."""
 
@@ -692,6 +697,7 @@ class TestFSMState:
         assert state.history == ["idle"]
 
 
+@pytest.mark.unit
 class TestWildcardTransitions:
     """Test wildcard transitions (from any state)."""
 
@@ -764,6 +770,7 @@ class TestWildcardTransitions:
         assert result.new_state == "error"
 
 
+@pytest.mark.unit
 class TestPersistenceIntents:
     """Test persistence intent emission."""
 
@@ -804,6 +811,7 @@ class TestPersistenceIntents:
         assert len(persist_intents) == 0
 
 
+@pytest.mark.unit
 class TestMetricsIntents:
     """Test metrics intent emission."""
 
@@ -823,6 +831,7 @@ class TestMetricsIntents:
         assert metric_intent.payload["tags"]["to_state"] == "running"
 
 
+@pytest.mark.unit
 class TestNestedFieldAccess:
     """Test nested field access in FSM condition expressions."""
 
@@ -1009,6 +1018,7 @@ class TestNestedFieldAccess:
         assert result.new_state == "end"
 
 
+@pytest.mark.unit
 class TestExpressionValidation:
     """Test expression validation using parse_expression."""
 

@@ -17,6 +17,7 @@ from omnibase_core.models.results.model_orchestrator_metrics import (
 )
 
 
+@pytest.mark.unit
 class TestModelOrchestratorMetricsBasicInstantiation:
     """Test basic instantiation."""
 
@@ -59,6 +60,7 @@ class TestModelOrchestratorMetricsBasicInstantiation:
         assert metrics.resource_utilization_percent == 75.0
 
 
+@pytest.mark.unit
 class TestModelOrchestratorMetricsFieldValidation:
     """Test field validation and type safety."""
 
@@ -94,6 +96,7 @@ class TestModelOrchestratorMetricsFieldValidation:
             ModelOrchestratorMetrics(failed_workflows=-1)
 
 
+@pytest.mark.unit
 class TestModelOrchestratorMetricsExecutionTimeField:
     """Test average execution time field."""
 
@@ -122,6 +125,7 @@ class TestModelOrchestratorMetricsExecutionTimeField:
         assert metrics.avg_execution_time_seconds == 0.0
 
 
+@pytest.mark.unit
 class TestModelOrchestratorMetricsResourceUtilizationField:
     """Test resource utilization percentage field."""
 
@@ -148,6 +152,7 @@ class TestModelOrchestratorMetricsResourceUtilizationField:
         assert metrics.resource_utilization_percent is None
 
 
+@pytest.mark.unit
 class TestModelOrchestratorMetricsGetTotalWorkflows:
     """Test get_total_workflows() method."""
 
@@ -193,6 +198,7 @@ class TestModelOrchestratorMetricsGetTotalWorkflows:
         assert total == 6
 
 
+@pytest.mark.unit
 class TestModelOrchestratorMetricsGetSuccessRate:
     """Test get_success_rate() method."""
 
@@ -260,6 +266,7 @@ class TestModelOrchestratorMetricsGetSuccessRate:
         assert 66.66 <= success_rate <= 66.67
 
 
+@pytest.mark.unit
 class TestModelOrchestratorMetricsSerialization:
     """Test model serialization and deserialization."""
 
@@ -312,6 +319,7 @@ class TestModelOrchestratorMetricsSerialization:
         )
 
 
+@pytest.mark.unit
 class TestModelOrchestratorMetricsComplexScenarios:
     """Test complex usage scenarios."""
 
@@ -351,6 +359,7 @@ class TestModelOrchestratorMetricsComplexScenarios:
         assert metrics.get_total_workflows() == 110
 
 
+@pytest.mark.unit
 class TestModelOrchestratorMetricsEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -378,6 +387,7 @@ class TestModelOrchestratorMetricsEdgeCases:
         assert metrics.resource_utilization_percent == 150.0
 
 
+@pytest.mark.unit
 class TestModelOrchestratorMetricsTypeSafety:
     """Test type safety - comprehensive testing required."""
 

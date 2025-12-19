@@ -7,6 +7,7 @@ from omnibase_core.models.common.model_value_container import ModelValueContaine
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
+@pytest.mark.unit
 class TestModelValueContainer:
     """Test class for ModelValueContainer."""
 

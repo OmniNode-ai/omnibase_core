@@ -86,6 +86,7 @@ class IncompleteRecord:
 
 
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestProtocolDefinition:
     """Tests for ProtocolRegistrationRecord definition."""
 
@@ -113,6 +114,7 @@ class TestProtocolDefinition:
 
 
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestPydanticImplementation:
     """Tests for Pydantic model implementations."""
 
@@ -167,6 +169,7 @@ class TestPydanticImplementation:
 
 
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestCustomImplementation:
     """Tests for custom (non-Pydantic) implementations."""
 
@@ -202,6 +205,7 @@ class TestCustomImplementation:
 
 
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestModelRegistrationRecordBase:
     """Tests for ModelRegistrationRecordBase convenience class."""
 
@@ -228,12 +232,14 @@ class TestModelRegistrationRecordBase:
 
     def test_base_class_is_frozen(self) -> None:
         """Test that base class produces frozen (immutable) instances."""
+        from pydantic import ValidationError
+
         record = InheritedRecord(
             service_id="svc-789",
             endpoint_url="http://test.local",
         )
         # Should raise on attempt to modify
-        with pytest.raises(Exception):  # ValidationError for frozen model
+        with pytest.raises(ValidationError, match="frozen"):
             record.service_id = "changed"  # type: ignore[misc]
 
     def test_base_class_forbids_extra_fields(self) -> None:
@@ -263,6 +269,7 @@ class TestModelRegistrationRecordBase:
 
 
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestProtocolTypeAnnotations:
     """Tests for using protocol in type annotations."""
 
@@ -315,6 +322,7 @@ class TestProtocolTypeAnnotations:
 
 
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestEdgeCases:
     """Tests for edge cases and boundary conditions."""
 

@@ -16,6 +16,8 @@ import ast
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import pytest
+
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
 from omnibase_core.validation.types import (
     ModelUnionPattern,
@@ -25,6 +27,7 @@ from omnibase_core.validation.types import (
 )
 
 
+@pytest.mark.unit
 class TestModelUnionPattern:
     """Test ModelUnionPattern class."""
 
@@ -103,6 +106,7 @@ class TestModelUnionPattern:
         assert "List[int]" in signature
 
 
+@pytest.mark.unit
 class TestUnionUsageChecker:
     """Test UnionUsageChecker class."""
 
@@ -260,6 +264,7 @@ def func(x: str | int | bool) -> None:
         assert checker.union_patterns[0].type_count == 1
 
 
+@pytest.mark.unit
 class TestValidateUnionUsageFile:
     """Test file-level union validation."""
 
@@ -369,6 +374,7 @@ def func3(z: str | int | bool) -> None:
         assert len(patterns) == 3
 
 
+@pytest.mark.unit
 class TestValidateUnionUsageDirectory:
     """Test directory-level union validation."""
 
@@ -509,6 +515,7 @@ def func(x: Union[str, int, bool]) -> None:
         assert result.metadata.strict_mode is False
 
 
+@pytest.mark.unit
 class TestEdgeCases:
     """Test edge cases and error conditions."""
 

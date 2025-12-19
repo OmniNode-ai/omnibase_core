@@ -2,9 +2,12 @@
 
 from uuid import uuid4
 
+import pytest
+
 from omnibase_core.models.configuration.model_per_user_limits import ModelPerUserLimits
 
 
+@pytest.mark.unit
 class TestModelPerUserLimitsBasics:
     """Test basic initialization and validation."""
 
@@ -31,6 +34,7 @@ class TestModelPerUserLimitsBasics:
         assert limits.user_tier_limits["free"] == 100
 
 
+@pytest.mark.unit
 class TestModelPerUserLimitsUserManagement:
     """Test user limit management methods."""
 
@@ -68,6 +72,7 @@ class TestModelPerUserLimitsUserManagement:
         assert limit == 1000
 
 
+@pytest.mark.unit
 class TestModelPerUserLimitsBurst:
     """Test burst capacity methods."""
 
@@ -91,6 +96,7 @@ class TestModelPerUserLimitsBurst:
         assert burst == 300
 
 
+@pytest.mark.unit
 class TestModelPerUserLimitsQuotas:
     """Test quota management methods."""
 
@@ -114,6 +120,7 @@ class TestModelPerUserLimitsQuotas:
         assert quota == 3000000
 
 
+@pytest.mark.unit
 class TestModelPerUserLimitsUserChecks:
     """Test user status check methods."""
 
@@ -140,6 +147,7 @@ class TestModelPerUserLimitsUserChecks:
         assert limits.is_user_blocked(user_id) is True
 
 
+@pytest.mark.unit
 class TestModelPerUserLimitsEscalation:
     """Test escalation methods."""
 
@@ -162,6 +170,7 @@ class TestModelPerUserLimitsEscalation:
         assert escalated == 200
 
 
+@pytest.mark.unit
 class TestModelPerUserLimitsUserIdentification:
     """Test user identification extraction."""
 
@@ -197,6 +206,7 @@ class TestModelPerUserLimitsUserIdentification:
         assert user_id == "custom123"
 
 
+@pytest.mark.unit
 class TestModelPerUserLimitsFactoryMethods:
     """Test factory methods."""
 
@@ -223,6 +233,7 @@ class TestModelPerUserLimitsFactoryMethods:
         assert limits.escalation_enabled is False
 
 
+@pytest.mark.unit
 class TestModelPerUserLimitsManagement:
     """Test user management operations."""
 
@@ -251,6 +262,7 @@ class TestModelPerUserLimitsManagement:
         assert user_id not in limits.unlimited_users
 
 
+@pytest.mark.unit
 class TestModelPerUserLimitsSerialization:
     """Test serialization."""
 

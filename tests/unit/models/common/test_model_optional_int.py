@@ -9,6 +9,7 @@ from omnibase_core.models.common.model_optional_int import (
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
+@pytest.mark.unit
 class TestModelOptionalIntNoneHandling:
     """Tests for None handling in ModelOptionalInt."""
 
@@ -62,6 +63,7 @@ class TestModelOptionalIntNoneHandling:
         assert bool(value) is False
 
 
+@pytest.mark.unit
 class TestModelOptionalIntIntegerValues:
     """Tests for integer value handling in ModelOptionalInt."""
 
@@ -130,6 +132,7 @@ class TestModelOptionalIntIntegerValues:
         assert bool(value) is True  # is_some() is True even for 0
 
 
+@pytest.mark.unit
 class TestModelOptionalIntFloatCoercionStrict:
     """Tests for float-to-int coercion in STRICT mode."""
 
@@ -173,6 +176,7 @@ class TestModelOptionalIntFloatCoercionStrict:
         assert "not an exact integer" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestModelOptionalIntFloatCoercionFloor:
     """Tests for float-to-int coercion in FLOOR mode."""
 
@@ -202,6 +206,7 @@ class TestModelOptionalIntFloatCoercionFloor:
         assert value.value == 3
 
 
+@pytest.mark.unit
 class TestModelOptionalIntFloatCoercionCeil:
     """Tests for float-to-int coercion in CEIL mode."""
 
@@ -231,6 +236,7 @@ class TestModelOptionalIntFloatCoercionCeil:
         assert value.value == 4
 
 
+@pytest.mark.unit
 class TestModelOptionalIntFloatCoercionRound:
     """Tests for float-to-int coercion in ROUND mode."""
 
@@ -266,6 +272,7 @@ class TestModelOptionalIntFloatCoercionRound:
         assert value.value == 5
 
 
+@pytest.mark.unit
 class TestModelOptionalIntInvalidFloatValues:
     """Tests for invalid float values (NaN, infinity)."""
 
@@ -294,6 +301,7 @@ class TestModelOptionalIntInvalidFloatValues:
         assert "cannot be NaN or infinity" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestModelOptionalIntInvalidTypes:
     """Tests for invalid input types."""
 
@@ -328,6 +336,7 @@ class TestModelOptionalIntInvalidTypes:
         assert "Cannot convert dict to optional int" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestModelOptionalIntUnwrapMethods:
     """Tests for unwrap-style methods."""
 
@@ -390,6 +399,7 @@ class TestModelOptionalIntUnwrapMethods:
         assert result == 999
 
 
+@pytest.mark.unit
 class TestModelOptionalIntMapMethod:
     """Tests for map transformation method."""
 
@@ -424,6 +434,7 @@ class TestModelOptionalIntMapMethod:
         assert result.unwrap() == 10
 
 
+@pytest.mark.unit
 class TestModelOptionalIntMetadata:
     """Tests for metadata handling."""
 
@@ -444,6 +455,7 @@ class TestModelOptionalIntMetadata:
         assert result.metadata == {"key": "value"}
 
 
+@pytest.mark.unit
 class TestModelOptionalIntCoercionModeEnum:
     """Tests for coercion mode enum."""
 
@@ -473,6 +485,7 @@ class TestModelOptionalIntCoercionModeEnum:
         assert mode == "strict"
 
 
+@pytest.mark.unit
 class TestModelOptionalIntAsDictSerialization:
     """Tests for dictionary serialization."""
 
@@ -503,6 +516,7 @@ class TestModelOptionalIntAsDictSerialization:
         assert result["coercion_mode"] == "floor"
 
 
+@pytest.mark.unit
 class TestModelOptionalIntPydanticSerialization:
     """Tests for Pydantic model serialization."""
 
@@ -540,6 +554,7 @@ class TestModelOptionalIntPydanticSerialization:
         assert restored.metadata == {"test": "data"}
 
 
+@pytest.mark.unit
 class TestModelOptionalIntStringRepresentation:
     """Tests for string representations."""
 
@@ -571,6 +586,7 @@ class TestModelOptionalIntStringRepresentation:
         assert "None" in result
 
 
+@pytest.mark.unit
 class TestModelOptionalIntBooleanConversion:
     """Tests for boolean conversion."""
 
@@ -613,6 +629,7 @@ class TestModelOptionalIntBooleanConversion:
         assert result is False
 
 
+@pytest.mark.unit
 class TestModelOptionalIntEdgeCases:
     """Tests for edge cases and boundary conditions."""
 
@@ -657,6 +674,7 @@ class TestModelOptionalIntEdgeCases:
         assert value.value == 3
 
 
+@pytest.mark.unit
 class TestModelOptionalIntIsSomeIsNone:
     """Tests for is_some() and is_none() methods."""
 
@@ -697,6 +715,7 @@ class TestModelOptionalIntIsSomeIsNone:
             assert value.is_some() != value.is_none()
 
 
+@pytest.mark.unit
 class TestModelOptionalIntPydanticValidation:
     """Tests for Pydantic validation behavior."""
 

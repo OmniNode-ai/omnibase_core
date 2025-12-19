@@ -21,7 +21,11 @@ from typing import Any
 
 
 class ClassDefinitionDetector(ast.NodeVisitor):
-    """AST visitor to detect top-level class definitions in Python code."""
+    """AST visitor to detect module-level class definitions in Python code.
+
+    Detects classes defined at module scope (not nested inside other classes).
+    Note: This includes classes defined inside functions at module scope.
+    """
 
     def __init__(self, filepath: str):
         self.filepath = filepath
@@ -29,7 +33,7 @@ class ClassDefinitionDetector(ast.NodeVisitor):
         self._in_class = False  # Track if we're inside a class
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
-        """Check if class definition is an Enum (only top-level classes)."""
+        """Check if class definition is an Enum (excludes nested classes only)."""
         # Skip nested classes (classes defined inside other classes)
         if self._in_class:
             return

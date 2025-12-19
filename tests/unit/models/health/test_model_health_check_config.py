@@ -5,6 +5,7 @@ import pytest
 from omnibase_core.models.health.model_health_check_config import ModelHealthCheckConfig
 
 
+@pytest.mark.unit
 class TestModelHealthCheckConfigBasics:
     """Test basic functionality."""
 
@@ -45,6 +46,7 @@ class TestModelHealthCheckConfigBasics:
         assert config.expected_status_codes == [200, 201]
 
 
+@pytest.mark.unit
 class TestModelHealthCheckConfigValidation:
     """Test validation."""
 
@@ -97,6 +99,7 @@ class TestModelHealthCheckConfigValidation:
             ModelHealthCheckConfig(check_method="INVALID")
 
 
+@pytest.mark.unit
 class TestModelHealthCheckConfigResponseValidation:
     """Test response validation."""
 
@@ -132,6 +135,7 @@ class TestModelHealthCheckConfigResponseValidation:
         assert config.is_response_healthy(200, "error") is False
 
 
+@pytest.mark.unit
 class TestModelHealthCheckConfigURLGeneration:
     """Test URL generation."""
 
@@ -157,6 +161,7 @@ class TestModelHealthCheckConfigURLGeneration:
         assert url == "https://api.example.com/health"
 
 
+@pytest.mark.unit
 class TestModelHealthCheckConfigHeaders:
     """Test header management."""
 
@@ -178,6 +183,7 @@ class TestModelHealthCheckConfigHeaders:
         assert "User-Agent" in headers
 
 
+@pytest.mark.unit
 class TestModelHealthCheckConfigTiming:
     """Test timing methods."""
 
@@ -196,6 +202,7 @@ class TestModelHealthCheckConfigTiming:
         assert config.should_check_now(0, 100) is False
 
 
+@pytest.mark.unit
 class TestModelHealthCheckConfigHealthStatus:
     """Test health status calculation."""
 
@@ -221,6 +228,7 @@ class TestModelHealthCheckConfigHealthStatus:
         assert status == "degraded"
 
 
+@pytest.mark.unit
 class TestModelHealthCheckConfigTimeout:
     """Test timeout methods."""
 
@@ -238,6 +246,7 @@ class TestModelHealthCheckConfigTimeout:
         assert config.get_effective_timeout() == 15
 
 
+@pytest.mark.unit
 class TestModelHealthCheckConfigFactoryMethods:
     """Test factory methods."""
 

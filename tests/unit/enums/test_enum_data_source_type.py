@@ -9,6 +9,7 @@ import pytest
 from omnibase_core.enums.enum_data_source_type import EnumDataSourceType
 
 
+@pytest.mark.unit
 class TestEnumDataSourceType:
     """Test cases for EnumDataSourceType enum."""
 

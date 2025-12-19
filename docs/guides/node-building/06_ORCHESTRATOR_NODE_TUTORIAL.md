@@ -25,6 +25,39 @@ In this tutorial, you'll build a production-ready **Data Processing Pipeline Orc
 > ORCHESTRATOR nodes coordinate but do NOT perform direct I/O - they emit Actions.
 > See [Canonical Execution Shapes](../../architecture/CANONICAL_EXECUTION_SHAPES.md) for the complete pattern.
 
+## ⚠️ CRITICAL: ORCHESTRATOR Result Constraint
+
+**ORCHESTRATOR nodes CANNOT return typed results** - they can only emit **events** and **intents**.
+
+```python
+# ✅ CORRECT - Return events and intents, NO result
+return ModelHandlerOutput[None](
+    node_kind=EnumNodeKind.ORCHESTRATOR,
+    events=[...],
+    intents=[...],
+    result=None,  # Must be None
+)
+
+# ❌ WRONG - Orchestrator cannot return result
+return ModelHandlerOutput[dict](
+    node_kind=EnumNodeKind.ORCHESTRATOR,
+    result={"status": "completed"},  # ERROR!
+)
+```
+
+**Why?**
+- **Separation of Concerns**: Orchestrators coordinate; COMPUTE nodes transform data
+- **Only COMPUTE nodes return typed results**
+- **Orchestrators communicate via events and intents, not direct results**
+
+**Validation Error:**
+```
+ValueError: ORCHESTRATOR cannot set result - use events[] and intents[] only.
+Only COMPUTE nodes return typed results.
+```
+
+See [ONEX Four-Node Architecture](../../architecture/ONEX_FOUR_NODE_ARCHITECTURE.md#4-orchestrator-node) for detailed explanation.
+
 ---
 
 **Why ORCHESTRATOR Nodes?**

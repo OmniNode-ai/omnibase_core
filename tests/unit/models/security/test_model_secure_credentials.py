@@ -65,6 +65,7 @@ class SampleCredentials(ModelSecureCredentials):
         )
 
 
+@pytest.mark.unit
 class TestModelSecureCredentialsBasicBehavior:
     """Test basic ModelSecureCredentials initialization and behaviors."""
 
@@ -114,6 +115,7 @@ class TestModelSecureCredentialsBasicBehavior:
             ModelSecureCredentials()  # Missing load_from_env implementation
 
 
+@pytest.mark.unit
 class TestModelSecureCredentialsSecretMasking:
     """Test secret masking functionality."""
 
@@ -245,6 +247,7 @@ class TestModelSecureCredentialsSecretMasking:
         assert masked[2]["password"] == "***MASKED***"
 
 
+@pytest.mark.unit
 class TestModelSecureCredentialsStrengthAssessment:
     """Test credential strength assessment."""
 
@@ -306,6 +309,7 @@ class TestModelSecureCredentialsStrengthAssessment:
         assert len(assessment.recommendations) > 0
 
 
+@pytest.mark.unit
 class TestModelSecureCredentialsSecurityClassification:
     """Test security classification functionality."""
 
@@ -342,6 +346,7 @@ class TestModelSecureCredentialsSecurityClassification:
         assert classification["username"] == "pii"
 
 
+@pytest.mark.unit
 class TestModelSecureCredentialsEnvironmentIntegration:
     """Test environment variable integration."""
 
@@ -410,6 +415,7 @@ class TestModelSecureCredentialsEnvironmentIntegration:
         assert creds.password.get_secret_value() == "new_password"
 
 
+@pytest.mark.unit
 class TestModelSecureCredentialsSerialization:
     """Test serialization methods."""
 
@@ -470,6 +476,7 @@ class TestModelSecureCredentialsSerialization:
         assert "(pii)" in template or "(secret)" in template
 
 
+@pytest.mark.unit
 class TestModelSecureCredentialsValidation:
     """Test credential validation methods."""
 
@@ -534,6 +541,7 @@ class TestModelSecureCredentialsValidation:
         assert can_connect is True
 
 
+@pytest.mark.unit
 class TestModelSecureCredentialsFactoryMethods:
     """Test factory methods."""
 
@@ -587,6 +595,7 @@ class TestModelSecureCredentialsFactoryMethods:
         assert isinstance(template.password, SecretStr)
 
 
+@pytest.mark.unit
 class TestModelSecureCredentialsSecurityBestPractices:
     """Test security best practices compliance."""
 
@@ -651,6 +660,7 @@ class TestModelSecureCredentialsSecurityBestPractices:
         assert "AuditSecretPassword" not in audit_str
 
 
+@pytest.mark.unit
 class TestModelSecureCredentialsEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -778,6 +788,7 @@ class TestModelSecureCredentialsEdgeCases:
         assert len(result.recommendations) > 0
 
 
+@pytest.mark.unit
 class TestModelSecureCredentialsBranchCoverage:
     """Test specific conditional branches for comprehensive branch coverage."""
 

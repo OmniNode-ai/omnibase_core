@@ -27,6 +27,7 @@ from omnibase_core.models.reducer.model_reducer_output import ModelReducerOutput
 pytestmark = pytest.mark.unit
 
 
+@pytest.mark.unit
 class TestModelReducerOutputThreadSafety:
     """Test thread safety and concurrent access to ModelReducerOutput."""
 
@@ -208,6 +209,7 @@ class TestModelReducerOutputThreadSafety:
             assert output.items_processed == i
 
 
+@pytest.mark.unit
 class TestModelReducerOutputUUIDFormatPreservation:
     """Test UUID format preservation through serialization cycles."""
 
@@ -358,6 +360,7 @@ class TestModelReducerOutputUUIDFormatPreservation:
         assert restored.operation_id == uuid_variant
 
 
+@pytest.mark.unit
 class TestModelReducerOutputAsyncSafe:
     """Test async-safe operations with ModelReducerOutput."""
 
@@ -496,6 +499,7 @@ class TestModelReducerOutputAsyncSafe:
             assert output.items_processed == i
 
 
+@pytest.mark.unit
 class TestModelReducerOutputPerformance:
     """Test performance characteristics and benchmarks."""
 

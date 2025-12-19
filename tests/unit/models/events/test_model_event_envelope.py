@@ -45,6 +45,7 @@ class ComplexPayload(BaseModel):
     metadata: dict[str, Any]
 
 
+@pytest.mark.unit
 class TestModelEventEnvelopeInstantiation:
     """Test cases for ModelEventEnvelope instantiation."""
 
@@ -147,6 +148,7 @@ class TestModelEventEnvelopeInstantiation:
         assert envelope_complex.payload == complex_payload
 
 
+@pytest.mark.unit
 class TestModelEventEnvelopeValidation:
     """Test field validation for ModelEventEnvelope."""
 
@@ -215,6 +217,7 @@ class TestModelEventEnvelopeValidation:
         assert "greater than or equal to 0" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestModelEventEnvelopeCorrelation:
     """Test correlation tracking functionality."""
 
@@ -252,6 +255,7 @@ class TestModelEventEnvelopeCorrelation:
         assert envelope_with_corr.is_correlated() is True
 
 
+@pytest.mark.unit
 class TestModelEventEnvelopeMetadata:
     """Test metadata management functionality."""
 
@@ -296,6 +300,7 @@ class TestModelEventEnvelopeMetadata:
         assert envelope.get_metadata_value("missing") is None
 
 
+@pytest.mark.unit
 class TestModelEventEnvelopeSecurity:
     """Test security context functionality."""
 
@@ -335,6 +340,7 @@ class TestModelEventEnvelopeSecurity:
         assert envelope_with_sec.has_security_context() is True
 
 
+@pytest.mark.unit
 class TestModelEventEnvelopeRouting:
     """Test routing functionality (source/target tools)."""
 
@@ -376,6 +382,7 @@ class TestModelEventEnvelopeRouting:
         assert new_envelope.target_tool == "target-service"
 
 
+@pytest.mark.unit
 class TestModelEventEnvelopeTracing:
     """Test distributed tracing functionality."""
 
@@ -460,6 +467,7 @@ class TestModelEventEnvelopeTracing:
         assert context_full["request_id"] == str(request_id)
 
 
+@pytest.mark.unit
 class TestModelEventEnvelopeQoS:
     """Test Quality of Service features (priority, timeout, retry)."""
 
@@ -556,6 +564,7 @@ class TestModelEventEnvelopeQoS:
         assert elapsed_after >= 0.1
 
 
+@pytest.mark.unit
 class TestModelEventEnvelopeFactoryMethods:
     """Test factory methods for creating envelopes."""
 
@@ -625,6 +634,7 @@ class TestModelEventEnvelopeFactoryMethods:
         assert envelope.priority == 5  # Default priority
 
 
+@pytest.mark.unit
 class TestModelEventEnvelopePayloadExtraction:
     """Test payload extraction functionality."""
 
@@ -661,6 +671,7 @@ class TestModelEventEnvelopePayloadExtraction:
         assert extracted.node_id == node_id
 
 
+@pytest.mark.unit
 class TestModelEventEnvelopeLazyEvaluation:
     """Test lazy evaluation functionality."""
 
@@ -744,6 +755,7 @@ class TestModelEventEnvelopeLazyEvaluation:
         assert isinstance(lazy_dict["envelope_version"], str)
 
 
+@pytest.mark.unit
 class TestModelEventEnvelopeSerialization:
     """Test serialization and deserialization."""
 
@@ -787,6 +799,7 @@ class TestModelEventEnvelopeSerialization:
         assert deserialized.payload.value == 100
 
 
+@pytest.mark.unit
 class TestModelEventEnvelopeEdgeCases:
     """Test edge cases and error conditions."""
 
@@ -906,6 +919,7 @@ class TestModelEventEnvelopeEdgeCases:
         assert retry3.is_retry() is True
 
 
+@pytest.mark.unit
 class TestModelEventEnvelopeInferCategory:
     """Tests for message category inference."""
 
@@ -1002,6 +1016,7 @@ class TestModelEventEnvelopeInferCategory:
         """Explicit EVENT category in metadata should take precedence."""
 
         # Even though payload has Command in name, metadata overrides
+        @pytest.mark.unit
         class TestCommand(BaseModel):
             """Command-like payload."""
 
@@ -1059,6 +1074,7 @@ class TestModelEventEnvelopeInferCategory:
     def test_infer_category_invalid_metadata_tag_falls_back(self):
         """Invalid metadata category should fall back to payload inference."""
 
+        @pytest.mark.unit
         class TestIntent(BaseModel):
             """Intent-like payload."""
 

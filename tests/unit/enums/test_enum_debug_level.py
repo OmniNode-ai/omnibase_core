@@ -19,6 +19,7 @@ from pydantic import BaseModel, ValidationError
 from omnibase_core.enums.enum_debug_level import EnumDebugLevel
 
 
+@pytest.mark.unit
 class TestEnumDebugLevel:
     """Test cases for EnumDebugLevel."""
 

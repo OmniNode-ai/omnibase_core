@@ -8,6 +8,7 @@ import pytest
 from omnibase_core.enums.enum_privacy_level import EnumPrivacyLevel
 
 
+@pytest.mark.unit
 class TestEnumPrivacyLevel:
     """Test suite for EnumPrivacyLevel."""
 

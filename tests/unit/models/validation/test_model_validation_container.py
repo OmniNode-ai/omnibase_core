@@ -6,6 +6,8 @@ This test suite focuses on validator branches and conditional logic to maximize 
 
 from __future__ import annotations
 
+import pytest
+
 from omnibase_core.models.validation.model_validation_container import (
     ModelValidationContainer,
 )
@@ -13,6 +15,7 @@ from omnibase_core.models.validation.model_validation_error import ModelValidati
 from omnibase_core.models.validation.model_validation_value import ModelValidationValue
 
 
+@pytest.mark.unit
 class TestModelValidationContainerInstantiation:
     """Test basic model instantiation."""
 
@@ -37,6 +40,7 @@ class TestModelValidationContainerInstantiation:
         assert len(container.warnings) == 2
 
 
+@pytest.mark.unit
 class TestModelValidationContainerAddErrorBranches:
     """Test add_error and add_error_with_raw_details branches."""
 
@@ -101,6 +105,7 @@ class TestModelValidationContainerAddErrorBranches:
         assert error.error_code == "ERROR_001"
 
 
+@pytest.mark.unit
 class TestModelValidationContainerAddCriticalErrorBranches:
     """Test add_critical_error branches."""
 
@@ -144,6 +149,7 @@ class TestModelValidationContainerAddCriticalErrorBranches:
         assert container.errors[0].details is not None
 
 
+@pytest.mark.unit
 class TestModelValidationContainerAddWarningBranches:
     """Test add_warning deduplication branches."""
 
@@ -173,6 +179,7 @@ class TestModelValidationContainerAddWarningBranches:
         assert len(container.warnings) == 3
 
 
+@pytest.mark.unit
 class TestModelValidationContainerQueryMethods:
     """Test query methods (has_errors, has_critical_errors, etc.)."""
 
@@ -216,6 +223,7 @@ class TestModelValidationContainerQueryMethods:
         assert container.has_warnings() is False
 
 
+@pytest.mark.unit
 class TestModelValidationContainerGetErrorSummaryBranches:
     """Test get_error_summary conditional branches."""
 
@@ -290,6 +298,7 @@ class TestModelValidationContainerGetErrorSummaryBranches:
         assert "2 warnings" in summary
 
 
+@pytest.mark.unit
 class TestModelValidationContainerGetMethods:
     """Test getter methods for error/warning data."""
 
@@ -349,6 +358,7 @@ class TestModelValidationContainerGetMethods:
         assert all(e.field_display_name == "field_a" for e in field_a_errors)
 
 
+@pytest.mark.unit
 class TestModelValidationContainerBulkOperations:
     """Test bulk add and extend operations."""
 
@@ -389,6 +399,7 @@ class TestModelValidationContainerBulkOperations:
         assert len(container.warnings) == 3
 
 
+@pytest.mark.unit
 class TestModelValidationContainerClearOperations:
     """Test clear operations."""
 
@@ -426,6 +437,7 @@ class TestModelValidationContainerClearOperations:
         assert len(container.warnings) == 0
 
 
+@pytest.mark.unit
 class TestModelValidationContainerProtocolMethods:
     """Test protocol method implementations."""
 
@@ -458,6 +470,7 @@ class TestModelValidationContainerProtocolMethods:
         assert "warnings" in serialized
 
 
+@pytest.mark.unit
 class TestModelValidationContainerMergeFrom:
     """Test merge_from operation."""
 
@@ -516,6 +529,7 @@ class TestModelValidationContainerMergeFrom:
         assert container1.has_critical_errors() is True
 
 
+@pytest.mark.unit
 class TestModelValidationContainerEdgeCases:
     """Test edge cases and boundary conditions."""
 

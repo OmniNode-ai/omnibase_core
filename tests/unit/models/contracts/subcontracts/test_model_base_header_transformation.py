@@ -29,6 +29,7 @@ class ConcreteTransformation(ModelBaseHeaderTransformation):
     name: str = Field(..., min_length=1)
 
 
+@pytest.mark.unit
 class TestBaseHeaderTransformationBasics:
     """Test basic model instantiation and defaults."""
 
@@ -77,6 +78,7 @@ class TestBaseHeaderTransformationBasics:
         assert transform.priority == 100
 
 
+@pytest.mark.unit
 class TestBaseHeaderTransformationValidation:
     """Test field validation and constraints."""
 
@@ -187,6 +189,7 @@ class TestBaseHeaderTransformationValidation:
         assert transform_with_condition.apply_condition == "condition"
 
 
+@pytest.mark.unit
 class TestBaseHeaderTransformationEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -246,6 +249,7 @@ class TestBaseHeaderTransformationEdgeCases:
         assert transform.case_sensitive is False
 
 
+@pytest.mark.unit
 class TestBaseHeaderTransformationConfigDict:
     """Test ConfigDict behavior."""
 
@@ -316,6 +320,7 @@ class TestBaseHeaderTransformationConfigDict:
         assert "test-rule" in json_str
 
 
+@pytest.mark.unit
 class TestBaseHeaderTransformationInheritance:
     """Test inheritance behavior."""
 
@@ -364,6 +369,7 @@ class TestBaseHeaderTransformationInheritance:
             )
 
 
+@pytest.mark.unit
 class TestBaseHeaderTransformationDocumentation:
     """Test documentation and interface guarantees."""
 

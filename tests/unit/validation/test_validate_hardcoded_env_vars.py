@@ -14,6 +14,8 @@ import importlib.util
 import tempfile
 from pathlib import Path
 
+import pytest
+
 # Load the validator module dynamically (script uses hyphens in filename)
 _validator_path = (
     Path(__file__).parent.parent.parent.parent
@@ -31,6 +33,7 @@ HardcodedEnvVarValidator = _validator_module.HardcodedEnvVarValidator
 PythonEnvVarValidator = _validator_module.PythonEnvVarValidator
 
 
+@pytest.mark.unit
 class TestPythonEnvVarValidator:
     """Test suite for PythonEnvVarValidator AST visitor."""
 
@@ -325,6 +328,7 @@ class ConfigEnum(Enum):
         assert len(validator.violations) == 0
 
 
+@pytest.mark.unit
 class TestHardcodedEnvVarValidator:
     """Test suite for HardcodedEnvVarValidator."""
 
@@ -395,6 +399,7 @@ DATABASE_URL = "postgresql://localhost/mydb"
             tmp1.write(
                 """
 import os
+
 DATABASE_URL = os.getenv("DATABASE_URL")
 """
             )

@@ -15,6 +15,7 @@ from omnibase_core.models.core.model_generic_collection_summary import (
 )
 
 
+@pytest.mark.unit
 class TestModelGenericCollectionSummary:
     """Test cases for ModelGenericCollectionSummary."""
 

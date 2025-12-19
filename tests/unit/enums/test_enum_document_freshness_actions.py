@@ -38,6 +38,7 @@ from omnibase_core.enums.enum_document_freshness_actions import (
 )
 
 
+@pytest.mark.unit
 class TestEnumDocumentFreshnessActions:
     """Test EnumDocumentFreshnessActions enum."""
 
@@ -83,6 +84,7 @@ class TestEnumDocumentFreshnessActions:
         assert model.action == EnumDocumentFreshnessActions.DETECT_CHANGES
 
 
+@pytest.mark.unit
 class TestEnumDocumentFreshnessRiskLevel:
     """Test EnumDocumentFreshnessRiskLevel enum."""
 
@@ -123,6 +125,7 @@ class TestEnumDocumentFreshnessRiskLevel:
             RiskModel(risk="invalid_risk")
 
 
+@pytest.mark.unit
 class TestEnumDocumentFreshnessStatus:
     """Test EnumDocumentFreshnessStatus enum."""
 
@@ -153,6 +156,7 @@ class TestEnumDocumentFreshnessStatus:
         assert '"status": "stale"' in json_str
 
 
+@pytest.mark.unit
 class TestEnumDocumentType:
     """Test EnumDocumentType enum."""
 
@@ -188,6 +192,7 @@ class TestEnumDocumentType:
         assert model.doc_type == EnumDocumentType.CODE
 
 
+@pytest.mark.unit
 class TestEnumRecommendationType:
     """Test EnumRecommendationType enum."""
 
@@ -215,6 +220,7 @@ class TestEnumRecommendationType:
         assert len(rec_types) == 4
 
 
+@pytest.mark.unit
 class TestEnumRecommendationPriority:
     """Test EnumRecommendationPriority enum."""
 
@@ -251,6 +257,7 @@ class TestEnumRecommendationPriority:
         assert model_dict == {"priority": "high"}
 
 
+@pytest.mark.unit
 class TestEnumEstimatedEffort:
     """Test EnumEstimatedEffort enum."""
 
@@ -282,6 +289,7 @@ class TestEnumEstimatedEffort:
         assert EnumEstimatedEffort.WEEKS == "weeks"
 
 
+@pytest.mark.unit
 class TestEnumDependencyRelationship:
     """Test EnumDependencyRelationship enum."""
 
@@ -313,6 +321,7 @@ class TestEnumDependencyRelationship:
         assert model.relationship == EnumDependencyRelationship.IMPORTS
 
 
+@pytest.mark.unit
 class TestEnumOutputFormat:
     """Test EnumOutputFormat enum."""
 
@@ -340,6 +349,7 @@ class TestEnumOutputFormat:
         assert len(formats) == 3
 
 
+@pytest.mark.unit
 class TestDocumentFreshnessEnumsIntegration:
     """Test integration scenarios with multiple enums."""
 
@@ -427,6 +437,7 @@ class TestDocumentFreshnessEnumsIntegration:
         assert loaded_data["risk"] == "critical"
 
 
+@pytest.mark.unit
 class TestDocumentFreshnessEnumsEdgeCases:
     """Test edge cases across all freshness enums."""
 

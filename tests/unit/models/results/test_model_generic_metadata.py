@@ -20,6 +20,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.results.model_simple_metadata import ModelGenericMetadata
 
 
+@pytest.mark.unit
 class TestModelGenericMetadataBasicInstantiation:
     """Test basic instantiation."""
 
@@ -54,6 +55,7 @@ class TestModelGenericMetadataBasicInstantiation:
         assert metadata.updated_by == "admin@example.com"
 
 
+@pytest.mark.unit
 class TestModelGenericMetadataVersionField:
     """Test version field with ModelSemVer."""
 
@@ -72,6 +74,7 @@ class TestModelGenericMetadataVersionField:
         assert metadata.version is None
 
 
+@pytest.mark.unit
 class TestModelGenericMetadataTagsField:
     """Test tags field handling."""
 
@@ -95,6 +98,7 @@ class TestModelGenericMetadataTagsField:
         assert metadata.tags == []
 
 
+@pytest.mark.unit
 class TestModelGenericMetadataLabelsField:
     """Test labels field handling."""
 
@@ -118,6 +122,7 @@ class TestModelGenericMetadataLabelsField:
         assert metadata.labels == {}
 
 
+@pytest.mark.unit
 class TestModelGenericMetadataAnnotationsField:
     """Test annotations field handling."""
 
@@ -140,6 +145,7 @@ class TestModelGenericMetadataAnnotationsField:
         assert metadata.annotations == {}
 
 
+@pytest.mark.unit
 class TestModelGenericMetadataCustomFields:
     """Test custom_fields with JsonSerializable type."""
 
@@ -179,6 +185,7 @@ class TestModelGenericMetadataCustomFields:
         assert metadata.custom_fields == {}
 
 
+@pytest.mark.unit
 class TestModelGenericMetadataExtendedData:
     """Test extended_data field with nested models."""
 
@@ -212,6 +219,7 @@ class TestModelGenericMetadataExtendedData:
         assert metadata.extended_data_json is None
 
 
+@pytest.mark.unit
 class TestModelGenericMetadataDateTimeSerialization:
     """Test datetime field serialization."""
 
@@ -239,6 +247,7 @@ class TestModelGenericMetadataDateTimeSerialization:
         assert dumped["updated_at"] is None
 
 
+@pytest.mark.unit
 class TestModelGenericMetadataExtraFieldsAllowed:
     """Test Pydantic extra='allow' configuration."""
 
@@ -259,6 +268,7 @@ class TestModelGenericMetadataExtraFieldsAllowed:
         # or as attributes depending on version
 
 
+@pytest.mark.unit
 class TestModelGenericMetadataFieldValidation:
     """Test field validation."""
 
@@ -284,6 +294,7 @@ class TestModelGenericMetadataFieldValidation:
             ModelGenericMetadata(created_at="not a datetime")
 
 
+@pytest.mark.unit
 class TestModelGenericMetadataSerialization:
     """Test model serialization and deserialization."""
 
@@ -330,6 +341,7 @@ class TestModelGenericMetadataSerialization:
         assert restored.labels == original.labels
 
 
+@pytest.mark.unit
 class TestModelGenericMetadataComplexScenarios:
     """Test complex usage scenarios."""
 
@@ -381,6 +393,7 @@ class TestModelGenericMetadataComplexScenarios:
         assert "published" in metadata.tags
 
 
+@pytest.mark.unit
 class TestModelGenericMetadataTypeSafety:
     """Test type safety - BOUNDARY_LAYER_EXCEPTION for metadata flexibility."""
 
@@ -410,6 +423,7 @@ class TestModelGenericMetadataTypeSafety:
         assert "str" in type_str
 
 
+@pytest.mark.unit
 class TestModelGenericMetadataFromDict:
     """Test from_dict class method."""
 

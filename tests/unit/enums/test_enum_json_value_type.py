@@ -7,6 +7,7 @@ import pytest
 from omnibase_core.enums.enum_json_value_type import EnumJsonValueType
 
 
+@pytest.mark.unit
 class TestEnumJsonValueType:
     """Test cases for EnumJsonValueType"""
 

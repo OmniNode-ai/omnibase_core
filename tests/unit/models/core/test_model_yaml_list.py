@@ -5,6 +5,8 @@ Comprehensive tests for YAML list model including initialization,
 list handling, and edge cases.
 """
 
+import pytest
+
 from omnibase_core.models.core.model_yaml_list import ModelYamlList
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -12,6 +14,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
+@pytest.mark.unit
 class TestModelYamlList:
     """Test suite for ModelYamlList."""
 
@@ -185,6 +188,7 @@ class TestModelYamlList:
         assert model.root_list[1]["values"][0]["a"] == 1
 
 
+@pytest.mark.unit
 class TestModelYamlListEdgeCases:
     """Edge case tests for ModelYamlList."""
 

@@ -71,6 +71,7 @@ class SampleModelWithValidation(BaseModel):
         return v
 
 
+@pytest.mark.unit
 class TestLoadAndValidateYamlModel:
     """Test load_and_validate_yaml_model function."""
 
@@ -235,6 +236,7 @@ value: 42
         assert result.value == 42
 
 
+@pytest.mark.unit
 class TestLoadYamlContentAsModel:
     """Test load_yaml_content_as_model function."""
 
@@ -305,6 +307,7 @@ value: 123
         assert result.name == "中文测试"
 
 
+@pytest.mark.unit
 class TestSerializePydanticModelToYaml:
     """Test serialize_pydantic_model_to_yaml function."""
 
@@ -377,6 +380,7 @@ class TestSerializePydanticModelToYaml:
         assert "42" in yaml_str or "custom_value" in yaml_str
 
 
+@pytest.mark.unit
 class TestSerializeDataToYaml:
     """Test serialize_data_to_yaml function."""
 
@@ -436,6 +440,7 @@ class TestSerializeDataToYaml:
         assert "Ñoño" in yaml_str
 
 
+@pytest.mark.unit
 class TestExtractExampleFromSchema:
     """Test extract_example_from_schema function."""
 

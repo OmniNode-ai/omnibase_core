@@ -17,6 +17,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
+@pytest.mark.unit
 class TestModelSerializationSubcontract:
     """Test the serialization subcontract model."""
 

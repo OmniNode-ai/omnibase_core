@@ -6,12 +6,15 @@ Provides comprehensive tests for JSON Schema reference resolution.
 
 from unittest.mock import MagicMock, Mock
 
+import pytest
+
 from omnibase_core.utils.generation.utility_reference_resolver import (
     ModelRefInfo,
     UtilityReferenceResolver,
 )
 
 
+@pytest.mark.unit
 class TestModelRefInfo:
     """Test ModelRefInfo dataclass."""
 
@@ -40,6 +43,7 @@ class TestModelRefInfo:
         assert ref_info.is_subcontract is True
 
 
+@pytest.mark.unit
 class TestUtilityReferenceResolverInitialization:
     """Test resolver initialization and configuration."""
 
@@ -94,6 +98,7 @@ class TestUtilityReferenceResolverInitialization:
         assert resolver.import_tracker is tracker
 
 
+@pytest.mark.unit
 class TestParseReference:
     """Test reference parsing functionality."""
 
@@ -173,6 +178,7 @@ class TestParseReference:
         assert ref_info.type_name == ""
 
 
+@pytest.mark.unit
 class TestResolveTypeName:
     """Test type name resolution."""
 
@@ -311,6 +317,7 @@ class TestResolveTypeName:
         assert result == "ModelCustomType"
 
 
+@pytest.mark.unit
 class TestEnsureModelPrefix:
     """Test _ensure_model_prefix method."""
 
@@ -347,6 +354,7 @@ class TestEnsureModelPrefix:
         assert result == "EnumStatus"
 
 
+@pytest.mark.unit
 class TestCleanToolPrefix:
     """Test _clean_tool_prefix method."""
 
@@ -431,6 +439,7 @@ class TestCleanToolPrefix:
         assert result == "CustomType"
 
 
+@pytest.mark.unit
 class TestIsExternalReference:
     """Test is_external_reference method."""
 
@@ -475,6 +484,7 @@ class TestIsExternalReference:
         assert result is False
 
 
+@pytest.mark.unit
 class TestPackageNameGeneration:
     """Test package name generation for subcontracts."""
 
@@ -529,6 +539,7 @@ class TestPackageNameGeneration:
         assert result == "models"
 
 
+@pytest.mark.unit
 class TestImportPathGeneration:
     """Test import path generation for subcontracts."""
 
@@ -573,6 +584,7 @@ class TestImportPathGeneration:
         assert result == "generated.models"
 
 
+@pytest.mark.unit
 class TestResolveRef:
     """Test main resolve_ref method."""
 
@@ -657,6 +669,7 @@ class TestResolveRef:
         assert result == "Modelmalformed"
 
 
+@pytest.mark.unit
 class TestImportTracking:
     """Test import tracking functionality."""
 
@@ -736,6 +749,7 @@ class TestImportTracking:
         )
 
 
+@pytest.mark.unit
 class TestResolveByFilePath:
     """Test _resolve_by_file_path method."""
 
@@ -798,6 +812,7 @@ class TestResolveByFilePath:
         assert result is None
 
 
+@pytest.mark.unit
 class TestEdgeCases:
     """Test edge cases and error handling."""
 

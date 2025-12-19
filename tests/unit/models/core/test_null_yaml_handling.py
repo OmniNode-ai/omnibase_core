@@ -23,6 +23,7 @@ from omnibase_core.models.core.model_mixin_metadata_collection import (
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
+@pytest.mark.unit
 class TestNullCodePatterns:
     """Test null code_patterns value handling."""
 
@@ -137,6 +138,7 @@ mixin_test:
             ModelMixinMetadataCollection.from_yaml(yaml_file)
 
 
+@pytest.mark.unit
 class TestNullPerformance:
     """Test null performance value handling."""
 
@@ -228,6 +230,7 @@ mixin_test:
             ModelMixinMetadataCollection.from_yaml(yaml_file)
 
 
+@pytest.mark.unit
 class TestNullConfigSchemaAndPresets:
     """Test null config_schema and presets handling."""
 
@@ -268,6 +271,7 @@ mixin_test:
         assert mixin.presets == {}
 
 
+@pytest.mark.unit
 class TestCompleteNullHandlingWorkflow:
     """Integration tests for complete null handling workflows."""
 

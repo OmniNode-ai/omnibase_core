@@ -118,6 +118,7 @@ def sample_introspection_response_event():
     )
 
 
+@pytest.mark.unit
 class TestToolDiscoveryCoordinator:
     """Test suite for ToolDiscoveryCoordinator."""
 
@@ -247,6 +248,7 @@ class TestToolDiscoveryCoordinator:
         assert len(stats["active_correlation_ids"]) == 2
 
 
+@pytest.mark.unit
 class TestToolUnifiedDiscovery:
     """Test suite for ToolUnifiedDiscovery."""
 
@@ -539,6 +541,7 @@ class TestToolUnifiedDiscovery:
         assert len(unified_discovery.catalog) == 0
 
 
+@pytest.mark.unit
 class TestIntegrationScenarios:
     """Integration tests for the complete unified discovery system."""
 
@@ -659,6 +662,7 @@ class TestIntegrationScenarios:
         assert len(filtered_nodes) == 0
 
 
+@pytest.mark.unit
 class TestUnifiedDiscoverySystem:
     """Comprehensive test suite for the unified discovery system."""
 

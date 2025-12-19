@@ -145,6 +145,7 @@ def correlation_id():
 
 
 # Test Classes
+@pytest.mark.unit
 class TestModelServiceOrchestratorInitialization:
     """Test service initialization and setup."""
 
@@ -208,6 +209,7 @@ class TestModelServiceOrchestratorInitialization:
         assert hasattr(service, "container")
 
 
+@pytest.mark.unit
 class TestModelServiceOrchestratorStartup:
     """Test service startup behavior."""
 
@@ -424,6 +426,7 @@ class TestModelServiceOrchestratorStartup:
             await service_orchestrator.start_service_mode()
 
 
+@pytest.mark.unit
 class TestModelServiceOrchestratorShutdown:
     """Test service shutdown behavior."""
 
@@ -586,6 +589,7 @@ class TestModelServiceOrchestratorShutdown:
         assert service_orchestrator._service_running is False
 
 
+@pytest.mark.unit
 class TestModelServiceOrchestratorEventHandling:
     """Test event subscription and handling for workflow coordination."""
 
@@ -710,6 +714,7 @@ class TestModelServiceOrchestratorEventHandling:
         assert service_orchestrator._failed_invocations == 1
 
 
+@pytest.mark.unit
 class TestModelServiceOrchestratorHealthMonitoring:
     """Test health monitoring and reporting with subnode aggregation."""
 
@@ -795,6 +800,7 @@ class TestModelServiceOrchestratorHealthMonitoring:
         assert health["active_invocations"] == 2
 
 
+@pytest.mark.unit
 class TestModelServiceOrchestratorRestart:
     """Test service restart cycles."""
 
@@ -865,6 +871,7 @@ class TestModelServiceOrchestratorRestart:
                 assert service_orchestrator._total_invocations == (i + 1) * 10
 
 
+@pytest.mark.unit
 class TestModelServiceOrchestratorSignalHandling:
     """Test signal handler registration and behavior."""
 

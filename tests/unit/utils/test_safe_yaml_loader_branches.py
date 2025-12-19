@@ -28,6 +28,7 @@ class SimpleModel(BaseModel):
     value: int = 0
 
 
+@pytest.mark.unit
 class TestLoadAndValidateYamlModelExceptionBranches:
     """Test exception handling branches in load_and_validate_yaml_model."""
 
@@ -66,6 +67,7 @@ class TestLoadAndValidateYamlModelExceptionBranches:
             temp_path.unlink()
 
 
+@pytest.mark.unit
 class TestLoadYamlContentAsModelExceptionBranches:
     """Test exception handling branches in load_yaml_content_as_model."""
 
@@ -80,6 +82,7 @@ class TestLoadYamlContentAsModelExceptionBranches:
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
 
+@pytest.mark.unit
 class TestSerializePydanticModelToYamlBranches:
     """Test conditional branches in serialize_pydantic_model_to_yaml."""
 
@@ -137,6 +140,7 @@ class TestSerializePydanticModelToYamlBranches:
         assert "test" in result
 
 
+@pytest.mark.unit
 class TestSerializeDataToYamlBranches:
     """Test conditional branches in serialize_data_to_yaml."""
 
@@ -169,6 +173,7 @@ class TestSerializeDataToYamlBranches:
         assert "value" in result
 
 
+@pytest.mark.unit
 class TestDumpYamlContentValidationBranches:
     """Test validation branches in _dump_yaml_content."""
 
@@ -193,6 +198,7 @@ class TestDumpYamlContentValidationBranches:
         assert "key" in result
 
 
+@pytest.mark.unit
 class TestYamlLoaderCommentPrefixEdgeCases:
     """Test comment prefix edge cases."""
 
@@ -220,6 +226,7 @@ class TestYamlLoaderCommentPrefixEdgeCases:
             assert line.startswith("## ") or line.strip() == ""
 
 
+@pytest.mark.unit
 class TestYamlLoaderYamlOptionsHandling:
     """Test YAML options parameter handling."""
 
@@ -243,6 +250,7 @@ class TestYamlLoaderYamlOptionsHandling:
         assert "apple" in result or "zebra" in result
 
 
+@pytest.mark.unit
 class TestGenericExceptionHandlers:
     """Test generic exception handlers in all functions."""
 
@@ -316,6 +324,7 @@ class TestGenericExceptionHandlers:
             assert "Failed to serialize data to YAML" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestDumpYamlContentErrorHandling:
     """Test error handling in _dump_yaml_content."""
 

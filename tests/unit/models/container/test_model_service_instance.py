@@ -27,6 +27,7 @@ def sample_instance():
     )
 
 
+@pytest.mark.unit
 class TestModelServiceInstance:
     """Tests for ModelServiceInstance model."""
 

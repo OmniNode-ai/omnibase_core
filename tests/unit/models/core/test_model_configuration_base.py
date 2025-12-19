@@ -7,6 +7,7 @@ standardized configuration patterns and utilities.
 
 from datetime import datetime
 
+import pytest
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.core import ModelConfigurationBase, ModelTypedConfiguration
@@ -25,6 +26,7 @@ class SampleConfigData(BaseModel):
     timeout: float = Field(default=30.0, description="Request timeout")
 
 
+@pytest.mark.unit
 class TestModelConfigurationBase:
     """Test the base configuration class."""
 
@@ -121,6 +123,7 @@ class TestModelConfigurationBase:
         assert config.updated_at > original_updated
 
 
+@pytest.mark.unit
 class TestModelTypedConfiguration:
     """Test the typed configuration with custom properties."""
 
@@ -233,6 +236,7 @@ class TestModelTypedConfiguration:
         assert "Disabled: Service unavailable" in config.description
 
 
+@pytest.mark.unit
 class TestConfigurationIntegration:
     """Test integration scenarios and edge cases."""
 
@@ -281,6 +285,7 @@ class TestConfigurationIntegration:
         assert region_result.unwrap().string_value == "us-east-1"
 
 
+@pytest.mark.unit
 class TestConfigurationBaseEdgeCases:
     """Test edge cases and error handling for ModelConfigurationBase."""
 
@@ -561,6 +566,7 @@ class TestConfigurationBaseEdgeCases:
         assert config.enabled is True
 
 
+@pytest.mark.unit
 class TestConfigurationBaseProtocolCompliance:
     """Test protocol compliance for Serializable, Configurable, Nameable, Validatable."""
 

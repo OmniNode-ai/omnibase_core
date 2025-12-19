@@ -25,6 +25,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
+@pytest.mark.unit
 class TestModelCliExecution:
     """Test cases for ModelCliExecution."""
 
@@ -625,6 +626,7 @@ class TestModelCliExecution:
         assert execution1 != execution3
 
 
+@pytest.mark.unit
 class TestModelCliExecutionEdgeCases:
     """Test edge cases and error conditions for ModelCliExecution."""
 

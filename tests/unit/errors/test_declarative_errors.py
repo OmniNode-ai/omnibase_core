@@ -38,6 +38,7 @@ import pytest
 
 
 @pytest.mark.timeout(10)
+@pytest.mark.unit
 class TestAdapterBindingError:
     """Tests for AdapterBindingError - adapter/handler binding failures."""
 
@@ -154,6 +155,7 @@ class TestAdapterBindingError:
 
 
 @pytest.mark.timeout(10)
+@pytest.mark.unit
 class TestPurityViolationError:
     """Tests for PurityViolationError - purity constraint violations."""
 
@@ -292,6 +294,7 @@ class TestPurityViolationError:
 
 
 @pytest.mark.timeout(10)
+@pytest.mark.unit
 class TestNodeExecutionError:
     """Tests for NodeExecutionError - node execution phase failures."""
 
@@ -431,6 +434,7 @@ class TestNodeExecutionError:
 
 
 @pytest.mark.timeout(10)
+@pytest.mark.unit
 class TestUnsupportedCapabilityError:
     """Tests for UnsupportedCapabilityError - missing capability errors."""
 
@@ -570,6 +574,7 @@ class TestUnsupportedCapabilityError:
 
 
 @pytest.mark.timeout(10)
+@pytest.mark.unit
 class TestDeclarativeErrorInvariants:
     """Tests for declarative error invariants - consistent behavior across all error types."""
 
@@ -710,6 +715,7 @@ class TestDeclarativeErrorInvariants:
 
 
 @pytest.mark.timeout(10)
+@pytest.mark.unit
 class TestDeclarativeErrorChaining:
     """Tests for exception chaining with declarative errors."""
 
@@ -772,6 +778,7 @@ class TestDeclarativeErrorChaining:
 
 
 @pytest.mark.timeout(10)
+@pytest.mark.unit
 class TestDeclarativeErrorContextKwargs:
     """Tests for arbitrary context kwargs support in declarative errors."""
 
@@ -856,6 +863,7 @@ class TestDeclarativeErrorContextKwargs:
 
 
 @pytest.mark.timeout(10)
+@pytest.mark.unit
 class TestDeclarativeErrorModuleExports:
     """Tests for module-level exports and __all__ definitions."""
 

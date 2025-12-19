@@ -21,6 +21,7 @@ from omnibase_core.models.infrastructure.model_result import (
 )
 
 
+@pytest.mark.unit
 class TestModelResultCreation:
     """Test basic Result creation patterns."""
 
@@ -125,6 +126,7 @@ class TestModelResultCreation:
         assert dict_err.error.get("code") == "E001"
 
 
+@pytest.mark.unit
 class TestModelResultUnwrapping:
     """Test value unwrapping methods."""
 
@@ -189,6 +191,7 @@ class TestModelResultUnwrapping:
         assert "Expected success but got: failure" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestModelResultMonadicOperations:
     """Test monadic operations (map, and_then, or_else)."""
 
@@ -361,6 +364,7 @@ class TestModelResultMonadicOperations:
         assert recovered.error == "Recovery failed"
 
 
+@pytest.mark.unit
 class TestModelResultUtilityFunctions:
     """Test utility functions for Result handling."""
 
@@ -467,6 +471,7 @@ class TestModelResultUtilityFunctions:
         assert collected.unwrap() == []
 
 
+@pytest.mark.unit
 class TestModelResultStringRepresentation:
     """Test string representation methods."""
 
@@ -513,6 +518,7 @@ class TestModelResultStringRepresentation:
         assert not result  # Direct falsiness test
 
 
+@pytest.mark.unit
 class TestModelResultSerialization:
     """Test serialization and deserialization capabilities."""
 
@@ -569,6 +575,7 @@ class TestModelResultSerialization:
         assert deserialized.unwrap() == [1, 2, {"nested": "data"}]
 
 
+@pytest.mark.unit
 class TestModelResultComplexScenarios:
     """Test complex real-world usage scenarios."""
 

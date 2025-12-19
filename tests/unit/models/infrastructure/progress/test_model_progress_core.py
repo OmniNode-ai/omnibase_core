@@ -10,6 +10,7 @@ from omnibase_core.models.infrastructure.progress.model_progress_core import (
 )
 
 
+@pytest.mark.unit
 class TestModelProgressCoreInstantiation:
     """Tests for ModelProgressCore instantiation."""
 
@@ -39,6 +40,7 @@ class TestModelProgressCoreInstantiation:
         assert progress.current_phase == EnumExecutionPhase.EXECUTION
 
 
+@pytest.mark.unit
 class TestModelProgressCoreValidation:
     """Tests for ModelProgressCore validation."""
 
@@ -70,6 +72,7 @@ class TestModelProgressCoreValidation:
         assert "cannot exceed total steps" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestModelProgressCoreProperties:
     """Tests for ModelProgressCore computed properties."""
 
@@ -99,6 +102,7 @@ class TestModelProgressCoreProperties:
         assert progress.completion_ratio == 0.5
 
 
+@pytest.mark.unit
 class TestModelProgressCorePercentageUpdates:
     """Tests for ModelProgressCore percentage updates."""
 
@@ -126,6 +130,7 @@ class TestModelProgressCorePercentageUpdates:
         assert progress.percentage == 50.0
 
 
+@pytest.mark.unit
 class TestModelProgressCoreStepUpdates:
     """Tests for ModelProgressCore step updates."""
 
@@ -165,6 +170,7 @@ class TestModelProgressCoreStepUpdates:
         assert progress.percentage == 50.0
 
 
+@pytest.mark.unit
 class TestModelProgressCorePhaseManagement:
     """Tests for ModelProgressCore phase management."""
 
@@ -201,6 +207,7 @@ class TestModelProgressCorePhaseManagement:
         assert progress.phase_percentage == 0.0
 
 
+@pytest.mark.unit
 class TestModelProgressCoreStatusManagement:
     """Tests for ModelProgressCore status management."""
 
@@ -227,6 +234,7 @@ class TestModelProgressCoreStatusManagement:
         assert progress.detailed_info == "Initial info"
 
 
+@pytest.mark.unit
 class TestModelProgressCoreReset:
     """Tests for ModelProgressCore reset functionality."""
 
@@ -250,6 +258,7 @@ class TestModelProgressCoreReset:
         assert progress.detailed_info == ""
 
 
+@pytest.mark.unit
 class TestModelProgressCoreFactoryMethods:
     """Tests for ModelProgressCore factory methods."""
 
@@ -282,6 +291,7 @@ class TestModelProgressCoreFactoryMethods:
         assert progress.current_phase == EnumExecutionPhase.INITIALIZATION
 
 
+@pytest.mark.unit
 class TestModelProgressCoreProtocols:
     """Tests for ModelProgressCore protocol implementations."""
 
@@ -307,6 +317,7 @@ class TestModelProgressCoreProtocols:
         assert data["total_steps"] == 10
 
 
+@pytest.mark.unit
 class TestModelProgressCoreEdgeCases:
     """Tests for ModelProgressCore edge cases."""
 

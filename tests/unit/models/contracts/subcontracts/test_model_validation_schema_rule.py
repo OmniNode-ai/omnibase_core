@@ -20,6 +20,7 @@ from omnibase_core.models.contracts.subcontracts.model_validation_schema_rule im
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
+@pytest.mark.unit
 class TestModelValidationSchemaRuleBasicCreation:
     """Test basic creation and field constraints."""
 
@@ -83,6 +84,7 @@ class TestModelValidationSchemaRuleBasicCreation:
         assert "validation_rule" in error_string
 
 
+@pytest.mark.unit
 class TestModelValidationSchemaRuleRegexValidation:
     """Test validation for REGEX rule type."""
 
@@ -149,6 +151,7 @@ class TestModelValidationSchemaRuleRegexValidation:
             assert rule.validation_rule == pattern
 
 
+@pytest.mark.unit
 class TestModelValidationSchemaRuleJSONSchemaValidation:
     """Test validation for JSON_SCHEMA rule type."""
 
@@ -251,6 +254,7 @@ class TestModelValidationSchemaRuleJSONSchemaValidation:
         assert rule.validation_rule == complex_schema
 
 
+@pytest.mark.unit
 class TestModelValidationSchemaRuleRangeValidation:
     """Test validation for RANGE rule type."""
 
@@ -343,6 +347,7 @@ class TestModelValidationSchemaRuleRangeValidation:
         assert "Invalid range format" in error_string
 
 
+@pytest.mark.unit
 class TestModelValidationSchemaRuleEnumValidation:
     """Test validation for ENUM rule type."""
 
@@ -417,6 +422,7 @@ class TestModelValidationSchemaRuleEnumValidation:
         assert rule.validation_rule == "  red  ,  green  ,  blue  "
 
 
+@pytest.mark.unit
 class TestModelValidationSchemaRuleEdgeCases:
     """Test edge cases and special scenarios."""
 

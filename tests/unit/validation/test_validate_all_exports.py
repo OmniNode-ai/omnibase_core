@@ -90,6 +90,7 @@ def find_python_files(validation_module: ModuleType) -> Any:
     return validation_module.find_python_files
 
 
+@pytest.mark.unit
 class TestValidateFileCoreFunctionality:
     """Tests for core validate_file() functionality."""
 
@@ -147,6 +148,7 @@ class TestValidateFileCoreFunctionality:
         assert len(result.all_exports) == 0
 
 
+@pytest.mark.unit
 class TestModuleLevelDefinitionsFinder:
     """Tests for the ModuleLevelDefinitionsFinder AST visitor."""
 
@@ -311,6 +313,7 @@ import os.path
         assert "os.path" not in finder.import_names
 
 
+@pytest.mark.unit
 class TestAllExtractor:
     """Tests for the AllExtractor AST visitor."""
 
@@ -369,6 +372,7 @@ __all__ = ["MyClass"]
         assert extractor.all_line == 4
 
 
+@pytest.mark.unit
 class TestStarImports:
     """Tests for star import handling."""
 
@@ -413,6 +417,7 @@ from . import *
         assert finder.star_imports[0].module == "<relative>"
 
 
+@pytest.mark.unit
 class TestErrorHandling:
     """Tests for error handling."""
 
@@ -434,6 +439,7 @@ class TestErrorHandling:
         assert result.error is not None
 
 
+@pytest.mark.unit
 class TestShouldExcludeFile:
     """Tests for file exclusion logic."""
 
@@ -480,6 +486,7 @@ class TestShouldExcludeFile:
         assert should_exclude_file(Path("src/package/module.py")) is False
 
 
+@pytest.mark.unit
 class TestFindPythonFiles:
     """Tests for file discovery logic."""
 
@@ -554,6 +561,7 @@ class TestFindPythonFiles:
             assert "old_module.py" not in file_names
 
 
+@pytest.mark.unit
 class TestCrossPlatformPathHandling:
     """Tests for cross-platform path handling."""
 
@@ -578,6 +586,7 @@ class TestCrossPlatformPathHandling:
         assert should_exclude_file(path) is True
 
 
+@pytest.mark.unit
 class TestAnnotatedAssignments:
     """Tests for annotated assignment handling."""
 
@@ -590,6 +599,7 @@ class TestAnnotatedAssignments:
         assert "typed_constant" in result.defined_names
 
 
+@pytest.mark.unit
 class TestImportsAndAliases:
     """Tests for various import patterns."""
 
@@ -605,6 +615,7 @@ class TestImportsAndAliases:
         assert "AnyType" in result.defined_names
 
 
+@pytest.mark.unit
 class TestExportValidationResult:
     """Tests for ExportValidationResult named tuple."""
 
@@ -650,6 +661,7 @@ class TestExportValidationResult:
         assert result.star_imports[0].line_no == 5
 
 
+@pytest.mark.unit
 class TestPublicDefinedNames:
     """Tests for public_defined_names property."""
 

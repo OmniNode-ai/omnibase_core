@@ -11,6 +11,7 @@ from omnibase_core.mixins.mixin_fail_fast import MixinFailFast
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
+@pytest.mark.unit
 class TestMixinFailFast:
     """Test MixinFailFast functionality."""
 

@@ -133,6 +133,7 @@ def create_node_with_subcontract(
 
 
 @pytest.mark.slow
+@pytest.mark.unit
 class TestNodeEffectCircuitBreakerConcurrency:
     """Test circuit breaker thread safety under concurrent load.
 
@@ -372,6 +373,7 @@ class TestNodeEffectCircuitBreakerConcurrency:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestNodeEffectThreadLocalPattern:
     """Test thread-local instance pattern for NodeEffect.
 
@@ -498,6 +500,7 @@ class TestNodeEffectThreadLocalPattern:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelEffectTransactionIsolation:
     """Test transaction isolation under concurrency.
 
@@ -634,6 +637,7 @@ class TestModelEffectTransactionIsolation:
 
 
 @pytest.mark.slow
+@pytest.mark.unit
 class TestCircuitBreakerRaceConditionsDetailed:
     """Detailed tests for circuit breaker race conditions.
 
@@ -796,6 +800,7 @@ class TestCircuitBreakerRaceConditionsDetailed:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestAsyncConcurrency:
     """Test async concurrency patterns with NodeEffect.
 

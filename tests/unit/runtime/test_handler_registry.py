@@ -176,6 +176,7 @@ class TestProtocolMessageHandler:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestHandlerRegistration:
     """Tests for handler registration."""
 
@@ -290,6 +291,7 @@ class TestHandlerRegistration:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestExecutionShapeValidation:
     """Tests for execution shape validation at registration time."""
 
@@ -405,6 +407,7 @@ class TestExecutionShapeValidation:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestFreezePattern:
     """Tests for freeze-after-init pattern."""
 
@@ -491,6 +494,7 @@ class TestFreezePattern:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestHandlerLookup:
     """Tests for handler lookup after freeze."""
 
@@ -577,6 +581,7 @@ class TestHandlerLookup:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestUnregistration:
     """Tests for handler unregistration."""
 
@@ -623,6 +628,7 @@ class TestUnregistration:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestStringRepresentation:
     """Tests for __str__ and __repr__."""
 

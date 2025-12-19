@@ -9,6 +9,7 @@ import pytest
 from omnibase_core.enums.enum_comparison_operators import EnumComparisonOperators
 
 
+@pytest.mark.unit
 class TestEnumComparisonOperators:
     """Test cases for EnumComparisonOperators enum."""
 

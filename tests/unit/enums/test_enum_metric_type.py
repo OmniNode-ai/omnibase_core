@@ -7,6 +7,7 @@ import pytest
 from omnibase_core.enums.enum_metric_type import EnumMetricType
 
 
+@pytest.mark.unit
 class TestEnumMetricType:
     """Test cases for EnumMetricType"""
 

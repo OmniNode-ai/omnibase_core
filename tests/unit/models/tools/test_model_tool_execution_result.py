@@ -17,6 +17,7 @@ from omnibase_core.models.tools.model_tool_execution_result import (
 )
 
 
+@pytest.mark.unit
 class TestBasicCreation:
     """Test basic creation and initialization."""
 
@@ -94,6 +95,7 @@ class TestBasicCreation:
         assert result.status_code == 200
 
 
+@pytest.mark.unit
 class TestSuccessScenarios:
     """Test various success scenarios."""
 
@@ -165,6 +167,7 @@ class TestSuccessScenarios:
         assert result.status_code == 201
 
 
+@pytest.mark.unit
 class TestFailureScenarios:
     """Test various failure scenarios."""
 
@@ -233,6 +236,7 @@ class TestFailureScenarios:
         assert result.output["total"] == 100
 
 
+@pytest.mark.unit
 class TestToolSpecificFields:
     """Test tool-specific fields."""
 
@@ -275,6 +279,7 @@ class TestToolSpecificFields:
         assert result.status_code == 0
 
 
+@pytest.mark.unit
 class TestExecutionTiming:
     """Test execution timing fields."""
 
@@ -316,6 +321,7 @@ class TestExecutionTiming:
         assert "execution_time_ms" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestStructuredDataHandling:
     """Test structured data output handling."""
 
@@ -397,6 +403,7 @@ class TestStructuredDataHandling:
         assert len(result.output) == 0
 
 
+@pytest.mark.unit
 class TestFieldValidation:
     """Test Pydantic field validation."""
 
@@ -458,6 +465,7 @@ class TestFieldValidation:
             result.execution_time_ms = -50
 
 
+@pytest.mark.unit
 class TestEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -561,6 +569,7 @@ class TestEdgeCases:
         assert result.execution_time_ms == 500
 
 
+@pytest.mark.unit
 class TestModelConfiguration:
     """Test Pydantic model configuration."""
 
@@ -613,6 +622,7 @@ class TestModelConfiguration:
         assert original.execution_time_ms == 100
 
 
+@pytest.mark.unit
 class TestRealWorldScenarios:
     """Test realistic usage scenarios."""
 

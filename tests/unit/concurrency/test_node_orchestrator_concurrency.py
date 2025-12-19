@@ -182,6 +182,7 @@ def create_workflow_definition() -> ModelWorkflowDefinition:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestNodeOrchestratorWorkflowConcurrency:
     """Test workflow state thread safety under concurrent load.
 
@@ -400,6 +401,7 @@ class TestNodeOrchestratorWorkflowConcurrency:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelActionLeaseConcurrency:
     """Test lease-based coordination under concurrent load.
 
@@ -593,6 +595,7 @@ class TestModelActionLeaseConcurrency:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestOrchestratorInputOutputConcurrency:
     """Test concurrent input/output processing.
 
@@ -758,6 +761,7 @@ class TestOrchestratorInputOutputConcurrency:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestNodeOrchestratorThreadLocalPattern:
     """Test thread-local instance pattern for NodeOrchestrator.
 
@@ -968,6 +972,7 @@ class TestNodeOrchestratorThreadLocalPattern:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestWorkflowStateSnapshotConcurrency:
     """Test ModelWorkflowStateSnapshot thread safety.
 

@@ -5,6 +5,7 @@ Tests protocol compliance for various omnibase_core models and validates
 that protocols work correctly with real model implementations.
 """
 
+import pytest
 from pydantic import BaseModel, Field
 
 from omnibase_core.types.constraints import (
@@ -17,6 +18,7 @@ from omnibase_core.types.constraints import (
 )
 
 
+@pytest.mark.unit
 class TestProtocolWithComplexModels:
     """Test protocols with more complex model structures."""
 
@@ -91,6 +93,7 @@ class TestProtocolWithComplexModels:
         assert "nested" in meta
 
 
+@pytest.mark.unit
 class TestProtocolWithOptionalFields:
     """Test protocols with optional and default fields."""
 
@@ -141,6 +144,7 @@ class TestProtocolWithOptionalFields:
         assert model.timeout is None
 
 
+@pytest.mark.unit
 class TestProtocolChaining:
     """Test chaining multiple protocol operations."""
 
@@ -193,6 +197,7 @@ class TestProtocolChaining:
         assert "file.txt" in result
 
 
+@pytest.mark.unit
 class TestProtocolErrorHandling:
     """Test error handling in protocol implementations."""
 
@@ -235,6 +240,7 @@ class TestProtocolErrorHandling:
         assert model.validate_instance() is True
 
 
+@pytest.mark.unit
 class TestProtocolWithCustomTypes:
     """Test protocols with custom type definitions."""
 
@@ -277,6 +283,7 @@ class TestProtocolWithCustomTypes:
         assert "tags" in meta
 
 
+@pytest.mark.unit
 class TestProtocolWithStateMachine:
     """Test protocols with stateful behavior."""
 
@@ -329,6 +336,7 @@ class TestProtocolWithStateMachine:
         assert "setting2" in config.current_config
 
 
+@pytest.mark.unit
 class TestProtocolComposition:
     """Test composing multiple protocol implementations."""
 
@@ -357,6 +365,7 @@ class TestProtocolComposition:
         assert "outer_id" in result
 
 
+@pytest.mark.unit
 class TestProtocolWithAsyncPatterns:
     """Test protocol patterns that could support async operations."""
 
@@ -381,6 +390,7 @@ class TestProtocolWithAsyncPatterns:
         assert "Sync result" in str(result)
 
 
+@pytest.mark.unit
 class TestProtocolWithBuilders:
     """Test protocols with builder pattern implementations."""
 
@@ -407,6 +417,7 @@ class TestProtocolWithBuilders:
         assert result["option2"] == "value2"
 
 
+@pytest.mark.unit
 class TestProtocolBoundaryConditions:
     """Test boundary conditions for protocol implementations."""
 
@@ -467,6 +478,7 @@ class TestProtocolBoundaryConditions:
         assert obj.metadata == {}
 
 
+@pytest.mark.unit
 class TestProtocolWithGenericTypes:
     """Test protocols with generic type parameters."""
 

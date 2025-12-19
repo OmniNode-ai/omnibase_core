@@ -8,6 +8,7 @@ import pytest
 from omnibase_core.enums.enum_security_level import EnumSecurityLevel
 
 
+@pytest.mark.unit
 class TestEnumSecurityLevel:
     """Test suite for EnumSecurityLevel."""
 

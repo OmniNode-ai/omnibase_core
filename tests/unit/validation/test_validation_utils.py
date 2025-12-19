@@ -30,6 +30,7 @@ from omnibase_core.validation.validation_utils import (
 )
 
 
+@pytest.mark.unit
 class TestProtocolSignatureExtractor:
     """Test the AST-based protocol signature extraction."""
 
@@ -94,6 +95,7 @@ class NotAProtocol:
         assert len(extractor.methods) == 0
 
 
+@pytest.mark.unit
 class TestExtractProtocolSignature:
     """Test the file-based protocol signature extraction."""
 
@@ -189,6 +191,7 @@ class TestProtocol(Protocol
             temp_path.unlink()
 
 
+@pytest.mark.unit
 class TestPathValidation:
     """Test input validation functions."""
 
@@ -254,6 +257,7 @@ class TestPathValidation:
                 assert "directory traversal" in log_message.lower()
 
 
+@pytest.mark.unit
 class TestExtractProtocolsFromDirectory:
     """Test directory-level protocol extraction."""
 
@@ -315,6 +319,7 @@ class TestProtocol(Protocol):
             extract_protocols_from_directory(invalid_path)
 
 
+@pytest.mark.unit
 class TestSHA256Migration:
     """Test that MD5 has been replaced with SHA256."""
 
@@ -376,6 +381,7 @@ class ConsistencyTestProtocol(Protocol):
 
 
 # Integration test to verify logging configuration
+@pytest.mark.unit
 class TestLoggingIntegration:
     """Test that logging is properly configured."""
 
@@ -408,6 +414,7 @@ class TestLoggingIntegration:
             temp_path.unlink()
 
 
+@pytest.mark.unit
 class TestDetermineRepositoryName:
     """Test repository name detection from file paths."""
 
@@ -442,6 +449,7 @@ class TestDetermineRepositoryName:
         assert result == "omnibase_core"
 
 
+@pytest.mark.unit
 class TestSuggestSpiLocation:
     """Test SPI location suggestions based on protocol names."""
 
@@ -694,6 +702,7 @@ class TestSuggestSpiLocation:
         assert result == "agent"
 
 
+@pytest.mark.unit
 class TestIsProtocolFile:
     """Test protocol file detection."""
 
@@ -789,6 +798,7 @@ class TestIsProtocolFile:
             temp_path.unlink()
 
 
+@pytest.mark.unit
 class TestFindProtocolFiles:
     """Test protocol file discovery."""
 
@@ -856,6 +866,7 @@ class TestFindProtocolFiles:
         assert result == []
 
 
+@pytest.mark.unit
 class TestInvalidPathHandling:
     """Test invalid path handling in validation functions."""
 

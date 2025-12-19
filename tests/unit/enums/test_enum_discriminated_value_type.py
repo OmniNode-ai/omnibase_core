@@ -1,8 +1,11 @@
 """Tests for EnumDiscriminatedValueType."""
 
+import pytest
+
 from omnibase_core.enums.enum_discriminated_value_type import EnumDiscriminatedValueType
 
 
+@pytest.mark.unit
 class TestEnumDiscriminatedValueTypeBasics:
     """Tests for basic EnumDiscriminatedValueType functionality."""
 
@@ -31,6 +34,7 @@ class TestEnumDiscriminatedValueTypeBasics:
         assert len(EnumDiscriminatedValueType) == 6
 
 
+@pytest.mark.unit
 class TestEnumDiscriminatedValueTypeTypeChecking:
     """Tests for EnumDiscriminatedValueType type checking methods."""
 
@@ -145,6 +149,7 @@ class TestEnumDiscriminatedValueTypeTypeChecking:
         )
 
 
+@pytest.mark.unit
 class TestEnumDiscriminatedValueTypeGetters:
     """Tests for EnumDiscriminatedValueType getter methods."""
 
@@ -178,6 +183,7 @@ class TestEnumDiscriminatedValueTypeGetters:
         assert EnumDiscriminatedValueType.INT not in collection_types
 
 
+@pytest.mark.unit
 class TestEnumDiscriminatedValueTypeEdgeCases:
     """Tests for EnumDiscriminatedValueType edge cases."""
 

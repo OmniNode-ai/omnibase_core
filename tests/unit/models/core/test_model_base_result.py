@@ -5,6 +5,8 @@ Comprehensive tests for base result model including metadata handling,
 serialization, and error tracking.
 """
 
+import pytest
+
 from omnibase_core.models.core.model_base_error import ModelBaseError
 from omnibase_core.models.core.model_base_result import ModelBaseResult
 from omnibase_core.models.primitives.model_semver import ModelSemVer
@@ -14,6 +16,7 @@ from omnibase_core.models.results.model_simple_metadata import ModelGenericMetad
 DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
+@pytest.mark.unit
 class TestModelBaseResult:
     """Test suite for ModelBaseResult."""
 
@@ -176,6 +179,7 @@ class TestModelBaseResult:
         assert result.success is True
 
 
+@pytest.mark.unit
 class TestModelBaseResultEdgeCases:
     """Edge case tests for ModelBaseResult."""
 
@@ -270,6 +274,7 @@ class TestModelBaseResultEdgeCases:
         assert "\t" in result.errors[0].message
 
 
+@pytest.mark.unit
 class TestModelBaseResultBranchCoverage:
     """Branch coverage tests for conditional logic in ModelBaseResult."""
 

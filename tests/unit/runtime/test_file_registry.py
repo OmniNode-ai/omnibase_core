@@ -233,8 +233,8 @@ def yaml_scalar_value() -> str:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestFileRegistryBasicLoading:
     """Test basic file loading functionality."""
 
@@ -322,8 +322,8 @@ class TestFileRegistryBasicLoading:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestFileRegistryDirectoryLoading:
     """Test loading multiple files from a directory."""
 
@@ -439,8 +439,8 @@ class TestFileRegistryDirectoryLoading:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestFileRegistryFileNotFound:
     """Test file not found error handling."""
 
@@ -524,8 +524,8 @@ class TestFileRegistryFileNotFound:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestFileRegistryInvalidYaml:
     """Test invalid YAML syntax and root type error handling.
 
@@ -701,8 +701,8 @@ handlers:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestFileRegistryUnknownFields:
     """Test unknown fields error handling (extra="forbid")."""
 
@@ -796,8 +796,8 @@ class TestFileRegistryUnknownFields:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestFileRegistryUnknownHandlerType:
     """Test unknown handler type error handling."""
 
@@ -873,8 +873,8 @@ class TestFileRegistryUnknownHandlerType:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestFileRegistryMissingRequiredFields:
     """Test missing required fields error handling."""
 
@@ -992,8 +992,8 @@ handlers:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestFileRegistrySchemaVersionMismatch:
     """Test schema version validation (if implemented)."""
 
@@ -1035,8 +1035,8 @@ event_bus:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestFileRegistryDuplicateHandlers:
     """Test duplicate handler type validation."""
 
@@ -1118,8 +1118,8 @@ class TestFileRegistryDuplicateHandlers:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestFileRegistryEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -1361,8 +1361,8 @@ nodes:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestFileRegistryErrorContext:
     """Test that errors contain proper context information."""
 
@@ -1432,8 +1432,8 @@ class TestFileRegistryErrorContext:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestFileRegistryAllHandlerTypes:
     """Test that all valid EnumHandlerType values are accepted."""
 
@@ -1484,8 +1484,8 @@ handlers:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestFileRegistryOSErrorHandling:
     """
     Test OSError handling in FileRegistry.

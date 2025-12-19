@@ -84,6 +84,7 @@ def create_transition(
     )
 
 
+@pytest.mark.unit
 class TestUniqueTransitionNames:
     """Tests for validate_unique_transition_names validation."""
 
@@ -153,6 +154,7 @@ class TestUniqueTransitionNames:
         assert "action_b" in error_message
 
 
+@pytest.mark.unit
 class TestUniqueStructuralTransitions:
     """Tests for validate_unique_structural_transitions validation."""
 
@@ -247,6 +249,7 @@ class TestUniqueStructuralTransitions:
         assert len(subcontract.transitions) == 2
 
 
+@pytest.mark.unit
 class TestNoTransitionsFromTerminalStates:
     """Tests for validate_no_transitions_from_terminal_states validation."""
 
@@ -377,6 +380,7 @@ class TestNoTransitionsFromTerminalStates:
         assert "completed" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestValidationInteractions:
     """Test interactions between multiple validations."""
 

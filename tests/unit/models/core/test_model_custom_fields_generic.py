@@ -14,6 +14,7 @@ from omnibase_core.models.core.model_custom_fields_accessor import (
 )
 
 
+@pytest.mark.unit
 class TestModelCustomFieldsAccessorGeneric:
     """Test cases for generic ModelCustomFieldsAccessor[T] functionality."""
 
@@ -274,6 +275,7 @@ class TestModelCustomFieldsAccessorGeneric:
         assert bool_fields == {"active": True}
 
 
+@pytest.mark.unit
 class TestModelCustomFieldsAccessorGenericEdgeCases:
     """Test edge cases for generic ModelCustomFieldsAccessor[T]."""
 

@@ -613,6 +613,45 @@ class TestModelHandlerOutputBuilderMethods:
 
         assert output.metrics == metrics
 
+    def test_for_orchestrator_metrics_default_behavior(
+        self, sample_envelope_id, sample_correlation_id, sample_handler_id
+    ) -> None:
+        """Test that metrics parameter defaults correctly for None and empty dict.
+
+        This verifies the `metrics or {}` pattern:
+        - metrics=None → {}
+        - metrics={} → {}
+        - No metrics parameter → {}
+        """
+        # Case 1: Explicit None
+        output_none = ModelHandlerOutput.for_orchestrator(
+            input_envelope_id=sample_envelope_id,
+            correlation_id=sample_correlation_id,
+            handler_id=sample_handler_id,
+            metrics=None,
+        )
+        assert output_none.metrics == {}
+
+        # Case 2: Explicit empty dict
+        output_empty = ModelHandlerOutput.for_orchestrator(
+            input_envelope_id=sample_envelope_id,
+            correlation_id=sample_correlation_id,
+            handler_id=sample_handler_id,
+            metrics={},
+        )
+        assert output_empty.metrics == {}
+
+        # Case 3: No metrics parameter (default)
+        output_default = ModelHandlerOutput.for_orchestrator(
+            input_envelope_id=sample_envelope_id,
+            correlation_id=sample_correlation_id,
+            handler_id=sample_handler_id,
+        )
+        assert output_default.metrics == {}
+
+        # All three should produce the same result
+        assert output_none.metrics == output_empty.metrics == output_default.metrics
+
     def test_for_orchestrator_with_logs(
         self, sample_envelope_id, sample_correlation_id, sample_handler_id
     ) -> None:

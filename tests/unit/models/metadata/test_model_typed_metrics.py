@@ -2,9 +2,12 @@
 
 from uuid import uuid4
 
+import pytest
+
 from omnibase_core.models.metadata.model_typed_metrics import ModelTypedMetrics
 
 
+@pytest.mark.unit
 class TestModelTypedMetricsInstantiation:
     """Tests for ModelTypedMetrics instantiation."""
 
@@ -72,6 +75,7 @@ class TestModelTypedMetricsInstantiation:
         assert metric.description == "A complete test metric"
 
 
+@pytest.mark.unit
 class TestModelTypedMetricsStringMetric:
     """Tests for string_metric factory method."""
 
@@ -137,6 +141,7 @@ class TestModelTypedMetricsStringMetric:
         assert metric1.metric_id != metric2.metric_id
 
 
+@pytest.mark.unit
 class TestModelTypedMetricsIntMetric:
     """Tests for int_metric factory method."""
 
@@ -188,6 +193,7 @@ class TestModelTypedMetricsIntMetric:
         assert metric.value == large_value
 
 
+@pytest.mark.unit
 class TestModelTypedMetricsFloatMetric:
     """Tests for float_metric factory method."""
 
@@ -239,6 +245,7 @@ class TestModelTypedMetricsFloatMetric:
         assert metric.value == precise_value
 
 
+@pytest.mark.unit
 class TestModelTypedMetricsBooleanMetric:
     """Tests for boolean_metric factory method."""
 
@@ -282,6 +289,7 @@ class TestModelTypedMetricsBooleanMetric:
         assert metric.description == "Feature flag status"
 
 
+@pytest.mark.unit
 class TestModelTypedMetricsProtocols:
     """Tests for ModelTypedMetrics protocol implementations."""
 
@@ -329,6 +337,7 @@ class TestModelTypedMetricsProtocols:
         assert metric.validate_instance() is True
 
 
+@pytest.mark.unit
 class TestModelTypedMetricsSerialization:
     """Tests for ModelTypedMetrics serialization."""
 
@@ -368,6 +377,7 @@ class TestModelTypedMetricsSerialization:
         assert isinstance(data["value"], bool)
 
 
+@pytest.mark.unit
 class TestModelTypedMetricsEdgeCases:
     """Tests for ModelTypedMetrics edge cases."""
 

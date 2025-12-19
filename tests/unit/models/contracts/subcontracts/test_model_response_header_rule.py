@@ -23,6 +23,7 @@ from omnibase_core.models.contracts.subcontracts.model_response_header_rule impo
 )
 
 
+@pytest.mark.unit
 class TestModelResponseHeaderRuleBasics:
     """Test basic model instantiation and defaults."""
 
@@ -83,6 +84,7 @@ class TestModelResponseHeaderRuleBasics:
         assert rule.priority == 100
 
 
+@pytest.mark.unit
 class TestModelResponseHeaderRuleValidation:
     """Test field validation and constraints."""
 
@@ -297,6 +299,7 @@ class TestModelResponseHeaderRuleValidation:
         assert rule_with_condition.apply_condition == "response.status == 200"
 
 
+@pytest.mark.unit
 class TestModelResponseHeaderRuleEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -499,6 +502,7 @@ class TestModelResponseHeaderRuleEdgeCases:
         assert rule1.priority < rule2.priority
 
 
+@pytest.mark.unit
 class TestModelResponseHeaderRuleConfigDict:
     """Test ConfigDict behavior."""
 
@@ -575,6 +579,7 @@ class TestModelResponseHeaderRuleConfigDict:
         assert "application/json" in json_str
 
 
+@pytest.mark.unit
 class TestModelResponseHeaderRuleDocumentation:
     """Test documentation and interface guarantees."""
 

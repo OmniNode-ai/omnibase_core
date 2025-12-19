@@ -21,6 +21,7 @@ from omnibase_core.models.events import (
 )
 
 
+@pytest.mark.unit
 class TestEnumTopicType:
     """Test cases for EnumTopicType enum."""
 
@@ -79,6 +80,7 @@ class TestEnumTopicType:
         assert mapping[EnumTopicType.COMMANDS] == "cmd_handler"
 
 
+@pytest.mark.unit
 class TestEnumCleanupPolicy:
     """Test cases for EnumCleanupPolicy enum."""
 
@@ -120,6 +122,7 @@ class TestEnumCleanupPolicy:
         assert EnumCleanupPolicy.COMPACT_DELETE in policies
 
 
+@pytest.mark.unit
 class TestModelTopicConfigInstantiation:
     """Test cases for ModelTopicConfig instantiation."""
 
@@ -179,6 +182,7 @@ class TestModelTopicConfigInstantiation:
         )
 
 
+@pytest.mark.unit
 class TestModelTopicConfigValidation:
     """Test cases for ModelTopicConfig field validation."""
 
@@ -324,6 +328,7 @@ class TestModelTopicConfigValidation:
         assert "less than or equal to 10" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestModelTopicConfigFactoryMethods:
     """Test cases for ModelTopicConfig factory methods."""
 
@@ -399,6 +404,7 @@ class TestModelTopicConfigFactoryMethods:
         assert commands.retention_ms == snapshots.retention_ms
 
 
+@pytest.mark.unit
 class TestModelTopicManifestInstantiation:
     """Test cases for ModelTopicManifest instantiation."""
 
@@ -451,6 +457,7 @@ class TestModelTopicManifestInstantiation:
             )
 
 
+@pytest.mark.unit
 class TestModelTopicManifestDomainValidation:
     """Test cases for domain name validation in ModelTopicManifest."""
 
@@ -592,6 +599,7 @@ class TestModelTopicManifestDomainValidation:
         assert manifest.domain == max_domain
 
 
+@pytest.mark.unit
 class TestModelTopicManifestGetTopicName:
     """Test cases for ModelTopicManifest.get_topic_name() method."""
 
@@ -652,6 +660,7 @@ class TestModelTopicManifestGetTopicName:
         assert "test" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestModelTopicManifestGetAllTopicNames:
     """Test cases for ModelTopicManifest.get_all_topic_names() method."""
 
@@ -701,6 +710,7 @@ class TestModelTopicManifestGetAllTopicNames:
         assert names1 is not names2  # Different objects
 
 
+@pytest.mark.unit
 class TestModelTopicManifestGetConfig:
     """Test cases for ModelTopicManifest.get_config() method."""
 
@@ -730,6 +740,7 @@ class TestModelTopicManifestGetConfig:
         assert "test" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestModelTopicManifestRegistrationDomain:
     """Test cases for ModelTopicManifest.registration_domain() factory method."""
 
@@ -792,6 +803,7 @@ class TestModelTopicManifestRegistrationDomain:
         )
 
 
+@pytest.mark.unit
 class TestModelTopicManifestCreateStandardManifest:
     """Test cases for ModelTopicManifest.create_standard_manifest() factory method."""
 
@@ -857,6 +869,7 @@ class TestModelTopicManifestCreateStandardManifest:
         assert standard.topics == registration.topics
 
 
+@pytest.mark.unit
 class TestModelTopicManifestSerialization:
     """Test cases for ModelTopicManifest serialization."""
 
@@ -889,6 +902,7 @@ class TestModelTopicManifestSerialization:
         assert len(restored.topics) == len(original.topics)
 
 
+@pytest.mark.unit
 class TestModelTopicManifestEdgeCases:
     """Test edge cases and special scenarios."""
 

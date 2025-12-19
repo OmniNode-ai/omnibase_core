@@ -16,6 +16,7 @@ import logging
 from datetime import datetime
 from uuid import UUID, uuid4
 
+import pytest
 from pydantic import BaseModel
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
@@ -41,6 +42,7 @@ class MockLogContext:
         return self.data
 
 
+@pytest.mark.unit
 class TestEmitLogEventSyncBasic:
     """Test basic emit_log_event_sync functionality."""
 
@@ -104,6 +106,7 @@ class TestEmitLogEventSyncBasic:
         assert log_data["level"] == "fatal"
 
 
+@pytest.mark.unit
 class TestStructuredLogEntry:
     """Test structured log entry creation."""
 
@@ -163,6 +166,7 @@ class TestStructuredLogEntry:
         assert log_data["context"]["count"] == 42
 
 
+@pytest.mark.unit
 class TestContextHandling:
     """Test different context types handling."""
 
@@ -250,6 +254,7 @@ class TestContextHandling:
         assert log_data["context"]["nested_dict"]["a"]["b"] == "c"
 
 
+@pytest.mark.unit
 class TestLogLevelMapping:
     """Test LogLevel to Python logging level mapping."""
 
@@ -308,6 +313,7 @@ class TestLogLevelMapping:
         assert caplog.records[0].levelno >= logging.DEBUG
 
 
+@pytest.mark.unit
 class TestJSONEncoding:
     """Test JSON encoding with PydanticJSONEncoder."""
 
@@ -366,6 +372,7 @@ class TestJSONEncoding:
         assert log_data["context"]["list"] == [1, 2, 3]
 
 
+@pytest.mark.unit
 class TestEdgeCases:
     """Test edge cases and special scenarios."""
 
@@ -467,6 +474,7 @@ class TestEdgeCases:
         assert len(caplog.records) >= 9  # 3 threads × 3 messages
 
 
+@pytest.mark.unit
 class TestLoggerNaming:
     """Test logger naming convention."""
 

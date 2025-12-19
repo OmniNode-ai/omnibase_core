@@ -4,10 +4,13 @@ Test suite for TypedDictOperationResult.
 
 from datetime import datetime
 
+import pytest
+
 from omnibase_core.types.typed_dict_error_details import TypedDictErrorDetails
 from omnibase_core.types.typed_dict_operation_result import TypedDictOperationResult
 
 
+@pytest.mark.unit
 class TestTypedDictOperationResult:
     """Test TypedDictOperationResult functionality."""
 

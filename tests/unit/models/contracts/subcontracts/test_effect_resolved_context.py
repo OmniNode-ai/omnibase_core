@@ -25,8 +25,8 @@ from omnibase_core.models.contracts.subcontracts.model_effect_resolved_context i
 )
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestModelResolvedHttpContext:
     """Test ModelResolvedHttpContext creation and validation."""
 
@@ -149,8 +149,8 @@ class TestModelResolvedHttpContext:
         assert "Extra inputs are not permitted" in str(exc_info.value)
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestModelResolvedDbContext:
     """Test ModelResolvedDbContext creation and validation."""
 
@@ -262,8 +262,8 @@ class TestModelResolvedDbContext:
         assert "Extra inputs are not permitted" in str(exc_info.value)
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestModelResolvedKafkaContext:
     """Test ModelResolvedKafkaContext creation and validation."""
 
@@ -367,8 +367,8 @@ class TestModelResolvedKafkaContext:
         assert "Extra inputs are not permitted" in str(exc_info.value)
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestModelResolvedFilesystemContext:
     """Test ModelResolvedFilesystemContext creation and validation."""
 
@@ -454,8 +454,8 @@ class TestModelResolvedFilesystemContext:
         assert "Extra inputs are not permitted" in str(exc_info.value)
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestResolvedIOContextUnion:
     """Test ResolvedIOContext union type behavior."""
 
@@ -521,8 +521,8 @@ class TestResolvedIOContextUnion:
         ]
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestModelSerializationDeserialization:
     """Test model serialization and deserialization."""
 
@@ -601,8 +601,8 @@ class TestModelSerializationDeserialization:
         assert restored.mode == original.mode
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestEdgeCases:
     """Test edge cases and boundary conditions."""
 

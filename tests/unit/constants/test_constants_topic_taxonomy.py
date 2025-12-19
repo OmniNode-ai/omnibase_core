@@ -47,6 +47,7 @@ from omnibase_core.constants import (
 )
 
 
+@pytest.mark.unit
 class TestTopicNameFunction:
     """Test cases for the topic_name() generator function."""
 
@@ -99,6 +100,7 @@ class TestTopicNameFunction:
                 assert result.startswith("onex.")
 
 
+@pytest.mark.unit
 class TestTopicNameValidation:
     """Test cases for topic_name() input validation."""
 
@@ -169,6 +171,7 @@ class TestTopicNameValidation:
         assert topic_name("my-service-v2", "events") == "onex.my-service-v2.events"
 
 
+@pytest.mark.unit
 class TestTopicTypeSuffixConstants:
     """Test cases for topic type suffix constants."""
 
@@ -213,6 +216,7 @@ class TestTopicTypeSuffixConstants:
         assert len(types) == len(set(types))
 
 
+@pytest.mark.unit
 class TestDomainNameConstants:
     """Test cases for domain name constants."""
 
@@ -264,6 +268,7 @@ class TestDomainNameConstants:
         assert len(domains) == len(set(domains))
 
 
+@pytest.mark.unit
 class TestRegistrationDomainTopics:
     """Test cases for registration domain topic constants."""
 
@@ -303,6 +308,7 @@ class TestRegistrationDomainTopics:
         )
 
 
+@pytest.mark.unit
 class TestDiscoveryDomainTopics:
     """Test cases for discovery domain topic constants."""
 
@@ -330,6 +336,7 @@ class TestDiscoveryDomainTopics:
         )
 
 
+@pytest.mark.unit
 class TestRuntimeDomainTopics:
     """Test cases for runtime domain topic constants."""
 
@@ -352,6 +359,7 @@ class TestRuntimeDomainTopics:
         assert topic_name(DOMAIN_RUNTIME, TOPIC_TYPE_INTENTS) == TOPIC_RUNTIME_INTENTS
 
 
+@pytest.mark.unit
 class TestSpecialTopicConstants:
     """Test cases for special topic constants."""
 
@@ -364,6 +372,7 @@ class TestSpecialTopicConstants:
         assert TOPIC_EVENT_PUBLISH_INTENT == TOPIC_RUNTIME_INTENTS
 
 
+@pytest.mark.unit
 class TestCleanupPolicyConstants:
     """Test cases for cleanup policy constants."""
 
@@ -409,6 +418,7 @@ class TestCleanupPolicyConstants:
         assert CLEANUP_POLICY_INTENTS == "delete"
 
 
+@pytest.mark.unit
 class TestRetentionConstants:
     """Test cases for retention constants by topic type."""
 
@@ -489,6 +499,7 @@ class TestRetentionConstants:
         assert RETENTION_MS_INTENTS < RETENTION_MS_AUDIT
 
 
+@pytest.mark.unit
 class TestTopicNamingConvention:
     """Test cases for topic naming convention compliance."""
 
@@ -571,6 +582,7 @@ class TestTopicNamingConvention:
         assert parts[2] == TOPIC_TYPE_INTENTS
 
 
+@pytest.mark.unit
 class TestTopicConstantsUniqueness:
     """Test cases for topic constant uniqueness."""
 
@@ -593,6 +605,7 @@ class TestTopicConstantsUniqueness:
         assert len(topics) == len(set(topics))
 
 
+@pytest.mark.unit
 class TestTopicConstantsUsability:
     """Test cases for topic constant usability patterns."""
 
@@ -638,6 +651,7 @@ class TestTopicConstantsUsability:
         assert deserialized["domain"] == DOMAIN_REGISTRATION
 
 
+@pytest.mark.unit
 class TestTopicNameFunctionWithConstants:
     """Test topic_name() function integration with constants."""
 
@@ -668,6 +682,7 @@ class TestTopicNameFunctionWithConstants:
         assert topic_name(DOMAIN_RUNTIME, TOPIC_TYPE_INTENTS) == TOPIC_RUNTIME_INTENTS
 
 
+@pytest.mark.unit
 class TestModuleDocumentation:
     """Test cases for module documentation."""
 
@@ -686,6 +701,7 @@ class TestModuleDocumentation:
         assert "topic" in docstring
 
 
+@pytest.mark.unit
 class TestModuleExports:
     """Test cases for module __all__ exports."""
 

@@ -13,8 +13,8 @@ from pydantic import ValidationError
 from omnibase_core.models.contracts.subcontracts import ModelEffectInputSchema
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestModelEffectInputSchema:
     """Test suite for ModelEffectInputSchema model."""
 
@@ -91,8 +91,8 @@ class TestModelEffectInputSchema:
         assert "metadata.tags" in schema.optional_fields
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestModelEffectInputSchemaExport:
     """Test that ModelEffectInputSchema is properly exported from subcontracts module."""
 

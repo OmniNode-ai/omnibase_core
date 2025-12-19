@@ -12,6 +12,7 @@ from omnibase_core.models.core.model_retry_config import ModelRetryConfig
 from omnibase_core.models.services import ModelExternalServiceConfig
 
 
+@pytest.mark.unit
 class TestModelExternalServiceConfigBasic:
     """Test basic external service configuration functionality."""
 
@@ -76,6 +77,7 @@ class TestModelExternalServiceConfigBasic:
             assert config.service_type == service_type
 
 
+@pytest.mark.unit
 class TestModelExternalServiceConfigConnectionTypes:
     """Test connection config type handling and validation."""
 
@@ -226,6 +228,7 @@ class TestModelExternalServiceConfigConnectionTypes:
         )
 
 
+@pytest.mark.unit
 class TestModelExternalServiceConfigFieldValidation:
     """Test field validation rules and constraints."""
 
@@ -297,6 +300,7 @@ class TestModelExternalServiceConfigFieldValidation:
             )
 
 
+@pytest.mark.unit
 class TestModelExternalServiceConfigHealthChecks:
     """Test health check configuration."""
 
@@ -323,6 +327,7 @@ class TestModelExternalServiceConfigHealthChecks:
         assert config.health_check_timeout == 5
 
 
+@pytest.mark.unit
 class TestModelExternalServiceConfigRetryConfig:
     """Test retry configuration."""
 
@@ -344,6 +349,7 @@ class TestModelExternalServiceConfigRetryConfig:
         assert config.retry_config is None
 
 
+@pytest.mark.unit
 class TestModelExternalServiceConfigSerialization:
     """Test external service configuration serialization."""
 
@@ -404,6 +410,7 @@ class TestModelExternalServiceConfigSerialization:
         assert restored.tags == original.tags
 
 
+@pytest.mark.unit
 class TestModelExternalServiceConfigMethods:
     """Test model methods."""
 
@@ -450,6 +457,7 @@ class TestModelExternalServiceConfigMethods:
         assert isinstance(updated, ModelExternalServiceConfig)
 
 
+@pytest.mark.unit
 class TestModelExternalServiceConfigEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -490,6 +498,7 @@ class TestModelExternalServiceConfigEdgeCases:
         assert len(config.tags) == 2
 
 
+@pytest.mark.unit
 class TestModelExternalServiceConfigFactoryMethods:
     """Test factory methods for creating configurations."""
 
@@ -516,6 +525,7 @@ class TestModelExternalServiceConfigFactoryMethods:
         assert config.retry_config is not None
 
 
+@pytest.mark.unit
 class TestModelExternalServiceConfigIntegration:
     """Test integration scenarios and realistic use cases."""
 

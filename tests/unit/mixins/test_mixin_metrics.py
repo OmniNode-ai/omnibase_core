@@ -4,6 +4,8 @@ Tests for MixinMetrics - Performance metrics collection mixin.
 Coverage target: 60%+ (stub implementation with defensive attribute handling)
 """
 
+import pytest
+
 from omnibase_core.mixins.mixin_metrics import MixinMetrics
 
 
@@ -11,6 +13,7 @@ class MockNode(MixinMetrics):
     """Mock node class that uses MixinMetrics."""
 
 
+@pytest.mark.unit
 class TestMixinMetricsInit:
     """Test suite for MixinMetrics initialization."""
 
@@ -29,6 +32,7 @@ class TestMixinMetricsInit:
         assert isinstance(metrics_data, dict)
 
 
+@pytest.mark.unit
 class TestRecordMetric:
     """Test suite for record_metric method."""
 
@@ -125,6 +129,7 @@ class TestRecordMetric:
         assert "test" in metrics_data
 
 
+@pytest.mark.unit
 class TestIncrementCounter:
     """Test suite for increment_counter method."""
 
@@ -199,6 +204,7 @@ class TestIncrementCounter:
         assert metrics_data["test_counter"]["value"] == 10
 
 
+@pytest.mark.unit
 class TestGetMetrics:
     """Test suite for get_metrics method."""
 
@@ -264,6 +270,7 @@ class TestGetMetrics:
         assert metrics["cpu_usage"]["value"] == 75.5
 
 
+@pytest.mark.unit
 class TestResetMetrics:
     """Test suite for reset_metrics method."""
 
@@ -311,6 +318,7 @@ class TestResetMetrics:
         assert metrics["test"]["value"] == 1.0
 
 
+@pytest.mark.unit
 class TestMetricsIntegration:
     """Integration tests for MixinMetrics workflow."""
 

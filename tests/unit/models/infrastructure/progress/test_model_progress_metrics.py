@@ -9,6 +9,7 @@ from omnibase_core.models.infrastructure.progress.model_progress_metrics import 
 )
 
 
+@pytest.mark.unit
 class TestModelProgressMetricsInstantiation:
     """Tests for ModelProgressMetrics instantiation."""
 
@@ -26,6 +27,7 @@ class TestModelProgressMetricsInstantiation:
         assert "important" in metrics.tags
 
 
+@pytest.mark.unit
 class TestModelProgressMetricsCustomMetrics:
     """Tests for ModelProgressMetrics custom metrics management."""
 
@@ -67,6 +69,7 @@ class TestModelProgressMetricsCustomMetrics:
         assert result is False
 
 
+@pytest.mark.unit
 class TestModelProgressMetricsTags:
     """Tests for ModelProgressMetrics tag management."""
 
@@ -150,6 +153,7 @@ class TestModelProgressMetricsTags:
         assert metrics.get_tags_count() == 2
 
 
+@pytest.mark.unit
 class TestModelProgressMetricsCounters:
     """Tests for ModelProgressMetrics counter methods."""
 
@@ -164,6 +168,7 @@ class TestModelProgressMetricsCounters:
         assert metrics.has_custom_metrics() is False
 
 
+@pytest.mark.unit
 class TestModelProgressMetricsSummary:
     """Tests for ModelProgressMetrics summary methods."""
 
@@ -174,6 +179,7 @@ class TestModelProgressMetricsSummary:
         assert len(summary) == 0
 
 
+@pytest.mark.unit
 class TestModelProgressMetricsStandardMetrics:
     """Tests for ModelProgressMetrics standard metrics update."""
 
@@ -195,6 +201,7 @@ class TestModelProgressMetricsStandardMetrics:
         assert "elapsed_seconds" in summary
 
 
+@pytest.mark.unit
 class TestModelProgressMetricsReset:
     """Tests for ModelProgressMetrics reset functionality."""
 
@@ -214,6 +221,7 @@ class TestModelProgressMetricsReset:
         assert metrics.get_tags_count() == 0
 
 
+@pytest.mark.unit
 class TestModelProgressMetricsFactoryMethods:
     """Tests for ModelProgressMetrics factory methods."""
 
@@ -236,6 +244,7 @@ class TestModelProgressMetricsFactoryMethods:
         assert metrics.get_custom_metric("key1") is not None
 
 
+@pytest.mark.unit
 class TestModelProgressMetricsProtocols:
     """Tests for ModelProgressMetrics protocol implementations."""
 
@@ -263,6 +272,7 @@ class TestModelProgressMetricsProtocols:
         assert "tags" in data
 
 
+@pytest.mark.unit
 class TestModelProgressMetricsEdgeCases:
     """Tests for ModelProgressMetrics edge cases."""
 

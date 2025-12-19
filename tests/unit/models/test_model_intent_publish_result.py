@@ -16,6 +16,7 @@ from omnibase_core.models.reducer.model_intent_publish_result import (
 )
 
 
+@pytest.mark.unit
 class TestModelIntentPublishResultInstantiation:
     """Test ModelIntentPublishResult instantiation."""
 
@@ -83,6 +84,7 @@ class TestModelIntentPublishResultInstantiation:
         assert isinstance(result, BaseModel)
 
 
+@pytest.mark.unit
 class TestModelIntentPublishResultFieldValidation:
     """Test field validation and constraints."""
 
@@ -209,6 +211,7 @@ class TestModelIntentPublishResultFieldValidation:
             )
 
 
+@pytest.mark.unit
 class TestModelIntentPublishResultSerialization:
     """Test model serialization and deserialization."""
 
@@ -328,6 +331,7 @@ class TestModelIntentPublishResultSerialization:
         assert restored.correlation_id == original.correlation_id
 
 
+@pytest.mark.unit
 class TestModelIntentPublishResultEquality:
     """Test equality and comparison operations."""
 
@@ -439,6 +443,7 @@ class TestModelIntentPublishResultEquality:
         assert result1 != result2
 
 
+@pytest.mark.unit
 class TestModelIntentPublishResultCopy:
     """Test model copying operations."""
 
@@ -476,6 +481,7 @@ class TestModelIntentPublishResultCopy:
         assert updated.target_topic != original.target_topic
 
 
+@pytest.mark.unit
 class TestModelIntentPublishResultRepresentation:
     """Test string representations."""
 
@@ -506,6 +512,7 @@ class TestModelIntentPublishResultRepresentation:
         assert "ModelIntentPublishResult" in repr_str
 
 
+@pytest.mark.unit
 class TestModelIntentPublishResultMetadata:
     """Test model metadata and configuration."""
 
@@ -559,6 +566,7 @@ class TestModelIntentPublishResultMetadata:
         assert fields["correlation_id"].description is not None
 
 
+@pytest.mark.unit
 class TestModelIntentPublishResultEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -643,6 +651,7 @@ class TestModelIntentPublishResultEdgeCases:
         assert "extra_field" not in result.model_dump()
 
 
+@pytest.mark.unit
 class TestModelIntentPublishResultAttributes:
     """Test model attributes and methods."""
 

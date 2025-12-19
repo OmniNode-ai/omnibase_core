@@ -10,6 +10,8 @@ from __future__ import annotations
 import datetime
 import json
 
+import pytest
+
 from omnibase_core.enums import EnumLogLevel
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 
@@ -26,6 +28,7 @@ ValidateMessageModelContext = ModelValidateMessageContext
 ValidateResultModel = ModelValidateResult
 
 
+@pytest.mark.unit
 class TestModelValidateMessageContextInstantiation:
     """Test ModelValidateMessageContext instantiation."""
 
@@ -89,6 +92,7 @@ class TestModelValidateMessageContextInstantiation:
         assert ctx5.value is None
 
 
+@pytest.mark.unit
 class TestModelValidateMessageContextSerialization:
     """Test ModelValidateMessageContext serialization."""
 
@@ -131,6 +135,7 @@ class TestModelValidateMessageContextSerialization:
         assert restored.reason == original.reason
 
 
+@pytest.mark.unit
 class TestModelValidateMessageInstantiation:
     """Test ModelValidateMessage instantiation."""
 
@@ -207,6 +212,7 @@ class TestModelValidateMessageInstantiation:
             assert msg.severity == level
 
 
+@pytest.mark.unit
 class TestModelValidateMessageComputeHash:
     """Test ModelValidateMessage compute_hash method."""
 
@@ -282,6 +288,7 @@ class TestModelValidateMessageComputeHash:
         assert len(hash_value) == 64
 
 
+@pytest.mark.unit
 class TestModelValidateMessageWithHash:
     """Test ModelValidateMessage with_hash method."""
 
@@ -309,6 +316,7 @@ class TestModelValidateMessageWithHash:
         assert msg.message == "Test"
 
 
+@pytest.mark.unit
 class TestModelValidateMessageToJson:
     """Test ModelValidateMessage to_json method."""
 
@@ -353,6 +361,7 @@ class TestModelValidateMessageToJson:
         assert parsed["hash"] is not None
 
 
+@pytest.mark.unit
 class TestModelValidateMessageToText:
     """Test ModelValidateMessage to_text method."""
 
@@ -425,6 +434,7 @@ class TestModelValidateMessageToText:
         assert "Context:" in text
 
 
+@pytest.mark.unit
 class TestModelValidateMessageToCi:
     """Test ModelValidateMessage to_ci method."""
 
@@ -481,6 +491,7 @@ class TestModelValidateMessageToCi:
         assert ci_str.startswith("::")
 
 
+@pytest.mark.unit
 class TestModelValidateMessageCompatibilityAliases:
     """Test compatibility aliases for ModelValidateMessage."""
 
@@ -493,6 +504,7 @@ class TestModelValidateMessageCompatibilityAliases:
         assert ValidateMessageModelContext is ModelValidateMessageContext
 
 
+@pytest.mark.unit
 class TestModelValidateResultInstantiation:
     """Test ModelValidateResult instantiation."""
 
@@ -554,6 +566,7 @@ class TestModelValidateResultInstantiation:
             assert result.status == status
 
 
+@pytest.mark.unit
 class TestModelValidateResultComputeHash:
     """Test ModelValidateResult compute_hash method."""
 
@@ -607,6 +620,7 @@ class TestModelValidateResultComputeHash:
         assert isinstance(hash_value, str)
 
 
+@pytest.mark.unit
 class TestModelValidateResultWithHash:
     """Test ModelValidateResult with_hash method."""
 
@@ -632,6 +646,7 @@ class TestModelValidateResultWithHash:
         assert result.hash is not None
 
 
+@pytest.mark.unit
 class TestModelValidateResultToJson:
     """Test ModelValidateResult to_json method."""
 
@@ -667,6 +682,7 @@ class TestModelValidateResultToJson:
         assert len(parsed["messages"]) == 2
 
 
+@pytest.mark.unit
 class TestModelValidateResultToText:
     """Test ModelValidateResult to_text method."""
 
@@ -729,6 +745,7 @@ class TestModelValidateResultToText:
         assert "ERROR" in text  # From message severity
 
 
+@pytest.mark.unit
 class TestModelValidateResultToCi:
     """Test ModelValidateResult to_ci method."""
 
@@ -759,6 +776,7 @@ class TestModelValidateResultToCi:
         assert isinstance(ci_str, str)
 
 
+@pytest.mark.unit
 class TestModelValidateResultCompatibilityAliases:
     """Test compatibility aliases for ModelValidateResult."""
 
@@ -767,6 +785,7 @@ class TestModelValidateResultCompatibilityAliases:
         assert ValidateResultModel is ModelValidateResult
 
 
+@pytest.mark.unit
 class TestValidationModelsIntegration:
     """Test integration scenarios with all validation models."""
 

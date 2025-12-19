@@ -70,6 +70,7 @@ def sample_service_metadata(
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestContainerProtocolUUIDEnforcement:
     """Test UUID enforcement in container protocol implementations."""
 
@@ -250,6 +251,7 @@ class TestContainerProtocolUUIDEnforcement:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestTypeProtocolUUIDEnforcement:
     """Test UUID enforcement in type protocol implementations."""
 
@@ -416,6 +418,7 @@ class TestTypeProtocolUUIDEnforcement:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestUUIDConversionEdgeCases:
     """Test UUID conversion edge cases."""
 
@@ -564,6 +567,7 @@ class LegacyMigrationHelper:
             return default
 
 
+@pytest.mark.unit
 class TestLegacyMigrationHelper:
     """Test legacy string ID migration helper."""
 
@@ -624,6 +628,7 @@ class TestLegacyMigrationHelper:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestPydanticUUIDSerialization:
     """Test Pydantic model UUID serialization/deserialization."""
 
@@ -691,6 +696,7 @@ class TestPydanticUUIDSerialization:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestProtocolTypeAnnotations:
     """Test that protocol type annotations correctly specify UUID."""
 

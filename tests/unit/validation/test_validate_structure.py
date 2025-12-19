@@ -1,3 +1,5 @@
+import pytest
+
 #!/usr/bin/env python3
 """
 Comprehensive tests for repository structure validation.
@@ -16,8 +18,6 @@ import sys
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
-
-import pytest
 
 sys.path.insert(
     0,
@@ -63,6 +63,7 @@ def minimal_repo():
     shutil.rmtree(temp_dir)
 
 
+@pytest.mark.unit
 class TestOmniStructureValidator:
     """Test cases for OmniStructureValidator."""
 
@@ -294,6 +295,7 @@ class TestOmniStructureValidator:
         assert len(organization_violations) >= 1
 
 
+@pytest.mark.unit
 class TestEdgeCases:
     """Test edge cases and error conditions."""
 
@@ -356,6 +358,7 @@ class TestEdgeCases:
         assert isinstance(violations, list)
 
 
+@pytest.mark.unit
 class TestReportGeneration:
     """Test validation report generation."""
 
@@ -432,6 +435,7 @@ class TestReportGeneration:
         assert "Message 3" in captured.out
 
 
+@pytest.mark.unit
 class TestMainFunction:
     """Test the main function and CLI interface."""
 
@@ -480,6 +484,7 @@ class TestMainFunction:
             assert exc_info.value.code != 0
 
 
+@pytest.mark.unit
 class TestFixtureValidation:
     """Test validation using our test fixtures."""
 

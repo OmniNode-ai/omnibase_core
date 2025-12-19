@@ -4,9 +4,12 @@ Test cases for EnumMetricDataType.
 Tests the metric data type enumeration.
 """
 
+import pytest
+
 from omnibase_core.enums.enum_metric_data_type import EnumMetricDataType
 
 
+@pytest.mark.unit
 class TestEnumMetricDataType:
     """Test EnumMetricDataType enumeration."""
 

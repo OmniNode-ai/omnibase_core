@@ -4,6 +4,8 @@ Test suite for MixinCanonicalYAMLSerializer.
 Tests canonical YAML serialization, normalization, and hash computation.
 """
 
+import pytest
+
 from omnibase_core.enums import EnumNodeMetadataField
 from omnibase_core.mixins.mixin_canonical_serialization import (
     MixinCanonicalYAMLSerializer,
@@ -14,6 +16,7 @@ from omnibase_core.mixins.mixin_canonical_serialization import (
 )
 
 
+@pytest.mark.unit
 class TestMixinCanonicalYAMLSerializer:
     """Test MixinCanonicalYAMLSerializer functionality."""
 
@@ -227,6 +230,7 @@ class TestMixinCanonicalYAMLSerializer:
         assert "test_node" in result
 
 
+@pytest.mark.unit
 class TestStripCommentPrefix:
     """Test _strip_comment_prefix function."""
 
@@ -277,6 +281,7 @@ class TestStripCommentPrefix:
         assert "line2" in result
 
 
+@pytest.mark.unit
 class TestExtractMetadataBlockAndBody:
     """Test extract_metadata_block_and_body function."""
 
@@ -357,6 +362,7 @@ Body content
         assert block is not None
 
 
+@pytest.mark.unit
 class TestStripBlockDelimitersAndAssert:
     """Test strip_block_delimiters_and_assert function."""
 
@@ -408,6 +414,7 @@ class TestStripBlockDelimitersAndAssert:
         assert "---" in result
 
 
+@pytest.mark.unit
 class TestNormalizeBodyStandalone:
     """Test standalone normalize_body function."""
 
@@ -433,6 +440,7 @@ class TestNormalizeBodyStandalone:
         assert result == "\n"
 
 
+@pytest.mark.unit
 class TestCanonicalSerializationEdgeCases:
     """Test edge cases and error scenarios."""
 
@@ -541,6 +549,7 @@ class TestCanonicalSerializationEdgeCases:
         assert result.count("\n") >= 3
 
 
+@pytest.mark.unit
 class TestUnionTypeDetection:
     """Test runtime Union type detection for both typing.Union and PEP 604 syntax.
 

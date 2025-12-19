@@ -22,6 +22,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
+@pytest.mark.unit
 class TestModelEventHandlingSubcontractBasics:
     """Test basic functionality of ModelEventHandlingSubcontract."""
 
@@ -106,6 +107,7 @@ class TestModelEventHandlingSubcontractBasics:
         assert subcontract.dead_letter_channel == "dlq.events.failed"
 
 
+@pytest.mark.unit
 class TestModelEventHandlingSubcontractSubscribedEvents:
     """Test subscribed_events field validation."""
 
@@ -141,6 +143,7 @@ class TestModelEventHandlingSubcontractSubscribedEvents:
         assert subcontract.subscribed_events == ["CUSTOM_EVENT"]
 
 
+@pytest.mark.unit
 class TestModelEventHandlingSubcontractDeadLetterChannel:
     """Test dead_letter_channel field validation."""
 
@@ -187,6 +190,7 @@ class TestModelEventHandlingSubcontractDeadLetterChannel:
         assert subcontract.dead_letter_channel is None
 
 
+@pytest.mark.unit
 class TestModelEventHandlingSubcontractOverflowStrategy:
     """Test dead_letter_overflow_strategy validation."""
 
@@ -213,6 +217,7 @@ class TestModelEventHandlingSubcontractOverflowStrategy:
         assert "must be one of" in exc_info.value.message
 
 
+@pytest.mark.unit
 class TestModelEventHandlingSubcontractRetryConfiguration:
     """Test retry configuration validation."""
 
@@ -274,6 +279,7 @@ class TestModelEventHandlingSubcontractRetryConfiguration:
         assert subcontract.max_retries == 5
 
 
+@pytest.mark.unit
 class TestModelEventHandlingSubcontractHandlerTimeout:
     """Test handler_timeout_seconds validation."""
 
@@ -311,6 +317,7 @@ class TestModelEventHandlingSubcontractHandlerTimeout:
         assert subcontract.handler_timeout_seconds is None
 
 
+@pytest.mark.unit
 class TestModelEventHandlingSubcontractDLQMaxEvents:
     """Test dead_letter_max_events validation."""
 
@@ -337,6 +344,7 @@ class TestModelEventHandlingSubcontractDLQMaxEvents:
             assert subcontract.dead_letter_max_events == value
 
 
+@pytest.mark.unit
 class TestModelEventHandlingSubcontractAsyncSyncConfiguration:
     """Test async/sync event bus configuration."""
 
@@ -382,6 +390,7 @@ class TestModelEventHandlingSubcontractAsyncSyncConfiguration:
         assert subcontract.sync_event_bus_fallback is True
 
 
+@pytest.mark.unit
 class TestModelEventHandlingSubcontractEventFilters:
     """Test event_filters field."""
 
@@ -427,6 +436,7 @@ class TestModelEventHandlingSubcontractEventFilters:
         assert subcontract.event_filters["priority"] == "high"
 
 
+@pytest.mark.unit
 class TestModelEventHandlingSubcontractConfigDict:
     """Test model_config settings."""
 
@@ -450,6 +460,7 @@ class TestModelEventHandlingSubcontractConfigDict:
         assert subcontract.max_retries == 5
 
 
+@pytest.mark.unit
 class TestModelEventHandlingSubcontractSerialization:
     """Test model serialization and deserialization."""
 
@@ -497,6 +508,7 @@ class TestModelEventHandlingSubcontractSerialization:
         assert subcontract.max_retries == 3
 
 
+@pytest.mark.unit
 class TestModelEventHandlingSubcontractEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -562,6 +574,7 @@ class TestModelEventHandlingSubcontractEdgeCases:
         assert subcontract.max_retries == 0
 
 
+@pytest.mark.unit
 class TestModelEventHandlingSubcontractUseCases:
     """Test realistic use cases."""
 
@@ -615,6 +628,7 @@ class TestModelEventHandlingSubcontractUseCases:
         assert subcontract.fail_fast_on_handler_errors is True
 
 
+@pytest.mark.unit
 class TestModelEventHandlingSubcontractDocumentation:
     """Test documentation and metadata."""
 

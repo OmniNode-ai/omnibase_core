@@ -16,6 +16,7 @@ from omnibase_core.models.contracts.subcontracts.model_validation_subcontract im
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
+@pytest.mark.unit
 class TestModelValidationSubcontract:
     """Test the validation subcontract model."""
 

@@ -20,6 +20,7 @@ from omnibase_core.models.configuration.model_compute_cache_config import (
 from omnibase_core.models.infrastructure.model_compute_cache import ModelComputeCache
 
 
+@pytest.mark.unit
 class TestIssue10EnumUsage:
     """Test Issue #10: EnumCacheEvictionPolicy enum usage in config."""
 
@@ -44,6 +45,7 @@ class TestIssue10EnumUsage:
         assert isinstance(config.eviction_policy, EnumCacheEvictionPolicy)
 
 
+@pytest.mark.unit
 class TestIssue11ValidationAtConstruction:
     """Test Issue #11: Eviction policy validation at ModelComputeCache construction."""
 
@@ -78,6 +80,7 @@ class TestIssue11ValidationAtConstruction:
             ModelComputeCache(eviction_policy="random")
 
 
+@pytest.mark.unit
 class TestIssue12TTLPrecision:
     """Test Issue #12: TTL seconds rounding bug - verify no truncation."""
 
@@ -128,6 +131,7 @@ class TestIssue12TTLPrecision:
         assert cache.ttl.total_seconds() == 90  # But actual TTL is precise
 
 
+@pytest.mark.unit
 class TestIssue13LRUvsLFU:
     """Test Issue #13: LRU vs LFU implementation correctness (CRITICAL BUG)."""
 
@@ -314,6 +318,7 @@ class TestIssue13LRUvsLFU:
         assert cache.get("key4") == "value4", "key4 should be cached"
 
 
+@pytest.mark.unit
 class TestCacheInternalStorage:
     """Test cache internal storage for LRU/LFU correctness."""
 

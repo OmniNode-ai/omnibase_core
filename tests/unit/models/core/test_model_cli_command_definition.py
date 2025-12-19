@@ -23,6 +23,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
+@pytest.mark.unit
 class TestModelCliCommandDefinitionCreation:
     """Test command definition creation and validation."""
 
@@ -194,6 +195,7 @@ class TestModelCliCommandDefinitionCreation:
         assert command.category == "test_category"
 
 
+@pytest.mark.unit
 class TestQualifiedName:
     """Test qualified name generation."""
 
@@ -270,6 +272,7 @@ class TestQualifiedName:
         assert qualified_name == "test"
 
 
+@pytest.mark.unit
 class TestHelpTextGeneration:
     """Test help text generation."""
 
@@ -486,6 +489,7 @@ class TestHelpTextGeneration:
         assert "copy --source /data" in help_text
 
 
+@pytest.mark.unit
 class TestCommandMatching:
     """Test command matching functionality."""
 
@@ -555,6 +559,7 @@ class TestCommandMatching:
         assert command.matches_command("TEST") is False
 
 
+@pytest.mark.unit
 class TestCommandDefinitionIntegration:
     """Test command definition integration scenarios."""
 

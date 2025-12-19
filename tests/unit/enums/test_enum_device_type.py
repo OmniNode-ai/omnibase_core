@@ -32,6 +32,7 @@ from omnibase_core.enums.enum_device_type import (
 )
 
 
+@pytest.mark.unit
 class TestEnumDeviceType:
     """Test EnumDeviceType enum."""
 
@@ -88,6 +89,7 @@ class TestEnumDeviceType:
         assert model.device_type == EnumDeviceType.DOCKER_CONTAINER
 
 
+@pytest.mark.unit
 class TestEnumDeviceLocation:
     """Test EnumDeviceLocation enum."""
 
@@ -118,6 +120,7 @@ class TestEnumDeviceLocation:
         assert len(locations) == 6
 
 
+@pytest.mark.unit
 class TestEnumDeviceStatus:
     """Test EnumDeviceStatus enum."""
 
@@ -159,6 +162,7 @@ class TestEnumDeviceStatus:
             StatusModel(status="invalid_status")
 
 
+@pytest.mark.unit
 class TestEnumAgentHealth:
     """Test EnumAgentHealth enum."""
 
@@ -202,6 +206,7 @@ class TestEnumAgentHealth:
         assert len(health_states) == 8
 
 
+@pytest.mark.unit
 class TestEnumPriority:
     """Test EnumPriority enum."""
 
@@ -239,6 +244,7 @@ class TestEnumPriority:
         assert model_dict == {"priority": "high"}
 
 
+@pytest.mark.unit
 class TestEnumRoutingStrategy:
     """Test EnumRoutingStrategy enum."""
 
@@ -277,6 +283,7 @@ class TestEnumRoutingStrategy:
         assert len(strategies) == 6
 
 
+@pytest.mark.unit
 class TestDeviceEnumsIntegration:
     """Test integration scenarios with multiple device enums."""
 
@@ -369,6 +376,7 @@ class TestDeviceEnumsIntegration:
         assert loaded_data["status"] == "maintenance"
 
 
+@pytest.mark.unit
 class TestDeviceEnumsEdgeCases:
     """Test edge cases across all device enums."""
 
@@ -439,6 +447,7 @@ class TestDeviceEnumsEdgeCases:
         assert EnumAgentHealth.UNKNOWN == "unknown"
 
 
+@pytest.mark.unit
 class TestDeviceEnumsComprehensiveScenarios:
     """Test comprehensive real-world scenarios."""
 

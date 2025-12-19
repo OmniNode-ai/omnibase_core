@@ -7,6 +7,7 @@ import pytest
 from omnibase_core.models.metadata.model_field_identity import ModelFieldIdentity
 
 
+@pytest.mark.unit
 class TestModelFieldIdentityInstantiation:
     """Tests for ModelFieldIdentity instantiation."""
 
@@ -61,6 +62,7 @@ class TestModelFieldIdentityInstantiation:
         assert identity.description == "A test field"
 
 
+@pytest.mark.unit
 class TestModelFieldIdentityValidation:
     """Tests for ModelFieldIdentity validation."""
 
@@ -109,6 +111,7 @@ class TestModelFieldIdentityValidation:
             )
 
 
+@pytest.mark.unit
 class TestModelFieldIdentityGetDisplayName:
     """Tests for get_display_name method."""
 
@@ -158,6 +161,7 @@ class TestModelFieldIdentityGetDisplayName:
         assert display_name == "Field 123 Name"
 
 
+@pytest.mark.unit
 class TestModelFieldIdentityMatchesName:
     """Tests for matches_name method."""
 
@@ -215,6 +219,7 @@ class TestModelFieldIdentityMatchesName:
         )
 
 
+@pytest.mark.unit
 class TestModelFieldIdentityProtocols:
     """Tests for ModelFieldIdentity protocol implementations."""
 
@@ -263,6 +268,7 @@ class TestModelFieldIdentityProtocols:
         assert identity.validate_instance() is True
 
 
+@pytest.mark.unit
 class TestModelFieldIdentitySerialization:
     """Tests for ModelFieldIdentity serialization."""
 
@@ -294,6 +300,7 @@ class TestModelFieldIdentitySerialization:
         assert "field_display_name" not in data
 
 
+@pytest.mark.unit
 class TestModelFieldIdentityEdgeCases:
     """Tests for ModelFieldIdentity edge cases."""
 
@@ -365,6 +372,7 @@ class TestModelFieldIdentityEdgeCases:
         assert identity.identity_id == identity.field_id
 
 
+@pytest.mark.unit
 class TestModelFieldIdentityErrorBranches:
     """Tests for error handling branches in ModelFieldIdentity."""
 

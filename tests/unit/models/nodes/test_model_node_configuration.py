@@ -30,6 +30,7 @@ from omnibase_core.models.node_metadata.model_node_resource_limits import (
 )
 
 
+@pytest.mark.unit
 class TestModelNodeConfiguration:
     """Test cases for ModelNodeConfiguration."""
 

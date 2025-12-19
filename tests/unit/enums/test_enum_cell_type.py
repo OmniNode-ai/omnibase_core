@@ -17,6 +17,7 @@ from pydantic import BaseModel, ValidationError
 from omnibase_core.enums.enum_cell_type import EnumCellType
 
 
+@pytest.mark.unit
 class TestEnumCellType:
     """Test cases for EnumCellType."""
 

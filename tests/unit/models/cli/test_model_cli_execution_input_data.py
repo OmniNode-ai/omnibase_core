@@ -24,6 +24,7 @@ from omnibase_core.models.cli.model_cli_execution_input_data import (
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
+@pytest.mark.unit
 class TestModelCliExecutionInputDataValueValidation:
     """Test value type validation."""
 
@@ -192,6 +193,7 @@ class TestModelCliExecutionInputDataValueValidation:
         )
 
 
+@pytest.mark.unit
 class TestModelCliExecutionInputDataFactoryMethods:
     """Test factory methods for creating input data."""
 
@@ -400,6 +402,7 @@ class TestModelCliExecutionInputDataFactoryMethods:
         assert data.value_type == EnumCliInputValueType.STRING_LIST
 
 
+@pytest.mark.unit
 class TestModelCliExecutionInputDataHelperMethods:
     """Test helper methods."""
 
@@ -478,6 +481,7 @@ class TestModelCliExecutionInputDataHelperMethods:
         assert data.is_uuid_value() is False
 
 
+@pytest.mark.unit
 class TestModelCliExecutionInputDataProtocols:
     """Test protocol method implementations."""
 
@@ -507,6 +511,7 @@ class TestModelCliExecutionInputDataProtocols:
         assert is_valid is True
 
 
+@pytest.mark.unit
 class TestModelCliExecutionInputDataEdgeCases:
     """Test edge cases and error scenarios."""
 

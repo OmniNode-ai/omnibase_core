@@ -21,6 +21,7 @@ from omnibase_core.models.node_metadata.model_node_capability import ModelNodeCa
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
+@pytest.mark.unit
 class TestModelNodeCapability:
     """Test cases for ModelNodeCapability."""
 
@@ -433,6 +434,7 @@ class TestModelNodeCapability:
         assert dep2 in capability.dependencies
 
 
+@pytest.mark.unit
 class TestModelNodeCapabilityEdgeCases:
     """Test edge cases and error scenarios."""
 

@@ -1,3 +1,5 @@
+import pytest
+
 #!/usr/bin/env python3
 """
 ModelTriggerMappings Comprehensive Unit Tests
@@ -16,13 +18,12 @@ Comprehensive testing required for all code paths.
 
 from uuid import UUID
 
-import pytest
-
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.contracts.model_trigger_mappings import ModelTriggerMappings
 from omnibase_core.models.errors.model_onex_error import ModelOnexError as OnexError
 
 
+@pytest.mark.unit
 class TestModelTriggerMappings:
     """Comprehensive tests for ModelTriggerMappings with full coverage."""
 

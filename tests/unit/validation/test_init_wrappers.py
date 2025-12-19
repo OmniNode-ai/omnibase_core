@@ -16,6 +16,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
 from omnibase_core.validation import (
     validate_all,
@@ -26,6 +28,7 @@ from omnibase_core.validation import (
 )
 
 
+@pytest.mark.unit
 class TestValidateArchitectureWrapper:
     """Test validate_architecture wrapper function."""
 
@@ -106,6 +109,7 @@ class Model2(BaseModel):
         assert isinstance(result, ModelValidationResult)
 
 
+@pytest.mark.unit
 class TestValidateUnionUsageWrapper:
     """Test validate_union_usage wrapper function."""
 
@@ -199,6 +203,7 @@ def func(x: str | int) -> None:
         assert isinstance(result, ModelValidationResult)
 
 
+@pytest.mark.unit
 class TestValidateContractsWrapper:
     """Test validate_contracts wrapper function."""
 
@@ -267,6 +272,7 @@ description: Test contract for validation
         assert result.is_valid  # Empty directory is valid
 
 
+@pytest.mark.unit
 class TestValidatePatternsWrapper:
     """Test validate_patterns wrapper function."""
 
@@ -335,6 +341,7 @@ class ModelExample(BaseModel):
         assert isinstance(result, ModelValidationResult)
 
 
+@pytest.mark.unit
 class TestValidateAllWrapper:
     """Test validate_all wrapper function that runs all validations."""
 
@@ -453,6 +460,7 @@ def func(x: Union[str, int]) -> None:
             assert isinstance(result, ModelValidationResult)
 
 
+@pytest.mark.unit
 class TestWrapperIntegration:
     """Integration tests for wrapper functions working together."""
 

@@ -6,6 +6,7 @@ from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.models.container.model_enhanced_logger import ModelEnhancedLogger
 
 
+@pytest.mark.unit
 class TestModelEnhancedLogger:
     """Tests for ModelEnhancedLogger."""
 

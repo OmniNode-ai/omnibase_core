@@ -7,12 +7,15 @@ and backward compatibility factory methods.
 
 from uuid import uuid4
 
+import pytest
+
 from omnibase_core.enums.enum_instance_type import EnumInstanceType
 from omnibase_core.models.connections.model_custom_connection_properties import (
     ModelCustomConnectionProperties,
 )
 
 
+@pytest.mark.unit
 class TestModelCustomConnectionProperties:
     """Test cases for ModelCustomConnectionProperties."""
 

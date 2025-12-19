@@ -93,8 +93,8 @@ def analyze_source() -> Callable[[str], PurityAnalyzer]:
 # ==============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestPurityCheckerConfiguration:
     """Test purity checker configuration constants."""
 
@@ -152,8 +152,8 @@ class TestPurityCheckerConfiguration:
         assert "MixinWorkflowExecution" in VALID_NODE_BASE_CLASSES
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestNetworkingImportDetection:
     """Test detection of forbidden networking imports."""
 
@@ -257,8 +257,8 @@ class TestNetworkingImportDetection:
         )
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestFilesystemOperationDetection:
     """Test detection of forbidden filesystem operations."""
 
@@ -365,8 +365,8 @@ class TestFilesystemOperationDetection:
         )
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestSubprocessDetection:
     """Test detection of forbidden subprocess operations."""
 
@@ -405,8 +405,8 @@ class TestSubprocessDetection:
         )
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestThreadingDetection:
     """Test detection of forbidden threading operations."""
 
@@ -464,8 +464,8 @@ class TestThreadingDetection:
         assert len(threading_violations) == 0
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestLoggingDetection:
     """Test detection of forbidden logging imports."""
 
@@ -505,8 +505,8 @@ class TestLoggingDetection:
         assert "structured logging" in logging_violations[0].suggestion.lower()
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestClassMutableDataDetection:
     """Test detection of class-level mutable data."""
 
@@ -591,8 +591,8 @@ class TestClassMutableDataDetection:
         assert len(mutable_violations) == 0
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestCachingDecoratorDetection:
     """Test detection of forbidden caching decorators."""
 
@@ -673,8 +673,8 @@ class TestCachingDecoratorDetection:
         assert any("ModelComputeCache" in v.suggestion for v in caching_violations)
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestInheritanceValidation:
     """Test validation of node inheritance."""
 
@@ -755,8 +755,8 @@ class TestInheritanceValidation:
         assert "SomeOtherClass" in inheritance_violations[0].message
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestNodeTypeDetection:
     """Test detection of node types."""
 
@@ -813,8 +813,8 @@ class TestNodeTypeDetection:
         assert analyzer.is_pure_node is False
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestEffectNodesAreNotChecked:
     """Test that effect nodes allow I/O operations."""
 
@@ -852,8 +852,8 @@ class TestEffectNodesAreNotChecked:
         assert len(analyzer.violations) == 0
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestFileAnalysis:
     """Test full file analysis."""
 
@@ -902,8 +902,8 @@ class TestFileAnalysis:
         assert len(result.violations) >= 2  # At least networking + mutable data
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestViolationSeverity:
     """Test that violations have correct severity levels."""
 
@@ -946,8 +946,8 @@ class TestViolationSeverity:
         assert all(v.severity == Severity.ERROR for v in caching_violations)
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestActualNodeFiles:
     """Test actual node files in the codebase for purity."""
 
@@ -1069,8 +1069,8 @@ class TestActualNodeFiles:
         )
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestViolationFormatting:
     """Test violation message formatting."""
 
@@ -1108,8 +1108,8 @@ class TestViolationFormatting:
             )
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestAllowedPatterns:
     """Test that allowed patterns don't trigger violations."""
 
@@ -1292,8 +1292,8 @@ class TestAllowedPatterns:
         assert len(open_violations) == 0
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestOpenWriteModeDetection:
     """Test detection of open() with various write modes."""
 
@@ -1413,8 +1413,8 @@ class TestOpenWriteModeDetection:
         assert len(open_violations) == 1
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestSafeRelativePath:
     """Test _safe_relative_path() helper function."""
 
@@ -1482,8 +1482,8 @@ class TestSafeRelativePath:
         assert result == expected
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestViolationDetectionSmokeTests:
     """Smoke tests covering all major violation types with minimal examples."""
 
@@ -1626,8 +1626,8 @@ class TestViolationDetectionSmokeTests:
         )
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestReadModeVsWriteModeDistinction:
     """Explicit tests verifying read-mode open is NOT flagged while write-mode IS flagged."""
 

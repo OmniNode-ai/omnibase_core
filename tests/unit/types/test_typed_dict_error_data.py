@@ -2,9 +2,12 @@
 Test suite for TypedDictErrorData.
 """
 
+import pytest
+
 from omnibase_core.types.typed_dict_error_data import TypedDictErrorData
 
 
+@pytest.mark.unit
 class TestTypedDictErrorData:
     """Test TypedDictErrorData functionality."""
 

@@ -16,6 +16,7 @@ import pytest
 from omnibase_core.enums.enum_cli_status import EnumCliStatus
 
 
+@pytest.mark.unit
 class TestEnumCliStatus:
     """Test cases for EnumCliStatus."""
 
@@ -155,6 +156,7 @@ class TestEnumCliStatus:
         """Test that enum works with Pydantic models."""
         from pydantic import BaseModel
 
+        @pytest.mark.unit
         class TestModel(BaseModel):
             status: EnumCliStatus
 
@@ -197,6 +199,7 @@ class TestEnumCliStatus:
         assert isinstance(result2, bool)
 
 
+@pytest.mark.unit
 class TestEnumCliStatusEdgeCases:
     """Test edge cases and error conditions for EnumCliStatus."""
 

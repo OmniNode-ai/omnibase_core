@@ -8,6 +8,7 @@ import pytest
 from omnibase_core.enums.enum_proxy_endpoint import EnumProxyEndpoint
 
 
+@pytest.mark.unit
 class TestEnumProxyEndpoint:
     """Test suite for EnumProxyEndpoint."""
 

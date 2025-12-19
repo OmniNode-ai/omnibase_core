@@ -9,6 +9,7 @@ import pytest
 from omnibase_core.enums.enum_conversation_status import EnumConversationStatus
 
 
+@pytest.mark.unit
 class TestEnumConversationStatus:
     """Test cases for EnumConversationStatus enum."""
 

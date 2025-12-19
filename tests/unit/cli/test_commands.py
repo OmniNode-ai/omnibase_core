@@ -43,6 +43,7 @@ if TYPE_CHECKING:
 pytestmark = pytest.mark.unit
 
 
+@pytest.mark.unit
 class TestGetVersion:
     """Tests for the get_version function."""
 
@@ -98,6 +99,7 @@ class TestGetVersion:
                 )
 
 
+@pytest.mark.unit
 class TestPrintVersion:
     """Tests for the print_version callback."""
 
@@ -131,6 +133,7 @@ class TestPrintVersion:
         ctx.exit.assert_not_called()
 
 
+@pytest.mark.unit
 class TestCliGroup:
     """Tests for the main CLI command group."""
 
@@ -168,6 +171,7 @@ class TestCliGroup:
         assert "Python path" in result.output
 
 
+@pytest.mark.unit
 class TestValidateCommand:
     """Tests for the validate command."""
 
@@ -282,6 +286,7 @@ class TestValidateCommand:
         )
 
 
+@pytest.mark.unit
 class TestInfoCommand:
     """Tests for the info command."""
 
@@ -311,6 +316,7 @@ class TestInfoCommand:
         assert "Display information" in result.output
 
 
+@pytest.mark.unit
 class TestHealthCommand:
     """Tests for the health command."""
 
@@ -402,6 +408,7 @@ class TestHealthCommand:
         assert "Core imports" in result.output
 
 
+@pytest.mark.unit
 class TestHealthCheckHelpers:
     """Tests for the health check helper functions."""
 
@@ -488,6 +495,7 @@ class TestHealthCheckHelpers:
         assert "Validation system" in matches
 
 
+@pytest.mark.unit
 class TestDisplayValidationResult:
     """Tests for the _display_validation_result helper function."""
 
@@ -634,6 +642,7 @@ class TestDisplayValidationResult:
         assert "more" in captured.out  # Should indicate there are more errors
 
 
+@pytest.mark.unit
 class TestCliEdgeCases:
     """Tests for CLI edge cases and error handling."""
 
@@ -724,6 +733,7 @@ class TestCliEdgeCases:
         )
 
 
+@pytest.mark.unit
 class TestCliExitCodes:
     """Tests for proper exit codes."""
 
@@ -756,6 +766,7 @@ class TestCliExitCodes:
         )
 
 
+@pytest.mark.unit
 class TestCliIntegration:
     """Integration tests for CLI functionality."""
 

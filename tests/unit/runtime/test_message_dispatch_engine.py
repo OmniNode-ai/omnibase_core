@@ -41,7 +41,7 @@ from omnibase_core.runtime.message_dispatch_engine import MessageDispatchEngine
 class UserCreatedEvent:
     """Test event class that ends with 'Event'."""
 
-    def __init__(self, user_id: str, name: str) -> None:
+    def __init__(self, user_id: UUID, name: str) -> None:
         self.user_id = user_id
         self.name = name
 
@@ -82,7 +82,9 @@ def dispatch_engine() -> MessageDispatchEngine:
 def event_envelope() -> ModelEventEnvelope[UserCreatedEvent]:
     """Create a test event envelope."""
     return ModelEventEnvelope(
-        payload=UserCreatedEvent(user_id="user-123", name="Test User"),
+        payload=UserCreatedEvent(
+            user_id=UUID("00000000-0000-0000-0000-000000000123"), name="Test User"
+        ),
         correlation_id=uuid4(),
     )
 
@@ -1284,7 +1286,9 @@ class TestDeterministicRouting:
         results: list[ModelDispatchResult] = []
         for _ in range(10):
             envelope = ModelEventEnvelope(
-                payload=UserCreatedEvent(user_id="user-123", name="Test")
+                payload=UserCreatedEvent(
+                    user_id=UUID("00000000-0000-0000-0000-000000000123"), name="Test"
+                )
             )
             result = await dispatch_engine.dispatch("dev.user.events.v1", envelope)
             results.append(result)
@@ -1335,7 +1339,9 @@ class TestDeterministicRouting:
         dispatch_engine.freeze()
 
         user_envelope = ModelEventEnvelope(
-            payload=UserCreatedEvent(user_id="user-123", name="Test")
+            payload=UserCreatedEvent(
+                user_id=UUID("00000000-0000-0000-0000-000000000123"), name="Test"
+            )
         )
         order_envelope = ModelEventEnvelope(payload=SomeGenericPayload(data="order"))
 
@@ -1386,7 +1392,9 @@ class TestPureRouting:
 
         # Different payload types, same topic
         envelope1 = ModelEventEnvelope(
-            payload=UserCreatedEvent(user_id="1", name="Alice")
+            payload=UserCreatedEvent(
+                user_id=UUID("00000000-0000-0000-0000-000000000001"), name="Alice"
+            )
         )
         envelope2 = ModelEventEnvelope(payload=SomeGenericPayload(data="test"))
 
@@ -1662,7 +1670,9 @@ class TestPublishingOrder:
     def sample_event_envelope(self) -> ModelEventEnvelope[UserCreatedEvent]:
         """Create a sample event envelope for testing."""
         return ModelEventEnvelope(
-            payload=UserCreatedEvent(user_id="user-123", name="Test User"),
+            payload=UserCreatedEvent(
+                user_id=UUID("00000000-0000-0000-0000-000000000123"), name="Test User"
+            ),
             correlation_id=uuid4(),
         )
 
@@ -2107,7 +2117,7 @@ class TestPublishingOrder:
         Per OMN-941: Each node kind has specific output restrictions:
         - REDUCER: projections only (no events, no intents, no result)
         - EFFECT: events only (no intents, no projections, no result)
-        - COMPUTE: result only (no events, no intents, no projections)
+        - COMPUTE: result value only (no events, no intents, no projections)
         - ORCHESTRATOR: events and intents only (no projections, no result)
         """
         from omnibase_core.enums.enum_node_kind import EnumNodeKind

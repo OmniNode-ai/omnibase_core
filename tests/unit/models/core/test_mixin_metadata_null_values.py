@@ -14,6 +14,7 @@ from omnibase_core.models.core.model_mixin_metadata_collection import (
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
+@pytest.mark.unit
 class TestNullValueHandling:
     """Test graceful handling of null YAML values (MINOR-5)."""
 
@@ -146,6 +147,7 @@ test_mixin:
         assert mixin.performance.overhead_per_call == "~1ms"
 
 
+@pytest.mark.unit
 class TestInvalidTypeValidation:
     """Test validation of invalid types raises proper errors."""
 

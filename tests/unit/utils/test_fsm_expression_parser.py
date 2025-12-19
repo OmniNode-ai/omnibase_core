@@ -18,6 +18,7 @@ from omnibase_core.utils.fsm_expression_parser import (
 )
 
 
+@pytest.mark.unit
 class TestParseExpressionValidExpressions:
     """Tests for valid 3-token expressions."""
 
@@ -120,6 +121,7 @@ class TestParseExpressionValidExpressions:
         assert value == "^[a-z]+@"
 
 
+@pytest.mark.unit
 class TestParseExpressionWhitespace:
     """Tests for whitespace handling."""
 
@@ -159,6 +161,7 @@ class TestParseExpressionWhitespace:
         assert value == "5"
 
 
+@pytest.mark.unit
 class TestParseExpressionInvalidTokenCount:
     """Tests for rejection of incorrect token counts."""
 
@@ -217,6 +220,7 @@ class TestParseExpressionInvalidTokenCount:
         assert "got 10" in str(error)
 
 
+@pytest.mark.unit
 class TestParseExpressionUnsupportedOperator:
     """Tests for unsupported operator rejection."""
 
@@ -256,6 +260,7 @@ class TestParseExpressionUnsupportedOperator:
         assert "EQUALS" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestParseExpressionErrorContext:
     """Tests for error context information in ModelOnexError.
 
@@ -317,6 +322,7 @@ class TestParseExpressionErrorContext:
         assert set(inner_context["supported_operators"]) == SUPPORTED_OPERATORS
 
 
+@pytest.mark.unit
 class TestAllSupportedOperators:
     """Tests to verify all supported operators are accepted.
 
@@ -359,6 +365,7 @@ class TestAllSupportedOperators:
         )
 
 
+@pytest.mark.unit
 class TestValidateExpression:
     """Tests for the validate_expression helper function."""
 
@@ -384,6 +391,7 @@ class TestValidateExpression:
             assert validate_expression(f"field {operator} value") is True
 
 
+@pytest.mark.unit
 class TestGetSupportedOperators:
     """Tests for the get_supported_operators function."""
 
@@ -452,6 +460,7 @@ class TestGetSupportedOperators:
         assert "matches" in operators
 
 
+@pytest.mark.unit
 class TestSupportedOperatorsConstant:
     """Tests for the SUPPORTED_OPERATORS constant."""
 
@@ -508,6 +517,7 @@ class TestSupportedOperatorsConstant:
         assert "matches" in SUPPORTED_OPERATORS
 
 
+@pytest.mark.unit
 class TestEdgeCases:
     """Tests for edge cases and unusual inputs."""
 
@@ -569,6 +579,7 @@ class TestEdgeCases:
         assert field == "user.email"
 
 
+@pytest.mark.unit
 class TestConsistencyWithFSMExecutor:
     """Tests ensuring consistency with fsm_executor condition evaluation."""
 
@@ -589,6 +600,7 @@ class TestConsistencyWithFSMExecutor:
             )
 
 
+@pytest.mark.unit
 class TestOperatorSynchronization:
     """Tests verifying that all symbolic operators are properly supported.
 
@@ -701,6 +713,7 @@ class TestOperatorSynchronization:
         )
 
 
+@pytest.mark.unit
 class TestFieldNameValidationSecurity:
     """Tests for field name validation security features.
 
@@ -817,6 +830,7 @@ class TestFieldNameValidationSecurity:
         assert "security" in error_msg.lower()
 
 
+@pytest.mark.unit
 class TestAllowPrivateFieldsParameter:
     """Tests for the allow_private_fields parameter."""
 
@@ -887,6 +901,7 @@ class TestAllowPrivateFieldsParameter:
         assert field2 == "count"
 
 
+@pytest.mark.unit
 class TestFieldNameValidationEdgeCases:
     """Edge cases for field name validation."""
 

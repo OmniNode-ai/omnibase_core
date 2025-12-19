@@ -12,6 +12,7 @@ from omnibase_core.models.contracts.model_yaml_contract import ModelYamlContract
 from omnibase_core.models.errors.model_onex_error import ModelOnexError as OnexError
 
 
+@pytest.mark.unit
 class TestModelYamlContract:
     """Test the YAML contract validation model."""
 
@@ -123,6 +124,7 @@ class TestModelYamlContract:
         assert not hasattr(contract, "metadata")
 
 
+@pytest.mark.unit
 class TestDeprecationWarnings:
     """Tests for deprecation warnings on legacy enum values."""
 

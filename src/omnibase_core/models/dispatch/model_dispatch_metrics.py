@@ -229,32 +229,12 @@ class ModelDispatchMetrics(BaseModel):
 
     def _get_histogram_bucket(self, duration_ms: float) -> str:
         """Get the histogram bucket key for a given latency."""
-        if duration_ms <= 1.0:
-            return "le_1ms"
-        elif duration_ms <= 5.0:
-            return "le_5ms"
-        elif duration_ms <= 10.0:
-            return "le_10ms"
-        elif duration_ms <= 25.0:
-            return "le_25ms"
-        elif duration_ms <= 50.0:
-            return "le_50ms"
-        elif duration_ms <= 100.0:
-            return "le_100ms"
-        elif duration_ms <= 250.0:
-            return "le_250ms"
-        elif duration_ms <= 500.0:
-            return "le_500ms"
-        elif duration_ms <= 1000.0:
-            return "le_1000ms"
-        elif duration_ms <= 2500.0:
-            return "le_2500ms"
-        elif duration_ms <= 5000.0:
-            return "le_5000ms"
-        elif duration_ms <= 10000.0:
-            return "le_10000ms"
-        else:
-            return "gt_10000ms"
+        for i, threshold in enumerate(LATENCY_HISTOGRAM_BUCKETS):
+            if duration_ms <= threshold:
+                # Map threshold to bucket key
+                threshold_int = int(threshold)
+                return f"le_{threshold_int}ms"
+        return "gt_10000ms"
 
     def record_dispatch(
         self,

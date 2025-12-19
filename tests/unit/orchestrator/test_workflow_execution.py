@@ -1,3 +1,5 @@
+import pytest
+
 # SPDX-FileCopyrightText: 2024 OmniNode Team
 #
 # SPDX-License-Identifier: Apache-2.0
@@ -16,8 +18,6 @@ OMN-657: Comprehensive workflow execution testing.
 """
 
 from uuid import UUID, uuid4
-
-import pytest
 
 from omnibase_core.enums.enum_workflow_coordination import EnumFailureRecoveryStrategy
 from omnibase_core.enums.enum_workflow_execution import (
@@ -200,8 +200,8 @@ def diamond_dependency_steps() -> tuple[list[ModelWorkflowStep], dict[str, UUID]
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestSingleStepExecution:
     """Tests for single step workflow execution."""
 
@@ -298,8 +298,8 @@ class TestSingleStepExecution:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestLinearChainExecution:
     """Tests for linear chain workflow execution (A -> B -> C)."""
 
@@ -410,8 +410,8 @@ class TestLinearChainExecution:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestDiamondDependencyExecution:
     """Tests for diamond dependency pattern: A -> (B, C) -> D."""
 
@@ -557,8 +557,8 @@ class TestDiamondDependencyExecution:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestExecutionStatus:
     """Tests for execution status tracking."""
 
@@ -747,8 +747,8 @@ class TestExecutionStatus:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestTopologicalOrder:
     """Tests for topological ordering of workflow steps."""
 
@@ -854,8 +854,8 @@ class TestTopologicalOrder:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestActionEmission:
     """Tests for action emission in workflow execution."""
 
@@ -1061,8 +1061,8 @@ class TestActionEmission:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestComplexWorkflows:
     """Tests for complex workflow patterns."""
 

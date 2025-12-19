@@ -25,6 +25,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
+@pytest.mark.unit
 class TestModelDockerComposeManifest:
     """Test suite for ModelDockerComposeManifest."""
 
@@ -575,6 +576,7 @@ networks:
         assert "api" in manifest2.services
 
 
+@pytest.mark.unit
 class TestModelDockerConfigFile:
     """Test suite for ModelDockerConfigFile."""
 
@@ -599,6 +601,7 @@ class TestModelDockerConfigFile:
         assert config.name == "app_config"
 
 
+@pytest.mark.unit
 class TestModelDockerSecretFile:
     """Test suite for ModelDockerSecretFile."""
 

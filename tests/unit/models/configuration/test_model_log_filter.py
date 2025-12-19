@@ -1,11 +1,14 @@
 """Tests for ModelLogFilter."""
 
+import pytest
+
 from omnibase_core.models.configuration.model_log_filter import ModelLogFilter
 from omnibase_core.models.configuration.model_log_filter_config import (
     ModelLogFilterConfig,
 )
 
 
+@pytest.mark.unit
 class TestModelLogFilterBasics:
     def test_create_with_required_fields(self):
         filter = ModelLogFilter(filter_name="test_filter", filter_type="regex")
@@ -19,6 +22,7 @@ class TestModelLogFilterBasics:
             assert filter.filter_type == ftype
 
 
+@pytest.mark.unit
 class TestModelLogFilterMatching:
     def test_matches_message_disabled(self):
         filter = ModelLogFilter(filter_name="test", filter_type="regex", enabled=False)
@@ -118,6 +122,7 @@ class TestModelLogFilterMatching:
         assert result is not None
 
 
+@pytest.mark.unit
 class TestModelLogFilterSerialization:
     def test_serialization(self):
         filter = ModelLogFilter(filter_name="test", filter_type="regex")

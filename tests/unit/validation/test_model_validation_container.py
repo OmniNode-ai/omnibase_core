@@ -5,12 +5,15 @@ Comprehensive test coverage for the validation error aggregation system
 that standardizes validation across all domains.
 """
 
+import pytest
+
 from omnibase_core.models.validation.model_validation_container import (
     ModelValidationContainer,
 )
 from omnibase_core.models.validation.model_validation_error import ModelValidationError
 
 
+@pytest.mark.unit
 class TestModelValidationContainer:
     """Test the ModelValidationContainer functionality."""
 

@@ -18,6 +18,7 @@ from pydantic import BaseModel, ValidationError
 from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
 
 
+@pytest.mark.unit
 class TestEnumExecutionStatus:
     """Test cases for EnumExecutionStatus."""
 

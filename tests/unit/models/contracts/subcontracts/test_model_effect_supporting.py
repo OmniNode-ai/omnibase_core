@@ -39,6 +39,7 @@ from omnibase_core.models.contracts.subcontracts.model_effect_transaction_config
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelEffectRetryPolicyDefaults:
     """Test ModelEffectRetryPolicy default values."""
 
@@ -61,6 +62,7 @@ class TestModelEffectRetryPolicyDefaults:
             policy.enabled = False  # type: ignore[misc]
 
 
+@pytest.mark.unit
 class TestModelEffectRetryPolicyCustomConfiguration:
     """Test ModelEffectRetryPolicy with custom configurations."""
 
@@ -97,6 +99,7 @@ class TestModelEffectRetryPolicyCustomConfiguration:
             ModelEffectRetryPolicy(backoff_strategy="invalid")  # type: ignore[arg-type]
 
 
+@pytest.mark.unit
 class TestModelEffectRetryPolicyConstraints:
     """Test ModelEffectRetryPolicy field constraints."""
 
@@ -181,6 +184,7 @@ class TestModelEffectRetryPolicyConstraints:
             ModelEffectRetryPolicy(jitter_factor=0.6)
 
 
+@pytest.mark.unit
 class TestModelEffectRetryPolicySerialization:
     """Test ModelEffectRetryPolicy serialization."""
 
@@ -217,6 +221,7 @@ class TestModelEffectRetryPolicySerialization:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelEffectCircuitBreakerDefaults:
     """Test ModelEffectCircuitBreaker default values."""
 
@@ -236,6 +241,7 @@ class TestModelEffectCircuitBreakerDefaults:
             cb.enabled = True  # type: ignore[misc]
 
 
+@pytest.mark.unit
 class TestModelEffectCircuitBreakerCustomConfiguration:
     """Test ModelEffectCircuitBreaker with custom configurations."""
 
@@ -255,6 +261,7 @@ class TestModelEffectCircuitBreakerCustomConfiguration:
         assert cb.half_open_requests == 1
 
 
+@pytest.mark.unit
 class TestModelEffectCircuitBreakerConstraints:
     """Test ModelEffectCircuitBreaker field constraints."""
 
@@ -339,6 +346,7 @@ class TestModelEffectCircuitBreakerConstraints:
             ModelEffectCircuitBreaker(half_open_requests=11)
 
 
+@pytest.mark.unit
 class TestModelEffectCircuitBreakerSerialization:
     """Test ModelEffectCircuitBreaker serialization."""
 
@@ -367,6 +375,7 @@ class TestModelEffectCircuitBreakerSerialization:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelEffectTransactionConfigDefaults:
     """Test ModelEffectTransactionConfig default values."""
 
@@ -385,6 +394,7 @@ class TestModelEffectTransactionConfigDefaults:
             config.enabled = True  # type: ignore[misc]
 
 
+@pytest.mark.unit
 class TestModelEffectTransactionConfigIsolationLevels:
     """Test ModelEffectTransactionConfig isolation level validation."""
 
@@ -414,6 +424,7 @@ class TestModelEffectTransactionConfigIsolationLevels:
             ModelEffectTransactionConfig(isolation_level="invalid")  # type: ignore[arg-type]
 
 
+@pytest.mark.unit
 class TestModelEffectTransactionConfigConstraints:
     """Test ModelEffectTransactionConfig field constraints."""
 
@@ -438,6 +449,7 @@ class TestModelEffectTransactionConfigConstraints:
             ModelEffectTransactionConfig(timeout_ms=300001)
 
 
+@pytest.mark.unit
 class TestModelEffectTransactionConfigSerialization:
     """Test ModelEffectTransactionConfig serialization."""
 
@@ -466,6 +478,7 @@ class TestModelEffectTransactionConfigSerialization:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelEffectObservabilityDefaults:
     """Test ModelEffectObservability default values."""
 
@@ -484,6 +497,7 @@ class TestModelEffectObservabilityDefaults:
             obs.log_request = False  # type: ignore[misc]
 
 
+@pytest.mark.unit
 class TestModelEffectObservabilityCustomConfiguration:
     """Test ModelEffectObservability with custom configurations."""
 
@@ -520,6 +534,7 @@ class TestModelEffectObservabilityCustomConfiguration:
         assert obs.log_response is False
 
 
+@pytest.mark.unit
 class TestModelEffectObservabilitySerialization:
     """Test ModelEffectObservability serialization."""
 
@@ -548,6 +563,7 @@ class TestModelEffectObservabilitySerialization:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelEffectResponseHandlingDefaults:
     """Test ModelEffectResponseHandling default values."""
 
@@ -578,6 +594,7 @@ class TestModelEffectResponseHandlingDefaults:
             handling.fail_on_empty = True  # type: ignore[misc]
 
 
+@pytest.mark.unit
 class TestModelEffectResponseHandlingCustomConfiguration:
     """Test ModelEffectResponseHandling with custom configurations."""
 
@@ -603,6 +620,7 @@ class TestModelEffectResponseHandlingCustomConfiguration:
         assert handling.fail_on_empty is True
 
 
+@pytest.mark.unit
 class TestModelEffectResponseHandlingExtractionEngine:
     """Test ModelEffectResponseHandling extraction_engine options."""
 
@@ -622,6 +640,7 @@ class TestModelEffectResponseHandlingExtractionEngine:
             ModelEffectResponseHandling(extraction_engine="invalid")  # type: ignore[arg-type]
 
 
+@pytest.mark.unit
 class TestModelEffectResponseHandlingSerialization:
     """Test ModelEffectResponseHandling serialization."""
 
@@ -652,6 +671,7 @@ class TestModelEffectResponseHandlingSerialization:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestIdempotencyDefaultsHttpMethods:
     """Test IDEMPOTENCY_DEFAULTS for HTTP methods."""
 
@@ -693,6 +713,7 @@ class TestIdempotencyDefaultsHttpMethods:
         assert set(IDEMPOTENCY_DEFAULTS["http"].keys()) == expected_methods
 
 
+@pytest.mark.unit
 class TestIdempotencyDefaultsDbOperations:
     """Test IDEMPOTENCY_DEFAULTS for database operations."""
 
@@ -726,6 +747,7 @@ class TestIdempotencyDefaultsDbOperations:
         assert set(IDEMPOTENCY_DEFAULTS["db"].keys()) == expected_ops
 
 
+@pytest.mark.unit
 class TestIdempotencyDefaultsKafkaOperations:
     """Test IDEMPOTENCY_DEFAULTS for Kafka operations."""
 
@@ -743,6 +765,7 @@ class TestIdempotencyDefaultsKafkaOperations:
         assert set(IDEMPOTENCY_DEFAULTS["kafka"].keys()) == expected_ops
 
 
+@pytest.mark.unit
 class TestIdempotencyDefaultsFilesystemOperations:
     """Test IDEMPOTENCY_DEFAULTS for filesystem operations."""
 
@@ -776,6 +799,7 @@ class TestIdempotencyDefaultsFilesystemOperations:
         assert set(IDEMPOTENCY_DEFAULTS["filesystem"].keys()) == expected_ops
 
 
+@pytest.mark.unit
 class TestIdempotencyDefaultsStructure:
     """Test overall structure of IDEMPOTENCY_DEFAULTS."""
 
@@ -810,6 +834,7 @@ class TestIdempotencyDefaultsStructure:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestExtraFieldsRejection:
     """Test that all models reject extra fields (extra='forbid')."""
 

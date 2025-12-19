@@ -26,6 +26,7 @@ from omnibase_core.enums.enum_node_kind import EnumNodeKind
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
+@pytest.mark.unit
 class TestEnforceExecutionShapeAllowedShapes:
     """Test enforce_execution_shape with allowed canonical shapes."""
 
@@ -95,6 +96,7 @@ class TestEnforceExecutionShapeAllowedShapes:
         assert result == "executed: test"
 
 
+@pytest.mark.unit
 class TestEnforceExecutionShapeForbiddenShapes:
     """Test enforce_execution_shape with forbidden shapes."""
 
@@ -207,6 +209,7 @@ class TestEnforceExecutionShapeForbiddenShapes:
             assert exc_info.value.error_code == EnumCoreErrorCode.CONTRACT_VIOLATION
 
 
+@pytest.mark.unit
 class TestEnforceExecutionShapeErrorContext:
     """Test error context details for forbidden shapes."""
 
@@ -266,6 +269,7 @@ class TestEnforceExecutionShapeErrorContext:
         assert "no canonical shape" in rationale.lower()
 
 
+@pytest.mark.unit
 class TestEnforceExecutionShapePreservesFunctionMetadata:
     """Test decorator preserves function signature and docstring."""
 
@@ -310,6 +314,7 @@ class TestEnforceExecutionShapePreservesFunctionMetadata:
         assert annotations.get("return") == str
 
 
+@pytest.mark.unit
 class TestEnforceExecutionShapeAsyncFunctions:
     """Test decorator works with async functions."""
 
@@ -356,6 +361,7 @@ class TestEnforceExecutionShapeAsyncFunctions:
         assert exc_info.value.error_code == EnumCoreErrorCode.CONTRACT_VIOLATION
 
 
+@pytest.mark.unit
 class TestEnforceExecutionShapeClassMethods:
     """Test decorator works with class methods."""
 
@@ -407,6 +413,7 @@ class TestEnforceExecutionShapeClassMethods:
         assert result == "event: test"
 
 
+@pytest.mark.unit
 class TestEnforceExecutionShapeReturnTypes:
     """Test decorator works with various return types."""
 
@@ -450,6 +457,7 @@ class TestEnforceExecutionShapeReturnTypes:
         assert result == ["a", "b", "c"]
 
 
+@pytest.mark.unit
 class TestEnforceExecutionShapeArgsKwargs:
     """Test decorator works with various argument patterns."""
 
@@ -489,6 +497,7 @@ class TestEnforceExecutionShapeArgsKwargs:
         assert result == "testtesttest?"
 
 
+@pytest.mark.unit
 class TestEnforceExecutionShapeAllCanonicalShapes:
     """Parametrized tests for all canonical shapes."""
 

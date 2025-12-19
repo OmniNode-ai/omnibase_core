@@ -35,6 +35,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelMixinVersion:
     """Test ModelMixinVersion parsing and formatting."""
 
@@ -79,6 +80,7 @@ class TestModelMixinVersion:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelMixinConfigField:
     """Test ModelMixinConfigField validation."""
 
@@ -134,6 +136,7 @@ class TestModelMixinConfigField:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelMixinMethod:
     """Test ModelMixinMethod model."""
 
@@ -151,6 +154,7 @@ class TestModelMixinMethod:
         assert method.example != ""
 
 
+@pytest.mark.unit
 class TestModelMixinProperty:
     """Test ModelMixinProperty model."""
 
@@ -164,6 +168,7 @@ class TestModelMixinProperty:
         assert prop.description == "Ready state"
 
 
+@pytest.mark.unit
 class TestModelMixinCodePatterns:
     """Test ModelMixinCodePatterns model."""
 
@@ -198,6 +203,7 @@ class TestModelMixinCodePatterns:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelMixinPreset:
     """Test ModelMixinPreset model."""
 
@@ -210,6 +216,7 @@ class TestModelMixinPreset:
         assert preset.config["max_retries"] == 3
 
 
+@pytest.mark.unit
 class TestModelMixinPerformance:
     """Test ModelMixinPerformance model."""
 
@@ -237,6 +244,7 @@ class TestModelMixinPerformance:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelMixinMetadata:
     """Test main ModelMixinMetadata model."""
 
@@ -343,6 +351,7 @@ class TestModelMixinMetadata:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelMixinMetadataCollection:
     """Test ModelMixinMetadataCollection functionality."""
 
@@ -533,6 +542,7 @@ class TestModelMixinMetadataCollection:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestYAMLLoading:
     """Test loading from actual mixin_metadata.yaml file."""
 
@@ -591,6 +601,7 @@ class TestYAMLLoading:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestIntegration:
     """Integration tests combining multiple features."""
 

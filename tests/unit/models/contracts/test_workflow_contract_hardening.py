@@ -1,3 +1,5 @@
+import pytest
+
 # SPDX-FileCopyrightText: 2024 OmniNode Team
 #
 # SPDX-License-Identifier: Apache-2.0
@@ -17,7 +19,6 @@ These tests ensure:
 from typing import Any
 from uuid import uuid4
 
-import pytest
 from pydantic import BaseModel, ValidationError
 
 from omnibase_core.enums.enum_node_type import EnumNodeType
@@ -147,8 +148,8 @@ def assert_model_config_hardening(model_class: type[BaseModel]) -> None:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelConfigHardening:
     """Parametrized tests for model_config hardening across all models."""
 
@@ -175,8 +176,8 @@ class TestModelConfigHardening:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestEdgeCases:
     """Edge case tests for workflow contract models."""
 
@@ -633,8 +634,8 @@ class TestEdgeCases:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelWorkflowDefinitionHardening:
     """Tests for ModelWorkflowDefinition frozen and extra=forbid behavior."""
 
@@ -716,8 +717,8 @@ class TestModelWorkflowDefinitionHardening:
         assert modified.version == new_version  # Copy has new value
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelWorkflowDefinitionMetadataHardening:
     """Tests for ModelWorkflowDefinitionMetadata frozen and extra=forbid behavior."""
 
@@ -800,8 +801,8 @@ class TestModelWorkflowDefinitionMetadataHardening:
         assert modified.timeout_ms == 120000  # Copy has new value
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelWorkflowStepHardening:
     """Tests for ModelWorkflowStep frozen and extra=forbid behavior."""
 
@@ -1014,8 +1015,8 @@ class TestModelWorkflowStepHardening:
         assert modified.priority == 200  # Copy has new value
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelCoordinationRulesHardening:
     """Tests for ModelCoordinationRules frozen and extra=forbid behavior."""
 
@@ -1096,8 +1097,8 @@ class TestModelCoordinationRulesHardening:
             assert rules.failure_recovery_strategy == strategy
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelExecutionGraphHardening:
     """Tests for ModelExecutionGraph frozen and extra=forbid behavior."""
 
@@ -1158,8 +1159,8 @@ class TestModelExecutionGraphHardening:
         assert len(modified.nodes) == 1  # Copy has new value
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelWorkflowNodeHardening:
     """Tests for ModelWorkflowNode frozen and extra=forbid behavior."""
 

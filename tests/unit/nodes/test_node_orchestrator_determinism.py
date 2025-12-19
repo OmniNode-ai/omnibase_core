@@ -168,6 +168,7 @@ def complex_dependency_steps_config() -> list[dict]:
 
 
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestNodeOrchestratorDeterministicOutput:
     """Test that same inputs always produce same outputs."""
 
@@ -314,6 +315,7 @@ class TestNodeOrchestratorDeterministicOutput:
 
 
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestNodeOrchestratorExecutionOrderDeterminism:
     """Test that execution order is deterministic."""
 
@@ -566,6 +568,7 @@ class TestNodeOrchestratorExecutionOrderDeterminism:
 
 
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestNodeOrchestratorNoGlobalStateDependencies:
     """Test that results don't depend on global state."""
 
@@ -730,6 +733,7 @@ class TestNodeOrchestratorNoGlobalStateDependencies:
 
 
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestNodeOrchestratorStateSerializationDeterminism:
     """Test that state serialization produces identical behavior."""
 
@@ -921,6 +925,7 @@ class TestNodeOrchestratorStateSerializationDeterminism:
 
 
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestNodeOrchestratorParallelExecutionDeterminism:
     """Test determinism in parallel execution mode."""
 
@@ -1008,6 +1013,7 @@ class TestNodeOrchestratorParallelExecutionDeterminism:
 
 
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestNodeOrchestratorEdgeCases:
     """Test edge cases for determinism."""
 

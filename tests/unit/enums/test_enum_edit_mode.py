@@ -7,6 +7,7 @@ import pytest
 from omnibase_core.enums.enum_edit_mode import EnumEditMode
 
 
+@pytest.mark.unit
 class TestEnumEditMode:
     """Test EnumEditMode functionality."""
 

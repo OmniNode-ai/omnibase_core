@@ -4,9 +4,12 @@ Test suite for TypedDictMetrics.
 
 from datetime import datetime
 
+import pytest
+
 from omnibase_core.types.typed_dict_metrics import TypedDictMetrics
 
 
+@pytest.mark.unit
 class TestTypedDictMetrics:
     """Test TypedDictMetrics functionality."""
 

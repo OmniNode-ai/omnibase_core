@@ -91,8 +91,8 @@ def tool_invocation_event(compute_node):
     )
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestModelServiceComputeLifecycle:
     """Test ModelServiceCompute lifecycle operations."""
 
@@ -539,8 +539,8 @@ class TestModelServiceComputeLifecycle:
             await asyncio.sleep(0.05)
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelServiceComputeToolInvocation:
     """Test tool invocation handling in service mode."""
 
@@ -604,8 +604,8 @@ class TestModelServiceComputeToolInvocation:
         assert compute_node._successful_invocations == 0
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelServiceComputeHealthMonitoring:
     """Test health monitoring functionality."""
 
@@ -678,8 +678,8 @@ class TestModelServiceComputeHealthMonitoring:
         assert health["success_rate"] == 0.9  # 90/100
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelServiceComputeShutdownHandling:
     """Test shutdown handling and callbacks."""
 

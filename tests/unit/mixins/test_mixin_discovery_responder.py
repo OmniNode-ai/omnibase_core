@@ -69,12 +69,14 @@ class CompliantTestNode(MixinDiscoveryResponder):
         )
 
 
+@pytest.mark.unit
 class TestMixinDiscoveryResponderInitialization:
     """Test MixinDiscoveryResponder initialization."""
 
     def test_mixin_initialization(self):
         """Test MixinDiscoveryResponder initializes properly."""
 
+        @pytest.mark.unit
         class TestNode(MixinDiscoveryResponder):
             pass
 
@@ -89,6 +91,7 @@ class TestMixinDiscoveryResponderInitialization:
     def test_initial_stats(self):
         """Test initial statistics are properly set."""
 
+        @pytest.mark.unit
         class TestNode(MixinDiscoveryResponder):
             pass
 
@@ -107,6 +110,7 @@ class TestMixinDiscoveryResponderInitialization:
             def __init__(self):
                 self.node_id = uuid4()
 
+        @pytest.mark.unit
         class TestNode(MixinDiscoveryResponder, BaseNode):
             pass
 
@@ -115,6 +119,7 @@ class TestMixinDiscoveryResponderInitialization:
         assert isinstance(node, BaseNode)
 
 
+@pytest.mark.unit
 class TestStartStopDiscoveryResponder:
     """Test start/stop discovery responder functionality."""
 
@@ -123,6 +128,7 @@ class TestStartStopDiscoveryResponder:
     async def test_start_discovery_responder_success(self):
         """Test starting discovery responder successfully."""
 
+        @pytest.mark.unit
         class TestNode(MixinDiscoveryResponder):
             def __init__(self):
                 super().__init__()
@@ -143,6 +149,7 @@ class TestStartStopDiscoveryResponder:
     async def test_start_discovery_responder_custom_throttle(self):
         """Test starting discovery responder with custom throttle."""
 
+        @pytest.mark.unit
         class TestNode(MixinDiscoveryResponder):
             def __init__(self):
                 super().__init__()
@@ -161,6 +168,7 @@ class TestStartStopDiscoveryResponder:
     async def test_start_discovery_responder_already_active(self):
         """Test starting discovery responder when already active."""
 
+        @pytest.mark.unit
         class TestNode(MixinDiscoveryResponder):
             def __init__(self):
                 super().__init__()
@@ -184,6 +192,7 @@ class TestStartStopDiscoveryResponder:
     async def test_start_discovery_responder_failure(self):
         """Test starting discovery responder with event bus failure."""
 
+        @pytest.mark.unit
         class TestNode(MixinDiscoveryResponder):
             def __init__(self):
                 super().__init__()
@@ -201,6 +210,7 @@ class TestStartStopDiscoveryResponder:
     async def test_stop_discovery_responder_when_active(self):
         """Test stopping active discovery responder."""
 
+        @pytest.mark.unit
         class TestNode(MixinDiscoveryResponder):
             def __init__(self):
                 super().__init__()
@@ -222,6 +232,7 @@ class TestStartStopDiscoveryResponder:
     async def test_stop_discovery_responder_when_inactive(self):
         """Test stopping inactive discovery responder."""
 
+        @pytest.mark.unit
         class TestNode(MixinDiscoveryResponder):
             pass
 
@@ -231,6 +242,7 @@ class TestStartStopDiscoveryResponder:
         assert node._discovery_active is False
 
 
+@pytest.mark.unit
 class TestDiscoveryMessageHandling:
     """Test discovery message handling."""
 
@@ -239,6 +251,7 @@ class TestDiscoveryMessageHandling:
     async def test_on_discovery_message_invalid_json(self):
         """Test processing message with invalid JSON."""
 
+        @pytest.mark.unit
         class TestNode(MixinDiscoveryResponder):
             pass
 
@@ -256,6 +269,7 @@ class TestDiscoveryMessageHandling:
     async def test_on_discovery_message_malformed_envelope(self):
         """Test processing message with malformed envelope."""
 
+        @pytest.mark.unit
         class TestNode(MixinDiscoveryResponder):
             pass
 
@@ -269,12 +283,14 @@ class TestDiscoveryMessageHandling:
         await node._on_discovery_message(mock_message)
 
 
+@pytest.mark.unit
 class TestDiscoveryCriteriaMatching:
     """Test discovery criteria matching."""
 
     def test_matches_criteria_no_filters(self):
         """Test matching with no filters (should match all)."""
 
+        @pytest.mark.unit
         class TestNode(MixinDiscoveryResponder):
             pass
 
@@ -286,6 +302,7 @@ class TestDiscoveryCriteriaMatching:
     def test_matches_criteria_node_type_match(self):
         """Test matching with node type filter."""
 
+        @pytest.mark.unit
         class TestNode(MixinDiscoveryResponder):
             pass
 
@@ -299,6 +316,7 @@ class TestDiscoveryCriteriaMatching:
     def test_matches_criteria_node_type_no_match(self):
         """Test not matching with node type filter."""
 
+        @pytest.mark.unit
         class TestNode(MixinDiscoveryResponder):
             pass
 
@@ -312,6 +330,7 @@ class TestDiscoveryCriteriaMatching:
     def test_matches_criteria_capability_match(self):
         """Test matching with capability filter."""
 
+        @pytest.mark.unit
         class TestNode(MixinDiscoveryResponder):
             def get_discovery_capabilities(self):
                 return ["discovery", "execution", "custom_capability"]
@@ -326,6 +345,7 @@ class TestDiscoveryCriteriaMatching:
     def test_matches_criteria_capability_no_match(self):
         """Test not matching with capability filter."""
 
+        @pytest.mark.unit
         class TestNode(MixinDiscoveryResponder):
             def get_discovery_capabilities(self):
                 return ["discovery"]
@@ -340,6 +360,7 @@ class TestDiscoveryCriteriaMatching:
     def test_matches_custom_criteria_default(self):
         """Test custom criteria matching with default implementation."""
 
+        @pytest.mark.unit
         class TestNode(MixinDiscoveryResponder):
             pass
 
@@ -350,6 +371,7 @@ class TestDiscoveryCriteriaMatching:
     def test_matches_custom_criteria_override(self):
         """Test custom criteria matching with override."""
 
+        @pytest.mark.unit
         class TestNode(MixinDiscoveryResponder):
             def _matches_custom_criteria(self, filter_criteria):
                 return filter_criteria.get("special_flag") == "yes"
@@ -360,12 +382,14 @@ class TestDiscoveryCriteriaMatching:
         assert node._matches_custom_criteria({"special_flag": "no"}) is False
 
 
+@pytest.mark.unit
 class TestDiscoveryCapabilities:
     """Test discovery capabilities reporting."""
 
     def test_get_discovery_capabilities_default(self):
         """Test default capabilities."""
 
+        @pytest.mark.unit
         class TestNode(MixinDiscoveryResponder):
             pass
 
@@ -378,6 +402,7 @@ class TestDiscoveryCapabilities:
     def test_get_discovery_capabilities_with_methods(self):
         """Test capabilities based on available methods."""
 
+        @pytest.mark.unit
         class TestNode(MixinDiscoveryResponder):
             def run(self):
                 pass
@@ -398,6 +423,7 @@ class TestDiscoveryCapabilities:
     def test_get_discovery_capabilities_override(self):
         """Test overriding capabilities."""
 
+        @pytest.mark.unit
         class TestNode(MixinDiscoveryResponder):
             def get_discovery_capabilities(self):
                 return ["custom1", "custom2", "custom3"]
@@ -408,12 +434,14 @@ class TestDiscoveryCapabilities:
         assert capabilities == ["custom1", "custom2", "custom3"]
 
 
+@pytest.mark.unit
 class TestHealthStatus:
     """Test health status reporting."""
 
     def test_get_health_status_default(self):
         """Test default health status."""
 
+        @pytest.mark.unit
         class TestNode(MixinDiscoveryResponder):
             pass
 
@@ -425,6 +453,7 @@ class TestHealthStatus:
     def test_get_health_status_override(self):
         """Test overriding health status."""
 
+        @pytest.mark.unit
         class TestNode(MixinDiscoveryResponder):
             def get_health_status(self):
                 return "degraded"
@@ -435,12 +464,14 @@ class TestHealthStatus:
         assert status == "degraded"
 
 
+@pytest.mark.unit
 class TestDiscoveryStatistics:
     """Test discovery statistics functionality."""
 
     def test_get_discovery_stats_initial(self):
         """Test getting initial statistics."""
 
+        @pytest.mark.unit
         class TestNode(MixinDiscoveryResponder):
             pass
 
@@ -455,6 +486,7 @@ class TestDiscoveryStatistics:
     def test_reset_discovery_stats(self):
         """Test resetting statistics."""
 
+        @pytest.mark.unit
         class TestNode(MixinDiscoveryResponder):
             pass
 
@@ -474,12 +506,14 @@ class TestDiscoveryStatistics:
         assert stats["throttled_requests"] == 0
 
 
+@pytest.mark.unit
 class TestNodeVersion:
     """Test node version retrieval."""
 
     def test_get_node_version_with_version_attr(self):
         """Test getting version from version attribute."""
 
+        @pytest.mark.unit
         class TestNode(MixinDiscoveryResponder):
             def __init__(self):
                 super().__init__()
@@ -496,6 +530,7 @@ class TestNodeVersion:
     def test_get_node_version_with_node_version_attr(self):
         """Test getting version from node_version attribute."""
 
+        @pytest.mark.unit
         class TestNode(MixinDiscoveryResponder):
             def __init__(self):
                 super().__init__()
@@ -512,6 +547,7 @@ class TestNodeVersion:
     def test_get_node_version_none(self):
         """Test getting version when not available now raises error."""
 
+        @pytest.mark.unit
         class TestNode(MixinDiscoveryResponder):
             pass
 
@@ -524,12 +560,14 @@ class TestNodeVersion:
         assert "version" in str(exc_info.value).lower()
 
 
+@pytest.mark.unit
 class TestEventChannels:
     """Test event channels retrieval."""
 
     def test_get_discovery_event_channels_missing_method(self):
         """Test that missing get_event_channels() method raises error."""
 
+        @pytest.mark.unit
         class TestNode(MixinDiscoveryResponder):
             pass
 
@@ -553,6 +591,7 @@ class TestEventChannels:
         assert "onex.discovery.response" in channels["publishes_to"]
 
 
+@pytest.mark.unit
 class TestIntegrationScenarios:
     """Integration tests for discovery responder."""
 
@@ -610,6 +649,7 @@ class TestIntegrationScenarios:
         assert node._matches_discovery_criteria(request) is True
 
 
+@pytest.mark.unit
 class TestStrictTypeEnforcement:
     """Test strict type enforcement breaking changes."""
 

@@ -17,6 +17,7 @@ from pydantic import BaseModel, ValidationError
 from omnibase_core.enums.enum_numeric_type import EnumNumericType
 
 
+@pytest.mark.unit
 class TestEnumNumericType:
     """Test cases for EnumNumericType."""
 

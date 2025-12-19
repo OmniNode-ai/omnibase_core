@@ -9,6 +9,7 @@ import sys
 import pytest
 
 
+@pytest.mark.unit
 class TestModelFastContractFactory:
     """Test suite for ModelFastContractFactory class."""
 
@@ -239,6 +240,7 @@ class TestModelFastContractFactory:
         assert len(factory2._contract_cache) == 0
 
 
+@pytest.mark.unit
 class TestModuleLevelFunctions:
     """Test suite for module-level convenience functions."""
 
@@ -323,6 +325,7 @@ class TestModuleLevelFunctions:
         assert compute1 is compute2
 
 
+@pytest.mark.unit
 class TestCreationHelpers:
     """Test suite for contract creation helper functions."""
 
@@ -357,6 +360,7 @@ class TestCreationHelpers:
         # Testing instantiation would fail, which is expected behavior
 
 
+@pytest.mark.unit
 class TestPreloadingFunctions:
     """Test suite for preloading functionality."""
 
@@ -395,6 +399,7 @@ class TestPreloadingFunctions:
         assert stats["cache_size"] >= 5
 
 
+@pytest.mark.unit
 class TestPerformanceMonitoring:
     """Test suite for performance monitoring."""
 
@@ -450,6 +455,7 @@ class TestPerformanceMonitoring:
         assert metrics["status"] == "optimal"
 
 
+@pytest.mark.unit
 class TestZeroImportTimeLoading:
     """Test suite for zero-import-time loading behavior."""
 
@@ -525,6 +531,7 @@ class TestZeroImportTimeLoading:
         assert set(model_fast_imports.__all__) == expected_exports
 
 
+@pytest.mark.unit
 class TestErrorHandling:
     """Test suite for error handling in fast imports."""
 

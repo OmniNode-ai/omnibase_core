@@ -9,6 +9,7 @@ import pytest
 from omnibase_core.enums.enum_file_event_type import EnumFileEventType
 
 
+@pytest.mark.unit
 class TestEnumFileEventType:
     """Test cases for EnumFileEventType enum."""
 

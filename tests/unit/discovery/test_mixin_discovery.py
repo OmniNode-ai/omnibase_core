@@ -20,6 +20,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
+@pytest.mark.unit
 class TestModelMixinInfo:
     """Tests for ModelMixinInfo model."""
 
@@ -76,6 +77,7 @@ class TestModelMixinInfo:
         assert len(mixin.usage_examples) == 2
 
 
+@pytest.mark.unit
 class TestMixinDiscovery:
     """Tests for MixinDiscovery class."""
 
@@ -433,6 +435,7 @@ MixinTest_123:
         assert mixin.name == "MixinTest_123"
 
 
+@pytest.mark.unit
 class TestMixinDiscoveryIntegration:
     """Integration tests for MixinDiscovery workflows."""
 

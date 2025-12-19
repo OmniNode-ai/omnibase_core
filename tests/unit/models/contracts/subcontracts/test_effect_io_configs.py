@@ -21,8 +21,8 @@ from omnibase_core.models.contracts.subcontracts.model_effect_io_configs import 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestModelHttpIOConfig:
     """Tests for ModelHttpIOConfig model."""
 
@@ -184,8 +184,8 @@ class TestModelHttpIOConfig:
             assert len(security_warnings) == 0
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestModelDbIOConfig:
     """Tests for ModelDbIOConfig model."""
 
@@ -476,8 +476,8 @@ class TestModelDbIOConfig:
             assert config.operation == operation
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestModelKafkaIOConfig:
     """Tests for ModelKafkaIOConfig model."""
 
@@ -666,8 +666,8 @@ class TestModelKafkaIOConfig:
         assert config.acks_zero_acknowledged is False
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestModelFilesystemIOConfig:
     """Tests for ModelFilesystemIOConfig model."""
 
@@ -856,8 +856,8 @@ class TestModelFilesystemIOConfig:
         assert config.destination_path_template == "/data/backup/${input.filename}"
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestEffectIOConfigUnion:
     """Tests for discriminated union behavior."""
 
@@ -946,8 +946,8 @@ class TestEffectIOConfigUnion:
         assert len(configs) == 4
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestEffectIOConfigDiscriminatedUnionIntegration:
     """
     Integration tests for EffectIOConfig discriminated union behavior.
@@ -1218,8 +1218,8 @@ class TestEffectIOConfigDiscriminatedUnionIntegration:
         assert set(serialized_types) == {"http", "db", "kafka", "filesystem"}
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestExportedFromSubcontracts:
     """Test that models are properly exported from subcontracts module."""
 

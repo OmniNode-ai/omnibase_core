@@ -18,6 +18,7 @@ from omnibase_core.models.configuration.model_session_affinity import (
 )
 
 
+@pytest.mark.unit
 class TestSessionAffinityHashAlgorithm:
     """Tests for hash algorithm field validation."""
 
@@ -69,6 +70,7 @@ class TestSessionAffinityHashAlgorithm:
             ModelSessionAffinity(hash_algorithm="SHA256")  # Case sensitive
 
 
+@pytest.mark.unit
 class TestSessionAffinityHashCalculation:
     """Tests for hash calculation functionality."""
 
@@ -158,6 +160,7 @@ class TestSessionAffinityHashCalculation:
         # (We can't guarantee they differ since it depends on hash values)
 
 
+@pytest.mark.unit
 class TestSessionAffinityDefaults:
     """Tests for ModelSessionAffinity default values and configuration."""
 
@@ -197,6 +200,7 @@ class TestSessionAffinityDefaults:
         assert affinity.max_retries_before_failover == 3
 
 
+@pytest.mark.unit
 class TestSessionAffinityGetAffinityKey:
     """Tests for get_affinity_key method."""
 
@@ -269,6 +273,7 @@ class TestSessionAffinityGetAffinityKey:
         assert result is None
 
 
+@pytest.mark.unit
 class TestSessionAffinityBehavior:
     """Tests for session affinity behavior methods."""
 
@@ -315,6 +320,7 @@ class TestSessionAffinityBehavior:
         assert affinity.should_maintain_affinity(target_node_healthy=True) is False
 
 
+@pytest.mark.unit
 class TestSessionAffinityCookieAttributes:
     """Tests for get_cookie_attributes method."""
 
@@ -361,6 +367,7 @@ class TestSessionAffinityCookieAttributes:
         assert attrs["path"] == "/app"
 
 
+@pytest.mark.unit
 class TestSessionAffinityValidation:
     """Tests for field validation constraints."""
 

@@ -13,6 +13,7 @@ from omnibase_core.models.metadata.model_node_info_container import (
 )
 
 
+@pytest.mark.unit
 class TestModelMetadataNodeCollectionInstantiation:
     """Tests for ModelMetadataNodeCollection instantiation."""
 
@@ -51,6 +52,7 @@ class TestModelMetadataNodeCollectionInstantiation:
             ModelMetadataNodeCollection(root=["invalid"])
 
 
+@pytest.mark.unit
 class TestModelMetadataNodeCollectionAnalytics:
     """Tests for metadata analytics in collection."""
 
@@ -77,6 +79,7 @@ class TestModelMetadataNodeCollectionAnalytics:
         )
 
 
+@pytest.mark.unit
 class TestModelMetadataNodeCollectionNodeInfo:
     """Tests for node info in collection."""
 
@@ -101,6 +104,7 @@ class TestModelMetadataNodeCollectionNodeInfo:
         assert isinstance(collection.root["_node_info"], ModelNodeInfoContainer)
 
 
+@pytest.mark.unit
 class TestModelMetadataNodeCollectionProtocols:
     """Tests for protocol implementations."""
 
@@ -131,6 +135,7 @@ class TestModelMetadataNodeCollectionProtocols:
         assert collection.validate_instance() is True
 
 
+@pytest.mark.unit
 class TestModelMetadataNodeCollectionCustomData:
     """Tests for custom data in collection."""
 
@@ -157,6 +162,7 @@ class TestModelMetadataNodeCollectionCustomData:
         assert collection.root["level1"]["level2"]["level3"]["data"] == "deep"
 
 
+@pytest.mark.unit
 class TestModelMetadataNodeCollectionAccess:
     """Tests for accessing collection data."""
 
@@ -188,6 +194,7 @@ class TestModelMetadataNodeCollectionAccess:
         assert "_node_info" in keys
 
 
+@pytest.mark.unit
 class TestModelMetadataNodeCollectionModification:
     """Tests for modifying collection."""
 
@@ -219,6 +226,7 @@ class TestModelMetadataNodeCollectionModification:
         assert collection.root["_metadata_analytics"] is new_analytics
 
 
+@pytest.mark.unit
 class TestModelMetadataNodeCollectionEdgeCases:
     """Tests for edge cases."""
 
@@ -275,6 +283,7 @@ class TestModelMetadataNodeCollectionEdgeCases:
         assert collection.root["dict"]["nested"] == "value"
 
 
+@pytest.mark.unit
 class TestModelMetadataNodeCollectionSerialization:
     """Tests for serialization."""
 
@@ -303,6 +312,7 @@ class TestModelMetadataNodeCollectionSerialization:
         assert "node" in serialized
 
 
+@pytest.mark.unit
 class TestModelMetadataNodeCollectionSpecialKeys:
     """Tests for special keys handling."""
 
@@ -333,6 +343,7 @@ class TestModelMetadataNodeCollectionSpecialKeys:
         assert collection.root["_node_info"] is new_node_info
 
 
+@pytest.mark.unit
 class TestModelMetadataNodeCollectionComplexScenarios:
     """Tests for complex scenarios."""
 

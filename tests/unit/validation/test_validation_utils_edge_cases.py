@@ -19,6 +19,7 @@ from omnibase_core.validation.validation_utils import (
 )
 
 
+@pytest.mark.unit
 class TestExtractProtocolSignatureEdgeCases:
     """Test edge cases in extract_protocol_signature function."""
 
@@ -140,6 +141,7 @@ class TestProtocol(Protocol):
             temp_path.unlink()
 
 
+@pytest.mark.unit
 class TestDetermineRepositoryNameEdgeCases:
     """Test edge cases in determine_repository_name function."""
 
@@ -184,6 +186,7 @@ class TestDetermineRepositoryNameEdgeCases:
         assert result == "omnibase_test"
 
 
+@pytest.mark.unit
 class TestExtractProtocolsFromDirectoryEdgeCases:
     """Test edge cases in extract_protocols_from_directory function."""
 
@@ -316,6 +319,7 @@ class DeepProtocol(Protocol):
                 assert "DeepProtocol" in protocol_names
 
 
+@pytest.mark.unit
 class TestProtocolSignatureEdgeCases:
     """Test edge cases in protocol signature generation."""
 

@@ -10,6 +10,7 @@ from pydantic import BaseModel, ValidationError
 from omnibase_core.models.configuration.model_workflow_input import ModelWorkflowInput
 
 
+@pytest.mark.unit
 class TestModelWorkflowInput:
     """Test class for ModelWorkflowInput."""
 

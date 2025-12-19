@@ -25,6 +25,7 @@ from omnibase_core.models.contracts.subcontracts.model_event_mapping_rule import
 )
 
 
+@pytest.mark.unit
 class TestModelEventMappingRuleBasics:
     """Test basic model instantiation and defaults."""
 
@@ -99,6 +100,7 @@ class TestModelEventMappingRuleBasics:
         assert rule.is_required is False
 
 
+@pytest.mark.unit
 class TestModelEventMappingRuleValidation:
     """Test field validation and constraints."""
 
@@ -250,6 +252,7 @@ class TestModelEventMappingRuleValidation:
         assert rule.apply_condition is None
 
 
+@pytest.mark.unit
 class TestModelEventMappingRuleEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -449,6 +452,7 @@ class TestModelEventMappingRuleEdgeCases:
         assert rule.default_value == json_default
 
 
+@pytest.mark.unit
 class TestModelEventMappingRuleConfigDict:
     """Test ConfigDict behavior."""
 
@@ -557,6 +561,7 @@ class TestModelEventMappingRuleConfigDict:
         assert rule.priority == 200
 
 
+@pytest.mark.unit
 class TestModelEventMappingRuleDocumentation:
     """Test documentation and interface guarantees."""
 
@@ -595,6 +600,7 @@ class TestModelEventMappingRuleDocumentation:
         assert "priority" not in required_fields
 
 
+@pytest.mark.unit
 class TestModelEventMappingRuleUseCases:
     """Test real-world use case scenarios."""
 
@@ -698,6 +704,7 @@ class TestModelEventMappingRuleUseCases:
         assert rule.is_required is False
 
 
+@pytest.mark.unit
 class TestModelEventMappingRuleDefaultValueTypes:
     """Test default_value field with multiple data types."""
 

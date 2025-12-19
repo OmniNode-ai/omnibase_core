@@ -7,11 +7,14 @@ and handling of various data types and edge cases.
 
 import json
 
+import pytest
+
 from omnibase_core.enums.enum_cli_status import EnumCliStatus
 from omnibase_core.models.cli.model_cli_output_data import ModelCliOutputData
 from omnibase_core.models.cli.model_cli_result_formatter import ModelCliResultFormatter
 
 
+@pytest.mark.unit
 class TestModelCliResultFormatterOutputFormatting:
     """Test output formatting functionality."""
 
@@ -113,6 +116,7 @@ class TestModelCliResultFormatterOutputFormatting:
         assert "  " in result or "\n" in result
 
 
+@pytest.mark.unit
 class TestModelCliResultFormatterErrorFormatting:
     """Test error formatting functionality."""
 
@@ -207,6 +211,7 @@ class TestModelCliResultFormatterErrorFormatting:
         assert "'quoted'" in result
 
 
+@pytest.mark.unit
 class TestModelCliResultFormatterSummaryFormatting:
     """Test summary formatting functionality."""
 
@@ -318,6 +323,7 @@ class TestModelCliResultFormatterSummaryFormatting:
         assert len(lines) >= 3  # At least 3 lines for status, exit code, duration
 
 
+@pytest.mark.unit
 class TestModelCliResultFormatterEdgeCases:
     """Test edge cases and special scenarios."""
 

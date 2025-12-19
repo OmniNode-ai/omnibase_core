@@ -11,6 +11,7 @@ from omnibase_core.enums.enum_intelligence_priority_level import (
 )
 
 
+@pytest.mark.unit
 class TestEnumIntelligencePriorityLevel:
     """Test cases for EnumIntelligencePriorityLevel enum."""
 

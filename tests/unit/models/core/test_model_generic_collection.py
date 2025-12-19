@@ -34,6 +34,7 @@ class MockSimpleItem(BaseModel):
     name: str
 
 
+@pytest.mark.unit
 class TestModelGenericCollection:
     """Test suite for ModelGenericCollection."""
 
@@ -495,6 +496,7 @@ class TestModelGenericCollection:
         assert collection3.collection_id == collection4.collection_id
 
 
+@pytest.mark.unit
 class TestModelGenericCollectionEdgeCases:
     """Test edge cases and error conditions."""
 

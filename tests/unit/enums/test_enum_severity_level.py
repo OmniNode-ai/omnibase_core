@@ -20,6 +20,7 @@ from pydantic import BaseModel, ValidationError
 from omnibase_core.enums.enum_severity_level import EnumSeverityLevel
 
 
+@pytest.mark.unit
 class TestEnumSeverityLevel:
     """Test cases for EnumSeverityLevel."""
 
