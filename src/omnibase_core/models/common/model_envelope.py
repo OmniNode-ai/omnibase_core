@@ -108,14 +108,15 @@ class ModelEnvelope(BaseModel):
     # When the message was created
     emitted_at: datetime = Field(
         default_factory=lambda: datetime.now(UTC),
-        description="Timestamp when this message was created (UTC)",
+        description="Timestamp when this message was created (must be timezone-aware UTC)",
     )
 
     # Partition key and identity anchor
     entity_id: str = Field(
         ...,
         min_length=1,
-        description="Partition key and identity anchor (e.g., node_id for registration domain)",
+        max_length=512,
+        description="Partition key and identity anchor (e.g., node_id for registration domain). Max 512 chars.",
     )
 
     @field_validator("entity_id", mode="before")
@@ -148,6 +149,31 @@ class ModelEnvelope(BaseModel):
                 value=v,
             )
         return stripped
+
+    @field_validator("emitted_at", mode="after")
+    @classmethod
+    def validate_emitted_at_timezone_aware(cls, v: datetime) -> datetime:
+        """Validate that emitted_at is timezone-aware.
+
+        All timestamps in ONEX must be timezone-aware to ensure consistent
+        handling across distributed services.
+
+        Args:
+            v: The datetime value to validate.
+
+        Returns:
+            The validated datetime.
+
+        Raises:
+            ModelOnexError: If the datetime is naive (no timezone info).
+        """
+        if v.tzinfo is None:
+            raise ModelOnexError(
+                message="emitted_at must be timezone-aware (naive datetime not allowed)",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                field="emitted_at",
+            )
+        return v
 
     @model_validator(mode="after")
     def validate_no_self_reference(self) -> Self:

@@ -880,22 +880,20 @@ class TestModelEnvelopeEdgeCases:
         # The datetime should have timezone info
         assert envelope.emitted_at.tzinfo is not None
 
-    def test_envelope_accepts_naive_datetime_for_emitted_at(self) -> None:
-        """Test behavior when naive datetime is provided for emitted_at."""
+    def test_envelope_rejects_naive_datetime_for_emitted_at(self) -> None:
+        """Test that naive datetime (no timezone) is rejected for emitted_at."""
+        from omnibase_core.errors import ModelOnexError
+
         naive_dt = datetime(2024, 1, 15, 10, 30, 0)  # No timezone
 
-        # This may or may not be accepted depending on implementation
-        try:
-            envelope = ModelEnvelope(
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelEnvelope(
                 correlation_id=uuid4(),
                 entity_id="node-123",
                 emitted_at=naive_dt,
             )
-            # If accepted, verify it's stored
-            assert envelope.emitted_at.year == 2024
-        except ValidationError:
-            # If rejected (timezone required), that's valid too
-            pass
+
+        assert "timezone" in str(exc_info.value).lower()
 
 
 class TestModelEnvelopeEquality:
