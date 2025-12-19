@@ -9,11 +9,17 @@ Pattern:
 
 Example:
     # Reducer publishes intent instead of direct event
+    from omnibase_core.constants import TOPIC_EVENT_PUBLISH_INTENT
+
     intent = ModelEventPublishIntent(
         target_topic=TOPIC_METRICS_RECORDED,
         target_event=metrics_event
     )
     await publish_to_kafka(TOPIC_EVENT_PUBLISH_INTENT, intent)
+
+Note:
+    TOPIC_EVENT_PUBLISH_INTENT is now defined in constants_topic_taxonomy.py
+    and should be imported from omnibase_core.constants.
 """
 
 from datetime import UTC, datetime
@@ -23,9 +29,6 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.utils.util_decorators import allow_dict_str_any
-
-# Kafka topic for intent events
-TOPIC_EVENT_PUBLISH_INTENT = "dev.omninode-bridge.intents.event-publish.v1"
 
 
 @allow_dict_str_any(

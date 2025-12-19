@@ -26,6 +26,7 @@ omnibase_core/docs/
 │   └── Node Building       ★ Critical priority
 ├── Architecture             → System design and concepts
 ├── Reference                → Templates and API docs
+├── Standards                → Normative specifications
 └── Specialized Topics       → Threading, errors, patterns
 ```
 
@@ -254,6 +255,12 @@ def serialize_error(error: ModelOnexError) -> TypedDictValidationErrorSerialized
 |----------|-------------|--------|
 | [**Async Hang Debugging**](troubleshooting/ASYNC_HANG_DEBUGGING.md) | Diagnose and fix async/event loop hangs in tests | ✅ Complete |
 
+### Standards
+
+| Document | Description | Status |
+|----------|-------------|--------|
+| [**ONEX Topic Taxonomy**](standards/onex_topic_taxonomy.md) | Kafka topic naming convention and configuration | ✅ Complete |
+
 ### Architecture Patterns
 
 | Document | Description | Status |
@@ -334,10 +341,11 @@ def serialize_error(error: ModelOnexError) -> TypedDictValidationErrorSerialized
 | **Node Building** | 10 | 0 | 0 | 10 |
 | **Architecture** | 13 | 0 | 0 | 13 |
 | **Reference** | 14 | 0 | 0 | 14 |
+| **Standards** | 1 | 0 | 0 | 1 |
 | **Specialized** | 13 | 0 | 0 | 13 |
-| **TOTAL** | **53** | **0** | **0** | **53** |
+| **TOTAL** | **54** | **0** | **0** | **54** |
 
-**Overall Progress**: 100% complete (53/53 documents)
+**Overall Progress**: 100% complete (54/54 documents)
 
 ### Priority Items
 
