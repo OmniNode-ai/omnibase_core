@@ -56,11 +56,11 @@ The Registration FSM defines 10 states across 4 categories:
 | `registering_postgres` | operational | No | Yes | Emitting PostgreSQL upsert intent. First phase of dual registration. |
 | `postgres_registered` | snapshot | No | Yes | PostgreSQL registration succeeded. Awaiting Consul registration. |
 | `registering_consul` | operational | No | Yes | Emitting Consul register intent. Second phase of dual registration. |
-| `registered` | terminal | No | No | Fully registered in both Consul and PostgreSQL. Success state allowing graceful shutdown. |
+| `registered` | success | No | No | Fully registered in both Consul and PostgreSQL. Success state allowing graceful shutdown. |
 | `partial_registered` | error | No | Yes | Partial registration - one succeeded, one failed. Requires recovery. |
 | `deregistering` | operational | No | Yes | Emitting deregistration intents for graceful shutdown. |
 | `deregistered` | terminal | Yes | No | Fully deregistered from both systems. Terminal cleanup state. |
-| `failed` | error | No | Yes | Registration failed completely. Both attempts failed or validation error. |
+| `failed` | error | No | Yes | Registration failed completely. Either both registration attempts failed, or a validation error occurred. |
 
 ### State Details
 
@@ -196,7 +196,7 @@ validation_rules:
 
 ```yaml
 state_name: registered
-state_type: terminal
+state_type: success
 description: "Fully registered in both Consul and PostgreSQL."
 is_terminal: false
 is_recoverable: false
@@ -295,7 +295,7 @@ validation_rules: []
 ```yaml
 state_name: failed
 state_type: error
-description: "Registration failed completely. Both attempts failed or validation error."
+description: "Registration failed completely. Either both registration attempts failed, or a validation error occurred."
 is_terminal: false
 is_recoverable: true
 entry_actions:
@@ -316,7 +316,7 @@ validation_rules: []
 
 ## Transitions
 
-The Registration FSM defines 16 transitions:
+The Registration FSM defines 17 transitions:
 
 ### Transition Table
 
@@ -338,6 +338,7 @@ The Registration FSM defines 16 transitions:
 | 14 | `retry_from_failed` | `failed` | `validating` | `RETRY` | 10 | Retry full registration workflow |
 | 15 | `abandon_registration` | `failed` | `deregistered` | `ABANDON` | 5 | Abandon failed registration |
 | 16 | `global_error_handler` | `*` | `failed` | `FATAL_ERROR` | 0 | Handle unrecoverable errors from any state |
+| 17 | `retry_exhausted` | `partial_registered` | `failed` | `RETRY_EXHAUSTED` | 10 | Retry limit reached in partial_registered |
 
 ### Transition Details
 
@@ -741,6 +742,33 @@ actions:
 
 ---
 
+#### Transition 17: `retry_exhausted`
+
+```yaml
+transition_name: retry_exhausted
+from_state: partial_registered
+to_state: failed
+trigger: RETRY_EXHAUSTED
+priority: 10
+is_atomic: true
+conditions:
+  - condition_name: retry_limit_reached
+    condition_type: expression
+    expression: "retry_count >= 3"
+    required: true
+actions:
+  - action_name: log_retry_exhausted
+    action_type: emit_intent
+    action_config:
+      intent_type: log_event
+      level: ERROR
+      message: "Retry limit exhausted in partial_registered state"
+```
+
+**Note**: This transition handles the case when retry attempts in `partial_registered` state have been exhausted. When `retry_count >= 3`, the guard on the `retry_consul` (Transition 9) and `retry_postgres` (Transition 10) transitions will fail. The Reducer should then emit a `RETRY_EXHAUSTED` trigger to move to the `failed` state, from which the operator can either retry the full workflow or abandon the registration.
+
+---
+
 ## Guards
 
 Guards are conditions that must evaluate to `true` for a transition to occur.
@@ -761,6 +789,7 @@ Guards are conditions that must evaluate to `true` for a transition to occur.
 | `consul_failed_postgres_ok` | `postgres_applied == true` | Yes | Postgres OK but Consul failed |
 | `postgres_failed_consul_ok` | `consul_applied == true` | Yes | Consul OK but Postgres failed |
 | `retry_count_valid` | `retry_count < 3` | Yes | Haven't exceeded retry limit |
+| `retry_limit_reached` | `retry_count >= 3` | Yes | Retry limit has been reached |
 
 ### Guard Expression Syntax
 
@@ -781,6 +810,63 @@ validation_result == passed
 consul_error exists true
 ```
 
+### Guard Validation Rules
+
+Guards are validated at two phases to ensure correctness and provide clear error messages.
+
+#### Contract Load-Time Validation
+
+When the FSM contract is loaded, all guard expressions are validated for syntactic correctness:
+
+1. **Syntax validation**: Expression must follow `field operator value` format (exactly 3 tokens)
+2. **Operator validation**: Operator must be in the supported operator set
+3. **Field reference validation**: Field names must be valid identifiers (alphanumeric with underscores, not starting with a number)
+4. **Value format validation**: Values must be parseable (booleans, numbers, strings, arrays)
+
+**Contract Load-Time Validation Errors**:
+
+| Error Code | Description | Example |
+|------------|-------------|---------|
+| `GUARD_SYNTAX_ERROR` | Expression doesn't follow 3-token format | `"postgres_applied"` (missing operator and value) |
+| `GUARD_INVALID_OPERATOR` | Operator not in supported set | `"retry_count ~= 3"` (invalid operator `~=`) |
+| `GUARD_INVALID_FIELD` | Field name is not a valid identifier | `"123field == true"` (starts with number) |
+| `GUARD_INVALID_VALUE` | Value cannot be parsed | `"count < [invalid"` (malformed array) |
+
+**Contract Validation Example**:
+```python
+# Valid guards - pass contract validation
+"postgres_applied == true"      # Boolean comparison
+"retry_count < 3"               # Numeric comparison
+"validation_result == passed"   # String comparison
+"tags contains production"      # Containment check
+
+# Invalid guards - fail contract validation
+"postgres_applied"              # GUARD_SYNTAX_ERROR: missing operator/value
+"count <=> 5"                   # GUARD_INVALID_OPERATOR: unknown operator
+"2fast == true"                 # GUARD_INVALID_FIELD: invalid identifier
+```
+
+#### Runtime Validation
+
+At runtime, guards are validated when evaluated against the FSM context:
+
+1. **Field resolution**: Field must exist in the FSM context (or be handled by `exists`/`not_exists`)
+2. **Type compatibility**: Field value type must be compatible with the operator
+3. **Value coercion**: Value must be coercible to the expected type for comparison
+
+**Runtime Validation Errors** (see also "Error Handling" subsection below):
+
+| Error Code | Description | Recovery |
+|------------|-------------|----------|
+| `GUARD_EVALUATION_ERROR` | Unsupported operator at runtime | Fix guard expression in contract |
+| `GUARD_TYPE_ERROR` | Type mismatch during evaluation | Fix context data or guard expression |
+| `GUARD_FIELD_UNDEFINED` | Referenced field not in context | Ensure context populated before transition |
+
+**Runtime Behavior for Undefined Fields**:
+- For `exists`/`not_exists` operators: Undefined fields return appropriate boolean
+- For other operators: Guard evaluation returns `false`, transition is blocked
+- No exception is raised for undefined fields (fail-safe behavior)
+
 ### Trigger Catalog
 
 The FSM uses the following triggers to drive state transitions:
@@ -794,14 +880,15 @@ The FSM uses the following triggers to drive state transitions:
 | `POSTGRES_FAILED` | Effect | PostgreSQL Effect returned failure. Database error or constraint violation. |
 | `CONSUL_SUCCEEDED` | Effect | Consul Effect returned success. Service registration completed successfully. |
 | `CONSUL_FAILED` | Effect | Consul Effect returned failure. Network error or Consul unavailable. |
-| `CONTINUE` | Internal | Automatic transition trigger. Emitted by the Reducer when no external event is needed to progress. Used between `postgres_registered` and `registering_consul`. |
+| `CONTINUE` | Internal | Automatic progression trigger emitted by the Reducer itself, not by external sources. This internal trigger represents automatic state advancement when no external event is needed. Used for the transition from `postgres_registered` to `registering_consul`. |
 | `RECOVERY_COMPLETE` | Orchestrator | Both components now registered. Emitted when partial registration is resolved through retry. |
 | `DEREGISTER` | External | Shutdown signal received. Initiates graceful deregistration from both systems. |
 | `DEREGISTRATION_COMPLETE` | Orchestrator | Both deregistrations succeeded. Emitted after Consul and PostgreSQL cleanup complete. |
-| `RETRY` | External/Internal | Retry after failure. Can be triggered by operator intervention or automatic retry policy. |
+| `RETRY` | External/Internal | Initiates a retry after failure. This trigger can be invoked by operator intervention or by an automatic retry policy. |
 | `RETRY_POSTGRES` | External | Retry PostgreSQL specifically. Used when Consul succeeded but PostgreSQL failed. |
 | `ABANDON` | External | Give up on registration. Transitions directly to `deregistered` without attempting cleanup. |
 | `FATAL_ERROR` | Internal | Unrecoverable error detected. Catches unexpected failures from any non-terminal state. |
+| `RETRY_EXHAUSTED` | Internal | Retry limit reached. Triggered when `retry_count >= max_retries` in `partial_registered` state. Transitions to `failed` state for operator intervention. |
 
 **Trigger Sources**:
 - **External**: Triggered by events from outside the FSM (user actions, lifecycle signals, introspection events)
@@ -874,6 +961,7 @@ stateDiagram-v2
     partial_registered --> registering_consul : RETRY [postgres_applied=true]
     partial_registered --> registering_postgres : RETRY_POSTGRES [consul_applied=true]
     partial_registered --> registered : RECOVERY_COMPLETE
+    partial_registered --> failed : RETRY_EXHAUSTED [retry_count >= 3]
 
     registered --> deregistering : DEREGISTER
 
@@ -935,13 +1023,13 @@ stateDiagram-v2
                    ┌──────────────────┐                          ┌────────────────┐         │
                    │partial_registered │─────RECOVERY_COMPLETE──▶│   registered   │         │
                    └──────────────────┘                          └────────────────┘         │
-                              │                                            │                 │
-                          RETRY │                                    DEREGISTER              │
-                              │                                            │                 │
-                              ▼                                            ▼                 │
-                   ┌─────────────────┐                          ┌────────────────┐         │
-                   │registering_consul│                          │  deregistering │         │
-                   └─────────────────┘                          └────────────────┘         │
+                         │    │                                          │                 │
+                     RETRY│    │RETRY_EXHAUSTED                    DEREGISTER              │
+                         │    │[retry_count>=3]                          │                 │
+                         ▼    ▼                                          ▼                 │
+                   ┌─────────────────┐  ┌─────────┐             ┌────────────────┐         │
+                   │registering_consul│  │ failed  │             │  deregistering │         │
+                   └─────────────────┘  └─────────┘             └────────────────┘         │
                                                                            │                 │
                                                                DEREGISTRATION_COMPLETE      │
                                                                            │                 │
@@ -1029,12 +1117,13 @@ ModelPostgresUpsertRegistrationIntent(
 The FSM contract is validated at load time:
 
 1. **Initial state exists**: `unregistered` must be in states list
-2. **Terminal states exist**: `registered`, `deregistered` must be in states list
-3. **Error states exist**: `partial_registered`, `failed` must be in states list
-4. **No orphan states**: All states must have at least one incoming or outgoing transition
-5. **No transitions from terminal states**: `registered` and `deregistered` have no outgoing transitions (except `registered` -> `deregistering` for graceful shutdown)
-6. **Unique transition names**: All transition names must be unique
-7. **Valid from/to states**: All transition `from_state` and `to_state` must exist in states list
+2. **Success states exist**: `registered` must be in states list (success state allowing graceful shutdown)
+3. **Terminal states exist**: `deregistered` must be in states list (true terminal with no outgoing transitions)
+4. **Error states exist**: `partial_registered`, `failed` must be in states list
+5. **No orphan states**: All states must have at least one incoming or outgoing transition
+6. **No transitions from terminal states**: `deregistered` has no outgoing transitions; `registered` (success state) has one outgoing transition to `deregistering` for graceful shutdown
+7. **Unique transition names**: All transition names must be unique
+8. **Valid from/to states**: All transition `from_state` and `to_state` must exist in states list
 
 ### Runtime Validation
 
@@ -1054,6 +1143,12 @@ During execution, the Reducer validates:
 | `STATE_MISMATCH` | Current state doesn't match expected | Reset FSM |
 | `RETRY_EXHAUSTED` | Maximum retry count exceeded | Manual intervention |
 | `GUARD_FAILED` | Required guard condition not satisfied | Fix context, retry |
+| `GUARD_SYNTAX_ERROR` | Malformed guard expression (contract load-time) | Fix guard expression syntax in contract |
+| `GUARD_INVALID_OPERATOR` | Unknown operator in guard expression | Use supported operator from operator set |
+| `GUARD_EVALUATION_ERROR` | Guard evaluation failed at runtime | Fix guard expression or context data |
+| `GUARD_TYPE_ERROR` | Type mismatch during guard evaluation | Ensure field type matches operator expectations |
+| `TIMEOUT_EXCEEDED` | State timeout exceeded | Check Effect execution time, increase timeout or fix blocking issue |
+| `INTENT_EMISSION_FAILED` | Failed to emit intent during transition | Check intent payload, verify target Effect exists |
 
 ---
 
@@ -1104,7 +1199,264 @@ retry_counter:
 
 4. **Guard Check**: Transitions 9, 10, and 14 include the guard `retry_count < 3` which prevents retry if the limit has been reached.
 
-5. **Exhaustion Handling**: When `retry_count >= 3`, the guard fails and no transition occurs. The caller should then trigger `ABANDON` to move to `deregistered` state.
+5. **Exhaustion Handling**: When `retry_count >= 3` in `partial_registered` state, the guard on `RETRY` and `RETRY_POSTGRES` transitions fails. The Reducer should then emit a `RETRY_EXHAUSTED` trigger (Transition 17) to move to the `failed` state. From `failed`, the operator can either:
+   - Trigger `RETRY` to restart the full workflow from `validating` (if retry_count allows)
+   - Trigger `ABANDON` to move to `deregistered` state and give up on registration
+
+#### Retry Limit Enforcement
+
+The retry limit is enforced through the guard condition `retry_count < 3` on retry transitions. This section provides detailed enforcement behavior documentation.
+
+**Maximum Retry Value**: `3`
+
+The FSM allows a maximum of 3 retry attempts before considering the registration permanently failed. This value balances recovery resilience with avoiding infinite retry loops.
+
+**Triggers That Increment the Counter**:
+
+| Trigger | Transition | Effect |
+|---------|------------|--------|
+| `RETRY` | Transitions 9 and 14 | Increments `retry_count` before retrying Consul or full registration |
+| `RETRY_POSTGRES` | Transition 10 | Increments `retry_count` before retrying PostgreSQL |
+
+**When the Limit Is Reached**:
+
+When `retry_count >= 3`, the guard condition `retry_count < 3` evaluates to `false`. This causes:
+
+1. **Transition Blocked**: The retry transition (9, 10, or 14) cannot fire
+2. **State Unchanged**: The FSM remains in current state (`partial_registered` or `failed`)
+3. **No Intent Emitted**: No retry intent is emitted since no transition occurs
+4. **Manual Intervention Required**: The Orchestrator or operator must trigger `RETRY_EXHAUSTED` or `ABANDON`
+
+**Counter Reset Events**:
+
+The counter resets to 0 when any of these success events occur:
+
+| Event | States Where Reset Occurs |
+|-------|--------------------------|
+| `POSTGRES_SUCCEEDED` | After `registering_postgres` |
+| `CONSUL_SUCCEEDED` | After `registering_consul` |
+| `VALIDATION_PASSED` | After `validating` |
+
+This allows fresh retry attempts if a later phase fails after an earlier retry succeeded.
+
+**Implementation Example**:
+
+The Reducer should implement retry limit handling as follows:
+
+```python
+async def handle_retry_trigger(
+    self,
+    current_state: str,
+    context: ModelFSMContext,
+) -> tuple[str, list[ModelIntent]]:
+    """Handle RETRY trigger with limit enforcement."""
+    retry_count = context.retry_count
+
+    # Check guard condition
+    if retry_count >= 3:
+        # Guard failed - cannot transition
+        # Emit exhaustion intent for Orchestrator awareness
+        return current_state, [
+            ModelLogIntent(
+                kind="log_event",
+                level="WARNING",
+                message=f"Retry limit exhausted (count={retry_count}). "
+                        "Trigger RETRY_EXHAUSTED or ABANDON to proceed.",
+                correlation_id=context.correlation_id,
+            )
+        ]
+
+    # Guard passed - proceed with retry transition
+    new_context = context.model_copy(
+        update={"retry_count": retry_count + 1}
+    )
+
+    if current_state == "partial_registered":
+        # Transition 9: retry_consul
+        return "registering_consul", [
+            ModelConsulRegisterIntent(
+                kind="consul.register",
+                service_id=context.consul_service_id,
+                correlation_id=context.correlation_id,
+            )
+        ]
+    elif current_state == "failed":
+        # Transition 14: retry_from_failed
+        return "validating", [
+            ModelLogIntent(
+                kind="log_event",
+                level="INFO",
+                message="Retrying registration from failed state",
+                correlation_id=context.correlation_id,
+            )
+        ]
+
+    # Invalid state for RETRY trigger
+    raise ModelOnexError(
+        message=f"RETRY trigger invalid in state: {current_state}",
+        error_code=EnumCoreErrorCode.INVALID_TRANSITION,
+    )
+```
+
+**Orchestrator Responsibility**:
+
+When the Reducer returns without a state change (guard failed), the Orchestrator should:
+
+1. Detect the retry exhaustion condition
+2. Log the exhaustion event with context
+3. Either:
+   - Trigger `RETRY_EXHAUSTED` to move to `failed` state (Transition 17)
+   - Trigger `ABANDON` to move to `deregistered` (automatic cleanup)
+   - Alert operators for manual intervention
+
+### Timeout Handling
+
+Several operational states define `timeout_ms` values that specify the maximum time allowed for state completion. This section documents timeout behavior and recovery strategies.
+
+#### Timeout Configuration
+
+The following states have timeout values defined:
+
+| State | Timeout (ms) | Timeout (s) | Purpose |
+|-------|-------------|-------------|---------|
+| `validating` | 5000 | 5s | Payload validation should complete quickly |
+| `registering_postgres` | 10000 | 10s | Database upsert with network latency |
+| `registering_consul` | 10000 | 10s | Service registration with network latency |
+| `deregistering` | 15000 | 15s | Cleanup of both systems (longer for graceful shutdown) |
+
+**Note**: States without explicit `timeout_ms` (such as `unregistered`, `registered`, `failed`, `partial_registered`, `deregistered`) can remain in that state indefinitely until an external trigger is received.
+
+#### Timeout Semantics
+
+**What `timeout_ms` Represents**:
+
+The `timeout_ms` value is the maximum wall-clock time the FSM should remain in an operational state awaiting an effect result or external trigger. If this duration elapses without a valid transition trigger, the state is considered timed out.
+
+**Timeout Detection**:
+
+Timeout detection is the responsibility of the **Orchestrator**, not the Reducer. The Reducer is pure and has no concept of wall-clock time. The Orchestrator must:
+
+1. Record entry timestamp when the FSM enters a state with `timeout_ms`
+2. Monitor elapsed time while awaiting Effect results
+3. Emit appropriate timeout trigger when `timeout_ms` is exceeded
+
+**Timeout Trigger Emission**:
+
+When a timeout occurs, the Orchestrator should emit one of the following triggers based on severity:
+
+| Timeout Scenario | Recommended Trigger | Target State | Rationale |
+|-----------------|---------------------|--------------|-----------|
+| `validating` timeout | `FATAL_ERROR` | `failed` | Validation should be fast; timeout indicates system issue |
+| `registering_postgres` timeout | `POSTGRES_FAILED` | `failed` | Database unreachable; treat as failure |
+| `registering_consul` timeout | `CONSUL_FAILED` | `partial_registered` | Consul unreachable; PostgreSQL already succeeded |
+| `deregistering` timeout | `DEREGISTRATION_COMPLETE` | `deregistered` | Best-effort cleanup; proceed to terminal state |
+
+#### Orchestrator Timeout Monitoring
+
+The Orchestrator should implement timeout monitoring as follows:
+
+```python
+async def monitor_state_timeout(
+    self,
+    fsm_state: str,
+    state_entered_at: datetime,
+    timeout_ms: int | None,
+) -> str | None:
+    """
+    Monitor for state timeout and return appropriate trigger if exceeded.
+
+    Returns:
+        Trigger name if timeout exceeded, None otherwise.
+    """
+    if timeout_ms is None:
+        # No timeout configured for this state
+        return None
+
+    elapsed_ms = (datetime.utcnow() - state_entered_at).total_seconds() * 1000
+
+    if elapsed_ms < timeout_ms:
+        # Still within timeout window
+        return None
+
+    # Timeout exceeded - determine appropriate trigger
+    timeout_triggers: dict[str, str] = {
+        "validating": "FATAL_ERROR",
+        "registering_postgres": "POSTGRES_FAILED",
+        "registering_consul": "CONSUL_FAILED",
+        "deregistering": "DEREGISTRATION_COMPLETE",
+    }
+
+    trigger = timeout_triggers.get(fsm_state, "FATAL_ERROR")
+
+    self.logger.warning(
+        f"State timeout exceeded: state={fsm_state}, "
+        f"timeout_ms={timeout_ms}, elapsed_ms={elapsed_ms}, "
+        f"emitting_trigger={trigger}"
+    )
+
+    return trigger
+```
+
+#### Timeout Recovery Strategies
+
+**Strategy 1: Immediate Failure (Recommended for `validating`)**
+
+Validation timeouts indicate a fundamental system issue (CPU overload, memory exhaustion). The FSM should transition to `failed` immediately and await manual intervention or retry.
+
+```text
+validating --[timeout]--> FATAL_ERROR --> failed
+```
+
+**Strategy 2: Retry-Eligible Failure (Recommended for `registering_postgres`)**
+
+PostgreSQL timeouts are often transient (network blip, database restart). The FSM transitions to `failed` but can be retried.
+
+```text
+registering_postgres --[timeout]--> POSTGRES_FAILED --> failed --[RETRY]--> validating
+```
+
+**Strategy 3: Partial Registration (Recommended for `registering_consul`)**
+
+If Consul times out after PostgreSQL succeeded, the node is partially registered. This allows targeted retry of just the Consul component.
+
+```text
+registering_consul --[timeout]--> CONSUL_FAILED --> partial_registered --[RETRY]--> registering_consul
+```
+
+**Strategy 4: Best-Effort Cleanup (Recommended for `deregistering`)**
+
+During graceful shutdown, cleanup timeouts should not block the shutdown process. The FSM proceeds to terminal state with a warning.
+
+```text
+deregistering --[timeout]--> DEREGISTRATION_COMPLETE --> deregistered
+```
+
+#### Timeout vs. Failure Distinction
+
+| Scenario | Trigger | Recovery Path |
+|----------|---------|---------------|
+| Effect returns error | `*_FAILED` | Normal retry logic applies |
+| Effect times out | `*_FAILED` (via Orchestrator) | Same retry logic, but may need longer timeout |
+| Effect hangs indefinitely | Orchestrator timeout trigger | Cancel pending effect, transition to failure |
+
+**Important**: The Reducer cannot distinguish between a timeout and an explicit failure - both result in the same trigger. The Orchestrator should log timeout events distinctly for observability.
+
+#### Timeout Metrics
+
+The Orchestrator should emit metrics for timeout events:
+
+```yaml
+metrics:
+  - name: registration_state_timeout_total
+    type: counter
+    labels: [state, trigger_emitted]
+    description: "Count of state timeout events by state and resulting trigger"
+
+  - name: registration_state_duration_ms
+    type: histogram
+    labels: [state, outcome]
+    description: "Duration spent in each state, labeled by outcome (success/timeout/failure)"
+```
 
 ### FSM Subcontract Configuration
 
@@ -1115,8 +1467,9 @@ fsm_subcontract:
   state_machine_version: { major: 1, minor: 0, patch: 0 }
   description: "Dual Registration FSM for Consul and PostgreSQL"
   initial_state: "unregistered"
-  terminal_states:
+  success_states:
     - "registered"
+  terminal_states:
     - "deregistered"
   error_states:
     - "partial_registered"
@@ -1144,6 +1497,27 @@ fsm_subcontract:
 | **Consul Errors** | `registering_consul` -> `partial_registered` | Retry Consul via `RETRY` |
 | **Partial Failures** | `partial_registered` | Retry failed component |
 | **Fatal Errors** | Any -> `failed` | Manual intervention or `ABANDON` |
+| **Guard Errors** | Any (contract load or runtime) | Fix guard expression or context data |
+| **Timeout Errors** | Operational states with `timeout_ms` | Increase timeout, fix blocking Effect, or manual intervention |
+| **Intent Emission Errors** | Any state with entry actions | Verify intent payload and target Effect availability |
+
+### Guard Error Details
+
+Guard errors can occur at two phases:
+
+1. **Contract Load-Time**: Malformed guard expressions (`GUARD_SYNTAX_ERROR`, `GUARD_INVALID_OPERATOR`, `GUARD_INVALID_FIELD`, `GUARD_INVALID_VALUE`) prevent the FSM contract from loading. These must be fixed in the contract definition before the FSM can be used.
+
+2. **Runtime**: Guard evaluation errors (`GUARD_EVALUATION_ERROR`, `GUARD_TYPE_ERROR`) occur during transition attempts. The transition is blocked and the FSM remains in its current state. Check the error context to identify the problematic guard and fix either the expression or the context data.
+
+### Timeout Error Details
+
+States with `timeout_ms` configured (`validating`: 5000ms, `registering_postgres`: 10000ms, `registering_consul`: 10000ms, `deregistering`: 15000ms) will trigger a `TIMEOUT_EXCEEDED` error if the state is not exited within the configured time.
+
+**Recovery**:
+- Check Effect node execution time and optimize if needed
+- Increase `timeout_ms` in state configuration if timeouts are legitimate
+- Investigate network or database connectivity issues for external dependencies
+- Consider triggering `FATAL_ERROR` if timeout indicates an unrecoverable condition
 
 ### Recovery Flows
 
