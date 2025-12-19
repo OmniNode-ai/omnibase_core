@@ -213,6 +213,16 @@ def serialize_error(error: ModelOnexError) -> TypedDictValidationErrorSerialized
 
 ---
 
+## 📖 Standards & Conventions
+
+**Canonical references and project-wide standards**
+
+| Document | Description | Status |
+|----------|-------------|--------|
+| [**ONEX Terminology Guide**](standards/onex_terminology.md) | Canonical definitions for Event, Intent, Action, Reducer, Orchestrator, Effect, Handler, Projection, Runtime | ✅ Complete |
+
+---
+
 ## 🔧 Specialized Topics
 
 **Deep dives into specific topics**

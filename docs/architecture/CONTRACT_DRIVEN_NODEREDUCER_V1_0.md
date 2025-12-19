@@ -5,6 +5,7 @@
 > **Status**: DRAFT - Ready for Implementation
 > **Ticket**: [OMN-495](https://linear.app/omninode/issue/OMN-495)
 > **Full Roadmap**: NODEREDUCER_VERSIONING_ROADMAP.md (to be created)
+> **See Also**: [ONEX Terminology Guide](../standards/onex_terminology.md) for canonical definitions of Reducer, Intent, and other ONEX concepts.
 
 ---
 

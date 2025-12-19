@@ -1,5 +1,7 @@
 # ModelAction Architecture
 
+> **See Also**: [ONEX Terminology Guide](../standards/onex_terminology.md) for canonical definitions. This document expands on the **Action** concept from the terminology guide.
+
 ## Overview
 
 **ModelAction** represents an Orchestrator-issued command in the ONEX Four-Node Architecture. Actions are the primary mechanism for coordinating distributed workflows with guaranteed single-writer semantics through lease management.

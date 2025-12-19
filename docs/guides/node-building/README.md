@@ -26,6 +26,8 @@ from omnibase_core.nodes import NodeCompute, NodeEffect, NodeReducer, NodeOrches
 # All nodes must use the FSM/workflow-driven implementations above
 ```
 
+> **Terminology Reference**: For canonical definitions of ONEX concepts (Event, Intent, Action, Reducer, Orchestrator, Effect, Handler, Projection, Runtime), see [ONEX Terminology Guide](../../standards/onex_terminology.md).
+
 ## What You'll Learn
 
 - **Fundamentals**: What nodes are and their role in the ONEX ecosystem

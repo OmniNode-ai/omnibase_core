@@ -1,5 +1,7 @@
 # ModelIntent Architecture
 
+> **See Also**: [ONEX Terminology Guide](../standards/onex_terminology.md) for canonical definitions. This document expands on the **Intent** concept from the terminology guide.
+
 ## Overview
 
 **ModelIntent** is a declarative side effect model that enables pure functional state machine (FSM) patterns in the ONEX 4-Node Architecture. Instead of executing side effects directly, nodes (particularly Reducers) emit Intents describing what side effects should occur. Effect nodes then consume and execute these Intents, maintaining strict separation between state transformation and side effect execution.
