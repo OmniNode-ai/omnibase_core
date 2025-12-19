@@ -32,6 +32,21 @@ Example:
     True
     >>> child.correlation_id == root.correlation_id
     True
+    >>>
+    >>> # Validate envelope fields before creation
+    >>> from omnibase_core.models.common.model_envelope import validate_envelope_fields
+    >>> result = validate_envelope_fields({
+    ...     "correlation_id": uuid4(),
+    ...     "entity_id": "node-processor-001",
+    ... })
+    >>> result.has_errors()
+    False
+    >>>
+    >>> # Validate a causation chain
+    >>> from omnibase_core.models.common.model_envelope import validate_causation_chain
+    >>> chain_valid = validate_causation_chain([root, child])
+    >>> chain_valid
+    True
 
 See Also:
     - ModelEnvelopePayload: Payload container for event data
@@ -67,6 +82,11 @@ class ModelEnvelope(BaseModel):
 
     Thread Safety:
         This model is immutable after creation (frozen=True) and thread-safe.
+
+    Performance:
+        All validation is O(1) - constant time complexity. The max_length=512
+        constraint on entity_id ensures bounded memory usage and prevents
+        database key overflow or message broker header size issues.
 
     Example:
         >>> envelope = ModelEnvelope(
@@ -298,6 +318,21 @@ class ModelEnvelope(BaseModel):
             True if this envelope's causation_id matches the other's message_id
         """
         return self.causation_id == other.message_id
+
+    def __repr__(self) -> str:
+        """Return a detailed string representation for debugging.
+
+        Returns:
+            A string with key envelope fields for debugging.
+        """
+        return (
+            f"ModelEnvelope("
+            f"message_id={self.message_id!r}, "
+            f"correlation_id={self.correlation_id!r}, "
+            f"causation_id={self.causation_id!r}, "
+            f"entity_id={self.entity_id!r}, "
+            f"emitted_at={self.emitted_at.isoformat()!r})"
+        )
 
 
 # -----------------------------------------------------------------------------

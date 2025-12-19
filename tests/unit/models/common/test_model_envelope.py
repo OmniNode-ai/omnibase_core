@@ -913,6 +913,49 @@ class TestModelEnvelopeEdgeCases:
         assert "timezone" in str(exc_info.value).lower()
 
 
+class TestModelEnvelopeRepr:
+    """Tests for __repr__ method."""
+
+    def test_repr_includes_all_fields(self) -> None:
+        """Test that __repr__ includes all key envelope fields."""
+        correlation_id = uuid4()
+        entity_id = "node-123"
+
+        envelope = ModelEnvelope(
+            correlation_id=correlation_id,
+            entity_id=entity_id,
+        )
+
+        repr_str = repr(envelope)
+
+        # Should include class name
+        assert "ModelEnvelope(" in repr_str
+
+        # Should include all key fields
+        assert "message_id=" in repr_str
+        assert "correlation_id=" in repr_str
+        assert "causation_id=" in repr_str
+        assert "entity_id=" in repr_str
+        assert "emitted_at=" in repr_str
+
+        # Should include actual values
+        assert str(correlation_id) in repr_str
+        assert entity_id in repr_str
+
+    def test_repr_is_readable(self) -> None:
+        """Test that __repr__ produces human-readable output."""
+        envelope = ModelEnvelope(
+            correlation_id=uuid4(),
+            entity_id="test-node",
+        )
+
+        repr_str = repr(envelope)
+
+        # Should be a single-line representation suitable for debugging
+        assert isinstance(repr_str, str)
+        assert len(repr_str) > 0
+
+
 class TestModelEnvelopeEquality:
     """Tests for equality and comparison."""
 
