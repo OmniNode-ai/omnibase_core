@@ -27,6 +27,19 @@ IntrospectionEvent -> Reducer (emits intents) -> Effects (execute) -> Orchestrat
 
 The Reducer is **pure** - it describes what should happen via Intent emission without performing I/O.
 
+### Dual Registration Order
+
+The FSM enforces a specific registration order:
+
+1. **PostgreSQL First** (source of truth): The node is registered in PostgreSQL first because it serves as the authoritative source of truth for node state. If PostgreSQL registration fails, no Consul registration is attempted.
+
+2. **Consul Second** (service discovery): After PostgreSQL succeeds, the node is registered in Consul for service discovery. If Consul fails after PostgreSQL succeeds, the FSM enters `partial_registered` state, allowing targeted retry of just the Consul component.
+
+This ordering ensures that:
+- The database always has an accurate record before the node becomes discoverable
+- Partial failures can be recovered with targeted retries
+- Service discovery only advertises nodes that are properly tracked in the database
+
 ---
 
 ## Table of Contents
@@ -45,7 +58,17 @@ The Reducer is **pure** - it describes what should happen via Intent emission wi
 
 ## States
 
-The Registration FSM defines 10 states across 6 state types:
+The Registration FSM defines 10 states across 6 state types.
+
+### State Type Terminology
+
+> **Important Distinction**: This FSM distinguishes between **success states** and **terminal states**:
+>
+> - **Success State** (`state_type: success`): A stable state indicating successful completion of the primary workflow goal. Success states may have outgoing transitions for graceful lifecycle management (e.g., shutdown). Example: `registered` allows `DEREGISTER` transition.
+>
+> - **Terminal State** (`state_type: terminal`): A final state with no outgoing transitions. Once entered, the FSM cannot leave this state. Example: `deregistered` has no outgoing transitions.
+>
+> The `is_terminal` field indicates whether a state has outgoing transitions (`false`) or not (`true`). A success state can have `is_terminal: false` if it allows graceful shutdown transitions.
 
 ### State Definitions
 
@@ -60,7 +83,7 @@ The Registration FSM defines 10 states across 6 state types:
 | `partial_registered` | error | No | Yes | Partial registration - one succeeded, one failed. Requires recovery. |
 | `deregistering` | operational | No | Yes | Emitting deregistration intents for graceful shutdown. |
 | `deregistered` | terminal | Yes | No | Fully deregistered from both systems. Terminal state. |
-| `failed` | error | No | Yes | Registration failed completely. Either both registration attempts failed, or a validation error occurred. |
+| `failed` | error | No | Yes | Registration failed completely because either both registration attempts failed or a validation error occurred. This state allows retry via the `RETRY` trigger. |
 
 ### State Details
 
@@ -116,7 +139,7 @@ validation_rules:
   - "consul_service_name.length >= 1"
 ```
 
-**Purpose**: Validates `ModelRegistrationPayload` before proceeding. Catches configuration errors early.
+**Purpose**: This state validates the `ModelRegistrationPayload` before proceeding with registration. Validation catches configuration errors early, ensuring that required fields are present and correctly formatted before attempting any external registrations.
 
 ---
 
@@ -161,7 +184,7 @@ validation_rules:
   - "postgres_applied == true"
 ```
 
-**Purpose**: Intermediate checkpoint confirming PostgreSQL registration before Consul. Enables partial recovery if Consul fails.
+**Purpose**: This is an intermediate checkpoint state that confirms PostgreSQL registration succeeded before proceeding to Consul. The checkpoint enables partial recovery if Consul registration subsequently fails, as the FSM knows that PostgreSQL was successfully registered and can retry only the Consul component.
 
 ---
 
@@ -215,6 +238,8 @@ validation_rules:
 
 **Purpose**: Success state. Node is fully discoverable and registered. Allows transition to `deregistering` for graceful shutdown via `DEREGISTER` trigger.
 
+> **Clarification**: The `registered` state is a **success state**, not a terminal state. It has `state_type: success` and `is_terminal: false` because it allows one outgoing transition (`DEREGISTER`) for graceful shutdown. This distinguishes it from the `deregistered` state, which is the true **terminal state** with `state_type: terminal` and `is_terminal: true` (no outgoing transitions). See [State Type Terminology](#state-type-terminology) for the full distinction.
+
 ---
 
 #### `partial_registered` (Error State)
@@ -239,7 +264,7 @@ validation_rules:
   - "postgres_applied != consul_applied"  # XOR condition
 ```
 
-**Purpose**: Recoverable error state when only one registration succeeded. Enables targeted retry of the failed component.
+**Purpose**: This is a recoverable error state indicating that exactly one registration succeeded while the other failed. The state enables targeted retry of only the failed component, avoiding redundant re-registration of the already-successful component. From this state, use `RETRY` to retry Consul (if PostgreSQL succeeded) or `RETRY_POSTGRES` to retry PostgreSQL (if Consul succeeded).
 
 ---
 
@@ -263,7 +288,7 @@ optional_data: []
 validation_rules: []
 ```
 
-**Purpose**: Graceful shutdown phase emitting deregistration intents. Cleans up both Consul and PostgreSQL.
+**Purpose**: This is the graceful shutdown phase where deregistration intents are emitted for both Consul and PostgreSQL. The FSM cleans up both systems in parallel, with the Orchestrator aggregating both deregistration outcomes before transitioning to the terminal `deregistered` state.
 
 **Note**: The `emit_consul_deregister_intent` and `emit_postgres_deregister_intent` entry actions are emitted in parallel. The Orchestrator aggregates both deregistration outcomes before transitioning to `deregistered`.
 
@@ -286,7 +311,9 @@ optional_data: []
 validation_rules: []
 ```
 
-**Purpose**: Terminal state. Node has been completely removed from service discovery and database.
+**Purpose**: This is the terminal state of the FSM, indicating that the node has been completely removed from both service discovery (Consul) and the database (PostgreSQL). Once the FSM reaches this state, no further transitions are possible, and the registration lifecycle is complete.
+
+> **Clarification**: The `deregistered` state is the **only true terminal state** in this FSM. It has `state_type: terminal` and `is_terminal: true`, meaning there are no outgoing transitions. Once the FSM reaches this state, the registration lifecycle is complete. This contrasts with `registered`, which is a success state that still allows graceful shutdown via `DEREGISTER`. See [State Type Terminology](#state-type-terminology) for the full distinction.
 
 ---
 
@@ -310,7 +337,7 @@ optional_data:
 validation_rules: []
 ```
 
-**Purpose**: This is the complete failure state for the registration workflow. The registration can be retried via the `RETRY` trigger.
+**Purpose**: This is the complete failure state for the registration workflow, entered when either validation fails, PostgreSQL registration fails (before Consul is attempted), or both registrations fail. Unlike `partial_registered`, this state indicates no successful registrations exist. The registration workflow can be retried from the beginning via the `RETRY` trigger (subject to the `retry_count < 3` guard), or the registration can be abandoned entirely via the `ABANDON` trigger.
 
 ---
 
@@ -860,14 +887,31 @@ Where:
 | Containment | `contains` | scalar value |
 | Pattern | `matches` | regex pattern (unquoted) |
 
-**Value Format Rules**:
-- **Booleans**: `true` or `false` (lowercase, unquoted)
-- **Numbers**: Integer or decimal (e.g., `3`, `3.14`, `-1`)
-- **Strings**: Unquoted alphanumeric identifiers (e.g., `passed`, `failed`, `production`)
-- **Arrays**: Bracket-enclosed, comma-separated (e.g., `[registering_postgres, registering_consul]`)
-- **Patterns**: Unquoted regex (e.g., `^node-.*`)
+**Value Literal Syntax**:
 
-**Case Sensitivity**: Field names and string values are case-sensitive. `Passed` != `passed`.
+| Type | Format | Examples | Notes |
+|------|--------|----------|-------|
+| **Boolean** | Lowercase `true` or `false` | `true`, `false` | Must be lowercase; `True`, `FALSE` are invalid |
+| **Number** | Integer or decimal, optional sign | `3`, `3.14`, `-1`, `0`, `-0.5` | Scientific notation not supported |
+| **String** | Unquoted alphanumeric with underscores | `passed`, `failed`, `in_progress` | No whitespace or special characters allowed |
+| **Array** | Bracket-enclosed, comma-separated | `[a, b, c]`, `[registering_postgres]` | Whitespace around brackets/commas is ignored |
+| **Pattern** | Unquoted regex (Python `re` flavor) | `^node-.*`, `^v[0-9]+\.[0-9]+$` | PCRE-compatible; see regex details below |
+
+**Regex Pattern Syntax**:
+- **Flavor**: Python `re` module (PCRE-compatible regular expressions)
+- **Anchoring**: Patterns are NOT automatically anchored. Use `^` for start-of-string and `$` for end-of-string.
+- **Case Sensitivity**: Patterns are case-sensitive by default. Use `(?i)` prefix for case-insensitive matching.
+- **Escaping**: Backslashes in YAML require double-escaping (e.g., `\\d` to match digits). In Python contract definitions, use raw strings or single escapes.
+- **Common Pattern Examples**:
+  ```text
+  ^node-.*                    # Starts with "node-"
+  .*_test$                    # Ends with "_test"
+  ^v[0-9]+\.[0-9]+\.[0-9]+$   # Semantic version (v1.2.3)
+  (?i)^production             # Case-insensitive prefix match
+  ^[a-z][a-z0-9_]*$           # Valid identifier format
+  ```
+
+**Case Sensitivity**: Field names and string values are case-sensitive. `Passed` != `passed`. Pattern matching is also case-sensitive unless the `(?i)` flag is used.
 
 **Examples by Operator Category**:
 ```text
@@ -998,7 +1042,7 @@ The FSM uses the following triggers to drive state transitions:
 | `RECOVERY_COMPLETE` | Orchestrator | Both components are now registered. This trigger is emitted when partial registration is resolved through retry. |
 | `DEREGISTER` | External | Shutdown signal received. Initiates graceful deregistration from both systems. |
 | `DEREGISTRATION_COMPLETE` | Orchestrator | Both deregistrations succeeded. This trigger is emitted after Consul and PostgreSQL cleanup is complete. |
-| `RETRY` | External/Internal | Initiates a retry after failure. This trigger can be invoked by operator intervention or by an automatic retry policy. |
+| `RETRY` | External/Internal | Initiates a retry after failure. This trigger can be invoked from `partial_registered` state (retries Consul registration via Transition 9) or from `failed` state (restarts full registration from `validating` via Transition 14). The trigger can be invoked by operator intervention or by an automatic retry policy, and is subject to the `retry_count < 3` guard. |
 | `RETRY_POSTGRES` | External | Retries PostgreSQL specifically. This trigger is used when Consul succeeded but PostgreSQL failed. |
 | `ABANDON` | External | Gives up on registration. This trigger transitions directly to `deregistered` without attempting cleanup. |
 | `FATAL_ERROR` | Internal | Unrecoverable error detected. This trigger catches unexpected failures from any non-terminal state. |
@@ -1463,12 +1507,12 @@ Timeout detection is the responsibility of the **Orchestrator**, not the Reducer
 
 When a timeout occurs, the Orchestrator should emit one of the following triggers based on severity:
 
-| Timeout Scenario | Recommended Trigger | Target State | Rationale |
-|-----------------|---------------------|--------------|-----------|
-| `validating` timeout | `FATAL_ERROR` | `failed` | Validation should be fast; timeout indicates system issue |
-| `registering_postgres` timeout | `POSTGRES_FAILED` | `failed` | Database unreachable; treat as failure |
-| `registering_consul` timeout | `CONSUL_FAILED` | `partial_registered` | Consul unreachable; PostgreSQL already succeeded |
-| `deregistering` timeout | `DEREGISTRATION_COMPLETE` | `deregistered` | Best-effort cleanup; proceed to terminal state |
+| State | Timeout | On Timeout | Rationale |
+|-------|---------|------------|-----------|
+| `validating` | 5s | Emit `FATAL_ERROR` -> `failed` | Validation should be fast; timeout indicates system issue |
+| `registering_postgres` | 10s | Emit `POSTGRES_FAILED` -> `failed` | Database unreachable; treat as failure |
+| `registering_consul` | 10s | Emit `CONSUL_FAILED` -> `partial_registered` | Consul unreachable; PostgreSQL already succeeded |
+| `deregistering` | 15s | Emit `DEREGISTRATION_COMPLETE` -> `deregistered` | Best-effort cleanup; proceed to terminal state |
 
 #### Orchestrator Timeout Monitoring
 
@@ -1641,6 +1685,138 @@ States with `timeout_ms` configured (`validating`: 5000ms, `registering_postgres
 - Investigate network or database connectivity issues for external dependencies
 - Consider triggering `FATAL_ERROR` if timeout indicates an unrecoverable condition
 
+### Intent Emission Error Details
+
+Intent emission errors occur when the Reducer fails to emit intents during a transition. This can happen during:
+- Entry actions on the target state
+- Exit actions on the source state
+- Transition actions (executed between exit and entry)
+- **CONTINUE trigger processing** (internal automatic progression)
+
+**Error Scenarios**:
+
+| Scenario | Trigger Context | Error Code | Recovery |
+|----------|-----------------|------------|----------|
+| Invalid intent payload | Any transition | `INTENT_PAYLOAD_ERROR` | Fix payload construction in Reducer |
+| Target Effect unavailable | Any transition | `EFFECT_NOT_FOUND` | Verify Effect registration in container |
+| Intent serialization failure | Any transition | `INTENT_SERIALIZATION_ERROR` | Check intent model compatibility |
+| CONTINUE processing failure | `POSTGRES_SUCCEEDED` -> `registering_consul` | `INTERNAL_TRANSITION_ERROR` | Transition to `failed` via `FATAL_ERROR` |
+
+#### CONTINUE Trigger Failure Handling
+
+The `CONTINUE` trigger is a special case for intent emission errors because it is an internal mechanism with no external retry source. This section details the specific error handling requirements for CONTINUE failures.
+
+**Why CONTINUE Failures Are Special**:
+
+1. **No External Retry Available**: Unlike `POSTGRES_FAILED` or `CONSUL_FAILED` which can be retried via `RETRY` trigger from an external source, `CONTINUE` is internally generated by the Reducer itself. There is no external event to replay that would re-trigger CONTINUE processing.
+
+2. **Indicates System-Level Issue**: Failure during `CONTINUE` processing (after successfully completing `POSTGRES_SUCCEEDED` and transitioning through `postgres_registered`) suggests a fundamental system problem rather than a transient error:
+   - Intent construction logic bug in the Reducer
+   - Memory exhaustion during intent creation
+   - Corrupted FSM context preventing proper intent building
+   - Unexpected exception in intent serialization
+
+3. **PostgreSQL Already Succeeded**: At the point CONTINUE fails, PostgreSQL registration has already completed successfully. The system is in an inconsistent state where the database knows about the node but Consul does not.
+
+**Recovery Strategy**:
+
+When CONTINUE processing fails, the FSM should:
+
+1. **Transition to `failed` state via `FATAL_ERROR`**: Since CONTINUE is internal, the only appropriate response is to treat this as a fatal error requiring investigation.
+
+2. **Log comprehensive failure context**: The Orchestrator should capture:
+   - The `postgres_registered` checkpoint state (logically traversed even in single-step execution)
+   - The specific intent that failed to emit (e.g., `ModelConsulRegisterIntent`)
+   - FSM context at time of failure including `correlation_id`
+   - Exception details and stack trace
+
+3. **Emit failure metric**: Record `registration_internal_error` metric for alerting and dashboards.
+
+4. **Require operator intervention**: From `failed` state, operator can:
+   - Investigate the root cause of CONTINUE failure
+   - Trigger `RETRY` to restart full registration from `validating`
+   - Trigger `ABANDON` to give up and transition to `deregistered`
+
+**Implementation Pattern**:
+
+```python
+async def delta(
+    self, state: str, trigger: str, context: ModelFSMContext
+) -> tuple[str, list[ModelIntent]]:
+    if state == "registering_postgres" and trigger == "POSTGRES_SUCCEEDED":
+        try:
+            # Log checkpoint traversal (observability requirement)
+            checkpoint_log = ModelLogIntent(
+                kind="log_event",
+                level="DEBUG",
+                message="Checkpoint: postgres_registered (proceeding via CONTINUE)",
+                correlation_id=context.correlation_id,
+            )
+
+            # Build Consul registration intent for CONTINUE progression
+            consul_intent = ModelConsulRegisterIntent(
+                kind="consul.register",
+                service_id=context.consul_service_id,
+                service_name=context.consul_service_name,
+                correlation_id=context.correlation_id,
+            )
+
+            return "registering_consul", [
+                checkpoint_log,
+                ModelLogIntent(
+                    kind="log_event",
+                    level="INFO",
+                    message="PostgreSQL succeeded, proceeding to Consul",
+                ),
+                consul_intent,
+            ]
+
+        except Exception as e:
+            # CONTINUE processing failed - this is a fatal error
+            # Log with full context for debugging
+            self.logger.error(
+                "CONTINUE processing failed during POSTGRES_SUCCEEDED",
+                error=str(e),
+                error_type=type(e).__name__,
+                checkpoint_state="postgres_registered",
+                correlation_id=str(context.correlation_id),
+            )
+
+            # Transition to failed state with diagnostic intents
+            return "failed", [
+                ModelLogIntent(
+                    kind="log_event",
+                    level="CRITICAL",
+                    message=f"Internal transition error during CONTINUE: {e}",
+                    correlation_id=context.correlation_id,
+                ),
+                ModelMetricIntent(
+                    kind="log_metric",
+                    metric="registration_internal_error",
+                    value=1,
+                    labels={"phase": "continue_processing", "error_type": type(e).__name__},
+                ),
+            ]
+```
+
+**Observability Requirements**:
+
+Even with single-step execution (where `postgres_registered` is not externally observable as a pause point), implementations must:
+
+1. **Log checkpoint traversal**: Emit a DEBUG or INFO log when transitioning through `postgres_registered`. This creates an audit trail showing the logical state progression.
+
+2. **Log CONTINUE initiation**: Emit a log when CONTINUE processing begins. This helps distinguish between "never reached CONTINUE" and "CONTINUE processing failed".
+
+3. **Log failure with full context**: If CONTINUE fails, emit a CRITICAL log with:
+   - Checkpoint state (`postgres_registered`)
+   - Correlation ID for distributed tracing
+   - Exception type and message
+   - Relevant context fields
+
+4. **Emit metrics**: Record `registration_internal_error` counter with labels for phase and error type.
+
+**Logging Is Always Safe**: Since logging is performed through intent emission (not direct I/O), the Reducer remains pure. Log intents are processed by the Orchestrator and forwarded to the logging Effect. If even the log intent emission fails, the exception bubbles up and triggers the FATAL_ERROR path.
+
 ### Recovery Flows
 
 #### Scenario 1: PostgreSQL Fails First
@@ -1725,6 +1901,34 @@ registering_consul --[timeout, 10s]--> CONSUL_FAILED --> partial_registered
                                                               v
                                                        registering_consul -> ...
 ```
+
+#### Scenario 8: CONTINUE Processing Failure
+
+```text
+registering_postgres -> [POSTGRES_SUCCEEDED] -> postgres_registered (checkpoint)
+                                                        |
+                                               [CONTINUE processing fails]
+                                                        |
+                                                   FATAL_ERROR
+                                                        |
+                                                        v
+                                                     failed
+                                                        |
+                                       +----------------+----------------+
+                                       |                                 |
+                                     RETRY                            ABANDON
+                                       |                                 |
+                                       v                                 v
+                                   validating                      deregistered
+```
+
+**Context**: This scenario occurs when PostgreSQL registration succeeds but the internal CONTINUE trigger processing fails before Consul registration can begin. Since CONTINUE is an internal mechanism, there is no external event that can be replayed to retry the operation.
+
+**Recovery Options**:
+1. **RETRY**: Restarts the full registration workflow from `validating`. The PostgreSQL Effect will receive another upsert intent (idempotent operation).
+2. **ABANDON**: Transitions directly to `deregistered`, leaving PostgreSQL in an orphaned state (node record exists but node is not running). Cleanup may be required.
+
+**Investigation Required**: CONTINUE failures indicate a system-level bug. Before retrying, operators should investigate logs and metrics to identify the root cause.
 
 ---
 

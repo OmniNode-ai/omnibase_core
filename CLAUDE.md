@@ -76,6 +76,7 @@ When spawning polymorphic agents or AI assistants:
 - **ALWAYS** instruct them to use `poetry run` for Python commands
 - **NEVER** allow direct pip or python execution
 - **NEVER** run `git commit` or `git push` in background mode - always foreground
+- **NEVER** run agents in background mode (`run_in_background: true`) - run parallel polymorphic agents in the foreground instead by dispatching multiple agents in a single message
 
 ---
 
