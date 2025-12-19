@@ -70,6 +70,18 @@ The Registration FSM defines 10 states across 6 state types.
 >
 > The `is_terminal` field indicates whether a state has outgoing transitions (`false`) or not (`true`). A success state can have `is_terminal: false` if it allows graceful shutdown transitions.
 
+**Understanding `registered` vs `deregistered`**:
+
+| Field | `registered` | `deregistered` | Explanation |
+|-------|-------------|----------------|-------------|
+| `state_type` | `success` | `terminal` | `registered` is a workflow success; `deregistered` is a lifecycle endpoint |
+| `is_terminal` | `false` | `true` | `registered` has one outgoing transition (`DEREGISTER`); `deregistered` has none |
+| `is_recoverable` | `false` | `false` | Neither state allows error recovery (both are "final" in different senses) |
+
+**Why `registered` has `is_recoverable: false`**: The `is_recoverable` field indicates whether error recovery mechanisms (like `RETRY`) are applicable. Since `registered` is a success state (not an error state), recovery is not meaningful - there is nothing to recover from. The node has successfully completed registration. The only valid transition out of `registered` is intentional deregistration via `DEREGISTER`, not error recovery.
+
+**Why `registered` has `is_terminal: false`**: Although `registered` is a "final" success state for the registration workflow, it is not terminal in the FSM sense because it permits graceful lifecycle management. A fully registered node can still receive a shutdown signal (`DEREGISTER`) and transition to `deregistering`. This is intentional: success states should allow graceful shutdown without requiring error-based transitions.
+
 ### State Definitions
 
 | State Name | Type | Terminal? | Recoverable? | Description |
@@ -240,6 +252,38 @@ validation_rules:
 
 > **Clarification**: The `registered` state is a **success state**, not a terminal state. It has `state_type: success` and `is_terminal: false` because it allows one outgoing transition (`DEREGISTER`) for graceful shutdown. This distinguishes it from the `deregistered` state, which is the true **terminal state** with `state_type: terminal` and `is_terminal: true` (no outgoing transitions). See [State Type Terminology](#state-type-terminology) for the full distinction.
 
+#### Why `is_recoverable: false` for a Success State?
+
+The `registered` state has `is_recoverable: false`, which may seem counterintuitive since it allows the `DEREGISTER` transition. This section clarifies the semantics of `is_recoverable`:
+
+**What `is_recoverable` Means**:
+
+`is_recoverable` indicates whether the state represents an **error condition that can be recovered from** via retry or corrective action. It does NOT indicate whether the state has outgoing transitions.
+
+| Property | Meaning | `registered` Value |
+|----------|---------|-------------------|
+| `is_terminal` | Has no outgoing transitions | `false` (has `DEREGISTER` transition) |
+| `is_recoverable` | Represents an error that can be fixed | `false` (not an error state) |
+| `state_type` | Semantic category of the state | `success` (goal achieved) |
+
+**Why Success States Are Not Recoverable**:
+
+1. **No Error to Recover From**: The `registered` state indicates successful completion of the registration workflow. There is no error, failure, or issue to "recover" from.
+
+2. **Recovery vs. Lifecycle**: The `DEREGISTER` transition is a **lifecycle operation** (graceful shutdown), not a **recovery operation**. Recovery implies fixing something that went wrong; deregistration is a normal operational flow.
+
+3. **Contrast with Error States**: Error states like `partial_registered` and `failed` have `is_recoverable: true` because they represent failures that can be corrected via `RETRY` or `RETRY_POSTGRES` triggers.
+
+**Comparison Table**:
+
+| State | `state_type` | `is_recoverable` | Why? |
+|-------|--------------|------------------|------|
+| `registered` | success | false | Goal achieved, nothing to recover from |
+| `deregistered` | terminal | false | Final state, no transitions possible |
+| `partial_registered` | error | true | Error condition, can retry failed component |
+| `failed` | error | true | Error condition, can retry full workflow |
+| `registering_postgres` | operational | true | Transient state, can recover from timeout/failure |
+
 ---
 
 #### `partial_registered` (Error State)
@@ -291,6 +335,52 @@ validation_rules: []
 **Purpose**: This is the graceful shutdown phase where deregistration intents are emitted for both Consul and PostgreSQL. The FSM cleans up both systems in parallel, with the Orchestrator aggregating both deregistration outcomes before transitioning to the terminal `deregistered` state.
 
 **Note**: The `emit_consul_deregister_intent` and `emit_postgres_deregister_intent` entry actions are emitted in parallel. The Orchestrator aggregates both deregistration outcomes before transitioning to `deregistered`.
+
+#### Deregistration Failure Handling
+
+**Timeout Behavior**: If deregistration times out (exceeds `timeout_ms: 15000`), the FSM uses a **best-effort cleanup strategy**:
+
+1. **Proceed to Terminal State**: The Orchestrator emits `DEREGISTRATION_COMPLETE` even if one or both deregistrations failed or timed out. The FSM transitions to `deregistered` to allow the node to complete shutdown.
+
+2. **Rationale**: During graceful shutdown, blocking indefinitely on cleanup failures is counterproductive. The node needs to stop running regardless of cleanup success.
+
+**Potential Orphaned Resources**:
+
+When deregistration fails or times out, the following orphaned resources may exist:
+
+| Resource | Location | Symptoms | Remediation |
+|----------|----------|----------|-------------|
+| Service advertisement | Consul | Traffic routed to stopped node, health checks fail | Manual `consul services deregister` or wait for TTL expiry |
+| Node registration record | PostgreSQL | Node appears in database but is not running | Garbage collection job (see below) |
+
+**Garbage Collection Recommendation**:
+
+Implement a periodic garbage collection job to clean up orphaned registrations:
+
+```python
+# Example garbage collection query
+async def cleanup_orphaned_registrations(
+    max_age_seconds: int = 3600,
+) -> int:
+    """
+    Remove PostgreSQL registration records for nodes that have been
+    offline longer than max_age_seconds.
+
+    Returns number of records cleaned up.
+    """
+    query = """
+        DELETE FROM node_registrations
+        WHERE last_heartbeat < NOW() - INTERVAL '%s seconds'
+          AND status != 'deregistered'
+        RETURNING node_id
+    """
+    result = await db.execute(query, max_age_seconds)
+    return len(result)
+```
+
+**v1.0 Limitation - No `partial_deregistered` State**:
+
+> **Note**: This FSM does not implement a `partial_deregistered` error state (analogous to `partial_registered`). In v1.0, deregistration failures proceed directly to `deregistered` with best-effort cleanup. A future enhancement may add a `partial_deregistered` state for scenarios requiring guaranteed cleanup before shutdown completion.
 
 ---
 
@@ -551,6 +641,40 @@ actions:
 6. **Observability Note**: Even with single-step execution, implementations should log the transition through `postgres_registered` for debugging and audit purposes. The checkpoint state is logically traversed even if not externally observable as a pause point.
 
 7. **Error Handling**: If CONTINUE trigger processing fails (e.g., intent emission error during transition to `registering_consul`), the FSM should transition to `failed` state via `FATAL_ERROR`. Since CONTINUE is an internal mechanism with no external event to retry, failure during CONTINUE processing indicates a system-level issue that requires investigation. The Orchestrator should log the failure with full context including the `postgres_registered` checkpoint state.
+
+8. **Observability vs Latency Tradeoff**: Implementations must choose between single-step and two-step execution patterns. This choice involves a tradeoff between observability and latency:
+
+   **Latency Comparison**:
+
+   | Execution Pattern | Typical Latency | Event Bus Round-Trips |
+   |-------------------|-----------------|----------------------|
+   | **Single-step** | <10ms | 0 (internal) |
+   | **Two-step** | 50-100ms | 1 (additional round-trip) |
+
+   The latency difference comes from the additional event bus round-trip in two-step mode. In single-step mode, the `CONTINUE` trigger is processed synchronously within the same `delta()` call. In two-step mode, the Reducer returns at `postgres_registered`, an event is published to the event bus, and the runtime must invoke `delta()` again with the `CONTINUE` trigger.
+
+   **Crash Recovery Considerations**:
+
+   If a crash occurs between `postgres_registered` and `registering_consul` in two-step mode:
+   - The FSM state is persisted at `postgres_registered` (if `persistence_enabled: true`)
+   - On recovery, the FSM resumes from `postgres_registered` and awaits `CONTINUE`
+   - The Orchestrator must detect the recovery scenario and re-emit `CONTINUE`
+   - PostgreSQL registration is already complete (idempotent, so retry is safe)
+
+   In single-step mode, crashes during CONTINUE processing result in:
+   - FSM state remains at `registering_postgres` (pre-transition)
+   - On recovery, the entire transition is replayed from `registering_postgres`
+   - PostgreSQL upsert is re-attempted (idempotent operation)
+
+   **When to Choose Each Approach**:
+
+   | Approach | Recommended Environment | Rationale |
+   |----------|------------------------|-----------|
+   | **Single-step** (recommended) | Production | Lower latency (<10ms vs 50-100ms), simpler recovery, fewer moving parts |
+   | **Two-step** | Development/Debugging | Observable checkpoint state aids debugging; useful when tracing FSM behavior step-by-step |
+   | **Two-step** | High-reliability requirements | External checkpoint enables third-party monitoring of intermediate states |
+
+   **Recommendation**: Use single-step execution in production. The latency savings (40-90ms per registration) compound across high-throughput systems. Two-step execution is valuable during development or when debugging FSM behavior, as it makes the `postgres_registered` checkpoint externally observable.
 
 ---
 
@@ -863,18 +987,47 @@ Guards are conditions that must evaluate to `true` for a transition to occur.
 
 ### Guard Expression Syntax
 
-Guards use a strict 3-token expression format:
+Guards use a **strict 3-token expression format**:
 
 ```text
 <field> <operator> <value>
 ```
+
+**CRITICAL**: The expression format is EXACTLY 3 tokens separated by whitespace. This is a strict requirement, not a flexible format.
 
 Where:
 - **`<field>`**: Context field name (alphanumeric with underscores, must not start with a digit)
 - **`<operator>`**: One of the supported operators listed below
 - **`<value>`**: Literal value (boolean, number, string, or array)
 
-**Token Separation**: Tokens are separated by whitespace. The expression is split into exactly 3 parts.
+#### Token Separation Rules
+
+Tokens are separated by whitespace (spaces or tabs). The parser splits on whitespace first, then validates exactly 3 tokens.
+
+**Whitespace Handling**:
+- Multiple consecutive whitespace characters are treated as a single delimiter
+- Leading and trailing whitespace is trimmed before parsing
+- Tabs and spaces are equivalent whitespace delimiters
+
+**Valid Format Examples**:
+```text
+retry_count < 3                    # Standard spacing
+retry_count  <  3                  # Multiple spaces (valid, treated as single delimiter)
+  retry_count < 3                  # Leading whitespace (trimmed)
+retry_count	<	3                  # Tabs as delimiters (valid)
+```
+
+**Invalid Format Examples** (Common Mistakes):
+```text
+retry_count<3                      # INVALID: No whitespace around operator (1 token)
+postgres_applied==true             # INVALID: No whitespace around operator (1 token)
+retry_count < 3 extra              # INVALID: Too many tokens (4 tokens)
+retry_count                        # INVALID: Missing operator and value (1 token)
+retry_count <                      # INVALID: Missing value (2 tokens)
+< 3                                # INVALID: Missing field (2 tokens)
+```
+
+The parser rejects any expression that does not split into exactly 3 whitespace-delimited tokens.
 
 **Valid Operators**:
 
@@ -940,7 +1093,59 @@ service_name matches ^node-.*
 version matches ^v[0-9]+\\.[0-9]+$
 ```
 
-**Nested Fields**: Guard expressions support only top-level field references (e.g., `postgres_applied`). Nested field access (e.g., `context.retry_count` or `payload.node_id`) is NOT supported in guard expressions. If nested data is required, the Reducer should flatten the context before guard evaluation.
+#### Nested Field Limitation (v1.0)
+
+> **v1.0 Limitation**: Guard expressions support only top-level field references. This is a **design decision for v1.0**, not a permanent restriction. Future versions may add nested field access if requirements emerge.
+
+Guard expressions support only top-level field references (e.g., `postgres_applied`). Nested field access (e.g., `context.retry_count` or `payload.node_id`) is NOT supported in guard expressions.
+
+**What Does NOT Work** (v1.0):
+
+```text
+# These expressions will fail contract validation with GUARD_INVALID_FIELD
+context.retry_count < 3              # Nested access via dot notation
+payload.node_id exists true          # Nested access via dot notation
+response.status_code == 200          # Nested access via dot notation
+config["timeout_ms"] > 5000          # Bracket notation not supported
+```
+
+**Workaround - Flatten Context Before Guard Evaluation**:
+
+The Reducer should flatten any nested structures into top-level fields in the FSM context before guard evaluation. This is the recommended pattern:
+
+```python
+# Example: Flattening context before guard evaluation
+def prepare_context_for_guards(
+    raw_context: ModelRegistrationContext,
+) -> dict[str, Any]:
+    """Flatten nested structures for guard evaluation."""
+    return {
+        # Top-level fields (guards can reference these)
+        "postgres_applied": raw_context.postgres_result.applied,
+        "consul_applied": raw_context.consul_result.applied,
+        "retry_count": raw_context.retry_state.count,
+        "validation_result": raw_context.validation.status,
+        "node_id": raw_context.payload.node_id,
+        "deployment_id": raw_context.payload.deployment_id,
+        # Error fields (flattened from nested error objects)
+        "postgres_error": raw_context.postgres_result.error_message,
+        "consul_error": raw_context.consul_result.error_message,
+    }
+```
+
+**Why This Limitation Exists**:
+
+1. **Simplicity**: 3-token format (`field operator value`) is easy to parse, validate, and reason about
+2. **Performance**: No need for recursive field resolution at runtime
+3. **Predictability**: All guard fields are explicit and visible at contract load time
+4. **Debugging**: Flattened context is easier to log and inspect
+
+**Future Enhancement** (post-v1.0): If nested field access becomes a strong requirement, a future version may introduce:
+- Dot notation support: `payload.node_id exists true`
+- JSONPath-like syntax: `$.context.retry_count < 3`
+- Bracket notation: `response["status"] == "ok"`
+
+This would require updates to the guard parser and contract validation logic.
 
 ### Guard Validation Rules
 
@@ -985,9 +1190,18 @@ When the FSM contract is loaded, all guard expressions are validated for syntact
 
 **Edge Case Examples**:
 ```python
-# Whitespace handling
-"  retry_count   <   3  "       # Valid - extra whitespace is trimmed
-"retry_count< 3"                # GUARD_SYNTAX_ERROR: operator attached to field
+# Whitespace handling - VALID examples
+"  retry_count   <   3  "       # Valid - leading/trailing whitespace is trimmed
+"retry_count    <    3"         # Valid - multiple spaces treated as single delimiter
+"retry_count\t<\t3"             # Valid - tabs are equivalent to spaces
+
+# Whitespace handling - INVALID examples
+"retry_count<3"                 # GUARD_SYNTAX_ERROR: no whitespace creates 1 token
+"retry_count< 3"                # GUARD_SYNTAX_ERROR: operator attached to field (2 tokens)
+"retry_count <3"                # GUARD_SYNTAX_ERROR: operator attached to value (2 tokens)
+"postgres_applied==true"        # GUARD_SYNTAX_ERROR: no whitespace creates 1 token
+"retry_count < 3\n"             # Behavior: trailing newline is trimmed (Valid)
+"retry_count < 3 "              # Valid - trailing space is trimmed
 
 # Case sensitivity
 "PostgresApplied == true"       # Valid syntax, but field name is case-sensitive
@@ -1024,6 +1238,83 @@ At runtime, guards are validated when evaluated against the FSM context:
 - For `exists`/`not_exists` operators: Undefined fields return appropriate boolean
 - For other operators: Guard evaluation returns `false`, transition is blocked
 - No exception is raised for undefined fields (fail-safe behavior)
+
+#### Guard Validation Flow Diagram
+
+The following diagram shows the complete validation flow for guard expressions, from input parsing through acceptance or rejection:
+
+```text
+Expression Input
+     │
+     ▼
+┌──────────────────────┐
+│ Trim leading/trailing│
+│ whitespace           │
+└──────────┬───────────┘
+           │
+           ▼
+┌──────────────────────┐
+│ Split on whitespace  │
+│ (spaces/tabs)        │
+└──────────┬───────────┘
+           │
+           ▼
+┌──────────────────────┐
+│ Exactly 3 tokens?    │──No──▶ GUARD_SYNTAX_ERROR
+└──────────┬───────────┘        "Expression must have exactly
+           │ Yes                 3 whitespace-separated tokens"
+           ▼
+┌──────────────────────┐
+│ Token 1: Valid       │
+│ field name?          │──No──▶ GUARD_INVALID_FIELD
+│ (alphanumeric/_,     │        "Field name must be valid
+│  no leading digit)   │         identifier"
+└──────────┬───────────┘
+           │ Yes
+           ▼
+┌──────────────────────┐
+│ Token 2: Valid       │
+│ operator?            │──No──▶ GUARD_INVALID_OPERATOR
+│ (==,!=,<,>,<=,>=,    │        "Unknown operator"
+│  exists, in, etc.)   │
+└──────────┬───────────┘
+           │ Yes
+           ▼
+┌──────────────────────┐
+│ Token 3: Valid       │
+│ value literal?       │──No──▶ GUARD_INVALID_VALUE
+│ (bool/num/str/array) │        "Cannot parse value"
+└──────────┬───────────┘
+           │ Yes
+           ▼
+  Contract Load: Guard Accepted
+           │
+           ▼ (at runtime)
+┌──────────────────────┐
+│ Field exists in      │
+│ FSM context?         │──No──▶ Guard returns false
+└──────────┬───────────┘        (transition blocked)
+           │ Yes
+           ▼
+┌──────────────────────┐
+│ Type compatible      │
+│ with operator?       │──No──▶ GUARD_TYPE_ERROR
+└──────────┬───────────┘
+           │ Yes
+           ▼
+┌──────────────────────┐
+│ Evaluate expression  │
+│ against context      │
+└──────────┬───────────┘
+           │
+           ▼
+     true / false
+     (transition allowed / blocked)
+```
+
+**Validation Phases**:
+1. **Contract Load-Time** (top section): Validates syntax, operator, field name format, and value format. Errors here prevent the FSM contract from loading.
+2. **Runtime** (bottom section): Validates field existence in context and type compatibility. Errors here block the transition but allow the FSM to continue operating.
 
 ### Trigger Catalog
 
@@ -1294,22 +1585,34 @@ During execution, the Reducer validates:
 
 ### Validation Errors
 
-| Error Code | Phase | Description | Recovery |
-|------------|-------|-------------|----------|
-| `VALIDATION_ERROR` | Runtime | Payload failed validation | Fix payload, retry |
-| `INVALID_TRANSITION` | Runtime | No valid transition from current state | Check guards, fix state |
-| `STATE_MISMATCH` | Runtime | Current state doesn't match expected | Reset FSM |
-| `RETRY_EXHAUSTED` | Runtime | Maximum retry count exceeded | Manual intervention |
-| `GUARD_FAILED` | Runtime | Required guard condition not satisfied | Fix context, retry |
-| `GUARD_SYNTAX_ERROR` | Contract Load | Expression doesn't follow 3-token format | Fix guard expression syntax in contract |
-| `GUARD_INVALID_OPERATOR` | Contract Load | Operator not in supported set | Use supported operator from operator set |
-| `GUARD_INVALID_FIELD` | Contract Load | Field name is not a valid identifier | Fix field name (alphanumeric, underscores, no leading digits) |
-| `GUARD_INVALID_VALUE` | Contract Load | Value cannot be parsed | Fix value format (boolean, number, string, or array literal) |
-| `GUARD_EVALUATION_ERROR` | Runtime | Unsupported operator at runtime | Fix guard expression in contract |
-| `GUARD_TYPE_ERROR` | Runtime | Type mismatch during evaluation | Ensure field type matches operator expectations |
-| `GUARD_FIELD_UNDEFINED` | Runtime | Referenced field not in context | Ensure context populated before transition (see note) |
-| `TIMEOUT_EXCEEDED` | Runtime | State timeout exceeded | Check Effect execution time, increase timeout or fix blocking issue |
-| `INTENT_EMISSION_FAILED` | Runtime | Failed to emit intent during transition | Check intent payload, verify target Effect exists |
+| Error Code | Phase | Severity | Description | Recovery |
+|------------|-------|----------|-------------|----------|
+| `VALIDATION_ERROR` | Runtime | Error | Payload failed validation | Fix payload, retry |
+| `INVALID_TRANSITION` | Runtime | Error | No valid transition from current state | Check guards, fix state |
+| `STATE_MISMATCH` | Runtime | Error | Current state doesn't match expected | Reset FSM |
+| `RETRY_EXHAUSTED` | Runtime | Warning | Maximum retry count exceeded | Manual intervention |
+| `GUARD_FAILED` | Runtime | Warning | Required guard condition not satisfied | Fix context, retry |
+| `GUARD_SYNTAX_ERROR` | Contract Load | Critical | Expression doesn't follow 3-token format | Fix guard expression syntax in contract |
+| `GUARD_INVALID_OPERATOR` | Contract Load | Critical | Operator not in supported set | Use supported operator from operator set |
+| `GUARD_INVALID_FIELD` | Contract Load | Critical | Field name is not a valid identifier | Fix field name (alphanumeric, underscores, no leading digits) |
+| `GUARD_INVALID_VALUE` | Contract Load | Critical | Value cannot be parsed | Fix value format (boolean, number, string, or array literal) |
+| `GUARD_EVALUATION_ERROR` | Runtime | Error | Unsupported operator at runtime | Fix guard expression in contract |
+| `GUARD_TYPE_ERROR` | Runtime | Error | Type mismatch during evaluation | Ensure field type matches operator expectations |
+| `GUARD_FIELD_UNDEFINED` | Runtime | Warning | Referenced field not in context | Ensure context populated before transition (see note) |
+| `TIMEOUT_EXCEEDED` | Runtime | Error | State timeout exceeded | Check Effect execution time, increase timeout or fix blocking issue |
+| `INTENT_EMISSION_FAILED` | Runtime | Error | Failed to emit intent during transition | Check intent payload, verify target Effect exists |
+| `INTENT_PAYLOAD_ERROR` | Runtime | Error | Intent payload is invalid or malformed | Fix payload construction in Reducer; verify required fields are present |
+| `EFFECT_NOT_FOUND` | Runtime | Critical | Target Effect node is unavailable or not registered | Verify Effect registration in container; check service discovery |
+| `INTENT_SERIALIZATION_ERROR` | Runtime | Error | Intent cannot be serialized for transmission | Check intent model compatibility; ensure all fields are serializable |
+| `INTERNAL_TRANSITION_ERROR` | Runtime | Critical | Error during internal transitions (e.g., CONTINUE) | Transition to `failed` via `FATAL_ERROR`; requires investigation |
+
+**Severity Level Definitions**:
+
+| Severity | Meaning | Behavior | Action Required |
+|----------|---------|----------|-----------------|
+| **Warning** | Non-blocking issue | Logged but does not prevent transition; FSM continues operating | Monitor logs; address at convenience |
+| **Error** | Blocking issue | Prevents the specific transition but allows retry; FSM remains operational | Fix the issue and retry the transition |
+| **Critical** | System failure | Prevents FSM from loading (Contract Load) or indicates fundamental system failure (Runtime) | Immediate investigation and remediation required |
 
 **Note on `GUARD_FIELD_UNDEFINED`**: This error code is available for strict mode implementations. By default, undefined fields cause guard evaluation to return `false` (fail-safe behavior) rather than raising an exception. Implementations may choose to raise `GUARD_FIELD_UNDEFINED` in strict validation mode when `strict_validation_enabled: true` is set in the FSM subcontract.
 
@@ -1373,6 +1676,14 @@ The retry limit is enforced through the guard condition `retry_count < 3` on ret
 **Maximum Retry Value**: `3`
 
 The FSM allows a maximum of 3 retry attempts before considering the registration permanently failed. This value balances recovery resilience with avoiding infinite retry loops.
+
+**Guard Semantics**: The guard `retry_count < 3` permits attempts when `retry_count` is 0, 1, or 2. This means:
+- **Attempt 0**: First retry (`retry_count = 0` before increment, `retry_count = 1` after)
+- **Attempt 1**: Second retry (`retry_count = 1` before increment, `retry_count = 2` after)
+- **Attempt 2**: Third and final retry (`retry_count = 2` before increment, `retry_count = 3` after)
+- **Attempt 3+**: Guard fails, no retry allowed (`retry_count >= 3`)
+
+The counter is incremented **during** the retry transition (not before the guard check). Thus, after 3 successful retry transitions, `retry_count = 3` and subsequent RETRY triggers are blocked.
 
 **Triggers That Increment the Counter**:
 
@@ -1471,6 +1782,43 @@ When the Reducer returns without a state change (guard failed), the Orchestrator
    - Trigger `RETRY_EXHAUSTED` to move to `failed` state (Transition 17)
    - Trigger `ABANDON` to move to `deregistered` (automatic cleanup)
    - Alert operators for manual intervention
+
+**Detecting Guard Failure**: The Orchestrator detects guard failure by comparing the state before and after invoking the Reducer's `delta()` function:
+
+```python
+async def handle_retry_with_exhaustion_detection(
+    self,
+    reducer: ProtocolReducer,
+    current_state: str,
+    trigger: str,
+    context: ModelFSMContext,
+) -> tuple[str, list[ModelIntent]]:
+    """Handle RETRY trigger with guard failure detection."""
+    # Invoke Reducer
+    new_state, intents = await reducer.delta(current_state, trigger, context)
+
+    # Detect guard failure: state unchanged after RETRY trigger
+    if new_state == current_state and trigger in ("RETRY", "RETRY_POSTGRES"):
+        # Guard likely failed - check if retry exhausted
+        if context.retry_count >= 3:
+            self.logger.warning(
+                "Retry exhausted detected",
+                current_state=current_state,
+                retry_count=context.retry_count,
+                correlation_id=str(context.correlation_id),
+            )
+            # Emit RETRY_EXHAUSTED to transition to failed state
+            return await reducer.delta(
+                current_state, "RETRY_EXHAUSTED", context
+            )
+
+    return new_state, intents
+```
+
+**Key Detection Points**:
+1. **State unchanged**: `new_state == current_state` after `RETRY` or `RETRY_POSTGRES`
+2. **Counter at limit**: `retry_count >= 3` in context
+3. **Action**: Orchestrator emits `RETRY_EXHAUSTED` trigger to invoke Transition 17
 
 ### Timeout Handling
 
@@ -1621,6 +1969,186 @@ metrics:
     description: "Duration spent in each state, labeled by outcome (success/timeout/failure)"
 ```
 
+### Comprehensive Metrics Reference
+
+This section documents all metrics emitted by the Registration FSM, including their types, emission points, and alerting thresholds.
+
+#### Metric Definitions
+
+| Metric Name | Type | Emission Point | Description |
+|-------------|------|----------------|-------------|
+| `registration_postgres_success` | counter | `postgres_success` transition (Transition 4) | PostgreSQL upsert succeeded |
+| `registration_postgres_failure` | counter | `postgres_failure` transition (Transition 5) | PostgreSQL upsert failed |
+| `registration_complete` | counter | `consul_success` transition entry to `registered` (Transition 7) | Full dual registration succeeded |
+| `registration_partial` | counter | `consul_failure` transition entry to `partial_registered` (Transition 8) | Consul failed after PostgreSQL succeeded |
+| `registration_recovery_success` | counter | `partial_recovery_success` transition (Transition 11) | Recovered from partial registration |
+| `deregistration_complete` | counter | `deregistration_complete` transition entry to `deregistered` (Transition 13) | Full deregistration succeeded |
+| `registration_internal_error` | counter | CONTINUE processing failure or other internal errors | Fatal internal error during registration |
+| `registration_state_timeout_total` | counter | Orchestrator timeout detection | State exceeded configured `timeout_ms` |
+| `registration_state_duration_ms` | histogram | State exit (any transition) | Time spent in each state |
+
+#### Metric Details
+
+##### `registration_postgres_success` (counter)
+
+```yaml
+name: registration_postgres_success
+type: counter
+labels: [node_id, deployment_id, environment]
+emitted_by: Reducer (via intent) -> Orchestrator -> Metrics Effect
+emission_point: Entry action on `postgres_registered` state (after POSTGRES_SUCCEEDED trigger)
+description: "Incremented when PostgreSQL upsert registration succeeds"
+```
+
+**When Emitted**: After the PostgreSQL Effect returns success and the FSM transitions from `registering_postgres` to `postgres_registered`.
+
+---
+
+##### `registration_postgres_failure` (counter)
+
+```yaml
+name: registration_postgres_failure
+type: counter
+labels: [node_id, deployment_id, environment, error_type]
+emitted_by: Reducer (via intent) -> Orchestrator -> Metrics Effect
+emission_point: Transition action on `postgres_failure` transition (Transition 5)
+description: "Incremented when PostgreSQL upsert registration fails"
+```
+
+**When Emitted**: After the PostgreSQL Effect returns failure and the FSM transitions from `registering_postgres` to `failed`.
+
+---
+
+##### `registration_complete` (counter)
+
+```yaml
+name: registration_complete
+type: counter
+labels: [node_id, deployment_id, environment]
+emitted_by: Reducer (via intent) -> Orchestrator -> Metrics Effect
+emission_point: Entry action on `registered` state (after CONSUL_SUCCEEDED trigger)
+description: "Incremented when full dual registration (PostgreSQL + Consul) succeeds"
+```
+
+**When Emitted**: After the Consul Effect returns success and the FSM transitions from `registering_consul` to `registered`.
+
+---
+
+##### `registration_partial` (counter)
+
+```yaml
+name: registration_partial
+type: counter
+labels: [node_id, deployment_id, environment, failed_component]
+emitted_by: Reducer (via intent) -> Orchestrator -> Metrics Effect
+emission_point: Entry action on `partial_registered` state (after CONSUL_FAILED trigger)
+description: "Incremented when Consul registration fails after PostgreSQL succeeded"
+```
+
+**When Emitted**: After the Consul Effect returns failure and the FSM transitions from `registering_consul` to `partial_registered`.
+
+**Alerting Threshold**:
+- **Warning**: `registration_partial` > 5 per minute indicates systematic Consul connectivity issues
+
+---
+
+##### `registration_recovery_success` (counter)
+
+```yaml
+name: registration_recovery_success
+type: counter
+labels: [node_id, deployment_id, environment, recovered_component]
+emitted_by: Reducer (via intent) -> Orchestrator -> Metrics Effect
+emission_point: Transition action on `partial_recovery_success` transition (Transition 11)
+description: "Incremented when partial registration is recovered via retry"
+```
+
+**When Emitted**: After a successful retry from `partial_registered` results in both components being registered.
+
+---
+
+##### `deregistration_complete` (counter)
+
+```yaml
+name: deregistration_complete
+type: counter
+labels: [node_id, deployment_id, environment]
+emitted_by: Reducer (via intent) -> Orchestrator -> Metrics Effect
+emission_point: Entry action on `deregistered` state (after DEREGISTRATION_COMPLETE trigger)
+description: "Incremented when full deregistration succeeds"
+```
+
+**When Emitted**: After both Consul and PostgreSQL deregistration Effects complete and the FSM transitions to `deregistered`.
+
+---
+
+##### `registration_internal_error` (counter)
+
+```yaml
+name: registration_internal_error
+type: counter
+labels: [node_id, deployment_id, environment, phase, error_type]
+emitted_by: Reducer (via intent) -> Orchestrator -> Metrics Effect
+emission_point: CONTINUE processing failure, intent emission failure, or other internal errors
+description: "Incremented when an internal error occurs during registration (not external Effect failure)"
+```
+
+**When Emitted**: When internal FSM processing fails (e.g., CONTINUE trigger fails, intent construction fails). This is distinct from external Effect failures.
+
+**Alerting Threshold**:
+- **Critical**: `registration_internal_error` > 0 requires immediate investigation (indicates code bug or system issue)
+
+---
+
+##### `registration_state_timeout_total` (counter)
+
+```yaml
+name: registration_state_timeout_total
+type: counter
+labels: [state, trigger_emitted, node_id, deployment_id]
+emitted_by: Orchestrator (directly)
+emission_point: When Orchestrator detects state timeout exceeded
+description: "Count of state timeout events by state and resulting trigger"
+```
+
+**When Emitted**: When the Orchestrator detects that a state has exceeded its configured `timeout_ms` value.
+
+**Alerting Threshold**:
+- **Warning**: `registration_state_timeout_total` > 10 per minute indicates infrastructure issues (network, database, Consul)
+
+---
+
+##### `registration_state_duration_ms` (histogram)
+
+```yaml
+name: registration_state_duration_ms
+type: histogram
+labels: [state, outcome, node_id]
+buckets: [10, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 30000]
+emitted_by: Orchestrator (directly)
+emission_point: On every state exit (successful transition or timeout)
+description: "Duration spent in each state, labeled by outcome (success/timeout/failure)"
+```
+
+**When Emitted**: Every time the FSM exits a state (via any transition, timeout, or error).
+
+**Outcome Labels**:
+- `success`: Normal transition to next state
+- `timeout`: State exceeded `timeout_ms`
+- `failure`: Transition to error state (`failed` or `partial_registered`)
+
+---
+
+#### Alerting Thresholds Summary
+
+| Metric | Threshold | Severity | Action |
+|--------|-----------|----------|--------|
+| `registration_partial` | > 5/min | Warning | Investigate Consul connectivity |
+| `registration_internal_error` | > 0 | Critical | Immediate investigation required |
+| `registration_state_timeout_total` | > 10/min | Warning | Check infrastructure health |
+| `registration_postgres_failure` | > 10/min | Warning | Check PostgreSQL health |
+| `registration_state_duration_ms` p99 | > 5000ms | Warning | Performance degradation |
+
 ### FSM Subcontract Configuration
 
 ```yaml
@@ -1674,6 +2202,72 @@ Guard errors can occur at two phases:
    - `GUARD_EVALUATION_ERROR`: Unsupported operator encountered at runtime
    - `GUARD_TYPE_ERROR`: Type mismatch during evaluation (e.g., comparing string to number)
    - `GUARD_FIELD_UNDEFINED`: Referenced field not found in context (only raised in strict mode when `strict_validation_enabled: true`; default behavior returns `false` and blocks transition without raising an exception)
+
+#### Context Preprocessing for Nested Fields
+
+Guard expressions only support top-level field references. If your data model contains nested fields that need to be evaluated in guards, the Reducer must flatten the context before guard evaluation.
+
+**Problem**: Nested field access is NOT supported in guard expressions.
+
+```python
+# NOT SUPPORTED - will fail guard parsing
+"context.retry_count < 3"          # Nested via dot notation
+"payload.node_id exists true"      # Nested via dot notation
+"event.payload.status == active"   # Deep nesting
+```
+
+**Solution**: Flatten nested context before guard evaluation.
+
+```python
+# BEFORE (nested structure - cannot be used in guards):
+context = ModelFSMContext(
+    payload=ModelRegistrationPayload(
+        node_id="node-123",
+        consul_service_id="svc-456",
+    ),
+    retry_count=2,
+)
+
+# AFTER (flattened for guard evaluation):
+flattened_context = {
+    "node_id": context.payload.node_id,           # Extracted from nested payload
+    "consul_service_id": context.payload.consul_service_id,
+    "retry_count": context.retry_count,           # Already top-level
+    "postgres_applied": context.postgres_applied,
+    "consul_applied": context.consul_applied,
+}
+
+# Now guards can reference these directly:
+# "node_id exists true"       - WORKS
+# "retry_count < 3"           - WORKS
+# "postgres_applied == true"  - WORKS
+```
+
+**Implementation Pattern**:
+
+The Reducer should implement a `flatten_context()` method that extracts all guard-relevant fields to top-level keys before invoking the FSM transition logic:
+
+```python
+def flatten_context(self, context: ModelFSMContext) -> dict[str, Any]:
+    """Flatten nested context for guard evaluation."""
+    flattened = {
+        # Extract from nested payload
+        "node_id": context.payload.node_id if context.payload else None,
+        "consul_service_id": context.payload.consul_service_id if context.payload else None,
+        "postgres_record": context.payload.postgres_record if context.payload else None,
+        # Top-level state fields
+        "retry_count": context.retry_count,
+        "postgres_applied": context.postgres_applied,
+        "consul_applied": context.consul_applied,
+        "validation_result": context.validation_result,
+        # Error fields (optional)
+        "postgres_error": context.postgres_error,
+        "consul_error": context.consul_error,
+    }
+    return {k: v for k, v in flattened.items() if v is not None}
+```
+
+**When to Flatten**: Context should be flattened at the entry point of the `delta()` function, before any guard conditions are evaluated. This ensures all guards have access to the expected fields.
 
 ### Timeout Error Details
 
@@ -1816,6 +2410,188 @@ Even with single-step execution (where `postgres_registered` is not externally o
 4. **Emit metrics**: Record `registration_internal_error` counter with labels for phase and error type.
 
 **Logging Is Always Safe**: Since logging is performed through intent emission (not direct I/O), the Reducer remains pure. Log intents are processed by the Orchestrator and forwarded to the logging Effect. If even the log intent emission fails, the exception bubbles up and triggers the FATAL_ERROR path.
+
+### Error Handling Best Practices
+
+This section documents robust error handling patterns for Registration FSM implementations.
+
+#### 1. Always Check Guard Conditions Before Attempting Transitions
+
+Before attempting a transition, validate that all guard conditions will pass. This prevents wasted work and provides clearer error messages:
+
+```python
+async def safe_transition(
+    self,
+    current_state: str,
+    trigger: str,
+    context: ModelFSMContext,
+) -> tuple[str, list[ModelIntent]]:
+    """Attempt transition with pre-validation of guards."""
+    # Pre-check guards for retry transitions
+    if trigger in ("RETRY", "RETRY_POSTGRES"):
+        if context.retry_count >= 3:
+            self.logger.warning(
+                "Transition blocked by guard",
+                trigger=trigger,
+                guard="retry_count < 3",
+                actual_value=context.retry_count,
+                correlation_id=str(context.correlation_id),
+            )
+            # Return early with informative intent
+            return current_state, [
+                ModelLogIntent(
+                    kind="log_event",
+                    level="WARNING",
+                    message=f"Guard blocked {trigger}: retry_count={context.retry_count} >= 3",
+                    correlation_id=context.correlation_id,
+                )
+            ]
+
+    # Proceed with transition
+    return await self.delta(current_state, trigger, context)
+```
+
+#### 2. Log Errors with Correlation IDs for Distributed Tracing
+
+All error logs must include the `correlation_id` from the FSM context to enable distributed tracing across the system:
+
+```python
+# CORRECT: Include correlation_id in all error logs
+self.logger.error(
+    "PostgreSQL registration failed",
+    error=str(exception),
+    error_type=type(exception).__name__,
+    current_state=current_state,
+    node_id=context.node_id,
+    correlation_id=str(context.correlation_id),  # REQUIRED
+)
+
+# INCORRECT: Missing correlation_id breaks distributed tracing
+self.logger.error(
+    "PostgreSQL registration failed",
+    error=str(exception),
+)
+```
+
+**Correlation ID Guidelines**:
+- Always preserve the `correlation_id` from the originating `IntrospectionEvent`
+- Pass `correlation_id` through all intents for Effect node logging
+- Include `correlation_id` in metrics labels where possible
+- Use `correlation_id` as the primary key for log aggregation queries
+
+#### 3. Emit Metrics for All Error Conditions
+
+Every error condition should emit a metric for alerting and dashboards:
+
+```python
+# Define standard error metrics
+ERROR_METRICS = {
+    "validation_failed": "registration_validation_error_total",
+    "postgres_failed": "registration_postgres_error_total",
+    "consul_failed": "registration_consul_error_total",
+    "retry_exhausted": "registration_retry_exhausted_total",
+    "timeout_exceeded": "registration_timeout_total",
+    "fatal_error": "registration_fatal_error_total",
+}
+
+async def emit_error_metric(
+    self,
+    error_type: str,
+    context: ModelFSMContext,
+    labels: dict[str, str] | None = None,
+) -> ModelMetricIntent:
+    """Emit standardized error metric."""
+    metric_name = ERROR_METRICS.get(error_type, "registration_unknown_error_total")
+    default_labels = {
+        "node_id": context.node_id or "unknown",
+        "deployment_id": context.deployment_id or "unknown",
+        "environment": context.environment or "unknown",
+        "error_type": error_type,
+    }
+    if labels:
+        default_labels.update(labels)
+
+    return ModelMetricIntent(
+        kind="log_metric",
+        metric=metric_name,
+        value=1,
+        labels=default_labels,
+        correlation_id=context.correlation_id,
+    )
+```
+
+#### 4. Use Structured Error Context
+
+When logging errors, include all relevant context as structured fields (not embedded in the message string):
+
+```python
+# CORRECT: Structured error context
+self.logger.error(
+    "Registration transition failed",
+    from_state=current_state,
+    trigger=trigger,
+    to_state=target_state,
+    error_code=error.error_code.value,
+    error_message=str(error),
+    retry_count=context.retry_count,
+    postgres_applied=context.postgres_applied,
+    consul_applied=context.consul_applied,
+    correlation_id=str(context.correlation_id),
+)
+
+# INCORRECT: Unstructured error context (harder to query)
+self.logger.error(
+    f"Registration transition failed from {current_state} to {target_state} "
+    f"on trigger {trigger}: {error}"
+)
+```
+
+#### 5. Graceful Degradation Patterns
+
+When non-critical operations fail, degrade gracefully rather than failing the entire workflow:
+
+```python
+async def emit_intents_with_fallback(
+    self,
+    intents: list[ModelIntent],
+    context: ModelFSMContext,
+) -> list[ModelIntent]:
+    """Emit intents with graceful degradation for non-critical failures."""
+    emitted = []
+    for intent in intents:
+        try:
+            emitted.append(intent)
+        except Exception as e:
+            if intent.kind.startswith("log_"):
+                # Logging failures are non-critical - continue
+                self.logger.warning(
+                    "Non-critical intent emission failed",
+                    intent_kind=intent.kind,
+                    error=str(e),
+                    correlation_id=str(context.correlation_id),
+                )
+            else:
+                # Critical intents (registration, etc.) must not be swallowed
+                raise
+    return emitted
+```
+
+#### 6. Idempotent Error Recovery
+
+Design error recovery to be idempotent, allowing safe retries:
+
+```python
+# PostgreSQL upsert is idempotent - safe to retry
+# The Effect should use ON CONFLICT DO UPDATE semantics
+INSERT INTO node_registry (node_id, deployment_id, ...)
+VALUES ($1, $2, ...)
+ON CONFLICT (node_id) DO UPDATE SET
+    deployment_id = EXCLUDED.deployment_id,
+    updated_at = NOW();
+
+# Consul registration is idempotent - safe to retry
+# Re-registering the same service_id updates the existing registration
+```
 
 ### Recovery Flows
 
