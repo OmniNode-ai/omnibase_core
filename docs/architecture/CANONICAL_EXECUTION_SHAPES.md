@@ -857,12 +857,17 @@ All nodes must include tests demonstrating:
 
 | Document | Purpose |
 |----------|---------|
+| [**Execution Shape Examples**](EXECUTION_SHAPE_EXAMPLES.md) | Practical code examples for each canonical shape |
 | [ONEX Four-Node Architecture](ONEX_FOUR_NODE_ARCHITECTURE.md) | Complete architecture overview |
 | [ModelIntent Architecture](MODEL_INTENT_ARCHITECTURE.md) | Intent pattern for Reducer → Effect |
 | [ModelAction Architecture](MODEL_ACTION_ARCHITECTURE.md) | Action pattern for Orchestrator → nodes |
 | [Node Purity Guarantees](NODE_PURITY_GUARANTEES.md) | Purity enforcement for COMPUTE/REDUCER |
 | [Node Types Guide](../guides/node-building/02_NODE_TYPES.md) | When to use each node type |
 | [Node Building Guide](../guides/node-building/README.md) | How to implement nodes |
+
+### See Also
+
+For practical, runnable code examples demonstrating each execution shape, see **[Execution Shape Examples](EXECUTION_SHAPE_EXAMPLES.md)**.
 
 ---
 

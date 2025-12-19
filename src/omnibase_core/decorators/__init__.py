@@ -4,6 +4,7 @@ Provides decorators to mark legitimate exceptions to ONEX strict typing standard
 """
 
 from .allow_dict_any import allow_dict_any
+from .decorator_enforce_execution_shape import enforce_execution_shape
 from .error_handling import (
     io_error_handling,
     standard_error_handling,
@@ -23,6 +24,7 @@ __all__ = [
     "allow_dict_str_any",
     "allow_legacy_pattern",
     "allow_mixed_types",
+    "enforce_execution_shape",
     "exclude_from_onex_standards",
     "io_error_handling",
     "standard_error_handling",

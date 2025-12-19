@@ -94,6 +94,7 @@ omnibase_core/docs/
 | [Architecture Overview](architecture/OVERVIEW.md) | High-level system design | ✅ Complete |
 | [**Four-Node Pattern**](architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) | Core ONEX architecture ⭐ **Excellent!** | ✅ Complete |
 | [**Canonical Execution Shapes**](architecture/CANONICAL_EXECUTION_SHAPES.md) | Allowed/forbidden data flow patterns ⭐ **NEW** | ✅ Complete |
+| [**Execution Shape Examples**](architecture/EXECUTION_SHAPE_EXAMPLES.md) | Practical examples for each canonical shape ⭐ **NEW** | ✅ Complete |
 | [**Message Topic Mapping**](architecture/MESSAGE_TOPIC_MAPPING.md) | Event/Command/Intent to topic routing rules ⭐ **NEW** | ✅ Complete |
 | [**Node Purity Guarantees**](architecture/NODE_PURITY_GUARANTEES.md) | Purity enforcement for COMPUTE/REDUCER nodes | ✅ Complete |
 | [**Node Class Hierarchy**](architecture/NODE_CLASS_HIERARCHY.md) | ModelService* vs Node* vs NodeCoreBase ⭐ **CRITICAL** | ✅ Complete |
