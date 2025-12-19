@@ -31,6 +31,7 @@ Architecture Decision Records (ADRs) document significant architectural decision
 | [ADR-001](./ADR-001-protocol-based-di-architecture.md) | Protocol-Based Dependency Injection Architecture | 🟢 **IMPLEMENTED** | 2025-10-30 | DI, ServiceRegistry, Protocols, Pydantic |
 | [ADR-002](./ADR-002-context-mutability-design-decision.md) | Context Mutability Design Decision | 🟢 **IMPLEMENTED** | 2025-12-15 | Immutability, Workflow State, FSM Snapshots |
 | [ADR-003](./ADR-003-reducer-output-exception-consistency.md) | Reducer Output Exception Consistency | 🟢 **IMPLEMENTED** | 2025-12-16 | Error Handling, Validation, Sentinel Pattern |
+| [ADR-004](./ADR-004-registration-trigger-architecture.md) | Registration Trigger Architecture | 🟢 **ACCEPTED** | 2025-12-19 | Registration, Events, Commands, Orchestrator |
 
 ---
 
@@ -60,6 +61,9 @@ Architecture Decision Records (ADRs) document significant architectural decision
 ### Error Handling & Validation
 - ADR-003: Reducer Output Exception Consistency
 
+### Node Registration & Discovery
+- ADR-004: Registration Trigger Architecture
+
 ---
 
 ## How to Use This Index
@@ -84,7 +88,7 @@ When creating a new ADR:
 
 ---
 
-**Last Updated**: 2025-12-16
-**Total ADRs**: 3 implemented
+**Last Updated**: 2025-12-19
+**Total ADRs**: 4 (3 implemented, 1 accepted)
 **Total Risk Records**: 1 mitigated
 **Correlation ID**: `95cac850-05a3-43e2-9e57-ccbbef683f43`

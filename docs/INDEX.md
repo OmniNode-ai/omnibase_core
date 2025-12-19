@@ -108,6 +108,7 @@ omnibase_core/docs/
 | [Protocol Architecture](architecture/PROTOCOL_ARCHITECTURE.md) | Protocol design and compliance | ✅ Complete |
 | [Effect Timeout Behavior](architecture/EFFECT_TIMEOUT_BEHAVIOR.md) | Timeout check points and retry behavior | ✅ Complete |
 | [Ecosystem Directory Structure](architecture/ECOSYSTEM_DIRECTORY_STRUCTURE.md) | Repository organization and patterns across ONEX ecosystem | ✅ Available |
+| [**Registration Trigger Design**](architecture/REGISTRATION_TRIGGER_DESIGN.md) | Registration trigger architecture and design patterns | ✅ Complete |
 
 ### Architecture Decision Records (ADRs)
 
@@ -119,6 +120,7 @@ omnibase_core/docs/
 | [ADR-002: Context Mutability](architecture/decisions/ADR-002-context-mutability-design-decision.md) | Design decision on context mutability | ✅ Complete |
 | [**ADR-012: Validator Error Handling**](architecture/adr/ADR-012-VALIDATOR-ERROR-HANDLING.md) | ModelOnexError in Pydantic validators with future compatibility ⭐ **v0.4.0** | ✅ Complete |
 | [ADR-003: Reducer Output Exception Consistency](architecture/decisions/ADR-003-reducer-output-exception-consistency.md) | Sentinel value pattern and exception handling strategy | ✅ Complete |
+| [ADR-004: Registration Trigger Architecture](architecture/decisions/ADR-004-registration-trigger-architecture.md) | Registration trigger selection (event vs command) | ✅ Complete |
 | [RISK-009: CI Workflow Modification](architecture/decisions/RISK-009-ci-workflow-modification-risk.md) | Risk assessment for CI workflow changes | ✅ Complete |
 
 ---
@@ -353,20 +355,20 @@ def serialize_error(error: ModelOnexError) -> TypedDictValidationErrorSerialized
 |----------|----------|-------------|---------|-------|
 | **Getting Started** | 3 | 0 | 0 | 3 |
 | **Node Building** | 10 | 0 | 0 | 10 |
-| **Architecture** | 16 | 0 | 0 | 16 |
+| **Architecture** | 18 | 0 | 0 | 18 |
 | **Reference** | 14 | 0 | 0 | 14 |
 | **Standards** | 1 | 0 | 0 | 1 |
 | **Specialized** | 13 | 0 | 0 | 13 |
-| **TOTAL** | **56** | **0** | **0** | **56** |
+| **TOTAL** | **59** | **0** | **0** | **59** |
 
-**Overall Progress**: 100% complete (56/56 documents)
+**Overall Progress**: 100% complete (59/59 documents)
 
 ### Priority Items
 
 **Completed**:
 - ✅ Node Building Guide (10/10 complete)
 - ✅ Getting Started guides (3/3 complete)
-- ✅ Architecture documentation (13/13 complete)
+- ✅ Architecture documentation (18/18 complete)
 - ✅ Testing Guide
 - ✅ Integration Testing Guide
 - ✅ All node tutorials (COMPUTE, EFFECT, REDUCER, ORCHESTRATOR)
