@@ -60,7 +60,7 @@ All ONEX Kafka topics **MUST** follow this three-part structure:
 
 ```python
 # Pattern definition
-TOPIC_PATTERN = r"^onex\.[a-z][a-z0-9_-]*\.(commands|events|intents|snapshots)$"
+TOPIC_PATTERN = r"^onex\.[a-z][a-z0-9-]*[a-z0-9]\.(commands|events|intents|snapshots)$|^onex\.[a-z]\.(commands|events|intents|snapshots)$"
 
 # Valid examples
 "onex.registration.commands"
@@ -78,7 +78,7 @@ TOPIC_PATTERN = r"^onex\.[a-z][a-z0-9_-]*\.(commands|events|intents|snapshots)$"
 ### Naming Rules
 
 1. **Prefix**: Always `onex.` (lowercase)
-2. **Domain**: Lowercase alphanumeric with optional hyphens/underscores
+2. **Domain**: Lowercase alphanumeric with optional hyphens (no underscores, cannot end with hyphen)
 3. **Type**: One of: `commands`, `events`, `intents`, `snapshots`
 4. **Separator**: Single dot (`.`) between components
 5. **Case**: All lowercase
@@ -492,7 +492,8 @@ topic = get_topic("registration", "events")  # "onex.registration.events"
 import re
 
 VALID_TOPIC_PATTERN = re.compile(
-    r"^onex\.[a-z][a-z0-9_-]*\.(commands|events|intents|snapshots)$"
+    r"^onex\.[a-z][a-z0-9-]*[a-z0-9]\.(commands|events|intents|snapshots)$"
+    r"|^onex\.[a-z]\.(commands|events|intents|snapshots)$"
 )
 
 def validate_topic_name(topic: str) -> bool:
@@ -502,7 +503,7 @@ def validate_topic_name(topic: str) -> bool:
 # Valid
 assert validate_topic_name("onex.registration.events")
 assert validate_topic_name("onex.my-domain.commands")
-assert validate_topic_name("onex.my_domain.intents")
+assert validate_topic_name("onex.my-service.intents")
 
 # Invalid
 assert not validate_topic_name("registration.events")      # Missing prefix
