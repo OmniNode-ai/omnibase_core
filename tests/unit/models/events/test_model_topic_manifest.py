@@ -333,7 +333,7 @@ class TestModelTopicConfigFactoryMethods:
 
         assert config.topic_type == EnumTopicType.COMMANDS
         assert config.cleanup_policy == EnumCleanupPolicy.DELETE
-        assert config.retention_ms == 86400000  # 24 hours
+        assert config.retention_ms == 604800000  # 7 days per ONEX standard
         assert config.partitions == 3
         assert config.replication_factor == 1
 
@@ -343,7 +343,7 @@ class TestModelTopicConfigFactoryMethods:
 
         assert config.topic_type == EnumTopicType.EVENTS
         assert config.cleanup_policy == EnumCleanupPolicy.DELETE
-        assert config.retention_ms == 604800000  # 7 days
+        assert config.retention_ms == 2592000000  # 30 days per ONEX standard
         assert config.partitions == 3
         assert config.replication_factor == 1
 
@@ -353,7 +353,7 @@ class TestModelTopicConfigFactoryMethods:
 
         assert config.topic_type == EnumTopicType.INTENTS
         assert config.cleanup_policy == EnumCleanupPolicy.DELETE
-        assert config.retention_ms == 172800000  # 48 hours
+        assert config.retention_ms == 86400000  # 1 day per ONEX standard
         assert config.partitions == 3
         assert config.replication_factor == 1
 
@@ -363,7 +363,7 @@ class TestModelTopicConfigFactoryMethods:
 
         assert config.topic_type == EnumTopicType.SNAPSHOTS
         assert config.cleanup_policy == EnumCleanupPolicy.COMPACT_DELETE
-        assert config.retention_ms is None  # Indefinite for compacted
+        assert config.retention_ms == 604800000  # 7 days per ONEX standard
         assert config.partitions == 3
         assert config.replication_factor == 1
 
@@ -381,18 +381,22 @@ class TestModelTopicConfigFactoryMethods:
                 config.partitions = 10  # type: ignore[misc]
 
     def test_factory_retention_ordering(self):
-        """Test that retention follows logical ordering: commands < intents < events."""
+        """Test that retention follows logical ordering: intents < commands/snapshots < events."""
         commands = ModelTopicConfig.commands_default()
         intents = ModelTopicConfig.intents_default()
         events = ModelTopicConfig.events_default()
+        snapshots = ModelTopicConfig.snapshots_default()
 
-        # Commands have shortest retention (24h)
-        # Intents have medium retention (48h)
-        # Events have longest retention (7 days)
-        assert commands.retention_ms is not None
+        # Per ONEX standard:
+        # Intents have shortest retention (1 day)
+        # Commands and Snapshots have same retention (7 days)
+        # Events have longest retention (30 days)
         assert intents.retention_ms is not None
+        assert commands.retention_ms is not None
+        assert snapshots.retention_ms is not None
         assert events.retention_ms is not None
-        assert commands.retention_ms < intents.retention_ms < events.retention_ms
+        assert intents.retention_ms < commands.retention_ms < events.retention_ms
+        assert commands.retention_ms == snapshots.retention_ms
 
 
 class TestModelTopicManifestInstantiation:

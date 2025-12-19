@@ -11,13 +11,27 @@ Types:
 - events: Immutable event logs
 - intents: Coordination intents
 - snapshots: Compacted state snapshots
+
+Thread Safety:
+    All constants in this module are immutable strings and thread-safe.
+    The topic_name() function is pure and thread-safe.
 """
+
+import re
 
 # Topic Type Suffixes
 TOPIC_TYPE_COMMANDS = "commands"
 TOPIC_TYPE_EVENTS = "events"
 TOPIC_TYPE_INTENTS = "intents"
 TOPIC_TYPE_SNAPSHOTS = "snapshots"
+
+# Valid topic types set for validation
+_VALID_TOPIC_TYPES = frozenset(
+    {TOPIC_TYPE_COMMANDS, TOPIC_TYPE_EVENTS, TOPIC_TYPE_INTENTS, TOPIC_TYPE_SNAPSHOTS}
+)
+
+# Domain validation pattern: lowercase alphanumeric with hyphens, starting with letter
+_DOMAIN_PATTERN = re.compile(r"^[a-z][a-z0-9-]*$")
 
 # Domain Names
 DOMAIN_REGISTRATION = "registration"
@@ -28,7 +42,39 @@ DOMAIN_AUDIT = "audit"
 
 
 def topic_name(domain: str, topic_type: str) -> str:
-    """Generate standardized topic name: onex.<domain>.<type>."""
+    """
+    Generate standardized topic name: onex.<domain>.<type>.
+
+    Args:
+        domain: Domain name (lowercase alphanumeric with hyphens, starting with letter).
+        topic_type: Topic type (commands, events, intents, or snapshots).
+
+    Returns:
+        Full topic name in format onex.<domain>.<type>.
+
+    Raises:
+        ValueError: If domain or topic_type is invalid.
+
+    Examples:
+        >>> topic_name("registration", "events")
+        'onex.registration.events'
+        >>> topic_name("my-service", "commands")
+        'onex.my-service.commands'
+    """
+    if not domain:
+        # error-ok: ValueError is standard for input validation in constants modules
+        raise ValueError("Domain cannot be empty")
+    if not _DOMAIN_PATTERN.match(domain):
+        # error-ok: ValueError is standard for input validation in constants modules
+        raise ValueError(
+            f"Invalid domain '{domain}': must be lowercase alphanumeric with hyphens, "
+            "starting with a letter (pattern: ^[a-z][a-z0-9-]*$)"
+        )
+    if topic_type not in _VALID_TOPIC_TYPES:
+        # error-ok: ValueError is standard for input validation in constants modules
+        raise ValueError(
+            f"Invalid topic_type '{topic_type}': must be one of {sorted(_VALID_TOPIC_TYPES)}"
+        )
     return f"onex.{domain}.{topic_type}"
 
 

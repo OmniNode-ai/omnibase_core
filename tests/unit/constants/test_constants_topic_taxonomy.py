@@ -96,6 +96,76 @@ class TestTopicNameFunction:
                 assert result.startswith("onex.")
 
 
+class TestTopicNameValidation:
+    """Test cases for topic_name() input validation."""
+
+    def test_empty_domain_raises_error(self):
+        """Test that empty domain raises ValueError."""
+        with pytest.raises(ValueError) as exc_info:
+            topic_name("", "events")
+        assert "empty" in str(exc_info.value).lower()
+
+    def test_uppercase_domain_raises_error(self):
+        """Test that uppercase domain raises ValueError."""
+        with pytest.raises(ValueError) as exc_info:
+            topic_name("Registration", "events")
+        assert "Invalid domain" in str(exc_info.value)
+
+    def test_domain_starting_with_number_raises_error(self):
+        """Test that domain starting with number raises ValueError."""
+        with pytest.raises(ValueError) as exc_info:
+            topic_name("1service", "events")
+        assert "Invalid domain" in str(exc_info.value)
+
+    def test_domain_with_underscore_raises_error(self):
+        """Test that domain with underscore raises ValueError."""
+        with pytest.raises(ValueError) as exc_info:
+            topic_name("my_service", "events")
+        assert "Invalid domain" in str(exc_info.value)
+
+    def test_domain_with_dot_raises_error(self):
+        """Test that domain with dot raises ValueError."""
+        with pytest.raises(ValueError) as exc_info:
+            topic_name("my.service", "events")
+        assert "Invalid domain" in str(exc_info.value)
+
+    def test_domain_with_space_raises_error(self):
+        """Test that domain with space raises ValueError."""
+        with pytest.raises(ValueError) as exc_info:
+            topic_name("my service", "events")
+        assert "Invalid domain" in str(exc_info.value)
+
+    def test_invalid_topic_type_raises_error(self):
+        """Test that invalid topic type raises ValueError."""
+        with pytest.raises(ValueError) as exc_info:
+            topic_name("test", "logs")
+        assert "Invalid topic_type" in str(exc_info.value)
+        assert "logs" in str(exc_info.value)
+
+    def test_empty_topic_type_raises_error(self):
+        """Test that empty topic type raises ValueError."""
+        with pytest.raises(ValueError) as exc_info:
+            topic_name("test", "")
+        assert "Invalid topic_type" in str(exc_info.value)
+
+    def test_uppercase_topic_type_raises_error(self):
+        """Test that uppercase topic type raises ValueError."""
+        with pytest.raises(ValueError) as exc_info:
+            topic_name("test", "Events")
+        assert "Invalid topic_type" in str(exc_info.value)
+
+    def test_valid_domain_patterns(self):
+        """Test various valid domain patterns pass validation."""
+        # Single letter
+        assert topic_name("a", "events") == "onex.a.events"
+        # Alphanumeric
+        assert topic_name("service1", "events") == "onex.service1.events"
+        # Hyphenated
+        assert topic_name("my-service", "events") == "onex.my-service.events"
+        # Complex
+        assert topic_name("my-service-v2", "events") == "onex.my-service-v2.events"
+
+
 class TestTopicTypeSuffixConstants:
     """Test cases for topic type suffix constants."""
 

@@ -19,6 +19,14 @@ class ModelTopicConfig(BaseModel):
 
     Defines retention, compaction, partitioning, and replication
     settings for domain topics in the ONEX framework.
+
+    Thread Safety:
+        This model is immutable (frozen=True) and thread-safe after instantiation.
+        Instances can be safely shared across threads without synchronization.
+
+    See Also:
+        - docs/standards/onex_topic_taxonomy.md for retention defaults
+        - docs/guides/THREADING.md for thread safety guidelines
     """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
@@ -60,12 +68,15 @@ class ModelTopicConfig(BaseModel):
         Default configuration for commands topics.
 
         Commands are imperative requests that require exactly-once processing.
-        Short retention (24h) since commands are processed promptly.
+        Default retention is 7 days per ONEX topic taxonomy standard.
+
+        Note:
+            This model is immutable (frozen) and thread-safe after instantiation.
         """
         return cls(
             topic_type=EnumTopicType.COMMANDS,
             cleanup_policy=EnumCleanupPolicy.DELETE,
-            retention_ms=86400000,  # 24 hours
+            retention_ms=604800000,  # 7 days per ONEX standard
             partitions=3,
             replication_factor=1,
         )
@@ -76,12 +87,15 @@ class ModelTopicConfig(BaseModel):
         Default configuration for events topics.
 
         Events are immutable logs of domain state changes.
-        Longer retention (7 days) for replay and audit purposes.
+        Default retention is 30 days for replay and audit purposes per ONEX standard.
+
+        Note:
+            This model is immutable (frozen) and thread-safe after instantiation.
         """
         return cls(
             topic_type=EnumTopicType.EVENTS,
             cleanup_policy=EnumCleanupPolicy.DELETE,
-            retention_ms=604800000,  # 7 days
+            retention_ms=2592000000,  # 30 days per ONEX standard
             partitions=3,
             replication_factor=1,
         )
@@ -92,12 +106,15 @@ class ModelTopicConfig(BaseModel):
         Default configuration for intents topics.
 
         Intents coordinate workflow actions between nodes.
-        Medium retention (48h) for retry and recovery.
+        Default retention is 1 day for short-lived coordination per ONEX standard.
+
+        Note:
+            This model is immutable (frozen) and thread-safe after instantiation.
         """
         return cls(
             topic_type=EnumTopicType.INTENTS,
             cleanup_policy=EnumCleanupPolicy.DELETE,
-            retention_ms=172800000,  # 48 hours
+            retention_ms=86400000,  # 1 day per ONEX standard
             partitions=3,
             replication_factor=1,
         )
@@ -109,11 +126,15 @@ class ModelTopicConfig(BaseModel):
 
         Snapshots store latest state per entity key.
         Compacted to retain only the most recent value per key.
+        Default retention is 7 days per ONEX standard.
+
+        Note:
+            This model is immutable (frozen) and thread-safe after instantiation.
         """
         return cls(
             topic_type=EnumTopicType.SNAPSHOTS,
             cleanup_policy=EnumCleanupPolicy.COMPACT_DELETE,
-            retention_ms=None,  # Indefinite for compacted topics
+            retention_ms=604800000,  # 7 days per ONEX standard
             partitions=3,
             replication_factor=1,
         )

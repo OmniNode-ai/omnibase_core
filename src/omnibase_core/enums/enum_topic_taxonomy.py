@@ -3,6 +3,10 @@ Topic Taxonomy Enums for ONEX Domain Topic Configuration.
 
 Defines the enumeration types for topic categories and cleanup policies
 per OMN-939 topic taxonomy specification.
+
+Thread Safety:
+    All enums in this module are immutable and thread-safe.
+    Enum values can be safely shared across threads without synchronization.
 """
 
 from enum import Enum, unique

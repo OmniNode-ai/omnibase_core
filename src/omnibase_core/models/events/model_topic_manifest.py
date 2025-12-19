@@ -22,11 +22,19 @@ class ModelTopicManifest(BaseModel):
     for a domain, including their configurations. Used by topic
     creation scripts and runtime routing.
 
+    Thread Safety:
+        This model is immutable (frozen=True) and thread-safe after instantiation.
+        Instances can be safely shared across threads without synchronization.
+
     Example:
         manifest = ModelTopicManifest.registration_domain()
         for topic_type in manifest.topics:
             topic_name = manifest.get_topic_name(topic_type)
             # Creates: onex.registration.events, onex.registration.commands, etc.
+
+    See Also:
+        - docs/standards/onex_topic_taxonomy.md for topic naming conventions
+        - docs/guides/THREADING.md for thread safety guidelines
     """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
