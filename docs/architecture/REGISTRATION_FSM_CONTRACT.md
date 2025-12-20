@@ -135,12 +135,12 @@ This design is intentional: success states should allow graceful shutdown withou
 | State | `state_type` | `is_terminal` | `is_recoverable` | Outgoing Transitions |
 |-------|--------------|---------------|------------------|---------------------|
 | `unregistered` | initial | false | true | `REGISTER` |
-| `validating` | operational | false | true | `VALIDATION_SUCCESS`, `VALIDATION_FAILED` |
-| `registering_postgres` | operational | false | true | `POSTGRES_SUCCESS`, `POSTGRES_FAILED` |
-| `postgres_registered` | snapshot | false | true | `CONTINUE_REGISTRATION` |
-| `registering_consul` | operational | false | true | `CONSUL_SUCCESS`, `CONSUL_FAILED` |
+| `validating` | operational | false | true | `VALIDATION_PASSED`, `VALIDATION_FAILED` |
+| `registering_postgres` | operational | false | true | `POSTGRES_SUCCEEDED`, `POSTGRES_FAILED` |
+| `postgres_registered` | snapshot | false | true | `CONTINUE` |
+| `registering_consul` | operational | false | true | `CONSUL_SUCCEEDED`, `CONSUL_FAILED` |
 | `registered` | success | false | false | `DEREGISTER` (lifecycle, not recovery) |
-| `partial_registered` | error | false | true | `RETRY`, `RETRY_POSTGRES`, `ABANDON` |
+| `partial_registered` | error | false | true | `RETRY`, `RETRY_POSTGRES`, `RETRY_EXHAUSTED`, `ABANDON` |
 | `deregistering` | operational | false | true | `DEREGISTRATION_COMPLETE` |
 | `deregistered` | terminal | true | false | (none) |
 | `failed` | error | false | true | `RETRY`, `ABANDON` |
@@ -728,7 +728,7 @@ optional_data:
 validation_rules: []
 ```
 
-**Purpose**: This is the complete failure state for the registration workflow, entered when either validation fails, PostgreSQL registration fails (before Consul is attempted), or both registrations fail. Unlike `partial_registered`, this state indicates no successful registrations exist. The registration workflow can be retried from the beginning via the `RETRY` trigger (subject to the `retry_count < 3` guard), or the registration can be abandoned entirely via the `ABANDON` trigger.
+**Purpose**: This is the complete failure state for the registration workflow, entered when any of the following occur: (1) validation fails, (2) PostgreSQL registration fails before Consul is attempted, (3) both registrations fail, or (4) retry attempts in `partial_registered` state are exhausted (via `RETRY_EXHAUSTED` trigger from Transition 17). Unlike `partial_registered`, this state indicates that the FSM cannot make forward progress without operator intervention. The registration workflow can be retried from the beginning via the `RETRY` trigger (subject to the `retry_count < 3` guard), or the registration can be abandoned entirely via the `ABANDON` trigger.
 
 ---
 
@@ -990,6 +990,42 @@ actions:
    | **Debug FSM issues** | Two-step | 50-100ms | Can inspect state at `postgres_registered` before Consul registration |
 
    **Recommendation**: Use single-step execution in production. The latency savings (40-90ms per registration) compound across high-throughput systems. Two-step execution is valuable during development or when debugging FSM behavior, as it makes the `postgres_registered` checkpoint externally observable.
+
+9. **CONTINUE Trigger Recovery Disambiguation**:
+
+   > **IMPORTANT**: The term "recovery" in the CONTINUE trigger context has a **specific, narrow meaning** that differs from general FSM error recovery. This disambiguation is critical for correct implementation.
+
+   The CONTINUE trigger interacts with recovery in two distinct scenarios:
+
+   | Scenario | Type | When It Occurs | Mechanism | Recovery Source |
+   |----------|------|----------------|-----------|-----------------|
+   | **CONTINUE Processing Failure** | Retry-after-failure | Exception during CONTINUE processing while process is running | Transition to `failed` via `FATAL_ERROR`; then `RETRY` or `ABANDON` | Operator triggers `RETRY` (external) |
+   | **Crash During CONTINUE** | Crash-recovery | Process crashes between `postgres_registered` and `registering_consul` | FSM persistence + Orchestrator replay | Orchestrator detects recovery scenario (automatic) |
+
+   **Retry-After-Failure (CONTINUE Processing Failure)**:
+   - **Trigger**: Exception thrown during CONTINUE processing (e.g., intent construction fails)
+   - **Process State**: Running (not crashed)
+   - **FSM Behavior**: Immediately transition to `failed` via `FATAL_ERROR`
+   - **Recovery**: Operator investigates logs, then triggers `RETRY` (restarts from `validating`) or `ABANDON`
+   - **Why FATAL_ERROR?**: CONTINUE is internal - there is no external event to replay. The failure indicates a system-level bug requiring investigation.
+
+   **Crash-Recovery (Crash During CONTINUE)**:
+   - **Trigger**: Process terminates unexpectedly (SIGKILL, OOM, hardware failure)
+   - **Process State**: Dead; new process starts
+   - **FSM Behavior**: Depends on execution mode:
+     - **Single-step**: FSM state remains at `registering_postgres`; replay entire transition including PostgreSQL upsert (idempotent)
+     - **Two-step**: FSM state persisted at `postgres_registered`; Orchestrator re-emits `CONTINUE` to resume
+   - **Recovery**: Automatic via Orchestrator state replay; no operator intervention needed
+   - **Why Automatic?**: Crash recovery is infrastructure-level; the Orchestrator is designed to resume interrupted workflows.
+
+   **Key Distinction**: CONTINUE "recovery" is **never** about retrying the CONTINUE trigger itself. Either:
+   1. The process is running and CONTINUE failed -> `FATAL_ERROR` -> operator-driven `RETRY` from `validating`
+   2. The process crashed -> automatic Orchestrator replay based on persisted state
+
+   There is no mechanism to "retry just CONTINUE" because:
+   - CONTINUE is synthetic (not sourced from an external event that can be replayed)
+   - CONTINUE failures indicate bugs, not transient errors
+   - Crash recovery replays the entire transition, not individual triggers
 
 ---
 
@@ -1272,7 +1308,7 @@ actions:
       message: "Retry limit exhausted in partial_registered state"
 ```
 
-**Note**: This transition handles the case when retry attempts in `partial_registered` state have been exhausted. When `retry_count >= 3`, the guard on the `retry_consul` (Transition 9) and `retry_postgres` (Transition 10) transitions will fail. The Reducer should then emit a `RETRY_EXHAUSTED` trigger to move to the `failed` state, from which the operator can either retry the full workflow or abandon the registration.
+**Note**: This transition handles the case when retry attempts in `partial_registered` state have been exhausted. When `retry_count >= 3`, the guard on the `retry_consul` (Transition 9) and `retry_postgres` (Transition 10) transitions will fail. The **Orchestrator** (not the Reducer) must then emit a `RETRY_EXHAUSTED` trigger to move to the `failed` state, from which the operator can either retry the full workflow or abandon the registration. See [Retry Limit Enforcement](#retry-limit-enforcement) for the detection mechanism and implementation details.
 
 ---
 
@@ -1880,7 +1916,7 @@ The FSM uses the following triggers to drive state transitions:
 | `DEREGISTER` | External | This trigger indicates a shutdown signal was received. It initiates graceful deregistration from both systems. |
 | `DEREGISTRATION_COMPLETE` | Orchestrator | This trigger indicates both deregistrations succeeded. It is emitted after Consul and PostgreSQL cleanup is complete. |
 | `RETRY` | External/Internal | This trigger initiates a retry after failure. It can be invoked from `partial_registered` state (retries Consul registration via Transition 9) or from `failed` state (restarts full registration from `validating` via Transition 14). The trigger can be invoked by operator intervention or by an automatic retry policy, and is subject to the `retry_count < 3` guard. |
-| `RETRY_POSTGRES` | External | This trigger retries PostgreSQL specifically. It is used when Consul succeeded but PostgreSQL failed. |
+| `RETRY_POSTGRES` | External | This trigger retries PostgreSQL registration specifically from the `partial_registered` state via Transition 10. It is used when Consul succeeded but PostgreSQL failed (an unusual scenario that can occur during recovery operations). The trigger is subject to the `retry_count < 3` guard. |
 | `ABANDON` | External | This trigger gives up on registration. It transitions directly to `deregistered` without attempting cleanup. |
 | `FATAL_ERROR` | Internal | This trigger indicates an unrecoverable error was detected. It catches unexpected failures from any non-terminal state. |
 | `RETRY_EXHAUSTED` | Orchestrator | This trigger indicates the retry limit has been reached. It is **generated by the Orchestrator** (not the Reducer) when it detects that the Reducer returned without state change due to guard failure on retry transitions (Transitions 9, 10, or 14). The Orchestrator emits this trigger when `retry_count >= 3` to transition to `failed` state for operator intervention. See [Retry Limit Enforcement](#retry-limit-enforcement) for detection logic and implementation examples. |
@@ -2217,7 +2253,7 @@ retry_counter:
 
 4. **Guard Check**: Transitions 9, 10, and 14 include the guard `retry_count < 3` which prevents retry if the limit has been reached.
 
-5. **Exhaustion Handling**: When `retry_count >= 3` in `partial_registered` state, the guard on `RETRY` and `RETRY_POSTGRES` transitions fails. The Reducer should then emit a `RETRY_EXHAUSTED` trigger (Transition 17) to move to the `failed` state. From `failed`, the operator can either:
+5. **Exhaustion Handling**: When `retry_count >= 3` in `partial_registered` state, the guard on `RETRY` and `RETRY_POSTGRES` transitions fails. The **Orchestrator** (not the Reducer) must then detect this guard failure and emit a `RETRY_EXHAUSTED` trigger (Transition 17) to move to the `failed` state. See [Retry Limit Enforcement](#retry-limit-enforcement) for the detection mechanism. From `failed`, the operator can either:
    - Trigger `RETRY` to restart the full workflow from `validating` (if retry_count allows)
    - Trigger `ABANDON` to move to `deregistered` state and give up on registration
 
@@ -2548,6 +2584,15 @@ This section documents all metrics emitted by the Registration FSM, including th
 | `registration_gc_duration_ms` | histogram | Garbage collection completion | GC job execution duration |
 | `registration_gc_errors_total` | counter | Garbage collection failure | GC job execution failed |
 | `consul_gc_deregistered_total` | counter | Consul garbage collection | Consul services force-deregistered |
+| `deregistration_consul_timeout_total` | counter | Consul deregistration timeout | Consul deregistration exceeded timeout during shutdown |
+| `deregistration_postgres_timeout_total` | counter | PostgreSQL deregistration timeout | PostgreSQL deregistration exceeded timeout during shutdown |
+| `deregistration_consul_failure_total` | counter | Consul deregistration Effect error | Consul deregistration returned an explicit error |
+| `deregistration_postgres_failure_total` | counter | PostgreSQL deregistration Effect error | PostgreSQL deregistration returned an explicit error |
+| `deregistration_partial_cleanup_total` | counter | Partial deregistration completion | One deregistration succeeded, one failed |
+| `orphan_resource_detected_total` | counter | GC job orphan detection | Orphaned resource detected before cleanup |
+| `orphan_resource_age_seconds` | gauge | GC job orphan detection | Age of orphaned resource in seconds |
+| `orphan_cleanup_success_total` | counter | GC job cleanup success | Successfully cleaned orphaned resource |
+| `orphan_cleanup_failure_total` | counter | GC job cleanup failure | Failed to clean orphaned resource |
 
 #### Metric Details
 
@@ -2698,8 +2743,6 @@ description: "Duration spent in each state, labeled by outcome (success/timeout/
 - `success`: Normal transition to next state
 - `timeout`: State exceeded `timeout_ms`
 - `failure`: Transition to error state (`failed` or `partial_registered`)
-
----
 
 ---
 
@@ -2875,6 +2918,178 @@ description: "Count of Consul services force-deregistered by garbage collection"
 
 **Note**: This metric tracks Consul-specific cleanup distinct from PostgreSQL garbage collection.
 
+---
+
+##### `deregistration_consul_timeout_total` (counter)
+
+```yaml
+name: deregistration_consul_timeout_total
+type: counter
+labels: [node_id, deployment_id, environment]
+emitted_by: Orchestrator (directly)
+emission_point: When Consul deregistration exceeds timeout during graceful shutdown
+description: "Count of Consul deregistration timeouts during graceful shutdown"
+```
+
+**When Emitted**: When the Orchestrator detects that Consul deregistration has exceeded its timeout (part of the 15000ms `deregistering` state timeout).
+
+**Alerting Threshold**:
+- **Warning**: `deregistration_consul_timeout_total` > 3/min indicates Consul connectivity issues during shutdown
+
+**Note**: This metric indicates orphaned Consul service advertisements. See [Deregistration Failure Handling](#deregistration-failure-handling) for cleanup guidance.
+
+---
+
+##### `deregistration_postgres_timeout_total` (counter)
+
+```yaml
+name: deregistration_postgres_timeout_total
+type: counter
+labels: [node_id, deployment_id, environment]
+emitted_by: Orchestrator (directly)
+emission_point: When PostgreSQL deregistration exceeds timeout during graceful shutdown
+description: "Count of PostgreSQL deregistration timeouts during graceful shutdown"
+```
+
+**When Emitted**: When the Orchestrator detects that PostgreSQL deregistration has exceeded its timeout (part of the 15000ms `deregistering` state timeout).
+
+**Alerting Threshold**:
+- **Warning**: `deregistration_postgres_timeout_total` > 3/min indicates PostgreSQL connectivity issues during shutdown
+
+**Note**: This metric indicates orphaned PostgreSQL registration records. See [Deregistration Failure Handling](#deregistration-failure-handling) for cleanup guidance.
+
+---
+
+##### `deregistration_consul_failure_total` (counter)
+
+```yaml
+name: deregistration_consul_failure_total
+type: counter
+labels: [node_id, deployment_id, environment, error_type]
+emitted_by: Orchestrator (directly)
+emission_point: When Consul deregistration Effect returns an error
+description: "Count of Consul deregistration failures (non-timeout)"
+```
+
+**When Emitted**: When the Consul deregistration Effect returns an explicit error (distinct from timeout).
+
+**Alerting Threshold**:
+- **Warning**: `deregistration_consul_failure_total` > 3/min indicates Consul API errors during shutdown
+
+---
+
+##### `deregistration_postgres_failure_total` (counter)
+
+```yaml
+name: deregistration_postgres_failure_total
+type: counter
+labels: [node_id, deployment_id, environment, error_type]
+emitted_by: Orchestrator (directly)
+emission_point: When PostgreSQL deregistration Effect returns an error
+description: "Count of PostgreSQL deregistration failures (non-timeout)"
+```
+
+**When Emitted**: When the PostgreSQL deregistration Effect returns an explicit error (distinct from timeout).
+
+**Alerting Threshold**:
+- **Warning**: `deregistration_postgres_failure_total` > 3/min indicates PostgreSQL API errors during shutdown
+
+---
+
+##### `deregistration_partial_cleanup_total` (counter)
+
+```yaml
+name: deregistration_partial_cleanup_total
+type: counter
+labels: [node_id, deployment_id, environment, failed_component]
+emitted_by: Orchestrator (directly)
+emission_point: When one deregistration succeeds but the other fails or times out
+description: "Count of partial deregistration completions (one success, one failure)"
+```
+
+**When Emitted**: When the FSM transitions to `deregistered` with only one of the two deregistrations successful.
+
+**Alerting Threshold**:
+- **Warning**: `deregistration_partial_cleanup_total` > 0 indicates orphaned resources requiring garbage collection
+
+**Labels**:
+- `failed_component`: `consul` or `postgres` indicating which deregistration failed
+
+---
+
+##### `orphan_resource_detected_total` (counter)
+
+```yaml
+name: orphan_resource_detected_total
+type: counter
+labels: [resource_type, detection_method, environment]
+emitted_by: Garbage Collection Job (external to FSM)
+emission_point: When GC job detects an orphaned resource before cleanup
+description: "Count of orphaned resources detected by garbage collection"
+```
+
+**When Emitted**: When the garbage collection job identifies an orphaned resource (before attempting cleanup).
+
+**Labels**:
+- `resource_type`: `consul_service`, `postgres_node_record`, `consul_session`, `consul_health_check`
+- `detection_method`: `stale_heartbeat`, `critical_health_check`, `orphan_session`, `missing_node`
+
+**Alerting Threshold**:
+- **Warning**: `orphan_resource_detected_total` > 5/hour indicates frequent deregistration failures
+
+---
+
+##### `orphan_resource_age_seconds` (gauge)
+
+```yaml
+name: orphan_resource_age_seconds
+type: gauge
+labels: [resource_type, node_id, environment]
+emitted_by: Garbage Collection Job (external to FSM)
+emission_point: When GC job detects an orphaned resource
+description: "Age of orphaned resources in seconds since last heartbeat/activity"
+```
+
+**When Emitted**: When the garbage collection job identifies an orphaned resource.
+
+**Alerting Threshold**:
+- **Warning**: `orphan_resource_age_seconds` > 3600 (1 hour) indicates GC job may not be running
+- **Critical**: `orphan_resource_age_seconds` > 86400 (24 hours) indicates GC job is broken
+
+---
+
+##### `orphan_cleanup_success_total` (counter)
+
+```yaml
+name: orphan_cleanup_success_total
+type: counter
+labels: [resource_type, environment]
+emitted_by: Garbage Collection Job (external to FSM)
+emission_point: After successful cleanup of an orphaned resource
+description: "Count of successfully cleaned orphaned resources"
+```
+
+**When Emitted**: After each successful orphan resource cleanup.
+
+---
+
+##### `orphan_cleanup_failure_total` (counter)
+
+```yaml
+name: orphan_cleanup_failure_total
+type: counter
+labels: [resource_type, error_type, environment]
+emitted_by: Garbage Collection Job (external to FSM)
+emission_point: When cleanup of an orphaned resource fails
+description: "Count of failed orphan cleanup attempts"
+```
+
+**When Emitted**: When the garbage collection job fails to clean up an orphaned resource.
+
+**Alerting Threshold**:
+- **Warning**: `orphan_cleanup_failure_total` > 0 indicates cleanup issues requiring investigation
+
+
 
 #### Alerting Thresholds Summary
 
@@ -2890,6 +3105,16 @@ description: "Count of Consul services force-deregistered by garbage collection"
 | `registration_fatal_error_total` | > 0 | Critical | System-level failure |
 | `registration_gc_errors_total` | > 0 | Warning | GC job failures |
 | `registration_gc_duration_ms` p99 | > 30000ms | Warning | GC performance issues |
+| `deregistration_consul_timeout_total` | > 3/min | Warning | Consul connectivity issues during shutdown |
+| `deregistration_postgres_timeout_total` | > 3/min | Warning | PostgreSQL connectivity issues during shutdown |
+| `deregistration_consul_failure_total` | > 3/min | Warning | Consul API errors during shutdown |
+| `deregistration_postgres_failure_total` | > 3/min | Warning | PostgreSQL API errors during shutdown |
+| `deregistration_partial_cleanup_total` | > 0 | Warning | Orphaned resources exist |
+| `orphan_resource_detected_total` | > 5/hour | Warning | Frequent deregistration failures |
+| `orphan_resource_age_seconds` | > 3600 | Warning | GC job may not be running |
+| `orphan_resource_age_seconds` | > 86400 | Critical | GC job is broken |
+| `orphan_cleanup_failure_total` | > 0 | Warning | Cleanup issues requiring investigation |
+
 
 ### FSM Subcontract Configuration
 
@@ -2980,6 +3205,183 @@ Guard failures do not have a severity level per se - they either block the trans
 | Guard syntax error (load-time) | ERROR | Contract cannot load; must fix before deployment |
 | Guard evaluation exception (runtime) | ERROR | Unexpected runtime error; investigate context |
 
+### FATAL_ERROR Path
+
+The `FATAL_ERROR` trigger provides a global error handler that can transition the FSM from **any non-terminal state** to the `failed` state. This section documents when to use `FATAL_ERROR`, how it differs from other error handling, and the recovery strategies available.
+
+#### When to Trigger FATAL_ERROR
+
+| Condition | Source State | Trigger Mechanism | Why FATAL_ERROR |
+|-----------|--------------|-------------------|-----------------|
+| CONTINUE processing failure | `postgres_registered` (logically) | Reducer catches exception | No external event to retry; system-level bug |
+| Intent construction failure | Any operational state | Reducer catches exception | Intent creation is Reducer logic; failure indicates bug |
+| Intent serialization failure | Any operational state | Orchestrator catches exception | Model compatibility issue; requires fix |
+| Corrupted FSM context | Any state | Reducer detects invalid context | State machine cannot proceed safely |
+| Unrecoverable infrastructure failure | Any operational state | Effect reports unrecoverable error | External system fundamentally unavailable |
+| Timeout with no recovery path | Operational states | Orchestrator timeout handler | State timeout exceeded with no viable retry |
+
+#### FATAL_ERROR vs Regular Error Transitions
+
+| Aspect | Regular Error Transition | FATAL_ERROR |
+|--------|-------------------------|-------------|
+| **Source** | Specific state (e.g., `registering_consul`) | Any non-terminal state (wildcard `*`) |
+| **Trigger** | Specific trigger (e.g., `CONSUL_FAILED`) | Global `FATAL_ERROR` trigger |
+| **Cause** | Expected failure mode (network issue, timeout) | Unexpected system-level failure |
+| **Severity** | ERROR | CRITICAL |
+| **Investigation** | May not be needed (transient) | Always required before retry |
+| **Example** | Consul returns 503 -> `CONSUL_FAILED` | Exception in intent construction -> `FATAL_ERROR` |
+
+#### States Subject to FATAL_ERROR
+
+The wildcard `from_state: "*"` in Transition 16 (`global_error_handler`) matches all non-terminal states:
+
+| State | Subject to FATAL_ERROR? | Notes |
+|-------|------------------------|-------|
+| `unregistered` | Yes | Initial state; rare but possible |
+| `validating` | Yes | Validation logic exception |
+| `registering_postgres` | Yes | PostgreSQL intent construction failure |
+| `postgres_registered` | Yes | CONTINUE processing failure |
+| `registering_consul` | Yes | Consul intent construction failure |
+| `registered` | Yes | Unlikely but allowed (success state, not terminal) |
+| `partial_registered` | Yes | Exception during retry evaluation |
+| `deregistering` | Yes | Deregistration intent construction failure |
+| `failed` | Yes | Recursive failure (already failed, then another error) |
+| `deregistered` | **No** | Terminal state; no outgoing transitions |
+
+#### Recovery Strategies After FATAL_ERROR
+
+Once in the `failed` state via `FATAL_ERROR`, the following recovery options exist:
+
+**Option 1: Investigate and RETRY**
+
+```python
+# After FATAL_ERROR, operator investigates logs
+# If issue is resolved (e.g., bug fixed, infrastructure restored):
+await reducer.delta("failed", "RETRY", context)
+# FSM transitions to `validating` and restarts registration workflow
+```
+
+**When to use**: Root cause identified and fixed; transient infrastructure issue resolved.
+
+**Option 2: ABANDON**
+
+```python
+# After FATAL_ERROR, if recovery is not feasible:
+await reducer.delta("failed", "ABANDON", context)
+# FSM transitions to `deregistered` (terminal)
+```
+
+**When to use**: Node is being decommissioned; repeated failures indicate fundamental issue.
+
+**Option 3: Manual State Reset** (Emergency)
+
+In extreme cases where the FSM is in an inconsistent state:
+
+```python
+# Direct state override (bypasses FSM logic)
+# Use with extreme caution - only for emergency recovery
+await state_store.set_state(node_id, "unregistered")
+# Then trigger new registration
+```
+
+**When to use**: Only when FSM is corrupted and normal transitions fail.
+
+#### FATAL_ERROR Implementation Pattern
+
+```python
+async def delta(
+    self, state: str, trigger: str, context: ModelFSMContext
+) -> tuple[str, list[ModelIntent]]:
+    try:
+        # Normal transition logic
+        return await self._process_transition(state, trigger, context)
+    except Exception as e:
+        # Any unhandled exception triggers FATAL_ERROR
+        self.logger.critical(
+            "Unhandled exception during transition - triggering FATAL_ERROR",
+            from_state=state,
+            trigger=trigger,
+            error=str(e),
+            error_type=type(e).__name__,
+            correlation_id=str(context.correlation_id),
+        )
+        return "failed", [
+            ModelLogIntent(
+                kind="log_event",
+                level="CRITICAL",
+                message=f"FATAL_ERROR from {state} on {trigger}: {e}",
+                correlation_id=context.correlation_id,
+            ),
+            ModelMetricIntent(
+                kind="log_metric",
+                metric="registration_fatal_error_total",
+                value=1,
+                labels={
+                    "from_state": state,
+                    "trigger": trigger,
+                    "error_type": type(e).__name__,
+                },
+            ),
+        ]
+```
+
+#### Recovery Strategy Selection Guide
+
+| Scenario | Investigation Required | Recommended Action | Urgency |
+|----------|----------------------|-------------------|---------|
+| CONTINUE processing exception | Yes - check Reducer logic | Fix bug, then `RETRY` | High |
+| Intent serialization failure | Yes - check model compatibility | Fix models, then `RETRY` | High |
+| Infrastructure unavailable | Maybe - check external system | Wait for restoration, then `RETRY` | Medium |
+| Repeated FATAL_ERROR (>3) | Yes - fundamental issue | `ABANDON` and escalate | Critical |
+| Node decommissioning | No | `ABANDON` immediately | Low |
+| Corrupted context | Yes - check data sources | Fix data, manual reset if needed | High |
+
+#### Advanced Recovery Patterns
+
+For production systems requiring higher reliability, consider implementing these advanced recovery patterns:
+
+**Event Sourcing for Recovery**
+
+Store all triggers and context changes as events. On FATAL_ERROR recovery:
+
+```python
+# Replay events to reconstruct state
+events = await event_store.get_events(node_id, since=last_checkpoint)
+for event in events:
+    context = await apply_event(context, event)
+# Now have reconstructed context for investigation
+```
+
+**Two-Phase Commit for Critical Transitions**
+
+For transitions with external side effects (PostgreSQL, Consul):
+
+```python
+# Phase 1: Prepare
+prepare_result = await effect.prepare(intent)
+if not prepare_result.success:
+    # Abort without side effects
+    return await self._handle_prepare_failure(prepare_result)
+
+# Phase 2: Commit
+try:
+    commit_result = await effect.commit(prepare_result.prepare_id)
+except Exception as e:
+    # Rollback if commit fails
+    await effect.rollback(prepare_result.prepare_id)
+    raise
+```
+
+**At-Least-Once Semantics with Idempotency**
+
+Ensure all Effects are idempotent so retries are safe:
+
+```python
+# PostgreSQL: Use ON CONFLICT DO UPDATE
+# Consul: Re-registration updates existing entry
+# Both operations are safe to retry after FATAL_ERROR
+```
+
 ### Guard Error Details
 
 Guard errors can occur at two phases:
@@ -3056,6 +3458,108 @@ def flatten_context(self, context: ModelFSMContext) -> dict[str, Any]:
 ```
 
 **When to Flatten**: Context should be flattened at the entry point of the `delta()` function, before any guard conditions are evaluated. This ensures all guards have access to the expected fields.
+
+#### Guard Validation Error Handling
+
+This section provides a consolidated reference for handling guard validation errors at both contract load-time and runtime.
+
+**Contract Load-Time Error Handling**:
+
+When the FSM contract fails to load due to guard validation errors, the system cannot start. Handle these errors as follows:
+
+| Error Code | Detection Time | Handling Strategy |
+|------------|---------------|-------------------|
+| `GUARD_SYNTAX_ERROR` | Contract load | Log error with full expression; reject contract; require fix before deployment |
+| `GUARD_INVALID_OPERATOR` | Contract load | Log unsupported operator; suggest valid operators; reject contract |
+| `GUARD_INVALID_FIELD` | Contract load | Log invalid field name; check for typos or naming conventions; reject contract |
+| `GUARD_INVALID_VALUE` | Contract load | Log malformed value; verify literal syntax; reject contract |
+
+**Best Practice**: Validate contracts in CI/CD pipeline before deployment:
+
+```python
+def validate_contract_guards(contract: ModelFSMContract) -> list[str]:
+    """Validate all guard expressions in contract. Returns list of errors."""
+    errors = []
+    for transition in contract.transitions:
+        for condition in transition.conditions:
+            try:
+                validate_guard_expression(condition.expression)
+            except GuardValidationError as e:
+                errors.append(f"{transition.transition_name}: {e}")
+    return errors
+```
+
+**Runtime Error Handling**:
+
+When guard evaluation fails at runtime, the transition is blocked but the FSM remains operational. Handle these errors as follows:
+
+| Error Code | Cause | Handling Strategy |
+|------------|-------|-------------------|
+| `GUARD_EVALUATION_ERROR` | Unsupported operator at runtime | Log with full context; investigate contract definition; may require redeployment |
+| `GUARD_TYPE_ERROR` | Type mismatch (e.g., string vs number) | Log actual vs expected types; fix context data source |
+| `GUARD_FIELD_UNDEFINED` | Field missing from context (strict mode) | Log missing field name; verify context preparation; check `flatten_context()` |
+
+**Implementation Pattern**:
+
+```python
+async def evaluate_guard_with_error_handling(
+    guard: str,
+    context: dict[str, Any],
+    correlation_id: UUID,
+) -> bool:
+    """Evaluate guard with structured error handling."""
+    try:
+        return evaluate_guard(guard, context)
+    except GuardEvaluationError as e:
+        # Log with full context for debugging
+        logger.error(
+            "Guard evaluation failed",
+            guard_expression=guard,
+            error_code=e.error_code.value,
+            error_message=str(e),
+            context_keys=list(context.keys()),
+            correlation_id=str(correlation_id),
+        )
+        # Emit metric for alerting
+        emit_metric("guard_evaluation_error_total", 1, labels={
+            "error_code": e.error_code.value,
+        })
+        # Return False to block transition (fail-safe)
+        return False
+```
+
+**Error Recovery Flowchart**:
+
+```text
+Guard Error Detected
+        |
+        v
++------------------+
+| Contract Load or |
+|     Runtime?     |
++--------+---------+
+         |
+    +----+----+
+    |         |
+    v         v
+Contract   Runtime
+  Load       Error
+    |          |
+    v          v
++--------+ +----------+
+| Fix    | | Check    |
+| guard  | | context  |
+| syntax | | data     |
++--------+ +----------+
+    |          |
+    v          v
++--------+ +----------+
+|Redeploy| |Retry with|
+|contract| |fixed data|
++--------+ +----------+
+```
+
+> **See Also**: [Guard Validation Rules](#guard-validation-rules) for expression syntax requirements, [Guard Error Details](#guard-error-details) for error code definitions.
 
 ### Timeout Error Details
 
@@ -3266,6 +3770,238 @@ self.logger.error(
 - Pass `correlation_id` through all intents for Effect node logging
 - Include `correlation_id` in metrics labels where possible
 - Use `correlation_id` as the primary key for log aggregation queries
+
+#### Correlation ID Propagation Through FSM Lifecycle
+
+This section provides detailed examples showing how `correlation_id` flows through the entire registration lifecycle, enabling end-to-end distributed tracing.
+
+##### Initial Event to FSM Context
+
+When an `IntrospectionEvent` arrives, the Orchestrator extracts the `correlation_id` and injects it into the FSM context:
+
+```python
+async def handle_introspection_event(
+    self,
+    event: ModelIntrospectionEvent,
+) -> None:
+    """Handle incoming introspection event and initiate FSM processing."""
+    # Extract correlation_id from event envelope
+    correlation_id = event.envelope.correlation_id
+
+    # Create FSM context with correlation_id
+    fsm_context = ModelFSMContext(
+        node_id=event.payload.node_id,
+        deployment_id=event.payload.deployment_id,
+        environment=event.payload.environment,
+        correlation_id=correlation_id,  # Preserved from event
+        retry_count=0,
+        postgres_applied=False,
+        consul_applied=False,
+    )
+
+    # Log with correlation_id for tracing
+    self.logger.info(
+        "Registration workflow initiated",
+        node_id=fsm_context.node_id,
+        correlation_id=str(correlation_id),
+    )
+
+    # Initiate FSM with REGISTER trigger
+    new_state, intents = await self.reducer.delta(
+        "unregistered", "REGISTER", fsm_context
+    )
+```
+
+##### FSM Context to Intents
+
+Every intent emitted by the Reducer includes the `correlation_id` for downstream tracing:
+
+```python
+async def delta(
+    self,
+    current_state: str,
+    trigger: str,
+    context: ModelFSMContext,
+) -> tuple[str, list[ModelIntent]]:
+    """FSM transition with correlation_id propagation."""
+    if current_state == "registering_postgres" and trigger == "POSTGRES_SUCCEEDED":
+        return "postgres_registered", [
+            # Log intent with correlation_id
+            ModelLogIntent(
+                kind="log_event",
+                level="INFO",
+                message="PostgreSQL registration succeeded",
+                correlation_id=context.correlation_id,  # Propagated
+            ),
+            # Metric intent with correlation_id in labels
+            ModelMetricIntent(
+                kind="log_metric",
+                metric="registration_postgres_success",
+                value=1,
+                labels={
+                    "node_id": context.node_id,
+                    "correlation_id": str(context.correlation_id),  # Propagated
+                },
+            ),
+        ]
+```
+
+##### Intents to Effect Nodes
+
+Effect nodes receive intents with `correlation_id` and include it in all external calls:
+
+```python
+class NodeConsulRegistrationEffect(NodeEffect):
+    """Effect node for Consul registration with correlation_id tracing."""
+
+    async def execute_effect(
+        self,
+        intent: ModelConsulRegisterIntent,
+    ) -> ModelEffectResult:
+        """Execute Consul registration with correlation_id in headers."""
+        # Include correlation_id in Consul registration metadata
+        registration_payload = {
+            "ID": intent.service_id,
+            "Name": intent.service_name,
+            "Tags": intent.tags or [],
+            "Meta": {
+                "correlation_id": str(intent.correlation_id),  # Tracing metadata
+                "node_id": intent.node_id,
+            },
+        }
+
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.put(
+                    f"{self.consul_addr}/v1/agent/service/register",
+                    json=registration_payload,
+                    headers={
+                        "X-Correlation-ID": str(intent.correlation_id),  # HTTP header
+                    },
+                )
+                response.raise_for_status()
+
+            self.logger.info(
+                "Consul registration succeeded",
+                service_id=intent.service_id,
+                correlation_id=str(intent.correlation_id),  # Always log with ID
+            )
+
+            return ModelEffectResult(
+                success=True,
+                correlation_id=intent.correlation_id,  # Returned for aggregation
+            )
+
+        except Exception as e:
+            self.logger.error(
+                "Consul registration failed",
+                service_id=intent.service_id,
+                error=str(e),
+                correlation_id=str(intent.correlation_id),  # Error tracing
+            )
+            raise
+```
+
+##### Effect Results Back to Orchestrator
+
+Effect results include `correlation_id` for result aggregation and tracing:
+
+```python
+async def aggregate_effect_results(
+    self,
+    results: list[ModelEffectResult],
+    context: ModelFSMContext,
+) -> str:
+    """Aggregate Effect results and determine next FSM trigger."""
+    # Verify all results have matching correlation_id
+    for result in results:
+        if result.correlation_id != context.correlation_id:
+            self.logger.warning(
+                "Correlation ID mismatch in effect result",
+                expected=str(context.correlation_id),
+                actual=str(result.correlation_id),
+            )
+
+    # Determine trigger based on aggregated results
+    if all(r.success for r in results):
+        return "DEREGISTRATION_COMPLETE"
+    else:
+        failed_effects = [r for r in results if not r.success]
+        self.logger.warning(
+            "Some effects failed during deregistration",
+            failed_count=len(failed_effects),
+            correlation_id=str(context.correlation_id),
+        )
+        # Still emit DEREGISTRATION_COMPLETE for best-effort cleanup
+        return "DEREGISTRATION_COMPLETE"
+```
+
+##### Debugging with Correlation IDs
+
+Use `correlation_id` as the primary key for log aggregation and debugging:
+
+```sql
+-- PostgreSQL query to trace a registration workflow
+SELECT
+    timestamp,
+    level,
+    message,
+    node_id,
+    state,
+    trigger
+FROM registration_logs
+WHERE correlation_id = 'abc123-def456-ghi789'
+ORDER BY timestamp ASC;
+
+-- Grafana/Loki query
+{job="registration-fsm"} |= "correlation_id=abc123-def456-ghi789"
+
+-- Jaeger trace lookup
+jaeger-query --trace-id=abc123-def456-ghi789
+```
+
+##### Correlation ID Lifecycle Summary
+
+```text
+IntrospectionEvent (correlation_id: uuid)
+    |
+    v
+Orchestrator.handle_event()
+    |-- Extract correlation_id from event.envelope
+    |-- Create FSM context with correlation_id
+    |
+    v
+Reducer.delta(current_state, trigger, context)
+    |-- Emit intents with context.correlation_id
+    |
+    v
+Orchestrator.process_intents(intents)
+    |-- Dispatch to Effect nodes with correlation_id
+    |
+    v
+Effect.execute_effect(intent)
+    |-- Include correlation_id in external calls (HTTP headers, DB metadata)
+    |-- Log all operations with correlation_id
+    |
+    v
+Orchestrator.aggregate_results(results)
+    |-- Verify correlation_id consistency
+    |-- Determine next trigger
+    |
+    v
+Reducer.delta(new_state, trigger, context)
+    |-- Continue FSM with same correlation_id
+    |
+    v
+(repeat until terminal state)
+    |
+    v
+Final Log Entry:
+    "Registration complete, correlation_id=abc123, duration=1234ms"
+```
+
+**Key Principle**: The same `correlation_id` flows from the initial `IntrospectionEvent` through every log entry, metric emission, and external call, enabling complete end-to-end tracing of any registration workflow.
+
 
 #### 3. Emit Metrics for All Error Conditions
 
@@ -3483,6 +4219,8 @@ registering_postgres -> [POSTGRES_SUCCEEDED] -> postgres_registered (checkpoint)
                                      RETRY                            ABANDON
                                        |                                 |
                                        v                                 v
+                                  validating                       deregistered
+```
 
 #### Scenario 9: Guard Evaluation Error (Runtime)
 
