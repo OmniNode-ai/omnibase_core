@@ -29,7 +29,6 @@ import pytest
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_effect_types import EnumEffectType, EnumTransactionState
-from omnibase_core.models.common.model_effect_metadata import ModelEffectMetadata
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.contracts.subcontracts.model_effect_circuit_breaker import (
     ModelEffectCircuitBreaker,
@@ -51,6 +50,7 @@ from omnibase_core.models.contracts.subcontracts.model_effect_transaction_config
     ModelEffectTransactionConfig,
 )
 from omnibase_core.models.effect.model_effect_input import ModelEffectInput
+from omnibase_core.models.effect.model_effect_metadata import ModelEffectMetadata
 from omnibase_core.models.effect.model_effect_output import ModelEffectOutput
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer

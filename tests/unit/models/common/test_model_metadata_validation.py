@@ -17,11 +17,11 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.models.common.model_effect_metadata import ModelEffectMetadata
 from omnibase_core.models.common.model_reducer_metadata import ModelReducerMetadata
 from omnibase_core.models.core.model_action_category import ModelActionCategory
 from omnibase_core.models.core.model_action_metadata import ModelActionMetadata
 from omnibase_core.models.core.model_node_action_type import ModelNodeActionType
+from omnibase_core.models.effect.model_effect_metadata import ModelEffectMetadata
 
 # =============================================================================
 # ModelEffectMetadata Validation Tests (extra="forbid")

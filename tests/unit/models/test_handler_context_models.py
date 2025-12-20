@@ -68,6 +68,7 @@ _reducer_context_module = _import_module_directly(
 ModelReducerContext: Any = _reducer_context_module.ModelReducerContext
 
 
+@pytest.mark.unit
 class TestModelOrchestratorContext:
     """Tests for orchestrator handler context."""
 
@@ -153,6 +154,7 @@ class TestModelOrchestratorContext:
             )
 
 
+@pytest.mark.unit
 class TestModelEffectContext:
     """Tests for effect handler context."""
 
@@ -264,6 +266,7 @@ class TestModelEffectContext:
             )
 
 
+@pytest.mark.unit
 class TestModelReducerContext:
     """Tests for reducer handler context - must NOT have time injection."""
 
@@ -367,6 +370,7 @@ class TestModelReducerContext:
             )
 
 
+@pytest.mark.unit
 class TestContextModelParity:
     """Tests ensuring all context models have consistent base fields."""
 
@@ -455,6 +459,7 @@ class TestContextModelParity:
         )
 
 
+@pytest.mark.unit
 class TestTimeInjectionUseCases:
     """Tests demonstrating practical use cases for time injection."""
 

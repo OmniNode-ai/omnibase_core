@@ -45,6 +45,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
+__all__ = ["ModelOrchestratorContext"]
+
 
 class ModelOrchestratorContext(BaseModel):
     """
@@ -86,6 +88,7 @@ class ModelOrchestratorContext(BaseModel):
     model_config = ConfigDict(
         frozen=True,
         extra="forbid",
+        from_attributes=True,
     )
 
     # Time injection - orchestrators CAN access this for deadline calculations

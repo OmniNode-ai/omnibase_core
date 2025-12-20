@@ -25,6 +25,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
+__all__ = ["ModelReducerContext"]
+
 
 class ModelReducerContext(BaseModel):
     """Context for reducer handler invocations.
@@ -65,7 +67,7 @@ class ModelReducerContext(BaseModel):
         >>> # Note: No `now` field - reducers must not access current time
     """
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     # NO `now` field - reducers must not access current time
 

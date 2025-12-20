@@ -89,7 +89,7 @@ class ModelEffectContext(BaseModel):
         >>> backoff_ms = 1000 * (2 ** context.retry_attempt)  # 4000ms
     """
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     # Time injection - effects CAN access this
     now: datetime = Field(
