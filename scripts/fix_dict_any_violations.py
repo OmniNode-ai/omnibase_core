@@ -30,7 +30,7 @@ def fix_file(filepath: Path) -> tuple[bool, list[str]]:
     if "def get_metadata(self) -> dict[str, Any]:" in content:
         content = content.replace(
             "def get_metadata(self) -> dict[str, Any]:",
-            "def get_metadata(self) -> TypedDictMetadataDict:"
+            "def get_metadata(self) -> TypedDictMetadataDict:",
         )
         needs_typed_dict_metadata = True
         changes.append("Fixed get_metadata return type")
@@ -39,7 +39,7 @@ def fix_file(filepath: Path) -> tuple[bool, list[str]]:
     if "def set_metadata(self, metadata: dict[str, Any]) -> bool:" in content:
         content = content.replace(
             "def set_metadata(self, metadata: dict[str, Any]) -> bool:",
-            "def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:"
+            "def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:",
         )
         needs_typed_dict_metadata = True
         changes.append("Fixed set_metadata parameter type")
@@ -48,7 +48,7 @@ def fix_file(filepath: Path) -> tuple[bool, list[str]]:
     if "def serialize(self) -> dict[str, Any]:" in content:
         content = content.replace(
             "def serialize(self) -> dict[str, Any]:",
-            "def serialize(self) -> TypedDictSerializedModel:"
+            "def serialize(self) -> TypedDictSerializedModel:",
         )
         needs_typed_dict_serialized = True
         changes.append("Fixed serialize return type")
@@ -59,7 +59,7 @@ def fix_file(filepath: Path) -> tuple[bool, list[str]]:
         content = re.sub(
             pattern_from_node_info,
             "def from_node_info(cls, node_info: TypedDictSerializedModel)",
-            content
+            content,
         )
         needs_typed_dict_serialized = True
         changes.append("Fixed from_node_info parameter type")
@@ -68,13 +68,17 @@ def fix_file(filepath: Path) -> tuple[bool, list[str]]:
     if "additional_fields: dict[str, Any]" in content:
         content = content.replace(
             "additional_fields: dict[str, Any]",
-            "additional_fields: TypedDictAdditionalFields"
+            "additional_fields: TypedDictAdditionalFields",
         )
         needs_typed_dict_additional = True
         changes.append("Fixed additional_fields field type")
 
     # Add imports if needed
-    if needs_typed_dict_metadata or needs_typed_dict_serialized or needs_typed_dict_additional:
+    if (
+        needs_typed_dict_metadata
+        or needs_typed_dict_serialized
+        or needs_typed_dict_additional
+    ):
         # Build import statement
         imports_needed = []
         if needs_typed_dict_metadata:
@@ -84,14 +88,15 @@ def fix_file(filepath: Path) -> tuple[bool, list[str]]:
         if needs_typed_dict_additional:
             imports_needed.append("TypedDictAdditionalFields")
 
-        import_line = f"from omnibase_core.types import {', '.join(sorted(imports_needed))}"
+        import_line = (
+            f"from omnibase_core.types import {', '.join(sorted(imports_needed))}"
+        )
 
         # Check if import already exists
         if "from omnibase_core.types import" in content:
             # Try to add to existing import
             existing_import_match = re.search(
-                r"from omnibase_core\.types import \(([^)]+)\)",
-                content
+                r"from omnibase_core\.types import \(([^)]+)\)", content
             )
             if existing_import_match:
                 # Multi-line import
@@ -101,13 +106,12 @@ def fix_file(filepath: Path) -> tuple[bool, list[str]]:
                         # Add before closing paren
                         content = content.replace(
                             f"from omnibase_core.types import ({existing_imports})",
-                            f"from omnibase_core.types import ({existing_imports.rstrip()}\n    {imp},)"
+                            f"from omnibase_core.types import ({existing_imports.rstrip()}\n    {imp},)",
                         )
             else:
                 # Single line import - check if types already imported
                 single_import_match = re.search(
-                    r"from omnibase_core\.types import ([^\n]+)",
-                    content
+                    r"from omnibase_core\.types import ([^\n]+)", content
                 )
                 if single_import_match:
                     existing = single_import_match.group(1).strip()
@@ -119,7 +123,7 @@ def fix_file(filepath: Path) -> tuple[bool, list[str]]:
                                 r"from omnibase_core\.types import [^\n]+",
                                 f"from omnibase_core.types import {new_import}",
                                 content,
-                                count=1
+                                count=1,
                             )
         else:
             # Add new import after other imports
@@ -129,22 +133,39 @@ def fix_file(filepath: Path) -> tuple[bool, list[str]]:
                 import_section_end = match.end()
 
             if import_section_end > 0:
-                content = content[:import_section_end] + f"\n{import_line}" + content[import_section_end:]
+                content = (
+                    content[:import_section_end]
+                    + f"\n{import_line}"
+                    + content[import_section_end:]
+                )
             else:
                 # Add at the beginning after docstring
                 docstring_match = re.search(r'^""".*?"""', content, re.DOTALL)
                 if docstring_match:
                     insert_pos = docstring_match.end()
-                    content = content[:insert_pos] + f"\n\n{import_line}" + content[insert_pos:]
+                    content = (
+                        content[:insert_pos]
+                        + f"\n\n{import_line}"
+                        + content[insert_pos:]
+                    )
                 else:
                     content = import_line + "\n\n" + content
 
         changes.append(f"Added imports: {', '.join(imports_needed)}")
 
     # Remove unused 'Any' import if no longer needed
-    if "dict[str, Any]" not in content and "list[Any]" not in content and ": Any" not in content:
+    if (
+        "dict[str, Any]" not in content
+        and "list[Any]" not in content
+        and ": Any" not in content
+    ):
         # Check if Any is still used
-        if ", Any" in content or "Any," in content or "Any)" in content or "(Any" in content:
+        if (
+            ", Any" in content
+            or "Any," in content
+            or "Any)" in content
+            or "(Any" in content
+        ):
             pass  # Any is still used
         elif "from typing import Any" in content:
             content = content.replace("from typing import Any\n", "")
@@ -193,7 +214,7 @@ def main() -> int:
                 for change in changes:
                     print(f"    - {change}")
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Total files processed: {total_files}")
     print(f"Total files fixed: {total_fixed}")
 

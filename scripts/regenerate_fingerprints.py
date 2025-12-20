@@ -578,7 +578,9 @@ def regenerate_fingerprint(
     # Note: yaml.safe_load is required here as the first step before Pydantic validation
     # because we need to detect the contract type from node_type before selecting the model
     try:
-        contract_data = yaml.safe_load(content)  # noqa: ONEX-YAML
+        contract_data = yaml.safe_load(
+            content
+        )  # ONEX-YAML: required for type detection
     except yaml.YAMLError as e:
         return RegenerateResult(
             file_path=file_path,

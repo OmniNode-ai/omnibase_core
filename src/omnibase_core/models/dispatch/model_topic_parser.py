@@ -314,7 +314,7 @@ class ModelTopicParser:
         """
         if not topic or not topic.strip():
             return ModelParsedTopic(
-                raw_topic=topic or "",
+                raw_topic=topic if topic else "<empty>",
                 standard=EnumTopicStandard.UNKNOWN,
                 is_valid=False,
                 validation_error="Topic cannot be empty or whitespace",

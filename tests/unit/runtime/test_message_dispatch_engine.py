@@ -895,7 +895,8 @@ class TestDispatchErrors:
 
         assert result.status == EnumDispatchStatus.INVALID_MESSAGE
         assert result.error_message is not None
-        assert "mismatch" in result.error_message.lower()
+        # Error message format: "Envelope category 'X' does not match topic category 'Y'"
+        assert "does not match" in result.error_message.lower()
 
     @pytest.mark.asyncio
     async def test_dispatch_handler_exception_returns_handler_error(
