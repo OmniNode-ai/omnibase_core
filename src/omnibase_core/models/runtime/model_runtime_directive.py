@@ -44,7 +44,7 @@ class ModelRuntimeDirective(BaseModel):
         This model is frozen (immutable) after creation.
     """
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     directive_id: UUID = Field(
         default_factory=uuid4, description="Unique directive identifier"

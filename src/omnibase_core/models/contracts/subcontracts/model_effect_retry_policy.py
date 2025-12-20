@@ -58,7 +58,7 @@ class ModelEffectRetryPolicy(BaseModel):
         - IDEMPOTENCY_DEFAULTS: Default idempotency by handler type and operation
     """
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     enabled: bool = Field(default=True)
     max_retries: int = Field(default=3, ge=0, le=10)

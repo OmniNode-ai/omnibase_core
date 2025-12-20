@@ -46,7 +46,7 @@ class ModelEffectSubcontract(BaseModel):
     3. All IO configs validated against handler type
     """
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     # Interface version for code generation stability
     INTERFACE_VERSION: ModelSemVer = Field(

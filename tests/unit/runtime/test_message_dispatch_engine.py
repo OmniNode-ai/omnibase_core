@@ -2118,7 +2118,7 @@ class TestPublishingOrder:
         Per OMN-941: Each node kind has specific output restrictions:
         - REDUCER: projections only (no events, no intents, no result)
         - EFFECT: events only (no intents, no projections, no result)
-        - COMPUTE: result value only (no events, no intents, no projections)
+        - COMPUTE: typed result only (no events, no intents, no projections)
         - ORCHESTRATOR: events and intents only (no projections, no result)
         """
         from omnibase_core.enums.enum_node_kind import EnumNodeKind
@@ -2173,5 +2173,38 @@ class TestPublishingOrder:
                 correlation_id=uuid4(),
                 handler_id="bad-orchestrator",
                 node_kind=EnumNodeKind.ORCHESTRATOR,
+                projections=({"type": "InvalidProjection"},),
+            )
+
+        # Test COMPUTE constraint - cannot emit events
+        with pytest.raises(ValueError, match="COMPUTE cannot emit events"):
+            ModelHandlerOutput(
+                input_envelope_id=uuid4(),
+                correlation_id=uuid4(),
+                handler_id="bad-compute",
+                node_kind=EnumNodeKind.COMPUTE,
+                result={"value": 42},
+                events=({"type": "InvalidEvent"},),
+            )
+
+        # Test COMPUTE constraint - cannot emit intents
+        with pytest.raises(ValueError, match="COMPUTE cannot emit intents"):
+            ModelHandlerOutput(
+                input_envelope_id=uuid4(),
+                correlation_id=uuid4(),
+                handler_id="bad-compute",
+                node_kind=EnumNodeKind.COMPUTE,
+                result={"value": 42},
+                intents=({"type": "InvalidIntent"},),
+            )
+
+        # Test COMPUTE constraint - cannot emit projections
+        with pytest.raises(ValueError, match="COMPUTE cannot emit projections"):
+            ModelHandlerOutput(
+                input_envelope_id=uuid4(),
+                correlation_id=uuid4(),
+                handler_id="bad-compute",
+                node_kind=EnumNodeKind.COMPUTE,
+                result={"value": 42},
                 projections=({"type": "InvalidProjection"},),
             )

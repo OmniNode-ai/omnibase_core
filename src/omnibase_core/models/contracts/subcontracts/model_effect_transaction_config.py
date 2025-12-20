@@ -64,7 +64,7 @@ class ModelEffectTransactionConfig(BaseModel):
         - ModelEffectSubcontract.validate_no_raw_in_transaction: Raw operation constraint
     """
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     enabled: bool = Field(default=False)  # Default false - must explicitly enable
     isolation_level: Literal[

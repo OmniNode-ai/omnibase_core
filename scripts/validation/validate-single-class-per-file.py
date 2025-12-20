@@ -21,21 +21,38 @@ from typing import Any
 
 
 class ClassDefinitionDetector(ast.NodeVisitor):
-    """AST visitor to detect non-nested class definitions in Python code.
+    """AST visitor to detect module-level class definitions in Python code.
 
-    Detects classes that are not nested inside other classes.
-    This includes both module-level classes and classes defined inside functions.
+    Detects only module-level classes. Classes nested inside other classes
+    or defined inside functions are excluded (they are implementation details).
     """
 
     def __init__(self, filepath: str):
         self.filepath = filepath
         self.classes: list[tuple[int, str, bool]] = []  # (line_num, name, is_enum)
         self._in_class = False  # Track if we're inside a class
+        self._in_function = False  # Track if we're inside a function
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+        """Track when we enter a function definition."""
+        self._in_function = True
+        self.generic_visit(node)
+        self._in_function = False
+
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+        """Track when we enter an async function definition."""
+        self._in_function = True
+        self.generic_visit(node)
+        self._in_function = False
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
-        """Check if class definition is an Enum (excludes nested classes only)."""
+        """Check if class definition is an Enum (excludes nested/local classes)."""
         # Skip nested classes (classes defined inside other classes)
         if self._in_class:
+            return
+
+        # Skip function-local classes (implementation details)
+        if self._in_function:
             return
 
         is_enum = self._is_enum_class(node)

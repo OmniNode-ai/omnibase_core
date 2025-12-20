@@ -41,7 +41,7 @@ class ModelEffectOperation(BaseModel):
     This ensures type-safe validation at contract load time.
     """
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     # Identity
     operation_name: str = Field(

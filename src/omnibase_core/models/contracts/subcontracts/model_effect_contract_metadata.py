@@ -25,7 +25,7 @@ class ModelEffectContractMetadata(BaseModel):
     - Audit trails and change history
     """
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     contract_id: UUID = Field(
         default_factory=uuid4, description="Stable contract identity"
