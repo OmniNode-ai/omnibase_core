@@ -1,6 +1,6 @@
+#!/usr/bin/env python3
 import pytest
 
-#!/usr/bin/env python3
 """
 EnvelopeRouter Comprehensive Unit Tests - TDD Test Suite (OMN-228)
 

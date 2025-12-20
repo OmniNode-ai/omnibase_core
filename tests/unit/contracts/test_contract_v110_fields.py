@@ -1,6 +1,6 @@
+#!/usr/bin/env python3
 import pytest
 
-#!/usr/bin/env python3
 """
 Unit Tests for Contract v1.1.0 Fields.
 

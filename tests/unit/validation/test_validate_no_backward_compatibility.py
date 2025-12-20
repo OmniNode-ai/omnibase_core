@@ -1,6 +1,6 @@
+#!/usr/bin/env python3
 import pytest
 
-#!/usr/bin/env python3
 """
 Comprehensive tests for backward compatibility anti-pattern detection.
 
