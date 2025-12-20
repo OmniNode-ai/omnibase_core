@@ -9,6 +9,7 @@ from omnibase_core.models.metadata.analytics.model_analytics_core import (
 )
 
 
+@pytest.mark.unit
 class TestModelAnalyticsCoreInstantiation:
     """Tests for ModelAnalyticsCore instantiation."""
 
@@ -62,6 +63,7 @@ class TestModelAnalyticsCoreInstantiation:
         assert analytics.active_nodes == 40
 
 
+@pytest.mark.unit
 class TestModelAnalyticsCoreProperties:
     """Tests for ModelAnalyticsCore properties."""
 
@@ -111,6 +113,7 @@ class TestModelAnalyticsCoreProperties:
         assert analytics.disabled_node_ratio == 0.0
 
 
+@pytest.mark.unit
 class TestModelAnalyticsCorePredicates:
     """Tests for ModelAnalyticsCore predicate methods."""
 
@@ -155,6 +158,7 @@ class TestModelAnalyticsCorePredicates:
         assert analytics.has_issues() is False
 
 
+@pytest.mark.unit
 class TestModelAnalyticsCoreUpdateMethods:
     """Tests for ModelAnalyticsCore update methods."""
 
@@ -236,6 +240,7 @@ class TestModelAnalyticsCoreUpdateMethods:
         assert analytics.active_nodes == 0
 
 
+@pytest.mark.unit
 class TestModelAnalyticsCoreFactoryMethods:
     """Tests for ModelAnalyticsCore factory methods."""
 
@@ -296,6 +301,7 @@ class TestModelAnalyticsCoreFactoryMethods:
         assert analytics1.collection_id == analytics2.collection_id
 
 
+@pytest.mark.unit
 class TestModelAnalyticsCoreProtocols:
     """Tests for ModelAnalyticsCore protocol implementations."""
 
@@ -341,6 +347,7 @@ class TestModelAnalyticsCoreProtocols:
         assert analytics.validate_instance() is True
 
 
+@pytest.mark.unit
 class TestModelAnalyticsCoreSerialization:
     """Tests for ModelAnalyticsCore serialization."""
 
@@ -367,6 +374,7 @@ class TestModelAnalyticsCoreSerialization:
         assert "total_nodes" in data
 
 
+@pytest.mark.unit
 class TestModelAnalyticsCoreEdgeCases:
     """Tests for ModelAnalyticsCore edge cases."""
 

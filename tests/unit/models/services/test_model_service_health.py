@@ -29,6 +29,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.services.model_service_health import ModelServiceHealth
 
 
+@pytest.mark.unit
 class TestModelServiceHealthInstantiation:
     """Test cases for ModelServiceHealth instantiation and basic validation."""
 
@@ -163,6 +164,7 @@ class TestModelServiceHealthInstantiation:
             assert service.status == status
 
 
+@pytest.mark.unit
 class TestModelServiceHealthValidators:
     """Test field validators for ModelServiceHealth."""
 
@@ -463,6 +465,7 @@ class TestModelServiceHealthValidators:
         assert service.port == 5432
 
 
+@pytest.mark.unit
 class TestModelServiceHealthStatusMethods:
     """Test health status analysis methods."""
 
@@ -600,6 +603,7 @@ class TestModelServiceHealthStatusMethods:
         assert service.get_severity_level() == "info"
 
 
+@pytest.mark.unit
 class TestModelServiceHealthConnectionAnalysis:
     """Test connection analysis methods."""
 
@@ -726,6 +730,7 @@ class TestModelServiceHealthConnectionAnalysis:
         )
 
 
+@pytest.mark.unit
 class TestModelServiceHealthPerformanceAnalysis:
     """Test performance analysis methods."""
 
@@ -830,6 +835,7 @@ class TestModelServiceHealthPerformanceAnalysis:
         assert service.get_uptime_human() == "2d"
 
 
+@pytest.mark.unit
 class TestModelServiceHealthReliabilityAnalysis:
     """Test reliability analysis methods."""
 
@@ -933,6 +939,7 @@ class TestModelServiceHealthReliabilityAnalysis:
         assert service.get_availability_category() == "unavailable"
 
 
+@pytest.mark.unit
 class TestModelServiceHealthBusinessIntelligence:
     """Test business intelligence methods."""
 
@@ -1077,6 +1084,7 @@ class TestModelServiceHealthBusinessIntelligence:
         assert service._estimate_operational_cost() == "minimal"
 
 
+@pytest.mark.unit
 class TestModelServiceHealthFactoryMethods:
     """Test factory methods."""
 
@@ -1142,6 +1150,7 @@ class TestModelServiceHealthFactoryMethods:
         assert service.last_check_time == "2024-01-15T10:30:00"
 
 
+@pytest.mark.unit
 class TestModelServiceHealthEdgeCases:
     """Test edge cases and error conditions."""
 

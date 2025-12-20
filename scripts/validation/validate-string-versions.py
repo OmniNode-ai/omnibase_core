@@ -94,7 +94,6 @@ class PythonASTValidator(ast.NodeVisitor):
             r"^span_id$",
             r"^parent_span_id$",
             r"^example_id$",
-            r"^user_id$",
         ]
 
         # Exceptions - fields that can legitimately be strings
@@ -147,6 +146,15 @@ class PythonASTValidator(ast.NodeVisitor):
             # ENVELOPE_PARTITION_KEYS (ModelEnvelope partition/identity anchors)
             # See: src/omnibase_core/models/common/model_envelope.py
             "entity_id",  # Partition key: holds node_id or other string identifiers (OMN-936)
+            # DISPATCH_ENGINE_IDS (human-readable dispatch identifiers)
+            # See: src/omnibase_core/models/dispatch/
+            # See: src/omnibase_core/models/runtime/model_runtime_directive.py
+            # These are semantic names like "order-workflow-handler" not UUIDs
+            "handler_id",  # Dispatch handler identifier (human-readable, not UUID)
+            "route_id",  # Dispatch route identifier (human-readable, not UUID)
+            "target_handler_id",  # Runtime directive target handler (human-readable, not UUID)
+            "matched_route_id",  # Dispatch result matched route (human-readable)
+            # TEST_FIXTURES (test helper fields removed - production code should use UUID)
             # TYPED_DICT_SERIALIZATION_BOUNDARY (TypedDicts for logging/monitoring/introspection)
             # See: src/omnibase_core/types/ for TypedDict definitions
             # These TypedDicts are at serialization boundaries where string versions/IDs are appropriate

@@ -20,6 +20,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.services.model_service_reducer import ModelServiceReducer
 
 
+@pytest.mark.unit
 class TestModelServiceReducerLifecycle:
     """Test ModelServiceReducer service lifecycle functionality."""
 
@@ -810,6 +811,7 @@ class TestModelServiceReducerLifecycle:
         assert health["success_rate"] == 1.0
 
 
+@pytest.mark.unit
 class TestModelServiceReducerEdgeCases:
     """Test edge cases and error scenarios for ModelServiceReducer."""
 

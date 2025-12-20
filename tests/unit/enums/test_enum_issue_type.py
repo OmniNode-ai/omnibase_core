@@ -7,6 +7,7 @@ import pytest
 from omnibase_core.enums.enum_issue_type import EnumIssueType
 
 
+@pytest.mark.unit
 class TestEnumIssueType:
     """Test cases for EnumIssueType"""
 

@@ -58,6 +58,7 @@ main = check_no_print_statements.main
 pytestmark = [pytest.mark.unit, pytest.mark.timeout(30)]
 
 
+@pytest.mark.unit
 class TestPrintStatementDetector:
     """Tests for the PrintStatementDetector AST visitor."""
 
@@ -234,6 +235,7 @@ def foo():
         assert "logger" in violation["message"].lower()
 
 
+@pytest.mark.unit
 class TestCheckDocstringPrints:
     """Tests for docstring print detection."""
 
@@ -386,6 +388,7 @@ async def foo():
         assert len(violations) == 1
 
 
+@pytest.mark.unit
 class TestCheckFile:
     """Tests for file-level checking."""
 
@@ -488,6 +491,7 @@ def foo(
         assert violations[0]["type"] == "read_error"
 
 
+@pytest.mark.unit
 class TestEdgeCases:
     """Edge case tests."""
 
@@ -621,6 +625,7 @@ def foo():
         assert violations[0]["line"] == 3
 
 
+@pytest.mark.unit
 class TestMainFunction:
     """Tests for the main() entry point."""
 
@@ -737,6 +742,7 @@ def foo():
             assert "print-ok:" in captured.out
 
 
+@pytest.mark.unit
 class TestPrintOkCommentVariations:
     """Tests for various # print-ok: comment formats."""
 

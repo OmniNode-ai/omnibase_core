@@ -8,6 +8,7 @@ import pytest
 from omnibase_core.enums.enum_response_format import EnumResponseFormat
 
 
+@pytest.mark.unit
 class TestEnumResponseFormat:
     """Test suite for EnumResponseFormat."""
 

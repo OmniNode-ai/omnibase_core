@@ -6,9 +6,12 @@ This test suite covers ModelSchemaProperty with all its fields and nested struct
 
 from __future__ import annotations
 
+import pytest
+
 from omnibase_core.models.validation.model_schema_property import ModelSchemaProperty
 
 
+@pytest.mark.unit
 class TestModelSchemaPropertyInstantiation:
     """Test basic ModelSchemaProperty instantiation."""
 
@@ -68,6 +71,7 @@ class TestModelSchemaPropertyInstantiation:
         assert prop.default == 0.0
 
 
+@pytest.mark.unit
 class TestModelSchemaPropertyWithEnum:
     """Test ModelSchemaProperty with enum values."""
 
@@ -114,6 +118,7 @@ class TestModelSchemaPropertyWithEnum:
         assert len(prop.enum) == 0
 
 
+@pytest.mark.unit
 class TestModelSchemaPropertyWithFormat:
     """Test ModelSchemaProperty with format specifiers."""
 
@@ -158,6 +163,7 @@ class TestModelSchemaPropertyWithFormat:
         assert prop.format == "custom-format"
 
 
+@pytest.mark.unit
 class TestModelSchemaPropertyArrayType:
     """Test ModelSchemaProperty with array type."""
 
@@ -226,6 +232,7 @@ class TestModelSchemaPropertyArrayType:
         assert prop.items.items.type == "string"
 
 
+@pytest.mark.unit
 class TestModelSchemaPropertyObjectType:
     """Test ModelSchemaProperty with object type."""
 
@@ -309,6 +316,7 @@ class TestModelSchemaPropertyObjectType:
         assert nested_prop.properties is not None
 
 
+@pytest.mark.unit
 class TestModelSchemaPropertyDefaultValues:
     """Test ModelSchemaProperty with various default values."""
 
@@ -414,6 +422,7 @@ class TestModelSchemaPropertyDefaultValues:
         assert len(prop.default) == 0
 
 
+@pytest.mark.unit
 class TestModelSchemaPropertySerialization:
     """Test ModelSchemaProperty serialization."""
 
@@ -483,6 +492,7 @@ class TestModelSchemaPropertySerialization:
         assert "description" not in dumped
 
 
+@pytest.mark.unit
 class TestModelSchemaPropertyModelConfig:
     """Test ModelSchemaProperty model configuration."""
 
@@ -504,6 +514,7 @@ class TestModelSchemaPropertyModelConfig:
         assert hasattr(prop, "custom_field")
 
 
+@pytest.mark.unit
 class TestModelSchemaPropertyEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -602,6 +613,7 @@ class TestModelSchemaPropertyEdgeCases:
         assert prop.default["nested"]["deeper"]["value"] == [1, 2, 3]
 
 
+@pytest.mark.unit
 class TestModelSchemaPropertyComplexScenarios:
     """Test complex real-world property scenarios."""
 

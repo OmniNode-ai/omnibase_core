@@ -731,6 +731,7 @@ def fsm_with_multiple_issues(base_version: ModelSemVer) -> ModelFSMSubcontract:
 # ==================== Test Cases ====================
 
 
+@pytest.mark.unit
 class TestFSMAnalysisUnreachableStates:
     """Test detection of unreachable states."""
 
@@ -764,6 +765,7 @@ class TestFSMAnalysisUnreachableStates:
         assert len(result.unreachable_states) == 0
 
 
+@pytest.mark.unit
 class TestFSMAnalysisCycles:
     """Test detection of cycles with and without exit paths."""
 
@@ -814,6 +816,7 @@ class TestFSMAnalysisCycles:
         assert len(result.cycles_without_exit) == 0
 
 
+@pytest.mark.unit
 class TestFSMAnalysisAmbiguousTransitions:
     """Test detection of ambiguous transitions.
 
@@ -1225,6 +1228,7 @@ class TestFSMAnalysisAmbiguousTransitions:
         assert len(result.ambiguous_transitions) == 0
 
 
+@pytest.mark.unit
 class TestFSMAnalysisMissingTransitions:
     """Test detection of missing transitions (dead-end states)."""
 
@@ -1258,6 +1262,7 @@ class TestFSMAnalysisMissingTransitions:
         assert "completed" not in result.missing_transitions
 
 
+@pytest.mark.unit
 class TestFSMAnalysisValidFSM:
     """Test that valid FSMs pass all checks."""
 
@@ -1281,6 +1286,7 @@ class TestFSMAnalysisValidFSM:
         assert len(result.errors) == 0
 
 
+@pytest.mark.unit
 class TestFSMAnalysisComprehensiveReporting:
     """Test that all issues are reported, not just the first."""
 
@@ -1346,6 +1352,7 @@ class TestFSMAnalysisComprehensiveReporting:
         assert isinstance(result.errors, list)
 
 
+@pytest.mark.unit
 class TestFSMAnalysisDeadTransitions:
     """Test detection of dead transitions (unreachable transitions)."""
 
@@ -1434,6 +1441,7 @@ class TestFSMAnalysisDeadTransitions:
         assert "dead_transition" in result.dead_transitions
 
 
+@pytest.mark.unit
 class TestFSMAnalysisEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -1801,6 +1809,7 @@ class TestFSMAnalysisEdgeCases:
         assert "error" in error_message
 
 
+@pytest.mark.unit
 class TestFSMAnalysisInitialStateValidation:
     """Test validation of initial state existence.
 

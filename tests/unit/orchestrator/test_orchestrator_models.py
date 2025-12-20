@@ -1,3 +1,5 @@
+import pytest
+
 # SPDX-FileCopyrightText: 2024 OmniNode Team
 #
 # SPDX-License-Identifier: Apache-2.0
@@ -29,7 +31,6 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-import pytest
 from pydantic import ValidationError
 
 from omnibase_core.enums.enum_node_type import EnumNodeType
@@ -73,8 +74,8 @@ DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelOrchestratorInputFrozenBehavior:
     """Tests for ModelOrchestratorInput frozen and extra=forbid."""
 
@@ -122,8 +123,8 @@ class TestModelOrchestratorInputFrozenBehavior:
         assert modified.max_parallel_steps == 10
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelOrchestratorInputSerialization:
     """Tests for ModelOrchestratorInput JSON serialization."""
 
@@ -192,8 +193,8 @@ class TestModelOrchestratorInputSerialization:
         assert restored.metadata == model.metadata
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelOrchestratorInputFieldValidation:
     """Tests for ModelOrchestratorInput field validation."""
 
@@ -245,8 +246,8 @@ class TestModelOrchestratorInputFieldValidation:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelOrchestratorOutputFrozenBehavior:
     """Tests for ModelOrchestratorOutput frozen and extra=forbid."""
 
@@ -299,8 +300,8 @@ class TestModelOrchestratorOutputFrozenBehavior:
         assert modified.execution_status == "failed"
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelOrchestratorOutputSerialization:
     """Tests for ModelOrchestratorOutput JSON serialization."""
 
@@ -376,8 +377,8 @@ class TestModelOrchestratorOutputSerialization:
         assert restored.parallel_executions == model.parallel_executions
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelOrchestratorOutputFieldValidation:
     """Tests for ModelOrchestratorOutput field validation."""
 
@@ -412,8 +413,8 @@ class TestModelOrchestratorOutputFieldValidation:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelActionFrozenBehavior:
     """Tests for ModelAction frozen and extra=forbid."""
 
@@ -454,8 +455,8 @@ class TestModelActionFrozenBehavior:
         )
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelActionSerialization:
     """Tests for ModelAction JSON serialization."""
 
@@ -532,8 +533,8 @@ class TestModelActionSerialization:
         assert restored.metadata == model.metadata
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelActionFieldValidation:
     """Tests for ModelAction field validation."""
 
@@ -731,8 +732,8 @@ class TestModelActionFieldValidation:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelWorkflowStepFrozenBehavior:
     """Tests for ModelWorkflowStep frozen and extra=forbid."""
 
@@ -769,8 +770,8 @@ class TestModelWorkflowStepFrozenBehavior:
         )
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelWorkflowStepSerialization:
     """Tests for ModelWorkflowStep JSON serialization."""
 
@@ -848,8 +849,8 @@ class TestModelWorkflowStepSerialization:
         assert restored.max_parallel_instances == model.max_parallel_instances
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelWorkflowStepFieldValidation:
     """Tests for ModelWorkflowStep field validation."""
 
@@ -999,8 +1000,8 @@ class TestModelWorkflowStepFieldValidation:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelWorkflowDefinitionMetadataFrozenBehavior:
     """Tests for ModelWorkflowDefinitionMetadata frozen and extra=forbid."""
 
@@ -1041,8 +1042,8 @@ class TestModelWorkflowDefinitionMetadataFrozenBehavior:
         )
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelWorkflowDefinitionMetadataSerialization:
     """Tests for ModelWorkflowDefinitionMetadata JSON serialization."""
 
@@ -1097,8 +1098,8 @@ class TestModelWorkflowDefinitionMetadataSerialization:
         assert restored.workflow_hash == model.workflow_hash
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelWorkflowDefinitionMetadataFieldValidation:
     """Tests for ModelWorkflowDefinitionMetadata field validation."""
 
@@ -1147,8 +1148,8 @@ class TestModelWorkflowDefinitionMetadataFieldValidation:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelCoordinationRulesFrozenBehavior:
     """Tests for ModelCoordinationRules frozen and extra=forbid."""
 
@@ -1181,8 +1182,8 @@ class TestModelCoordinationRulesFrozenBehavior:
         )
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelCoordinationRulesSerialization:
     """Tests for ModelCoordinationRules JSON serialization."""
 
@@ -1224,8 +1225,8 @@ class TestModelCoordinationRulesSerialization:
         assert restored.failure_recovery_strategy == model.failure_recovery_strategy
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelCoordinationRulesFieldValidation:
     """Tests for ModelCoordinationRules field validation."""
 
@@ -1256,8 +1257,8 @@ class TestModelCoordinationRulesFieldValidation:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelWorkflowDefinitionFrozenBehavior:
     """Tests for ModelWorkflowDefinition frozen and extra=forbid."""
 
@@ -1316,8 +1317,8 @@ class TestModelWorkflowDefinitionFrozenBehavior:
         )
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelWorkflowDefinitionSerialization:
     """Tests for ModelWorkflowDefinition JSON serialization."""
 
@@ -1422,8 +1423,8 @@ class TestModelWorkflowDefinitionSerialization:
         )
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelWorkflowDefinitionFieldValidation:
     """Tests for ModelWorkflowDefinition field validation."""
 
@@ -1483,8 +1484,8 @@ class TestModelWorkflowDefinitionFieldValidation:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestOrchestratorModelsFrozenBehaviorParametrized:
     """Parametrized tests for frozen behavior across multiple models."""
 
@@ -1611,8 +1612,8 @@ class TestOrchestratorModelsFrozenBehaviorParametrized:
         )
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestOrchestratorModelsSerializationParametrized:
     """Parametrized tests for JSON serialization across multiple models."""
 
@@ -1689,8 +1690,8 @@ class TestOrchestratorModelsSerializationParametrized:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestOrchestratorModelsEdgeCases:
     """Edge cases for orchestrator models."""
 
@@ -1835,8 +1836,8 @@ class TestOrchestratorModelsEdgeCases:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelExecutionGraphFrozenBehavior:
     """Tests for ModelExecutionGraph frozen and extra=forbid."""
 
@@ -1873,8 +1874,8 @@ class TestModelExecutionGraphFrozenBehavior:
         )
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelExecutionGraphSerialization:
     """Tests for ModelExecutionGraph JSON serialization."""
 
@@ -1896,8 +1897,8 @@ class TestModelExecutionGraphSerialization:
         assert len(restored.nodes) == 1
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelWorkflowNodeFrozenBehavior:
     """Tests for ModelWorkflowNode frozen and extra=forbid."""
 
@@ -1934,8 +1935,8 @@ class TestModelWorkflowNodeFrozenBehavior:
         )
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelWorkflowNodeSerialization:
     """Tests for ModelWorkflowNode JSON serialization."""
 

@@ -24,6 +24,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
+@pytest.mark.unit
 class TestModelCircuitBreakerSubcontractBasics:
     """Test basic model instantiation and defaults."""
 
@@ -88,6 +89,7 @@ class TestModelCircuitBreakerSubcontractBasics:
         assert cb.ignore_exceptions == []
 
 
+@pytest.mark.unit
 class TestModelCircuitBreakerSubcontractValidation:
     """Test field validation and constraints."""
 
@@ -465,6 +467,7 @@ class TestModelCircuitBreakerSubcontractValidation:
         assert "requires slow_call_duration_threshold_ms" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestModelCircuitBreakerSubcontractEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -579,6 +582,7 @@ class TestModelCircuitBreakerSubcontractEdgeCases:
         assert cb.automatic_transition_enabled is False
 
 
+@pytest.mark.unit
 class TestModelCircuitBreakerSubcontractConfigDict:
     """Test ConfigDict behavior."""
 
@@ -636,6 +640,7 @@ class TestModelCircuitBreakerSubcontractConfigDict:
         assert restored.slow_call_rate_threshold == original.slow_call_rate_threshold
 
 
+@pytest.mark.unit
 class TestModelCircuitBreakerSubcontractDocumentation:
     """Test documentation and interface guarantees."""
 

@@ -662,6 +662,72 @@ async def get_user(user_id: UUID):
 
 ---
 
+### Pattern 7: Orchestrator Returns Result (FORBIDDEN)
+
+```text
+    ┌─────────────────────────────────────────────────────────────┐
+    │          FORBIDDEN: Orchestrator → Typed Result              │
+    └─────────────────────────────────────────────────────────────┘
+
+    ┌──────────────────┐          ┌─────────────────┐
+    │   ORCHESTRATOR   │    ╳     │   Return typed  │
+    │       [O]        │────╳────▶│   result like   │
+    │                  │    ╳     │   COMPUTE node  │
+    └──────────────────┘          └─────────────────┘
+
+    WHY FORBIDDEN:
+    ┌─────────────────────────────────────────────────────────────┐
+    │ 1. Orchestrators emit events/intents, not return results     │
+    │ 2. Only COMPUTE nodes return typed results                   │
+    │ 3. Violates separation of concerns (coordinate vs transform) │
+    │ 4. Makes orchestrators stateful (aggregating results)        │
+    │ 5. Breaks architectural clarity of 4-node pattern            │
+    └─────────────────────────────────────────────────────────────┘
+```
+
+**Rationale**: The ONEX architecture enforces clear separation - **COMPUTE transforms data and returns results**, **ORCHESTRATOR coordinates workflows via events/intents**. Allowing Orchestrators to return results would blur this distinction.
+
+**Validation Enforcement**:
+```python
+# This will raise ValueError at runtime
+output = ModelHandlerOutput[dict](
+    node_kind=EnumNodeKind.ORCHESTRATOR,
+    result={"workflow_status": "completed"},  # ERROR!
+)
+# ValueError: ORCHESTRATOR cannot set result - use events[] and intents[] only.
+# Only COMPUTE nodes return typed results.
+```
+
+**Correct Alternative**:
+```text
+    [O] Orchestrator emits events (workflow state) and intents (side effects)
+    [C] COMPUTE node returns typed results when data transformation is needed
+```
+
+**Example**:
+```python
+# ✅ CORRECT - Orchestrator emits events and intents
+return ModelHandlerOutput[None](
+    node_kind=EnumNodeKind.ORCHESTRATOR,
+    events=[
+        ModelEventEnvelope(
+            event_type="workflow.completed",
+            payload={"workflow_id": workflow_id, "status": "success"}
+        )
+    ],
+    intents=[
+        ModelIntent(
+            intent_type=EnumIntentType.NOTIFICATION,
+            target="email_service",
+            payload={"message": "Workflow completed"}
+        )
+    ],
+    result=None,  # REQUIRED: Must be None
+)
+```
+
+---
+
 ## Why These Constraints Matter
 
 ### 1. Predictable Data Flow
@@ -998,6 +1064,7 @@ the complete data pipeline, not a single message routing pattern.
 | 4 | Compute → I/O | Violates purity |
 | 5 | Circular Dependencies | Creates infinite loops |
 | 6 | Orchestrator → Direct I/O | Bypasses Effect layer |
+| 7 | Orchestrator → Typed Result | Only COMPUTE returns results |
 
 ### Key Principles
 

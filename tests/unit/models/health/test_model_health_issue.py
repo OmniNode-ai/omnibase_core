@@ -8,6 +8,7 @@ import pytest
 from omnibase_core.models.health.model_health_issue import ModelHealthIssue
 
 
+@pytest.mark.unit
 class TestModelHealthIssueBasics:
     """Test basic functionality."""
 
@@ -37,6 +38,7 @@ class TestModelHealthIssueBasics:
         assert issue.recovery_action is None
 
 
+@pytest.mark.unit
 class TestModelHealthIssueValidation:
     """Test validation."""
 
@@ -162,6 +164,7 @@ class TestModelHealthIssueValidation:
             )
 
 
+@pytest.mark.unit
 class TestModelHealthIssueChecks:
     """Test issue checking methods."""
 
@@ -273,6 +276,7 @@ class TestModelHealthIssueChecks:
         assert isinstance(duration, int)
 
 
+@pytest.mark.unit
 class TestModelHealthIssueFactoryMethods:
     """Test factory methods."""
 
@@ -334,6 +338,7 @@ class TestModelHealthIssueFactoryMethods:
         assert issue.category == "resource"
 
 
+@pytest.mark.unit
 class TestModelHealthIssueRecovery:
     """Test recovery configuration."""
 

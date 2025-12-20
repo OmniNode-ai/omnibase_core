@@ -15,6 +15,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError as OnexE
 from omnibase_core.models.infrastructure.model_time_based import ModelTimeBased
 
 
+@pytest.mark.unit
 class TestEnumTimeUnit:
     """Test EnumTimeUnit enum."""
 
@@ -43,6 +44,7 @@ class TestEnumTimeUnit:
         assert EnumTimeUnit.DAYS.to_milliseconds_multiplier() == 24 * 60 * 60 * 1000
 
 
+@pytest.mark.unit
 class TestModelTimeBasedBasic:
     """Test basic ModelTimeBased functionality."""
 
@@ -79,6 +81,7 @@ class TestModelTimeBasedBasic:
         assert time_based.runtime_category == EnumRuntimeCategory.MODERATE
 
 
+@pytest.mark.unit
 class TestModelTimeBasedConversions:
     """Test time conversion methods."""
 
@@ -139,6 +142,7 @@ class TestModelTimeBasedConversions:
         assert delta.total_seconds() == 90.0
 
 
+@pytest.mark.unit
 class TestModelTimeBasedValidation:
     """Test validation features."""
 
@@ -187,6 +191,7 @@ class TestModelTimeBasedValidation:
             )
 
 
+@pytest.mark.unit
 class TestModelTimeBasedProperties:
     """Test property methods."""
 
@@ -225,6 +230,7 @@ class TestModelTimeBasedProperties:
         assert str(ms_time) == "1s500ms"
 
 
+@pytest.mark.unit
 class TestModelTimeBasedTimeout:
     """Test timeout-specific functionality."""
 
@@ -362,6 +368,7 @@ class TestModelTimeBasedTimeout:
         assert result is False
 
 
+@pytest.mark.unit
 class TestModelTimeBasedFactoryMethods:
     """Test factory and class methods."""
 
@@ -453,6 +460,7 @@ class TestModelTimeBasedFactoryMethods:
         assert timeout.to_seconds() <= 5  # Fast category max
 
 
+@pytest.mark.unit
 class TestExplicitGenericTypes:
     """Test explicit generic types instead of type aliases."""
 
@@ -475,6 +483,7 @@ class TestExplicitGenericTypes:
         assert isinstance(ms_duration.value, int)
 
 
+@pytest.mark.unit
 class TestModelTimeBasedEdgeCases:
     """Test edge cases and error conditions."""
 
@@ -505,6 +514,7 @@ class TestModelTimeBasedEdgeCases:
         assert timeout.runtime_category == EnumRuntimeCategory.STANDARD
 
 
+@pytest.mark.unit
 class TestModelTimeBasedIntegration:
     """Integration tests with other components."""
 

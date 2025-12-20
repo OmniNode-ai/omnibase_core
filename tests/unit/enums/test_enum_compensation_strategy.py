@@ -18,6 +18,7 @@ from pydantic import BaseModel, ValidationError
 from omnibase_core.enums.enum_compensation_strategy import EnumCompensationStrategy
 
 
+@pytest.mark.unit
 class TestEnumCompensationStrategy:
     """Test cases for EnumCompensationStrategy."""
 

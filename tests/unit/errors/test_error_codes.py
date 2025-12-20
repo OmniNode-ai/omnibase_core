@@ -53,6 +53,7 @@ def get_cli_adapter():
 CLIAdapter = None  # Will be loaded lazily in tests that need it
 
 
+@pytest.mark.unit
 class TestCLIExitCode:
     """Test CLIExitCode enum."""
 
@@ -72,6 +73,7 @@ class TestCLIExitCode:
         assert isinstance(CLIExitCode.ERROR, int)
 
 
+@pytest.mark.unit
 class TestStatusToExitCodeMapping:
     """Test STATUS_TO_EXIT_CODE mapping."""
 
@@ -99,12 +101,14 @@ class TestStatusToExitCodeMapping:
         assert get_exit_code_for_status(EnumOnexStatus.UNKNOWN) == 1  # Maps to ERROR
 
 
+@pytest.mark.unit
 class TestOnexErrorCodeBase:
     """Test OnexErrorCode base class."""
 
     def test_onex_error_code_abstract_methods(self):
         """Test that abstract methods raise NotImplementedError."""
 
+        @pytest.mark.unit
         class TestErrorCode(OnexErrorCode):
             TEST_ERROR = "TEST_ERROR_001"
 
@@ -122,6 +126,7 @@ class TestOnexErrorCodeBase:
     def test_onex_error_code_default_exit_code(self):
         """Test that default get_exit_code() returns ERROR."""
 
+        @pytest.mark.unit
         class TestErrorCode(OnexErrorCode):
             TEST_ERROR = "TEST_ERROR_001"
 
@@ -138,6 +143,7 @@ class TestOnexErrorCodeBase:
         assert error_code.get_exit_code() == CLIExitCode.ERROR.value
 
 
+@pytest.mark.unit
 class TestCoreErrorCode:
     """Test CoreErrorCode enum."""
 
@@ -204,6 +210,7 @@ class TestCoreErrorCode:
         )
 
 
+@pytest.mark.unit
 class TestCoreErrorDescriptions:
     """Test core error descriptions."""
 
@@ -224,6 +231,7 @@ class TestCoreErrorDescriptions:
             assert keyword in description, f"'{keyword}' not in '{description}'"
 
 
+@pytest.mark.unit
 class TestModelOnexError:
     """Test ModelOnexError Pydantic model."""
 
@@ -265,6 +273,7 @@ class TestModelOnexError:
         assert error.context["file_path"].to_value() == "/test/path.txt"
 
 
+@pytest.mark.unit
 class TestOnexError:
     """Test OnexError exception class."""
 
@@ -402,6 +411,7 @@ class TestOnexError:
         # Context handling depends on ModelErrorContext availability
 
 
+@pytest.mark.unit
 class TestCLIAdapter:
     """Test CLIAdapter class."""
 
@@ -420,6 +430,7 @@ class TestCLIAdapter:
         assert callable(CLIAdapter.exit_with_error)
 
 
+@pytest.mark.unit
 class TestErrorCodeRegistry:
     """Test error code registry functionality."""
 
@@ -455,6 +466,7 @@ class TestErrorCodeRegistry:
     def test_list_registered_components(self):
         """Test listing registered components."""
 
+        @pytest.mark.unit
         class TestErrorCode(OnexErrorCode):
             TEST = "TEST_001"
 
@@ -474,6 +486,7 @@ class TestErrorCodeRegistry:
         assert "list_test_component" in components
 
 
+@pytest.mark.unit
 class TestRegistryErrorCode:
     """Test RegistryErrorCode enum."""
 
@@ -500,6 +513,7 @@ class TestRegistryErrorCode:
         assert exit_code == CLIExitCode.ERROR.value
 
 
+@pytest.mark.unit
 class TestOnexErrorEdgeCases:
     """Test OnexError edge cases."""
 
@@ -542,6 +556,7 @@ class TestOnexErrorEdgeCases:
         assert isinstance(error.timestamp, datetime)
 
 
+@pytest.mark.unit
 class TestGetExitCodeForCoreError:
     """Test get_exit_code_for_core_error() function."""
 

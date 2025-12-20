@@ -11,6 +11,7 @@ from pydantic import ValidationError
 from omnibase_core.models.examples.model_uri import ModelOnexUri
 
 
+@pytest.mark.unit
 class TestModelOnexUriBranchCoverage:
     """Branch coverage tests for ModelOnexUri conditional logic."""
 
@@ -216,6 +217,7 @@ class TestModelOnexUriBranchCoverage:
         assert not hasattr(uri, "extra_field")
 
 
+@pytest.mark.unit
 class TestModelOnexUriProtocolEdgeCases:
     """Edge case tests for protocol implementations."""
 

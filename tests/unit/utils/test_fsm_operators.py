@@ -29,6 +29,7 @@ from omnibase_core.utils.fsm_operators import (
 )
 
 
+@pytest.mark.unit
 class TestEvaluateEquals:
     """Test the evaluate_equals function."""
 
@@ -111,6 +112,7 @@ class TestEvaluateEquals:
         assert evaluate_equals({}, "{}") is True
 
 
+@pytest.mark.unit
 class TestEvaluateNotEquals:
     """Test the evaluate_not_equals function."""
 
@@ -148,6 +150,7 @@ class TestEvaluateNotEquals:
         assert evaluate_not_equals(True, "true") is True  # Case sensitive
 
 
+@pytest.mark.unit
 class TestTypeCoercionFootguns:
     """Test documented type coercion edge cases (footguns).
 
@@ -207,6 +210,7 @@ class TestTypeCoercionFootguns:
         assert evaluate_equals("hello\\world", "hello\\world") is True
 
 
+@pytest.mark.unit
 class TestIsStringOperator:
     """Test the is_string_operator function."""
 
@@ -237,6 +241,7 @@ class TestIsStringOperator:
         assert is_string_operator("Equals") is False
 
 
+@pytest.mark.unit
 class TestEvaluateStringOperator:
     """Test the evaluate_string_operator dispatch function."""
 
@@ -290,6 +295,7 @@ class TestEvaluateStringOperator:
         assert evaluate_string_operator("not_equals", False, "True") is True
 
 
+@pytest.mark.unit
 class TestErrorMessages:
     """Test error messages and context."""
 
@@ -307,6 +313,7 @@ class TestErrorMessages:
         assert "valid_operators" in inner_context
 
 
+@pytest.mark.unit
 class TestEdgeCases:
     """Test edge cases and boundary conditions."""
 

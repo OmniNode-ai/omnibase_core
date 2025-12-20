@@ -23,6 +23,7 @@ from omnibase_core.models.contracts.subcontracts.model_log_level_override import
 )
 
 
+@pytest.mark.unit
 class TestModelLogLevelOverrideBasics:
     """Test basic model instantiation and defaults."""
 
@@ -71,6 +72,7 @@ class TestModelLogLevelOverrideBasics:
         assert override.description is None
 
 
+@pytest.mark.unit
 class TestModelLogLevelOverrideValidation:
     """Test field validation and constraints."""
 
@@ -119,6 +121,7 @@ class TestModelLogLevelOverrideValidation:
             assert override.logger_name == name
 
 
+@pytest.mark.unit
 class TestModelLogLevelOverridePatternValidation:
     """Test logger_name pattern validation (dotted notation)."""
 
@@ -447,6 +450,7 @@ class TestModelLogLevelOverridePatternValidation:
         assert override_with_desc.description == "Test description"
 
 
+@pytest.mark.unit
 class TestModelLogLevelOverrideEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -554,6 +558,7 @@ class TestModelLogLevelOverrideEdgeCases:
         assert override1.override_priority < override2.override_priority
 
 
+@pytest.mark.unit
 class TestModelLogLevelOverrideConfigDict:
     """Test ConfigDict behavior."""
 
@@ -636,6 +641,7 @@ class TestModelLogLevelOverrideConfigDict:
         assert "error" in json_str.lower()
 
 
+@pytest.mark.unit
 class TestModelLogLevelOverrideDocumentation:
     """Test documentation and interface guarantees."""
 

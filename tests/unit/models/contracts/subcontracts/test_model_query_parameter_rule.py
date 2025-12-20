@@ -23,6 +23,7 @@ from omnibase_core.models.contracts.subcontracts.model_query_parameter_rule impo
 )
 
 
+@pytest.mark.unit
 class TestModelQueryParameterRuleBasics:
     """Test basic model instantiation and defaults."""
 
@@ -79,6 +80,7 @@ class TestModelQueryParameterRuleBasics:
         assert rule.priority == 100
 
 
+@pytest.mark.unit
 class TestModelQueryParameterRuleValidation:
     """Test field validation and constraints."""
 
@@ -275,6 +277,7 @@ class TestModelQueryParameterRuleValidation:
         assert rule_with_condition.apply_condition == "request.method == 'GET'"
 
 
+@pytest.mark.unit
 class TestModelQueryParameterRuleEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -442,6 +445,7 @@ class TestModelQueryParameterRuleEdgeCases:
         assert rule1.priority < rule2.priority
 
 
+@pytest.mark.unit
 class TestModelQueryParameterRuleConfigDict:
     """Test ConfigDict behavior."""
 
@@ -516,6 +520,7 @@ class TestModelQueryParameterRuleConfigDict:
         assert "12345" in json_str
 
 
+@pytest.mark.unit
 class TestModelQueryParameterRuleDocumentation:
     """Test documentation and interface guarantees."""
 

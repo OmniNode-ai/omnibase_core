@@ -217,6 +217,7 @@ def _create_input_with_fixed_ids(
 
 
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestNodeReducerDeterministicTransitions:
     """Test that FSM state transitions are deterministic."""
 
@@ -412,6 +413,7 @@ class TestNodeReducerDeterministicTransitions:
 
 
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestNodeReducerDeterministicOutput:
     """Test that same inputs produce same outputs."""
 
@@ -559,6 +561,7 @@ class TestNodeReducerDeterministicOutput:
 
 
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestNodeReducerStateSerializationDeterminism:
     """Test that state serialization produces identical behavior."""
 
@@ -692,6 +695,7 @@ class TestNodeReducerStateSerializationDeterminism:
 
 
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestNodeReducerNoHiddenEntropy:
     """Test that no hidden entropy sources affect state transitions."""
 
@@ -879,6 +883,7 @@ class TestNodeReducerNoHiddenEntropy:
 
 
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestNodeReducerDeterministicEdgeCases:
     """Test determinism in edge cases and boundary conditions."""
 

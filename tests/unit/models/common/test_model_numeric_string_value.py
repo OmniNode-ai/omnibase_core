@@ -32,6 +32,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 # ============================================================================
 
 
+@pytest.mark.unit
 class TestBasicCreation:
     """Test basic creation of ModelNumericStringValue instances."""
 
@@ -137,6 +138,7 @@ class TestBasicCreation:
 # ============================================================================
 
 
+@pytest.mark.unit
 class TestTypeDiscrimination:
     """Test type discrimination and validation."""
 
@@ -217,6 +219,7 @@ class TestTypeDiscrimination:
 # ============================================================================
 
 
+@pytest.mark.unit
 class TestTypeGuards:
     """Test type guard methods."""
 
@@ -278,6 +281,7 @@ class TestTypeGuards:
 # ============================================================================
 
 
+@pytest.mark.unit
 class TestFloatConversion:
     """Test conversion to float."""
 
@@ -366,6 +370,7 @@ class TestFloatConversion:
 # ============================================================================
 
 
+@pytest.mark.unit
 class TestIntConversion:
     """Test conversion to int with coercion modes."""
 
@@ -483,6 +488,7 @@ class TestIntConversion:
 # ============================================================================
 
 
+@pytest.mark.unit
 class TestStringConversion:
     """Test conversion to string."""
 
@@ -542,6 +548,7 @@ class TestStringConversion:
 # ============================================================================
 
 
+@pytest.mark.unit
 class TestCoercionModes:
     """Test coercion mode behavior."""
 
@@ -666,6 +673,7 @@ class TestCoercionModes:
 # ============================================================================
 
 
+@pytest.mark.unit
 class TestStringParsing:
     """Test parsing of various string formats."""
 
@@ -729,6 +737,7 @@ class TestStringParsing:
 # ============================================================================
 
 
+@pytest.mark.unit
 class TestJSONSerialization:
     """Test JSON serialization and deserialization."""
 
@@ -813,6 +822,7 @@ class TestJSONSerialization:
 # ============================================================================
 
 
+@pytest.mark.unit
 class TestEdgeCases:
     """Test edge cases and boundary conditions."""
 

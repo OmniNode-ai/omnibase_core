@@ -30,6 +30,7 @@ from omnibase_core.logging.core_logging import (
 )
 
 
+@pytest.mark.unit
 class TestEmitLogEventCore:
     """Test core emit_log_event functionality."""
 
@@ -89,6 +90,7 @@ class TestEmitLogEventCore:
         assert get_correlation_id() == test_correlation_id
 
 
+@pytest.mark.unit
 class TestCorrelationIdManagement:
     """Test correlation ID management functions."""
 
@@ -144,6 +146,7 @@ class TestCorrelationIdManagement:
         assert len(set(correlation_ids)) == 3  # All unique
 
 
+@pytest.mark.unit
 class TestInternalCorrelationIdGetter:
     """Test _get_correlation_id internal function."""
 
@@ -184,6 +187,7 @@ class TestInternalCorrelationIdGetter:
         assert first_id == second_id
 
 
+@pytest.mark.unit
 class TestSimpleFallbackLogger:
     """Test _SimpleFallbackLogger functionality."""
 
@@ -256,6 +260,7 @@ class TestSimpleFallbackLogger:
         assert "Warning message" in captured.out
 
 
+@pytest.mark.unit
 class TestGetRegistryLogger:
     """Test _get_registry_logger functionality."""
 
@@ -304,6 +309,7 @@ class TestGetRegistryLogger:
         assert len(set(results)) == 1
 
 
+@pytest.mark.unit
 class TestAsyncEmission:
     """Test async emission patterns."""
 
@@ -353,6 +359,7 @@ class TestAsyncEmission:
         await asyncio.gather(*tasks)
 
 
+@pytest.mark.unit
 class TestEdgeCases:
     """Test edge cases and error handling."""
 
@@ -388,6 +395,7 @@ class TestEdgeCases:
         assert get_correlation_id() == test_id
 
 
+@pytest.mark.unit
 class TestThreadSafety:
     """Test thread safety of logging functions."""
 

@@ -14,6 +14,7 @@ from pydantic import ValidationError
 from omnibase_core.models.cli.model_result_summary import ModelResultSummary
 
 
+@pytest.mark.unit
 class TestModelResultSummaryBasics:
     """Test basic initialization and validation."""
 
@@ -104,6 +105,7 @@ class TestModelResultSummaryBasics:
         assert summary.target_node is None
 
 
+@pytest.mark.unit
 class TestModelResultSummaryExecutionStatus:
     """Test execution status scenarios."""
 
@@ -200,6 +202,7 @@ class TestModelResultSummaryExecutionStatus:
         assert summary.error_count == 10
 
 
+@pytest.mark.unit
 class TestModelResultSummaryErrorCounts:
     """Test error and warning counting."""
 
@@ -297,6 +300,7 @@ class TestModelResultSummaryErrorCounts:
         assert summary.error_count == 5
 
 
+@pytest.mark.unit
 class TestModelResultSummaryProtocols:
     """Test protocol method implementations."""
 
@@ -400,6 +404,7 @@ class TestModelResultSummaryProtocols:
         assert result is True
 
 
+@pytest.mark.unit
 class TestModelResultSummaryEdgeCases:
     """Test edge cases and boundary values."""
 

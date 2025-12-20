@@ -11,17 +11,20 @@ Tests cover:
 - Redaction value customization
 """
 
+import pytest
 from pydantic import BaseModel
 
 from omnibase_core.mixins.mixin_redaction import MixinSensitiveFieldRedaction
 
 
+@pytest.mark.unit
 class TestMixinSensitiveFieldRedactionBasicBehavior:
     """Test basic MixinSensitiveFieldRedaction functionality."""
 
     def test_mixin_with_pydantic_model(self):
         """Test mixin works with Pydantic models."""
 
+        @pytest.mark.unit
         class TestModel(MixinSensitiveFieldRedaction, BaseModel):
             name: str
             password: str
@@ -33,6 +36,7 @@ class TestMixinSensitiveFieldRedactionBasicBehavior:
     def test_get_sensitive_field_patterns(self):
         """Test getting default sensitive field patterns."""
 
+        @pytest.mark.unit
         class TestModel(MixinSensitiveFieldRedaction, BaseModel):
             name: str
 
@@ -47,6 +51,7 @@ class TestMixinSensitiveFieldRedactionBasicBehavior:
     def test_get_redaction_values(self):
         """Test getting default redaction values."""
 
+        @pytest.mark.unit
         class TestModel(MixinSensitiveFieldRedaction, BaseModel):
             name: str
 
@@ -58,12 +63,14 @@ class TestMixinSensitiveFieldRedactionBasicBehavior:
         assert "secret" in redaction_values
 
 
+@pytest.mark.unit
 class TestSensitiveFieldDetection:
     """Test is_sensitive_field functionality."""
 
     def test_is_sensitive_field_with_password(self):
         """Test detection of password fields."""
 
+        @pytest.mark.unit
         class TestModel(MixinSensitiveFieldRedaction, BaseModel):
             name: str
 
@@ -75,6 +82,7 @@ class TestSensitiveFieldDetection:
     def test_is_sensitive_field_with_token(self):
         """Test detection of token fields."""
 
+        @pytest.mark.unit
         class TestModel(MixinSensitiveFieldRedaction, BaseModel):
             name: str
 
@@ -86,6 +94,7 @@ class TestSensitiveFieldDetection:
     def test_is_sensitive_field_with_secret(self):
         """Test detection of secret fields."""
 
+        @pytest.mark.unit
         class TestModel(MixinSensitiveFieldRedaction, BaseModel):
             name: str
 
@@ -96,6 +105,7 @@ class TestSensitiveFieldDetection:
     def test_is_sensitive_field_with_key(self):
         """Test detection of key fields."""
 
+        @pytest.mark.unit
         class TestModel(MixinSensitiveFieldRedaction, BaseModel):
             name: str
 
@@ -106,6 +116,7 @@ class TestSensitiveFieldDetection:
     def test_is_sensitive_field_with_non_sensitive(self):
         """Test detection returns False for non-sensitive fields."""
 
+        @pytest.mark.unit
         class TestModel(MixinSensitiveFieldRedaction, BaseModel):
             name: str
 
@@ -115,12 +126,14 @@ class TestSensitiveFieldDetection:
         assert not TestModel.is_sensitive_field("created_at")
 
 
+@pytest.mark.unit
 class TestRedactionValueSelection:
     """Test get_redaction_value functionality."""
 
     def test_redaction_value_for_password(self):
         """Test redaction value selection for password fields."""
 
+        @pytest.mark.unit
         class TestModel(MixinSensitiveFieldRedaction, BaseModel):
             password: str
 
@@ -133,6 +146,7 @@ class TestRedactionValueSelection:
     def test_redaction_value_for_token(self):
         """Test redaction value selection for token fields."""
 
+        @pytest.mark.unit
         class TestModel(MixinSensitiveFieldRedaction, BaseModel):
             token: str
 
@@ -145,6 +159,7 @@ class TestRedactionValueSelection:
     def test_redaction_value_for_secret(self):
         """Test redaction value selection for secret fields."""
 
+        @pytest.mark.unit
         class TestModel(MixinSensitiveFieldRedaction, BaseModel):
             secret: str
 
@@ -157,6 +172,7 @@ class TestRedactionValueSelection:
     def test_redaction_value_for_key(self):
         """Test redaction value selection for key fields."""
 
+        @pytest.mark.unit
         class TestModel(MixinSensitiveFieldRedaction, BaseModel):
             api_key: str
 
@@ -167,12 +183,14 @@ class TestRedactionValueSelection:
         assert value == "[KEY_REDACTED]"
 
 
+@pytest.mark.unit
 class TestRedactSensitiveFields:
     """Test redact_sensitive_fields functionality."""
 
     def test_redact_basic_sensitive_fields(self):
         """Test redacting basic sensitive fields."""
 
+        @pytest.mark.unit
         class TestModel(MixinSensitiveFieldRedaction, BaseModel):
             name: str
             password: str
@@ -188,6 +206,7 @@ class TestRedactSensitiveFields:
     def test_redact_multiple_sensitive_fields(self):
         """Test redacting multiple sensitive fields."""
 
+        @pytest.mark.unit
         class TestModel(MixinSensitiveFieldRedaction, BaseModel):
             username: str
             password: str
@@ -218,6 +237,7 @@ class TestRedactSensitiveFields:
     def test_redact_with_none_values(self):
         """Test redaction preserves None values."""
 
+        @pytest.mark.unit
         class TestModel(MixinSensitiveFieldRedaction, BaseModel):
             name: str
             password: str | None = None
@@ -233,6 +253,7 @@ class TestRedactSensitiveFields:
     def test_redact_flat_dict_only(self):
         """Test redacting sensitive fields in flat dictionary."""
 
+        @pytest.mark.unit
         class TestModel(MixinSensitiveFieldRedaction, BaseModel):
             name: str
 
@@ -255,6 +276,7 @@ class TestRedactSensitiveFields:
     def test_redact_lists_with_simple_values(self):
         """Test redacting lists with simple non-dict values."""
 
+        @pytest.mark.unit
         class TestModel(MixinSensitiveFieldRedaction, BaseModel):
             name: str
 
@@ -273,6 +295,7 @@ class TestRedactSensitiveFields:
     def test_redact_with_additional_sensitive_fields_basic(self):
         """Test redaction with additional specified sensitive fields - basic."""
 
+        @pytest.mark.unit
         class TestModel(MixinSensitiveFieldRedaction, BaseModel):
             name: str
             email: str
@@ -287,12 +310,14 @@ class TestRedactSensitiveFields:
         assert redacted["email"] == "user@test.com"  # email not sensitive by default
 
 
+@pytest.mark.unit
 class TestRedactMethod:
     """Test redact convenience method."""
 
     def test_redact_model_data(self):
         """Test redacting model data."""
 
+        @pytest.mark.unit
         class TestModel(MixinSensitiveFieldRedaction, BaseModel):
             username: str
             password: str
@@ -313,6 +338,7 @@ class TestRedactMethod:
     def test_redact_without_additional_fields(self):
         """Test redact without additional sensitive fields."""
 
+        @pytest.mark.unit
         class TestModel(MixinSensitiveFieldRedaction, BaseModel):
             name: str
             email: str
@@ -333,6 +359,7 @@ class TestRedactMethod:
     def test_redact_with_model_dump_kwargs(self):
         """Test redact with model_dump kwargs."""
 
+        @pytest.mark.unit
         class TestModel(MixinSensitiveFieldRedaction, BaseModel):
             name: str
             password: str
@@ -352,12 +379,14 @@ class TestRedactMethod:
         assert redacted["password"] == "[PASSWORD_REDACTED]"
 
 
+@pytest.mark.unit
 class TestModelDumpRedacted:
     """Test model_dump_redacted convenience method."""
 
     def test_model_dump_redacted_basic(self):
         """Test model_dump_redacted basic functionality."""
 
+        @pytest.mark.unit
         class TestModel(MixinSensitiveFieldRedaction, BaseModel):
             username: str
             password: str
@@ -372,6 +401,7 @@ class TestModelDumpRedacted:
     def test_model_dump_redacted_is_alias_for_redact(self):
         """Test model_dump_redacted is equivalent to redact."""
 
+        @pytest.mark.unit
         class TestModel(MixinSensitiveFieldRedaction, BaseModel):
             name: str
             token: str
@@ -384,6 +414,7 @@ class TestModelDumpRedacted:
         assert redacted1 == redacted2
 
 
+@pytest.mark.unit
 class TestCustomPatterns:
     """Test customizing sensitive field patterns."""
 
@@ -421,12 +452,14 @@ class TestCustomPatterns:
         assert value == "[HIDDEN]"
 
 
+@pytest.mark.unit
 class TestEdgeCases:
     """Test edge cases and boundary conditions."""
 
     def test_redact_empty_dict(self):
         """Test redacting empty dictionary."""
 
+        @pytest.mark.unit
         class TestModel(MixinSensitiveFieldRedaction, BaseModel):
             name: str
 
@@ -438,6 +471,7 @@ class TestEdgeCases:
     def test_redact_deeply_nested_structures(self):
         """Test redacting deeply nested structures."""
 
+        @pytest.mark.unit
         class TestModel(MixinSensitiveFieldRedaction, BaseModel):
             name: str
 
@@ -463,6 +497,7 @@ class TestEdgeCases:
     def test_redact_mixed_list_types(self):
         """Test redacting lists with mixed types."""
 
+        @pytest.mark.unit
         class TestModel(MixinSensitiveFieldRedaction, BaseModel):
             name: str
 
@@ -485,6 +520,7 @@ class TestEdgeCases:
         assert redacted["items"][3]["token"] == "[MASKED]"
 
 
+@pytest.mark.unit
 class TestIntegrationScenarios:
     """Integration tests for redaction patterns."""
 

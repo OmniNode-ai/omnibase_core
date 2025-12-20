@@ -4,6 +4,8 @@ Test suite for ModelBaseOutputState.
 
 from datetime import datetime
 
+import pytest
+
 from omnibase_core.models.core.model_base_output_state import ModelBaseOutputState
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -11,6 +13,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
+@pytest.mark.unit
 class TestModelBaseOutputState:
     """Test ModelBaseOutputState functionality."""
 

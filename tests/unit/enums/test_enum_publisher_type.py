@@ -8,6 +8,7 @@ import pytest
 from omnibase_core.enums.enum_publisher_type import EnumPublisherType
 
 
+@pytest.mark.unit
 class TestEnumPublisherType:
     """Test suite for EnumPublisherType."""
 

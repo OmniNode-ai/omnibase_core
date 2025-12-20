@@ -7,6 +7,7 @@ from omnibase_core.models.configuration.model_rate_limit_policy import (
 )
 
 
+@pytest.mark.unit
 class TestModelRateLimitPolicyBasics:
     def test_create_with_required_fields(self):
         policy = ModelRateLimitPolicy(policy_name="test-policy")
@@ -20,6 +21,7 @@ class TestModelRateLimitPolicyBasics:
             ModelRateLimitPolicy(policy_name="Invalid Policy")
 
 
+@pytest.mark.unit
 class TestModelRateLimitPolicyMethods:
     def test_get_effective_rate_limit_disabled(self):
         policy = ModelRateLimitPolicy(policy_name="test", enabled=False)
@@ -73,6 +75,7 @@ class TestModelRateLimitPolicyMethods:
         assert isinstance(issues, list)
 
 
+@pytest.mark.unit
 class TestModelRateLimitPolicySerialization:
     def test_serialization(self):
         policy = ModelRateLimitPolicy(policy_name="test")

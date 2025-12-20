@@ -9,6 +9,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError as OnexE
 from omnibase_core.models.infrastructure.model_regex_flags import ModelRegexFlags
 
 
+@pytest.mark.unit
 class TestModelRegexFlagsInstantiation:
     """Tests for ModelRegexFlags instantiation."""
 
@@ -39,6 +40,7 @@ class TestModelRegexFlagsInstantiation:
         assert flags.flag_value == re.DOTALL
 
 
+@pytest.mark.unit
 class TestModelRegexFlagsCombined:
     """Tests for combined ModelRegexFlags."""
 
@@ -73,6 +75,7 @@ class TestModelRegexFlagsCombined:
         assert flags.flag_value == (re.DOTALL | re.MULTILINE)
 
 
+@pytest.mark.unit
 class TestModelRegexFlagsValidation:
     """Tests for ModelRegexFlags validation."""
 
@@ -111,6 +114,7 @@ class TestModelRegexFlagsValidation:
         assert "Invalid combined flag value" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestModelRegexFlagsUsage:
     """Tests for using ModelRegexFlags in regex operations."""
 
@@ -159,6 +163,7 @@ class TestModelRegexFlagsUsage:
         assert match.group(0) == "LINE2"
 
 
+@pytest.mark.unit
 class TestModelRegexFlagsSerialization:
     """Tests for ModelRegexFlags serialization."""
 
@@ -178,6 +183,7 @@ class TestModelRegexFlagsSerialization:
         assert "flag_value" in data
 
 
+@pytest.mark.unit
 class TestModelRegexFlagsProtocols:
     """Tests for ModelRegexFlags protocol implementations."""
 
@@ -194,6 +200,7 @@ class TestModelRegexFlagsProtocols:
         assert result is True
 
 
+@pytest.mark.unit
 class TestModelRegexFlagsEdgeCases:
     """Tests for ModelRegexFlags edge cases."""
 

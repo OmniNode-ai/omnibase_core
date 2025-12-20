@@ -9,6 +9,7 @@ import pytest
 from omnibase_core.enums.enum_finish_reason import EnumFinishReason
 
 
+@pytest.mark.unit
 class TestEnumFinishReason:
     """Test cases for EnumFinishReason enum."""
 

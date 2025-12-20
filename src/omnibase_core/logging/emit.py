@@ -513,24 +513,26 @@ _SENSITIVE_PATTERNS = [
 ]
 
 # Sensitive key names that should trigger value redaction
-_SENSITIVE_KEY_NAMES = {
-    "password",
-    "passwd",
-    "pwd",
-    "api_key",
-    "apikey",
-    "api-key",
-    "secret",
-    "token",
-    "access_token",
-    "refresh_token",
-    "auth_token",
-    "authorization",
-    "credentials",
-    "private_key",
-    "privatekey",
-    "private-key",
-}
+_SENSITIVE_KEY_NAMES = frozenset(
+    {
+        "password",
+        "passwd",
+        "pwd",
+        "api_key",
+        "apikey",
+        "api-key",
+        "secret",
+        "token",
+        "access_token",
+        "refresh_token",
+        "auth_token",
+        "authorization",
+        "credentials",
+        "private_key",
+        "privatekey",
+        "private-key",
+    }
+)
 
 
 def _sanitize_sensitive_data(text: str) -> str:

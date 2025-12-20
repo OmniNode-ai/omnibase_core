@@ -6,6 +6,7 @@ from pydantic import ValidationError
 from omnibase_core.models.health.model_health_metric import ModelHealthMetric
 
 
+@pytest.mark.unit
 class TestModelHealthMetricBasics:
     """Test basic functionality."""
 
@@ -36,6 +37,7 @@ class TestModelHealthMetricBasics:
         assert metric.threshold_critical == 95.0
 
 
+@pytest.mark.unit
 class TestModelHealthMetricValidation:
     """Test validation."""
 
@@ -62,6 +64,7 @@ class TestModelHealthMetricValidation:
             )
 
 
+@pytest.mark.unit
 class TestModelHealthMetricThresholds:
     """Test threshold checking."""
 
@@ -126,6 +129,7 @@ class TestModelHealthMetricThresholds:
         assert metric.is_critical() is False
 
 
+@pytest.mark.unit
 class TestModelHealthMetricTrends:
     """Test trend analysis."""
 
@@ -142,6 +146,7 @@ class TestModelHealthMetricTrends:
         assert metric.is_degrading() is False
 
 
+@pytest.mark.unit
 class TestModelHealthMetricFormatting:
     """Test formatting methods."""
 
@@ -164,6 +169,7 @@ class TestModelHealthMetricFormatting:
         assert formatted == "125.68ms"
 
 
+@pytest.mark.unit
 class TestModelHealthMetricStatus:
     """Test status determination."""
 
@@ -210,6 +216,7 @@ class TestModelHealthMetricStatus:
         assert metric.get_status() == "normal"
 
 
+@pytest.mark.unit
 class TestModelHealthMetricUpdates:
     """Test metric updates."""
 
@@ -276,6 +283,7 @@ class TestModelHealthMetricUpdates:
         assert metric.trend == "stable"
 
 
+@pytest.mark.unit
 class TestModelHealthMetricFactoryMethods:
     """Test factory methods."""
 
@@ -310,6 +318,7 @@ class TestModelHealthMetricFactoryMethods:
         assert metric.threshold_critical == 5000.0
 
 
+@pytest.mark.unit
 class TestModelHealthMetricEdgeCases:
     """Test edge cases."""
 
@@ -359,6 +368,7 @@ class TestModelHealthMetricEdgeCases:
         assert metric.last_updated >= original_timestamp
 
 
+@pytest.mark.unit
 class TestModelHealthMetricComplexScenarios:
     """Test complex scenarios."""
 

@@ -14,6 +14,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
+@pytest.mark.unit
 class TestModelGenericMetadataGeneric:
     """Test cases for ModelGenericMetadata functionality."""
 
@@ -324,6 +325,7 @@ class TestModelGenericMetadataGeneric:
         # due to complex ModelValue serialization - this is expected behavior
 
 
+@pytest.mark.unit
 class TestModelGenericMetadataGenericEdgeCases:
     """Test edge cases for ModelGenericMetadata."""
 

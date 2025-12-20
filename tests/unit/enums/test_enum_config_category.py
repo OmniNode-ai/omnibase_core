@@ -18,6 +18,7 @@ from pydantic import BaseModel, ValidationError
 from omnibase_core.enums.enum_config_category import EnumConfigCategory
 
 
+@pytest.mark.unit
 class TestEnumConfigCategory:
     """Test cases for EnumConfigCategory."""
 
@@ -229,6 +230,7 @@ class TestEnumConfigCategory:
         assert len(unclassified) == 0
 
 
+@pytest.mark.unit
 class TestEnumConfigCategoryEdgeCases:
     """Test edge cases for EnumConfigCategory."""
 

@@ -120,6 +120,7 @@ class MockToolNoMethods:
 # ===== INITIALIZATION TESTS =====
 
 
+@pytest.mark.unit
 class TestNodeBaseInitialization:
     """Test NodeBase initialization and setup."""
 
@@ -284,6 +285,7 @@ class TestNodeBaseInitialization:
 # ===== TOOL RESOLUTION TESTS =====
 
 
+@pytest.mark.unit
 class TestNodeBaseToolResolution:
     """Test NodeBase tool resolution and instantiation."""
 
@@ -416,6 +418,7 @@ class TestNodeBaseToolResolution:
 # ===== ASYNC EXECUTION TESTS =====
 
 
+@pytest.mark.unit
 class TestNodeBaseAsyncExecution:
     """Test NodeBase async execution methods."""
 
@@ -645,6 +648,7 @@ class TestNodeBaseAsyncExecution:
 # ===== SYNC EXECUTION TESTS =====
 
 
+@pytest.mark.unit
 class TestNodeBaseSyncExecution:
     """Test NodeBase sync execution methods."""
 
@@ -714,6 +718,7 @@ class TestNodeBaseSyncExecution:
 # ===== REDUCER PATTERN TESTS =====
 
 
+@pytest.mark.unit
 class TestNodeBaseReducerPattern:
     """Test NodeBase reducer pattern implementation."""
 
@@ -819,6 +824,7 @@ class TestNodeBaseReducerPattern:
 # ===== PROPERTY TESTS =====
 
 
+@pytest.mark.unit
 class TestNodeBaseProperties:
     """Test NodeBase property accessors."""
 
@@ -1015,6 +1021,7 @@ class TestNodeBaseProperties:
 # ===== WORKFLOW TESTS =====
 
 
+@pytest.mark.unit
 class TestNodeBaseWorkflow:
     """Test NodeBase workflow creation."""
 
@@ -1051,6 +1058,7 @@ class TestNodeBaseWorkflow:
 # ===== EDGE CASES AND ERROR HANDLING =====
 
 
+@pytest.mark.unit
 class TestNodeBaseEdgeCases:
     """Test NodeBase edge cases and error scenarios."""
 

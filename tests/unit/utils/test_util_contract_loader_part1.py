@@ -157,6 +157,7 @@ def contract_loader_no_cache(tmp_path: Path) -> ProtocolContractLoader:
 # ===== Constructor Tests =====
 
 
+@pytest.mark.unit
 class TestProtocolContractLoaderInit:
     """Test ProtocolContractLoader.__init__ constructor."""
 
@@ -201,6 +202,7 @@ class TestProtocolContractLoaderInit:
 # ===== load_contract Tests =====
 
 
+@pytest.mark.unit
 class TestLoadContract:
     """Test ProtocolContractLoader.load_contract method."""
 
@@ -311,6 +313,7 @@ class TestLoadContract:
 # ===== _load_contract_file Tests =====
 
 
+@pytest.mark.unit
 class TestLoadContractFile:
     """Test ProtocolContractLoader._load_contract_file method."""
 
@@ -427,6 +430,7 @@ tool_specification:
 # ===== _parse_contract_content Tests =====
 
 
+@pytest.mark.unit
 class TestParseContractContent:
     """Test ProtocolContractLoader._parse_contract_content method."""
 
@@ -573,6 +577,7 @@ class TestParseContractContent:
 # ===== _convert_contract_content_to_dict Tests =====
 
 
+@pytest.mark.unit
 class TestConvertContractContentToDict:
     """Test ProtocolContractLoader._convert_contract_content_to_dict method."""
 
@@ -631,6 +636,7 @@ class TestConvertContractContentToDict:
 # ===== _validate_contract_structure Tests =====
 
 
+@pytest.mark.unit
 class TestValidateContractStructure:
     """Test ProtocolContractLoader._validate_contract_structure method."""
 
@@ -707,6 +713,7 @@ class TestValidateContractStructure:
 # ===== _validate_yaml_content_security Tests =====
 
 
+@pytest.mark.unit
 class TestValidateYamlContentSecurity:
     """Test ProtocolContractLoader._validate_yaml_content_security method."""
 
@@ -868,6 +875,7 @@ data: !!map
 # ===== Integration Tests =====
 
 
+@pytest.mark.unit
 class TestContractLoaderIntegration:
     """Integration tests for complete contract loading workflow."""
 

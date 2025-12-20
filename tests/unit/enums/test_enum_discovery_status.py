@@ -9,6 +9,7 @@ import pytest
 from omnibase_core.enums.enum_discovery_status import EnumDiscoveryStatus
 
 
+@pytest.mark.unit
 class TestEnumDiscoveryStatus:
     """Test cases for EnumDiscoveryStatus enum."""
 

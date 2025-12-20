@@ -1,5 +1,7 @@
 """Tests for base container helper functions."""
 
+import pytest
+
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.models.container.model_base_model_onex_container import (
     _create_action_registry,
@@ -12,6 +14,7 @@ from omnibase_core.models.container.model_base_model_onex_container import (
 )
 
 
+@pytest.mark.unit
 class TestBaseContainerHelpers:
     """Tests for base container helper functions."""
 

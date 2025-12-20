@@ -55,6 +55,7 @@ main = validate_no_direct_io.main
 pytestmark = [pytest.mark.unit, pytest.mark.timeout(30)]
 
 
+@pytest.mark.unit
 class TestIOViolation:
     """Tests for the IOViolation named tuple."""
 
@@ -76,6 +77,7 @@ class TestIOViolation:
         assert violation.description == "Direct file I/O detected"
 
 
+@pytest.mark.unit
 class TestDirectIODetectorFileIO:
     """Tests for file I/O detection in DirectIODetector."""
 
@@ -207,6 +209,7 @@ def find_files():
         assert violations[0].pattern_type == "path_io"
 
 
+@pytest.mark.unit
 class TestDirectIODetectorNetworkIO:
     """Tests for network I/O detection in DirectIODetector."""
 
@@ -254,6 +257,7 @@ def fetch_data():
         assert violations[0].pattern_type == "network_io"
 
 
+@pytest.mark.unit
 class TestDirectIODetectorDatabaseIO:
     """Tests for database I/O detection in DirectIODetector."""
 
@@ -314,6 +318,7 @@ def get_engine():
         assert violations[0].pattern_type == "database_io"
 
 
+@pytest.mark.unit
 class TestDirectIODetectorMessageQueueIO:
     """Tests for message queue I/O detection in DirectIODetector."""
 
@@ -333,6 +338,7 @@ def create_producer():
         assert isinstance(violations, list)
 
 
+@pytest.mark.unit
 class TestDirectIODetectorEnvVarAccess:
     """Tests for environment variable access detection in DirectIODetector."""
 
@@ -378,6 +384,7 @@ def get_config():
         assert violations[0].pattern_type == "env_var"
 
 
+@pytest.mark.unit
 class TestDirectIODetectorBypassComments:
     """Tests for bypass comment handling in DirectIODetector."""
 
@@ -426,6 +433,7 @@ def read_data():
         assert len(violations) == 0
 
 
+@pytest.mark.unit
 class TestDirectIODetectorCleanCode:
     """Tests for code that should NOT trigger violations."""
 
@@ -486,6 +494,7 @@ def use_class():
         assert isinstance(violations, list)
 
 
+@pytest.mark.unit
 class TestDirectIODetectorEdgeCases:
     """Tests for edge cases in DirectIODetector."""
 
@@ -549,6 +558,7 @@ def do_io():
         assert len(violations) >= 3  # At least env, network, and path I/O
 
 
+@pytest.mark.unit
 class TestDirectIOValidator:
     """Tests for the DirectIOValidator class."""
 
@@ -775,6 +785,7 @@ def read_file():
         assert "Skipped files" in captured.out
 
 
+@pytest.mark.unit
 class TestMainFunction:
     """Tests for the main() entry point."""
 
@@ -849,6 +860,7 @@ class TestMainFunction:
             assert result in (0, 1, 2)
 
 
+@pytest.mark.unit
 class TestPathObjectDetection:
     """Tests for Path object detection heuristics."""
 
@@ -907,6 +919,7 @@ def read_file(self):
         assert len(violations) == 1
 
 
+@pytest.mark.unit
 class TestImportTracking:
     """Tests for import statement tracking."""
 

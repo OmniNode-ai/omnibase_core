@@ -21,6 +21,7 @@ from __future__ import annotations
 from typing import Any, TypeVar
 from uuid import uuid4
 
+import pytest
 import yaml
 from pydantic import BaseModel
 
@@ -82,6 +83,7 @@ def parse_yaml_to_dict(yaml_content: str) -> dict[str, Any]:
     return result if result is not None else {}
 
 
+@pytest.mark.unit
 class TestStepOrderingPreservation:
     """Test that workflow steps maintain exact order through round-trip."""
 
@@ -270,6 +272,7 @@ max_parallel_instances: 1
         assert round_tripped_dict["order_index"] == 42
 
 
+@pytest.mark.unit
 class TestStepIDPreservation:
     """Test that step IDs and correlation IDs remain unchanged."""
 
@@ -355,6 +358,7 @@ dependencies:
         assert round_tripped_dict["dependencies"] == [str(dep_id_1), str(dep_id_2)]
 
 
+@pytest.mark.unit
 class TestDependencySetPreservation:
     """Test that depends_on lists are preserved exactly."""
 
@@ -444,6 +448,7 @@ dependencies:
         assert round_tripped_dict["dependencies"] == expected_deps
 
 
+@pytest.mark.unit
 class TestReservedFieldHandling:
     """Test that reserved fields are untouched through round-trip."""
 
@@ -565,6 +570,7 @@ coordination_rules:
         assert sync_points == ["checkpoint_1", "checkpoint_2", "final_sync"]
 
 
+@pytest.mark.unit
 class TestScalarTypePreservation:
     """Test that scalar types are preserved without coercion."""
 
@@ -675,6 +681,7 @@ dependencies: []
         assert isinstance(reqs["string_bool"], str)
 
 
+@pytest.mark.unit
 class TestNullValueHandling:
     """Test null value handling through round-trip."""
 
@@ -824,6 +831,7 @@ timeout_ms: 120000
         assert model_without.workflow_hash is None
 
 
+@pytest.mark.unit
 class TestComplexRoundTripScenarios:
     """Test complex round-trip scenarios combining multiple features."""
 
@@ -998,6 +1006,7 @@ coordination_rules:
         assert dict2 == dict3, "Second and third round-trip differ"
 
 
+@pytest.mark.unit
 class TestEnumValuePreservation:
     """Test that enum values are preserved correctly."""
 

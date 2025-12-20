@@ -18,6 +18,7 @@ from omnibase_core.models.fsm import ModelFSMStateSnapshot
 pytestmark = pytest.mark.unit
 
 
+@pytest.mark.unit
 class TestModelFSMStateSnapshotInstantiation:
     """Test cases for ModelFSMStateSnapshot instantiation."""
 
@@ -56,6 +57,7 @@ class TestModelFSMStateSnapshotInstantiation:
         assert isinstance(snapshot.history, list)
 
 
+@pytest.mark.unit
 class TestModelFSMStateSnapshotHistoryNeverNone:
     """Test that history is NEVER None, always a list."""
 
@@ -91,6 +93,7 @@ class TestModelFSMStateSnapshotHistoryNeverNone:
         assert "history" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestModelFSMStateSnapshotFrozenBehavior:
     """Test frozen behavior (immutability) of ModelFSMStateSnapshot."""
 
@@ -123,6 +126,7 @@ class TestModelFSMStateSnapshotFrozenBehavior:
             snapshot.new_attr = "value"
 
 
+@pytest.mark.unit
 class TestModelFSMStateSnapshotExtraFieldsRejected:
     """Test that extra fields are rejected (extra='forbid')."""
 
@@ -162,6 +166,7 @@ class TestModelFSMStateSnapshotExtraFieldsRejected:
         assert "extra_field" in error_str.lower() or "extra" in error_str.lower()
 
 
+@pytest.mark.unit
 class TestModelFSMStateSnapshotCreateInitial:
     """Test create_initial factory method."""
 
@@ -205,6 +210,7 @@ class TestModelFSMStateSnapshotCreateInitial:
         assert snapshot.history == []
 
 
+@pytest.mark.unit
 class TestModelFSMStateSnapshotSerialization:
     """Test serialization and deserialization for ModelFSMStateSnapshot."""
 
@@ -303,6 +309,7 @@ class TestModelFSMStateSnapshotSerialization:
         assert restored == original
 
 
+@pytest.mark.unit
 class TestModelFSMStateSnapshotValidation:
     """Test validation rules for ModelFSMStateSnapshot."""
 
@@ -338,6 +345,7 @@ class TestModelFSMStateSnapshotValidation:
             ModelFSMStateSnapshot(current_state="idle", history={"dict": "value"})
 
 
+@pytest.mark.unit
 class TestModelFSMStateSnapshotEdgeCases:
     """Test edge cases for ModelFSMStateSnapshot."""
 
@@ -438,6 +446,7 @@ class TestModelFSMStateSnapshotEdgeCases:
         assert "test" in repr_str
 
 
+@pytest.mark.unit
 class TestModelFSMStateSnapshotTransitionTo:
     """Test transition_to helper method."""
 

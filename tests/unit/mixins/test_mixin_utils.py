@@ -4,6 +4,7 @@ Tests for MixinUtils - Utility functions for metadata canonicalization.
 Coverage target: 100% (single function with simple behavior)
 """
 
+import pytest
 from pydantic import BaseModel
 
 from omnibase_core.mixins.mixin_utils import canonicalize_metadata_block
@@ -19,6 +20,7 @@ class SampleMetadataModel(BaseModel):
     description: str
 
 
+@pytest.mark.unit
 class TestCanonicalizeMetadataBlock:
     """Test suite for canonicalize_metadata_block function."""
 

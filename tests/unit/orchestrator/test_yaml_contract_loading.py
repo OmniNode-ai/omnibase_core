@@ -49,6 +49,7 @@ from omnibase_core.utils.util_safe_yaml_loader import (
 from omnibase_core.utils.workflow_executor import get_execution_order
 
 
+@pytest.mark.unit
 class TestOrderPreservation:
     """Tests for YAML list order preservation."""
 
@@ -171,6 +172,7 @@ nodes:
         return steps_yaml
 
 
+@pytest.mark.unit
 class TestTypedConversion:
     """Tests for YAML type conversion to Pydantic model fields."""
 
@@ -380,6 +382,7 @@ step_type: compute
         assert step.parallel_group is None
 
 
+@pytest.mark.unit
 class TestDeclarationOrderTiebreaker:
     """Tests for declaration order as tiebreaker for equal-priority steps."""
 
@@ -566,6 +569,7 @@ steps:
         assert execution_order[-1] == id_priority_10
 
 
+@pytest.mark.unit
 class TestYamlSyntax:
     """Tests for YAML syntax handling and error messages."""
 
@@ -734,6 +738,7 @@ step_type: invalid_step_type
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
 
+@pytest.mark.unit
 class TestYamlContentLoading:
     """Tests for loading YAML content from strings."""
 
@@ -779,6 +784,7 @@ nodes:
         assert graph.nodes[1].node_type == EnumNodeType.EFFECT_GENERIC
 
 
+@pytest.mark.unit
 class TestWorkflowDefinitionLoading:
     """Tests for complete workflow definition loading."""
 

@@ -1,10 +1,3 @@
-from typing import Any
-
-from omnibase_core.constants.event_types import (
-    NODE_INTROSPECTION_EVENT,
-    TOOL_DISCOVERY_REQUEST,
-)
-
 """
 Discovery Event Models for ONEX Event-Driven Service Discovery
 
@@ -65,8 +58,6 @@ from .model_node_shutdown_event import ModelNodeShutdownEvent
 from .model_request_introspection_event import ModelRequestIntrospectionEvent
 from .model_resource_usage import ModelResourceUsage
 from .model_tool_discovery_error import ModelToolDiscoveryError
-from .model_tool_discovery_request import ModelDiscoveryFilters
-from .model_tool_discovery_response import ModelDiscoveredTool
 from .model_tool_discovery_result import ModelToolDiscoveryResult
 from .model_tooldiscoveryrequest import ModelToolDiscoveryRequest
 from .model_tooldiscoveryresponse import ModelToolDiscoveryResponse

@@ -8,6 +8,7 @@ import pytest
 from omnibase_core.enums.enum_query_type import EnumQueryType
 
 
+@pytest.mark.unit
 class TestEnumQueryType:
     """Test suite for EnumQueryType."""
 

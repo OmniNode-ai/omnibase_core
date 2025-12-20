@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from omnibase_core.models.validation.model_validation_base import ModelValidationBase
 from omnibase_core.models.validation.model_validation_container import (
     ModelValidationContainer,
@@ -47,6 +49,7 @@ class ModelWithComplexValidation(ModelValidationBase):
             self.add_validation_error("Count must be non-negative", field="count")
 
 
+@pytest.mark.unit
 class TestModelValidationBaseInstantiation:
     """Test basic model instantiation."""
 
@@ -67,6 +70,7 @@ class TestModelValidationBaseInstantiation:
         assert len(model2.validation.errors) == 0
 
 
+@pytest.mark.unit
 class TestModelValidationBaseHasValidationErrors:
     """Test has_validation_errors method."""
 
@@ -82,6 +86,7 @@ class TestModelValidationBaseHasValidationErrors:
         assert model.has_validation_errors() is True
 
 
+@pytest.mark.unit
 class TestModelValidationBaseHasCriticalValidationErrors:
     """Test has_critical_validation_errors method."""
 
@@ -103,6 +108,7 @@ class TestModelValidationBaseHasCriticalValidationErrors:
         assert model.has_critical_validation_errors() is True
 
 
+@pytest.mark.unit
 class TestModelValidationBaseAddValidationErrorBranches:
     """Test add_validation_error method branches."""
 
@@ -138,6 +144,7 @@ class TestModelValidationBaseAddValidationErrorBranches:
         assert model.validation.errors[0].message == "Simple error"
 
 
+@pytest.mark.unit
 class TestModelValidationBaseAddValidationWarning:
     """Test add_validation_warning method."""
 
@@ -150,6 +157,7 @@ class TestModelValidationBaseAddValidationWarning:
         assert model.validation.warnings[0] == "Warning message"
 
 
+@pytest.mark.unit
 class TestModelValidationBaseGetValidationSummary:
     """Test get_validation_summary method."""
 
@@ -168,6 +176,7 @@ class TestModelValidationBaseGetValidationSummary:
         assert "2 errors" in summary
 
 
+@pytest.mark.unit
 class TestModelValidationBaseValidateModelDataBranches:
     """Test validate_model_data method branches."""
 
@@ -341,6 +350,7 @@ class TestModelValidationBaseValidateModelDataBranches:
             pass  # Expected to bubble up
 
 
+@pytest.mark.unit
 class TestModelValidationBasePerformValidation:
     """Test perform_validation method."""
 
@@ -378,6 +388,7 @@ class TestModelValidationBasePerformValidation:
         )
 
 
+@pytest.mark.unit
 class TestModelValidationBaseValidateInstance:
     """Test validate_instance protocol method."""
 
@@ -392,6 +403,7 @@ class TestModelValidationBaseValidateInstance:
         assert result is False
 
 
+@pytest.mark.unit
 class TestModelValidationBaseSerialize:
     """Test serialize protocol method."""
 
@@ -415,6 +427,7 @@ class TestModelValidationBaseSerialize:
         assert "validation" in serialized
 
 
+@pytest.mark.unit
 class TestModelValidationBaseEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -487,6 +500,7 @@ class TestModelValidationBaseEdgeCases:
         assert error.is_critical() is True
 
 
+@pytest.mark.unit
 class TestModelValidationBaseInheritance:
     """Test inheritance and custom validation scenarios."""
 

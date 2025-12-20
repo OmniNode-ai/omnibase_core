@@ -106,10 +106,10 @@ class MockServiceC(IServiceC):
         return f"ServiceC-{self.id_num}"
 
 
-@pytest.mark.unit
 @pytest.mark.asyncio
 @pytest.mark.slow
 @pytest.mark.timeout(120)
+@pytest.mark.unit
 class TestServiceRegistryConcurrency:
     """Test suite for concurrent ServiceRegistry operations.
 

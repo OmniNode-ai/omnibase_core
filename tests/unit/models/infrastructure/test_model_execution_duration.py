@@ -8,6 +8,7 @@ from omnibase_core.models.infrastructure.model_execution_duration import (
 )
 
 
+@pytest.mark.unit
 class TestModelExecutionDurationInstantiation:
     """Tests for ModelExecutionDuration instantiation."""
 
@@ -33,6 +34,7 @@ class TestModelExecutionDurationInstantiation:
         assert "greater than or equal to 0" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestModelExecutionDurationConversions:
     """Tests for ModelExecutionDuration time conversions."""
 
@@ -57,6 +59,7 @@ class TestModelExecutionDurationConversions:
         assert duration.total_seconds() == 0.0
 
 
+@pytest.mark.unit
 class TestModelExecutionDurationStringRepresentation:
     """Tests for ModelExecutionDuration string representation."""
 
@@ -100,6 +103,7 @@ class TestModelExecutionDurationStringRepresentation:
         assert result.startswith("3m")
 
 
+@pytest.mark.unit
 class TestModelExecutionDurationSerialization:
     """Tests for ModelExecutionDuration serialization."""
 
@@ -122,6 +126,7 @@ class TestModelExecutionDurationSerialization:
         assert "milliseconds" in data
 
 
+@pytest.mark.unit
 class TestModelExecutionDurationEdgeCases:
     """Tests for ModelExecutionDuration edge cases."""
 
@@ -159,6 +164,7 @@ class TestModelExecutionDurationEdgeCases:
         assert result.startswith("1m")
 
 
+@pytest.mark.unit
 class TestModelExecutionDurationModelConfig:
     """Tests for ModelExecutionDuration model configuration."""
 

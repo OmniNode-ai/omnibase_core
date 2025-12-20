@@ -20,6 +20,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
+@pytest.mark.unit
 class TestModelLoggingSubcontractInitialization:
     """Test ModelLoggingSubcontract initialization."""
 
@@ -70,6 +71,7 @@ class TestModelLoggingSubcontractInitialization:
         assert version.patch == 0
 
 
+@pytest.mark.unit
 class TestModelLoggingSubcontractValidation:
     """Test ModelLoggingSubcontract field validation."""
 
@@ -181,6 +183,7 @@ class TestModelLoggingSubcontractValidation:
         assert subcontract.log_buffer_size == 10000
 
 
+@pytest.mark.unit
 class TestModelLoggingSubcontractSerialization:
     """Test ModelLoggingSubcontract serialization."""
 
@@ -244,6 +247,7 @@ class TestModelLoggingSubcontractSerialization:
         assert restored.log_buffer_size == original.log_buffer_size
 
 
+@pytest.mark.unit
 class TestModelLoggingSubcontractDefaultValues:
     """Test ModelLoggingSubcontract default values."""
 
@@ -328,6 +332,7 @@ class TestModelLoggingSubcontractDefaultValues:
         assert subcontract.include_request_context is True
 
 
+@pytest.mark.unit
 class TestModelLoggingSubcontractEdgeCases:
     """Test logging subcontract edge cases."""
 
@@ -427,6 +432,7 @@ class TestModelLoggingSubcontractEdgeCases:
         assert subcontract.log_file_path == "/var/log/app/application.log"
 
 
+@pytest.mark.unit
 class TestModelLoggingSubcontractAttributes:
     """Test logging subcontract attributes and metadata."""
 
@@ -492,6 +498,7 @@ class TestModelLoggingSubcontractAttributes:
         assert version.major >= 1
 
 
+@pytest.mark.unit
 class TestModelLoggingSubcontractConfigDict:
     """Test ModelLoggingSubcontract ConfigDict settings."""
 
@@ -518,6 +525,7 @@ class TestModelLoggingSubcontractConfigDict:
             subcontract.log_level = "INVALID_LEVEL"
 
 
+@pytest.mark.unit
 class TestModelLoggingSubcontractSecurityFeatures:
     """Test logging subcontract security features."""
 
@@ -554,6 +562,7 @@ class TestModelLoggingSubcontractSecurityFeatures:
         assert len(subcontract.sensitive_field_patterns) == 2
 
 
+@pytest.mark.unit
 class TestModelLoggingSubcontractPerformanceFeatures:
     """Test logging subcontract performance features."""
 

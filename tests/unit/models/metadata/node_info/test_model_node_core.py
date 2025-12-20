@@ -11,6 +11,7 @@ from omnibase_core.models.metadata.node_info.model_node_core import ModelNodeCor
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
+@pytest.mark.unit
 class TestModelNodeCoreInstantiation:
     """Tests for ModelNodeCore instantiation."""
 
@@ -61,6 +62,7 @@ class TestModelNodeCoreInstantiation:
         assert node.version.patch == 4
 
 
+@pytest.mark.unit
 class TestModelNodeCoreProperties:
     """Tests for ModelNodeCore properties."""
 
@@ -136,6 +138,7 @@ class TestModelNodeCoreProperties:
         assert node.version_string == "1.2.3"
 
 
+@pytest.mark.unit
 class TestModelNodeCoreUpdateMethods:
     """Tests for ModelNodeCore update methods."""
 
@@ -214,6 +217,7 @@ class TestModelNodeCoreUpdateMethods:
         assert node.version.patch == 4
 
 
+@pytest.mark.unit
 class TestModelNodeCorePredicates:
     """Tests for ModelNodeCore predicate methods."""
 
@@ -244,6 +248,7 @@ class TestModelNodeCorePredicates:
         assert level == EnumConceptualComplexity.ADVANCED.value
 
 
+@pytest.mark.unit
 class TestModelNodeCoreFactoryMethods:
     """Tests for ModelNodeCore factory methods."""
 
@@ -312,6 +317,7 @@ class TestModelNodeCoreFactoryMethods:
         assert node1.node_id == node2.node_id
 
 
+@pytest.mark.unit
 class TestModelNodeCoreProtocols:
     """Tests for ModelNodeCore protocol implementations."""
 
@@ -359,6 +365,7 @@ class TestModelNodeCoreProtocols:
         assert node.validate_instance() is True
 
 
+@pytest.mark.unit
 class TestModelNodeCoreSerialization:
     """Tests for ModelNodeCore serialization."""
 
@@ -389,6 +396,7 @@ class TestModelNodeCoreSerialization:
         assert "node_id" in data  # Required field
 
 
+@pytest.mark.unit
 class TestModelNodeCoreEdgeCases:
     """Tests for ModelNodeCore edge cases."""
 

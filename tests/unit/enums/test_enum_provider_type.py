@@ -8,6 +8,7 @@ import pytest
 from omnibase_core.enums.enum_provider_type import EnumProviderType
 
 
+@pytest.mark.unit
 class TestEnumProviderType:
     """Test suite for EnumProviderType."""
 

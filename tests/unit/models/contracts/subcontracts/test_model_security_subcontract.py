@@ -19,6 +19,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
+@pytest.mark.unit
 class TestModelSecuritySubcontractInitialization:
     """Test ModelSecuritySubcontract initialization."""
 
@@ -68,6 +69,7 @@ class TestModelSecuritySubcontractInitialization:
         assert ModelSecuritySubcontract.INTERFACE_VERSION.patch == 0
 
 
+@pytest.mark.unit
 class TestModelSecuritySubcontractPatternValidation:
     """Test sensitive field pattern validation."""
 
@@ -130,6 +132,7 @@ class TestModelSecuritySubcontractPatternValidation:
         assert security.sensitive_field_patterns == ["secret"]
 
 
+@pytest.mark.unit
 class TestModelSecuritySubcontractEncryptionValidation:
     """Test encryption configuration validation."""
 
@@ -183,6 +186,7 @@ class TestModelSecuritySubcontractEncryptionValidation:
         assert security.enable_encryption_at_rest is True
 
 
+@pytest.mark.unit
 class TestModelSecuritySubcontractFieldValidation:
     """Test field constraint validation."""
 
@@ -219,6 +223,7 @@ class TestModelSecuritySubcontractFieldValidation:
         assert security.redaction_placeholder == "***HIDDEN***"
 
 
+@pytest.mark.unit
 class TestModelSecuritySubcontractSerialization:
     """Test ModelSecuritySubcontract serialization."""
 
@@ -278,6 +283,7 @@ class TestModelSecuritySubcontractSerialization:
         assert restored.max_field_length == original.max_field_length
 
 
+@pytest.mark.unit
 class TestModelSecuritySubcontractAuditLogging:
     """Test audit logging configuration."""
 
@@ -306,6 +312,7 @@ class TestModelSecuritySubcontractAuditLogging:
         assert security.audit_access_attempts is False
 
 
+@pytest.mark.unit
 class TestModelSecuritySubcontractAccessControl:
     """Test access control configuration."""
 
@@ -334,6 +341,7 @@ class TestModelSecuritySubcontractAccessControl:
         assert security.require_authorization is False
 
 
+@pytest.mark.unit
 class TestModelSecuritySubcontractInputValidation:
     """Test input validation configuration."""
 
@@ -362,6 +370,7 @@ class TestModelSecuritySubcontractInputValidation:
         assert security.enable_xss_protection is False
 
 
+@pytest.mark.unit
 class TestModelSecuritySubcontractOutputSanitization:
     """Test output sanitization configuration."""
 
@@ -390,6 +399,7 @@ class TestModelSecuritySubcontractOutputSanitization:
         assert security.sanitize_scripts is False
 
 
+@pytest.mark.unit
 class TestModelSecuritySubcontractSecurityPolicies:
     """Test security policy configuration."""
 
@@ -418,6 +428,7 @@ class TestModelSecuritySubcontractSecurityPolicies:
         assert security.enable_csrf_protection is False
 
 
+@pytest.mark.unit
 class TestModelSecuritySubcontractEdgeCases:
     """Test security subcontract edge cases."""
 
@@ -465,6 +476,7 @@ class TestModelSecuritySubcontractEdgeCases:
         assert security.enable_encryption_at_rest is True
 
 
+@pytest.mark.unit
 class TestModelSecuritySubcontractAttributes:
     """Test security subcontract attributes and metadata."""
 
@@ -503,6 +515,7 @@ class TestModelSecuritySubcontractAttributes:
         assert copied is not security
 
 
+@pytest.mark.unit
 class TestModelSecuritySubcontractConfigDict:
     """Test security subcontract ConfigDict settings."""
 

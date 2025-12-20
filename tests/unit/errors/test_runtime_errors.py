@@ -15,6 +15,7 @@ import pytest
 
 
 @pytest.mark.timeout(10)
+@pytest.mark.unit
 class TestRuntimeHostError:
     """Tests for RuntimeHostError base class."""
 
@@ -74,6 +75,7 @@ class TestRuntimeHostError:
 
 
 @pytest.mark.timeout(10)
+@pytest.mark.unit
 class TestHandlerExecutionError:
     """Tests for HandlerExecutionError."""
 
@@ -136,6 +138,7 @@ class TestHandlerExecutionError:
 
 
 @pytest.mark.timeout(10)
+@pytest.mark.unit
 class TestEventBusError:
     """Tests for EventBusError."""
 
@@ -175,6 +178,7 @@ class TestEventBusError:
 
 
 @pytest.mark.timeout(10)
+@pytest.mark.unit
 class TestInvalidOperationError:
     """Tests for InvalidOperationError."""
 
@@ -213,6 +217,7 @@ class TestInvalidOperationError:
 
 
 @pytest.mark.timeout(10)
+@pytest.mark.unit
 class TestContractValidationError:
     """Tests for ContractValidationError."""
 
@@ -257,6 +262,7 @@ class TestContractValidationError:
 
 
 @pytest.mark.timeout(10)
+@pytest.mark.unit
 class TestErrorInvariants:
     """Tests for MVP error invariants from ."""
 

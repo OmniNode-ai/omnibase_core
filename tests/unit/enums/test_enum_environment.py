@@ -19,6 +19,7 @@ from pydantic import BaseModel, ValidationError
 from omnibase_core.enums.enum_environment import EnumEnvironment
 
 
+@pytest.mark.unit
 class TestEnumEnvironment:
     """Test cases for EnumEnvironment."""
 

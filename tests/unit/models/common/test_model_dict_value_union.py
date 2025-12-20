@@ -16,6 +16,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 # === Basic Creation Tests (15 tests) ===
 
 
+@pytest.mark.unit
 class TestBasicCreation:
     """Test basic creation of ModelDictValueUnion for all supported types."""
 
@@ -114,6 +115,7 @@ class TestBasicCreation:
 # === Type Discrimination Tests (10 tests) ===
 
 
+@pytest.mark.unit
 class TestTypeDiscrimination:
     """Test automatic type discrimination."""
 
@@ -172,6 +174,7 @@ class TestTypeDiscrimination:
 # === Type Guard Tests (15 tests) ===
 
 
+@pytest.mark.unit
 class TestTypeGuards:
     """Test type guard methods."""
 
@@ -261,6 +264,7 @@ class TestTypeGuards:
 # === Type Getter Tests (20 tests) ===
 
 
+@pytest.mark.unit
 class TestTypeGetters:
     """Test type getter methods."""
 
@@ -380,6 +384,7 @@ class TestTypeGetters:
 # === Dict Handling Tests (20 tests) ===
 
 
+@pytest.mark.unit
 class TestDictHandling:
     """Test dict-specific handling."""
 
@@ -525,6 +530,7 @@ class TestDictHandling:
 # === Dict Access Tests (15 tests) ===
 
 
+@pytest.mark.unit
 class TestDictAccess:
     """Test dict-specific access methods."""
 
@@ -613,6 +619,7 @@ class TestDictAccess:
 # === List Handling Tests (10 tests) ===
 
 
+@pytest.mark.unit
 class TestListHandling:
     """Test list-specific handling."""
 
@@ -683,6 +690,7 @@ class TestListHandling:
 # === Validation Tests (10 tests) ===
 
 
+@pytest.mark.unit
 class TestValidation:
     """Test validation and error handling."""
 
@@ -758,6 +766,7 @@ class TestValidation:
 # === JSON Serialization Tests (10 tests) ===
 
 
+@pytest.mark.unit
 class TestJSONSerialization:
     """Test JSON serialization and deserialization."""
 
@@ -837,6 +846,7 @@ class TestJSONSerialization:
 # === Edge Cases Tests (5 tests) ===
 
 
+@pytest.mark.unit
 class TestEdgeCases:
     """Test edge cases and corner scenarios."""
 
@@ -887,6 +897,7 @@ class TestEdgeCases:
 # === Additional Coverage Tests ===
 
 
+@pytest.mark.unit
 class TestAdditionalCoverage:
     """Additional tests for comprehensive coverage."""
 

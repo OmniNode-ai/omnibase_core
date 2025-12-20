@@ -34,6 +34,7 @@ from omnibase_core.validation.contracts import (
 )
 
 
+@pytest.mark.unit
 class TestLoadAndValidateYamlModel:
     """Test load_and_validate_yaml_model function."""
 
@@ -149,6 +150,7 @@ operations: []
             load_and_validate_yaml_model(yaml_content)
 
 
+@pytest.mark.unit
 class TestValidateYamlFileExtended:
     """Extended tests for validate_yaml_file function."""
 
@@ -322,6 +324,7 @@ operations:
         assert isinstance(errors, list)
 
 
+@pytest.mark.unit
 class TestValidateNoManualYamlExtended:
     """Extended tests for validate_no_manual_yaml function."""
 
@@ -489,6 +492,7 @@ operations: []
         assert len(errors) == 0
 
 
+@pytest.mark.unit
 class TestValidateContractsDirectoryExtended:
     """Extended tests for validate_contracts_directory function."""
 
@@ -734,6 +738,7 @@ operations: []
         assert result.metadata is not None
 
 
+@pytest.mark.unit
 class TestTimeoutHandler:
     """Test timeout_handler function."""
 
@@ -800,6 +805,7 @@ class TestTimeoutHandler:
         )
 
 
+@pytest.mark.unit
 class TestValidateYamlFileErrors:
     """Test error handling in validate_yaml_file."""
 
@@ -941,6 +947,7 @@ operations: []
         assert any("OS error reading file" in error for error in errors)
 
 
+@pytest.mark.unit
 class TestValidateContractsCLI:
     """Test validate_contracts_cli function."""
 

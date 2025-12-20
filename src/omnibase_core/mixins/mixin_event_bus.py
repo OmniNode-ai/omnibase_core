@@ -225,7 +225,6 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
             >>> self._validate_topic_alignment("dev.user.commands.v1", envelope)  # Raises
         """
         # Import here to avoid circular imports at module level
-        from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 
         # Only validate if envelope has message_category property
         if not hasattr(envelope, "message_category"):

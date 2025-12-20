@@ -5,6 +5,7 @@ import pytest
 from omnibase_core.enums.enum_base_status import EnumBaseStatus
 
 
+@pytest.mark.unit
 class TestEnumBaseStatus:
     def test_enum_values(self):
         """Test that all enum values are defined correctly."""

@@ -4,7 +4,10 @@ Unit tests for __init___fast.py lazy loading functions.
 Tests lazy loading of validation tools to prevent import-time penalties.
 """
 
+import pytest
 
+
+@pytest.mark.unit
 class TestLazyValidationLoading:
     """Test suite for lazy validation loading functions."""
 
@@ -186,6 +189,7 @@ class TestLazyValidationLoading:
         assert set(omnibase_core.__all__) == expected_exports
 
 
+@pytest.mark.unit
 class TestLazyLoadingIntegration:
     """Integration tests for lazy loading behavior."""
 

@@ -14,6 +14,7 @@ from typing import Any
 import pytest
 
 
+@pytest.mark.unit
 class TestAllowAnyTypeBasicBehavior:
     """Test basic @allow_any_type decorator behavior."""
 
@@ -59,6 +60,7 @@ class TestAllowAnyTypeBasicBehavior:
         assert my_function.__allow_any_reason__ == reason_text
 
 
+@pytest.mark.unit
 class TestAllowAnyTypeWithCustomClasses:
     """Test @allow_any_type with custom classes."""
 
@@ -99,6 +101,7 @@ class TestAllowAnyTypeWithCustomClasses:
         assert result == nested_data
 
 
+@pytest.mark.unit
 class TestAllowAnyTypeWithExceptions:
     """Test @allow_any_type with exception handling."""
 
@@ -133,6 +136,7 @@ class TestAllowAnyTypeWithExceptions:
         assert conditional_return(False) == 42
 
 
+@pytest.mark.unit
 class TestAllowAnyTypeWithPydanticModels:
     """Test @allow_any_type with Pydantic models."""
 
@@ -145,6 +149,7 @@ class TestAllowAnyTypeWithPydanticModels:
         except ImportError:
             pytest.skip("Pydantic not installed")
 
+        @pytest.mark.unit
         class TestModel(BaseModel):
             name: str
             value: int
@@ -184,6 +189,7 @@ class TestAllowAnyTypeWithPydanticModels:
         assert result == {"data": "test_data"}
 
 
+@pytest.mark.unit
 class TestAllowAnyTypeMetadata:
     """Test @allow_any_type metadata tracking."""
 
@@ -234,6 +240,7 @@ class TestAllowAnyTypeMetadata:
         assert func.__allow_any_reason__ == reason
 
 
+@pytest.mark.unit
 class TestAllowAnyTypeFunctionSignatures:
     """Test @allow_any_type with various function signatures."""
 
@@ -283,6 +290,7 @@ class TestAllowAnyTypeFunctionSignatures:
         assert kwargs_result == {"a": "test", "b": 42}
 
 
+@pytest.mark.unit
 class TestAllowAnyTypeEdgeCases:
     """Test @allow_any_type edge cases and boundary conditions."""
 
@@ -343,6 +351,7 @@ class TestAllowAnyTypeEdgeCases:
         assert result == 42
 
 
+@pytest.mark.unit
 class TestAllowAnyTypeDocumentation:
     """Test @allow_any_type documentation requirements."""
 

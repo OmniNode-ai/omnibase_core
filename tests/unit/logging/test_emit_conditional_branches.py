@@ -8,6 +8,8 @@ to improve overall branch coverage from 24.4% toward 75%+ target.
 from unittest.mock import MagicMock, Mock, patch
 from uuid import UUID, uuid4
 
+import pytest
+
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.emit import (
     _detect_node_id_from_context,
@@ -19,6 +21,7 @@ from omnibase_core.logging.emit import (
 from omnibase_core.models.core.model_log_context import ModelLogContext
 
 
+@pytest.mark.unit
 class TestValidateNodeIdConditional:
     """Test _validate_node_id conditional branches."""
 
@@ -52,6 +55,7 @@ class TestValidateNodeIdConditional:
         assert result is None
 
 
+@pytest.mark.unit
 class TestSanitizeDataDictConditionalBranches:
     """Test _sanitize_data_dict conditional type checking branches."""
 
@@ -171,6 +175,7 @@ class TestSanitizeDataDictConditionalBranches:
         assert result["token"] == "[REDACTED]"
 
 
+@pytest.mark.unit
 class TestDetectNodeIdContextConditionalBranches:
     """Test _detect_node_id_from_context depth and fallback branches."""
 
@@ -254,6 +259,7 @@ class TestDetectNodeIdContextConditionalBranches:
         assert isinstance(result, str)
 
 
+@pytest.mark.unit
 class TestRouteToLoggerNodeCacheBranches:
     """Test _route_to_logger_node cache expiration branches."""
 
@@ -350,6 +356,7 @@ class TestRouteToLoggerNodeCacheBranches:
         )
 
 
+@pytest.mark.unit
 class TestEmitLogEventNodeIdBranches:
     """Test emit_log_event node_id validation branches."""
 
@@ -419,6 +426,7 @@ class TestEmitLogEventNodeIdBranches:
         )
 
 
+@pytest.mark.unit
 class TestLogCodeBlockConditionalBranches:
     """Test LogCodeBlock context manager conditional branches."""
 

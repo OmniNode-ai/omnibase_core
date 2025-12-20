@@ -10,6 +10,7 @@ from omnibase_core.models.container.model_workflow_coordinator import (
 from omnibase_core.models.container.model_workflow_factory import ModelWorkflowFactory
 
 
+@pytest.mark.unit
 class TestModelWorkflowCoordinator:
     """Tests for ModelWorkflowCoordinator."""
 

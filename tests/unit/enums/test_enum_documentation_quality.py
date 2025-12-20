@@ -12,6 +12,7 @@ from pydantic import BaseModel, ValidationError
 from omnibase_core.enums.enum_documentation_quality import EnumDocumentationQuality
 
 
+@pytest.mark.unit
 class TestEnumDocumentationQuality:
     """Test EnumDocumentationQuality enumeration."""
 
@@ -54,6 +55,7 @@ class TestEnumDocumentationQuality:
         assert len(list(EnumDocumentationQuality)) == 13
 
 
+@pytest.mark.unit
 class TestNumericScore:
     """Test get_numeric_score method."""
 
@@ -192,6 +194,7 @@ class TestNumericScore:
             assert scores[i] < scores[i + 1]
 
 
+@pytest.mark.unit
 class TestIsAcceptable:
     """Test is_acceptable method."""
 
@@ -223,6 +226,7 @@ class TestIsAcceptable:
             assert EnumDocumentationQuality.is_acceptable(quality) is False
 
 
+@pytest.mark.unit
 class TestNeedsImprovement:
     """Test needs_improvement method."""
 
@@ -254,6 +258,7 @@ class TestNeedsImprovement:
             assert EnumDocumentationQuality.needs_improvement(quality) is False
 
 
+@pytest.mark.unit
 class TestIsHighQuality:
     """Test is_high_quality method."""
 
@@ -285,6 +290,7 @@ class TestIsHighQuality:
             assert EnumDocumentationQuality.is_high_quality(quality) is False
 
 
+@pytest.mark.unit
 class TestImprovementSuggestion:
     """Test get_improvement_suggestion method."""
 
@@ -390,6 +396,7 @@ class TestImprovementSuggestion:
         assert "Assess" in suggestion or "assess" in suggestion
 
 
+@pytest.mark.unit
 class TestFromScore:
     """Test from_score method."""
 
@@ -477,6 +484,7 @@ class TestFromScore:
             )
 
 
+@pytest.mark.unit
 class TestEnumIntegration:
     """Integration tests for documentation quality enum."""
 

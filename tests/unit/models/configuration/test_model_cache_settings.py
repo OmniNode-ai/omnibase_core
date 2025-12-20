@@ -4,9 +4,12 @@ Tests for ModelCacheSettings.
 Comprehensive tests for cache configuration and settings.
 """
 
+import pytest
+
 from omnibase_core.models.configuration.model_cache_settings import ModelCacheSettings
 
 
+@pytest.mark.unit
 class TestModelCacheSettingsInitialization:
     """Test ModelCacheSettings initialization."""
 
@@ -40,6 +43,7 @@ class TestModelCacheSettingsInitialization:
         assert isinstance(settings, BaseModel)
 
 
+@pytest.mark.unit
 class TestModelCacheSettingsValidation:
     """Test ModelCacheSettings field validation."""
 
@@ -70,6 +74,7 @@ class TestModelCacheSettingsValidation:
             assert settings.eviction_policy == policy
 
 
+@pytest.mark.unit
 class TestModelCacheSettingsSerialization:
     """Test ModelCacheSettings serialization."""
 
@@ -119,6 +124,7 @@ class TestModelCacheSettingsSerialization:
         assert restored.max_size_mb == original.max_size_mb
 
 
+@pytest.mark.unit
 class TestModelCacheSettingsMethods:
     """Test ModelCacheSettings methods."""
 
@@ -157,6 +163,7 @@ class TestModelCacheSettingsMethods:
         assert ttl == 0
 
 
+@pytest.mark.unit
 class TestModelCacheSettingsEdgeCases:
     """Test cache settings edge cases."""
 
@@ -200,6 +207,7 @@ class TestModelCacheSettingsEdgeCases:
         assert ttl == 10000
 
 
+@pytest.mark.unit
 class TestModelCacheSettingsAttributes:
     """Test cache settings attributes and metadata."""
 

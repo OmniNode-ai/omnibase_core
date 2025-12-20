@@ -22,6 +22,7 @@ from omnibase_core.models.contracts.model_action_config_parameter import (
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
+@pytest.mark.unit
 class TestModelActionConfigParameterBasics:
     """Test basic ModelActionConfigParameter instantiation and defaults."""
 
@@ -144,6 +145,7 @@ class TestModelActionConfigParameterBasics:
         assert param.default is None
 
 
+@pytest.mark.unit
 class TestModelActionConfigParameterValidation:
     """Test ModelActionConfigParameter field validation."""
 
@@ -258,6 +260,7 @@ class TestModelActionConfigParameterValidation:
         assert param.description == ""
 
 
+@pytest.mark.unit
 class TestModelActionConfigParameterDefaultValidation:
     """Test default value type matching validation (model_validator)."""
 
@@ -465,6 +468,7 @@ class TestModelActionConfigParameterDefaultValidation:
             assert param.default is None
 
 
+@pytest.mark.unit
 class TestModelActionConfigParameterFrozen:
     """Test immutability (frozen=True)."""
 
@@ -526,6 +530,7 @@ class TestModelActionConfigParameterFrozen:
             param.description = "modified"
 
 
+@pytest.mark.unit
 class TestModelActionConfigParameterSerialization:
     """Test serialization (model_dump, model_dump_json, model_validate_json)."""
 
@@ -648,6 +653,7 @@ class TestModelActionConfigParameterSerialization:
         assert not hasattr(param, "unknown_field")
 
 
+@pytest.mark.unit
 class TestModelActionConfigParameterEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -784,6 +790,7 @@ class TestModelActionConfigParameterEdgeCases:
         assert param.default == nested_dict
 
 
+@pytest.mark.unit
 class TestModelActionConfigParameterDocumentation:
     """Test documentation and interface guarantees."""
 
@@ -819,6 +826,7 @@ class TestModelActionConfigParameterDocumentation:
         assert "description" not in required_fields
 
 
+@pytest.mark.unit
 class TestModelActionConfigParameterUseCases:
     """Test real-world use case scenarios."""
 

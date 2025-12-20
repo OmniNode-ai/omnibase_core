@@ -16,6 +16,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
+@pytest.mark.unit
 class TestModelEventBusSubcontractInitialization:
     """Test ModelEventBusSubcontract initialization."""
 
@@ -66,6 +67,7 @@ class TestModelEventBusSubcontractInitialization:
         assert version.patch == 0
 
 
+@pytest.mark.unit
 class TestModelEventBusSubcontractValidation:
     """Test ModelEventBusSubcontract field validation."""
 
@@ -162,6 +164,7 @@ class TestModelEventBusSubcontractValidation:
         assert subcontract.batch_timeout_ms == 60000
 
 
+@pytest.mark.unit
 class TestModelEventBusSubcontractSerialization:
     """Test ModelEventBusSubcontract serialization."""
 
@@ -223,6 +226,7 @@ class TestModelEventBusSubcontractSerialization:
         assert restored.max_retry_attempts == original.max_retry_attempts
 
 
+@pytest.mark.unit
 class TestModelEventBusSubcontractDefaultValues:
     """Test ModelEventBusSubcontract default values."""
 
@@ -293,6 +297,7 @@ class TestModelEventBusSubcontractDefaultValues:
         ]
 
 
+@pytest.mark.unit
 class TestModelEventBusSubcontractEdgeCases:
     """Test event bus subcontract edge cases."""
 
@@ -355,6 +360,7 @@ class TestModelEventBusSubcontractEdgeCases:
         assert subcontract.default_event_patterns == custom_patterns
 
 
+@pytest.mark.unit
 class TestModelEventBusSubcontractAttributes:
     """Test event bus subcontract attributes and metadata."""
 
@@ -420,6 +426,7 @@ class TestModelEventBusSubcontractAttributes:
         assert version.major >= 1
 
 
+@pytest.mark.unit
 class TestModelEventBusSubcontractConfigDict:
     """Test ModelEventBusSubcontract ConfigDict settings."""
 

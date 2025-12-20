@@ -14,6 +14,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_validation_value import ModelValidationValue
 
 
+@pytest.mark.unit
 class TestModelValidationValueInstantiation:
     """Test basic model instantiation and validators."""
 
@@ -50,6 +51,7 @@ class TestModelValidationValueInstantiation:
         assert value.raw_value is None
 
 
+@pytest.mark.unit
 class TestModelValidationValueValidatorBranches:
     """Test validator branches for raw_value field validation."""
 
@@ -103,6 +105,7 @@ class TestModelValidationValueValidatorBranches:
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
 
+@pytest.mark.unit
 class TestModelValidationValueFactoryMethods:
     """Test factory methods for creating validation values."""
 
@@ -131,6 +134,7 @@ class TestModelValidationValueFactoryMethods:
         assert value.raw_value is None
 
 
+@pytest.mark.unit
 class TestModelValidationValueFromAnyBranches:
     """Test from_any method branches for automatic type detection."""
 
@@ -192,6 +196,7 @@ class TestModelValidationValueFromAnyBranches:
         assert value.raw_value == "3.14"
 
 
+@pytest.mark.unit
 class TestModelValidationValueConversion:
     """Test conversion methods."""
 
@@ -216,6 +221,7 @@ class TestModelValidationValueConversion:
         assert value.to_python_value() is None
 
 
+@pytest.mark.unit
 class TestModelValidationValueStrMethod:
     """Test __str__ method branches."""
 
@@ -240,6 +246,7 @@ class TestModelValidationValueStrMethod:
         assert str(value) == "True"
 
 
+@pytest.mark.unit
 class TestModelValidationValueProtocolMethods:
     """Test protocol method implementations."""
 
@@ -257,6 +264,7 @@ class TestModelValidationValueProtocolMethods:
         assert "raw_value" in serialized
 
 
+@pytest.mark.unit
 class TestModelValidationValueEdgeCases:
     """Test edge cases and boundary conditions."""
 

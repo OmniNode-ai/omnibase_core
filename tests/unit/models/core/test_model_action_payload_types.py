@@ -64,6 +64,7 @@ def make_action(name: str, category: ModelActionCategory) -> ModelNodeActionType
     )
 
 
+@pytest.mark.unit
 class TestCreateSpecificActionPayload:
     """Test create_specific_action_payload factory function."""
 
@@ -157,6 +158,7 @@ class TestCreateSpecificActionPayload:
         assert payload.action_type.name == "read"
 
 
+@pytest.mark.unit
 class TestActionPayloadTypesEdgeCases:
     """Test edge cases for action payload factory."""
 

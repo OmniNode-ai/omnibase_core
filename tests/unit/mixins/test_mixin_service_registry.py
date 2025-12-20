@@ -8,6 +8,8 @@ import time
 from unittest.mock import Mock
 from uuid import uuid4
 
+import pytest
+
 from omnibase_core.mixins.mixin_service_registry import MixinServiceRegistry
 from omnibase_core.models.mixins.model_service_registry_entry import (
     ModelServiceRegistryEntry,
@@ -24,6 +26,7 @@ class MockServiceHub(MixinServiceRegistry):
         self.event_loop = None
 
 
+@pytest.mark.unit
 class TestMixinServiceRegistry:
     """Test MixinServiceRegistry functionality."""
 

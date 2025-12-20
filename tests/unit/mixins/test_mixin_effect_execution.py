@@ -65,6 +65,7 @@ class MockContainer:
         return self._services[name]
 
 
+@pytest.mark.unit
 class TestNode(MixinEffectExecution):
     """Test node class using effect execution mixin."""
 
@@ -247,6 +248,7 @@ def filesystem_read_input() -> ModelEffectInput:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestMixinEffectExecutionInit:
     """Test MixinEffectExecution initialization."""
 
@@ -274,6 +276,7 @@ class TestMixinEffectExecutionInit:
         assert node.container is mock_container
 
 
+@pytest.mark.unit
 class TestParseIOConfig:
     """Test _parse_io_config method for all handler types."""
 
@@ -348,6 +351,7 @@ class TestParseIOConfig:
         assert "Unknown handler type" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestResolveIOContext:
     """Test _resolve_io_context template resolution."""
 
@@ -524,6 +528,7 @@ class TestResolveIOContext:
         assert "Unknown template prefix" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestExtractField:
     """Test _extract_field dotpath extraction."""
 
@@ -667,6 +672,7 @@ class TestExtractField:
         assert exc_info.value.model.context["allowed_pattern"] == "[a-zA-Z0-9_.]"
 
 
+@pytest.mark.unit
 class TestDeniedBuiltins:
     """Test denied Python built-ins validation for template injection protection.
 
@@ -888,6 +894,7 @@ class TestDeniedBuiltins:
         assert "Invalid field path characters" in exc_info.value.message
 
 
+@pytest.mark.unit
 class TestCoerceParamValue:
     """Test _coerce_param_value type coercion."""
 
@@ -927,6 +934,7 @@ class TestCoerceParamValue:
         assert test_node._coerce_param_value("test@example.com") == "test@example.com"
 
 
+@pytest.mark.unit
 class TestCircuitBreaker:
     """Test circuit breaker management methods."""
 
@@ -1013,6 +1021,7 @@ class TestCircuitBreaker:
         assert operation_id in test_node._circuit_breakers
 
 
+@pytest.mark.unit
 class TestExecuteEffect:
     """Test execute_effect main entry point."""
 
@@ -1142,6 +1151,7 @@ class TestExecuteEffect:
             await test_node.execute_effect(input_data)
 
 
+@pytest.mark.unit
 class TestExecuteWithRetry:
     """Test _execute_with_retry retry logic."""
 
@@ -1323,6 +1333,7 @@ class TestExecuteWithRetry:
         assert "Circuit breaker is open" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestExtractResponseFields:
     """Test _extract_response_fields method."""
 
@@ -1485,6 +1496,7 @@ class TestExtractResponseFields:
             )
 
 
+@pytest.mark.unit
 class TestExecuteOperation:
     """Test _execute_operation handler dispatch."""
 
@@ -1585,6 +1597,7 @@ class TestExecuteOperation:
         assert result == "custom_result_string"
 
 
+@pytest.mark.unit
 class TestDefaultOperationTimeout:
     """Test default operation timeout behavior."""
 
@@ -1650,6 +1663,7 @@ class TestDefaultOperationTimeout:
         assert result.transaction_state == EnumTransactionState.COMMITTED
 
 
+@pytest.mark.unit
 class TestSecretResolution:
     """Test secret.* template resolution."""
 
@@ -1732,6 +1746,7 @@ class TestSecretResolution:
         assert "Failed to resolve secret" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestFilesystemContentResolution:
     """Test filesystem content extraction and resolution."""
 
@@ -1826,6 +1841,7 @@ class TestFilesystemContentResolution:
 
 @pytest.mark.slow
 @pytest.mark.integration
+@pytest.mark.unit
 class TestMixinEffectExecutionIntegration:
     """Integration-style tests for MixinEffectExecution.
 
@@ -1933,6 +1949,7 @@ class TestMixinEffectExecutionIntegration:
 
 
 @pytest.mark.slow
+@pytest.mark.unit
 class TestTimeoutBehavior:
     """Test timeout behavior in effect execution.
 
@@ -2027,6 +2044,7 @@ class TestTimeoutBehavior:
         assert "timeout" in exc_info.value.message.lower()
 
 
+@pytest.mark.unit
 class TestEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -2120,6 +2138,7 @@ class TestEdgeCases:
         assert "Handler execution failed" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestMixinEffectExecutionThreadSafety:
     """Thread safety tests for MixinEffectExecution.
 
@@ -2229,6 +2248,7 @@ class TestMixinEffectExecutionThreadSafety:
         assert cb2.failure_count == 0
 
 
+@pytest.mark.unit
 class TestEffectContractYamlParsing:
     """Tests for YAML effect contract parsing.
 

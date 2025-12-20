@@ -20,8 +20,8 @@ from omnibase_core.models.compute.model_compute_step_result import (
 )
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelComputeExecutionContext:
     """Tests for ModelComputeExecutionContext."""
 
@@ -61,8 +61,8 @@ class TestModelComputeExecutionContext:
             )
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelComputeStepMetadata:
     """Tests for ModelComputeStepMetadata."""
 
@@ -111,8 +111,8 @@ class TestModelComputeStepMetadata:
             )
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelComputeStepResult:
     """Tests for ModelComputeStepResult."""
 
@@ -158,8 +158,8 @@ class TestModelComputeStepResult:
             result.success = False  # type: ignore[misc]
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelComputePipelineResult:
     """Tests for ModelComputePipelineResult."""
 
@@ -270,8 +270,8 @@ class TestModelComputePipelineResult:
             )
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelComputeOutput:
     """Tests for ModelComputeOutput."""
 

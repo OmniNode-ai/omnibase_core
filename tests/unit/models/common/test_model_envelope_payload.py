@@ -22,6 +22,7 @@ from omnibase_core.models.common.model_envelope_payload import (
 )
 
 
+@pytest.mark.unit
 class TestModelEnvelopePayloadBasic:
     """Test basic ModelEnvelopePayload functionality."""
 
@@ -76,6 +77,7 @@ class TestModelEnvelopePayloadBasic:
         assert "exceeds maximum size" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestModelEnvelopePayloadRoundTrip:
     """Test round-trip serialization."""
 
@@ -138,6 +140,7 @@ class TestModelEnvelopePayloadRoundTrip:
         assert payload.data["another_field"] == 42
 
 
+@pytest.mark.unit
 class TestModelEnvelopePayloadWarnings:
     """Test warning behavior for edge cases."""
 
@@ -227,6 +230,7 @@ class TestModelEnvelopePayloadWarnings:
         assert "data_event_type" in result
 
 
+@pytest.mark.unit
 class TestModelEnvelopePayloadStringDict:
     """Test to_string_dict and from_string_dict conversion."""
 
@@ -275,6 +279,7 @@ class TestModelEnvelopePayloadStringDict:
         assert payload.data["custom_key"] == "custom_value"
 
 
+@pytest.mark.unit
 class TestModelEnvelopePayloadImmutableUpdates:
     """Test immutable update methods."""
 
@@ -312,6 +317,7 @@ class TestModelEnvelopePayloadImmutableUpdates:
         assert updated.timestamp == custom_time.isoformat()
 
 
+@pytest.mark.unit
 class TestModelEnvelopePayloadAccessors:
     """Test accessor methods."""
 
@@ -365,6 +371,7 @@ class TestModelEnvelopePayloadAccessors:
         assert "missing" not in payload
 
 
+@pytest.mark.unit
 class TestModelEnvelopePayloadLenBool:
     """Test __len__ and __bool__ implementations."""
 

@@ -14,6 +14,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.utils.model_yaml_option import ModelYamlOption
 
 
+@pytest.mark.unit
 class TestModelYamlOptionInstantiation:
     """Test basic model instantiation."""
 
@@ -48,6 +49,7 @@ class TestModelYamlOptionInstantiation:
         assert option.integer_value is None
 
 
+@pytest.mark.unit
 class TestModelYamlOptionFactoryMethods:
     """Test factory methods for creating options."""
 
@@ -100,6 +102,7 @@ class TestModelYamlOptionFactoryMethods:
         assert option.string_value == ""
 
 
+@pytest.mark.unit
 class TestModelYamlOptionToValueBranches:
     """Test to_value method branches for different types."""
 
@@ -153,6 +156,7 @@ class TestModelYamlOptionToValueBranches:
         assert "Invalid option_type" in exc_info.value.message
 
 
+@pytest.mark.unit
 class TestModelYamlOptionProtocolMethods:
     """Test protocol method implementations."""
 
@@ -184,6 +188,7 @@ class TestModelYamlOptionProtocolMethods:
         assert option.validate_instance() is True
 
 
+@pytest.mark.unit
 class TestModelYamlOptionEdgeCases:
     """Test edge cases and boundary conditions."""
 

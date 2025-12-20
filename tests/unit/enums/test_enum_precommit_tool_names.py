@@ -8,6 +8,7 @@ import pytest
 from omnibase_core.enums.enum_precommit_tool_names import EnumPrecommitToolNames
 
 
+@pytest.mark.unit
 class TestEnumPrecommitToolNames:
     """Test suite for EnumPrecommitToolNames."""
 

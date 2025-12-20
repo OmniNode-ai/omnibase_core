@@ -25,6 +25,7 @@ from omnibase_core.models.validation.model_shape_validation_result import (
 )
 
 
+@pytest.mark.unit
 class TestModelExecutionShapeCreation:
     """Test ModelExecutionShape instantiation and fields."""
 
@@ -64,6 +65,7 @@ class TestModelExecutionShapeCreation:
         assert "target_node_kind" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestModelExecutionShapeModelConfig:
     """Test ModelExecutionShape model configuration."""
 
@@ -91,6 +93,7 @@ class TestModelExecutionShapeModelConfig:
         assert "extra_field" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestModelExecutionShapeFromShape:
     """Test ModelExecutionShape.from_shape() classmethod."""
 
@@ -155,6 +158,7 @@ class TestModelExecutionShapeFromShape:
         assert isinstance(shape.description, str)
 
 
+@pytest.mark.unit
 class TestModelExecutionShapeGetAllShapes:
     """Test ModelExecutionShape.get_all_shapes() classmethod."""
 
@@ -189,6 +193,7 @@ class TestModelExecutionShapeGetAllShapes:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelExecutionShapeValidationCreation:
     """Test ModelExecutionShapeValidation instantiation."""
 
@@ -220,6 +225,7 @@ class TestModelExecutionShapeValidationCreation:
         assert validation.rationale == ""
 
 
+@pytest.mark.unit
 class TestModelExecutionShapeValidationModelConfig:
     """Test ModelExecutionShapeValidation model configuration."""
 
@@ -246,6 +252,7 @@ class TestModelExecutionShapeValidationModelConfig:
         assert "unknown_field" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestModelExecutionShapeValidationValidateShapeAllowed:
     """Test validate_shape() for allowed shapes."""
 
@@ -305,6 +312,7 @@ class TestModelExecutionShapeValidationValidateShapeAllowed:
         assert validation.rationale != ""
 
 
+@pytest.mark.unit
 class TestModelExecutionShapeValidationValidateShapeDisallowed:
     """Test validate_shape() for disallowed shapes."""
 
@@ -393,6 +401,7 @@ class TestModelExecutionShapeValidationValidateShapeDisallowed:
             assert validation.matched_shape is None
 
 
+@pytest.mark.unit
 class TestModelExecutionShapeValidationRationale:
     """Test rationale field content."""
 
@@ -422,6 +431,7 @@ class TestModelExecutionShapeValidationRationale:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelShapeValidationResultCreation:
     """Test ModelShapeValidationResult instantiation."""
 
@@ -464,6 +474,7 @@ class TestModelShapeValidationResultCreation:
         assert result.warnings == ["Test warning"]
 
 
+@pytest.mark.unit
 class TestModelShapeValidationResultModelConfig:
     """Test ModelShapeValidationResult model configuration."""
 
@@ -482,6 +493,7 @@ class TestModelShapeValidationResultModelConfig:
         assert "extra_field" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestModelShapeValidationResultFromValidations:
     """Test ModelShapeValidationResult.from_validations() classmethod."""
 
@@ -576,6 +588,7 @@ class TestModelShapeValidationResultFromValidations:
         assert result.validations[0] is validation
 
 
+@pytest.mark.unit
 class TestModelShapeValidationResultCounts:
     """Test count calculations in ModelShapeValidationResult."""
 
@@ -608,6 +621,7 @@ class TestModelShapeValidationResultCounts:
         assert result.allowed_count + result.disallowed_count == result.total_validated
 
 
+@pytest.mark.unit
 class TestModelShapeValidationResultErrors:
     """Test error list in ModelShapeValidationResult."""
 
@@ -644,6 +658,7 @@ class TestModelShapeValidationResultErrors:
         assert result.errors == []
 
 
+@pytest.mark.unit
 class TestModelShapeValidationResultCompliance:
     """Test is_fully_compliant calculation."""
 
@@ -686,6 +701,7 @@ class TestModelShapeValidationResultCompliance:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestExecutionShapeModelsIntegration:
     """Integration tests across execution shape models."""
 

@@ -2,6 +2,8 @@
 
 import ast
 
+import pytest
+
 from omnibase_core.validation.patterns import (
     GenericPatternChecker,
     NamingConventionChecker,
@@ -9,6 +11,7 @@ from omnibase_core.validation.patterns import (
 )
 
 
+@pytest.mark.unit
 class TestPydanticPatternChecker:
     """Test PydanticPatternChecker class."""
 
@@ -162,6 +165,7 @@ class ModelPost(BaseModel):
         assert checker.classes_checked == 2
 
 
+@pytest.mark.unit
 class TestNamingConventionChecker:
     """Test NamingConventionChecker class."""
 
@@ -365,6 +369,7 @@ class ServiceRegistry:
         assert any("Service" in issue for issue in checker.issues)
 
 
+@pytest.mark.unit
 class TestGenericPatternChecker:
     """Test GenericPatternChecker class."""
 

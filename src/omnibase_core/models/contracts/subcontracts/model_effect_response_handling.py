@@ -77,7 +77,7 @@ class ModelEffectResponseHandling(BaseModel):
         - constants_effect.SAFE_FIELD_PATTERN: Path validation pattern
     """
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     success_codes: list[int] = Field(default_factory=lambda: [200, 201, 202, 204])
     extract_fields: dict[str, str] = Field(

@@ -23,7 +23,6 @@ Related Models:
 
 Notes:
     - Parametrized tests reduce duplication while maintaining comprehensive coverage
-    - All tests use pytest markers (@pytest.mark.unit)
     - Thread-safe for pytest-xdist parallel execution
 """
 
@@ -55,6 +54,7 @@ class ModelTestData(BaseModel):
     label: str
 
 
+@pytest.mark.unit
 class TestModelReducerOutputInstantiation:
     """Test ModelReducerOutput instantiation with various configurations."""
 
@@ -198,6 +198,7 @@ class TestModelReducerOutputInstantiation:
         assert output.result.label == "answer"
 
 
+@pytest.mark.unit
 class TestModelReducerOutputValidation:
     """Test ModelReducerOutput field validation."""
 
@@ -549,6 +550,7 @@ class TestModelReducerOutputValidation:
         assert "Extra inputs are not permitted" in error_msg
 
 
+@pytest.mark.unit
 class TestModelReducerOutputSerialization:
     """Test ModelReducerOutput serialization and deserialization."""
 
@@ -773,6 +775,7 @@ class TestModelReducerOutputSerialization:
         assert restored.result == 42
 
 
+@pytest.mark.unit
 class TestModelReducerOutputGenericTyping:
     """Test ModelReducerOutput generic type parameter behavior."""
 
@@ -883,6 +886,7 @@ class TestModelReducerOutputGenericTyping:
         assert output.result["level1"]["level2"]["values"] == [1, 2, 3]
 
 
+@pytest.mark.unit
 class TestModelReducerOutputFrozenBehavior:
     """Test frozen behavior (immutability) of ModelReducerOutput."""
 
@@ -935,6 +939,7 @@ class TestModelReducerOutputFrozenBehavior:
             output.new_field = "value"  # type: ignore[attr-defined]  # Testing attribute addition prevention
 
 
+@pytest.mark.unit
 class TestModelReducerOutputEdgeCases:
     """Test edge cases and boundary conditions for ModelReducerOutput."""
 
@@ -1152,6 +1157,7 @@ class TestModelReducerOutputEdgeCases:
             assert output.streaming_mode == streaming_mode
 
 
+@pytest.mark.unit
 class TestModelReducerOutputThreadSafety:
     """Test thread safety and concurrent access patterns."""
 
@@ -1470,6 +1476,7 @@ class TestModelReducerOutputThreadSafety:
         assert all(r[2] == 10.0 for r in results)
 
 
+@pytest.mark.unit
 class TestModelReducerOutputImmutability:
     """Test immutability guarantees of ModelReducerOutput."""
 

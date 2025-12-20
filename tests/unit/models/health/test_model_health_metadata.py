@@ -6,6 +6,7 @@ from omnibase_core.models.health.model_health_metadata import ModelHealthMetadat
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
+@pytest.mark.unit
 class TestModelHealthMetadataBasics:
     """Test basic functionality."""
 
@@ -43,6 +44,7 @@ class TestModelHealthMetadataBasics:
         assert metadata.notification_enabled is False
 
 
+@pytest.mark.unit
 class TestModelHealthMetadataValidation:
     """Test validation."""
 
@@ -113,6 +115,7 @@ class TestModelHealthMetadataValidation:
             )
 
 
+@pytest.mark.unit
 class TestModelHealthMetadataEnvironmentChecking:
     """Test environment checking methods."""
 
@@ -156,6 +159,7 @@ class TestModelHealthMetadataEnvironmentChecking:
         assert metadata.is_development_environment() is False
 
 
+@pytest.mark.unit
 class TestModelHealthMetadataAutoHeal:
     """Test auto-healing logic."""
 
@@ -187,6 +191,7 @@ class TestModelHealthMetadataAutoHeal:
         assert metadata.should_auto_heal() is False
 
 
+@pytest.mark.unit
 class TestModelHealthMetadataNotifications:
     """Test notification logic."""
 
@@ -218,6 +223,7 @@ class TestModelHealthMetadataNotifications:
         assert metadata.should_send_notifications() is False
 
 
+@pytest.mark.unit
 class TestModelHealthMetadataCustomAttributes:
     """Test custom attributes management."""
 
@@ -244,6 +250,7 @@ class TestModelHealthMetadataCustomAttributes:
         assert metadata.custom_attributes is not None
 
 
+@pytest.mark.unit
 class TestModelHealthMetadataCheckInterval:
     """Test check interval methods."""
 
@@ -280,6 +287,7 @@ class TestModelHealthMetadataCheckInterval:
         assert metadata.get_effective_check_interval() == 300
 
 
+@pytest.mark.unit
 class TestModelHealthMetadataFactoryMethods:
     """Test factory methods."""
 

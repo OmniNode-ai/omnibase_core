@@ -8,6 +8,7 @@ import pytest
 from omnibase_core.enums.enum_permission_action import EnumPermissionAction
 
 
+@pytest.mark.unit
 class TestEnumPermissionAction:
     """Test suite for EnumPermissionAction."""
 

@@ -2,6 +2,8 @@
 
 from uuid import uuid4
 
+import pytest
+
 from omnibase_core.enums.enum_field_type import EnumFieldType
 from omnibase_core.models.infrastructure.model_value import ModelValue
 from omnibase_core.models.metadata.model_field_identity import ModelFieldIdentity
@@ -13,6 +15,7 @@ from omnibase_core.models.metadata.model_metadata_field_info import (
 )
 
 
+@pytest.mark.unit
 class TestModelMetadataFieldInfoInstantiation:
     """Tests for ModelMetadataFieldInfo instantiation."""
 
@@ -69,6 +72,7 @@ class TestModelMetadataFieldInfoInstantiation:
         assert field_info.validation == validation
 
 
+@pytest.mark.unit
 class TestModelMetadataFieldInfoFactoryMetadataVersion:
     """Tests for metadata_version factory method."""
 
@@ -89,6 +93,7 @@ class TestModelMetadataFieldInfoFactoryMetadataVersion:
         assert field_info.default_value is not None
 
 
+@pytest.mark.unit
 class TestModelMetadataFieldInfoFactoryProtocolVersion:
     """Tests for protocol_version factory method."""
 
@@ -108,6 +113,7 @@ class TestModelMetadataFieldInfoFactoryProtocolVersion:
         assert field_info.default_value is not None
 
 
+@pytest.mark.unit
 class TestModelMetadataFieldInfoFactoryName:
     """Tests for name_field factory method."""
 
@@ -127,6 +133,7 @@ class TestModelMetadataFieldInfoFactoryName:
         assert field_info.default_value is None
 
 
+@pytest.mark.unit
 class TestModelMetadataFieldInfoFactoryVersion:
     """Tests for version factory method."""
 
@@ -146,6 +153,7 @@ class TestModelMetadataFieldInfoFactoryVersion:
         assert field_info.default_value is not None
 
 
+@pytest.mark.unit
 class TestModelMetadataFieldInfoFactoryUUID:
     """Tests for uuid factory method."""
 
@@ -166,6 +174,7 @@ class TestModelMetadataFieldInfoFactoryUUID:
         assert "0-9a-f" in field_info.validation.validation_pattern
 
 
+@pytest.mark.unit
 class TestModelMetadataFieldInfoFactoryAuthor:
     """Tests for author factory method."""
 
@@ -180,6 +189,7 @@ class TestModelMetadataFieldInfoFactoryAuthor:
         assert field_info.field_type == EnumFieldType.STRING
 
 
+@pytest.mark.unit
 class TestModelMetadataFieldInfoFactoryCreatedAt:
     """Tests for created_at factory method."""
 
@@ -194,6 +204,7 @@ class TestModelMetadataFieldInfoFactoryCreatedAt:
         assert field_info.field_type == EnumFieldType.DATETIME
 
 
+@pytest.mark.unit
 class TestModelMetadataFieldInfoFactoryLastModifiedAt:
     """Tests for last_modified_at factory method."""
 
@@ -208,6 +219,7 @@ class TestModelMetadataFieldInfoFactoryLastModifiedAt:
         assert field_info.field_type == EnumFieldType.DATETIME
 
 
+@pytest.mark.unit
 class TestModelMetadataFieldInfoFactoryHash:
     """Tests for hash factory method."""
 
@@ -228,6 +240,7 @@ class TestModelMetadataFieldInfoFactoryHash:
         assert "64" in field_info.validation.validation_pattern
 
 
+@pytest.mark.unit
 class TestModelMetadataFieldInfoFactoryEntrypoint:
     """Tests for entrypoint factory method."""
 
@@ -242,6 +255,7 @@ class TestModelMetadataFieldInfoFactoryEntrypoint:
         assert field_info.field_type == EnumFieldType.STRING
 
 
+@pytest.mark.unit
 class TestModelMetadataFieldInfoFactoryNamespace:
     """Tests for namespace factory method."""
 
@@ -256,6 +270,7 @@ class TestModelMetadataFieldInfoFactoryNamespace:
         assert field_info.field_type == EnumFieldType.STRING
 
 
+@pytest.mark.unit
 class TestModelMetadataFieldInfoGetAllFields:
     """Tests for get_all_fields method."""
 
@@ -281,6 +296,7 @@ class TestModelMetadataFieldInfoGetAllFields:
             assert isinstance(field, ModelMetadataFieldInfo)
 
 
+@pytest.mark.unit
 class TestModelMetadataFieldInfoGetRequiredFields:
     """Tests for get_required_fields method."""
 
@@ -309,6 +325,7 @@ class TestModelMetadataFieldInfoGetRequiredFields:
         assert "METADATA_VERSION" not in field_names
 
 
+@pytest.mark.unit
 class TestModelMetadataFieldInfoGetOptionalFields:
     """Tests for get_optional_fields method."""
 
@@ -330,6 +347,7 @@ class TestModelMetadataFieldInfoGetOptionalFields:
         assert "METADATA_VERSION" in field_names
 
 
+@pytest.mark.unit
 class TestModelMetadataFieldInfoGetVolatileFields:
     """Tests for get_volatile_fields method."""
 
@@ -357,6 +375,7 @@ class TestModelMetadataFieldInfoGetVolatileFields:
         assert "LAST_MODIFIED_AT" in field_names
 
 
+@pytest.mark.unit
 class TestModelMetadataFieldInfoFromString:
     """Tests for from_string method."""
 
@@ -402,6 +421,7 @@ class TestModelMetadataFieldInfoFromString:
             assert field_info.identity.identity_display_name == field_name
 
 
+@pytest.mark.unit
 class TestModelMetadataFieldInfoStringRepresentation:
     """Tests for __str__ method."""
 
@@ -421,6 +441,7 @@ class TestModelMetadataFieldInfoStringRepresentation:
         assert str(field_info) == "uuid"
 
 
+@pytest.mark.unit
 class TestModelMetadataFieldInfoEquality:
     """Tests for __eq__ method."""
 
@@ -453,6 +474,7 @@ class TestModelMetadataFieldInfoEquality:
         assert field_info != []
 
 
+@pytest.mark.unit
 class TestModelMetadataFieldInfoProtocols:
     """Tests for protocol implementations."""
 
@@ -488,6 +510,7 @@ class TestModelMetadataFieldInfoProtocols:
         assert field_info.validate_instance() is True
 
 
+@pytest.mark.unit
 class TestModelMetadataFieldInfoEdgeCases:
     """Tests for edge cases."""
 
@@ -539,6 +562,7 @@ class TestModelMetadataFieldInfoEdgeCases:
             assert field_info.field_type == field_type
 
 
+@pytest.mark.unit
 class TestModelMetadataFieldInfoSerialization:
     """Tests for serialization."""
 

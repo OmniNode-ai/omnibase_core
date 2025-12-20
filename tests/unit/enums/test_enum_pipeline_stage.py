@@ -8,6 +8,7 @@ import pytest
 from omnibase_core.enums.enum_pipeline_stage import EnumPipelineStage
 
 
+@pytest.mark.unit
 class TestEnumPipelineStage:
     """Test suite for EnumPipelineStage."""
 

@@ -60,6 +60,32 @@ class UnionUsageChecker(ast.NodeVisitor):
         True
     """
 
+    # Common problematic type combinations (class-level for performance)
+    # These frozensets are immutable and thread-safe
+    _PROBLEMATIC_COMBINATIONS: dict[frozenset[str], str] = {
+        frozenset(["str", "int", "bool", "float"]): "primitive_overload",
+        # Mixed primitive/complex patterns (with generic annotations)
+        frozenset(["str", "int", "bool", "dict[str, Any]"]): "mixed_primitive_complex",
+        frozenset(
+            ["str", "int", "dict[str, Any]", "list[Any]"]
+        ): "mixed_primitive_complex",
+        # Mixed primitive/complex patterns (without generic annotations)
+        frozenset(["str", "int", "bool", "dict"]): "mixed_primitive_complex",
+        frozenset(["str", "int", "bool", "Dict"]): "mixed_primitive_complex",
+        frozenset(["str", "int", "dict", "list"]): "mixed_primitive_complex",
+        frozenset(["str", "int", "Dict", "List"]): "mixed_primitive_complex",
+        # Everything union patterns (with generic annotations)
+        frozenset(
+            ["str", "int", "bool", "float", "dict[str, Any]"]
+        ): "everything_union",
+        frozenset(["str", "int", "bool", "float", "list[Any]"]): "everything_union",
+        # Everything union patterns (without generic annotations)
+        frozenset(["str", "int", "bool", "float", "dict"]): "everything_union",
+        frozenset(["str", "int", "bool", "float", "list"]): "everything_union",
+        frozenset(["str", "int", "bool", "float", "Dict"]): "everything_union",
+        frozenset(["str", "int", "bool", "float", "List"]): "everything_union",
+    }
+
     def __init__(self, file_path: str) -> None:
         """Initialize the UnionUsageChecker.
 
@@ -77,32 +103,8 @@ class UnionUsageChecker(ast.NodeVisitor):
         self.primitive_heavy_unions: list[ModelUnionPattern] = []
         self.generic_unions: list[ModelUnionPattern] = []
 
-        # Common problematic type combinations
-        self.problematic_combinations: dict[frozenset[str], str] = {
-            frozenset(["str", "int", "bool", "float"]): "primitive_overload",
-            # Mixed primitive/complex patterns (with generic annotations)
-            frozenset(
-                ["str", "int", "bool", "dict[str, Any]"]
-            ): "mixed_primitive_complex",
-            frozenset(
-                ["str", "int", "dict[str, Any]", "list[Any]"]
-            ): "mixed_primitive_complex",
-            # Mixed primitive/complex patterns (without generic annotations)
-            frozenset(["str", "int", "bool", "dict"]): "mixed_primitive_complex",
-            frozenset(["str", "int", "bool", "Dict"]): "mixed_primitive_complex",
-            frozenset(["str", "int", "dict", "list"]): "mixed_primitive_complex",
-            frozenset(["str", "int", "Dict", "List"]): "mixed_primitive_complex",
-            # Everything union patterns (with generic annotations)
-            frozenset(
-                ["str", "int", "bool", "float", "dict[str, Any]"]
-            ): "everything_union",
-            frozenset(["str", "int", "bool", "float", "list[Any]"]): "everything_union",
-            # Everything union patterns (without generic annotations)
-            frozenset(["str", "int", "bool", "float", "dict"]): "everything_union",
-            frozenset(["str", "int", "bool", "float", "list"]): "everything_union",
-            frozenset(["str", "int", "bool", "float", "Dict"]): "everything_union",
-            frozenset(["str", "int", "bool", "float", "List"]): "everything_union",
-        }
+        # Reference class-level combinations for instance access
+        self.problematic_combinations = self._PROBLEMATIC_COMBINATIONS
 
     def _extract_type_name(self, node: ast.AST) -> str:
         """Extract type name from an AST node.

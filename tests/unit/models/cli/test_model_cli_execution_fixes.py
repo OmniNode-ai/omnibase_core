@@ -8,6 +8,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from uuid import UUID, uuid4
 
+import pytest
+
 from omnibase_core.enums.enum_context_source import EnumContextSource
 from omnibase_core.enums.enum_context_type import EnumContextType
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
@@ -25,6 +27,7 @@ from omnibase_core.models.cli.model_cli_execution_summary import (
 )
 
 
+@pytest.mark.unit
 class TestModelCliExecutionTyping:
     """Test CLI execution model with proper typing."""
 
@@ -132,6 +135,7 @@ class TestModelCliExecutionTyping:
         assert failure_context.source == EnumContextSource.SYSTEM
 
 
+@pytest.mark.unit
 class TestNewModelValidation:
     """Test validation of the new typed models."""
 

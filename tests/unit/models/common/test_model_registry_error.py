@@ -9,6 +9,7 @@ from omnibase_core.enums.enum_registry_error_code import EnumRegistryErrorCode
 from omnibase_core.models.common.model_registry_error import ModelRegistryError
 
 
+@pytest.mark.unit
 class TestModelRegistryError:
     """Tests for ModelRegistryError model."""
 

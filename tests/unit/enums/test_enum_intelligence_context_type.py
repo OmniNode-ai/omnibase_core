@@ -11,6 +11,7 @@ from omnibase_core.enums.enum_intelligence_context_type import (
 )
 
 
+@pytest.mark.unit
 class TestEnumIntelligenceContextType:
     """Test cases for EnumIntelligenceContextType enum."""
 

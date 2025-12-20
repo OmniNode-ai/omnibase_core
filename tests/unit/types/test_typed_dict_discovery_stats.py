@@ -2,9 +2,12 @@
 Test suite for TypedDictDiscoveryStats.
 """
 
+import pytest
+
 from omnibase_core.types.typed_dict_discovery_stats import TypedDictDiscoveryStats
 
 
+@pytest.mark.unit
 class TestTypedDictDiscoveryStats:
     """Test TypedDictDiscoveryStats functionality."""
 

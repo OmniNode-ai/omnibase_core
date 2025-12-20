@@ -7,6 +7,7 @@ type safety, and backward compatibility with existing field access patterns.
 
 from typing import Any
 
+import pytest
 from pydantic import Field
 
 from omnibase_core.models.core import (
@@ -18,12 +19,14 @@ from omnibase_core.models.core import (
 )
 
 
+@pytest.mark.unit
 class TestModelFieldAccessor:
     """Test basic field accessor functionality."""
 
     def test_basic_field_access(self):
         """Test basic get/set field operations."""
 
+        @pytest.mark.unit
         class TestModel(ModelFieldAccessor):
             data: dict[str, Any] = Field(default_factory=dict)
 
@@ -49,6 +52,7 @@ class TestModelFieldAccessor:
     def test_dot_notation_nested_access(self):
         """Test nested field access with dot notation."""
 
+        @pytest.mark.unit
         class TestModel(ModelFieldAccessor):
             config: dict[str, Any] = Field(default_factory=dict)
 
@@ -76,6 +80,7 @@ class TestModelFieldAccessor:
     def test_remove_field(self):
         """Test field removal."""
 
+        @pytest.mark.unit
         class TestModel(ModelFieldAccessor):
             data: dict[str, Any] = Field(default_factory=dict)
 
@@ -94,6 +99,7 @@ class TestModelFieldAccessor:
     def test_attribute_vs_dict_access(self):
         """Test accessing both model attributes and dict fields."""
 
+        @pytest.mark.unit
         class TestModel(ModelFieldAccessor):
             name: str = "test_model"
             data: dict[str, Any] = Field(default_factory=dict)
@@ -110,12 +116,14 @@ class TestModelFieldAccessor:
         assert model.get_field("data.key").unwrap().to_value() == "value"
 
 
+@pytest.mark.unit
 class TestModelTypedAccessor:
     """Test typed field accessor with generic type safety."""
 
     def test_typed_field_access(self):
         """Test type-safe field access."""
 
+        @pytest.mark.unit
         class TestModel(ModelTypedAccessor[str]):
             data: dict[str, Any] = Field(default_factory=dict)
 
@@ -140,6 +148,7 @@ class TestModelTypedAccessor:
     def test_set_typed_field(self):
         """Test typed field setting with validation."""
 
+        @pytest.mark.unit
         class TestModel(ModelTypedAccessor[str]):
             data: dict[str, Any] = Field(default_factory=dict)
 
@@ -153,12 +162,14 @@ class TestModelTypedAccessor:
         assert not model.set_typed_field("data.text", 42, str)
 
 
+@pytest.mark.unit
 class TestModelEnvironmentAccessor:
     """Test environment accessor with type coercion."""
 
     def test_string_coercion(self):
         """Test string value coercion."""
 
+        @pytest.mark.unit
         class TestModel(ModelEnvironmentAccessor):
             props: dict[str, Any] = Field(default_factory=dict)
 
@@ -176,6 +187,7 @@ class TestModelEnvironmentAccessor:
     def test_int_coercion(self):
         """Test integer value coercion."""
 
+        @pytest.mark.unit
         class TestModel(ModelEnvironmentAccessor):
             props: dict[str, Any] = Field(default_factory=dict)
 
@@ -195,6 +207,7 @@ class TestModelEnvironmentAccessor:
     def test_bool_coercion(self):
         """Test boolean value coercion."""
 
+        @pytest.mark.unit
         class TestModel(ModelEnvironmentAccessor):
             props: dict[str, Any] = Field(default_factory=dict)
 
@@ -221,6 +234,7 @@ class TestModelEnvironmentAccessor:
     def test_list_coercion(self):
         """Test list value coercion."""
 
+        @pytest.mark.unit
         class TestModel(ModelEnvironmentAccessor):
             props: dict[str, Any] = Field(default_factory=dict)
 
@@ -236,12 +250,14 @@ class TestModelEnvironmentAccessor:
         assert model.get_list("props.nonexistent", ["default"]) == ["default"]
 
 
+@pytest.mark.unit
 class TestModelResultAccessor:
     """Test CLI result accessor functionality."""
 
     def test_result_value_access(self):
         """Test getting values from results and metadata."""
 
+        @pytest.mark.unit
         class TestModel(ModelResultAccessor):
             results: dict[str, Any] = Field(default_factory=dict)
             metadata: dict[str, Any] = Field(default_factory=dict)
@@ -260,6 +276,7 @@ class TestModelResultAccessor:
     def test_set_result_and_metadata(self):
         """Test setting result and metadata values."""
 
+        @pytest.mark.unit
         class TestModel(ModelResultAccessor):
             results: dict[str, Any] = Field(default_factory=dict)
             metadata: dict[str, Any] = Field(default_factory=dict)
@@ -278,12 +295,14 @@ class TestModelResultAccessor:
         )
 
 
+@pytest.mark.unit
 class TestModelCustomFieldsAccessor:
     """Test custom fields accessor functionality."""
 
     def test_custom_field_access(self):
         """Test custom field operations."""
 
+        @pytest.mark.unit
         class TestModel(ModelCustomFieldsAccessor):
             custom_fields: dict[str, Any] | None = Field(default=None)
 
@@ -305,6 +324,7 @@ class TestModelCustomFieldsAccessor:
     def test_custom_fields_initialization(self):
         """Test that custom_fields dict is properly initialized."""
 
+        @pytest.mark.unit
         class TestModel(ModelCustomFieldsAccessor):
             custom_fields: dict[str, Any] | None = Field(default=None)
 
@@ -319,6 +339,7 @@ class TestModelCustomFieldsAccessor:
         assert model.custom_fields == {"test": "value"}
 
 
+@pytest.mark.unit
 class TestFieldAccessorIntegration:
     """Test integration scenarios with real-world usage patterns."""
 

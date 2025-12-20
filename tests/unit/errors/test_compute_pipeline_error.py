@@ -9,8 +9,8 @@ from uuid import UUID, uuid4
 import pytest
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(10)
+@pytest.mark.unit
 class TestComputePipelineError:
     """Tests for ComputePipelineError."""
 
@@ -135,8 +135,8 @@ class TestComputePipelineError:
         assert context.get("operation") == "transformation"
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(10)
+@pytest.mark.unit
 class TestComputePipelineErrorImport:
     """Tests for ComputePipelineError import from errors module."""
 
@@ -163,8 +163,8 @@ class TestComputePipelineErrorImport:
         assert isinstance(error, Exception)
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(10)
+@pytest.mark.unit
 class TestComputePipelineErrorInvariants:
     """Tests for ComputePipelineError invariants."""
 

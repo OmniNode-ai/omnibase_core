@@ -161,6 +161,7 @@ def tool_invocation_event(node_id, correlation_id):
     )
 
 
+@pytest.mark.unit
 class TestModelServiceReducerInvocation:
     """Test suite for ModelServiceReducer tool invocation handling."""
 
@@ -672,6 +673,7 @@ class TestModelServiceReducerInvocation:
         assert mock_event_bus.publish.call_count == 2
 
 
+@pytest.mark.unit
 class TestModelServiceReducerInvocationEdgeCases:
     """Test edge cases for reducer invocation handling."""
 

@@ -72,10 +72,10 @@ def create_test_implementation(interface: type, name: str) -> Any:
 # ===== Performance Test Suite =====
 
 
-@pytest.mark.unit
 @pytest.mark.performance
 @pytest.mark.slow
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestServiceRegistryPerformance:
     """Performance test suite for ServiceRegistry with large-scale registrations.
 
@@ -504,10 +504,10 @@ class TestServiceRegistryPerformance:
         print(f"   Scope distribution: {status.scope_distribution}")
 
 
-@pytest.mark.unit
 @pytest.mark.performance
 @pytest.mark.slow
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestServiceRegistryMemoryUsage:
     """Memory usage tests for ServiceRegistry with large-scale registrations.
 

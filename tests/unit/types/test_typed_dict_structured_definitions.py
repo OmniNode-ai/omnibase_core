@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from datetime import datetime
 
+import pytest
+
 from omnibase_core.types import (
     TypedDictAuditInfo,
     TypedDictBatchProcessingInfo,
@@ -37,6 +39,7 @@ from omnibase_core.types import (
 )
 
 
+@pytest.mark.unit
 class TestTypedDictStructuredDefinitions:
     """Test TypedDict structured definitions can be instantiated."""
 

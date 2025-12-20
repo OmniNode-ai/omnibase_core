@@ -27,7 +27,7 @@ class ModelEffectInputSchema(BaseModel):
     - IDE autocompletion for input fields
     """
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     required_fields: list[str] = Field(
         default_factory=list,

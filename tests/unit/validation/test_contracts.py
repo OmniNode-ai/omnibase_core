@@ -14,6 +14,7 @@ from omnibase_core.validation.contracts import (
 )
 
 
+@pytest.mark.unit
 class TestLoadAndValidateYamlModel:
     """Test load_and_validate_yaml_model function."""
 
@@ -48,6 +49,7 @@ invalid: [unclosed
             load_and_validate_yaml_model(yaml_content)
 
 
+@pytest.mark.unit
 class TestValidateYamlFile:
     """Test validate_yaml_file function."""
 
@@ -166,6 +168,7 @@ operations: []
         assert len(errors) == 0
 
 
+@pytest.mark.unit
 class TestValidateNoManualYaml:
     """Test validate_no_manual_yaml function."""
 
@@ -248,6 +251,7 @@ class TestValidateNoManualYaml:
         assert len(errors) > 0
 
 
+@pytest.mark.unit
 class TestValidateContractsDirectory:
     """Test validate_contracts_directory function."""
 

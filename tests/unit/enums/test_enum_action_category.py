@@ -13,6 +13,7 @@ import pytest
 from omnibase_core.enums.enum_action_category import EnumActionCategory
 
 
+@pytest.mark.unit
 class TestEnumActionCategory:
     """Test cases for EnumActionCategory."""
 

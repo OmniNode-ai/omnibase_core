@@ -51,6 +51,7 @@ pytestmark = pytest.mark.unit
 
 
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestEffectCapabilities:
     """Test EFFECT_CAPABILITIES constant definition and contents."""
 
@@ -116,6 +117,7 @@ class TestEffectCapabilities:
 
 
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestComputeCapabilities:
     """Test COMPUTE_CAPABILITIES constant definition and contents."""
 
@@ -139,6 +141,7 @@ class TestComputeCapabilities:
 
 
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestReducerCapabilities:
     """Test REDUCER_CAPABILITIES constant definition and contents."""
 
@@ -156,6 +159,7 @@ class TestReducerCapabilities:
 
 
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestOrchestratorCapabilities:
     """Test ORCHESTRATOR_CAPABILITIES constant definition and contents."""
 
@@ -182,6 +186,7 @@ class TestOrchestratorCapabilities:
 
 
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestNodeTypeRequirements:
     """Test NODE_TYPE_REQUIREMENTS mapping definition."""
 
@@ -260,6 +265,7 @@ class TestNodeTypeRequirements:
 
 
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestValidateCapabilities:
     """Test validate_capabilities() function."""
 
@@ -415,6 +421,7 @@ class TestValidateCapabilities:
 
 
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestGetCapabilitiesByNodeKind:
     """Test get_capabilities_by_node_kind() function."""
 
@@ -494,6 +501,7 @@ class TestGetCapabilitiesByNodeKind:
 
 
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestContractCapabilityValidation:
     """Test contract capability validation scenarios."""
 
@@ -586,6 +594,7 @@ class TestContractCapabilityValidation:
 
 
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestHandlerCapabilitiesEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -672,6 +681,7 @@ class TestHandlerCapabilitiesEdgeCases:
 
 
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestHandlerCapabilitiesImports:
     """Test module imports and exports."""
 
@@ -741,6 +751,7 @@ class TestHandlerCapabilitiesImports:
 
 
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestCapabilityEnums:
     """Test capability enum definitions and behavior."""
 

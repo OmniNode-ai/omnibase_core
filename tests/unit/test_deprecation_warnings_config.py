@@ -19,6 +19,7 @@ import warnings
 import pytest
 
 
+@pytest.mark.unit
 class TestDeprecationWarningsConfig:
     """Tests verifying pytest deprecation warning configuration works correctly."""
 

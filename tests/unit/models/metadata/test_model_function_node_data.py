@@ -2,6 +2,8 @@
 
 from uuid import UUID, uuid4
 
+import pytest
+
 from omnibase_core.enums.enum_config_type import EnumConfigType
 from omnibase_core.enums.enum_function_status import EnumFunctionStatus
 from omnibase_core.enums.enum_node_type import EnumNodeType
@@ -12,6 +14,7 @@ from omnibase_core.models.metadata.model_function_node_data import ModelFunction
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
+@pytest.mark.unit
 class TestModelFunctionNodeData:
     """Test ModelFunctionNodeData functionality."""
 

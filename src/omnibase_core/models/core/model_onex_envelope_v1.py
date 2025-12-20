@@ -26,7 +26,7 @@ Usage:
 Part of omnibase_core framework - provides standardized event wrapping
 """
 
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import TYPE_CHECKING
 from uuid import UUID
 

@@ -36,6 +36,7 @@ from omnibase_core.models.discovery.model_resource_usage import ModelResourceUsa
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
+@pytest.mark.unit
 class TestRequestIntrospectionEvent:
     """Test REQUEST_REAL_TIME_INTROSPECTION event model."""
 
@@ -116,6 +117,7 @@ class TestRequestIntrospectionEvent:
         assert request.filters.node_names == ["node_generator"]
 
 
+@pytest.mark.unit
 class TestIntrospectionResponseEvent:
     """Test REAL_TIME_INTROSPECTION_RESPONSE event model."""
 
@@ -244,12 +246,14 @@ class TestIntrospectionResponseEvent:
         assert tool_availability.execution_count == 42
 
 
+@pytest.mark.unit
 class TestMixinRequestResponseIntrospection:
     """Test the MixinRequestResponseIntrospection functionality."""
 
     def create_test_node(self):
         """Create a test node with the mixin."""
 
+        @pytest.mark.unit
         class TestNode(MixinRequestResponseIntrospection):
             def __init__(self):
                 self.node_id = uuid4()

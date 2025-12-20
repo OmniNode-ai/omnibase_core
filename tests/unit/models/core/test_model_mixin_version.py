@@ -15,6 +15,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
+@pytest.mark.unit
 class TestModelMixinVersionBasics:
     """Test basic ModelMixinVersion functionality."""
 
@@ -43,6 +44,7 @@ class TestModelMixinVersionBasics:
         assert str(version) == "0.0.0"
 
 
+@pytest.mark.unit
 class TestModelMixinVersionNegativeNumbers:
     """Test validation of negative version numbers."""
 
@@ -72,6 +74,7 @@ class TestModelMixinVersionNegativeNumbers:
         assert "greater than or equal to 0" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestModelMixinVersionFromString:
     """Test parsing version strings."""
 
@@ -135,6 +138,7 @@ class TestModelMixinVersionFromString:
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_FAILED
 
 
+@pytest.mark.unit
 class TestModelMixinVersionFromStringNegative:
     """Test parsing version strings with negative numbers."""
 
@@ -179,6 +183,7 @@ class TestModelMixinVersionFromStringNegative:
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_FAILED
 
 
+@pytest.mark.unit
 class TestModelMixinVersionEdgeCases:
     """Test edge cases and boundary conditions."""
 

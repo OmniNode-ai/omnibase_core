@@ -19,6 +19,7 @@ from pydantic import BaseModel, ValidationError
 from omnibase_core.enums.enum_collection_format import EnumCollectionFormat
 
 
+@pytest.mark.unit
 class TestEnumCollectionFormat:
     """Test cases for EnumCollectionFormat."""
 
@@ -287,6 +288,7 @@ class TestEnumCollectionFormat:
         assert len(values) == len(set(values))
 
 
+@pytest.mark.unit
 class TestEnumCollectionFormatOverlaps:
     """Test format classification overlaps."""
 
@@ -320,6 +322,7 @@ class TestEnumCollectionFormatOverlaps:
         assert EnumCollectionFormat.is_text_format(EnumCollectionFormat.TSV) is True
 
 
+@pytest.mark.unit
 class TestEnumCollectionFormatEdgeCases:
     """Test edge cases for EnumCollectionFormat."""
 

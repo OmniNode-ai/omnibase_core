@@ -32,6 +32,7 @@ if TYPE_CHECKING:
     from _pytest.capture import CaptureFixture
 
 
+@pytest.mark.unit
 class TestModelValidationSuite:
     """Test ModelValidationSuite class."""
 
@@ -129,6 +130,7 @@ class TestModelValidationSuite:
         assert "Usage Examples" in captured.out
 
 
+@pytest.mark.unit
 class TestCreateParser:
     """Test CLI argument parser creation."""
 
@@ -234,6 +236,7 @@ class TestCreateParser:
         assert args.exit_zero is True
 
 
+@pytest.mark.unit
 class TestFormatResult:
     """Test result formatting function."""
 
@@ -336,6 +339,7 @@ class TestFormatResult:
         assert "and 5 more issues" in captured.out
 
 
+@pytest.mark.unit
 class TestCLIIntegration:
     """Integration tests for CLI functionality."""
 
@@ -454,6 +458,7 @@ def example_function():
         assert isinstance(result, ModelValidationResult)
 
 
+@pytest.mark.unit
 class TestEdgeCases:
     """Test edge cases and error conditions."""
 
@@ -524,6 +529,7 @@ def func(x: Union[str, int, bool, float]) -> None:  # Complex union
             assert suite1.validators[key]["args"] == suite2.validators[key]["args"]
 
 
+@pytest.mark.unit
 class TestRunValidationCLI:
     """Test run_validation_cli function."""
 

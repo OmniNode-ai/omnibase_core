@@ -7,6 +7,7 @@ import pytest
 from omnibase_core.enums.enum_collaboration_domain import EnumCollaborationDomain
 
 
+@pytest.mark.unit
 class TestEnumCollaborationDomain:
     """Test EnumCollaborationDomain functionality."""
 

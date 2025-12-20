@@ -38,6 +38,7 @@ class MockLoggerProtocol(Protocol):
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestGetService:
     """Tests for get_service() function."""
 
@@ -147,6 +148,7 @@ class TestGetService:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestGetLoggingService:
     """Tests for get_logging_service() function."""
 
@@ -242,6 +244,7 @@ class TestGetLoggingService:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestEmitLogEvent:
     """Tests for emit_log_event() function."""
 
@@ -372,6 +375,7 @@ class TestEmitLogEvent:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestEmitLogEventSync:
     """Tests for emit_log_event_sync() function."""
 
@@ -486,6 +490,7 @@ class TestEmitLogEventSync:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestGetRegistryNode:
     """Tests for _get_registry_node() private function.
 
@@ -537,6 +542,7 @@ class TestGetRegistryNode:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestGetFallbackService:
     """Tests for _get_fallback_service() private function."""
 
@@ -617,6 +623,7 @@ class TestGetFallbackService:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestGetMinimalLoggingService:
     """Tests for _get_minimal_logging_service() private function."""
 
@@ -660,6 +667,7 @@ class TestGetMinimalLoggingService:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestIsServiceAvailable:
     """Tests for is_service_available() function."""
 
@@ -717,6 +725,7 @@ class TestIsServiceAvailable:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestGetAvailableServices:
     """Tests for get_available_services() function."""
 
@@ -804,6 +813,7 @@ class TestGetAvailableServices:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestBootstrapIntegration:
     """Integration tests for complete bootstrap workflows."""
 
@@ -921,6 +931,7 @@ class TestBootstrapIntegration:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestBootstrapEdgeCases:
     """Tests for edge cases and error handling."""
 

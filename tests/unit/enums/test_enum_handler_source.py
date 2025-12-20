@@ -9,6 +9,7 @@ import pytest
 from omnibase_core.enums.enum_handler_source import EnumHandlerSource
 
 
+@pytest.mark.unit
 class TestEnumHandlerSource:
     """Test cases for EnumHandlerSource enum."""
 

@@ -55,6 +55,7 @@ FIXED_METADATA = ModelEnvelopeMetadata(trace_id="abc123", request_id="req-001")
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelOnexEnvelopeInstantiation:
     """Test ModelOnexEnvelope creation with required and optional fields."""
 
@@ -190,6 +191,7 @@ class TestModelOnexEnvelopeInstantiation:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelOnexEnvelopeFieldRenames:
     """Test renamed fields work correctly (envelope_id, source_node, operation)."""
 
@@ -269,6 +271,7 @@ class TestModelOnexEnvelopeFieldRenames:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelOnexEnvelopeNewFields:
     """Test all new fields (causation_id, target_node, handler_type, metadata, is_response, success, error)."""
 
@@ -534,6 +537,7 @@ class TestModelOnexEnvelopeNewFields:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelOnexEnvelopeSerialization:
     """Test JSON serialization with custom encoders for UUID/datetime."""
 
@@ -694,6 +698,7 @@ class TestModelOnexEnvelopeSerialization:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelOnexEnvelopeDeserialization:
     """Test JSON to model roundtrip deserialization."""
 
@@ -821,6 +826,7 @@ class TestModelOnexEnvelopeDeserialization:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelOnexEnvelopeRequestResponse:
     """Test request/response pattern (is_response, success, error)."""
 
@@ -943,6 +949,7 @@ class TestModelOnexEnvelopeRequestResponse:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelOnexEnvelopeValidation:
     """Test validation errors for invalid inputs."""
 
@@ -1144,6 +1151,7 @@ class TestModelOnexEnvelopeValidation:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelOnexEnvelopeStringRepresentation:
     """Test __str__ and __repr__ methods."""
 
@@ -1251,6 +1259,7 @@ class TestModelOnexEnvelopeStringRepresentation:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelOnexEnvelopeEquality:
     """Test equality comparison behavior."""
 
@@ -1313,6 +1322,7 @@ class TestModelOnexEnvelopeEquality:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelOnexEnvelopeBulkOperations:
     """Test bulk envelope creation and processing."""
 
@@ -1405,6 +1415,7 @@ class TestModelOnexEnvelopeBulkOperations:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelOnexEnvelopeSuccessErrorValidation:
     """
     Test validation behavior around success and error field correlation.
@@ -1631,6 +1642,7 @@ class TestModelOnexEnvelopeSuccessErrorValidation:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelOnexEnvelopeValidationWarnings:
     """
     Test that validation warnings are emitted for inconsistent success/error states.
@@ -1876,6 +1888,7 @@ class TestModelOnexEnvelopeValidationWarnings:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelOnexEnvelopeCreateRequest:
     """Test the create_request factory method."""
 
@@ -2083,6 +2096,7 @@ class TestModelOnexEnvelopeCreateRequest:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelOnexEnvelopeCreateResponse:
     """Test the create_response factory method."""
 
@@ -2375,6 +2389,7 @@ class TestModelOnexEnvelopeCreateResponse:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelOnexEnvelopeRequestResponseFlow:
     """Test complete request/response flows using factory methods."""
 

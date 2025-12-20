@@ -872,6 +872,83 @@ def execute_reduction(self, contract):
 - Fault tolerance through declarative retry policies
 - Zero custom code for standard workflows
 
+**CRITICAL CONSTRAINT: ORCHESTRATOR Cannot Return Results**
+
+Orchestrator nodes coordinate workflows by emitting **events** and **intents**, but they **CANNOT return typed results** like COMPUTE nodes. This architectural constraint ensures clear separation of concerns:
+
+```python
+# ✅ CORRECT - Orchestrator emits events and intents
+output = ModelHandlerOutput[None](
+    node_kind=EnumNodeKind.ORCHESTRATOR,
+    events=[
+        ModelEventEnvelope(...),  # Workflow state change event
+    ],
+    intents=[
+        ModelIntent(...),  # Side effect request
+    ],
+    result=None,  # Must be None for ORCHESTRATOR
+)
+
+# ❌ WRONG - Orchestrator cannot return result
+output = ModelHandlerOutput[dict](
+    node_kind=EnumNodeKind.ORCHESTRATOR,
+    result={"workflow_status": "completed"},  # ERROR: ORCHESTRATOR cannot set result!
+)
+```
+
+**Why This Constraint Exists:**
+
+1. **Separation of Concerns**: Orchestrators coordinate; COMPUTE nodes transform
+2. **Architectural Clarity**: Results come from COMPUTE, coordination happens via events/intents
+3. **Testability**: Orchestrator tests verify event/intent emission, not result calculation
+4. **Scalability**: Orchestrators can be stateless coordinators without result aggregation logic
+
+**Validation Error:**
+
+If you attempt to set `result` on an ORCHESTRATOR output, you'll receive:
+```python
+ValueError: ORCHESTRATOR cannot set result - use events[] and intents[] only.
+Only COMPUTE nodes return typed results.
+```
+
+**Correct Pattern:**
+
+```python
+class NodeWorkflowOrchestrator(NodeOrchestrator):
+    async def process(self, input_data: ModelOrchestratorInput) -> ModelHandlerOutput[None]:
+        # Execute workflow steps
+        workflow_result = await self._execute_workflow(input_data)
+
+        # Emit events about workflow completion
+        events = [
+            ModelEventEnvelope(
+                event_type="workflow.completed",
+                payload={"workflow_id": input_data.workflow_id},
+            )
+        ]
+
+        # Emit intents for side effects
+        intents = [
+            ModelIntent(
+                intent_type=EnumIntentType.NOTIFICATION,
+                target="email_service",
+                payload={"message": "Workflow completed"},
+            )
+        ]
+
+        # Return with events and intents, NO result
+        return ModelHandlerOutput[None](
+            node_kind=EnumNodeKind.ORCHESTRATOR,
+            events=events,
+            intents=intents,
+            result=None,  # REQUIRED: Must be None
+        )
+```
+
+**See Also**:
+- [Canonical Execution Shapes](CANONICAL_EXECUTION_SHAPES.md) - Allowed orchestrator patterns
+- [ModelHandlerOutput Validation](../../src/omnibase_core/models/dispatch/model_handler_output.py) - Enforcement code
+
 **v0.4.0 Implementation**: `NodeOrchestrator` with `MixinWorkflowExecution`
 
 The primary implementation uses workflow definitions for coordination. All workflow

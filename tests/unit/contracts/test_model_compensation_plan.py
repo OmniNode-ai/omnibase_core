@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import pytest
+
 """
 ModelCompensationPlan Comprehensive Unit Tests
 
@@ -16,8 +18,6 @@ Comprehensive testing required for all code paths.
 
 from uuid import UUID, uuid4
 
-import pytest
-
 from omnibase_core.enums.enum_compensation_strategy import EnumCompensationStrategy
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_order import EnumExecutionOrder
@@ -25,6 +25,7 @@ from omnibase_core.models.contracts.model_compensation_plan import ModelCompensa
 from omnibase_core.models.errors.model_onex_error import ModelOnexError as OnexError
 
 
+@pytest.mark.unit
 class TestModelCompensationPlan:
     """Comprehensive tests for ModelCompensationPlan with zero tolerance coverage."""
 

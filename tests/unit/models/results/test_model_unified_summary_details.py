@@ -9,12 +9,15 @@ Tests cover:
 - Type safety verification
 """
 
+import pytest
+
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.results.model_unified_summary_details import (
     ModelUnifiedSummaryDetails,
 )
 
 
+@pytest.mark.unit
 class TestModelUnifiedSummaryDetailsBasicInstantiation:
     """Test basic instantiation."""
 
@@ -43,6 +46,7 @@ class TestModelUnifiedSummaryDetailsBasicInstantiation:
         assert details.value.string_value == "85.5"
 
 
+@pytest.mark.unit
 class TestModelUnifiedSummaryDetailsKeyField:
     """Test key field handling."""
 
@@ -72,6 +76,7 @@ class TestModelUnifiedSummaryDetailsKeyField:
             assert details.key == key
 
 
+@pytest.mark.unit
 class TestModelUnifiedSummaryDetailsValueField:
     """Test value field with ModelSchemaValue type (strongly typed)."""
 
@@ -144,6 +149,7 @@ class TestModelUnifiedSummaryDetailsValueField:
         assert details.value is None
 
 
+@pytest.mark.unit
 class TestModelUnifiedSummaryDetailsModelConfig:
     """Test Pydantic model_config settings."""
 
@@ -154,6 +160,7 @@ class TestModelUnifiedSummaryDetailsModelConfig:
         )
 
 
+@pytest.mark.unit
 class TestModelUnifiedSummaryDetailsFieldValidation:
     """Test field validation."""
 
@@ -204,6 +211,7 @@ class TestModelUnifiedSummaryDetailsFieldValidation:
         assert details.value is None
 
 
+@pytest.mark.unit
 class TestModelUnifiedSummaryDetailsSerialization:
     """Test model serialization and deserialization."""
 
@@ -258,6 +266,7 @@ class TestModelUnifiedSummaryDetailsSerialization:
         assert restored.value.string_value == "85.5"
 
 
+@pytest.mark.unit
 class TestModelUnifiedSummaryDetailsComplexScenarios:
     """Test complex usage scenarios."""
 
@@ -322,6 +331,7 @@ class TestModelUnifiedSummaryDetailsComplexScenarios:
         assert details_list[2].value.number_value == 250
 
 
+@pytest.mark.unit
 class TestModelUnifiedSummaryDetailsTypeSafety:
     """Test type safety - comprehensive testing required."""
 
@@ -352,6 +362,7 @@ class TestModelUnifiedSummaryDetailsTypeSafety:
             )
 
 
+@pytest.mark.unit
 class TestModelUnifiedSummaryDetailsEdgeCases:
     """Test edge cases and boundary conditions."""
 

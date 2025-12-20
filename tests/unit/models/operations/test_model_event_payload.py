@@ -21,6 +21,7 @@ from omnibase_core.models.operations.model_workflow_event_data import (
 )
 
 
+@pytest.mark.unit
 class TestModelEventPayload:
     """Test basic event payload functionality with discriminated unions."""
 
@@ -191,6 +192,7 @@ class TestModelEventPayload:
         assert payload.routing_info.broadcast is True
 
 
+@pytest.mark.unit
 class TestModelEventPayloadSerialization:
     """Test serialization and deserialization with discriminated unions."""
 
@@ -376,6 +378,7 @@ class TestModelEventPayloadSerialization:
         )
 
 
+@pytest.mark.unit
 class TestModelEventPayloadValidation:
     """Test validation and error handling."""
 
@@ -466,6 +469,7 @@ class TestModelEventPayloadValidation:
         assert isinstance(payload, ModelEventPayload)
 
 
+@pytest.mark.unit
 class TestModelEventPayloadUsagePatterns:
     """Test real-world usage patterns and integration scenarios."""
 

@@ -29,10 +29,10 @@ import pytest
 pytestmark = pytest.mark.unit
 
 
+@pytest.mark.unit
 class TestNodeComputeSignatureSnapshot:
     """Signature snapshot tests for NodeCompute.__init__."""
 
-    @pytest.mark.unit
     def test_node_compute_init_signature_params(self) -> None:
         """Verify NodeCompute.__init__ parameter names.
 
@@ -49,7 +49,6 @@ class TestNodeComputeSignatureSnapshot:
             f"Expected params: {expected_params}, Got: {params}"
         )
 
-    @pytest.mark.unit
     def test_node_compute_init_container_required(self) -> None:
         """Verify container parameter is required (no default).
 
@@ -65,7 +64,6 @@ class TestNodeComputeSignatureSnapshot:
             f"Got default: {container_param.default}"
         )
 
-    @pytest.mark.unit
     def test_node_compute_init_return_type(self) -> None:
         """Verify NodeCompute.__init__ return type annotation is None.
 
@@ -82,7 +80,6 @@ class TestNodeComputeSignatureSnapshot:
             f"NodeCompute.__init__ should return None, got {sig.return_annotation}"
         )
 
-    @pytest.mark.unit
     def test_node_compute_init_container_type_annotation(self) -> None:
         """Verify container parameter type annotation.
 
@@ -107,6 +104,7 @@ class TestNodeComputeSignatureSnapshot:
         )
 
 
+@pytest.mark.unit
 class TestNodeEffectSignatureSnapshot:
     """Signature snapshot tests for NodeEffect.__init__.
 
@@ -123,7 +121,6 @@ class TestNodeEffectSignatureSnapshot:
         - :mod:`omnibase_core.models.contracts.subcontracts.model_effect_subcontract`: Effect contracts
     """
 
-    @pytest.mark.unit
     def test_node_effect_init_signature_params(self) -> None:
         """Verify NodeEffect.__init__ parameter names.
 
@@ -143,7 +140,6 @@ class TestNodeEffectSignatureSnapshot:
             f"Expected params: {expected_params}, Got: {params}"
         )
 
-    @pytest.mark.unit
     def test_node_effect_init_container_required(self) -> None:
         """Verify container parameter is required (no default).
 
@@ -159,7 +155,6 @@ class TestNodeEffectSignatureSnapshot:
             f"Got default: {container_param.default}"
         )
 
-    @pytest.mark.unit
     def test_node_effect_init_return_type(self) -> None:
         """Verify NodeEffect.__init__ return type annotation is None.
 
@@ -176,7 +171,6 @@ class TestNodeEffectSignatureSnapshot:
             f"NodeEffect.__init__ should return None, got {sig.return_annotation}"
         )
 
-    @pytest.mark.unit
     def test_node_effect_init_container_type_annotation(self) -> None:
         """Verify container parameter type annotation.
 
@@ -201,10 +195,10 @@ class TestNodeEffectSignatureSnapshot:
         )
 
 
+@pytest.mark.unit
 class TestNodeReducerSignatureSnapshot:
     """Signature snapshot tests for NodeReducer.__init__."""
 
-    @pytest.mark.unit
     def test_node_reducer_init_signature_params(self) -> None:
         """Verify NodeReducer.__init__ parameter names.
 
@@ -221,7 +215,6 @@ class TestNodeReducerSignatureSnapshot:
             f"Expected params: {expected_params}, Got: {params}"
         )
 
-    @pytest.mark.unit
     def test_node_reducer_init_container_required(self) -> None:
         """Verify container parameter is required (no default).
 
@@ -237,7 +230,6 @@ class TestNodeReducerSignatureSnapshot:
             f"Got default: {container_param.default}"
         )
 
-    @pytest.mark.unit
     def test_node_reducer_init_return_type(self) -> None:
         """Verify NodeReducer.__init__ return type annotation is None.
 
@@ -254,7 +246,6 @@ class TestNodeReducerSignatureSnapshot:
             f"NodeReducer.__init__ should return None, got {sig.return_annotation}"
         )
 
-    @pytest.mark.unit
     def test_node_reducer_init_container_type_annotation(self) -> None:
         """Verify container parameter type annotation.
 
@@ -279,10 +270,10 @@ class TestNodeReducerSignatureSnapshot:
         )
 
 
+@pytest.mark.unit
 class TestNodeOrchestratorSignatureSnapshot:
     """Signature snapshot tests for NodeOrchestrator.__init__."""
 
-    @pytest.mark.unit
     def test_node_orchestrator_init_signature_params(self) -> None:
         """Verify NodeOrchestrator.__init__ parameter names.
 
@@ -299,7 +290,6 @@ class TestNodeOrchestratorSignatureSnapshot:
             f"Expected params: {expected_params}, Got: {params}"
         )
 
-    @pytest.mark.unit
     def test_node_orchestrator_init_container_required(self) -> None:
         """Verify container parameter is required (no default).
 
@@ -315,7 +305,6 @@ class TestNodeOrchestratorSignatureSnapshot:
             f"Got default: {container_param.default}"
         )
 
-    @pytest.mark.unit
     def test_node_orchestrator_init_return_type(self) -> None:
         """Verify NodeOrchestrator.__init__ return type annotation is None.
 
@@ -332,7 +321,6 @@ class TestNodeOrchestratorSignatureSnapshot:
             f"NodeOrchestrator.__init__ should return None, got {sig.return_annotation}"
         )
 
-    @pytest.mark.unit
     def test_node_orchestrator_init_container_type_annotation(self) -> None:
         """Verify container parameter type annotation.
 
@@ -357,10 +345,10 @@ class TestNodeOrchestratorSignatureSnapshot:
         )
 
 
+@pytest.mark.unit
 class TestNodeCoreBaseSignatureSnapshot:
     """Signature snapshot tests for NodeCoreBase.__init__."""
 
-    @pytest.mark.unit
     def test_node_core_base_init_signature_params(self) -> None:
         """Verify NodeCoreBase.__init__ parameter names.
 
@@ -377,7 +365,6 @@ class TestNodeCoreBaseSignatureSnapshot:
             f"Expected params: {expected_params}, Got: {params}"
         )
 
-    @pytest.mark.unit
     def test_node_core_base_init_container_required(self) -> None:
         """Verify container parameter is required (no default).
 
@@ -393,7 +380,6 @@ class TestNodeCoreBaseSignatureSnapshot:
             f"Got default: {container_param.default}"
         )
 
-    @pytest.mark.unit
     def test_node_core_base_init_return_type(self) -> None:
         """Verify NodeCoreBase.__init__ return type annotation is None.
 
@@ -411,13 +397,13 @@ class TestNodeCoreBaseSignatureSnapshot:
         )
 
 
+@pytest.mark.unit
 class TestNodeBaseSignatureSnapshot:
     """Signature snapshot tests for NodeBase.__init__.
 
     NodeBase has a more complex signature with multiple optional parameters.
     """
 
-    @pytest.mark.unit
     def test_node_base_init_signature_params(self) -> None:
         """Verify NodeBase.__init__ parameter names.
 
@@ -444,7 +430,6 @@ class TestNodeBaseSignatureSnapshot:
             f"Expected params: {expected_params}, Got: {params}"
         )
 
-    @pytest.mark.unit
     def test_node_base_init_contract_path_required(self) -> None:
         """Verify contract_path parameter is required (no default).
 
@@ -460,7 +445,6 @@ class TestNodeBaseSignatureSnapshot:
             f"Got default: {contract_path_param.default}"
         )
 
-    @pytest.mark.unit
     def test_node_base_init_node_id_optional(self) -> None:
         """Verify node_id parameter is optional with None default.
 
@@ -476,7 +460,6 @@ class TestNodeBaseSignatureSnapshot:
             f"Got default: {node_id_param.default}"
         )
 
-    @pytest.mark.unit
     def test_node_base_init_event_bus_optional(self) -> None:
         """Verify event_bus parameter is optional with None default.
 
@@ -492,7 +475,6 @@ class TestNodeBaseSignatureSnapshot:
             f"Got default: {event_bus_param.default}"
         )
 
-    @pytest.mark.unit
     def test_node_base_init_container_optional(self) -> None:
         """Verify container parameter is optional with None default.
 
@@ -508,7 +490,6 @@ class TestNodeBaseSignatureSnapshot:
             f"Got default: {container_param.default}"
         )
 
-    @pytest.mark.unit
     def test_node_base_init_workflow_id_optional(self) -> None:
         """Verify workflow_id parameter is optional with None default.
 
@@ -524,7 +505,6 @@ class TestNodeBaseSignatureSnapshot:
             f"Got default: {workflow_id_param.default}"
         )
 
-    @pytest.mark.unit
     def test_node_base_init_session_id_optional(self) -> None:
         """Verify session_id parameter is optional with None default.
 
@@ -540,7 +520,6 @@ class TestNodeBaseSignatureSnapshot:
             f"Got default: {session_id_param.default}"
         )
 
-    @pytest.mark.unit
     def test_node_base_init_kwargs_variadic(self) -> None:
         """Verify kwargs parameter is VAR_KEYWORD type (**kwargs).
 
@@ -556,7 +535,6 @@ class TestNodeBaseSignatureSnapshot:
             f"Got kind: {kwargs_param.kind}"
         )
 
-    @pytest.mark.unit
     def test_node_base_init_return_type(self) -> None:
         """Verify NodeBase.__init__ return type annotation is None.
 
@@ -573,7 +551,6 @@ class TestNodeBaseSignatureSnapshot:
             f"NodeBase.__init__ should return None, got {sig.return_annotation}"
         )
 
-    @pytest.mark.unit
     def test_node_base_init_contract_path_type_annotation(self) -> None:
         """Verify contract_path parameter type annotation.
 
@@ -595,6 +572,7 @@ class TestNodeBaseSignatureSnapshot:
         )
 
 
+@pytest.mark.unit
 class TestSignatureComprehensiveSummary:
     """Summary tests for all node signatures.
 
@@ -602,7 +580,6 @@ class TestSignatureComprehensiveSummary:
     for verification during refactoring.
     """
 
-    @pytest.mark.unit
     def test_all_four_node_architecture_classes_have_container_param(self) -> None:
         """Verify all 4-node architecture classes accept container parameter.
 
@@ -623,7 +600,6 @@ class TestSignatureComprehensiveSummary:
                 f"{node_class.__name__}.__init__ must have 'container' parameter"
             )
 
-    @pytest.mark.unit
     def test_four_node_container_param_first_after_self(self) -> None:
         """Verify container is the first parameter after self for 4-node classes.
 
@@ -653,7 +629,6 @@ class TestSignatureComprehensiveSummary:
                 f"got '{params[1]}'"
             )
 
-    @pytest.mark.unit
     def test_no_node_has_callback_param(self) -> None:
         """Verify no node class has on_rollback_failure callback parameter.
 
@@ -688,7 +663,6 @@ class TestSignatureComprehensiveSummary:
                 "parameter (v0.4.0+: rollback handling is declarative via contracts)"
             )
 
-    @pytest.mark.unit
     def test_signature_param_counts(self) -> None:
         """Verify expected parameter counts for each node class.
 
@@ -742,10 +716,10 @@ class TestSignatureComprehensiveSummary:
             )
 
 
+@pytest.mark.unit
 class TestNodeComputeProcessSignatureSnapshot:
     """Signature snapshot tests for NodeCompute.process method."""
 
-    @pytest.mark.unit
     def test_node_compute_process_signature_params(self) -> None:
         """Verify NodeCompute.process parameter names.
 
@@ -762,7 +736,6 @@ class TestNodeComputeProcessSignatureSnapshot:
             f"Expected params: {expected_params}, Got: {params}"
         )
 
-    @pytest.mark.unit
     def test_node_compute_process_input_required(self) -> None:
         """Verify input_data parameter is required (no default).
 
@@ -778,7 +751,6 @@ class TestNodeComputeProcessSignatureSnapshot:
             f"Got default: {input_param.default}"
         )
 
-    @pytest.mark.unit
     def test_node_compute_process_input_type_annotation(self) -> None:
         """Verify input_data parameter type annotation.
 
@@ -826,7 +798,6 @@ class TestNodeComputeProcessSignatureSnapshot:
             f"got {annotation}"
         )
 
-    @pytest.mark.unit
     def test_node_compute_process_return_type_annotation(self) -> None:
         """Verify NodeCompute.process return type annotation.
 
@@ -872,7 +843,6 @@ class TestNodeComputeProcessSignatureSnapshot:
             f"got {return_annotation}"
         )
 
-    @pytest.mark.unit
     def test_node_compute_process_is_async(self) -> None:
         """Verify NodeCompute.process is an async method.
 
@@ -885,10 +855,10 @@ class TestNodeComputeProcessSignatureSnapshot:
         )
 
 
+@pytest.mark.unit
 class TestNodeEffectProcessSignatureSnapshot:
     """Signature snapshot tests for NodeEffect.process method."""
 
-    @pytest.mark.unit
     def test_node_effect_process_signature_params(self) -> None:
         """Verify NodeEffect.process parameter names.
 
@@ -905,7 +875,6 @@ class TestNodeEffectProcessSignatureSnapshot:
             f"Expected params: {expected_params}, Got: {params}"
         )
 
-    @pytest.mark.unit
     def test_node_effect_process_input_required(self) -> None:
         """Verify input_data parameter is required (no default).
 
@@ -921,7 +890,6 @@ class TestNodeEffectProcessSignatureSnapshot:
             f"Got default: {input_param.default}"
         )
 
-    @pytest.mark.unit
     def test_node_effect_process_input_type_annotation(self) -> None:
         """Verify input_data parameter type annotation.
 
@@ -938,7 +906,6 @@ class TestNodeEffectProcessSignatureSnapshot:
             f"got {input_param.annotation}"
         )
 
-    @pytest.mark.unit
     def test_node_effect_process_return_type_annotation(self) -> None:
         """Verify NodeEffect.process return type annotation.
 
@@ -954,7 +921,6 @@ class TestNodeEffectProcessSignatureSnapshot:
             f"got {sig.return_annotation}"
         )
 
-    @pytest.mark.unit
     def test_node_effect_process_is_async(self) -> None:
         """Verify NodeEffect.process is an async method.
 
@@ -967,10 +933,10 @@ class TestNodeEffectProcessSignatureSnapshot:
         )
 
 
+@pytest.mark.unit
 class TestNodeReducerProcessSignatureSnapshot:
     """Signature snapshot tests for NodeReducer.process method."""
 
-    @pytest.mark.unit
     def test_node_reducer_process_signature_params(self) -> None:
         """Verify NodeReducer.process parameter names.
 
@@ -987,7 +953,6 @@ class TestNodeReducerProcessSignatureSnapshot:
             f"Expected params: {expected_params}, Got: {params}"
         )
 
-    @pytest.mark.unit
     def test_node_reducer_process_input_required(self) -> None:
         """Verify input_data parameter is required (no default).
 
@@ -1003,7 +968,6 @@ class TestNodeReducerProcessSignatureSnapshot:
             f"Got default: {input_param.default}"
         )
 
-    @pytest.mark.unit
     def test_node_reducer_process_input_type_annotation(self) -> None:
         """Verify input_data parameter type annotation.
 
@@ -1045,7 +1009,6 @@ class TestNodeReducerProcessSignatureSnapshot:
             f"got {annotation}"
         )
 
-    @pytest.mark.unit
     def test_node_reducer_process_return_type_annotation(self) -> None:
         """Verify NodeReducer.process return type annotation.
 
@@ -1088,7 +1051,6 @@ class TestNodeReducerProcessSignatureSnapshot:
             f"got {return_annotation}"
         )
 
-    @pytest.mark.unit
     def test_node_reducer_process_is_async(self) -> None:
         """Verify NodeReducer.process is an async method.
 
@@ -1101,10 +1063,10 @@ class TestNodeReducerProcessSignatureSnapshot:
         )
 
 
+@pytest.mark.unit
 class TestNodeOrchestratorProcessSignatureSnapshot:
     """Signature snapshot tests for NodeOrchestrator.process method."""
 
-    @pytest.mark.unit
     def test_node_orchestrator_process_signature_params(self) -> None:
         """Verify NodeOrchestrator.process parameter names.
 
@@ -1121,7 +1083,6 @@ class TestNodeOrchestratorProcessSignatureSnapshot:
             f"Expected params: {expected_params}, Got: {params}"
         )
 
-    @pytest.mark.unit
     def test_node_orchestrator_process_input_required(self) -> None:
         """Verify input_data parameter is required (no default).
 
@@ -1137,7 +1098,6 @@ class TestNodeOrchestratorProcessSignatureSnapshot:
             f"Got default: {input_param.default}"
         )
 
-    @pytest.mark.unit
     def test_node_orchestrator_process_input_type_annotation(self) -> None:
         """Verify input_data parameter type annotation.
 
@@ -1156,7 +1116,6 @@ class TestNodeOrchestratorProcessSignatureSnapshot:
             f"got {input_param.annotation}"
         )
 
-    @pytest.mark.unit
     def test_node_orchestrator_process_return_type_annotation(self) -> None:
         """Verify NodeOrchestrator.process return type annotation.
 
@@ -1172,7 +1131,6 @@ class TestNodeOrchestratorProcessSignatureSnapshot:
             f"got {sig.return_annotation}"
         )
 
-    @pytest.mark.unit
     def test_node_orchestrator_process_is_async(self) -> None:
         """Verify NodeOrchestrator.process is an async method.
 
@@ -1185,6 +1143,7 @@ class TestNodeOrchestratorProcessSignatureSnapshot:
         )
 
 
+@pytest.mark.unit
 class TestProcessSignatureComprehensiveSummary:
     """Summary tests for all node process method signatures.
 
@@ -1192,7 +1151,6 @@ class TestProcessSignatureComprehensiveSummary:
     for verification during refactoring.
     """
 
-    @pytest.mark.unit
     def test_all_four_node_classes_have_process_method(self) -> None:
         """Verify all 4-node architecture classes have a process method.
 
@@ -1215,7 +1173,6 @@ class TestProcessSignatureComprehensiveSummary:
                 f"{node_class.__name__}.process must be callable"
             )
 
-    @pytest.mark.unit
     def test_all_process_methods_are_async(self) -> None:
         """Verify all 4-node process methods are async.
 
@@ -1235,7 +1192,6 @@ class TestProcessSignatureComprehensiveSummary:
                 f"{node_class.__name__}.process must be async (coroutine function)"
             )
 
-    @pytest.mark.unit
     def test_all_process_methods_have_input_data_param(self) -> None:
         """Verify all 4-node process methods have input_data parameter.
 
@@ -1256,7 +1212,6 @@ class TestProcessSignatureComprehensiveSummary:
                 f"{node_class.__name__}.process must have 'input_data' parameter"
             )
 
-    @pytest.mark.unit
     def test_process_signature_param_counts(self) -> None:
         """Verify expected parameter counts for each node process method.
 
@@ -1291,7 +1246,6 @@ class TestProcessSignatureComprehensiveSummary:
                 f"Params: {list(sig.parameters.keys())}"
             )
 
-    @pytest.mark.unit
     def test_process_methods_have_return_annotations(self) -> None:
         """Verify all 4-node process methods have return type annotations.
 
@@ -1313,7 +1267,6 @@ class TestProcessSignatureComprehensiveSummary:
                 f"{node_class.__name__}.process must have return type annotation"
             )
 
-    @pytest.mark.unit
     def test_process_input_params_have_type_annotations(self) -> None:
         """Verify all 4-node process input_data parameters have type annotations.
 

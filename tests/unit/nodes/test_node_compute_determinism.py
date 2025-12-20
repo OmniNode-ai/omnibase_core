@@ -57,6 +57,7 @@ def fixed_operation_id() -> UUID:
 
 
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestNodeComputeDeterministicOutput:
     """Test that same inputs always produce same outputs.
 
@@ -228,6 +229,7 @@ class TestNodeComputeDeterministicOutput:
 
 
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestNodeComputeNoHiddenEntropy:
     """Test that no hidden entropy sources affect output.
 
@@ -409,6 +411,7 @@ class TestNodeComputeNoHiddenEntropy:
 
 
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestNodeComputeTimeIndependence:
     """Test that results are independent of time/execution order.
 
@@ -558,6 +561,7 @@ class TestNodeComputeTimeIndependence:
 
 
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestNodeComputeStateSerialization:
     """Test that state serialization produces identical results.
 
@@ -702,6 +706,7 @@ class TestNodeComputeStateSerialization:
 
 
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestNodeComputeCacheKeyDeterminism:
     """Additional tests for cache key determinism."""
 
@@ -790,6 +795,7 @@ class TestNodeComputeCacheKeyDeterminism:
 
 
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestNodeComputeInputValidation:
     """Tests for input validation to ensure deterministic behavior."""
 
@@ -868,6 +874,7 @@ class TestNodeComputeInputValidation:
 
 
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestNodeComputeImmutability:
     """Tests for immutability guarantees supporting determinism."""
 

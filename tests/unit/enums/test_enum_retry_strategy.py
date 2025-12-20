@@ -8,6 +8,7 @@ import pytest
 from omnibase_core.enums.enum_retry_strategy import EnumRetryStrategy
 
 
+@pytest.mark.unit
 class TestEnumRetryStrategy:
     """Test suite for EnumRetryStrategy."""
 

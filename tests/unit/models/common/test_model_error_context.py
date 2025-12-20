@@ -1,9 +1,12 @@
 """Tests for ModelErrorContext."""
 
+import pytest
+
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
+@pytest.mark.unit
 class TestModelErrorContextInstantiation:
     """Tests for ModelErrorContext instantiation."""
 
@@ -53,6 +56,7 @@ class TestModelErrorContextInstantiation:
         assert "severity" in context.additional_context
 
 
+@pytest.mark.unit
 class TestModelErrorContextFactoryMethods:
     """Tests for ModelErrorContext factory methods."""
 
@@ -83,6 +87,7 @@ class TestModelErrorContextFactoryMethods:
         assert all(k in context.additional_context for k in additional)
 
 
+@pytest.mark.unit
 class TestModelErrorContextSerialization:
     """Tests for ModelErrorContext serialization."""
 
@@ -112,6 +117,7 @@ class TestModelErrorContextSerialization:
         assert "module_name" in data
 
 
+@pytest.mark.unit
 class TestModelErrorContextProtocols:
     """Tests for ModelErrorContext protocol implementations."""
 
@@ -132,6 +138,7 @@ class TestModelErrorContextProtocols:
         assert context.validate_instance() is True
 
 
+@pytest.mark.unit
 class TestModelErrorContextEdgeCases:
     """Tests for ModelErrorContext edge cases."""
 

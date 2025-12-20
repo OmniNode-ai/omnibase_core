@@ -34,9 +34,9 @@ class MockServiceImplementation(ITestService):
         return f"Executed {self.name} (count: {self.execution_count})"
 
 
-@pytest.mark.unit
 @pytest.mark.slow
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestServiceRegistryMemory:
     """Test suite for ServiceRegistry memory management.
 

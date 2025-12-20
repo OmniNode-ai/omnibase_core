@@ -11,8 +11,8 @@ import pytest
 from omnibase_core.enums.enum_effect_handler_type import EnumEffectHandlerType
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestEnumEffectHandlerType:
     """Test cases for EnumEffectHandlerType enum."""
 
@@ -116,8 +116,8 @@ class TestEnumEffectHandlerType:
         assert values1 is not values2  # Different list objects
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestEnumEffectHandlerTypePydanticIntegration:
     """Test Pydantic serialization compatibility."""
 
@@ -125,6 +125,7 @@ class TestEnumEffectHandlerTypePydanticIntegration:
         """Test enum serialization in a Pydantic model context."""
         from pydantic import BaseModel
 
+        @pytest.mark.unit
         class TestModel(BaseModel):
             handler_type: EnumEffectHandlerType
 
@@ -136,6 +137,7 @@ class TestEnumEffectHandlerTypePydanticIntegration:
         """Test enum deserialization in a Pydantic model context."""
         from pydantic import BaseModel
 
+        @pytest.mark.unit
         class TestModel(BaseModel):
             handler_type: EnumEffectHandlerType
 
@@ -151,6 +153,7 @@ class TestEnumEffectHandlerTypePydanticIntegration:
         """Test enum JSON serialization round-trip."""
         from pydantic import BaseModel
 
+        @pytest.mark.unit
         class TestModel(BaseModel):
             handler_type: EnumEffectHandlerType
 
@@ -163,8 +166,8 @@ class TestEnumEffectHandlerTypePydanticIntegration:
         assert restored.handler_type == EnumEffectHandlerType.FILESYSTEM
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestEnumEffectHandlerTypeExport:
     """Test enum is properly exported from omnibase_core.enums."""
 

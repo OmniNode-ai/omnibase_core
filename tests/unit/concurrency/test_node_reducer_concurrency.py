@@ -209,6 +209,7 @@ def _create_reducer_input(
     )
 
 
+@pytest.mark.unit
 class TestNodeReducerFSMConcurrency:
     """Test FSM state thread safety under concurrent load.
 
@@ -394,6 +395,7 @@ class TestNodeReducerFSMConcurrency:
                     assert id(snapshot.context) != id(snapshots[0].context)
 
 
+@pytest.mark.unit
 class TestModelReducerInputConcurrency:
     """Test concurrent ModelReducerInput processing.
 
@@ -510,6 +512,7 @@ class TestModelReducerInputConcurrency:
             )
 
 
+@pytest.mark.unit
 class TestModelReducerOutputConcurrency:
     """Test concurrent ModelReducerOutput generation.
 
@@ -631,6 +634,7 @@ class TestModelReducerOutputConcurrency:
             )
 
 
+@pytest.mark.unit
 class TestNodeReducerThreadLocalPattern:
     """Test thread-local instance pattern for NodeReducer.
 
@@ -764,6 +768,7 @@ class TestNodeReducerThreadLocalPattern:
             )
 
 
+@pytest.mark.unit
 class TestSharedNodeReducerRaceConditions:
     """Test race conditions when NodeReducer is INCORRECTLY shared.
 
@@ -842,6 +847,7 @@ class TestSharedNodeReducerRaceConditions:
             )
 
 
+@pytest.mark.unit
 class TestNodeReducerWithThreadPoolExecutor:
     """Test NodeReducer behavior with ThreadPoolExecutor.
 
@@ -951,6 +957,7 @@ class TestNodeReducerWithThreadPoolExecutor:
             assert result["history"] == expected_history
 
 
+@pytest.mark.unit
 class TestNodeReducerSnapshotRestoreConcurrency:
     """Test snapshot and restore operations under concurrent load.
 

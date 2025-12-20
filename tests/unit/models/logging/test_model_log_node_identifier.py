@@ -18,6 +18,7 @@ from omnibase_core.models.logging.model_lognodeidentifierstring import (
 )
 
 
+@pytest.mark.unit
 class TestModelLogNodeIdentifierUUID:
     """Test UUID-based log node identifier."""
 
@@ -69,6 +70,7 @@ class TestModelLogNodeIdentifierUUID:
         assert identifier.value == test_uuid
 
 
+@pytest.mark.unit
 class TestModelLogNodeIdentifierString:
     """Test string-based log node identifier."""
 
@@ -115,6 +117,7 @@ class TestModelLogNodeIdentifierString:
         assert identifier.value == test_string
 
 
+@pytest.mark.unit
 class TestModelLogNodeIdentifierUnion:
     """Test the discriminated union ModelLogNodeIdentifier."""
 
@@ -167,6 +170,7 @@ class TestModelLogNodeIdentifierUnion:
         assert string_restored.value == test_string
 
 
+@pytest.mark.unit
 class TestModelLogNodeIdentifierEdgeCases:
     """Test edge cases for log node identifiers."""
 
@@ -209,6 +213,7 @@ class TestModelLogNodeIdentifierEdgeCases:
         assert identifier.type == "uuid"
 
 
+@pytest.mark.unit
 class TestModelLogNodeIdentifierIntegration:
     """Test integration scenarios for log node identifiers."""
 

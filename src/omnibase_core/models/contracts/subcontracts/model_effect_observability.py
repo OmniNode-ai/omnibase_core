@@ -46,7 +46,7 @@ class ModelEffectObservability(BaseModel):
         - ModelEffectSubcontract.observability: Subcontract-level observability settings
     """
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     log_request: bool = Field(default=True)
     log_response: bool = Field(default=False, description="May contain sensitive data")

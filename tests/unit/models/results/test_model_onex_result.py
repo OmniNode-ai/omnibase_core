@@ -26,6 +26,7 @@ from omnibase_core.models.results.model_unified_summary import ModelUnifiedSumma
 from omnibase_core.models.results.model_unified_version import ModelUnifiedVersion
 
 
+@pytest.mark.unit
 class TestModelOnexResultBasicInstantiation:
     """Test basic instantiation with required fields."""
 
@@ -75,6 +76,7 @@ class TestModelOnexResultBasicInstantiation:
         assert result.messages[1].level == EnumLogLevel.WARNING
 
 
+@pytest.mark.unit
 class TestModelOnexResultFieldValidation:
     """Test field validation and type safety."""
 
@@ -112,6 +114,7 @@ class TestModelOnexResultFieldValidation:
         assert result.coverage == 85.5
 
 
+@pytest.mark.unit
 class TestModelOnexResultRecursiveComposition:
     """Test recursive child_results composition."""
 
@@ -159,6 +162,7 @@ class TestModelOnexResultRecursiveComposition:
         assert result.child_results == []
 
 
+@pytest.mark.unit
 class TestModelOnexResultComplexFields:
     """Test complex nested field structures."""
 
@@ -207,6 +211,7 @@ class TestModelOnexResultComplexFields:
         assert result.version.tool_version.major == 2
 
 
+@pytest.mark.unit
 class TestModelOnexResultOptionalFields:
     """Test optional field handling."""
 
@@ -268,6 +273,7 @@ class TestModelOnexResultOptionalFields:
         assert "--verbose" in result.cli_args
 
 
+@pytest.mark.unit
 class TestModelOnexResultUUIDs:
     """Test UUID field handling."""
 
@@ -294,6 +300,7 @@ class TestModelOnexResultUUIDs:
         assert result.parent_id == parent_id
 
 
+@pytest.mark.unit
 class TestModelOnexResultBooleanFields:
     """Test boolean field handling."""
 
@@ -312,6 +319,7 @@ class TestModelOnexResultBooleanFields:
         assert result_not_fixed.auto_fix_applied is False
 
 
+@pytest.mark.unit
 class TestModelOnexResultEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -353,6 +361,7 @@ class TestModelOnexResultEdgeCases:
         assert result.diff == diff_content
 
 
+@pytest.mark.unit
 class TestModelOnexResultSerialization:
     """Test model serialization and deserialization."""
 
@@ -401,6 +410,7 @@ class TestModelOnexResultSerialization:
         assert restored.exit_code == original.exit_code
 
 
+@pytest.mark.unit
 class TestModelOnexResultModelConfig:
     """Test Pydantic model_config settings."""
 
@@ -419,6 +429,7 @@ class TestModelOnexResultModelConfig:
         assert "messages" in example
 
 
+@pytest.mark.unit
 class TestModelOnexResultTypeSafety:
     """Test type safety - comprehensive testing required."""
 
@@ -448,6 +459,7 @@ class TestModelOnexResultTypeSafety:
         assert "ModelOnexMessage" in str(messages_type) or "list" in str(messages_type)
 
 
+@pytest.mark.unit
 class TestModelOnexResultStatusEnumHandling:
     """Test status enum field handling with all enum values."""
 

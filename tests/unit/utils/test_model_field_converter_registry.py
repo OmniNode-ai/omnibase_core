@@ -22,6 +22,7 @@ class SampleStatus(Enum):
     PENDING = "pending"
 
 
+@pytest.mark.unit
 class TestModelFieldConverterRegistryInit:
     """Test ModelFieldConverterRegistry initialization."""
 
@@ -32,6 +33,7 @@ class TestModelFieldConverterRegistryInit:
         assert registry.list_fields() == []
 
 
+@pytest.mark.unit
 class TestRegisterBooleanField:
     """Test boolean field registration."""
 
@@ -74,6 +76,7 @@ class TestRegisterBooleanField:
         assert registry.has_converter("optional")
 
 
+@pytest.mark.unit
 class TestRegisterIntegerField:
     """Test integer field registration."""
 
@@ -127,6 +130,7 @@ class TestRegisterIntegerField:
         assert exc_info.value.error_code == EnumCoreErrorCode.CONVERSION_ERROR
 
 
+@pytest.mark.unit
 class TestRegisterEnumField:
     """Test enum field registration."""
 
@@ -182,6 +186,7 @@ class TestRegisterEnumField:
         assert "Invalid SampleStatus value" in exc_info.value.message
 
 
+@pytest.mark.unit
 class TestRegisterOptionalIntegerField:
     """Test optional integer field registration."""
 
@@ -217,6 +222,7 @@ class TestRegisterOptionalIntegerField:
         assert registry.convert_field("count", "1") == 1
 
 
+@pytest.mark.unit
 class TestRegisterCustomField:
     """Test custom field registration."""
 
@@ -259,6 +265,7 @@ class TestRegisterCustomField:
         assert registry.convert_field("port", "8080") == 8080
 
 
+@pytest.mark.unit
 class TestConvertField:
     """Test convert_field() method."""
 
@@ -281,6 +288,7 @@ class TestConvertField:
         assert result == 30
 
 
+@pytest.mark.unit
 class TestConvertData:
     """Test convert_data() method."""
 
@@ -338,6 +346,7 @@ class TestConvertData:
         assert result["count"].to_value() == 10
 
 
+@pytest.mark.unit
 class TestHasConverter:
     """Test has_converter() method."""
 
@@ -366,6 +375,7 @@ class TestHasConverter:
         assert registry.has_converter("unknown") is False
 
 
+@pytest.mark.unit
 class TestListFields:
     """Test list_fields() method."""
 
@@ -401,6 +411,7 @@ class TestListFields:
         assert fields == expected
 
 
+@pytest.mark.unit
 class TestModelFieldConverterRegistryIntegration:
     """Integration tests for ModelFieldConverterRegistry."""
 

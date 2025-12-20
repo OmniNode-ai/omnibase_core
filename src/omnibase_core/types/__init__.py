@@ -213,12 +213,14 @@ from .typed_dict_k8s_resources import (
     TypedDictK8sServicePort,
     TypedDictK8sServiceSpec,
 )
+from .typed_dict_legacy_dispatch_metrics import TypedDictLegacyDispatchMetrics
 from .typed_dict_legacy_error import TypedDictLegacyError
 from .typed_dict_legacy_health import TypedDictLegacyHealth
 from .typed_dict_legacy_stats import TypedDictLegacyStats
 from .typed_dict_lifecycle_event_fields import TypedDictLifecycleEventFields
 from .typed_dict_lifecycle_event_metadata import TypedDictLifecycleEventMetadata
 from .typed_dict_load_balancer_stats import TypedDictLoadBalancerStats
+from .typed_dict_log_context import TypedDictLogContext
 from .typed_dict_maintenance_summary import TypedDictMaintenanceSummary
 
 # YAML and path resolution TypedDict definitions
@@ -540,9 +542,11 @@ __all__ = [
     "TypedDictFeatureFlags",
     "TypedDictStatsCollection",
     "TypedDictSystemState",
+    "TypedDictLegacyDispatchMetrics",
     "TypedDictLegacyStats",
     "TypedDictLegacyHealth",
     "TypedDictLegacyError",
+    "TypedDictLogContext",
     "TypedDictMigrationStepDict",
     "TypedDictNodeCoreUpdateData",
     "TypedDictPerformanceData",

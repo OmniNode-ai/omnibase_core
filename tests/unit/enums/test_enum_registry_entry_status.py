@@ -8,6 +8,7 @@ import pytest
 from omnibase_core.enums.enum_registry_entry_status import EnumRegistryEntryStatus
 
 
+@pytest.mark.unit
 class TestEnumRegistryEntryStatus:
     """Test suite for EnumRegistryEntryStatus."""
 

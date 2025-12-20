@@ -2,11 +2,14 @@
 Test suite for TypedDictMigrationDuplicateConflictDict.
 """
 
+import pytest
+
 from omnibase_core.types.typed_dict_migration_duplicate_conflict_dict import (
     TypedDictMigrationDuplicateConflictDict,
 )
 
 
+@pytest.mark.unit
 class TestTypedDictMigrationDuplicateConflictDict:
     """Test TypedDictMigrationDuplicateConflictDict functionality."""
 

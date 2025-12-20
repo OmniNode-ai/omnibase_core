@@ -9,6 +9,7 @@ import pytest
 from omnibase_core.enums.enum_file_processing_mode import EnumFileProcessingMode
 
 
+@pytest.mark.unit
 class TestEnumFileProcessingMode:
     """Test cases for EnumFileProcessingMode enum."""
 

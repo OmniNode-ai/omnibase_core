@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import pytest
+
 """
 Unit Tests for Contract v1.1.0 Fields.
 
@@ -21,7 +23,6 @@ import re
 from pathlib import Path
 from typing import Any
 
-import pytest
 import yaml
 
 # Import shared contract constants from test_runtime_contracts to avoid duplication

@@ -16,6 +16,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import pytest
+
 from omnibase_core.models.validation.model_duplication_info import ModelDuplicationInfo
 from omnibase_core.validation.auditor_protocol import (
     ModelAuditResult,
@@ -28,6 +30,7 @@ if TYPE_CHECKING:
     from _pytest.capture import CaptureFixture
 
 
+@pytest.mark.unit
 class TestPrintAuditSummary:
     """Test print_audit_summary method."""
 
@@ -128,6 +131,7 @@ class TestPrintAuditSummary:
         # Should handle completely empty result
 
 
+@pytest.mark.unit
 class TestPrintDuplicationReport:
     """Test print_duplication_report method."""
 
@@ -339,6 +343,7 @@ class TestPrintDuplicationReport:
         captured = capsys.readouterr()
 
 
+@pytest.mark.unit
 class TestAuditEcosystem:
     """Test audit_ecosystem method."""
 
@@ -414,6 +419,7 @@ class TestAuditEcosystem:
         assert "file.txt" not in results
 
 
+@pytest.mark.unit
 class TestProtocolQualityChecking:
     """Test protocol quality checking methods."""
 
@@ -519,6 +525,7 @@ class TestProtocolQualityChecking:
         assert len(issues) >= 2
 
 
+@pytest.mark.unit
 class TestNamingConventionChecking:
     """Test naming convention checking methods."""
 
@@ -634,6 +641,7 @@ class TestNamingConventionChecking:
         assert len(violations) >= 1
 
 
+@pytest.mark.unit
 class TestAuditResultHasIssues:
     """Test ModelAuditResult.has_issues() method."""
 

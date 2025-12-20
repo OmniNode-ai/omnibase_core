@@ -4,9 +4,12 @@ Tests for ComputationCache - Caching layer for expensive computations.
 
 from datetime import UTC, datetime, timedelta
 
+import pytest
+
 from omnibase_core.infrastructure.computation_cache import ComputationCache
 
 
+@pytest.mark.unit
 class TestComputationCacheInit:
     """Test ComputationCache initialization."""
 
@@ -37,6 +40,7 @@ class TestComputationCacheInit:
         assert cache._cache == {}
 
 
+@pytest.mark.unit
 class TestComputationCacheGet:
     """Test ComputationCache get operations."""
 
@@ -106,6 +110,7 @@ class TestComputationCacheGet:
         assert cache.get("key3") == "value3"
 
 
+@pytest.mark.unit
 class TestComputationCachePut:
     """Test ComputationCache put operations."""
 
@@ -192,6 +197,7 @@ class TestComputationCachePut:
         assert cache.get("key") == "value2"
 
 
+@pytest.mark.unit
 class TestComputationCacheEvictLRU:
     """Test ComputationCache LRU eviction."""
 
@@ -224,6 +230,7 @@ class TestComputationCacheEvictLRU:
         assert cache._cache == {}
 
 
+@pytest.mark.unit
 class TestComputationCacheClear:
     """Test ComputationCache clear operations."""
 
@@ -250,6 +257,7 @@ class TestComputationCacheClear:
         assert cache.get("key3") is None
 
 
+@pytest.mark.unit
 class TestComputationCacheGetStats:
     """Test ComputationCache statistics."""
 
@@ -315,6 +323,7 @@ class TestComputationCacheGetStats:
         assert stats["max_size"] == 50
 
 
+@pytest.mark.unit
 class TestComputationCacheIntegration:
     """Integration tests for ComputationCache."""
 

@@ -28,6 +28,7 @@ from omnibase_core.enums.enum_node_kind import EnumNodeKind
 from omnibase_core.enums.enum_node_type import EnumNodeType
 
 
+@pytest.mark.unit
 class TestEnumNodeTypeKindMapping:
     """Validate EnumNodeType to EnumNodeKind mapping invariants."""
 
@@ -348,6 +349,7 @@ class TestEnumNodeTypeKindMapping:
         )
 
 
+@pytest.mark.unit
 class TestHasNodeKind:
     """Test the has_node_kind() helper method for defensive programming."""
 
@@ -478,6 +480,7 @@ class TestHasNodeKind:
             )
 
 
+@pytest.mark.unit
 class TestEnumNodeTypeKindMappingEdgeCases:
     """Test edge cases and error conditions for mapping."""
 
@@ -569,6 +572,7 @@ class TestEnumNodeTypeKindMappingEdgeCases:
         assert len(EnumNodeType._KIND_MAP) == original_length
 
 
+@pytest.mark.unit
 class TestEnumNodeTypeCoreAndInfrastructureMethods:
     """Test get_core_node_types() and get_infrastructure_types() methods."""
 
@@ -805,6 +809,7 @@ class TestEnumNodeTypeCoreAndInfrastructureMethods:
         )
 
 
+@pytest.mark.unit
 class TestNodeRoutingIntegration:
     """
     Integration tests for node type to kind routing.

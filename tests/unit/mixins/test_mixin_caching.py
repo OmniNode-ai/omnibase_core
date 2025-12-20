@@ -13,6 +13,7 @@ class MockNode(MixinCaching):
     """Mock node class that uses MixinCaching."""
 
 
+@pytest.mark.unit
 class TestMixinCachingInit:
     """Test suite for MixinCaching initialization."""
 
@@ -28,6 +29,7 @@ class TestMixinCachingInit:
         assert isinstance(node._cache_data, dict)
 
 
+@pytest.mark.unit
 class TestGenerateCacheKey:
     """Test suite for generate_cache_key method."""
 
@@ -114,6 +116,7 @@ class TestGenerateCacheKey:
         assert key1 != key2
 
 
+@pytest.mark.unit
 class TestGetCached:
     """Test suite for get_cached method."""
 
@@ -161,6 +164,7 @@ class TestGetCached:
         assert result is None
 
 
+@pytest.mark.unit
 class TestSetCached:
     """Test suite for set_cached method."""
 
@@ -228,6 +232,7 @@ class TestSetCached:
         assert node._cache_data["complex_key"] == complex_value
 
 
+@pytest.mark.unit
 class TestInvalidateCache:
     """Test suite for invalidate_cache method."""
 
@@ -276,6 +281,7 @@ class TestInvalidateCache:
         assert "key3" in node._cache_data
 
 
+@pytest.mark.unit
 class TestClearCache:
     """Test suite for clear_cache method."""
 
@@ -310,6 +316,7 @@ class TestClearCache:
         assert node._cache_data == {}
 
 
+@pytest.mark.unit
 class TestGetCacheStats:
     """Test suite for get_cache_stats method."""
 
@@ -365,6 +372,7 @@ class TestGetCacheStats:
         assert len(stats["keys"]) == 2
 
 
+@pytest.mark.unit
 class TestCachingIntegration:
     """Integration tests for MixinCaching workflow."""
 

@@ -126,8 +126,8 @@ def make_subcontract(
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestValidateTransactionScope:
     """Tests for validate_transaction_scope validator.
 
@@ -266,8 +266,8 @@ class TestValidateTransactionScope:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestValidateIdempotencyRetryInteraction:
     """Tests for validate_idempotency_retry_interaction validator.
 
@@ -424,8 +424,8 @@ class TestValidateIdempotencyRetryInteraction:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestValidateSelectRetryInTransaction:
     """Tests for validate_select_retry_in_transaction validator.
 
@@ -618,8 +618,8 @@ class TestValidateSelectRetryInTransaction:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestValidateNoRawInTransaction:
     """Tests for validate_no_raw_in_transaction validator.
 
@@ -772,8 +772,8 @@ class TestValidateNoRawInTransaction:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestValidatorInteractions:
     """Tests for interactions between multiple validators."""
 
@@ -935,8 +935,8 @@ class TestValidatorInteractions:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestModelEffectSubcontractExports:
     """Test that ModelEffectSubcontract is properly exported."""
 

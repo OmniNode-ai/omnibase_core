@@ -14,6 +14,7 @@ from omnibase_core.models.cli.model_cli_performance_metrics import (
 )
 
 
+@pytest.mark.unit
 class TestModelPerformanceMetricsBasics:
     """Test basic initialization and validation."""
 
@@ -63,6 +64,7 @@ class TestModelPerformanceMetricsBasics:
         assert metrics.execution_time_ms == -1.0
 
 
+@pytest.mark.unit
 class TestModelPerformanceMetricsProtocols:
     """Test protocol method implementations."""
 
@@ -159,6 +161,7 @@ class TestModelPerformanceMetricsProtocols:
         assert result is True
 
 
+@pytest.mark.unit
 class TestModelPerformanceMetricsEdgeCases:
     """Test edge cases and boundary values."""
 
@@ -217,6 +220,7 @@ class TestModelPerformanceMetricsEdgeCases:
         assert metrics.cpu_usage_percent == 0.1
 
 
+@pytest.mark.unit
 class TestModelPerformanceMetricsConfig:
     """Test model configuration."""
 
@@ -265,6 +269,7 @@ class TestModelPerformanceMetricsConfig:
         assert "memory_usage_mb" in data  # 0.0 is not None
 
 
+@pytest.mark.unit
 class TestModelPerformanceMetricsComparisons:
     """Test metric comparisons and calculations."""
 
@@ -319,6 +324,7 @@ class TestModelPerformanceMetricsComparisons:
         assert metrics.network_calls == 8
 
 
+@pytest.mark.unit
 class TestModelPerformanceMetricsRealisticScenarios:
     """Test realistic usage scenarios."""
 

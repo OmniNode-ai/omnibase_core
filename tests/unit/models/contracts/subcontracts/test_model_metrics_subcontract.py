@@ -19,6 +19,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
+@pytest.mark.unit
 class TestModelMetricsSubcontractInitialization:
     """Test ModelMetricsSubcontract initialization."""
 
@@ -64,6 +65,7 @@ class TestModelMetricsSubcontractInitialization:
         assert ModelMetricsSubcontract.INTERFACE_VERSION.patch == 0
 
 
+@pytest.mark.unit
 class TestModelMetricsSubcontractValidation:
     """Test ModelMetricsSubcontract field validation."""
 
@@ -233,6 +235,7 @@ class TestModelMetricsSubcontractValidation:
             )
 
 
+@pytest.mark.unit
 class TestModelMetricsSubcontractSerialization:
     """Test ModelMetricsSubcontract serialization."""
 
@@ -291,6 +294,7 @@ class TestModelMetricsSubcontractSerialization:
         )
 
 
+@pytest.mark.unit
 class TestModelMetricsSubcontractMetricTypes:
     """Test metric type enablement flags."""
 
@@ -337,6 +341,7 @@ class TestModelMetricsSubcontractMetricTypes:
         assert metrics.enable_summaries is False
 
 
+@pytest.mark.unit
 class TestModelMetricsSubcontractPerformanceMonitoring:
     """Test performance monitoring configuration."""
 
@@ -369,6 +374,7 @@ class TestModelMetricsSubcontractPerformanceMonitoring:
         assert metrics.track_error_rates is False
 
 
+@pytest.mark.unit
 class TestModelMetricsSubcontractEdgeCases:
     """Test metrics subcontract edge cases."""
 
@@ -417,6 +423,7 @@ class TestModelMetricsSubcontractEdgeCases:
         assert metrics.metrics_backend == "none"
 
 
+@pytest.mark.unit
 class TestModelMetricsSubcontractAttributes:
     """Test metrics subcontract attributes and metadata."""
 
@@ -455,6 +462,7 @@ class TestModelMetricsSubcontractAttributes:
         assert copied is not metrics
 
 
+@pytest.mark.unit
 class TestModelMetricsSubcontractConfigDict:
     """Test metrics subcontract ConfigDict settings."""
 

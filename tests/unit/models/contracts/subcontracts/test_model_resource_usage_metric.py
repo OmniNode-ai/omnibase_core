@@ -20,6 +20,7 @@ from omnibase_core.models.contracts.subcontracts.model_resource_usage_metric imp
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
+@pytest.mark.unit
 class TestModelResourceUsageMetricValidation:
     """Test validation rules for resource usage metrics."""
 
@@ -118,6 +119,7 @@ class TestModelResourceUsageMetricValidation:
         assert metric.is_percentage is False
 
 
+@pytest.mark.unit
 class TestModelResourceUsageMetricCreation:
     """Test creation and field constraints."""
 
@@ -214,6 +216,7 @@ class TestModelResourceUsageMetricCreation:
             assert metric.usage_unit == unit
 
 
+@pytest.mark.unit
 class TestModelResourceUsageMetricEdgeCases:
     """Test edge cases and boundary conditions."""
 

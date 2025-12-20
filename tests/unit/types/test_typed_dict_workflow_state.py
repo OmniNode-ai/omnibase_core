@@ -5,9 +5,12 @@ Test suite for TypedDictWorkflowState.
 from datetime import datetime
 from uuid import UUID, uuid4
 
+import pytest
+
 from omnibase_core.types.typed_dict_workflow_state import TypedDictWorkflowState
 
 
+@pytest.mark.unit
 class TestTypedDictWorkflowState:
     """Test TypedDictWorkflowState functionality."""
 

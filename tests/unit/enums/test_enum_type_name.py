@@ -18,6 +18,7 @@ from pydantic import BaseModel, ValidationError
 from omnibase_core.enums.enum_type_name import EnumTypeName
 
 
+@pytest.mark.unit
 class TestEnumTypeName:
     """Test cases for EnumTypeName."""
 
@@ -226,6 +227,7 @@ class TestEnumTypeName:
             assert sum(categories) <= 1, f"{type_name} belongs to multiple categories"
 
 
+@pytest.mark.unit
 class TestEnumTypeNameEdgeCases:
     """Test edge cases for EnumTypeName."""
 

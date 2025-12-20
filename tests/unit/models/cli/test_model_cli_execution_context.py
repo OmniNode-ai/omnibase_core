@@ -18,6 +18,7 @@ from omnibase_core.models.cli.model_cli_execution_context import (
 )
 
 
+@pytest.mark.unit
 class TestModelCliExecutionContextBasic:
     """Test basic CLI execution context functionality."""
 
@@ -157,6 +158,7 @@ class TestModelCliExecutionContextBasic:
         assert context.value == test_list
 
 
+@pytest.mark.unit
 class TestModelCliExecutionContextMethods:
     """Test context instance methods."""
 
@@ -308,6 +310,7 @@ class TestModelCliExecutionContextMethods:
         assert context.updated_at > original_updated_at
 
 
+@pytest.mark.unit
 class TestModelCliExecutionContextValidation:
     """Test context validation."""
 
@@ -354,6 +357,7 @@ class TestModelCliExecutionContextValidation:
             )
 
 
+@pytest.mark.unit
 class TestModelCliExecutionContextProtocols:
     """Test protocol method implementations."""
 
@@ -409,6 +413,7 @@ class TestModelCliExecutionContextProtocols:
         assert result is True
 
 
+@pytest.mark.unit
 class TestModelCliExecutionContextSerialization:
     """Test serialization and deserialization."""
 
@@ -467,6 +472,7 @@ class TestModelCliExecutionContextSerialization:
         assert isinstance(restored.value, int)
 
 
+@pytest.mark.unit
 class TestModelCliExecutionContextEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -585,6 +591,7 @@ class TestModelCliExecutionContextEdgeCases:
         assert context.value == 42
 
 
+@pytest.mark.unit
 class TestModelCliExecutionContextTypeHandling:
     """Test type handling and conversions."""
 

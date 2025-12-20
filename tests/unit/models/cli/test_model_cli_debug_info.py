@@ -6,9 +6,12 @@ Tests the clean, strongly-typed replacement for dict[str, Any] in CLI debug info
 
 from datetime import UTC, datetime
 
+import pytest
+
 from omnibase_core.models.cli.model_cli_debug_info import ModelCliDebugInfo
 
 
+@pytest.mark.unit
 class TestModelCliDebugInfo:
     """Test cases for ModelCliDebugInfo."""
 

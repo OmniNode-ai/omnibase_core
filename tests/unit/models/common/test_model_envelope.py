@@ -22,6 +22,7 @@ from pydantic import ValidationError
 from omnibase_core.models.common.model_envelope import ModelEnvelope
 
 
+@pytest.mark.unit
 class TestModelEnvelopeCreation:
     """Tests for ModelEnvelope creation and defaults."""
 
@@ -105,6 +106,7 @@ class TestModelEnvelopeCreation:
         assert envelope1.message_id != envelope2.message_id
 
 
+@pytest.mark.unit
 class TestModelEnvelopeValidation:
     """Tests for ModelEnvelope field validation."""
 
@@ -165,6 +167,7 @@ class TestModelEnvelopeValidation:
         assert "entity_id" in error_str or "whitespace" in error_str.lower()
 
 
+@pytest.mark.unit
 class TestModelEnvelopeExtraFieldRejection:
     """Tests for strict model behavior (extra='forbid')."""
 
@@ -217,6 +220,7 @@ class TestModelEnvelopeExtraFieldRejection:
             )
 
 
+@pytest.mark.unit
 class TestModelEnvelopeTypeValidation:
     """Tests for ModelEnvelope field type validation."""
 
@@ -304,6 +308,7 @@ class TestModelEnvelopeTypeValidation:
         assert "causation_id" in error_str or "uuid" in error_str.lower()
 
 
+@pytest.mark.unit
 class TestModelEnvelopeSelfReferenceValidation:
     """Tests for self-reference validation."""
 
@@ -324,6 +329,7 @@ class TestModelEnvelopeSelfReferenceValidation:
         assert "self-reference" in str(exc_info.value).lower()
 
 
+@pytest.mark.unit
 class TestModelEnvelopeCausationChain:
     """Tests for causation chain relationships."""
 
@@ -414,6 +420,7 @@ class TestModelEnvelopeCausationChain:
         assert child1.message_id != child2.message_id
 
 
+@pytest.mark.unit
 class TestModelEnvelopeUtilityMethods:
     """Tests for utility methods (is_root, has_same_workflow, is_caused_by)."""
 
@@ -475,6 +482,7 @@ class TestModelEnvelopeUtilityMethods:
         assert grandchild.is_caused_by(child) is True
 
 
+@pytest.mark.unit
 class TestModelEnvelopeImmutability:
     """Tests for envelope immutability (frozen=True)."""
 
@@ -525,6 +533,7 @@ class TestModelEnvelopeImmutability:
             envelope.causation_id = uuid4()  # type: ignore[misc]
 
 
+@pytest.mark.unit
 class TestModelEnvelopeFactoryMethods:
     """Tests for factory methods."""
 
@@ -602,6 +611,7 @@ class TestModelEnvelopeFactoryMethods:
         assert child3.correlation_id == correlation_id
 
 
+@pytest.mark.unit
 class TestModelEnvelopeValidationHelpers:
     """Tests for validation helper functions."""
 
@@ -700,6 +710,7 @@ class TestModelEnvelopeValidationHelpers:
         assert any("length" in msg.lower() or "512" in msg for msg in error_messages)
 
 
+@pytest.mark.unit
 class TestValidateCausationChain:
     """Tests for the validate_causation_chain helper function."""
 
@@ -857,6 +868,7 @@ class TestValidateCausationChain:
         assert result is True
 
 
+@pytest.mark.unit
 class TestGetChainDepth:
     """Tests for the get_chain_depth helper function."""
 
@@ -988,6 +1000,7 @@ class TestGetChainDepth:
         assert "get_chain_depth" in model_envelope.__all__
 
 
+@pytest.mark.unit
 class TestModelEnvelopeSerialization:
     """Tests for serialization and deserialization."""
 
@@ -1070,6 +1083,7 @@ class TestModelEnvelopeSerialization:
         assert envelope.entity_id == entity_id
 
 
+@pytest.mark.unit
 class TestModelEnvelopeEdgeCases:
     """Tests for edge cases and boundary conditions."""
 
@@ -1135,6 +1149,7 @@ class TestModelEnvelopeEdgeCases:
         assert "timezone" in str(exc_info.value).lower()
 
 
+@pytest.mark.unit
 class TestModelEnvelopeRepr:
     """Tests for __repr__ method."""
 
@@ -1178,6 +1193,7 @@ class TestModelEnvelopeRepr:
         assert len(repr_str) > 0
 
 
+@pytest.mark.unit
 class TestModelEnvelopeEquality:
     """Tests for equality and comparison."""
 

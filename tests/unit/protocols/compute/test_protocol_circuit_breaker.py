@@ -140,6 +140,7 @@ class ModelCircuitBreakerAdapter:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestProtocolCircuitBreakerDefinition:
     """Test ProtocolCircuitBreaker protocol definition."""
 
@@ -184,6 +185,7 @@ class TestProtocolCircuitBreakerDefinition:
         assert callable(getattr(mock, "reset", None))
 
 
+@pytest.mark.unit
 class TestProtocolAsyncCircuitBreakerDefinition:
     """Test ProtocolAsyncCircuitBreaker protocol definition."""
 
@@ -223,6 +225,7 @@ class TestProtocolAsyncCircuitBreakerDefinition:
         assert not asyncio.iscoroutinefunction(sync_mock.reset)
 
 
+@pytest.mark.unit
 class TestMockSyncCircuitBreakerBehavior:
     """Test MockSyncCircuitBreaker behavior for protocol conformance."""
 
@@ -285,6 +288,7 @@ class TestMockSyncCircuitBreakerBehavior:
         assert cb.failure_count == 2
 
 
+@pytest.mark.unit
 class TestMockAsyncCircuitBreakerBehavior:
     """Test MockAsyncCircuitBreaker behavior for protocol conformance."""
 
@@ -349,6 +353,7 @@ class TestMockAsyncCircuitBreakerBehavior:
         assert cb.failure_count == 1
 
 
+@pytest.mark.unit
 class TestModelCircuitBreakerDirectConformance:
     """Test that ModelCircuitBreaker directly conforms to ProtocolCircuitBreaker."""
 
@@ -510,6 +515,7 @@ class TestModelCircuitBreakerDirectConformance:
         assert result == "recovered"
 
 
+@pytest.mark.unit
 class TestModelCircuitBreakerAdapterConformance:
     """Test that ModelCircuitBreaker can still conform via adapter (backwards compat)."""
 
@@ -550,6 +556,7 @@ class TestModelCircuitBreakerAdapterConformance:
         assert adapter.failure_count == 0
 
 
+@pytest.mark.unit
 class TestProtocolUsagePatterns:
     """Test common usage patterns with protocols."""
 
@@ -604,6 +611,7 @@ class TestProtocolUsagePatterns:
         assert get_failure_count(mock) == 1
 
 
+@pytest.mark.unit
 class TestProtocolImports:
     """Test that protocols are correctly exported."""
 

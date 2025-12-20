@@ -22,6 +22,7 @@ from omnibase_core.types.json_types import (
 )
 
 
+@pytest.mark.unit
 class TestJsonPrimitive:
     """Tests for JsonPrimitive type alias."""
 
@@ -131,6 +132,7 @@ class TestJsonPrimitive:
         assert value is False
 
 
+@pytest.mark.unit
 class TestPrimitiveValue:
     """Tests for PrimitiveValue type alias (non-nullable)."""
 
@@ -201,6 +203,7 @@ class TestPrimitiveValue:
         assert primitive_args == json_primitive_args - {type(None)}
 
 
+@pytest.mark.unit
 class TestJsonValue:
     """Tests for JsonValue type alias."""
 
@@ -306,6 +309,7 @@ class TestJsonValue:
         assert len(value) == 6
 
 
+@pytest.mark.unit
 class TestJsonType:
     """Tests for JsonType recursive type alias."""
 
@@ -392,6 +396,7 @@ class TestJsonType:
         assert empty_list == []
 
 
+@pytest.mark.unit
 class TestPrimitiveContainer:
     """Tests for PrimitiveContainer type alias."""
 
@@ -474,6 +479,7 @@ class TestPrimitiveContainer:
         assert type(None) not in args
 
 
+@pytest.mark.unit
 class TestToolParameterValue:
     """Tests for ToolParameterValue type alias."""
 
@@ -604,6 +610,7 @@ class TestToolParameterValue:
         assert cli_args["verbose"] is True
 
 
+@pytest.mark.unit
 class TestModuleExports:
     """Tests for module __all__ exports."""
 
@@ -639,6 +646,7 @@ class TestModuleExports:
         assert set(json_types.__all__) == expected_exports
 
 
+@pytest.mark.unit
 class TestTypeRelationships:
     """Tests for relationships between type aliases."""
 
@@ -671,6 +679,7 @@ class TestTypeRelationships:
         assert type(None) in value_args
 
 
+@pytest.mark.unit
 class TestUsageInFunctionSignatures:
     """Tests for using type aliases in function signatures."""
 
@@ -725,6 +734,7 @@ class TestUsageInFunctionSignatures:
         assert get_config_value("unknown") == "default"
 
 
+@pytest.mark.unit
 class TestDocstringExamplesFromModule:
     """Tests that verify all docstring examples from the module work correctly."""
 

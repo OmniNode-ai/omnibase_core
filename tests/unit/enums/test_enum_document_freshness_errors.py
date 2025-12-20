@@ -11,6 +11,7 @@ from omnibase_core.enums.enum_document_freshness_errors import (
 )
 
 
+@pytest.mark.unit
 class TestEnumDocumentFreshnessErrors:
     """Test cases for EnumDocumentFreshnessErrors enum."""
 

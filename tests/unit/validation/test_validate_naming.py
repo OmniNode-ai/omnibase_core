@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import pytest
+
 """
 Comprehensive tests for naming convention validation.
 
@@ -17,8 +19,6 @@ import sys
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
-
-import pytest
 
 sys.path.insert(
     0,
@@ -48,6 +48,7 @@ def naming_validator(temp_repo):
     return NamingConventionValidator(temp_repo)
 
 
+@pytest.mark.unit
 class TestNamingConventionValidator:
     """Test cases for NamingConventionValidator."""
 
@@ -266,6 +267,7 @@ class _PrivateClass:  # Should be ignored (private)
     """Private class."""
     pass
 
+@pytest.mark.unit
 class TestUserModel:  # Should be ignored (test class)
     """Test class."""
     pass
@@ -350,6 +352,7 @@ class ModelUserAuth(BaseModel):  # Model class but not in models/ directory
         assert len(directory_warnings) >= 1
 
 
+@pytest.mark.unit
 class TestEdgeCases:
     """Test edge cases and error conditions."""
 
@@ -482,6 +485,7 @@ class ModelTest{i:03d}(BaseModel):
             assert isinstance(validator.violations, list)
 
 
+@pytest.mark.unit
 class TestPatternMatching:
     """Test pattern matching logic."""
 
@@ -531,6 +535,7 @@ class TestPatternMatching:
         assert not naming_validator._is_exception_class("ServiceAuth")
 
 
+@pytest.mark.unit
 class TestReportGeneration:
     """Test report generation functionality."""
 
@@ -590,6 +595,7 @@ class TestReportGeneration:
         assert "Enums:" in report
 
 
+@pytest.mark.unit
 class TestMainFunction:
     """Test the main function and CLI interface."""
 
@@ -624,6 +630,7 @@ class TestMainFunction:
                 assert mock_print.called
 
 
+@pytest.mark.unit
 class TestFixtureValidation:
     """Test validation using our test fixtures."""
 

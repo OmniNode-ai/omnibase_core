@@ -18,6 +18,7 @@ from omnibase_core.errors.exceptions import (
 )
 
 
+@pytest.mark.unit
 class TestExceptionHierarchy:
     """Test the exception inheritance hierarchy."""
 
@@ -73,6 +74,7 @@ class TestExceptionHierarchy:
         assert isinstance(exc, Exception)
 
 
+@pytest.mark.unit
 class TestExceptionFileProcessing:
     """Test ExceptionFileProcessingError specific functionality."""
 
@@ -108,6 +110,7 @@ class TestExceptionFileProcessing:
         assert exc.original_exception is None
 
 
+@pytest.mark.unit
 class TestExceptionProtocolParsingError:
     """Test ExceptionProtocolParsingError specific functionality."""
 
@@ -136,6 +139,7 @@ class TestExceptionProtocolParsingError:
         assert exc.file_path == "/test.py"
 
 
+@pytest.mark.unit
 class TestExceptionCatching:
     """Test exception catching patterns."""
 
@@ -193,6 +197,7 @@ class TestExceptionCatching:
             assert str(exc) == "Configuration failed"
 
 
+@pytest.mark.unit
 class TestExceptionDocumentation:
     """Test that exceptions have proper documentation."""
 
@@ -240,6 +245,7 @@ class TestExceptionDocumentation:
         assert "migration" in ExceptionMigrationError.__doc__.lower()
 
 
+@pytest.mark.unit
 class TestExceptionUsagePatterns:
     """Test common exception usage patterns."""
 

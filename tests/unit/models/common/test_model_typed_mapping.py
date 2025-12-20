@@ -8,6 +8,7 @@ from omnibase_core.models.common.model_value_container import ModelValueContaine
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
+@pytest.mark.unit
 class TestModelTypedMapping:
     """Test class for ModelTypedMapping."""
 

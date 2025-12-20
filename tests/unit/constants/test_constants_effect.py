@@ -12,6 +12,7 @@ import pytest
 pytestmark = pytest.mark.unit
 
 
+@pytest.mark.unit
 class TestDeniedBuiltinsConstant:
     """Test DENIED_BUILTINS frozenset configuration."""
 
@@ -117,6 +118,7 @@ class TestDeniedBuiltinsConstant:
         )
 
 
+@pytest.mark.unit
 class TestContainsDeniedBuiltin:
     """Test contains_denied_builtin helper function."""
 
@@ -255,6 +257,7 @@ class TestContainsDeniedBuiltin:
         assert contains_denied_builtin("__class__") == "__class__"
 
 
+@pytest.mark.unit
 class TestSafeFieldPatternAndDeniedBuiltinsInteraction:
     """Test the interaction between SAFE_FIELD_PATTERN and DENIED_BUILTINS.
 

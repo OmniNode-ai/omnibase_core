@@ -19,6 +19,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
+@pytest.mark.unit
 class TestModelObservabilitySubcontractInitialization:
     """Test ModelObservabilitySubcontract initialization."""
 
@@ -70,6 +71,7 @@ class TestModelObservabilitySubcontractInitialization:
         assert ModelObservabilitySubcontract.INTERFACE_VERSION.patch == 0
 
 
+@pytest.mark.unit
 class TestModelObservabilitySubcontractLogLevelValidation:
     """Test log level validation."""
 
@@ -114,6 +116,7 @@ class TestModelObservabilitySubcontractLogLevelValidation:
         assert "must be one of" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestModelObservabilitySubcontractTracingValidation:
     """Test distributed tracing validation."""
 
@@ -211,6 +214,7 @@ class TestModelObservabilitySubcontractTracingValidation:
             )
 
 
+@pytest.mark.unit
 class TestModelObservabilitySubcontractProfilingValidation:
     """Test performance profiling validation."""
 
@@ -291,6 +295,7 @@ class TestModelObservabilitySubcontractProfilingValidation:
         assert "above 0.1" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestModelObservabilitySubcontractExportValidation:
     """Test export configuration validation."""
 
@@ -360,6 +365,7 @@ class TestModelObservabilitySubcontractExportValidation:
         assert obs.export_batch_size == 10000
 
 
+@pytest.mark.unit
 class TestModelObservabilitySubcontractComprehensive:
     """Test comprehensive observability configurations."""
 

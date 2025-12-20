@@ -126,6 +126,7 @@ def contract_loader_no_cache(tmp_path: Path) -> ProtocolContractLoader:
 # ===== _resolve_all_references Tests =====
 
 
+@pytest.mark.unit
 class TestResolveAllReferences:
     """Test ProtocolContractLoader._resolve_all_references method."""
 
@@ -258,6 +259,7 @@ class TestResolveAllReferences:
 # ===== clear_cache Tests =====
 
 
+@pytest.mark.unit
 class TestClearCache:
     """Test ProtocolContractLoader.clear_cache method."""
 
@@ -378,6 +380,7 @@ class TestClearCache:
 # ===== validate_contract_compatibility Tests =====
 
 
+@pytest.mark.unit
 class TestValidateContractCompatibility:
     """Test ProtocolContractLoader.validate_contract_compatibility method."""
 
@@ -473,6 +476,7 @@ contract_version:
 # ===== Cache Behavior Tests =====
 
 
+@pytest.mark.unit
 class TestCacheBehavior:
     """Test advanced cache behavior and edge cases."""
 
@@ -603,6 +607,7 @@ tool_specification:
 # ===== Resolution Stack Tests =====
 
 
+@pytest.mark.unit
 class TestResolutionStack:
     """Test resolution stack management."""
 
@@ -668,6 +673,7 @@ class TestResolutionStack:
 # ===== Performance Tests =====
 
 
+@pytest.mark.unit
 class TestPerformance:
     """Test performance characteristics of contract loader."""
 
@@ -752,6 +758,7 @@ metadata:
 # ===== Advanced Integration Tests =====
 
 
+@pytest.mark.unit
 class TestAdvancedIntegration:
     """Advanced integration tests for complex scenarios."""
 

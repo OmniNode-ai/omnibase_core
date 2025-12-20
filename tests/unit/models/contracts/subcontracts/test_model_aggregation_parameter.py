@@ -19,6 +19,7 @@ from omnibase_core.models.contracts.subcontracts.model_aggregation_parameter imp
 )
 
 
+@pytest.mark.unit
 class TestModelAggregationParameterValidation:
     """Test validation rules for aggregation parameters."""
 
@@ -112,6 +113,7 @@ class TestModelAggregationParameterValidation:
         assert param.description == "This is a test parameter"
 
 
+@pytest.mark.unit
 class TestModelAggregationParameterCreation:
     """Test creation and field constraints."""
 
@@ -179,6 +181,7 @@ class TestModelAggregationParameterCreation:
             assert param.parameter_type == param_type
 
 
+@pytest.mark.unit
 class TestModelAggregationParameterEdgeCases:
     """Test edge cases and boundary conditions."""
 

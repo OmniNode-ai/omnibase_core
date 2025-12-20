@@ -9,6 +9,7 @@ from omnibase_core.models.common.model_multi_type_value import ModelMultiTypeVal
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
+@pytest.mark.unit
 class TestModelMultiTypeValueBasics:
     """Test basic functionality of ModelMultiTypeValue."""
 
@@ -60,6 +61,7 @@ class TestModelMultiTypeValueBasics:
         assert value.metadata == metadata
 
 
+@pytest.mark.unit
 class TestTypeInference:
     """Test automatic type inference."""
 
@@ -124,6 +126,7 @@ class TestTypeInference:
         assert value.value_type == "int"
 
 
+@pytest.mark.unit
 class TestExplicitTypeSpecification:
     """Test explicit type specification."""
 
@@ -153,6 +156,7 @@ class TestExplicitTypeSpecification:
         assert value.value_type == "list"
 
 
+@pytest.mark.unit
 class TestTypeMismatchValidation:
     """Test type mismatch validation."""
 
@@ -189,6 +193,7 @@ class TestTypeMismatchValidation:
         assert "type mismatch" in str(exc_info.value).lower()
 
 
+@pytest.mark.unit
 class TestFloatValidation:
     """Test float value validation."""
 
@@ -235,6 +240,7 @@ class TestFloatValidation:
         assert value.value_type == "float"
 
 
+@pytest.mark.unit
 class TestStringValidation:
     """Test string value validation."""
 
@@ -281,6 +287,7 @@ class TestStringValidation:
         assert "exceeds maximum length" in str(exc_info.value).lower()
 
 
+@pytest.mark.unit
 class TestListValidation:
     """Test list value validation."""
 
@@ -325,6 +332,7 @@ class TestListValidation:
         assert "exceeds maximum size" in str(exc_info.value).lower()
 
 
+@pytest.mark.unit
 class TestHelperMethods:
     """Test helper methods."""
 
@@ -410,6 +418,7 @@ class TestHelperMethods:
         assert ModelMultiTypeValue(value=3.14).is_collection() is False
 
 
+@pytest.mark.unit
 class TestSerialization:
     """Test model serialization and deserialization."""
 
@@ -468,6 +477,7 @@ class TestSerialization:
         assert restored.value_type == "list"
 
 
+@pytest.mark.unit
 class TestEdgeCases:
     """Test edge cases and special values."""
 
@@ -522,6 +532,7 @@ class TestEdgeCases:
         assert value.value_type == "list"
 
 
+@pytest.mark.unit
 class TestStringRepresentation:
     """Test string representation methods."""
 
@@ -545,6 +556,7 @@ class TestStringRepresentation:
         assert "hello" in repr_str
 
 
+@pytest.mark.unit
 class TestModelOperations:
     """Test model operations like copy, equality."""
 
@@ -579,6 +591,7 @@ class TestModelOperations:
         assert value.__class__.__name__ == "ModelMultiTypeValue"
 
 
+@pytest.mark.unit
 class TestUnsupportedTypes:
     """Test handling of unsupported types."""
 
@@ -603,6 +616,7 @@ class TestUnsupportedTypes:
         assert "unsupported" in str(exc_info.value).lower()
 
 
+@pytest.mark.unit
 class TestTypeConsistency:
     """Test type consistency across operations."""
 

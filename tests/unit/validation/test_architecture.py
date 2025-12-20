@@ -20,6 +20,7 @@ from omnibase_core.validation.architecture import (
 from omnibase_core.validation.auditor_protocol import ModelProtocolAuditor
 
 
+@pytest.mark.unit
 class TestModelCounter:
     """Test ModelCounter AST visitor."""
 
@@ -174,6 +175,7 @@ CustomType: TypeAlias = dict[str, str]
         assert "CustomType" in counter.type_aliases
 
 
+@pytest.mark.unit
 class TestValidateOneModelPerFile:
     """Test validate_one_model_per_file function."""
 
@@ -307,6 +309,7 @@ class Invalid(
         assert any("Syntax error" in error for error in errors)
 
 
+@pytest.mark.unit
 class TestValidateArchitectureDirectory:
     """Test validate_architecture_directory function."""
 
@@ -461,6 +464,7 @@ class ModelPost(BaseModel):
         assert any("Parse error" in error for error in errors)
 
 
+@pytest.mark.unit
 class TestValidateArchitectureCLI:
     """Test validate_architecture_cli function."""
 
@@ -710,6 +714,7 @@ class ModelPost(BaseModel):
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelProtocolAuditor:
     """Test ModelProtocolAuditor class."""
 
@@ -1284,6 +1289,7 @@ class ProtocolExample(Protocol):
         assert len(results) == 0
 
 
+@pytest.mark.unit
 class TestModelAuditResult:
     """Test ModelAuditResult model."""
 
@@ -1344,6 +1350,7 @@ class TestModelAuditResult:
         assert result.has_issues() is False
 
 
+@pytest.mark.unit
 class TestArchitectureEdgeCases:
     """Test edge cases for architecture validation."""
 

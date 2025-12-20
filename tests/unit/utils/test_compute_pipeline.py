@@ -60,8 +60,8 @@ from omnibase_core.utils.compute_transformations import (
 )
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestTransformIdentity:
     """Tests for identity transformation."""
 
@@ -83,8 +83,8 @@ class TestTransformIdentity:
         assert transform_identity(data, None) == data
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestTransformRegex:
     """Tests for regex transformation."""
 
@@ -137,8 +137,8 @@ class TestTransformRegex:
             transform_regex("test", config)
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestTransformCase:
     """Tests for case transformation."""
 
@@ -169,8 +169,8 @@ class TestTransformCase:
         assert transform_case("", config) == ""
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestTransformTrim:
     """Tests for trim transformation."""
 
@@ -201,8 +201,8 @@ class TestTransformTrim:
         assert transform_trim("hello", config) == "hello"
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestTransformUnicode:
     """Tests for unicode normalization."""
 
@@ -228,8 +228,8 @@ class TestTransformUnicode:
             transform_unicode(123, config)
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestTransformJsonPath:
     """Tests for JSONPath extraction."""
 
@@ -265,8 +265,8 @@ class TestTransformJsonPath:
         assert transform_json_path(data, config) == "deep"
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestExecuteTransformation:
     """Tests for execute_transformation dispatcher."""
 
@@ -306,8 +306,8 @@ class TestExecuteTransformation:
         assert result == "\xe9"
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestResolveMappingPath:
     """Tests for resolve_mapping_path."""
 
@@ -385,8 +385,8 @@ class TestResolveMappingPath:
             resolve_mapping_path("$.steps.transform.invalid", {}, step_results)
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestExecuteComputePipeline:
     """Tests for execute_compute_pipeline.
 

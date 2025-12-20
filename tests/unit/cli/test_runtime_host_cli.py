@@ -28,6 +28,7 @@ from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
 pytestmark = pytest.mark.unit
 
 
+@pytest.mark.unit
 class TestRuntimeHostCliBasics:
     """Tests for basic CLI command properties."""
 
@@ -62,6 +63,7 @@ class TestRuntimeHostCliBasics:
         assert "CONTRACT_PATH" in result.output
 
 
+@pytest.mark.unit
 class TestProductionEnvironmentCheck:
     """Tests for production environment check."""
 
@@ -139,6 +141,7 @@ class TestProductionEnvironmentCheck:
         assert "successfully" in result.output.lower()
 
 
+@pytest.mark.unit
 class TestDevTestWarning:
     """Tests for dev/test warning messages."""
 
@@ -175,6 +178,7 @@ class TestDevTestWarning:
         assert "WARNING" in result.output
 
 
+@pytest.mark.unit
 class TestContractPathArgument:
     """Tests for CONTRACT_PATH argument handling."""
 
@@ -221,6 +225,7 @@ class TestContractPathArgument:
         )
 
 
+@pytest.mark.unit
 class TestSuccessfulExecution:
     """Tests for successful command execution."""
 
@@ -300,6 +305,7 @@ handlers:
         assert "successfully" in result.output.lower()
 
 
+@pytest.mark.unit
 class TestErrorHandling:
     """Tests for error handling scenarios."""
 
@@ -342,6 +348,7 @@ class TestErrorHandling:
         )
 
 
+@pytest.mark.unit
 class TestModuleDocumentation:
     """Tests for module-level documentation."""
 
@@ -356,6 +363,7 @@ class TestModuleDocumentation:
         assert "production" in cli_module.__doc__.lower()
 
 
+@pytest.mark.unit
 class TestExportedFromInit:
     """Tests for module export configuration."""
 

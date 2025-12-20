@@ -6,7 +6,10 @@ Tests lazy loading with caching, singleton pattern, and performance optimization
 
 import sys
 
+import pytest
 
+
+@pytest.mark.unit
 class TestModelLazyContractLoader:
     """Test suite for ModelLazyContractLoader class."""
 
@@ -220,6 +223,7 @@ class TestModelLazyContractLoader:
         assert len(loader2._cache) == 0
 
 
+@pytest.mark.unit
 class TestModuleLevelFunctions:
     """Test suite for module-level convenience functions."""
 
@@ -321,6 +325,7 @@ class TestModuleLevelFunctions:
         assert compute1 is compute2
 
 
+@pytest.mark.unit
 class TestSingletonBehavior:
     """Test suite for singleton pattern behavior."""
 
@@ -355,6 +360,7 @@ class TestSingletonBehavior:
         assert "ModelContractBase" in stats["cached_models"]
 
 
+@pytest.mark.unit
 class TestLazyLoadingBehavior:
     """Test suite for lazy loading behavior."""
 
@@ -432,6 +438,7 @@ class TestLazyLoadingBehavior:
         assert set(model_lazy_imports.__all__) == expected_exports
 
 
+@pytest.mark.unit
 class TestPerformanceOptimization:
     """Test suite for performance optimization features."""
 
@@ -502,6 +509,7 @@ class TestPerformanceOptimization:
         assert base_class is not None
 
 
+@pytest.mark.unit
 class TestIntegrationWithContracts:
     """Integration tests with actual contract classes."""
 

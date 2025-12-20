@@ -15,6 +15,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.utils.model_yaml_value import ModelYamlValue
 
 
+@pytest.mark.unit
 class TestModelYamlValueInstantiation:
     """Test basic model instantiation."""
 
@@ -54,6 +55,7 @@ class TestModelYamlValueInstantiation:
         assert len(yaml_val.list_value) == 1
 
 
+@pytest.mark.unit
 class TestModelYamlValueFactoryMethods:
     """Test factory methods for creating YAML values."""
 
@@ -147,6 +149,7 @@ class TestModelYamlValueFactoryMethods:
         assert len(yaml_val.list_value) == 0
 
 
+@pytest.mark.unit
 class TestModelYamlValueToSerializableBranches:
     """Test to_serializable method branches for different types."""
 
@@ -241,6 +244,7 @@ class TestModelYamlValueToSerializableBranches:
         assert "Invalid value_type" in exc_info.value.message
 
 
+@pytest.mark.unit
 class TestModelYamlValueProtocolMethods:
     """Test protocol method implementations."""
 
@@ -277,6 +281,7 @@ class TestModelYamlValueProtocolMethods:
         assert yaml_val.validate_instance() is True
 
 
+@pytest.mark.unit
 class TestModelYamlValueEdgeCases:
     """Test edge cases and boundary conditions."""
 

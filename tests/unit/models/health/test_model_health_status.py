@@ -11,6 +11,7 @@ from omnibase_core.models.health.model_health_metric import ModelHealthMetric
 from omnibase_core.models.health.model_health_status import ModelHealthStatus
 
 
+@pytest.mark.unit
 class TestModelHealthStatusBasics:
     """Test basic ModelHealthStatus functionality."""
 
@@ -59,6 +60,7 @@ class TestModelHealthStatusBasics:
         assert status.issues[0].severity == "high"
 
 
+@pytest.mark.unit
 class TestModelHealthStatusValidation:
     """Test ModelHealthStatus validation."""
 
@@ -108,6 +110,7 @@ class TestModelHealthStatusValidation:
             ModelHealthStatus(status="healthy", health_score=1.0, uptime_seconds=-1)
 
 
+@pytest.mark.unit
 class TestModelHealthStatusHealthChecking:
     """Test health checking methods."""
 
@@ -169,6 +172,7 @@ class TestModelHealthStatusHealthChecking:
         assert status.is_critical() is True
 
 
+@pytest.mark.unit
 class TestModelHealthStatusIssueManagement:
     """Test issue management methods."""
 
@@ -239,6 +243,7 @@ class TestModelHealthStatusIssueManagement:
         assert all(issue.severity == "high" for issue in high_issues)
 
 
+@pytest.mark.unit
 class TestModelHealthStatusMetricManagement:
     """Test metric management methods."""
 
@@ -276,6 +281,7 @@ class TestModelHealthStatusMetricManagement:
         assert found_metric is None
 
 
+@pytest.mark.unit
 class TestModelHealthStatusSubsystems:
     """Test subsystem health management."""
 
@@ -316,6 +322,7 @@ class TestModelHealthStatusSubsystems:
         assert summary["api"] == "unhealthy"
 
 
+@pytest.mark.unit
 class TestModelHealthStatusScoreCalculation:
     """Test health score calculation."""
 
@@ -372,6 +379,7 @@ class TestModelHealthStatusScoreCalculation:
         assert calculated_score <= 0.6
 
 
+@pytest.mark.unit
 class TestModelHealthStatusAttentionNeeded:
     """Test needs_attention method."""
 
@@ -426,6 +434,7 @@ class TestModelHealthStatusAttentionNeeded:
         assert status.needs_attention() is False
 
 
+@pytest.mark.unit
 class TestModelHealthStatusSummary:
     """Test health summary generation."""
 
@@ -463,6 +472,7 @@ class TestModelHealthStatusSummary:
         assert "HEALTHY" in summary
 
 
+@pytest.mark.unit
 class TestModelHealthStatusFactoryMethods:
     """Test factory methods."""
 

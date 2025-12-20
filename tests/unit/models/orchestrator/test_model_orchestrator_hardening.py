@@ -1,3 +1,5 @@
+import pytest
+
 # SPDX-FileCopyrightText: 2024 OmniNode Team
 #
 # SPDX-License-Identifier: Apache-2.0
@@ -15,7 +17,6 @@ These tests ensure:
 
 from uuid import uuid4
 
-import pytest
 from pydantic import ValidationError
 
 from omnibase_core.enums.enum_workflow_execution import EnumActionType
@@ -29,8 +30,8 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelActionHardening:
     """Tests for ModelAction frozen and extra=forbid."""
 
@@ -233,8 +234,8 @@ class TestModelActionHardening:
         assert original.action_type == modified.action_type  # Other fields preserved
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelWorkflowCoordinationSubcontractHardening:
     """Tests for ModelWorkflowCoordinationSubcontract frozen and extra=forbid."""
 

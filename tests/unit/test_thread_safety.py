@@ -24,9 +24,9 @@ from omnibase_core.models.infrastructure.model_compute_cache import ModelCompute
 from omnibase_core.nodes.node_compute import NodeCompute
 
 
-@pytest.mark.unit
 @pytest.mark.slow
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestCacheRaceConditions:
     """
     Test suite demonstrating cache race conditions.
@@ -206,9 +206,9 @@ class TestCacheRaceConditions:
         )
 
 
-@pytest.mark.unit
 @pytest.mark.slow
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestCircuitBreakerRaceConditions:
     """
     Test suite verifying circuit breaker thread safety.
@@ -329,8 +329,8 @@ class TestCircuitBreakerRaceConditions:
         )
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestThreadSafeWrappers:
     """
     Test suite demonstrating CORRECT thread-safe patterns.
@@ -500,8 +500,8 @@ class TestThreadSafeWrappers:
         )
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestDocumentationExamples:
     """
     Test suite validating code examples from docs/THREADING.md.

@@ -8,6 +8,7 @@ import pytest
 from omnibase_core.enums.enum_output_mode import EnumOutputMode
 
 
+@pytest.mark.unit
 class TestEnumOutputMode:
     """Test suite for EnumOutputMode."""
 

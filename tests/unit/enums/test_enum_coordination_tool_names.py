@@ -9,6 +9,7 @@ import pytest
 from omnibase_core.enums.enum_coordination_tool_names import EnumCoordinationToolNames
 
 
+@pytest.mark.unit
 class TestEnumCoordinationToolNames:
     """Test cases for EnumCoordinationToolNames enum."""
 

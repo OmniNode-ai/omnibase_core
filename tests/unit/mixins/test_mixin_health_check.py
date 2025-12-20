@@ -26,6 +26,7 @@ class MockNode(MixinHealthCheck):
         return self.custom_checks
 
 
+@pytest.mark.unit
 class TestMixinHealthCheck:
     """Test MixinHealthCheck functionality."""
 
@@ -522,6 +523,7 @@ class MockHttpClient:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestCheckHttpServiceHealth:
     """Test check_http_service_health function."""
 
@@ -727,6 +729,7 @@ class TestCheckHttpServiceHealth:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestCheckHttpServiceHealthInputValidation:
     """Test input validation for check_http_service_health."""
 

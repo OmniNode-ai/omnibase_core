@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import pytest
+
 """
 ModelContractBase Comprehensive Unit Tests
 
@@ -14,7 +16,6 @@ Coverage Requirements:
 Comprehensive testing required for all code paths.
 """
 
-import pytest
 from pydantic import ValidationError
 
 from omnibase_core.enums import EnumNodeType
@@ -38,6 +39,7 @@ class SampleContractModel(ModelContractBase):
             raise ValueError("Test validation error")
 
 
+@pytest.mark.unit
 class TestModelContractBase:
     """Comprehensive tests for ModelContractBase with zero tolerance coverage."""
 

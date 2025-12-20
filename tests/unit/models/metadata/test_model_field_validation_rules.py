@@ -8,6 +8,7 @@ from omnibase_core.models.metadata.model_field_validation_rules import (
 )
 
 
+@pytest.mark.unit
 class TestModelFieldValidationRulesInstantiation:
     """Tests for ModelFieldValidationRules instantiation."""
 
@@ -46,6 +47,7 @@ class TestModelFieldValidationRulesInstantiation:
         assert rules.allow_empty is False
 
 
+@pytest.mark.unit
 class TestModelFieldValidationRulesHasValidation:
     """Tests for validation detection methods."""
 
@@ -87,6 +89,7 @@ class TestModelFieldValidationRulesHasValidation:
         assert rules.has_numeric_validation() is False
 
 
+@pytest.mark.unit
 class TestModelFieldValidationRulesStringValidation:
     """Tests for string validation."""
 
@@ -153,6 +156,7 @@ class TestModelFieldValidationRulesStringValidation:
         assert rules.is_valid_string("test123") is False  # Pattern mismatch
 
 
+@pytest.mark.unit
 class TestModelFieldValidationRulesNumericValidation:
     """Tests for numeric validation."""
 
@@ -216,6 +220,7 @@ class TestModelFieldValidationRulesNumericValidation:
         assert rules.is_valid_numeric(ModelNumericValue.from_int(150)) is False
 
 
+@pytest.mark.unit
 class TestModelFieldValidationRulesSetters:
     """Tests for setter methods."""
 
@@ -244,6 +249,7 @@ class TestModelFieldValidationRulesSetters:
         assert rules.max_value == max_val
 
 
+@pytest.mark.unit
 class TestModelFieldValidationRulesGetters:
     """Tests for getter methods."""
 
@@ -270,6 +276,7 @@ class TestModelFieldValidationRulesGetters:
         assert rules.get_max_value() is None
 
 
+@pytest.mark.unit
 class TestModelFieldValidationRulesProtocols:
     """Tests for protocol implementations."""
 
@@ -300,6 +307,7 @@ class TestModelFieldValidationRulesProtocols:
         assert rules.validate_instance() is True
 
 
+@pytest.mark.unit
 class TestModelFieldValidationRulesEdgeCases:
     """Tests for edge cases."""
 
@@ -352,6 +360,7 @@ class TestModelFieldValidationRulesEdgeCases:
         assert rules.is_valid_string("invalid-email") is False
 
 
+@pytest.mark.unit
 class TestModelFieldValidationRulesSerialization:
     """Tests for serialization."""
 
@@ -382,6 +391,7 @@ class TestModelFieldValidationRulesSerialization:
         assert "max_length" not in data
 
 
+@pytest.mark.unit
 class TestModelFieldValidationRulesErrorBranches:
     """Tests for error handling branches in ModelFieldValidationRules."""
 

@@ -2,9 +2,12 @@
 
 from uuid import UUID
 
+import pytest
+
 from omnibase_core.utils.util_uuid_utilities import uuid_from_string
 
 
+@pytest.mark.unit
 class TestUuidUtilities:
     """Test UUID utility functions."""
 

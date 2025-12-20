@@ -12,6 +12,7 @@ from pydantic import ValidationError
 from omnibase_core.models.reducer.model_intent import ModelIntent
 
 
+@pytest.mark.unit
 class TestModelIntentInstantiation:
     """Test ModelIntent instantiation."""
 
@@ -63,6 +64,7 @@ class TestModelIntentInstantiation:
         assert intent1.intent_id != intent2.intent_id
 
 
+@pytest.mark.unit
 class TestModelIntentFieldValidation:
     """Test ModelIntent field validation."""
 
@@ -183,6 +185,7 @@ class TestModelIntentFieldValidation:
         assert intent.lease_id is None
 
 
+@pytest.mark.unit
 class TestModelIntentSerialization:
     """Test ModelIntent serialization."""
 
@@ -258,6 +261,7 @@ class TestModelIntentSerialization:
         assert kafka_data["priority"] == 5
 
 
+@pytest.mark.unit
 class TestModelIntentDeserialization:
     """Test ModelIntent deserialization."""
 
@@ -357,6 +361,7 @@ class TestModelIntentDeserialization:
         assert restored_intent.epoch == original_intent.epoch
 
 
+@pytest.mark.unit
 class TestModelIntentEdgeCases:
     """Test ModelIntent edge cases and error conditions."""
 
@@ -435,6 +440,7 @@ class TestModelIntentEdgeCases:
         assert "extra_field" in error_str or "Extra inputs" in error_str
 
 
+@pytest.mark.unit
 class TestModelIntentModelConfig:
     """Test ModelIntent model configuration."""
 
@@ -497,6 +503,7 @@ class TestModelIntentModelConfig:
         assert ModelIntent.model_config["use_enum_values"] is False
 
 
+@pytest.mark.unit
 class TestModelIntentMetadata:
     """Test ModelIntent metadata and introspection."""
 
@@ -535,6 +542,7 @@ class TestModelIntentMetadata:
         assert isinstance(intent, BaseModel)
 
 
+@pytest.mark.unit
 class TestModelIntentComparison:
     """Test ModelIntent comparison operations."""
 
@@ -606,6 +614,7 @@ class TestModelIntentComparison:
         assert copied.payload["nested"]["key"] == "modified"
 
 
+@pytest.mark.unit
 class TestModelIntentStringRepresentation:
     """Test ModelIntent string representation."""
 

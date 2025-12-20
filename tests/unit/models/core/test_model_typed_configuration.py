@@ -7,6 +7,8 @@ validation, protocol implementations, and custom properties.
 
 from typing import Any
 
+import pytest
+
 from omnibase_core.models.core.model_typed_configuration import ModelTypedConfiguration
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -14,6 +16,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
+@pytest.mark.unit
 class TestModelTypedConfiguration:
     """Test suite for ModelTypedConfiguration."""
 
@@ -290,6 +293,7 @@ class TestModelTypedConfiguration:
         assert config.updated_at is not None
 
 
+@pytest.mark.unit
 class TestModelTypedConfigurationEdgeCases:
     """Edge case tests for ModelTypedConfiguration."""
 
@@ -370,6 +374,7 @@ class TestModelTypedConfigurationEdgeCases:
         assert "Disabled" in config.description
 
 
+@pytest.mark.unit
 class TestModelTypedConfigurationBranchCoverage:
     """Branch coverage tests for conditional logic in ModelTypedConfiguration."""
 

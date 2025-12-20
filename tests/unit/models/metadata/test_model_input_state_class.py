@@ -1,9 +1,12 @@
 """Test ModelInputState class."""
 
+import pytest
+
 from omnibase_core.models.metadata.model_input_state_class import ModelInputState
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
+@pytest.mark.unit
 class TestModelInputState:
     """Test ModelInputState functionality."""
 

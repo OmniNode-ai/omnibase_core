@@ -22,8 +22,8 @@ from omnibase_core.models.contracts.subcontracts.model_effect_operation import (
 )
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestModelEffectOperationBasic:
     """Basic tests for ModelEffectOperation model."""
 
@@ -65,8 +65,8 @@ class TestModelEffectOperationBasic:
         assert operation_db.handler_type == "db"
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestHttpIdempotency:
     """Tests for HTTP method idempotency defaults."""
 
@@ -152,8 +152,8 @@ class TestHttpIdempotency:
         assert operation.get_effective_idempotency() is False
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestDbIdempotency:
     """Tests for database operation idempotency defaults."""
 
@@ -271,8 +271,8 @@ class TestDbIdempotency:
         assert operation.get_effective_idempotency() is True
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestKafkaIdempotency:
     """Tests for Kafka operation idempotency defaults."""
 
@@ -307,8 +307,8 @@ class TestKafkaIdempotency:
         assert operation.get_effective_idempotency() is False
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestFilesystemIdempotency:
     """Tests for filesystem operation idempotency defaults."""
 
@@ -392,8 +392,8 @@ class TestFilesystemIdempotency:
         assert operation.get_effective_idempotency() is False
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestExplicitIdempotencyOverride:
     """Tests for explicit idempotent field override behavior."""
 
@@ -512,8 +512,8 @@ class TestExplicitIdempotencyOverride:
         assert operation.get_effective_idempotency() is False
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestIdempotencyPriority:
     """Tests verifying the priority order: explicit > handler default."""
 
@@ -576,8 +576,8 @@ class TestIdempotencyPriority:
         assert operation.get_effective_idempotency() is False
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestIdempotencyDefaultsConstant:
     """Tests for IDEMPOTENCY_DEFAULTS constant consistency."""
 
@@ -618,8 +618,8 @@ class TestIdempotencyDefaultsConstant:
             assert http_defaults[method] is False, f"{method} should not be idempotent"
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestEdgeCases:
     """Tests for edge cases and special scenarios."""
 
@@ -701,8 +701,8 @@ class TestEdgeCases:
             assert op in fs_defaults, f"Missing idempotency default for filesystem {op}"
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestModelEffectOperationIntegration:
     """Integration tests for ModelEffectOperation with various IO configs."""
 
@@ -789,8 +789,8 @@ class TestModelEffectOperationIntegration:
         assert operation.get_effective_idempotency() is False
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestRetryPolicyEdgeCases:
     """Tests for retry policy edge cases including max_retries boundaries."""
 
@@ -877,8 +877,8 @@ class TestRetryPolicyEdgeCases:
         assert "max_retries" in str(exc_info.value)
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestTimeoutEdgeCases:
     """Tests for timeout field edge cases (operation_timeout_ms and io_config timeout_ms)."""
 
@@ -1057,8 +1057,8 @@ class TestTimeoutEdgeCases:
         assert max_config.timeout_ms == 600000
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestLongTemplateStringEdgeCases:
     """Tests for very long template strings near practical limits."""
 

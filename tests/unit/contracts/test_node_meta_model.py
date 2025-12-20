@@ -32,6 +32,7 @@ from omnibase_core.enums.enum_node_kind import EnumNodeKind
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
+@pytest.mark.unit
 class TestModelContractMetaRequiredFields:
     """Tests for required fields in ModelContractMeta."""
 
@@ -168,6 +169,7 @@ class TestModelContractMetaRequiredFields:
         assert "output_schema" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestModelContractMetaNodeKindValidation:
     """Tests for node_kind validation in ModelContractMeta."""
 
@@ -244,6 +246,7 @@ class TestModelContractMetaNodeKindValidation:
             )
 
 
+@pytest.mark.unit
 class TestModelContractMetaVersionValidation:
     """Tests for version field validation."""
 
@@ -297,6 +300,7 @@ class TestModelContractMetaVersionValidation:
             )
 
 
+@pytest.mark.unit
 class TestModelContractMetaOptionalFields:
     """Tests for optional fields in ModelContractMeta."""
 
@@ -436,6 +440,7 @@ class TestModelContractMetaOptionalFields:
         assert meta.updated_at == now
 
 
+@pytest.mark.unit
 class TestModelContractMetaReservedExtensionFields:
     """Tests for reserved extension fields in ModelContractMeta."""
 
@@ -532,6 +537,7 @@ class TestModelContractMetaReservedExtensionFields:
         assert meta.metadata.deprecated is True
 
 
+@pytest.mark.unit
 class TestModelContractMetaMetaSchemaValidation:
     """Tests for meta-schema validation that enforces cross-node consistency."""
 
@@ -649,6 +655,7 @@ class TestModelContractMetaMetaSchemaValidation:
         assert str(meta.node_id) == uuid_str
 
 
+@pytest.mark.unit
 class TestModelContractMetaCrossNodeConsistency:
     """Tests for cross-node consistency validation."""
 
@@ -721,6 +728,7 @@ class TestModelContractMetaCrossNodeConsistency:
         assert is_valid_meta_model(meta) is True
 
 
+@pytest.mark.unit
 class TestModelContractMetaSerialization:
     """Tests for serialization and deserialization."""
 
@@ -816,6 +824,7 @@ class TestModelContractMetaSerialization:
         assert "compute" in json_str.lower()
 
 
+@pytest.mark.unit
 class TestModelContractMetaEdgeCases:
     """Tests for edge cases and boundary conditions."""
 
@@ -900,6 +909,7 @@ class TestModelContractMetaEdgeCases:
         assert meta.name == "Test-Node_With.Unicode"
 
 
+@pytest.mark.unit
 class TestModelContractMetaHashability:
     """Tests for hashability and use in sets/dicts."""
 
@@ -973,6 +983,7 @@ class TestModelContractMetaHashability:
         assert len(meta_set) == 2
 
 
+@pytest.mark.unit
 class TestModelContractMetaEquality:
     """Tests for equality comparison."""
 

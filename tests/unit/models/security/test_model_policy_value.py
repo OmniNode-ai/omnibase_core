@@ -13,6 +13,7 @@ from omnibase_core.models.security.model_policy_value import ModelPolicyValue
 DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
+@pytest.mark.unit
 class TestModelPolicyValueBasics:
     """Test basic functionality of ModelPolicyValue."""
 
@@ -84,6 +85,7 @@ class TestModelPolicyValueBasics:
         assert value.is_sensitive is False
 
 
+@pytest.mark.unit
 class TestSensitiveDataMarking:
     """Test sensitive data marking functionality (SECURITY-CRITICAL)."""
 
@@ -159,6 +161,7 @@ class TestSensitiveDataMarking:
         assert "[SENSITIVE]" not in str_repr
 
 
+@pytest.mark.unit
 class TestTypeInference:
     """Test automatic type inference."""
 
@@ -236,6 +239,7 @@ class TestTypeInference:
         assert value.value_type == "int"
 
 
+@pytest.mark.unit
 class TestExplicitTypeSpecification:
     """Test explicit type specification."""
 
@@ -275,6 +279,7 @@ class TestExplicitTypeSpecification:
         assert value.value_type == "dict"
 
 
+@pytest.mark.unit
 class TestTypeMismatchValidation:
     """Test type mismatch validation."""
 
@@ -319,6 +324,7 @@ class TestTypeMismatchValidation:
         assert "type mismatch" in str(exc_info.value).lower()
 
 
+@pytest.mark.unit
 class TestNoneHandling:
     """Test None value handling (CRITICAL for optional policies)."""
 
@@ -374,6 +380,7 @@ class TestNoneHandling:
         assert value.get_python_type() == type(None)
 
 
+@pytest.mark.unit
 class TestFloatValidation:
     """Test float value validation (SECURITY)."""
 
@@ -420,6 +427,7 @@ class TestFloatValidation:
         assert value.value_type == "float"
 
 
+@pytest.mark.unit
 class TestListValidation:
     """Test list value validation (SECURITY - DoS protection)."""
 
@@ -464,6 +472,7 @@ class TestListValidation:
         assert "exceeds maximum size" in str(exc_info.value).lower()
 
 
+@pytest.mark.unit
 class TestDictValidation:
     """Test dict value validation (SECURITY - DoS protection)."""
 
@@ -529,6 +538,7 @@ class TestDictValidation:
         assert "string" in error_str or "key" in error_str
 
 
+@pytest.mark.unit
 class TestHelperMethods:
     """Test helper methods."""
 
@@ -640,6 +650,7 @@ class TestHelperMethods:
         assert ModelPolicyValue(value=3.14).is_collection() is False
 
 
+@pytest.mark.unit
 class TestSerialization:
     """Test model serialization and deserialization."""
 
@@ -741,6 +752,7 @@ class TestSerialization:
         assert restored.is_sensitive is True
 
 
+@pytest.mark.unit
 class TestEdgeCases:
     """Test edge cases and special values."""
 
@@ -809,6 +821,7 @@ class TestEdgeCases:
         assert value.value_type == "dict"
 
 
+@pytest.mark.unit
 class TestStringRepresentation:
     """Test string representation methods."""
 
@@ -853,6 +866,7 @@ class TestStringRepresentation:
         assert "is_sensitive=True" in repr_str
 
 
+@pytest.mark.unit
 class TestModelOperations:
     """Test model operations like copy, equality."""
 
@@ -903,6 +917,7 @@ class TestModelOperations:
         assert value.__class__.__name__ == "ModelPolicyValue"
 
 
+@pytest.mark.unit
 class TestUnsupportedTypes:
     """Test handling of unsupported types."""
 
@@ -919,6 +934,7 @@ class TestUnsupportedTypes:
         assert "unsupported" in str(exc_info.value).lower()
 
 
+@pytest.mark.unit
 class TestTypeConsistency:
     """Test type consistency across operations."""
 
@@ -953,6 +969,7 @@ class TestTypeConsistency:
         assert zero_value.is_none() is False
 
 
+@pytest.mark.unit
 class TestSecurityEdgeCases:
     """Test security-critical edge cases and attack vectors."""
 
@@ -1025,6 +1042,7 @@ class TestSecurityEdgeCases:
         assert "exceeds maximum size" in str(exc_info.value).lower()
 
 
+@pytest.mark.unit
 class TestPolicySpecificUseCases:
     """Test policy-specific use cases."""
 

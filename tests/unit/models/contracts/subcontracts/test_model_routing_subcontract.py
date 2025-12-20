@@ -22,6 +22,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
+@pytest.mark.unit
 class TestRoutingSubcontractValidators:
     """Test ModelRoutingSubcontract validators."""
 
@@ -206,6 +207,7 @@ class TestRoutingSubcontractValidators:
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
 
+@pytest.mark.unit
 class TestRoutingSubcontractEdgeCases:
     """Test edge cases for routing subcontract."""
 

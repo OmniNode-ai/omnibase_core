@@ -1,3 +1,5 @@
+import pytest
+
 # SPDX-FileCopyrightText: 2024 OmniNode Team
 #
 # SPDX-License-Identifier: Apache-2.0
@@ -13,14 +15,13 @@ These tests ensure:
 - model_copy() works correctly for creating modified copies
 """
 
-import pytest
 from pydantic import ValidationError
 
 from omnibase_core.models.compute.model_compute_input import ModelComputeInput
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelComputeInputHardening:
     """Tests for ModelComputeInput frozen and extra=forbid."""
 

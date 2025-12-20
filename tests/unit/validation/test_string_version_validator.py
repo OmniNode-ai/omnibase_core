@@ -19,6 +19,8 @@ import importlib.util
 import sys
 from pathlib import Path
 
+import pytest
+
 # Load the validator module directly from its file path
 _scripts_path = Path(__file__).parent.parent.parent.parent / "scripts" / "validation"
 _validator_path = _scripts_path / "validate-string-versions.py"
@@ -39,6 +41,7 @@ PythonASTValidator = _validator_module.PythonASTValidator
 StringVersionValidator = _validator_module.StringVersionValidator
 
 
+@pytest.mark.unit
 class TestStringVersionValidator:
     """Test suite for StringVersionValidator Python file validation."""
 
@@ -365,6 +368,7 @@ def another_bad_version():
         assert sum(versions_found) == 2, "Should find both 2.0.0 and 3.1.0 violations"
 
 
+@pytest.mark.unit
 class TestPythonASTValidator:
     """Test suite for PythonASTValidator AST parsing logic."""
 
@@ -441,6 +445,7 @@ def broken_function(
         assert result, "Should handle syntax errors gracefully"
 
 
+@pytest.mark.unit
 class TestStringVersionValidatorYAMLValidation:
     """Test suite for YAML file validation."""
 
@@ -503,6 +508,7 @@ name: "test_contract"
         assert len(validator.errors) == 0, "Should have no errors"
 
 
+@pytest.mark.unit
 class TestStringVersionValidatorEdgeCases:
     """Test edge cases and error handling."""
 
@@ -557,6 +563,7 @@ v = ModelSemVer(1, 0, 0)  # Valid
         file2.write_text(
             """
 from omnibase_core.models.model_semver import ModelSemVer
+
 v = ModelSemVer.parse("1.0.0")  # Invalid
 """
         )

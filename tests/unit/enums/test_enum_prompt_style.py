@@ -8,6 +8,7 @@ import pytest
 from omnibase_core.enums.enum_prompt_style import EnumPromptStyle
 
 
+@pytest.mark.unit
 class TestEnumPromptStyle:
     """Test suite for EnumPromptStyle."""
 

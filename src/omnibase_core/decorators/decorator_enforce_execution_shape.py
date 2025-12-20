@@ -24,11 +24,6 @@ from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
 from omnibase_core.enums.enum_node_kind import EnumNodeKind
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
-if TYPE_CHECKING:
-    from omnibase_core.models.validation.model_execution_shape_validation import (
-        ModelExecutionShapeValidation,
-    )
-
 __all__ = ["enforce_execution_shape"]
 
 P = ParamSpec("P")

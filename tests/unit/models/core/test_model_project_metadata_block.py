@@ -29,6 +29,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
+@pytest.mark.unit
 class TestModelProjectMetadataBlock:
     """Test cases for ModelProjectMetadataBlock."""
 
@@ -378,6 +379,7 @@ class TestModelProjectMetadataBlock:
         assert "tools" in result
 
 
+@pytest.mark.unit
 class TestModelProjectMetadataBlockEdgeCases:
     """Test edge cases for ModelProjectMetadataBlock."""
 

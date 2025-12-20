@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import pytest
+
 """
 Comprehensive tests for backward compatibility anti-pattern detection.
 
@@ -18,8 +20,6 @@ import sys
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
-
-import pytest
 
 sys.path.insert(
     0,
@@ -60,6 +60,7 @@ def detector():
     return BackwardCompatibilityDetector()
 
 
+@pytest.mark.unit
 class TestBackwardCompatibilityDetector:
     """Test cases for BackwardCompatibilityDetector."""
 
@@ -270,6 +271,7 @@ class ModelUser:
         )
 
 
+@pytest.mark.unit
 class TestEdgeCases:
     """Test edge cases and error conditions."""
 
@@ -403,6 +405,7 @@ class ModelTest{i:03d}(BaseModel):
         assert isinstance(result, bool)
 
 
+@pytest.mark.unit
 class TestDirectoryScanning:
     """Test directory scanning functionality."""
 
@@ -467,6 +470,7 @@ class TestDirectoryScanning:
         assert "not a directory" in detector.errors[0]
 
 
+@pytest.mark.unit
 class TestFileCollection:
     """Test file collection from arguments."""
 
@@ -512,6 +516,7 @@ class TestFileCollection:
         assert len(detector.errors) >= 1
 
 
+@pytest.mark.unit
 class TestValidateAllFiles:
     """Test batch file validation."""
 
@@ -546,6 +551,7 @@ def process_legacy(data: dict) -> dict:
         assert len(detector.errors) == 0
 
 
+@pytest.mark.unit
 class TestResultsPrinting:
     """Test results printing functionality."""
 
@@ -582,6 +588,7 @@ class TestResultsPrinting:
         assert "10 files" in captured.out
 
 
+@pytest.mark.unit
 class TestCLIInterface:
     """Test command line interface."""
 
@@ -657,6 +664,7 @@ def process_legacy_data(data: dict) -> dict:
                 assert mock_print.called
 
 
+@pytest.mark.unit
 class TestFixtureValidation:
     """Test validation using our test fixtures."""
 

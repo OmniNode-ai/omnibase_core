@@ -43,6 +43,7 @@ class MockNodeWithIntentPublisher(MixinIntentPublisher):
         self._init_intent_publisher(container)
 
 
+@pytest.mark.unit
 class TestMixinIntentPublisher:
     """Test MixinIntentPublisher functionality."""
 

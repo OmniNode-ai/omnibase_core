@@ -7,6 +7,7 @@ This module tests the basic imports and structure of the events model_config mod
 import pytest
 
 
+@pytest.mark.unit
 class TestModelConfigModule:
     """Test the model_config module structure and imports."""
 
@@ -39,6 +40,7 @@ class TestModelConfigModule:
         from omnibase_core.models.events.model_event_config import BaseModel
 
         # Create a simple model using the imported BaseModel
+        @pytest.mark.unit
         class TestModel(BaseModel):
             name: str
             value: int

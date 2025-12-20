@@ -22,6 +22,7 @@ from omnibase_core.models.contracts.subcontracts.model_header_transformation imp
 )
 
 
+@pytest.mark.unit
 class TestModelHeaderTransformationBasics:
     """Test basic model instantiation and defaults."""
 
@@ -74,6 +75,7 @@ class TestModelHeaderTransformationBasics:
         assert transform.priority == 100
 
 
+@pytest.mark.unit
 class TestModelHeaderTransformationValidation:
     """Test field validation and constraints."""
 
@@ -251,6 +253,7 @@ class TestModelHeaderTransformationValidation:
         assert transform_with_condition.apply_condition == "request.method == 'GET'"
 
 
+@pytest.mark.unit
 class TestModelHeaderTransformationEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -384,6 +387,7 @@ class TestModelHeaderTransformationEdgeCases:
         assert transform1.priority < transform2.priority
 
 
+@pytest.mark.unit
 class TestModelHeaderTransformationConfigDict:
     """Test ConfigDict behavior."""
 
@@ -456,6 +460,7 @@ class TestModelHeaderTransformationConfigDict:
         assert "application/json" in json_str
 
 
+@pytest.mark.unit
 class TestModelHeaderTransformationDocumentation:
     """Test documentation and interface guarantees."""
 

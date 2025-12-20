@@ -15,6 +15,7 @@ from pydantic import ValidationError
 from omnibase_core.models.cli.model_trace_data import ModelTraceData
 
 
+@pytest.mark.unit
 class TestModelTraceDataBasics:
     """Test basic initialization and validation."""
 
@@ -95,6 +96,7 @@ class TestModelTraceDataBasics:
         assert isinstance(trace.span_id, UUID)
 
 
+@pytest.mark.unit
 class TestModelTraceDataTimestamps:
     """Test timestamp handling."""
 
@@ -151,6 +153,7 @@ class TestModelTraceDataTimestamps:
         assert trace.duration_ms == 0.0
 
 
+@pytest.mark.unit
 class TestModelTraceDataTagsAndLogs:
     """Test tags and logs handling."""
 
@@ -230,6 +233,7 @@ class TestModelTraceDataTagsAndLogs:
         assert trace.logs[-1] == "Trace completed"
 
 
+@pytest.mark.unit
 class TestModelTraceDataProtocols:
     """Test protocol method implementations."""
 
@@ -317,6 +321,7 @@ class TestModelTraceDataProtocols:
         assert result is True
 
 
+@pytest.mark.unit
 class TestModelTraceDataEdgeCases:
     """Test edge cases and boundary values."""
 

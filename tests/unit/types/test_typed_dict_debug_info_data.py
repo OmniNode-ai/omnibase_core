@@ -4,9 +4,12 @@ Test suite for TypedDictDebugInfoData.
 
 from datetime import datetime
 
+import pytest
+
 from omnibase_core.types.typed_dict_debug_info_data import TypedDictDebugInfoData
 
 
+@pytest.mark.unit
 class TestTypedDictDebugInfoData:
     """Test TypedDictDebugInfoData functionality."""
 

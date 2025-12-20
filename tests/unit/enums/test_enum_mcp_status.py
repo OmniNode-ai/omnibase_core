@@ -7,6 +7,7 @@ import pytest
 from omnibase_core.enums.enum_mcp_status import EnumMcpStatus
 
 
+@pytest.mark.unit
 class TestEnumMcpStatus:
     """Test cases for EnumMcpStatus"""
 

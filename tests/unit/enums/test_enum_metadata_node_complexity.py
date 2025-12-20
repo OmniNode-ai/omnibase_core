@@ -7,6 +7,7 @@ import pytest
 from omnibase_core.enums.enum_metadata_node_complexity import EnumMetadataNodeComplexity
 
 
+@pytest.mark.unit
 class TestEnumMetadataNodeComplexity:
     """Test cases for EnumMetadataNodeComplexity"""
 

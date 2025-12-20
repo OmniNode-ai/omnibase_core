@@ -24,6 +24,7 @@ from omnibase_core.models.security.model_signing_policy import ModelSigningPolic
 DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
+@pytest.mark.unit
 class TestModelSignatureChainBasic:
     """Test basic ModelSignatureChain functionality."""
 
@@ -144,6 +145,7 @@ class TestModelSignatureChainBasic:
         assert chain.trust_level == EnumTrustLevel.HIGH_TRUST
 
 
+@pytest.mark.unit
 class TestModelSignatureChainEnums:
     """Test ModelSignatureChain with different enum values."""
 
@@ -196,6 +198,7 @@ class TestModelSignatureChainEnums:
         assert EnumComplianceFramework.SOX in chain.compliance_frameworks
 
 
+@pytest.mark.unit
 class TestModelSignatureChainSignatures:
     """Test ModelSignatureChain signature management."""
 
@@ -278,6 +281,7 @@ class TestModelSignatureChainSignatures:
         assert len(chain.signatures) == 0
 
 
+@pytest.mark.unit
 class TestModelSignatureChainTimestamps:
     """Test ModelSignatureChain timestamp functionality."""
 
@@ -325,6 +329,7 @@ class TestModelSignatureChainTimestamps:
         assert chain.last_modified == updated
 
 
+@pytest.mark.unit
 class TestModelSignatureChainMetrics:
     """Test ModelSignatureChain metrics functionality."""
 
@@ -356,6 +361,7 @@ class TestModelSignatureChainMetrics:
         assert chain.chain_metrics.verification_time_ms == 100.0
 
 
+@pytest.mark.unit
 class TestModelSignatureChainPolicies:
     """Test ModelSignatureChain signing policies."""
 
@@ -388,6 +394,7 @@ class TestModelSignatureChainPolicies:
         assert chain.signing_policy.require_sequential_timestamps is True
 
 
+@pytest.mark.unit
 class TestModelSignatureChainEdgeCases:
     """Test ModelSignatureChain edge cases."""
 
@@ -428,6 +435,7 @@ class TestModelSignatureChainEdgeCases:
         assert chain.envelope_id is not None
 
 
+@pytest.mark.unit
 class TestModelSignatureChainSerialization:
     """Test ModelSignatureChain serialization scenarios."""
 

@@ -55,6 +55,7 @@ class ModelSampleMetrics(BaseModel):
     )
 
 
+@pytest.mark.unit
 class TestModelGenericFactory:
     """Test basic factory functionality."""
 
@@ -231,6 +232,7 @@ class TestModelGenericFactory:
         assert performance.details["type"] == "performance"
 
 
+@pytest.mark.unit
 class TestModelGenericFactoryUtilities:
     """Test utility class methods."""
 
@@ -292,6 +294,7 @@ class TestModelGenericFactoryUtilities:
         assert result.severity == EnumSeverityLevel.CRITICAL
 
 
+@pytest.mark.unit
 class TestModelGenericFactoryIntegration:
     """Test integration scenarios and real-world patterns."""
 
@@ -427,6 +430,7 @@ class TestModelGenericFactoryIntegration:
         assert result_v2.metadata["version"] == "v2"
 
 
+@pytest.mark.unit
 class TestModelGenericFactoryErrorHandling:
     """Test error handling and edge cases."""
 

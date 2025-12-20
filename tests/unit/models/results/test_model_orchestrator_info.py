@@ -24,6 +24,7 @@ from omnibase_core.models.results.model_orchestrator_metrics import (
 )
 
 
+@pytest.mark.unit
 class TestModelOrchestratorInfoBasicInstantiation:
     """Test basic instantiation with required fields."""
 
@@ -57,6 +58,7 @@ class TestModelOrchestratorInfoBasicInstantiation:
             assert info.orchestrator_type == orch_type
 
 
+@pytest.mark.unit
 class TestModelOrchestratorInfoFieldValidation:
     """Test field validation and type safety."""
 
@@ -101,6 +103,7 @@ class TestModelOrchestratorInfoFieldValidation:
         assert info.orchestrator_version.patch == 0
 
 
+@pytest.mark.unit
 class TestModelOrchestratorInfoClusterFields:
     """Test cluster-related fields."""
 
@@ -138,6 +141,7 @@ class TestModelOrchestratorInfoClusterFields:
         assert info.cluster_zone is None
 
 
+@pytest.mark.unit
 class TestModelOrchestratorInfoNodeFields:
     """Test node-related fields."""
 
@@ -176,6 +180,7 @@ class TestModelOrchestratorInfoNodeFields:
             assert info.node_role == role
 
 
+@pytest.mark.unit
 class TestModelOrchestratorInfoWorkflowFields:
     """Test workflow-related fields."""
 
@@ -223,6 +228,7 @@ class TestModelOrchestratorInfoWorkflowFields:
             assert info.workflow_status == status
 
 
+@pytest.mark.unit
 class TestModelOrchestratorInfoExecutionContext:
     """Test execution context fields."""
 
@@ -248,6 +254,7 @@ class TestModelOrchestratorInfoExecutionContext:
         assert info.root_execution_id == root_id
 
 
+@pytest.mark.unit
 class TestModelOrchestratorInfoTimingFields:
     """Test timing-related fields."""
 
@@ -291,6 +298,7 @@ class TestModelOrchestratorInfoTimingFields:
         assert "2025-01-01" in dumped["started_at"]
 
 
+@pytest.mark.unit
 class TestModelOrchestratorInfoResourceFields:
     """Test resource allocation fields."""
 
@@ -327,6 +335,7 @@ class TestModelOrchestratorInfoResourceFields:
         assert info.memory_limit == "512Mi"
 
 
+@pytest.mark.unit
 class TestModelOrchestratorInfoLabelsAndAnnotations:
     """Test labels and annotations fields."""
 
@@ -378,6 +387,7 @@ class TestModelOrchestratorInfoLabelsAndAnnotations:
         assert info.annotations == {}
 
 
+@pytest.mark.unit
 class TestModelOrchestratorInfoMetrics:
     """Test metrics field integration."""
 
@@ -405,6 +415,7 @@ class TestModelOrchestratorInfoMetrics:
         assert info.metrics.failed_workflows == 3
 
 
+@pytest.mark.unit
 class TestModelOrchestratorInfoServiceMesh:
     """Test service mesh fields."""
 
@@ -453,6 +464,7 @@ class TestModelOrchestratorInfoServiceMesh:
         assert info.sidecar_injected is False
 
 
+@pytest.mark.unit
 class TestModelOrchestratorInfoCustomData:
     """Test custom_data field with JsonSerializable type."""
 
@@ -514,6 +526,7 @@ class TestModelOrchestratorInfoCustomData:
         assert info.custom_data == {}
 
 
+@pytest.mark.unit
 class TestModelOrchestratorInfoMethods:
     """Test instance methods."""
 
@@ -592,6 +605,7 @@ class TestModelOrchestratorInfoMethods:
         assert info.is_completed() is False
 
 
+@pytest.mark.unit
 class TestModelOrchestratorInfoSerialization:
     """Test model serialization and deserialization."""
 
@@ -631,6 +645,7 @@ class TestModelOrchestratorInfoSerialization:
         assert "cluster_name" not in dumped
 
 
+@pytest.mark.unit
 class TestModelOrchestratorInfoTypeSafety:
     """Test type safety - comprehensive testing required."""
 

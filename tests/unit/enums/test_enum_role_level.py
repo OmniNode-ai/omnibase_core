@@ -8,6 +8,7 @@ import pytest
 from omnibase_core.enums.enum_role_level import EnumRoleLevel
 
 
+@pytest.mark.unit
 class TestEnumRoleLevel:
     """Test suite for EnumRoleLevel."""
 

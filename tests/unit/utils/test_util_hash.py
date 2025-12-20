@@ -17,6 +17,7 @@ from omnibase_core.utils.util_hash import (
 )
 
 
+@pytest.mark.unit
 class TestDeterministicHash:
     """Tests for the deterministic_hash function."""
 
@@ -60,6 +61,7 @@ class TestDeterministicHash:
         assert len(result) == 64
 
 
+@pytest.mark.unit
 class TestDeterministicHashInt:
     """Tests for the deterministic_hash_int function."""
 
@@ -88,6 +90,7 @@ class TestDeterministicHashInt:
         assert 0 <= index < len(nodes)
 
 
+@pytest.mark.unit
 class TestDeterministicCacheKey:
     """Tests for the deterministic_cache_key function."""
 
@@ -123,6 +126,7 @@ class TestDeterministicCacheKey:
         assert len(result) == 64
 
 
+@pytest.mark.unit
 class TestStringToUuid:
     """Tests for the string_to_uuid function."""
 
@@ -162,6 +166,7 @@ class TestStringToUuid:
         assert isinstance(result, UUID)
 
 
+@pytest.mark.unit
 class TestDeterministicJitter:
     """Tests for the deterministic_jitter function."""
 
@@ -206,6 +211,7 @@ class TestDeterministicJitter:
         assert result == 0.0
 
 
+@pytest.mark.unit
 class TestDeterministicErrorCode:
     """Tests for the deterministic_error_code function."""
 
@@ -248,6 +254,7 @@ class TestDeterministicErrorCode:
         assert 0.0 <= result <= 1.0
 
 
+@pytest.mark.unit
 class TestCrossProcessConsistency:
     """Tests to verify hash consistency (simulated).
 

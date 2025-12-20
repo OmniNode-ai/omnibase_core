@@ -6,6 +6,7 @@ Tests the specialized accessor for handling CLI execution results and metadata.
 
 from typing import Any
 
+import pytest
 from pydantic import Field
 
 from omnibase_core.models.core import ModelResultAccessor
@@ -22,6 +23,7 @@ class SampleResultModel(ModelResultAccessor):
     metadata: dict[str, Any] = Field(default_factory=dict)
 
 
+@pytest.mark.unit
 class TestModelResultAccessor:
     """Test cases for ModelResultAccessor."""
 

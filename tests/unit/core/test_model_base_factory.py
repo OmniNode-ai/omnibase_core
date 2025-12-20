@@ -63,6 +63,7 @@ class UserFactory(ModelBaseFactory[User]):
         return type_name in ["standard", "admin", "guest"]
 
 
+@pytest.mark.unit
 class TestModelBaseFactoryAbstract:
     """Test that ModelBaseFactory enforces abstract methods."""
 
@@ -92,6 +93,7 @@ class TestModelBaseFactoryAbstract:
             IncompleteFactory()  # type: ignore[abstract]
 
 
+@pytest.mark.unit
 class TestConcreteFactoryImplementation:
     """Test concrete factory implementations."""
 
@@ -137,6 +139,7 @@ class TestConcreteFactoryImplementation:
         assert factory.can_create("professional") is True
 
 
+@pytest.mark.unit
 class TestUserFactoryImplementation:
     """Test user factory implementation."""
 
@@ -170,6 +173,7 @@ class TestUserFactoryImplementation:
         assert factory.can_create("superuser") is False
 
 
+@pytest.mark.unit
 class TestFactoryModelConfiguration:
     """Test factory model configuration."""
 
@@ -201,6 +205,7 @@ class TestFactoryModelConfiguration:
         assert "supported_types" in data
 
 
+@pytest.mark.unit
 class TestFactoryCreationPatterns:
     """Test various factory creation patterns."""
 
@@ -244,6 +249,7 @@ class TestFactoryCreationPatterns:
         assert product2.category == "cat2"
 
 
+@pytest.mark.unit
 class TestFactoryEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -299,6 +305,7 @@ class TestFactoryEdgeCases:
         assert all(isinstance(p, Product) for p in products)
 
 
+@pytest.mark.unit
 class TestFactoryTypeParameter:
     """Test that factory works with different type parameters."""
 
@@ -328,6 +335,7 @@ class TestFactoryTypeParameter:
         assert not isinstance(user, Product)
 
 
+@pytest.mark.unit
 class TestFactoryInheritance:
     """Test factory inheritance patterns."""
 
@@ -365,6 +373,7 @@ class TestFactoryInheritance:
         assert factory.can_create("unknown") is True
 
 
+@pytest.mark.unit
 class TestFactoryWithComplexTypes:
     """Test factory with complex model types."""
 

@@ -15,6 +15,7 @@ from omnibase_core.models.configuration.model_event_bus_config import (
 )
 
 
+@pytest.mark.unit
 class TestModelEventBusConfigInitialization:
     """Test ModelEventBusConfig initialization."""
 
@@ -55,6 +56,7 @@ class TestModelEventBusConfigInitialization:
         assert isinstance(config, BaseModel)
 
 
+@pytest.mark.unit
 class TestModelEventBusConfigValidation:
     """Test ModelEventBusConfig field validation."""
 
@@ -93,6 +95,7 @@ class TestModelEventBusConfigValidation:
         assert config.auto_offset_reset == "earliest"
 
 
+@pytest.mark.unit
 class TestModelEventBusConfigSerialization:
     """Test ModelEventBusConfig serialization."""
 
@@ -144,6 +147,7 @@ class TestModelEventBusConfigSerialization:
         assert restored.security_protocol == original.security_protocol
 
 
+@pytest.mark.unit
 class TestModelEventBusConfigMethods:
     """Test ModelEventBusConfig methods."""
 
@@ -250,6 +254,7 @@ class TestModelEventBusConfigMethods:
         assert updated.topics == config.topics
 
 
+@pytest.mark.unit
 class TestModelEventBusConfigFactoryMethods:
     """Test ModelEventBusConfig factory methods."""
 
@@ -263,6 +268,7 @@ class TestModelEventBusConfigFactoryMethods:
         assert isinstance(config.group_id, UUID)
 
 
+@pytest.mark.unit
 class TestModelEventBusConfigEdgeCases:
     """Test event bus config edge cases."""
 
@@ -309,6 +315,7 @@ class TestModelEventBusConfigEdgeCases:
         assert config.group_id == group_id
 
 
+@pytest.mark.unit
 class TestModelEventBusConfigAttributes:
     """Test event bus config attributes and metadata."""
 

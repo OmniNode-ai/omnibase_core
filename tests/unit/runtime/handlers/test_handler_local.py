@@ -24,6 +24,7 @@ from omnibase_core.protocols.runtime.protocol_handler import ProtocolHandler
 from omnibase_core.runtime.handlers.handler_local import HandlerLocal
 
 
+@pytest.mark.unit
 class TestHandlerLocalProtocolCompliance:
     """Tests for HandlerLocal protocol compliance."""
 
@@ -53,6 +54,7 @@ class TestHandlerLocalProtocolCompliance:
         assert callable(handler.describe)
 
 
+@pytest.mark.unit
 class TestHandlerLocalType:
     """Tests for HandlerLocal handler_type property."""
 
@@ -78,6 +80,7 @@ class TestHandlerLocalType:
         assert handler_type == EnumHandlerType.LOCAL
 
 
+@pytest.mark.unit
 class TestHandlerLocalInitialization:
     """Tests for HandlerLocal initialization behavior."""
 
@@ -122,6 +125,7 @@ class TestHandlerLocalInitialization:
         assert handler1 is not handler2
 
 
+@pytest.mark.unit
 class TestHandlerLocalHealthCheck:
     """Tests for HandlerLocal health_check method."""
 
@@ -149,6 +153,7 @@ class TestHandlerLocalHealthCheck:
         assert result["status"] == "healthy"
 
 
+@pytest.mark.unit
 class TestHandlerLocalDescribe:
     """Tests for HandlerLocal describe method."""
 
@@ -206,6 +211,7 @@ class TestHandlerLocalDescribe:
         assert "error" in capabilities
 
 
+@pytest.mark.unit
 class TestHandlerLocalEchoOperation:
     """Tests for HandlerLocal echo operation."""
 
@@ -300,6 +306,7 @@ class TestHandlerLocalEchoOperation:
         assert response.is_response is True
 
 
+@pytest.mark.unit
 class TestHandlerLocalTransformOperation:
     """Tests for HandlerLocal transform operation."""
 
@@ -420,6 +427,7 @@ class TestHandlerLocalTransformOperation:
         assert response.payload["active"] is True
 
 
+@pytest.mark.unit
 class TestHandlerLocalErrorOperation:
     """Tests for HandlerLocal error operation."""
 
@@ -493,6 +501,7 @@ class TestHandlerLocalErrorOperation:
         assert response.is_response is True
 
 
+@pytest.mark.unit
 class TestHandlerLocalUnknownOperation:
     """Tests for HandlerLocal behavior with unknown operations."""
 

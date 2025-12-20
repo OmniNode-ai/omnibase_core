@@ -1,11 +1,14 @@
 """Test the string field reduction improvements demonstration."""
 
+import pytest
+
 from omnibase_core.models.metadata.model_example_string_reduction_improvements import (
     demonstrate_benefits,
     demonstrate_string_field_improvements,
 )
 
 
+@pytest.mark.unit
 class TestStringFieldReductionImprovements:
     """Test the string field reduction improvements demonstration."""
 

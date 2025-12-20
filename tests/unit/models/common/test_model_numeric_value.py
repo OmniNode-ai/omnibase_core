@@ -8,6 +8,7 @@ from omnibase_core.models.common.model_numeric_value import ModelNumericValue
 from omnibase_core.models.errors.model_onex_error import ModelOnexError as OnexError
 
 
+@pytest.mark.unit
 class TestModelNumericValueInstantiation:
     """Tests for ModelNumericValue instantiation."""
 
@@ -43,6 +44,7 @@ class TestModelNumericValueInstantiation:
         assert value.source == "test_source"
 
 
+@pytest.mark.unit
 class TestModelNumericValueValidation:
     """Tests for ModelNumericValue validation."""
 
@@ -71,6 +73,7 @@ class TestModelNumericValueValidation:
             ModelNumericValue(value=None, value_type=EnumNumericType.INTEGER)
 
 
+@pytest.mark.unit
 class TestModelNumericValueRetrieval:
     """Tests for retrieving values from ModelNumericValue."""
 
@@ -121,6 +124,7 @@ class TestModelNumericValueRetrieval:
         assert result == 3.14
 
 
+@pytest.mark.unit
 class TestModelNumericValueComparison:
     """Tests for ModelNumericValue comparison."""
 
@@ -193,6 +197,7 @@ class TestModelNumericValueComparison:
         assert value1 >= value3
 
 
+@pytest.mark.unit
 class TestModelNumericValueSerialization:
     """Tests for ModelNumericValue serialization."""
 
@@ -217,6 +222,7 @@ class TestModelNumericValueSerialization:
         assert value.validate_instance() is True
 
 
+@pytest.mark.unit
 class TestModelNumericValueEdgeCases:
     """Tests for ModelNumericValue edge cases."""
 

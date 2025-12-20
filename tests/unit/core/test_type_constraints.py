@@ -35,6 +35,7 @@ from omnibase_core.types.constraints import (
 )
 
 
+@pytest.mark.unit
 class TestSerializableProtocol:
     """Test Serializable protocol and type guard."""
 
@@ -67,6 +68,7 @@ class TestSerializableProtocol:
         assert is_serializable(obj) is False
 
 
+@pytest.mark.unit
 class TestIdentifiableProtocol:
     """Test Identifiable protocol and type guard."""
 
@@ -101,6 +103,7 @@ class TestIdentifiableProtocol:
         assert is_identifiable(obj) is False
 
 
+@pytest.mark.unit
 class TestNameableProtocol:
     """Test Nameable protocol and type guard."""
 
@@ -151,6 +154,7 @@ class TestNameableProtocol:
         assert is_nameable(obj) is False
 
 
+@pytest.mark.unit
 class TestValidatableProtocol:
     """Test ProtocolValidatable protocol and type guard."""
 
@@ -183,6 +187,7 @@ class TestValidatableProtocol:
         assert is_validatable(obj) is False
 
 
+@pytest.mark.unit
 class TestConfigurableProtocol:
     """Test Configurable protocol and type guard."""
 
@@ -206,6 +211,7 @@ class TestConfigurableProtocol:
         assert is_configurable(obj) is False
 
 
+@pytest.mark.unit
 class TestExecutableProtocol:
     """Test Executable protocol and type guard."""
 
@@ -229,6 +235,7 @@ class TestExecutableProtocol:
         assert is_executable(obj) is False
 
 
+@pytest.mark.unit
 class TestMetadataProviderProtocol:
     """Test ProtocolMetadataProvider protocol and type guard."""
 
@@ -263,6 +270,7 @@ class TestMetadataProviderProtocol:
         assert is_metadata_provider(obj) is False
 
 
+@pytest.mark.unit
 class TestPrimitiveValueValidation:
     """Test primitive value type guards and validation."""
 
@@ -317,6 +325,7 @@ class TestPrimitiveValueValidation:
         assert "Expected primitive value" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestContextValueValidation:
     """Test context value type guards and validation."""
 
@@ -382,6 +391,7 @@ class TestContextValueValidation:
         assert "Expected context value" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestTypeVariablesAndProtocols:
     """Test that type variables and protocols are properly defined."""
 
@@ -410,6 +420,7 @@ class TestTypeVariablesAndProtocols:
         assert ContextValueType is not None
 
 
+@pytest.mark.unit
 class TestProtocolIntegration:
     """Test protocols working with actual implementations."""
 
@@ -463,6 +474,7 @@ class TestProtocolIntegration:
         assert is_validatable(obj) is True
 
 
+@pytest.mark.unit
 class TestEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -496,6 +508,7 @@ class TestEdgeCases:
         assert is_context_value([1, "two", 3.0, True, [5]]) is True
 
 
+@pytest.mark.unit
 class TestProtocolImplementationWithPydanticModels:
     """Test protocols implemented by Pydantic models."""
 
@@ -583,6 +596,7 @@ class TestProtocolImplementationWithPydanticModels:
         assert model.get_name() == "updated"
 
 
+@pytest.mark.unit
 class TestProtocolWithInheritance:
     """Test protocol compliance with inheritance."""
 
@@ -647,6 +661,7 @@ class TestProtocolWithInheritance:
         assert derived.execute() == "derived"
 
 
+@pytest.mark.unit
 class TestProtocolTypeGuardsEdgeCases:
     """Test edge cases for protocol type guards."""
 
@@ -700,6 +715,7 @@ class TestProtocolTypeGuardsEdgeCases:
         assert is_identifiable(TupleId()) is True
 
 
+@pytest.mark.unit
 class TestProtocolWithDynamicAttributes:
     """Test protocols with dynamically added attributes."""
 
@@ -745,6 +761,7 @@ class TestProtocolWithDynamicAttributes:
         assert is_nameable(obj) is True
 
 
+@pytest.mark.unit
 class TestPrimitiveValueValidationEdgeCases:
     """Test edge cases for primitive value validation."""
 
@@ -779,6 +796,7 @@ class TestPrimitiveValueValidationEdgeCases:
         assert is_primitive_value(0.0) is True
 
 
+@pytest.mark.unit
 class TestContextValueValidationEdgeCases:
     """Test edge cases for context value validation."""
 
@@ -812,6 +830,7 @@ class TestContextValueValidationEdgeCases:
             validate_context_value(frozenset([1, 2, 3]))
 
 
+@pytest.mark.unit
 class TestProtocolCompliance:
     """Test actual protocol compliance and type checking."""
 
@@ -865,6 +884,7 @@ class TestProtocolCompliance:
         assert obj.id == "computed_id"
 
 
+@pytest.mark.unit
 class TestBaseCollectionAndFactory:
     """Test BaseCollection and BaseFactory imports."""
 
@@ -881,6 +901,7 @@ class TestBaseCollectionAndFactory:
         assert hasattr(BaseFactory, "__abstractmethods__")
 
 
+@pytest.mark.unit
 class TestMultiProtocolObjects:
     """Test objects implementing multiple protocols simultaneously."""
 

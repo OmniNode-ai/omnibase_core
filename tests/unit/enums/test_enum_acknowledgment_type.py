@@ -9,6 +9,7 @@ import pytest
 from omnibase_core.enums.enum_acknowledgment_type import EnumAcknowledgmentType
 
 
+@pytest.mark.unit
 class TestEnumAcknowledgmentType:
     """Test cases for EnumAcknowledgmentType enum."""
 

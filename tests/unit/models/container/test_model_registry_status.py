@@ -20,6 +20,7 @@ def sample_status():
     )
 
 
+@pytest.mark.unit
 class TestModelServiceRegistryStatus:
     """Tests for ModelServiceRegistryStatus model."""
 

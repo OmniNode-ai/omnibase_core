@@ -110,6 +110,7 @@ def skip_if_module_not_loaded() -> None:
 pytestmark = [pytest.mark.unit, pytest.mark.timeout(30)]
 
 
+@pytest.mark.unit
 class TestTransportViolation:
     """Tests for TransportViolation dataclass creation and formatting."""
 
@@ -153,6 +154,7 @@ class TestTransportViolation:
         assert "10" in formatted
 
 
+@pytest.mark.unit
 class TestBannedModulesConfiguration:
     """Tests that banned modules configuration is complete."""
 
@@ -177,6 +179,7 @@ class TestBannedModulesConfiguration:
         assert "asyncpg" in BANNED_TRANSPORT_MODULES
 
 
+@pytest.mark.unit
 class TestBannedKafkaImports:
     """Tests detection of banned Kafka library imports."""
 
@@ -280,6 +283,7 @@ from kafka import (
         assert "kafka" in analyzer.violations[0].message.lower()
 
 
+@pytest.mark.unit
 class TestBannedRedisImports:
     """Tests detection of banned Redis/Valkey library imports."""
 
@@ -362,6 +366,7 @@ import redis, json, typing
         assert "redis" in analyzer.violations[0].message
 
 
+@pytest.mark.unit
 class TestBannedHttpImports:
     """Tests detection of banned HTTP client library imports."""
 
@@ -440,6 +445,7 @@ from aiohttp import ClientSession
         assert len(analyzer.violations) == 1
 
 
+@pytest.mark.unit
 class TestBannedDatabaseImports:
     """Tests detection of banned database client imports."""
 
@@ -519,6 +525,7 @@ import psycopg2
         assert "psycopg2" in analyzer.violations[0].message
 
 
+@pytest.mark.unit
 class TestBannedInfrastructureImports:
     """Tests detection of banned infrastructure library imports."""
 
@@ -561,6 +568,7 @@ import consul
         assert "consul" in analyzer.violations[0].message
 
 
+@pytest.mark.unit
 class TestAllowedImports:
     """Tests that allowed imports pass validation."""
 
@@ -674,6 +682,7 @@ from abc import ABC, abstractmethod
         assert len(analyzer.violations) == 0
 
 
+@pytest.mark.unit
 class TestTypeCheckingBlockHandling:
     """Tests that TYPE_CHECKING block imports are allowed."""
 
@@ -841,6 +850,7 @@ if TYPE_CHECKING:
         assert len(analyzer.violations) == 0
 
 
+@pytest.mark.unit
 class TestEdgeCases:
     """Tests edge cases and error handling scenarios."""
 
@@ -981,6 +991,7 @@ except ImportError:
         assert len(analyzer.violations) == 1
 
 
+@pytest.mark.unit
 class TestMultipleViolations:
     """Tests detection of multiple violations in single files."""
 
@@ -1030,6 +1041,7 @@ import redis
         assert 5 in line_numbers  # import redis
 
 
+@pytest.mark.unit
 class TestAnalyzeFileFunction:
     """Tests for the analyze_file() function."""
 
@@ -1069,6 +1081,7 @@ import kafka
         assert len(result.violations) == 1
 
 
+@pytest.mark.unit
 class TestFindPythonFilesFunction:
     """Tests for the find_python_files() function."""
 
@@ -1100,6 +1113,7 @@ class TestFindPythonFilesFunction:
         assert files[0].name == "main.py"
 
 
+@pytest.mark.unit
 class TestExitCodes:
     """Tests script exit code behavior."""
 
@@ -1144,6 +1158,7 @@ class TestExitCodes:
             assert result == 2
 
 
+@pytest.mark.unit
 class TestOutputFormats:
     """Tests --verbose and --json output formats."""
 
@@ -1219,6 +1234,7 @@ class TestOutputFormats:
         assert result.get("summary", {}).get("total_violations", 0) == 0
 
 
+@pytest.mark.unit
 class TestAliasedImports:
     """Tests detection of aliased imports."""
 
@@ -1260,6 +1276,7 @@ from redis import Redis as R
         assert len(analyzer.violations) == 1
 
 
+@pytest.mark.unit
 class TestChangedFilesFlag:
     """Tests for --changed-files CLI flag behavior."""
 
@@ -1421,6 +1438,7 @@ class TestChangedFilesFlag:
         )
 
 
+@pytest.mark.unit
 class TestGetChangedFilesFunction:
     """Tests for the get_changed_files() function."""
 
@@ -1441,6 +1459,7 @@ class TestGetChangedFilesFunction:
         assert isinstance(result, list)
 
 
+@pytest.mark.unit
 class TestSubmoduleImports:
     """Tests detection of submodule imports."""
 

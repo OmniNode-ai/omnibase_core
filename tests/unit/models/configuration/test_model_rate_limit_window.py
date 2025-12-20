@@ -1,10 +1,13 @@
 """Tests for ModelRateLimitWindow."""
 
+import pytest
+
 from omnibase_core.models.configuration.model_rate_limit_window import (
     ModelRateLimitWindow,
 )
 
 
+@pytest.mark.unit
 class TestModelRateLimitWindowBasics:
     def test_create_default(self):
         window = ModelRateLimitWindow()
@@ -18,6 +21,7 @@ class TestModelRateLimitWindowBasics:
             assert window.window_type == wtype
 
 
+@pytest.mark.unit
 class TestModelRateLimitWindowMethods:
     def test_get_effective_window_size_no_burst(self):
         window = ModelRateLimitWindow(window_size=100, allow_burst_above_limit=False)
@@ -65,6 +69,7 @@ class TestModelRateLimitWindowMethods:
         assert leaked == 50.0
 
 
+@pytest.mark.unit
 class TestModelRateLimitWindowFactoryMethods:
     def test_create_fixed_window(self):
         window = ModelRateLimitWindow.create_fixed_window(120, 200)
@@ -93,6 +98,7 @@ class TestModelRateLimitWindowFactoryMethods:
         assert window.burst_multiplier == 2.0
 
 
+@pytest.mark.unit
 class TestModelRateLimitWindowSerialization:
     def test_serialization(self):
         window = ModelRateLimitWindow(window_size=200)

@@ -57,6 +57,7 @@ main = validate_all_exports.main
 pytestmark = [pytest.mark.unit, pytest.mark.timeout(30)]
 
 
+@pytest.mark.unit
 class TestExportValidationResult:
     """Tests for the ExportValidationResult named tuple."""
 
@@ -84,6 +85,7 @@ class TestExportValidationResult:
         assert result.error is None
 
 
+@pytest.mark.unit
 class TestModuleLevelDefinitionsFinder:
     """Tests for the ModuleLevelDefinitionsFinder AST visitor."""
 
@@ -364,6 +366,7 @@ _PRIVATE_CONSTANT = 100
         assert "_PRIVATE_CONSTANT" not in public_names
 
 
+@pytest.mark.unit
 class TestAllExtractor:
     """Tests for the AllExtractor AST visitor."""
 
@@ -441,6 +444,7 @@ __all__ = ["foo", 123, "bar", None]
         assert extractor.all_names == {"foo", "bar"}
 
 
+@pytest.mark.unit
 class TestValidateFile:
     """Tests for the validate_file() function."""
 
@@ -558,6 +562,7 @@ __all__ = ["Optional"]
         assert result.extra_exports == set()
 
 
+@pytest.mark.unit
 class TestShouldExcludeFile:
     """Tests for the should_exclude_file() function."""
 
@@ -615,6 +620,7 @@ class TestShouldExcludeFile:
         assert should_exclude_file(regular_file) is False
 
 
+@pytest.mark.unit
 class TestFindPythonFiles:
     """Tests for the find_python_files() function."""
 
@@ -694,6 +700,7 @@ class TestFindPythonFiles:
         assert files == sorted(files)
 
 
+@pytest.mark.unit
 class TestMainFunction:
     """Tests for the main() entry point."""
 
@@ -816,6 +823,7 @@ __all__ = ["PublicClass"]
             assert result == 0
 
 
+@pytest.mark.unit
 class TestComplexModules:
     """Tests for complex module scenarios."""
 
@@ -928,6 +936,7 @@ __all__ = [
         assert result.all_exports == {"Foo", "Bar"}
 
 
+@pytest.mark.unit
 class TestEdgeCases:
     """Tests for edge cases and error handling."""
 

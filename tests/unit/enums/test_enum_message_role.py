@@ -7,6 +7,7 @@ import pytest
 from omnibase_core.enums.enum_message_role import EnumMessageRole
 
 
+@pytest.mark.unit
 class TestEnumMessageRole:
     """Test cases for EnumMessageRole"""
 

@@ -17,6 +17,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
+@pytest.mark.unit
 class TestModelMissingToolBasic:
     """Test basic ModelMissingTool functionality."""
 
@@ -137,6 +138,7 @@ class TestModelMissingToolBasic:
         assert tool.tool_category == EnumToolCategory.DATA_PROCESSING
 
 
+@pytest.mark.unit
 class TestModelMissingToolEnums:
     """Test ModelMissingTool with different enum values."""
 
@@ -193,6 +195,7 @@ class TestModelMissingToolEnums:
         assert tool.tool_category == EnumToolCategory.SECURITY
 
 
+@pytest.mark.unit
 class TestModelMissingToolEdgeCases:
     """Test ModelMissingTool edge cases."""
 
@@ -290,6 +293,7 @@ class TestModelMissingToolEdgeCases:
         assert tool.expected_type == "Type<Generic>"
 
 
+@pytest.mark.unit
 class TestModelMissingToolBusinessScenarios:
     """Test ModelMissingTool in business scenarios."""
 
@@ -360,6 +364,7 @@ class TestModelMissingToolBusinessScenarios:
         assert tool.tool_category == EnumToolCategory.UTILITY
 
 
+@pytest.mark.unit
 class TestModelMissingToolValidation:
     """Test ModelMissingTool validation rules."""
 
@@ -449,6 +454,7 @@ class TestModelMissingToolValidation:
             )
 
 
+@pytest.mark.unit
 class TestModelMissingToolSerialization:
     """Test ModelMissingTool serialization scenarios."""
 

@@ -23,6 +23,7 @@ from omnibase_core.models.validation.model_module_import_result import (
 from omnibase_core.validation.circular_import_validator import CircularImportValidator
 
 
+@pytest.mark.unit
 class TestCircularImportValidatorInitialization:
     """Test CircularImportValidator initialization."""
 
@@ -80,6 +81,7 @@ class TestCircularImportValidatorInitialization:
         assert "does not exist" in str(exc_info.value.message)
 
 
+@pytest.mark.unit
 class TestCircularImportValidatorFileDiscovery:
     """Test file discovery functionality."""
 
@@ -152,6 +154,7 @@ class TestCircularImportValidatorFileDiscovery:
         assert validator._should_exclude(Path("/path/regular_file.py")) is False
 
 
+@pytest.mark.unit
 class TestCircularImportValidatorModuleNameConversion:
     """Test module name conversion functionality."""
 
@@ -226,6 +229,7 @@ class TestCircularImportValidatorModuleNameConversion:
         assert module_name == "pydantic_models.schema"
 
 
+@pytest.mark.unit
 class TestCircularImportValidatorImportTesting:
     """Test import testing functionality."""
 
@@ -295,6 +299,7 @@ class TestCircularImportValidatorImportTesting:
         mock_import.assert_called_once_with(test_module)
 
 
+@pytest.mark.unit
 class TestCircularImportValidatorLoggingAndProgress:
     """Test logging and progress callback functionality."""
 
@@ -335,6 +340,7 @@ class TestCircularImportValidatorLoggingAndProgress:
         validator._notify_progress("Progress update")
 
 
+@pytest.mark.unit
 class TestCircularImportValidatorValidate:
     """Test validate method."""
 
@@ -450,6 +456,7 @@ class TestCircularImportValidatorValidate:
         assert "Python files to test" in captured.out
 
 
+@pytest.mark.unit
 class TestCircularImportValidatorValidateAndReport:
     """Test validate_and_report method."""
 
@@ -531,6 +538,7 @@ class TestCircularImportValidatorValidateAndReport:
         assert "Success rate:" in captured.out
 
 
+@pytest.mark.unit
 class TestCircularImportValidatorEdgeCases:
     """Test edge cases and error conditions."""
 

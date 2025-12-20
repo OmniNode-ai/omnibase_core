@@ -29,6 +29,7 @@ class SampleTypedIntModel(ModelTypedAccessor[int]):
     data: dict[str, Any] = Field(default_factory=dict)
 
 
+@pytest.mark.unit
 class TestModelTypedAccessor:
     """Test cases for ModelTypedAccessor."""
 

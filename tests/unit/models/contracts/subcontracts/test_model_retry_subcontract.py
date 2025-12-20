@@ -24,6 +24,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
+@pytest.mark.unit
 class TestModelRetrySubcontractBasics:
     """Test basic model instantiation and defaults."""
 
@@ -88,6 +89,7 @@ class TestModelRetrySubcontractBasics:
         assert "validation_error" in retry.non_retryable_error_codes
 
 
+@pytest.mark.unit
 class TestModelRetrySubcontractValidation:
     """Test field validation and constraints."""
 
@@ -266,6 +268,7 @@ class TestModelRetrySubcontractValidation:
         assert "should not exceed 2x" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestModelRetrySubcontractEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -354,6 +357,7 @@ class TestModelRetrySubcontractEdgeCases:
         assert "permanent_error" in retry.non_retryable_error_codes
 
 
+@pytest.mark.unit
 class TestModelRetrySubcontractConfigDict:
     """Test ConfigDict behavior."""
 
@@ -400,6 +404,7 @@ class TestModelRetrySubcontractConfigDict:
         assert restored.backoff_strategy == original.backoff_strategy
 
 
+@pytest.mark.unit
 class TestModelRetrySubcontractDocumentation:
     """Test documentation and interface guarantees."""
 

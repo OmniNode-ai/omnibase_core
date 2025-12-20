@@ -18,6 +18,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError as OnexE
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
+@pytest.mark.unit
 class TestModelCliResultMetadata:
     """Test cases for ModelCliResultMetadata."""
 

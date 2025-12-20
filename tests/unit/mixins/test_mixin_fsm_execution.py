@@ -89,6 +89,7 @@ class MockNode(MixinFSMExecution):
         super().__init__()
 
 
+@pytest.mark.unit
 class TestMixinFSMExecution:
     """Test FSM execution mixin."""
 

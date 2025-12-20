@@ -7,6 +7,7 @@ import pytest
 from omnibase_core.enums.enum_node_union_type import EnumNodeUnionType
 
 
+@pytest.mark.unit
 class TestEnumNodeUnionType:
     """Test cases for EnumNodeUnionType"""
 

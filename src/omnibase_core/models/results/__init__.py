@@ -2,8 +2,6 @@
 Results module - ONEX result models and related structures
 """
 
-from typing import Generic
-
 from omnibase_core.models.core.model_protocol_metadata import ModelGenericMetadata
 
 from .model_onex_message import ModelOnexMessage

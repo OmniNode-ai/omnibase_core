@@ -170,6 +170,7 @@ def tool_invocation_event(node_id, correlation_id):
 # ============================================================================
 
 
+@pytest.mark.unit
 class TestServiceReducerHealthStatus:
     """Test cases for health status retrieval and metrics."""
 
@@ -308,6 +309,7 @@ class TestServiceReducerHealthStatus:
 # ============================================================================
 
 
+@pytest.mark.unit
 class TestServiceReducerHealthMonitoring:
     """Test cases for health monitoring loop."""
 
@@ -477,6 +479,7 @@ class TestServiceReducerHealthMonitoring:
 # ============================================================================
 
 
+@pytest.mark.unit
 class TestServiceReducerGracefulShutdown:
     """Test cases for graceful shutdown."""
 
@@ -613,6 +616,7 @@ class TestServiceReducerGracefulShutdown:
 # ============================================================================
 
 
+@pytest.mark.unit
 class TestServiceReducerShutdownEventEmission:
     """Test shutdown event emission functionality."""
 
@@ -658,6 +662,7 @@ class TestServiceReducerShutdownEventEmission:
 # ============================================================================
 
 
+@pytest.mark.unit
 class TestServiceReducerShutdownCallbacks:
     """Test shutdown callback functionality."""
 
@@ -807,6 +812,7 @@ class TestServiceReducerShutdownCallbacks:
 # ============================================================================
 
 
+@pytest.mark.unit
 class TestServiceReducerSignalHandlers:
     """Test signal handler functionality."""
 
@@ -908,6 +914,7 @@ class TestServiceReducerSignalHandlers:
 # ============================================================================
 
 
+@pytest.mark.unit
 class TestServiceReducerShutdownIntegration:
     """Test integrated shutdown scenarios."""
 
@@ -1016,6 +1023,7 @@ class TestServiceReducerShutdownIntegration:
 # ============================================================================
 
 
+@pytest.mark.unit
 class TestServiceReducerStatePersistenceHealth:
     """Test state persistence health monitoring (reducer-specific)."""
 
@@ -1105,6 +1113,7 @@ class TestServiceReducerStatePersistenceHealth:
 # ============================================================================
 
 
+@pytest.mark.unit
 class TestServiceReducerHealthEdgeCases:
     """Test edge cases for health monitoring and shutdown."""
 

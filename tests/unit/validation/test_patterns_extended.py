@@ -16,6 +16,8 @@ import ast
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import pytest
+
 from omnibase_core.validation.patterns import (
     GenericPatternChecker,
     NamingConventionChecker,
@@ -28,6 +30,7 @@ if TYPE_CHECKING:
     import pytest
 
 
+@pytest.mark.unit
 class TestPydanticPatternCheckerExtended:
     """Extended tests for PydanticPatternChecker."""
 
@@ -230,6 +233,7 @@ class ModelOrder(BaseModel):
         assert len(checker.issues) >= 5
 
 
+@pytest.mark.unit
 class TestNamingConventionCheckerExtended:
     """Extended tests for NamingConventionChecker."""
 
@@ -467,6 +471,7 @@ class BadHelper:
         assert any("Helper" in issue for issue in checker.issues)
 
 
+@pytest.mark.unit
 class TestGenericPatternCheckerExtended:
     """Extended tests for GenericPatternChecker."""
 
@@ -645,6 +650,7 @@ class Outer:
         assert any("process" in issue for issue in checker.issues)
 
 
+@pytest.mark.unit
 class TestValidatePatternsFileExtended:
     """Extended tests for validate_patterns_file function."""
 
@@ -769,6 +775,7 @@ class ProductRepository:
         assert len(issues) >= 1
 
 
+@pytest.mark.unit
 class TestValidatePatternsDirectoryExtended:
     """Extended tests for validate_patterns_directory function."""
 
@@ -912,6 +919,7 @@ class ModelTest(BaseModel):
         assert result.metadata.files_processed >= 1
 
 
+@pytest.mark.unit
 class TestValidatePatternsCLI:
     """Extended tests for validate_patterns_cli function."""
 

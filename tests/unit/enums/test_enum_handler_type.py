@@ -9,6 +9,7 @@ import pytest
 from omnibase_core.enums.enum_handler_type import EnumHandlerType
 
 
+@pytest.mark.unit
 class TestEnumHandlerType:
     """Test cases for EnumHandlerType enum."""
 
@@ -197,6 +198,7 @@ class TestEnumHandlerType:
         assert EnumHandlerType.LOCAL in EnumHandlerType
 
 
+@pytest.mark.unit
 class TestEnumHandlerTypeConcreteCategories:
     """Test cases for concrete handler type categorization."""
 

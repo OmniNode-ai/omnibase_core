@@ -1,8 +1,11 @@
 """Unit tests for EnumCircuitBreakerState."""
 
+import pytest
+
 from omnibase_core.enums.enum_circuit_breaker_state import EnumCircuitBreakerState
 
 
+@pytest.mark.unit
 class TestEnumCircuitBreakerState:
     """Test suite for EnumCircuitBreakerState enumeration."""
 

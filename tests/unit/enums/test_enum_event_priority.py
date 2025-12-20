@@ -9,6 +9,7 @@ import pytest
 from omnibase_core.enums.enum_event_priority import EnumEventPriority
 
 
+@pytest.mark.unit
 class TestEnumEventPriority:
     """Test cases for EnumEventPriority enum."""
 

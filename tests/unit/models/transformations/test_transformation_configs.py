@@ -28,8 +28,8 @@ from omnibase_core.models.transformations.model_validation_step_config import (
 )
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelTransformRegexConfig:
     """Tests for ModelTransformRegexConfig."""
 
@@ -63,8 +63,8 @@ class TestModelTransformRegexConfig:
             config.pattern = r"\w+"  # type: ignore[misc]
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelTransformCaseConfig:
     """Tests for ModelTransformCaseConfig."""
 
@@ -90,8 +90,8 @@ class TestModelTransformCaseConfig:
             ModelTransformCaseConfig(mode=EnumCaseMode.UPPER, extra="bad")  # type: ignore[call-arg]
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelTransformTrimConfig:
     """Tests for ModelTransformTrimConfig."""
 
@@ -112,8 +112,8 @@ class TestModelTransformTrimConfig:
         assert config.mode == EnumTrimMode.RIGHT
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelTransformUnicodeConfig:
     """Tests for ModelTransformUnicodeConfig."""
 
@@ -134,8 +134,8 @@ class TestModelTransformUnicodeConfig:
         assert config.form == EnumUnicodeForm.NFKC
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelTransformJsonPathConfig:
     """Tests for ModelTransformJsonPathConfig."""
 
@@ -176,8 +176,8 @@ class TestModelTransformJsonPathConfig:
             ModelTransformJsonPathConfig(path="$.x", extra="bad")  # type: ignore[call-arg]
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelMappingConfig:
     """Tests for ModelMappingConfig."""
 
@@ -201,8 +201,8 @@ class TestModelMappingConfig:
             ModelMappingConfig(field_mappings={})
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestModelValidationStepConfig:
     """Tests for ModelValidationStepConfig."""
 

@@ -5,6 +5,7 @@ import pytest
 from omnibase_core.enums.enum_return_type import EnumReturnType
 
 
+@pytest.mark.unit
 class TestEnumReturnType:
     def test_enum_values(self):
         """Test that all enum values are defined correctly."""

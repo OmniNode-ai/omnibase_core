@@ -16,6 +16,7 @@ from pydantic import BaseModel, ValidationError
 from omnibase_core.enums.enum_retry_backoff_strategy import EnumRetryBackoffStrategy
 
 
+@pytest.mark.unit
 class TestEnumRetryBackoffStrategy:
     """Test cases for EnumRetryBackoffStrategy."""
 
@@ -144,6 +145,7 @@ class TestEnumRetryBackoffStrategy:
         assert "fixed" in repr(EnumRetryBackoffStrategy.FIXED)
 
 
+@pytest.mark.unit
 class TestEnumRetryBackoffStrategyEdgeCases:
     """Test edge cases for EnumRetryBackoffStrategy."""
 

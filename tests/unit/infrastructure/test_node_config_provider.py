@@ -23,6 +23,7 @@ from omnibase_core.models.configuration.model_node_config_value import (
 )
 
 
+@pytest.mark.unit
 class TestNodeConfigProviderBasics:
     """Test basic NodeConfigProvider functionality."""
 
@@ -59,6 +60,7 @@ class TestNodeConfigProviderBasics:
         assert provider.has_config("orchestrator.action_emission_enabled")
 
 
+@pytest.mark.unit
 class TestNodeConfigProviderDefaults:
     """Test default value retrieval."""
 
@@ -135,6 +137,7 @@ class TestNodeConfigProviderDefaults:
         assert action_emission is True
 
 
+@pytest.mark.unit
 class TestNodeConfigProviderEnvironmentOverrides:
     """Test environment variable override functionality."""
 
@@ -202,6 +205,7 @@ class TestNodeConfigProviderEnvironmentOverrides:
         assert max_workers == 16
 
 
+@pytest.mark.unit
 class TestNodeConfigProviderCustomDefaults:
     """Test custom default value handling."""
 
@@ -238,6 +242,7 @@ class TestNodeConfigProviderCustomDefaults:
         assert timeout == 30000
 
 
+@pytest.mark.unit
 class TestNodeConfigProviderValidation:
     """Test configuration validation functionality."""
 
@@ -292,6 +297,7 @@ class TestNodeConfigProviderValidation:
         assert results["reducer.default_batch_size"] is True
 
 
+@pytest.mark.unit
 class TestNodeConfigProviderSchema:
     """Test configuration schema functionality."""
 
@@ -332,6 +338,7 @@ class TestNodeConfigProviderSchema:
         assert compute_workers_schema.default == 4
 
 
+@pytest.mark.unit
 class TestNodeConfigProviderAllConfig:
     """Test retrieving all configuration."""
 
@@ -362,6 +369,7 @@ class TestNodeConfigProviderAllConfig:
         assert all_config["compute.max_parallel_workers"] == 32
 
 
+@pytest.mark.unit
 class TestNodeConfigProviderTypeConversion:
     """Test type conversion in get_timeout_ms."""
 
@@ -387,6 +395,7 @@ class TestNodeConfigProviderTypeConversion:
         assert timeout == 30000
 
 
+@pytest.mark.unit
 class TestNodeConfigProviderDomainMethods:
     """Test domain-specific configuration methods."""
 

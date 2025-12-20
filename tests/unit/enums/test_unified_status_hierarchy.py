@@ -25,6 +25,7 @@ from omnibase_core.models.validation.model_status_migration_validator import (
 )
 
 
+@pytest.mark.unit
 class TestBaseStatus:
     """Test base status enum functionality."""
 
@@ -70,6 +71,7 @@ class TestBaseStatus:
         assert not EnumBaseStatus.COMPLETED.is_pending_state()
 
 
+@pytest.mark.unit
 class TestExecutionStatusV2:
     """Test execution status v2 functionality."""
 
@@ -133,6 +135,7 @@ class TestExecutionStatusV2:
         assert EnumExecutionStatus.PENDING == EnumExecutionStatusV2.PENDING
 
 
+@pytest.mark.unit
 class TestFunctionLifecycleStatus:
     """Test function lifecycle status functionality."""
 
@@ -212,6 +215,7 @@ class TestFunctionLifecycleStatus:
         assert EnumMetadataNodeStatus.BETA == EnumFunctionLifecycleStatus.BETA
 
 
+@pytest.mark.unit
 class TestGeneralStatus:
     """Test general status functionality."""
 
@@ -268,6 +272,7 @@ class TestGeneralStatus:
         assert EnumStatus.PROCESSING == EnumGeneralStatus.PROCESSING
 
 
+@pytest.mark.unit
 class TestStatusMigration:
     """Test status migration utilities."""
 
@@ -326,6 +331,7 @@ class TestStatusMigration:
         assert "completed" in report["summary"]["conflicting_values"]
 
 
+@pytest.mark.unit
 class TestCrossEnumCompatibility:
     """Test compatibility across unified enum hierarchy."""
 

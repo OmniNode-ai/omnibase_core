@@ -9,12 +9,15 @@ Tests cover:
 - Type safety verification
 """
 
+import pytest
+
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.results.model_onex_message_context import (
     ModelOnexMessageContext,
 )
 
 
+@pytest.mark.unit
 class TestModelOnexMessageContextBasicInstantiation:
     """Test basic instantiation."""
 
@@ -43,6 +46,7 @@ class TestModelOnexMessageContextBasicInstantiation:
         assert context.value.string_value == "test_value"
 
 
+@pytest.mark.unit
 class TestModelOnexMessageContextKeyField:
     """Test key field handling."""
 
@@ -72,6 +76,7 @@ class TestModelOnexMessageContextKeyField:
             assert context.key == key
 
 
+@pytest.mark.unit
 class TestModelOnexMessageContextValueField:
     """Test value field with ModelSchemaValue type (strongly typed)."""
 
@@ -144,6 +149,7 @@ class TestModelOnexMessageContextValueField:
         assert context.value is None
 
 
+@pytest.mark.unit
 class TestModelOnexMessageContextModelConfig:
     """Test Pydantic model_config settings."""
 
@@ -152,6 +158,7 @@ class TestModelOnexMessageContextModelConfig:
         assert ModelOnexMessageContext.model_config["arbitrary_types_allowed"] is True
 
 
+@pytest.mark.unit
 class TestModelOnexMessageContextFieldValidation:
     """Test field validation."""
 
@@ -198,6 +205,7 @@ class TestModelOnexMessageContextFieldValidation:
         assert context.value is None
 
 
+@pytest.mark.unit
 class TestModelOnexMessageContextSerialization:
     """Test model serialization and deserialization."""
 
@@ -251,6 +259,7 @@ class TestModelOnexMessageContextSerialization:
         assert restored.value.value_type in ["string", "object"]
 
 
+@pytest.mark.unit
 class TestModelOnexMessageContextComplexScenarios:
     """Test complex usage scenarios."""
 
@@ -304,6 +313,7 @@ class TestModelOnexMessageContextComplexScenarios:
         assert contexts[2].value.number_value == 10
 
 
+@pytest.mark.unit
 class TestModelOnexMessageContextTypeSafety:
     """Test type safety - comprehensive testing required."""
 
@@ -334,6 +344,7 @@ class TestModelOnexMessageContextTypeSafety:
             )
 
 
+@pytest.mark.unit
 class TestModelOnexMessageContextEdgeCases:
     """Test edge cases and boundary conditions."""
 

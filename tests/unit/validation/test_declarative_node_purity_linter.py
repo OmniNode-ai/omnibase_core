@@ -56,8 +56,8 @@ from tests.unit.validation.purity_test_helpers import (
 # ==============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestLegacyMixinDetection:
     """Test detection of forbidden legacy mixin imports in declarative nodes."""
 
@@ -482,8 +482,8 @@ class TestLegacyMixinDetection:
         ), "MixinEventBus import should be detected even without inheritance"
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestLegacyMixinViolationDetails:
     """Test violation details for legacy mixin detection."""
 
@@ -560,8 +560,8 @@ class TestLegacyMixinViolationDetails:
             assert violation.line_number > 0, "Violation should have line number"
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestLegacyMixinImportStyles:
     """Test detection of various import styles for legacy mixins."""
 
@@ -620,8 +620,8 @@ class TestLegacyMixinImportStyles:
         ), "Aliased import should be detected"
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestLegacyMixinInheritanceDetection:
     """Test detection of legacy mixin usage in class inheritance."""
 
@@ -674,8 +674,8 @@ class TestLegacyMixinInheritanceDetection:
 # ==============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestAnyImportBlockingInDeclarativeNodes:
     """
     TDD tests for blocking 'from typing import Any' in declarative nodes.
@@ -820,8 +820,8 @@ class TestAnyImportBlockingInDeclarativeNodes:
         )
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestDictAnyTypeHintBlockingInDeclarativeNodes:
     """
     TDD tests for blocking Dict[str, Any] and dict[str, Any] in declarative nodes.
@@ -969,8 +969,8 @@ class TestDictAnyTypeHintBlockingInDeclarativeNodes:
         assert len(dict_any_violations) == 0, "Effect nodes should allow Dict[str, Any]"
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestAllowDictAnyDecoratorExclusion:
     """
     TDD tests for @allow_dict_any decorator exclusion.
@@ -1129,8 +1129,8 @@ class TestAllowDictAnyDecoratorExclusion:
         )
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestAnyTypeHintDetectionInDeclarativeNodes:
     """
     TDD tests for detecting Any in various type hint positions.
@@ -1341,8 +1341,8 @@ class TestAnyTypeHintDetectionInDeclarativeNodes:
         )
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestPEP604UnionAnyDetection:
     """Tests for PEP604 union type Any detection (str | Any syntax).
 
@@ -1559,8 +1559,8 @@ class TestPEP604UnionAnyDetection:
         )
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestOnexExcludeCommentForAnyDictAny:
     """
     TDD tests for ONEX_EXCLUDE comment-based exclusions for Any/Dict[Any].
@@ -1648,8 +1648,8 @@ class TestOnexExcludeCommentForAnyDictAny:
         )
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestAnyDictAnyViolationMessageQuality:
     """
     TDD tests for violation message quality.
@@ -1775,8 +1775,8 @@ class TestAnyDictAnyViolationMessageQuality:
             )
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestTypeCheckingBlockExclusion:
     """
     TDD tests for TYPE_CHECKING block handling.
@@ -2127,8 +2127,8 @@ class TestTypeCheckingBlockExclusion:
         )
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestMixedValidAndInvalidTypeHints:
     """
     TDD tests for files with both valid and invalid type hints.
@@ -2196,8 +2196,8 @@ class TestMixedValidAndInvalidTypeHints:
 # ==============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestEventBusComponentDetection:
     """Test detection of forbidden event bus imports in declarative nodes.
 
@@ -2416,8 +2416,8 @@ class TestEventBusComponentDetection:
         )
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestEventBusImportVariations:
     """Test detection of various import syntax patterns for event bus components."""
 
@@ -2536,8 +2536,8 @@ class TestEventBusImportVariations:
         ), f"Expected EVENT_BUS_IMPORT violation, got: {analyzer.violations}"
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestEventBusCleanCode:
     """Test that clean code without event bus imports produces no violations."""
 
@@ -2613,8 +2613,8 @@ class TestEventBusCleanCode:
         assert analyzer.is_pure_node is False
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestEventBusMultipleViolations:
     """Test handling of multiple event bus violations in a single file."""
 
@@ -2672,8 +2672,8 @@ class TestEventBusMultipleViolations:
         )
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestEventBusViolationDetails:
     """Test violation details for event bus detection."""
 
@@ -2750,8 +2750,8 @@ class TestEventBusViolationDetails:
             ), f"Suggestion should mention alternatives: {violation.suggestion}"
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestEventBusSpecificModels:
     """Test detection of specific event bus model imports."""
 

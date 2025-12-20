@@ -173,6 +173,7 @@ def parallel_workflow_steps() -> list[ModelWorkflowStep]:
     ]
 
 
+@pytest.mark.unit
 class TestWorkflowExecutionSuccess:
     """Test successful workflow execution."""
 
@@ -274,6 +275,7 @@ class TestWorkflowExecutionSuccess:
                 assert len(action.dependencies) == len(step.depends_on)
 
 
+@pytest.mark.unit
 class TestWorkflowValidation:
     """Test workflow validation."""
 
@@ -345,6 +347,7 @@ class TestWorkflowValidation:
         assert any("cycle" in error.lower() for error in errors)
 
 
+@pytest.mark.unit
 class TestExecutionOrder:
     """Test execution order computation."""
 
@@ -413,6 +416,7 @@ class TestExecutionOrder:
         assert "cycle" in str(exc_info.value).lower()
 
 
+@pytest.mark.unit
 class TestDisabledSteps:
     """Test handling of disabled steps."""
 
@@ -457,6 +461,7 @@ class TestDisabledSteps:
         assert len(result.failed_steps) == 1  # Step 3 fails
 
 
+@pytest.mark.unit
 class TestStepMetadata:
     """Test step metadata in emitted actions."""
 
@@ -485,6 +490,7 @@ class TestStepMetadata:
             assert "step_name" in action.metadata.parameters
 
 
+@pytest.mark.unit
 class TestActionTypes:
     """Test correct action types for different step types."""
 
@@ -731,6 +737,7 @@ class TestExecuteStepErrorHandling:
         assert len(result.completed_steps) + len(result.failed_steps) < len(steps)
 
 
+@pytest.mark.unit
 class TestExecutionTimeTracking:
     """Test execution time tracking."""
 
@@ -750,6 +757,7 @@ class TestExecutionTimeTracking:
         assert isinstance(result.execution_time_ms, int)
 
 
+@pytest.mark.unit
 class TestMetadata:
     """Test workflow execution metadata."""
 
@@ -851,6 +859,7 @@ class TestMetadata:
         assert result_sequential.metadata["workflow_hash"] == expected_hash
 
 
+@pytest.mark.unit
 class TestBuildWorkflowContext:
     """Tests for _build_workflow_context function."""
 
@@ -938,6 +947,7 @@ class TestBuildWorkflowContext:
         assert str(step1_id) in context["step_outputs"]
 
 
+@pytest.mark.unit
 class TestValidateJsonPayload:
     """Tests for _validate_json_payload function."""
 
@@ -1102,6 +1112,7 @@ class TestValidateJsonPayload:
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
 
 
+@pytest.mark.unit
 class TestVerifyWorkflowIntegrity:
     """Tests for verify_workflow_integrity function."""
 
@@ -1157,6 +1168,7 @@ class TestVerifyWorkflowIntegrity:
         )
 
 
+@pytest.mark.unit
 class TestComputeWorkflowHash:
     """Tests for _compute_workflow_hash function."""
 
@@ -1219,6 +1231,7 @@ class TestComputeWorkflowHash:
         assert hash1 != hash2
 
 
+@pytest.mark.unit
 class TestPriorityOrderingIntegration:
     """Integration tests for priority ordering in real workflow execution.
 
@@ -1556,6 +1569,7 @@ class TestPriorityOrderingIntegration:
         )
 
 
+@pytest.mark.unit
 class TestPriorityOrdering:
     """Tests for priority-aware topological ordering in _get_topological_order."""
 
@@ -1843,6 +1857,7 @@ class TestPriorityOrdering:
         assert payload_size > 0
 
 
+@pytest.mark.unit
 class TestWorkflowContextIntegration:
     """Tests for workflow context integration in execution flow."""
 
@@ -2075,6 +2090,7 @@ class TestWorkflowContextIntegration:
 
 
 @pytest.mark.performance
+@pytest.mark.unit
 class TestWorkflowExecutorPerformance:
     """Performance tests for workflow executor with large workflows.
 

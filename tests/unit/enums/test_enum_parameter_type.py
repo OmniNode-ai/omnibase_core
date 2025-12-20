@@ -4,9 +4,12 @@ Unit tests for EnumParameterType.
 Test coverage for parameter type enumeration and helper methods.
 """
 
+import pytest
+
 from omnibase_core.enums import EnumParameterType
 
 
+@pytest.mark.unit
 class TestEnumParameterType:
     """Test cases for EnumParameterType."""
 

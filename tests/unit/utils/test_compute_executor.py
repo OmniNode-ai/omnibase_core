@@ -26,8 +26,8 @@ from omnibase_core.models.contracts.subcontracts.model_compute_subcontract impor
 from omnibase_core.utils.compute_executor import execute_compute_pipeline
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(10)
+@pytest.mark.unit
 class TestPipelineExecutorUnexpectedErrors:
     """Tests for unexpected error handling in execute_compute_pipeline.
 
@@ -414,8 +414,8 @@ class TestPipelineExecutorUnexpectedErrors:
             assert correlation_id in log_args
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestPipelineExecutorLoggingDetails:
     """Tests for detailed logging behavior during error handling."""
 
@@ -455,8 +455,8 @@ class TestPipelineExecutorLoggingDetails:
             assert "ZeroDivisionError" in log_args
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(5)
+@pytest.mark.unit
 class TestValidationStepWarning:
     """Tests for validation step warning behavior."""
 
@@ -485,8 +485,8 @@ class TestValidationStepWarning:
         assert result == {"test": "data"}
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)  # Allow time for slow timeout tests
+@pytest.mark.unit
 class TestPipelineTimeoutEnforcement:
     """Tests for pipeline_timeout_ms enforcement in execute_compute_pipeline.
 

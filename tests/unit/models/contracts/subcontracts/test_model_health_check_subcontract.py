@@ -41,6 +41,7 @@ from omnibase_core.models.contracts.subcontracts.model_node_health_status import
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
+@pytest.mark.unit
 class TestModelComponentHealth:
     """Test suite for ModelComponentHealth."""
 
@@ -120,6 +121,7 @@ class TestModelComponentHealth:
         assert component.status == EnumNodeHealthStatus.CRITICAL
 
 
+@pytest.mark.unit
 class TestModelNodeHealthStatus:
     """Test suite for ModelNodeHealthStatus."""
 
@@ -174,6 +176,7 @@ class TestModelNodeHealthStatus:
             )
 
 
+@pytest.mark.unit
 class TestModelComponentHealthCollection:
     """Test suite for ModelComponentHealthCollection."""
 
@@ -237,6 +240,7 @@ class TestModelComponentHealthCollection:
             ModelComponentHealthCollection(version=DEFAULT_VERSION, total_components=-1)
 
 
+@pytest.mark.unit
 class TestModelDependencyHealth:
     """Test suite for ModelDependencyHealth."""
 
@@ -309,6 +313,7 @@ class TestModelDependencyHealth:
             )
 
 
+@pytest.mark.unit
 class TestModelHealthCheckSubcontractResult:
     """Test suite for ModelHealthCheckSubcontractResult."""
 
@@ -421,6 +426,7 @@ class TestModelHealthCheckSubcontractResult:
             )
 
 
+@pytest.mark.unit
 class TestModelHealthCheckSubcontract:
     """Test suite for ModelHealthCheckSubcontract."""
 

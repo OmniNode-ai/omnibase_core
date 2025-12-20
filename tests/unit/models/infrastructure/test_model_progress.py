@@ -2,11 +2,14 @@
 
 from datetime import timedelta
 
+import pytest
+
 from omnibase_core.enums.enum_execution_phase import EnumExecutionPhase
 from omnibase_core.enums.enum_status_message import EnumStatusMessage
 from omnibase_core.models.infrastructure.model_progress import ModelProgress
 
 
+@pytest.mark.unit
 class TestModelProgressInstantiation:
     """Tests for ModelProgress instantiation."""
 
@@ -25,6 +28,7 @@ class TestModelProgressInstantiation:
         assert progress.current_step == 0
 
 
+@pytest.mark.unit
 class TestModelProgressCorePropertiesAccess:
     """Tests for ModelProgress core properties access through composition."""
 
@@ -63,6 +67,7 @@ class TestModelProgressCorePropertiesAccess:
         assert progress.core.total_steps == 10
 
 
+@pytest.mark.unit
 class TestModelProgressTimingPropertiesAccess:
     """Tests for ModelProgress timing properties access."""
 
@@ -89,6 +94,7 @@ class TestModelProgressTimingPropertiesAccess:
         assert elapsed >= 0.0
 
 
+@pytest.mark.unit
 class TestModelProgressStatusProperties:
     """Tests for ModelProgress status properties."""
 
@@ -117,6 +123,7 @@ class TestModelProgressStatusProperties:
         assert progress.status_message == EnumStatusMessage.PENDING
 
 
+@pytest.mark.unit
 class TestModelProgressUpdateMethods:
     """Tests for ModelProgress update methods."""
 
@@ -161,6 +168,7 @@ class TestModelProgressUpdateMethods:
         assert progress.detailed_info == "Test info"
 
 
+@pytest.mark.unit
 class TestModelProgressMilestones:
     """Tests for ModelProgress milestone methods."""
 
@@ -187,6 +195,7 @@ class TestModelProgressMilestones:
         assert next_milestone is not None
 
 
+@pytest.mark.unit
 class TestModelProgressMetricsMethods:
     """Tests for ModelProgress metrics methods."""
 
@@ -221,6 +230,7 @@ class TestModelProgressMetricsMethods:
         assert isinstance(progress.tags, list)
 
 
+@pytest.mark.unit
 class TestModelProgressReset:
     """Tests for ModelProgress reset functionality."""
 
@@ -235,6 +245,7 @@ class TestModelProgressReset:
         assert len(progress.tags) == 0
 
 
+@pytest.mark.unit
 class TestModelProgressSummary:
     """Tests for ModelProgress summary methods."""
 
@@ -249,6 +260,7 @@ class TestModelProgressSummary:
         assert "elapsed_seconds" in summary
 
 
+@pytest.mark.unit
 class TestModelProgressFactoryMethods:
     """Tests for ModelProgress factory methods."""
 
@@ -275,6 +287,7 @@ class TestModelProgressFactoryMethods:
         assert progress.current_phase == EnumExecutionPhase.INITIALIZATION
 
 
+@pytest.mark.unit
 class TestModelProgressProtocols:
     """Tests for ModelProgress protocol implementations."""
 
@@ -301,6 +314,7 @@ class TestModelProgressProtocols:
         assert "metrics" in data
 
 
+@pytest.mark.unit
 class TestModelProgressEdgeCases:
     """Tests for ModelProgress edge cases."""
 

@@ -25,6 +25,7 @@ from omnibase_core.models.contracts.subcontracts.model_environment_validation_ru
 )
 
 
+@pytest.mark.unit
 class TestModelEnvironmentValidationRulesValidation:
     """Test validation rules for environment validation rules container."""
 
@@ -152,6 +153,7 @@ class TestModelEnvironmentValidationRulesValidation:
             assert "MERGE_WITH_OVERRIDE" in str(w[0].message)
 
 
+@pytest.mark.unit
 class TestModelEnvironmentValidationRulesCreation:
     """Test creation and field constraints."""
 
@@ -199,6 +201,7 @@ class TestModelEnvironmentValidationRulesCreation:
             assert rules.environment == env
 
 
+@pytest.mark.unit
 class TestModelEnvironmentValidationRulesEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -517,6 +520,7 @@ class TestModelEnvironmentValidationRulesEdgeCases:
         assert result_keys == keys
 
 
+@pytest.mark.unit
 class TestModelEnvironmentValidationRulesInheritanceModes:
     """Test inheritance mode validation and flag behavior."""
 

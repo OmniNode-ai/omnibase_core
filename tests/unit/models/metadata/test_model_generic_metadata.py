@@ -15,6 +15,7 @@ from omnibase_core.models.metadata.model_generic_metadata import ModelGenericMet
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
+@pytest.mark.unit
 class TestModelGenericMetadataCreation:
     """Test basic metadata creation and initialization."""
 
@@ -69,6 +70,7 @@ class TestModelGenericMetadataCreation:
         assert isinstance(float_metadata, ModelGenericMetadata)
 
 
+@pytest.mark.unit
 class TestModelGenericMetadataFieldOperations:
     """Test custom field operations."""
 
@@ -260,6 +262,7 @@ class TestModelGenericMetadataFieldOperations:
         assert result is False
 
 
+@pytest.mark.unit
 class TestModelGenericMetadataVersionHandling:
     """Test version handling with ModelSemVer."""
 
@@ -304,6 +307,7 @@ class TestModelGenericMetadataVersionHandling:
         assert metadata.version.patch == 1
 
 
+@pytest.mark.unit
 class TestModelGenericMetadataTagsHandling:
     """Test tags list handling."""
 
@@ -342,6 +346,7 @@ class TestModelGenericMetadataTagsHandling:
         assert serialized["tags"] == ["serialize", "test", "metadata"]
 
 
+@pytest.mark.unit
 class TestModelGenericMetadataSerialization:
     """Test serialization and deserialization."""
 
@@ -432,6 +437,7 @@ class TestModelGenericMetadataSerialization:
         assert "number_field" in deserialized.custom_fields
 
 
+@pytest.mark.unit
 class TestModelGenericMetadataComplexScenarios:
     """Test complex real-world usage scenarios."""
 

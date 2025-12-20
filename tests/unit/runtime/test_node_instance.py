@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import pytest
+
 """
 NodeInstance Comprehensive Unit Tests - TDD Test Suite (OMN-227)
 
@@ -32,7 +34,6 @@ from datetime import UTC, datetime
 from unittest.mock import MagicMock, Mock
 from uuid import uuid4
 
-import pytest
 from pydantic import ValidationError
 
 from omnibase_core.enums import EnumNodeType
@@ -283,8 +284,8 @@ class TestNodeInstanceFrozenBehavior:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestNodeInstanceInitialize:
     """Tests for NodeInstance initialize() lifecycle method.
 
@@ -392,8 +393,8 @@ class TestNodeInstanceInitialize:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestNodeInstanceShutdown:
     """Tests for NodeInstance shutdown() lifecycle method.
 
@@ -526,8 +527,8 @@ class TestNodeInstanceShutdown:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestNodeInstanceHandle:
     """Tests for NodeInstance handle() method - envelope processing.
 
@@ -673,8 +674,8 @@ class TestNodeInstanceHandle:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestNodeInstanceRuntimeIntegration:
     """Tests for NodeInstance runtime delegation patterns.
 
@@ -911,8 +912,8 @@ class TestNodeInstanceStringRepresentation:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestNodeInstanceEdgeCases:
     """Tests for NodeInstance edge cases and error conditions.
 
@@ -1249,8 +1250,8 @@ class TestNodeInstanceModelConfig:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestNodeInstanceIntegrationPatterns:
     """Tests for common NodeInstance usage patterns.
 

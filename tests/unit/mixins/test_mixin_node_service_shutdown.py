@@ -1,3 +1,5 @@
+import pytest
+
 # === OmniNode:Metadata ===
 # author: OmniNode Team
 # copyright: OmniNode.ai
@@ -30,8 +32,6 @@ import os
 import time
 from typing import Any
 from uuid import uuid4
-
-import pytest
 
 from omnibase_core.mixins.mixin_node_service import MixinNodeService
 
@@ -78,6 +78,7 @@ class MinimalServiceNode(MixinNodeService):
         return "MinimalServiceNode"
 
 
+@pytest.mark.unit
 class TestShutdownTiming:
     """Tests for shutdown event timing behavior."""
 
@@ -337,6 +338,7 @@ class TestShutdownTiming:
         )
 
 
+@pytest.mark.unit
 class TestShutdownEventIntegration:
     """Integration tests for shutdown event handling in MixinNodeService."""
 

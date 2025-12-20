@@ -22,6 +22,7 @@ from omnibase_core.models.node_metadata.model_node_type import ModelNodeType
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
+@pytest.mark.unit
 class TestModelNodeType:
     """Test cases for ModelNodeType."""
 
@@ -109,6 +110,7 @@ class TestModelNodeType:
         assert node1 != node2
 
 
+@pytest.mark.unit
 class TestModelNodeTypeFactoryMethods:
     """Test all factory methods for node types."""
 
@@ -327,6 +329,7 @@ class TestModelNodeTypeFactoryMethods:
         assert node.category == EnumConfigCategory.TESTING
 
 
+@pytest.mark.unit
 class TestModelNodeTypeFromString:
     """Test from_string factory method."""
 
@@ -371,6 +374,7 @@ class TestModelNodeTypeFromString:
         assert "Unknown node type" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestModelNodeTypeProtocols:
     """Test protocol implementations."""
 
@@ -431,6 +435,7 @@ class TestModelNodeTypeProtocols:
         assert node_id == str(node.type_id)
 
 
+@pytest.mark.unit
 class TestModelNodeTypeEdgeCases:
     """Test edge cases and error scenarios."""
 

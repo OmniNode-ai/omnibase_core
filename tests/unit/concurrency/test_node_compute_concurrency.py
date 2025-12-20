@@ -130,9 +130,9 @@ class ThreadSafeComputeCache:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.slow
 @pytest.mark.timeout(120)
+@pytest.mark.unit
 class TestModelComputeCacheConcurrency:
     """
     Test cache thread safety under concurrent load.
@@ -404,8 +404,8 @@ class TestModelComputeCacheConcurrency:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(120)
+@pytest.mark.unit
 class TestThreadSafeComputeCacheWrapper:
     """
     Test the ThreadSafeComputeCache wrapper pattern.
@@ -564,8 +564,8 @@ class TestThreadSafeComputeCacheWrapper:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(120)
+@pytest.mark.unit
 class TestNodeComputeParallelBatchProcessing:
     """
     Test parallel batch processing thread safety.
@@ -723,8 +723,8 @@ class TestNodeComputeParallelBatchProcessing:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(120)
+@pytest.mark.unit
 class TestMultiThreadingWithExecutor:
     """
     Test true multi-threading scenarios using ThreadPoolExecutor.
@@ -876,8 +876,8 @@ class TestMultiThreadingWithExecutor:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestCacheKeyGenerationConcurrency:
     """
     Test cache key generation under concurrent load.
@@ -936,9 +936,9 @@ class TestCacheKeyGenerationConcurrency:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.slow
 @pytest.mark.timeout(180)
+@pytest.mark.unit
 class TestHighContentionStress:
     """
     High contention stress tests.

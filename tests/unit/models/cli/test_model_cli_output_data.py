@@ -10,12 +10,15 @@ Tests cover:
 - Edge cases and error scenarios
 """
 
+import pytest
+
 from omnibase_core.enums.enum_cli_status import EnumCliStatus
 from omnibase_core.enums.enum_output_format import EnumOutputFormat
 from omnibase_core.enums.enum_output_type import EnumOutputType
 from omnibase_core.models.cli.model_cli_output_data import ModelCliOutputData
 
 
+@pytest.mark.unit
 class TestModelCliOutputDataInitialization:
     """Test initialization and default values."""
 
@@ -59,6 +62,7 @@ class TestModelCliOutputDataInitialization:
         assert data.memory_usage_mb == 25.3
 
 
+@pytest.mark.unit
 class TestModelCliOutputDataResultsMethods:
     """Test methods for managing results."""
 
@@ -126,6 +130,7 @@ class TestModelCliOutputDataResultsMethods:
         assert str(data.metadata["empty_meta"].to_python_value()) == ""
 
 
+@pytest.mark.unit
 class TestModelCliOutputDataFilesMethods:
     """Test methods for managing file operations."""
 
@@ -193,6 +198,7 @@ class TestModelCliOutputDataFilesMethods:
         assert len(data.files_modified) == 1
 
 
+@pytest.mark.unit
 class TestModelCliOutputDataValueAccessors:
     """Test value access methods."""
 
@@ -254,6 +260,7 @@ class TestModelCliOutputDataValueAccessors:
         assert value == "value2"
 
 
+@pytest.mark.unit
 class TestModelCliOutputDataFactoryMethods:
     """Test factory methods."""
 
@@ -332,6 +339,7 @@ class TestModelCliOutputDataFactoryMethods:
         assert data.get_field_value("error_code") == "ERR_001"
 
 
+@pytest.mark.unit
 class TestModelCliOutputDataProtocols:
     """Test protocol method implementations."""
 
@@ -375,6 +383,7 @@ class TestModelCliOutputDataProtocols:
         assert is_valid is True
 
 
+@pytest.mark.unit
 class TestModelCliOutputDataEdgeCases:
     """Test edge cases and error scenarios."""
 

@@ -21,7 +21,7 @@ class ModelEffectOperationResult(BaseModel):
     standards (no primitive soup unions).
     """
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     operation_name: str
     success: bool

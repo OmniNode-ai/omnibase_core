@@ -7,6 +7,7 @@ import pytest
 from omnibase_core.enums.enum_onex_tree_node_type import EnumOnexTreeNodeType
 
 
+@pytest.mark.unit
 class TestEnumOnexTreeNodeType:
     """Test cases for EnumOnexTreeNodeType"""
 

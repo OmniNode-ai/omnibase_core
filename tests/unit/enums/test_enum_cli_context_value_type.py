@@ -7,6 +7,7 @@ import pytest
 from omnibase_core.enums.enum_cli_context_value_type import EnumCliContextValueType
 
 
+@pytest.mark.unit
 class TestEnumCliContextValueType:
     """Test EnumCliContextValueType functionality."""
 

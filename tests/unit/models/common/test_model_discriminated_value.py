@@ -11,6 +11,7 @@ from omnibase_core.models.common.model_discriminated_value import (
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
+@pytest.mark.unit
 class TestModelDiscriminatedValueInstantiation:
     """Tests for ModelDiscriminatedValue instantiation with primitive types."""
 
@@ -83,6 +84,7 @@ class TestModelDiscriminatedValueInstantiation:
         assert value.get_value() == ""
 
 
+@pytest.mark.unit
 class TestModelDiscriminatedValueCollections:
     """Tests for ModelDiscriminatedValue with collection types."""
 
@@ -147,6 +149,7 @@ class TestModelDiscriminatedValueCollections:
         assert value.list_value == mixed_list
 
 
+@pytest.mark.unit
 class TestModelDiscriminatedValueAutoDetection:
     """Tests for ModelDiscriminatedValue automatic type detection."""
 
@@ -197,6 +200,7 @@ class TestModelDiscriminatedValueAutoDetection:
         assert bool_value.value_type != int_value.value_type  # type: ignore[comparison-overlap]
 
 
+@pytest.mark.unit
 class TestModelDiscriminatedValueMetadata:
     """Tests for ModelDiscriminatedValue metadata support."""
 
@@ -218,6 +222,7 @@ class TestModelDiscriminatedValueMetadata:
         assert value.metadata["key"] == "value"
 
 
+@pytest.mark.unit
 class TestModelDiscriminatedValueValidation:
     """Tests for ModelDiscriminatedValue validation."""
 
@@ -285,6 +290,7 @@ class TestModelDiscriminatedValueValidation:
         assert "not JSON serializable" in str(exc_info.value)
 
 
+@pytest.mark.unit
 class TestModelDiscriminatedValueTypeChecking:
     """Tests for ModelDiscriminatedValue type checking methods."""
 
@@ -334,6 +340,7 @@ class TestModelDiscriminatedValueTypeChecking:
         assert ModelDiscriminatedValue.from_list([]).is_type(list) is True
 
 
+@pytest.mark.unit
 class TestModelDiscriminatedValueTypeCategories:
     """Tests for ModelDiscriminatedValue type category methods."""
 
@@ -374,6 +381,7 @@ class TestModelDiscriminatedValueTypeCategories:
         assert ModelDiscriminatedValue.from_str("test").is_collection() is False
 
 
+@pytest.mark.unit
 class TestModelDiscriminatedValueComparison:
     """Tests for ModelDiscriminatedValue comparison operations."""
 
@@ -421,6 +429,7 @@ class TestModelDiscriminatedValueComparison:
         assert list_val1 == list_val2
 
 
+@pytest.mark.unit
 class TestModelDiscriminatedValueStringRepresentation:
     """Tests for ModelDiscriminatedValue string representation."""
 
@@ -456,6 +465,7 @@ class TestModelDiscriminatedValueStringRepresentation:
             assert len(str_repr) > 0
 
 
+@pytest.mark.unit
 class TestModelDiscriminatedValueEdgeCases:
     """Tests for ModelDiscriminatedValue edge cases."""
 
@@ -508,6 +518,7 @@ class TestModelDiscriminatedValueEdgeCases:
         assert value.get_value() == list_with_none
 
 
+@pytest.mark.unit
 class TestModelDiscriminatedValueSerialization:
     """Tests for ModelDiscriminatedValue serialization."""
 
@@ -538,6 +549,7 @@ class TestModelDiscriminatedValueSerialization:
         assert restored == original
 
 
+@pytest.mark.unit
 class TestModelDiscriminatedValueUnsupportedTypes:
     """Tests for ModelDiscriminatedValue with unsupported types."""
 

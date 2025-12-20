@@ -9,6 +9,7 @@ import pytest
 from omnibase_core.enums.enum_daemon_action_type import EnumDaemonActionType
 
 
+@pytest.mark.unit
 class TestEnumDaemonActionType:
     """Test cases for EnumDaemonActionType enum."""
 

@@ -9,6 +9,7 @@ import pytest
 from omnibase_core.enums.enum_delivery_mode import EnumDeliveryMode
 
 
+@pytest.mark.unit
 class TestEnumDeliveryMode:
     """Test cases for EnumDeliveryMode enum."""
 

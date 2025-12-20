@@ -29,6 +29,7 @@ from omnibase_core.models.node_metadata.model_function_node_performance import (
 )
 
 
+@pytest.mark.unit
 class TestModelFunctionNode:
     """Test cases for ModelFunctionNode."""
 

@@ -72,6 +72,7 @@ class IntegerCollection(ModelBaseCollection[int]):
         return self.values[:]
 
 
+@pytest.mark.unit
 class TestModelBaseCollectionAbstract:
     """Test that ModelBaseCollection enforces abstract methods."""
 
@@ -119,6 +120,7 @@ class TestModelBaseCollectionAbstract:
             IncompleteCollection()  # type: ignore[abstract]
 
 
+@pytest.mark.unit
 class TestConcreteCollectionImplementation:
     """Test concrete collection implementations."""
 
@@ -188,6 +190,7 @@ class TestConcreteCollectionImplementation:
         assert not hasattr(collection, "unknown_field")
 
 
+@pytest.mark.unit
 class TestIntegerCollectionImplementation:
     """Test integer collection implementation."""
 
@@ -218,6 +221,7 @@ class TestIntegerCollectionImplementation:
         assert collection.get_items() == [1, 3, 2, 4]
 
 
+@pytest.mark.unit
 class TestCollectionModelSerialization:
     """Test collection serialization and deserialization."""
 
@@ -247,6 +251,7 @@ class TestCollectionModelSerialization:
         assert collection.get_items() == ["a", "b"]
 
 
+@pytest.mark.unit
 class TestCollectionEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -289,6 +294,7 @@ class TestCollectionEdgeCases:
         assert original.get_item_count() == 3
 
 
+@pytest.mark.unit
 class TestCollectionTypeParameter:
     """Test that collection works with different type parameters."""
 

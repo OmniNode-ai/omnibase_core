@@ -9,6 +9,7 @@ import pytest
 from omnibase_core.enums.enum_generation_error_codes import EnumGenerationErrorCodes
 
 
+@pytest.mark.unit
 class TestEnumGenerationErrorCodes:
     """Test cases for EnumGenerationErrorCodes enum."""
 

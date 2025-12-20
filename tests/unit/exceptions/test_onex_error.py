@@ -16,6 +16,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
+@pytest.mark.unit
 class TestModelOnexErrorBasicBehavior:
     """Test basic ModelOnexError initialization and behaviors."""
 
@@ -71,6 +72,7 @@ class TestModelOnexErrorBasicBehavior:
         assert exc_info.value.message == "Resource not found"
 
 
+@pytest.mark.unit
 class TestModelOnexErrorCodes:
     """Test ModelOnexError with different error codes."""
 
@@ -116,6 +118,7 @@ class TestModelOnexErrorCodes:
         assert "Test message" in str(error)
 
 
+@pytest.mark.unit
 class TestModelOnexErrorContext:
     """Test ModelOnexError with error context handling."""
 
@@ -199,6 +202,7 @@ class TestModelOnexErrorContext:
         assert error.context == {}
 
 
+@pytest.mark.unit
 class TestModelOnexErrorCauseChaining:
     """Test ModelOnexError cause exception chaining using Python's standard __cause__."""
 
@@ -272,6 +276,7 @@ class TestModelOnexErrorCauseChaining:
                 assert type(error.__cause__) == type(original_exception)
 
 
+@pytest.mark.unit
 class TestModelOnexErrorMessageFormatting:
     """Test ModelOnexError message formatting behaviors."""
 
@@ -339,6 +344,7 @@ class TestModelOnexErrorMessageFormatting:
         assert "🚀" in str(error)
 
 
+@pytest.mark.unit
 class TestModelOnexErrorEdgeCases:
     """Test ModelOnexError edge cases and boundary conditions."""
 
@@ -405,6 +411,7 @@ class TestModelOnexErrorEdgeCases:
         assert error.message == "Modified message"
 
 
+@pytest.mark.unit
 class TestModelOnexErrorIntegration:
     """Integration tests for ModelOnexError usage patterns."""
 

@@ -16,6 +16,7 @@ import pytest
 from omnibase_core.enums.enum_filter_type import EnumFilterType
 
 
+@pytest.mark.unit
 class TestEnumFilterType:
     """Test cases for EnumFilterType."""
 
@@ -130,6 +131,7 @@ class TestEnumFilterType:
         """Test that enum works with Pydantic models."""
         from pydantic import BaseModel
 
+        @pytest.mark.unit
         class TestModel(BaseModel):
             filter_type: EnumFilterType
 
@@ -191,6 +193,7 @@ class TestEnumFilterType:
             assert reconstructed == member
 
 
+@pytest.mark.unit
 class TestEnumFilterTypeEdgeCases:
     """Test edge cases and error conditions for EnumFilterType."""
 

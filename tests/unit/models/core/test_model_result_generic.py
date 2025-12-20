@@ -18,6 +18,7 @@ from omnibase_core.models.infrastructure.model_result import (
 )
 
 
+@pytest.mark.unit
 class TestResultGeneric:
     """Test cases for generic ModelResult[T, E] functionality."""
 
@@ -362,6 +363,7 @@ class TestResultGeneric:
             ModelResult(success=False, value="value", error="error")
 
 
+@pytest.mark.unit
 class TestResultGenericComplexTypes:
     """Test Result with complex generic types."""
 
@@ -450,6 +452,7 @@ class TestResultGenericComplexTypes:
         assert mapped.unwrap().value == 84
 
 
+@pytest.mark.unit
 class TestResultGenericEdgeCases:
     """Test edge cases for generic ModelResult[T, E]."""
 

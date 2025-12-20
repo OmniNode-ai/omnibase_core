@@ -51,6 +51,7 @@ class MockNode(MixinEventListener[MockInputState, MockOutputState]):
         return MockOutputState(result="processed")
 
 
+@pytest.mark.unit
 class TestMixinEventListener:
     """Test MixinEventListener functionality."""
 

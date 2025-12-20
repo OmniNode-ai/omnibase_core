@@ -23,6 +23,7 @@ from omnibase_core.models.primitives.model_semver import (
 )
 
 
+@pytest.mark.unit
 class TestModelSemVerCreation:
     """Test basic ModelSemVer creation and validation."""
 
@@ -75,6 +76,7 @@ class TestModelSemVerCreation:
         assert not hasattr(version, "extra_field")
 
 
+@pytest.mark.unit
 class TestModelSemVerStringRepresentation:
     """Test string representation methods."""
 
@@ -99,6 +101,7 @@ class TestModelSemVerStringRepresentation:
         assert str(version) == "99.999.9999"
 
 
+@pytest.mark.unit
 class TestModelSemVerComparison:
     """Test comparison operators."""
 
@@ -200,6 +203,7 @@ class TestModelSemVerComparison:
         assert v3 > v2 > v1
 
 
+@pytest.mark.unit
 class TestModelSemVerHashing:
     """Test hashing and use in collections."""
 
@@ -234,6 +238,7 @@ class TestModelSemVerHashing:
         assert version_dict[v1] == "second"
 
 
+@pytest.mark.unit
 class TestModelSemVerBumping:
     """Test version bumping methods."""
 
@@ -284,6 +289,7 @@ class TestModelSemVerBumping:
         assert bumped.patch == 0
 
 
+@pytest.mark.unit
 class TestModelSemVerPrerelease:
     """Test prerelease functionality."""
 
@@ -298,6 +304,7 @@ class TestModelSemVerPrerelease:
         assert version.is_prerelease() is False
 
 
+@pytest.mark.unit
 class TestParseSemverFromString:
     """Test parse_semver_from_string function."""
 
@@ -359,6 +366,7 @@ class TestParseSemverFromString:
         assert version.patch == 3
 
 
+@pytest.mark.unit
 class TestModelSemVerParse:
     """Test ModelSemVer.parse class method."""
 
@@ -377,6 +385,7 @@ class TestModelSemVerParse:
         assert version1 == version2
 
 
+@pytest.mark.unit
 class TestParseInputStateVersion:
     """Test parse_input_state_version function."""
 
@@ -447,6 +456,7 @@ class TestParseInputStateVersion:
         assert version.patch == 3
 
 
+@pytest.mark.unit
 class TestSemVerFieldAlias:
     """Test SemVerField type alias."""
 
@@ -461,6 +471,7 @@ class TestSemVerFieldAlias:
         assert version.major == 1
 
 
+@pytest.mark.unit
 class TestModelSemVerBackwardCompatibility:
     """Test backward compatibility with older version patterns."""
 
@@ -540,6 +551,7 @@ class TestModelSemVerBackwardCompatibility:
 
         from omnibase_core.models.primitives.model_semver import default_model_version
 
+        @pytest.mark.unit
         class TestModel(BaseModel):
             version: ModelSemVer = Field(default_factory=default_model_version)
 
@@ -612,6 +624,7 @@ class TestModelSemVerBackwardCompatibility:
         assert str(config.api_version) == "2.0.0"
 
 
+@pytest.mark.unit
 class TestModelSemVerEdgeCases:
     """Test edge cases and boundary conditions."""
 

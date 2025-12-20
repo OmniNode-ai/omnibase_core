@@ -17,10 +17,12 @@ __all__ = [
 ]
 
 # Reserved execution modes (not accepted in v1.0)
-RESERVED_EXECUTION_MODES = {
-    EnumExecutionMode.CONDITIONAL,
-    EnumExecutionMode.STREAMING,
-}
+RESERVED_EXECUTION_MODES = frozenset(
+    {
+        EnumExecutionMode.CONDITIONAL,
+        EnumExecutionMode.STREAMING,
+    }
+)
 
 
 def validate_execution_mode(mode: EnumExecutionMode) -> None:

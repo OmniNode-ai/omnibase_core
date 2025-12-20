@@ -21,6 +21,7 @@ from omnibase_core.models.core.model_node_action_type import ModelNodeActionType
 from omnibase_core.models.orchestrator.model_action import ModelAction
 
 
+@pytest.mark.unit
 class TestModelActionBasicCreation:
     """Test basic ModelAction creation and validation."""
 
@@ -121,6 +122,7 @@ class TestModelActionBasicCreation:
         assert modified.lease_id == original.lease_id
 
 
+@pytest.mark.unit
 class TestModelActionValidation:
     """Test ModelAction field validation."""
 
@@ -232,6 +234,7 @@ class TestModelActionValidation:
             )
 
 
+@pytest.mark.unit
 class TestModelActionMetadataTyped:
     """Test ModelAction with typed ModelActionMetadata."""
 
@@ -338,6 +341,7 @@ class TestModelActionMetadataTyped:
         assert action.metadata.trust_score == 0.85
 
 
+@pytest.mark.unit
 class TestModelActionMetadataDefault:
     """Test ModelAction with default/empty metadata."""
 
@@ -379,6 +383,7 @@ class TestModelActionMetadataDefault:
         assert isinstance(action2.metadata, ModelActionMetadata)
 
 
+@pytest.mark.unit
 class TestModelActionMetadataNoneHandling:
     """Test ModelAction metadata None handling."""
 
@@ -417,6 +422,7 @@ class TestModelActionMetadataNoneHandling:
             )
 
 
+@pytest.mark.unit
 class TestModelActionSerialization:
     """Test ModelAction serialization and deserialization."""
 
@@ -501,6 +507,7 @@ class TestModelActionSerialization:
         assert restored.metadata.parameters == original.metadata.parameters
 
 
+@pytest.mark.unit
 class TestModelActionLeaseSemantics:
     """Test ModelAction lease management semantics."""
 
@@ -553,6 +560,7 @@ class TestModelActionLeaseSemantics:
         assert action1.lease_id == action2.lease_id == action3.lease_id
 
 
+@pytest.mark.unit
 class TestModelActionDependencies:
     """Test ModelAction dependency management."""
 

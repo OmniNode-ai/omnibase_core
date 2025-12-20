@@ -34,6 +34,7 @@ from omnibase_core.logging.emit import (
 from omnibase_core.models.core.model_log_entry import LogModelContext
 
 
+@pytest.mark.unit
 class TestEmitLogEventCore:
     """Test core emit_log_event functionality."""
 
@@ -91,6 +92,7 @@ class TestEmitLogEventCore:
         )
 
 
+@pytest.mark.unit
 class TestEmitLogEventWrappers:
     """Test emit_log_event wrapper functions."""
 
@@ -126,6 +128,7 @@ class TestEmitLogEventWrappers:
         )
 
 
+@pytest.mark.unit
 class TestSensitiveDataSanitization:
     """Test sensitive data sanitization - SECURITY CRITICAL."""
 
@@ -200,6 +203,7 @@ class TestSensitiveDataSanitization:
         assert result is None
 
 
+@pytest.mark.unit
 class TestDataDictSanitization:
     """Test _sanitize_data_dict functionality."""
 
@@ -285,6 +289,7 @@ class TestDataDictSanitization:
         assert "api" in str(result).lower() or "[REDACTED]" in str(result)
 
 
+@pytest.mark.unit
 class TestNodeIdDetection:
     """Test _detect_node_id_from_context functionality."""
 
@@ -351,6 +356,7 @@ class TestNodeIdDetection:
         assert isinstance(result, (UUID, str))
 
 
+@pytest.mark.unit
 class TestLogContextCreation:
     """Test _create_log_context_from_frame functionality."""
 
@@ -395,6 +401,7 @@ class TestLogContextCreation:
         assert context.calling_line >= 0
 
 
+@pytest.mark.unit
 class TestTraceFunctionLifecycle:
     """Test trace_function_lifecycle decorator."""
 
@@ -429,6 +436,7 @@ class TestTraceFunctionLifecycle:
         assert callable(my_function)
 
 
+@pytest.mark.unit
 class TestLogCodeBlock:
     """Test LogCodeBlock context manager."""
 
@@ -468,6 +476,7 @@ class TestLogCodeBlock:
             pass
 
 
+@pytest.mark.unit
 class TestLogPerformanceMetrics:
     """Test log_performance_metrics decorator."""
 
@@ -504,6 +513,7 @@ class TestLogPerformanceMetrics:
         assert result == {"status": "success", "value": 42}
 
 
+@pytest.mark.unit
 class TestSanitizationSecurityEdgeCases:
     """Security-focused edge case tests for sanitization."""
 
@@ -550,6 +560,7 @@ class TestSanitizationSecurityEdgeCases:
         assert "secret123" not in str(result.get("config", ""))
 
 
+@pytest.mark.unit
 class TestThreadSafety:
     """Test thread safety of logging functions."""
 

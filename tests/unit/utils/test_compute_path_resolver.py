@@ -59,8 +59,8 @@ class NestedObject:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestResolvePath:
     """Tests for resolve_path function (simple dot-notation paths)."""
 
@@ -176,8 +176,8 @@ class TestResolvePath:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestResolveInputPath:
     """Tests for resolve_input_path function ($.input prefix paths)."""
 
@@ -244,8 +244,8 @@ class TestResolveInputPath:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestResolveStepPath:
     """Tests for resolve_step_path function ($.steps prefix paths)."""
 
@@ -336,8 +336,8 @@ class TestResolveStepPath:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestResolvePipelinePath:
     """Tests for resolve_pipeline_path function (unified pipeline resolver)."""
 
@@ -399,8 +399,8 @@ class TestResolvePipelinePath:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestPathResolutionError:
     """Tests for PathResolutionError exception class."""
 
@@ -465,8 +465,8 @@ class TestPathResolutionError:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(30)
+@pytest.mark.unit
 class TestEdgeCasesAndSecurity:
     """Tests for edge cases and security considerations."""
 

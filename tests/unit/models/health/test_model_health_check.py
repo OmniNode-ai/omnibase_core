@@ -8,6 +8,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.health.model_health_check import ModelHealthCheck
 
 
+@pytest.mark.unit
 class TestModelHealthCheckBasics:
     """Test basic ModelHealthCheck functionality."""
 
@@ -75,6 +76,7 @@ class TestModelHealthCheckBasics:
         assert check.headers == headers
 
 
+@pytest.mark.unit
 class TestModelHealthCheckValidation:
     """Test ModelHealthCheck validation."""
 
@@ -203,6 +205,7 @@ class TestModelHealthCheckValidation:
             )
 
 
+@pytest.mark.unit
 class TestModelHealthCheckURLGeneration:
     """Test URL generation methods."""
 
@@ -257,6 +260,7 @@ class TestModelHealthCheckURLGeneration:
         assert url == ""
 
 
+@pytest.mark.unit
 class TestModelHealthCheckTypeChecking:
     """Test type checking methods."""
 
@@ -288,6 +292,7 @@ class TestModelHealthCheckTypeChecking:
         assert check.is_http_check() is False
 
 
+@pytest.mark.unit
 class TestModelHealthCheckTimeout:
     """Test timeout methods."""
 
@@ -312,6 +317,7 @@ class TestModelHealthCheckTimeout:
         assert check.get_effective_timeout() == 30
 
 
+@pytest.mark.unit
 class TestModelHealthCheckConfiguration:
     """Test health check configuration."""
 
@@ -358,6 +364,7 @@ class TestModelHealthCheckConfiguration:
         assert check.metadata == metadata
 
 
+@pytest.mark.unit
 class TestModelHealthCheckEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -438,6 +445,7 @@ class TestModelHealthCheckEdgeCases:
         assert url == "https://api.example.com:8080/api/v1/health/status"
 
 
+@pytest.mark.unit
 class TestModelHealthCheckCommandType:
     """Test command-specific functionality."""
 

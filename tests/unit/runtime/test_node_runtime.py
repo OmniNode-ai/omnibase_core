@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import pytest
+
 """
 EnvelopeRouter Comprehensive Unit Tests - TDD Test Suite (OMN-228)
 
@@ -32,8 +34,6 @@ Related:
 from datetime import UTC, datetime
 from unittest.mock import MagicMock
 from uuid import uuid4
-
-import pytest
 
 from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_handler_type import EnumHandlerType
@@ -772,8 +772,8 @@ class TestEnvelopeRouterRouteEnvelope:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestEnvelopeRouterExecuteWithHandler:
     """Tests for EnvelopeRouter execute_with_handler() method.
 
@@ -1013,8 +1013,8 @@ class TestEnvelopeRouterExecuteWithHandler:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestEnvelopeRouterEdgeCases:
     """Tests for EnvelopeRouter edge cases and error conditions.
 
@@ -1573,8 +1573,8 @@ class TestEnvelopeRouterStringRepresentation:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(60)
+@pytest.mark.unit
 class TestEnvelopeRouterIntegrationPatterns:
     """Tests for common EnvelopeRouter usage patterns.
 
@@ -2572,8 +2572,8 @@ class TestEnvelopeRouterLargeRegistryRepr:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.timeout(90)
+@pytest.mark.unit
 class TestEnvelopeRouterHandlerTimeout:
     """
     Tests for handler execution timeout behavior.
@@ -2898,9 +2898,9 @@ class TestEnvelopeRouterHandlerTimeout:
 # =============================================================================
 
 
-@pytest.mark.unit
 @pytest.mark.slow
 @pytest.mark.timeout(120)
+@pytest.mark.unit
 class TestEnvelopeRouterConcurrencyStress:
     """
     Stress tests for concurrent access patterns on EnvelopeRouter.

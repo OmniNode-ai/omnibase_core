@@ -5,6 +5,8 @@ This module tests discovery statistics tracking, health metrics calculation,
 and performance monitoring for CLI tool discovery operations.
 """
 
+import pytest
+
 from omnibase_core.models.core.model_cli_discovery_stats import ModelCliDiscoveryStats
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -12,6 +14,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
 
 
+@pytest.mark.unit
 class TestModelCliDiscoveryStatsCreation:
     """Test discovery stats creation and defaults."""
 
@@ -67,6 +70,7 @@ class TestModelCliDiscoveryStatsCreation:
         assert stats.registries_total == 5
 
 
+@pytest.mark.unit
 class TestHealthPercentageProperty:
     """Test health_percentage property calculation."""
 
@@ -148,6 +152,7 @@ class TestHealthPercentageProperty:
         assert stats.health_percentage == 0.0
 
 
+@pytest.mark.unit
 class TestRegistryHealthPercentageProperty:
     """Test registry_health_percentage property calculation."""
 
@@ -203,6 +208,7 @@ class TestRegistryHealthPercentageProperty:
         assert abs(stats.registry_health_percentage - 66.66666666666667) < 0.0001
 
 
+@pytest.mark.unit
 class TestToSummaryDict:
     """Test to_summary_dict method."""
 
@@ -290,6 +296,7 @@ class TestToSummaryDict:
         assert set(summary.keys()) == expected_keys
 
 
+@pytest.mark.unit
 class TestDiscoveryStatsEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -363,6 +370,7 @@ class TestDiscoveryStatsEdgeCases:
         assert stats.last_error_message.startswith("Error: AAA")
 
 
+@pytest.mark.unit
 class TestDiscoveryStatsTimestamps:
     """Test timestamp handling."""
 
@@ -394,6 +402,7 @@ class TestDiscoveryStatsTimestamps:
         assert stats.last_health_check_timestamp is None
 
 
+@pytest.mark.unit
 class TestDiscoveryStatsPerformanceMetrics:
     """Test performance metrics fields."""
 
@@ -435,6 +444,7 @@ class TestDiscoveryStatsPerformanceMetrics:
         assert stats.average_discovery_duration_ms == 0.0
 
 
+@pytest.mark.unit
 class TestDiscoveryStatsErrorTracking:
     """Test error tracking fields."""
 
@@ -471,6 +481,7 @@ class TestDiscoveryStatsErrorTracking:
         assert stats.discovery_errors_count == 100
 
 
+@pytest.mark.unit
 class TestDiscoveryStatsIntegration:
     """Test integration scenarios."""
 

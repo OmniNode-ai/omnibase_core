@@ -20,6 +20,7 @@ from omnibase_core.models.node_metadata.model_node_resource_limits import (
 )
 
 
+@pytest.mark.unit
 class TestModelNodeResourceLimits:
     """Test cases for ModelNodeResourceLimits."""
 
@@ -179,6 +180,7 @@ class TestModelNodeResourceLimits:
         assert limits.is_cpu_constrained(threshold_percent=20.0) is False
 
 
+@pytest.mark.unit
 class TestModelNodeResourceLimitsFactoryMethods:
     """Test factory methods."""
 
@@ -224,6 +226,7 @@ class TestModelNodeResourceLimitsFactoryMethods:
         assert limits.max_cpu_percent == 100.0
 
 
+@pytest.mark.unit
 class TestModelNodeResourceLimitsProtocols:
     """Test protocol implementations."""
 
@@ -275,6 +278,7 @@ class TestModelNodeResourceLimitsProtocols:
         assert limits.validate_instance() is True
 
 
+@pytest.mark.unit
 class TestModelNodeResourceLimitsEdgeCases:
     """Test edge cases and boundary conditions."""
 

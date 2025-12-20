@@ -9,6 +9,7 @@ import pytest
 from omnibase_core.enums.enum_dependency_mode import EnumDependencyMode
 
 
+@pytest.mark.unit
 class TestEnumDependencyMode:
     """Test cases for EnumDependencyMode enum."""
 

@@ -18,6 +18,7 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.results.model_unified_version import ModelUnifiedVersion
 
 
+@pytest.mark.unit
 class TestModelUnifiedVersionBasicInstantiation:
     """Test basic instantiation with required fields."""
 
@@ -51,6 +52,7 @@ class TestModelUnifiedVersionBasicInstantiation:
         assert version.last_updated == updated
 
 
+@pytest.mark.unit
 class TestModelUnifiedVersionFieldValidation:
     """Test field validation and type safety."""
 
@@ -85,6 +87,7 @@ class TestModelUnifiedVersionFieldValidation:
             ModelUnifiedVersion(protocol_version=protocol, tool_version="2.0.0")
 
 
+@pytest.mark.unit
 class TestModelUnifiedVersionProtocolVersionField:
     """Test protocol_version field."""
 
@@ -112,6 +115,7 @@ class TestModelUnifiedVersionProtocolVersionField:
         assert version.protocol_version.patch == 3
 
 
+@pytest.mark.unit
 class TestModelUnifiedVersionToolVersionField:
     """Test tool_version optional field."""
 
@@ -134,6 +138,7 @@ class TestModelUnifiedVersionToolVersionField:
         assert version.tool_version is None
 
 
+@pytest.mark.unit
 class TestModelUnifiedVersionSchemaVersionField:
     """Test schema_version optional field."""
 
@@ -156,6 +161,7 @@ class TestModelUnifiedVersionSchemaVersionField:
         assert version.schema_version is None
 
 
+@pytest.mark.unit
 class TestModelUnifiedVersionLastUpdatedField:
     """Test last_updated datetime field."""
 
@@ -186,6 +192,7 @@ class TestModelUnifiedVersionLastUpdatedField:
         assert version.last_updated == now
 
 
+@pytest.mark.unit
 class TestModelUnifiedVersionSerialization:
     """Test model serialization and deserialization."""
 
@@ -229,6 +236,7 @@ class TestModelUnifiedVersionSerialization:
         assert restored.tool_version.major == original.tool_version.major
 
 
+@pytest.mark.unit
 class TestModelUnifiedVersionComplexScenarios:
     """Test complex usage scenarios."""
 
@@ -283,6 +291,7 @@ class TestModelUnifiedVersionComplexScenarios:
         assert new_version.protocol_version > old_version.protocol_version
 
 
+@pytest.mark.unit
 class TestModelUnifiedVersionVersionComparison:
     """Test version comparison scenarios."""
 
@@ -314,6 +323,7 @@ class TestModelUnifiedVersionVersionComparison:
         assert v2.tool_version > v1.tool_version
 
 
+@pytest.mark.unit
 class TestModelUnifiedVersionEdgeCases:
     """Test edge cases and boundary conditions."""
 
@@ -350,6 +360,7 @@ class TestModelUnifiedVersionEdgeCases:
         assert version.last_updated.year == 2099
 
 
+@pytest.mark.unit
 class TestModelUnifiedVersionTypeSafety:
     """Test type safety - comprehensive testing required."""
 

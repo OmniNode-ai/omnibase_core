@@ -1,6 +1,9 @@
 """Test model_input_state module."""
 
+import pytest
 
+
+@pytest.mark.unit
 class TestModelInputStateModule:
     """Test the model_input_state module."""
 

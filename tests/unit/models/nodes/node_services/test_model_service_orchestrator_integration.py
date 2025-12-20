@@ -130,6 +130,7 @@ def tool_invocation_event(service_orchestrator):
     )
 
 
+@pytest.mark.unit
 class TestMROCorrectness:
     """Test Method Resolution Order correctness for ModelServiceOrchestrator."""
 
@@ -257,6 +258,7 @@ class TestMROCorrectness:
             )
 
 
+@pytest.mark.unit
 class TestServiceModeEventBusIntegration:
     """Test integration between service mode and EventBus mixin (CRITICAL for orchestrators)."""
 
@@ -313,6 +315,7 @@ class TestServiceModeEventBusIntegration:
         assert published_event.success is True
 
 
+@pytest.mark.unit
 class TestServiceModeHealthCheckIntegration:
     """Test integration between service mode and HealthCheck mixin."""
 
@@ -375,6 +378,7 @@ class TestServiceModeHealthCheckIntegration:
         assert health_after["active_invocations"] == 0
 
 
+@pytest.mark.unit
 class TestServiceModeMetricsIntegration:
     """Test integration between service mode and Metrics mixin."""
 
@@ -409,6 +413,7 @@ class TestServiceModeMetricsIntegration:
         assert service_orchestrator._total_invocations == initial_count + 1
 
 
+@pytest.mark.unit
 class TestToolInvocationWorkflowEventEmission:
     """Test tool invocation and workflow event emission integration."""
 
@@ -465,6 +470,7 @@ class TestToolInvocationWorkflowEventEmission:
         assert "Workflow error" in published_event.error
 
 
+@pytest.mark.unit
 class TestWorkflowDefinitionPattern:
     """Test v0.4.0 workflow-driven orchestrator pattern."""
 
@@ -507,6 +513,7 @@ class TestWorkflowDefinitionPattern:
         assert callable(service_orchestrator.validate_contract)
 
 
+@pytest.mark.unit
 class TestEndToEndWorkflow:
     """Test full end-to-end orchestrator service workflow."""
 
@@ -629,6 +636,7 @@ class TestEndToEndWorkflow:
         assert len(service_orchestrator._active_invocations) == 0
 
 
+@pytest.mark.unit
 class TestMixinMethodAccessibility:
     """Test that methods from all mixins are accessible and functional."""
 

@@ -25,6 +25,7 @@ from omnibase_core.models.results.model_onex_message_context import (
 )
 
 
+@pytest.mark.unit
 class TestModelOnexMessageBasicInstantiation:
     """Test basic instantiation with required fields."""
 
@@ -45,6 +46,7 @@ class TestModelOnexMessageBasicInstantiation:
         assert message.level == EnumLogLevel.ERROR
 
 
+@pytest.mark.unit
 class TestModelOnexMessageLevelField:
     """Test level field with EnumLogLevel."""
 
@@ -73,6 +75,7 @@ class TestModelOnexMessageLevelField:
             ModelOnexMessage(summary="Test", level="invalid_level")
 
 
+@pytest.mark.unit
 class TestModelOnexMessageFieldValidation:
     """Test field validation and type safety."""
 
@@ -93,6 +96,7 @@ class TestModelOnexMessageFieldValidation:
             ModelOnexMessage(summary=123)  # Not a string
 
 
+@pytest.mark.unit
 class TestModelOnexMessageFileLocationFields:
     """Test file location fields (file, line, column)."""
 
@@ -131,6 +135,7 @@ class TestModelOnexMessageFileLocationFields:
             ModelOnexMessage(summary="Test", line="not an integer")
 
 
+@pytest.mark.unit
 class TestModelOnexMessageDetailFields:
     """Test detail and suggestion fields."""
 
@@ -162,6 +167,7 @@ class TestModelOnexMessageDetailFields:
         assert "update the configuration file" in message.remediation
 
 
+@pytest.mark.unit
 class TestModelOnexMessageCodeField:
     """Test code field for error/warning codes."""
 
@@ -180,6 +186,7 @@ class TestModelOnexMessageCodeField:
             assert message.code == code
 
 
+@pytest.mark.unit
 class TestModelOnexMessageContextField:
     """Test context field with ModelOnexMessageContext."""
 
@@ -199,6 +206,7 @@ class TestModelOnexMessageContextField:
         assert message.context is None
 
 
+@pytest.mark.unit
 class TestModelOnexMessageTimestampField:
     """Test timestamp field handling."""
 
@@ -216,6 +224,7 @@ class TestModelOnexMessageTimestampField:
         assert message.timestamp is None
 
 
+@pytest.mark.unit
 class TestModelOnexMessageFixableField:
     """Test fixable boolean field."""
 
@@ -242,6 +251,7 @@ class TestModelOnexMessageFixableField:
         assert message.fixable is None
 
 
+@pytest.mark.unit
 class TestModelOnexMessageOriginField:
     """Test origin field for message source."""
 
@@ -260,6 +270,7 @@ class TestModelOnexMessageOriginField:
             assert message.origin == tool
 
 
+@pytest.mark.unit
 class TestModelOnexMessageRenderingFields:
     """Test rendering and documentation fields."""
 
@@ -286,6 +297,7 @@ class TestModelOnexMessageRenderingFields:
         assert message.example == example
 
 
+@pytest.mark.unit
 class TestModelOnexMessageLocalizationField:
     """Test localization support via localized_text field."""
 
@@ -308,6 +320,7 @@ class TestModelOnexMessageLocalizationField:
         assert message.localized_text is None
 
 
+@pytest.mark.unit
 class TestModelOnexMessageSeverityField:
     """Test severity field (in addition to level)."""
 
@@ -328,6 +341,7 @@ class TestModelOnexMessageSeverityField:
         assert message.severity is None
 
 
+@pytest.mark.unit
 class TestModelOnexMessageTypeField:
     """Test type field for message categorization."""
 
@@ -346,6 +360,7 @@ class TestModelOnexMessageTypeField:
             assert message.type == msg_type
 
 
+@pytest.mark.unit
 class TestModelOnexMessageOptionalFields:
     """Test that all optional fields can be None."""
 
@@ -372,6 +387,7 @@ class TestModelOnexMessageOptionalFields:
         assert message.type is None
 
 
+@pytest.mark.unit
 class TestModelOnexMessageSerialization:
     """Test model serialization and deserialization."""
 
@@ -422,6 +438,7 @@ class TestModelOnexMessageSerialization:
         assert restored.code == original.code
 
 
+@pytest.mark.unit
 class TestModelOnexMessageComplexScenarios:
     """Test complex usage scenarios."""
 
@@ -472,6 +489,7 @@ class TestModelOnexMessageComplexScenarios:
         assert "docs.example.com" in message.doc_link
 
 
+@pytest.mark.unit
 class TestModelOnexMessageTypeSafety:
     """Test type safety - comprehensive testing required."""
 

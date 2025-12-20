@@ -5,6 +5,8 @@ Validates CLI execution configuration model functionality including
 validation, serialization, and edge cases.
 """
 
+import pytest
+
 from omnibase_core.enums.enum_output_format import EnumOutputFormat
 from omnibase_core.models.cli.model_cli_execution_config import ModelCliExecutionConfig
 from omnibase_core.models.cli.model_cli_execution_input_data import (
@@ -12,6 +14,7 @@ from omnibase_core.models.cli.model_cli_execution_input_data import (
 )
 
 
+@pytest.mark.unit
 class TestModelCliExecutionConfigBasic:
     """Test basic CLI execution configuration functionality."""
 
@@ -55,6 +58,7 @@ class TestModelCliExecutionConfigBasic:
         assert config.capture_output is False
 
 
+@pytest.mark.unit
 class TestModelCliExecutionConfigMethods:
     """Test methods for managing config data."""
 
@@ -129,6 +133,7 @@ class TestModelCliExecutionConfigMethods:
         assert config.is_debug_mode() is True
 
 
+@pytest.mark.unit
 class TestModelCliExecutionConfigFactoryMethods:
     """Test factory methods for creating configurations."""
 
@@ -159,6 +164,7 @@ class TestModelCliExecutionConfigFactoryMethods:
         assert config.is_verbose is True
 
 
+@pytest.mark.unit
 class TestModelCliExecutionConfigProtocols:
     """Test protocol method implementations."""
 
@@ -198,6 +204,7 @@ class TestModelCliExecutionConfigProtocols:
         assert result is True
 
 
+@pytest.mark.unit
 class TestModelCliExecutionConfigSerialization:
     """Test serialization and deserialization."""
 
@@ -230,6 +237,7 @@ class TestModelCliExecutionConfigSerialization:
         assert restored.output_format == original.output_format
 
 
+@pytest.mark.unit
 class TestModelCliExecutionConfigEdgeCases:
     """Test edge cases and boundary conditions."""
 

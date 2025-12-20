@@ -18,6 +18,7 @@ from pydantic import BaseModel, ValidationError
 from omnibase_core.enums.enum_config_type import EnumConfigType
 
 
+@pytest.mark.unit
 class TestEnumConfigType:
     """Test basic enum functionality."""
 
@@ -116,6 +117,7 @@ class TestEnumConfigType:
         assert str(EnumConfigType.DEVELOPMENT_CONFIG) == "development_config"
 
 
+@pytest.mark.unit
 class TestEnumConfigTypeCategoryMethods:
     """Test category classification methods."""
 
@@ -269,6 +271,7 @@ class TestEnumConfigTypeCategoryMethods:
                 )
 
 
+@pytest.mark.unit
 class TestEnumConfigTypeIntegration:
     """Test integration with other systems."""
 
@@ -343,6 +346,7 @@ class TestEnumConfigTypeIntegration:
         assert json_str == '{"config_type":"metrics_config"}'
 
 
+@pytest.mark.unit
 class TestEnumConfigTypeEdgeCases:
     """Test edge cases and error conditions."""
 
@@ -382,6 +386,7 @@ class TestEnumConfigTypeEdgeCases:
         assert EnumConfigType.PRODUCTION_CONFIG == "production_config"
 
 
+@pytest.mark.unit
 class TestEnumConfigTypeComprehensiveScenarios:
     """Test comprehensive real-world scenarios."""
 

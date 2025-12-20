@@ -14,6 +14,7 @@ from omnibase_core.models.cli.model_cli_execution_resources import (
 )
 
 
+@pytest.mark.unit
 class TestModelCliExecutionResourcesBasic:
     """Test basic resource creation and configuration."""
 
@@ -74,6 +75,7 @@ class TestModelCliExecutionResourcesBasic:
         assert resources.retry_count == 0
 
 
+@pytest.mark.unit
 class TestModelCliExecutionResourcesTimeouts:
     """Test timeout checking functionality."""
 
@@ -112,6 +114,7 @@ class TestModelCliExecutionResourcesTimeouts:
         assert resources.is_timed_out(1.001)
 
 
+@pytest.mark.unit
 class TestModelCliExecutionResourcesRetries:
     """Test retry logic and counter management."""
 
@@ -208,6 +211,7 @@ class TestModelCliExecutionResourcesRetries:
         assert resources.retry_count == 1
 
 
+@pytest.mark.unit
 class TestModelCliExecutionResourcesUserContext:
     """Test user and session context management."""
 
@@ -262,6 +266,7 @@ class TestModelCliExecutionResourcesUserContext:
         assert resources.session_id == session_id
 
 
+@pytest.mark.unit
 class TestModelCliExecutionResourcesProtocols:
     """Test protocol method implementations (Serializable, Nameable, Validatable)."""
 
@@ -310,6 +315,7 @@ class TestModelCliExecutionResourcesProtocols:
         assert resources.validate_instance() is True
 
 
+@pytest.mark.unit
 class TestModelCliExecutionResourcesValidation:
     """Test Pydantic validation and constraints."""
 
@@ -360,6 +366,7 @@ class TestModelCliExecutionResourcesValidation:
             ModelCliExecutionResources(retry_count=-1)
 
 
+@pytest.mark.unit
 class TestModelCliExecutionResourcesEdgeCases:
     """Test edge cases and complex scenarios."""
 

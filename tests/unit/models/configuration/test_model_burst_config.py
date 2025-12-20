@@ -1,8 +1,11 @@
 """Tests for ModelBurstConfig."""
 
+import pytest
+
 from omnibase_core.models.configuration.model_burst_config import ModelBurstConfig
 
 
+@pytest.mark.unit
 class TestModelBurstConfigBasics:
     def test_create_default(self):
         config = ModelBurstConfig()
@@ -17,6 +20,7 @@ class TestModelBurstConfigBasics:
         assert config.burst_duration_seconds == 60
 
 
+@pytest.mark.unit
 class TestModelBurstConfigMethods:
     def test_get_burst_capacity(self):
         config = ModelBurstConfig(burst_capacity_multiplier=2.0)
@@ -88,6 +92,7 @@ class TestModelBurstConfigMethods:
         assert adaptive == 200
 
 
+@pytest.mark.unit
 class TestModelBurstConfigSerialization:
     def test_serialization(self):
         config = ModelBurstConfig(burst_capacity_multiplier=3.0)
