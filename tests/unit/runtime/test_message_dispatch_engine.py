@@ -2638,6 +2638,151 @@ class TestContextInjection:
         assert received_context.correlation_id == correlation_id
         assert received_context.envelope_id == envelope.envelope_id
 
+    @pytest.mark.asyncio
+    async def test_context_fields_propagate_from_envelope(
+        self,
+        dispatch_engine: MessageDispatchEngine,
+    ) -> None:
+        """Verify correlation_id, trace_id, span_id, envelope_id propagate to context.
+
+        This test ensures all tracing/causality IDs from the envelope are correctly
+        propagated to the handler context, enabling full distributed tracing and
+        causality tracking through the message dispatch system.
+        """
+        # Create known UUIDs for each field
+        known_correlation_id = uuid4()
+        known_trace_id = uuid4()
+        known_span_id = uuid4()
+
+        # Create envelope with all tracing fields set
+        envelope = ModelEventEnvelope(
+            payload=UserCreatedEvent(
+                user_id=UUID("00000000-0000-0000-0000-000000000123"), name="Test User"
+            ),
+            correlation_id=known_correlation_id,
+            trace_id=known_trace_id,
+            span_id=known_span_id,
+        )
+
+        # Capture the envelope_id after creation (auto-generated)
+        known_envelope_id = envelope.envelope_id
+
+        # Storage for captured context
+        captured_context: ProtocolHandlerContext | None = None
+
+        async def capturing_handler(
+            env: ModelEventEnvelope[Any], ctx: ProtocolHandlerContext
+        ) -> str:
+            nonlocal captured_context
+            captured_context = ctx
+            return "handled"
+
+        dispatch_engine.register_handler(
+            handler_id="tracing-handler",
+            handler=capturing_handler,
+            category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
+        )
+        dispatch_engine.register_route(
+            ModelDispatchRoute(
+                route_id="tracing-route",
+                topic_pattern="*.user.events.*",
+                message_category=EnumMessageCategory.EVENT,
+                handler_id="tracing-handler",
+            )
+        )
+        dispatch_engine.freeze()
+
+        # Dispatch the message
+        result = await dispatch_engine.dispatch("dev.user.events.v1", envelope)
+
+        # Verify dispatch succeeded
+        assert result.status == EnumDispatchStatus.SUCCESS
+
+        # Verify context was captured
+        assert captured_context is not None
+
+        # Verify ALL tracing fields propagated correctly
+        assert captured_context.correlation_id == known_correlation_id, (
+            f"correlation_id mismatch: expected {known_correlation_id}, "
+            f"got {captured_context.correlation_id}"
+        )
+        assert captured_context.trace_id == known_trace_id, (
+            f"trace_id mismatch: expected {known_trace_id}, "
+            f"got {captured_context.trace_id}"
+        )
+        assert captured_context.span_id == known_span_id, (
+            f"span_id mismatch: expected {known_span_id}, "
+            f"got {captured_context.span_id}"
+        )
+        assert captured_context.envelope_id == known_envelope_id, (
+            f"envelope_id mismatch: expected {known_envelope_id}, "
+            f"got {captured_context.envelope_id}"
+        )
+
+    @pytest.mark.asyncio
+    async def test_context_fields_propagate_with_null_trace_ids(
+        self,
+        dispatch_engine: MessageDispatchEngine,
+    ) -> None:
+        """Verify context correctly handles None trace_id and span_id.
+
+        Distributed tracing fields are optional. This test ensures that when
+        they are not set on the envelope, the context correctly reflects None
+        values rather than failing or providing unexpected defaults.
+        """
+        # Create known UUIDs only for required fields
+        known_correlation_id = uuid4()
+
+        # Create envelope WITHOUT trace_id and span_id
+        envelope = ModelEventEnvelope(
+            payload=UserCreatedEvent(
+                user_id=UUID("00000000-0000-0000-0000-000000000123"), name="Test User"
+            ),
+            correlation_id=known_correlation_id,
+            # trace_id and span_id intentionally omitted (None by default)
+        )
+
+        known_envelope_id = envelope.envelope_id
+
+        captured_context: ProtocolHandlerContext | None = None
+
+        async def capturing_handler(
+            env: ModelEventEnvelope[Any], ctx: ProtocolHandlerContext
+        ) -> str:
+            nonlocal captured_context
+            captured_context = ctx
+            return "handled"
+
+        dispatch_engine.register_handler(
+            handler_id="null-trace-handler",
+            handler=capturing_handler,
+            category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
+        )
+        dispatch_engine.register_route(
+            ModelDispatchRoute(
+                route_id="null-trace-route",
+                topic_pattern="*.user.events.*",
+                message_category=EnumMessageCategory.EVENT,
+                handler_id="null-trace-handler",
+            )
+        )
+        dispatch_engine.freeze()
+
+        result = await dispatch_engine.dispatch("dev.user.events.v1", envelope)
+
+        assert result.status == EnumDispatchStatus.SUCCESS
+        assert captured_context is not None
+
+        # Required fields should be set
+        assert captured_context.correlation_id == known_correlation_id
+        assert captured_context.envelope_id == known_envelope_id
+
+        # Optional trace fields should be None
+        assert captured_context.trace_id is None
+        assert captured_context.span_id is None
+
     def test_register_handler_runtime_host_rejected(
         self, dispatch_engine: MessageDispatchEngine
     ) -> None:

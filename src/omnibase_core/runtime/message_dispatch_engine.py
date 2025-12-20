@@ -1348,6 +1348,10 @@ class MessageDispatchEngine:
 
         node_kind = entry.node_kind
 
+        # Ensure retry_count is non-negative (ModelEffectContext.retry_attempt
+        # has ge=0 constraint). Protect against corrupted envelope data.
+        retry_attempt = max(0, envelope.retry_count)
+
         # Build context based on node_kind
         # Use single return point for consistent protocol assertion
         context: ProtocolHandlerContext
@@ -1358,7 +1362,7 @@ class MessageDispatchEngine:
                 envelope_id=envelope_id,
                 trace_id=trace_id,
                 span_id=span_id,
-                retry_attempt=envelope.retry_count,
+                retry_attempt=retry_attempt,
             )
 
         elif node_kind == EnumNodeKind.COMPUTE:
