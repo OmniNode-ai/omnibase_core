@@ -94,7 +94,6 @@ class PythonASTValidator(ast.NodeVisitor):
             r"^span_id$",
             r"^parent_span_id$",
             r"^example_id$",
-            r"^user_id$",
         ]
 
         # Exceptions - fields that can legitimately be strings

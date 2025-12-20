@@ -58,9 +58,6 @@ from .enum_detection_type import EnumDetectionType
 # Directive type enum (runtime-internal)
 from .enum_directive_type import EnumDirectiveType
 
-# Value type enums
-from .enum_discriminated_value_type import EnumDiscriminatedValueType
-
 # Dispatch status enum
 from .enum_dispatch_status import EnumDispatchStatus
 

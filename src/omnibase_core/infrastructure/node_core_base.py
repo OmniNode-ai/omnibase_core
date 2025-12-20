@@ -228,7 +228,7 @@ class NodeCoreBase(ABC):
 
         except Exception as e:
             self.state["status"] = "failed"
-            self.metrics["error_count"] += 1
+            self._increment_metric("error_count")
 
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
@@ -548,6 +548,16 @@ class NodeCoreBase(ABC):
             "supports_dependency_injection": True,
         }
 
+    def _increment_metric(self, key: str, amount: float = 1.0) -> None:
+        """
+        Increment a metric value atomically.
+
+        Args:
+            key: Metric key to increment
+            amount: Amount to add (default: 1.0)
+        """
+        self.metrics[key] = self.metrics.get(key, 0.0) + amount
+
     async def _update_processing_metrics(
         self,
         processing_time_ms: float,
@@ -560,12 +570,8 @@ class NodeCoreBase(ABC):
             processing_time_ms: Time taken for processing
             success: Whether operation was successful
         """
-        self.metrics["total_operations"] += 1
-
-        if success:
-            self.metrics["success_count"] += 1
-        else:
-            self.metrics["error_count"] += 1
+        self._increment_metric("total_operations")
+        self._increment_metric("success_count" if success else "error_count")
 
         # Update rolling average of processing time
         total_ops = self.metrics["total_operations"]

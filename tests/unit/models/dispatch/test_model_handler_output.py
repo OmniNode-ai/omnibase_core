@@ -1747,6 +1747,22 @@ class TestJsonLedgerSafe:
         error_msg = str(exc_info.value)
         assert "COMPUTE result must be JSON-ledger-safe" in error_msg
 
+    def test_dict_with_int_keys_is_not_ledger_safe(
+        self, sample_envelope_id, sample_correlation_id, sample_handler_id
+    ) -> None:
+        """Test that dict with integer keys is NOT JSON-ledger-safe (only str keys allowed)."""
+        with pytest.raises(ValueError) as exc_info:
+            ModelHandlerOutput(
+                input_envelope_id=sample_envelope_id,
+                correlation_id=sample_correlation_id,
+                handler_id=sample_handler_id,
+                node_kind=EnumNodeKind.COMPUTE,
+                result={1: "value", 2: "another"},  # int keys are not ledger-safe
+            )
+
+        error_msg = str(exc_info.value)
+        assert "COMPUTE result must be JSON-ledger-safe" in error_msg
+
 
 # ============================================================================
 # COMPUTE Builder Methods Tests (OMN-941)

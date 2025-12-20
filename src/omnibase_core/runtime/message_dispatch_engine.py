@@ -1450,22 +1450,24 @@ class MessageDispatchEngine:
             Returns a copy to prevent external modification.
             For high-frequency monitoring, consider caching the result.
             For structured metrics, use get_structured_metrics() instead.
+            Thread-safe: Protected by metrics lock to prevent torn reads.
 
         .. versionadded:: 0.4.0
         """
-        # Return a copy to prevent external modification
-        # TypedDict cast is safe since _metrics is typed as TypedDictLegacyDispatchMetrics
-        return TypedDictLegacyDispatchMetrics(
-            dispatch_count=self._metrics["dispatch_count"],
-            dispatch_success_count=self._metrics["dispatch_success_count"],
-            dispatch_error_count=self._metrics["dispatch_error_count"],
-            total_latency_ms=self._metrics["total_latency_ms"],
-            handler_execution_count=self._metrics["handler_execution_count"],
-            handler_error_count=self._metrics["handler_error_count"],
-            routes_matched_count=self._metrics["routes_matched_count"],
-            no_handler_count=self._metrics["no_handler_count"],
-            category_mismatch_count=self._metrics["category_mismatch_count"],
-        )
+        # Thread-safe snapshot of metrics
+        # Must hold lock to prevent torn reads during concurrent updates
+        with self._metrics_lock:
+            return TypedDictLegacyDispatchMetrics(
+                dispatch_count=self._metrics["dispatch_count"],
+                dispatch_success_count=self._metrics["dispatch_success_count"],
+                dispatch_error_count=self._metrics["dispatch_error_count"],
+                total_latency_ms=self._metrics["total_latency_ms"],
+                handler_execution_count=self._metrics["handler_execution_count"],
+                handler_error_count=self._metrics["handler_error_count"],
+                routes_matched_count=self._metrics["routes_matched_count"],
+                no_handler_count=self._metrics["no_handler_count"],
+                category_mismatch_count=self._metrics["category_mismatch_count"],
+            )
 
     def get_structured_metrics(self) -> ModelDispatchMetrics:
         """

@@ -39,7 +39,6 @@ __all__ = ["ServiceHandlerRegistry"]
 import logging
 import threading
 from collections import defaultdict
-from typing import TYPE_CHECKING
 from uuid import uuid4
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -134,7 +133,7 @@ class ServiceHandlerRegistry:
             self,
             handler: ProtocolMessageHandler,
             message_types: set[str],
-            registration_id: str,
+            registration_id: UUID,
         ) -> None:
             self.handler = handler
             self.message_types = message_types
@@ -221,7 +220,7 @@ class ServiceHandlerRegistry:
         self._validate_execution_shape(handler_id, category, node_kind)
 
         # Create registration entry
-        registration_id = str(uuid4())
+        registration_id = uuid4()
         entry = ServiceHandlerRegistry._HandlerEntry(
             handler=handler,
             message_types=effective_message_types,

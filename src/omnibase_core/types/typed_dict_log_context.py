@@ -11,7 +11,7 @@ All fields are optional since context is built incrementally.
 
 from __future__ import annotations
 
-from typing import NotRequired, TypedDict
+from typing import TypedDict
 
 __all__ = ["TypedDictLogContext"]
 

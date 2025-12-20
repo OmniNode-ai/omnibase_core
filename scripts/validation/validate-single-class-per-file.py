@@ -21,10 +21,10 @@ from typing import Any
 
 
 class ClassDefinitionDetector(ast.NodeVisitor):
-    """AST visitor to detect module-level class definitions in Python code.
+    """AST visitor to detect non-nested class definitions in Python code.
 
-    Detects classes defined at module scope (not nested inside other classes).
-    Note: This includes classes defined inside functions at module scope.
+    Detects classes that are not nested inside other classes.
+    This includes both module-level classes and classes defined inside functions.
     """
 
     def __init__(self, filepath: str):

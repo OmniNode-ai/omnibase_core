@@ -130,13 +130,6 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_node_kind import EnumNodeKind
 
-if TYPE_CHECKING:
-    from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
-    from omnibase_core.models.projection.model_projection_base import (
-        ModelProjectionBase,
-    )
-    from omnibase_core.models.reducer.model_intent import ModelIntent
-
 # Type variable for COMPUTE result
 T = TypeVar("T")
 
