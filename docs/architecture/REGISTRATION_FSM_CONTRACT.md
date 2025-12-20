@@ -54,12 +54,17 @@ This ordering ensures that:
 ## Table of Contents
 
 1. [States](#states)
+   - [State Type Terminology](#state-type-terminology)
+   - [Recovery Terminology Disambiguation](#recovery-terminology-disambiguation)
+   - [State Definitions](#state-definitions)
 2. [Transitions](#transitions)
 3. [Guards](#guards)
 4. [State Diagram](#state-diagram)
 5. [Intent Emission](#intent-emission)
 6. [Validation Rules](#validation-rules)
 7. [Implementation Notes](#implementation-notes)
+   - [Retry Limit Enforcement](#retry-limit-enforcement)
+   - [Timeout Handling](#timeout-handling)
 8. [Error Handling](#error-handling)
 9. [Related Documentation](#related-documentation)
 
@@ -71,15 +76,32 @@ The Registration FSM defines 10 states across 6 state types.
 
 ### State Type Terminology
 
-> **Important Distinction**: This FSM distinguishes between **success states** and **terminal states**:
->
-> - **Success State** (`state_type: success`): A stable state indicating successful completion of the primary workflow goal. Success states may have outgoing transitions for graceful lifecycle management (e.g., shutdown). Example: `registered` allows `DEREGISTER` transition.
->
-> - **Terminal State** (`state_type: terminal`): A final state with no outgoing transitions. Once entered, the FSM cannot leave this state. Example: `deregistered` has no outgoing transitions.
->
-> The `is_terminal` field indicates whether a state has outgoing transitions (`false`) or not (`true`). A success state can have `is_terminal: false` if it allows graceful shutdown transitions.
+This FSM uses a **three-dimensional state classification system** to precisely describe state behavior:
 
-**Understanding `registered` vs `deregistered`**:
+| Dimension | Field | Question It Answers |
+|-----------|-------|---------------------|
+| **Semantic Role** | `state_type` | What is this state's purpose in the workflow? |
+| **Transition Finality** | `is_terminal` | Can the FSM leave this state? |
+| **Error Recovery** | `is_recoverable` | Does this state support retry/recovery operations? |
+
+#### State Type Values (Semantic Role)
+
+| `state_type` | Meaning | Examples |
+|--------------|---------|----------|
+| `initial` | Entry point for the FSM | `unregistered` |
+| `operational` | In-progress work (transient) | `validating`, `registering_postgres`, `registering_consul`, `deregistering` |
+| `snapshot` | Intermediate checkpoint | `postgres_registered` |
+| `success` | Workflow goal achieved | `registered` |
+| `error` | Failure requiring recovery | `partial_registered`, `failed` |
+| `terminal` | Final state, no exit | `deregistered` |
+
+#### Key Distinctions
+
+> **Success vs Terminal**: A **success state** (`state_type: success`) indicates the workflow goal was achieved, but the FSM may still allow lifecycle transitions (e.g., graceful shutdown). A **terminal state** (`state_type: terminal`) has no outgoing transitions whatsoever.
+
+> **Terminal vs Recoverable**: The `is_terminal` field indicates whether transitions OUT of a state exist. The `is_recoverable` field indicates whether ERROR RECOVERY (retry) is meaningful. These are independent concepts.
+
+#### Understanding `registered` vs `deregistered`
 
 | Field | `registered` | `deregistered` | Explanation |
 |-------|-------------|----------------|-------------|
@@ -87,9 +109,67 @@ The Registration FSM defines 10 states across 6 state types.
 | `is_terminal` | `false` | `true` | `registered` has one outgoing transition (`DEREGISTER`); `deregistered` has none |
 | `is_recoverable` | `false` | `false` | Neither state allows error recovery (both are "final" in different senses) |
 
-**Why `registered` has `is_recoverable: false`**: The `is_recoverable` field indicates whether error recovery mechanisms (like `RETRY`) are applicable. Since `registered` is a success state (not an error state), recovery is not meaningful - there is nothing to recover from. The node has successfully completed registration. The only valid transition out of `registered` is intentional deregistration via `DEREGISTER`, not error recovery.
+#### Why `registered` Has `is_recoverable: false`
 
-**Why `registered` has `is_terminal: false`**: Although `registered` is a "final" success state for the registration workflow, it is not terminal in the FSM sense because it permits graceful lifecycle management. A fully registered node can still receive a shutdown signal (`DEREGISTER`) and transition to `deregistering`. This is intentional: success states should allow graceful shutdown without requiring error-based transitions.
+The `is_recoverable` field specifically indicates whether **error recovery mechanisms** (like `RETRY`) are applicable to a state. It does NOT indicate whether the state has outgoing transitions.
+
+**Key insight**: `is_recoverable` answers the question "Is there an error to fix?" not "Can the FSM transition from here?"
+
+| State Category | `is_recoverable` | Rationale |
+|----------------|------------------|-----------|
+| Success states | `false` | No error exists; nothing to recover from |
+| Terminal states | `false` | FSM has ended; no transitions possible |
+| Error states | `true` | Error exists that can be corrected via retry |
+| Operational states | `true` | Transient failures can be recovered |
+
+Since `registered` is a **success state** (not an error state), recovery is not meaningful - there is nothing to recover from. The node has successfully completed registration. The only valid transition out of `registered` is **intentional deregistration** via `DEREGISTER`, which is a lifecycle operation, not error recovery.
+
+#### Why `registered` Has `is_terminal: false`
+
+Although `registered` is a "final" success state for the registration workflow, it is NOT terminal in the FSM sense because it permits **graceful lifecycle management**. A fully registered node can still receive a shutdown signal (`DEREGISTER`) and transition to `deregistering`.
+
+This design is intentional: success states should allow graceful shutdown without requiring error-based transitions.
+
+#### Complete State Classification Reference
+
+| State | `state_type` | `is_terminal` | `is_recoverable` | Outgoing Transitions |
+|-------|--------------|---------------|------------------|---------------------|
+| `unregistered` | initial | false | true | `REGISTER` |
+| `validating` | operational | false | true | `VALIDATION_SUCCESS`, `VALIDATION_FAILED` |
+| `registering_postgres` | operational | false | true | `POSTGRES_SUCCESS`, `POSTGRES_FAILED` |
+| `postgres_registered` | snapshot | false | true | `CONTINUE_REGISTRATION` |
+| `registering_consul` | operational | false | true | `CONSUL_SUCCESS`, `CONSUL_FAILED` |
+| `registered` | success | false | false | `DEREGISTER` (lifecycle, not recovery) |
+| `partial_registered` | error | false | true | `RETRY`, `RETRY_POSTGRES`, `ABANDON` |
+| `deregistering` | operational | false | true | `DEREGISTRATION_COMPLETE` |
+| `deregistered` | terminal | true | false | (none) |
+| `failed` | error | false | true | `RETRY`, `ABANDON` |
+
+### Recovery Terminology Disambiguation
+
+The term "recovery" appears in multiple contexts within this FSM contract. This section clarifies the distinct meanings to avoid confusion.
+
+| Context | Meaning | Mechanism | Example |
+|---------|---------|-----------|---------|
+| **Error Recovery** (`is_recoverable`) | State supports retry/recovery from failure | `RETRY`, `RETRY_POSTGRES` triggers with guard-limited attempts | `partial_registered` -> `registering_consul` via `RETRY` |
+| **Crash Recovery** (FSM Persistence) | Resuming FSM after process crash | State persistence + Orchestrator replay | Node restarts, FSM resumes from `postgres_registered` |
+| **Partial Recovery** | Completing registration after partial failure | Targeted retry of failed component only | `partial_registered` -> `registered` via `RECOVERY_COMPLETE` |
+| **Timeout Recovery** | Handling state timeout gracefully | Orchestrator timeout detection + failure trigger | `registering_consul` timeout -> `CONSUL_FAILED` |
+
+**Key Distinctions**:
+
+1. **`is_recoverable` vs Crash Recovery**: The `is_recoverable` field indicates whether **error recovery mechanisms** (retry triggers) are applicable to a state. It does NOT relate to crash recovery, which is an Orchestrator-level concern involving FSM state persistence and replay.
+
+2. **Retry-After-Failure vs Crash-After-Failure**:
+   - **Retry-After-Failure**: The FSM receives a failure trigger (e.g., `CONSUL_FAILED`), transitions to an error state, and can be retried via `RETRY` trigger. The process remains running.
+   - **Crash-After-Failure**: The process crashes. On restart, the Orchestrator reads persisted FSM state and replays from the last checkpoint. This is independent of `is_recoverable`.
+
+3. **Partial vs Full Recovery**: `partial_registered` state enables **partial recovery** - retrying only the failed component (Consul or PostgreSQL) rather than restarting the entire workflow. The `failed` state requires **full recovery** - restarting from `validating`.
+
+> **See Also**:
+> - [Crash Recovery Considerations](#transition-6-start_consul_registration) for crash recovery during CONTINUE processing
+> - [Retry Limit Enforcement](#retry-limit-enforcement) for retry-after-failure mechanics
+> - [Deregistration Failure Handling](#deregistering-operational-state) for timeout recovery during shutdown
 
 ### State Definitions
 
@@ -263,35 +343,18 @@ validation_rules:
 
 #### Why `is_recoverable: false` for a Success State?
 
-The `registered` state has `is_recoverable: false`, which may seem counterintuitive since it allows the `DEREGISTER` transition. This section clarifies the semantics of `is_recoverable`:
+The `registered` state has `is_recoverable: false`, which may seem counterintuitive since it allows the `DEREGISTER` transition. The key distinction:
 
-**What `is_recoverable` Means**:
+- **`is_recoverable`** answers: "Is there an error to fix?"
+- **`is_terminal`** answers: "Can the FSM transition from here?"
 
-`is_recoverable` indicates whether the state represents an **error condition that can be recovered from** via retry or corrective action. It does NOT indicate whether the state has outgoing transitions.
+For `registered`:
+- `is_recoverable: false` because there is no error - the workflow succeeded
+- `is_terminal: false` because the `DEREGISTER` transition exists for graceful shutdown
 
-| Property | Meaning | `registered` Value |
-|----------|---------|-------------------|
-| `is_terminal` | Has no outgoing transitions | `false` (has `DEREGISTER` transition) |
-| `is_recoverable` | Represents an error that can be fixed | `false` (not an error state) |
-| `state_type` | Semantic category of the state | `success` (goal achieved) |
+The `DEREGISTER` transition is a **lifecycle operation** (graceful shutdown), not a **recovery operation**. Recovery implies fixing something that went wrong; deregistration is a normal operational flow.
 
-**Why Success States Are Not Recoverable**:
-
-1. **No Error to Recover From**: The `registered` state indicates successful completion of the registration workflow. There is no error, failure, or issue to "recover" from.
-
-2. **Recovery vs. Lifecycle**: The `DEREGISTER` transition is a **lifecycle operation** (graceful shutdown), not a **recovery operation**. Recovery implies fixing something that went wrong; deregistration is a normal operational flow.
-
-3. **Contrast with Error States**: Error states like `partial_registered` and `failed` have `is_recoverable: true` because they represent failures that can be corrected via `RETRY` or `RETRY_POSTGRES` triggers.
-
-**Comparison Table**:
-
-| State | `state_type` | `is_recoverable` | Why? |
-|-------|--------------|------------------|------|
-| `registered` | success | false | Goal achieved, nothing to recover from |
-| `deregistered` | terminal | false | Final state, no transitions possible |
-| `partial_registered` | error | true | Error condition, can retry failed component |
-| `failed` | error | true | Error condition, can retry full workflow |
-| `registering_postgres` | operational | true | Transient state, can recover from timeout/failure |
+> **See Also**: [State Type Terminology](#state-type-terminology) for the complete three-dimensional classification system and comparison tables.
 
 ---
 
@@ -347,49 +410,278 @@ validation_rules: []
 
 #### Deregistration Failure Handling
 
+> **CRITICAL**: Deregistration uses a **best-effort cleanup strategy** that may create orphaned resources. This section documents the failure modes, potential orphaned resources, and required cleanup mechanisms.
+
 **Timeout Behavior**: If deregistration times out (exceeds `timeout_ms: 15000`), the FSM uses a **best-effort cleanup strategy**:
 
 1. **Proceed to Terminal State**: The Orchestrator emits `DEREGISTRATION_COMPLETE` even if one or both deregistrations failed or timed out. The FSM transitions to `deregistered` to allow the node to complete shutdown.
 
-2. **Rationale**: During graceful shutdown, blocking indefinitely on cleanup failures is counterproductive. The node needs to stop running regardless of cleanup success.
+2. **Rationale**: During graceful shutdown, blocking indefinitely on cleanup failures is counterproductive. The node needs to stop running regardless of cleanup success. Retrying deregistration during shutdown would:
+   - Delay the shutdown process indefinitely if the external system is unavailable
+   - Consume resources on a node that is trying to terminate
+   - Create unpredictable shutdown timing, complicating orchestration (e.g., Kubernetes pod termination)
+   - Risk leaving the node in a zombie state where it's neither running nor cleanly terminated
 
 **Potential Orphaned Resources**:
 
 When deregistration fails or times out, the following orphaned resources may exist:
 
-| Resource | Location | Symptoms | Remediation |
-|----------|----------|----------|-------------|
-| Service advertisement | Consul | Traffic routed to stopped node, health checks fail | Manual `consul services deregister` or wait for TTL expiry |
-| Node registration record | PostgreSQL | Node appears in database but is not running | Garbage collection job (see below) |
+| Resource | Location | Symptoms | Detection | Remediation |
+|----------|----------|----------|-----------|-------------|
+| Service advertisement | Consul | Traffic routed to stopped node; health checks fail; 503/504 errors in downstream services | `consul catalog services` shows node; health checks critical | Manual `consul services deregister <service-id>` or wait for health check TTL expiry (default: 60s) |
+| Node registration record | PostgreSQL | Node appears in database with stale `last_heartbeat`; dashboard shows phantom nodes | Query: `SELECT * FROM node_registrations WHERE last_heartbeat < NOW() - INTERVAL '5 minutes'` | Garbage collection job (see below) |
+| Consul session | Consul | Orphaned session locks; blocked leader elections | `consul session list` shows sessions for non-existent nodes | Session TTL expiry (default: 10s) or manual `consul session destroy` |
+| Health check definition | Consul | Consul continues polling non-existent endpoint | `consul catalog checks` shows critical checks for unknown services | Automatic cleanup with service deregistration |
 
-**Garbage Collection Recommendation**:
+**Failure Scenarios**:
 
-Implement a periodic garbage collection job to clean up orphaned registrations:
+| Scenario | Consul State | PostgreSQL State | Impact |
+|----------|--------------|------------------|--------|
+| Both deregistrations succeed | Removed | Removed | Clean shutdown (expected case) |
+| Consul deregistration times out | **Still advertising** | Removed | Traffic routed to dead node until health check TTL expires |
+| PostgreSQL deregistration times out | Removed | **Record persists** | Phantom node in database; affects node count metrics |
+| Both deregistrations time out | **Still advertising** | **Record persists** | Maximum orphan exposure; requires both cleanup mechanisms |
+| Network partition during shutdown | Unknown | Unknown | Indeterminate state; garbage collection resolves eventually |
+
+**Why No Automatic Retry for Deregistration**:
+
+Unlike the `partial_registered` state which supports `RETRY` and `RETRY_POSTGRES` triggers, the `deregistering` state intentionally **does not support retry mechanisms**:
+
+1. **Shutdown Context**: The node is terminating. Retrying would delay shutdown and consume resources on a dying process.
+
+2. **No Return Path**: Once deregistration is initiated, the node cannot meaningfully "go back" to `registered` - it's already shutting down.
+
+3. **External Cleanup Preferred**: Orphaned resources are better handled by external garbage collection jobs that run on healthy nodes, not by a terminating node.
+
+4. **Graceful Degradation**: Consul health checks naturally expire (TTL-based), providing automatic eventual consistency without node participation.
+
+**Garbage Collection Implementation**:
+
+Production systems **MUST** implement garbage collection for orphaned registrations. This is not optional - it's required to maintain system integrity after deregistration failures.
+
+**PostgreSQL Garbage Collection Job**:
 
 ```python
-# Example garbage collection query
-async def cleanup_orphaned_registrations(
-    max_age_seconds: int = 3600,
-) -> int:
+# Example: PostgreSQL garbage collection for orphaned node registrations
+# Run this as a periodic job (e.g., every 5 minutes via cron or Kubernetes CronJob)
+
+import asyncio
+from datetime import timedelta
+from typing import NamedTuple
+
+class CleanupResult(NamedTuple):
+    """Result of garbage collection run."""
+    nodes_cleaned: int
+    node_ids: list[str]
+    duration_ms: float
+
+
+async def cleanup_orphaned_postgres_registrations(
+    db_pool: "asyncpg.Pool",
+    max_age: timedelta = timedelta(hours=1),
+    batch_size: int = 100,
+) -> CleanupResult:
     """
     Remove PostgreSQL registration records for nodes that have been
-    offline longer than max_age_seconds.
+    offline longer than max_age.
 
-    Returns number of records cleaned up.
+    This handles orphaned records from:
+    - Deregistration timeouts
+    - Node crashes without graceful shutdown
+    - Network partitions during shutdown
+
+    Args:
+        db_pool: AsyncPG connection pool
+        max_age: Maximum age before considering a registration orphaned
+        batch_size: Maximum records to delete per run (prevents long transactions)
+
+    Returns:
+        CleanupResult with count and IDs of cleaned records
     """
-    query = """
-        DELETE FROM node_registrations
-        WHERE last_heartbeat < NOW() - INTERVAL '%s seconds'
-          AND status != 'deregistered'
-        RETURNING node_id
-    """
-    result = await db.execute(query, max_age_seconds)
-    return len(result)
+    import time
+    start_time = time.monotonic()
+
+    # Use a transaction with row locking to prevent race conditions
+    async with db_pool.acquire() as conn:
+        async with conn.transaction():
+            # Find and lock orphaned records
+            query = """
+                WITH orphaned AS (
+                    SELECT node_id, last_heartbeat, status
+                    FROM node_registrations
+                    WHERE last_heartbeat < NOW() - $1::interval
+                      AND status NOT IN ('deregistered', 'unregistered')
+                    ORDER BY last_heartbeat ASC
+                    LIMIT $2
+                    FOR UPDATE SKIP LOCKED
+                )
+                DELETE FROM node_registrations
+                WHERE node_id IN (SELECT node_id FROM orphaned)
+                RETURNING node_id, last_heartbeat
+            """
+            results = await conn.fetch(
+                query,
+                max_age,
+                batch_size,
+            )
+
+            node_ids = [str(row["node_id"]) for row in results]
+
+            # Log for observability
+            if node_ids:
+                # Emit metric: registration_gc_cleaned_total
+                await conn.execute(
+                    """
+                    INSERT INTO registration_gc_log (
+                        run_timestamp, nodes_cleaned, node_ids
+                    ) VALUES (NOW(), $1, $2)
+                    """,
+                    len(node_ids),
+                    node_ids,
+                )
+
+    duration_ms = (time.monotonic() - start_time) * 1000
+    return CleanupResult(
+        nodes_cleaned=len(node_ids),
+        node_ids=node_ids,
+        duration_ms=duration_ms,
+    )
+
+
+# Example: Kubernetes CronJob specification
+# apiVersion: batch/v1
+# kind: CronJob
+# metadata:
+#   name: registration-gc
+# spec:
+#   schedule: "*/5 * * * *"  # Every 5 minutes
+#   jobTemplate:
+#     spec:
+#       template:
+#         spec:
+#           containers:
+#           - name: gc
+#             image: omninode/registration-gc:latest
+#             command: ["python", "-m", "registration_gc"]
+#           restartPolicy: OnFailure
 ```
 
-**v1.0 Limitation - No `partial_deregistered` State**:
+**Consul Garbage Collection Job**:
 
-> **Note**: This FSM does not implement a `partial_deregistered` error state (analogous to `partial_registered`). In v1.0, deregistration failures proceed directly to `deregistered` with best-effort cleanup. A future enhancement may add a `partial_deregistered` state for scenarios requiring guaranteed cleanup before shutdown completion.
+```python
+# Example: Consul garbage collection for orphaned service registrations
+# This complements the PostgreSQL GC by ensuring Consul consistency
+
+import httpx
+from typing import NamedTuple
+
+
+class ConsulCleanupResult(NamedTuple):
+    """Result of Consul garbage collection run."""
+    services_deregistered: int
+    service_ids: list[str]
+    already_healthy: int
+
+
+async def cleanup_orphaned_consul_services(
+    consul_addr: str = "http://localhost:8500",
+    service_name: str = "onex-node",
+    critical_duration_seconds: int = 300,
+) -> ConsulCleanupResult:
+    """
+    Deregister Consul services that have been in critical health state
+    longer than the specified duration.
+
+    This handles:
+    - Services where the node crashed without deregistration
+    - Services orphaned by deregistration timeout
+    - Services with expired health check TTLs
+
+    Args:
+        consul_addr: Consul HTTP API address
+        service_name: Name of the service to check
+        critical_duration_seconds: How long a service must be critical before cleanup
+
+    Returns:
+        ConsulCleanupResult with cleanup statistics
+    """
+    async with httpx.AsyncClient() as client:
+        # Get all health checks for the service
+        response = await client.get(
+            f"{consul_addr}/v1/health/checks/{service_name}"
+        )
+        response.raise_for_status()
+        checks = response.json()
+
+        services_to_deregister = []
+        already_healthy = 0
+
+        for check in checks:
+            if check["Status"] == "critical":
+                # Check how long it's been critical
+                # Note: Consul doesn't expose duration directly;
+                # use check output or external tracking
+                service_id = check["ServiceID"]
+                services_to_deregister.append(service_id)
+            else:
+                already_healthy += 1
+
+        # Deregister orphaned services
+        deregistered = []
+        for service_id in services_to_deregister:
+            try:
+                await client.put(
+                    f"{consul_addr}/v1/agent/service/deregister/{service_id}"
+                )
+                deregistered.append(service_id)
+            except httpx.HTTPError:
+                # Log but continue - service may have been cleaned up already
+                pass
+
+        return ConsulCleanupResult(
+            services_deregistered=len(deregistered),
+            service_ids=deregistered,
+            already_healthy=already_healthy,
+        )
+```
+
+**Garbage Collection Metrics**:
+
+The garbage collection jobs should emit the following metrics for observability:
+
+| Metric | Type | Description |
+|--------|------|-------------|
+| `registration_gc_run_total` | counter | Number of GC runs executed |
+| `registration_gc_cleaned_total` | counter | Total orphaned records cleaned |
+| `registration_gc_duration_ms` | histogram | GC job execution duration |
+| `registration_gc_errors_total` | counter | GC job failures |
+| `consul_gc_deregistered_total` | counter | Consul services force-deregistered |
+
+**v1.0 Limitations**:
+
+> **v1.0 Limitation - No `partial_deregistered` State**:
+>
+> This FSM does not implement a `partial_deregistered` error state (analogous to `partial_registered`). In v1.0, deregistration failures proceed directly to `deregistered` with best-effort cleanup.
+>
+> **Rationale**: A `partial_deregistered` state would require:
+> - The node to remain alive to process retry transitions
+> - Complex logic to determine which cleanup succeeded
+> - A mechanism to eventually force-terminate if cleanup never succeeds
+>
+> These requirements conflict with the shutdown context. External garbage collection is more appropriate.
+>
+> **Future Enhancement**: A future version may add `partial_deregistered` for use cases requiring guaranteed cleanup before process termination (e.g., when releasing exclusive resources like distributed locks).
+
+> **v1.0 Limitation - No `RETRY_DEREGISTRATION` Trigger**:
+>
+> This FSM does not implement a `RETRY_DEREGISTRATION` trigger for the `deregistering` state. Unlike registration retries (`RETRY`, `RETRY_POSTGRES`), deregistration retries are not supported.
+>
+> **Rationale**: Retry mechanisms assume the node remains operational to process retry outcomes. During shutdown:
+> - Process may be killed by orchestrator (SIGKILL) before retry completes
+> - Resources are being released, making retries unreliable
+> - External garbage collection provides eventual consistency without node participation
+>
+> **Recommended Alternative**: Implement robust garbage collection jobs as documented above rather than in-process retry mechanisms.
 
 ---
 
@@ -617,6 +909,8 @@ actions:
 **CONTINUE Trigger Semantics**: The `CONTINUE` trigger enables automatic state progression without requiring an external event. Unlike external triggers (e.g., `REGISTER`, `DEREGISTER`) or Effect-sourced triggers (e.g., `POSTGRES_SUCCEEDED`), `CONTINUE` is a **synthetic internal trigger** that the Reducer emits to itself.
 
 > **TL;DR**: Use single-step execution (recommended for production, <10ms latency). Use two-step only for debugging (adds 50-100ms but makes checkpoint observable).
+>
+> **CRITICAL - Error Handling**: CONTINUE failures MUST trigger `FATAL_ERROR` transition to `failed` state. Since CONTINUE is internal with no external retry mechanism, failures indicate system-level issues requiring investigation. See [CONTINUE Trigger Failure Handling](#continue-trigger-failure-handling) for detailed implementation patterns and recovery strategies.
 
 **Implementation Pattern**:
 
@@ -679,11 +973,21 @@ actions:
 
    **When to Choose Each Approach**:
 
-   | Approach | Recommended Environment | Rationale |
-   |----------|------------------------|-----------|
-   | **Single-step** (recommended) | Production | Lower latency (<10ms vs 50-100ms), simpler recovery, fewer moving parts |
-   | **Two-step** | Development/Debugging | Observable checkpoint state aids debugging; useful when tracing FSM behavior step-by-step |
-   | **Two-step** | High-reliability requirements | External checkpoint enables third-party monitoring of intermediate states |
+   | Approach | Environment | Priority | Rationale |
+   |----------|-------------|----------|-----------|
+   | **Single-step** (recommended) | Production | Latency > Observability | Lower latency (<10ms vs 50-100ms), simpler crash recovery (replay from `registering_postgres`), fewer moving parts, atomic transition semantics |
+   | **Two-step** | Development/Debugging | Observability > Latency | Observable checkpoint state aids debugging; step-by-step FSM tracing; can pause at `postgres_registered` for inspection |
+   | **Two-step** | Staging/QA | Observability > Latency | Validate FSM behavior before production; verify checkpoint persistence works correctly |
+   | **Two-step** | High-reliability/Audit | Compliance > Latency | External checkpoint enables third-party monitoring; audit trail shows explicit intermediate states; crash recovery preserves exact checkpoint |
+
+   **Decision Matrix**:
+
+   | Your Priority | Choose | Latency Impact | Crash Recovery Behavior |
+   |---------------|--------|----------------|------------------------|
+   | **Minimize latency** | Single-step | <10ms | Replay from `registering_postgres`; PostgreSQL upsert re-attempted (idempotent) |
+   | **Maximize observability** | Two-step | 50-100ms | Resume from `postgres_registered`; Orchestrator re-emits `CONTINUE` |
+   | **Audit/compliance requirements** | Two-step | 50-100ms | Persisted checkpoint provides audit trail; third-party systems can observe intermediate state |
+   | **Debug FSM issues** | Two-step | 50-100ms | Can inspect state at `postgres_registered` before Consul registration |
 
    **Recommendation**: Use single-step execution in production. The latency savings (40-90ms per registration) compound across high-throughput systems. Two-step execution is valuable during development or when debugging FSM behavior, as it makes the `postgres_registered` checkpoint externally observable.
 
@@ -996,6 +1300,13 @@ Guards are conditions that must evaluate to `true` for a transition to occur.
 
 **Cross-Reference**: For retry limit guard (`retry_count < 3`) enforcement details including counter increment semantics, reset events, and exhaustion handling, see [Retry Limit Enforcement](#retry-limit-enforcement).
 
+> **See Also - Retry Transitions**: The `retry_count < 3` guard is used in:
+> - [Transition 9: retry_consul](#transition-9-retry_consul) - Retrying Consul from `partial_registered`
+> - [Transition 10: retry_postgres](#transition-10-retry_postgres) - Retrying PostgreSQL from `partial_registered`
+> - [Transition 14: retry_from_failed](#transition-14-retry_from_failed) - Retrying full workflow from `failed`
+>
+> When this guard fails (i.e., `retry_count >= 3`), the **Orchestrator** (not the Reducer) must detect the guard failure and emit the `RETRY_EXHAUSTED` trigger to transition to `failed` state. See [Exhaustion Handling](#retry-limit-enforcement) for implementation details.
+
 ### Guard Expression Syntax
 
 Guards use a **strict 3-token expression format**:
@@ -1004,7 +1315,12 @@ Guards use a **strict 3-token expression format**:
 <field> <operator> <value>
 ```
 
-**CRITICAL**: The expression format is EXACTLY 3 tokens separated by whitespace. This is a strict requirement, not a flexible format.
+> **CRITICAL - WHITESPACE IS MANDATORY**: Operators MUST be surrounded by whitespace. Expressions like `retry_count<3` or `postgres_applied==true` are **INVALID** and will fail with `GUARD_SYNTAX_ERROR`. This is a strict, non-negotiable requirement of the parser.
+
+**Format Requirements**:
+- The expression format is EXACTLY 3 tokens separated by whitespace
+- Whitespace around operators is **REQUIRED**, not optional
+- This is a strict requirement, not a flexible format
 
 Where:
 - **`<field>`**: Context field name (alphanumeric with underscores, must not start with a digit)
@@ -1013,30 +1329,61 @@ Where:
 
 #### Token Separation Rules
 
-Tokens are separated by whitespace (spaces or tabs). The parser splits on whitespace first, then validates exactly 3 tokens.
+> **MANDATORY**: Whitespace (spaces or tabs) MUST separate all three tokens. The parser splits on whitespace first, then validates exactly 3 tokens. Expressions without whitespace around operators are treated as a single token and rejected.
 
-**Whitespace Handling**:
+**Whitespace Requirements**:
+- **REQUIRED**: At least one space or tab between field and operator
+- **REQUIRED**: At least one space or tab between operator and value
 - Multiple consecutive whitespace characters are treated as a single delimiter
 - Leading and trailing whitespace is trimmed before parsing
 - Tabs and spaces are equivalent whitespace delimiters
 
 **Valid Format Examples**:
 ```text
-retry_count < 3                    # Standard spacing
+retry_count < 3                    # Standard spacing (CORRECT)
 retry_count  <  3                  # Multiple spaces (valid, treated as single delimiter)
   retry_count < 3                  # Leading whitespace (trimmed)
 retry_count	<	3                  # Tabs as delimiters (valid)
+postgres_applied == true           # Whitespace around == (CORRECT)
 ```
 
 **Invalid Format Examples** (Common Mistakes):
 ```text
 retry_count<3                      # INVALID: No whitespace around operator (1 token)
+                                   #   → Error: GUARD_SYNTAX_ERROR
+                                   #   → Message: "Expression 'retry_count<3' has 1 token(s), expected 3"
+
 postgres_applied==true             # INVALID: No whitespace around operator (1 token)
+                                   #   → Error: GUARD_SYNTAX_ERROR
+                                   #   → Message: "Expression 'postgres_applied==true' has 1 token(s), expected 3"
+
+retry_count< 3                     # INVALID: Operator attached to field (2 tokens)
+                                   #   → Error: GUARD_SYNTAX_ERROR
+                                   #   → Message: "Expression has 2 token(s), expected 3"
+
+retry_count <3                     # INVALID: Operator attached to value (2 tokens)
+                                   #   → Error: GUARD_SYNTAX_ERROR
+                                   #   → Message: "Expression has 2 token(s), expected 3"
+
+consul_applied!=false              # INVALID: No whitespace around != (1 token)
+                                   #   → Error: GUARD_SYNTAX_ERROR
+
+retry_count>=3                     # INVALID: No whitespace around >= (1 token)
+                                   #   → Error: GUARD_SYNTAX_ERROR
+
 retry_count < 3 extra              # INVALID: Too many tokens (4 tokens)
+                                   #   → Error: GUARD_SYNTAX_ERROR
+                                   #   → Message: "Expression has 4 token(s), expected 3"
+
 retry_count                        # INVALID: Missing operator and value (1 token)
 retry_count <                      # INVALID: Missing value (2 tokens)
 < 3                                # INVALID: Missing field (2 tokens)
 ```
+
+**Why Whitespace is Mandatory**: The parser uses a simple whitespace-split tokenization strategy. Without whitespace, the entire expression becomes a single token (e.g., `retry_count<3` is one token, not three). This design ensures:
+1. **Unambiguous parsing**: No complex operator detection needed
+2. **Predictable behavior**: Same tokenization rules for all operators
+3. **Clear error messages**: Token count immediately reveals the problem
 
 The parser rejects any expression that does not split into exactly 3 whitespace-delimited tokens.
 
@@ -1201,34 +1548,215 @@ When the FSM contract is loaded, all guard expressions are validated for syntact
 "count < [a, b"                 # GUARD_INVALID_VALUE: unclosed array bracket
 ```
 
-**Edge Case Examples**:
+**Edge Case Examples with Error Codes**:
+
+The following comprehensive examples show exactly what error code is returned for each type of syntax error. This is the definitive reference for guard expression validation behavior.
+
 ```python
-# Whitespace handling - VALID examples
-"  retry_count   <   3  "       # Valid - leading/trailing whitespace is trimmed
-"retry_count    <    3"         # Valid - multiple spaces treated as single delimiter
-"retry_count\t<\t3"             # Valid - tabs are equivalent to spaces
+# ═══════════════════════════════════════════════════════════════════════════════
+# WHITESPACE HANDLING - VALID EXAMPLES
+# ═══════════════════════════════════════════════════════════════════════════════
 
-# Whitespace handling - INVALID examples
-"retry_count<3"                 # GUARD_SYNTAX_ERROR: no whitespace creates 1 token
-"retry_count< 3"                # GUARD_SYNTAX_ERROR: operator attached to field (2 tokens)
-"retry_count <3"                # GUARD_SYNTAX_ERROR: operator attached to value (2 tokens)
-"postgres_applied==true"        # GUARD_SYNTAX_ERROR: no whitespace creates 1 token
-"retry_count < 3\n"             # Behavior: trailing newline is trimmed (Valid)
-"retry_count < 3 "              # Valid - trailing space is trimmed
+"retry_count < 3"               # VALID - Standard single-space separation
+"  retry_count   <   3  "       # VALID - Leading/trailing whitespace is trimmed
+"retry_count    <    3"         # VALID - Multiple spaces treated as single delimiter
+"retry_count\t<\t3"             # VALID - Tabs are equivalent to spaces
+"retry_count < 3\n"             # VALID - Trailing newline is trimmed
+"retry_count < 3 "              # VALID - Trailing space is trimmed
+"\tretry_count < 3\t"           # VALID - Leading/trailing tabs are trimmed
+"postgres_applied == true"      # VALID - Whitespace around == operator
 
-# Case sensitivity
-"PostgresApplied == true"       # Valid syntax, but field name is case-sensitive
-"postgres_applied == True"      # GUARD_INVALID_VALUE: boolean must be lowercase
+# ═══════════════════════════════════════════════════════════════════════════════
+# WHITESPACE HANDLING - INVALID EXAMPLES (GUARD_SYNTAX_ERROR)
+# All of these fail because whitespace around operators is MANDATORY
+# ═══════════════════════════════════════════════════════════════════════════════
 
-# Boundary values
-"retry_count >= 0"              # Valid - zero is allowed
-"retry_count < -1"              # Valid - negative numbers allowed
-"priority <= 999999999"         # Valid - large numbers supported
+"retry_count<3"
+    # → Error Code: GUARD_SYNTAX_ERROR
+    # → Token Count: 1 (entire string is one token)
+    # → Message: "Expression 'retry_count<3' has 1 token(s), expected exactly 3"
 
-# Empty and null handling
-"field exists true"             # Valid - checks for presence
-"field exists false"            # Valid - checks for absence (same as not_exists true)
-"field == null"                 # GUARD_INVALID_VALUE: use "exists" for null checks
+"postgres_applied==true"
+    # → Error Code: GUARD_SYNTAX_ERROR
+    # → Token Count: 1 (entire string is one token)
+    # → Message: "Expression 'postgres_applied==true' has 1 token(s), expected exactly 3"
+
+"retry_count< 3"
+    # → Error Code: GUARD_SYNTAX_ERROR
+    # → Token Count: 2 (tokens: ["retry_count<", "3"])
+    # → Message: "Expression has 2 token(s), expected exactly 3"
+
+"retry_count <3"
+    # → Error Code: GUARD_SYNTAX_ERROR
+    # → Token Count: 2 (tokens: ["retry_count", "<3"])
+    # → Message: "Expression has 2 token(s), expected exactly 3"
+
+"consul_applied!=false"
+    # → Error Code: GUARD_SYNTAX_ERROR
+    # → Token Count: 1 (entire string is one token)
+    # → Message: "Expression 'consul_applied!=false' has 1 token(s), expected exactly 3"
+
+"retry_count>=3"
+    # → Error Code: GUARD_SYNTAX_ERROR
+    # → Token Count: 1 (entire string is one token)
+    # → Message: "Expression 'retry_count>=3' has 1 token(s), expected exactly 3"
+
+"priority<=5"
+    # → Error Code: GUARD_SYNTAX_ERROR
+    # → Token Count: 1 (entire string is one token)
+    # → Message: "Expression 'priority<=5' has 1 token(s), expected exactly 3"
+
+"status!= active"
+    # → Error Code: GUARD_SYNTAX_ERROR
+    # → Token Count: 2 (tokens: ["status!=", "active"])
+    # → Message: "Expression has 2 token(s), expected exactly 3"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# TOKEN COUNT ERRORS (GUARD_SYNTAX_ERROR)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+"retry_count < 3 extra"
+    # → Error Code: GUARD_SYNTAX_ERROR
+    # → Token Count: 4 (tokens: ["retry_count", "<", "3", "extra"])
+    # → Message: "Expression has 4 token(s), expected exactly 3"
+
+"retry_count"
+    # → Error Code: GUARD_SYNTAX_ERROR
+    # → Token Count: 1 (only field name present)
+    # → Message: "Expression 'retry_count' has 1 token(s), expected exactly 3"
+
+"retry_count <"
+    # → Error Code: GUARD_SYNTAX_ERROR
+    # → Token Count: 2 (missing value)
+    # → Message: "Expression has 2 token(s), expected exactly 3"
+
+"< 3"
+    # → Error Code: GUARD_SYNTAX_ERROR
+    # → Token Count: 2 (missing field)
+    # → Message: "Expression has 2 token(s), expected exactly 3"
+
+""
+    # → Error Code: GUARD_SYNTAX_ERROR
+    # → Token Count: 0 (empty expression)
+    # → Message: "Expression is empty"
+
+"   "
+    # → Error Code: GUARD_SYNTAX_ERROR
+    # → Token Count: 0 (whitespace-only expression)
+    # → Message: "Expression is empty after trimming whitespace"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# FIELD NAME ERRORS (GUARD_INVALID_FIELD)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+"2fast == true"
+    # → Error Code: GUARD_INVALID_FIELD
+    # → Reason: Field name starts with a digit
+    # → Message: "Field name '2fast' is not a valid identifier (cannot start with digit)"
+
+"123 < 5"
+    # → Error Code: GUARD_INVALID_FIELD
+    # → Reason: Field name is entirely numeric
+    # → Message: "Field name '123' is not a valid identifier"
+
+"field-name == true"
+    # → Error Code: GUARD_INVALID_FIELD
+    # → Reason: Hyphens are not allowed in field names
+    # → Message: "Field name 'field-name' contains invalid character '-'"
+
+"field.nested == true"
+    # → Error Code: GUARD_INVALID_FIELD
+    # → Reason: Dots are not allowed (nested access not supported in v1.0)
+    # → Message: "Field name 'field.nested' contains invalid character '.'"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# OPERATOR ERRORS (GUARD_INVALID_OPERATOR)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+"count <=> 5"
+    # → Error Code: GUARD_INVALID_OPERATOR
+    # → Reason: <=> is not a valid operator
+    # → Message: "Unknown operator '<=>' (valid: ==, !=, <, >, <=, >=, equals, ...)"
+
+"status === active"
+    # → Error Code: GUARD_INVALID_OPERATOR
+    # → Reason: === is not a valid operator (use ==)
+    # → Message: "Unknown operator '==='"
+
+"count ~= 5"
+    # → Error Code: GUARD_INVALID_OPERATOR
+    # → Reason: ~= is not a valid operator
+    # → Message: "Unknown operator '~='"
+
+"status like pattern"
+    # → Error Code: GUARD_INVALID_OPERATOR
+    # → Reason: Use 'matches' for pattern matching, not 'like'
+    # → Message: "Unknown operator 'like' (did you mean 'matches'?)"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# VALUE ERRORS (GUARD_INVALID_VALUE)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+"postgres_applied == True"
+    # → Error Code: GUARD_INVALID_VALUE
+    # → Reason: Boolean must be lowercase
+    # → Message: "Invalid boolean value 'True' (must be lowercase 'true' or 'false')"
+
+"consul_applied == FALSE"
+    # → Error Code: GUARD_INVALID_VALUE
+    # → Reason: Boolean must be lowercase
+    # → Message: "Invalid boolean value 'FALSE' (must be lowercase 'true' or 'false')"
+
+"count < [a, b"
+    # → Error Code: GUARD_INVALID_VALUE
+    # → Reason: Malformed array literal
+    # → Message: "Unclosed array bracket in value '[a, b'"
+
+"field == null"
+    # → Error Code: GUARD_INVALID_VALUE
+    # → Reason: null is not a valid literal
+    # → Message: "Invalid value 'null' (use 'exists' operator for null checks)"
+
+"field == undefined"
+    # → Error Code: GUARD_INVALID_VALUE
+    # → Reason: undefined is not a valid literal
+    # → Message: "Invalid value 'undefined' (use 'exists' operator for presence checks)"
+
+"field == 'quoted'"
+    # → Error Code: GUARD_INVALID_VALUE
+    # → Reason: Quotes are not supported in string values
+    # → Message: "Invalid value ''quoted'' (string values should not be quoted)"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CASE SENSITIVITY
+# ═══════════════════════════════════════════════════════════════════════════════
+
+"PostgresApplied == true"       # VALID syntax, but field name is case-sensitive
+                                # (will match 'PostgresApplied', not 'postgres_applied')
+
+"postgres_applied == TRUE"      # GUARD_INVALID_VALUE: boolean must be lowercase
+
+"status EQUALS active"          # GUARD_INVALID_OPERATOR: operators are case-sensitive
+                                # (use lowercase 'equals')
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# BOUNDARY VALUES (ALL VALID)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+"retry_count >= 0"              # VALID - zero is allowed
+"retry_count < -1"              # VALID - negative numbers allowed
+"priority <= 999999999"         # VALID - large numbers supported
+"count == 0"                    # VALID - zero comparison
+"value > -999"                  # VALID - negative comparison
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# EXISTENCE AND NULL HANDLING
+# ═══════════════════════════════════════════════════════════════════════════════
+
+"field exists true"             # VALID - checks if field is present and non-null
+"field exists false"            # VALID - checks if field is absent or null
+"field not_exists true"         # VALID - checks if field is absent or null
+"field not_exists false"        # VALID - checks if field is present and non-null
 ```
 
 #### Runtime Validation
@@ -1254,10 +1782,12 @@ At runtime, guards are validated when evaluated against the FSM context:
 
 #### Guard Validation Flow Diagram
 
-The following diagram shows the complete validation flow for guard expressions, from input parsing through acceptance or rejection:
+The following diagram shows the complete validation flow for guard expressions, from input parsing through acceptance or rejection.
+
+> **CRITICAL**: The "Split on whitespace" step is why whitespace around operators is MANDATORY. Expressions like `retry_count<3` remain as a single token after splitting, causing validation to fail with `GUARD_SYNTAX_ERROR`.
 
 ```text
-Expression Input
+Expression Input (e.g., "retry_count < 3")
      │
      ▼
 ┌──────────────────────┐
@@ -1267,8 +1797,11 @@ Expression Input
            │
            ▼
 ┌──────────────────────┐
-│ Split on whitespace  │
-│ (spaces/tabs)        │
+│ Split on whitespace  │◀──── WHITESPACE IS REQUIRED
+│ (spaces/tabs)        │      between all 3 tokens!
+│                      │
+│ "retry_count < 3"    │      ✓ → ["retry_count", "<", "3"]
+│ "retry_count<3"      │      ✗ → ["retry_count<3"] (1 token!)
 └──────────┬───────────┘
            │
            ▼
@@ -1335,28 +1868,30 @@ The FSM uses the following triggers to drive state transitions:
 
 | Trigger | Source | Description |
 |---------|--------|-------------|
-| `REGISTER` | External | `IntrospectionEvent` received with registration payload. Initiates the registration workflow. |
-| `VALIDATION_PASSED` | Internal | Payload validation succeeded. Emitted by the Reducer after validating `ModelRegistrationPayload`. |
-| `VALIDATION_FAILED` | Internal | Payload validation failed. Emitted when required fields are missing or invalid. |
-| `POSTGRES_SUCCEEDED` | Effect | PostgreSQL Effect returned success. The upsert operation completed successfully. |
-| `POSTGRES_FAILED` | Effect | PostgreSQL Effect returned failure. Database error or constraint violation. |
-| `CONSUL_SUCCEEDED` | Effect | Consul Effect returned success. Service registration completed successfully. |
-| `CONSUL_FAILED` | Effect | Consul Effect returned failure. Network error or Consul unavailable. |
-| `CONTINUE` | Internal | **Synthetic internal trigger** for automatic state progression. Emitted by the Reducer itself during `POSTGRES_SUCCEEDED` processing to advance from `postgres_registered` to `registering_consul`. Never received from external sources. See [Transition 6](#transition-6-start_consul_registration) for detailed implementation semantics including single-step vs two-step execution patterns. |
-| `RECOVERY_COMPLETE` | Orchestrator | Both components are now registered. This trigger is emitted when partial registration is resolved through retry. |
-| `DEREGISTER` | External | Shutdown signal received. Initiates graceful deregistration from both systems. |
-| `DEREGISTRATION_COMPLETE` | Orchestrator | Both deregistrations succeeded. This trigger is emitted after Consul and PostgreSQL cleanup is complete. |
-| `RETRY` | External/Internal | Initiates a retry after failure. This trigger can be invoked from `partial_registered` state (retries Consul registration via Transition 9) or from `failed` state (restarts full registration from `validating` via Transition 14). The trigger can be invoked by operator intervention or by an automatic retry policy, and is subject to the `retry_count < 3` guard. |
-| `RETRY_POSTGRES` | External | Retries PostgreSQL specifically. This trigger is used when Consul succeeded but PostgreSQL failed. |
-| `ABANDON` | External | Gives up on registration. This trigger transitions directly to `deregistered` without attempting cleanup. |
-| `FATAL_ERROR` | Internal | Unrecoverable error detected. This trigger catches unexpected failures from any non-terminal state. |
-| `RETRY_EXHAUSTED` | Internal | Retry limit reached. **Generated by the Orchestrator** (not the Reducer) when it detects that the Reducer returned without state change due to guard failure on retry transitions. The Orchestrator emits this trigger when `retry_count >= max_retries` to transition to `failed` state for operator intervention. |
+| `REGISTER` | External | This trigger indicates an `IntrospectionEvent` was received with registration payload. It initiates the registration workflow. |
+| `VALIDATION_PASSED` | Internal | This trigger indicates payload validation succeeded. It is emitted by the Reducer after validating `ModelRegistrationPayload`. |
+| `VALIDATION_FAILED` | Internal | This trigger indicates payload validation failed. It is emitted when required fields are missing or invalid. |
+| `POSTGRES_SUCCEEDED` | Effect | This trigger indicates the PostgreSQL Effect returned success and the upsert operation completed successfully. |
+| `POSTGRES_FAILED` | Effect | This trigger indicates the PostgreSQL Effect returned failure due to database error or constraint violation. |
+| `CONSUL_SUCCEEDED` | Effect | This trigger indicates the Consul Effect returned success and service registration completed successfully. |
+| `CONSUL_FAILED` | Effect | This trigger indicates the Consul Effect returned failure due to network error or Consul unavailability. |
+| `CONTINUE` | Internal | This is a **synthetic internal trigger** for automatic state progression. It is emitted by the Reducer itself during `POSTGRES_SUCCEEDED` processing to advance from `postgres_registered` to `registering_consul`. It is never received from external sources. See [Transition 6](#transition-6-start_consul_registration) for detailed implementation semantics including single-step vs two-step execution patterns. |
+| `RECOVERY_COMPLETE` | Orchestrator | This trigger indicates both components are now registered. It is emitted when partial registration is resolved through retry. |
+| `DEREGISTER` | External | This trigger indicates a shutdown signal was received. It initiates graceful deregistration from both systems. |
+| `DEREGISTRATION_COMPLETE` | Orchestrator | This trigger indicates both deregistrations succeeded. It is emitted after Consul and PostgreSQL cleanup is complete. |
+| `RETRY` | External/Internal | This trigger initiates a retry after failure. It can be invoked from `partial_registered` state (retries Consul registration via Transition 9) or from `failed` state (restarts full registration from `validating` via Transition 14). The trigger can be invoked by operator intervention or by an automatic retry policy, and is subject to the `retry_count < 3` guard. |
+| `RETRY_POSTGRES` | External | This trigger retries PostgreSQL specifically. It is used when Consul succeeded but PostgreSQL failed. |
+| `ABANDON` | External | This trigger gives up on registration. It transitions directly to `deregistered` without attempting cleanup. |
+| `FATAL_ERROR` | Internal | This trigger indicates an unrecoverable error was detected. It catches unexpected failures from any non-terminal state. |
+| `RETRY_EXHAUSTED` | Orchestrator | This trigger indicates the retry limit has been reached. It is **generated by the Orchestrator** (not the Reducer) when it detects that the Reducer returned without state change due to guard failure on retry transitions (Transitions 9, 10, or 14). The Orchestrator emits this trigger when `retry_count >= 3` to transition to `failed` state for operator intervention. See [Retry Limit Enforcement](#retry-limit-enforcement) for detection logic and implementation examples. |
 
 **Trigger Sources**:
 - **External**: Triggered by events from outside the FSM (user actions, lifecycle signals, introspection events)
 - **Internal**: Triggered by the Reducer itself based on internal logic or validation results
 - **Effect**: Triggered by Effect nodes returning execution results
-- **Orchestrator**: Triggered by the Orchestrator after aggregating multiple Effect outcomes
+- **Orchestrator**: Triggered by the Orchestrator after aggregating multiple Effect outcomes or detecting guard failures
+
+> **Why RETRY_EXHAUSTED is Orchestrator-Generated**: The Reducer is pure and stateless regarding time and external conditions. When a retry guard (`retry_count < 3`) fails, the Reducer simply returns the current state unchanged with no intents. The Orchestrator detects this "no-op" response pattern (same state, RETRY trigger) and generates `RETRY_EXHAUSTED` to drive the FSM to `failed` state. This separation of concerns maintains Reducer purity while enabling proper exhaustion handling.
 
 ### Guard Implementation Details
 
@@ -2003,6 +2538,16 @@ This section documents all metrics emitted by the Registration FSM, including th
 | `registration_internal_error` | counter | CONTINUE processing failure or other internal errors | Fatal internal error during registration |
 | `registration_state_timeout_total` | counter | Orchestrator timeout detection | State exceeded configured `timeout_ms` |
 | `registration_state_duration_ms` | histogram | State exit (any transition) | Time spent in each state |
+| `registration_validation_error_total` | counter | `validation_failure` transition (Transition 3) | Payload validation failed |
+| `registration_consul_error_total` | counter | `consul_failure` transition (Transition 8) | Consul registration failed (alternative to `registration_partial`) |
+| `registration_retry_exhausted_total` | counter | `retry_exhausted` transition (Transition 17) | Maximum retry attempts exceeded |
+| `registration_timeout_total` | counter | Any operational state timeout | State timeout exceeded `timeout_ms` |
+| `registration_fatal_error_total` | counter | `global_error_handler` transition (Transition 16) | Unrecoverable error from any state |
+| `registration_gc_run_total` | counter | Garbage collection job execution | GC job started |
+| `registration_gc_cleaned_total` | counter | Garbage collection cleanup | Orphaned records removed |
+| `registration_gc_duration_ms` | histogram | Garbage collection completion | GC job execution duration |
+| `registration_gc_errors_total` | counter | Garbage collection failure | GC job execution failed |
+| `consul_gc_deregistered_total` | counter | Consul garbage collection | Consul services force-deregistered |
 
 #### Metric Details
 
@@ -2156,6 +2701,181 @@ description: "Duration spent in each state, labeled by outcome (success/timeout/
 
 ---
 
+---
+
+##### `registration_validation_error_total` (counter)
+
+```yaml
+name: registration_validation_error_total
+type: counter
+labels: [node_id, deployment_id, environment, validation_error_type]
+emitted_by: Reducer (via intent) -> Orchestrator -> Metrics Effect
+emission_point: Transition action on `validation_failure` transition (Transition 3)
+description: "Incremented when payload validation fails"
+```
+
+**When Emitted**: After the `validate_payload` entry action fails and the FSM transitions from `validating` to `failed`.
+
+**Alerting Threshold**:
+- **Warning**: `registration_validation_error_total` > 10 per minute indicates systematic configuration issues
+
+---
+
+##### `registration_consul_error_total` (counter)
+
+```yaml
+name: registration_consul_error_total
+type: counter
+labels: [node_id, deployment_id, environment, consul_error_type]
+emitted_by: Reducer (via intent) -> Orchestrator -> Metrics Effect
+emission_point: Transition action on `consul_failure` transition (Transition 8)
+description: "Incremented when Consul registration fails (alternative view of registration_partial)"
+```
+
+**When Emitted**: After the Consul Effect returns failure. This metric provides an error-centric view complementing `registration_partial`.
+
+**Note**: This metric may be emitted alongside `registration_partial` for the same failure event, providing different aggregation dimensions.
+
+---
+
+##### `registration_retry_exhausted_total` (counter)
+
+```yaml
+name: registration_retry_exhausted_total
+type: counter
+labels: [node_id, deployment_id, environment, last_state]
+emitted_by: Reducer (via intent) -> Orchestrator -> Metrics Effect
+emission_point: Transition action on `retry_exhausted` transition (Transition 17)
+description: "Incremented when maximum retry attempts (3) are exceeded"
+```
+
+**When Emitted**: After `retry_count >= 3` and the FSM transitions from `partial_registered` to `failed` via the `RETRY_EXHAUSTED` trigger.
+
+**Alerting Threshold**:
+- **Critical**: `registration_retry_exhausted_total` > 0 indicates nodes that failed registration after 3 retry attempts
+
+---
+
+##### `registration_timeout_total` (counter)
+
+```yaml
+name: registration_timeout_total
+type: counter
+labels: [node_id, deployment_id, environment, state, timeout_ms]
+emitted_by: Orchestrator (directly)
+emission_point: When any operational state exceeds its configured timeout_ms
+description: "Count of state timeouts by state (alternative view of registration_state_timeout_total)"
+```
+
+**When Emitted**: When the Orchestrator detects that a state has exceeded its configured `timeout_ms` value.
+
+**Note**: This metric provides an error-centric view complementing `registration_state_timeout_total`.
+
+---
+
+##### `registration_fatal_error_total` (counter)
+
+```yaml
+name: registration_fatal_error_total
+type: counter
+labels: [node_id, deployment_id, environment, from_state, error_type]
+emitted_by: Reducer (via intent) -> Orchestrator -> Metrics Effect
+emission_point: Transition action on `global_error_handler` transition (Transition 16)
+description: "Incremented when unrecoverable errors trigger FATAL_ERROR from any state"
+```
+
+**When Emitted**: After the `FATAL_ERROR` trigger is processed and the FSM transitions from any state to `failed`.
+
+**Alerting Threshold**:
+- **Critical**: `registration_fatal_error_total` > 0 requires immediate investigation (indicates system-level failures)
+
+---
+
+##### `registration_gc_run_total` (counter)
+
+```yaml
+name: registration_gc_run_total
+type: counter
+labels: [gc_type]  # postgres, consul
+emitted_by: Garbage Collection Job (external to FSM)
+emission_point: Start of each garbage collection run
+description: "Count of garbage collection job executions"
+```
+
+**When Emitted**: At the start of each garbage collection run (PostgreSQL cleanup, Consul cleanup).
+
+**Note**: This metric is emitted by the garbage collection job, not the FSM itself. See [Deregistration Failure Handling](#deregistration-failure-handling) for GC implementation details.
+
+---
+
+##### `registration_gc_cleaned_total` (counter)
+
+```yaml
+name: registration_gc_cleaned_total
+type: counter
+labels: [gc_type, resource_type]  # postgres/node_record, consul/service
+emitted_by: Garbage Collection Job (external to FSM)
+emission_point: After successful cleanup of orphaned resources
+description: "Count of orphaned resources cleaned by garbage collection"
+```
+
+**When Emitted**: After each successful resource cleanup during garbage collection.
+
+---
+
+##### `registration_gc_duration_ms` (histogram)
+
+```yaml
+name: registration_gc_duration_ms
+type: histogram
+labels: [gc_type]  # postgres, consul
+buckets: [100, 500, 1000, 5000, 10000, 30000, 60000]
+emitted_by: Garbage Collection Job (external to FSM)
+emission_point: At completion of each garbage collection run
+description: "Duration of garbage collection job execution"
+```
+
+**When Emitted**: At the completion of each garbage collection run.
+
+**Alerting Threshold**:
+- **Warning**: `registration_gc_duration_ms` p99 > 30000ms indicates GC performance issues
+
+---
+
+##### `registration_gc_errors_total` (counter)
+
+```yaml
+name: registration_gc_errors_total
+type: counter
+labels: [gc_type, error_type]
+emitted_by: Garbage Collection Job (external to FSM)
+emission_point: When garbage collection job fails
+description: "Count of garbage collection job failures"
+```
+
+**When Emitted**: When the garbage collection job encounters an error.
+
+**Alerting Threshold**:
+- **Warning**: `registration_gc_errors_total` > 0 indicates GC job failures requiring investigation
+
+---
+
+##### `consul_gc_deregistered_total` (counter)
+
+```yaml
+name: consul_gc_deregistered_total
+type: counter
+labels: [environment, datacenter]
+emitted_by: Consul Garbage Collection Job (external to FSM)
+emission_point: After force-deregistering orphaned Consul services
+description: "Count of Consul services force-deregistered by garbage collection"
+```
+
+**When Emitted**: After successfully force-deregistering an orphaned Consul service.
+
+**Note**: This metric tracks Consul-specific cleanup distinct from PostgreSQL garbage collection.
+
+
 #### Alerting Thresholds Summary
 
 | Metric | Threshold | Severity | Action |
@@ -2165,6 +2885,11 @@ description: "Duration spent in each state, labeled by outcome (success/timeout/
 | `registration_state_timeout_total` | > 10/min | Warning | Check infrastructure health |
 | `registration_postgres_failure` | > 10/min | Warning | Check PostgreSQL health |
 | `registration_state_duration_ms` p99 | > 5000ms | Warning | Performance degradation |
+| `registration_validation_error_total` | > 10/min | Warning | Check configuration issues |
+| `registration_retry_exhausted_total` | > 0 | Critical | Nodes failed after 3 retries |
+| `registration_fatal_error_total` | > 0 | Critical | System-level failure |
+| `registration_gc_errors_total` | > 0 | Warning | GC job failures |
+| `registration_gc_duration_ms` p99 | > 30000ms | Warning | GC performance issues |
 
 ### FSM Subcontract Configuration
 
@@ -2204,10 +2929,56 @@ fsm_subcontract:
 | **PostgreSQL Errors** | `registering_postgres` -> `failed` | Check database, retry via `RETRY` |
 | **Consul Errors** | `registering_consul` -> `partial_registered` | Retry Consul via `RETRY` |
 | **Partial Failures** | `partial_registered` | Retry failed component |
+| **CONTINUE Errors** | `postgres_registered` -> `failed` | **CRITICAL**: Internal trigger failure; requires investigation then `RETRY` or `ABANDON`. See [CONTINUE Trigger Failure Handling](#continue-trigger-failure-handling) |
 | **Fatal Errors** | Any -> `failed` | Manual intervention or `ABANDON` |
 | **Guard Errors** | Any (contract load or runtime) | Fix guard expression or context data |
 | **Timeout Errors** | Operational states with `timeout_ms` | Increase timeout, fix blocking Effect, or manual intervention |
 | **Intent Emission Errors** | Any state with entry actions | Verify intent payload and target Effect availability |
+| **Retry Exhaustion Errors** | `partial_registered` -> `failed` | Retry limit reached; `ABANDON` or investigate root cause |
+
+### Severity Level Definitions
+
+Error severity levels are used consistently across the Registration FSM for logging, metrics, and alerting. Each level indicates the urgency and impact of the error condition.
+
+| Severity | Symbol | Meaning | FSM Impact | Examples |
+|----------|--------|---------|------------|----------|
+| **DEBUG** | - | Diagnostic information | None - purely informational | Checkpoint traversal logs, guard evaluation traces |
+| **INFO** | - | Normal operational events | None - expected behavior | Registration started, PostgreSQL succeeded, retry initiated |
+| **WARNING** | - | Non-blocking issues | Logs warning but allows transition to proceed | Registration abandoned, non-critical intent emission failed, approaching retry limit |
+| **ERROR** | - | Blocking issues | Prevents specific transition; allows retry | PostgreSQL failed, Consul failed, guard blocked transition, timeout exceeded |
+| **CRITICAL** | - | System-level failures | Triggers `FATAL_ERROR` transition to `failed` state | CONTINUE processing failure, intent serialization failure, corrupted FSM context |
+
+#### Severity Guidelines
+
+**WARNING** (Non-blocking):
+- The operation completed but with suboptimal conditions
+- User/operator attention is recommended but not urgent
+- FSM can continue normal operation
+- Example: `ABANDON` trigger received (intentional, but worth noting)
+
+**ERROR** (Blocking, Recoverable):
+- The specific operation failed
+- FSM remains in current state or transitions to an error state (`failed`, `partial_registered`)
+- Retry is possible via `RETRY`, `RETRY_POSTGRES`, or external intervention
+- Example: PostgreSQL connection timeout, Consul service registration rejected
+
+**CRITICAL** (System Failure):
+- Indicates a fundamental system problem beyond transient failures
+- FSM transitions to `failed` via `FATAL_ERROR`
+- Requires investigation before retry
+- May indicate bugs in Reducer logic, infrastructure failures, or corrupted state
+- Example: Exception during CONTINUE processing, failed to construct required intents
+
+#### Severity in Guards
+
+Guard failures do not have a severity level per se - they either block the transition (guard evaluates to `false`) or raise an exception (malformed expression). The logging severity for guard-related events:
+
+| Guard Scenario | Log Severity | Reason |
+|----------------|--------------|--------|
+| Guard evaluates to `false` | DEBUG or INFO | Normal guard behavior - transition not applicable |
+| Guard blocked retry (limit reached) | WARNING | Operator should consider `ABANDON` or investigate |
+| Guard syntax error (load-time) | ERROR | Contract cannot load; must fix before deployment |
+| Guard evaluation exception (runtime) | ERROR | Unexpected runtime error; investigate context |
 
 ### Guard Error Details
 
@@ -2712,16 +3483,63 @@ registering_postgres -> [POSTGRES_SUCCEEDED] -> postgres_registered (checkpoint)
                                      RETRY                            ABANDON
                                        |                                 |
                                        v                                 v
-                                   validating                      deregistered
+
+#### Scenario 9: Guard Evaluation Error (Runtime)
+
+```text
+Any state with guarded transition (e.g., partial_registered)
+        |
+   [Guard evaluation throws exception]
+        |
+   Transition blocked, FSM remains in current state
+        |
+        v
+   [Investigate error context, fix guard or context data]
+        |
+        v
+   [Re-attempt transition with corrected data]
 ```
 
-**Context**: This scenario occurs when PostgreSQL registration succeeds but the internal CONTINUE trigger processing fails before Consul registration can begin. Since CONTINUE is an internal mechanism, there is no external event that can be replayed to retry the operation.
+**Context**: Runtime guard errors occur when:
+- Type mismatch during comparison (e.g., comparing string to number)
+- Unsupported operator encountered at runtime
+- Referenced field undefined in context (strict mode only)
 
 **Recovery Options**:
-1. **RETRY**: Restarts the full registration workflow from `validating`. The PostgreSQL Effect will receive another upsert intent (idempotent operation).
-2. **ABANDON**: Transitions directly to `deregistered`, leaving PostgreSQL in an orphaned state (node record exists but node is not running). Cleanup may be required.
+1. **Fix Context Data**: If the guard expression is correct but context data is malformed, fix the data source (e.g., ensure `retry_count` is a number, not a string)
+2. **Fix Guard Expression**: If the guard expression has a runtime issue, update the contract and redeploy
+3. **FATAL_ERROR**: If the guard error indicates corrupted FSM state, trigger `FATAL_ERROR` to transition to `failed` and investigate
 
-**Investigation Required**: CONTINUE failures indicate a system-level bug. Before retrying, operators should investigate logs and metrics to identify the root cause.
+**Prevention**: Validate context data before passing to the FSM. Use the `flatten_context()` pattern documented in [Context Preprocessing for Nested Fields](#context-preprocessing-for-nested-fields).
+
+#### Scenario 10: Contract Load-Time Guard Error
+
+```text
+FSM initialization
+        |
+   [Load contract from YAML/Python]
+        |
+   [Guard expression parsing fails]
+        |
+        v
+   Contract rejected - FSM does not load
+        |
+        v
+   [Fix guard syntax in contract definition]
+        |
+        v
+   [Redeploy with corrected contract]
+```
+
+**Context**: Contract load-time errors prevent the FSM from initializing:
+- `GUARD_SYNTAX_ERROR`: Expression doesn't follow `field operator value` format
+- `GUARD_INVALID_OPERATOR`: Operator not in supported set
+- `GUARD_INVALID_FIELD`: Field name is not a valid identifier
+- `GUARD_INVALID_VALUE`: Value cannot be parsed
+
+**Recovery**: These errors are caught during deployment/startup. Fix the contract definition and redeploy. No runtime recovery is possible because the FSM never loads.
+
+**Prevention**: Use contract validation tools before deployment. See [Guard Validation Rules](#guard-validation-rules) for complete syntax requirements.
 
 ---
 
