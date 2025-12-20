@@ -13,6 +13,10 @@ Key Components:
     ModelOrchestratorOutput:
         Output model with workflow results, step outcomes, and execution metrics.
 
+    ModelOrchestratorContext:
+        Handler context with time injection for deadline/timeout calculations.
+        Provides correlation and envelope IDs for causality tracking.
+
     ModelOrchestratorStep:
         Individual step definition within a workflow, including dependencies
         and timeout configuration.
@@ -73,6 +77,7 @@ from omnibase_core.models.services.model_plan import ModelPlan
 # Re-export aggregator
 from .model_load_balancer import ModelLoadBalancer
 from .model_orchestrator import *
+from .model_orchestrator_context import ModelOrchestratorContext
 from .model_orchestrator_graph import ModelOrchestratorGraph
 from .model_orchestrator_input import ModelOrchestratorInput
 from .model_orchestrator_output import ModelOrchestratorOutput
@@ -84,6 +89,7 @@ __all__ = [
     "ModelAction",
     "ModelGraph",
     "ModelLoadBalancer",
+    "ModelOrchestratorContext",
     "ModelOrchestratorGraph",
     "ModelOrchestratorInput",
     "ModelOrchestratorOutput",
