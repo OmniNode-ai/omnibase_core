@@ -14,7 +14,6 @@ from omnibase_core.models.common.model_config_schema_property import (
 from omnibase_core.models.common.model_custom_health_metrics import (
     ModelCustomHealthMetrics,
 )
-from omnibase_core.models.common.model_effect_metadata import ModelEffectMetadata
 from omnibase_core.models.common.model_event_subscription_config import (
     ModelEventSubscriptionConfig,
 )
@@ -38,6 +37,7 @@ from omnibase_core.models.common.model_tool_metadata_fields import (
     ModelToolMetadataFields,
 )
 from omnibase_core.models.common.model_tool_result_data import ModelToolResultData
+from omnibase_core.models.effect.model_effect_metadata import ModelEffectMetadata
 
 __all__ = [
     "ModelToolMetadataFields",
