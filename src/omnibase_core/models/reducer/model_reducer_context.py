@@ -44,9 +44,9 @@ class ModelReducerContext(BaseModel):
             Used to track causality chains through the system.
         envelope_id: Source envelope ID for causality tracking. Links this
             reducer invocation to its triggering event envelope.
-        trace_id: Optional distributed tracing ID for observability systems
+        trace_id: Optional distributed tracing ID (UUID) for observability systems
             (e.g., OpenTelemetry, Jaeger).
-        span_id: Optional span ID within the distributed trace.
+        span_id: Optional span ID (UUID) within the distributed trace.
         partition_id: Optional partition ID for sharded reducers. Used when
             reducers are partitioned by key for parallel processing.
 
@@ -61,8 +61,8 @@ class ModelReducerContext(BaseModel):
         >>> context = ModelReducerContext(
         ...     correlation_id=uuid4(),
         ...     envelope_id=uuid4(),
-        ...     trace_id="abc123",
-        ...     span_id="span456",
+        ...     trace_id=uuid4(),
+        ...     span_id=uuid4(),
         ... )
         >>> # Note: No `now` field - reducers must not access current time
     """
@@ -79,14 +79,14 @@ class ModelReducerContext(BaseModel):
         description="Source envelope ID for causality tracking.",
     )
 
-    # Optional tracing
-    trace_id: str | None = Field(
+    # Optional distributed tracing (UUID for consistency with ModelEventEnvelope)
+    trace_id: UUID | None = Field(
         default=None,
-        description="Distributed tracing ID.",
+        description="Distributed tracing ID (e.g., OpenTelemetry trace ID).",
     )
-    span_id: str | None = Field(
+    span_id: UUID | None = Field(
         default=None,
-        description="Span ID within the trace.",
+        description="Span ID within the trace (e.g., OpenTelemetry span ID).",
     )
 
     # Reducer-specific context (no time-dependent fields)

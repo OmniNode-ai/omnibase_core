@@ -67,9 +67,9 @@ class ModelOrchestratorContext(BaseModel):
             Used to correlate related events and operations.
         envelope_id: Source envelope ID for causality tracking.
             Links this context to the originating event envelope.
-        trace_id: Optional distributed tracing ID for integration with
+        trace_id: Optional distributed tracing ID (UUID) for integration with
             observability platforms (e.g., OpenTelemetry, Jaeger).
-        span_id: Optional span ID within the trace for fine-grained
+        span_id: Optional span ID (UUID) within the trace for fine-grained
             operation tracking.
 
     Thread Safety:
@@ -81,7 +81,8 @@ class ModelOrchestratorContext(BaseModel):
         >>> from datetime import timedelta
         >>> timeout_ms = 30000  # 30 seconds
         >>> deadline = context.now + timedelta(milliseconds=timeout_ms)
-        >>> if datetime.now(UTC) > deadline:
+        >>> # Use context.now for consistent time injection (not datetime.now)
+        >>> if context.now > deadline:
         ...     raise TimeoutError("Operation exceeded deadline")
     """
 
@@ -108,12 +109,12 @@ class ModelOrchestratorContext(BaseModel):
         description="Source envelope ID for causality tracking.",
     )
 
-    # Optional distributed tracing
-    trace_id: str | None = Field(
+    # Optional distributed tracing (UUID for consistency with ModelEventEnvelope)
+    trace_id: UUID | None = Field(
         default=None,
-        description="Distributed tracing ID.",
+        description="Distributed tracing ID (e.g., OpenTelemetry trace ID).",
     )
-    span_id: str | None = Field(
+    span_id: UUID | None = Field(
         default=None,
-        description="Span ID within the trace.",
+        description="Span ID within the trace (e.g., OpenTelemetry span ID).",
     )

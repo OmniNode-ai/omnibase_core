@@ -2,11 +2,11 @@
 
 These tests verify the type-level enforcement that:
 - Orchestrator and Effect contexts have `now` for time-dependent operations
-- Reducer context does NOT have `now` (pure function requirement)
+- Reducer and Compute contexts do NOT have `now` (pure function requirement)
 
 This ensures:
 1. Deterministic testing via time injection for orchestrators and effects
-2. Replay safety for reducers by preventing wall-clock time access
+2. Replay safety for reducers and compute nodes by preventing wall-clock time access
 3. Consistent base fields (correlation_id, envelope_id) across all contexts
 4. Thread safety via frozen models
 
@@ -66,6 +66,12 @@ _reducer_context_module = _import_module_directly(
     "omnibase_core.models.reducer.model_reducer_context",
 )
 ModelReducerContext: Any = _reducer_context_module.ModelReducerContext
+
+_compute_context_module = _import_module_directly(
+    _src_dir / "omnibase_core" / "models" / "compute" / "model_compute_context.py",
+    "omnibase_core.models.compute.model_compute_context",
+)
+ModelComputeContext: Any = _compute_context_module.ModelComputeContext
 
 
 @pytest.mark.unit
@@ -128,21 +134,23 @@ class TestModelOrchestratorContext:
 
     def test_optional_trace_id(self) -> None:
         """Context should support optional trace_id for distributed tracing."""
+        trace = uuid4()
         ctx = ModelOrchestratorContext(
             correlation_id=uuid4(),
             envelope_id=uuid4(),
-            trace_id="trace-abc123",
+            trace_id=trace,
         )
-        assert ctx.trace_id == "trace-abc123"
+        assert ctx.trace_id == trace
 
     def test_optional_span_id(self) -> None:
         """Context should support optional span_id for distributed tracing."""
+        span = uuid4()
         ctx = ModelOrchestratorContext(
             correlation_id=uuid4(),
             envelope_id=uuid4(),
-            span_id="span-xyz789",
+            span_id=span,
         )
-        assert ctx.span_id == "span-xyz789"
+        assert ctx.span_id == span
 
     def test_extra_fields_forbidden(self) -> None:
         """Context should reject unknown fields (extra='forbid')."""
@@ -240,21 +248,23 @@ class TestModelEffectContext:
 
     def test_optional_trace_id(self) -> None:
         """Context should support optional trace_id for distributed tracing."""
+        trace = uuid4()
         ctx = ModelEffectContext(
             correlation_id=uuid4(),
             envelope_id=uuid4(),
-            trace_id="trace-abc123",
+            trace_id=trace,
         )
-        assert ctx.trace_id == "trace-abc123"
+        assert ctx.trace_id == trace
 
     def test_optional_span_id(self) -> None:
         """Context should support optional span_id for distributed tracing."""
+        span = uuid4()
         ctx = ModelEffectContext(
             correlation_id=uuid4(),
             envelope_id=uuid4(),
-            span_id="span-xyz789",
+            span_id=span,
         )
-        assert ctx.span_id == "span-xyz789"
+        assert ctx.span_id == span
 
     def test_extra_fields_forbidden(self) -> None:
         """Context should reject unknown fields (extra='forbid')."""
@@ -344,26 +354,133 @@ class TestModelReducerContext:
 
     def test_optional_trace_id(self) -> None:
         """Context should support optional trace_id for distributed tracing."""
+        trace = uuid4()
         ctx = ModelReducerContext(
             correlation_id=uuid4(),
             envelope_id=uuid4(),
-            trace_id="trace-abc123",
+            trace_id=trace,
         )
-        assert ctx.trace_id == "trace-abc123"
+        assert ctx.trace_id == trace
 
     def test_optional_span_id(self) -> None:
         """Context should support optional span_id for distributed tracing."""
+        span = uuid4()
         ctx = ModelReducerContext(
             correlation_id=uuid4(),
             envelope_id=uuid4(),
-            span_id="span-xyz789",
+            span_id=span,
         )
-        assert ctx.span_id == "span-xyz789"
+        assert ctx.span_id == span
 
     def test_extra_fields_forbidden(self) -> None:
         """Context should reject unknown fields (extra='forbid')."""
         with pytest.raises(ValidationError):
             ModelReducerContext(
+                correlation_id=uuid4(),
+                envelope_id=uuid4(),
+                unknown_field="value",  # type: ignore[call-arg]
+            )
+
+
+@pytest.mark.unit
+class TestModelComputeContext:
+    """Tests for compute handler context - must NOT have time injection."""
+
+    def test_does_not_have_now_field(self) -> None:
+        """CRITICAL: Compute context must NOT have `now` field.
+
+        COMPUTE nodes must be pure functions with deterministic output.
+        Accessing wall-clock time would break caching and reproducibility.
+        """
+        ctx = ModelComputeContext(
+            correlation_id=uuid4(),
+            envelope_id=uuid4(),
+        )
+        assert not hasattr(ctx, "now"), "Compute context must NOT have 'now' field"
+
+    def test_now_not_in_model_fields(self) -> None:
+        """Verify `now` is not in the model's field definitions."""
+        assert "now" not in ModelComputeContext.model_fields, (
+            "Compute context must not define 'now' field"
+        )
+
+    def test_cannot_pass_now_to_constructor(self) -> None:
+        """Should reject `now` argument (extra='forbid')."""
+        with pytest.raises(ValidationError):
+            ModelComputeContext(
+                correlation_id=uuid4(),
+                envelope_id=uuid4(),
+                now=datetime.now(UTC),  # type: ignore[call-arg]
+            )
+
+    def test_has_computation_type(self) -> None:
+        """Compute context should support computation_type for algorithm tracking."""
+        ctx = ModelComputeContext(
+            correlation_id=uuid4(),
+            envelope_id=uuid4(),
+            computation_type="transform_json_to_xml",
+        )
+        assert ctx.computation_type == "transform_json_to_xml"
+
+    def test_computation_type_is_optional(self) -> None:
+        """Computation type should be optional, defaulting to None."""
+        ctx = ModelComputeContext(
+            correlation_id=uuid4(),
+            envelope_id=uuid4(),
+        )
+        assert ctx.computation_type is None
+
+    def test_is_frozen(self) -> None:
+        """Context should be immutable after creation."""
+        ctx = ModelComputeContext(
+            correlation_id=uuid4(),
+            envelope_id=uuid4(),
+        )
+        with pytest.raises(ValidationError):
+            ctx.correlation_id = uuid4()  # type: ignore[misc]
+
+    def test_has_correlation_id(self) -> None:
+        """Context must have correlation_id for request tracing."""
+        corr_id = uuid4()
+        ctx = ModelComputeContext(
+            correlation_id=corr_id,
+            envelope_id=uuid4(),
+        )
+        assert ctx.correlation_id == corr_id
+
+    def test_has_envelope_id(self) -> None:
+        """Context must have envelope_id for causality tracking."""
+        env_id = uuid4()
+        ctx = ModelComputeContext(
+            correlation_id=uuid4(),
+            envelope_id=env_id,
+        )
+        assert ctx.envelope_id == env_id
+
+    def test_optional_trace_id(self) -> None:
+        """Context should support optional trace_id for distributed tracing."""
+        trace = uuid4()
+        ctx = ModelComputeContext(
+            correlation_id=uuid4(),
+            envelope_id=uuid4(),
+            trace_id=trace,
+        )
+        assert ctx.trace_id == trace
+
+    def test_optional_span_id(self) -> None:
+        """Context should support optional span_id for distributed tracing."""
+        span = uuid4()
+        ctx = ModelComputeContext(
+            correlation_id=uuid4(),
+            envelope_id=uuid4(),
+            span_id=span,
+        )
+        assert ctx.span_id == span
+
+    def test_extra_fields_forbidden(self) -> None:
+        """Context should reject unknown fields (extra='forbid')."""
+        with pytest.raises(ValidationError):
+            ModelComputeContext(
                 correlation_id=uuid4(),
                 envelope_id=uuid4(),
                 unknown_field="value",  # type: ignore[call-arg]
@@ -380,6 +497,7 @@ class TestContextModelParity:
             ModelOrchestratorContext,
             ModelEffectContext,
             ModelReducerContext,
+            ModelComputeContext,
         ]:
             assert "correlation_id" in model_cls.model_fields, (
                 f"{model_cls.__name__} must have correlation_id field"
@@ -391,6 +509,7 @@ class TestContextModelParity:
             ModelOrchestratorContext,
             ModelEffectContext,
             ModelReducerContext,
+            ModelComputeContext,
         ]:
             assert "envelope_id" in model_cls.model_fields, (
                 f"{model_cls.__name__} must have envelope_id field"
@@ -402,6 +521,7 @@ class TestContextModelParity:
             ModelOrchestratorContext,
             ModelEffectContext,
             ModelReducerContext,
+            ModelComputeContext,
         ]:
             assert "trace_id" in model_cls.model_fields, (
                 f"{model_cls.__name__} must have trace_id field"
@@ -413,6 +533,7 @@ class TestContextModelParity:
             ModelOrchestratorContext,
             ModelEffectContext,
             ModelReducerContext,
+            ModelComputeContext,
         ]:
             assert "span_id" in model_cls.model_fields, (
                 f"{model_cls.__name__} must have span_id field"
@@ -424,6 +545,7 @@ class TestContextModelParity:
             ModelOrchestratorContext,
             ModelEffectContext,
             ModelReducerContext,
+            ModelComputeContext,
         ]:
             assert model_cls.model_config.get("frozen") is True, (
                 f"{model_cls.__name__} must have frozen=True"
@@ -435,6 +557,7 @@ class TestContextModelParity:
             ModelOrchestratorContext,
             ModelEffectContext,
             ModelReducerContext,
+            ModelComputeContext,
         ]:
             assert model_cls.model_config.get("extra") == "forbid", (
                 f"{model_cls.__name__} must have extra='forbid'"
@@ -447,6 +570,7 @@ class TestContextModelParity:
         - Orchestrators need `now` for deadline/timeout calculations
         - Effects need `now` for retry timing and metrics
         - Reducers must NOT have `now` to maintain purity and replay safety
+        - Compute nodes must NOT have `now` to maintain caching and reproducibility
         """
         assert "now" in ModelOrchestratorContext.model_fields, (
             "Orchestrator context must have 'now' for deadline calculations"
@@ -456,6 +580,9 @@ class TestContextModelParity:
         )
         assert "now" not in ModelReducerContext.model_fields, (
             "Reducer context must NOT have 'now' to maintain purity"
+        )
+        assert "now" not in ModelComputeContext.model_fields, (
+            "Compute context must NOT have 'now' to maintain caching validity"
         )
 
 
@@ -527,6 +654,29 @@ class TestTimeInjectionUseCases:
         # Attempting to pass `now` will raise ValidationError
         with pytest.raises(ValidationError) as exc_info:
             ModelReducerContext(
+                correlation_id=uuid4(),
+                envelope_id=uuid4(),
+                now=datetime.now(UTC),  # type: ignore[call-arg]
+            )
+
+        # Verify the error mentions the unexpected field
+        error_message = str(exc_info.value)
+        assert "now" in error_message.lower() or "extra" in error_message.lower()
+
+    def test_compute_purity_enforcement(self) -> None:
+        """Compute contexts enforce purity by excluding time.
+
+        COMPUTE nodes must be pure functions that produce deterministic
+        output based solely on their input data. Wall-clock time would
+        break caching validity and reproducibility.
+
+        If a computation needs time information, it must be passed as
+        part of the input data, not injected as runtime context.
+        """
+        # This is a compile-time / construction-time check
+        # Attempting to pass `now` will raise ValidationError
+        with pytest.raises(ValidationError) as exc_info:
+            ModelComputeContext(
                 correlation_id=uuid4(),
                 envelope_id=uuid4(),
                 now=datetime.now(UTC),  # type: ignore[call-arg]

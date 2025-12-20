@@ -66,9 +66,9 @@ class ModelEffectContext(BaseModel):
             Propagated from upstream to enable end-to-end request tracing.
         envelope_id: Source envelope ID for causality tracking. Links this
             effect execution to the originating event envelope.
-        trace_id: Optional distributed tracing ID (e.g., OpenTelemetry trace).
+        trace_id: Optional distributed tracing ID (UUID, e.g., OpenTelemetry trace).
             Used for integration with observability platforms.
-        span_id: Optional span ID within the trace. Identifies this effect
+        span_id: Optional span ID (UUID) within the trace. Identifies this effect
             execution as a span in the distributed trace.
         retry_attempt: Current retry attempt number (0 = first attempt).
             Used for exponential backoff calculations and retry limit checks.
@@ -105,14 +105,14 @@ class ModelEffectContext(BaseModel):
         description="Source envelope ID for causality tracking.",
     )
 
-    # Optional tracing
-    trace_id: str | None = Field(
+    # Optional distributed tracing (UUID for consistency with ModelEventEnvelope)
+    trace_id: UUID | None = Field(
         default=None,
-        description="Distributed tracing ID.",
+        description="Distributed tracing ID (e.g., OpenTelemetry trace ID).",
     )
-    span_id: str | None = Field(
+    span_id: UUID | None = Field(
         default=None,
-        description="Span ID within the trace.",
+        description="Span ID within the trace (e.g., OpenTelemetry span ID).",
     )
 
     # Effect-specific context

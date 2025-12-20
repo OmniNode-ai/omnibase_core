@@ -57,6 +57,7 @@ See Also:
     - docs/guides/node-building/03_COMPUTE_NODE_TUTORIAL.md: Compute node tutorial
 """
 
+from omnibase_core.models.compute.model_compute_context import ModelComputeContext
 from omnibase_core.models.compute.model_compute_execution_context import (
     ModelComputeExecutionContext,
 )
@@ -73,6 +74,7 @@ from omnibase_core.models.compute.model_compute_step_result import (
 )
 
 __all__ = [
+    "ModelComputeContext",
     "ModelComputeExecutionContext",
     "ModelComputeInput",
     "ModelComputeOutput",
