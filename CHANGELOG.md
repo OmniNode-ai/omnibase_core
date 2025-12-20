@@ -185,6 +185,33 @@ affinity = ModelSessionAffinity(hash_algorithm="sha512")  # ✅ Strongest
 - Renamed fields: `event_id`→`envelope_id`, `source_service`→`source_node`, `event_type`→`operation`
 - Added new fields: `causation_id`, `target_node`, `handler_type`, `metadata`, `is_response`, `success`, `error`
 
+## [0.5.5] - 2025-12-20
+
+### Fixed
+
+#### Missing Model Exports [OMN-989]
+
+Exported 4 models from `omnibase_core.models.common` that existed but were not in the public API:
+
+| Model | Purpose |
+|-------|---------|
+| `ModelTypedMapping` | Type-safe dict replacement for union reduction |
+| `ModelValueContainer` | Value container used by ModelTypedMapping |
+| `ModelOnexWarning` | Structured warning model |
+| `ModelRegistryError` | Canonical registry error model |
+
+**Impact**: Enables `omnibase_infra` to use `ModelTypedMapping` for ~80-100 potential union reductions with proper type safety.
+
+**Canonical Import Paths**:
+| Model | Canonical Import | Also Available From |
+|-------|-----------------|---------------------|
+| `ModelTypedMapping` | `omnibase_core.models.common` | - |
+| `ModelValueContainer` | `omnibase_core.models.common` | - |
+| `ModelOnexWarning` | `omnibase_core.errors` | `omnibase_core.models.common` |
+| `ModelRegistryError` | `omnibase_core.errors` | `omnibase_core.models.common` |
+
+For error/warning models, prefer importing from `omnibase_core.errors` for semantic clarity.
+
 ## [0.5.3] - 2025-12-19
 
 ### Changed
