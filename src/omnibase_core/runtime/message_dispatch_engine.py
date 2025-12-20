@@ -87,14 +87,24 @@ from uuid import uuid4
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_dispatch_status import EnumDispatchStatus
 from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
+from omnibase_core.enums.enum_node_kind import EnumNodeKind
+from omnibase_core.models.compute.model_compute_context import ModelComputeContext
 from omnibase_core.models.dispatch.model_dispatch_metrics import ModelDispatchMetrics
 from omnibase_core.models.dispatch.model_dispatch_result import ModelDispatchResult
 from omnibase_core.models.dispatch.model_dispatch_route import ModelDispatchRoute
 from omnibase_core.models.dispatch.model_handler_metrics import ModelHandlerMetrics
 from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
+from omnibase_core.models.effect.model_effect_context import ModelEffectContext
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+from omnibase_core.models.orchestrator.model_orchestrator_context import (
+    ModelOrchestratorContext,
+)
+from omnibase_core.models.reducer.model_reducer_context import ModelReducerContext
 from omnibase_core.protocols.event_bus.protocol_event_bus import ProtocolEventBus
+from omnibase_core.protocols.handler.protocol_handler_context import (
+    ProtocolHandlerContext,
+)
 from omnibase_core.types.typed_dict_legacy_dispatch_metrics import (
     TypedDictLegacyDispatchMetrics,
 )
@@ -117,8 +127,11 @@ MetricKey = Literal[
 ]
 
 # Type alias for handler functions
-# Handlers can be sync or async, take an envelope and return Any (handler output)
-HandlerFunc = Callable[[ModelEventEnvelope[Any]], Any | Awaitable[Any]]
+# Handlers take an envelope and context, can be sync or async
+HandlerFunc = Callable[
+    [ModelEventEnvelope[Any], ProtocolHandlerContext],
+    Any | Awaitable[Any],
+]
 
 
 class MessageDispatchEngine:
@@ -196,7 +209,7 @@ class MessageDispatchEngine:
     class _HandlerEntry:
         """Internal storage for handler registration metadata."""
 
-        __slots__ = ("category", "handler", "handler_id", "message_types")
+        __slots__ = ("category", "handler", "handler_id", "message_types", "node_kind")
 
         def __init__(
             self,
@@ -204,11 +217,13 @@ class MessageDispatchEngine:
             handler: HandlerFunc,
             category: EnumMessageCategory,
             message_types: set[str] | None,
+            node_kind: EnumNodeKind,
         ) -> None:
             self.handler_id = handler_id
             self.handler = handler
             self.category = category
             self.message_types = message_types  # None means "all types"
+            self.node_kind = node_kind
 
     def __init__(
         self,
@@ -340,6 +355,7 @@ class MessageDispatchEngine:
         handler_id: str,
         handler: HandlerFunc,
         category: EnumMessageCategory,
+        node_kind: EnumNodeKind,
         message_types: set[str] | None = None,
     ) -> None:
         """
@@ -352,8 +368,15 @@ class MessageDispatchEngine:
         Args:
             handler_id: Unique identifier for this handler
             handler: Callable that processes messages. Can be sync or async.
-                Signature: (envelope: ModelEventEnvelope[Any]) -> Any
+                Signature: (envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext) -> Any
             category: Message category this handler processes
+            node_kind: The architectural node kind for this handler. Determines
+                which context type the handler receives:
+                - EFFECT: ModelEffectContext (with `now`, `retry_attempt`)
+                - COMPUTE: ModelComputeContext (no `now` - pure function)
+                - REDUCER: ModelReducerContext (no `now` - pure function)
+                - ORCHESTRATOR: ModelOrchestratorContext (with `now`)
+                RUNTIME_HOST is not allowed as it's for infrastructure, not handlers.
             message_types: Optional set of specific message types to handle.
                 When None, handles all message types in the category.
 
@@ -361,18 +384,21 @@ class MessageDispatchEngine:
             ModelOnexError: If engine is frozen (INVALID_STATE)
             ModelOnexError: If handler_id is empty (INVALID_PARAMETER)
             ModelOnexError: If handler is not callable (INVALID_PARAMETER)
+            ModelOnexError: If node_kind is RUNTIME_HOST (INVALID_PARAMETER)
             ModelOnexError: If handler with same ID exists (DUPLICATE_REGISTRATION)
 
         Example:
-            >>> async def process_user_event(envelope):
+            >>> async def process_user_event(envelope, context):
+            ...     # Access correlation tracking
+            ...     logger.info(f"Processing {context.correlation_id}")
             ...     user_data = envelope.payload
-            ...     # Process the event
             ...     return {"processed": True}
             >>>
             >>> engine.register_handler(
             ...     handler_id="user-event-handler",
             ...     handler=process_user_event,
             ...     category=EnumMessageCategory.EVENT,
+            ...     node_kind=EnumNodeKind.REDUCER,
             ...     message_types={"UserCreated", "UserUpdated"},
             ... )
 
@@ -409,6 +435,25 @@ class MessageDispatchEngine:
                 error_code=EnumCoreErrorCode.INVALID_PARAMETER,
             )
 
+        if not isinstance(node_kind, EnumNodeKind):
+            raise ModelOnexError(
+                message=(
+                    f"node_kind must be EnumNodeKind, got {type(node_kind).__name__}. "
+                    f"Valid node kinds: EFFECT, COMPUTE, REDUCER, ORCHESTRATOR"
+                ),
+                error_code=EnumCoreErrorCode.INVALID_PARAMETER,
+            )
+
+        if node_kind == EnumNodeKind.RUNTIME_HOST:
+            raise ModelOnexError(
+                message=(
+                    f"Cannot register handler '{handler_id}' with node_kind RUNTIME_HOST. "
+                    "RUNTIME_HOST is for infrastructure nodes, not message handlers. "
+                    "Use EFFECT, COMPUTE, REDUCER, or ORCHESTRATOR."
+                ),
+                error_code=EnumCoreErrorCode.INVALID_PARAMETER,
+            )
+
         with self._registration_lock:
             if self._frozen:
                 raise ModelOnexError(
@@ -437,6 +482,7 @@ class MessageDispatchEngine:
                 handler=handler,
                 category=category,
                 message_types=message_types,
+                node_kind=node_kind,
             )
             self._handlers[handler_id] = entry
 
@@ -1254,16 +1300,103 @@ class MessageDispatchEngine:
 
         return matching_handlers
 
+    def _build_handler_context(
+        self,
+        entry: MessageDispatchEngine._HandlerEntry,
+        envelope: ModelEventEnvelope[Any],
+    ) -> ProtocolHandlerContext:
+        """
+        Build the appropriate context model for a handler based on its node_kind.
+
+        Context type selection:
+            - EFFECT: ModelEffectContext (with `now`, `retry_attempt`)
+            - COMPUTE: ModelComputeContext (no `now` - pure function)
+            - REDUCER: ModelReducerContext (no `now` - pure function)
+            - ORCHESTRATOR: ModelOrchestratorContext (with `now`)
+
+        The context carries causality tracking fields from the envelope:
+            - correlation_id: Request tracing across services
+            - envelope_id: Links handler invocation to triggering event
+            - trace_id/span_id: Optional OpenTelemetry integration
+
+        Args:
+            entry: Handler entry with node_kind
+            envelope: Source envelope for correlation/trace IDs
+
+        Returns:
+            Appropriate context model for the handler's node_kind.
+            All context models implement ProtocolHandlerContext.
+
+        Raises:
+            ModelOnexError: If node_kind is RUNTIME_HOST (should not happen
+                as registration rejects RUNTIME_HOST)
+        """
+        # Extract IDs from envelope
+        # correlation_id is required in context, generate if missing
+        correlation_id = envelope.correlation_id
+        if correlation_id is None:
+            correlation_id = uuid4()
+
+        envelope_id = envelope.envelope_id
+        trace_id = envelope.trace_id
+        span_id = envelope.span_id
+
+        node_kind = entry.node_kind
+
+        if node_kind == EnumNodeKind.EFFECT:
+            return ModelEffectContext(
+                correlation_id=correlation_id,
+                envelope_id=envelope_id,
+                trace_id=trace_id,
+                span_id=span_id,
+                retry_attempt=envelope.retry_count,
+            )
+
+        elif node_kind == EnumNodeKind.COMPUTE:
+            return ModelComputeContext(
+                correlation_id=correlation_id,
+                envelope_id=envelope_id,
+                trace_id=trace_id,
+                span_id=span_id,
+            )
+
+        elif node_kind == EnumNodeKind.REDUCER:
+            return ModelReducerContext(
+                correlation_id=correlation_id,
+                envelope_id=envelope_id,
+                trace_id=trace_id,
+                span_id=span_id,
+            )
+
+        elif node_kind == EnumNodeKind.ORCHESTRATOR:
+            return ModelOrchestratorContext(
+                correlation_id=correlation_id,
+                envelope_id=envelope_id,
+                trace_id=trace_id,
+                span_id=span_id,
+            )
+
+        else:
+            # RUNTIME_HOST or unknown - should not reach here
+            raise ModelOnexError(
+                message=f"Cannot build context for node_kind {node_kind}. "
+                "Only EFFECT, COMPUTE, REDUCER, and ORCHESTRATOR are valid.",
+                error_code=EnumCoreErrorCode.INVALID_STATE,
+            )
+
     async def _execute_handler(
         self,
         entry: MessageDispatchEngine._HandlerEntry,
         envelope: ModelEventEnvelope[Any],
     ) -> Any:
         """
-        Execute a handler (sync or async).
+        Execute a handler (sync or async) with context injection.
+
+        Builds the appropriate context based on the handler's node_kind
+        and invokes the handler with both envelope and context.
 
         Args:
-            entry: The handler entry containing the callable
+            entry: The handler entry containing the callable and node_kind
             envelope: The message envelope to process
 
         Returns:
@@ -1274,13 +1407,16 @@ class MessageDispatchEngine:
         """
         handler = entry.handler
 
+        # Build context from envelope + handler's node_kind
+        context = self._build_handler_context(entry, envelope)
+
         # Check if handler is async
         if inspect.iscoroutinefunction(handler):
-            return await handler(envelope)
+            return await handler(envelope, context)
         else:
             # Sync handler - run in executor to avoid blocking
             loop = asyncio.get_running_loop()
-            return await loop.run_in_executor(None, handler, envelope)
+            return await loop.run_in_executor(None, handler, envelope, context)
 
     async def _publish_outputs_in_order(
         self,
