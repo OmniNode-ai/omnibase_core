@@ -1350,7 +1350,15 @@ class MessageDispatchEngine:
 
         # Ensure retry_count is non-negative (ModelEffectContext.retry_attempt
         # has ge=0 constraint). Protect against corrupted envelope data.
-        retry_attempt = max(0, envelope.retry_count)
+        retry_attempt = envelope.retry_count
+        if retry_attempt < 0:
+            self._logger.warning(
+                "Envelope has negative retry_count=%d (envelope_id=%s), clamping to 0. "
+                "This may indicate data corruption.",
+                retry_attempt,
+                envelope.envelope_id,
+            )
+            retry_attempt = 0
 
         # Build context based on node_kind
         # Use single return point for consistent protocol assertion
