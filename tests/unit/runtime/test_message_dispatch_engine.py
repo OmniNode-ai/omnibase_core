@@ -27,10 +27,14 @@ import pytest
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_dispatch_status import EnumDispatchStatus
 from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
+from omnibase_core.enums.enum_node_kind import EnumNodeKind
 from omnibase_core.models.dispatch.model_dispatch_result import ModelDispatchResult
 from omnibase_core.models.dispatch.model_dispatch_route import ModelDispatchRoute
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
+from omnibase_core.protocols.handler.protocol_handler_context import (
+    ProtocolHandlerContext,
+)
 from omnibase_core.runtime.message_dispatch_engine import MessageDispatchEngine
 
 # ============================================================================
@@ -218,13 +222,16 @@ class TestHandlerRegistration:
     ) -> None:
         """Test successful sync handler registration."""
 
-        def sync_handler(envelope: ModelEventEnvelope[Any]) -> str:
+        def sync_handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
             return "handled"
 
         dispatch_engine.register_handler(
             handler_id="sync-handler",
             handler=sync_handler,
             category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
         )
 
         assert dispatch_engine.handler_count == 1
@@ -234,13 +241,16 @@ class TestHandlerRegistration:
     ) -> None:
         """Test successful async handler registration."""
 
-        async def async_handler(envelope: ModelEventEnvelope[Any]) -> str:
+        async def async_handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
             return "handled"
 
         dispatch_engine.register_handler(
             handler_id="async-handler",
             handler=async_handler,
             category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
         )
 
         assert dispatch_engine.handler_count == 1
@@ -250,13 +260,16 @@ class TestHandlerRegistration:
     ) -> None:
         """Test handler registration with specific message types."""
 
-        def handler(envelope: ModelEventEnvelope[Any]) -> str:
+        def handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
             return "handled"
 
         dispatch_engine.register_handler(
             handler_id="typed-handler",
             handler=handler,
             category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
             message_types={"UserCreatedEvent", "UserUpdatedEvent"},
         )
 
@@ -267,29 +280,38 @@ class TestHandlerRegistration:
     ) -> None:
         """Test registering handlers for different categories."""
 
-        def event_handler(envelope: ModelEventEnvelope[Any]) -> str:
+        def event_handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
             return "event"
 
-        def command_handler(envelope: ModelEventEnvelope[Any]) -> str:
+        def command_handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
             return "command"
 
-        def intent_handler(envelope: ModelEventEnvelope[Any]) -> str:
+        def intent_handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
             return "intent"
 
         dispatch_engine.register_handler(
             handler_id="event-handler",
             handler=event_handler,
             category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
         )
         dispatch_engine.register_handler(
             handler_id="command-handler",
             handler=command_handler,
             category=EnumMessageCategory.COMMAND,
+            node_kind=EnumNodeKind.ORCHESTRATOR,
         )
         dispatch_engine.register_handler(
             handler_id="intent-handler",
             handler=intent_handler,
             category=EnumMessageCategory.INTENT,
+            node_kind=EnumNodeKind.EFFECT,
         )
 
         assert dispatch_engine.handler_count == 3
@@ -299,13 +321,16 @@ class TestHandlerRegistration:
     ) -> None:
         """Test that duplicate handler_id raises DUPLICATE_REGISTRATION error."""
 
-        def handler(envelope: ModelEventEnvelope[Any]) -> str:
+        def handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
             return "handled"
 
         dispatch_engine.register_handler(
             handler_id="dup-handler",
             handler=handler,
             category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
         )
 
         with pytest.raises(ModelOnexError) as exc_info:
@@ -313,6 +338,7 @@ class TestHandlerRegistration:
                 handler_id="dup-handler",  # Same ID
                 handler=handler,
                 category=EnumMessageCategory.COMMAND,  # Different category
+                node_kind=EnumNodeKind.ORCHESTRATOR,
             )
 
         assert exc_info.value.error_code == EnumCoreErrorCode.DUPLICATE_REGISTRATION
@@ -323,7 +349,9 @@ class TestHandlerRegistration:
     ) -> None:
         """Test that empty handler_id raises INVALID_PARAMETER error."""
 
-        def handler(envelope: ModelEventEnvelope[Any]) -> str:
+        def handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
             return "handled"
 
         with pytest.raises(ModelOnexError) as exc_info:
@@ -331,6 +359,7 @@ class TestHandlerRegistration:
                 handler_id="",
                 handler=handler,
                 category=EnumMessageCategory.EVENT,
+                node_kind=EnumNodeKind.REDUCER,
             )
 
         assert exc_info.value.error_code == EnumCoreErrorCode.INVALID_PARAMETER
@@ -340,7 +369,9 @@ class TestHandlerRegistration:
     ) -> None:
         """Test that whitespace-only handler_id raises INVALID_PARAMETER error."""
 
-        def handler(envelope: ModelEventEnvelope[Any]) -> str:
+        def handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
             return "handled"
 
         with pytest.raises(ModelOnexError) as exc_info:
@@ -348,6 +379,7 @@ class TestHandlerRegistration:
                 handler_id="   ",
                 handler=handler,
                 category=EnumMessageCategory.EVENT,
+                node_kind=EnumNodeKind.REDUCER,
             )
 
         assert exc_info.value.error_code == EnumCoreErrorCode.INVALID_PARAMETER
@@ -361,6 +393,7 @@ class TestHandlerRegistration:
                 handler_id="bad-handler",
                 handler=None,  # type: ignore[arg-type]
                 category=EnumMessageCategory.EVENT,
+                node_kind=EnumNodeKind.REDUCER,
             )
 
         assert exc_info.value.error_code == EnumCoreErrorCode.INVALID_PARAMETER
@@ -374,6 +407,7 @@ class TestHandlerRegistration:
                 handler_id="bad-handler",
                 handler="not a function",  # type: ignore[arg-type]
                 category=EnumMessageCategory.EVENT,
+                node_kind=EnumNodeKind.REDUCER,
             )
 
         assert exc_info.value.error_code == EnumCoreErrorCode.INVALID_PARAMETER
@@ -383,7 +417,9 @@ class TestHandlerRegistration:
     ) -> None:
         """Test that invalid category raises INVALID_PARAMETER error."""
 
-        def handler(envelope: ModelEventEnvelope[Any]) -> str:
+        def handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
             return "handled"
 
         with pytest.raises(ModelOnexError) as exc_info:
@@ -391,6 +427,7 @@ class TestHandlerRegistration:
                 handler_id="handler",
                 handler=handler,
                 category="not_a_category",  # type: ignore[arg-type]
+                node_kind=EnumNodeKind.REDUCER,
             )
 
         assert exc_info.value.error_code == EnumCoreErrorCode.INVALID_PARAMETER
@@ -401,7 +438,9 @@ class TestHandlerRegistration:
         """Test that handler registration after freeze raises INVALID_STATE error."""
         dispatch_engine.freeze()
 
-        def handler(envelope: ModelEventEnvelope[Any]) -> str:
+        def handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
             return "handled"
 
         with pytest.raises(ModelOnexError) as exc_info:
@@ -409,6 +448,7 @@ class TestHandlerRegistration:
                 handler_id="late-handler",
                 handler=handler,
                 category=EnumMessageCategory.EVENT,
+                node_kind=EnumNodeKind.REDUCER,
             )
 
         assert exc_info.value.error_code == EnumCoreErrorCode.INVALID_STATE
@@ -469,13 +509,16 @@ class TestFreezePattern:
     ) -> None:
         """Test successful freeze with valid route-handler configuration."""
 
-        def handler(envelope: ModelEventEnvelope[Any]) -> str:
+        def handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
             return "handled"
 
         dispatch_engine.register_handler(
             handler_id="user-handler",
             handler=handler,
             category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
         )
         dispatch_engine.register_route(
             ModelDispatchRoute(
@@ -519,7 +562,9 @@ class TestDispatchSuccess:
         """Test dispatch with a single matching handler."""
         results: list[str] = []
 
-        async def handler(envelope: ModelEventEnvelope[Any]) -> str:
+        async def handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
             results.append("handled")
             return "output.topic.v1"
 
@@ -527,6 +572,7 @@ class TestDispatchSuccess:
             handler_id="event-handler",
             handler=handler,
             category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
         )
         dispatch_engine.register_route(
             ModelDispatchRoute(
@@ -554,7 +600,9 @@ class TestDispatchSuccess:
         """Test dispatch with a sync handler (runs in executor)."""
         results: list[str] = []
 
-        def sync_handler(envelope: ModelEventEnvelope[Any]) -> str:
+        def sync_handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
             results.append("sync_handled")
             return "sync.output.v1"
 
@@ -562,6 +610,7 @@ class TestDispatchSuccess:
             handler_id="sync-handler",
             handler=sync_handler,
             category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
         )
         dispatch_engine.register_route(
             ModelDispatchRoute(
@@ -587,11 +636,15 @@ class TestDispatchSuccess:
         """Test fan-out dispatch to multiple handlers via multiple routes."""
         results: list[str] = []
 
-        async def handler1(envelope: ModelEventEnvelope[Any]) -> str:
+        async def handler1(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
             results.append("handler1")
             return "output1.v1"
 
-        async def handler2(envelope: ModelEventEnvelope[Any]) -> str:
+        async def handler2(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
             results.append("handler2")
             return "output2.v1"
 
@@ -599,11 +652,13 @@ class TestDispatchSuccess:
             handler_id="handler-1",
             handler=handler1,
             category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
         )
         dispatch_engine.register_handler(
             handler_id="handler-2",
             handler=handler2,
             category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
         )
 
         # Two routes pointing to different handlers, both match the topic
@@ -641,13 +696,16 @@ class TestDispatchSuccess:
     ) -> None:
         """Test handler that returns list of output topics."""
 
-        async def handler(envelope: ModelEventEnvelope[Any]) -> list[str]:
+        async def handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> list[str]:
             return ["output1.v1", "output2.v1", "output3.v1"]
 
         dispatch_engine.register_handler(
             handler_id="multi-output-handler",
             handler=handler,
             category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
         )
         dispatch_engine.register_route(
             ModelDispatchRoute(
@@ -674,13 +732,16 @@ class TestDispatchSuccess:
     ) -> None:
         """Test handler that returns None (no outputs)."""
 
-        async def handler(envelope: ModelEventEnvelope[Any]) -> None:
+        async def handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> None:
             pass  # No return value
 
         dispatch_engine.register_handler(
             handler_id="void-handler",
             handler=handler,
             category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
         )
         dispatch_engine.register_route(
             ModelDispatchRoute(
@@ -706,11 +767,15 @@ class TestDispatchSuccess:
         """Test dispatch with message type filtering."""
         results: list[str] = []
 
-        async def user_created_handler(envelope: ModelEventEnvelope[Any]) -> str:
+        async def user_created_handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
             results.append("user_created")
             return "created.output"
 
-        async def user_updated_handler(envelope: ModelEventEnvelope[Any]) -> str:
+        async def user_updated_handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
             results.append("user_updated")
             return "updated.output"
 
@@ -718,12 +783,14 @@ class TestDispatchSuccess:
             handler_id="created-handler",
             handler=user_created_handler,
             category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
             message_types={"UserCreatedEvent"},  # Only handles UserCreatedEvent
         )
         dispatch_engine.register_handler(
             handler_id="updated-handler",
             handler=user_updated_handler,
             category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
             message_types={"UserUpdatedEvent"},  # Only handles UserUpdatedEvent
         )
 
@@ -760,13 +827,16 @@ class TestDispatchSuccess:
     ) -> None:
         """Test that dispatch result preserves envelope correlation_id."""
 
-        async def handler(envelope: ModelEventEnvelope[Any]) -> None:
+        async def handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> None:
             pass
 
         dispatch_engine.register_handler(
             handler_id="handler",
             handler=handler,
             category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
         )
         dispatch_engine.register_route(
             ModelDispatchRoute(
@@ -906,13 +976,16 @@ class TestDispatchErrors:
     ) -> None:
         """Test that handler exception results in HANDLER_ERROR status."""
 
-        async def failing_handler(envelope: ModelEventEnvelope[Any]) -> None:
+        async def failing_handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> None:
             raise ValueError("Something went wrong!")
 
         dispatch_engine.register_handler(
             handler_id="failing-handler",
             handler=failing_handler,
             category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
         )
         dispatch_engine.register_route(
             ModelDispatchRoute(
@@ -939,11 +1012,15 @@ class TestDispatchErrors:
         """Test dispatch where some handlers succeed and some fail."""
         results: list[str] = []
 
-        async def success_handler(envelope: ModelEventEnvelope[Any]) -> str:
+        async def success_handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
             results.append("success")
             return "success.output"
 
-        async def failing_handler(envelope: ModelEventEnvelope[Any]) -> None:
+        async def failing_handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> None:
             results.append("failing")
             raise RuntimeError("Handler failed!")
 
@@ -951,11 +1028,13 @@ class TestDispatchErrors:
             handler_id="success-handler",
             handler=success_handler,
             category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
         )
         dispatch_engine.register_handler(
             handler_id="failing-handler",
             handler=failing_handler,
             category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
         )
 
         dispatch_engine.register_route(
@@ -1000,13 +1079,16 @@ class TestDispatchErrors:
     ) -> None:
         """Test that disabled routes are not matched."""
 
-        async def handler(envelope: ModelEventEnvelope[Any]) -> str:
+        async def handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
             return "handled"
 
         dispatch_engine.register_handler(
             handler_id="handler",
             handler=handler,
             category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
         )
         dispatch_engine.register_route(
             ModelDispatchRoute(
@@ -1043,7 +1125,9 @@ class TestAsyncHandlers:
         """Test async handler that uses await."""
         results: list[str] = []
 
-        async def async_handler(envelope: ModelEventEnvelope[Any]) -> str:
+        async def async_handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
             await asyncio.sleep(0.01)  # Simulate async work
             results.append("async_complete")
             return "async.output"
@@ -1052,6 +1136,7 @@ class TestAsyncHandlers:
             handler_id="async-handler",
             handler=async_handler,
             category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
         )
         dispatch_engine.register_route(
             ModelDispatchRoute(
@@ -1101,13 +1186,16 @@ class TestMetrics:
     ) -> None:
         """Test metrics are updated on successful dispatch."""
 
-        async def handler(envelope: ModelEventEnvelope[Any]) -> str:
+        async def handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
             return "output"
 
         dispatch_engine.register_handler(
             handler_id="handler",
             handler=handler,
             category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
         )
         dispatch_engine.register_route(
             ModelDispatchRoute(
@@ -1137,13 +1225,16 @@ class TestMetrics:
     ) -> None:
         """Test metrics are updated on handler error."""
 
-        async def failing_handler(envelope: ModelEventEnvelope[Any]) -> None:
+        async def failing_handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> None:
             raise ValueError("Failure!")
 
         dispatch_engine.register_handler(
             handler_id="handler",
             handler=failing_handler,
             category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
         )
         dispatch_engine.register_route(
             ModelDispatchRoute(
@@ -1204,13 +1295,16 @@ class TestMetrics:
     ) -> None:
         """Test metrics accumulate across multiple dispatches."""
 
-        async def handler(envelope: ModelEventEnvelope[Any]) -> str:
+        async def handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
             return "output"
 
         dispatch_engine.register_handler(
             handler_id="handler",
             handler=handler,
             category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
         )
         dispatch_engine.register_route(
             ModelDispatchRoute(
@@ -1249,21 +1343,27 @@ class TestDeterministicRouting:
         """Test that same input always produces same handler selection."""
         handler_calls: list[list[str]] = []
 
-        async def handler1(envelope: ModelEventEnvelope[Any]) -> None:
+        async def handler1(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> None:
             pass
 
-        async def handler2(envelope: ModelEventEnvelope[Any]) -> None:
+        async def handler2(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> None:
             pass
 
         dispatch_engine.register_handler(
             handler_id="handler-1",
             handler=handler1,
             category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
         )
         dispatch_engine.register_handler(
             handler_id="handler-2",
             handler=handler2,
             category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
         )
         dispatch_engine.register_route(
             ModelDispatchRoute(
@@ -1305,21 +1405,27 @@ class TestDeterministicRouting:
     ) -> None:
         """Test that different topics route to different handlers."""
 
-        async def user_handler(envelope: ModelEventEnvelope[Any]) -> None:
+        async def user_handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> None:
             pass
 
-        async def order_handler(envelope: ModelEventEnvelope[Any]) -> None:
+        async def order_handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> None:
             pass
 
         dispatch_engine.register_handler(
             handler_id="user-handler",
             handler=user_handler,
             category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
         )
         dispatch_engine.register_handler(
             handler_id="order-handler",
             handler=order_handler,
             category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
         )
         dispatch_engine.register_route(
             ModelDispatchRoute(
@@ -1373,13 +1479,16 @@ class TestPureRouting:
         """Test that routing is based on topic/category, not payload content."""
         handler_calls: list[str] = []
 
-        async def handler(envelope: ModelEventEnvelope[Any]) -> None:
+        async def handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> None:
             handler_calls.append(type(envelope.payload).__name__)
 
         dispatch_engine.register_handler(
             handler_id="generic-handler",
             handler=handler,
             category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
         )
         dispatch_engine.register_route(
             ModelDispatchRoute(
@@ -1416,7 +1525,9 @@ class TestPureRouting:
         """Test that outputs are collected for publishing, not interpreted."""
 
         # Handler returns various output formats
-        async def handler(envelope: ModelEventEnvelope[Any]) -> list[str]:
+        async def handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> list[str]:
             return [
                 "output.topic.v1",
                 "another.output.v1",
@@ -1427,6 +1538,7 @@ class TestPureRouting:
             handler_id="handler",
             handler=handler,
             category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
         )
         dispatch_engine.register_route(
             ModelDispatchRoute(
@@ -1471,13 +1583,16 @@ class TestStringRepresentation:
     ) -> None:
         """Test __str__ method with routes and handlers."""
 
-        def handler(envelope: ModelEventEnvelope[Any]) -> None:
+        def handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> None:
             pass
 
         dispatch_engine.register_handler(
             handler_id="handler",
             handler=handler,
             category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
         )
         dispatch_engine.register_route(
             ModelDispatchRoute(
@@ -1537,7 +1652,9 @@ class TestProperties:
     def test_handler_count(self, dispatch_engine: MessageDispatchEngine) -> None:
         """Test handler_count property."""
 
-        def handler(envelope: ModelEventEnvelope[Any]) -> None:
+        def handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> None:
             pass
 
         assert dispatch_engine.handler_count == 0
@@ -1546,6 +1663,7 @@ class TestProperties:
             handler_id="handler-1",
             handler=handler,
             category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
         )
         assert dispatch_engine.handler_count == 1
 
@@ -1553,6 +1671,7 @@ class TestProperties:
             handler_id="handler-2",
             handler=handler,
             category=EnumMessageCategory.COMMAND,
+            node_kind=EnumNodeKind.ORCHESTRATOR,
         )
         assert dispatch_engine.handler_count == 2
 
@@ -1575,7 +1694,9 @@ class TestCommandAndIntentDispatch:
         """Test successful command dispatch."""
         results: list[str] = []
 
-        async def command_handler(envelope: ModelEventEnvelope[Any]) -> str:
+        async def command_handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
             results.append("command_handled")
             return "result.events.v1"
 
@@ -1583,6 +1704,7 @@ class TestCommandAndIntentDispatch:
             handler_id="command-handler",
             handler=command_handler,
             category=EnumMessageCategory.COMMAND,
+            node_kind=EnumNodeKind.ORCHESTRATOR,
         )
         dispatch_engine.register_route(
             ModelDispatchRoute(
@@ -1611,7 +1733,9 @@ class TestCommandAndIntentDispatch:
         """Test successful intent dispatch."""
         results: list[str] = []
 
-        async def intent_handler(envelope: ModelEventEnvelope[Any]) -> str:
+        async def intent_handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
             results.append("intent_handled")
             return "user.commands.v1"
 
@@ -1619,6 +1743,7 @@ class TestCommandAndIntentDispatch:
             handler_id="intent-handler",
             handler=intent_handler,
             category=EnumMessageCategory.INTENT,
+            node_kind=EnumNodeKind.EFFECT,
         )
         dispatch_engine.register_route(
             ModelDispatchRoute(
@@ -2208,3 +2333,473 @@ class TestPublishingOrder:
                 result={"value": 42},
                 projections=({"type": "InvalidProjection"},),
             )
+
+
+# ============================================================================
+# Context Injection Tests (OMN-984)
+# ============================================================================
+
+
+@pytest.mark.unit
+class TestContextInjection:
+    """Tests for handler context injection (OMN-984)."""
+
+    @pytest.mark.asyncio
+    async def test_reducer_handler_receives_reducer_context(
+        self,
+        dispatch_engine: MessageDispatchEngine,
+        event_envelope: ModelEventEnvelope[UserCreatedEvent],
+    ) -> None:
+        """Test that REDUCER handler receives ModelReducerContext."""
+        from omnibase_core.models.reducer.model_reducer_context import (
+            ModelReducerContext,
+        )
+
+        received_context: ProtocolHandlerContext | None = None
+
+        async def handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
+            nonlocal received_context
+            received_context = context
+            return "handled"
+
+        dispatch_engine.register_handler(
+            handler_id="reducer-handler",
+            handler=handler,
+            category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
+        )
+        dispatch_engine.register_route(
+            ModelDispatchRoute(
+                route_id="route",
+                topic_pattern="*.user.events.*",
+                message_category=EnumMessageCategory.EVENT,
+                handler_id="reducer-handler",
+            )
+        )
+        dispatch_engine.freeze()
+
+        await dispatch_engine.dispatch("dev.user.events.v1", event_envelope)
+
+        assert received_context is not None
+        assert isinstance(received_context, ModelReducerContext)
+        # Reducer context should NOT have 'now' attribute
+        assert (
+            not hasattr(received_context, "now")
+            or getattr(received_context, "now", None) is None
+        )
+
+    @pytest.mark.asyncio
+    async def test_effect_handler_receives_effect_context(
+        self,
+        dispatch_engine: MessageDispatchEngine,
+    ) -> None:
+        """Test that EFFECT handler receives ModelEffectContext with time."""
+        from omnibase_core.models.effect.model_effect_context import ModelEffectContext
+
+        received_context: ProtocolHandlerContext | None = None
+
+        async def handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
+            nonlocal received_context
+            received_context = context
+            return "handled"
+
+        intent_envelope = ModelEventEnvelope(
+            payload=ProvisionUserIntent(user_type="admin"),
+            correlation_id=uuid4(),
+        )
+
+        dispatch_engine.register_handler(
+            handler_id="effect-handler",
+            handler=handler,
+            category=EnumMessageCategory.INTENT,
+            node_kind=EnumNodeKind.EFFECT,
+        )
+        dispatch_engine.register_route(
+            ModelDispatchRoute(
+                route_id="route",
+                topic_pattern="*.user.intents.*",
+                message_category=EnumMessageCategory.INTENT,
+                handler_id="effect-handler",
+            )
+        )
+        dispatch_engine.freeze()
+
+        await dispatch_engine.dispatch("dev.user.intents.v1", intent_envelope)
+
+        assert received_context is not None
+        assert isinstance(received_context, ModelEffectContext)
+        # Effect context SHOULD have 'now' attribute
+        assert hasattr(received_context, "now")
+        assert received_context.now is not None
+        # Effect context should have retry_attempt
+        assert hasattr(received_context, "retry_attempt")
+        assert received_context.retry_attempt == 0
+
+    @pytest.mark.asyncio
+    async def test_effect_context_retry_attempt_maps_from_envelope_retry_count(
+        self,
+        dispatch_engine: MessageDispatchEngine,
+    ) -> None:
+        """Test that envelope.retry_count correctly maps to ModelEffectContext.retry_attempt.
+
+        This test verifies the mapping in _build_handler_context:
+            retry_attempt=envelope.retry_count
+
+        The retry_count on the envelope indicates how many times this message
+        has been retried. The EFFECT handler receives this value as retry_attempt
+        in its context, allowing it to implement retry-aware logic (e.g.,
+        exponential backoff, different error handling on final retry).
+        """
+        from omnibase_core.models.effect.model_effect_context import ModelEffectContext
+
+        received_context: ProtocolHandlerContext | None = None
+
+        async def handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
+            nonlocal received_context
+            received_context = context
+            return "handled"
+
+        # Create envelope with specific retry_count value
+        retry_count_value = 3
+        intent_envelope = ModelEventEnvelope(
+            payload=ProvisionUserIntent(user_type="admin"),
+            correlation_id=uuid4(),
+            retry_count=retry_count_value,
+        )
+
+        dispatch_engine.register_handler(
+            handler_id="effect-handler",
+            handler=handler,
+            category=EnumMessageCategory.INTENT,
+            node_kind=EnumNodeKind.EFFECT,
+        )
+        dispatch_engine.register_route(
+            ModelDispatchRoute(
+                route_id="route",
+                topic_pattern="*.user.intents.*",
+                message_category=EnumMessageCategory.INTENT,
+                handler_id="effect-handler",
+            )
+        )
+        dispatch_engine.freeze()
+
+        await dispatch_engine.dispatch("dev.user.intents.v1", intent_envelope)
+
+        # Verify context was received
+        assert received_context is not None
+        assert isinstance(received_context, ModelEffectContext)
+
+        # CRITICAL: Verify the retry_count -> retry_attempt mapping
+        assert received_context.retry_attempt == retry_count_value
+        assert received_context.retry_attempt == 3
+
+    @pytest.mark.asyncio
+    async def test_orchestrator_handler_receives_orchestrator_context(
+        self,
+        dispatch_engine: MessageDispatchEngine,
+    ) -> None:
+        """Test that ORCHESTRATOR handler receives ModelOrchestratorContext."""
+        from omnibase_core.models.orchestrator.model_orchestrator_context import (
+            ModelOrchestratorContext,
+        )
+
+        received_context: ProtocolHandlerContext | None = None
+
+        async def handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
+            nonlocal received_context
+            received_context = context
+            return "handled"
+
+        command_envelope = ModelEventEnvelope(
+            payload=CreateUserCommand(name="Test"),
+            correlation_id=uuid4(),
+        )
+
+        dispatch_engine.register_handler(
+            handler_id="orchestrator-handler",
+            handler=handler,
+            category=EnumMessageCategory.COMMAND,
+            node_kind=EnumNodeKind.ORCHESTRATOR,
+        )
+        dispatch_engine.register_route(
+            ModelDispatchRoute(
+                route_id="route",
+                topic_pattern="*.user.commands.*",
+                message_category=EnumMessageCategory.COMMAND,
+                handler_id="orchestrator-handler",
+            )
+        )
+        dispatch_engine.freeze()
+
+        await dispatch_engine.dispatch("dev.user.commands.v1", command_envelope)
+
+        assert received_context is not None
+        assert isinstance(received_context, ModelOrchestratorContext)
+        # Orchestrator context SHOULD have 'now' attribute
+        assert hasattr(received_context, "now")
+        assert received_context.now is not None
+
+    @pytest.mark.asyncio
+    async def test_compute_handler_receives_compute_context(
+        self,
+        dispatch_engine: MessageDispatchEngine,
+        event_envelope: ModelEventEnvelope[UserCreatedEvent],
+    ) -> None:
+        """Test that COMPUTE handler receives ModelComputeContext."""
+        from omnibase_core.models.compute.model_compute_context import (
+            ModelComputeContext,
+        )
+
+        received_context: ProtocolHandlerContext | None = None
+
+        async def handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
+            nonlocal received_context
+            received_context = context
+            return "handled"
+
+        dispatch_engine.register_handler(
+            handler_id="compute-handler",
+            handler=handler,
+            category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.COMPUTE,
+        )
+        dispatch_engine.register_route(
+            ModelDispatchRoute(
+                route_id="route",
+                topic_pattern="*.user.events.*",
+                message_category=EnumMessageCategory.EVENT,
+                handler_id="compute-handler",
+            )
+        )
+        dispatch_engine.freeze()
+
+        await dispatch_engine.dispatch("dev.user.events.v1", event_envelope)
+
+        assert received_context is not None
+        assert isinstance(received_context, ModelComputeContext)
+        # Compute context should NOT have 'now' attribute (purity)
+        assert (
+            not hasattr(received_context, "now")
+            or getattr(received_context, "now", None) is None
+        )
+
+    @pytest.mark.asyncio
+    async def test_context_preserves_correlation_id(
+        self,
+        dispatch_engine: MessageDispatchEngine,
+    ) -> None:
+        """Test that context preserves correlation_id from envelope."""
+        received_context: ProtocolHandlerContext | None = None
+
+        async def handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
+            nonlocal received_context
+            received_context = context
+            return "handled"
+
+        correlation_id = uuid4()
+        envelope = ModelEventEnvelope(
+            payload=UserCreatedEvent(
+                user_id=UUID("00000000-0000-0000-0000-000000000123"), name="Test"
+            ),
+            correlation_id=correlation_id,
+        )
+
+        dispatch_engine.register_handler(
+            handler_id="handler",
+            handler=handler,
+            category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
+        )
+        dispatch_engine.register_route(
+            ModelDispatchRoute(
+                route_id="route",
+                topic_pattern="*.user.events.*",
+                message_category=EnumMessageCategory.EVENT,
+                handler_id="handler",
+            )
+        )
+        dispatch_engine.freeze()
+
+        await dispatch_engine.dispatch("dev.user.events.v1", envelope)
+
+        assert received_context is not None
+        assert received_context.correlation_id == correlation_id
+        assert received_context.envelope_id == envelope.envelope_id
+
+    @pytest.mark.asyncio
+    async def test_context_fields_propagate_from_envelope(
+        self,
+        dispatch_engine: MessageDispatchEngine,
+    ) -> None:
+        """Verify correlation_id, trace_id, span_id, envelope_id propagate to context.
+
+        This test ensures all tracing/causality IDs from the envelope are correctly
+        propagated to the handler context, enabling full distributed tracing and
+        causality tracking through the message dispatch system.
+        """
+        # Create known UUIDs for each field
+        known_correlation_id = uuid4()
+        known_trace_id = uuid4()
+        known_span_id = uuid4()
+
+        # Create envelope with all tracing fields set
+        envelope = ModelEventEnvelope(
+            payload=UserCreatedEvent(
+                user_id=UUID("00000000-0000-0000-0000-000000000123"), name="Test User"
+            ),
+            correlation_id=known_correlation_id,
+            trace_id=known_trace_id,
+            span_id=known_span_id,
+        )
+
+        # Capture the envelope_id after creation (auto-generated)
+        known_envelope_id = envelope.envelope_id
+
+        # Storage for captured context
+        captured_context: ProtocolHandlerContext | None = None
+
+        async def capturing_handler(
+            env: ModelEventEnvelope[Any], ctx: ProtocolHandlerContext
+        ) -> str:
+            nonlocal captured_context
+            captured_context = ctx
+            return "handled"
+
+        dispatch_engine.register_handler(
+            handler_id="tracing-handler",
+            handler=capturing_handler,
+            category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
+        )
+        dispatch_engine.register_route(
+            ModelDispatchRoute(
+                route_id="tracing-route",
+                topic_pattern="*.user.events.*",
+                message_category=EnumMessageCategory.EVENT,
+                handler_id="tracing-handler",
+            )
+        )
+        dispatch_engine.freeze()
+
+        # Dispatch the message
+        result = await dispatch_engine.dispatch("dev.user.events.v1", envelope)
+
+        # Verify dispatch succeeded
+        assert result.status == EnumDispatchStatus.SUCCESS
+
+        # Verify context was captured
+        assert captured_context is not None
+
+        # Verify ALL tracing fields propagated correctly
+        assert captured_context.correlation_id == known_correlation_id, (
+            f"correlation_id mismatch: expected {known_correlation_id}, "
+            f"got {captured_context.correlation_id}"
+        )
+        assert captured_context.trace_id == known_trace_id, (
+            f"trace_id mismatch: expected {known_trace_id}, "
+            f"got {captured_context.trace_id}"
+        )
+        assert captured_context.span_id == known_span_id, (
+            f"span_id mismatch: expected {known_span_id}, "
+            f"got {captured_context.span_id}"
+        )
+        assert captured_context.envelope_id == known_envelope_id, (
+            f"envelope_id mismatch: expected {known_envelope_id}, "
+            f"got {captured_context.envelope_id}"
+        )
+
+    @pytest.mark.asyncio
+    async def test_context_fields_propagate_with_null_trace_ids(
+        self,
+        dispatch_engine: MessageDispatchEngine,
+    ) -> None:
+        """Verify context correctly handles None trace_id and span_id.
+
+        Distributed tracing fields are optional. This test ensures that when
+        they are not set on the envelope, the context correctly reflects None
+        values rather than failing or providing unexpected defaults.
+        """
+        # Create known UUIDs only for required fields
+        known_correlation_id = uuid4()
+
+        # Create envelope WITHOUT trace_id and span_id
+        envelope = ModelEventEnvelope(
+            payload=UserCreatedEvent(
+                user_id=UUID("00000000-0000-0000-0000-000000000123"), name="Test User"
+            ),
+            correlation_id=known_correlation_id,
+            # trace_id and span_id intentionally omitted (None by default)
+        )
+
+        known_envelope_id = envelope.envelope_id
+
+        captured_context: ProtocolHandlerContext | None = None
+
+        async def capturing_handler(
+            env: ModelEventEnvelope[Any], ctx: ProtocolHandlerContext
+        ) -> str:
+            nonlocal captured_context
+            captured_context = ctx
+            return "handled"
+
+        dispatch_engine.register_handler(
+            handler_id="null-trace-handler",
+            handler=capturing_handler,
+            category=EnumMessageCategory.EVENT,
+            node_kind=EnumNodeKind.REDUCER,
+        )
+        dispatch_engine.register_route(
+            ModelDispatchRoute(
+                route_id="null-trace-route",
+                topic_pattern="*.user.events.*",
+                message_category=EnumMessageCategory.EVENT,
+                handler_id="null-trace-handler",
+            )
+        )
+        dispatch_engine.freeze()
+
+        result = await dispatch_engine.dispatch("dev.user.events.v1", envelope)
+
+        assert result.status == EnumDispatchStatus.SUCCESS
+        assert captured_context is not None
+
+        # Required fields should be set
+        assert captured_context.correlation_id == known_correlation_id
+        assert captured_context.envelope_id == known_envelope_id
+
+        # Optional trace fields should be None
+        assert captured_context.trace_id is None
+        assert captured_context.span_id is None
+
+    def test_register_handler_runtime_host_rejected(
+        self, dispatch_engine: MessageDispatchEngine
+    ) -> None:
+        """Test that RUNTIME_HOST node_kind is rejected."""
+
+        def handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
+            return "handled"
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            dispatch_engine.register_handler(
+                handler_id="runtime-handler",
+                handler=handler,
+                category=EnumMessageCategory.EVENT,
+                node_kind=EnumNodeKind.RUNTIME_HOST,
+            )
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.INVALID_PARAMETER
+        assert "RUNTIME_HOST" in exc_info.value.message
