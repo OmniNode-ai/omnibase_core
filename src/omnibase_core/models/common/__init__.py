@@ -23,11 +23,14 @@ from .model_graph_node_parameters import ModelGraphNodeParameters
 from .model_multi_type_value import ModelMultiTypeValue
 from .model_numeric_string_value import ModelNumericStringValue
 from .model_numeric_value import ModelNumericValue
+from .model_onex_warning import ModelOnexWarning
 from .model_optional_int import ModelOptionalInt
 from .model_output_mapping import ModelOutputMapping
 from .model_output_reference import ModelOutputReference
 from .model_query_parameters import ModelQueryParameters, ParameterValue
+from .model_registry_error import ModelRegistryError
 from .model_schema_value import ModelSchemaValue
+from .model_typed_mapping import ModelTypedMapping
 from .model_typed_metadata import (
     ModelConfigSchemaProperty,
     ModelCustomHealthMetrics,
@@ -51,6 +54,7 @@ from .model_validation_result import (
     ModelValidationMetadata,
     ModelValidationResult,
 )
+from .model_value_container import ModelValueContainer
 from .model_value_union import ModelValueUnion
 
 __all__ = [
@@ -66,14 +70,18 @@ __all__ = [
     "ModelMultiTypeValue",
     "ModelNumericValue",
     "ModelNumericStringValue",
+    "ModelOnexWarning",
     "ModelOptionalInt",
     "ModelOutputMapping",
     "ModelOutputReference",
     "ModelQueryParameters",
+    "ModelRegistryError",
     "ModelSchemaValue",
+    "ModelTypedMapping",
     "ModelValidationIssue",
     "ModelValidationMetadata",
     "ModelValidationResult",
+    "ModelValueContainer",
     "ModelValueUnion",
     # Type aliases
     "ParameterValue",
