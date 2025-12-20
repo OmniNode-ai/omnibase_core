@@ -1335,6 +1335,11 @@ class MessageDispatchEngine:
         # correlation_id is required in context, generate if missing
         correlation_id = envelope.correlation_id
         if correlation_id is None:
+            self._logger.warning(
+                "Missing correlation_id in envelope, generating fallback UUID "
+                "(envelope_id=%s). This may indicate an upstream issue.",
+                envelope.envelope_id,
+            )
             correlation_id = uuid4()
 
         envelope_id = envelope.envelope_id
@@ -1343,8 +1348,12 @@ class MessageDispatchEngine:
 
         node_kind = entry.node_kind
 
+        # Build context based on node_kind
+        # Use single return point for consistent protocol assertion
+        context: ProtocolHandlerContext
+
         if node_kind == EnumNodeKind.EFFECT:
-            return ModelEffectContext(
+            context = ModelEffectContext(
                 correlation_id=correlation_id,
                 envelope_id=envelope_id,
                 trace_id=trace_id,
@@ -1353,7 +1362,7 @@ class MessageDispatchEngine:
             )
 
         elif node_kind == EnumNodeKind.COMPUTE:
-            return ModelComputeContext(
+            context = ModelComputeContext(
                 correlation_id=correlation_id,
                 envelope_id=envelope_id,
                 trace_id=trace_id,
@@ -1361,7 +1370,7 @@ class MessageDispatchEngine:
             )
 
         elif node_kind == EnumNodeKind.REDUCER:
-            return ModelReducerContext(
+            context = ModelReducerContext(
                 correlation_id=correlation_id,
                 envelope_id=envelope_id,
                 trace_id=trace_id,
@@ -1369,7 +1378,7 @@ class MessageDispatchEngine:
             )
 
         elif node_kind == EnumNodeKind.ORCHESTRATOR:
-            return ModelOrchestratorContext(
+            context = ModelOrchestratorContext(
                 correlation_id=correlation_id,
                 envelope_id=envelope_id,
                 trace_id=trace_id,
@@ -1381,8 +1390,18 @@ class MessageDispatchEngine:
             raise ModelOnexError(
                 message=f"Cannot build context for node_kind {node_kind}. "
                 "Only EFFECT, COMPUTE, REDUCER, and ORCHESTRATOR are valid.",
-                error_code=EnumCoreErrorCode.INVALID_STATE,
+                error_code=EnumCoreErrorCode.INVALID_PARAMETER,
             )
+
+        # Runtime assertion for protocol compliance during development
+        # Only runs when __debug__ is True (i.e., not with python -O)
+        if __debug__:
+            assert isinstance(context, ProtocolHandlerContext), (
+                f"Context {type(context).__name__} does not implement "
+                f"ProtocolHandlerContext"
+            )
+
+        return context
 
     async def _execute_handler(
         self,

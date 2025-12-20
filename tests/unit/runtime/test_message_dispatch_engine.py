@@ -2440,6 +2440,66 @@ class TestContextInjection:
         assert received_context.retry_attempt == 0
 
     @pytest.mark.asyncio
+    async def test_effect_context_retry_attempt_maps_from_envelope_retry_count(
+        self,
+        dispatch_engine: MessageDispatchEngine,
+    ) -> None:
+        """Test that envelope.retry_count correctly maps to ModelEffectContext.retry_attempt.
+
+        This test verifies the mapping in _build_handler_context:
+            retry_attempt=envelope.retry_count
+
+        The retry_count on the envelope indicates how many times this message
+        has been retried. The EFFECT handler receives this value as retry_attempt
+        in its context, allowing it to implement retry-aware logic (e.g.,
+        exponential backoff, different error handling on final retry).
+        """
+        from omnibase_core.models.effect.model_effect_context import ModelEffectContext
+
+        received_context: ProtocolHandlerContext | None = None
+
+        async def handler(
+            envelope: ModelEventEnvelope[Any], context: ProtocolHandlerContext
+        ) -> str:
+            nonlocal received_context
+            received_context = context
+            return "handled"
+
+        # Create envelope with specific retry_count value
+        retry_count_value = 3
+        intent_envelope = ModelEventEnvelope(
+            payload=ProvisionUserIntent(user_type="admin"),
+            correlation_id=uuid4(),
+            retry_count=retry_count_value,
+        )
+
+        dispatch_engine.register_handler(
+            handler_id="effect-handler",
+            handler=handler,
+            category=EnumMessageCategory.INTENT,
+            node_kind=EnumNodeKind.EFFECT,
+        )
+        dispatch_engine.register_route(
+            ModelDispatchRoute(
+                route_id="route",
+                topic_pattern="*.user.intents.*",
+                message_category=EnumMessageCategory.INTENT,
+                handler_id="effect-handler",
+            )
+        )
+        dispatch_engine.freeze()
+
+        await dispatch_engine.dispatch("dev.user.intents.v1", intent_envelope)
+
+        # Verify context was received
+        assert received_context is not None
+        assert isinstance(received_context, ModelEffectContext)
+
+        # CRITICAL: Verify the retry_count -> retry_attempt mapping
+        assert received_context.retry_attempt == retry_count_value
+        assert received_context.retry_attempt == 3
+
+    @pytest.mark.asyncio
     async def test_orchestrator_handler_receives_orchestrator_context(
         self,
         dispatch_engine: MessageDispatchEngine,
