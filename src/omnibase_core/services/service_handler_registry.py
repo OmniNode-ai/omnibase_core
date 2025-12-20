@@ -39,7 +39,7 @@ __all__ = ["ServiceHandlerRegistry"]
 import logging
 import threading
 from collections import defaultdict
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
