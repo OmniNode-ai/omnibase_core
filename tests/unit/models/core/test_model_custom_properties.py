@@ -276,3 +276,93 @@ class TestModelCustomProperties:
         assert new_props.custom_strings == props.custom_strings
         assert new_props.custom_numbers == props.custom_numbers
         assert new_props.custom_flags == props.custom_flags
+
+    def test_get_custom_value_wrapped_success(self):
+        """Test wrapped value retrieval with ModelResult for string values."""
+        props = ModelCustomProperties()
+        props.set_custom_string("environment", "production")
+
+        result = props.get_custom_value_wrapped("environment")
+
+        assert result.is_ok()
+        value = result.unwrap()
+        assert value.to_value() == "production"
+        assert value.value_type == "string"
+
+    def test_get_custom_value_wrapped_number(self):
+        """Test wrapped value retrieval for number values."""
+        props = ModelCustomProperties()
+        props.set_custom_number("timeout", 42.5)
+
+        result = props.get_custom_value_wrapped("timeout")
+
+        assert result.is_ok()
+        value = result.unwrap()
+        assert value.to_value() == 42.5
+        assert value.value_type == "number"
+
+    def test_get_custom_value_wrapped_flag(self):
+        """Test wrapped value retrieval for boolean flag values."""
+        props = ModelCustomProperties()
+        props.set_custom_flag("debug_enabled", True)
+
+        result = props.get_custom_value_wrapped("debug_enabled")
+
+        assert result.is_ok()
+        value = result.unwrap()
+        assert value.to_value() is True
+        assert value.value_type == "boolean"
+
+    def test_get_custom_value_wrapped_not_found(self):
+        """Test wrapped value retrieval for missing key returns error."""
+        props = ModelCustomProperties()
+
+        result = props.get_custom_value_wrapped("nonexistent_key")
+
+        assert result.is_err()
+        error_msg = result.error
+        assert error_msg is not None
+        assert "nonexistent_key" in error_msg
+        assert "not found" in error_msg
+
+    def test_get_custom_value_wrapped_with_default(self):
+        """Test wrapped value retrieval with default value."""
+        from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
+        props = ModelCustomProperties()
+        default_value = ModelSchemaValue.from_value("fallback")
+
+        result = props.get_custom_value_wrapped("missing_key", default=default_value)
+
+        assert result.is_ok()
+        value = result.unwrap()
+        assert value.to_value() == "fallback"
+        assert value.value_type == "string"
+
+    def test_get_custom_value_wrapped_lazy_import(self):
+        """Verify the lazy import of ModelResult works at runtime.
+
+        This is CRITICAL - if the lazy import fails, an ImportError would be raised.
+        The lazy import is necessary to avoid circular dependencies between
+        model_custom_properties and model_result.
+        """
+        props = ModelCustomProperties()
+        props.set_custom_string("test_key", "test_value")
+
+        # This call exercises the lazy import path at line 130:
+        # from omnibase_core.models.infrastructure.model_result import ModelResult
+        result = props.get_custom_value_wrapped("test_key")
+
+        # Verify the result is the correct type from the lazy import
+        from omnibase_core.models.infrastructure.model_result import ModelResult
+
+        assert isinstance(result, ModelResult)
+        assert result.is_ok()
+        value = result.unwrap()
+        assert value.to_value() == "test_value"
+        assert value.value_type == "string"
+
+        # Also verify error path uses the same lazy import correctly
+        error_result = props.get_custom_value_wrapped("missing")
+        assert isinstance(error_result, ModelResult)
+        assert error_result.is_err()
