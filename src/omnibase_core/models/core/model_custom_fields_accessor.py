@@ -30,7 +30,7 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
     string_fields: dict[str, str] = Field(default_factory=dict)
     int_fields: dict[str, int] = Field(default_factory=dict)
     bool_fields: dict[str, bool] = Field(default_factory=dict)
-    list_fields: dict[str, list[Any]] = Field(default_factory=dict)
+    list_fields: dict[str, list[ModelSchemaValue]] = Field(default_factory=dict)
     float_fields: dict[str, float] = Field(default_factory=dict)
     # Custom fields storage - can be overridden by subclasses to have default=None
     custom_fields: dict[str, PrimitiveValueType] | None = Field(default=None)
@@ -50,11 +50,29 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
             return {}
 
         # Create empty typed field storages, but only if they don't exist
+        # Convert existing list_fields to ModelSchemaValue if needed
+        existing_list_fields = values.get("list_fields", {})
+        converted_list_fields: dict[str, list[ModelSchemaValue]] = {}
+        if isinstance(existing_list_fields, dict):
+            for key, value_list in existing_list_fields.items():
+                if isinstance(value_list, list):
+                    if value_list and isinstance(value_list[0], ModelSchemaValue):
+                        converted_list_fields[key] = value_list  # type: ignore[assignment]
+                    else:
+                        converted_list_fields[key] = [
+                            ModelSchemaValue.from_value(item) for item in value_list
+                        ]
+                else:
+                    # Handle non-list values (shouldn't happen, but be safe)
+                    converted_list_fields[key] = [
+                        ModelSchemaValue.from_value(value_list)
+                    ]
+
         result = {
             "string_fields": values.get("string_fields", {}),
             "int_fields": values.get("int_fields", {}),
             "bool_fields": values.get("bool_fields", {}),
-            "list_fields": values.get("list_fields", {}),
+            "list_fields": converted_list_fields,
             "float_fields": values.get("float_fields", {}),
         }
 
@@ -78,7 +96,16 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
             elif isinstance(value, int):
                 result["int_fields"][key] = value
             elif isinstance(value, list):
-                result["list_fields"][key] = value
+                # Convert list to list[ModelSchemaValue] for type safety
+                # Ensure list_fields is initialized
+                if "list_fields" not in result:
+                    result["list_fields"] = {}
+                if value and isinstance(value[0], ModelSchemaValue):
+                    result["list_fields"][key] = value  # type: ignore[assignment]
+                else:
+                    result["list_fields"][key] = [  # type: ignore[assignment]
+                        ModelSchemaValue.from_value(item) for item in value
+                    ]
             elif isinstance(value, float):
                 result["float_fields"][key] = value
             elif isinstance(value, dict):
@@ -133,7 +160,14 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
                 elif value_type is float:
                     self.float_fields[path] = value  # type: ignore[assignment]
                 elif isinstance(value, list):
-                    self.list_fields[path] = value
+                    # Require ModelSchemaValue lists - convert if needed
+                    if value and isinstance(value[0], ModelSchemaValue):
+                        self.list_fields[path] = value  # type: ignore[assignment]
+                    else:
+                        # Convert raw list to ModelSchemaValue list
+                        self.list_fields[path] = [
+                            ModelSchemaValue.from_value(item) for item in value
+                        ]
                 else:
                     # Fallback to string storage for any other type
                     self.string_fields[path] = str(value)
@@ -170,6 +204,7 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
             if path in self.bool_fields:
                 return self.bool_fields[path]
             if path in self.list_fields:
+                # Return ModelSchemaValue list directly
                 return self.list_fields[path]
             if path in self.float_fields:
                 return self.float_fields[path]
@@ -214,16 +249,22 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
             return bool(value)  # Explicit cast for type safety
         return default
 
-    def get_list(self, key: str, default: list[Any] | None = None) -> list[Any]:
-        """Get a list[Any]field value."""
+    def get_list(
+        self, key: str, default: list[ModelSchemaValue] | None = None
+    ) -> list[ModelSchemaValue]:
+        """Get a list field value.
+
+        Returns list[ModelSchemaValue] for type safety.
+        """
         if default is None:
             default = []
         if key in self.list_fields:
             return self.list_fields[key]
-        # Try to get from other types
+        # Try to get from other types and convert
         value = self.get_field(key)
         if value is not None and isinstance(value, list):
-            return list(value)  # Explicit cast for type safety
+            # Convert raw list to ModelSchemaValue list
+            return [ModelSchemaValue.from_value(item) for item in value]
         return default
 
     def get_float(self, key: str, default: float = 0.0) -> float:
@@ -351,7 +392,7 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
         if key in self.bool_fields:
             return "bool"
         if key in self.list_fields:
-            return "list[Any]"
+            return "list"
         if key in self.float_fields:
             return "float"
         if hasattr(self, "custom_fields") and key in getattr(
@@ -383,7 +424,7 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
             return value_type is bool
         if field_type == "float":
             return value_type is float
-        if field_type == "list[Any]":
+        if field_type == "list":
             return isinstance(value, list)
         if field_type == "custom":
             return True  # Custom fields accept any type
@@ -397,7 +438,8 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
             return dict(self.int_fields)
         if field_type == "bool":
             return dict(self.bool_fields)
-        if field_type == "list[Any]":
+        if field_type == "list":
+            # Return ModelSchemaValue lists directly
             return dict(self.list_fields)
         if field_type == "float":
             return dict(self.float_fields)
@@ -412,7 +454,11 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
         new_instance.string_fields = copy.deepcopy(self.string_fields)
         new_instance.int_fields = copy.deepcopy(self.int_fields)
         new_instance.bool_fields = copy.deepcopy(self.bool_fields)
-        new_instance.list_fields = copy.deepcopy(self.list_fields)
+        # Deep copy list_fields (ModelSchemaValue lists) - create new instances
+        new_instance.list_fields = {
+            key: [ModelSchemaValue.from_value(item.to_value()) for item in value]
+            for key, value in self.list_fields.items()
+        }
         new_instance.float_fields = copy.deepcopy(self.float_fields)
 
         # Only copy custom_fields if it exists
@@ -430,7 +476,11 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
         self.string_fields.update(other.string_fields)
         self.int_fields.update(other.int_fields)
         self.bool_fields.update(other.bool_fields)
-        self.list_fields.update(other.list_fields)
+        # Merge list_fields (ModelSchemaValue lists) - create new instances
+        for key, value in other.list_fields.items():
+            self.list_fields[key] = [
+                ModelSchemaValue.from_value(item.to_value()) for item in value
+            ]
         self.float_fields.update(other.float_fields)
 
         # Only merge custom_fields if both objects have them

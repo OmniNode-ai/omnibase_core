@@ -5,19 +5,14 @@ Type-safe workflow outputs that replace Dict[str, Any] usage
 for workflow execution results.
 """
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.services.model_custom_fields import ModelCustomFields
+from omnibase_core.types.type_serializable_value import SerializedDict
 from omnibase_core.types.typed_dict_workflow_outputs import TypedDictWorkflowOutputsDict
-from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 
-@allow_dict_str_any(
-    "Workflow outputs output_data field requires dict[str, Any] for "
-    "flexible workflow-specific result data and custom output formats."
-)
 class ModelWorkflowOutputs(BaseModel):
     """
     Type-safe workflow outputs.
@@ -65,9 +60,9 @@ class ModelWorkflowOutputs(BaseModel):
     )
 
     # Structured data outputs
-    data: dict[str, str | int | float | bool | list[str]] | None = Field(
+    data: dict[str, ModelSchemaValue] | None = Field(
         default=None,
-        description="Structured data outputs",
+        description="Structured data outputs (type-safe)",
     )
 
     # For extensibility - custom fields that don't fit above
@@ -76,13 +71,13 @@ class ModelWorkflowOutputs(BaseModel):
         description="Custom output fields for workflow-specific data",
     )
 
-    def add_output(self, key: str, value: Any) -> None:
+    def add_output(self, key: str, value: ModelSchemaValue | object) -> None:
         """
         Add a custom output field.
 
         Args:
             key: Output field key
-            value: Output field value
+            value: Output field value (converted to ModelSchemaValue)
         """
         if self.custom_outputs is None:
             from omnibase_core.models.primitives.model_semver import ModelSemVer
@@ -90,9 +85,14 @@ class ModelWorkflowOutputs(BaseModel):
             self.custom_outputs = ModelCustomFields(
                 schema_version=ModelSemVer(major=1, minor=0, patch=0)
             )
+        # Convert to ModelSchemaValue for type safety
+        if not isinstance(value, ModelSchemaValue):
+            value = ModelSchemaValue.from_value(value)
         self.custom_outputs.set_field(key, value)
 
-    def get_output(self, key: str, default: Any = None) -> Any:
+    def get_output(
+        self, key: str, default: ModelSchemaValue | None = None
+    ) -> ModelSchemaValue | None:
         """
         Get a custom output field.
 
@@ -101,16 +101,22 @@ class ModelWorkflowOutputs(BaseModel):
             default: Default value if not found
 
         Returns:
-            Output value or default
+            ModelSchemaValue or default
         """
         if self.custom_outputs is None:
             return default
-        return self.custom_outputs.field_values.get(key, default)
+        value = self.custom_outputs.field_values.get(key)
+        if value is None:
+            return default
+        # Ensure we return ModelSchemaValue
+        if isinstance(value, ModelSchemaValue):
+            return value
+        return ModelSchemaValue.from_value(value)
 
     def to_dict(self) -> TypedDictWorkflowOutputsDict:
         """Convert to dictionary for current standards."""
         # Create dictionary with all standard fields and merge custom fields
-        result: dict[str, Any] = {
+        result: SerializedDict = {
             "result": self.result,
             "status_message": self.status_message,
             "error_message": self.error_message,
@@ -125,9 +131,9 @@ class ModelWorkflowOutputs(BaseModel):
         # Remove None values
         result = {k: v for k, v in result.items() if v is not None}
 
-        # Add data if present
+        # Add data if present (convert ModelSchemaValue to raw values)
         if self.data:
-            result["data"] = self.data
+            result["data"] = {key: value.to_value() for key, value in self.data.items()}
 
         # Add custom outputs if present
         if self.custom_outputs:

@@ -1,9 +1,12 @@
 """Collection of custom filters model."""
 
+from __future__ import annotations
+
 from typing import Any
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 from .model_complex_filter import ModelComplexFilter
@@ -46,8 +49,16 @@ class ModelCustomFilters(BaseModel):
         """Add a datetime filter."""
         self.filters[name] = ModelDateTimeFilter(**kwargs)
 
-    def add_list_filter(self, name: str, values: list[Any], **kwargs: Any) -> None:
-        """Add a list filter."""
+    def add_list_filter(
+        self,
+        name: str,
+        values: list[Any] | list[ModelSchemaValue],
+        **kwargs: Any,
+    ) -> None:
+        """Add a list filter.
+
+        Values are automatically converted to ModelSchemaValue for type safety.
+        """
         self.filters[name] = ModelListFilter(values=values, **kwargs)
 
     def add_metadata_filter(
@@ -90,7 +101,7 @@ class ModelCustomFilters(BaseModel):
         return {name: filter_obj.to_dict() for name, filter_obj in self.filters.items()}
 
     @classmethod
-    def from_dict(cls, data: SerializedDict) -> "ModelCustomFilters":
+    def from_dict(cls, data: SerializedDict) -> ModelCustomFilters:
         """Create from dictionary (for migration)."""
         # union-ok: discriminated_model_union - All filter types share filter_type discriminator field
         filters: dict[

@@ -4,7 +4,7 @@ ModelValidationRulesInputValue - Discriminated Union for Validation Rules Input.
 ONEX-compatible discriminated union that replaces Union pattern for validation rules.
 """
 
-from typing import Any
+from typing import Any, cast
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
@@ -12,6 +12,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_validation_rules_input_type import (
     EnumValidationRulesInputType,
 )
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.contracts.model_validation_rules import ModelValidationRules
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -29,7 +30,7 @@ class ModelValidationRulesInputValue(BaseModel):
     )
 
     # Data storage fields (only one should be populated based on input_type)
-    dict_data: dict[str, object] | None = None
+    dict_data: dict[str, ModelSchemaValue] | None = None
     validation_rules: ModelValidationRules | None = None
     string_constraint: str | None = None
 
@@ -65,9 +66,24 @@ class ModelValidationRulesInputValue(BaseModel):
         return cls(input_type=EnumValidationRulesInputType.NONE)
 
     @classmethod
-    def from_dict(cls, data: dict[str, object]) -> "ModelValidationRulesInputValue":
+    def from_dict(
+        cls, data: dict[str, object] | dict[str, ModelSchemaValue]
+    ) -> "ModelValidationRulesInputValue":
         """Create validation rules input from dictionary."""
-        return cls(input_type=EnumValidationRulesInputType.DICT_OBJECT, dict_data=data)
+        # Convert to ModelSchemaValue if needed
+        if data and not isinstance(next(iter(data.values())), ModelSchemaValue):
+            converted_data: dict[str, ModelSchemaValue] = {
+                k: ModelSchemaValue.from_value(v) for k, v in data.items()
+            }
+            return cls(
+                input_type=EnumValidationRulesInputType.DICT_OBJECT,
+                dict_data=converted_data,
+            )
+        # Data is already dict[str, ModelSchemaValue] since we checked the first value
+        return cls(
+            input_type=EnumValidationRulesInputType.DICT_OBJECT,
+            dict_data=cast(dict[str, ModelSchemaValue], data),
+        )
 
     @classmethod
     def from_validation_rules(
