@@ -5,7 +5,7 @@ Type-safe workflow outputs that replace Dict[str, Any] usage
 for workflow execution results.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.services.model_custom_fields import ModelCustomFields
@@ -20,6 +20,8 @@ class ModelWorkflowOutputs(BaseModel):
     This model provides structured output storage for workflow execution
     results with type safety and validation.
     """
+
+    model_config = ConfigDict(from_attributes=True)
 
     # Common output fields
     result: str | None = Field(default=None, description="Main result value")

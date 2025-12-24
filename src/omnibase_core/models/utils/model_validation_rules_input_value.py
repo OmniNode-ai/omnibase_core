@@ -6,7 +6,7 @@ ONEX-compatible discriminated union that replaces Union pattern for validation r
 
 from typing import Any, cast
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_validation_rules_input_type import (
@@ -24,6 +24,8 @@ class ModelValidationRulesInputValue(BaseModel):
     Replaces Union[None, dict[str, object], ModelValidationRules, str] with
     ONEX-compatible discriminated union pattern.
     """
+
+    model_config = ConfigDict(from_attributes=True)
 
     input_type: EnumValidationRulesInputType = Field(
         description="Validation rules input type discriminator",

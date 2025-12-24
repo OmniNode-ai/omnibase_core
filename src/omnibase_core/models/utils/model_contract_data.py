@@ -5,7 +5,7 @@ Discriminated union for contract data to replace Union patterns.
 
 from typing import cast
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_contract_data_type import EnumContractDataType
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
@@ -18,6 +18,8 @@ class ModelContractData(BaseModel):
     Replaces Union[dict[str, ModelSchemaValue], dict[str, object], None] with
     ONEX-compatible discriminated union pattern.
     """
+
+    model_config = ConfigDict(from_attributes=True)
 
     data_type: EnumContractDataType = Field(
         description="Contract data type discriminator",

@@ -13,7 +13,7 @@ class ModelYamlList(BaseModel):
     Uses ModelSchemaValue for type-safe list values.
     """
 
-    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow", from_attributes=True)
 
     # For files that are root-level arrays
     root_list: list[ModelSchemaValue] = Field(
