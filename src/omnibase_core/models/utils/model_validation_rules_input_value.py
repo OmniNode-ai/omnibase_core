@@ -71,7 +71,11 @@ class ModelValidationRulesInputValue(BaseModel):
     ) -> "ModelValidationRulesInputValue":
         """Create validation rules input from dictionary."""
         # Convert to ModelSchemaValue if needed
-        if data and not isinstance(next(iter(data.values())), ModelSchemaValue):
+        if (
+            data
+            and len(data) > 0
+            and not isinstance(next(iter(data.values())), ModelSchemaValue)
+        ):
             converted_data: dict[str, ModelSchemaValue] = {
                 k: ModelSchemaValue.from_value(v) for k, v in data.items()
             }

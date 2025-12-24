@@ -56,7 +56,10 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
         if isinstance(existing_list_fields, dict):
             for key, value_list in existing_list_fields.items():
                 if isinstance(value_list, list):
-                    if value_list and isinstance(value_list[0], ModelSchemaValue):
+                    # Empty lists are explicitly handled here - no conversion needed
+                    if not value_list:
+                        converted_list_fields[key] = []
+                    elif isinstance(value_list[0], ModelSchemaValue):
                         converted_list_fields[key] = value_list  # type: ignore[assignment]
                     else:
                         converted_list_fields[key] = [
@@ -97,9 +100,7 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
                 result["int_fields"][key] = value
             elif isinstance(value, list):
                 # Convert list to list[ModelSchemaValue] for type safety
-                # Ensure list_fields is initialized
-                if "list_fields" not in result:
-                    result["list_fields"] = {}
+                # Note: list_fields is already initialized at line 75, no need to check
                 if value and isinstance(value[0], ModelSchemaValue):
                     result["list_fields"][key] = value  # type: ignore[assignment]
                 else:
@@ -454,11 +455,8 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
         new_instance.string_fields = copy.deepcopy(self.string_fields)
         new_instance.int_fields = copy.deepcopy(self.int_fields)
         new_instance.bool_fields = copy.deepcopy(self.bool_fields)
-        # Deep copy list_fields (ModelSchemaValue lists) - create new instances
-        new_instance.list_fields = {
-            key: [ModelSchemaValue.from_value(item.to_value()) for item in value]
-            for key, value in self.list_fields.items()
-        }
+        # Deep copy list_fields using copy.deepcopy for consistency with other field types
+        new_instance.list_fields = copy.deepcopy(self.list_fields)
         new_instance.float_fields = copy.deepcopy(self.float_fields)
 
         # Only copy custom_fields if it exists

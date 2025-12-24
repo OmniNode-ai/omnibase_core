@@ -76,7 +76,7 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
         if not v:
             return []
         # If already ModelSchemaValue instances, return as-is
-        if v and isinstance(v[0], ModelSchemaValue):
+        if len(v) > 0 and isinstance(v[0], ModelSchemaValue):
             return v  # type: ignore[return-value]
         # Convert raw values to ModelSchemaValue
         return [ModelSchemaValue.from_value(item) for item in v]
@@ -189,7 +189,7 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
         description="Maximum time allowed for encryption operations",
     )
 
-    model_config = ConfigDict()
+    model_config = ConfigDict(from_attributes=True)
 
     @field_serializer("timestamp")
     def serialize_timestamp(self, value: datetime) -> str:

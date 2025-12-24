@@ -202,6 +202,8 @@ orchestrator_data: dict[str, Any]
 
 ### Phase 2: Quick Wins - Replace with Existing Models (Weeks 2-3)
 
+**Status**: Initial batch of 10 core models complete. See [Implementation Progress](#implementation-progress) below.
+
 **Target**: 50-100 files that can use existing strongly-typed models
 
 **Tasks**:
@@ -284,7 +286,7 @@ orchestrator_data: dict[str, Any]
 - CLI serialization changes (may affect external tools)
 - Breaking changes in model APIs
 
-### High Risk
+### High-Risk
 - Security/policy models (must maintain JSON compatibility)
 - Models with `@allow_dict_str_any` decorators (may have legitimate reasons)
 - Models used by external consumers
@@ -367,28 +369,36 @@ See grep results above for complete list. Key files:
 
 ### Phase 2: Quick Wins - Implementation Status (2025-12-23)
 
-**Status**: ✅ In Progress
+**Status**: Initial batch complete (10 core models migrated to `ModelSchemaValue`)
 
 The following files have been migrated to use `ModelSchemaValue` for type safety:
 
 #### Core Models (10 files modified)
 
-| File | Change | Status |
-|------|--------|--------|
-| `model_custom_fields_accessor.py` | Replaced `list[Any]` with `list[ModelSchemaValue]` in `list_fields` | ✅ Complete |
-| `model_custom_filters.py` | Added `ModelSchemaValue` support in `add_list_filter` | ✅ Complete |
-| `model_list_filter.py` | Changed `values: list[Any]` to `list[ModelSchemaValue]` with auto-conversion | ✅ Complete |
-| `model_yaml_list.py` | Changed `root_list: list[Any]` to `list[ModelSchemaValue]` with auto-conversion | ✅ Complete |
-| `model_effect_result_list.py` | Changed `value: list[Any]` to `list[ModelSchemaValue]` with auto-conversion | ✅ Complete |
-| `model_orchestrator_output.py` | Replaced multiple `dict[str, Any]` with `dict[str, ModelSchemaValue]` | ✅ Complete |
-| `model_secure_event_envelope_class.py` | Changed `route_hops: list[Any]` to `list[ModelSchemaValue]` | ✅ Complete |
-| `model_contract_data.py` | Created discriminated union replacing `Union[dict, None]` pattern | ✅ Complete |
-| `model_validation_rules_input_value.py` | Created discriminated union for validation rules input | ✅ Complete |
-| `model_workflow_outputs.py` | Replaced `dict[str, Any]` with `dict[str, ModelSchemaValue]` | ✅ Complete |
+| File | Change | Pattern Used | Status |
+|------|--------|--------------|--------|
+| `model_list_filter.py` | Changed `values: list[Any]` to `list[ModelSchemaValue]` | `@field_validator(mode="before")` | Complete |
+| `model_yaml_list.py` | Changed `root_list: list[Any]` to `list[ModelSchemaValue]` | `@field_validator(mode="before")` | Complete |
+| `model_effect_result_list.py` | Changed `value: list[Any]` to `list[ModelSchemaValue]` | `@field_validator(mode="before")` | Complete |
+| `model_orchestrator_output.py` | Replaced multiple `dict[str, Any]` with `dict[str, ModelSchemaValue]` | `@field_validator(mode="before")` | Complete |
+| `model_secure_event_envelope_class.py` | Changed `route_hops: list[Any]` to `list[ModelSchemaValue]` | `@field_validator(mode="before")` | Complete |
+| `model_custom_fields_accessor.py` | Replaced `list[Any]` with `list[ModelSchemaValue]` in `list_fields` | `@model_validator(mode="before")` | Complete |
+| `model_custom_filters.py` | Added `ModelSchemaValue` support in `add_list_filter` | Direct type annotation (no validators) | Complete |
+| `model_contract_data.py` | Created discriminated union replacing `Union[dict, None]` | Classmethod factory methods | Complete |
+| `model_validation_rules_input_value.py` | Created discriminated union for validation rules input | Field validators (various modes) | Complete |
+| `model_workflow_outputs.py` | Replaced `dict[str, Any]` with `dict[str, ModelSchemaValue]` | Inline conversion in instance methods | Complete |
 
 #### Key Patterns Applied
 
-1. **Field Validators for Auto-Conversion**: Used `@field_validator(mode="before")` to automatically convert raw values to `ModelSchemaValue`:
+All 10 files use `ModelSchemaValue` for type safety, but employ different implementation mechanisms based on their specific needs:
+
+1. **Field Validators with `mode="before"` (5 files)**: Used `@field_validator(mode="before")` to automatically convert raw values to `ModelSchemaValue` during model instantiation:
+   - `model_list_filter.py`
+   - `model_yaml_list.py`
+   - `model_effect_result_list.py`
+   - `model_orchestrator_output.py`
+   - `model_secure_event_envelope_class.py`
+
    ```python
    @field_validator("values", mode="before")
    @classmethod
@@ -400,14 +410,32 @@ The following files have been migrated to use `ModelSchemaValue` for type safety
        return [ModelSchemaValue.from_value(item) for item in v]
    ```
 
-2. **Discriminated Unions**: Created ONEX-compatible discriminated union models:
-   - `ModelContractData` with `EnumContractDataType` discriminator
-   - `ModelValidationRulesInputValue` with `EnumValidationRulesInputType` discriminator
+2. **Model Validator (1 file)**: Used `@model_validator(mode="before")` for class-level validation:
+   - `model_custom_fields_accessor.py`
 
-3. **Type-Safe Nested Dicts**: Replaced `dict[str, Any]` with `dict[str, ModelSchemaValue]`:
-   ```python
-   step_outputs: dict[str, dict[str, ModelSchemaValue]] = Field(...)
-   output_variables: dict[str, ModelSchemaValue] = Field(...)
+3. **Classmethod Factory Methods (1 file)**: Used factory methods for creating typed instances:
+   - `model_contract_data.py` (with `EnumContractDataType` discriminator)
+
+4. **Field Validators with Various Modes (1 file)**: Used multiple field validators with different modes:
+   - `model_validation_rules_input_value.py` (with `EnumValidationRulesInputType` discriminator)
+
+5. **Inline Conversion in Instance Methods (1 file)**: Conversion handled in method implementations:
+   - `model_workflow_outputs.py`
+
+6. **Direct Type Annotation (1 file)**: Type safety enforced via annotations without validators:
+   - `model_custom_filters.py`
+
+#### Discriminated Unions Created
+
+- `ModelContractData` with `EnumContractDataType` discriminator
+- `ModelValidationRulesInputValue` with `EnumValidationRulesInputType` discriminator
+
+#### Type-Safe Nested Dicts
+
+Replaced `dict[str, Any]` with `dict[str, ModelSchemaValue]`:
+```python
+step_outputs: dict[str, dict[str, ModelSchemaValue]] = Field(...)
+output_variables: dict[str, ModelSchemaValue] = Field(...)
    ```
 
 #### Validation Results

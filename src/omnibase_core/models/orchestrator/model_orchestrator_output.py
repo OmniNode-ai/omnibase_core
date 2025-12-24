@@ -182,7 +182,7 @@ class ModelOrchestratorOutput(BaseModel):
         """Convert actions to ModelSchemaValue for type safety."""
         if not v:
             return []
-        if v and isinstance(v[0], ModelSchemaValue):
+        if len(v) > 0 and isinstance(v[0], ModelSchemaValue):
             return v  # type: ignore[return-value]
         return [ModelSchemaValue.from_value(item) for item in v]
 

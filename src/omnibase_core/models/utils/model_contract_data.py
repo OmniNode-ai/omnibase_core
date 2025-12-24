@@ -41,7 +41,11 @@ class ModelContractData(BaseModel):
     ) -> "ModelContractData":
         """Create contract data from raw values."""
         # Convert to ModelSchemaValue if needed
-        if values and not isinstance(next(iter(values.values())), ModelSchemaValue):
+        if (
+            values
+            and len(values) > 0
+            and not isinstance(next(iter(values.values())), ModelSchemaValue)
+        ):
             converted_values: dict[str, ModelSchemaValue] = {
                 k: ModelSchemaValue.from_value(v) for k, v in values.items()
             }

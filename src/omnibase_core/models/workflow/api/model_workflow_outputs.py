@@ -71,7 +71,18 @@ class ModelWorkflowOutputs(BaseModel):
         description="Custom output fields for workflow-specific data",
     )
 
-    def add_output(self, key: str, value: ModelSchemaValue | object) -> None:
+    def add_output(
+        self,
+        key: str,
+        value: ModelSchemaValue
+        | str
+        | int
+        | float
+        | bool
+        | list[object]
+        | dict[str, object]
+        | None,
+    ) -> None:
         """
         Add a custom output field.
 

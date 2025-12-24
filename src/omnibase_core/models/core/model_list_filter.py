@@ -33,7 +33,7 @@ class ModelListFilter(ModelCustomFilterBase):
         if not v:
             return []
         # If already ModelSchemaValue instances, return as-is
-        if v and isinstance(v[0], ModelSchemaValue):
+        if len(v) > 0 and isinstance(v[0], ModelSchemaValue):
             return v  # type: ignore[return-value]
         # Convert raw values to ModelSchemaValue
         return [ModelSchemaValue.from_value(item) for item in v]
