@@ -343,6 +343,12 @@ class TestModelOrchestratorOutputSerialization:
 
     def test_json_round_trip_stability(self) -> None:
         """Test model -> JSON -> model produces equal result."""
+        test_action = ModelAction(
+            action_type=EnumActionType.EFFECT,
+            target_node_type="EFFECT",
+            lease_id=uuid4(),
+            epoch=1,
+        )
         model = ModelOrchestratorOutput(
             execution_status="completed",
             execution_time_ms=1500,
@@ -359,7 +365,7 @@ class TestModelOrchestratorOutputSerialization:
             ],
             metrics={"total_ms": 1500.0},
             parallel_executions=1,
-            actions_emitted=[{"action": "test"}],
+            actions_emitted=[test_action],
         )
         json_str = model.model_dump_json()
         restored = ModelOrchestratorOutput.model_validate_json(json_str)

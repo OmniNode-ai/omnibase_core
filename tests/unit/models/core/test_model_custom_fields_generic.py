@@ -9,6 +9,7 @@ from typing import Any
 
 import pytest
 
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_custom_fields_accessor import (
     ModelCustomFieldsAccessor,
 )
@@ -59,7 +60,9 @@ class TestModelCustomFieldsAccessorGeneric:
         assert fields.get_field("config") == "{'key': 'value'}"
         assert fields.get_field("count") == 42
         assert fields.get_field("enabled") is True
-        assert fields.get_field("items") == ["a", "b", "c"]
+        # get_field returns list[ModelSchemaValue] for list fields - extract raw values
+        items = fields.get_field("items")
+        assert [item.to_value() for item in items] == ["a", "b", "c"]
 
     def test_generic_factory_methods(self):
         """Test factory methods with generic types."""
@@ -71,7 +74,8 @@ class TestModelCustomFieldsAccessorGeneric:
         assert fields.get_string("name") == "test"
         assert fields.get_int("value") == 123
         assert fields.get_bool("active") is True
-        assert fields.get_list("tags") == ["a", "b"]
+        # get_list returns list[ModelSchemaValue] - extract raw values for comparison
+        assert [item.to_value() for item in fields.get_list("tags")] == ["a", "b"]
 
     def test_generic_copy_operations(self):
         """Test copy operations with generic types."""
@@ -115,35 +119,47 @@ class TestModelCustomFieldsAccessorGeneric:
         fields.set_field("bool_val", True)
         fields.set_field("list_val", [1, 2, 3])
 
-        # Test model_dump
+        # Test model_dump - list values are returned as ModelSchemaValue objects
         data = fields.model_dump(exclude_none=True)
-        expected = {
-            "string_val": "test",
-            "int_val": 42,
-            "bool_val": True,
-            "list_val": [1, 2, 3],
-        }
-        assert data == expected
 
-        # Test round-trip
+        # Verify primitive fields are returned as-is
+        assert data["string_val"] == "test"
+        assert data["int_val"] == 42
+        assert data["bool_val"] is True
+
+        # List values are now ModelSchemaValue objects - extract raw values
+        list_val = data["list_val"]
+        assert isinstance(list_val, list)
+        assert [item.to_value() for item in list_val] == [1, 2, 3]
+
+        # Test round-trip - use the same field access patterns
         restored = ModelCustomFieldsAccessor[Any].model_validate(data)
-        assert restored.model_dump(exclude_none=True) == expected
+        assert restored.get_string("string_val") == "test"
+        assert restored.get_int("int_val") == 42
+        assert restored.get_bool("bool_val") is True
+        assert [item.to_value() for item in restored.get_list("list_val")] == [1, 2, 3]
 
     def test_generic_pydantic_validation(self):
         """Test Pydantic validation with generic types."""
-        # Test model validation
+        # Test model validation - list_fields now expects ModelSchemaValue objects
         fields = ModelCustomFieldsAccessor(
             string_fields={"name": "test"},
             int_fields={"count": 10},
             bool_fields={"active": True},
-            list_fields={"items": ["a", "b"]},
+            list_fields={
+                "items": [
+                    ModelSchemaValue.from_value("a"),
+                    ModelSchemaValue.from_value("b"),
+                ]
+            },
         )
 
         # Should validate successfully
         assert fields.get_string("name") == "test"
         assert fields.get_int("count") == 10
         assert fields.get_bool("active") is True
-        assert fields.get_list("items") == ["a", "b"]
+        # get_list returns list[ModelSchemaValue] - extract raw values for comparison
+        assert [item.to_value() for item in fields.get_list("items")] == ["a", "b"]
 
     def test_generic_json_serialization(self):
         """Test JSON serialization with generic types."""

@@ -204,6 +204,8 @@ orchestrator_data: dict[str, Any]
 
 **Status**: Initial batch of 10 core models complete. See [Implementation Progress](#implementation-progress) below.
 
+**Scope**: This phase focuses on migrating files where existing strongly-typed models (`ModelSchemaValue`, `ModelFlexibleValue`, `ModelValueUnion`) can be used as drop-in replacements without requiring new model creation or significant architectural changes.
+
 **Target**: 50-100 files that can use existing strongly-typed models
 
 **Tasks**:
@@ -212,10 +214,13 @@ orchestrator_data: dict[str, Any]
 3. Replace custom fields `dict[str, Any]` with `ModelCustomProperties` for known types
 4. Update tests and validation
 
-**Success Criteria**:
+**Completion Criteria**:
 - 50+ files migrated to strongly-typed models
-- All tests pass
+- All tests pass (unit, integration, type checking)
 - No new `dict[str, Any]` violations introduced
+- Each migrated file maintains backward compatibility with existing callers
+
+**Current Progress**: 10 of 50+ target files complete (20%). Remaining files will be identified through systematic review of the 297 files flagged in the analysis.
 
 ### Phase 3: Create Domain-Specific Models (Weeks 4-6)
 
@@ -286,7 +291,7 @@ orchestrator_data: dict[str, Any]
 - CLI serialization changes (may affect external tools)
 - Breaking changes in model APIs
 
-### High-Risk
+### High Risk
 - Security/policy models (must maintain JSON compatibility)
 - Models with `@allow_dict_str_any` decorators (may have legitimate reasons)
 - Models used by external consumers
@@ -390,7 +395,7 @@ The following files have been migrated to use `ModelSchemaValue` for type safety
 
 #### Key Patterns Applied
 
-All 10 files use `ModelSchemaValue` for type safety, but employ different implementation mechanisms based on their specific needs:
+All 10 files use `ModelSchemaValue` for type safety, but employ different implementation mechanisms based on their specific needs. Of the 10 files, **5 use the `@field_validator(mode="before")` pattern**, while the remaining 5 use other approaches (model validators, factory methods, inline conversion, or direct type annotations):
 
 1. **Field Validators with `mode="before"` (5 files)**: Used `@field_validator(mode="before")` to automatically convert raw values to `ModelSchemaValue` during model instantiation:
    - `model_list_filter.py`

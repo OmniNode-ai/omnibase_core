@@ -44,8 +44,11 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
 
     @model_validator(mode="before")
     @classmethod
-    def validate_and_distribute_fields(cls, values: object) -> dict[str, object]:
+    def validate_and_distribute_fields(
+        cls, values: dict[str, object] | object
+    ) -> dict[str, object]:
         """Validate and distribute incoming fields to appropriate typed storages."""
+        # Handle empty dict edge case - returns empty typed field storages
         if not isinstance(values, dict):
             return {}
 
@@ -59,6 +62,8 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
                     # Empty lists are explicitly handled here - no conversion needed
                     if not value_list:
                         converted_list_fields[key] = []
+                    # Homogeneous list assumption: if first element is ModelSchemaValue,
+                    # all elements are (lists come from single serialization source)
                     elif isinstance(value_list[0], ModelSchemaValue):
                         converted_list_fields[key] = value_list  # type: ignore[assignment]
                     else:
@@ -66,7 +71,9 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
                             ModelSchemaValue.from_value(item) for item in value_list
                         ]
                 else:
-                    # Handle non-list values (shouldn't happen, but be safe)
+                    # Handle non-list values by wrapping in single-element list.
+                    # Assumption: Non-list values in list_fields are converted to
+                    # homogeneous single-element lists for consistency.
                     converted_list_fields[key] = [
                         ModelSchemaValue.from_value(value_list)
                     ]
@@ -100,7 +107,9 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
                 result["int_fields"][key] = value
             elif isinstance(value, list):
                 # Convert list to list[ModelSchemaValue] for type safety
-                # Note: list_fields is already initialized at line 75, no need to check
+                # Note: list_fields is already initialized, no need to check
+                # Homogeneous list assumption: if first element is ModelSchemaValue,
+                # all elements are (lists come from single serialization source)
                 if value and isinstance(value[0], ModelSchemaValue):
                     result["list_fields"][key] = value  # type: ignore[assignment]
                 else:
@@ -162,6 +171,8 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
                     self.float_fields[path] = value  # type: ignore[assignment]
                 elif isinstance(value, list):
                     # Require ModelSchemaValue lists - convert if needed
+                    # Homogeneous list assumption: if first element is ModelSchemaValue,
+                    # all elements are (lists come from single serialization source)
                     if value and isinstance(value[0], ModelSchemaValue):
                         self.list_fields[path] = value  # type: ignore[assignment]
                     else:
@@ -256,6 +267,11 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
         """Get a list field value.
 
         Returns list[ModelSchemaValue] for type safety.
+
+        Note:
+            Breaking API change in v0.4.0: Previously returned list[Any].
+            Now returns list[ModelSchemaValue] for ONEX type safety compliance.
+            To get raw values, use: [item.to_value() for item in accessor.get_list(key)]
         """
         if default is None:
             default = []
@@ -393,7 +409,7 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
         if key in self.bool_fields:
             return "bool"
         if key in self.list_fields:
-            return "list"
+            return "list[Any]"
         if key in self.float_fields:
             return "float"
         if hasattr(self, "custom_fields") and key in getattr(
@@ -539,9 +555,9 @@ class ModelCustomFieldsAccessor[T](ModelFieldAccessor):
         """Set a custom field value. Accepts raw values or ModelSchemaValue."""
         try:
             # Initialize custom_fields if it's None with explicit type annotation
-            if not hasattr(self, "custom_fields") or self.custom_fields is None:
+            # Note: custom_fields is a defined model field, so hasattr check is redundant
+            if self.custom_fields is None:
                 # Explicitly type the dictionary to avoid MyPy inference issues
-
                 self.custom_fields: dict[str, PrimitiveValueType] = {}
 
             # Store raw values directly in custom_fields

@@ -75,6 +75,8 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
         """Convert values to ModelSchemaValue for type safety."""
         if not v:
             return []
+        # Homogeneous list assumption: if first element is ModelSchemaValue,
+        # all elements are (lists come from single serialization source).
         # If already ModelSchemaValue instances, return as-is
         if len(v) > 0 and isinstance(v[0], ModelSchemaValue):
             return v  # type: ignore[return-value]
