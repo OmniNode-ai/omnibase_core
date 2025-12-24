@@ -7,16 +7,13 @@ in orchestrator results.
 
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.orchestrator.model_action import ModelAction
 from omnibase_core.models.services.model_custom_fields import ModelCustomFields
-from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 
-@allow_dict_str_any(
-    "Orchestrator output requires flexible step_outputs, output_variables, and metrics "
-    "for arbitrary workflow results and execution data."
-)
 class ModelOrchestratorOutput(BaseModel):
     """
     Type-safe orchestrator output.
@@ -84,18 +81,18 @@ class ModelOrchestratorOutput(BaseModel):
     )
 
     # Step outputs (step_id -> output data)
-    step_outputs: dict[str, dict[str, Any]] = Field(
+    step_outputs: dict[str, dict[str, ModelSchemaValue]] = Field(
         default_factory=dict,
-        description="Outputs from each step",
+        description="Outputs from each step (type-safe)",
     )
 
     # Final outputs
-    final_result: Any | None = Field(
-        default=None, description="Final orchestration result"
+    final_result: ModelSchemaValue | None = Field(
+        default=None, description="Final orchestration result (type-safe)"
     )
-    output_variables: dict[str, Any] = Field(
+    output_variables: dict[str, ModelSchemaValue] = Field(
         default_factory=dict,
-        description="Output variables from the orchestration",
+        description="Output variables from the orchestration (type-safe)",
     )
 
     # Error information
@@ -117,10 +114,86 @@ class ModelOrchestratorOutput(BaseModel):
     )
 
     # Actions tracking
-    actions_emitted: list[Any] = Field(
+    actions_emitted: list[ModelAction] = Field(
         default_factory=list,
-        description="List of actions emitted during workflow execution",
+        description="List of actions emitted during workflow execution (type-safe)",
     )
+
+    @field_validator("step_outputs", mode="before")
+    @classmethod
+    def convert_step_outputs(
+        cls, v: dict[str, dict[str, object] | object]
+    ) -> dict[str, dict[str, ModelSchemaValue]]:
+        """Convert step outputs to ModelSchemaValue for type safety.
+
+        Handles both properly structured step outputs (dict[str, dict[str, Any]])
+        and malformed inputs where step data is not a dict.
+        """
+        if not v:
+            return {}
+        result: dict[str, dict[str, ModelSchemaValue]] = {}
+        for step_id, step_data in v.items():
+            if isinstance(step_data, dict):
+                result[step_id] = {
+                    key: cls._convert_to_schema_value(value)
+                    for key, value in step_data.items()
+                }
+            else:
+                result[step_id] = {"value": ModelSchemaValue.from_value(step_data)}
+        return result
+
+    @classmethod
+    def _convert_to_schema_value(cls, value: object) -> ModelSchemaValue:
+        """Convert a value to ModelSchemaValue, handling serialized dicts."""
+        if isinstance(value, ModelSchemaValue):
+            return value
+        # Check if this is a serialized ModelSchemaValue dict
+        if isinstance(value, dict) and "value_type" in value:
+            try:
+                return ModelSchemaValue.model_validate(value)
+            except Exception:
+                # If validation fails, treat as raw value
+                pass
+        return ModelSchemaValue.from_value(value)
+
+    @field_validator("output_variables", mode="before")
+    @classmethod
+    def convert_output_variables(
+        cls, v: dict[str, object] | dict[str, ModelSchemaValue]
+    ) -> dict[str, ModelSchemaValue]:
+        """Convert output variables to ModelSchemaValue for type safety."""
+        if not v:
+            return {}
+        return {key: cls._convert_to_schema_value(value) for key, value in v.items()}
+
+    @field_validator("final_result", mode="before")
+    @classmethod
+    def convert_final_result(
+        cls, v: Any | ModelSchemaValue | None
+    ) -> ModelSchemaValue | None:
+        """Convert final result to ModelSchemaValue for type safety."""
+        if v is None:
+            return None
+        return cls._convert_to_schema_value(v)
+
+    @field_validator("actions_emitted", mode="before")
+    @classmethod
+    def convert_actions_emitted(
+        cls, v: list[Any] | list[ModelAction]
+    ) -> list[ModelAction]:
+        """Convert actions to ModelAction for type safety.
+
+        Accepts:
+        - list[ModelAction]: Returned as-is
+        - list[dict]: Each dict is validated as ModelAction
+        - Empty list: Returned as-is
+        """
+        if not v:
+            return []
+        if len(v) > 0 and isinstance(v[0], ModelAction):
+            return v  # Already list[ModelAction]
+        # Let Pydantic validate dicts as ModelAction
+        return v  # type: ignore[return-value]
 
     # Custom outputs for extensibility
     custom_outputs: ModelCustomFields | None = Field(

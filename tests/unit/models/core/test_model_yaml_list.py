@@ -7,11 +7,21 @@ list handling, and edge cases.
 
 import pytest
 
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_yaml_list import ModelYamlList
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 # Default version for test instances - required field after removing default_factory
 DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
+
+
+def extract_values(schema_values: list[ModelSchemaValue]) -> list[object]:
+    """Extract raw Python values from a list of ModelSchemaValue objects.
+
+    This helper is needed because ModelYamlList.root_list now stores
+    ModelSchemaValue wrappers instead of raw Python values.
+    """
+    return [v.to_value() for v in schema_values]
 
 
 @pytest.mark.unit
@@ -31,7 +41,7 @@ class TestModelYamlList:
 
         model = ModelYamlList(data=data)
 
-        assert model.root_list == data
+        assert extract_values(model.root_list) == data
         assert len(model.root_list) == 3
 
     def test_initialization_with_dict_list(self):
@@ -43,9 +53,9 @@ class TestModelYamlList:
 
         model = ModelYamlList(data=data)
 
-        assert model.root_list == data
+        assert extract_values(model.root_list) == data
         assert len(model.root_list) == 2
-        assert model.root_list[0]["key"] == "value1"
+        assert model.root_list[0].to_value()["key"] == "value1"
 
     def test_initialization_with_mixed_types(self):
         """Test initialization with mixed type list."""
@@ -53,14 +63,14 @@ class TestModelYamlList:
 
         model = ModelYamlList(data=data)
 
-        assert model.root_list == data
+        assert extract_values(model.root_list) == data
         assert len(model.root_list) == 6
-        assert model.root_list[0] == "string"
-        assert model.root_list[1] == 123
-        assert model.root_list[2] == {"key": "value"}
-        assert model.root_list[3] == [1, 2, 3]
-        assert model.root_list[4] is None
-        assert model.root_list[5] is True
+        assert model.root_list[0].to_value() == "string"
+        assert model.root_list[1].to_value() == 123
+        assert model.root_list[2].to_value() == {"key": "value"}
+        assert model.root_list[3].to_value() == [1, 2, 3]
+        assert model.root_list[4].to_value() is None
+        assert model.root_list[5].to_value() is True
 
     def test_initialization_with_none_data(self):
         """Test initialization with None data."""
@@ -72,7 +82,7 @@ class TestModelYamlList:
         """Test initialization with kwargs but no data."""
         model = ModelYamlList(root_list=["a", "b", "c"])
 
-        assert model.root_list == ["a", "b", "c"]
+        assert extract_values(model.root_list) == ["a", "b", "c"]
 
     def test_initialization_data_and_kwargs(self):
         """Test that data parameter takes precedence over kwargs."""
@@ -81,7 +91,7 @@ class TestModelYamlList:
         model = ModelYamlList(data=data, root_list=["ignored"])
 
         # data parameter should win
-        assert model.root_list == data
+        assert extract_values(model.root_list) == data
 
     def test_initialization_with_nested_lists(self):
         """Test initialization with nested list structures."""
@@ -93,16 +103,16 @@ class TestModelYamlList:
 
         model = ModelYamlList(data=data)
 
-        assert model.root_list == data
+        assert extract_values(model.root_list) == data
         assert len(model.root_list) == 3
-        assert model.root_list[0] == ["nested", "list", 1]
-        assert model.root_list[2] == [[["deeply"], ["nested"]]]
+        assert model.root_list[0].to_value() == ["nested", "list", 1]
+        assert model.root_list[2].to_value() == [[["deeply"], ["nested"]]]
 
     def test_extra_fields_allowed(self):
         """Test that extra fields are allowed (ConfigDict extra='allow')."""
         model = ModelYamlList(data=["item1"], extra_field="extra_value")
 
-        assert model.root_list == ["item1"]
+        assert extract_values(model.root_list) == ["item1"]
         assert model.extra_field == "extra_value"
 
     def test_model_dump(self):
@@ -114,7 +124,8 @@ class TestModelYamlList:
 
         assert isinstance(dumped, dict)
         assert "root_list" in dumped
-        assert dumped["root_list"] == data
+        # root_list now contains ModelSchemaValue dicts, extract values to compare
+        assert extract_values(model.root_list) == data
 
     def test_model_dump_json(self):
         """Test JSON serialization."""
@@ -138,7 +149,7 @@ class TestModelYamlList:
         """Test with single item list."""
         model = ModelYamlList(data=["single"])
 
-        assert model.root_list == ["single"]
+        assert extract_values(model.root_list) == ["single"]
         assert len(model.root_list) == 1
 
     def test_large_list(self):
@@ -148,8 +159,8 @@ class TestModelYamlList:
         model = ModelYamlList(data=data)
 
         assert len(model.root_list) == 1000
-        assert model.root_list[0] == 0
-        assert model.root_list[999] == 999
+        assert model.root_list[0].to_value() == 0
+        assert model.root_list[999].to_value() == 999
 
     def test_list_with_none_values(self):
         """Test list containing None values."""
@@ -157,9 +168,9 @@ class TestModelYamlList:
 
         model = ModelYamlList(data=data)
 
-        assert model.root_list == data
-        assert model.root_list[1] is None
-        assert model.root_list[3] is None
+        assert extract_values(model.root_list) == data
+        assert model.root_list[1].to_value() is None
+        assert model.root_list[3].to_value() is None
 
     def test_list_modification(self):
         """Test that root_list can be modified."""
@@ -183,9 +194,11 @@ class TestModelYamlList:
 
         model = ModelYamlList(data=data)
 
-        assert model.root_list == data
-        assert model.root_list[0]["nested"]["level2"]["level3"] == ["deep", "values"]
-        assert model.root_list[1]["values"][0]["a"] == 1
+        assert extract_values(model.root_list) == data
+        extracted_0 = model.root_list[0].to_value()
+        assert extracted_0["nested"]["level2"]["level3"] == ["deep", "values"]
+        extracted_1 = model.root_list[1].to_value()
+        assert extracted_1["values"][0]["a"] == 1
 
 
 @pytest.mark.unit
@@ -198,9 +211,9 @@ class TestModelYamlListEdgeCases:
 
         model = ModelYamlList(data=data)
 
-        assert model.root_list == data
-        assert model.root_list[0] == "Hello 世界"
-        assert model.root_list[3] == "🎉🎊"
+        assert extract_values(model.root_list) == data
+        assert model.root_list[0].to_value() == "Hello 世界"
+        assert model.root_list[3].to_value() == "🎉🎊"
 
     def test_special_characters(self):
         """Test with special characters."""
@@ -214,9 +227,9 @@ class TestModelYamlListEdgeCases:
 
         model = ModelYamlList(data=data)
 
-        assert model.root_list == data
-        assert "\n" in model.root_list[0]
-        assert "\t" in model.root_list[1]
+        assert extract_values(model.root_list) == data
+        assert "\n" in model.root_list[0].to_value()
+        assert "\t" in model.root_list[1].to_value()
 
     def test_numeric_strings(self):
         """Test with numeric strings vs actual numbers."""
@@ -224,11 +237,11 @@ class TestModelYamlListEdgeCases:
 
         model = ModelYamlList(data=data)
 
-        assert model.root_list == data
-        assert isinstance(model.root_list[0], str)
-        assert isinstance(model.root_list[1], int)
-        assert isinstance(model.root_list[2], str)
-        assert isinstance(model.root_list[3], float)
+        assert extract_values(model.root_list) == data
+        assert isinstance(model.root_list[0].to_value(), str)
+        assert isinstance(model.root_list[1].to_value(), int)
+        assert isinstance(model.root_list[2].to_value(), str)
+        assert isinstance(model.root_list[3].to_value(), float)
 
     def test_boolean_values(self):
         """Test with boolean values."""
@@ -236,11 +249,11 @@ class TestModelYamlListEdgeCases:
 
         model = ModelYamlList(data=data)
 
-        assert model.root_list == data
-        assert model.root_list[0] is True
-        assert model.root_list[1] is False
-        assert model.root_list[2] == "true"
-        assert model.root_list[3] == "false"
+        assert extract_values(model.root_list) == data
+        assert model.root_list[0].to_value() is True
+        assert model.root_list[1].to_value() is False
+        assert model.root_list[2].to_value() == "true"
+        assert model.root_list[3].to_value() == "false"
 
     def test_very_long_strings(self):
         """Test with very long strings."""
@@ -249,8 +262,8 @@ class TestModelYamlListEdgeCases:
 
         model = ModelYamlList(data=data)
 
-        assert len(model.root_list[0]) == 10000
-        assert model.root_list[0] == long_string
+        assert len(model.root_list[0].to_value()) == 10000
+        assert model.root_list[0].to_value() == long_string
 
     def test_deeply_nested_structures(self):
         """Test with deeply nested structures."""
@@ -258,12 +271,12 @@ class TestModelYamlListEdgeCases:
 
         model = ModelYamlList(data=data)
 
-        assert model.root_list == data
-        # Navigate to deepest level
-        current = model.root_list
-        for _ in range(6):
-            current = current[0]
-        assert current == ["deep"]
+        assert extract_values(model.root_list) == data
+        # Navigate to deepest level by extracting the whole value
+        extracted = model.root_list[0].to_value()
+        for _ in range(5):
+            extracted = extracted[0]
+        assert extracted == ["deep"]
 
     def test_initialization_not_list(self):
         """Test initialization with non-list data."""
@@ -295,11 +308,13 @@ class TestModelYamlListEdgeCases:
 
         copy = original.model_copy(deep=True)
 
-        # Modify copy
-        copy.root_list[0]["nested"]["key"] = "modified"
+        # Modify copy - need to access the underlying object_value dict
+        copy.root_list[0].object_value["nested"].object_value["key"] = (
+            ModelSchemaValue.from_value("modified")
+        )
 
         # Original should be unchanged
-        assert original.root_list[0]["nested"]["key"] == "value"
+        assert original.root_list[0].to_value()["nested"]["key"] == "value"
 
     def test_model_validate(self):
         """Test model validation."""
@@ -308,7 +323,7 @@ class TestModelYamlListEdgeCases:
         # Should validate without error
         model = ModelYamlList.model_validate({"root_list": data})
 
-        assert model.root_list == data
+        assert extract_values(model.root_list) == data
 
     def test_empty_dict_in_list(self):
         """Test with empty dict in list."""
@@ -316,7 +331,7 @@ class TestModelYamlListEdgeCases:
 
         model = ModelYamlList(data=data)
 
-        assert model.root_list == data
-        assert model.root_list[0] == {}
-        assert model.root_list[1] == {"key": "value"}
-        assert model.root_list[2] == {}
+        assert extract_values(model.root_list) == data
+        assert model.root_list[0].to_value() == {}
+        assert model.root_list[1].to_value() == {"key": "value"}
+        assert model.root_list[2].to_value() == {}

@@ -103,7 +103,11 @@ class ModelValidationRulesConverter:
             v.input_type == EnumValidationRulesInputType.DICT_OBJECT
             and v.dict_data is not None
         ):
-            return ModelValidationRulesConverter._convert_dict_to_rules(v.dict_data)
+            # Convert ModelSchemaValue to raw values for dict processing
+            raw_dict: dict[str, object] = {
+                k: val.to_value() for k, val in v.dict_data.items()
+            }
+            return ModelValidationRulesConverter._convert_dict_to_rules(raw_dict)
         if (
             v.input_type == EnumValidationRulesInputType.MODEL_VALIDATION_RULES
             and v.validation_rules is not None

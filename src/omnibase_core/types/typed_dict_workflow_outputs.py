@@ -38,7 +38,9 @@ class TypedDictWorkflowOutputsDict(TypedDict, total=True):
     items_processed: NotRequired[int]
     success_count: NotRequired[int]
     failure_count: NotRequired[int]
-    data: NotRequired[dict[str, str | int | float | bool | list[str]]]
+    data: NotRequired[
+        dict[str, str | int | float | bool | None | list[object] | dict[str, object]]
+    ]
 
 
 __all__ = ["TypedDictWorkflowOutputsDict"]

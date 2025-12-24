@@ -14,6 +14,7 @@ from pydantic import ConfigDict, Field, field_serializer, field_validator
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_security_event_status import EnumSecurityEventStatus
 from omnibase_core.enums.enum_security_event_type import EnumSecurityEventType
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.core.model_route_spec import ModelRouteSpec
 from omnibase_core.models.core.model_trust_level import ModelTrustLevel
@@ -61,10 +62,26 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
     )
 
     # Routing hops tracking
-    route_hops: list[Any] = Field(
+    route_hops: list[ModelSchemaValue] = Field(
         default_factory=list,
-        description="List of routing hops for audit trail",
+        description="List of routing hops for audit trail (type-safe)",
     )
+
+    @field_validator("route_hops", mode="before")
+    @classmethod
+    def convert_route_hops_to_schema(
+        cls, v: list[Any] | list[ModelSchemaValue] | None
+    ) -> list[ModelSchemaValue]:
+        """Convert values to ModelSchemaValue for type safety."""
+        if not v:
+            return []
+        # Homogeneous list assumption: if first element is ModelSchemaValue,
+        # all elements are (lists come from single serialization source).
+        # If already ModelSchemaValue instances, return as-is
+        if len(v) > 0 and isinstance(v[0], ModelSchemaValue):
+            return v  # type: ignore[return-value]
+        # Convert raw values to ModelSchemaValue
+        return [ModelSchemaValue.from_value(item) for item in v]
 
     # Enhanced security context (override parent's dict type)
     security_context: ModelSecurityContext | None = Field(
@@ -174,7 +191,7 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
         description="Maximum time allowed for encryption operations",
     )
 
-    model_config = ConfigDict()
+    model_config = ConfigDict(from_attributes=True)
 
     @field_serializer("timestamp")
     def serialize_timestamp(self, value: datetime) -> str:
@@ -225,7 +242,7 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
         Args:
             hop_identifier: String identifier for the hop (typically a node ID)
         """
-        self.route_hops.append(hop_identifier)
+        self.route_hops.append(ModelSchemaValue.from_value(hop_identifier))
 
     def _update_content_hash(self) -> None:
         """Update content hash for tamper detection."""
