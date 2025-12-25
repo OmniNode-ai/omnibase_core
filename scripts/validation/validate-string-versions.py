@@ -1059,12 +1059,32 @@ def main() -> int:
                         continue
             else:
                 # Individual file mode
+                # Apply same exclusions as directory mode
+                exclude_patterns = [
+                    "tests",
+                    "protocols",
+                    "archive",
+                    "archived",
+                    "__pycache__",
+                    ".mypy_cache",
+                    ".pytest_cache",
+                ]
                 for arg in args:
                     try:
                         path = Path(arg)
 
                         if not path.exists():
                             print(f"Warning: File does not exist: {path}")
+                            continue
+
+                        # Skip excluded paths (same logic as directory mode)
+                        path_parts = path.parts
+                        should_exclude = False
+                        for pattern in exclude_patterns:
+                            if pattern in path_parts:
+                                should_exclude = True
+                                break
+                        if should_exclude:
                             continue
 
                         if path.suffix.lower() in [".yaml", ".yml", ".py"]:

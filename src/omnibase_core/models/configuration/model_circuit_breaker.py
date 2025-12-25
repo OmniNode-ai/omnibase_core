@@ -464,3 +464,18 @@ class ModelCircuitBreaker(BaseModel):
     def create_disabled(cls) -> "ModelCircuitBreaker":
         """Create disabled circuit breaker"""
         return cls(enabled=False)
+
+
+def _rebuild_models() -> None:
+    """Rebuild models to resolve forward references.
+
+    This function is called to resolve the forward reference to ModelCustomFields
+    in ModelCircuitBreakerMetadata. The lazy import avoids circular dependencies.
+    """
+    from omnibase_core.models.services.model_custom_fields import ModelCustomFields
+
+    ModelCircuitBreakerMetadata.model_rebuild()
+
+
+# Trigger model rebuild to resolve forward references
+_rebuild_models()

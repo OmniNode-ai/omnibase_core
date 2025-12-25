@@ -293,8 +293,8 @@ class TestModelSemVerBumping:
 class TestModelSemVerPrerelease:
     """Test prerelease functionality."""
 
-    def test_is_prerelease_always_false(self):
-        """Test that is_prerelease always returns False."""
+    def test_is_prerelease_false_for_release(self):
+        """Test that is_prerelease returns False for release versions."""
         version = ModelSemVer(major=1, minor=2, patch=3)
         assert version.is_prerelease() is False
 
@@ -302,6 +302,23 @@ class TestModelSemVerPrerelease:
         """Test is_prerelease for 0.0.0."""
         version = ModelSemVer(major=0, minor=0, patch=0)
         assert version.is_prerelease() is False
+
+    def test_is_prerelease_true_with_prerelease(self):
+        """Test that is_prerelease returns True when prerelease is set."""
+        version = ModelSemVer(major=1, minor=0, patch=0, prerelease=("alpha",))
+        assert version.is_prerelease() is True
+
+    def test_is_prerelease_with_numeric_identifier(self):
+        """Test is_prerelease with numeric identifier."""
+        version = ModelSemVer(major=1, minor=0, patch=0, prerelease=(1,))
+        assert version.is_prerelease() is True
+
+    def test_is_prerelease_with_multiple_identifiers(self):
+        """Test is_prerelease with multiple identifiers."""
+        version = ModelSemVer(
+            major=1, minor=0, patch=0, prerelease=("alpha", 1, "beta")
+        )
+        assert version.is_prerelease() is True
 
 
 @pytest.mark.unit
@@ -654,7 +671,14 @@ class TestModelSemVerEdgeCases:
         """Test Pydantic model_dump method."""
         version = ModelSemVer(major=1, minor=2, patch=3)
         dumped = version.model_dump()
-        assert dumped == {"major": 1, "minor": 2, "patch": 3}
+        # Now includes prerelease and build fields (None by default)
+        assert dumped == {
+            "major": 1,
+            "minor": 2,
+            "patch": 3,
+            "prerelease": None,
+            "build": None,
+        }
 
     def test_model_json(self):
         """Test JSON serialization."""
@@ -663,3 +687,483 @@ class TestModelSemVerEdgeCases:
         assert '"major":1' in json_str or '"major": 1' in json_str
         assert '"minor":2' in json_str or '"minor": 2' in json_str
         assert '"patch":3' in json_str or '"patch": 3' in json_str
+
+
+@pytest.mark.unit
+class TestSemVer20Parsing:
+    """Test SemVer 2.0.0 parsing with prerelease and build metadata."""
+
+    def test_parse_simple_version(self):
+        """Test parsing simple major.minor.patch."""
+        version = ModelSemVer.parse("1.2.3")
+        assert version.major == 1
+        assert version.minor == 2
+        assert version.patch == 3
+        assert version.prerelease is None
+        assert version.build is None
+
+    def test_parse_with_prerelease_alpha(self):
+        """Test parsing version with alpha prerelease."""
+        version = ModelSemVer.parse("1.0.0-alpha")
+        assert version.major == 1
+        assert version.minor == 0
+        assert version.patch == 0
+        assert version.prerelease == ("alpha",)
+        assert version.build is None
+
+    def test_parse_with_prerelease_numeric(self):
+        """Test parsing version with numeric prerelease."""
+        version = ModelSemVer.parse("1.0.0-0")
+        assert version.prerelease == (0,)
+
+    def test_parse_with_prerelease_dotted(self):
+        """Test parsing version with dotted prerelease identifiers."""
+        version = ModelSemVer.parse("1.0.0-alpha.1")
+        assert version.prerelease == ("alpha", 1)
+
+    def test_parse_with_prerelease_multiple(self):
+        """Test parsing version with multiple prerelease identifiers."""
+        version = ModelSemVer.parse("1.0.0-alpha.1.beta.2")
+        assert version.prerelease == ("alpha", 1, "beta", 2)
+
+    def test_parse_with_build_only(self):
+        """Test parsing version with build metadata only."""
+        version = ModelSemVer.parse("1.0.0+build")
+        assert version.prerelease is None
+        assert version.build == ("build",)
+
+    def test_parse_with_build_dotted(self):
+        """Test parsing version with dotted build metadata."""
+        version = ModelSemVer.parse("1.0.0+build.123")
+        assert version.build == ("build", "123")
+
+    def test_parse_with_prerelease_and_build(self):
+        """Test parsing version with both prerelease and build."""
+        version = ModelSemVer.parse("1.0.0-alpha.1+build.123")
+        assert version.major == 1
+        assert version.minor == 0
+        assert version.patch == 0
+        assert version.prerelease == ("alpha", 1)
+        assert version.build == ("build", "123")
+
+    def test_parse_with_hyphen_in_prerelease(self):
+        """Test parsing version with hyphen in prerelease identifier."""
+        version = ModelSemVer.parse("1.0.0-alpha-1")
+        assert version.prerelease == ("alpha-1",)
+
+    def test_parse_with_complex_prerelease(self):
+        """Test parsing version with complex prerelease."""
+        version = ModelSemVer.parse("1.0.0-0.3.7")
+        assert version.prerelease == (0, 3, 7)
+
+    def test_parse_with_alphanumeric_prerelease(self):
+        """Test parsing version with alphanumeric prerelease."""
+        version = ModelSemVer.parse("1.0.0-x.7.z.92")
+        assert version.prerelease == ("x", 7, "z", 92)
+
+    def test_parse_invalid_leading_zeros_major(self):
+        """Test that leading zeros in major version are rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelSemVer.parse("01.0.0")
+        assert "Invalid semantic version format" in exc_info.value.message
+
+    def test_parse_invalid_leading_zeros_minor(self):
+        """Test that leading zeros in minor version are rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelSemVer.parse("1.01.0")
+        assert "Invalid semantic version format" in exc_info.value.message
+
+    def test_parse_invalid_leading_zeros_patch(self):
+        """Test that leading zeros in patch version are rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelSemVer.parse("1.0.01")
+        assert "Invalid semantic version format" in exc_info.value.message
+
+    def test_parse_invalid_leading_zeros_prerelease(self):
+        """Test that leading zeros in numeric prerelease identifiers are rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelSemVer.parse("1.0.0-01")
+        assert "Invalid semantic version format" in exc_info.value.message
+
+
+@pytest.mark.unit
+class TestSemVer20Comparison:
+    """Test SemVer 2.0.0 comparison/precedence rules."""
+
+    def test_prerelease_less_than_release(self):
+        """Test that prerelease versions are less than release versions."""
+        alpha = ModelSemVer.parse("1.0.0-alpha")
+        release = ModelSemVer.parse("1.0.0")
+        assert alpha < release
+        assert not release < alpha
+
+    def test_prerelease_ordering_alpha_before_beta(self):
+        """Test that alpha < beta (lexical ordering)."""
+        alpha = ModelSemVer.parse("1.0.0-alpha")
+        beta = ModelSemVer.parse("1.0.0-beta")
+        assert alpha < beta
+        assert not beta < alpha
+
+    def test_prerelease_ordering_numeric(self):
+        """Test numeric prerelease identifier ordering."""
+        v1 = ModelSemVer.parse("1.0.0-1")
+        v2 = ModelSemVer.parse("1.0.0-2")
+        v10 = ModelSemVer.parse("1.0.0-10")
+        assert v1 < v2
+        assert v2 < v10
+        assert v1 < v10
+
+    def test_prerelease_numeric_less_than_alphanumeric(self):
+        """Test that numeric identifiers < alphanumeric identifiers."""
+        numeric = ModelSemVer.parse("1.0.0-1")
+        alpha = ModelSemVer.parse("1.0.0-alpha")
+        assert numeric < alpha
+        assert not alpha < numeric
+
+    def test_prerelease_fewer_identifiers_less_than_more(self):
+        """Test that fewer identifiers < more identifiers (when equal)."""
+        v1 = ModelSemVer.parse("1.0.0-alpha")
+        v2 = ModelSemVer.parse("1.0.0-alpha.1")
+        assert v1 < v2
+        assert not v2 < v1
+
+    def test_prerelease_complex_ordering(self):
+        """Test complex prerelease ordering per SemVer spec.
+
+        Per SemVer spec example:
+        1.0.0-alpha < 1.0.0-alpha.1 < 1.0.0-alpha.beta < 1.0.0-beta
+        < 1.0.0-beta.2 < 1.0.0-beta.11 < 1.0.0-rc.1 < 1.0.0
+        """
+        versions = [
+            ModelSemVer.parse("1.0.0-alpha"),
+            ModelSemVer.parse("1.0.0-alpha.1"),
+            ModelSemVer.parse("1.0.0-alpha.beta"),
+            ModelSemVer.parse("1.0.0-beta"),
+            ModelSemVer.parse("1.0.0-beta.2"),
+            ModelSemVer.parse("1.0.0-beta.11"),
+            ModelSemVer.parse("1.0.0-rc.1"),
+            ModelSemVer.parse("1.0.0"),
+        ]
+        # Each version should be less than the next
+        for i in range(len(versions) - 1):
+            assert versions[i] < versions[i + 1], (
+                f"{versions[i]} should be < {versions[i + 1]}"
+            )
+            assert not versions[i + 1] < versions[i], (
+                f"{versions[i + 1]} should not be < {versions[i]}"
+            )
+
+    def test_build_metadata_ignored_for_precedence(self):
+        """Test that build metadata is ignored for precedence comparison."""
+        v1 = ModelSemVer.parse("1.0.0+build1")
+        v2 = ModelSemVer.parse("1.0.0+build2")
+        # Should be equal
+        assert v1 == v2
+        assert not v1 < v2
+        assert not v2 < v1
+
+    def test_build_metadata_ignored_with_prerelease(self):
+        """Test that build metadata is ignored even with prerelease."""
+        v1 = ModelSemVer.parse("1.0.0-alpha+build1")
+        v2 = ModelSemVer.parse("1.0.0-alpha+build2")
+        assert v1 == v2
+
+    def test_comparison_operators_all(self):
+        """Test all comparison operators with prerelease versions."""
+        alpha = ModelSemVer.parse("1.0.0-alpha")
+        beta = ModelSemVer.parse("1.0.0-beta")
+        alpha2 = ModelSemVer.parse("1.0.0-alpha")
+
+        assert alpha < beta
+        assert alpha <= beta
+        assert alpha <= alpha2
+        assert beta > alpha
+        assert beta >= alpha
+        assert alpha2 >= alpha
+        assert alpha == alpha2
+        assert alpha != beta
+
+    def test_sorted_versions(self):
+        """Test that versions can be sorted correctly."""
+        versions = [
+            ModelSemVer.parse("2.0.0"),
+            ModelSemVer.parse("1.0.0-alpha"),
+            ModelSemVer.parse("1.0.0"),
+            ModelSemVer.parse("1.0.0-beta"),
+            ModelSemVer.parse("0.9.0"),
+        ]
+        sorted_versions = sorted(versions)
+        expected = [
+            ModelSemVer.parse("0.9.0"),
+            ModelSemVer.parse("1.0.0-alpha"),
+            ModelSemVer.parse("1.0.0-beta"),
+            ModelSemVer.parse("1.0.0"),
+            ModelSemVer.parse("2.0.0"),
+        ]
+        assert sorted_versions == expected
+
+
+@pytest.mark.unit
+class TestSemVer20Hashing:
+    """Test hashing with prerelease and build metadata."""
+
+    def test_hash_with_prerelease(self):
+        """Test that prerelease affects hash."""
+        v1 = ModelSemVer.parse("1.0.0-alpha")
+        v2 = ModelSemVer.parse("1.0.0")
+        assert hash(v1) != hash(v2)
+
+    def test_hash_same_prerelease(self):
+        """Test that same prerelease versions have same hash."""
+        v1 = ModelSemVer.parse("1.0.0-alpha.1")
+        v2 = ModelSemVer.parse("1.0.0-alpha.1")
+        assert hash(v1) == hash(v2)
+
+    def test_hash_ignores_build(self):
+        """Test that build metadata is ignored for hashing."""
+        v1 = ModelSemVer.parse("1.0.0+build1")
+        v2 = ModelSemVer.parse("1.0.0+build2")
+        assert hash(v1) == hash(v2)
+
+    def test_use_in_set_with_prerelease(self):
+        """Test ModelSemVer with prerelease can be used in sets."""
+        v1 = ModelSemVer.parse("1.0.0-alpha")
+        v2 = ModelSemVer.parse("1.0.0-alpha")
+        v3 = ModelSemVer.parse("1.0.0-beta")
+        version_set = {v1, v2, v3}
+        assert len(version_set) == 2  # v1 and v2 are duplicates
+
+    def test_use_in_set_build_deduplication(self):
+        """Test that different build metadata are treated as same in sets."""
+        v1 = ModelSemVer.parse("1.0.0+build1")
+        v2 = ModelSemVer.parse("1.0.0+build2")
+        version_set = {v1, v2}
+        assert len(version_set) == 1
+
+
+@pytest.mark.unit
+class TestSemVer20StringRepresentation:
+    """Test string representation with prerelease and build metadata."""
+
+    def test_str_with_prerelease(self):
+        """Test __str__ with prerelease."""
+        version = ModelSemVer(major=1, minor=0, patch=0, prerelease=("alpha",))
+        assert str(version) == "1.0.0-alpha"
+
+    def test_str_with_numeric_prerelease(self):
+        """Test __str__ with numeric prerelease identifier."""
+        version = ModelSemVer(major=1, minor=0, patch=0, prerelease=(1,))
+        assert str(version) == "1.0.0-1"
+
+    def test_str_with_dotted_prerelease(self):
+        """Test __str__ with dotted prerelease."""
+        version = ModelSemVer(major=1, minor=0, patch=0, prerelease=("alpha", 1))
+        assert str(version) == "1.0.0-alpha.1"
+
+    def test_str_with_build_only(self):
+        """Test __str__ with build metadata only."""
+        version = ModelSemVer(major=1, minor=0, patch=0, build=("build",))
+        assert str(version) == "1.0.0+build"
+
+    def test_str_with_dotted_build(self):
+        """Test __str__ with dotted build metadata."""
+        version = ModelSemVer(major=1, minor=0, patch=0, build=("build", "123"))
+        assert str(version) == "1.0.0+build.123"
+
+    def test_str_with_prerelease_and_build(self):
+        """Test __str__ with both prerelease and build."""
+        version = ModelSemVer(
+            major=1, minor=0, patch=0, prerelease=("alpha", 1), build=("build", "123")
+        )
+        assert str(version) == "1.0.0-alpha.1+build.123"
+
+    def test_parse_and_str_roundtrip(self):
+        """Test that parsing and stringifying produces same result."""
+        test_cases = [
+            "1.0.0",
+            "1.0.0-alpha",
+            "1.0.0-alpha.1",
+            "1.0.0+build",
+            "1.0.0+build.123",
+            "1.0.0-alpha.1+build.123",
+            "2.1.3-beta.2.rc1+build-metadata.7",
+        ]
+        for version_str in test_cases:
+            version = ModelSemVer.parse(version_str)
+            assert str(version) == version_str, f"Roundtrip failed for {version_str}"
+
+
+@pytest.mark.unit
+class TestSemVer20KeyMethods:
+    """Test precedence_key and exact_key methods."""
+
+    def test_precedence_key_release(self):
+        """Test precedence_key for release version."""
+        version = ModelSemVer.parse("1.2.3")
+        key = version.precedence_key()
+        # is_release=1, no prerelease identifiers
+        assert key == (1, 2, 3, 1, ())
+
+    def test_precedence_key_prerelease(self):
+        """Test precedence_key for prerelease version."""
+        version = ModelSemVer.parse("1.2.3-alpha.1")
+        key = version.precedence_key()
+        # is_release=0 (prerelease sorts before release), identifiers with (type, value) tuples
+        assert key == (1, 2, 3, 0, ((1, "alpha"), (0, 1)))
+
+    def test_precedence_key_ignores_build(self):
+        """Test that precedence_key ignores build metadata."""
+        v1 = ModelSemVer.parse("1.0.0+build1")
+        v2 = ModelSemVer.parse("1.0.0+build2")
+        assert v1.precedence_key() == v2.precedence_key()
+
+    def test_precedence_key_sortable(self):
+        """Test that precedence_key produces correct sort order."""
+        versions = [
+            ModelSemVer.parse("1.0.0"),
+            ModelSemVer.parse("1.0.0-alpha"),
+            ModelSemVer.parse("1.0.0-beta"),
+            ModelSemVer.parse("0.9.0"),
+        ]
+        # Sort by precedence_key
+        sorted_versions = sorted(versions, key=lambda v: v.precedence_key())
+        expected_strs = ["0.9.0", "1.0.0-alpha", "1.0.0-beta", "1.0.0"]
+        assert [str(v) for v in sorted_versions] == expected_strs
+
+    def test_exact_key_includes_build(self):
+        """Test that exact_key includes build metadata."""
+        v1 = ModelSemVer.parse("1.0.0+build1")
+        v2 = ModelSemVer.parse("1.0.0+build2")
+        assert v1.exact_key() != v2.exact_key()
+
+    def test_exact_key_all_components(self):
+        """Test exact_key returns all components."""
+        version = ModelSemVer.parse("1.2.3-alpha.1+build.123")
+        key = version.exact_key()
+        assert key == (1, 2, 3, ("alpha", 1), ("build", "123"))
+
+
+@pytest.mark.unit
+class TestSemVer20Construction:
+    """Test direct construction with prerelease and build."""
+
+    def test_construct_with_prerelease_tuple(self):
+        """Test constructing with prerelease tuple."""
+        version = ModelSemVer(major=1, minor=0, patch=0, prerelease=("alpha", 1))
+        assert version.prerelease == ("alpha", 1)
+
+    def test_construct_with_prerelease_list(self):
+        """Test constructing with prerelease list (converted to tuple)."""
+        version = ModelSemVer(major=1, minor=0, patch=0, prerelease=["alpha", 1])
+        assert version.prerelease == ("alpha", 1)
+
+    def test_construct_with_build_tuple(self):
+        """Test constructing with build tuple."""
+        version = ModelSemVer(major=1, minor=0, patch=0, build=("build", "123"))
+        assert version.build == ("build", "123")
+
+    def test_construct_with_build_list(self):
+        """Test constructing with build list (converted to tuple)."""
+        version = ModelSemVer(major=1, minor=0, patch=0, build=["build", "123"])
+        assert version.build == ("build", "123")
+
+    def test_construct_empty_prerelease_becomes_none(self):
+        """Test that empty prerelease tuple becomes None."""
+        version = ModelSemVer(major=1, minor=0, patch=0, prerelease=())
+        assert version.prerelease is None
+
+    def test_construct_empty_build_becomes_none(self):
+        """Test that empty build tuple becomes None."""
+        version = ModelSemVer(major=1, minor=0, patch=0, build=())
+        assert version.build is None
+
+    def test_invalid_prerelease_identifier(self):
+        """Test that invalid prerelease identifier raises error."""
+        with pytest.raises((ValidationError, ModelOnexError)):
+            ModelSemVer(major=1, minor=0, patch=0, prerelease=("invalid!",))
+
+    def test_negative_numeric_prerelease_invalid(self):
+        """Test that negative numeric prerelease identifier raises error."""
+        with pytest.raises(ModelOnexError):
+            ModelSemVer(major=1, minor=0, patch=0, prerelease=(-1,))
+
+    def test_invalid_build_identifier(self):
+        """Test that invalid build identifier raises error."""
+        with pytest.raises((ValidationError, ModelOnexError)):
+            ModelSemVer(major=1, minor=0, patch=0, build=("invalid!",))
+
+
+@pytest.mark.unit
+class TestSemVer20Bumping:
+    """Test version bumping clears prerelease and build."""
+
+    def test_bump_major_clears_prerelease(self):
+        """Test that bumping major clears prerelease."""
+        version = ModelSemVer.parse("1.0.0-alpha")
+        bumped = version.bump_major()
+        assert bumped.prerelease is None
+        assert bumped.build is None
+        assert bumped.major == 2
+
+    def test_bump_minor_clears_prerelease(self):
+        """Test that bumping minor clears prerelease."""
+        version = ModelSemVer.parse("1.0.0-alpha.1+build")
+        bumped = version.bump_minor()
+        assert bumped.prerelease is None
+        assert bumped.build is None
+        assert bumped.minor == 1
+
+    def test_bump_patch_clears_prerelease(self):
+        """Test that bumping patch clears prerelease."""
+        version = ModelSemVer.parse("1.0.0-alpha+build.123")
+        bumped = version.bump_patch()
+        assert bumped.prerelease is None
+        assert bumped.build is None
+        assert bumped.patch == 1
+
+
+@pytest.mark.unit
+class TestSemVer20Serialization:
+    """Test serialization with prerelease and build."""
+
+    def test_model_dump_with_prerelease(self):
+        """Test model_dump with prerelease."""
+        version = ModelSemVer.parse("1.0.0-alpha.1")
+        dumped = version.model_dump()
+        assert dumped == {
+            "major": 1,
+            "minor": 0,
+            "patch": 0,
+            "prerelease": ("alpha", 1),
+            "build": None,
+        }
+
+    def test_model_dump_with_build(self):
+        """Test model_dump with build."""
+        version = ModelSemVer.parse("1.0.0+build.123")
+        dumped = version.model_dump()
+        assert dumped == {
+            "major": 1,
+            "minor": 0,
+            "patch": 0,
+            "prerelease": None,
+            "build": ("build", "123"),
+        }
+
+    def test_roundtrip_serialization(self):
+        """Test full serialization roundtrip."""
+        original = ModelSemVer.parse("1.2.3-alpha.1+build.123")
+        dumped = original.model_dump()
+        restored = ModelSemVer.model_validate(dumped)
+        # Note: exact_key comparison includes build
+        assert restored.exact_key() == original.exact_key()
+
+    def test_json_roundtrip(self):
+        """Test JSON serialization roundtrip."""
+        import json
+
+        original = ModelSemVer.parse("1.2.3-beta.2+metadata")
+        json_str = original.model_dump_json()
+        data = json.loads(json_str)
+        restored = ModelSemVer.model_validate(data)
+        assert restored.exact_key() == original.exact_key()
