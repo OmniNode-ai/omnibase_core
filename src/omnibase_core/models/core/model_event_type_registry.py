@@ -81,7 +81,11 @@ class ModelEventTypeRegistry:
         for contract_file in contract_files:
             try:
                 events_discovered += self._discover_from_contract(contract_file)
-            except Exception:
+            except Exception as e:
+                # fallback-ok: resilient discovery - skip invalid contracts with debug logging
+                import logging
+
+                logging.debug(f"Failed to discover events from {contract_file}: {e}")
                 continue
 
         return events_discovered

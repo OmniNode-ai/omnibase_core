@@ -109,7 +109,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
                         )  # Direct Pydantic instantiation (ONEX compliance)
                         new_data[k] = function_tool
                     except Exception:
-                        # Fallback to raw dictionary if ModelFunctionTool creation fails
+                        # fallback-ok: Fallback to raw dictionary if ModelFunctionTool creation fails
                         new_data[k] = v
                 else:
                     new_data[k] = v
@@ -253,6 +253,7 @@ class ModelMetadataToolCollection(RootModel[dict[str, Any]]):
                         **tool_data
                     )  # Direct Pydantic instantiation (ONEX compliance)
                 except Exception:
+                    # fallback-ok: Fallback to raw dict if ModelFunctionTool creation fails
                     self.root[name] = tool_data
             else:
                 self.root[name] = tool_data

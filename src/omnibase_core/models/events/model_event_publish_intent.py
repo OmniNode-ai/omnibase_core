@@ -112,13 +112,15 @@ class ModelEventPublishIntent(BaseModel):
         description="Event type name (for routing and logging)",
         examples=["GENERATION_METRICS_RECORDED", "NODE_GENERATION_COMPLETED"],
     )
-    target_event_payload: ModelEventPayloadUnion | dict[str, Any] = Field(
-        ...,
-        description=(
-            "Event payload to publish. Accepts typed payloads from "
-            "ModelEventPayloadUnion (recommended) or legacy dict[str, Any] "
-            "(deprecated, emits warning)."
-        ),
+    target_event_payload: ModelEventPayloadUnion | dict[str, Any] = (
+        Field(  # dict-any-ok: union with typed payloads
+            ...,
+            description=(
+                "Event payload to publish. Accepts typed payloads from "
+                "ModelEventPayloadUnion (recommended) or legacy dict[str, Any] "
+                "(deprecated, emits warning)."
+            ),
+        )
     )
 
     # Execution hints
@@ -175,39 +177,67 @@ def _rebuild_model() -> None:
         This pattern is common in Pydantic models that use TYPE_CHECKING
         imports. The model_rebuild() call injects the actual types into
         Pydantic's type resolution namespace.
+
+    Raises:
+        ModelOnexError: If imports fail or model rebuild fails due to
+            missing dependencies or configuration issues.
     """
-    # Lazy imports to avoid circular dependency during module load
-    # Inject types into module globals for Pydantic to resolve forward references
     import sys
 
-    from omnibase_core.models.events.payloads import (
-        ModelEventPayloadUnion,
-    )
-    from omnibase_core.models.infrastructure.model_retry_policy import (
-        ModelRetryPolicy,
-    )
+    from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+    from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
-    current_module = sys.modules[__name__]
-    setattr(current_module, "ModelEventPayloadUnion", ModelEventPayloadUnion)
-    setattr(current_module, "ModelRetryPolicy", ModelRetryPolicy)
+    try:
+        # Lazy imports to avoid circular dependency during module load
+        from omnibase_core.models.events.payloads import (
+            ModelEventPayloadUnion,
+        )
+        from omnibase_core.models.infrastructure.model_retry_policy import (
+            ModelRetryPolicy,
+        )
+    except ImportError as e:
+        raise ModelOnexError(
+            message=f"Failed to import required modules for model rebuild: {e}",
+            error_code=EnumCoreErrorCode.IMPORT_ERROR,
+            context={
+                "model": "ModelEventPublishIntent",
+                "missing_module": str(e),
+            },
+        ) from e
 
-    # Also update the model's __pydantic_parent_namespace__
-    ModelEventPublishIntent.model_rebuild(
-        _types_namespace={
-            "ModelEventPayloadUnion": ModelEventPayloadUnion,
-            "ModelRetryPolicy": ModelRetryPolicy,
-        }
-    )
+    try:
+        # Inject types into module globals for Pydantic to resolve forward references
+        current_module = sys.modules[__name__]
+        setattr(current_module, "ModelEventPayloadUnion", ModelEventPayloadUnion)
+        setattr(current_module, "ModelRetryPolicy", ModelRetryPolicy)
+
+        # Rebuild model with resolved types namespace
+        ModelEventPublishIntent.model_rebuild(
+            _types_namespace={
+                "ModelEventPayloadUnion": ModelEventPayloadUnion,
+                "ModelRetryPolicy": ModelRetryPolicy,
+            }
+        )
+    except Exception as e:
+        raise ModelOnexError(
+            message=f"Failed to rebuild ModelEventPublishIntent: {e}",
+            error_code=EnumCoreErrorCode.INITIALIZATION_FAILED,
+            context={
+                "model": "ModelEventPublishIntent",
+                "error_type": type(e).__name__,
+            },
+        ) from e
 
 
-# Forward Reference Resolution
-# ============================
-# This module uses TYPE_CHECKING imports to break circular dependencies.
-# As a result, forward references (ModelEventPayloadUnion, ModelRetryPolicy)
-# must be resolved before typed payload validation can work correctly.
-#
-# Options:
-#   1. Call _rebuild_model() explicitly during application startup (recommended)
-#   2. Let Pydantic auto-resolve on first model_validate() call (less predictable)
-#
-# See _rebuild_model() docstring for detailed usage instructions.
+# Automatic forward reference resolution
+# =====================================
+# Invoke _rebuild_model() automatically on module load to resolve
+# TYPE_CHECKING forward references. This ensures typed payload validation
+# works correctly without requiring manual intervention.
+try:
+    _rebuild_model()
+except Exception:
+    # If automatic rebuild fails (e.g., during early import phase),
+    # fall back to Pydantic's lazy resolution. Users can call
+    # _rebuild_model() explicitly after all dependencies are loaded.
+    pass

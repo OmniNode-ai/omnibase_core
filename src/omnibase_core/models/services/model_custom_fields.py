@@ -13,7 +13,6 @@ from pydantic import BaseModel, ConfigDict, Field, field_serializer, field_valid
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.types.typed_dict_custom_fields import TypedDictCustomFieldsDict
 from omnibase_core.utils.util_decorators import allow_any_type
 
 # Import separated models
@@ -36,10 +35,11 @@ class ModelCustomFields(BaseModel):
         description="Custom field definitions",
     )
 
-    # Field values
-    field_values: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Custom field values",
+    field_values: dict[str, Any] = (
+        Field(  # dict-any-ok: dynamic user-defined field values
+            default_factory=dict,
+            description="Custom field values",
+        )
     )
 
     # Metadata
@@ -95,21 +95,7 @@ class ModelCustomFields(BaseModel):
 
         return v
 
-    # DEPRECATED: Use model_dump(exclude_none=True) instead
-    def to_dict(self) -> TypedDictCustomFieldsDict:
-        """
-        DEPRECATED: Use model_dump(exclude_none=True) instead.
-
-        Convert to dictionary for current standards.
-        This method will be removed in a future release.
-        """
-        # Custom compatibility logic - return just the field values
-        # TypedDictCustomFieldsDict is a flexible TypedDict with total=False
-        # Cast to TypedDict since the structure is intentionally dynamic
-        result: TypedDictCustomFieldsDict = {}
-        result.update(self.field_values)  # type: ignore[typeddict-item]
-        return result
-
+    # REMOVED: to_dict deprecated method - use model_dump(exclude_none=True) instead
     # REMOVED: from_dict factory method - use Pydantic model_validate() instead
     # Factory methods bypass Pydantic validation and violate ONEX architecture.
     # Migration: Replace ModelCustomFields.from_dict(data) with ModelCustomFields(**data)
@@ -168,11 +154,6 @@ class ModelCustomFields(BaseModel):
             return value.isoformat()
         return None
 
-
-# Compatibility aliases
-CustomFieldDefinition = ModelCustomFieldDefinition
-CustomFields = ModelCustomFields
-ErrorDetails = ModelErrorDetails
 
 # Re-export for current standards
 __all__ = [

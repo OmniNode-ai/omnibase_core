@@ -255,12 +255,19 @@ class TestModelCancelExecutionPayloadEdgeCases:
 
     def test_reason_with_unicode(self) -> None:
         """Test reason with unicode characters."""
-        reason = "Cancellation reason"
+        # Test with actual unicode: emoji, CJK, Arabic, Cyrillic, Greek
+        reason = "Cancellation: \u2705 \u4e2d\u6587 \u0639\u0631\u0628\u064a \u0420\u0443\u0441\u0441\u043a\u0438\u0439 \u03b1\u03b2\u03b3"
         payload = ModelCancelExecutionPayload(
             execution_id=uuid4(),
             reason=reason,
         )
         assert payload.reason == reason
+        # Verify specific unicode characters are preserved
+        assert "\u2705" in payload.reason  # Checkmark emoji
+        assert "\u4e2d\u6587" in payload.reason  # Chinese characters
+        assert "\u0639\u0631\u0628\u064a" in payload.reason  # Arabic
+        assert "\u0420\u0443\u0441\u0441\u043a\u0438\u0439" in payload.reason  # Russian
+        assert "\u03b1\u03b2\u03b3" in payload.reason  # Greek letters
 
     def test_all_flags_false(self) -> None:
         """Test with all boolean flags set to False."""

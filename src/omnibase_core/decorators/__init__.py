@@ -4,6 +4,11 @@ Provides decorators to mark legitimate exceptions to ONEX strict typing standard
 """
 
 from .allow_dict_any import allow_dict_any
+from .convert_to_schema import (
+    convert_dict_to_schema,
+    convert_list_to_schema,
+    convert_to_schema,
+)
 from .decorator_enforce_execution_shape import enforce_execution_shape
 from .error_handling import (
     io_error_handling,
@@ -22,6 +27,9 @@ __all__ = [
     "allow_dict_any",
     "allow_legacy_pattern",
     "allow_mixed_types",
+    "convert_dict_to_schema",
+    "convert_list_to_schema",
+    "convert_to_schema",
     "enforce_execution_shape",
     "exclude_from_onex_standards",
     "io_error_handling",

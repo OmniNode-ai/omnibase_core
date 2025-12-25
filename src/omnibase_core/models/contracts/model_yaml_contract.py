@@ -72,8 +72,7 @@ class ModelYamlContract(BaseModel):
 
         Supports:
         - EnumNodeType enum values
-        - String values that match EnumNodeType values
-        - Legacy lowercase values like "compute" (map to *_GENERIC values, e.g., COMPUTE_GENERIC)
+        - String values that match EnumNodeType values (case-insensitive by name or value)
 
         Args:
             value: Node type value to validate
@@ -88,27 +87,6 @@ class ModelYamlContract(BaseModel):
             return value
 
         if isinstance(value, str):
-            # Handle legacy lowercase "compute" mapping -> use COMPUTE_GENERIC
-            # Log deprecation warning for legacy values to help teams update
-            legacy_mappings = {
-                "compute": EnumNodeType.COMPUTE_GENERIC,
-                "effect": EnumNodeType.EFFECT_GENERIC,
-                "reducer": EnumNodeType.REDUCER_GENERIC,
-                "orchestrator": EnumNodeType.ORCHESTRATOR_GENERIC,
-            }
-            value_lower = value.lower()
-            if value_lower in legacy_mappings:
-                import warnings
-
-                new_value = legacy_mappings[value_lower]
-                warnings.warn(
-                    f"Legacy node_type value '{value}' is deprecated. "
-                    f"Please update to '{new_value.value}' for forward compatibility.",
-                    DeprecationWarning,
-                    stacklevel=2,
-                )
-                return new_value
-
             # Try to match string to EnumNodeType by name or value (case-insensitive)
             value_upper = value.upper()
             for enum_value in EnumNodeType:

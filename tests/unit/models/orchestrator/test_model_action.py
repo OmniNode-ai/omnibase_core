@@ -26,7 +26,7 @@ from omnibase_core.models.orchestrator.model_action import ModelAction
 class _TestActionPayload(BaseModel):
     """Minimal payload for unit tests."""
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
     kind: Literal["test.action"] = "test.action"
     data: str = "test"
 

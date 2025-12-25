@@ -170,9 +170,13 @@ class ModelCliCommandRegistry(BaseModel):
                     if command:
                         self.register_command(command)
                         commands_discovered += 1
-                except Exception:
+                except Exception as e:
                     # Log error but continue processing other commands
-                    pass
+                    import logging
+
+                    logging.debug(
+                        f"Failed to create command from contract for node '{node_name}': {e}"
+                    )
 
             return commands_discovered
 

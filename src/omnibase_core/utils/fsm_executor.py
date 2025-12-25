@@ -10,7 +10,7 @@ while maintaining type clarity for FSM-specific usage.
 """
 
 from datetime import UTC, datetime
-from typing import Any, SupportsFloat, cast
+from typing import Any, Literal, SupportsFloat, cast
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.contracts.subcontracts.model_fsm_state_definition import (
@@ -630,8 +630,10 @@ async def _execute_state_actions(
     if not actions:
         return []
 
-    # Convert action_type to the payload format
-    payload_action_type: str = "on_enter" if action_type == "entry" else "on_exit"
+    # Convert action_type to the payload format - typed as Literal for type safety
+    payload_action_type: Literal["on_enter", "on_exit"] = (
+        "on_enter" if action_type == "entry" else "on_exit"
+    )
 
     for action_name in actions:
         # Create intent for each action
@@ -641,7 +643,7 @@ async def _execute_state_actions(
                 target="action_executor",
                 payload=ModelPayloadFSMStateAction(
                     state_name=state.state_name,
-                    action_type=payload_action_type,  # type: ignore[arg-type]
+                    action_type=payload_action_type,
                     action_name=action_name,
                     parameters={"fsm": fsm.state_machine_name, "context": context},
                 ),

@@ -1263,10 +1263,10 @@ def _create_action_for_step(
 
     # Build typed payload using the action type factory
     # The workflow context is passed as metadata since typed payloads have specific fields
+    # semantic_action is not specified - factory uses type-appropriate defaults:
+    #   COMPUTE -> "process", EFFECT -> "execute", REDUCE -> "aggregate", ORCHESTRATE -> "coordinate"
     typed_payload = create_action_payload(
         action_type=action_type,
-        # Use "execute" as the default semantic action for workflow steps
-        semantic_action="execute",
         metadata={
             "workflow_id": str(workflow_id),
             "step_id": str(step.step_id),

@@ -50,7 +50,7 @@ from .model_state_contract_block import ModelStateContractBlock
 from .model_test_matrix_entry import ModelTestMatrixEntry
 from .model_testing_block import ModelTestingBlock
 
-# Type aliases for current standards - using TypeAlias for runtime compatibility
+# Type aliases for current standards - using PEP 695 type statement syntax
 type DependencyBlock = ModelDependencyBlock
 type IOBlock = ModelIOBlock
 type SignatureBlock = ModelSignatureBlock

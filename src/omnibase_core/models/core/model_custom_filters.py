@@ -6,7 +6,9 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 from .model_complex_filter import ModelComplexFilter
@@ -134,17 +136,14 @@ class ModelCustomFilters(BaseModel):
                 elif filter_type == "complex":
                     filters[name] = ModelComplexFilter(**filter_data)
                 else:
-                    # For unknown types, create a generic filter
-                    # This maintains compatibility
-                    filters[name] = ModelStringFilter(
-                        pattern=str(filter_data),
-                        filter_type="legacy",
+                    raise ModelOnexError(
+                        message=f"Unknown filter_type '{filter_type}' for filter '{name}'",
+                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     )
             else:
-                # Legacy format - convert to string filter
-                filters[name] = ModelStringFilter(
-                    pattern=str(filter_data),
-                    filter_type="legacy",
+                raise ModelOnexError(
+                    message=f"Filter '{name}' must be a dict with 'filter_type' key",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 )
 
         return cls(filters=filters)

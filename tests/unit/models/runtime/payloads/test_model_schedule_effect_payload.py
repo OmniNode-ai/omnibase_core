@@ -194,10 +194,10 @@ class TestModelScheduleEffectPayloadEdgeCases:
         payload = ModelScheduleEffectPayload(effect_node_type="http-request_v2.0")
         assert payload.effect_node_type == "http-request_v2.0"
 
-    def test_effect_node_type_unicode(self) -> None:
-        """Test effect_node_type with unicode characters."""
-        payload = ModelScheduleEffectPayload(effect_node_type="effect_type")
-        assert payload.effect_node_type == "effect_type"
+    def test_effect_node_type_single_character(self) -> None:
+        """Test effect_node_type with single character (min_length boundary)."""
+        payload = ModelScheduleEffectPayload(effect_node_type="e")
+        assert payload.effect_node_type == "e"
 
     def test_effect_input_nested_structure(self) -> None:
         """Test effect_input with deeply nested structure."""

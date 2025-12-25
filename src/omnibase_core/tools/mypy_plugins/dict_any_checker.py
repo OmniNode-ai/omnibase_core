@@ -19,7 +19,6 @@ Configuration (optional):
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from mypy.plugin import (
@@ -32,6 +31,8 @@ from mypy.types import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from mypy.options import Options
 
 # Error code for dict[str, Any] violations
@@ -55,7 +56,6 @@ class DictAnyCheckerPlugin(Plugin):
     def __init__(self, options: Options) -> None:
         """Initialize the plugin with mypy options."""
         super().__init__(options)
-        self._checked_files: set[str] = set()
 
     def get_type_analyze_hook(
         self, fullname: str

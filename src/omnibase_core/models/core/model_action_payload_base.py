@@ -33,7 +33,7 @@ class ModelActionPayloadBase(BaseModel):
         description="Additional metadata for the action",
     )
 
-    model_config = ConfigDict(use_enum_values=True)
+    model_config = ConfigDict(use_enum_values=True, from_attributes=True)
 
     @property
     def kind(self) -> str:

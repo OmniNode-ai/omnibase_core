@@ -548,7 +548,12 @@ class ModelEventPublishIntent(BaseModel):
    @field_validator("payload", mode="before")
    @classmethod
    def migrate_dict_payload(cls, v):
-       if isinstance(v, dict) and "kind" not in v:
+       # NOTE: The discriminator field name varies by model category:
+       #   - ModelIntent payloads: "intent_type"
+       #   - ModelRuntimeDirective payloads: "kind"
+       #   - ModelAction payloads: "action_type"
+       # This example uses "intent_type" for ModelIntent:
+       if isinstance(v, dict) and "intent_type" not in v:
            # Infer and convert to typed payload
            return infer_payload_type(v)
        return v

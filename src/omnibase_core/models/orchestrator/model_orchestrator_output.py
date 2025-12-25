@@ -152,7 +152,7 @@ class ModelOrchestratorOutput(BaseModel):
             try:
                 return ModelSchemaValue.model_validate(value)
             except Exception:
-                # If validation fails, treat as raw value
+                # fallback-ok: If validation fails, treat as raw value
                 pass
         return ModelSchemaValue.from_value(value)
 

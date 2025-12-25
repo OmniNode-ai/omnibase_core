@@ -10,6 +10,26 @@ IMPORT ORDER CONSTRAINTS (Critical - Do Not Break):
 This module uses deferred imports to avoid circular dependencies.
 ModelSchemaValue is imported inside functions, not at module level.
 
+PYDANTIC INTERNAL API USAGE (Documented Limitation):
+=====================================================
+This module uses Pydantic internal APIs because there is no public API
+for dynamically adding model validators to an existing class post-creation.
+
+Internal APIs used:
+- pydantic._internal._decorators.Decorator
+- pydantic._internal._decorators.ModelValidatorDecoratorInfo
+- cls.__pydantic_decorators__ (semi-public, used in Pydantic docs)
+
+Version Compatibility:
+- Tested with Pydantic 2.6+ through 2.11+
+- These internals are stable across Pydantic 2.x but may change in 3.x
+- If Pydantic adds a public API for dynamic validators, migrate to it
+
+Alternative approaches considered and rejected:
+- create_model() with __validators__: Changes class identity, breaks isinstance checks
+- Subclass wrapping: Creates new class, incompatible with existing type hints
+- __init_subclass__: Requires modifying the decorated class's metaclass
+
 Usage:
     @convert_to_schema("field_name")
     class MyModel(BaseModel):
@@ -47,7 +67,9 @@ def _get_model_schema_value() -> type[ModelSchemaValue]:
     return ModelSchemaValue
 
 
-def _is_serialized_schema_value(value: dict[str, Any]) -> bool:
+def _is_serialized_schema_value(
+    value: dict[str, Any],  # dict-any-ok: deserializing unknown schema
+) -> bool:
     """Check if a dict looks like a serialized ModelSchemaValue."""
     # Serialized ModelSchemaValue always has 'value_type' key with specific values
     if "value_type" not in value:
@@ -79,8 +101,9 @@ def _convert_list_value(
 
 
 def _convert_dict_value(
-    value: dict[str, Any] | None, schema_cls: type[ModelSchemaValue]
-) -> dict[str, Any]:
+    value: dict[str, Any] | None,  # dict-any-ok: schema conversion utility
+    schema_cls: type[ModelSchemaValue],
+) -> dict[str, Any]:  # dict-any-ok: returns dynamic schema data
     """Convert a dict value to dict of ModelSchemaValue."""
     if not value:
         return {}
@@ -160,8 +183,8 @@ def convert_to_schema(
 
         def convert_schema_fields(
             cls_inner: type[Any],
-            data: dict[str, Any] | Any,
-        ) -> dict[str, Any] | Any:
+            data: dict[str, Any] | Any,  # dict-any-ok: pydantic validator input
+        ) -> dict[str, Any] | Any:  # dict-any-ok: pydantic validator output
             """
             Convert specified field values to ModelSchemaValue for type safety.
 
@@ -239,8 +262,8 @@ def convert_list_to_schema(
 
         def convert_list_fields(
             cls_inner: type[Any],
-            data: dict[str, Any] | Any,
-        ) -> dict[str, Any] | Any:
+            data: dict[str, Any] | Any,  # dict-any-ok: pydantic validator input
+        ) -> dict[str, Any] | Any:  # dict-any-ok: pydantic validator output
             """Convert specified list fields to ModelSchemaValue."""
             if not isinstance(data, dict):
                 return data
@@ -301,8 +324,8 @@ def convert_dict_to_schema(
 
         def convert_dict_fields(
             cls_inner: type[Any],
-            data: dict[str, Any] | Any,
-        ) -> dict[str, Any] | Any:
+            data: dict[str, Any] | Any,  # dict-any-ok: pydantic validator input
+        ) -> dict[str, Any] | Any:  # dict-any-ok: pydantic validator output
             """Convert specified dict fields to ModelSchemaValue."""
             if not isinstance(data, dict):
                 return data

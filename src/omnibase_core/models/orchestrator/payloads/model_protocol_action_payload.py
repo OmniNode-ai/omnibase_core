@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2025 OmniNode Team
+# SPDX-License-Identifier: Apache-2.0
 """
 Protocol for action payloads.
 
@@ -38,6 +40,12 @@ See Also:
 """
 
 from typing import Protocol, runtime_checkable
+
+# Public API - listed immediately after imports per Python convention
+__all__ = [
+    "ProtocolActionPayload",
+    "ActionPayloadList",
+]
 
 
 @runtime_checkable

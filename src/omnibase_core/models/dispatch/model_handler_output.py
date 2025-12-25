@@ -128,7 +128,9 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_node_kind import EnumNodeKind
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Type variable for COMPUTE result
 T = TypeVar("T")
@@ -348,88 +350,146 @@ class ModelHandlerOutput(BaseModel, Generic[T]):
         - result must be JSON-ledger-safe (BaseModel, JSON primitives, or JSON containers)
 
         Raises:
-            ValueError: If the output contains fields not allowed for the node_kind
+            ModelOnexError: If the output contains fields not allowed for the node_kind
 
         Returns:
             Self if validation passes
         """
         if self.node_kind == EnumNodeKind.ORCHESTRATOR:
             if self.projections:
-                raise ValueError(
-                    "ORCHESTRATOR cannot emit projections[] - use events[] and intents[] only. "
-                    "Orchestrators coordinate workflows but do not maintain read-optimized state."
+                raise ModelOnexError(
+                    message=(
+                        "ORCHESTRATOR cannot emit projections[] - use events[] and intents[] only. "
+                        "Orchestrators coordinate workflows but do not maintain read-optimized state."
+                    ),
+                    error_code=EnumCoreErrorCode.CONTRACT_VIOLATION,
+                    context={
+                        "node_kind": "ORCHESTRATOR",
+                        "forbidden_field": "projections",
+                    },
                 )
             if self.result is not None:
-                raise ValueError(
-                    "ORCHESTRATOR cannot set result - use events[] and intents[] only. "
-                    "Only COMPUTE nodes return typed results."
+                raise ModelOnexError(
+                    message=(
+                        "ORCHESTRATOR cannot set result - use events[] and intents[] only. "
+                        "Only COMPUTE nodes return typed results."
+                    ),
+                    error_code=EnumCoreErrorCode.CONTRACT_VIOLATION,
+                    context={"node_kind": "ORCHESTRATOR", "forbidden_field": "result"},
                 )
 
         elif self.node_kind == EnumNodeKind.REDUCER:
             if self.events:
-                raise ValueError(
-                    "REDUCER cannot emit events[] (pure fold - projections[] only). "
-                    "Reducers maintain read-optimized state projections, not publish events."
+                raise ModelOnexError(
+                    message=(
+                        "REDUCER cannot emit events[] (pure fold - projections[] only). "
+                        "Reducers maintain read-optimized state projections, not publish events."
+                    ),
+                    error_code=EnumCoreErrorCode.CONTRACT_VIOLATION,
+                    context={"node_kind": "REDUCER", "forbidden_field": "events"},
                 )
             if self.intents:
-                raise ValueError(
-                    "REDUCER cannot emit intents[] (pure fold - projections[] only). "
-                    "Reducers are pure functions that update state, not request side effects."
+                raise ModelOnexError(
+                    message=(
+                        "REDUCER cannot emit intents[] (pure fold - projections[] only). "
+                        "Reducers are pure functions that update state, not request side effects."
+                    ),
+                    error_code=EnumCoreErrorCode.CONTRACT_VIOLATION,
+                    context={"node_kind": "REDUCER", "forbidden_field": "intents"},
                 )
             if self.result is not None:
-                raise ValueError(
-                    "REDUCER cannot set result (pure fold - projections[] only). "
-                    "Only COMPUTE nodes return typed results."
+                raise ModelOnexError(
+                    message=(
+                        "REDUCER cannot set result (pure fold - projections[] only). "
+                        "Only COMPUTE nodes return typed results."
+                    ),
+                    error_code=EnumCoreErrorCode.CONTRACT_VIOLATION,
+                    context={"node_kind": "REDUCER", "forbidden_field": "result"},
                 )
 
         elif self.node_kind == EnumNodeKind.EFFECT:
             if self.intents:
-                raise ValueError(
-                    "EFFECT cannot emit intents[] - events[] only. "
-                    "Effects execute side effects and publish result events, not request further effects."
+                raise ModelOnexError(
+                    message=(
+                        "EFFECT cannot emit intents[] - events[] only. "
+                        "Effects execute side effects and publish result events, not request further effects."
+                    ),
+                    error_code=EnumCoreErrorCode.CONTRACT_VIOLATION,
+                    context={"node_kind": "EFFECT", "forbidden_field": "intents"},
                 )
             if self.projections:
-                raise ValueError(
-                    "EFFECT cannot emit projections[] - events[] only. "
-                    "Effects publish result events about external interactions, not update read state."
+                raise ModelOnexError(
+                    message=(
+                        "EFFECT cannot emit projections[] - events[] only. "
+                        "Effects publish result events about external interactions, not update read state."
+                    ),
+                    error_code=EnumCoreErrorCode.CONTRACT_VIOLATION,
+                    context={"node_kind": "EFFECT", "forbidden_field": "projections"},
                 )
             if self.result is not None:
-                raise ValueError(
-                    "EFFECT cannot set result - events[] only. "
-                    "Only COMPUTE nodes return typed results."
+                raise ModelOnexError(
+                    message=(
+                        "EFFECT cannot set result - events[] only. "
+                        "Only COMPUTE nodes return typed results."
+                    ),
+                    error_code=EnumCoreErrorCode.CONTRACT_VIOLATION,
+                    context={"node_kind": "EFFECT", "forbidden_field": "result"},
                 )
 
         elif self.node_kind == EnumNodeKind.COMPUTE:
             # COMPUTE must NOT emit anything - pure transformation returns result only
             if self.events:
-                raise ValueError(
-                    "COMPUTE cannot emit events[] - result only. "
-                    "COMPUTE nodes are pure transformations. If you need to emit events, use EFFECT."
+                raise ModelOnexError(
+                    message=(
+                        "COMPUTE cannot emit events[] - result only. "
+                        "COMPUTE nodes are pure transformations. If you need to emit events, use EFFECT."
+                    ),
+                    error_code=EnumCoreErrorCode.CONTRACT_VIOLATION,
+                    context={"node_kind": "COMPUTE", "forbidden_field": "events"},
                 )
             if self.intents:
-                raise ValueError(
-                    "COMPUTE cannot emit intents[] - result only. "
-                    "COMPUTE nodes are pure transformations, not side-effect requesters."
+                raise ModelOnexError(
+                    message=(
+                        "COMPUTE cannot emit intents[] - result only. "
+                        "COMPUTE nodes are pure transformations, not side-effect requesters."
+                    ),
+                    error_code=EnumCoreErrorCode.CONTRACT_VIOLATION,
+                    context={"node_kind": "COMPUTE", "forbidden_field": "intents"},
                 )
             if self.projections:
-                raise ValueError(
-                    "COMPUTE cannot emit projections[] - result only. "
-                    "COMPUTE nodes transform data, not update read-optimized state."
+                raise ModelOnexError(
+                    message=(
+                        "COMPUTE cannot emit projections[] - result only. "
+                        "COMPUTE nodes transform data, not update read-optimized state."
+                    ),
+                    error_code=EnumCoreErrorCode.CONTRACT_VIOLATION,
+                    context={"node_kind": "COMPUTE", "forbidden_field": "projections"},
                 )
 
             # COMPUTE requires result (unless allow_void_compute)
             if self.result is None and not self.allow_void_compute:
-                raise ValueError(
-                    "COMPUTE requires result (or set allow_void_compute=True for void computations). "
-                    "COMPUTE nodes must return a typed result from their transformation."
+                raise ModelOnexError(
+                    message=(
+                        "COMPUTE requires result (or set allow_void_compute=True for void computations). "
+                        "COMPUTE nodes must return a typed result from their transformation."
+                    ),
+                    error_code=EnumCoreErrorCode.CONTRACT_VIOLATION,
+                    context={"node_kind": "COMPUTE", "missing_field": "result"},
                 )
 
             # COMPUTE result must be JSON-ledger-safe
             if self.result is not None and not _is_json_ledger_safe(self.result):
-                raise ValueError(
-                    "COMPUTE result must be JSON-ledger-safe: BaseModel, JSON primitives "
-                    "(str, int, float, bool, None), or JSON containers (list, dict with str keys). "
-                    "For bytes or complex types, use a ModelComputeResult wrapper."
+                raise ModelOnexError(
+                    message=(
+                        "COMPUTE result must be JSON-ledger-safe: BaseModel, JSON primitives "
+                        "(str, int, float, bool, None), or JSON containers (list, dict with str keys). "
+                        "For bytes or complex types, use a ModelComputeResult wrapper."
+                    ),
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    context={
+                        "node_kind": "COMPUTE",
+                        "result_type": type(self.result).__name__,
+                    },
                 )
 
         # RUNTIME_HOST is infrastructure, not a message handler - no specific constraints

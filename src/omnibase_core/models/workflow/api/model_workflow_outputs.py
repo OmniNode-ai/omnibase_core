@@ -150,7 +150,7 @@ class ModelWorkflowOutputs(BaseModel):
 
         # Add custom outputs if present
         if self.custom_outputs:
-            result.update(self.custom_outputs.to_dict())
+            result.update(self.custom_outputs.model_dump(exclude_none=True))
 
         # Cast to TypedDict - the structure matches TypedDictWorkflowOutputsDict
         return TypedDictWorkflowOutputsDict(**result)  # type: ignore[typeddict-item, no-any-return]

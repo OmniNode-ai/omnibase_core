@@ -237,7 +237,7 @@ class ModelIntent(BaseModel):
                 "For extension intents without coordination requirements, "
                 "this warning can be safely ignored.",
                 UserWarning,
-                stacklevel=2,
+                stacklevel=3,
             )
         return self
 
