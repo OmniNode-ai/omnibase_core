@@ -6,7 +6,7 @@ Base computation output with discriminator and common fields for all computation
 
 from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.types.typed_dict_computation_output_summary import (
@@ -19,6 +19,8 @@ if TYPE_CHECKING:
 
 class ModelComputationOutputBase(BaseModel):
     """Base computation output with discriminator."""
+
+    model_config = ConfigDict(from_attributes=True)
 
     computation_type: "EnumComputationType" = Field(
         default=...,

@@ -1,14 +1,22 @@
 from datetime import datetime
-from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
+
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
 class ModelBaseOutputState(BaseModel):
-    """Base model for all output states in ONEX"""
+    """Base model for all output states in ONEX.
 
-    # ONEX_EXCLUDE: dict_str_any - Base state metadata for extensible tool output data
-    metadata: dict[str, Any] = Field(
+    This is a base class for output state models that may be nested in other
+    Pydantic models or used with pytest-xdist parallel test execution.
+    The from_attributes=True setting ensures proper instance recognition
+    across worker processes.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    metadata: dict[str, ModelSchemaValue] = Field(
         default_factory=dict,
         description="Metadata for the output state",
     )

@@ -1,18 +1,128 @@
-"""
-Error details model to replace Dict[str, Any] usage.
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
+"""Error details model to replace Dict[str, Any] usage.
+
+This module provides the ModelErrorDetails class, a typed Pydantic model that
+replaces untyped dict[str, Any] for error context in ONEX error handling.
+
+Thread Safety:
+    ModelErrorDetails instances are immutable (frozen=True) after creation,
+    making them thread-safe for concurrent read access across multiple threads.
+
+See Also:
+    - ModelOnexError: Primary error class that uses ModelErrorDetails
+    - ModelSchemaValue: Type-safe value container for context_data
+    - EnumCoreErrorCode: Standard error codes for error_code field
+
 """
 
+from __future__ import annotations
+
 from datetime import UTC, datetime
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
 
 class ModelErrorDetails(BaseModel):
-    """
-    Error details with typed fields.
-    Replaces Dict[str, Any] for error_details fields.
+    """Structured error details with typed fields for ONEX error handling.
+
+    This model replaces dict[str, Any] usage for error_details fields, providing:
+
+    - **Type safety** through Pydantic validation
+    - **Consistent error structure** across the codebase
+    - **Support for nested errors** via inner_errors field
+    - **Recovery information** (retry_after_seconds, recovery_suggestions)
+    - **Correlation tracking** (request_id, session_id, user_id)
+
+    Use Cases:
+        - Capturing detailed error context for debugging
+        - Structured error logging and monitoring
+        - API error responses with consistent format
+        - Error aggregation in reducers and orchestrators
+
+    Thread Safety:
+        Instances are immutable (frozen=True) after creation, making them
+        thread-safe for concurrent read access. For pytest-xdist compatibility,
+        from_attributes=True is enabled.
+
+    Attributes:
+        error_code: Unique identifier for the error type (e.g., "VALIDATION_ERROR").
+        error_type: Category of error - "validation", "runtime", or "system".
+        error_message: Human-readable error description.
+        component: Optional name of the component where error occurred.
+        operation: Optional name of the operation being performed.
+        timestamp: When the error occurred (defaults to current UTC time).
+        stack_trace: Optional list of stack trace lines for debugging.
+        inner_errors: Optional list of nested ModelErrorDetails for error chains.
+        request_id: Optional UUID for request correlation.
+        user_id: Optional UUID of the user who triggered the error.
+        session_id: Optional UUID for session tracking.
+        context_data: Additional typed context using ModelSchemaValue.
+        retry_after_seconds: Optional hint for when to retry (rate limiting).
+        recovery_suggestions: Optional list of recovery actions.
+        documentation_url: Optional link to relevant documentation.
+
+    Example:
+        Basic error details::
+
+            from omnibase_core.models.services import ModelErrorDetails
+
+            error = ModelErrorDetails(
+                error_code="VALIDATION_ERROR",
+                error_type="validation",
+                error_message="Invalid input format",
+                component="UserService",
+                operation="create_user",
+            )
+
+        Error with recovery information::
+
+            error = ModelErrorDetails(
+                error_code="RATE_LIMIT_EXCEEDED",
+                error_type="rate_limit",
+                error_message="Too many requests",
+                retry_after_seconds=60,
+                recovery_suggestions=[
+                    "Wait 60 seconds before retrying",
+                    "Consider using exponential backoff",
+                ],
+            )
+
+        Nested errors for error chains::
+
+            inner = ModelErrorDetails(
+                error_code="DB_CONNECTION_FAILED",
+                error_type="system",
+                error_message="Could not connect to database",
+            )
+            outer = ModelErrorDetails(
+                error_code="USER_CREATION_FAILED",
+                error_type="runtime",
+                error_message="Failed to create user",
+                inner_errors=[inner],
+            )
+
+        Migrating from dict[str, Any]::
+
+            # Before (untyped)
+            error_details = {
+                "code": "VALIDATION_ERROR",
+                "message": "Invalid input",
+            }
+
+            # After (typed) - use from_dict for legacy format
+            error = ModelErrorDetails.from_dict(error_details)
+
+    See Also:
+        - ModelOnexError: Primary error class using this model
+        - ModelSchemaValue: Type-safe values for context_data
+        - MIGRATING_FROM_DICT_ANY.md: Full migration guide
+
     """
 
     # Error identification
@@ -34,7 +144,7 @@ class ModelErrorDetails(BaseModel):
 
     # Error details
     stack_trace: list[str] | None = Field(default=None, description="Stack trace lines")
-    inner_errors: list["ModelErrorDetails"] | None = Field(
+    inner_errors: list[ModelErrorDetails] | None = Field(
         default=None,
         description="Nested errors",
     )
@@ -45,7 +155,7 @@ class ModelErrorDetails(BaseModel):
     session_id: UUID | None = Field(default=None, description="Session ID")
 
     # Additional context
-    context_data: dict[str, Any] = Field(
+    context_data: dict[str, ModelSchemaValue] = Field(
         default_factory=dict,
         description="Additional error context",
     )
@@ -60,13 +170,60 @@ class ModelErrorDetails(BaseModel):
     )
     documentation_url: str | None = Field(default=None, description="Documentation URL")
 
-    model_config = ConfigDict()
+    model_config = ConfigDict(frozen=True, from_attributes=True)
 
+    # ONEX_EXCLUDE: dict_str_any - factory input
     @classmethod
-    def from_dict(cls, data: dict[str, Any] | None) -> Optional["ModelErrorDetails"]:
-        """Create from dictionary for easy migration."""
+    def from_dict(cls, data: dict[str, Any] | None) -> ModelErrorDetails | None:
+        """Create ModelErrorDetails from a dictionary.
+
+        This factory method provides easy migration from legacy dict[str, Any]
+        patterns to the typed ModelErrorDetails. It handles common legacy field
+        name variations automatically.
+
+        Legacy Field Mappings:
+            - ``code`` -> ``error_code``
+            - ``message`` -> ``error_message``
+            - Missing ``error_type`` defaults to ``"runtime"``
+
+        Args:
+            data: Dictionary containing error details. If None, returns None.
+
+        Returns:
+            ModelErrorDetails instance if data is provided, None otherwise.
+
+        Raises:
+            ValidationError: If required fields are missing after mapping.
+
+        Example:
+            Legacy format migration::
+
+                # Old format with 'code' and 'message'
+                legacy = {"code": "ERR_001", "message": "Something went wrong"}
+                error = ModelErrorDetails.from_dict(legacy)
+                assert error.error_code == "ERR_001"
+                assert error.error_message == "Something went wrong"
+                assert error.error_type == "runtime"  # Default
+
+            Modern format::
+
+                modern = {
+                    "error_code": "VALIDATION_ERROR",
+                    "error_type": "validation",
+                    "error_message": "Invalid input",
+                }
+                error = ModelErrorDetails.from_dict(modern)
+
+        Note:
+            This method does NOT mutate the input dictionary. A defensive
+            copy is made before any modifications to preserve caller's data.
+
+        """
         if data is None:
             return None
+
+        # Make a defensive copy to avoid mutating the caller's input
+        data = data.copy()
 
         # Handle legacy format
         if "error_code" not in data and "code" in data:
@@ -79,7 +236,37 @@ class ModelErrorDetails(BaseModel):
         return cls(**data)
 
     def is_retryable(self) -> bool:
-        """Check if error is retryable."""
+        """Check if this error is retryable.
+
+        An error is considered retryable if:
+
+        1. ``retry_after_seconds`` is set (explicit retry hint), OR
+        2. ``error_type`` is "timeout" or "rate_limit" (transient errors)
+
+        This method helps implement retry logic in effect nodes and
+        orchestrators by identifying errors that may succeed on retry.
+
+        Returns:
+            True if the error is retryable, False otherwise.
+
+        Example:
+            Retry logic in an effect node::
+
+                try:
+                    result = await execute_effect()
+                except EffectError as e:
+                    if e.details and e.details.is_retryable():
+                        wait_time = e.details.retry_after_seconds or 5
+                        await asyncio.sleep(wait_time)
+                        result = await execute_effect()  # Retry
+                    else:
+                        raise  # Non-retryable error
+
+        See Also:
+            - retry_after_seconds: Explicit retry delay hint
+            - ModelEffectRetryPolicy: Retry policy configuration
+
+        """
         return self.retry_after_seconds is not None or self.error_type in [
             "timeout",
             "rate_limit",
@@ -87,6 +274,34 @@ class ModelErrorDetails(BaseModel):
 
     @field_serializer("timestamp")
     def serialize_datetime(self, value: datetime | None) -> str | None:
+        """Serialize datetime to ISO 8601 format string.
+
+        This serializer ensures consistent datetime formatting when the model
+        is serialized to JSON or dict. Uses ISO 8601 format for interoperability
+        with JavaScript, APIs, and logging systems.
+
+        Args:
+            value: The datetime value to serialize, or None.
+
+        Returns:
+            ISO 8601 formatted string (e.g., "2025-01-15T10:30:00+00:00")
+            if value is provided, None otherwise.
+
+        Example:
+            Serialization behavior::
+
+                from datetime import datetime, UTC
+
+                error = ModelErrorDetails(
+                    error_code="TEST",
+                    error_type="runtime",
+                    error_message="Test error",
+                    timestamp=datetime(2025, 1, 15, 10, 30, 0, tzinfo=UTC),
+                )
+                data = error.model_dump()
+                assert data["timestamp"] == "2025-01-15T10:30:00+00:00"
+
+        """
         if value:
             return value.isoformat()
         return None

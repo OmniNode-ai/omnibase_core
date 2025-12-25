@@ -377,8 +377,13 @@ class MixinEventHandler:
             Filtered introspection data as dict with requested fields only
         """
         # Convert to dict if it's a Pydantic model
+        # Performance optimization: use model_dump(include=...) to only serialize
+        # the requested fields, avoiding full model serialization overhead for
+        # large introspection data structures
         if hasattr(introspection_data, "model_dump"):
-            data_dict = introspection_data.model_dump()
+            # Only dump the fields we actually need
+            requested_set = set(requested_types)
+            data_dict = introspection_data.model_dump(include=requested_set)
         else:
             data_dict = dict(introspection_data)
 

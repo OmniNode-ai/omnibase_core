@@ -77,6 +77,27 @@ class ModelProjectMetadataBlock(BaseModel):
 
     @classmethod
     def from_dict(cls, data: SerializedDict) -> "ModelProjectMetadataBlock":
+        """Create a ModelProjectMetadataBlock from a dictionary.
+
+        This factory method converts raw dictionary data (typically from YAML/JSON)
+        into a fully validated ModelProjectMetadataBlock instance.
+
+        Note:
+            This method does NOT mutate the input dictionary. A defensive
+            copy is made before any modifications to preserve caller's data.
+
+        Args:
+            data: Dictionary containing project metadata fields.
+
+        Returns:
+            Validated ModelProjectMetadataBlock instance.
+
+        Raises:
+            ModelOnexError: If required fields are missing or invalid.
+        """
+        # Make a defensive copy to avoid mutating the caller's input
+        data = dict(data)
+
         # Convert entrypoint to EntrypointBlock if needed
         if ENTRYPOINT_KEY in data:
             entrypoint_val = data[ENTRYPOINT_KEY]

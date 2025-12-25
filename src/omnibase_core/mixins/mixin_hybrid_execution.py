@@ -280,7 +280,15 @@ class MixinHybridExecution[InputStateT, OutputStateT]:
         score = 0.0
 
         # Check input size
-        if hasattr(input_state, "model_dump"):
+        # Performance optimization: use model_dump_json() when available as it's
+        # more efficient than json.dumps(model_dump()) - avoids intermediate dict
+        if hasattr(input_state, "model_dump_json"):
+            data_size = len(input_state.model_dump_json())
+            if data_size > 10000:
+                score += 0.3
+            elif data_size > 1000:
+                score += 0.2
+        elif hasattr(input_state, "model_dump"):
             data_size = len(json.dumps(input_state.model_dump()))
             if data_size > 10000:
                 score += 0.3

@@ -162,14 +162,32 @@ class MixinEventDrivenNode(
             # Use the method from MixinIntrospectionPublisher
             data = self._gather_introspection_data()
             if hasattr(data, "model_dump"):
-                dumped = data.model_dump()
+                # Performance optimization: use direct attribute access where possible
+                # instead of model_dump() to avoid full serialization overhead
+                node_name = getattr(data, "node_name", None) or self.get_node_name()
+                version = getattr(data, "version", None) or self.get_node_version()
+
+                # Handle nested capabilities - only dump if needed
+                capabilities_obj = getattr(data, "capabilities", None)
+                if capabilities_obj is not None:
+                    # Try direct access first, then model_dump if it's a model
+                    actions = getattr(capabilities_obj, "actions", None)
+                    if actions is None and hasattr(capabilities_obj, "model_dump"):
+                        # Only serialize the actions field if direct access failed
+                        cap_dict = capabilities_obj.model_dump(include={"actions"})
+                        actions = cap_dict.get("actions", ["health_check"])
+                    elif actions is None and isinstance(capabilities_obj, dict):
+                        actions = capabilities_obj.get("actions", ["health_check"])
+                    elif actions is None:
+                        actions = ["health_check"]
+                else:
+                    actions = ["health_check"]
+
                 return {
-                    "node_name": str(dumped.get("node_name", self.get_node_name())),
+                    "node_name": str(node_name),
                     "node_id": str(self._node_id),
-                    "version": str(dumped.get("version", self.get_node_version())),
-                    "capabilities": dumped.get("capabilities", {}).get(
-                        "actions", ["health_check"]
-                    ),
+                    "version": str(version),
+                    "capabilities": actions,
                     "status": "active",
                     "event_types_handled": ["introspection", "discovery"],
                 }

@@ -12,38 +12,42 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_workflow_execution import (
     EnumBranchCondition,
     EnumExecutionMode,
     EnumWorkflowState,
 )
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.orchestrator.model_action import ModelAction
 
 __all__ = ["ModelWorkflowStepExecution"]
 
 
 class ModelWorkflowStepExecution(BaseModel):
-    """
-    Single step in a workflow with execution metadata and state tracking.
+    """Single step in a workflow with execution metadata and state tracking.
 
     This model tracks runtime execution state, distinct from ModelWorkflowStep
     which defines workflow step configuration.
 
     Runtime properties:
-    - State tracking (PENDING -> RUNNING -> COMPLETED/FAILED)
-    - Execution timestamps
-    - Error tracking
-    - Result collection
+        - State tracking (PENDING -> RUNNING -> COMPLETED/FAILED)
+        - Execution timestamps
+        - Error tracking
+        - Result collection
+
+    The from_attributes=True setting ensures proper instance recognition
+    when nested in other Pydantic models or used with pytest-xdist.
     """
 
-    model_config = {
-        "extra": "ignore",
-        "arbitrary_types_allowed": True,  # For Callable[..., Any] and Exception
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        arbitrary_types_allowed=True,  # For Callable[..., Any] and Exception
+        use_enum_values=False,
+        validate_assignment=True,
+        from_attributes=True,
+    )
 
     step_id: UUID = Field(
         default_factory=uuid4,
@@ -92,7 +96,7 @@ class ModelWorkflowStepExecution(BaseModel):
         le=10,
     )
 
-    metadata: dict[str, Any] = Field(
+    metadata: dict[str, ModelSchemaValue] = Field(
         default_factory=dict,
         description="Additional metadata for step execution",
     )

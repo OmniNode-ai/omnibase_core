@@ -8,10 +8,10 @@ Strict typing is enforced - no Any types in implementation.
 """
 
 from datetime import UTC, datetime
-from typing import Any
 from uuid import UUID
 
 from omnibase_core.enums.enum_workflow_execution import EnumWorkflowState
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.orchestrator.model_action import ModelAction
 
 
@@ -34,7 +34,7 @@ class ModelDeclarativeWorkflowResult:
         failed_steps: list[str],
         actions_emitted: list[ModelAction],
         execution_time_ms: int,
-        metadata: dict[str, Any] | None = None,
+        metadata: dict[str, ModelSchemaValue] | None = None,
     ):
         """
         Initialize declarative workflow execution result.

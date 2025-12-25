@@ -194,7 +194,7 @@ class TestMixinWorkflowExecution:
         )
 
         assert "execution_mode" in result.metadata
-        assert result.metadata["execution_mode"] == "sequential"
+        assert result.metadata["execution_mode"].to_value() == "sequential"
 
     @pytest.mark.asyncio
     async def test_execute_workflow_emits_actions(
