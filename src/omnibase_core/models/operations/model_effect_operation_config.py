@@ -66,8 +66,10 @@ _TypedIOConfigUnion = (
 
 
 def _is_typed_io_config(
-    config: _TypedIOConfigUnion
-    | dict[str, Any],  # ONEX_EXCLUDE: dict_str_any - TypeIs narrowing
+    config: (
+        _TypedIOConfigUnion
+        | dict[str, Any]  # ONEX_EXCLUDE: dict_str_any - TypeIs narrowing
+    ),
 ) -> TypeIs[_TypedIOConfigUnion]:
     """TypeIs predicate to check if io_config is already a typed EffectIOConfig model.
 
