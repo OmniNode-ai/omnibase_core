@@ -52,6 +52,9 @@ from omnibase_core.models.contracts.subcontracts.model_effect_response_handling 
 from omnibase_core.models.contracts.subcontracts.model_effect_retry_policy import (
     ModelEffectRetryPolicy,
 )
+from omnibase_core.models.contracts.subcontracts.model_effect_transaction_config import (
+    ModelEffectTransactionConfig,
+)
 
 __all__ = ["ModelEffectOperationConfig"]
 
@@ -119,6 +122,8 @@ class ModelEffectOperationConfig(BaseModel):
             including success codes and field extraction.
         retry_policy: Per-operation retry policy configuration.
         circuit_breaker: Per-operation circuit breaker configuration.
+        transaction_config: Transaction configuration for DB operations.
+            Only applicable when the operation uses a database handler.
         correlation_id: Optional correlation ID for tracing.
         idempotent: Whether the operation is idempotent (safe to retry).
 
@@ -215,6 +220,11 @@ class ModelEffectOperationConfig(BaseModel):
     circuit_breaker: ModelEffectCircuitBreaker | dict[str, Any] | None = Field(
         default=None,
         description="Per-operation circuit breaker configuration",
+    )
+    # ONEX_EXCLUDE: dict_str_any - typed model union for flexibility
+    transaction_config: ModelEffectTransactionConfig | dict[str, Any] | None = Field(
+        default=None,
+        description="Transaction configuration for DB operations",
     )
 
     # Correlation and idempotency
@@ -386,6 +396,10 @@ class ModelEffectOperationConfig(BaseModel):
 
         Returns:
             Validated ModelEffectOperationConfig instance.
+
+        Note:
+            This method does NOT mutate the input dictionary. Pydantic's
+            model_validate handles conversion without modifying the source.
 
         Example:
             >>> config = ModelEffectOperationConfig.from_dict({

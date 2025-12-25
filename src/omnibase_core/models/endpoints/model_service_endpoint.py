@@ -32,8 +32,16 @@ class ModelServiceEndpoint(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def extract_from_url(cls, data: Any) -> Any:
-        """Extract port and protocol from URL if not explicitly provided."""
+        """Extract port and protocol from URL if not explicitly provided.
+
+        Note:
+            This validator does NOT mutate the input dictionary. A defensive
+            copy is made before any modifications to preserve caller's data.
+        """
         if isinstance(data, dict):
+            # Make a defensive copy to avoid mutating the caller's input
+            data = data.copy()
+
             # Extract port from URL if not provided
             if data.get("port") is None and "url" in data:
                 url = data["url"]

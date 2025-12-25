@@ -736,10 +736,12 @@ class TestModelErrorDetailsEdgeCases:
             component="status_reporter",
         )
 
-        # Verify emoji characters are preserved
+        # Verify emoji characters are preserved (including variation selectors)
         assert "\u2705" in error.error_message  # checkmark
         assert "\u274c" in error.error_message  # x mark
-        assert "\u26a0" in error.error_message  # warning sign
+        assert (
+            "\u26a0\ufe0f" in error.error_message
+        )  # warning sign with variation selector
 
     def test_long_strings(self):
         """Test model with very long strings."""

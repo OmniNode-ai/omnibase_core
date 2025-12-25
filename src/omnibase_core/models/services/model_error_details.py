@@ -17,6 +17,8 @@ See Also:
 
 """
 
+from __future__ import annotations
+
 from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
@@ -142,7 +144,7 @@ class ModelErrorDetails(BaseModel):
 
     # Error details
     stack_trace: list[str] | None = Field(default=None, description="Stack trace lines")
-    inner_errors: list["ModelErrorDetails"] | None = Field(
+    inner_errors: list[ModelErrorDetails] | None = Field(
         default=None,
         description="Nested errors",
     )
@@ -172,7 +174,7 @@ class ModelErrorDetails(BaseModel):
 
     # ONEX_EXCLUDE: dict_str_any - factory input
     @classmethod
-    def from_dict(cls, data: dict[str, Any] | None) -> "ModelErrorDetails | None":
+    def from_dict(cls, data: dict[str, Any] | None) -> ModelErrorDetails | None:
         """Create ModelErrorDetails from a dictionary.
 
         This factory method provides easy migration from legacy dict[str, Any]
@@ -213,12 +215,15 @@ class ModelErrorDetails(BaseModel):
                 error = ModelErrorDetails.from_dict(modern)
 
         Note:
-            This method modifies the input dict. Pass a copy if the original
-            dict must be preserved.
+            This method does NOT mutate the input dictionary. A defensive
+            copy is made before any modifications to preserve caller's data.
 
         """
         if data is None:
             return None
+
+        # Make a defensive copy to avoid mutating the caller's input
+        data = data.copy()
 
         # Handle legacy format
         if "error_code" not in data and "code" in data:
