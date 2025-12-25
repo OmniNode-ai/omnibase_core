@@ -9,6 +9,7 @@ from .model_computation_data import (
     ModelComputationOutputData,
 )
 from .model_compute_operation_data import ModelComputeOperationData
+from .model_effect_operation_config import ModelEffectOperationConfig
 from .model_effect_operation_data import ModelEffectOperationData
 from .model_effect_result import (
     ModelEffectResult,
@@ -43,6 +44,7 @@ __all__ = [
     "ModelComputationInputData",
     "ModelComputationOutputData",
     "ModelComputeOperationData",
+    "ModelEffectOperationConfig",
     "ModelEffectOperationData",
     "ModelEffectParameters",
     "ModelEffectResult",

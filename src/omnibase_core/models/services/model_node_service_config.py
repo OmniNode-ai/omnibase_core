@@ -203,43 +203,43 @@ class ModelNodeServiceConfig(BaseModel):
             "log_level": os.getenv("LOG_LEVEL", LogLevel.INFO.value),
             "debug_mode": os.getenv("DEBUG_MODE", "false").lower() == "true",
         }
-        event_bus_config: dict[str, Any] = {
-            "bootstrap_servers": [
+        event_bus_config = ModelEventBusConfig(
+            bootstrap_servers=[
                 server.strip()
                 for server in os.getenv(
                     "EVENT_BUS_BOOTSTRAP_SERVERS", "localhost:9092"
                 ).split(",")
             ],
-            "topics": [
+            topics=[
                 topic.strip()
                 for topic in os.getenv("EVENT_BUS_TOPICS", "onex-default").split(",")
             ],
-        }
-        network_config: dict[str, Any] = {
-            "port": int(os.getenv("SERVICE_PORT", "8080")),
-            "host": os.getenv(
+        )
+        network_config = ModelNetworkConfig(
+            port=int(os.getenv("SERVICE_PORT", "8080")),
+            host=os.getenv(
                 "SERVICE_HOST",
                 "0.0.0.0",
             ),
-        }
-        health_config: dict[str, Any] = {
-            "enabled": os.getenv("HEALTH_CHECK_ENABLED", "true").lower() == "true",
-            "check_interval_seconds": int(os.getenv("HEALTH_CHECK_INTERVAL", "30")),
-            "timeout_seconds": int(os.getenv("HEALTH_CHECK_TIMEOUT", "10")),
-        }
-        monitoring_config: dict[str, Any] = {
-            "prometheus_enabled": os.getenv("METRICS_ENABLED", "true").lower()
+        )
+        health_config = ModelHealthCheckConfig(
+            enabled=os.getenv("HEALTH_CHECK_ENABLED", "true").lower() == "true",
+            check_interval_seconds=int(os.getenv("HEALTH_CHECK_INTERVAL", "30")),
+            timeout_seconds=int(os.getenv("HEALTH_CHECK_TIMEOUT", "10")),
+        )
+        monitoring_config = ModelMonitoringConfig(
+            prometheus_enabled=os.getenv("METRICS_ENABLED", "true").lower()
             == "true",
-            "prometheus_port": int(os.getenv("METRICS_PORT", "9090")),
-        }
-        security_config: dict[str, Any] = {}
+            prometheus_port=int(os.getenv("METRICS_PORT", "9090")),
+        )
+        security_config = ModelSecurityConfig()
         config = {
             **env_config,
-            "event_bus": ModelEventBusConfig(**event_bus_config),
-            "network": ModelNetworkConfig(**network_config),
-            "health_check": ModelHealthCheckConfig(**health_config),
-            "monitoring": ModelMonitoringConfig(**monitoring_config),
-            "security": ModelSecurityConfig(**security_config),
+            "event_bus": event_bus_config,
+            "network": network_config,
+            "health_check": health_config,
+            "monitoring": monitoring_config,
+            "security": security_config,
             **overrides,
         }
         return cls(**config)

@@ -8,13 +8,9 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
-from omnibase_core.utils.util_decorators import allow_dict_str_any
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
-@allow_dict_str_any(
-    "Error details require flexible context_data for error-specific information "
-    "and from_dict factory method for legacy format compatibility."
-)
 class ModelErrorDetails(BaseModel):
     """
     Error details with typed fields.
@@ -51,7 +47,7 @@ class ModelErrorDetails(BaseModel):
     session_id: UUID | None = Field(default=None, description="Session ID")
 
     # Additional context
-    context_data: dict[str, Any] = Field(
+    context_data: dict[str, ModelSchemaValue] = Field(
         default_factory=dict,
         description="Additional error context",
     )

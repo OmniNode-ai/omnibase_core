@@ -1,14 +1,14 @@
 from datetime import datetime
-from typing import Any
 
 from pydantic import BaseModel, Field
+
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
 class ModelBaseInputState(BaseModel):
     """Base model for all input states in ONEX"""
 
-    # ONEX_EXCLUDE: dict_str_any - Base state metadata for extensible tool input data
-    metadata: dict[str, Any] = Field(
+    metadata: dict[str, ModelSchemaValue] = Field(
         default_factory=dict,
         description="Metadata for the input state",
     )

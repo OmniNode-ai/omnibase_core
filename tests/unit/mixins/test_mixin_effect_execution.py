@@ -282,13 +282,15 @@ class TestParseIOConfig:
 
     def test_parse_http_config(self, test_node: TestNode) -> None:
         """Test parsing HTTP IO config."""
-        operation_config = {
+        from omnibase_core.models.operations import ModelEffectOperationConfig
+
+        operation_config = ModelEffectOperationConfig.from_dict({
             "io_config": {
                 "handler_type": "http",
                 "url_template": "https://api.example.com/test",
                 "method": "GET",
             }
-        }
+        })
         result = test_node._parse_io_config(operation_config)
         assert isinstance(result, ModelHttpIOConfig)
         assert result.url_template == "https://api.example.com/test"
@@ -296,14 +298,16 @@ class TestParseIOConfig:
 
     def test_parse_db_config(self, test_node: TestNode) -> None:
         """Test parsing DB IO config."""
-        operation_config = {
+        from omnibase_core.models.operations import ModelEffectOperationConfig
+
+        operation_config = ModelEffectOperationConfig.from_dict({
             "io_config": {
                 "handler_type": "db",
                 "operation": "select",
                 "connection_name": "primary",
                 "query_template": "SELECT * FROM users",
             }
-        }
+        })
         result = test_node._parse_io_config(operation_config)
         assert isinstance(result, ModelDbIOConfig)
         assert result.operation == "select"
@@ -311,41 +315,57 @@ class TestParseIOConfig:
 
     def test_parse_kafka_config(self, test_node: TestNode) -> None:
         """Test parsing Kafka IO config."""
-        operation_config = {
+        from omnibase_core.models.operations import ModelEffectOperationConfig
+
+        operation_config = ModelEffectOperationConfig.from_dict({
             "io_config": {
                 "handler_type": "kafka",
                 "topic": "test-topic",
                 "payload_template": '{"test": "data"}',
             }
-        }
+        })
         result = test_node._parse_io_config(operation_config)
         assert isinstance(result, ModelKafkaIOConfig)
         assert result.topic == "test-topic"
 
     def test_parse_filesystem_config(self, test_node: TestNode) -> None:
         """Test parsing Filesystem IO config."""
-        operation_config = {
+        from omnibase_core.models.operations import ModelEffectOperationConfig
+
+        operation_config = ModelEffectOperationConfig.from_dict({
             "io_config": {
                 "handler_type": "filesystem",
                 "file_path_template": "/data/test.txt",
                 "operation": "read",
                 "atomic": False,
             }
-        }
+        })
         result = test_node._parse_io_config(operation_config)
         assert isinstance(result, ModelFilesystemIOConfig)
         assert result.operation == "read"
 
     def test_parse_missing_io_config_raises_error(self, test_node: TestNode) -> None:
-        """Test that missing io_config raises ModelOnexError."""
-        operation_config: dict[str, Any] = {}
-        with pytest.raises(ModelOnexError) as exc_info:
-            test_node._parse_io_config(operation_config)
-        assert "Missing io_config" in str(exc_info.value)
+        """Test that missing io_config raises validation error.
+
+        NOTE: With typed ModelEffectOperationConfig, validation happens
+        at model creation time, not in _parse_io_config. This is actually
+        better - earlier validation catches errors sooner.
+        """
+        from pydantic import ValidationError
+
+        from omnibase_core.models.operations import ModelEffectOperationConfig
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelEffectOperationConfig.from_dict({})
+        assert "io_config" in str(exc_info.value)
 
     def test_parse_unknown_handler_type_raises_error(self, test_node: TestNode) -> None:
         """Test that unknown handler type raises ModelOnexError."""
-        operation_config = {"io_config": {"handler_type": "unknown"}}
+        from omnibase_core.models.operations import ModelEffectOperationConfig
+
+        operation_config = ModelEffectOperationConfig.from_dict({
+            "io_config": {"handler_type": "unknown"}
+        })
         with pytest.raises(ModelOnexError) as exc_info:
             test_node._parse_io_config(operation_config)
         assert "Unknown handler type" in str(exc_info.value)
@@ -2450,6 +2470,8 @@ class TestEffectContractYamlParsing:
         self, test_node: TestNode
     ) -> None:
         """Test that _parse_io_config correctly parses YAML-style operation configs."""
+        from omnibase_core.models.operations import ModelEffectOperationConfig
+
         # Simulate a YAML operation config structure
         yaml_operation = {
             "operation_name": "test_http_call",
@@ -2470,8 +2492,11 @@ class TestEffectContractYamlParsing:
             },
         }
 
+        # Convert dict to typed model (as the mixin now expects)
+        operation_config = ModelEffectOperationConfig.from_dict(yaml_operation)
+
         # Test that io_config parses correctly
-        io_config = test_node._parse_io_config(yaml_operation)
+        io_config = test_node._parse_io_config(operation_config)
 
         from omnibase_core.models.contracts.subcontracts.model_effect_io_configs import (
             ModelHttpIOConfig,

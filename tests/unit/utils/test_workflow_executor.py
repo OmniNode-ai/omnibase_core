@@ -776,7 +776,7 @@ class TestMetadata:
         )
 
         assert "execution_mode" in result.metadata
-        assert result.metadata["execution_mode"] == "sequential"
+        assert result.metadata["execution_mode"].get_string() == "sequential"
 
     @pytest.mark.asyncio
     async def test_parallel_metadata(
@@ -793,7 +793,7 @@ class TestMetadata:
         )
 
         assert "execution_mode" in result.metadata
-        assert result.metadata["execution_mode"] == "parallel"
+        assert result.metadata["execution_mode"].get_string() == "parallel"
 
     @pytest.mark.asyncio
     async def test_workflow_hash_in_metadata(
@@ -814,7 +814,7 @@ class TestMetadata:
         assert "workflow_hash" in result.metadata
 
         # Verify the hash is a valid SHA-256 hex string (64 characters)
-        workflow_hash = result.metadata["workflow_hash"]
+        workflow_hash = result.metadata["workflow_hash"].get_string()
         assert isinstance(workflow_hash, str)
         assert len(workflow_hash) == 64
         assert all(c in "0123456789abcdef" for c in workflow_hash)
@@ -850,13 +850,13 @@ class TestMetadata:
 
         # Both should have the same workflow hash (based on definition, not execution)
         assert (
-            result_sequential.metadata["workflow_hash"]
-            == result_parallel.metadata["workflow_hash"]
+            result_sequential.metadata["workflow_hash"].get_string()
+            == result_parallel.metadata["workflow_hash"].get_string()
         )
 
         # And both should match the computed hash
         expected_hash = _compute_workflow_hash(simple_workflow_definition)
-        assert result_sequential.metadata["workflow_hash"] == expected_hash
+        assert result_sequential.metadata["workflow_hash"].get_string() == expected_hash
 
 
 @pytest.mark.unit
@@ -2377,7 +2377,7 @@ class TestWorkflowExecutorPerformance:
         )
 
         # Verify metadata indicates parallel execution
-        assert result.metadata["execution_mode"] == "parallel"
+        assert result.metadata["execution_mode"].get_string() == "parallel"
 
     @pytest.mark.slow
     @pytest.mark.asyncio
@@ -3435,8 +3435,8 @@ class TestWorkflowSizeLimitEnforcement:
         # Verify some steps were processed before limit was hit
         assert call_count > 1, "Multiple steps should be processed before limit is hit"
         # Verify batch metadata is present (batch mode adds this)
-        assert result.metadata.get("execution_mode") == "batch"
-        assert result.metadata.get("batch_size") == num_steps
+        assert result.metadata.get("execution_mode").get_string() == "batch"
+        assert result.metadata.get("batch_size").get_number().to_python_value() == num_steps
 
     def test_constants_exported(self) -> None:
         """Test that size limit constants are exported in __all__."""

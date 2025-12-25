@@ -19,16 +19,12 @@ from omnibase_core.enums.enum_workflow_execution import (
     EnumExecutionMode,
     EnumWorkflowState,
 )
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.orchestrator.model_action import ModelAction
-from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 __all__ = ["ModelWorkflowStepExecution"]
 
 
-@allow_dict_str_any(
-    "Workflow step execution inputs and results fields require dict[str, Any] "
-    "for flexible step-specific data across different step types."
-)
 class ModelWorkflowStepExecution(BaseModel):
     """
     Single step in a workflow with execution metadata and state tracking.
@@ -97,7 +93,7 @@ class ModelWorkflowStepExecution(BaseModel):
         le=10,
     )
 
-    metadata: dict[str, Any] = Field(
+    metadata: dict[str, ModelSchemaValue] = Field(
         default_factory=dict,
         description="Additional metadata for step execution",
     )

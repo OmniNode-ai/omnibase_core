@@ -110,6 +110,9 @@ from omnibase_core.models.contracts.subcontracts.model_effect_io_configs import 
     ModelHttpIOConfig,
     ModelKafkaIOConfig,
 )
+from omnibase_core.models.operations.model_effect_operation_config import (
+    ModelEffectOperationConfig,
+)
 from omnibase_core.models.contracts.subcontracts.model_effect_resolved_context import (
     ModelResolvedDbContext,
     ModelResolvedFilesystemContext,
@@ -388,7 +391,7 @@ class MixinEffectExecution:
         # The subcontract pattern is preferred when the caller provides the full
         # subcontract object, allowing this mixin to extract operations directly.
         # For v1.0, we expect a single operation configuration.
-        operations_config: list[dict[str, Any]] = []
+        operations_config: list[ModelEffectOperationConfig] = []
 
         # Check for subcontract first (preferred pattern)
         effect_subcontract = input_data.operation_data.get("effect_subcontract")
@@ -401,15 +404,19 @@ class MixinEffectExecution:
             else:
                 subcontract_ops = []
 
-            # Transform subcontract operations to operation_data format
+            # Transform subcontract operations to ModelEffectOperationConfig
             # This preserves all operation-level configs including response_handling,
             # retry_policy, and circuit_breaker for use by handlers and execution.
             for op in subcontract_ops:
-                if isinstance(op, dict):
+                if isinstance(op, ModelEffectOperationConfig):
                     operations_config.append(op)
+                elif isinstance(op, dict):
+                    operations_config.append(ModelEffectOperationConfig.from_dict(op))
                 elif hasattr(op, "model_dump"):
-                    # Pydantic model - serialize to dict preserving all fields
-                    operations_config.append(op.model_dump())
+                    # Pydantic model - serialize to dict and convert
+                    operations_config.append(
+                        ModelEffectOperationConfig.from_dict(op.model_dump())
+                    )
                 elif hasattr(op, "io_config"):
                     # ModelEffectOperation-like object - extract all relevant fields
                     op_dict: dict[str, Any] = {}
@@ -449,11 +456,20 @@ class MixinEffectExecution:
                         else:
                             op_dict["circuit_breaker"] = op.circuit_breaker
 
-                    operations_config.append(op_dict)
+                    operations_config.append(ModelEffectOperationConfig.from_dict(op_dict))
 
         # Fallback to direct operations list if subcontract not provided
         if not operations_config:
-            operations_config = input_data.operation_data.get("operations", [])
+            raw_operations = input_data.operation_data.get("operations", [])
+            for raw_op in raw_operations:
+                if isinstance(raw_op, ModelEffectOperationConfig):
+                    operations_config.append(raw_op)
+                elif isinstance(raw_op, dict):
+                    operations_config.append(ModelEffectOperationConfig.from_dict(raw_op))
+                elif hasattr(raw_op, "model_dump"):
+                    operations_config.append(
+                        ModelEffectOperationConfig.from_dict(raw_op.model_dump())
+                    )
 
         if not operations_config:
             raise ModelOnexError(
@@ -495,7 +511,7 @@ class MixinEffectExecution:
             # defaults for consistency. Individual IO configs may specify their own
             # timeout_ms values.
             operation_timeout_ms = (
-                operation_config.get("operation_timeout_ms")
+                operation_config.operation_timeout_ms
                 or DEFAULT_OPERATION_TIMEOUT_MS
             )
 
@@ -537,13 +553,14 @@ class MixinEffectExecution:
             metadata=input_data.metadata,
         )
 
-    @allow_dict_any
-    def _parse_io_config(self, operation_config: dict[str, Any]) -> EffectIOConfig:
+    def _parse_io_config(
+        self, operation_config: ModelEffectOperationConfig
+    ) -> EffectIOConfig:
         """
         Parse operation configuration into typed IO config.
 
         Args:
-            operation_config: Raw operation configuration dictionary.
+            operation_config: Typed operation configuration.
 
         Returns:
             Typed EffectIOConfig (discriminated union).
@@ -551,14 +568,26 @@ class MixinEffectExecution:
         Raises:
             ModelOnexError: On invalid configuration.
         """
-        io_config_data = operation_config.get("io_config")
+        # Use the typed method from ModelEffectOperationConfig if io_config is already typed
+        if isinstance(
+            operation_config.io_config,
+            (
+                ModelHttpIOConfig,
+                ModelDbIOConfig,
+                ModelKafkaIOConfig,
+                ModelFilesystemIOConfig,
+            ),
+        ):
+            return operation_config.io_config
+
+        # Handle dict io_config - parse based on handler_type
+        io_config_data = operation_config.get_io_config_as_dict()
         if not io_config_data:
             raise ModelOnexError(
                 message="Missing io_config in operation",
                 error_code=EnumCoreErrorCode.INVALID_CONFIGURATION,
                 context={
-                    "operation_config_keys": list(operation_config.keys()),
-                    "operation_name": operation_config.get("operation_name", "unknown"),
+                    "operation_name": operation_config.operation_name,
                 },
             )
 
@@ -580,9 +609,7 @@ class MixinEffectExecution:
                     context={
                         "handler_type": handler_type,
                         "supported_handlers": ["http", "db", "kafka", "filesystem"],
-                        "operation_name": operation_config.get(
-                            "operation_name", "unknown"
-                        ),
+                        "operation_name": operation_config.operation_name,
                     },
                 )
         except ModelOnexError:
@@ -593,7 +620,7 @@ class MixinEffectExecution:
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 context={
                     "handler_type": handler_type,
-                    "operation_name": operation_config.get("operation_name", "unknown"),
+                    "operation_name": operation_config.operation_name,
                     "io_config_keys": (
                         list(io_config_data.keys()) if io_config_data else []
                     ),
@@ -987,13 +1014,12 @@ class MixinEffectExecution:
         # Return as string
         return value
 
-    @allow_dict_any
     async def _execute_with_retry(
         self,
         resolved_context: ResolvedIOContext,
         input_data: ModelEffectInput,
         operation_timeout_ms: int,
-        operation_config: dict[str, Any] | None = None,
+        operation_config: ModelEffectOperationConfig | None = None,
     ) -> tuple[EffectResultType, int]:
         """
         Execute operation with retry logic and circuit breaker.
@@ -1064,7 +1090,7 @@ class MixinEffectExecution:
             resolved_context: Fully resolved IO context.
             input_data: Effect input with retry configuration.
             operation_timeout_ms: Overall operation timeout including all retries.
-            operation_config: Optional operation configuration dict containing
+            operation_config: Optional typed operation configuration containing
                 response_handling, retry_policy, circuit_breaker, and other
                 per-operation settings. NOTE: In v1.0, per-operation retry_policy
                 and circuit_breaker configs are serialized but NOT YET wired to
@@ -1190,12 +1216,11 @@ class MixinEffectExecution:
             error_code=EnumCoreErrorCode.OPERATION_FAILED,
         )
 
-    @allow_dict_any
     async def _execute_operation(
         self,
         resolved_context: ResolvedIOContext,
         input_data: ModelEffectInput,
-        operation_config: dict[str, Any] | None = None,
+        operation_config: ModelEffectOperationConfig | None = None,
     ) -> EffectResultType:
         """
         Execute single operation by dispatching to appropriate handler.
@@ -1230,7 +1255,7 @@ class MixinEffectExecution:
             be raised with HANDLER_EXECUTION_ERROR code.
 
         Response Handling (Caller-Owned Utility - Not Auto-Applied):
-            The operation_config may contain a "response_handling" dict with:
+            The operation_config may contain response_handling with:
             - success_codes: HTTP status codes considered successful (e.g., [200, 201])
             - extract_fields: Map of output_name to JSONPath/dotpath expression
             - fail_on_empty: Whether to fail if extraction returns empty/null
@@ -1263,7 +1288,7 @@ class MixinEffectExecution:
         Args:
             resolved_context: Fully resolved IO context.
             input_data: Effect input with operation metadata.
-            operation_config: Optional operation configuration containing
+            operation_config: Optional typed operation configuration containing
                 response_handling, retry_policy, circuit_breaker, and other
                 per-operation settings. NOTE: This config is NOT passed to handlers
                 and response_handling is NOT automatically applied. The config is

@@ -28,6 +28,7 @@ from uuid import UUID, uuid4
 import pytest
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.enums.enum_node_type import EnumNodeType
 from omnibase_core.enums.enum_workflow_coordination import EnumFailureRecoveryStrategy
 from omnibase_core.enums.enum_workflow_execution import (
@@ -480,9 +481,9 @@ class TestOrchestratorIntegration:
             steps=steps,
             execution_mode=EnumExecutionMode.SEQUENTIAL,
             metadata={
-                "source": "integration_test",
-                "environment": "test",
-                "correlation_id": str(uuid4()),
+                "source": ModelSchemaValue.create_string("integration_test"),
+                "environment": ModelSchemaValue.create_string("test"),
+                "correlation_id": ModelSchemaValue.create_string(str(uuid4())),
             },
         )
 
