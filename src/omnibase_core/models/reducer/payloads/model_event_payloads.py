@@ -46,6 +46,9 @@ from omnibase_core.models.reducer.payloads.model_intent_payload_base import (
     ModelIntentPayloadBase,
 )
 
+# Public API - listed immediately after imports per Python convention
+__all__ = ["PayloadEmitEvent"]
+
 
 class PayloadEmitEvent(ModelIntentPayloadBase):
     """Payload for event emission intents.
@@ -145,8 +148,3 @@ class PayloadEmitEvent(ModelIntentPayloadBase):
             "'source', 'content-type', 'schema-id'."
         ),
     )
-
-
-__all__ = [
-    "PayloadEmitEvent",
-]

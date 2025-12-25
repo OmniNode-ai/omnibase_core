@@ -25,6 +25,7 @@ Migration Status (OMN-1008):
     type safety. Legacy dict usage triggers a deprecation warning.
 """
 
+import logging
 import warnings
 from datetime import datetime
 from typing import Any, Self
@@ -35,9 +36,13 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_workflow_execution import EnumActionType
 from omnibase_core.models.core.model_action_metadata import ModelActionMetadata
+from omnibase_core.models.core.model_action_payload_base import ModelActionPayloadBase
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.orchestrator.payloads import ActionPayloadType
 from omnibase_core.utils.util_decorators import allow_dict_str_any
+
+# Module-level logger for validation diagnostics
+_logger = logging.getLogger(__name__)
 
 
 @allow_dict_str_any(
@@ -194,29 +199,66 @@ class ModelAction(BaseModel):
         This validator supports legacy dict format during migration while
         encouraging adoption of typed payloads (ActionPayloadType).
 
+        Error Handling:
+            This validator explicitly catches and logs any unexpected errors
+            during payload inspection to prevent silent failures. If an error
+            occurs, it logs the exception and re-raises it wrapped in
+            ModelOnexError for consistent error reporting.
+
         Args:
             data: Raw input data before model construction
 
         Returns:
             The input data (unchanged) after validation and warning emission
+
+        Raises:
+            ModelOnexError: If payload inspection fails unexpectedly.
         """
         if not isinstance(data, dict):
             return data
 
-        payload = data.get("payload")
+        try:
+            payload = data.get("payload")
 
-        # Skip if payload is None, empty dict (default), or already a typed payload
-        if payload is None:
-            return data
-
-        if isinstance(payload, dict):
-            # Empty dict is the default, don't warn
-            if not payload:
+            # Skip if payload is None (default factory will create empty dict)
+            if payload is None:
                 return data
 
-            # Check if this looks like a typed payload that was serialized
-            # Typed payloads have 'action_type' field from ModelActionPayloadBase
-            if "action_type" not in payload:
+            # Already a typed payload instance - validate and pass through
+            if isinstance(payload, ModelActionPayloadBase):
+                _logger.debug(
+                    "ModelAction received typed payload: %s",
+                    type(payload).__name__,
+                )
+                return data
+
+            if isinstance(payload, dict):
+                # Empty dict is the default, don't warn
+                if not payload:
+                    return data
+
+                # Heuristic: Typed action payloads have an 'action_type' discriminator field.
+                # This field is defined in ModelActionPayloadBase and serves as the
+                # discriminator for the SpecificActionPayload union type.
+                #
+                # If 'action_type' is present, this is likely a serialized typed payload
+                # that Pydantic will deserialize via the discriminated union pattern.
+                #
+                # Heuristic accuracy:
+                #   - False positives: A legacy dict with an 'action_type' key will be treated
+                #     as a typed payload. This is acceptable since it follows the typed contract.
+                #   - False negatives: None - all typed payloads MUST have 'action_type'.
+                if "action_type" in payload:
+                    # Log for debugging - helps trace payload deserialization issues
+                    _logger.debug(
+                        "ModelAction payload has action_type='%s', "
+                        "will attempt typed deserialization",
+                        payload.get("action_type"),
+                    )
+                    return data
+
+                # Legacy untyped dict payload - issue deprecation warning
+                # stacklevel=4 points through: warn() -> validator -> Pydantic -> caller
                 warnings.warn(
                     "ModelAction: Using untyped dict[str, Any] payload is deprecated. "
                     "Use typed payloads from ActionPayloadType (e.g., "
@@ -224,11 +266,36 @@ class ModelAction(BaseModel):
                     "better type safety. See omnibase_core.models.orchestrator.payloads "
                     "for available payload types.",
                     DeprecationWarning,
-                    stacklevel=4,  # Point to caller's code, not Pydantic internals
+                    stacklevel=4,
                 )
 
-        # Note: Non-dict payloads (typed model instances or unexpected types)
-        # pass through here and are validated by Pydantic's type system
+            # Handle unexpected payload types (not dict, not ModelActionPayloadBase)
+            elif payload is not None:
+                # Log unexpected type for debugging
+                _logger.warning(
+                    "ModelAction received unexpected payload type: %s. "
+                    "Expected dict or ActionPayloadType (ModelActionPayloadBase subclass).",
+                    type(payload).__name__,
+                )
+
+        except Exception as e:
+            # Log and re-raise with context - never silently swallow exceptions
+            _logger.exception(
+                "ModelAction payload validation failed unexpectedly: %s",
+                str(e),
+            )
+            raise ModelOnexError(
+                message=(
+                    f"ModelAction payload validation failed: {e}. "
+                    "Check that the payload is a valid dict or typed ActionPayloadType model."
+                ),
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                payload_type=type(data.get("payload", None)).__name__
+                if isinstance(data, dict)
+                else "unknown",
+                original_error=str(e),
+            ) from e
+
         return data
 
     @model_validator(mode="after")
@@ -239,6 +306,7 @@ class ModelAction(BaseModel):
         Validates:
         1. Self-dependency check: An action cannot depend on itself
         2. Retry/timeout coherence: Warns if retry_count * timeout_ms exceeds reasonable limits
+        3. ActionPayloadType integration: Validates typed payload compatibility with action_type
 
         Returns:
             Self: The validated model instance
@@ -277,4 +345,73 @@ class ModelAction(BaseModel):
                 stacklevel=2,
             )
 
+        # Validate ActionPayloadType integration when using typed payloads
+        self._validate_payload_type_integration()
+
         return self
+
+    def _validate_payload_type_integration(self) -> None:
+        """
+        Validate that typed payload is compatible with the action_type.
+
+        This method performs integration validation between the typed payload
+        (if present) and the ModelAction's action_type field. It checks if the
+        payload type is among the recommended types for the given action_type.
+
+        This is a soft validation (warning) rather than an error because:
+        - The recommendations are guidelines, not strict requirements
+        - Edge cases may require non-standard payload/action combinations
+        - Extensibility is important for the orchestrator pattern
+
+        Note:
+            This validation only applies to typed payloads (instances of
+            ModelActionPayloadBase). Legacy dict payloads skip this check.
+        """
+        # Skip validation for legacy dict payloads - they don't have type info
+        if not isinstance(self.payload, ModelActionPayloadBase):
+            return
+
+        # Import here to avoid circular import at module level
+        from omnibase_core.models.orchestrator.payloads import (
+            get_recommended_payloads_for_action_type,
+        )
+
+        # Get recommended payload types for this action_type
+        recommended_types = get_recommended_payloads_for_action_type(self.action_type)
+
+        # If no recommendations exist for this action_type, skip validation
+        if not recommended_types:
+            _logger.debug(
+                "No recommended payload types for action_type=%s, skipping validation",
+                self.action_type,
+            )
+            return
+
+        # Check if the payload type is among the recommended types
+        payload_type = type(self.payload)
+        is_recommended = any(
+            isinstance(self.payload, recommended_type)
+            for recommended_type in recommended_types
+        )
+
+        if not is_recommended:
+            # Log for debugging - this isn't an error but may indicate misuse
+            recommended_names = [t.__name__ for t in recommended_types]
+            _logger.info(
+                "ModelAction: Payload type '%s' is not among recommended types %s "
+                "for action_type=%s. This may be intentional for custom workflows.",
+                payload_type.__name__,
+                recommended_names,
+                self.action_type,
+            )
+            # Issue informational warning for potential misuse
+            warnings.warn(
+                f"ModelAction: Payload type '{payload_type.__name__}' is not among "
+                f"the recommended types {recommended_names} for action_type="
+                f"{self.action_type.value if hasattr(self.action_type, 'value') else self.action_type}. "
+                "This may be intentional for custom workflows, but consider using "
+                "a recommended payload type for better semantic alignment. "
+                "See get_recommended_payloads_for_action_type() for guidance.",
+                UserWarning,
+                stacklevel=3,  # Point through _validate_action_consistency to caller
+            )

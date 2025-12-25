@@ -47,6 +47,9 @@ from omnibase_core.models.reducer.payloads.model_intent_payload_base import (
     ModelIntentPayloadBase,
 )
 
+# Public API - listed immediately after imports per Python convention
+__all__ = ["PayloadNotify"]
+
 
 class PayloadNotify(ModelIntentPayloadBase):
     """Payload for notification/alert intents.
@@ -157,8 +160,3 @@ class PayloadNotify(ModelIntentPayloadBase):
             "'env', 'correlation_id', 'alert_id'."
         ),
     )
-
-
-__all__ = [
-    "PayloadNotify",
-]

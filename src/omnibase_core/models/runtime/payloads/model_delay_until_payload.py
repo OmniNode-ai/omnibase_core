@@ -72,7 +72,9 @@ class ModelDelayUntilPayload(ModelDirectivePayloadBase):
 
     Attributes:
         kind: Discriminator field (always "delay_until")
-        execute_at: UTC datetime when execution should occur
+        execute_at: Timezone-aware datetime when execution should occur.
+            Accepts any timezone (UTC, local, or other), not just UTC.
+            A naive datetime (without tzinfo) will raise a validation error.
         operation_id: UUID of the operation to delay
         reason: Optional human-readable reason for the delay
 

@@ -101,17 +101,23 @@ See Also:
     - omnibase_core.nodes.node_effect: Executes intents
 """
 
+import logging
 import warnings
 from typing import Any, Self
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.reducer.payloads import ModelIntentPayloadUnion
 from omnibase_core.models.reducer.payloads.model_intent_payload_base import (
     ModelIntentPayloadBase,
 )
 from omnibase_core.utils.util_decorators import allow_dict_str_any
+
+# Module-level logger for validation diagnostics
+_logger = logging.getLogger(__name__)
 
 
 @allow_dict_str_any(
@@ -202,42 +208,95 @@ class ModelIntent(BaseModel):
         Typed payload instances (ModelIntentPayloadBase subclasses) pass through
         without warning.
 
+        Error Handling:
+            This validator explicitly catches and logs any unexpected errors
+            during payload inspection to prevent silent failures. If an error
+            occurs, it logs the exception and re-raises it wrapped in
+            ModelOnexError for consistent error reporting.
+
         Args:
             data: Raw input data for model construction. Can be any type
                 for mode="before" validators.
 
         Returns:
             The input data unchanged.
+
+        Raises:
+            ModelOnexError: If payload inspection fails unexpectedly.
         """
         if not isinstance(data, dict):
             return data
 
-        payload = data.get("payload")
+        try:
+            payload = data.get("payload")
 
-        # No payload or empty dict - no warning needed (common default case)
-        if payload is None or payload == {}:
-            return data
-
-        # Already a typed payload instance - no warning needed
-        if isinstance(payload, ModelIntentPayloadBase):
-            return data
-
-        # Dict payload that's not empty - check if it's a serialized typed payload
-        if isinstance(payload, dict):
-            # If it has an intent_type field, it might be a serialized typed payload
-            # In that case, Pydantic will handle deserialization via the discriminator
-            if "intent_type" in payload:
+            # No payload or empty dict - no warning needed (common default case)
+            if payload is None or payload == {}:
                 return data
 
-            # Legacy untyped dict payload - issue deprecation warning
-            warnings.warn(
-                "Using untyped dict payload in ModelIntent is deprecated. "
-                "Use typed payloads from omnibase_core.models.reducer.payloads instead. "
-                "For plugins/extensions, use PayloadExtension. "
-                "See: docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md",
-                DeprecationWarning,
-                stacklevel=4,  # Point to caller's caller (through Pydantic internals)
+            # Already a typed payload instance - no warning needed
+            if isinstance(payload, ModelIntentPayloadBase):
+                return data
+
+            # Dict payload that's not empty - check if it's a serialized typed payload
+            if isinstance(payload, dict):
+                # Heuristic: Typed intent payloads have an 'intent_type' discriminator field.
+                # This field is defined as a Literal in each payload class (e.g., Literal["log_event"])
+                # and serves as the discriminator for ModelIntentPayloadUnion.
+                #
+                # If 'intent_type' is present, this is likely a serialized typed payload
+                # that Pydantic will deserialize via the discriminated union pattern.
+                #
+                # Heuristic accuracy:
+                #   - False positives: A legacy dict with an 'intent_type' key will be treated
+                #     as a typed payload. This is acceptable since it follows the typed contract.
+                #   - False negatives: None - all typed payloads MUST have 'intent_type'.
+                if "intent_type" in payload:
+                    # Log for debugging - helps trace payload deserialization issues
+                    _logger.debug(
+                        "ModelIntent payload has intent_type='%s', "
+                        "will attempt typed deserialization",
+                        payload.get("intent_type"),
+                    )
+                    return data
+
+                # Legacy untyped dict payload - issue deprecation warning
+                # stacklevel=4 points through: warn() -> validator -> Pydantic -> caller
+                warnings.warn(
+                    "Using untyped dict payload in ModelIntent is deprecated. "
+                    "Use typed payloads from omnibase_core.models.reducer.payloads instead. "
+                    "For plugins/extensions, use PayloadExtension. "
+                    "See: docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md",
+                    DeprecationWarning,
+                    stacklevel=4,
+                )
+
+            # Handle unexpected payload types (not dict, not ModelIntentPayloadBase)
+            elif payload is not None:
+                # Log unexpected type for debugging
+                _logger.warning(
+                    "ModelIntent received unexpected payload type: %s. "
+                    "Expected dict or ModelIntentPayloadBase subclass.",
+                    type(payload).__name__,
+                )
+
+        except Exception as e:
+            # Log and re-raise with context - never silently swallow exceptions
+            _logger.exception(
+                "ModelIntent payload validation failed unexpectedly: %s",
+                str(e),
             )
+            raise ModelOnexError(
+                message=(
+                    f"ModelIntent payload validation failed: {e}. "
+                    "Check that the payload is a valid dict or typed payload model."
+                ),
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                payload_type=type(data.get("payload", None)).__name__
+                if isinstance(data, dict)
+                else "unknown",
+                original_error=str(e),
+            ) from e
 
         return data
 

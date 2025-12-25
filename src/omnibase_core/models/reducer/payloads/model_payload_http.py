@@ -39,6 +39,9 @@ from omnibase_core.models.reducer.payloads.model_intent_payload_base import (
     ModelIntentPayloadBase,
 )
 
+# Public API - listed immediately after imports per Python convention
+__all__ = ["PayloadHTTP"]
+
 
 class PayloadHTTP(ModelIntentPayloadBase):
     """Payload for HTTP request intents.
@@ -143,8 +146,3 @@ class PayloadHTTP(ModelIntentPayloadBase):
         default=True,
         description="Whether to follow HTTP 3xx redirects automatically.",
     )
-
-
-__all__ = [
-    "PayloadHTTP",
-]

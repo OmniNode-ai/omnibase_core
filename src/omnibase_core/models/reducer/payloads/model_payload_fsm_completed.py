@@ -41,6 +41,9 @@ from omnibase_core.models.reducer.payloads.model_intent_payload_base import (
     ModelIntentPayloadBase,
 )
 
+# Public API - listed immediately after imports per Python convention
+__all__ = ["PayloadFSMCompleted"]
+
 
 class PayloadFSMCompleted(ModelIntentPayloadBase):
     """Payload for FSM completion notification intents.
@@ -116,8 +119,3 @@ class PayloadFSMCompleted(ModelIntentPayloadBase):
             "'transitions', 'start_time', 'end_time'."
         ),
     )
-
-
-__all__ = [
-    "PayloadFSMCompleted",
-]

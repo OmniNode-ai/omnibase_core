@@ -42,6 +42,9 @@ from omnibase_core.models.reducer.payloads.model_intent_payload_base import (
     ModelIntentPayloadBase,
 )
 
+# Public API - listed immediately after imports per Python convention
+__all__ = ["PayloadFSMTransitionAction"]
+
 
 class PayloadFSMTransitionAction(ModelIntentPayloadBase):
     """Payload for FSM transition action execution intents.
@@ -138,8 +141,3 @@ class PayloadFSMTransitionAction(ModelIntentPayloadBase):
             "scenarios to route the action to the correct instance."
         ),
     )
-
-
-__all__ = [
-    "PayloadFSMTransitionAction",
-]

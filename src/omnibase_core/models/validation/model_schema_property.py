@@ -42,12 +42,38 @@ class ModelSchemaProperty(BaseModel):
     model_config = {"arbitrary_types_allowed": True, "extra": "allow"}
 
 
-# Rebuild the model to resolve forward references
+# Forward Reference Resolution
+# ============================
+# This module uses TYPE_CHECKING imports to break circular dependencies with
+# ModelSchemaPropertiesModel and ModelRequiredFieldsModel. Forward references
+# are resolved by calling model_rebuild() at module import time.
+
+
 def _rebuild_model() -> None:
-    """Rebuild the model to resolve forward references."""
+    """
+    Rebuild the model to resolve TYPE_CHECKING forward references.
+
+    This function resolves forward references used by ModelSchemaProperty
+    (ModelSchemaPropertiesModel, ModelRequiredFieldsModel). These are defined
+    under TYPE_CHECKING to avoid circular import errors during module initialization.
+
+    Pattern:
+        - Called automatically at module import (see below)
+        - Safe to call multiple times (Pydantic handles idempotently)
+        - Fails gracefully if referenced modules not yet loaded
+
+    Why This Exists:
+        ModelSchemaProperty references ModelSchemaPropertiesModel and
+        ModelRequiredFieldsModel, creating a circular dependency. TYPE_CHECKING
+        imports break the cycle, but require explicit resolution via model_rebuild().
+    """
     try:
         from .model_required_fields_model import ModelRequiredFieldsModel
         from .model_schema_properties_model import ModelSchemaPropertiesModel
+
+        # Suppress unused variable warnings - imports inject types into namespace
+        _ = ModelRequiredFieldsModel
+        _ = ModelSchemaPropertiesModel
 
         ModelSchemaProperty.model_rebuild()
     except ImportError:
@@ -55,5 +81,6 @@ def _rebuild_model() -> None:
         pass
 
 
-# Call rebuild on module import
+# Automatically resolve forward references on module import.
+# This is the recommended pattern for self-contained modules.
 _rebuild_model()

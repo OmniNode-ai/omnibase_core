@@ -111,6 +111,27 @@ from omnibase_core.models.reducer.payloads.model_payload_persist_state import (
 )
 from omnibase_core.models.reducer.payloads.model_payload_write import PayloadWrite
 
+# Public API - listed immediately after imports per Python convention
+__all__ = [
+    # Union type
+    "ModelIntentPayloadUnion",
+    # Type aliases
+    "IntentPayloadList",
+    # Re-export all payload types for convenience
+    "PayloadLogEvent",
+    "PayloadMetric",
+    "PayloadPersistState",
+    "PayloadPersistResult",
+    "PayloadFSMStateAction",
+    "PayloadFSMTransitionAction",
+    "PayloadFSMCompleted",
+    "PayloadEmitEvent",
+    "PayloadWrite",
+    "PayloadHTTP",
+    "PayloadNotify",
+    "PayloadExtension",
+]
+
 # ==============================================================================
 # Discriminated Union Type
 # ==============================================================================
@@ -181,24 +202,3 @@ Adding a new payload requires:
 # List type for reducer output
 IntentPayloadList = list[ModelIntentPayloadUnion]
 """Type alias for lists of intent payloads in reducer outputs."""
-
-
-__all__ = [
-    # Union type
-    "ModelIntentPayloadUnion",
-    # Type aliases
-    "IntentPayloadList",
-    # Re-export all payload types for convenience
-    "PayloadLogEvent",
-    "PayloadMetric",
-    "PayloadPersistState",
-    "PayloadPersistResult",
-    "PayloadFSMStateAction",
-    "PayloadFSMTransitionAction",
-    "PayloadFSMCompleted",
-    "PayloadEmitEvent",
-    "PayloadWrite",
-    "PayloadHTTP",
-    "PayloadNotify",
-    "PayloadExtension",
-]

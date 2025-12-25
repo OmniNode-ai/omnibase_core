@@ -38,6 +38,9 @@ from omnibase_core.models.reducer.payloads.model_intent_payload_base import (
     ModelIntentPayloadBase,
 )
 
+# Public API - listed immediately after imports per Python convention
+__all__ = ["PayloadPersistState"]
+
 
 class PayloadPersistState(ModelIntentPayloadBase):
     """Payload for state persistence intents.
@@ -111,8 +114,3 @@ class PayloadPersistState(ModelIntentPayloadBase):
         ),
         ge=0,
     )
-
-
-__all__ = [
-    "PayloadPersistState",
-]

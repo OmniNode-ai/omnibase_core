@@ -38,6 +38,9 @@ from omnibase_core.models.reducer.payloads.model_intent_payload_base import (
     ModelIntentPayloadBase,
 )
 
+# Public API - listed immediately after imports per Python convention
+__all__ = ["PayloadPersistResult"]
+
 
 class PayloadPersistResult(ModelIntentPayloadBase):
     """Payload for computation result persistence intents.
@@ -109,8 +112,3 @@ class PayloadPersistResult(ModelIntentPayloadBase):
             "computation time, 'node_id' for origin, 'version' for result version."
         ),
     )
-
-
-__all__ = [
-    "PayloadPersistResult",
-]

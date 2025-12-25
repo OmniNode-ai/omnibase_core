@@ -38,6 +38,9 @@ from omnibase_core.models.reducer.payloads.model_intent_payload_base import (
     ModelIntentPayloadBase,
 )
 
+# Public API - listed immediately after imports per Python convention
+__all__ = ["PayloadMetric"]
+
 
 class PayloadMetric(ModelIntentPayloadBase):
     """Payload for metric recording intents.
@@ -116,8 +119,3 @@ class PayloadMetric(ModelIntentPayloadBase):
         ),
         max_length=32,
     )
-
-
-__all__ = [
-    "PayloadMetric",
-]

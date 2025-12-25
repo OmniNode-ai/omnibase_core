@@ -54,6 +54,9 @@ from omnibase_core.models.reducer.payloads.model_intent_payload_base import (
     ModelIntentPayloadBase,
 )
 
+# Public API - listed immediately after imports per Python convention
+__all__ = ["PayloadExtension"]
+
 
 class PayloadExtension(ModelIntentPayloadBase):
     """Payload for extension/plugin intents.
@@ -157,8 +160,3 @@ class PayloadExtension(ModelIntentPayloadBase):
         ge=1,
         le=3600,
     )
-
-
-__all__ = [
-    "PayloadExtension",
-]
