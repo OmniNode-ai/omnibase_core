@@ -26,11 +26,13 @@ See Also:
     - model_directive_payload_base.py: Base class for payloads
 """
 
-from typing import Literal
+from typing import Literal, Self
 from uuid import UUID
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.runtime.payloads.model_directive_payload_base import (
     ModelDirectivePayloadBase,
 )
@@ -99,3 +101,26 @@ class ModelRetryWithBackoffPayload(ModelDirectivePayloadBase):
         default=True,
         description="Whether to add random jitter to backoff",
     )
+
+    @model_validator(mode="after")
+    def _validate_backoff_bounds(self) -> Self:
+        """
+        Validate that initial_backoff_ms does not exceed max_backoff_ms.
+
+        This ensures that the initial backoff delay is always less than or equal
+        to the maximum backoff delay, preventing invalid configurations.
+
+        Raises:
+            ModelOnexError: If initial_backoff_ms > max_backoff_ms
+        """
+        if self.initial_backoff_ms > self.max_backoff_ms:
+            raise ModelOnexError(
+                message=(
+                    f"initial_backoff_ms ({self.initial_backoff_ms}) cannot exceed "
+                    f"max_backoff_ms ({self.max_backoff_ms})"
+                ),
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                initial_backoff_ms=self.initial_backoff_ms,
+                max_backoff_ms=self.max_backoff_ms,
+            )
+        return self

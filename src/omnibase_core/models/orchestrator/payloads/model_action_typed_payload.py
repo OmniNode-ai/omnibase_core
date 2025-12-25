@@ -103,6 +103,28 @@ from omnibase_core.models.core.model_validation_action_payload import (
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
+__all__ = [
+    # Type alias for ModelAction.payload field
+    "ActionPayloadType",
+    # Factory functions
+    "create_action_payload",
+    "get_recommended_payloads_for_action_type",
+    "get_payload_type_for_semantic_action",
+    # Re-exported payload types (for convenience)
+    "ModelCustomActionPayload",
+    "ModelDataActionPayload",
+    "ModelFilesystemActionPayload",
+    "ModelLifecycleActionPayload",
+    "ModelManagementActionPayload",
+    "ModelMonitoringActionPayload",
+    "ModelOperationalActionPayload",
+    "ModelRegistryActionPayload",
+    "ModelTransformationActionPayload",
+    "ModelValidationActionPayload",
+    # Union type
+    "SpecificActionPayload",
+]
+
 # Type alias for typed payloads in ModelAction
 # union-ok: discriminated_model_union - Type alias representing all valid payload types
 ActionPayloadType = SpecificActionPayload
@@ -273,6 +295,55 @@ def create_action_payload(
     return create_specific_action_payload(node_action_type, **kwargs)
 
 
+# Mapping from semantic action names to their corresponding payload types
+# Using a flat dict is more efficient and maintainable than nested if/elif chains
+_SEMANTIC_ACTION_TO_PAYLOAD_TYPE: dict[str, type[SpecificActionPayload]] = {
+    # Data actions
+    "read": ModelDataActionPayload,
+    "write": ModelDataActionPayload,
+    "create": ModelDataActionPayload,
+    "update": ModelDataActionPayload,
+    "delete": ModelDataActionPayload,
+    "search": ModelDataActionPayload,
+    "query": ModelDataActionPayload,
+    # Registry actions
+    "register": ModelRegistryActionPayload,
+    "unregister": ModelRegistryActionPayload,
+    "discover": ModelRegistryActionPayload,
+    # Filesystem actions
+    "scan": ModelFilesystemActionPayload,
+    "watch": ModelFilesystemActionPayload,
+    "sync": ModelFilesystemActionPayload,
+    # Custom action
+    "custom": ModelCustomActionPayload,
+    # Lifecycle actions
+    "health_check": ModelLifecycleActionPayload,
+    "initialize": ModelLifecycleActionPayload,
+    "shutdown": ModelLifecycleActionPayload,
+    "start": ModelLifecycleActionPayload,
+    "stop": ModelLifecycleActionPayload,
+    # Validation actions
+    "validate": ModelValidationActionPayload,
+    "verify": ModelValidationActionPayload,
+    "check": ModelValidationActionPayload,
+    "test": ModelValidationActionPayload,
+    # Transformation actions
+    "transform": ModelTransformationActionPayload,
+    "convert": ModelTransformationActionPayload,
+    "parse": ModelTransformationActionPayload,
+    "serialize": ModelTransformationActionPayload,
+    # Management actions
+    "configure": ModelManagementActionPayload,
+    "deploy": ModelManagementActionPayload,
+    "migrate": ModelManagementActionPayload,
+    # Monitoring/Query actions
+    "monitor": ModelMonitoringActionPayload,
+    "collect": ModelMonitoringActionPayload,
+    "report": ModelMonitoringActionPayload,
+    "alert": ModelMonitoringActionPayload,
+}
+
+
 def get_payload_type_for_semantic_action(
     semantic_action: str,
 ) -> type[SpecificActionPayload]:
@@ -287,52 +358,10 @@ def get_payload_type_for_semantic_action(
     Returns:
         The payload type class expected for this action
 
-    Raises:
-        ModelOnexError: If the action cannot be mapped to a known payload type
+    Note:
+        Unknown actions default to ModelOperationalActionPayload rather than
+        raising an error, as this allows extensibility for custom actions.
     """
-    # Data actions
-    data_actions = {"read", "write", "create", "update", "delete", "search", "query"}
-    if semantic_action in data_actions:
-        return ModelDataActionPayload
-
-    # Registry actions
-    registry_actions = {"register", "unregister", "discover"}
-    if semantic_action in registry_actions:
-        return ModelRegistryActionPayload
-
-    # Filesystem actions
-    filesystem_actions = {"scan", "watch", "sync"}
-    if semantic_action in filesystem_actions:
-        return ModelFilesystemActionPayload
-
-    # Custom action
-    if semantic_action == "custom":
-        return ModelCustomActionPayload
-
-    # Lifecycle actions
-    lifecycle_actions = {"health_check", "initialize", "shutdown", "start", "stop"}
-    if semantic_action in lifecycle_actions:
-        return ModelLifecycleActionPayload
-
-    # Validation actions
-    validation_actions = {"validate", "verify", "check", "test"}
-    if semantic_action in validation_actions:
-        return ModelValidationActionPayload
-
-    # Transformation actions
-    transformation_actions = {"transform", "convert", "parse", "serialize"}
-    if semantic_action in transformation_actions:
-        return ModelTransformationActionPayload
-
-    # Management actions
-    management_actions = {"configure", "deploy", "migrate"}
-    if semantic_action in management_actions:
-        return ModelManagementActionPayload
-
-    # Monitoring/Query actions
-    monitoring_actions = {"monitor", "collect", "report", "alert"}
-    if semantic_action in monitoring_actions:
-        return ModelMonitoringActionPayload
-
-    # Default to operational for unknown actions
-    return ModelOperationalActionPayload
+    return _SEMANTIC_ACTION_TO_PAYLOAD_TYPE.get(
+        semantic_action, ModelOperationalActionPayload
+    )

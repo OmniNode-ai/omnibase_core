@@ -53,8 +53,8 @@ class PayloadWrite(ModelIntentPayloadBase):
             Placed first for optimal union type resolution performance.
         path: Target path for the write operation. For filesystems, this is
             the file path. For object storage, this is the object key.
-        content: The content to write. Can be string (text) or bytes (binary).
-            For structured data, pre-serialize to JSON/YAML string.
+        content: The content to write as a string. For structured data,
+            pre-serialize to JSON/YAML string. For binary data, use base64 encoding.
         content_type: MIME type of the content (e.g., "application/json").
         encoding: Text encoding for string content (default: "utf-8").
         create_dirs: Whether to create parent directories if they don't exist.

@@ -234,10 +234,41 @@ class ModelEventPublishIntent(BaseModel):
 
 def _rebuild_model() -> None:
     """
-    Rebuild the model to resolve forward references.
+    Rebuild the model to resolve forward references for typed payloads.
 
-    This is called after all imports are complete to ensure
-    ModelEventPayloadUnion and ModelRetryPolicy types are resolved.
+    This function resolves the TYPE_CHECKING forward references used by
+    ModelEventPublishIntent (ModelEventPayloadUnion and ModelRetryPolicy).
+    Forward references are necessary to avoid circular imports during
+    module initialization.
+
+    When to Call:
+        - Call this function ONCE after your application has finished loading
+          all dependent modules (e.g., during application startup).
+        - If not called manually, Pydantic will attempt to resolve forward
+          references on first validation, but explicit rebuild is recommended
+          for predictable behavior.
+
+    Why This Exists:
+        ModelEventPublishIntent uses TYPE_CHECKING imports to avoid circular
+        dependencies with ModelEventPayloadUnion and ModelRetryPolicy. These
+        forward references need explicit resolution before the model can
+        properly validate typed payloads.
+
+    Example:
+        >>> # In your application startup code:
+        >>> from omnibase_core.models.events.model_event_publish_intent import (
+        ...     ModelEventPublishIntent,
+        ...     _rebuild_model,
+        ... )
+        >>> _rebuild_model()  # Resolve forward references
+        >>>
+        >>> # Now ModelEventPublishIntent can validate typed payloads
+        >>> intent = ModelEventPublishIntent(...)
+
+    Note:
+        This pattern is common in Pydantic models that use TYPE_CHECKING
+        imports. The model_rebuild() call injects the actual types into
+        Pydantic's type resolution namespace.
     """
     # Lazy imports to avoid circular dependency during module load
     # Inject types into module globals for Pydantic to resolve forward references
@@ -263,6 +294,14 @@ def _rebuild_model() -> None:
     )
 
 
-# Defer model rebuild to avoid circular import during module initialization
-# Users should call _rebuild_model() after all dependent modules are loaded,
-# or the model will be rebuilt automatically on first validation attempt
+# Forward Reference Resolution
+# ============================
+# This module uses TYPE_CHECKING imports to break circular dependencies.
+# As a result, forward references (ModelEventPayloadUnion, ModelRetryPolicy)
+# must be resolved before typed payload validation can work correctly.
+#
+# Options:
+#   1. Call _rebuild_model() explicitly during application startup (recommended)
+#   2. Let Pydantic auto-resolve on first model_validate() call (less predictable)
+#
+# See _rebuild_model() docstring for detailed usage instructions.

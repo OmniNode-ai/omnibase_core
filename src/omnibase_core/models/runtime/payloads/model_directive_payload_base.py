@@ -40,6 +40,8 @@ class ModelDirectivePayloadBase(BaseModel):
     Configuration:
         - frozen=True: Immutable after creation
         - extra="forbid": No additional fields allowed
+        - from_attributes=True: Allows instantiation from arbitrary objects
+          (useful for pytest-xdist parallel execution)
     """
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)

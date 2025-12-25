@@ -20,7 +20,9 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_directive_type import EnumDirectiveType
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.runtime.payloads import ModelDirectivePayload
 
 __all__ = ["ModelRuntimeDirective"]
@@ -89,12 +91,17 @@ class ModelRuntimeDirective(BaseModel):
         and the actual payload provided, preventing mismatched directives.
 
         Raises:
-            ValueError: If payload.kind doesn't match directive_type.value
+            ModelOnexError: If payload.kind doesn't match directive_type.value
         """
         expected_kind = self.directive_type.value
         if self.payload.kind != expected_kind:
-            raise ValueError(
-                f"Payload kind '{self.payload.kind}' doesn't match "
-                f"directive_type '{expected_kind}'"
+            raise ModelOnexError(
+                message=(
+                    f"Payload kind '{self.payload.kind}' doesn't match "
+                    f"directive_type '{expected_kind}'"
+                ),
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                payload_kind=self.payload.kind,
+                expected_kind=expected_kind,
             )
         return self

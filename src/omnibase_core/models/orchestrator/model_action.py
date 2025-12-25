@@ -34,7 +34,6 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_workflow_execution import EnumActionType
 from omnibase_core.models.core.model_action_metadata import ModelActionMetadata
-from omnibase_core.models.core.model_action_payload_base import ModelActionPayloadBase
 from omnibase_core.models.orchestrator.payloads import ActionPayloadType
 from omnibase_core.utils.util_decorators import allow_dict_str_any
 
@@ -218,8 +217,6 @@ class ModelAction(BaseModel):
                     DeprecationWarning,
                     stacklevel=4,  # Point to caller's code, not Pydantic internals
                 )
-        elif not isinstance(payload, ModelActionPayloadBase):
-            # Payload is something unexpected - let Pydantic validation handle it
-            pass
+            # Note: Non-dict payloads (typed or unexpected) are handled by Pydantic validation
 
         return data

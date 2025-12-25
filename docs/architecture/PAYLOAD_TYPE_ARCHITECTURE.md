@@ -73,12 +73,12 @@ ModelIntent.model_validate(intent_dict)  # T is unknown!
 ```python
 # Discriminated union - self-describing at runtime
 class ModelWebhookIntentPayload(BaseModel):
-    kind: Literal["webhook.send"] = "webhook.send"
+    intent_type: Literal["webhook.send"] = "webhook.send"
     url: str
     method: str
 
 # Pydantic knows exactly which type from discriminator
-intent_dict = {"intent_type": "webhook.send", "payload": {"kind": "webhook.send", "url": "..."}}
+intent_dict = {"intent_type": "webhook.send", "payload": {"intent_type": "webhook.send", "url": "..."}}
 ModelIntent.model_validate(intent_dict)  # Resolves to ModelWebhookIntentPayload
 ```
 
@@ -218,28 +218,28 @@ from typing import Annotated, Literal
 from pydantic import Field
 
 class ModelWebhookIntentPayload(BaseModel):
-    kind: Literal["webhook.send"] = "webhook.send"
+    intent_type: Literal["webhook.send"] = "webhook.send"
     url: str
     method: str = "POST"
     headers: dict[str, str] = {}
     body: dict[str, Any] = {}
 
 class ModelPluginExecutePayload(BaseModel):
-    kind: Literal["plugin.execute"] = "plugin.execute"
+    intent_type: Literal["plugin.execute"] = "plugin.execute"
     plugin_id: str
     action: str
     params: dict[str, Any] = {}
 
 class ModelGenericIntentPayload(BaseModel):
     """Fallback for truly dynamic plugin payloads."""
-    kind: Literal["generic"] = "generic"
+    intent_type: Literal["generic"] = "generic"
     data: dict[str, Any]
 
 ExtensionIntentPayload = Annotated[
     ModelWebhookIntentPayload
     | ModelPluginExecutePayload
     | ModelGenericIntentPayload,
-    Field(discriminator="kind"),
+    Field(discriminator="intent_type"),
 ]
 
 class ModelIntent(BaseModel):

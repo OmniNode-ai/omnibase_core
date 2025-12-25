@@ -26,11 +26,13 @@ See Also:
 """
 
 from datetime import datetime
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import Field
+from pydantic import AfterValidator, Field
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.runtime.payloads.model_directive_payload_base import (
     ModelDirectivePayloadBase,
 )
@@ -38,6 +40,27 @@ from omnibase_core.models.runtime.payloads.model_directive_payload_base import (
 __all__ = [
     "ModelDelayUntilPayload",
 ]
+
+
+def _validate_timezone_aware(value: datetime) -> datetime:
+    """
+    Validate that a datetime value is timezone-aware.
+
+    Args:
+        value: The datetime to validate
+
+    Returns:
+        The validated datetime value
+
+    Raises:
+        ModelOnexError: If the datetime is naive (has no timezone info)
+    """
+    if value.tzinfo is None:
+        raise ModelOnexError(
+            message="execute_at must be timezone-aware (have tzinfo set)",
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+        )
+    return value
 
 
 class ModelDelayUntilPayload(ModelDirectivePayloadBase):
@@ -64,9 +87,9 @@ class ModelDelayUntilPayload(ModelDirectivePayloadBase):
     """
 
     kind: Literal["delay_until"] = "delay_until"
-    execute_at: datetime = Field(
+    execute_at: Annotated[datetime, AfterValidator(_validate_timezone_aware)] = Field(
         ...,
-        description="UTC datetime when execution should occur",
+        description="Timezone-aware datetime when execution should occur",
     )
     operation_id: UUID = Field(
         ...,
