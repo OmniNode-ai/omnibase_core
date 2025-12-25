@@ -1,17 +1,20 @@
-from uuid import UUID
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
+"""
+ONEX Node Service Configuration Model.
 
-from pydantic import Field, field_validator, model_validator
+This module provides a comprehensive Pydantic schema for ONEX node service configuration,
+supporting Docker, Kubernetes, and compose file generation from contracts.
+"""
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
-"\nONEX Node Service Configuration Model.\n\nThis module provides a comprehensive Pydantic schema for ONEX node service configuration,\nsupporting Docker, Kubernetes, and compose file generation from contracts.\n\nAuthor: OmniNode Team\n"
 import os
 from typing import Any
+from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_service_mode import EnumServiceMode
 from omnibase_core.models.configuration.model_event_bus_config import (
@@ -21,8 +24,10 @@ from omnibase_core.models.configuration.model_monitoring_config import (
     ModelMonitoringConfig,
 )
 from omnibase_core.models.configuration.model_resource_limits import ModelResourceLimits
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.examples.model_security_config import ModelSecurityConfig
 from omnibase_core.models.health.model_health_check_config import ModelHealthCheckConfig
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.services.model_network_config import ModelNetworkConfig
 from omnibase_core.utils.util_decorators import allow_dict_str_any
 
@@ -38,6 +43,8 @@ class ModelNodeServiceConfig(BaseModel):
     This model provides complete configuration for deploying ONEX nodes as services
     with support for Docker, Kubernetes, and compose file generation.
     """
+
+    model_config = ConfigDict(from_attributes=True)
 
     node_name: str = Field(
         default=..., description="Name of the ONEX node", min_length=1
@@ -228,8 +235,7 @@ class ModelNodeServiceConfig(BaseModel):
             timeout_seconds=int(os.getenv("HEALTH_CHECK_TIMEOUT", "10")),
         )
         monitoring_config = ModelMonitoringConfig(
-            prometheus_enabled=os.getenv("METRICS_ENABLED", "true").lower()
-            == "true",
+            prometheus_enabled=os.getenv("METRICS_ENABLED", "true").lower() == "true",
             prometheus_port=int(os.getenv("METRICS_PORT", "9090")),
         )
         security_config = ModelSecurityConfig()

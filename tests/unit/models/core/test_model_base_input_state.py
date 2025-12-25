@@ -62,15 +62,17 @@ class TestModelBaseInputState:
 
     def test_model_base_input_state_metadata_types(self):
         """Test ModelBaseInputState with different metadata value types."""
-        metadata = _make_metadata({
-            "string": "test",
-            "integer": 123,
-            "float": 45.67,
-            "boolean": True,
-            "list": [1, 2, 3],
-            "dict": {"nested": "value"},
-            "none": None,
-        })
+        metadata = _make_metadata(
+            {
+                "string": "test",
+                "integer": 123,
+                "float": 45.67,
+                "boolean": True,
+                "list": [1, 2, 3],
+                "dict": {"nested": "value"},
+                "none": None,
+            }
+        )
         state = ModelBaseInputState(metadata=metadata)
 
         assert state.metadata["string"].get_string() == "test"
@@ -91,16 +93,18 @@ class TestModelBaseInputState:
 
     def test_model_base_input_state_nested_metadata(self):
         """Test ModelBaseInputState with nested metadata structure."""
-        metadata = _make_metadata({
-            "level1": {
-                "level2": {
-                    "level3": "deep_value",
-                    "list": [1, 2, {"nested": "object"}],
+        metadata = _make_metadata(
+            {
+                "level1": {
+                    "level2": {
+                        "level3": "deep_value",
+                        "list": [1, 2, {"nested": "object"}],
+                    },
+                    "simple": "value",
                 },
-                "simple": "value",
-            },
-            "top_level": "value",
-        })
+                "top_level": "value",
+            }
+        )
         state = ModelBaseInputState(metadata=metadata)
 
         level1 = state.metadata["level1"].get_object()

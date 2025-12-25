@@ -110,9 +110,6 @@ from omnibase_core.models.contracts.subcontracts.model_effect_io_configs import 
     ModelHttpIOConfig,
     ModelKafkaIOConfig,
 )
-from omnibase_core.models.operations.model_effect_operation_config import (
-    ModelEffectOperationConfig,
-)
 from omnibase_core.models.contracts.subcontracts.model_effect_resolved_context import (
     ModelResolvedDbContext,
     ModelResolvedFilesystemContext,
@@ -123,6 +120,9 @@ from omnibase_core.models.contracts.subcontracts.model_effect_resolved_context i
 from omnibase_core.models.effect.model_effect_input import ModelEffectInput
 from omnibase_core.models.effect.model_effect_output import ModelEffectOutput
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.operations.model_effect_operation_config import (
+    ModelEffectOperationConfig,
+)
 from omnibase_core.types.type_effect_result import DbParamType, EffectResultType
 
 __all__ = ["MixinEffectExecution"]
@@ -456,7 +456,9 @@ class MixinEffectExecution:
                         else:
                             op_dict["circuit_breaker"] = op.circuit_breaker
 
-                    operations_config.append(ModelEffectOperationConfig.from_dict(op_dict))
+                    operations_config.append(
+                        ModelEffectOperationConfig.from_dict(op_dict)
+                    )
 
         # Fallback to direct operations list if subcontract not provided
         if not operations_config:
@@ -465,7 +467,9 @@ class MixinEffectExecution:
                 if isinstance(raw_op, ModelEffectOperationConfig):
                     operations_config.append(raw_op)
                 elif isinstance(raw_op, dict):
-                    operations_config.append(ModelEffectOperationConfig.from_dict(raw_op))
+                    operations_config.append(
+                        ModelEffectOperationConfig.from_dict(raw_op)
+                    )
                 elif hasattr(raw_op, "model_dump"):
                     operations_config.append(
                         ModelEffectOperationConfig.from_dict(raw_op.model_dump())
@@ -511,8 +515,7 @@ class MixinEffectExecution:
             # defaults for consistency. Individual IO configs may specify their own
             # timeout_ms values.
             operation_timeout_ms = (
-                operation_config.operation_timeout_ms
-                or DEFAULT_OPERATION_TIMEOUT_MS
+                operation_config.operation_timeout_ms or DEFAULT_OPERATION_TIMEOUT_MS
             )
 
             # Resolve IO context from templates

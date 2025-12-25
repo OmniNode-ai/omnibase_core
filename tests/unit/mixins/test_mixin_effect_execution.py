@@ -284,13 +284,15 @@ class TestParseIOConfig:
         """Test parsing HTTP IO config."""
         from omnibase_core.models.operations import ModelEffectOperationConfig
 
-        operation_config = ModelEffectOperationConfig.from_dict({
-            "io_config": {
-                "handler_type": "http",
-                "url_template": "https://api.example.com/test",
-                "method": "GET",
+        operation_config = ModelEffectOperationConfig.from_dict(
+            {
+                "io_config": {
+                    "handler_type": "http",
+                    "url_template": "https://api.example.com/test",
+                    "method": "GET",
+                }
             }
-        })
+        )
         result = test_node._parse_io_config(operation_config)
         assert isinstance(result, ModelHttpIOConfig)
         assert result.url_template == "https://api.example.com/test"
@@ -300,14 +302,16 @@ class TestParseIOConfig:
         """Test parsing DB IO config."""
         from omnibase_core.models.operations import ModelEffectOperationConfig
 
-        operation_config = ModelEffectOperationConfig.from_dict({
-            "io_config": {
-                "handler_type": "db",
-                "operation": "select",
-                "connection_name": "primary",
-                "query_template": "SELECT * FROM users",
+        operation_config = ModelEffectOperationConfig.from_dict(
+            {
+                "io_config": {
+                    "handler_type": "db",
+                    "operation": "select",
+                    "connection_name": "primary",
+                    "query_template": "SELECT * FROM users",
+                }
             }
-        })
+        )
         result = test_node._parse_io_config(operation_config)
         assert isinstance(result, ModelDbIOConfig)
         assert result.operation == "select"
@@ -317,13 +321,15 @@ class TestParseIOConfig:
         """Test parsing Kafka IO config."""
         from omnibase_core.models.operations import ModelEffectOperationConfig
 
-        operation_config = ModelEffectOperationConfig.from_dict({
-            "io_config": {
-                "handler_type": "kafka",
-                "topic": "test-topic",
-                "payload_template": '{"test": "data"}',
+        operation_config = ModelEffectOperationConfig.from_dict(
+            {
+                "io_config": {
+                    "handler_type": "kafka",
+                    "topic": "test-topic",
+                    "payload_template": '{"test": "data"}',
+                }
             }
-        })
+        )
         result = test_node._parse_io_config(operation_config)
         assert isinstance(result, ModelKafkaIOConfig)
         assert result.topic == "test-topic"
@@ -332,14 +338,16 @@ class TestParseIOConfig:
         """Test parsing Filesystem IO config."""
         from omnibase_core.models.operations import ModelEffectOperationConfig
 
-        operation_config = ModelEffectOperationConfig.from_dict({
-            "io_config": {
-                "handler_type": "filesystem",
-                "file_path_template": "/data/test.txt",
-                "operation": "read",
-                "atomic": False,
+        operation_config = ModelEffectOperationConfig.from_dict(
+            {
+                "io_config": {
+                    "handler_type": "filesystem",
+                    "file_path_template": "/data/test.txt",
+                    "operation": "read",
+                    "atomic": False,
+                }
             }
-        })
+        )
         result = test_node._parse_io_config(operation_config)
         assert isinstance(result, ModelFilesystemIOConfig)
         assert result.operation == "read"
@@ -363,9 +371,9 @@ class TestParseIOConfig:
         """Test that unknown handler type raises ModelOnexError."""
         from omnibase_core.models.operations import ModelEffectOperationConfig
 
-        operation_config = ModelEffectOperationConfig.from_dict({
-            "io_config": {"handler_type": "unknown"}
-        })
+        operation_config = ModelEffectOperationConfig.from_dict(
+            {"io_config": {"handler_type": "unknown"}}
+        )
         with pytest.raises(ModelOnexError) as exc_info:
             test_node._parse_io_config(operation_config)
         assert "Unknown handler type" in str(exc_info.value)

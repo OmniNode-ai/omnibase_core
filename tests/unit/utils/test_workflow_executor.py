@@ -3436,7 +3436,10 @@ class TestWorkflowSizeLimitEnforcement:
         assert call_count > 1, "Multiple steps should be processed before limit is hit"
         # Verify batch metadata is present (batch mode adds this)
         assert result.metadata.get("execution_mode").get_string() == "batch"
-        assert result.metadata.get("batch_size").get_number().to_python_value() == num_steps
+        assert (
+            result.metadata.get("batch_size").get_number().to_python_value()
+            == num_steps
+        )
 
     def test_constants_exported(self) -> None:
         """Test that size limit constants are exported in __all__."""

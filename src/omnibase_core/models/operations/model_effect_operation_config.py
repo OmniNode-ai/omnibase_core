@@ -30,6 +30,7 @@ from typing import Annotated, Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+from typing_extensions import TypeIs
 
 from omnibase_core.constants.constants_effect_limits import (
     EFFECT_OPERATION_DESCRIPTION_MAX_LENGTH,
@@ -53,6 +54,43 @@ from omnibase_core.models.contracts.subcontracts.model_effect_retry_policy impor
 )
 
 __all__ = ["ModelEffectOperationConfig"]
+
+
+# Type alias for the union of all typed IO config models
+_TypedIOConfigUnion = (
+    ModelHttpIOConfig | ModelDbIOConfig | ModelKafkaIOConfig | ModelFilesystemIOConfig
+)
+
+
+def _is_typed_io_config(
+    config: _TypedIOConfigUnion | dict[str, Any],
+) -> TypeIs[_TypedIOConfigUnion]:
+    """
+    TypeIs predicate to check if io_config is already a typed EffectIOConfig model.
+
+    Uses TypeIs (PEP 742) for bidirectional type narrowing. Unlike TypeGuard,
+    TypeIs narrows the type in both branches:
+    - Positive branch: config is _TypedIOConfigUnion
+    - Negative branch: config is dict[str, Any]
+
+    This enables mypy to understand type narrowing when checking if io_config
+    is already parsed into a typed model vs. a raw dictionary.
+
+    Args:
+        config: The io_config value, either typed or dict.
+
+    Returns:
+        True if config is one of the typed IO config models, False if dict.
+    """
+    return isinstance(
+        config,
+        (
+            ModelHttpIOConfig,
+            ModelDbIOConfig,
+            ModelKafkaIOConfig,
+            ModelFilesystemIOConfig,
+        ),
+    )
 
 
 class ModelEffectOperationConfig(BaseModel):
@@ -228,42 +266,54 @@ class ModelEffectOperationConfig(BaseModel):
             return self.response_handling
         return self.response_handling.model_dump()
 
-    def get_typed_io_config(self) -> EffectIOConfig:
+    def get_typed_io_config(self) -> _TypedIOConfigUnion:
         """
         Get io_config as a typed EffectIOConfig.
+
+        Uses TypeIs-based type narrowing (PEP 742) to properly narrow the return
+        type. Unlike TypeGuard, TypeIs provides bidirectional narrowing:
+        - Positive branch: config is _TypedIOConfigUnion
+        - Negative branch: config is dict[str, Any]
 
         Parses dict io_config into the appropriate typed model based on
         handler_type discriminator.
 
         Returns:
-            Typed EffectIOConfig (ModelHttpIOConfig, ModelDbIOConfig, etc.)
+            Typed IO config (ModelHttpIOConfig, ModelDbIOConfig,
+            ModelKafkaIOConfig, or ModelFilesystemIOConfig). The return type
+            is properly narrowed by the TypeIs predicate, enabling mypy to
+            understand that the result is always a typed model, never a dict.
 
         Raises:
             ValueError: If handler_type is unknown or io_config is invalid.
+
+        Example:
+            >>> config = ModelEffectOperationConfig(
+            ...     io_config={"handler_type": "http", "url_template": "...", "method": "GET"}
+            ... )
+            >>> typed = config.get_typed_io_config()
+            >>> # mypy knows typed is _TypedIOConfigUnion, not dict
+            >>> assert hasattr(typed, "handler_type")
         """
-        if isinstance(
-            self.io_config,
-            (
-                ModelHttpIOConfig,
-                ModelDbIOConfig,
-                ModelKafkaIOConfig,
-                ModelFilesystemIOConfig,
-            ),
-        ):
+        # TypeIs narrows self.io_config to _TypedIOConfigUnion in positive branch
+        # and to dict[str, Any] in negative branch
+        if _is_typed_io_config(self.io_config):
             return self.io_config
 
-        # Parse dict to typed model
+        # At this point, mypy knows self.io_config is dict[str, Any]
+        # Parse dict to typed model using match statement for cleaner type handling
         handler_type = self.io_config.get("handler_type")
-        if handler_type == "http":
-            return ModelHttpIOConfig.model_validate(self.io_config)
-        elif handler_type == "db":
-            return ModelDbIOConfig.model_validate(self.io_config)
-        elif handler_type == "kafka":
-            return ModelKafkaIOConfig.model_validate(self.io_config)
-        elif handler_type == "filesystem":
-            return ModelFilesystemIOConfig.model_validate(self.io_config)
-        else:
-            raise ValueError(f"Unknown handler_type: {handler_type}")
+        match handler_type:
+            case "http":
+                return ModelHttpIOConfig.model_validate(self.io_config)
+            case "db":
+                return ModelDbIOConfig.model_validate(self.io_config)
+            case "kafka":
+                return ModelKafkaIOConfig.model_validate(self.io_config)
+            case "filesystem":
+                return ModelFilesystemIOConfig.model_validate(self.io_config)
+            case _:
+                raise ValueError(f"Unknown handler_type: {handler_type}")
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ModelEffectOperationConfig":
@@ -289,7 +339,8 @@ class ModelEffectOperationConfig(BaseModel):
 
     @classmethod
     def from_effect_operation(
-        cls, operation: Any  # ModelEffectOperation, avoiding circular import
+        cls,
+        operation: Any,  # ModelEffectOperation, avoiding circular import
     ) -> "ModelEffectOperationConfig":
         """
         Create a ModelEffectOperationConfig from a ModelEffectOperation.
