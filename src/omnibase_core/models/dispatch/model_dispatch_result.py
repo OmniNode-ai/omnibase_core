@@ -49,20 +49,15 @@ See Also:
 """
 
 from datetime import UTC, datetime
-from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.decorators.pattern_exclusions import allow_dict_str_any
 from omnibase_core.enums.enum_dispatch_status import EnumDispatchStatus
 from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
+from omnibase_core.models.services.model_error_details import ModelErrorDetails
 
 
-@allow_dict_str_any(
-    "error_details field requires flexible dict[str, Any] for arbitrary debugging "
-    "context that varies per error type. with_error() method propagates this pattern."
-)
 class ModelDispatchResult(BaseModel):
     """
     Result of a dispatch operation.
@@ -188,7 +183,7 @@ class ModelDispatchResult(BaseModel):
         default=None,
         description="Error code if the dispatch failed.",
     )
-    error_details: dict[str, Any] | None = Field(
+    error_details: ModelErrorDetails | None = Field(
         default=None,
         description="Additional error details for debugging.",
     )
@@ -289,7 +284,7 @@ class ModelDispatchResult(BaseModel):
         status: EnumDispatchStatus,
         message: str,
         code: str | None = None,
-        details: dict[str, Any] | None = None,
+        details: ModelErrorDetails | None = None,
     ) -> "ModelDispatchResult":
         """
         Create a new result with error information.

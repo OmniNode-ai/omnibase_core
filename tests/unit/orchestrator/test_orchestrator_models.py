@@ -39,6 +39,7 @@ from omnibase_core.enums.enum_workflow_execution import (
     EnumActionType,
     EnumExecutionMode,
 )
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.contracts.subcontracts.model_coordination_rules import (
     ModelCoordinationRules,
@@ -140,7 +141,7 @@ class TestModelOrchestratorInputSerialization:
             failure_strategy="fail_fast",
             load_balancing_enabled=False,
             dependency_resolution_enabled=True,
-            metadata={"key": "value"},
+            metadata={"key": ModelSchemaValue.create_string("value")},
         )
         json_str = model.model_dump_json()
         assert isinstance(json_str, str)
@@ -173,7 +174,7 @@ class TestModelOrchestratorInputSerialization:
             failure_strategy="continue_on_error",
             load_balancing_enabled=True,
             dependency_resolution_enabled=False,
-            metadata={"env": "test"},
+            metadata={"env": ModelSchemaValue.create_string("test")},
         )
         json_str = model.model_dump_json()
         restored = ModelOrchestratorInput.model_validate_json(json_str)

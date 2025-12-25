@@ -176,17 +176,30 @@ class ModelExternalServiceConfig(BaseModel):
         return f"{self.service_type}://[configured]"
 
     def apply_environment_overrides(self) -> "ModelExternalServiceConfig":
-        """Apply environment variable overrides for CI/local testing."""
+        """Apply environment variable overrides for CI/local testing.
+
+        Performance Note:
+            Uses model_copy(update=...) instead of model_dump() + reconstruction
+            to avoid unnecessary serialization. If no environment overrides are
+            applied (updated_connection_config is the same object), returns self
+            without creating a new instance.
+
+        Returns:
+            New ModelExternalServiceConfig with overrides applied, or self if
+            no changes were made.
+        """
         # Apply overrides to connection_config if it supports them
         if hasattr(self.connection_config, "apply_environment_overrides"):
             updated_connection_config = (
                 self.connection_config.apply_environment_overrides()
             )
 
-            # Create new instance with updated connection config
-            current_data = self.model_dump()
-            current_data["connection_config"] = updated_connection_config.model_dump()
-            return ModelExternalServiceConfig(**current_data)
+            # Only create new instance if connection_config actually changed
+            # Avoids unnecessary model_dump() calls when no env vars are set
+            if updated_connection_config is not self.connection_config:
+                return self.model_copy(
+                    update={"connection_config": updated_connection_config}
+                )
 
         return self
 

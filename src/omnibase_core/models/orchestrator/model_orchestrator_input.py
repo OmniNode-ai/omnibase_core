@@ -57,13 +57,9 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_workflow_execution import EnumExecutionMode
-from omnibase_core.utils.util_decorators import allow_dict_str_any
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
-@allow_dict_str_any(
-    "Orchestrator input requires flexible metadata and step configurations "
-    "for workflow-specific context and dynamic step parameters."
-)
 class ModelOrchestratorInput(BaseModel):
     """
     Input model for NodeOrchestrator operations.
@@ -110,7 +106,7 @@ class ModelOrchestratorInput(BaseModel):
     """
 
     workflow_id: UUID = Field(..., description="Unique workflow identifier")
-    steps: list[dict[str, Any]] = Field(
+    steps: list[dict[str, Any]] = Field(  # ONEX_EXCLUDE: dict_str_any - heterogeneous
         ..., description="Simplified WorkflowStep representation"
     )
     operation_id: UUID = Field(
@@ -134,7 +130,7 @@ class ModelOrchestratorInput(BaseModel):
     dependency_resolution_enabled: bool = Field(
         default=True, description="Enable automatic dependency resolution"
     )
-    metadata: dict[str, Any] = Field(
+    metadata: dict[str, ModelSchemaValue] = Field(
         default_factory=dict, description="Additional workflow metadata"
     )
     timestamp: datetime = Field(
@@ -146,4 +142,5 @@ class ModelOrchestratorInput(BaseModel):
         use_enum_values=False,
         frozen=True,
         extra="forbid",
+        from_attributes=True,
     )

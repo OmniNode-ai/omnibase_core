@@ -94,7 +94,9 @@ class MixinContractStateReducer:
             )
 
             # Extract state_transitions section
-            contract_dict = contract.model_dump()
+            # Performance optimization: use model_dump(include=...) to only serialize
+            # the state_transitions field, avoiding full contract serialization overhead
+            contract_dict = contract.model_dump(include={"state_transitions"})
             transitions_data = contract_dict.get("state_transitions", [])
 
             # Convert to ModelStateTransition objects

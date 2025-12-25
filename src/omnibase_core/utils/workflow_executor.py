@@ -85,6 +85,7 @@ from omnibase_core.enums.enum_workflow_execution import (
     EnumExecutionMode,
     EnumWorkflowState,
 )
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.contracts.subcontracts.model_workflow_definition import (
     ModelWorkflowDefinition,
@@ -217,9 +218,9 @@ def _log_workflow_completion_metrics(
             "total_payload_size_bytes": total_payload_size,
             "step_count": step_count,
             "execution_mode": execution_mode,
-            "avg_payload_size_bytes": total_payload_size // step_count
-            if step_count > 0
-            else 0,
+            "avg_payload_size_bytes": (
+                total_payload_size // step_count if step_count > 0 else 0
+            ),
             "total_payload_pct_of_limit": round(
                 total_payload_size / MAX_TOTAL_PAYLOAD_SIZE_BYTES * 100, 2
             ),
@@ -346,7 +347,7 @@ async def execute_workflow(
     result.execution_time_ms = execution_time_ms
 
     # Add workflow hash to metadata for integrity verification
-    result.metadata["workflow_hash"] = workflow_hash
+    result.metadata["workflow_hash"] = ModelSchemaValue.create_string(workflow_hash)
 
     return result
 
@@ -750,8 +751,10 @@ async def _execute_sequential(
         actions_emitted=all_actions,
         execution_time_ms=0,  # Will be set by caller
         metadata={
-            "execution_mode": "sequential",
-            "workflow_name": workflow_definition.workflow_metadata.workflow_name,
+            "execution_mode": ModelSchemaValue.create_string("sequential"),
+            "workflow_name": ModelSchemaValue.create_string(
+                workflow_definition.workflow_metadata.workflow_name
+            ),
         },
     )
 
@@ -995,8 +998,10 @@ async def _execute_parallel(
         actions_emitted=all_actions,
         execution_time_ms=0,
         metadata={
-            "execution_mode": "parallel",
-            "workflow_name": workflow_definition.workflow_metadata.workflow_name,
+            "execution_mode": ModelSchemaValue.create_string("parallel"),
+            "workflow_name": ModelSchemaValue.create_string(
+                workflow_definition.workflow_metadata.workflow_name
+            ),
         },
     )
 
@@ -1031,8 +1036,8 @@ async def _execute_batch(
     """
     # For batch mode, use sequential execution with batching metadata
     result = await _execute_sequential(workflow_definition, workflow_steps, workflow_id)
-    result.metadata["execution_mode"] = "batch"
-    result.metadata["batch_size"] = len(workflow_steps)
+    result.metadata["execution_mode"] = ModelSchemaValue.create_string("batch")
+    result.metadata["batch_size"] = ModelSchemaValue.create_number(len(workflow_steps))
     return result
 
 

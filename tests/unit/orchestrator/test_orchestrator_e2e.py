@@ -605,7 +605,7 @@ class TestCompleteWorkflowE2E:
         assert result.execution_status == EnumWorkflowState.COMPLETED
         assert len(result.completed_steps) == 4
         assert len(result.actions_emitted) == 4
-        assert result.metadata["execution_mode"] == "parallel"
+        assert result.metadata["execution_mode"].get_string() == "parallel"
 
     @pytest.mark.asyncio
     async def test_yaml_to_execution_complex_multi_branch(
@@ -1360,7 +1360,9 @@ class TestRoundTripIntegrationE2E:
 
         # Hashes should be identical
         assert hash_before == hash_after
-        assert result.metadata.get("workflow_hash") == hash_before
+        workflow_hash_value = result.metadata.get("workflow_hash")
+        assert workflow_hash_value is not None
+        assert workflow_hash_value.get_string() == hash_before
 
     def test_workflow_hash_deterministic_across_loads(
         self, simple_workflow_yaml: str
@@ -1561,7 +1563,7 @@ class TestPerformanceE2E:
         # Verify completion
         assert result.execution_status == EnumWorkflowState.COMPLETED
         assert len(result.completed_steps) == 12  # 1 + 10 + 1
-        assert result.metadata["execution_mode"] == "parallel"
+        assert result.metadata["execution_mode"].get_string() == "parallel"
 
 
 # =============================================================================
@@ -1589,7 +1591,7 @@ class TestBatchExecutionE2E:
         )
 
         assert result.execution_status == EnumWorkflowState.COMPLETED
-        assert result.metadata["execution_mode"] == "batch"
+        assert result.metadata["execution_mode"].get_string() == "batch"
         assert "batch_size" in result.metadata
 
 
@@ -1711,7 +1713,7 @@ class TestMetadataVerificationE2E:
 
         # Verify metadata
         assert (
-            result.metadata["workflow_name"]
+            result.metadata["workflow_name"].get_string()
             == workflow_def.workflow_metadata.workflow_name
         )
         assert "workflow_hash" in result.metadata

@@ -1,17 +1,21 @@
-from uuid import UUID
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
+"""
+ONEX Node Service Configuration Model.
 
-from pydantic import Field, field_validator, model_validator
+This module provides a comprehensive Pydantic schema for ONEX node service configuration,
+supporting Docker, Kubernetes, and compose file generation from contracts.
+"""
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import ModelSemVer
-
-"\nONEX Node Service Configuration Model.\n\nThis module provides a comprehensive Pydantic schema for ONEX node service configuration,\nsupporting Docker, Kubernetes, and compose file generation from contracts.\n\nAuthor: OmniNode Team\n"
 import os
 from typing import Any
+from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from omnibase_core.decorators.error_handling import standard_error_handling
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_service_mode import EnumServiceMode
 from omnibase_core.models.configuration.model_event_bus_config import (
@@ -21,8 +25,10 @@ from omnibase_core.models.configuration.model_monitoring_config import (
     ModelMonitoringConfig,
 )
 from omnibase_core.models.configuration.model_resource_limits import ModelResourceLimits
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.examples.model_security_config import ModelSecurityConfig
 from omnibase_core.models.health.model_health_check_config import ModelHealthCheckConfig
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.services.model_network_config import ModelNetworkConfig
 from omnibase_core.utils.util_decorators import allow_dict_str_any
 
@@ -38,6 +44,8 @@ class ModelNodeServiceConfig(BaseModel):
     This model provides complete configuration for deploying ONEX nodes as services
     with support for Docker, Kubernetes, and compose file generation.
     """
+
+    model_config = ConfigDict(from_attributes=True)
 
     node_name: str = Field(
         default=..., description="Name of the ONEX node", min_length=1
@@ -183,6 +191,7 @@ class ModelNodeServiceConfig(BaseModel):
         ]
 
     @classmethod
+    @standard_error_handling("Environment configuration parsing")
     def from_environment(
         cls, node_name: str, **overrides: Any
     ) -> "ModelNodeServiceConfig":
@@ -203,43 +212,42 @@ class ModelNodeServiceConfig(BaseModel):
             "log_level": os.getenv("LOG_LEVEL", LogLevel.INFO.value),
             "debug_mode": os.getenv("DEBUG_MODE", "false").lower() == "true",
         }
-        event_bus_config: dict[str, Any] = {
-            "bootstrap_servers": [
+        event_bus_config = ModelEventBusConfig(
+            bootstrap_servers=[
                 server.strip()
                 for server in os.getenv(
                     "EVENT_BUS_BOOTSTRAP_SERVERS", "localhost:9092"
                 ).split(",")
             ],
-            "topics": [
+            topics=[
                 topic.strip()
                 for topic in os.getenv("EVENT_BUS_TOPICS", "onex-default").split(",")
             ],
-        }
-        network_config: dict[str, Any] = {
-            "port": int(os.getenv("SERVICE_PORT", "8080")),
-            "host": os.getenv(
+        )
+        network_config = ModelNetworkConfig(
+            port=int(os.getenv("SERVICE_PORT", "8080")),
+            host=os.getenv(
                 "SERVICE_HOST",
                 "0.0.0.0",
             ),
-        }
-        health_config: dict[str, Any] = {
-            "enabled": os.getenv("HEALTH_CHECK_ENABLED", "true").lower() == "true",
-            "check_interval_seconds": int(os.getenv("HEALTH_CHECK_INTERVAL", "30")),
-            "timeout_seconds": int(os.getenv("HEALTH_CHECK_TIMEOUT", "10")),
-        }
-        monitoring_config: dict[str, Any] = {
-            "prometheus_enabled": os.getenv("METRICS_ENABLED", "true").lower()
-            == "true",
-            "prometheus_port": int(os.getenv("METRICS_PORT", "9090")),
-        }
-        security_config: dict[str, Any] = {}
+        )
+        health_config = ModelHealthCheckConfig(
+            enabled=os.getenv("HEALTH_CHECK_ENABLED", "true").lower() == "true",
+            check_interval_seconds=int(os.getenv("HEALTH_CHECK_INTERVAL", "30")),
+            timeout_seconds=int(os.getenv("HEALTH_CHECK_TIMEOUT", "10")),
+        )
+        monitoring_config = ModelMonitoringConfig(
+            prometheus_enabled=os.getenv("METRICS_ENABLED", "true").lower() == "true",
+            prometheus_port=int(os.getenv("METRICS_PORT", "9090")),
+        )
+        security_config = ModelSecurityConfig()
         config = {
             **env_config,
-            "event_bus": ModelEventBusConfig(**event_bus_config),
-            "network": ModelNetworkConfig(**network_config),
-            "health_check": ModelHealthCheckConfig(**health_config),
-            "monitoring": ModelMonitoringConfig(**monitoring_config),
-            "security": ModelSecurityConfig(**security_config),
+            "event_bus": event_bus_config,
+            "network": network_config,
+            "health_check": health_config,
+            "monitoring": monitoring_config,
+            "security": security_config,
             **overrides,
         }
         return cls(**config)

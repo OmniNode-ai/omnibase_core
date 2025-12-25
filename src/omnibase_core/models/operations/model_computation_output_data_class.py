@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Annotated
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
@@ -20,6 +20,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 # See: https://errors.pydantic.dev/2.12/u/discriminator-needs-literal
 if TYPE_CHECKING:
     from omnibase_core.enums.enum_computation_type import EnumComputationType
+
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.operations.model_binary_computation_output import (
     ModelBinaryComputationOutput,
@@ -120,11 +121,12 @@ class ModelComputationOutputData(BaseModel):
 
         return v
 
-    model_config = {
-        "extra": "ignore",
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        use_enum_values=False,
+        validate_assignment=True,
+        from_attributes=True,
+    )
 
     # Protocol method implementations
 

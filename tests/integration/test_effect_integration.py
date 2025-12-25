@@ -779,3 +779,852 @@ class TestEffectIntegrationEdgeCases:
 
         # The resolved URL should contain the id value
         assert "complex_123" in resolved_context.url
+
+
+# =============================================================================
+# TYPED CONFIG INTEGRATION TESTS
+# =============================================================================
+
+
+@pytest.mark.integration
+@pytest.mark.timeout(INTEGRATION_TEST_TIMEOUT_SECONDS)
+class TestTypedEffectOperationConfigIntegration:
+    """Integration tests for effect execution with typed ModelEffectOperationConfig.
+
+    These tests verify that the typed operation config models work correctly
+    through the complete effect execution flow, including:
+    1. ModelEffectOperationConfig with typed io_config
+    2. Typed transaction_config handling
+    3. Typed retry_policy and circuit_breaker configs
+    4. Error scenarios with typed configs
+
+    All tests use the new typed model patterns from PR #240 refactoring.
+    """
+
+    def test_execute_with_typed_http_operation_config(
+        self,
+        effect_with_contract_factory: EffectWithContractFactory,
+        mock_http_handler: AsyncMock,
+    ) -> None:
+        """Test effect execution with fully typed ModelEffectOperationConfig.
+
+        Verifies that ModelEffectOperationConfig with typed ModelHttpIOConfig
+        flows correctly through the entire effect execution pipeline.
+        """
+        from omnibase_core.models.operations.model_effect_operation_config import (
+            ModelEffectOperationConfig,
+        )
+
+        # Arrange: Create a typed ModelEffectOperationConfig directly
+        typed_http_config = ModelHttpIOConfig(
+            url_template="https://api.example.com/typed/${input.id}",
+            method="GET",
+            headers={"Accept": "application/json"},
+            timeout_ms=5000,
+        )
+
+        operation_config = ModelEffectOperationConfig(
+            io_config=typed_http_config,
+            operation_name="typed_http_get",
+            description="Test with typed HTTP config",
+            operation_timeout_ms=10000,
+            idempotent=True,
+        )
+
+        # Verify typed io_config is accessible
+        assert isinstance(operation_config.io_config, ModelHttpIOConfig)
+        typed_io = operation_config.get_typed_io_config()
+        assert isinstance(typed_io, ModelHttpIOConfig)
+        assert typed_io.method == "GET"
+
+        # Create subcontract with typed operation
+        effect_subcontract = create_test_effect_subcontract(
+            name="typed_http_effect",
+            operations=[
+                ModelEffectOperation(
+                    operation_name="typed_http_get",
+                    io_config=typed_http_config,
+                    idempotent=True,
+                )
+            ],
+        )
+
+        effect_node = effect_with_contract_factory(effect_subcontract)
+
+        input_data = ModelEffectInput(
+            effect_type=EnumEffectType.API_CALL,
+            operation_data={"id": "typed_123"},
+            retry_enabled=False,
+        )
+
+        # Act
+        result: ModelEffectOutput = asyncio.run(effect_node.process(input_data))
+
+        # Assert
+        assert result.transaction_state == EnumTransactionState.COMMITTED
+        assert result.effect_type == EnumEffectType.API_CALL
+        mock_http_handler.execute.assert_called_once()
+
+        # Verify the resolved URL contains our typed config values
+        call_args = mock_http_handler.execute.call_args
+        resolved_context = call_args[0][0]
+        assert "typed_123" in resolved_context.url
+
+    def test_execute_with_typed_db_operation_config(
+        self,
+        effect_with_contract_factory: EffectWithContractFactory,
+        mock_container: ModelONEXContainer,
+    ) -> None:
+        """Test effect execution with typed ModelDbIOConfig.
+
+        Verifies that database operations with typed configs flow correctly.
+        """
+        from omnibase_core.models.contracts.subcontracts.model_effect_io_configs import (
+            ModelDbIOConfig,
+        )
+
+        # Get the DB handler mock
+        mock_db_handler = AsyncMock()
+        mock_db_handler.execute = AsyncMock(
+            return_value=[{"id": 1, "name": "Test User"}]
+        )
+
+        def get_service_side_effect(service_name: str) -> Any:
+            if service_name == "ProtocolEffectHandler_DB":
+                return mock_db_handler
+            return MagicMock()
+
+        mock_container.get_service = MagicMock(side_effect=get_service_side_effect)
+
+        # Arrange: Create typed DB config
+        typed_db_config = ModelDbIOConfig(
+            operation="select",
+            connection_name="primary_db",
+            query_template="SELECT * FROM users WHERE id = $1",
+            query_params=["${input.user_id}"],
+            timeout_ms=5000,
+            read_only=True,
+        )
+
+        db_operation = ModelEffectOperation(
+            operation_name="query_users",
+            description="Query users with typed config",
+            io_config=typed_db_config,
+            idempotent=True,
+        )
+
+        effect_subcontract = create_test_effect_subcontract(
+            name="typed_db_effect",
+            operations=[db_operation],
+        )
+
+        effect_node = effect_with_contract_factory(effect_subcontract)
+
+        input_data = ModelEffectInput(
+            effect_type=EnumEffectType.DATABASE_OPERATION,
+            operation_data={"user_id": "456"},
+            retry_enabled=False,
+        )
+
+        # Act
+        result: ModelEffectOutput = asyncio.run(effect_node.process(input_data))
+
+        # Assert
+        assert result.transaction_state == EnumTransactionState.COMMITTED
+        assert result.effect_type == EnumEffectType.DATABASE_OPERATION
+        mock_db_handler.execute.assert_called_once()
+
+    def test_execute_with_typed_transaction_config(
+        self,
+        effect_with_contract_factory: EffectWithContractFactory,
+        mock_container: ModelONEXContainer,
+    ) -> None:
+        """Test effect execution with typed ModelEffectTransactionConfig.
+
+        Verifies that transaction configuration is properly handled when
+        using typed models.
+        """
+        from omnibase_core.models.contracts.subcontracts.model_effect_io_configs import (
+            ModelDbIOConfig,
+        )
+
+        # Setup mock DB handler
+        mock_db_handler = AsyncMock()
+        mock_db_handler.execute = AsyncMock(return_value={"affected_rows": 1})
+
+        def get_service_side_effect(service_name: str) -> Any:
+            if service_name == "ProtocolEffectHandler_DB":
+                return mock_db_handler
+            return MagicMock()
+
+        mock_container.get_service = MagicMock(side_effect=get_service_side_effect)
+
+        # Arrange: Create typed transaction config
+        typed_transaction_config = ModelEffectTransactionConfig(
+            enabled=True,
+            isolation_level="read_committed",
+            rollback_on_error=True,
+            timeout_ms=30000,
+        )
+
+        # Verify the typed config is immutable (frozen)
+        assert typed_transaction_config.enabled is True
+        assert typed_transaction_config.isolation_level == "read_committed"
+        assert typed_transaction_config.rollback_on_error is True
+        assert typed_transaction_config.timeout_ms == 30000
+
+        # Create DB operation with typed config
+        # Note: Using 'upsert' which can be idempotent, or set idempotent=True
+        typed_db_config = ModelDbIOConfig(
+            operation="insert",
+            connection_name="primary_db",
+            query_template="INSERT INTO users (name, email) VALUES ($1, $2)",
+            query_params=["${input.name}", "${input.email}"],
+            timeout_ms=5000,
+        )
+
+        # Set idempotent=True to allow retry (required by subcontract validation)
+        # In production, you'd use upsert or set retry_policy.enabled=False
+        db_operation = ModelEffectOperation(
+            operation_name="insert_user",
+            io_config=typed_db_config,
+            idempotent=True,  # Required when retry is enabled
+        )
+
+        # Create subcontract with typed transaction config and disabled retry
+        # (Transaction operations typically shouldn't retry at operation level)
+        effect_subcontract = create_test_effect_subcontract(
+            name="transaction_effect",
+            operations=[db_operation],
+            transaction=typed_transaction_config,
+            retry_policy=ModelEffectRetryPolicy(
+                enabled=False,  # Disable retry for transaction operations
+            ),
+        )
+
+        effect_node = effect_with_contract_factory(effect_subcontract)
+
+        input_data = ModelEffectInput(
+            effect_type=EnumEffectType.DATABASE_OPERATION,
+            operation_data={"name": "John Doe", "email": "john@example.com"},
+            retry_enabled=False,
+        )
+
+        # Act
+        result: ModelEffectOutput = asyncio.run(effect_node.process(input_data))
+
+        # Assert
+        assert result.transaction_state == EnumTransactionState.COMMITTED
+        mock_db_handler.execute.assert_called_once()
+
+    def test_execute_with_typed_retry_policy(
+        self,
+        effect_with_contract_factory: EffectWithContractFactory,
+        mock_http_handler: AsyncMock,
+    ) -> None:
+        """Test effect execution with typed ModelEffectRetryPolicy.
+
+        Verifies that typed retry policy configuration is properly applied.
+        """
+        # Arrange: Configure handler to fail twice then succeed
+        call_count = 0
+
+        async def fail_then_succeed(*args: Any, **kwargs: Any) -> dict[str, Any]:
+            nonlocal call_count
+            call_count += 1
+            if call_count < 3:
+                raise RuntimeError(f"Transient failure {call_count}")
+            return {"status": "success", "attempts": call_count}
+
+        mock_http_handler.execute = AsyncMock(side_effect=fail_then_succeed)
+
+        # Create typed retry policy
+        typed_retry_policy = ModelEffectRetryPolicy(
+            enabled=True,
+            max_retries=5,
+            backoff_strategy="fixed",
+            base_delay_ms=100,  # Minimum allowed value
+        )
+
+        # Verify typed config is accessible
+        assert typed_retry_policy.enabled is True
+        assert typed_retry_policy.max_retries == 5
+        assert typed_retry_policy.backoff_strategy == "fixed"
+
+        effect_subcontract = create_test_effect_subcontract(
+            name="typed_retry_effect",
+            retry_policy=typed_retry_policy,
+        )
+
+        effect_node = effect_with_contract_factory(effect_subcontract)
+
+        input_data = ModelEffectInput(
+            effect_type=EnumEffectType.API_CALL,
+            operation_data={"id": "retry_test"},
+            retry_enabled=True,
+            max_retries=5,
+            retry_delay_ms=10,
+        )
+
+        # Act
+        result: ModelEffectOutput = asyncio.run(effect_node.process(input_data))
+
+        # Assert
+        assert result.transaction_state == EnumTransactionState.COMMITTED
+        assert result.retry_count == 2  # Failed twice before success
+        assert call_count == 3  # Handler called 3 times total
+
+    def test_execute_with_typed_circuit_breaker(
+        self,
+        effect_with_contract_factory: EffectWithContractFactory,
+        mock_http_handler: AsyncMock,
+    ) -> None:
+        """Test effect execution with typed ModelEffectCircuitBreaker.
+
+        Verifies that typed circuit breaker configuration is properly applied.
+        """
+        # Arrange: Create typed circuit breaker config
+        typed_circuit_breaker = ModelEffectCircuitBreaker(
+            enabled=True,
+            failure_threshold=5,
+            success_threshold=2,
+            timeout_ms=5000,
+        )
+
+        # Verify typed config is accessible
+        assert typed_circuit_breaker.enabled is True
+        assert typed_circuit_breaker.failure_threshold == 5
+        assert typed_circuit_breaker.success_threshold == 2
+
+        effect_subcontract = create_test_effect_subcontract(
+            name="typed_cb_effect",
+            circuit_breaker=typed_circuit_breaker,
+        )
+
+        effect_node = effect_with_contract_factory(effect_subcontract)
+
+        input_data = ModelEffectInput(
+            effect_type=EnumEffectType.API_CALL,
+            operation_data={"id": "circuit_test"},
+            circuit_breaker_enabled=True,
+        )
+
+        # Act
+        result: ModelEffectOutput = asyncio.run(effect_node.process(input_data))
+
+        # Assert
+        assert result.transaction_state == EnumTransactionState.COMMITTED
+        mock_http_handler.execute.assert_called_once()
+
+    def test_execute_with_typed_response_handling(
+        self,
+        effect_with_contract_factory: EffectWithContractFactory,
+        mock_http_handler: AsyncMock,
+    ) -> None:
+        """Test effect execution with typed ModelEffectResponseHandling.
+
+        Verifies that typed response handling configuration is accessible.
+        """
+        from omnibase_core.models.contracts.subcontracts.model_effect_response_handling import (
+            ModelEffectResponseHandling,
+        )
+
+        # Configure mock to return structured response
+        mock_http_handler.execute = AsyncMock(
+            return_value={
+                "status": "success",
+                "data": {"user_id": 123, "email": "test@example.com"},
+            }
+        )
+
+        # Create typed response handling
+        typed_response_handling = ModelEffectResponseHandling(
+            success_codes=[200, 201],
+            extract_fields={"user_id": "$.data.user_id", "email": "$.data.email"},
+            fail_on_empty=True,
+            extraction_engine="jsonpath",
+        )
+
+        # Verify typed config is accessible
+        assert typed_response_handling.success_codes == [200, 201]
+        assert "user_id" in typed_response_handling.extract_fields
+
+        # Create operation with typed response handling
+        http_config = ModelHttpIOConfig(
+            url_template="https://api.example.com/users/${input.id}",
+            method="GET",
+        )
+
+        operation = ModelEffectOperation(
+            operation_name="fetch_user",
+            io_config=http_config,
+            response_handling=typed_response_handling,
+            idempotent=True,
+        )
+
+        effect_subcontract = create_test_effect_subcontract(
+            name="typed_response_effect",
+            operations=[operation],
+        )
+
+        effect_node = effect_with_contract_factory(effect_subcontract)
+
+        input_data = ModelEffectInput(
+            effect_type=EnumEffectType.API_CALL,
+            operation_data={"id": "response_test"},
+            retry_enabled=False,
+        )
+
+        # Act
+        result: ModelEffectOutput = asyncio.run(effect_node.process(input_data))
+
+        # Assert
+        assert result.transaction_state == EnumTransactionState.COMMITTED
+        assert isinstance(result.result, dict)
+        assert result.result.get("status") == "success"
+
+
+@pytest.mark.integration
+@pytest.mark.timeout(INTEGRATION_TEST_TIMEOUT_SECONDS)
+class TestTypedConfigErrorScenarios:
+    """Integration tests for error scenarios with typed configs.
+
+    Tests verify that error handling works correctly with typed models,
+    including validation errors, configuration errors, and handler failures.
+    """
+
+    def test_typed_config_validation_error_io_config_required(
+        self,
+    ) -> None:
+        """Test that missing io_config raises proper validation error.
+
+        Verifies that ModelEffectOperationConfig requires io_config.
+        """
+        from pydantic import ValidationError
+
+        from omnibase_core.models.operations.model_effect_operation_config import (
+            ModelEffectOperationConfig,
+        )
+
+        with pytest.raises(ValueError, match="io_config is required"):
+            ModelEffectOperationConfig(operation_name="test")
+
+    def test_typed_config_invalid_handler_type_error(
+        self,
+        effect_with_contract_factory: EffectWithContractFactory,
+    ) -> None:
+        """Test error handling when typed config has unknown handler type.
+
+        Verifies that get_typed_io_config raises ModelOnexError for unknown types.
+        """
+        from omnibase_core.models.operations.model_effect_operation_config import (
+            ModelEffectOperationConfig,
+        )
+
+        # Create config with unknown handler type (falls back to dict)
+        config = ModelEffectOperationConfig(
+            io_config={"handler_type": "unknown_type", "some_field": "value"}
+        )
+
+        # io_config is stored as dict for unknown types
+        assert isinstance(config.io_config, dict)
+
+        # Attempting to get typed config should raise error
+        with pytest.raises(ModelOnexError, match="Unknown handler_type: unknown_type"):
+            config.get_typed_io_config()
+
+    def test_typed_config_handler_not_registered_error(
+        self,
+        effect_with_contract_factory: EffectWithContractFactory,
+        mock_container: ModelONEXContainer,
+    ) -> None:
+        """Test error when handler is not registered in container.
+
+        Verifies proper error message when effect handler protocol is missing.
+        """
+        from omnibase_core.models.contracts.subcontracts.model_effect_io_configs import (
+            ModelKafkaIOConfig,
+        )
+
+        # Configure container to raise for Kafka handler
+        def get_service_side_effect(service_name: str) -> Any:
+            if "KAFKA" in service_name:
+                raise KeyError(f"Service not found: {service_name}")
+            return MagicMock()
+
+        mock_container.get_service = MagicMock(side_effect=get_service_side_effect)
+
+        # Create typed Kafka config
+        typed_kafka_config = ModelKafkaIOConfig(
+            topic="test-events",
+            payload_template='{"event": "test"}',
+        )
+
+        # Mark as idempotent since default retry_policy has enabled=True
+        kafka_operation = ModelEffectOperation(
+            operation_name="publish_event",
+            io_config=typed_kafka_config,
+            idempotent=True,  # Required when retry is enabled
+        )
+
+        effect_subcontract = create_test_effect_subcontract(
+            name="kafka_error_effect",
+            operations=[kafka_operation],
+        )
+
+        effect_node = effect_with_contract_factory(effect_subcontract)
+
+        input_data = ModelEffectInput(
+            effect_type=EnumEffectType.EVENT_EMISSION,
+            operation_data={"event_data": "test"},
+            retry_enabled=False,
+        )
+
+        # Act & Assert
+        with pytest.raises(ModelOnexError) as exc_info:
+            asyncio.run(effect_node.process(input_data))
+
+        error = exc_info.value
+        assert (
+            "handler not registered" in error.message.lower()
+            or error.error_code == EnumCoreErrorCode.HANDLER_EXECUTION_ERROR
+        )
+
+    def test_typed_config_handler_execution_failure(
+        self,
+        effect_with_contract_factory: EffectWithContractFactory,
+        mock_http_handler: AsyncMock,
+    ) -> None:
+        """Test error handling when handler execution fails with typed config.
+
+        Verifies that handler failures are properly wrapped in ModelOnexError.
+        """
+        # Configure handler to fail
+        mock_http_handler.execute = AsyncMock(
+            side_effect=Exception("Handler execution failed: connection refused")
+        )
+
+        # Create typed HTTP config
+        typed_http_config = ModelHttpIOConfig(
+            url_template="https://api.example.com/fail/${input.id}",
+            method="GET",
+        )
+
+        http_operation = ModelEffectOperation(
+            operation_name="failing_http_call",
+            io_config=typed_http_config,
+            idempotent=True,
+        )
+
+        effect_subcontract = create_test_effect_subcontract(
+            name="handler_error_effect",
+            operations=[http_operation],
+            retry_policy=ModelEffectRetryPolicy(
+                enabled=False,  # Disable retries for faster test
+            ),
+        )
+
+        effect_node = effect_with_contract_factory(effect_subcontract)
+
+        input_data = ModelEffectInput(
+            effect_type=EnumEffectType.API_CALL,
+            operation_data={"id": "fail_test"},
+            retry_enabled=False,
+        )
+
+        # Act & Assert
+        with pytest.raises(ModelOnexError) as exc_info:
+            asyncio.run(effect_node.process(input_data))
+
+        error = exc_info.value
+        assert error.error_code in (
+            EnumCoreErrorCode.OPERATION_FAILED,
+            EnumCoreErrorCode.HANDLER_EXECUTION_ERROR,
+        )
+
+    def test_typed_config_timeout_handling(
+        self,
+        effect_with_contract_factory: EffectWithContractFactory,
+        mock_http_handler: AsyncMock,
+    ) -> None:
+        """Test timeout handling with typed config.
+
+        Verifies that typed operation timeout configuration is properly applied.
+        Note: ModelEffectOperation requires operation_timeout_ms >= 1000ms.
+        """
+        # Configure handler to succeed quickly
+        mock_http_handler.execute = AsyncMock(
+            return_value={"status": "success", "timing": "fast"}
+        )
+
+        # Create typed config with valid timeout (minimum 1000ms for operations)
+        typed_http_config = ModelHttpIOConfig(
+            url_template="https://api.example.com/timeout/${input.id}",
+            method="GET",
+            timeout_ms=5000,  # 5 second timeout for HTTP request
+        )
+
+        # ModelEffectOperation requires operation_timeout_ms >= 1000ms
+        http_operation = ModelEffectOperation(
+            operation_name="timeout_test_call",
+            io_config=typed_http_config,
+            operation_timeout_ms=5000,  # Valid timeout (minimum 1000ms)
+            idempotent=True,
+        )
+
+        effect_subcontract = create_test_effect_subcontract(
+            name="timeout_effect",
+            operations=[http_operation],
+            retry_policy=ModelEffectRetryPolicy(
+                enabled=False,
+            ),
+        )
+
+        effect_node = effect_with_contract_factory(effect_subcontract)
+
+        input_data = ModelEffectInput(
+            effect_type=EnumEffectType.API_CALL,
+            operation_data={"id": "timeout_test"},
+            retry_enabled=False,
+            timeout_ms=5000,  # Match operation timeout
+        )
+
+        # Act: Execute with valid timeout
+        result: ModelEffectOutput = asyncio.run(effect_node.process(input_data))
+
+        # Assert: Operation should complete successfully with typed timeout config
+        assert result.transaction_state == EnumTransactionState.COMMITTED
+        assert result.result.get("status") == "success"
+
+        # Verify handler was called
+        mock_http_handler.execute.assert_called_once()
+
+    def test_typed_config_immutability(self) -> None:
+        """Test that typed configs are immutable (frozen).
+
+        Verifies that attempting to modify frozen configs raises error.
+        """
+        from pydantic import ValidationError
+
+        from omnibase_core.models.operations.model_effect_operation_config import (
+            ModelEffectOperationConfig,
+        )
+
+        typed_http_config = ModelHttpIOConfig(
+            url_template="https://api.example.com/test",
+            method="GET",
+        )
+
+        config = ModelEffectOperationConfig(
+            io_config=typed_http_config,
+            operation_name="test_op",
+            idempotent=True,
+        )
+
+        # Verify config is frozen - attempting to modify should raise
+        with pytest.raises(ValidationError):
+            config.operation_name = "modified_name"
+
+        with pytest.raises(ValidationError):
+            config.idempotent = False
+
+    def test_typed_transaction_config_with_non_db_operations(
+        self,
+    ) -> None:
+        """Test transaction config constraints.
+
+        Verifies that transaction config can be created but validation
+        of DB-only constraint happens at subcontract level.
+        """
+        # Transaction config can be created independently
+        typed_transaction = ModelEffectTransactionConfig(
+            enabled=True,
+            isolation_level="serializable",
+            rollback_on_error=True,
+            timeout_ms=60000,
+        )
+
+        # Verify config is valid
+        assert typed_transaction.enabled is True
+        assert typed_transaction.isolation_level == "serializable"
+
+        # Note: The constraint that transactions only work with DB operations
+        # is validated at the ModelEffectSubcontract level, not here.
+        # This test just verifies the config model works correctly.
+
+
+@pytest.mark.integration
+@pytest.mark.timeout(INTEGRATION_TEST_TIMEOUT_SECONDS)
+class TestTypedConfigFactoryMethods:
+    """Integration tests for typed config factory methods.
+
+    Tests verify that factory methods work correctly in the integration context.
+    """
+
+    def test_from_effect_operation_preserves_all_fields(
+        self,
+        effect_with_contract_factory: EffectWithContractFactory,
+        mock_http_handler: AsyncMock,
+    ) -> None:
+        """Test that from_effect_operation preserves all operation fields.
+
+        Verifies that converting ModelEffectOperation to ModelEffectOperationConfig
+        preserves all configuration values.
+        """
+        from omnibase_core.models.contracts.subcontracts.model_effect_response_handling import (
+            ModelEffectResponseHandling,
+        )
+        from omnibase_core.models.operations.model_effect_operation_config import (
+            ModelEffectOperationConfig,
+        )
+
+        # Create a fully-populated operation
+        typed_http_config = ModelHttpIOConfig(
+            url_template="https://api.example.com/users/${input.user_id}",
+            method="POST",
+            headers={"Content-Type": "application/json"},
+            body_template='{"action": "${input.action}"}',
+            timeout_ms=5000,
+        )
+
+        typed_retry_policy = ModelEffectRetryPolicy(
+            enabled=True,
+            max_retries=3,
+            backoff_strategy="exponential",
+            base_delay_ms=1000,
+        )
+
+        typed_circuit_breaker = ModelEffectCircuitBreaker(
+            enabled=True,
+            failure_threshold=5,
+        )
+
+        typed_response_handling = ModelEffectResponseHandling(
+            success_codes=[200, 201],
+            extract_fields={"id": "$.data.id"},
+        )
+
+        full_operation = ModelEffectOperation(
+            operation_name="create_user",
+            description="Creates a new user via API",
+            io_config=typed_http_config,
+            operation_timeout_ms=15000,
+            response_handling=typed_response_handling,
+            retry_policy=typed_retry_policy,
+            circuit_breaker=typed_circuit_breaker,
+            idempotent=False,
+        )
+
+        # Convert to operation config
+        config = ModelEffectOperationConfig.from_effect_operation(full_operation)
+
+        # Verify all fields are preserved
+        assert config.operation_name == "create_user"
+        assert config.description == "Creates a new user via API"
+        assert config.operation_timeout_ms == 15000
+        assert config.idempotent is False
+
+        # Verify typed nested configs
+        assert isinstance(config.io_config, ModelHttpIOConfig)
+        assert config.io_config.method == "POST"
+
+        assert isinstance(config.retry_policy, ModelEffectRetryPolicy)
+        assert config.retry_policy.max_retries == 3
+
+        assert isinstance(config.circuit_breaker, ModelEffectCircuitBreaker)
+        assert config.circuit_breaker.failure_threshold == 5
+
+        assert isinstance(config.response_handling, ModelEffectResponseHandling)
+        assert config.response_handling.success_codes == [200, 201]
+
+    def test_from_dict_creates_valid_config(
+        self,
+        effect_with_contract_factory: EffectWithContractFactory,
+        mock_http_handler: AsyncMock,
+    ) -> None:
+        """Test that from_dict creates valid typed config from dictionary.
+
+        Verifies that dict-based config is properly converted to typed models.
+        """
+        from omnibase_core.models.operations.model_effect_operation_config import (
+            ModelEffectOperationConfig,
+        )
+
+        # Create config from dict (simulating YAML/JSON input)
+        config_dict = {
+            "io_config": {
+                "handler_type": "http",
+                "url_template": "https://api.example.com/dict-test/${input.id}",
+                "method": "GET",
+                "headers": {"Accept": "application/json"},
+            },
+            "operation_name": "dict_based_operation",
+            "operation_timeout_ms": 10000,
+            "retry_policy": {
+                "enabled": True,
+                "max_retries": 2,
+            },
+            "idempotent": True,
+        }
+
+        config = ModelEffectOperationConfig.from_dict(config_dict)
+
+        # Verify the dict was properly converted to typed models
+        assert config.operation_name == "dict_based_operation"
+        assert config.operation_timeout_ms == 10000
+        assert config.idempotent is True
+
+        # io_config should be validated into typed model
+        assert isinstance(config.io_config, ModelHttpIOConfig)
+        typed_io = config.get_typed_io_config()
+        assert typed_io.method == "GET"
+
+        # retry_policy should be validated into typed model
+        assert isinstance(config.retry_policy, ModelEffectRetryPolicy)
+        assert config.retry_policy.max_retries == 2
+
+    def test_typed_config_in_effect_subcontract_operations(
+        self,
+        effect_with_contract_factory: EffectWithContractFactory,
+        mock_http_handler: AsyncMock,
+    ) -> None:
+        """Test typed configs within ModelEffectSubcontract operations list.
+
+        Verifies that typed operation configs flow correctly through subcontract.
+        """
+        # Create multiple typed operations
+        op1_config = ModelHttpIOConfig(
+            url_template="https://api.example.com/step1/${input.id}",
+            method="GET",
+        )
+
+        operation1 = ModelEffectOperation(
+            operation_name="step_one",
+            io_config=op1_config,
+            idempotent=True,
+        )
+
+        # Verify typed config is accessible from operation
+        assert isinstance(operation1.io_config, ModelHttpIOConfig)
+        assert operation1.io_config.method == "GET"
+
+        # Create subcontract with single typed operation (v1.0 limit)
+        effect_subcontract = create_test_effect_subcontract(
+            name="multi_typed_effect",
+            operations=[operation1],
+        )
+
+        effect_node = effect_with_contract_factory(effect_subcontract)
+
+        input_data = ModelEffectInput(
+            effect_type=EnumEffectType.API_CALL,
+            operation_data={"id": "multi_test"},
+            retry_enabled=False,
+        )
+
+        # Act
+        result: ModelEffectOutput = asyncio.run(effect_node.process(input_data))
+
+        # Assert
+        assert result.transaction_state == EnumTransactionState.COMMITTED
+        mock_http_handler.execute.assert_called_once()
