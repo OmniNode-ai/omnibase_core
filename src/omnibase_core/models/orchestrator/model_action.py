@@ -18,22 +18,31 @@ Thread Safety:
         new_action = action.model_copy(update={"retry_count": action.retry_count + 1})
 
 Extracted from node_orchestrator.py to eliminate embedded class anti-pattern.
+
+Migration Status (OMN-1008):
+    The payload field now accepts typed payloads (ActionPayloadType) in addition
+    to the legacy dict[str, Any]. New code should use typed payloads for better
+    type safety. Legacy dict usage triggers a deprecation warning.
 """
 
+import warnings
 from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_workflow_execution import EnumActionType
 from omnibase_core.models.core.model_action_metadata import ModelActionMetadata
+from omnibase_core.models.core.model_action_payload_base import ModelActionPayloadBase
+from omnibase_core.models.orchestrator.payloads import ActionPayloadType
 from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 
 @allow_dict_str_any(
-    "Action model requires flexible payload for arbitrary action data "
-    "across different action types and workflow contexts."
+    "MIGRATION IN PROGRESS (OMN-1008): Action model now supports typed payloads "
+    "(ActionPayloadType) and supports legacy dict[str, Any] during migration. "
+    "Legacy dict usage is deprecated. Use typed payloads for new code."
 )
 class ModelAction(BaseModel):
     """
@@ -102,9 +111,15 @@ class ModelAction(BaseModel):
         max_length=100,
     )
 
-    payload: dict[str, Any] = Field(
+    # union-ok: migration_support - Accepts typed payloads (preferred) or legacy dict
+    payload: ActionPayloadType | dict[str, Any] = Field(
         default_factory=dict,
-        description="Action payload data",
+        description=(
+            "Action payload data. Preferred: Use typed payloads from "
+            "ActionPayloadType (e.g., ModelDataActionPayload, "
+            "ModelTransformationActionPayload). Legacy dict[str, Any] is "
+            "supported during migration but deprecated."
+        ),
     )
 
     dependencies: list[UUID] = Field(
@@ -161,3 +176,50 @@ class ModelAction(BaseModel):
         use_enum_values=False,
         from_attributes=True,
     )
+
+    @model_validator(mode="before")
+    @classmethod
+    def _validate_payload_format(cls, data: Any) -> Any:
+        """
+        Validate payload and emit deprecation warning for legacy dict usage.
+
+        This validator supports legacy dict format during migration while
+        encouraging adoption of typed payloads (ActionPayloadType).
+
+        Args:
+            data: Raw input data before model construction
+
+        Returns:
+            The input data (unchanged) after validation and warning emission
+        """
+        if not isinstance(data, dict):
+            return data
+
+        payload = data.get("payload")
+
+        # Skip if payload is None, empty dict (default), or already a typed payload
+        if payload is None:
+            return data
+
+        if isinstance(payload, dict):
+            # Empty dict is the default, don't warn
+            if not payload:
+                return data
+
+            # Check if this looks like a typed payload that was serialized
+            # Typed payloads have 'action_type' field from ModelActionPayloadBase
+            if "action_type" not in payload:
+                warnings.warn(
+                    "ModelAction: Using untyped dict[str, Any] payload is deprecated. "
+                    "Use typed payloads from ActionPayloadType (e.g., "
+                    "ModelDataActionPayload, ModelTransformationActionPayload) for "
+                    "better type safety. See omnibase_core.models.orchestrator.payloads "
+                    "for available payload types.",
+                    DeprecationWarning,
+                    stacklevel=4,  # Point to caller's code, not Pydantic internals
+                )
+        elif not isinstance(payload, ModelActionPayloadBase):
+            # Payload is something unexpected - let Pydantic validation handle it
+            pass
+
+        return data
