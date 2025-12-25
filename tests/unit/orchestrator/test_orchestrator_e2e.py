@@ -569,8 +569,8 @@ class TestCompleteWorkflowE2E:
         for action in result.actions_emitted:
             assert isinstance(action, ModelAction)
             assert action.payload is not None
-            assert "workflow_id" in action.payload
-            assert "step_id" in action.payload
+            assert "workflow_id" in action.payload.metadata
+            assert "step_id" in action.payload.metadata
 
     @pytest.mark.asyncio
     async def test_yaml_to_execution_diamond_pattern(
@@ -1146,10 +1146,10 @@ class TestFullIntegrationE2E:
             assert action.lease_id is not None
             assert action.created_at is not None
 
-            # Payload structure
-            assert "workflow_id" in action.payload
-            assert "step_id" in action.payload
-            assert "step_name" in action.payload
+            # Payload structure (workflow context is in payload.metadata)
+            assert "workflow_id" in action.payload.metadata
+            assert "step_id" in action.payload.metadata
+            assert "step_name" in action.payload.metadata
 
             # Verify timeout and retry_count are set
             assert action.timeout_ms is not None
@@ -1229,10 +1229,10 @@ class TestFullIntegrationE2E:
             workflow_id=uuid4(),
         )
 
-        # Build action map
+        # Build action map from payload metadata
         action_by_step: dict[str, ModelAction] = {}
         for action in result.actions_emitted:
-            step_id = action.payload.get("step_id")
+            step_id = action.payload.metadata.get("step_id")
             if step_id:
                 action_by_step[str(step_id)] = action
 

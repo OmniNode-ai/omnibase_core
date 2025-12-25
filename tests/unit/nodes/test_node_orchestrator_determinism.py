@@ -857,8 +857,7 @@ class TestNodeOrchestratorStateSerializationDeterminism:
         serialized_output = result.model_dump()
 
         # Metrics should be preserved exactly in serialized form
-        # (We compare dict form since Protocol-typed fields can't be directly deserialized)
-        assert serialized_output["metrics"] == result.model_dump()["metrics"]
+        assert serialized_output["metrics"] == result.metrics
         assert serialized_output["completed_steps"] == result.completed_steps
         assert serialized_output["failed_steps"] == result.failed_steps
 

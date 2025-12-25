@@ -43,11 +43,37 @@ The decorator will generate a model_validator that:
 
 from __future__ import annotations
 
+import warnings
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, TypeVar
 
+from pydantic import VERSION as PYDANTIC_VERSION
 from pydantic import BaseModel
-from pydantic._internal._decorators import Decorator, ModelValidatorDecoratorInfo
+
+# Pydantic internal API import with proper fallback handling.
+# This is documented as a known limitation - no public API exists for
+# dynamically adding model validators post-creation.
+try:
+    from pydantic._internal._decorators import Decorator, ModelValidatorDecoratorInfo
+
+    _PYDANTIC_INTERNALS_AVAILABLE = True
+except ImportError as e:
+    _PYDANTIC_INTERNALS_AVAILABLE = False
+    _PYDANTIC_IMPORT_ERROR = e
+    # Provide type stubs to prevent NameError at module load time
+    Decorator = None  # type: ignore[assignment, misc]
+    ModelValidatorDecoratorInfo = None  # type: ignore[assignment, misc]
+
+# Version compatibility check - warn if outside tested range
+_PYDANTIC_MAJOR = int(PYDANTIC_VERSION.split(".")[0])
+_PYDANTIC_MINOR = int(PYDANTIC_VERSION.split(".")[1])
+if _PYDANTIC_MAJOR != 2 or _PYDANTIC_MINOR < 6:
+    warnings.warn(
+        f"convert_to_schema decorator is tested with Pydantic 2.6+. "
+        f"Current version: {PYDANTIC_VERSION}. Internal APIs may differ.",
+        UserWarning,
+        stacklevel=2,
+    )
 
 if TYPE_CHECKING:
     from omnibase_core.models.common.model_schema_value import ModelSchemaValue
@@ -68,7 +94,7 @@ def _get_model_schema_value() -> type[ModelSchemaValue]:
 
 
 def _is_serialized_schema_value(
-    value: dict[str, Any],  # dict-any-ok: deserializing unknown schema
+    value: dict[str, Any],  # ONEX_EXCLUDE: dict_str_any - deserializing unknown schema
 ) -> bool:
     """Check if a dict looks like a serialized ModelSchemaValue."""
     # Serialized ModelSchemaValue always has 'value_type' key with specific values
@@ -100,10 +126,11 @@ def _convert_list_value(
     return [schema_cls.from_value(item) for item in value]
 
 
+# ONEX_EXCLUDE: dict_str_any - schema conversion utility for dynamic types
 def _convert_dict_value(
-    value: dict[str, Any] | None,  # dict-any-ok: schema conversion utility
+    value: dict[str, Any] | None,
     schema_cls: type[ModelSchemaValue],
-) -> dict[str, Any]:  # dict-any-ok: returns dynamic schema data
+) -> dict[str, Any]:
     """Convert a dict value to dict of ModelSchemaValue."""
     if not value:
         return {}
@@ -115,8 +142,15 @@ def _convert_dict_value(
 
 
 def _convert_value(value: Any, schema_cls: type[ModelSchemaValue]) -> Any:
-    """Convert a value (list or dict) to ModelSchemaValue format."""
+    """Convert a value (list or dict) to ModelSchemaValue format.
+
+    Note: None values are returned as-is to allow Pydantic's default_factory
+    to provide the appropriate default. This ensures dict fields don't
+    incorrectly receive an empty list.
+    """
     if value is None:
+        return None
+    if value == []:
         return []
     if isinstance(value, list):
         return _convert_list_value(value, schema_cls)
@@ -178,13 +212,25 @@ def convert_to_schema(
     """
 
     def decorator(cls: type[T]) -> type[T]:
+        # Runtime check for Pydantic internal API availability
+        if not _PYDANTIC_INTERNALS_AVAILABLE:
+            raise RuntimeError(  # error-ok: Pydantic internal API unavailable at import time
+                f"convert_to_schema decorator requires Pydantic internal APIs "
+                f"(pydantic._internal._decorators) which are not available. "
+                f"Import error: {_PYDANTIC_IMPORT_ERROR}. "
+                f"This may indicate an incompatible Pydantic version. "
+                f"Current version: {PYDANTIC_VERSION}. "
+                f"Tested with: Pydantic 2.6+ through 2.11+."
+            )
+
         # Capture field names in closure
         fields_to_convert = set(field_names)
 
+        # ONEX_EXCLUDE: dict_str_any - pydantic validator requires flexible input/output types
         def convert_schema_fields(
             cls_inner: type[Any],
-            data: dict[str, Any] | Any,  # dict-any-ok: pydantic validator input
-        ) -> dict[str, Any] | Any:  # dict-any-ok: pydantic validator output
+            data: dict[str, Any] | Any,
+        ) -> dict[str, Any] | Any:
             """
             Convert specified field values to ModelSchemaValue for type safety.
 
@@ -258,12 +304,23 @@ def convert_list_to_schema(
     """
 
     def decorator(cls: type[T]) -> type[T]:
+        # Runtime check for Pydantic internal API availability
+        if not _PYDANTIC_INTERNALS_AVAILABLE:
+            raise RuntimeError(  # error-ok: Pydantic internal API unavailable at import time
+                f"convert_list_to_schema decorator requires Pydantic internal APIs "
+                f"(pydantic._internal._decorators) which are not available. "
+                f"Import error: {_PYDANTIC_IMPORT_ERROR}. "
+                f"Current version: {PYDANTIC_VERSION}. "
+                f"Tested with: Pydantic 2.6+ through 2.11+."
+            )
+
         fields_to_convert = set(field_names)
 
+        # ONEX_EXCLUDE: dict_str_any - pydantic validator requires flexible input/output types
         def convert_list_fields(
             cls_inner: type[Any],
-            data: dict[str, Any] | Any,  # dict-any-ok: pydantic validator input
-        ) -> dict[str, Any] | Any:  # dict-any-ok: pydantic validator output
+            data: dict[str, Any] | Any,
+        ) -> dict[str, Any] | Any:
             """Convert specified list fields to ModelSchemaValue."""
             if not isinstance(data, dict):
                 return data
@@ -320,12 +377,23 @@ def convert_dict_to_schema(
     """
 
     def decorator(cls: type[T]) -> type[T]:
+        # Runtime check for Pydantic internal API availability
+        if not _PYDANTIC_INTERNALS_AVAILABLE:
+            raise RuntimeError(  # error-ok: Pydantic internal API unavailable at import time
+                f"convert_dict_to_schema decorator requires Pydantic internal APIs "
+                f"(pydantic._internal._decorators) which are not available. "
+                f"Import error: {_PYDANTIC_IMPORT_ERROR}. "
+                f"Current version: {PYDANTIC_VERSION}. "
+                f"Tested with: Pydantic 2.6+ through 2.11+."
+            )
+
         fields_to_convert = set(field_names)
 
+        # ONEX_EXCLUDE: dict_str_any - pydantic validator requires flexible input/output types
         def convert_dict_fields(
             cls_inner: type[Any],
-            data: dict[str, Any] | Any,  # dict-any-ok: pydantic validator input
-        ) -> dict[str, Any] | Any:  # dict-any-ok: pydantic validator output
+            data: dict[str, Any] | Any,
+        ) -> dict[str, Any] | Any:
             """Convert specified dict fields to ModelSchemaValue."""
             if not isinstance(data, dict):
                 return data

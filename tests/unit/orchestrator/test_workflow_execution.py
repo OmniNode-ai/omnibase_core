@@ -251,9 +251,9 @@ class TestSingleStepExecution:
         # Verify action properties
         assert action.action_type == EnumActionType.COMPUTE
         assert action.target_node_type == "NodeCompute"
-        assert action.payload["step_name"] == step.step_name
-        assert action.payload["step_id"] == str(step.step_id)
-        assert action.payload["workflow_id"] == str(workflow_id)
+        assert action.payload.metadata["step_name"] == step.step_name
+        assert action.payload.metadata["step_id"] == str(step.step_id)
+        assert action.payload.metadata["workflow_id"] == str(workflow_id)
 
     @pytest.mark.asyncio
     async def test_single_step_execution_status_is_completed(
@@ -386,10 +386,10 @@ class TestLinearChainExecution:
             execution_mode=EnumExecutionMode.SEQUENTIAL,
         )
 
-        # Create lookup by step_id from payload
+        # Create lookup by step_id from payload metadata
         actions_by_step_id: dict[UUID, ModelAction] = {}
         for action in result.actions_emitted:
-            step_id_str = action.payload["step_id"]
+            step_id_str = action.payload.metadata["step_id"]
             actions_by_step_id[UUID(str(step_id_str))] = action
 
         # Verify action A has no dependencies
@@ -528,10 +528,10 @@ class TestDiamondDependencyExecution:
             execution_mode=EnumExecutionMode.SEQUENTIAL,
         )
 
-        # Create lookup by step_id
+        # Create lookup by step_id from payload metadata
         actions_by_step_id: dict[UUID, ModelAction] = {}
         for action in result.actions_emitted:
-            step_id_str = action.payload["step_id"]
+            step_id_str = action.payload.metadata["step_id"]
             actions_by_step_id[UUID(str(step_id_str))] = action
 
         # A has no dependencies
@@ -979,10 +979,10 @@ class TestActionEmission:
 
         action = result.actions_emitted[0]
 
-        assert "workflow_id" in action.payload
-        assert action.payload["workflow_id"] == str(workflow_id)
-        assert "step_id" in action.payload
-        assert "step_name" in action.payload
+        assert "workflow_id" in action.payload.metadata
+        assert action.payload.metadata["workflow_id"] == str(workflow_id)
+        assert "step_id" in action.payload.metadata
+        assert "step_name" in action.payload.metadata
 
     @pytest.mark.asyncio
     async def test_action_metadata_contains_correlation_id(

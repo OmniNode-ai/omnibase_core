@@ -229,9 +229,7 @@ class ModelAction(BaseModel):
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 action_id=str(self.action_id),
                 dependencies=[str(d) for d in self.dependencies],
-                action_type=self.action_type.value
-                if hasattr(self.action_type, "value")
-                else str(self.action_type),
+                action_type=self.action_type.value,
             )
 
         # Warn if total potential execution time is very high
@@ -309,7 +307,7 @@ class ModelAction(BaseModel):
             warnings.warn(
                 f"ModelAction: Payload type '{payload_type.__name__}' is not among "
                 f"the recommended types {recommended_names} for action_type="
-                f"{self.action_type.value if hasattr(self.action_type, 'value') else self.action_type}. "
+                f"{self.action_type.value}. "
                 "This may be intentional for custom workflows, but consider using "
                 "a recommended payload type for better semantic alignment. "
                 "See get_recommended_payloads_for_action_type() for guidance.",

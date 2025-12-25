@@ -250,15 +250,30 @@ class TestConvertToSchemaEdgeCases:
     """Test @convert_to_schema edge cases and boundary conditions."""
 
     def test_convert_none_value(self):
-        """Test handling of None value."""
+        """Test handling of None value uses default_factory when field omitted.
+
+        Note: Explicitly passing None to a non-optional field will fail Pydantic
+        validation. To get the default, omit the field entirely.
+        """
 
         @convert_to_schema("values")
         class TestModel(BaseModel):
             values: list[ModelSchemaValue] = Field(default_factory=list)
 
-        model = TestModel(values=None)
-
+        # When field is omitted, default_factory provides empty list
+        model = TestModel()
         assert model.values == []
+
+    def test_convert_dict_none_value(self):
+        """Test that dict fields with None don't get incorrectly converted to []."""
+
+        @convert_to_schema("metadata")
+        class TestModel(BaseModel):
+            metadata: dict[str, ModelSchemaValue] | None = Field(default=None)
+
+        # None should remain None for optional dict fields
+        model = TestModel(metadata=None)
+        assert model.metadata is None
 
     def test_convert_list_with_none_elements(self):
         """Test conversion of list containing None elements."""

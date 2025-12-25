@@ -148,9 +148,16 @@ class ModelWorkflowOutputs(BaseModel):
         if self.data:
             result["data"] = {key: value.to_value() for key, value in self.data.items()}
 
-        # Add custom outputs if present
+        # Add custom outputs if present (convert ModelSchemaValue to primitives)
         if self.custom_outputs:
-            result.update(self.custom_outputs.model_dump(exclude_none=True))
+            custom_dump = self.custom_outputs.model_dump(exclude_none=True)
+            # Convert field_values ModelSchemaValue objects to primitives
+            if custom_dump.get("field_values"):
+                custom_dump["field_values"] = {
+                    k: (v.to_value() if isinstance(v, ModelSchemaValue) else v)
+                    for k, v in self.custom_outputs.field_values.items()
+                }
+            result.update(custom_dump)
 
         # Cast to TypedDict - the structure matches TypedDictWorkflowOutputsDict
         return TypedDictWorkflowOutputsDict(**result)  # type: ignore[typeddict-item, no-any-return]

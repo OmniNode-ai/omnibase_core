@@ -596,8 +596,9 @@ class TestReducerIntegration:
             i for i in result.intents if i.intent_type == "persist_state"
         ]
         assert len(persist_intents) == 1
-        assert persist_intents[0].payload["fsm_name"] == "event_driven_fsm"
-        assert persist_intents[0].payload["state"] == "processing_event"
+        # Access state_data dict from the typed ModelPayloadPersistState payload
+        assert persist_intents[0].payload.state_data["fsm_name"] == "event_driven_fsm"
+        assert persist_intents[0].payload.state_data["state"] == "processing_event"
 
     def test_recovery_workflow_retry_success(
         self, reducer_with_contract_factory: ReducerWithContractFactory

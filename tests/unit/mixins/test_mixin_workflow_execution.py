@@ -220,8 +220,9 @@ class TestMixinWorkflowExecution:
             assert action.target_node_type is not None
             assert action.lease_id is not None
             assert action.epoch == 0
-            assert "workflow_id" in action.payload
-            assert action.payload["workflow_id"] == str(workflow_id)
+            # workflow_id is in payload.metadata (typed payload model)
+            assert "workflow_id" in action.payload.metadata
+            assert action.payload.metadata["workflow_id"] == str(workflow_id)
 
     @pytest.mark.asyncio
     async def test_execute_workflow_tracks_execution_time(

@@ -2250,9 +2250,10 @@ class TestPublishingOrder:
         from omnibase_core.models.dispatch.model_handler_output import (
             ModelHandlerOutput,
         )
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
         # Test REDUCER constraint - cannot emit events
-        with pytest.raises(ValueError, match="REDUCER cannot emit events"):
+        with pytest.raises(ModelOnexError, match="REDUCER cannot emit events"):
             ModelHandlerOutput(
                 input_envelope_id=uuid4(),
                 correlation_id=uuid4(),
@@ -2262,7 +2263,7 @@ class TestPublishingOrder:
             )
 
         # Test REDUCER constraint - cannot emit intents
-        with pytest.raises(ValueError, match="REDUCER cannot emit intents"):
+        with pytest.raises(ModelOnexError, match="REDUCER cannot emit intents"):
             ModelHandlerOutput(
                 input_envelope_id=uuid4(),
                 correlation_id=uuid4(),
@@ -2272,7 +2273,7 @@ class TestPublishingOrder:
             )
 
         # Test EFFECT constraint - cannot emit intents
-        with pytest.raises(ValueError, match="EFFECT cannot emit intents"):
+        with pytest.raises(ModelOnexError, match="EFFECT cannot emit intents"):
             ModelHandlerOutput(
                 input_envelope_id=uuid4(),
                 correlation_id=uuid4(),
@@ -2282,7 +2283,7 @@ class TestPublishingOrder:
             )
 
         # Test EFFECT constraint - cannot emit projections
-        with pytest.raises(ValueError, match="EFFECT cannot emit projections"):
+        with pytest.raises(ModelOnexError, match="EFFECT cannot emit projections"):
             ModelHandlerOutput(
                 input_envelope_id=uuid4(),
                 correlation_id=uuid4(),
@@ -2292,7 +2293,9 @@ class TestPublishingOrder:
             )
 
         # Test ORCHESTRATOR constraint - cannot emit projections
-        with pytest.raises(ValueError, match="ORCHESTRATOR cannot emit projections"):
+        with pytest.raises(
+            ModelOnexError, match="ORCHESTRATOR cannot emit projections"
+        ):
             ModelHandlerOutput(
                 input_envelope_id=uuid4(),
                 correlation_id=uuid4(),
@@ -2302,7 +2305,7 @@ class TestPublishingOrder:
             )
 
         # Test COMPUTE constraint - cannot emit events
-        with pytest.raises(ValueError, match="COMPUTE cannot emit events"):
+        with pytest.raises(ModelOnexError, match="COMPUTE cannot emit events"):
             ModelHandlerOutput(
                 input_envelope_id=uuid4(),
                 correlation_id=uuid4(),
@@ -2313,7 +2316,7 @@ class TestPublishingOrder:
             )
 
         # Test COMPUTE constraint - cannot emit intents
-        with pytest.raises(ValueError, match="COMPUTE cannot emit intents"):
+        with pytest.raises(ModelOnexError, match="COMPUTE cannot emit intents"):
             ModelHandlerOutput(
                 input_envelope_id=uuid4(),
                 correlation_id=uuid4(),
@@ -2324,7 +2327,7 @@ class TestPublishingOrder:
             )
 
         # Test COMPUTE constraint - cannot emit projections
-        with pytest.raises(ValueError, match="COMPUTE cannot emit projections"):
+        with pytest.raises(ModelOnexError, match="COMPUTE cannot emit projections"):
             ModelHandlerOutput(
                 input_envelope_id=uuid4(),
                 correlation_id=uuid4(),
