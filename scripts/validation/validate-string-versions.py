@@ -45,6 +45,35 @@ MAX_YAML_FILE_SIZE = 50 * 1024 * 1024  # 50MB - prevent DoS attacks on YAML file
 DIRECTORY_SCAN_TIMEOUT = 30  # seconds
 VALIDATION_TIMEOUT = 600  # 10 minutes
 
+# Exclusion patterns for validation (shared between directory and individual file modes)
+#
+# EXCLUSION RATIONALE:
+# - protocols/: Protocol files define interfaces/type stubs that may reference version
+#   formats in docstrings and type hints for documentation purposes. These are abstract
+#   interfaces, not runtime implementations, so the string version anti-pattern doesn't apply.
+# - tests/: Test files may contain version strings as test data
+# - archive/archived/: Legacy code not subject to current standards
+# - deployment/infrastructure: CI/CD and deployment configs use string versions by convention
+EXCLUDE_PATTERNS = [
+    "deployment",
+    ".github",
+    "docker-compose",
+    "prometheus",
+    "alerts.yml",
+    "grafana",
+    "kubernetes",
+    "ci-cd.yml",  # GitHub Actions CI file
+    "__pycache__",
+    ".mypy_cache",
+    ".pytest_cache",
+    "node_modules",
+    "archive",  # Exclude archived code
+    "archived",  # Exclude archived code (alternative naming)
+    "tests",  # Exclude test files
+    "examples_validation_container_usage.py",  # Exclude specific example files
+    "protocols",  # Exclude Protocol classes (see rationale above)
+]
+
 # Add src to Python path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
@@ -964,38 +993,8 @@ def main() -> int:
                             # Setup timeout for directory scanning (30 seconds)
                             try:
                                 with timeout_context("directory_scan"):
-                                    # Recursively find all YAML and Python files, but exclude non-ONEX directories
-                                    #
-                                    # EXCLUSION RATIONALE:
-                                    # - protocols/: Protocol files define interfaces/type stubs that may
-                                    #   reference version formats in docstrings and type hints for
-                                    #   documentation purposes. These are abstract interfaces, not runtime
-                                    #   implementations, so the string version anti-pattern doesn't apply.
-                                    #   Protocol files document API contracts and may legitimately include
-                                    #   version string examples in their docstrings.
-                                    # - tests/: Test files may contain version strings as test data
-                                    # - archive/archived/: Legacy code not subject to current standards
-                                    #
-                                    exclude_patterns = [
-                                        "deployment",
-                                        ".github",
-                                        "docker-compose",
-                                        "prometheus",
-                                        "alerts.yml",
-                                        "grafana",
-                                        "kubernetes",
-                                        "ci-cd.yml",  # GitHub Actions CI file
-                                        "__pycache__",
-                                        ".mypy_cache",
-                                        ".pytest_cache",
-                                        "node_modules",
-                                        "archive",  # Exclude archived code
-                                        "archived",  # Exclude archived code (alternative naming)
-                                        "tests",  # Exclude test files
-                                        "examples_validation_container_usage.py",  # Exclude specific example files
-                                        "protocols",  # Exclude Protocol classes (see EXCLUSION RATIONALE above)
-                                    ]
-
+                                    # Recursively find all YAML and Python files, excluding non-ONEX directories
+                                    # See EXCLUDE_PATTERNS constant for rationale on each exclusion
                                     try:
                                         all_files = (
                                             list(path.rglob("*.yaml"))
@@ -1022,7 +1021,7 @@ def main() -> int:
                                                 file_name = file_path.name
 
                                                 # Check if any path component or filename matches exclusion patterns
-                                                for pattern in exclude_patterns:
+                                                for pattern in EXCLUDE_PATTERNS:
                                                     if (
                                                         pattern in path_parts
                                                         or file_name.startswith(pattern)
@@ -1058,30 +1057,7 @@ def main() -> int:
                         print(f"Warning: Error processing argument '{arg}': {e}")
                         continue
             else:
-                # Individual file mode
-                # Apply same exclusions as directory mode (must match exclude_patterns above)
-                #
-                # EXCLUSION RATIONALE: See directory mode comments above for why each
-                # pattern is excluded. This list must stay in sync with directory mode.
-                exclude_patterns = [
-                    "deployment",
-                    ".github",
-                    "docker-compose",
-                    "prometheus",
-                    "alerts.yml",
-                    "grafana",
-                    "kubernetes",
-                    "ci-cd.yml",  # GitHub Actions CI file
-                    "__pycache__",
-                    ".mypy_cache",
-                    ".pytest_cache",
-                    "node_modules",
-                    "archive",  # Exclude archived code
-                    "archived",  # Exclude archived code (alternative naming)
-                    "tests",  # Exclude test files
-                    "examples_validation_container_usage.py",  # Exclude specific example files
-                    "protocols",  # Exclude Protocol classes (see EXCLUSION RATIONALE above)
-                ]
+                # Individual file mode - uses shared EXCLUDE_PATTERNS constant
                 for arg in args:
                     try:
                         path = Path(arg)
@@ -1090,12 +1066,11 @@ def main() -> int:
                             print(f"Warning: File does not exist: {path}")
                             continue
 
-                        # Skip excluded paths (same logic as directory mode)
-                        # Check both path components AND filename-based exclusions
+                        # Skip excluded paths using shared EXCLUDE_PATTERNS constant
                         path_parts = path.parts
                         file_name = path.name
                         should_exclude = False
-                        for pattern in exclude_patterns:
+                        for pattern in EXCLUDE_PATTERNS:
                             if pattern in path_parts or file_name.startswith(pattern):
                                 should_exclude = True
                                 break

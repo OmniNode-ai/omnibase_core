@@ -19,13 +19,16 @@ for ONEX microservices ecosystem.
 Strict typing is enforced: No Any types allowed in implementation.
 """
 
-from typing import ClassVar
+from typing import Any, ClassVar
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
+from omnibase_core.models.configuration.model_circuit_breaker_metadata import (
+    ModelCircuitBreakerMetadata,
+)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -33,6 +36,48 @@ from .model_load_balancing import ModelLoadBalancing
 from .model_request_transformation import ModelRequestTransformation
 from .model_route_definition import ModelRouteDefinition
 from .model_routing_metrics import ModelRoutingMetrics
+
+# Lazy model rebuild flag - forward references are resolved on first use, not at import
+_models_rebuilt = False
+
+
+def _ensure_models_rebuilt(
+    routing_subcontract_cls: type[BaseModel] | None = None,
+) -> None:
+    """Ensure models are rebuilt to resolve forward references (lazy initialization).
+
+    This function implements lazy model rebuild to avoid importing ModelCustomFields
+    at module load time. The rebuild only happens on first ModelRoutingSubcontract
+    instantiation, improving import performance when the model isn't used.
+
+    The pattern:
+    1. Module-level flag tracks if rebuild has occurred
+    2. This function is called via __new__ on first instantiation
+    3. The rebuild resolves ModelCircuitBreakerMetadata's forward reference to ModelCustomFields
+    4. Then rebuilds ModelCircuitBreaker to pick up the resolved metadata type
+    5. Then rebuilds ModelRoutingSubcontract to pick up the resolved circuit breaker type
+    6. Subsequent instantiations skip the rebuild (flag is already True)
+
+    Args:
+        routing_subcontract_cls: The ModelRoutingSubcontract class to rebuild. Must be
+            provided on first call to properly resolve the forward reference chain.
+
+    Thread Safety:
+        This function is not thread-safe by itself, but Pydantic's model_rebuild()
+        is idempotent, so concurrent calls during initial import are safe.
+    """
+    global _models_rebuilt
+    if not _models_rebuilt:
+        from omnibase_core.models.services.model_custom_fields import ModelCustomFields
+
+        # First rebuild the metadata model to resolve its forward reference
+        ModelCircuitBreakerMetadata.model_rebuild()
+        # Then rebuild the circuit breaker model to pick up the resolved metadata
+        ModelCircuitBreaker.model_rebuild()
+        # Finally rebuild the routing subcontract to pick up the resolved circuit breaker
+        if routing_subcontract_cls is not None:
+            routing_subcontract_cls.model_rebuild()
+        _models_rebuilt = True
 
 
 class ModelRoutingSubcontract(BaseModel):
@@ -46,6 +91,18 @@ class ModelRoutingSubcontract(BaseModel):
 
     Strict typing is enforced: No Any types allowed in implementation.
     """
+
+    def __new__(cls, **_data: Any) -> "ModelRoutingSubcontract":
+        """Override __new__ to trigger lazy model rebuild before Pydantic validation.
+
+        Pydantic validates model completeness before calling model_validator,
+        so we must trigger the rebuild in __new__ which runs first.
+
+        Args:
+            **_data: Keyword arguments passed to Pydantic (handled by __init__).
+        """
+        _ensure_models_rebuilt(cls)
+        return super().__new__(cls)
 
     # Interface version for code generation stability
     INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)
