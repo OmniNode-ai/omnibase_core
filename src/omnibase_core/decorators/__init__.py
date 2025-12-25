@@ -12,7 +12,6 @@ from .error_handling import (
 )
 from .pattern_exclusions import (
     allow_any_type,
-    allow_dict_str_any,
     allow_legacy_pattern,
     allow_mixed_types,
     exclude_from_onex_standards,
@@ -21,7 +20,6 @@ from .pattern_exclusions import (
 __all__ = [
     "allow_any_type",
     "allow_dict_any",
-    "allow_dict_str_any",
     "allow_legacy_pattern",
     "allow_mixed_types",
     "enforce_execution_shape",

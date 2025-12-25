@@ -2,7 +2,7 @@
 Event emission intent payloads for event bus publishing.
 
 This module provides typed payloads for event-related intents:
-- PayloadEmitEvent: Domain event emission to event bus
+- ModelPayloadEmitEvent: Domain event emission to event bus
 
 Design Pattern:
     Reducers emit these payloads when event publishing side effects are needed.
@@ -13,7 +13,7 @@ Design Pattern:
     outcome without performing the actual side effect.
 
 Event Integration:
-    - PayloadEmitEvent supports structured event emission with type, data, and metadata
+    - ModelPayloadEmitEvent supports structured event emission with type, data, and metadata
     - Supports multiple event bus targets (Kafka, Redis, in-memory)
     - Includes correlation ID for distributed tracing
 
@@ -22,10 +22,10 @@ Thread Safety:
     thread-safe for concurrent read access.
 
 Example:
-    >>> from omnibase_core.models.reducer.payloads import PayloadEmitEvent
+    >>> from omnibase_core.models.reducer.payloads import ModelPayloadEmitEvent
     >>>
     >>> # Domain event payload
-    >>> event_payload = PayloadEmitEvent(
+    >>> event_payload = ModelPayloadEmitEvent(
     ...     event_type="order.created",
     ...     event_data={"order_id": "12345", "total": 99.99},
     ...     topic="orders",
@@ -47,10 +47,10 @@ from omnibase_core.models.reducer.payloads.model_intent_payload_base import (
 )
 
 # Public API - listed immediately after imports per Python convention
-__all__ = ["PayloadEmitEvent"]
+__all__ = ["ModelPayloadEmitEvent"]
 
 
-class PayloadEmitEvent(ModelIntentPayloadBase):
+class ModelPayloadEmitEvent(ModelIntentPayloadBase):
     """Payload for event emission intents.
 
     Emitted by Reducers when a domain event should be published to the event bus.
@@ -75,7 +75,7 @@ class PayloadEmitEvent(ModelIntentPayloadBase):
         headers: Optional headers for event metadata (e.g., content-type, version).
 
     Example:
-        >>> payload = PayloadEmitEvent(
+        >>> payload = ModelPayloadEmitEvent(
         ...     event_type="inventory.updated",
         ...     event_data={"sku": "PROD-123", "quantity": 50, "warehouse": "US-WEST"},
         ...     topic="inventory-events",

@@ -1,7 +1,7 @@
 """
-PayloadFSMStateAction - Typed payload for FSM state action execution intents.
+ModelPayloadFSMStateAction - Typed payload for FSM state action execution intents.
 
-This module provides the PayloadFSMStateAction model for FSM state
+This module provides the ModelPayloadFSMStateAction model for FSM state
 entry/exit action execution from Reducers. The Effect node receives
 the intent and invokes the registered action handler.
 
@@ -16,9 +16,9 @@ Thread Safety:
 
 Example:
     >>> from uuid import uuid4
-    >>> from omnibase_core.models.reducer.payloads import PayloadFSMStateAction
+    >>> from omnibase_core.models.reducer.payloads import ModelPayloadFSMStateAction
     >>>
-    >>> payload = PayloadFSMStateAction(
+    >>> payload = ModelPayloadFSMStateAction(
     ...     state_name="authenticated",
     ...     action_type="on_enter",
     ...     action_name="log_user_session",
@@ -42,10 +42,10 @@ from omnibase_core.models.reducer.payloads.model_intent_payload_base import (
 )
 
 # Public API - listed immediately after imports per Python convention
-__all__ = ["PayloadFSMStateAction"]
+__all__ = ["ModelPayloadFSMStateAction"]
 
 
-class PayloadFSMStateAction(ModelIntentPayloadBase):
+class ModelPayloadFSMStateAction(ModelIntentPayloadBase):
     """Payload for FSM state action execution intents.
 
     Emitted by Reducers when a state entry or exit action should be executed.
@@ -64,7 +64,7 @@ class PayloadFSMStateAction(ModelIntentPayloadBase):
         fsm_id: Optional FSM instance identifier for multi-instance scenarios.
 
     Example:
-        >>> payload = PayloadFSMStateAction(
+        >>> payload = ModelPayloadFSMStateAction(
         ...     state_name="authenticated",
         ...     action_type="on_enter",
         ...     action_name="log_user_session",

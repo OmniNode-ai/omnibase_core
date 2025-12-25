@@ -21,20 +21,11 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.types.typed_dict_validation_container_serialized import (
     TypedDictValidationContainerSerialized,
 )
-from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 from .model_validation_error import ModelValidationError
 from .model_validation_value import ModelValidationValue
 
-# Note: Previously had type alias (ValidationConvertibleValue = Any)
-# Removed to comply with ONEX strong typing standards.
-# Now uses dict[str, object] for raw input validation.
 
-
-@allow_dict_str_any(
-    "Validation container add_error_from_dict accepts dict[str, Any] input "
-    "for flexible error creation from external validation frameworks."
-)
 class ModelValidationContainer(BaseModel):
     """
     Generic container for validation results and error aggregation.

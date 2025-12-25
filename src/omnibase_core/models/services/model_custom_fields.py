@@ -14,16 +14,13 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.types.typed_dict_custom_fields import TypedDictCustomFieldsDict
-from omnibase_core.utils.util_decorators import allow_any_type, allow_dict_str_any
+from omnibase_core.utils.util_decorators import allow_any_type
 
 # Import separated models
 from .model_custom_field_definition import ModelCustomFieldDefinition
 from .model_error_details import ModelErrorDetails
 
 
-@allow_dict_str_any(
-    "Custom fields require flexible dictionary for extensibility across 20+ models",
-)
 @allow_any_type(
     "Custom field values need Any type for flexibility in graph nodes, orchestrator steps, and metadata",
 )

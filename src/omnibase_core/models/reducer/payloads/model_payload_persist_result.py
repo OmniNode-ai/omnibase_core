@@ -1,7 +1,7 @@
 """
-PayloadPersistResult - Typed payload for computation result persistence intents.
+ModelPayloadPersistResult - Typed payload for computation result persistence intents.
 
-This module provides the PayloadPersistResult model for computation
+This module provides the ModelPayloadPersistResult model for computation
 result persistence from Reducers. The Effect node receives the intent
 and stores the result to the configured persistence backend.
 
@@ -15,9 +15,9 @@ Thread Safety:
     thread-safe for concurrent read access.
 
 Example:
-    >>> from omnibase_core.models.reducer.payloads import PayloadPersistResult
+    >>> from omnibase_core.models.reducer.payloads import ModelPayloadPersistResult
     >>>
-    >>> payload = PayloadPersistResult(
+    >>> payload = ModelPayloadPersistResult(
     ...     result_key="compute:transform:batch-001",
     ...     result_data={"records": 1000, "status": "success"},
     ...     ttl_seconds=7200,  # 2 hours cache
@@ -39,10 +39,10 @@ from omnibase_core.models.reducer.payloads.model_intent_payload_base import (
 )
 
 # Public API - listed immediately after imports per Python convention
-__all__ = ["PayloadPersistResult"]
+__all__ = ["ModelPayloadPersistResult"]
 
 
-class PayloadPersistResult(ModelIntentPayloadBase):
+class ModelPayloadPersistResult(ModelIntentPayloadBase):
     """Payload for computation result persistence intents.
 
     Emitted by Reducers when a computation result should be persisted. The Effect
@@ -61,7 +61,7 @@ class PayloadPersistResult(ModelIntentPayloadBase):
         metadata: Optional metadata about the result (e.g., computation time, version).
 
     Example:
-        >>> payload = PayloadPersistResult(
+        >>> payload = ModelPayloadPersistResult(
         ...     result_key="compute:transform:batch-001",
         ...     result_data={"records": 1000, "status": "success"},
         ...     ttl_seconds=7200,  # 2 hours cache

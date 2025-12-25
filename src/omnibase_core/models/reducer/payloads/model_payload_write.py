@@ -1,7 +1,7 @@
 """
-PayloadWrite - Typed payload for file/storage write intents.
+ModelPayloadWrite - Typed payload for file/storage write intents.
 
-This module provides the PayloadWrite model for file and storage
+This module provides the ModelPayloadWrite model for file and storage
 write operations from Reducers. The Effect node receives the intent
 and performs the write operation to the configured storage backend.
 
@@ -16,9 +16,9 @@ Thread Safety:
     thread-safe for concurrent read access.
 
 Example:
-    >>> from omnibase_core.models.reducer.payloads import PayloadWrite
+    >>> from omnibase_core.models.reducer.payloads import ModelPayloadWrite
     >>>
-    >>> payload = PayloadWrite(
+    >>> payload = ModelPayloadWrite(
     ...     path="s3://bucket/reports/daily-2024-01-15.json",
     ...     content='{"summary": "daily report", "items": 150}',
     ...     content_type="application/json",
@@ -39,10 +39,10 @@ from omnibase_core.models.reducer.payloads.model_intent_payload_base import (
 )
 
 # Public API - listed immediately after imports per Python convention
-__all__ = ["PayloadWrite"]
+__all__ = ["ModelPayloadWrite"]
 
 
-class PayloadWrite(ModelIntentPayloadBase):
+class ModelPayloadWrite(ModelIntentPayloadBase):
     """Payload for file/storage write intents.
 
     Emitted by Reducers when data should be written to a file or object storage.
@@ -69,7 +69,7 @@ class PayloadWrite(ModelIntentPayloadBase):
         metadata: Optional metadata for object storage systems.
 
     Example:
-        >>> payload = PayloadWrite(
+        >>> payload = ModelPayloadWrite(
         ...     path="s3://bucket/reports/daily-2024-01-15.json",
         ...     content='{"summary": "daily report", "items": 150}',
         ...     content_type="application/json",

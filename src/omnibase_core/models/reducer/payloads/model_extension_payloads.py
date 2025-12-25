@@ -2,14 +2,14 @@
 Extension intent payloads for plugins and experimental features.
 
 This module provides typed payloads for extension-related intents:
-- PayloadExtension: Generic extension payload for plugins and webhooks
+- ModelPayloadExtension: Generic extension payload for plugins and webhooks
 
 Design Pattern:
     Extension payloads provide a flexible escape hatch for plugin and
     experimental intent types that don't fit the core typed payload system.
     They maintain type safety while allowing arbitrary extension data.
 
-    Unlike core payloads with fixed schemas, PayloadExtension uses an
+    Unlike core payloads with fixed schemas, ModelPayloadExtension uses an
     `extension_type` field to classify the extension category while
     storing arbitrary data in the `data` field.
 
@@ -24,17 +24,17 @@ Thread Safety:
     thread-safe for concurrent read access.
 
 Example:
-    >>> from omnibase_core.models.reducer.payloads import PayloadExtension
+    >>> from omnibase_core.models.reducer.payloads import ModelPayloadExtension
     >>>
     >>> # Plugin execution payload
-    >>> plugin_payload = PayloadExtension(
+    >>> plugin_payload = ModelPayloadExtension(
     ...     extension_type="plugin.transform",
     ...     plugin_name="data-enricher",
     ...     data={"source": "user_db", "transform": "enrich_profile"},
     ... )
     >>>
     >>> # Webhook payload
-    >>> webhook_payload = PayloadExtension(
+    >>> webhook_payload = ModelPayloadExtension(
     ...     extension_type="webhook.outbound",
     ...     plugin_name="slack-notifier",
     ...     data={"url": "https://hooks.slack.com/...", "message": "Alert!"},
@@ -55,10 +55,10 @@ from omnibase_core.models.reducer.payloads.model_intent_payload_base import (
 )
 
 # Public API - listed immediately after imports per Python convention
-__all__ = ["PayloadExtension"]
+__all__ = ["ModelPayloadExtension"]
 
 
-class PayloadExtension(ModelIntentPayloadBase):
+class ModelPayloadExtension(ModelIntentPayloadBase):
     """Payload for extension/plugin intents.
 
     Provides a flexible payload structure for plugin, webhook, and experimental
@@ -86,7 +86,7 @@ class PayloadExtension(ModelIntentPayloadBase):
         timeout_seconds: Optional timeout for extension execution.
 
     Example:
-        >>> payload = PayloadExtension(
+        >>> payload = ModelPayloadExtension(
         ...     extension_type="plugin.ml_inference",
         ...     plugin_name="sentiment-analyzer",
         ...     version="2.1.0",

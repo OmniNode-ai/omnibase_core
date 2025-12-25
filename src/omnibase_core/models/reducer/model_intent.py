@@ -17,10 +17,10 @@ Intent System Architecture:
        - Use for: registration, persistence, lifecycle, core workflows
 
     2. Extension Intents (this module):
-       - Generic ModelIntent with typed payload
+       - Generic ModelIntent with Protocol-typed payload
        - Open set for plugins and extensions
        - String-based intent_type routing
-       - Runtime validation
+       - Runtime validation via Protocol
        - Use for: plugins, experimental features, third-party integrations
 
 Design Pattern:
@@ -49,18 +49,17 @@ When to Use ModelIntent vs Core Intents:
     - Building core infrastructure
 
 Typed Payloads (v0.4.0+):
-    ModelIntent now supports typed payloads via ModelIntentPayloadUnion for
-    compile-time type safety. Legacy dict[str, Any] payloads are still supported
-    during the migration period but will issue a deprecation warning.
+    ModelIntent requires typed payloads implementing ProtocolIntentPayload.
+    All payload classes must have an `intent_type` attribute for routing.
 
     Typed Payload Categories:
-        - Logging: PayloadLogEvent, PayloadMetric
-        - Persistence: PayloadPersistState, PayloadPersistResult
-        - FSM: PayloadFSMStateAction, PayloadFSMTransitionAction, PayloadFSMCompleted
-        - Events: PayloadEmitEvent
-        - I/O: PayloadWrite, PayloadHTTP
-        - Notifications: PayloadNotify
-        - Extensions: PayloadExtension (catch-all for plugins)
+        - Logging: ModelPayloadLogEvent, ModelPayloadMetric
+        - Persistence: ModelPayloadPersistState, ModelPayloadPersistResult
+        - FSM: ModelPayloadFSMStateAction, ModelPayloadFSMTransitionAction, ModelPayloadFSMCompleted
+        - Events: ModelPayloadEmitEvent
+        - I/O: ModelPayloadWrite, ModelPayloadHTTP
+        - Notifications: ModelPayloadNotify
+        - Extensions: ModelPayloadExtension (catch-all for plugins)
 
 Intent Types (Extension Examples):
     - "plugin.execute": Execute a plugin action
@@ -68,34 +67,24 @@ Intent Types (Extension Examples):
     - "custom.transform": Apply custom data transformation
     - "experimental.feature": Test experimental feature
 
-Example (Typed Payload - Recommended):
+Example (Typed Payload):
     >>> from omnibase_core.models.reducer import ModelIntent
-    >>> from omnibase_core.models.reducer.payloads import PayloadLogEvent
+    >>> from omnibase_core.models.reducer.payloads import ModelPayloadLogEvent
     >>>
     >>> # Create intent with typed payload
     >>> intent = ModelIntent(
     ...     intent_type="log_event",
     ...     target="logging",
-    ...     payload=PayloadLogEvent(
+    ...     payload=ModelPayloadLogEvent(
     ...         level="INFO",
     ...         message="Processing completed",
     ...         context={"duration_ms": 125},
     ...     ),
     ... )
 
-Example (Legacy Dict - Deprecated):
-    >>> from omnibase_core.models.reducer import ModelIntent
-    >>>
-    >>> # Legacy dict payload (deprecated, issues warning)
-    >>> intent = ModelIntent(
-    ...     intent_type="webhook.send",
-    ...     target="notifications",
-    ...     payload={"url": "https://...", "method": "POST", "body": {}},
-    ...     priority=5,
-    ... )
-
 See Also:
     - omnibase_core.models.reducer.payloads: Typed payload models
+    - omnibase_core.models.reducer.payloads.ProtocolIntentPayload: Payload protocol
     - omnibase_core.models.intents: Core infrastructure intents (discriminated union)
     - omnibase_core.nodes.node_reducer: Emits intents during reduction
     - omnibase_core.nodes.node_effect: Executes intents
@@ -103,28 +92,19 @@ See Also:
 
 import logging
 import warnings
-from typing import Any, Self
+from typing import Self
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.reducer.payloads import ModelIntentPayloadUnion
-from omnibase_core.models.reducer.payloads.model_intent_payload_base import (
-    ModelIntentPayloadBase,
+from omnibase_core.models.reducer.payloads.model_protocol_intent_payload import (
+    ProtocolIntentPayload,
 )
-from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 # Module-level logger for validation diagnostics
 _logger = logging.getLogger(__name__)
 
 
-@allow_dict_str_any(
-    "Intent payloads support both typed payloads (ModelIntentPayloadUnion) and "
-    "legacy dict[str, Any] for migration support. "
-    "New code should use typed payloads."
-)
 class ModelIntent(BaseModel):
     """
     Extension intent declaration for plugin and experimental workflows.
@@ -132,7 +112,7 @@ class ModelIntent(BaseModel):
     For core infrastructure intents (registration, persistence, lifecycle),
     use the discriminated union in omnibase_core.models.intents instead.
 
-    The Reducer is a pure function: δ(state, action) → (new_state, intents[])
+    The Reducer is a pure function: delta(state, action) -> (new_state, intents[])
     Instead of performing side effects directly, it emits Intents describing
     what side effects should occur. The Effect node consumes these Intents
     and executes them.
@@ -142,6 +122,15 @@ class ModelIntent(BaseModel):
         - Intent to send webhook
         - Intent to apply custom transformation
         - Intent for experimental features
+
+    Attributes:
+        intent_id: Unique identifier for this intent (auto-generated UUID).
+        intent_type: Type of intent for routing (e.g., "log_event", "notify").
+        target: Target for the intent execution (service, channel, topic).
+        payload: Typed payload implementing ProtocolIntentPayload.
+        priority: Execution priority (1-10, higher = more urgent).
+        lease_id: Optional lease ID for leased workflow tracking.
+        epoch: Optional epoch for versioned state tracking.
 
     See Also:
         omnibase_core.models.intents.ModelCoreIntent: Base class for core intents
@@ -156,7 +145,7 @@ class ModelIntent(BaseModel):
 
     intent_type: str = Field(
         ...,
-        description="Type of intent (log, emit_event, write, notify)",
+        description="Type of intent (log_event, emit_event, write, notify, etc.)",
         min_length=1,
         max_length=100,
     )
@@ -168,12 +157,12 @@ class ModelIntent(BaseModel):
         max_length=200,
     )
 
-    payload: ModelIntentPayloadUnion | dict[str, Any] = Field(
-        default_factory=dict,
+    payload: ProtocolIntentPayload = Field(
+        ...,
         description=(
-            "Intent payload data. Supports typed payloads (ModelIntentPayloadUnion) "
-            "for type safety or legacy dict[str, Any] for migration support. "
-            "New code should use typed payloads from omnibase_core.models.reducer.payloads."
+            "Intent payload implementing ProtocolIntentPayload. "
+            "Use typed payloads from omnibase_core.models.reducer.payloads "
+            "(e.g., ModelPayloadLogEvent, ModelPayloadNotify, ModelPayloadExtension)."
         ),
     )
 
@@ -196,109 +185,29 @@ class ModelIntent(BaseModel):
         ge=0,
     )
 
-    @model_validator(mode="before")
-    @classmethod
-    def _check_legacy_payload(cls, data: Any) -> Any:
-        """Check for legacy dict payload and issue deprecation warning.
+    @model_validator(mode="after")
+    def _validate_intent_type_consistency(self) -> Self:
+        """
+        Validate that intent_type matches the payload's intent_type.
 
-        This validator detects when an untyped dict is passed as the payload
-        and issues a deprecation warning encouraging migration to typed payloads.
-
-        Empty dicts are allowed without warning (common default case).
-        Typed payload instances (ModelIntentPayloadBase subclasses) pass through
-        without warning.
-
-        Error Handling:
-            This validator explicitly catches and logs any unexpected errors
-            during payload inspection to prevent silent failures. If an error
-            occurs, it logs the exception and re-raises it wrapped in
-            ModelOnexError for consistent error reporting.
-
-        Args:
-            data: Raw input data for model construction. Can be any type
-                for mode="before" validators.
+        This ensures consistency between the intent's routing type and the
+        payload's discriminator field.
 
         Returns:
-            The input data unchanged.
+            Self: The validated model instance
 
         Raises:
-            ModelOnexError: If payload inspection fails unexpectedly.
+            ValueError: If intent_type doesn't match payload.intent_type
         """
-        if not isinstance(data, dict):
-            return data
-
-        try:
-            payload = data.get("payload")
-
-            # No payload or empty dict - no warning needed (common default case)
-            if payload is None or payload == {}:
-                return data
-
-            # Already a typed payload instance - no warning needed
-            if isinstance(payload, ModelIntentPayloadBase):
-                return data
-
-            # Dict payload that's not empty - check if it's a serialized typed payload
-            if isinstance(payload, dict):
-                # Heuristic: Typed intent payloads have an 'intent_type' discriminator field.
-                # This field is defined as a Literal in each payload class (e.g., Literal["log_event"])
-                # and serves as the discriminator for ModelIntentPayloadUnion.
-                #
-                # If 'intent_type' is present, this is likely a serialized typed payload
-                # that Pydantic will deserialize via the discriminated union pattern.
-                #
-                # Heuristic accuracy:
-                #   - False positives: A legacy dict with an 'intent_type' key will be treated
-                #     as a typed payload. This is acceptable since it follows the typed contract.
-                #   - False negatives: None - all typed payloads MUST have 'intent_type'.
-                if "intent_type" in payload:
-                    # Log for debugging - helps trace payload deserialization issues
-                    _logger.debug(
-                        "ModelIntent payload has intent_type='%s', "
-                        "will attempt typed deserialization",
-                        payload.get("intent_type"),
-                    )
-                    return data
-
-                # Legacy untyped dict payload - issue deprecation warning
-                # stacklevel=4 points through: warn() -> validator -> Pydantic -> caller
-                warnings.warn(
-                    "Using untyped dict payload in ModelIntent is deprecated. "
-                    "Use typed payloads from omnibase_core.models.reducer.payloads instead. "
-                    "For plugins/extensions, use PayloadExtension. "
-                    "See: docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md",
-                    DeprecationWarning,
-                    stacklevel=4,
-                )
-
-            # Handle unexpected payload types (not dict, not ModelIntentPayloadBase)
-            elif payload is not None:
-                # Log unexpected type for debugging
-                _logger.warning(
-                    "ModelIntent received unexpected payload type: %s. "
-                    "Expected dict or ModelIntentPayloadBase subclass.",
-                    type(payload).__name__,
-                )
-
-        except Exception as e:
-            # Log and re-raise with context - never silently swallow exceptions
-            _logger.exception(
-                "ModelIntent payload validation failed unexpectedly: %s",
-                str(e),
+        payload_intent_type = self.payload.intent_type
+        if self.intent_type != payload_intent_type:
+            _logger.warning(
+                "ModelIntent intent_type='%s' differs from payload.intent_type='%s'. "
+                "This may cause routing issues. Consider using the same value.",
+                self.intent_type,
+                payload_intent_type,
             )
-            raise ModelOnexError(
-                message=(
-                    f"ModelIntent payload validation failed: {e}. "
-                    "Check that the payload is a valid dict or typed payload model."
-                ),
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                payload_type=type(data.get("payload", None)).__name__
-                if isinstance(data, dict)
-                else "unknown",
-                original_error=str(e),
-            ) from e
-
-        return data
+        return self
 
     @model_validator(mode="after")
     def _validate_lease_epoch_consistency(self) -> Self:
@@ -338,4 +247,5 @@ class ModelIntent(BaseModel):
         use_enum_values=False,
         validate_assignment=True,
         from_attributes=True,
+        arbitrary_types_allowed=True,  # Required for Protocol types
     )

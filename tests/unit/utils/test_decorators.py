@@ -3,7 +3,7 @@
 import pytest
 from pydantic import BaseModel
 
-from omnibase_core.utils.util_decorators import allow_any_type, allow_dict_str_any
+from omnibase_core.utils.util_decorators import allow_any_type
 
 
 @pytest.mark.unit
@@ -38,52 +38,6 @@ class TestDecorators:
         assert reason1 in TestModel._allow_any_reasons
         assert reason2 in TestModel._allow_any_reasons
         assert len(TestModel._allow_any_reasons) == 2
-
-    def test_allow_dict_str_any_decorator(self):
-        """Test allow_dict_str_any decorator."""
-        reason = "Testing dict[str, Any] allowance"
-
-        @allow_dict_str_any(reason)
-        @pytest.mark.unit
-        class TestModel(BaseModel):
-            field: str
-
-        # Check that the decorator was applied
-        assert hasattr(TestModel, "_allow_dict_str_any_reasons")
-        assert reason in TestModel._allow_dict_str_any_reasons
-
-    def test_allow_dict_str_any_multiple_reasons(self):
-        """Test allow_dict_str_any decorator with multiple reasons."""
-        reason1 = "First reason"
-        reason2 = "Second reason"
-
-        @allow_dict_str_any(reason1)
-        @allow_dict_str_any(reason2)
-        @pytest.mark.unit
-        class TestModel(BaseModel):
-            field: str
-
-        assert hasattr(TestModel, "_allow_dict_str_any_reasons")
-        assert reason1 in TestModel._allow_dict_str_any_reasons
-        assert reason2 in TestModel._allow_dict_str_any_reasons
-        assert len(TestModel._allow_dict_str_any_reasons) == 2
-
-    def test_both_decorators_together(self):
-        """Test using both decorators on the same class."""
-        any_reason = "Any type reason"
-        dict_reason = "Dict type reason"
-
-        @allow_any_type(any_reason)
-        @allow_dict_str_any(dict_reason)
-        @pytest.mark.unit
-        class TestModel(BaseModel):
-            field: str
-
-        # Check both decorators were applied
-        assert hasattr(TestModel, "_allow_any_reasons")
-        assert hasattr(TestModel, "_allow_dict_str_any_reasons")
-        assert any_reason in TestModel._allow_any_reasons
-        assert dict_reason in TestModel._allow_dict_str_any_reasons
 
     def test_decorator_preserves_class_functionality(self):
         """Test that decorators don't break normal class functionality."""

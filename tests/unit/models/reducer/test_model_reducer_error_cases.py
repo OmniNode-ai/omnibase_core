@@ -23,6 +23,7 @@ from omnibase_core.enums.enum_reducer_types import EnumReductionType
 from omnibase_core.models.reducer.model_intent import ModelIntent
 from omnibase_core.models.reducer.model_reducer_input import ModelReducerInput
 from omnibase_core.models.reducer.model_reducer_output import ModelReducerOutput
+from omnibase_core.models.reducer.payloads import ModelPayloadLogEvent
 
 
 @pytest.mark.timeout(30)
@@ -169,6 +170,10 @@ class TestModelIntentHardening:
         intent = ModelIntent(
             intent_type="emit_event",
             target="user.created",
+            payload=ModelPayloadLogEvent(
+                level="INFO",
+                message="Test message",
+            ),
         )
         with pytest.raises(ValidationError):
             intent.intent_type = "notify"  # type: ignore[misc]
@@ -179,6 +184,10 @@ class TestModelIntentHardening:
             ModelIntent(
                 intent_type="emit_event",
                 target="user.created",
+                payload=ModelPayloadLogEvent(
+                    level="INFO",
+                    message="Test message",
+                ),
                 unknown_field="should_fail",  # type: ignore[call-arg]
             )
         assert (
@@ -192,6 +201,10 @@ class TestModelIntentHardening:
         valid = ModelIntent(
             intent_type="emit_event",
             target="user.created",
+            payload=ModelPayloadLogEvent(
+                level="INFO",
+                message="Test message",
+            ),
             priority=5,
         )
         assert valid.priority == 5
@@ -201,6 +214,10 @@ class TestModelIntentHardening:
             ModelIntent(
                 intent_type="emit_event",
                 target="user.created",
+                payload=ModelPayloadLogEvent(
+                    level="INFO",
+                    message="Test message",
+                ),
                 priority=0,
             )
 
@@ -209,6 +226,10 @@ class TestModelIntentHardening:
             ModelIntent(
                 intent_type="emit_event",
                 target="user.created",
+                payload=ModelPayloadLogEvent(
+                    level="INFO",
+                    message="Test message",
+                ),
                 priority=11,
             )
 
@@ -218,6 +239,10 @@ class TestModelIntentHardening:
         valid = ModelIntent(
             intent_type="emit_event",
             target="user.created",
+            payload=ModelPayloadLogEvent(
+                level="INFO",
+                message="Test message",
+            ),
         )
         assert valid.intent_type == "emit_event"
 
@@ -226,6 +251,10 @@ class TestModelIntentHardening:
             ModelIntent(
                 intent_type="",
                 target="user.created",
+                payload=ModelPayloadLogEvent(
+                    level="INFO",
+                    message="Test message",
+                ),
             )
 
         # Too long (must be <= 100)
@@ -233,6 +262,10 @@ class TestModelIntentHardening:
             ModelIntent(
                 intent_type="x" * 101,
                 target="user.created",
+                payload=ModelPayloadLogEvent(
+                    level="INFO",
+                    message="Test message",
+                ),
             )
 
     def test_target_length_bounds(self) -> None:
@@ -241,6 +274,10 @@ class TestModelIntentHardening:
         valid = ModelIntent(
             intent_type="emit_event",
             target="user.created",
+            payload=ModelPayloadLogEvent(
+                level="INFO",
+                message="Test message",
+            ),
         )
         assert valid.target == "user.created"
 
@@ -249,6 +286,10 @@ class TestModelIntentHardening:
             ModelIntent(
                 intent_type="emit_event",
                 target="",
+                payload=ModelPayloadLogEvent(
+                    level="INFO",
+                    message="Test message",
+                ),
             )
 
         # Too long (must be <= 200)
@@ -256,6 +297,10 @@ class TestModelIntentHardening:
             ModelIntent(
                 intent_type="emit_event",
                 target="x" * 201,
+                payload=ModelPayloadLogEvent(
+                    level="INFO",
+                    message="Test message",
+                ),
             )
 
     def test_epoch_bounds(self) -> None:
@@ -264,6 +309,10 @@ class TestModelIntentHardening:
         valid = ModelIntent(
             intent_type="emit_event",
             target="user.created",
+            payload=ModelPayloadLogEvent(
+                level="INFO",
+                message="Test message",
+            ),
             epoch=0,
         )
         assert valid.epoch == 0
@@ -273,6 +322,10 @@ class TestModelIntentHardening:
             ModelIntent(
                 intent_type="emit_event",
                 target="user.created",
+                payload=ModelPayloadLogEvent(
+                    level="INFO",
+                    message="Test message",
+                ),
                 epoch=-1,
             )
 
@@ -291,6 +344,10 @@ class TestModelIntentHardening:
         original = ModelIntent(
             intent_type="emit_event",
             target="user.created",
+            payload=ModelPayloadLogEvent(
+                level="INFO",
+                message="Test message",
+            ),
             priority=5,
         )
 

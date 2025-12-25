@@ -15,13 +15,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from omnibase_core.utils.util_decorators import allow_dict_str_any
 
-
-@allow_dict_str_any(
-    "Workflow factory config parameter accepts dict[str, Any] for "
-    "flexible workflow-specific configuration options."
-)
 class ModelWorkflowFactory:
     """Workflow factory for LlamaIndex integration."""
 

@@ -24,6 +24,7 @@ from omnibase_core.enums.enum_reducer_types import EnumReductionType
 from omnibase_core.models.common.model_reducer_metadata import ModelReducerMetadata
 from omnibase_core.models.reducer.model_intent import ModelIntent
 from omnibase_core.models.reducer.model_reducer_output import ModelReducerOutput
+from omnibase_core.models.reducer.payloads import ModelPayloadLogEvent
 
 pytestmark = pytest.mark.unit
 
@@ -45,7 +46,14 @@ class TestModelReducerOutputThreadSafety:
         Validates that concurrent read operations from 10+ threads do not cause
         race conditions, data corruption, or access violations."""
         # Create a single instance with intents
-        intent = ModelIntent(intent_type="log", target="service")
+        intent = ModelIntent(
+            intent_type="log",
+            target="service",
+            payload=ModelPayloadLogEvent(
+                level="INFO",
+                message="Test message",
+            ),
+        )
         output = ModelReducerOutput[int](
             result=42,
             operation_id=uuid4(),
@@ -476,12 +484,16 @@ class TestModelReducerOutputUUIDFormatPreservation:
         """Test that UUID fields in ModelIntent are preserved.
 
         Validates that intent_id UUIDs in the intents tuple maintain correct
-        format through serialization cycles."""
+        format through model_copy (Protocol-based typing doesn't support JSON deserialization)."""
         intent_id = uuid4()
         intent = ModelIntent(
             intent_id=intent_id,
-            intent_type="log_metrics",
+            intent_type="log_event",
             target="metrics_service",
+            payload=ModelPayloadLogEvent(
+                level="INFO",
+                message="Test message",
+            ),
         )
 
         output = ModelReducerOutput[int](
@@ -493,9 +505,8 @@ class TestModelReducerOutputUUIDFormatPreservation:
             intents=(intent,),
         )
 
-        # Roundtrip through JSON
-        json_str = output.model_dump_json()
-        restored = ModelReducerOutput[int].model_validate_json(json_str)
+        # Roundtrip through model_copy (Protocol-based payloads don't support JSON deserialization)
+        restored = output.model_copy()
 
         # Intent ID should be preserved
         assert len(restored.intents) == 1

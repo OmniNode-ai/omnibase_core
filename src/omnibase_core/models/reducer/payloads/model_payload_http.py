@@ -1,7 +1,7 @@
 """
-PayloadHTTP - Typed payload for HTTP request intents.
+ModelPayloadHTTP - Typed payload for HTTP request intents.
 
-This module provides the PayloadHTTP model for outbound HTTP request
+This module provides the ModelPayloadHTTP model for outbound HTTP request
 operations from Reducers. The Effect node receives the intent and
 performs the HTTP request to the specified URL.
 
@@ -15,9 +15,9 @@ Thread Safety:
     thread-safe for concurrent read access.
 
 Example:
-    >>> from omnibase_core.models.reducer.payloads import PayloadHTTP
+    >>> from omnibase_core.models.reducer.payloads import ModelPayloadHTTP
     >>>
-    >>> payload = PayloadHTTP(
+    >>> payload = ModelPayloadHTTP(
     ...     url="https://api.service.com/v1/notify",
     ...     method="POST",
     ...     headers={"Authorization": "Bearer token123", "Content-Type": "application/json"},
@@ -40,10 +40,10 @@ from omnibase_core.models.reducer.payloads.model_intent_payload_base import (
 )
 
 # Public API - listed immediately after imports per Python convention
-__all__ = ["PayloadHTTP"]
+__all__ = ["ModelPayloadHTTP"]
 
 
-class PayloadHTTP(ModelIntentPayloadBase):
+class ModelPayloadHTTP(ModelIntentPayloadBase):
     """Payload for HTTP request intents.
 
     Emitted by Reducers when an outbound HTTP request should be made.
@@ -64,7 +64,7 @@ class PayloadHTTP(ModelIntentPayloadBase):
         follow_redirects: Whether to follow HTTP redirects.
 
     Example:
-        >>> payload = PayloadHTTP(
+        >>> payload = ModelPayloadHTTP(
         ...     url="https://api.service.com/v1/notify",
         ...     method="POST",
         ...     headers={"Authorization": "Bearer token123", "Content-Type": "application/json"},

@@ -3,9 +3,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """
-Tests for PayloadLogEvent.
+Tests for ModelPayloadLogEvent.
 
-This module tests the PayloadLogEvent model for log event emission intents, verifying:
+This module tests the ModelPayloadLogEvent model for log event emission intents, verifying:
 1. Field validation (level, message, context)
 2. Discriminator value
 3. Serialization/deserialization
@@ -16,23 +16,23 @@ This module tests the PayloadLogEvent model for log event emission intents, veri
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.models.reducer.payloads import PayloadLogEvent
+from omnibase_core.models.reducer.payloads import ModelPayloadLogEvent
 
 
 @pytest.mark.unit
-class TestPayloadLogEventInstantiation:
-    """Test PayloadLogEvent instantiation."""
+class TestModelPayloadLogEventInstantiation:
+    """Test ModelPayloadLogEvent instantiation."""
 
     def test_create_with_required_fields(self) -> None:
         """Test creating payload with required fields only."""
-        payload = PayloadLogEvent(level="INFO", message="Test message")
+        payload = ModelPayloadLogEvent(level="INFO", message="Test message")
         assert payload.level == "INFO"
         assert payload.message == "Test message"
         assert payload.intent_type == "log_event"
 
     def test_create_with_all_fields(self) -> None:
         """Test creating payload with all fields."""
-        payload = PayloadLogEvent(
+        payload = ModelPayloadLogEvent(
             level="ERROR",
             message="Error occurred",
             context={"user_id": "123", "action": "login"},
@@ -43,147 +43,147 @@ class TestPayloadLogEventInstantiation:
 
 
 @pytest.mark.unit
-class TestPayloadLogEventDiscriminator:
+class TestModelPayloadLogEventDiscriminator:
     """Test discriminator field."""
 
     def test_intent_type_value(self) -> None:
         """Test that intent_type is 'log_event'."""
-        payload = PayloadLogEvent(level="INFO", message="Test")
+        payload = ModelPayloadLogEvent(level="INFO", message="Test")
         assert payload.intent_type == "log_event"
 
     def test_intent_type_in_serialization(self) -> None:
         """Test that intent_type is included in serialization."""
-        payload = PayloadLogEvent(level="INFO", message="Test")
+        payload = ModelPayloadLogEvent(level="INFO", message="Test")
         data = payload.model_dump()
         assert data["intent_type"] == "log_event"
 
 
 @pytest.mark.unit
-class TestPayloadLogEventLevelValidation:
+class TestModelPayloadLogEventLevelValidation:
     """Test level field validation."""
 
     def test_valid_level_debug(self) -> None:
         """Test valid DEBUG level."""
-        payload = PayloadLogEvent(level="DEBUG", message="Debug message")
+        payload = ModelPayloadLogEvent(level="DEBUG", message="Debug message")
         assert payload.level == "DEBUG"
 
     def test_valid_level_info(self) -> None:
         """Test valid INFO level."""
-        payload = PayloadLogEvent(level="INFO", message="Info message")
+        payload = ModelPayloadLogEvent(level="INFO", message="Info message")
         assert payload.level == "INFO"
 
     def test_valid_level_warning(self) -> None:
         """Test valid WARNING level."""
-        payload = PayloadLogEvent(level="WARNING", message="Warning message")
+        payload = ModelPayloadLogEvent(level="WARNING", message="Warning message")
         assert payload.level == "WARNING"
 
     def test_valid_level_error(self) -> None:
         """Test valid ERROR level."""
-        payload = PayloadLogEvent(level="ERROR", message="Error message")
+        payload = ModelPayloadLogEvent(level="ERROR", message="Error message")
         assert payload.level == "ERROR"
 
     def test_invalid_level_rejected(self) -> None:
         """Test that invalid level is rejected."""
         with pytest.raises(ValidationError) as exc_info:
-            PayloadLogEvent(level="CRITICAL", message="Test")  # type: ignore[arg-type]
+            ModelPayloadLogEvent(level="CRITICAL", message="Test")  # type: ignore[arg-type]
         assert "level" in str(exc_info.value)
 
     def test_lowercase_level_rejected(self) -> None:
         """Test that lowercase level is rejected."""
         with pytest.raises(ValidationError) as exc_info:
-            PayloadLogEvent(level="info", message="Test")  # type: ignore[arg-type]
+            ModelPayloadLogEvent(level="info", message="Test")  # type: ignore[arg-type]
         assert "level" in str(exc_info.value)
 
 
 @pytest.mark.unit
-class TestPayloadLogEventMessageValidation:
+class TestModelPayloadLogEventMessageValidation:
     """Test message field validation."""
 
     def test_message_required(self) -> None:
         """Test that message is required."""
         with pytest.raises(ValidationError) as exc_info:
-            PayloadLogEvent(level="INFO")  # type: ignore[call-arg]
+            ModelPayloadLogEvent(level="INFO")  # type: ignore[call-arg]
         assert "message" in str(exc_info.value)
 
     def test_message_min_length(self) -> None:
         """Test message minimum length validation."""
         with pytest.raises(ValidationError) as exc_info:
-            PayloadLogEvent(level="INFO", message="")
+            ModelPayloadLogEvent(level="INFO", message="")
         assert "message" in str(exc_info.value)
 
     def test_message_max_length(self) -> None:
         """Test message maximum length validation."""
         long_message = "a" * 4097
         with pytest.raises(ValidationError) as exc_info:
-            PayloadLogEvent(level="INFO", message=long_message)
+            ModelPayloadLogEvent(level="INFO", message=long_message)
         assert "message" in str(exc_info.value)
 
 
 @pytest.mark.unit
-class TestPayloadLogEventDefaultValues:
+class TestModelPayloadLogEventDefaultValues:
     """Test default values."""
 
     def test_default_context(self) -> None:
         """Test default context is empty dict."""
-        payload = PayloadLogEvent(level="INFO", message="Test")
+        payload = ModelPayloadLogEvent(level="INFO", message="Test")
         assert payload.context == {}
 
 
 @pytest.mark.unit
-class TestPayloadLogEventImmutability:
+class TestModelPayloadLogEventImmutability:
     """Test frozen/immutability."""
 
     def test_cannot_modify_level(self) -> None:
         """Test that level cannot be modified after creation."""
-        payload = PayloadLogEvent(level="INFO", message="Test")
+        payload = ModelPayloadLogEvent(level="INFO", message="Test")
         with pytest.raises(ValidationError):
             payload.level = "ERROR"  # type: ignore[misc]
 
     def test_cannot_modify_message(self) -> None:
         """Test that message cannot be modified after creation."""
-        payload = PayloadLogEvent(level="INFO", message="Test")
+        payload = ModelPayloadLogEvent(level="INFO", message="Test")
         with pytest.raises(ValidationError):
             payload.message = "New message"  # type: ignore[misc]
 
 
 @pytest.mark.unit
-class TestPayloadLogEventSerialization:
+class TestModelPayloadLogEventSerialization:
     """Test serialization/deserialization."""
 
     def test_roundtrip_serialization(self) -> None:
         """Test roundtrip serialization."""
-        original = PayloadLogEvent(
+        original = ModelPayloadLogEvent(
             level="WARNING",
             message="Warning message",
             context={"source": "test"},
         )
         data = original.model_dump()
-        restored = PayloadLogEvent.model_validate(data)
+        restored = ModelPayloadLogEvent.model_validate(data)
         assert restored == original
 
     def test_json_roundtrip(self) -> None:
         """Test JSON roundtrip serialization."""
-        original = PayloadLogEvent(level="INFO", message="Test")
+        original = ModelPayloadLogEvent(level="INFO", message="Test")
         json_str = original.model_dump_json()
-        restored = PayloadLogEvent.model_validate_json(json_str)
+        restored = ModelPayloadLogEvent.model_validate_json(json_str)
         assert restored == original
 
     def test_serialization_includes_all_fields(self) -> None:
         """Test that serialization includes all fields."""
-        payload = PayloadLogEvent(level="INFO", message="Test")
+        payload = ModelPayloadLogEvent(level="INFO", message="Test")
         data = payload.model_dump()
         expected_keys = {"intent_type", "level", "message", "context"}
         assert set(data.keys()) == expected_keys
 
 
 @pytest.mark.unit
-class TestPayloadLogEventExtraFieldsRejected:
+class TestModelPayloadLogEventExtraFieldsRejected:
     """Test that extra fields are rejected."""
 
     def test_reject_extra_field(self) -> None:
         """Test that extra fields are rejected."""
         with pytest.raises(ValidationError) as exc_info:
-            PayloadLogEvent(
+            ModelPayloadLogEvent(
                 level="INFO",
                 message="Test",
                 unknown_field="value",  # type: ignore[call-arg]
@@ -192,19 +192,19 @@ class TestPayloadLogEventExtraFieldsRejected:
 
 
 @pytest.mark.unit
-class TestPayloadLogEventContextTypes:
+class TestModelPayloadLogEventContextTypes:
     """Test context field with various value types."""
 
     def test_context_with_string_values(self) -> None:
         """Test context with string values."""
-        payload = PayloadLogEvent(
+        payload = ModelPayloadLogEvent(
             level="INFO", message="Test", context={"key": "value"}
         )
         assert payload.context["key"] == "value"
 
     def test_context_with_numeric_values(self) -> None:
         """Test context with numeric values."""
-        payload = PayloadLogEvent(
+        payload = ModelPayloadLogEvent(
             level="INFO", message="Test", context={"count": 42, "ratio": 0.5}
         )
         assert payload.context["count"] == 42
@@ -212,7 +212,7 @@ class TestPayloadLogEventContextTypes:
 
     def test_context_with_nested_dict(self) -> None:
         """Test context with nested dictionary."""
-        payload = PayloadLogEvent(
+        payload = ModelPayloadLogEvent(
             level="INFO",
             message="Test",
             context={"nested": {"inner": "value"}},
@@ -221,7 +221,7 @@ class TestPayloadLogEventContextTypes:
 
     def test_context_with_list_values(self) -> None:
         """Test context with list values."""
-        payload = PayloadLogEvent(
+        payload = ModelPayloadLogEvent(
             level="INFO",
             message="Test",
             context={"items": [1, 2, 3]},

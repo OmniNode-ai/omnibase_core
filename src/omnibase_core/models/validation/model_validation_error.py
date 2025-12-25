@@ -21,15 +21,10 @@ from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
 from omnibase_core.types.typed_dict_validation_error_serialized import (
     TypedDictValidationErrorSerialized,
 )
-from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 from .model_validation_value import ModelValidationValue
 
 
-@allow_dict_str_any(
-    "Validation error requires flexible details dictionary for context-specific "
-    "error information using ModelValidationValue discriminated union."
-)
 class ModelValidationError(BaseModel):
     """Validation error information.
     Implements Core protocols:

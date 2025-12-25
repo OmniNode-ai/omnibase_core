@@ -2,51 +2,50 @@
 Typed intent payloads for ONEX Reducer/Effect pattern.
 
 This module provides typed payload models for ModelIntent, replacing the generic
-`dict[str, Any]` payload field with discriminated union types for type safety.
+`dict[str, Any]` payload field with Protocol-based types for type safety.
 
 Intent Payload Architecture:
     The ONEX intent system uses typed payloads for compile-time type safety:
 
-    1. Core Typed Payloads (this module):
-       - Discriminated union pattern via `intent_type` field
-       - Closed set of known payload types
-       - Exhaustive pattern matching in Effects
-       - Compile-time type safety
+    1. Protocol-Based Payloads (ProtocolIntentPayload):
+       - Open extensibility: Plugins can define their own payloads
+       - Duck typing: Any conforming class works as a payload
+       - Structural typing for pattern matching in Effects
 
-    2. Extension Payloads (PayloadExtension):
+    2. Extension Payloads (ModelPayloadExtension):
        - Flexible structure for plugins and experiments
        - Uses `extension_type` for sub-classification
        - Runtime validation
 
 Payload Categories:
-    - Logging: PayloadLogEvent, PayloadMetric
-    - Persistence: PayloadPersistState, PayloadPersistResult
-    - FSM: PayloadFSMStateAction, PayloadFSMTransitionAction, PayloadFSMCompleted
-    - Events: PayloadEmitEvent
-    - I/O: PayloadWrite, PayloadHTTP
-    - Notifications: PayloadNotify
-    - Extensions: PayloadExtension
+    - Logging: ModelPayloadLogEvent, ModelPayloadMetric
+    - Persistence: ModelPayloadPersistState, ModelPayloadPersistResult
+    - FSM: ModelPayloadFSMStateAction, ModelPayloadFSMTransitionAction, ModelPayloadFSMCompleted
+    - Events: ModelPayloadEmitEvent
+    - I/O: ModelPayloadWrite, ModelPayloadHTTP
+    - Notifications: ModelPayloadNotify
+    - Extensions: ModelPayloadExtension
 
 Usage:
     >>> from omnibase_core.models.reducer.payloads import (
-    ...     PayloadLogEvent,
-    ...     PayloadMetric,
-    ...     ModelIntentPayloadUnion,
+    ...     ModelPayloadLogEvent,
+    ...     ModelPayloadMetric,
+    ...     ProtocolIntentPayload,
     ... )
     >>>
     >>> # Create a typed payload
-    >>> payload = PayloadLogEvent(
+    >>> payload = ModelPayloadLogEvent(
     ...     level="INFO",
     ...     message="Operation completed",
     ...     context={"duration_ms": 125},
     ... )
     >>>
     >>> # Use in pattern matching
-    >>> def handle_payload(payload: ModelIntentPayloadUnion) -> None:
+    >>> def handle_payload(payload: ProtocolIntentPayload) -> None:
     ...     match payload:
-    ...         case PayloadLogEvent():
+    ...         case ModelPayloadLogEvent():
     ...             print(f"Log: {payload.message}")
-    ...         case PayloadMetric():
+    ...         case ModelPayloadMetric():
     ...             print(f"Metric: {payload.name}={payload.value}")
 
 See Also:
@@ -58,80 +57,84 @@ See Also:
 
 # Base class
 # Event payloads
-from omnibase_core.models.reducer.payloads.model_event_payloads import PayloadEmitEvent
+from omnibase_core.models.reducer.payloads.model_event_payloads import (
+    ModelPayloadEmitEvent,
+)
 
 # Extension payloads
 from omnibase_core.models.reducer.payloads.model_extension_payloads import (
-    PayloadExtension,
+    ModelPayloadExtension,
 )
 from omnibase_core.models.reducer.payloads.model_intent_payload_base import (
     ModelIntentPayloadBase,
 )
 
-# Discriminated union
-from omnibase_core.models.reducer.payloads.model_intent_payload_union import (
-    IntentPayloadList,
-    ModelIntentPayloadUnion,
-)
-
 # Notification payloads
 from omnibase_core.models.reducer.payloads.model_notification_payloads import (
-    PayloadNotify,
+    ModelPayloadNotify,
 )
 
 # FSM payloads (split files)
 from omnibase_core.models.reducer.payloads.model_payload_fsm_completed import (
-    PayloadFSMCompleted,
+    ModelPayloadFSMCompleted,
 )
 from omnibase_core.models.reducer.payloads.model_payload_fsm_state_action import (
-    PayloadFSMStateAction,
+    ModelPayloadFSMStateAction,
 )
 from omnibase_core.models.reducer.payloads.model_payload_fsm_transition_action import (
-    PayloadFSMTransitionAction,
+    ModelPayloadFSMTransitionAction,
 )
 
 # I/O payloads (split files)
-from omnibase_core.models.reducer.payloads.model_payload_http import PayloadHTTP
+from omnibase_core.models.reducer.payloads.model_payload_http import ModelPayloadHTTP
 
 # Logging payloads (split files)
 from omnibase_core.models.reducer.payloads.model_payload_log_event import (
-    PayloadLogEvent,
+    ModelPayloadLogEvent,
 )
-from omnibase_core.models.reducer.payloads.model_payload_metric import PayloadMetric
+from omnibase_core.models.reducer.payloads.model_payload_metric import (
+    ModelPayloadMetric,
+)
 
 # Persistence payloads (split files)
 from omnibase_core.models.reducer.payloads.model_payload_persist_result import (
-    PayloadPersistResult,
+    ModelPayloadPersistResult,
 )
 from omnibase_core.models.reducer.payloads.model_payload_persist_state import (
-    PayloadPersistState,
+    ModelPayloadPersistState,
 )
-from omnibase_core.models.reducer.payloads.model_payload_write import PayloadWrite
+from omnibase_core.models.reducer.payloads.model_payload_write import ModelPayloadWrite
+
+# Protocol for structural typing
+from omnibase_core.models.reducer.payloads.model_protocol_intent_payload import (
+    IntentPayloadList,
+    ProtocolIntentPayload,
+)
 
 # Public API - listed immediately after imports per Python convention
 __all__ = [
+    # Protocol for structural typing
+    "ProtocolIntentPayload",
+    "IntentPayloadList",
     # Base class
     "ModelIntentPayloadBase",
     # Logging payloads
-    "PayloadLogEvent",
-    "PayloadMetric",
+    "ModelPayloadLogEvent",
+    "ModelPayloadMetric",
     # Persistence payloads
-    "PayloadPersistState",
-    "PayloadPersistResult",
+    "ModelPayloadPersistState",
+    "ModelPayloadPersistResult",
     # FSM payloads
-    "PayloadFSMStateAction",
-    "PayloadFSMTransitionAction",
-    "PayloadFSMCompleted",
+    "ModelPayloadFSMStateAction",
+    "ModelPayloadFSMTransitionAction",
+    "ModelPayloadFSMCompleted",
     # Event payloads
-    "PayloadEmitEvent",
+    "ModelPayloadEmitEvent",
     # I/O payloads
-    "PayloadWrite",
-    "PayloadHTTP",
+    "ModelPayloadWrite",
+    "ModelPayloadHTTP",
     # Notification payloads
-    "PayloadNotify",
+    "ModelPayloadNotify",
     # Extension payloads
-    "PayloadExtension",
-    # Discriminated union
-    "ModelIntentPayloadUnion",
-    "IntentPayloadList",
+    "ModelPayloadExtension",
 ]

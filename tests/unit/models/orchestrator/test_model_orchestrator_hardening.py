@@ -15,9 +15,10 @@ These tests ensure:
 - Field constraints are properly enforced
 """
 
+from typing import Literal
 from uuid import uuid4
 
-from pydantic import ValidationError
+from pydantic import BaseModel, ConfigDict, ValidationError
 
 from omnibase_core.enums.enum_workflow_execution import EnumActionType
 from omnibase_core.models.contracts.subcontracts.model_workflow_coordination_subcontract import (
@@ -28,6 +29,21 @@ from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 # Default version for test instances - required field
 DEFAULT_VERSION = ModelSemVer(major=1, minor=0, patch=0)
+
+
+# Minimal test payload implementing ProtocolActionPayload
+class _TestActionPayload(BaseModel):
+    """Minimal payload for unit tests."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid")
+    kind: Literal["test.action"] = "test.action"
+    data: str = "test"
+
+
+# Test helper for creating valid action type payload
+def _create_test_payload() -> _TestActionPayload:
+    """Create a minimal valid payload for test ModelAction instances."""
+    return _TestActionPayload()
 
 
 @pytest.mark.timeout(30)
@@ -42,6 +58,7 @@ class TestModelActionHardening:
             target_node_type="COMPUTE",
             lease_id=uuid4(),
             epoch=1,
+            payload=_create_test_payload(),
         )
         with pytest.raises(ValidationError):
             action.action_type = EnumActionType.EFFECT  # type: ignore[misc]
@@ -54,6 +71,7 @@ class TestModelActionHardening:
                 target_node_type="COMPUTE",
                 lease_id=uuid4(),
                 epoch=1,
+                payload=_create_test_payload(),
                 unknown_field="should_fail",  # type: ignore[call-arg]
             )
         assert (
@@ -70,6 +88,7 @@ class TestModelActionHardening:
             lease_id=uuid4(),
             epoch=1,
             priority=5,
+            payload=_create_test_payload(),
         )
         assert valid.priority == 5
 
@@ -81,6 +100,7 @@ class TestModelActionHardening:
                 lease_id=uuid4(),
                 epoch=1,
                 priority=0,
+                payload=_create_test_payload(),
             )
 
         # Too large (must be <= 10)
@@ -91,6 +111,7 @@ class TestModelActionHardening:
                 lease_id=uuid4(),
                 epoch=1,
                 priority=11,
+                payload=_create_test_payload(),
             )
 
     def test_timeout_ms_bounds(self) -> None:
@@ -102,6 +123,7 @@ class TestModelActionHardening:
             lease_id=uuid4(),
             epoch=1,
             timeout_ms=60000,
+            payload=_create_test_payload(),
         )
         assert valid.timeout_ms == 60000
 
@@ -113,6 +135,7 @@ class TestModelActionHardening:
                 lease_id=uuid4(),
                 epoch=1,
                 timeout_ms=99,
+                payload=_create_test_payload(),
             )
 
         # Too large (must be <= 300000)
@@ -123,6 +146,7 @@ class TestModelActionHardening:
                 lease_id=uuid4(),
                 epoch=1,
                 timeout_ms=300001,
+                payload=_create_test_payload(),
             )
 
     def test_retry_count_bounds(self) -> None:
@@ -134,6 +158,7 @@ class TestModelActionHardening:
             lease_id=uuid4(),
             epoch=1,
             retry_count=5,
+            payload=_create_test_payload(),
         )
         assert valid.retry_count == 5
 
@@ -145,6 +170,7 @@ class TestModelActionHardening:
                 lease_id=uuid4(),
                 epoch=1,
                 retry_count=-1,
+                payload=_create_test_payload(),
             )
 
         # Too large (must be <= 10)
@@ -155,6 +181,7 @@ class TestModelActionHardening:
                 lease_id=uuid4(),
                 epoch=1,
                 retry_count=11,
+                payload=_create_test_payload(),
             )
 
     def test_epoch_bounds(self) -> None:
@@ -165,6 +192,7 @@ class TestModelActionHardening:
             target_node_type="COMPUTE",
             lease_id=uuid4(),
             epoch=0,
+            payload=_create_test_payload(),
         )
         assert valid.epoch == 0
 
@@ -175,6 +203,7 @@ class TestModelActionHardening:
                 target_node_type="COMPUTE",
                 lease_id=uuid4(),
                 epoch=-1,
+                payload=_create_test_payload(),
             )
 
     def test_target_node_type_length_bounds(self) -> None:
@@ -185,6 +214,7 @@ class TestModelActionHardening:
             target_node_type="COMPUTE",
             lease_id=uuid4(),
             epoch=1,
+            payload=_create_test_payload(),
         )
         assert valid.target_node_type == "COMPUTE"
 
@@ -195,6 +225,7 @@ class TestModelActionHardening:
                 target_node_type="",
                 lease_id=uuid4(),
                 epoch=1,
+                payload=_create_test_payload(),
             )
 
         # Too long (must be <= 100)
@@ -204,6 +235,7 @@ class TestModelActionHardening:
                 target_node_type="x" * 101,
                 lease_id=uuid4(),
                 epoch=1,
+                payload=_create_test_payload(),
             )
 
     def test_model_config_frozen(self) -> None:
@@ -224,6 +256,7 @@ class TestModelActionHardening:
             lease_id=uuid4(),
             epoch=1,
             priority=5,
+            payload=_create_test_payload(),
         )
 
         # Create a modified copy (this is the correct pattern for frozen models)

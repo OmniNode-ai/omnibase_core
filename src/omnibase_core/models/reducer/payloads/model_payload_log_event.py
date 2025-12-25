@@ -1,7 +1,7 @@
 """
-PayloadLogEvent - Typed payload for log event emission intents.
+ModelPayloadLogEvent - Typed payload for log event emission intents.
 
-This module provides the PayloadLogEvent model for structured log event
+This module provides the ModelPayloadLogEvent model for structured log event
 emission from Reducers. The Effect node receives the intent and sends
 the log to the configured logging backend.
 
@@ -15,9 +15,9 @@ Thread Safety:
     thread-safe for concurrent read access.
 
 Example:
-    >>> from omnibase_core.models.reducer.payloads import PayloadLogEvent
+    >>> from omnibase_core.models.reducer.payloads import ModelPayloadLogEvent
     >>>
-    >>> payload = PayloadLogEvent(
+    >>> payload = ModelPayloadLogEvent(
     ...     level="INFO",
     ...     message="User authentication successful",
     ...     context={"user_id": "abc123", "auth_method": "oauth2"},
@@ -37,10 +37,10 @@ from omnibase_core.models.reducer.payloads.model_intent_payload_base import (
 )
 
 # Public API - listed immediately after imports per Python convention
-__all__ = ["PayloadLogEvent"]
+__all__ = ["ModelPayloadLogEvent"]
 
 
-class PayloadLogEvent(ModelIntentPayloadBase):
+class ModelPayloadLogEvent(ModelIntentPayloadBase):
     """Payload for log event emission intents.
 
     Emitted by Reducers when a log event should be recorded. The Effect node
@@ -58,7 +58,7 @@ class PayloadLogEvent(ModelIntentPayloadBase):
             Uses dict[str, object] for type-safe flexible metadata.
 
     Example:
-        >>> payload = PayloadLogEvent(
+        >>> payload = ModelPayloadLogEvent(
         ...     level="INFO",
         ...     message="User authentication successful",
         ...     context={"user_id": "abc123", "auth_method": "oauth2"},

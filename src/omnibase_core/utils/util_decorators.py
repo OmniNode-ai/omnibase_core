@@ -34,27 +34,6 @@ def allow_any_type(reason: str) -> Callable[[ClassType], ClassType]:
     return decorator
 
 
-def allow_dict_str_any(reason: str) -> Callable[[ClassType], ClassType]:
-    """
-    Decorator to allow dict[str, Any] types in model fields.
-
-    Args:
-        reason: Explanation for why dict[str, Any] is needed
-
-    Returns:
-        The decorator function
-    """
-
-    def decorator(cls: ClassType) -> ClassType:
-        # Add metadata to the class for documentation
-        if not hasattr(cls, "_allow_dict_str_any_reasons"):
-            cls._allow_dict_str_any_reasons = []  # type: ignore[attr-defined]
-        cls._allow_dict_str_any_reasons.append(reason)  # type: ignore[attr-defined]
-        return cls
-
-    return decorator
-
-
 def allow_string_id(reason: str) -> Callable[[ClassType], ClassType]:
     """
     Decorator to allow string ID fields instead of UUID.

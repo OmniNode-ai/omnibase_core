@@ -1,7 +1,7 @@
 """
-PayloadFSMTransitionAction - Typed payload for FSM transition action execution intents.
+ModelPayloadFSMTransitionAction - Typed payload for FSM transition action execution intents.
 
-This module provides the PayloadFSMTransitionAction model for FSM
+This module provides the ModelPayloadFSMTransitionAction model for FSM
 transition action execution from Reducers. The Effect node receives
 the intent and invokes the registered transition action handler.
 
@@ -16,9 +16,9 @@ Thread Safety:
 
 Example:
     >>> from uuid import uuid4
-    >>> from omnibase_core.models.reducer.payloads import PayloadFSMTransitionAction
+    >>> from omnibase_core.models.reducer.payloads import ModelPayloadFSMTransitionAction
     >>>
-    >>> payload = PayloadFSMTransitionAction(
+    >>> payload = ModelPayloadFSMTransitionAction(
     ...     from_state="cart",
     ...     to_state="checkout",
     ...     trigger="proceed_to_checkout",
@@ -43,10 +43,10 @@ from omnibase_core.models.reducer.payloads.model_intent_payload_base import (
 )
 
 # Public API - listed immediately after imports per Python convention
-__all__ = ["PayloadFSMTransitionAction"]
+__all__ = ["ModelPayloadFSMTransitionAction"]
 
 
-class PayloadFSMTransitionAction(ModelIntentPayloadBase):
+class ModelPayloadFSMTransitionAction(ModelIntentPayloadBase):
     """Payload for FSM transition action execution intents.
 
     Emitted by Reducers when a transition action should be executed.
@@ -67,7 +67,7 @@ class PayloadFSMTransitionAction(ModelIntentPayloadBase):
         fsm_id: Optional FSM instance identifier for multi-instance scenarios.
 
     Example:
-        >>> payload = PayloadFSMTransitionAction(
+        >>> payload = ModelPayloadFSMTransitionAction(
         ...     from_state="cart",
         ...     to_state="checkout",
         ...     trigger="proceed_to_checkout",

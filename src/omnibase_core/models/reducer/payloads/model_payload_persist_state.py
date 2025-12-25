@@ -1,7 +1,7 @@
 """
-PayloadPersistState - Typed payload for state persistence intents.
+ModelPayloadPersistState - Typed payload for state persistence intents.
 
-This module provides the PayloadPersistState model for FSM state
+This module provides the ModelPayloadPersistState model for FSM state
 snapshot persistence from Reducers. The Effect node receives the
 intent and stores the state to the configured persistence backend.
 
@@ -15,9 +15,9 @@ Thread Safety:
     thread-safe for concurrent read access.
 
 Example:
-    >>> from omnibase_core.models.reducer.payloads import PayloadPersistState
+    >>> from omnibase_core.models.reducer.payloads import ModelPayloadPersistState
     >>>
-    >>> payload = PayloadPersistState(
+    >>> payload = ModelPayloadPersistState(
     ...     state_key="fsm:order:12345:state",
     ...     state_data={"status": "pending", "items": ["a", "b"]},
     ...     ttl_seconds=86400,  # 24 hours
@@ -39,10 +39,10 @@ from omnibase_core.models.reducer.payloads.model_intent_payload_base import (
 )
 
 # Public API - listed immediately after imports per Python convention
-__all__ = ["PayloadPersistState"]
+__all__ = ["ModelPayloadPersistState"]
 
 
-class PayloadPersistState(ModelIntentPayloadBase):
+class ModelPayloadPersistState(ModelIntentPayloadBase):
     """Payload for state persistence intents.
 
     Emitted by Reducers when FSM state should be persisted. The Effect node
@@ -62,7 +62,7 @@ class PayloadPersistState(ModelIntentPayloadBase):
             should check version before writing to prevent conflicts.
 
     Example:
-        >>> payload = PayloadPersistState(
+        >>> payload = ModelPayloadPersistState(
         ...     state_key="fsm:order:12345:state",
         ...     state_data={"status": "pending", "items": ["a", "b"]},
         ...     ttl_seconds=86400,  # 24 hours

@@ -3,9 +3,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """
-Tests for PayloadNotify.
+Tests for ModelPayloadNotify.
 
-This module tests the PayloadNotify model for notification intents, verifying:
+This module tests the ModelPayloadNotify model for notification intents, verifying:
 1. Field validation (channel, recipients, subject, body, priority, etc.)
 2. Discriminator value
 3. Serialization/deserialization
@@ -18,16 +18,16 @@ from uuid import uuid4
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.models.reducer.payloads import PayloadNotify
+from omnibase_core.models.reducer.payloads import ModelPayloadNotify
 
 
 @pytest.mark.unit
-class TestPayloadNotifyInstantiation:
-    """Test PayloadNotify instantiation."""
+class TestModelPayloadNotifyInstantiation:
+    """Test ModelPayloadNotify instantiation."""
 
     def test_create_with_required_fields(self) -> None:
         """Test creating payload with required fields only."""
-        payload = PayloadNotify(
+        payload = ModelPayloadNotify(
             channel="email",
             recipients=["test@example.com"],
             subject="Test Subject",
@@ -42,7 +42,7 @@ class TestPayloadNotifyInstantiation:
     def test_create_with_all_fields(self) -> None:
         """Test creating payload with all fields."""
         template_id = uuid4()
-        payload = PayloadNotify(
+        payload = ModelPayloadNotify(
             channel="slack",
             recipients=["#engineering-alerts", "#ops"],
             subject="Build Failed",
@@ -63,12 +63,12 @@ class TestPayloadNotifyInstantiation:
 
 
 @pytest.mark.unit
-class TestPayloadNotifyDiscriminator:
+class TestModelPayloadNotifyDiscriminator:
     """Test discriminator field."""
 
     def test_intent_type_value(self) -> None:
         """Test that intent_type is 'notify'."""
-        payload = PayloadNotify(
+        payload = ModelPayloadNotify(
             channel="email",
             recipients=["test@example.com"],
             subject="Test",
@@ -78,7 +78,7 @@ class TestPayloadNotifyDiscriminator:
 
     def test_intent_type_in_serialization(self) -> None:
         """Test that intent_type is included in serialization."""
-        payload = PayloadNotify(
+        payload = ModelPayloadNotify(
             channel="email",
             recipients=["test@example.com"],
             subject="Test",
@@ -89,14 +89,14 @@ class TestPayloadNotifyDiscriminator:
 
 
 @pytest.mark.unit
-class TestPayloadNotifyChannelValidation:
+class TestModelPayloadNotifyChannelValidation:
     """Test channel field validation."""
 
     def test_valid_channels(self) -> None:
         """Test all valid notification channels."""
         valid_channels = ["email", "sms", "slack", "pagerduty", "webhook", "teams"]
         for channel in valid_channels:
-            payload = PayloadNotify(
+            payload = ModelPayloadNotify(
                 channel=channel,  # type: ignore[arg-type]
                 recipients=["recipient"],
                 subject="Test",
@@ -107,7 +107,7 @@ class TestPayloadNotifyChannelValidation:
     def test_invalid_channel_rejected(self) -> None:
         """Test that invalid channel is rejected."""
         with pytest.raises(ValidationError) as exc_info:
-            PayloadNotify(
+            ModelPayloadNotify(
                 channel="invalid",  # type: ignore[arg-type]
                 recipients=["recipient"],
                 subject="Test",
@@ -117,19 +117,19 @@ class TestPayloadNotifyChannelValidation:
 
 
 @pytest.mark.unit
-class TestPayloadNotifyRecipientsValidation:
+class TestModelPayloadNotifyRecipientsValidation:
     """Test recipients field validation."""
 
     def test_recipients_required(self) -> None:
         """Test that recipients is required."""
         with pytest.raises(ValidationError) as exc_info:
-            PayloadNotify(channel="email", subject="Test", body="Body")  # type: ignore[call-arg]
+            ModelPayloadNotify(channel="email", subject="Test", body="Body")  # type: ignore[call-arg]
         assert "recipients" in str(exc_info.value)
 
     def test_recipients_min_length(self) -> None:
         """Test recipients minimum length validation."""
         with pytest.raises(ValidationError) as exc_info:
-            PayloadNotify(
+            ModelPayloadNotify(
                 channel="email",
                 recipients=[],
                 subject="Test",
@@ -139,7 +139,7 @@ class TestPayloadNotifyRecipientsValidation:
 
     def test_recipients_accepts_multiple(self) -> None:
         """Test recipients accepts multiple entries."""
-        payload = PayloadNotify(
+        payload = ModelPayloadNotify(
             channel="email",
             recipients=["a@test.com", "b@test.com", "c@test.com"],
             subject="Test",
@@ -149,13 +149,13 @@ class TestPayloadNotifyRecipientsValidation:
 
 
 @pytest.mark.unit
-class TestPayloadNotifySubjectValidation:
+class TestModelPayloadNotifySubjectValidation:
     """Test subject field validation."""
 
     def test_subject_required(self) -> None:
         """Test that subject is required."""
         with pytest.raises(ValidationError) as exc_info:
-            PayloadNotify(
+            ModelPayloadNotify(
                 channel="email",
                 recipients=["test@example.com"],
                 body="Body",
@@ -165,7 +165,7 @@ class TestPayloadNotifySubjectValidation:
     def test_subject_min_length(self) -> None:
         """Test subject minimum length validation."""
         with pytest.raises(ValidationError) as exc_info:
-            PayloadNotify(
+            ModelPayloadNotify(
                 channel="email",
                 recipients=["test@example.com"],
                 subject="",
@@ -177,7 +177,7 @@ class TestPayloadNotifySubjectValidation:
         """Test subject maximum length validation."""
         long_subject = "a" * 257
         with pytest.raises(ValidationError) as exc_info:
-            PayloadNotify(
+            ModelPayloadNotify(
                 channel="email",
                 recipients=["test@example.com"],
                 subject=long_subject,
@@ -187,13 +187,13 @@ class TestPayloadNotifySubjectValidation:
 
 
 @pytest.mark.unit
-class TestPayloadNotifyBodyValidation:
+class TestModelPayloadNotifyBodyValidation:
     """Test body field validation."""
 
     def test_body_required(self) -> None:
         """Test that body is required."""
         with pytest.raises(ValidationError) as exc_info:
-            PayloadNotify(
+            ModelPayloadNotify(
                 channel="email",
                 recipients=["test@example.com"],
                 subject="Test",
@@ -203,7 +203,7 @@ class TestPayloadNotifyBodyValidation:
     def test_body_min_length(self) -> None:
         """Test body minimum length validation."""
         with pytest.raises(ValidationError) as exc_info:
-            PayloadNotify(
+            ModelPayloadNotify(
                 channel="email",
                 recipients=["test@example.com"],
                 subject="Test",
@@ -215,7 +215,7 @@ class TestPayloadNotifyBodyValidation:
         """Test body maximum length validation."""
         long_body = "a" * 16385
         with pytest.raises(ValidationError) as exc_info:
-            PayloadNotify(
+            ModelPayloadNotify(
                 channel="email",
                 recipients=["test@example.com"],
                 subject="Test",
@@ -225,14 +225,14 @@ class TestPayloadNotifyBodyValidation:
 
 
 @pytest.mark.unit
-class TestPayloadNotifyPriorityValidation:
+class TestModelPayloadNotifyPriorityValidation:
     """Test priority field validation."""
 
     def test_valid_priorities(self) -> None:
         """Test all valid priority levels."""
         valid_priorities = ["low", "normal", "high", "critical"]
         for priority in valid_priorities:
-            payload = PayloadNotify(
+            payload = ModelPayloadNotify(
                 channel="email",
                 recipients=["test@example.com"],
                 subject="Test",
@@ -244,7 +244,7 @@ class TestPayloadNotifyPriorityValidation:
     def test_invalid_priority_rejected(self) -> None:
         """Test that invalid priority is rejected."""
         with pytest.raises(ValidationError) as exc_info:
-            PayloadNotify(
+            ModelPayloadNotify(
                 channel="email",
                 recipients=["test@example.com"],
                 subject="Test",
@@ -255,12 +255,12 @@ class TestPayloadNotifyPriorityValidation:
 
 
 @pytest.mark.unit
-class TestPayloadNotifyDefaultValues:
+class TestModelPayloadNotifyDefaultValues:
     """Test default values."""
 
     def test_default_priority(self) -> None:
         """Test default priority is normal."""
-        payload = PayloadNotify(
+        payload = ModelPayloadNotify(
             channel="email",
             recipients=["test@example.com"],
             subject="Test",
@@ -270,7 +270,7 @@ class TestPayloadNotifyDefaultValues:
 
     def test_default_template_id(self) -> None:
         """Test default template_id is None."""
-        payload = PayloadNotify(
+        payload = ModelPayloadNotify(
             channel="email",
             recipients=["test@example.com"],
             subject="Test",
@@ -280,7 +280,7 @@ class TestPayloadNotifyDefaultValues:
 
     def test_default_template_vars(self) -> None:
         """Test default template_vars is empty dict."""
-        payload = PayloadNotify(
+        payload = ModelPayloadNotify(
             channel="email",
             recipients=["test@example.com"],
             subject="Test",
@@ -290,7 +290,7 @@ class TestPayloadNotifyDefaultValues:
 
     def test_default_metadata(self) -> None:
         """Test default metadata is empty dict."""
-        payload = PayloadNotify(
+        payload = ModelPayloadNotify(
             channel="email",
             recipients=["test@example.com"],
             subject="Test",
@@ -300,12 +300,12 @@ class TestPayloadNotifyDefaultValues:
 
 
 @pytest.mark.unit
-class TestPayloadNotifyImmutability:
+class TestModelPayloadNotifyImmutability:
     """Test frozen/immutability."""
 
     def test_cannot_modify_channel(self) -> None:
         """Test that channel cannot be modified after creation."""
-        payload = PayloadNotify(
+        payload = ModelPayloadNotify(
             channel="email",
             recipients=["test@example.com"],
             subject="Test",
@@ -316,7 +316,7 @@ class TestPayloadNotifyImmutability:
 
     def test_cannot_modify_subject(self) -> None:
         """Test that subject cannot be modified after creation."""
-        payload = PayloadNotify(
+        payload = ModelPayloadNotify(
             channel="email",
             recipients=["test@example.com"],
             subject="Test",
@@ -327,13 +327,13 @@ class TestPayloadNotifyImmutability:
 
 
 @pytest.mark.unit
-class TestPayloadNotifySerialization:
+class TestModelPayloadNotifySerialization:
     """Test serialization/deserialization."""
 
     def test_roundtrip_serialization(self) -> None:
         """Test roundtrip serialization."""
         template_id = uuid4()
-        original = PayloadNotify(
+        original = ModelPayloadNotify(
             channel="slack",
             recipients=["#alerts"],
             subject="Alert",
@@ -344,24 +344,24 @@ class TestPayloadNotifySerialization:
             metadata={"source": "monitoring"},
         )
         data = original.model_dump()
-        restored = PayloadNotify.model_validate(data)
+        restored = ModelPayloadNotify.model_validate(data)
         assert restored == original
 
     def test_json_roundtrip(self) -> None:
         """Test JSON roundtrip serialization."""
-        original = PayloadNotify(
+        original = ModelPayloadNotify(
             channel="email",
             recipients=["test@example.com"],
             subject="Test",
             body="Body",
         )
         json_str = original.model_dump_json()
-        restored = PayloadNotify.model_validate_json(json_str)
+        restored = ModelPayloadNotify.model_validate_json(json_str)
         assert restored == original
 
     def test_serialization_includes_all_fields(self) -> None:
         """Test that serialization includes all fields."""
-        payload = PayloadNotify(
+        payload = ModelPayloadNotify(
             channel="email",
             recipients=["test@example.com"],
             subject="Test",
@@ -383,13 +383,13 @@ class TestPayloadNotifySerialization:
 
 
 @pytest.mark.unit
-class TestPayloadNotifyExtraFieldsRejected:
+class TestModelPayloadNotifyExtraFieldsRejected:
     """Test that extra fields are rejected."""
 
     def test_reject_extra_field(self) -> None:
         """Test that extra fields are rejected."""
         with pytest.raises(ValidationError) as exc_info:
-            PayloadNotify(
+            ModelPayloadNotify(
                 channel="email",
                 recipients=["test@example.com"],
                 subject="Test",

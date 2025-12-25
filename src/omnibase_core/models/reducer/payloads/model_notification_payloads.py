@@ -2,7 +2,7 @@
 Notification intent payloads for alerts and messaging.
 
 This module provides typed payloads for notification-related intents:
-- PayloadNotify: General notification/alert emission
+- ModelPayloadNotify: General notification/alert emission
 
 Design Pattern:
     Reducers emit these payloads when notification side effects are needed.
@@ -13,7 +13,7 @@ Design Pattern:
     outcome without performing the actual side effect.
 
 Notification Integration:
-    - PayloadNotify supports multiple channels (email, SMS, Slack, webhook)
+    - ModelPayloadNotify supports multiple channels (email, SMS, Slack, webhook)
     - Supports priority levels for alerting systems
     - Includes recipient targeting and content templating
 
@@ -22,10 +22,10 @@ Thread Safety:
     thread-safe for concurrent read access.
 
 Example:
-    >>> from omnibase_core.models.reducer.payloads import PayloadNotify
+    >>> from omnibase_core.models.reducer.payloads import ModelPayloadNotify
     >>>
     >>> # Notification payload
-    >>> notify_payload = PayloadNotify(
+    >>> notify_payload = ModelPayloadNotify(
     ...     channel="slack",
     ...     recipients=["#engineering-alerts"],
     ...     subject="Build Failed",
@@ -48,10 +48,10 @@ from omnibase_core.models.reducer.payloads.model_intent_payload_base import (
 )
 
 # Public API - listed immediately after imports per Python convention
-__all__ = ["PayloadNotify"]
+__all__ = ["ModelPayloadNotify"]
 
 
-class PayloadNotify(ModelIntentPayloadBase):
+class ModelPayloadNotify(ModelIntentPayloadBase):
     """Payload for notification/alert intents.
 
     Emitted by Reducers when a notification should be sent to users or systems.
@@ -73,7 +73,7 @@ class PayloadNotify(ModelIntentPayloadBase):
         metadata: Additional metadata for the notification.
 
     Example:
-        >>> payload = PayloadNotify(
+        >>> payload = ModelPayloadNotify(
         ...     channel="email",
         ...     recipients=["admin@example.com", "oncall@example.com"],
         ...     subject="Critical: Database Connection Pool Exhausted",

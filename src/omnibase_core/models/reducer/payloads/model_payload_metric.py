@@ -1,7 +1,7 @@
 """
-PayloadMetric - Typed payload for metric recording intents.
+ModelPayloadMetric - Typed payload for metric recording intents.
 
-This module provides the PayloadMetric model for structured metric
+This module provides the ModelPayloadMetric model for structured metric
 recording from Reducers. The Effect node receives the intent and sends
 the metric to the configured metrics backend.
 
@@ -15,9 +15,9 @@ Thread Safety:
     thread-safe for concurrent read access.
 
 Example:
-    >>> from omnibase_core.models.reducer.payloads import PayloadMetric
+    >>> from omnibase_core.models.reducer.payloads import ModelPayloadMetric
     >>>
-    >>> payload = PayloadMetric(
+    >>> payload = ModelPayloadMetric(
     ...     name="http.request.duration",
     ...     value=0.125,
     ...     metric_type="histogram",
@@ -39,10 +39,10 @@ from omnibase_core.models.reducer.payloads.model_intent_payload_base import (
 )
 
 # Public API - listed immediately after imports per Python convention
-__all__ = ["PayloadMetric"]
+__all__ = ["ModelPayloadMetric"]
 
 
-class PayloadMetric(ModelIntentPayloadBase):
+class ModelPayloadMetric(ModelIntentPayloadBase):
     """Payload for metric recording intents.
 
     Emitted by Reducers when a metric should be recorded. The Effect node
@@ -61,7 +61,7 @@ class PayloadMetric(ModelIntentPayloadBase):
         unit: Optional unit of measurement (e.g., "seconds", "bytes").
 
     Example:
-        >>> payload = PayloadMetric(
+        >>> payload = ModelPayloadMetric(
         ...     name="http.request.duration",
         ...     value=0.125,
         ...     metric_type="histogram",

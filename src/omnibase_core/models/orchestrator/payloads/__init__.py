@@ -59,7 +59,16 @@ from omnibase_core.models.orchestrator.payloads.model_action_typed_payload impor
     get_recommended_payloads_for_action_type,
 )
 
+# Protocol for structural typing
+from omnibase_core.models.orchestrator.payloads.model_protocol_action_payload import (
+    ActionPayloadList,
+    ProtocolActionPayload,
+)
+
 __all__ = [
+    # Protocol for structural typing
+    "ProtocolActionPayload",
+    "ActionPayloadList",
     # Base class
     "ModelActionPayloadBase",
     # Specific payload types

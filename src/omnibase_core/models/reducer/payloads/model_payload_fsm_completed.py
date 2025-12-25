@@ -1,7 +1,7 @@
 """
-PayloadFSMCompleted - Typed payload for FSM completion notification intents.
+ModelPayloadFSMCompleted - Typed payload for FSM completion notification intents.
 
-This module provides the PayloadFSMCompleted model for FSM completion
+This module provides the ModelPayloadFSMCompleted model for FSM completion
 notification from Reducers. The Effect node receives the intent and
 performs cleanup operations and notifies downstream systems.
 
@@ -16,9 +16,9 @@ Thread Safety:
 
 Example:
     >>> from uuid import UUID
-    >>> from omnibase_core.models.reducer.payloads import PayloadFSMCompleted
+    >>> from omnibase_core.models.reducer.payloads import ModelPayloadFSMCompleted
     >>>
-    >>> payload = PayloadFSMCompleted(
+    >>> payload = ModelPayloadFSMCompleted(
     ...     fsm_id=UUID("12345678-1234-5678-1234-567812345678"),
     ...     final_state="completed",
     ...     completion_status="success",
@@ -42,10 +42,10 @@ from omnibase_core.models.reducer.payloads.model_intent_payload_base import (
 )
 
 # Public API - listed immediately after imports per Python convention
-__all__ = ["PayloadFSMCompleted"]
+__all__ = ["ModelPayloadFSMCompleted"]
 
 
-class PayloadFSMCompleted(ModelIntentPayloadBase):
+class ModelPayloadFSMCompleted(ModelIntentPayloadBase):
     """Payload for FSM completion notification intents.
 
     Emitted by Reducers when an FSM has reached a terminal state and should
@@ -62,7 +62,7 @@ class PayloadFSMCompleted(ModelIntentPayloadBase):
         metadata: Optional metadata about the completion (timing, metrics, etc.).
 
     Example:
-        >>> payload = PayloadFSMCompleted(
+        >>> payload = ModelPayloadFSMCompleted(
         ...     fsm_id=UUID("12345678-1234-5678-1234-567812345678"),
         ...     final_state="completed",
         ...     completion_status="success",
