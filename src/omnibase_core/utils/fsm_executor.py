@@ -31,6 +31,13 @@ from omnibase_core.models.fsm.model_fsm_transition_result import (
     ModelFSMTransitionResult as FSMTransitionResult,
 )
 from omnibase_core.models.reducer.model_intent import ModelIntent
+from omnibase_core.models.reducer.payloads import (
+    ModelPayloadFSMStateAction,
+    ModelPayloadFSMTransitionAction,
+    ModelPayloadLogEvent,
+    ModelPayloadMetric,
+    ModelPayloadPersistState,
+)
 from omnibase_core.types.type_fsm_context import FSMContextType
 from omnibase_core.utils.fsm_expression_parser import parse_expression
 from omnibase_core.utils.fsm_operators import evaluate_equals, evaluate_not_equals
@@ -119,15 +126,15 @@ async def execute_transition(
             ModelIntent(
                 intent_type="log_event",
                 target="logging_service",
-                payload={
-                    "level": "WARNING",
-                    "message": f"FSM transition conditions not met: {transition.transition_name}",
-                    "context": {
+                payload=ModelPayloadLogEvent(
+                    level="WARNING",
+                    message=f"FSM transition conditions not met: {transition.transition_name}",
+                    context={
                         "fsm": fsm.state_machine_name,
                         "from_state": current_state,
                         "to_state": transition.to_state,
                     },
-                },
+                ),
                 priority=3,
             )
         )
@@ -170,13 +177,16 @@ async def execute_transition(
             ModelIntent(
                 intent_type="persist_state",
                 target="state_persistence",
-                payload={
-                    "fsm_name": fsm.state_machine_name,
-                    "state": transition.to_state,
-                    "previous_state": current_state,
-                    "context": context,
-                    "timestamp": datetime.now(UTC).isoformat(),
-                },
+                payload=ModelPayloadPersistState(
+                    state_key=f"fsm:{fsm.state_machine_name}:state",
+                    state_data={
+                        "fsm_name": fsm.state_machine_name,
+                        "state": transition.to_state,
+                        "previous_state": current_state,
+                        "context": context,
+                        "timestamp": datetime.now(UTC).isoformat(),
+                    },
+                ),
                 priority=1,  # High priority for persistence
             )
         )
@@ -186,16 +196,17 @@ async def execute_transition(
         ModelIntent(
             intent_type="record_metric",
             target="metrics_service",
-            payload={
-                "metric_name": "fsm_transition",
-                "tags": {
+            payload=ModelPayloadMetric(
+                name="fsm.transition",
+                value=1.0,
+                metric_type="counter",
+                labels={
                     "fsm": fsm.state_machine_name,
                     "from_state": current_state,
                     "to_state": transition.to_state,
                     "trigger": trigger,
                 },
-                "value": 1,
-            },
+            ),
             priority=3,
         )
     )
@@ -619,19 +630,21 @@ async def _execute_state_actions(
     if not actions:
         return []
 
+    # Convert action_type to the payload format
+    payload_action_type: str = "on_enter" if action_type == "entry" else "on_exit"
+
     for action_name in actions:
         # Create intent for each action
         intents.append(
             ModelIntent(
                 intent_type="fsm_state_action",
                 target="action_executor",
-                payload={
-                    "action_name": action_name,
-                    "action_type": action_type,
-                    "state": state.state_name,
-                    "fsm": fsm.state_machine_name,
-                    "context": context,
-                },
+                payload=ModelPayloadFSMStateAction(
+                    state_name=state.state_name,
+                    action_type=payload_action_type,  # type: ignore[arg-type]
+                    action_name=action_name,
+                    parameters={"fsm": fsm.state_machine_name, "context": context},
+                ),
                 priority=2,
             )
         )
@@ -664,14 +677,19 @@ async def _execute_transition_actions(
             ModelIntent(
                 intent_type="fsm_transition_action",
                 target="action_executor",
-                payload={
-                    "action_name": action.action_name,
-                    "action_type": action.action_type,
-                    "transition": transition.transition_name,
-                    "context": context,
-                    "is_critical": action.is_critical,
-                    "timeout_ms": action.timeout_ms,
-                },
+                payload=ModelPayloadFSMTransitionAction(
+                    from_state=transition.from_state,
+                    to_state=transition.to_state,
+                    trigger=transition.trigger,
+                    action_name=action.action_name,
+                    parameters={
+                        "action_type": action.action_type,
+                        "transition_name": transition.transition_name,
+                        "context": context,
+                        "is_critical": action.is_critical,
+                        "timeout_ms": action.timeout_ms,
+                    },
+                ),
                 priority=2,
             )
         )
