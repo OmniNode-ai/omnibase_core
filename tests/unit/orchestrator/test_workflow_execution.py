@@ -288,7 +288,7 @@ class TestSingleStepExecution:
         )
 
         assert "execution_mode" in result.metadata
-        assert result.metadata["execution_mode"] == "sequential"
+        assert result.metadata["execution_mode"].get_string() == "sequential"
         assert "workflow_name" in result.metadata
         assert "workflow_hash" in result.metadata
 
