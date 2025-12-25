@@ -162,9 +162,9 @@ When addressing tech debt, prioritize by impact:
 
 ## Related Documentation
 
-- [Type Safety Tech Debt Analysis](./TYPE_SAFETY_TECH_DEBT_ANALYSIS.md)
+- [Type System Architecture](./TYPE_SYSTEM.md)
 - [ModelSchemaValue Type Definition](../../src/omnibase_core/types/type_schema_aliases.py)
-- [ONEX Coding Standards](../standards/CODING_STANDARDS.md)
+- [ONEX Terminology](../standards/onex_terminology.md)
 
 ## Verification
 

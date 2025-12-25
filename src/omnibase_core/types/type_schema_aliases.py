@@ -61,7 +61,7 @@ See Also:
     - docs/architecture/ONEX_FOUR_NODE_ARCHITECTURE.md: Node architecture patterns
 """
 
-from typing import TYPE_CHECKING, TypeAlias
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from omnibase_core.models.common.model_schema_value import ModelSchemaValue
@@ -100,7 +100,7 @@ __all__ = [
 #     ...     "version": ModelSchemaValue.create_string("1.0.0"),
 #     ...     "enabled": ModelSchemaValue.create_boolean(True),
 #     ... }
-SchemaDict: TypeAlias = "dict[str, ModelSchemaValue]"
+type SchemaDict = dict[str, "ModelSchemaValue"]
 
 
 # ==============================================================================
@@ -135,4 +135,4 @@ SchemaDict: TypeAlias = "dict[str, ModelSchemaValue]"
 #     ...         "result": ModelSchemaValue.create_array(["a", "b", "c"]),
 #     ...     },
 #     ... }
-StepOutputs: TypeAlias = "dict[str, dict[str, ModelSchemaValue]]"
+type StepOutputs = dict[str, dict[str, "ModelSchemaValue"]]

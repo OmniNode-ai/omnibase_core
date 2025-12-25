@@ -20,8 +20,8 @@ Configuration (optional):
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import TYPE_CHECKING
 
-from mypy.options import Options
 from mypy.plugin import (
     AnalyzeTypeContext,
     Plugin,
@@ -30,6 +30,9 @@ from mypy.types import (
     Type,
     UnboundType,
 )
+
+if TYPE_CHECKING:
+    from mypy.options import Options
 
 # Error code for dict[str, Any] violations
 DICT_ANY_ERROR_CODE = "dict-str-any"
@@ -149,6 +152,7 @@ def plugin(version: str) -> type[DictAnyCheckerPlugin]:
     # This plugin requires mypy 1.0+
     major_version = int(version.split(".")[0])
     if major_version < 1:
+        # error-ok: mypy plugin runs in mypy context, cannot use OnexError
         raise RuntimeError(f"dict_any_checker plugin requires mypy 1.0+, got {version}")
 
     return DictAnyCheckerPlugin
