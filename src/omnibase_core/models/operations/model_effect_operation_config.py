@@ -167,7 +167,7 @@ class ModelEffectOperationConfig(BaseModel):
     )
 
     # Core configuration - io_config is required
-    # dict-any-ok: accepts both typed models and dicts for parsing flexibility
+    # ONEX_EXCLUDE: dict_str_any - accepts both typed models and dicts for parsing flexibility
     io_config: Annotated[
         ModelHttpIOConfig
         | ModelDbIOConfig

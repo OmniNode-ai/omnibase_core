@@ -84,17 +84,61 @@ from typing import Any
 from uuid import UUID
 
 
-# Local no-op decorator for dict[str, Any] type exclusion.
-# Defined locally to avoid circular imports with decorators module.
-# This decorator documents intentional dict[str, Any] usage where Pydantic
-# validates the schema at runtime (e.g., operation configs from YAML contracts).
-# See also: omnibase_core.decorators.allow_dict_any for the canonical implementation.
+# =============================================================================
+# LOCAL DECORATOR: allow_dict_any
+# =============================================================================
+# This is a LOCAL COPY of the canonical decorator defined at:
+#     omnibase_core.decorators.allow_dict_any
+#
+# WHY A LOCAL COPY EXISTS:
+#     This module (mixin_effect_execution.py) is imported by core infrastructure
+#     components that are themselves dependencies of the decorators module.
+#     Importing from omnibase_core.decorators would create a circular import:
+#
+#         mixin_effect_execution.py
+#             -> omnibase_core.decorators.allow_dict_any
+#             -> omnibase_core.decorators.__init__
+#             -> (other decorators that may import infrastructure)
+#             -> mixin_effect_execution.py  [CIRCULAR]
+#
+#     To avoid this, we define a simplified local version here that provides
+#     the same no-op identity decorator behavior.
+#
+# DIFFERENCES FROM CANONICAL IMPLEMENTATION:
+#     - Canonical: Supports optional `reason` argument and attaches metadata
+#       attributes (_allow_dict_any, _dict_any_reason) for validation scripts
+#     - Local: Simple identity function with no metadata attachment
+#
+#     Both serve the same documentation purpose: marking functions that
+#     intentionally use dict[str, Any] where Pydantic validates at runtime.
+#
+# MAINTENANCE NOTE:
+#     If the canonical decorator's core behavior changes, this local copy
+#     should be reviewed for consistency. However, the simplified no-op
+#     behavior is sufficient for this module's needs.
+# =============================================================================
 def allow_dict_any[F: Callable[..., object]](func: F) -> F:
     """Mark a function as intentionally using dict[str, Any] for dynamic configs.
 
-    This is a no-op identity decorator that serves as documentation for
-    static analysis tools and code reviewers, indicating that dict[str, Any]
-    usage is intentional and validated at runtime by Pydantic models.
+    This is a LOCAL COPY of ``omnibase_core.decorators.allow_dict_any``,
+    defined here to avoid circular imports. See the module-level comment
+    block above for detailed rationale.
+
+    This no-op identity decorator serves as documentation for static analysis
+    tools and code reviewers, indicating that dict[str, Any] usage is intentional
+    and validated at runtime by Pydantic models (e.g., operation configs from
+    YAML contracts).
+
+    Canonical Implementation:
+        For the full-featured version with ``reason`` argument support
+        and validation script metadata, see:
+        ``omnibase_core.decorators.allow_dict_any``
+
+    Args:
+        func: The function to mark as allowing dict[str, Any] usage.
+
+    Returns:
+        The same function unchanged (identity decorator).
     """
     return func
 
