@@ -53,9 +53,12 @@ class PayloadWrite(ModelIntentPayloadBase):
             Placed first for optimal union type resolution performance.
         path: Target path for the write operation. For filesystems, this is
             the file path. For object storage, this is the object key.
-        content: The content to write as a string. For structured data,
-            pre-serialize to JSON/YAML string. For binary data, use base64 encoding.
-        content_type: MIME type of the content (e.g., "application/json").
+        content: The content to write as a string. For text content (JSON, YAML,
+            plain text), pass directly. For binary data (images, PDFs, etc.),
+            encode to base64 using `base64.b64encode(data).decode('ascii')`.
+        content_type: MIME type of the content (e.g., "application/json",
+            "image/png", "application/pdf"). Used by Effect to determine if
+            base64 decoding is needed for binary types.
         encoding: Text encoding for string content (default: "utf-8").
         create_dirs: Whether to create parent directories if they don't exist.
         overwrite: Whether to overwrite existing files (default: True).
@@ -92,8 +95,13 @@ class PayloadWrite(ModelIntentPayloadBase):
     content: str = Field(
         ...,
         description=(
-            "The content to write. For structured data, pre-serialize to JSON/YAML "
-            "string. For binary data, use base64 encoding."
+            "The content to write as a string. For text content (JSON, YAML, plain text), "
+            "pass the string directly. For binary data (images, PDFs, archives), encode "
+            "to base64 string using `base64.b64encode(data).decode('ascii')`. The Effect "
+            "handler will decode base64 content when content_type indicates binary "
+            "(e.g., 'application/octet-stream', 'image/png', 'application/pdf'). "
+            "Example for binary: content=base64.b64encode(image_bytes).decode('ascii'), "
+            "content_type='image/png'."
         ),
     )
 

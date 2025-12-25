@@ -3,7 +3,7 @@
 **Status**: Proposed
 **Author**: OmniNode Team
 **Created**: 2025-12-24
-**Last Updated**: 2025-12-24
+**Last Updated**: 2025-12-25
 
 ---
 
@@ -22,12 +22,13 @@ Replace `dict[str, Any]` payload fields in 4 core models with **Pydantic discrim
 ## Table of Contents
 
 1. [Decision](#decision)
-2. [Rationale](#rationale)
-3. [Current State Analysis](#current-state-analysis)
-4. [Implementation by Model](#implementation-by-model)
-5. [Migration Strategy](#migration-strategy)
-6. [Examples](#examples)
-7. [Appendix: Type Safety Comparison](#appendix-type-safety-comparison)
+2. [Discriminator Naming Conventions](#discriminator-naming-conventions)
+3. [Rationale](#rationale)
+4. [Current State Analysis](#current-state-analysis)
+5. [Implementation by Model](#implementation-by-model)
+6. [Migration Strategy](#migration-strategy)
+7. [Examples](#examples)
+8. [Appendix: Type Safety Comparison](#appendix-type-safety-comparison)
 
 ---
 
@@ -41,6 +42,115 @@ Adopt **discriminated unions with Pydantic's `Field(discriminator="...")`** patt
 2. **Annotated union aliases** - Define type aliases using `Annotated[Union[...], Field(discriminator="...")]`
 3. **Closed sets for core types** - Known, finite payload types per model
 4. **Open extension points** - Keep string-based routing for plugins/extensions where needed
+
+---
+
+## Discriminator Naming Conventions
+
+The codebase uses **intentionally different discriminator field names** across payload categories for semantic clarity. This is a deliberate design choice, not an inconsistency.
+
+### Quick Reference
+
+| Payload Category | Discriminator Field | Pattern | Union Type |
+|------------------|---------------------|---------|------------|
+| **Reducer Intent Payloads** | `intent_type` | `Literal["..."]` | `ModelIntentPayloadUnion` |
+| **Runtime Directive Payloads** | `kind` | `Literal["..."]` | `ModelDirectivePayload` |
+| **Action Payloads** | `action_type` | `ModelNodeActionType` | `SpecificActionPayload` |
+| **Core Registration Intents** | `kind` | `Literal["..."]` | `ModelCoreRegistrationIntent` |
+| **Event Payloads** | `event_type` | (varies) | `ModelEventPayloadUnion` |
+
+### Rationale for Different Names
+
+#### 1. `intent_type` (Reducer Intent Payloads)
+
+**Location**: `omnibase_core/models/reducer/payloads/`
+
+**Rationale**:
+- Aligns semantically with `ModelIntent.intent_type` field
+- Clearly indicates this payload describes an *intent* to perform a side effect
+- The discriminator value matches what the Effect node uses for dispatch routing
+
+**Example**:
+```python
+class PayloadLogEvent(ModelIntentPayloadBase):
+    # Discriminator FIRST for optimal union resolution
+    intent_type: Literal["log_event"] = Field(
+        default="log_event",
+        description="Discriminator for intent routing"
+    )
+    level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = Field(...)
+    message: str = Field(...)
+```
+
+#### 2. `kind` (Runtime Directive Payloads)
+
+**Location**: `omnibase_core/models/runtime/payloads/`
+
+**Rationale**:
+- Short, unambiguous internal convention for runtime-level coordination
+- Matches Kubernetes and other infrastructure patterns (e.g., `kind: Deployment`)
+- Used for internal runtime signals that never leave the system boundary
+
+**Example**:
+```python
+class ModelScheduleEffectPayload(ModelDirectivePayloadBase):
+    kind: Literal["schedule_effect"] = "schedule_effect"
+    effect_node_type: str = Field(...)
+    effect_input: ModelSchemaValue | None = Field(...)
+```
+
+#### 3. `action_type` (Action Payloads)
+
+**Location**: `omnibase_core/models/core/model_action_payload_*.py`
+
+**Rationale**:
+- Uses rich `ModelNodeActionType` for **semantic categorization** (not Literal)
+- Enables category-based dispatch (lifecycle, data, transformation, validation, etc.)
+- This is NOT a Pydantic discriminated union - uses type matching instead
+- Matches the semantic action being performed, not just a type tag
+
+**Note**: Action payloads do not use the discriminated union pattern. Instead, they use
+a factory function (`create_specific_action_payload`) that selects the payload type based
+on the action's semantic category.
+
+### Performance Requirements
+
+For **optimal O(1) discriminator lookup**, all payloads in discriminated unions MUST:
+
+1. **Use Literal types** for the discriminator field:
+   ```python
+   intent_type: Literal["log_event"] = "log_event"  # Correct
+   intent_type: str = "log_event"                    # Wrong - O(n) lookup
+   ```
+
+2. **Place discriminator FIRST** in the model definition:
+   ```python
+   class PayloadLogEvent(ModelIntentPayloadBase):
+       intent_type: Literal["log_event"] = ...  # FIRST
+       level: str = ...                          # Other fields after
+       message: str = ...
+   ```
+
+3. **Include Field() with description** for documentation:
+   ```python
+   intent_type: Literal["log_event"] = Field(
+       default="log_event",
+       description="Discriminator literal for intent routing"
+   )
+   ```
+
+### Adding New Payloads Checklist
+
+When adding a new payload to a discriminated union:
+
+- [ ] Define the Literal discriminator as the **FIRST field** in the model
+- [ ] Use the **correct field name** for the category:
+  - `intent_type` for Reducer intent payloads
+  - `kind` for Runtime directive payloads
+  - `action_type` for Action payloads (if using discriminated union)
+- [ ] Add the payload to the appropriate **union type alias**
+- [ ] Update all **Effect dispatch handlers** for exhaustive pattern matching
+- [ ] Add **tests** for serialization/deserialization round-trip
 
 ---
 
@@ -212,6 +322,9 @@ class ModelEventPublishIntent(BaseModel):
 
 **Payload Field**: `payload` -> `ExtensionIntentPayload | ModelGenericIntentPayload`
 
+> **See**: [Discriminator Naming Conventions](#discriminator-naming-conventions) for why
+> Extension Intent payloads use `intent_type` instead of `kind`.
+
 **Approach**:
 ```python
 from typing import Annotated, Literal
@@ -267,6 +380,10 @@ class ModelAction(BaseModel):
 ```
 
 **Approach B** (Create action-type-specific union):
+
+> **See**: [Discriminator Naming Conventions](#discriminator-naming-conventions) for the
+> rationale behind discriminator field naming across different payload categories.
+
 ```python
 class ModelComputeActionPayload(BaseModel):
     kind: Literal["compute"] = "compute"

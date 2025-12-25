@@ -102,7 +102,7 @@ See Also:
 """
 
 import warnings
-from typing import Any
+from typing import Any, Self
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -240,6 +240,38 @@ class ModelIntent(BaseModel):
             )
 
         return data
+
+    @model_validator(mode="after")
+    def _validate_lease_epoch_consistency(self) -> Self:
+        """
+        Validate cross-field consistency for lease semantics.
+
+        If epoch is set (versioned state tracking), lease_id should ideally also
+        be set to ensure proper single-writer semantics. This validation emits
+        a warning for potentially misconfigured intents that have versioning
+        without ownership proof.
+
+        Note:
+            This is a warning rather than an error because ModelIntent supports
+            extension and experimental workflows where epoch may be used for
+            simple versioning without the full lease semantics. For core
+            infrastructure intents requiring strict single-writer guarantees,
+            use the discriminated union in omnibase_core.models.intents.
+
+        Returns:
+            Self: The validated model instance
+        """
+        if self.epoch is not None and self.lease_id is None:
+            warnings.warn(
+                f"ModelIntent has epoch ({self.epoch}) set without lease_id. "
+                "For proper single-writer semantics in distributed workflows, "
+                "consider providing a lease_id to prove ownership. "
+                "For extension intents without coordination requirements, "
+                "this warning can be safely ignored.",
+                UserWarning,
+                stacklevel=2,
+            )
+        return self
 
     model_config = ConfigDict(
         extra="forbid",

@@ -27,13 +27,15 @@ Migration Status (OMN-1008):
 
 import warnings
 from datetime import datetime
-from typing import Any
+from typing import Any, Self
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_workflow_execution import EnumActionType
 from omnibase_core.models.core.model_action_metadata import ModelActionMetadata
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.orchestrator.payloads import ActionPayloadType
 from omnibase_core.utils.util_decorators import allow_dict_str_any
 
@@ -66,7 +68,7 @@ class ModelAction(BaseModel):
         payload: Action payload data (default empty dict).
         dependencies: List of action IDs this action depends on (default empty list).
         priority: Execution priority (1-10, higher = more urgent, default 1).
-        timeout_ms: Execution timeout (100-300000 ms, default 30000).
+        timeout_ms: Execution timeout in ms (100-300000, default 30000). Raises TimeoutError on expiry.
         lease_id: Lease ID proving Orchestrator ownership (required).
         epoch: Monotonically increasing version number (>= 0, required).
         retry_count: Number of retry attempts on failure (0-10, default 0).
@@ -135,7 +137,14 @@ class ModelAction(BaseModel):
 
     timeout_ms: int = Field(
         default=30000,
-        description="Execution timeout in milliseconds",
+        description=(
+            "Execution timeout in milliseconds. When exceeded, the action execution "
+            "is cancelled and a TimeoutError is raised. The Orchestrator may retry "
+            "the action based on retry_count and backoff policy. For long-running "
+            "operations (e.g., large file transfers, complex computations), increase "
+            "this value up to the maximum of 300000ms (5 minutes). Consider breaking "
+            "very long operations into smaller actions with progress checkpoints."
+        ),
         ge=100,
         le=300000,  # Max 5 minutes
     )
@@ -217,6 +226,55 @@ class ModelAction(BaseModel):
                     DeprecationWarning,
                     stacklevel=4,  # Point to caller's code, not Pydantic internals
                 )
-            # Note: Non-dict payloads (typed or unexpected) are handled by Pydantic validation
 
+        # Note: Non-dict payloads (typed model instances or unexpected types)
+        # pass through here and are validated by Pydantic's type system
         return data
+
+    @model_validator(mode="after")
+    def _validate_action_consistency(self) -> Self:
+        """
+        Validate cross-field consistency for action semantics.
+
+        Validates:
+        1. Self-dependency check: An action cannot depend on itself
+        2. Retry/timeout coherence: Warns if retry_count * timeout_ms exceeds reasonable limits
+
+        Returns:
+            Self: The validated model instance
+
+        Raises:
+            ModelOnexError: If action has circular self-dependency
+        """
+        # Check for circular self-dependency
+        if self.action_id in self.dependencies:
+            raise ModelOnexError(
+                message=(
+                    f"ModelAction validation failed: action_id ({self.action_id}) "
+                    "cannot be in its own dependencies list. This would create a "
+                    "circular dependency that can never be resolved."
+                ),
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                action_id=str(self.action_id),
+                dependencies=[str(d) for d in self.dependencies],
+                action_type=self.action_type.value
+                if hasattr(self.action_type, "value")
+                else str(self.action_type),
+            )
+
+        # Warn if total potential execution time is very high
+        # (retry_count + 1) * timeout_ms = total potential time
+        total_potential_ms = (self.retry_count + 1) * self.timeout_ms
+        max_reasonable_ms = 600000  # 10 minutes
+        if total_potential_ms > max_reasonable_ms:
+            warnings.warn(
+                f"ModelAction: Total potential execution time "
+                f"({total_potential_ms}ms = ({self.retry_count}+1) retries * "
+                f"{self.timeout_ms}ms timeout) exceeds {max_reasonable_ms}ms. "
+                "Consider reducing retry_count or timeout_ms to prevent "
+                "excessive blocking in orchestration workflows.",
+                UserWarning,
+                stacklevel=2,
+            )
+
+        return self

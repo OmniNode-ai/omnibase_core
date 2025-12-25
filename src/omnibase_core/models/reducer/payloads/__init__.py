@@ -108,6 +108,7 @@ from omnibase_core.models.reducer.payloads.model_payload_persist_state import (
 )
 from omnibase_core.models.reducer.payloads.model_payload_write import PayloadWrite
 
+# Public API - listed immediately after imports per Python convention
 __all__ = [
     # Base class
     "ModelIntentPayloadBase",

@@ -102,7 +102,7 @@ class ModelEventPublishIntent(BaseModel):
         # Emits: DeprecationWarning about untyped dict payload
     """
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     # Intent metadata
     intent_id: UUID = Field(
@@ -188,6 +188,11 @@ class ModelEventPublishIntent(BaseModel):
             # It's a plain dict, not a Pydantic model
             # Check if it looks like an untyped legacy payload
             # Typed payloads would have specific fields like 'event_type' or 'node_name'
+            #
+            # Heuristic Limitation: This detection uses field presence and may have
+            # false positives (legacy dict happens to have 'event_type' field) or
+            # false negatives (new typed payload without common markers). This is
+            # acceptable during migration since the warning is advisory only.
             known_typed_fields = {
                 "event_type",
                 "node_name",
@@ -225,9 +230,18 @@ class ModelEventPublishIntent(BaseModel):
             # Attempt to convert legacy dict to ModelRetryPolicy
             try:
                 data["retry_policy"] = RetryPolicyModel(**retry_policy)
-            except Exception:
-                # If conversion fails, let Pydantic handle the validation error
-                pass
+            except (TypeError, ValueError) as e:
+                # Log the conversion failure with details for debugging
+                # The original dict is left in place for Pydantic to validate,
+                # which will produce a proper validation error with context
+                warnings.warn(
+                    f"Failed to auto-migrate retry_policy dict to ModelRetryPolicy: {e}. "
+                    f"The invalid retry_policy will cause a Pydantic validation error. "
+                    f"Provided dict keys: {list(retry_policy.keys())}. "
+                    "See ModelRetryPolicy for valid field names.",
+                    UserWarning,
+                    stacklevel=4,
+                )
 
         return data
 
