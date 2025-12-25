@@ -37,6 +37,7 @@ from omnibase_core.models.contracts.subcontracts.model_effect_response_handling 
 from omnibase_core.models.contracts.subcontracts.model_effect_retry_policy import (
     ModelEffectRetryPolicy,
 )
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.operations.model_effect_operation_config import (
     ModelEffectOperationConfig,
 )
@@ -570,14 +571,14 @@ class TestGetTypedIOConfig:
         assert result.operation == "read"
 
     def test_unknown_handler_type_raises_error(self) -> None:
-        """Test that unknown handler_type raises ValueError when parsing to typed."""
+        """Test that unknown handler_type raises ModelOnexError when parsing to typed."""
         # Unknown handler_type falls back to dict storage
         config = ModelEffectOperationConfig(
             io_config={"handler_type": "unknown", "some_field": "value"}
         )
 
         # get_typed_io_config raises when handler_type is unknown
-        with pytest.raises(ValueError, match="Unknown handler_type: unknown"):
+        with pytest.raises(ModelOnexError, match="Unknown handler_type: unknown"):
             config.get_typed_io_config()
 
     def test_dict_without_handler_type_infers_type(self) -> None:
@@ -1038,25 +1039,22 @@ class TestModelEffectOperationConfigImmutability:
 
 
 # =============================================================================
-# Extra Fields (extra="allow") Tests
+# Extra Fields (extra="forbid") Tests
 # =============================================================================
 
 
 @pytest.mark.unit
 class TestModelEffectOperationConfigExtraFields:
-    """Test that extra fields are allowed for forward compatibility."""
+    """Test that extra fields are forbidden for strict validation."""
 
-    def test_extra_fields_accepted(self, http_io_config: ModelHttpIOConfig) -> None:
-        """Test that extra fields are accepted at creation time."""
-        config = ModelEffectOperationConfig(
-            io_config=http_io_config,
-            future_field="some_value",
-            another_new_field=123,
-        )
-
-        assert hasattr(config, "future_field")
-        assert config.future_field == "some_value"
-        assert config.another_new_field == 123
+    def test_extra_fields_rejected(self, http_io_config: ModelHttpIOConfig) -> None:
+        """Test that extra fields are rejected at creation time."""
+        with pytest.raises(ValidationError, match="Extra inputs are not permitted"):
+            ModelEffectOperationConfig(
+                io_config=http_io_config,
+                future_field="some_value",  # type: ignore[call-arg]
+                another_new_field=123,  # type: ignore[call-arg]
+            )
 
 
 # =============================================================================

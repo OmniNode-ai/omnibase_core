@@ -696,15 +696,50 @@ class TestModelErrorDetailsEdgeCases:
         assert '"name"' in error.error_message
 
     def test_unicode_in_strings(self):
-        """Test model with Unicode characters."""
+        """Test model with Unicode characters from various scripts."""
+        # Test with accented Latin characters
         error = ModelErrorDetails(
             error_code="ERR001",
             error_type="validation",
-            error_message="Invalid character: café (café)",
+            error_message="Invalid input: caf\u00e9, ni\u00f1o, na\u00efve",
             component="internationalization",
         )
 
-        assert "café" in error.error_message
+        # Verify accented Latin characters are preserved
+        assert "caf\u00e9" in error.error_message  # cafe with accent
+        assert "ni\u00f1o" in error.error_message  # nino with tilde
+        assert "na\u00efve" in error.error_message  # naive with diaeresis
+
+    def test_unicode_non_latin_scripts(self):
+        """Test model with non-Latin script characters."""
+        # Test with Japanese, Chinese, and Arabic characters
+        error = ModelErrorDetails(
+            error_code="ERR002",
+            error_type="validation",
+            error_message="Error in: \u65e5\u672c\u8a9e, \u4e2d\u6587, \u0627\u0644\u0639\u0631\u0628\u064a\u0629",
+            component="i18n_service",
+        )
+
+        # Verify non-Latin scripts are preserved
+        assert "\u65e5\u672c\u8a9e" in error.error_message  # Japanese
+        assert "\u4e2d\u6587" in error.error_message  # Chinese
+        assert (
+            "\u0627\u0644\u0639\u0631\u0628\u064a\u0629" in error.error_message
+        )  # Arabic
+
+    def test_unicode_emoji_characters(self):
+        """Test model with emoji characters."""
+        error = ModelErrorDetails(
+            error_code="ERR003",
+            error_type="runtime",
+            error_message="Status: \u2705 passed, \u274c failed, \u26a0\ufe0f warning",
+            component="status_reporter",
+        )
+
+        # Verify emoji characters are preserved
+        assert "\u2705" in error.error_message  # checkmark
+        assert "\u274c" in error.error_message  # x mark
+        assert "\u26a0" in error.error_message  # warning sign
 
     def test_long_strings(self):
         """Test model with very long strings."""

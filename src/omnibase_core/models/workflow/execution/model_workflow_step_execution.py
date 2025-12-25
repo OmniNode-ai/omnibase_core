@@ -12,7 +12,7 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_workflow_execution import (
     EnumBranchCondition,
@@ -26,25 +26,28 @@ __all__ = ["ModelWorkflowStepExecution"]
 
 
 class ModelWorkflowStepExecution(BaseModel):
-    """
-    Single step in a workflow with execution metadata and state tracking.
+    """Single step in a workflow with execution metadata and state tracking.
 
     This model tracks runtime execution state, distinct from ModelWorkflowStep
     which defines workflow step configuration.
 
     Runtime properties:
-    - State tracking (PENDING -> RUNNING -> COMPLETED/FAILED)
-    - Execution timestamps
-    - Error tracking
-    - Result collection
+        - State tracking (PENDING -> RUNNING -> COMPLETED/FAILED)
+        - Execution timestamps
+        - Error tracking
+        - Result collection
+
+    The from_attributes=True setting ensures proper instance recognition
+    when nested in other Pydantic models or used with pytest-xdist.
     """
 
-    model_config = {
-        "extra": "ignore",
-        "arbitrary_types_allowed": True,  # For Callable[..., Any] and Exception
-        "use_enum_values": False,
-        "validate_assignment": True,
-    }
+    model_config = ConfigDict(
+        extra="ignore",
+        arbitrary_types_allowed=True,  # For Callable[..., Any] and Exception
+        use_enum_values=False,
+        validate_assignment=True,
+        from_attributes=True,
+    )
 
     step_id: UUID = Field(
         default_factory=uuid4,

@@ -28,13 +28,13 @@ from uuid import UUID, uuid4
 import pytest
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.enums.enum_node_type import EnumNodeType
 from omnibase_core.enums.enum_workflow_coordination import EnumFailureRecoveryStrategy
 from omnibase_core.enums.enum_workflow_execution import (
     EnumExecutionMode,
     EnumWorkflowState,
 )
+from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.contracts.subcontracts.model_coordination_rules import (

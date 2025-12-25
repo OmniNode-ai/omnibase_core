@@ -218,9 +218,9 @@ def _log_workflow_completion_metrics(
             "total_payload_size_bytes": total_payload_size,
             "step_count": step_count,
             "execution_mode": execution_mode,
-            "avg_payload_size_bytes": total_payload_size // step_count
-            if step_count > 0
-            else 0,
+            "avg_payload_size_bytes": (
+                total_payload_size // step_count if step_count > 0 else 0
+            ),
             "total_payload_pct_of_limit": round(
                 total_payload_size / MAX_TOTAL_PAYLOAD_SIZE_BYTES * 100, 2
             ),

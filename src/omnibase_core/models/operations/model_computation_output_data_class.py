@@ -20,6 +20,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 # See: https://errors.pydantic.dev/2.12/u/discriminator-needs-literal
 if TYPE_CHECKING:
     from omnibase_core.enums.enum_computation_type import EnumComputationType
+
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.operations.model_binary_computation_output import (
     ModelBinaryComputationOutput,

@@ -84,11 +84,18 @@ from typing import Any
 from uuid import UUID
 
 
-# Type-checking decorator to allow dict[str, Any] in methods that handle dynamic configs.
-# Effect execution requires dict[str, Any] for operation configs from YAML contracts
-# where the schema is validated by Pydantic models at runtime, not at type-check time.
+# Local no-op decorator for dict[str, Any] type exclusion.
+# Defined locally to avoid circular imports with decorators module.
+# This decorator documents intentional dict[str, Any] usage where Pydantic
+# validates the schema at runtime (e.g., operation configs from YAML contracts).
+# See also: omnibase_core.decorators.allow_dict_any for the canonical implementation.
 def allow_dict_any[F: Callable[..., object]](func: F) -> F:
-    """Mark a function as intentionally using dict[str, Any] for dynamic configs."""
+    """Mark a function as intentionally using dict[str, Any] for dynamic configs.
+
+    This is a no-op identity decorator that serves as documentation for
+    static analysis tools and code reviewers, indicating that dict[str, Any]
+    usage is intentional and validated at runtime by Pydantic models.
+    """
     return func
 
 
@@ -109,6 +116,9 @@ from omnibase_core.models.contracts.subcontracts.model_effect_io_configs import 
     ModelFilesystemIOConfig,
     ModelHttpIOConfig,
     ModelKafkaIOConfig,
+)
+from omnibase_core.models.contracts.subcontracts.model_effect_operation import (
+    ModelEffectOperation,
 )
 from omnibase_core.models.contracts.subcontracts.model_effect_resolved_context import (
     ModelResolvedDbContext,
@@ -407,60 +417,50 @@ class MixinEffectExecution:
             # Transform subcontract operations to ModelEffectOperationConfig
             # This preserves all operation-level configs including response_handling,
             # retry_policy, and circuit_breaker for use by handlers and execution.
+            #
+            # PERFORMANCE OPTIMIZATION (PR #240):
+            # - Use from_effect_operation() for ModelEffectOperation to avoid model_dump()
+            # - Pass typed models directly instead of serializing to dict
             for op in subcontract_ops:
                 if isinstance(op, ModelEffectOperationConfig):
                     operations_config.append(op)
                 elif isinstance(op, dict):
                     operations_config.append(ModelEffectOperationConfig.from_dict(op))
+                elif isinstance(op, ModelEffectOperation):
+                    # OPTIMIZED: Use factory method that passes typed models directly
+                    # This avoids expensive model_dump() serialization
+                    operations_config.append(
+                        ModelEffectOperationConfig.from_effect_operation(op)
+                    )
+                elif hasattr(op, "io_config"):
+                    # OPTIMIZED: Pass typed models directly to ModelEffectOperationConfig
+                    # instead of serializing each field with model_dump()
+                    # ModelEffectOperationConfig accepts both typed models and dicts
+                    operations_config.append(
+                        ModelEffectOperationConfig(
+                            io_config=op.io_config,
+                            operation_name=getattr(op, "operation_name", "unknown"),
+                            description=getattr(op, "description", None),
+                            operation_timeout_ms=getattr(
+                                op, "operation_timeout_ms", None
+                            ),
+                            response_handling=getattr(op, "response_handling", None),
+                            retry_policy=getattr(op, "retry_policy", None),
+                            circuit_breaker=getattr(op, "circuit_breaker", None),
+                            correlation_id=getattr(op, "correlation_id", None),
+                            idempotent=getattr(op, "idempotent", None),
+                        )
+                    )
                 elif hasattr(op, "model_dump"):
-                    # Pydantic model - serialize to dict and convert
+                    # Fallback for other Pydantic models - serialize to dict
+                    # This path should rarely be hit since ModelEffectOperation
+                    # is the primary Pydantic model used for operations
                     operations_config.append(
                         ModelEffectOperationConfig.from_dict(op.model_dump())
                     )
-                elif hasattr(op, "io_config"):
-                    # ModelEffectOperation-like object - extract all relevant fields
-                    op_dict: dict[str, Any] = {}
-
-                    # Required: io_config
-                    if hasattr(op.io_config, "model_dump"):
-                        op_dict["io_config"] = op.io_config.model_dump()
-                    else:
-                        op_dict["io_config"] = op.io_config
-
-                    # Optional: operation metadata
-                    if hasattr(op, "operation_name"):
-                        op_dict["operation_name"] = op.operation_name
-                    if hasattr(op, "description"):
-                        op_dict["description"] = op.description
-                    if hasattr(op, "operation_timeout_ms"):
-                        op_dict["operation_timeout_ms"] = op.operation_timeout_ms
-
-                    # Optional: response handling for field extraction
-                    if hasattr(op, "response_handling") and op.response_handling:
-                        if hasattr(op.response_handling, "model_dump"):
-                            op_dict["response_handling"] = (
-                                op.response_handling.model_dump()
-                            )
-                        else:
-                            op_dict["response_handling"] = op.response_handling
-
-                    # Optional: per-operation resilience configs
-                    if hasattr(op, "retry_policy") and op.retry_policy:
-                        if hasattr(op.retry_policy, "model_dump"):
-                            op_dict["retry_policy"] = op.retry_policy.model_dump()
-                        else:
-                            op_dict["retry_policy"] = op.retry_policy
-                    if hasattr(op, "circuit_breaker") and op.circuit_breaker:
-                        if hasattr(op.circuit_breaker, "model_dump"):
-                            op_dict["circuit_breaker"] = op.circuit_breaker.model_dump()
-                        else:
-                            op_dict["circuit_breaker"] = op.circuit_breaker
-
-                    operations_config.append(
-                        ModelEffectOperationConfig.from_dict(op_dict)
-                    )
 
         # Fallback to direct operations list if subcontract not provided
+        # PERFORMANCE OPTIMIZATION (PR #240): Use isinstance checks before model_dump fallback
         if not operations_config:
             raw_operations = input_data.operation_data.get("operations", [])
             for raw_op in raw_operations:
@@ -470,7 +470,13 @@ class MixinEffectExecution:
                     operations_config.append(
                         ModelEffectOperationConfig.from_dict(raw_op)
                     )
+                elif isinstance(raw_op, ModelEffectOperation):
+                    # OPTIMIZED: Use factory method to avoid model_dump()
+                    operations_config.append(
+                        ModelEffectOperationConfig.from_effect_operation(raw_op)
+                    )
                 elif hasattr(raw_op, "model_dump"):
+                    # Fallback for other Pydantic models
                     operations_config.append(
                         ModelEffectOperationConfig.from_dict(raw_op.model_dump())
                     )

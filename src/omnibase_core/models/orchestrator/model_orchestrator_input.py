@@ -106,7 +106,7 @@ class ModelOrchestratorInput(BaseModel):
     """
 
     workflow_id: UUID = Field(..., description="Unique workflow identifier")
-    steps: list[dict[str, Any]] = Field(
+    steps: list[dict[str, Any]] = Field(  # ONEX_EXCLUDE: dict_str_any - heterogeneous
         ..., description="Simplified WorkflowStep representation"
     )
     operation_id: UUID = Field(
@@ -142,4 +142,5 @@ class ModelOrchestratorInput(BaseModel):
         use_enum_values=False,
         frozen=True,
         extra="forbid",
+        from_attributes=True,
     )

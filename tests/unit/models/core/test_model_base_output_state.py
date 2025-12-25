@@ -38,7 +38,7 @@ class TestModelBaseOutputState:
         state = ModelBaseOutputState(metadata=metadata)
 
         assert state.metadata["key1"].get_string() == "value1"
-        assert state.metadata["key2"].get_number().to_python_value() == 123
+        assert state.metadata["key2"].get_number() == 123
         assert state.metadata["key3"].get_boolean() is True
         assert isinstance(state.timestamp, datetime)
         assert state.processing_time_ms is None
@@ -76,7 +76,7 @@ class TestModelBaseOutputState:
         )
 
         assert state.metadata["test"].get_string() == "data"
-        assert state.metadata["number"].get_number().to_python_value() == 42
+        assert state.metadata["number"].get_number() == 42
         assert state.timestamp == custom_timestamp
         assert state.processing_time_ms == processing_time
 
@@ -130,8 +130,8 @@ class TestModelBaseOutputState:
         state = ModelBaseOutputState(metadata=metadata)
 
         assert state.metadata["string"].get_string() == "test"
-        assert state.metadata["integer"].get_number().to_python_value() == 123
-        assert state.metadata["float"].get_number().to_python_value() == 45.67
+        assert state.metadata["integer"].get_number() == 123
+        assert state.metadata["float"].get_number() == 45.67
         assert state.metadata["boolean"].get_boolean() is True
         assert state.metadata["list"].is_array()
         assert state.metadata["dict"].is_object()

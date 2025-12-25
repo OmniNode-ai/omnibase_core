@@ -440,32 +440,50 @@ def validate_user(data: dict) -> ModelErrorDetails | None:
     return None
 ```
 
-### Pattern 2: Exception Context
+### Pattern 2: Structured Error Details
+
+When you need structured, type-safe error details (e.g., for API responses,
+error aggregation, or detailed logging), use `ModelErrorDetails` directly:
 
 ```python
-# Before
-from omnibase_core.errors import ModelOnexError
+# Before - untyped dict for error context
+from typing import Any
 
-raise ModelOnexError(
-    message="Validation failed",
-    context={"field": "email", "reason": "invalid format"},
-)
+def validate_and_report(data: dict) -> dict[str, Any] | None:
+    if not data.get("email"):
+        return {"field": "email", "reason": "invalid format"}
+    return None
 
-# After
-from omnibase_core.errors import ModelOnexError
+# After - typed ModelErrorDetails with context_data
 from omnibase_core.models.services import ModelErrorDetails
+from omnibase_core.models.common import ModelSchemaValue
 
+def validate_and_report(data: dict) -> ModelErrorDetails | None:
+    if not data.get("email"):
+        return ModelErrorDetails(
+            error_code="VALIDATION_ERROR",
+            error_type="validation",
+            error_message="Invalid email format",
+            context_data={
+                "field": ModelSchemaValue.create_string("email"),
+                "reason": ModelSchemaValue.create_string("invalid format"),
+            },
+        )
+    return None
+```
+
+For exception context, `ModelOnexError` accepts keyword arguments directly:
+
+```python
+from omnibase_core.errors import ModelOnexError
+from omnibase_core.enums import EnumCoreErrorCode
+
+# Simple context via keyword arguments
 raise ModelOnexError(
     message="Validation failed",
-    error_details=ModelErrorDetails(
-        error_code="VALIDATION_ERROR",
-        error_type="validation",
-        error_message="Invalid email format",
-        context_data={
-            "field": ModelSchemaValue.create_string("email"),
-            "reason": ModelSchemaValue.create_string("invalid format"),
-        },
-    ),
+    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+    field="email",
+    reason="invalid format",
 )
 ```
 
