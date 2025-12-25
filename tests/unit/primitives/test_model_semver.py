@@ -1167,3 +1167,112 @@ class TestSemVer20Serialization:
         data = json.loads(json_str)
         restored = ModelSemVer.model_validate(data)
         assert restored.exact_key() == original.exact_key()
+
+
+@pytest.mark.unit
+class TestSemVerPrereleaseLeadingZerosValidation:
+    """Test that numeric prerelease identifiers with leading zeros are rejected.
+
+    Per SemVer 2.0.0 spec: "Numeric identifiers MUST NOT include leading zeroes."
+    """
+
+    def test_parse_rejects_leading_zeros_007(self):
+        """Test that parsing '1.0.0-007' is rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelSemVer.parse("1.0.0-007")
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        # The regex itself rejects this, so error message is "Invalid semantic version format"
+        assert "Invalid semantic version format" in exc_info.value.message
+
+    def test_parse_rejects_leading_zeros_01(self):
+        """Test that parsing '1.0.0-01' is rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelSemVer.parse("1.0.0-01")
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+
+    def test_parse_rejects_leading_zeros_00(self):
+        """Test that parsing '1.0.0-00' is rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelSemVer.parse("1.0.0-00")
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+
+    def test_construction_rejects_leading_zeros_string_007(self):
+        """Test that direct construction with prerelease=('007',) is rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelSemVer(major=1, minor=0, patch=0, prerelease=("007",))
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "leading zeros" in exc_info.value.message
+
+    def test_construction_rejects_leading_zeros_string_01(self):
+        """Test that direct construction with prerelease=('01',) is rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelSemVer(major=1, minor=0, patch=0, prerelease=("01",))
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "leading zeros" in exc_info.value.message
+
+    def test_construction_rejects_leading_zeros_string_00(self):
+        """Test that direct construction with prerelease=('00',) is rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelSemVer(major=1, minor=0, patch=0, prerelease=("00",))
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "leading zeros" in exc_info.value.message
+
+    def test_construction_rejects_leading_zeros_in_dotted(self):
+        """Test that direct construction with prerelease=('alpha', '007') is rejected."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelSemVer(major=1, minor=0, patch=0, prerelease=("alpha", "007"))
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "leading zeros" in exc_info.value.message
+
+    # Valid cases that SHOULD pass
+
+    def test_valid_zero_numeric_prerelease(self):
+        """Test that '0' is a valid numeric prerelease identifier."""
+        version = ModelSemVer.parse("1.0.0-0")
+        assert version.prerelease == (0,)
+
+    def test_valid_nonzero_numeric_prerelease(self):
+        """Test that '1', '123' are valid numeric prerelease identifiers."""
+        version = ModelSemVer.parse("1.0.0-1")
+        assert version.prerelease == (1,)
+
+        version = ModelSemVer.parse("1.0.0-123")
+        assert version.prerelease == (123,)
+
+    def test_valid_alphanumeric_prerelease(self):
+        """Test that alphanumeric identifiers are valid."""
+        version = ModelSemVer.parse("1.0.0-alpha")
+        assert version.prerelease == ("alpha",)
+
+    def test_valid_alphanumeric_starting_with_zero(self):
+        """Test that '0alpha' is valid (contains letter, so alphanumeric)."""
+        version = ModelSemVer.parse("1.0.0-0alpha")
+        assert version.prerelease == ("0alpha",)
+
+    def test_valid_alphanumeric_007a(self):
+        """Test that '007a' is valid (contains letter, so alphanumeric)."""
+        version = ModelSemVer.parse("1.0.0-007a")
+        assert version.prerelease == ("007a",)
+
+    def test_valid_alphanumeric_with_hyphen(self):
+        """Test that '0-1' is valid (contains hyphen, so alphanumeric)."""
+        version = ModelSemVer.parse("1.0.0-0-1")
+        assert version.prerelease == ("0-1",)
+
+    def test_construction_valid_zero_as_int(self):
+        """Test that integer 0 is valid as prerelease identifier."""
+        version = ModelSemVer(major=1, minor=0, patch=0, prerelease=(0,))
+        assert version.prerelease == (0,)
+        assert str(version) == "1.0.0-0"
+
+    def test_construction_valid_alphanumeric_007a(self):
+        """Test that '007a' string is valid when contains letter."""
+        version = ModelSemVer(major=1, minor=0, patch=0, prerelease=("007a",))
+        assert version.prerelease == ("007a",)
+        assert str(version) == "1.0.0-007a"
+
+    def test_construction_valid_alphanumeric_0alpha(self):
+        """Test that '0alpha' string is valid when contains letter."""
+        version = ModelSemVer(major=1, minor=0, patch=0, prerelease=("0alpha",))
+        assert version.prerelease == ("0alpha",)
+        assert str(version) == "1.0.0-0alpha"

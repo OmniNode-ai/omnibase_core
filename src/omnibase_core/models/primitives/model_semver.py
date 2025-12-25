@@ -30,6 +30,11 @@ _SEMVER_PATTERN = re.compile(
 _PRERELEASE_NUMERIC_PATTERN = re.compile(r"^(0|[1-9]\d*)$")
 _PRERELEASE_ALPHANUMERIC_PATTERN = re.compile(r"^[0-9a-zA-Z-]+$")
 
+# Pattern to detect purely numeric strings with leading zeros (e.g., "01", "007", "00")
+# Per SemVer 2.0.0 spec: "Numeric identifiers MUST NOT include leading zeroes."
+# These are INVALID - not just treated as alphanumeric strings.
+_NUMERIC_WITH_LEADING_ZEROS_PATTERN = re.compile(r"^0\d+$")
+
 # Pattern for validating build metadata identifiers
 _BUILD_IDENTIFIER_PATTERN = re.compile(r"^[0-9a-zA-Z-]+$")
 
@@ -40,7 +45,18 @@ def _parse_prerelease_identifier(identifier: str) -> str | int:
     Per SemVer spec:
     - Numeric identifiers must not have leading zeros
     - Returns int for numeric, str for alphanumeric
+
+    Raises:
+        ModelOnexError: If identifier is a numeric string with leading zeros
+            (e.g., "007", "01", "00"). Per SemVer 2.0.0 spec, these are invalid.
     """
+    # Check for invalid numeric identifiers with leading zeros (e.g., "007", "01")
+    # Per SemVer spec: "Numeric identifiers MUST NOT include leading zeroes."
+    if _NUMERIC_WITH_LEADING_ZEROS_PATTERN.match(identifier):
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=f"Invalid prerelease identifier '{identifier}': numeric identifiers must not have leading zeros",
+        )
     if _PRERELEASE_NUMERIC_PATTERN.match(identifier):
         return int(identifier)
     return identifier
@@ -172,6 +188,13 @@ class ModelSemVer(BaseModel):
                         error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                         message=f"Invalid prerelease identifier: {identifier}",
                     )
+                # Per SemVer 2.0.0 spec: "Numeric identifiers MUST NOT include leading zeroes."
+                # Reject purely numeric strings with leading zeros (e.g., "007", "01", "00")
+                if _NUMERIC_WITH_LEADING_ZEROS_PATTERN.match(identifier):
+                    raise ModelOnexError(
+                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                        message=f"Invalid prerelease identifier '{identifier}': numeric identifiers must not have leading zeros",
+                    )
             else:
                 raise ModelOnexError(
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -240,6 +263,17 @@ class ModelSemVer(BaseModel):
         - (major, minor, patch, is_release, prerelease_comparators)
         - is_release=1 (release) sorts after is_release=0 (prerelease)
 
+        Use this method when you need to compare or sort versions by precedence,
+        where build metadata differences should be treated as equivalent.
+
+        Example:
+            >>> v1 = ModelSemVer.parse("1.0.0+build.123")
+            >>> v2 = ModelSemVer.parse("1.0.0+build.456")
+            >>> v1.precedence_key() == v2.precedence_key()  # Same precedence
+            True
+            >>> v1.exact_key() == v2.exact_key()  # Different exact identity
+            False
+
         Returns:
             Tuple suitable for comparison operations.
         """
@@ -267,7 +301,21 @@ class ModelSemVer(BaseModel):
         """Return a tuple for exact identity comparison (includes build metadata).
 
         Unlike precedence_key(), this includes build metadata for cases where
-        exact version identity matters.
+        exact version identity matters, such as caching or deduplication where
+        different builds of the same version should be tracked separately.
+
+        Example:
+            >>> v1 = ModelSemVer.parse("1.0.0+build.123")
+            >>> v2 = ModelSemVer.parse("1.0.0+build.456")
+            >>> # For sorting/comparison, use precedence_key():
+            >>> v1.precedence_key() == v2.precedence_key()  # Same precedence
+            True
+            >>> # For exact caching where build metadata matters, use exact_key():
+            >>> cache = {}
+            >>> cache[v1.exact_key()] = "data for build 123"
+            >>> cache[v2.exact_key()] = "data for build 456"
+            >>> len(cache)  # Two separate entries
+            2
 
         Returns:
             Tuple including all version components.

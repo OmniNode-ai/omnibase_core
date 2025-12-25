@@ -1059,15 +1059,28 @@ def main() -> int:
                         continue
             else:
                 # Individual file mode
-                # Apply same exclusions as directory mode
+                # Apply same exclusions as directory mode (must match exclude_patterns above)
+                #
+                # EXCLUSION RATIONALE: See directory mode comments above for why each
+                # pattern is excluded. This list must stay in sync with directory mode.
                 exclude_patterns = [
-                    "tests",
-                    "protocols",
-                    "archive",
-                    "archived",
+                    "deployment",
+                    ".github",
+                    "docker-compose",
+                    "prometheus",
+                    "alerts.yml",
+                    "grafana",
+                    "kubernetes",
+                    "ci-cd.yml",  # GitHub Actions CI file
                     "__pycache__",
                     ".mypy_cache",
                     ".pytest_cache",
+                    "node_modules",
+                    "archive",  # Exclude archived code
+                    "archived",  # Exclude archived code (alternative naming)
+                    "tests",  # Exclude test files
+                    "examples_validation_container_usage.py",  # Exclude specific example files
+                    "protocols",  # Exclude Protocol classes (see EXCLUSION RATIONALE above)
                 ]
                 for arg in args:
                     try:
@@ -1078,10 +1091,12 @@ def main() -> int:
                             continue
 
                         # Skip excluded paths (same logic as directory mode)
+                        # Check both path components AND filename-based exclusions
                         path_parts = path.parts
+                        file_name = path.name
                         should_exclude = False
                         for pattern in exclude_patterns:
-                            if pattern in path_parts:
+                            if pattern in path_parts or file_name.startswith(pattern):
                                 should_exclude = True
                                 break
                         if should_exclude:
