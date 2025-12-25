@@ -419,6 +419,28 @@ class ModelSemVer(BaseModel):
         Hash is based on major, minor, patch, and prerelease.
         Build metadata is excluded (consistent with __eq__).
 
+        Warning:
+            Using ModelSemVer instances directly as dict keys or in sets will
+            ignore build metadata differences. Two versions that differ only in
+            build metadata will hash to the same value and compare as equal.
+            If build metadata matters for caching or deduplication, use
+            exact_key() as the dict key instead.
+
+        Example:
+            >>> v1 = ModelSemVer.parse("1.0.0+build.123")
+            >>> v2 = ModelSemVer.parse("1.0.0+build.456")
+            >>> # Direct use as dict key ignores build metadata:
+            >>> cache = {v1: "data"}
+            >>> cache[v2] = "overwritten"  # v2 overwrites v1's entry!
+            >>> len(cache)
+            1
+            >>> # Use exact_key() when build metadata matters:
+            >>> cache = {}
+            >>> cache[v1.exact_key()] = "data for build 123"
+            >>> cache[v2.exact_key()] = "data for build 456"
+            >>> len(cache)  # Two separate entries
+            2
+
         Returns:
             int: Hash computed from version tuple.
         """
