@@ -1,8 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
 #
 # SPDX-License-Identifier: Apache-2.0
-"""
-Error details model to replace Dict[str, Any] usage.
+"""Error details model to replace Dict[str, Any] usage.
 
 This module provides the ModelErrorDetails class, a typed Pydantic model that
 replaces untyped dict[str, Any] for error context in ONEX error handling.
@@ -15,6 +14,7 @@ See Also:
     - ModelOnexError: Primary error class that uses ModelErrorDetails
     - ModelSchemaValue: Type-safe value container for context_data
     - EnumCoreErrorCode: Standard error codes for error_code field
+
 """
 
 from datetime import UTC, datetime
@@ -27,8 +27,7 @@ from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 
 class ModelErrorDetails(BaseModel):
-    """
-    Structured error details with typed fields for ONEX error handling.
+    """Structured error details with typed fields for ONEX error handling.
 
     This model replaces dict[str, Any] usage for error_details fields, providing:
 
@@ -121,6 +120,7 @@ class ModelErrorDetails(BaseModel):
         - ModelOnexError: Primary error class using this model
         - ModelSchemaValue: Type-safe values for context_data
         - MIGRATING_FROM_DICT_ANY.md: Full migration guide
+
     """
 
     # Error identification
@@ -170,10 +170,10 @@ class ModelErrorDetails(BaseModel):
 
     model_config = ConfigDict(frozen=True, from_attributes=True)
 
+    # ONEX_EXCLUDE: dict_str_any - factory input
     @classmethod
     def from_dict(cls, data: dict[str, Any] | None) -> "ModelErrorDetails | None":
-        """
-        Create ModelErrorDetails from a dictionary.
+        """Create ModelErrorDetails from a dictionary.
 
         This factory method provides easy migration from legacy dict[str, Any]
         patterns to the typed ModelErrorDetails. It handles common legacy field
@@ -215,6 +215,7 @@ class ModelErrorDetails(BaseModel):
         Note:
             This method modifies the input dict. Pass a copy if the original
             dict must be preserved.
+
         """
         if data is None:
             return None
@@ -230,8 +231,7 @@ class ModelErrorDetails(BaseModel):
         return cls(**data)
 
     def is_retryable(self) -> bool:
-        """
-        Check if this error is retryable.
+        """Check if this error is retryable.
 
         An error is considered retryable if:
 
@@ -260,6 +260,7 @@ class ModelErrorDetails(BaseModel):
         See Also:
             - retry_after_seconds: Explicit retry delay hint
             - ModelEffectRetryPolicy: Retry policy configuration
+
         """
         return self.retry_after_seconds is not None or self.error_type in [
             "timeout",
@@ -268,6 +269,34 @@ class ModelErrorDetails(BaseModel):
 
     @field_serializer("timestamp")
     def serialize_datetime(self, value: datetime | None) -> str | None:
+        """Serialize datetime to ISO 8601 format string.
+
+        This serializer ensures consistent datetime formatting when the model
+        is serialized to JSON or dict. Uses ISO 8601 format for interoperability
+        with JavaScript, APIs, and logging systems.
+
+        Args:
+            value: The datetime value to serialize, or None.
+
+        Returns:
+            ISO 8601 formatted string (e.g., "2025-01-15T10:30:00+00:00")
+            if value is provided, None otherwise.
+
+        Example:
+            Serialization behavior::
+
+                from datetime import datetime, UTC
+
+                error = ModelErrorDetails(
+                    error_code="TEST",
+                    error_type="runtime",
+                    error_message="Test error",
+                    timestamp=datetime(2025, 1, 15, 10, 30, 0, tzinfo=UTC),
+                )
+                data = error.model_dump()
+                assert data["timestamp"] == "2025-01-15T10:30:00+00:00"
+
+        """
         if value:
             return value.isoformat()
         return None

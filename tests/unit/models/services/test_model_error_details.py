@@ -498,6 +498,25 @@ class TestModelErrorDetailsDatetimeSerialization:
         json_str = error.model_dump_json()
         assert "2024-06-20T15:45:30" in json_str
 
+    def test_serialize_datetime_with_none_value(self):
+        """Test serialize_datetime method handles None defensively.
+
+        Note: The timestamp field has a default_factory and doesn't allow None,
+        so this tests the serializer's defensive None handling directly.
+        This ensures the serializer is robust even though the field type
+        doesn't permit None values in practice.
+        """
+        error = ModelErrorDetails(
+            error_code="ERR001",
+            error_type="runtime",
+            error_message="Test message",
+        )
+
+        # Directly test the serializer method with None
+        # This covers the defensive None handling in serialize_datetime
+        result = error.serialize_datetime(None)
+        assert result is None
+
 
 @pytest.mark.unit
 class TestModelErrorDetailsContextData:
@@ -681,11 +700,11 @@ class TestModelErrorDetailsEdgeCases:
         error = ModelErrorDetails(
             error_code="ERR001",
             error_type="validation",
-            error_message="Invalid character: cafe (cafe)",
+            error_message="Invalid character: café (café)",
             component="internationalization",
         )
 
-        assert "cafe" in error.error_message
+        assert "café" in error.error_message
 
     def test_long_strings(self):
         """Test model with very long strings."""
@@ -890,6 +909,103 @@ class TestModelErrorDetailsDocumentationUrl:
         )
 
         assert error.documentation_url == url
+
+
+@pytest.mark.unit
+class TestModelErrorDetailsFrozenBehavior:
+    """Test that the model is frozen (immutable) after creation."""
+
+    def test_model_is_frozen(self):
+        """Test that attempting to modify a frozen model raises ValidationError."""
+        error = ModelErrorDetails(
+            error_code="ERR001",
+            error_type="validation",
+            error_message="Test message",
+        )
+
+        # Attempting to modify any attribute should raise ValidationError
+        with pytest.raises(ValidationError):
+            error.error_code = "MODIFIED"
+
+    def test_model_is_frozen_all_fields(self):
+        """Test that all fields are frozen and cannot be modified."""
+        error = ModelErrorDetails(
+            error_code="ERR001",
+            error_type="validation",
+            error_message="Test message",
+            component="test_component",
+        )
+
+        with pytest.raises(ValidationError):
+            error.error_message = "New message"
+
+        with pytest.raises(ValidationError):
+            error.error_type = "runtime"
+
+        with pytest.raises(ValidationError):
+            error.component = "new_component"
+
+    def test_frozen_model_allows_reading(self):
+        """Test that frozen model still allows reading attributes."""
+        error = ModelErrorDetails(
+            error_code="ERR001",
+            error_type="validation",
+            error_message="Test message",
+        )
+
+        # Reading should work fine
+        assert error.error_code == "ERR001"
+        assert error.error_type == "validation"
+        assert error.error_message == "Test message"
+
+
+@pytest.mark.unit
+class TestModelErrorDetailsFromAttributes:
+    """Test from_attributes=True behavior for pytest-xdist compatibility."""
+
+    def test_from_attributes_with_model_copy(self):
+        """Test that model_copy works correctly with from_attributes."""
+        original = ModelErrorDetails(
+            error_code="ERR001",
+            error_type="validation",
+            error_message="Original message",
+        )
+
+        # Create a copy with updated fields (uses from_attributes internally)
+        copy = original.model_copy(update={"error_message": "Updated message"})
+
+        assert copy.error_code == "ERR001"
+        assert copy.error_type == "validation"
+        assert copy.error_message == "Updated message"
+        assert original.error_message == "Original message"  # Original unchanged
+
+    def test_from_attributes_enables_attribute_access(self):
+        """Test that from_attributes=True allows creating instances from objects."""
+
+        # Create a simple object with matching attributes
+        class MockErrorObject:
+            error_code = "MOCK001"
+            error_type = "runtime"
+            error_message = "Mock error message"
+            component = None
+            operation = None
+            timestamp = datetime.now(UTC)
+            stack_trace = None
+            inner_errors = None
+            request_id = None
+            user_id = None
+            session_id = None
+            context_data = {}
+            retry_after_seconds = None
+            recovery_suggestions = None
+            documentation_url = None
+
+        mock = MockErrorObject()
+        error = ModelErrorDetails.model_validate(mock, from_attributes=True)
+
+        assert error.error_code == "MOCK001"
+        assert error.error_type == "runtime"
+        assert error.error_message == "Mock error message"
 
 
 @pytest.mark.unit

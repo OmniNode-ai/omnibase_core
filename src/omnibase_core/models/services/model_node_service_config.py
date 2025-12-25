@@ -14,6 +14,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from omnibase_core.decorators.error_handling import standard_error_handling
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_service_mode import EnumServiceMode
@@ -190,6 +191,7 @@ class ModelNodeServiceConfig(BaseModel):
         ]
 
     @classmethod
+    @standard_error_handling("Environment configuration parsing")
     def from_environment(
         cls, node_name: str, **overrides: Any
     ) -> "ModelNodeServiceConfig":

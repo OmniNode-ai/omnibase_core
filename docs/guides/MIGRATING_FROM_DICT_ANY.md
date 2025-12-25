@@ -473,12 +473,19 @@ raise ModelOnexError(
 
 ```python
 # Before
+from typing import Any
+
 async def call_api(config: dict[str, Any]) -> dict[str, Any]:
     url = config["url"]
     method = config.get("method", "GET")
     ...
 
 # After
+from typing import Any
+
+from omnibase_core.models.operations import ModelEffectOperationConfig
+from omnibase_core.models.contracts.subcontracts import ModelHttpIOConfig
+
 async def call_api(config: ModelEffectOperationConfig) -> dict[str, Any]:
     io = config.get_typed_io_config()
     if not isinstance(io, ModelHttpIOConfig):

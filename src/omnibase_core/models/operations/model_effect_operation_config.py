@@ -2,8 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""
-Effect Operation Configuration Model.
+"""Effect Operation Configuration Model.
 
 Provides a typed model to replace dict[str, Any] usage for operation_config
 parameters in MixinEffectExecution. This model supports both direct attribute
@@ -24,6 +23,7 @@ See Also:
     - ModelEffectResponseHandling: Response handling configuration
     - ModelEffectRetryPolicy: Retry policy configuration
     - ModelEffectCircuitBreaker: Circuit breaker configuration
+
 """
 
 from typing import Annotated, Any
@@ -63,10 +63,10 @@ _TypedIOConfigUnion = (
 
 
 def _is_typed_io_config(
-    config: _TypedIOConfigUnion | dict[str, Any],
+    config: _TypedIOConfigUnion
+    | dict[str, Any],  # ONEX_EXCLUDE: dict_str_any - TypeIs narrowing
 ) -> TypeIs[_TypedIOConfigUnion]:
-    """
-    TypeIs predicate to check if io_config is already a typed EffectIOConfig model.
+    """TypeIs predicate to check if io_config is already a typed EffectIOConfig model.
 
     Uses TypeIs (PEP 742) for bidirectional type narrowing. Unlike TypeGuard,
     TypeIs narrows the type in both branches:
@@ -81,6 +81,7 @@ def _is_typed_io_config(
 
     Returns:
         True if config is one of the typed IO config models, False if dict.
+
     """
     return isinstance(
         config,
@@ -94,8 +95,7 @@ def _is_typed_io_config(
 
 
 class ModelEffectOperationConfig(BaseModel):
-    """
-    Runtime configuration for a single effect operation.
+    """Runtime configuration for a single effect operation.
 
     This model provides type safety for operation_config parameters in
     MixinEffectExecution methods. It replaces dict[str, Any] usage while
@@ -150,21 +150,23 @@ class ModelEffectOperationConfig(BaseModel):
         - MixinEffectExecution._parse_io_config: Parses io_config to typed model
         - MixinEffectExecution._execute_with_retry: Uses this config for retries
         - ModelEffectOperation: Full operation definition model
+
     """
 
     model_config = ConfigDict(
         frozen=True,
-        extra="allow",  # Allow extra fields for forward compatibility
+        extra="forbid",
         from_attributes=True,
     )
 
     # Core configuration - io_config is required
+    # dict-any-ok: accepts both typed models and dicts for parsing flexibility
     io_config: Annotated[
         ModelHttpIOConfig
         | ModelDbIOConfig
         | ModelKafkaIOConfig
         | ModelFilesystemIOConfig
-        | dict[str, Any],
+        | dict[str, Any],  # ONEX_EXCLUDE: dict_str_any - typed model union
         Field(
             description="Handler-specific IO configuration. Can be a typed model "
             "or a dict that will be parsed based on handler_type."
@@ -197,16 +199,19 @@ class ModelEffectOperationConfig(BaseModel):
     )
 
     # Response handling configuration
+    # ONEX_EXCLUDE: dict_str_any - typed model union for flexibility
     response_handling: ModelEffectResponseHandling | dict[str, Any] | None = Field(
         default=None,
         description="Configuration for response interpretation and field extraction",
     )
 
     # Resilience configurations (per-operation overrides)
+    # ONEX_EXCLUDE: dict_str_any - typed model union for flexibility
     retry_policy: ModelEffectRetryPolicy | dict[str, Any] | None = Field(
         default=None,
         description="Per-operation retry policy configuration",
     )
+    # ONEX_EXCLUDE: dict_str_any - typed model union for flexibility
     circuit_breaker: ModelEffectCircuitBreaker | dict[str, Any] | None = Field(
         default=None,
         description="Per-operation circuit breaker configuration",
@@ -225,12 +230,28 @@ class ModelEffectOperationConfig(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def _validate_io_config_type(cls, data: Any) -> Any:
-        """
-        Ensure io_config is properly structured.
+        """Validate that io_config is present and properly structured.
 
-        If io_config is a dict without handler_type, this will fail
-        validation later. This validator just ensures we have the
-        basic structure.
+        This pre-validation hook runs before Pydantic's field validation.
+        It ensures the required io_config field exists when input is a dict.
+        If io_config is a dict without handler_type, the discriminated union
+        validation will fail later with a more specific error.
+
+        Args:
+            data: Raw input data, typically a dict from JSON/YAML or
+                another Pydantic model's model_dump() output.
+
+        Returns:
+            The validated data unchanged if validation passes.
+
+        Raises:
+            ValueError: If data is a dict and io_config key is missing.
+
+        Note:
+            This validator does not check handler_type validity; that is
+            handled by the discriminated union validation on the io_config
+            field itself.
+
         """
         if isinstance(data, dict):
             io_config = data.get("io_config")
@@ -239,26 +260,57 @@ class ModelEffectOperationConfig(BaseModel):
                 raise ValueError("io_config is required")
         return data
 
+    # ONEX_EXCLUDE: dict_str_any - serialization output
     def get_io_config_as_dict(self) -> dict[str, Any]:
-        """
-        Get io_config as a dictionary.
+        """Get io_config as a dictionary.
 
         Useful when the mixin needs to pass io_config to _parse_io_config
         which expects a dict structure.
 
+        Performance Note:
+            This method uses an early-return pattern to avoid unnecessary
+            serialization. If io_config is already a dict, it returns directly.
+            The model_dump() path is only hit when io_config is a typed model.
+
+            In practice, callers (like MixinEffectExecution._parse_io_config)
+            check isinstance() before calling this method, so the model_dump()
+            path is rarely executed. When it is, Pydantic v2's Rust-based
+            model_dump() is highly optimized.
+
+            Caching via @cached_property is not used because frozen=True
+            prevents attribute assignment on the instance.
+
         Returns:
             Dict representation of io_config.
+
         """
         if isinstance(self.io_config, dict):
             return self.io_config
         return self.io_config.model_dump()
 
+    # ONEX_EXCLUDE: dict_str_any - serialization output
     def get_response_handling_as_dict(self) -> dict[str, Any]:
-        """
-        Get response_handling as a dictionary.
+        """Get response_handling as a dictionary.
+
+        Performance Note:
+            Similar to get_io_config_as_dict(), this method uses early returns
+            to avoid unnecessary serialization:
+            - Returns {} immediately if response_handling is None
+            - Returns the dict directly if already a dict
+            - Only calls model_dump() when response_handling is a typed model
+
+            This method returns dict format for callers that require it.
+            Production code typically uses the typed ModelEffectResponseHandling
+            directly via the response_handling attribute.
+
+            Caching is not implemented because:
+            1. The model is frozen (prevents @cached_property)
+            2. The method is not called repeatedly on the same instance
+            3. Pydantic v2's model_dump() is Rust-optimized
 
         Returns:
             Dict representation of response_handling, or empty dict if None.
+
         """
         if self.response_handling is None:
             return {}
@@ -267,8 +319,7 @@ class ModelEffectOperationConfig(BaseModel):
         return self.response_handling.model_dump()
 
     def get_typed_io_config(self) -> _TypedIOConfigUnion:
-        """
-        Get io_config as a typed EffectIOConfig.
+        """Get io_config as a typed EffectIOConfig.
 
         Uses TypeIs-based type narrowing (PEP 742) to properly narrow the return
         type. Unlike TypeGuard, TypeIs provides bidirectional narrowing:
@@ -294,6 +345,7 @@ class ModelEffectOperationConfig(BaseModel):
             >>> typed = config.get_typed_io_config()
             >>> # mypy knows typed is _TypedIOConfigUnion, not dict
             >>> assert hasattr(typed, "handler_type")
+
         """
         # TypeIs narrows self.io_config to _TypedIOConfigUnion in positive branch
         # and to dict[str, Any] in negative branch
@@ -313,12 +365,18 @@ class ModelEffectOperationConfig(BaseModel):
             case "filesystem":
                 return ModelFilesystemIOConfig.model_validate(self.io_config)
             case _:
-                raise ValueError(f"Unknown handler_type: {handler_type}")
+                from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+                from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
+                raise ModelOnexError(
+                    f"Unknown handler_type: {handler_type}",
+                    error_code=EnumCoreErrorCode.INVALID_CONFIGURATION,
+                )
+
+    # ONEX_EXCLUDE: dict_str_any - factory input
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "ModelEffectOperationConfig":
-        """
-        Create a ModelEffectOperationConfig from a dictionary.
+        """Create a ModelEffectOperationConfig from a dictionary.
 
         This factory method provides explicit conversion from dict,
         which is useful when migrating from dict[str, Any] patterns.
@@ -334,6 +392,7 @@ class ModelEffectOperationConfig(BaseModel):
             ...     "io_config": {"handler_type": "http", "url_template": "...", "method": "GET"},
             ...     "operation_name": "my_op",
             ... })
+
         """
         return cls.model_validate(data)
 
@@ -342,17 +401,49 @@ class ModelEffectOperationConfig(BaseModel):
         cls,
         operation: Any,  # ModelEffectOperation, avoiding circular import
     ) -> "ModelEffectOperationConfig":
-        """
-        Create a ModelEffectOperationConfig from a ModelEffectOperation.
+        """Create a ModelEffectOperationConfig from a ModelEffectOperation.
 
-        This factory method converts the full operation definition into
-        the runtime configuration format used by MixinEffectExecution.
+        This factory method converts the full operation definition (used in
+        YAML contracts) into the runtime configuration format consumed by
+        MixinEffectExecution methods. It preserves all configuration fields
+        while adapting to the runtime context.
 
         Args:
-            operation: A ModelEffectOperation instance.
+            operation: A ModelEffectOperation instance containing the full
+                operation definition. Type hint is Any to avoid circular
+                imports (ModelEffectOperation imports from this module).
 
         Returns:
-            ModelEffectOperationConfig with values from the operation.
+            ModelEffectOperationConfig with all applicable values copied
+            from the operation. Fields not present in ModelEffectOperation
+            (like extra fields from extra="allow") are not copied.
+
+        Example:
+            Converting a contract operation to runtime config::
+
+                from omnibase_core.models.contracts import ModelEffectOperation
+
+                # Full operation definition from YAML contract
+                operation = ModelEffectOperation(
+                    operation_name="fetch_user",
+                    io_config=ModelHttpIOConfig(
+                        handler_type="http",
+                        url_template="https://api.example.com/users/${input.id}",
+                        method="GET",
+                    ),
+                    operation_timeout_ms=5000,
+                    retry_policy=ModelEffectRetryPolicy(max_retries=3),
+                )
+
+                # Convert to runtime config for mixin execution
+                config = ModelEffectOperationConfig.from_effect_operation(operation)
+                assert config.operation_name == "fetch_user"
+                assert config.operation_timeout_ms == 5000
+
+        See Also:
+            - ModelEffectOperation: Full operation definition model
+            - MixinEffectExecution: Consumes this runtime config
+
         """
         return cls(
             io_config=operation.io_config,

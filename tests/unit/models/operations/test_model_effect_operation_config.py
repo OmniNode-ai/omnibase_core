@@ -41,7 +41,6 @@ from omnibase_core.models.operations.model_effect_operation_config import (
     ModelEffectOperationConfig,
 )
 
-
 # =============================================================================
 # Fixtures
 # =============================================================================
@@ -736,6 +735,185 @@ class TestFromEffectOperationFactory:
 
         assert config.correlation_id == operation.correlation_id
         assert isinstance(config.correlation_id, UUID)
+
+    # =========================================================================
+    # Edge Case Tests for from_effect_operation
+    # =========================================================================
+
+    def test_from_effect_operation_with_db_io_config(
+        self, db_io_config: ModelDbIOConfig
+    ) -> None:
+        """Test from_effect_operation with DB io_config."""
+        operation = ModelEffectOperation(
+            operation_name="query_users",
+            io_config=db_io_config,
+            description="Query users from database",
+        )
+
+        config = ModelEffectOperationConfig.from_effect_operation(operation)
+
+        assert isinstance(config, ModelEffectOperationConfig)
+        assert config.io_config == db_io_config
+        assert isinstance(config.io_config, ModelDbIOConfig)
+        assert config.operation_name == "query_users"
+        assert config.description == "Query users from database"
+
+    def test_from_effect_operation_with_kafka_io_config(
+        self, kafka_io_config: ModelKafkaIOConfig
+    ) -> None:
+        """Test from_effect_operation with Kafka io_config."""
+        operation = ModelEffectOperation(
+            operation_name="publish_event",
+            io_config=kafka_io_config,
+        )
+
+        config = ModelEffectOperationConfig.from_effect_operation(operation)
+
+        assert isinstance(config, ModelEffectOperationConfig)
+        assert config.io_config == kafka_io_config
+        assert isinstance(config.io_config, ModelKafkaIOConfig)
+        assert config.operation_name == "publish_event"
+
+    def test_from_effect_operation_with_filesystem_io_config(
+        self, filesystem_io_config: ModelFilesystemIOConfig
+    ) -> None:
+        """Test from_effect_operation with Filesystem io_config."""
+        operation = ModelEffectOperation(
+            operation_name="write_file",
+            io_config=filesystem_io_config,
+        )
+
+        config = ModelEffectOperationConfig.from_effect_operation(operation)
+
+        assert isinstance(config, ModelEffectOperationConfig)
+        assert config.io_config == filesystem_io_config
+        assert isinstance(config.io_config, ModelFilesystemIOConfig)
+        assert config.operation_name == "write_file"
+
+    def test_from_effect_operation_preserves_none_optional_fields(
+        self, http_io_config: ModelHttpIOConfig
+    ) -> None:
+        """Test that None values for optional fields are preserved correctly.
+
+        ModelEffectOperation has defaults for some fields (e.g., response_handling
+        has default_factory). Verify the conversion preserves these correctly.
+        """
+        operation = ModelEffectOperation(
+            operation_name="minimal_op",
+            io_config=http_io_config,
+            # retry_policy, circuit_breaker, operation_timeout_ms are None by default
+        )
+
+        config = ModelEffectOperationConfig.from_effect_operation(operation)
+
+        # Optional fields that default to None should be None
+        assert config.retry_policy is None
+        assert config.circuit_breaker is None
+        assert config.operation_timeout_ms is None
+        # idempotent defaults to None in ModelEffectOperation
+        assert config.idempotent is None
+
+    def test_from_effect_operation_with_explicit_none_idempotent(
+        self, http_io_config: ModelHttpIOConfig
+    ) -> None:
+        """Test from_effect_operation with explicitly set idempotent=None.
+
+        When idempotent is explicitly None, it should be preserved as None
+        in the resulting config, not converted to a boolean.
+        """
+        operation = ModelEffectOperation(
+            operation_name="explicit_none_test",
+            io_config=http_io_config,
+            idempotent=None,  # Explicit None
+        )
+
+        config = ModelEffectOperationConfig.from_effect_operation(operation)
+
+        assert config.idempotent is None
+
+    def test_from_effect_operation_with_idempotent_true(
+        self, http_io_config: ModelHttpIOConfig
+    ) -> None:
+        """Test from_effect_operation with idempotent=True."""
+        operation = ModelEffectOperation(
+            operation_name="idempotent_op",
+            io_config=http_io_config,
+            idempotent=True,
+        )
+
+        config = ModelEffectOperationConfig.from_effect_operation(operation)
+
+        assert config.idempotent is True
+
+    def test_from_effect_operation_with_idempotent_false(
+        self, http_io_config: ModelHttpIOConfig
+    ) -> None:
+        """Test from_effect_operation with idempotent=False."""
+        operation = ModelEffectOperation(
+            operation_name="non_idempotent_op",
+            io_config=http_io_config,
+            idempotent=False,
+        )
+
+        config = ModelEffectOperationConfig.from_effect_operation(operation)
+
+        assert config.idempotent is False
+
+    def test_from_effect_operation_preserves_default_response_handling(
+        self, http_io_config: ModelHttpIOConfig
+    ) -> None:
+        """Test that default response_handling from ModelEffectOperation is preserved.
+
+        ModelEffectOperation has `response_handling: ModelEffectResponseHandling =
+        Field(default_factory=ModelEffectResponseHandling)`. This means when no
+        response_handling is provided, a default instance is created.
+        """
+        operation = ModelEffectOperation(
+            operation_name="default_response_test",
+            io_config=http_io_config,
+        )
+
+        config = ModelEffectOperationConfig.from_effect_operation(operation)
+
+        # response_handling should be the default ModelEffectResponseHandling
+        assert config.response_handling is not None
+        assert isinstance(config.response_handling, ModelEffectResponseHandling)
+        # Default ModelEffectResponseHandling has default success codes
+        assert config.response_handling.success_codes == [200, 201, 202, 204]
+
+    def test_from_effect_operation_typed_io_config_accessible(
+        self, db_io_config: ModelDbIOConfig
+    ) -> None:
+        """Test that get_typed_io_config works on config created from operation."""
+        operation = ModelEffectOperation(
+            operation_name="typed_access_test",
+            io_config=db_io_config,
+        )
+
+        config = ModelEffectOperationConfig.from_effect_operation(operation)
+
+        # Should be able to get typed io_config
+        typed = config.get_typed_io_config()
+        assert isinstance(typed, ModelDbIOConfig)
+        assert typed.handler_type == db_io_config.handler_type
+        assert typed.operation == db_io_config.operation
+
+    def test_from_effect_operation_get_io_config_as_dict(
+        self, kafka_io_config: ModelKafkaIOConfig
+    ) -> None:
+        """Test that get_io_config_as_dict works on config created from operation."""
+        operation = ModelEffectOperation(
+            operation_name="dict_access_test",
+            io_config=kafka_io_config,
+        )
+
+        config = ModelEffectOperationConfig.from_effect_operation(operation)
+
+        # Should be able to get io_config as dict
+        io_dict = config.get_io_config_as_dict()
+        assert isinstance(io_dict, dict)
+        assert io_dict["topic"] == kafka_io_config.topic
+        assert io_dict["payload_template"] == kafka_io_config.payload_template
 
 
 # =============================================================================
