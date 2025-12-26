@@ -49,6 +49,7 @@ See Also:
 """
 
 from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -183,7 +184,7 @@ class ModelDispatchResult(BaseModel):
         default=None,
         description="Error code if the dispatch failed.",
     )
-    error_details: ModelErrorDetails | None = Field(
+    error_details: ModelErrorDetails[Any] | None = Field(
         default=None,
         description="Additional error details for debugging.",
     )
@@ -284,7 +285,7 @@ class ModelDispatchResult(BaseModel):
         status: EnumDispatchStatus,
         message: str,
         code: str | None = None,
-        details: ModelErrorDetails | None = None,
+        details: ModelErrorDetails[Any] | None = None,
     ) -> "ModelDispatchResult":
         """
         Create a new result with error information.

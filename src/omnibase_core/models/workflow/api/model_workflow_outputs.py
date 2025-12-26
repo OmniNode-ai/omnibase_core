@@ -101,7 +101,8 @@ class ModelWorkflowOutputs(BaseModel):
         # Convert to ModelSchemaValue for type safety
         if not isinstance(value, ModelSchemaValue):
             value = ModelSchemaValue.from_value(value)
-        self.custom_outputs.set_field(key, value)
+        # Use immutable API - with_field returns new instance
+        self.custom_outputs = self.custom_outputs.with_field(key, value)
 
     def get_output(
         self, key: str, default: ModelSchemaValue | None = None
@@ -148,9 +149,13 @@ class ModelWorkflowOutputs(BaseModel):
         if self.data:
             result["data"] = {key: value.to_value() for key, value in self.data.items()}
 
-        # Add custom outputs if present
+        # Add custom outputs if present (convert ModelSchemaValue to raw values)
         if self.custom_outputs:
-            result.update(self.custom_outputs.to_dict())
+            for key, value in self.custom_outputs.field_values.items():
+                if isinstance(value, ModelSchemaValue):
+                    result[key] = value.to_value()
+                else:
+                    result[key] = value
 
         # Cast to TypedDict - the structure matches TypedDictWorkflowOutputsDict
         return TypedDictWorkflowOutputsDict(**result)  # type: ignore[typeddict-item, no-any-return]

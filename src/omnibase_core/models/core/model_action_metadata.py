@@ -6,6 +6,7 @@ Enhanced for tool-as-a-service architecture with strong typing throughout.
 """
 
 from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -123,7 +124,7 @@ class ModelActionMetadata(BaseModel):
         default=None,
         description="Action result data as JSON-serializable data",
     )
-    error_details: ModelErrorDetails | None = Field(
+    error_details: ModelErrorDetails[Any] | None = Field(
         default=None,
         description="Structured error details if action failed",
     )
@@ -171,7 +172,7 @@ class ModelActionMetadata(BaseModel):
         if result_data:
             self.result_data = result_data
 
-    def mark_failed(self, error_details: ModelErrorDetails) -> None:
+    def mark_failed(self, error_details: ModelErrorDetails[Any]) -> None:
         """Mark the action as failed with structured error details."""
         self.completed_at = datetime.now(UTC)
         self.status = "failed"
