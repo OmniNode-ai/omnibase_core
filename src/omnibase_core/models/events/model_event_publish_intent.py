@@ -20,12 +20,15 @@ Example:
         ModelNodeRegisteredEvent,
     )
 
+    # Create typed payload with all required fields
     node_id = uuid4()
     payload = ModelNodeRegisteredEvent(
         node_id=node_id,
         node_name="my_node",
         node_type=EnumNodeKind.COMPUTE,
     )
+
+    # Build intent with typed payload (recommended over dict[str, Any])
     intent = ModelEventPublishIntent(
         correlation_id=uuid4(),
         created_by="my_reducer_v1_0_0",
@@ -34,11 +37,13 @@ Example:
         target_event_type="NODE_REGISTERED",
         target_event_payload=payload,
     )
+
+    # Publish to intent topic for execution by IntentExecutor
     await publish_to_kafka(TOPIC_EVENT_PUBLISH_INTENT, intent)
 
 Note:
-    TOPIC_EVENT_PUBLISH_INTENT is now defined in constants_topic_taxonomy.py
-    and should be imported from omnibase_core.constants.
+    TOPIC_EVENT_PUBLISH_INTENT and TOPIC_REGISTRATION_EVENTS are defined in
+    constants_topic_taxonomy.py and should be imported from omnibase_core.constants.
 
 """
 
@@ -77,6 +82,8 @@ class ModelEventPublishIntent(BaseModel):
 
     Example:
         from uuid import uuid4
+
+        from omnibase_core.constants import TOPIC_REGISTRATION_EVENTS
         from omnibase_core.enums.enum_node_kind import EnumNodeKind
         from omnibase_core.models.events.model_node_registered_event import (
             ModelNodeRegisteredEvent,
@@ -91,7 +98,7 @@ class ModelEventPublishIntent(BaseModel):
         intent = ModelEventPublishIntent(
             correlation_id=uuid4(),
             created_by="my_node_v1",
-            target_topic="dev.runtime.node-registered.v1",
+            target_topic=TOPIC_REGISTRATION_EVENTS,
             target_key=str(node_id),
             target_event_type="NODE_REGISTERED",
             target_event_payload=payload,
@@ -99,6 +106,30 @@ class ModelEventPublishIntent(BaseModel):
     """
 
     model_config = ConfigDict(extra="forbid", from_attributes=True)
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        """
+        Ensure forward references are resolved when subclassing.
+
+        This hook automatically invokes _rebuild_model() when a subclass is
+        created, ensuring that ModelEventPayloadUnion and ModelRetryPolicy
+        forward references are properly resolved for the subclass.
+
+        Args:
+            **kwargs: Additional keyword arguments passed to parent class.
+        """
+        super().__init_subclass__(**kwargs)
+        # Attempt to rebuild the model to resolve forward references
+        # This ensures subclasses inherit properly resolved types
+        try:
+            _rebuild_model()
+        except (ImportError, TypeError, ValueError, AttributeError, RuntimeError):
+            # ImportError: Dependencies not yet available during early loading
+            # TypeError/ValueError: Type annotation issues during rebuild
+            # AttributeError: Module attribute access issues
+            # RuntimeError: Module manipulation issues
+            # If rebuild fails, Pydantic will lazily resolve on first use
+            pass
 
     # Intent metadata
     intent_id: UUID = Field(
@@ -212,9 +243,7 @@ def _rebuild_model() -> None:
 
     try:
         # Lazy imports to avoid circular dependency during module load
-        from omnibase_core.models.events.payloads import (
-            ModelEventPayloadUnion,
-        )
+        from omnibase_core.models.events.payloads import ModelEventPayloadUnion
         from omnibase_core.models.infrastructure.model_retry_policy import (
             ModelRetryPolicy,
         )
@@ -229,6 +258,14 @@ def _rebuild_model() -> None:
         ) from e
 
     try:
+        # Import Pydantic-specific exceptions for precise error handling
+        from pydantic import PydanticSchemaGenerationError, PydanticUserError
+    except ImportError:
+        # Fallback for older Pydantic versions
+        PydanticSchemaGenerationError = TypeError  # type: ignore[misc, assignment]
+        PydanticUserError = ValueError  # type: ignore[misc, assignment]
+
+    try:
         # Inject types into module globals for Pydantic to resolve forward references
         current_module = sys.modules[__name__]
         setattr(current_module, "ModelEventPayloadUnion", ModelEventPayloadUnion)
@@ -241,16 +278,48 @@ def _rebuild_model() -> None:
                 "ModelRetryPolicy": ModelRetryPolicy,
             }
         )
-    except (TypeError, ValueError, AttributeError) as e:
+    except PydanticSchemaGenerationError as e:
+        # Schema generation failed due to invalid type annotations
+        raise ModelOnexError(
+            message=f"Failed to generate schema for ModelEventPublishIntent: {e}",
+            error_code=EnumCoreErrorCode.INITIALIZATION_FAILED,
+            context={
+                "model": "ModelEventPublishIntent",
+                "error_type": "PydanticSchemaGenerationError",
+                "error_details": str(e),
+            },
+        ) from e
+    except PydanticUserError as e:
+        # User configuration error in Pydantic model definition
+        raise ModelOnexError(
+            message=f"Invalid Pydantic configuration for ModelEventPublishIntent: {e}",
+            error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
+            context={
+                "model": "ModelEventPublishIntent",
+                "error_type": "PydanticUserError",
+                "error_details": str(e),
+            },
+        ) from e
+    except (TypeError, ValueError) as e:
         # TypeError: Invalid type annotations or type parameters
-        # ValueError: Pydantic validation/schema issues
-        # AttributeError: Module attribute access issues during rebuild
+        # ValueError: General validation/schema issues
         raise ModelOnexError(
             message=f"Failed to rebuild ModelEventPublishIntent: {e}",
             error_code=EnumCoreErrorCode.INITIALIZATION_FAILED,
             context={
                 "model": "ModelEventPublishIntent",
                 "error_type": type(e).__name__,
+                "error_details": str(e),
+            },
+        ) from e
+    except AttributeError as e:
+        # Module attribute access issues during rebuild
+        raise ModelOnexError(
+            message=f"Attribute error during ModelEventPublishIntent rebuild: {e}",
+            error_code=EnumCoreErrorCode.INITIALIZATION_FAILED,
+            context={
+                "model": "ModelEventPublishIntent",
+                "error_type": "AttributeError",
                 "error_details": str(e),
             },
         ) from e
@@ -262,6 +331,26 @@ def _rebuild_model() -> None:
 # TYPE_CHECKING forward references. This ensures typed payload validation
 # works correctly without requiring manual intervention.
 
+
+def _log_rebuild_failure(
+    error_code_str: str, error_msg: str, error_type: str | None = None
+) -> None:
+    """Log and warn about rebuild failure in a consistent format."""
+    import logging as _logging
+    import warnings as _warnings
+
+    _full_msg = (
+        f"ModelEventPublishIntent: automatic forward reference rebuild failed"
+        f"{f' ({error_type})' if error_type else ''}: "
+        f"{error_code_str}: {error_msg}. "
+        f"Call _rebuild_model() explicitly after all dependencies are loaded."
+    )
+
+    _logger = _logging.getLogger(__name__)
+    _logger.warning(_full_msg)
+    _warnings.warn(_full_msg, UserWarning, stacklevel=3)
+
+
 try:
     # Import ModelOnexError for specific exception handling
     from omnibase_core.models.errors.model_onex_error import (
@@ -271,15 +360,8 @@ try:
     try:
         _rebuild_model()
     except _ModelOnexError as _rebuild_error:
-        # If automatic rebuild fails due to import or initialization issues,
-        # fall back to Pydantic's lazy resolution. Users can call
-        # _rebuild_model() explicitly after all dependencies are loaded.
-        import logging as _logging
-        import warnings as _warnings
-
-        # Extract error code and message safely
+        # Structured error from _rebuild_model() - extract details for logging
         # ModelOnexError has error_code: EnumOnexErrorCode | str | None
-        # Use getattr with hasattr to handle enum or string values
         _error_code = _rebuild_error.error_code
         if _error_code is None:
             _error_code_str = "UNKNOWN"
@@ -288,29 +370,33 @@ try:
         else:
             _error_code_str = str(_error_code)
         _error_msg = _rebuild_error.message or str(_rebuild_error)
-
-        _logger = _logging.getLogger(__name__)
-        _logger.warning(
-            "ModelEventPublishIntent: automatic forward reference rebuild failed: "
-            "%s: %s. Call _rebuild_model() explicitly after all dependencies are loaded.",
-            _error_code_str,
-            _error_msg,
+        _log_rebuild_failure(_error_code_str, _error_msg, "ModelOnexError")
+    except (TypeError, ValueError, AttributeError) as _type_error:
+        # Specific exception types that could escape _rebuild_model()
+        # These are recoverable - Pydantic will lazily resolve on first use
+        _log_rebuild_failure(
+            type(_type_error).__name__,
+            str(_type_error),
+            "type_error",
         )
-        _warnings.warn(
-            f"ModelEventPublishIntent: automatic forward reference rebuild failed: "
-            f"{_error_code_str}: {_error_msg}. "
-            f"Call _rebuild_model() explicitly after all dependencies are loaded.",
-            UserWarning,
-            stacklevel=1,
+    except RuntimeError as _runtime_error:
+        # RuntimeError could occur during module manipulation
+        _log_rebuild_failure(
+            "RUNTIME_ERROR",
+            str(_runtime_error),
+            "RuntimeError",
         )
 except ImportError as _import_error:
     # Handle case where ModelOnexError itself fails to import (early bootstrap)
+    # This is expected during early module loading before all dependencies exist
+    import logging as _logging
     import warnings as _warnings
 
-    _warnings.warn(
-        f"ModelEventPublishIntent: automatic forward reference rebuild failed during bootstrap: "
-        f"{type(_import_error).__name__}: {_import_error}. "
-        f"Call _rebuild_model() explicitly after all dependencies are loaded.",
-        UserWarning,
-        stacklevel=1,
+    _bootstrap_msg = (
+        f"ModelEventPublishIntent: automatic forward reference rebuild failed "
+        f"during bootstrap: {type(_import_error).__name__}: {_import_error}. "
+        f"Call _rebuild_model() explicitly after all dependencies are loaded."
     )
+    _logger = _logging.getLogger(__name__)
+    _logger.debug(_bootstrap_msg)  # Debug level - bootstrap failures are expected
+    _warnings.warn(_bootstrap_msg, UserWarning, stacklevel=1)

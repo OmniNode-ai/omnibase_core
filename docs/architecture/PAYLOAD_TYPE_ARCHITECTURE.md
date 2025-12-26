@@ -55,9 +55,12 @@ The codebase uses **intentionally different discriminator field names** across p
 |------------------|---------------------|---------|------------|
 | **Reducer Intent Payloads** | `intent_type` | `Literal["..."]` | `ProtocolIntentPayload` (Protocol-based) |
 | **Runtime Directive Payloads** | `kind` | `Literal["..."]` | `ModelDirectivePayload` |
-| **Action Payloads** | `action_type` | `ModelNodeActionType` | `SpecificActionPayload` |
+| **Action Payloads** | `action_type` + `kind` property | `ModelNodeActionType` | `SpecificActionPayload` |
 | **Core Registration Intents** | `kind` | `Literal["..."]` | `ModelCoreRegistrationIntent` |
 | **Event Payloads** | `event_type` | (varies) | `ModelEventPayloadUnion` |
+
+> **Note on Action Payloads**: Action payloads use `action_type: ModelNodeActionType` as the data field,
+> with a `kind` **property** (derived from `action_type.name`) to satisfy `ProtocolActionPayload`.
 
 > **Note**: Reducer Intent Payloads use a Protocol-based approach (`ProtocolIntentPayload`) rather than
 > a discriminated union, enabling open extensibility for plugins. Payload classes still define an
@@ -67,7 +70,7 @@ The codebase uses **intentionally different discriminator field names** across p
 
 #### 1. `intent_type` (Reducer Intent Payloads)
 
-**Location**: `omnibase_core/models/reducer/payloads/`
+**Location**: `src/omnibase_core/models/reducer/payloads/`
 
 **Rationale**:
 - Aligns semantically with `ModelIntent.intent_type` field
@@ -88,7 +91,7 @@ class PayloadLogEvent(ModelIntentPayloadBase):
 
 #### 2. `kind` (Runtime Directive Payloads)
 
-**Location**: `omnibase_core/models/runtime/payloads/`
+**Location**: `src/omnibase_core/models/runtime/payloads/`
 
 **Rationale**:
 - Short, unambiguous internal convention for runtime-level coordination
@@ -106,14 +109,28 @@ class ModelScheduleEffectPayload(ModelDirectivePayloadBase):
 #### 3. `action_type` (Action Payloads)
 
 **Locations**:
-- Base payloads: `omnibase_core/models/core/model_action_payload*.py`
-- Type alias and factory: `omnibase_core/models/orchestrator/payloads/model_action_typed_payload.py`
+- Base payloads: `src/omnibase_core/models/core/model_action_payload*.py`
+- Type alias and factory: `src/omnibase_core/models/orchestrator/payloads/model_action_typed_payload.py`
 
 **Rationale**:
 - Uses rich `ModelNodeActionType` for **semantic categorization** (not Literal)
 - Enables category-based dispatch (lifecycle, data, transformation, validation, etc.)
 - This is NOT a Pydantic discriminated union - uses type matching instead
 - Matches the semantic action being performed, not just a type tag
+
+**Protocol Conformance**: Action payloads satisfy `ProtocolActionPayload` via a `kind`
+**property** (not a field) that returns `action_type.name`. This is implemented in
+`ModelActionPayloadBase`:
+
+```python
+class ModelActionPayloadBase(BaseModel):
+    action_type: ModelNodeActionType = Field(...)
+
+    @property
+    def kind(self) -> str:
+        """Returns action_type.name for ProtocolActionPayload conformance."""
+        return self.action_type.name
+```
 
 **Note**: Action payloads do not use the discriminated union pattern. Instead, they use
 a factory function (`create_specific_action_payload` in `model_action_payload_types.py` or
@@ -409,21 +426,22 @@ class ModelAction(BaseModel):
     payload: SpecificActionPayload | None = None  # Use existing union
 ```
 
-**Approach B** (Create action-type-specific union):
+**Approach B** (Hypothetical - Create action-type-specific discriminated union):
 
-> **See**: [Discriminator Naming Conventions](#discriminator-naming-conventions) for the
-> rationale behind discriminator field naming across different payload categories.
-> This example uses `action_type` as the discriminator to align with the Action Payloads
-> convention defined in the table above.
+> **Note**: This is a **hypothetical alternative** NOT currently implemented.
+> The actual implementation uses Approach A with `SpecificActionPayload`.
+> If implementing this pattern, use `kind` as the discriminator to satisfy
+> `ProtocolActionPayload`, which requires a `kind` property/attribute.
 
 ```python
+# Hypothetical alternative - NOT currently implemented
 class ModelComputeActionPayload(BaseModel):
-    action_type: Literal["compute"] = "compute"
+    kind: Literal["compute"] = "compute"  # Discriminator for ProtocolActionPayload
     node_id: str
     input_data: dict[str, Any]
 
 class ModelEffectActionPayload(BaseModel):
-    action_type: Literal["effect"] = "effect"
+    kind: Literal["effect"] = "effect"
     effect_type: str
     params: dict[str, Any]
 
@@ -435,7 +453,7 @@ ActionPayload = Annotated[
     | ModelReduceActionPayload
     | ModelOrchestrateActionPayload
     | ModelCustomActionPayload,
-    Field(discriminator="action_type"),
+    Field(discriminator="kind"),  # Uses 'kind' to satisfy ProtocolActionPayload
 ]
 ```
 

@@ -181,7 +181,7 @@ def parse_semver_from_string(version_str: str) -> ModelSemVer:
         ModelSemVer instance validated through Pydantic
 
     Raises:
-        ValueError: If version string format is invalid
+        ModelOnexError: If version string format is invalid
 
     Example:
         >>> version = parse_semver_from_string("1.2.3")
@@ -216,7 +216,7 @@ def parse_input_state_version(input_state: SerializedDict) -> "ModelSemVer":
         ModelSemVer instance
 
     Raises:
-        ValueError: If version is missing, is a string, or has invalid format
+        ModelOnexError: If version is missing, is a string, or has invalid format
     """
     v = input_state.get("version")
 

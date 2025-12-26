@@ -12,8 +12,10 @@ ModelSchemaValue is imported inside functions, not at module level.
 
 PYDANTIC INTERNAL API USAGE (Documented Limitation):
 =====================================================
-This module uses Pydantic internal APIs because there is no public API
+TECH_DEBT: This module uses Pydantic internal APIs because there is no public API
 for dynamically adding model validators to an existing class post-creation.
+When Pydantic 3.x is released, audit this module for breaking changes.
+Issue tracking: If Pydantic adds a public API for dynamic validators, migrate to it.
 
 Internal APIs used:
 - pydantic._internal._decorators.Decorator
@@ -77,24 +79,38 @@ if TYPE_CHECKING:
 # to satisfy type checkers while handling ImportError gracefully.
 # Note: Using type[Any] since Decorator is a generic class and we don't
 # need to track the specific type parameter at runtime.
+#
+# Import structure explanation (for type checker satisfaction):
+# - We declare module-level variables with union types (X | None)
+# - The try block imports and assigns the actual classes
+# - The except block captures any import error for later diagnostics
+# - Runtime checks verify availability before use
 _PYDANTIC_INTERNALS_AVAILABLE: bool = False
 _PYDANTIC_IMPORT_ERROR: ImportError | None = None
+
+# Declare with explicit None initialization for type checker clarity
 _Decorator: type[DecoratorType[Any]] | None = None
 _ModelValidatorDecoratorInfo: type[ModelValidatorDecoratorInfoType] | None = None
 
 try:
-    from pydantic._internal._decorators import (
-        Decorator as _DecoratorImport,
-    )
+    # Import and assign in one block to help type checkers understand the flow
+    from pydantic._internal._decorators import Decorator as _DecoratorImport
     from pydantic._internal._decorators import (
         ModelValidatorDecoratorInfo as _ModelValidatorDecoratorInfoImport,
     )
 
+    # Assign to module-level variables (type checker sees these as potentially None)
     _Decorator = _DecoratorImport
     _ModelValidatorDecoratorInfo = _ModelValidatorDecoratorInfoImport
     _PYDANTIC_INTERNALS_AVAILABLE = True
 except ImportError as e:
+    # Capture error for diagnostic messages in runtime checks
     _PYDANTIC_IMPORT_ERROR = e
+    _logger.debug(
+        "Pydantic internal APIs not available: %s. "
+        "convert_to_schema decorators will raise RuntimeError if used.",
+        e,
+    )
 
 # Version compatibility check - warn if outside tested range
 _PYDANTIC_MAJOR = int(PYDANTIC_VERSION.split(".")[0])
@@ -229,16 +245,36 @@ def _convert_dict_value(
 def _convert_value(value: Any, schema_cls: type[ModelSchemaValue]) -> Any:
     """Convert a value (list or dict) to ModelSchemaValue format.
 
-    Note: None values are returned as-is to allow Pydantic's default_factory
-    to provide the appropriate default. This ensures dict fields don't
-    incorrectly receive an empty list.
+    This function handles conversion of raw values to ModelSchemaValue instances.
+    It preserves the collection type (list vs dict) to ensure proper field semantics.
+
+    Args:
+        value: The value to convert. Can be None, list, dict, or already-converted
+               ModelSchemaValue instances.
+        schema_cls: The ModelSchemaValue class to use for conversion.
+
+    Returns:
+        The converted value, or the original value if already converted or unexpected type.
+
+    Note:
+        None values are returned as-is to allow Pydantic's default_factory
+        to provide the appropriate default. This ensures dict fields don't
+        incorrectly receive an empty list, and vice versa.
+
+        Empty collections are returned as their respective types ([] or {})
+        to preserve the field's expected collection type.
     """
     if value is None:
         return None
+
+    # Handle empty collections explicitly - preserve collection type
+    # This is checked BEFORE isinstance to avoid unnecessary function calls
     if value == []:
         return []
     if value == {}:
         return {}
+
+    # Convert based on collection type
     if isinstance(value, list):
         return _convert_list_value(value, schema_cls)
     if isinstance(value, dict):
@@ -247,7 +283,15 @@ def _convert_value(value: Any, schema_cls: type[ModelSchemaValue]) -> Any:
         if _is_serialized_schema_value(value):
             return value
         return _convert_dict_value(value, schema_cls)
-    # For unexpected types, return as-is
+
+    # For unexpected types, log a warning and return as-is
+    # This allows Pydantic's type validation to catch the error with proper context
+    _logger.warning(
+        "Unexpected value type in schema conversion: %s (value: %r). "
+        "Expected list or dict. Value will be passed through for Pydantic validation.",
+        type(value).__name__,
+        value if not isinstance(value, (bytes, bytearray)) else "<binary data>",
+    )
     return value
 
 
@@ -365,12 +409,17 @@ def convert_to_schema(
                 },
             )
 
-        decorator_obj = _Decorator(
+        # Assign to local variables for type narrowing - type checkers cannot narrow
+        # module-level variables after guard checks due to potential concurrent modification
+        DecoratorClass = _Decorator
+        ValidatorInfoClass = _ModelValidatorDecoratorInfo
+
+        decorator_obj = DecoratorClass(
             cls_ref=f"{cls.__module__}.{cls.__name__}:{id(cls)}",
             cls_var_name=validator_name,
             func=validator_method,
             shim=None,
-            info=_ModelValidatorDecoratorInfo(mode="before"),
+            info=ValidatorInfoClass(mode="before"),
         )
 
         # Add to pydantic_decorators
@@ -458,12 +507,17 @@ def convert_list_to_schema(
                 },
             )
 
-        decorator_obj = _Decorator(
+        # Assign to local variables for type narrowing - type checkers cannot narrow
+        # module-level variables after guard checks due to potential concurrent modification
+        DecoratorClass = _Decorator
+        ValidatorInfoClass = _ModelValidatorDecoratorInfo
+
+        decorator_obj = DecoratorClass(
             cls_ref=f"{cls.__module__}.{cls.__name__}:{id(cls)}",
             cls_var_name=validator_name,
             func=validator_method,
             shim=None,
-            info=_ModelValidatorDecoratorInfo(mode="before"),
+            info=ValidatorInfoClass(mode="before"),
         )
         cls.__pydantic_decorators__.model_validators[validator_name] = decorator_obj
         cls.model_rebuild(force=True)
@@ -547,12 +601,17 @@ def convert_dict_to_schema(
                 },
             )
 
-        decorator_obj = _Decorator(
+        # Assign to local variables for type narrowing - type checkers cannot narrow
+        # module-level variables after guard checks due to potential concurrent modification
+        DecoratorClass = _Decorator
+        ValidatorInfoClass = _ModelValidatorDecoratorInfo
+
+        decorator_obj = DecoratorClass(
             cls_ref=f"{cls.__module__}.{cls.__name__}:{id(cls)}",
             cls_var_name=validator_name,
             func=validator_method,
             shim=None,
-            info=_ModelValidatorDecoratorInfo(mode="before"),
+            info=ValidatorInfoClass(mode="before"),
         )
         cls.__pydantic_decorators__.model_validators[validator_name] = decorator_obj
         cls.model_rebuild(force=True)

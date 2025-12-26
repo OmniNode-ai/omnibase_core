@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team
 # SPDX-License-Identifier: Apache-2.0
+# Copyright 2025 OmniNode Team
 """
 Protocol for action payloads.
 
@@ -22,17 +22,46 @@ Thread Safety:
     All conforming payloads should be immutable (frozen=True) after creation.
 
 Example:
-    >>> from omnibase_core.models.orchestrator.payloads import ProtocolActionPayload
-    >>> from pydantic import BaseModel, ConfigDict
-    >>> from typing import Literal
+    The recommended approach is to inherit from ModelActionPayloadBase, which
+    provides the `kind` property automatically derived from `action_type.name`:
+
+    >>> from omnibase_core.models.core.model_action_payload_base import ModelActionPayloadBase
+    >>> from omnibase_core.models.core.model_node_action_type import ModelNodeActionType
+    >>> from omnibase_core.models.core.model_predefined_categories import OPERATION
+    >>> from pydantic import Field
     >>>
-    >>> class ModelPayloadCustomAction(BaseModel):
+    >>> class ModelPayloadCustomAction(ModelActionPayloadBase):
+    ...     '''Custom action payload with automatic kind property.'''
+    ...     data: str = Field(..., description="Custom data")
+    >>>
+    >>> # Create with ModelNodeActionType - kind property is auto-derived
+    >>> payload = ModelPayloadCustomAction(
+    ...     action_type=ModelNodeActionType(
+    ...         name="custom.action",
+    ...         category=OPERATION,
+    ...         display_name="Custom Action",
+    ...         description="A custom action",
+    ...     ),
+    ...     data="test",
+    ... )
+    >>> payload.kind  # Returns "custom.action" (derived from action_type.name)
+    'custom.action'
+
+    Alternatively, implement the kind property directly for standalone payloads:
+
+    >>> from pydantic import BaseModel, ConfigDict
+    >>>
+    >>> class ModelPayloadStandalone(BaseModel):
     ...     model_config = ConfigDict(frozen=True, extra="forbid")
-    ...     kind: Literal["custom.action"] = "custom.action"
+    ...     _kind: str = "standalone.action"
     ...     data: str
+    ...
+    ...     @property
+    ...     def kind(self) -> str:
+    ...         return self._kind
     >>>
     >>> # Conforms to ProtocolActionPayload via structural typing
-    >>> payload: ProtocolActionPayload = ModelPayloadCustomAction(data="test")
+    >>> payload: ProtocolActionPayload = ModelPayloadStandalone(data="test")
 
 See Also:
     omnibase_core.models.core.model_action_payload_base: Base class for core action payloads
@@ -57,25 +86,34 @@ class ProtocolActionPayload(Protocol):
     satisfies the protocol without explicit inheritance.
 
     Required Attributes:
-        kind: String identifier for the action type. Used for routing to
-            the appropriate handler. Should be a Literal type for type safety.
+        kind: String identifier for the action type (property or attribute).
+            Used for routing to the appropriate handler. When inheriting from
+            ModelActionPayloadBase, this is automatically provided as a property
+            derived from `action_type.name`.
 
     Conformance Requirements:
-        - Must have a `kind` attribute (read-only string)
+        - Must have a `kind` property or attribute (read-only string)
         - Should be immutable (frozen=True) for thread safety
         - Should use extra="forbid" for strict schema validation
 
-    Example:
-        >>> from pydantic import BaseModel, ConfigDict
-        >>> from typing import Literal
+    Example (recommended - inherit from ModelActionPayloadBase):
+        >>> from omnibase_core.models.core.model_action_payload_base import ModelActionPayloadBase
+        >>> from omnibase_core.models.core.model_node_action_type import ModelNodeActionType
+        >>> from omnibase_core.models.core.model_predefined_categories import OPERATION
         >>>
-        >>> class ModelPayloadMyAction(BaseModel):
-        ...     model_config = ConfigDict(frozen=True, extra="forbid")
-        ...     kind: Literal["my.action"] = "my.action"
+        >>> class ModelPayloadMyAction(ModelActionPayloadBase):
         ...     data: str
         >>>
-        >>> # Automatically satisfies ProtocolActionPayload
-        >>> payload: ProtocolActionPayload = ModelPayloadMyAction(data="test")
+        >>> # The kind property is auto-derived from action_type.name
+        >>> payload = ModelPayloadMyAction(
+        ...     action_type=ModelNodeActionType(
+        ...         name="my.action", category=OPERATION,
+        ...         display_name="My Action", description="Example",
+        ...     ),
+        ...     data="test",
+        ... )
+        >>> payload.kind
+        'my.action'
 
     Note:
         The @runtime_checkable decorator enables isinstance() checks:

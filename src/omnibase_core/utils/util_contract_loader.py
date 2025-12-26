@@ -239,7 +239,7 @@ class ProtocolContractLoader:
                 deps_data = raw_content["dependencies"]
                 if isinstance(deps_data, list):
                     dependencies = []
-                    for dep_item in deps_data:
+                    for index, dep_item in enumerate(deps_data):
                         if isinstance(dep_item, dict):
                             # Construct typed ModelContractDependency from dict
                             dep = ModelContractDependency.model_validate(dep_item)
@@ -247,10 +247,12 @@ class ProtocolContractLoader:
                         else:
                             emit_log_event(
                                 LogLevel.WARNING,
-                                f"Skipping non-dict dependency item: {dep_item!r}",
+                                f"Skipping non-dict dependency item at index {index}: {type(dep_item).__name__}",
                                 context={
                                     "contract_path": str(contract_path),
                                     "item_type": type(dep_item).__name__,
+                                    "index": index,
+                                    "item_repr": repr(dep_item)[:100],
                                 },
                             )
 

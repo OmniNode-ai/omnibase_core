@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: 2025 OmniNode Team
 # SPDX-License-Identifier: Apache-2.0
+# Copyright 2025 OmniNode Team
 """
 ModelPayloadPersistState - Typed payload for state persistence intents.
 

@@ -348,7 +348,7 @@ class ModelEffectOperationConfig(BaseModel):
             understand that the result is always a typed model, never a dict.
 
         Raises:
-            ValueError: If handler_type is unknown or io_config is invalid.
+            ModelOnexError: If handler_type is unknown or io_config is invalid.
 
         Example:
             >>> config = ModelEffectOperationConfig(
