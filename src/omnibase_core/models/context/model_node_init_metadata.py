@@ -16,7 +16,9 @@ See Also:
     - omnibase_core.nodes: Node base classes
 """
 
-from pydantic import BaseModel, ConfigDict, Field
+from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 __all__ = ["ModelNodeInitMetadata"]
 
@@ -80,3 +82,28 @@ class ModelNodeInitMetadata(BaseModel):
         default=None,
         description="Enabled feature flags",
     )
+
+    @field_validator("init_timestamp", mode="before")
+    @classmethod
+    def validate_init_timestamp_iso8601(cls, value: str | None) -> str | None:
+        """Validate init_timestamp is in ISO 8601 format.
+
+        Args:
+            value: The init_timestamp string or None.
+
+        Returns:
+            The validated timestamp string unchanged, or None.
+
+        Raises:
+            ValueError: If the timestamp is not valid ISO 8601 format.
+        """
+        if value is None:
+            return None
+        try:
+            # Python 3.11+ fromisoformat handles 'Z' suffix
+            datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError as e:
+            raise ValueError(
+                f"Invalid ISO 8601 timestamp for init_timestamp: {value}"
+            ) from e
+        return value

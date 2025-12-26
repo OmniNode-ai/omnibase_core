@@ -16,7 +16,9 @@ See Also:
     - omnibase_core.models.context.model_authorization_context: Auth context
 """
 
-from pydantic import BaseModel, ConfigDict, Field
+import ipaddress
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 __all__ = ["ModelSessionContext"]
 
@@ -90,3 +92,28 @@ class ModelSessionContext(BaseModel):
         default=None,
         description="Authentication method used (e.g., oauth2, saml, basic)",
     )
+
+    @field_validator("client_ip", mode="before")
+    @classmethod
+    def validate_client_ip(cls, v: str | None) -> str | None:
+        """Validate that client_ip is a valid IPv4 or IPv6 address.
+
+        Args:
+            v: The IP address string to validate, or None.
+
+        Returns:
+            The validated IP address string, or None if input is None.
+
+        Raises:
+            ValueError: If the value is not a valid IPv4 or IPv6 address.
+        """
+        if v is None:
+            return None
+        try:
+            # ipaddress.ip_address() handles both IPv4 and IPv6
+            ip = ipaddress.ip_address(v)
+            return str(ip)
+        except ValueError as e:
+            raise ValueError(
+                f"Invalid IP address '{v}': must be a valid IPv4 or IPv6 address"
+            ) from e

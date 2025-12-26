@@ -16,7 +16,9 @@ See Also:
     - omnibase_core.models.context.model_audit_metadata: Audit trail metadata
 """
 
-from pydantic import BaseModel, ConfigDict, Field
+from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 __all__ = ["ModelAuthorizationContext"]
 
@@ -84,3 +86,26 @@ class ModelAuthorizationContext(BaseModel):
         default=None,
         description="OAuth client ID",
     )
+
+    @field_validator("expiry", mode="before")
+    @classmethod
+    def validate_expiry_iso8601(cls, value: str | None) -> str | None:
+        """Validate expiry is in ISO 8601 format.
+
+        Args:
+            value: The expiry timestamp string or None.
+
+        Returns:
+            The validated timestamp string unchanged, or None.
+
+        Raises:
+            ValueError: If the timestamp is not valid ISO 8601 format.
+        """
+        if value is None:
+            return None
+        try:
+            # Python 3.11+ fromisoformat handles 'Z' suffix
+            datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError as e:
+            raise ValueError(f"Invalid ISO 8601 timestamp for expiry: {value}") from e
+        return value

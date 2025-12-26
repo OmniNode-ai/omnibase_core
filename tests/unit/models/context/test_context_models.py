@@ -868,8 +868,9 @@ class TestContextModelsCommonBehavior:
         # All should be hashable (no exception raised)
         hash(session)
         hash(http)
-        # Note: auth with list fields may not be hashable
-        # depending on Pydantic version - test others
+        # Note: ModelAuthorizationContext (auth) is NOT hashed here because
+        # Pydantic frozen models with mutable fields (lists) are not hashable.
+        # See: https://docs.pydantic.dev/latest/concepts/models/#frozen-instances
         hash(audit)
         hash(checkpoint)
         hash(detection)
