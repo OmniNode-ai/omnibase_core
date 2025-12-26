@@ -251,15 +251,23 @@ class TestModelOptionalStringEdgeCases:
 
     def test_newline_string(self) -> None:
         """Test string with newlines."""
-        opt = ModelOptionalString(value="\\n\\n")
+        opt = ModelOptionalString(value="hello\nworld\n")
         assert bool(opt) is True
         assert opt.has_value() is True
+        assert "\n" in opt.value  # Verify actual newline character present
 
     def test_unicode_string(self) -> None:
         """Test string with unicode characters."""
-        opt = ModelOptionalString(value="hello")
+        # Test with various unicode: Japanese, accented chars, emoji, Chinese
+        unicode_value = (
+            "\u3053\u3093\u306b\u3061\u306f \u00d1o\u00f1o \U0001f389 \u4e2d\u6587"
+        )
+        opt = ModelOptionalString(value=unicode_value)
         assert bool(opt) is True
-        assert opt.value == "hello"
+        assert opt.value == unicode_value
+        assert opt.has_value() is True
+        # Verify non-ASCII characters are present
+        assert any(ord(c) > 127 for c in opt.value)
 
     def test_long_string(self) -> None:
         """Test very long string."""

@@ -734,3 +734,163 @@ class TestModelOptionalIntPydanticValidation:
         # Assignment validation should allow setting to int
         value.value = 100
         assert value.value == 100
+
+
+@pytest.mark.unit
+class TestModelOptionalIntAdditionalEdgeCases:
+    """Additional edge case tests for boundary conditions and special values."""
+
+    def test_sys_maxsize_value(self) -> None:
+        """Test with sys.maxsize (platform-specific maximum int)."""
+        import sys
+
+        value = ModelOptionalInt(value=sys.maxsize)
+        assert value.unwrap() == sys.maxsize
+        assert value.is_some() is True
+
+    def test_negative_sys_maxsize_value(self) -> None:
+        """Test with negative sys.maxsize."""
+        import sys
+
+        value = ModelOptionalInt(value=-sys.maxsize)
+        assert value.unwrap() == -sys.maxsize
+        assert value.is_some() is True
+
+    def test_bankers_rounding_round_to_even_2_5(self) -> None:
+        """Test banker's rounding: 2.5 rounds to 2 (nearest even)."""
+        value = ModelOptionalInt(value=2.5, coercion_mode=EnumCoercionMode.ROUND)
+        assert value.value == 2  # Python's round() uses banker's rounding
+
+    def test_bankers_rounding_round_to_even_4_5(self) -> None:
+        """Test banker's rounding: 4.5 rounds to 4 (nearest even)."""
+        value = ModelOptionalInt(value=4.5, coercion_mode=EnumCoercionMode.ROUND)
+        assert value.value == 4  # Python's round() uses banker's rounding
+
+    def test_bankers_rounding_round_to_odd_1_5(self) -> None:
+        """Test banker's rounding: 1.5 rounds to 2 (nearest even)."""
+        value = ModelOptionalInt(value=1.5, coercion_mode=EnumCoercionMode.ROUND)
+        assert value.value == 2  # 1.5 -> 2 (even)
+
+    def test_dict_instantiation_without_keyword(self) -> None:
+        """Test dict-based instantiation using model_validate.
+
+        The model_validator(mode='before') handles dict inputs where 'value'
+        can be any supported type (int, float, None).
+        """
+        # Using model_validate with dict that contains the value
+        value = ModelOptionalInt.model_validate({"value": 42})
+        assert value.value == 42
+        assert value.is_some() is True
+
+    def test_dict_instantiation_with_none(self) -> None:
+        """Test dict-based instantiation with None using model_validate."""
+        value = ModelOptionalInt.model_validate({"value": None})
+        assert value.value is None
+        assert value.is_none() is True
+
+    def test_bool_with_logical_not_operator(self) -> None:
+        """Test logical not operator with __bool__."""
+        value_some = ModelOptionalInt(value=42)
+        value_none = ModelOptionalInt(value=None)
+
+        assert not value_some is False  # not True == False
+        assert not value_none is True  # not False == True
+
+    def test_bool_with_logical_and_operator(self) -> None:
+        """Test logical and operator with __bool__."""
+        value_some = ModelOptionalInt(value=42)
+        value_none = ModelOptionalInt(value=None)
+
+        # and short-circuits: returns first falsy or last value
+        assert (value_some and value_some) is value_some
+        assert (value_none and value_some) is value_none
+        assert (value_some and value_none) is value_none
+
+    def test_bool_with_logical_or_operator(self) -> None:
+        """Test logical or operator with __bool__."""
+        value_some = ModelOptionalInt(value=42)
+        value_none = ModelOptionalInt(value=None)
+
+        # or short-circuits: returns first truthy or last value
+        assert (value_some or value_none) is value_some
+        assert (value_none or value_some) is value_some
+        assert (value_none or value_none) is value_none
+
+    def test_bool_in_conditional_expression(self) -> None:
+        """Test __bool__ in ternary conditional expression."""
+        value_some = ModelOptionalInt(value=42)
+        value_none = ModelOptionalInt(value=None)
+
+        result_some = "present" if value_some else "absent"
+        result_none = "present" if value_none else "absent"
+
+        assert result_some == "present"
+        assert result_none == "absent"
+
+    def test_bool_zero_vs_none_distinction(self) -> None:
+        """Explicitly test that 0 and None have different boolean behavior.
+
+        This is a critical edge case: 0 is a valid value (truthy),
+        while None indicates absence (falsy).
+        """
+        zero = ModelOptionalInt(value=0)
+        none = ModelOptionalInt(value=None)
+
+        # 0 is a present value, so bool is True
+        assert bool(zero) is True
+        assert zero.is_some() is True
+        assert zero.is_none() is False
+
+        # None indicates absence, so bool is False
+        assert bool(none) is False
+        assert none.is_some() is False
+        assert none.is_none() is True
+
+        # Critically different from standard Python int behavior
+        # where bool(0) == False
+        assert bool(0) is False  # Standard Python
+        assert bool(zero) is True  # ModelOptionalInt (value presence)
+
+    def test_unwrap_or_with_zero_default(self) -> None:
+        """Test unwrap_or when default is 0."""
+        none_value = ModelOptionalInt(value=None)
+        some_value = ModelOptionalInt(value=42)
+
+        assert none_value.unwrap_or(0) == 0
+        assert some_value.unwrap_or(0) == 42
+
+    def test_unwrap_or_with_negative_default(self) -> None:
+        """Test unwrap_or when default is negative."""
+        none_value = ModelOptionalInt(value=None)
+        assert none_value.unwrap_or(-1) == -1
+
+    def test_map_with_zero_result(self) -> None:
+        """Test map that produces zero as result."""
+        value = ModelOptionalInt(value=5)
+        result = value.map(lambda x: x - 5)  # 5 - 5 = 0
+        assert result.value == 0
+        assert result.is_some() is True
+        assert bool(result) is True
+
+    def test_very_small_positive_float_strict_mode(self) -> None:
+        """Test very small positive float in STRICT mode raises error."""
+        with pytest.raises(ModelOnexError):
+            ModelOptionalInt(value=0.000001)
+
+    def test_very_small_negative_float_strict_mode(self) -> None:
+        """Test very small negative float in STRICT mode raises error."""
+        with pytest.raises(ModelOnexError):
+            ModelOptionalInt(value=-0.000001)
+
+    def test_float_with_many_decimal_places_exact(self) -> None:
+        """Test float with many decimal places that equals an exact integer."""
+        # 5.0000000000000000 should coerce to 5 in STRICT mode
+        value = ModelOptionalInt(value=5.0000000000000000)
+        assert value.value == 5
+
+    def test_large_exact_float_coercion(self) -> None:
+        """Test large float that is exactly an integer."""
+        large_float = 1e15  # 1000000000000000.0
+        value = ModelOptionalInt(value=large_float)
+        assert value.value == 1000000000000000
+        assert isinstance(value.value, int)

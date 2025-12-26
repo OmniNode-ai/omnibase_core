@@ -413,11 +413,13 @@ class TestModelQueryParametersDunder:
 
     def test_bool_with_multiple_params(self) -> None:
         """Test bool() with multiple parameters."""
-        params = ModelQueryParameters.from_dict({
-            "page": 1,
-            "limit": 10,
-            "sort": "name",
-            "order": "asc",
-        })
+        params = ModelQueryParameters.from_dict(
+            {
+                "page": 1,
+                "limit": 10,
+                "sort": "name",
+                "order": "asc",
+            }
+        )
         assert bool(params) is True
         assert params  # Idiomatic check
