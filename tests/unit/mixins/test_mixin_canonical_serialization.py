@@ -847,7 +847,13 @@ class TestUnionTypeDetection:
         assert isinstance(result, str)
         assert "test_node" in result
         # None/empty fields should be handled without error
-        assert "null" not in result.lower() or "tools: null" in result.lower()
+        # Allow version.prerelease and version.build to be null (added in PR #241),
+        # but no other unexpected nulls
+        result_lower = result.lower()
+        assert "null" not in result_lower or any(
+            x in result_lower
+            for x in ["prerelease: null", "build: null", "tools: null"]
+        )
 
     def test_node_metadata_block_uses_pep604(self):
         """Verify that NodeMetadataBlock actually uses PEP 604 union syntax.

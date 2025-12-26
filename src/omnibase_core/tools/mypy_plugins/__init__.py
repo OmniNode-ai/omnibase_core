@@ -1,22 +1,41 @@
 # SPDX-License-Identifier: Apache-2.0
-"""Mypy plugins for ONEX type checking.
+"""
+ONEX mypy plugins package.
 
-This module provides custom mypy plugins for enforcing ONEX-specific type checking
-rules. The primary plugin, dict_any_checker, detects and warns about usage of
-dict[str, Any] type annotations.
+This package provides custom mypy plugins for enforcing ONEX type safety patterns.
+Available plugins:
+
+- dict_any_checker: Checks for unguarded dict[str, Any] usage
 
 Usage in mypy.ini or pyproject.toml:
     [tool.mypy]
     plugins = ["omnibase_core.tools.mypy_plugins"]
 
-Plugin Discovery:
-    Mypy discovers plugins by looking for a callable named `plugin` at module level.
-    This module re-exports the `plugin` function from dict_any_checker.
+The package exposes a plugin() function as required by mypy's plugin API.
 """
 
-from omnibase_core.tools.mypy_plugins.dict_any_checker import (
-    DictAnyCheckerPlugin,
-    plugin,
-)
+from mypy.plugin import Plugin
 
-__all__ = ["DictAnyCheckerPlugin", "plugin"]
+
+def plugin(version: str) -> type[Plugin]:
+    """
+    Mypy plugin entry point.
+
+    This function is called by mypy to get the plugin class. It must be named
+    'plugin' and return a Plugin subclass.
+
+    Args:
+        version: The mypy version string (e.g., "1.19.0"). Currently unused but
+            required by the mypy plugin API for version compatibility checks.
+
+    Returns:
+        type[Plugin]: The DictAnyCheckerPlugin class which mypy will instantiate
+            to enable dict[str, Any] usage checking.
+    """
+    # Import here to avoid circular imports and ensure proper initialization
+    from omnibase_core.tools.mypy_plugins.dict_any_checker import DictAnyCheckerPlugin
+
+    return DictAnyCheckerPlugin
+
+
+__all__ = ["plugin"]

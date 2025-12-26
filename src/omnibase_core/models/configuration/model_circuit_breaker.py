@@ -7,11 +7,62 @@ cascade failures in load balancing systems.
 
 import threading
 from datetime import UTC, datetime, timedelta
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
 from .model_circuit_breaker_metadata import ModelCircuitBreakerMetadata
+
+# Lazy model rebuild flag - forward references are resolved on first use, not at import
+_models_rebuilt = False
+_rebuild_lock = threading.Lock()
+
+
+def _ensure_models_rebuilt(circuit_breaker_cls: type[BaseModel] | None = None) -> None:
+    """Ensure models are rebuilt to resolve forward references (lazy initialization).
+
+    This function implements lazy model rebuild to avoid importing ModelCustomFields
+    at module load time. The rebuild only happens on first ModelCircuitBreaker
+    instantiation, improving import performance when the model isn't used.
+
+    The pattern:
+    1. Module-level flag tracks if rebuild has occurred
+    2. This function is called via __new__ on first instantiation
+    3. The rebuild resolves ModelCircuitBreakerMetadata's forward reference to ModelCustomFields
+    4. Then rebuilds ModelCircuitBreaker to pick up the resolved metadata type
+    5. Subsequent instantiations skip the rebuild (flag is already True)
+
+    Args:
+        circuit_breaker_cls: The ModelCircuitBreaker class to rebuild. Must be provided
+            on first call to properly resolve the forward reference chain.
+
+    Thread Safety:
+        This function is thread-safe. It uses double-checked locking to ensure that
+        concurrent first-instantiation calls safely coordinate the rebuild. The pattern:
+        1. Fast path: Check flag without lock (subsequent calls return immediately)
+        2. Acquire lock only when rebuild might be needed
+        3. Re-check flag inside lock to handle race conditions
+        4. Perform rebuild and set flag atomically within lock
+    """
+    global _models_rebuilt
+    if _models_rebuilt:  # Fast path - no lock needed
+        return
+
+    with _rebuild_lock:
+        if (
+            _models_rebuilt
+        ):  # Double-check after acquiring lock  # type: ignore[unreachable]
+            return  # type: ignore[unreachable]
+
+        from omnibase_core.models.services.model_custom_fields import ModelCustomFields
+
+        # First rebuild the metadata model to resolve its forward reference
+        ModelCircuitBreakerMetadata.model_rebuild()
+        # Then rebuild the circuit breaker model to pick up the resolved metadata
+        if circuit_breaker_cls is not None:
+            circuit_breaker_cls.model_rebuild()
+        _models_rebuilt = True
 
 
 class ModelCircuitBreaker(BaseModel):
@@ -42,6 +93,18 @@ class ModelCircuitBreaker(BaseModel):
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    def __new__(cls, **_data: Any) -> "ModelCircuitBreaker":
+        """Override __new__ to trigger lazy model rebuild before Pydantic validation.
+
+        Pydantic validates model completeness before calling model_validator,
+        so we must trigger the rebuild in __new__ which runs first.
+
+        Args:
+            **_data: Keyword arguments passed to Pydantic (handled by __init__).
+        """
+        _ensure_models_rebuilt(cls)
+        return super().__new__(cls)
 
     # Private lock for thread-safe operations
     _lock: threading.Lock = PrivateAttr(default_factory=threading.Lock)

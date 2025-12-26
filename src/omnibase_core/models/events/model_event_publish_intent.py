@@ -5,22 +5,28 @@ This module defines the intent event used for coordinating event publishing
 between nodes without performing direct domain I/O.
 
 Pattern:
-    Node (builds intent) → Kafka (intent topic) → IntentExecutor → Kafka (domain topic)
+    Node (builds intent) -> Kafka (intent topic) -> IntentExecutor -> Kafka (domain topic)
 
 Example:
     # Reducer publishes intent instead of direct event (typed payload)
     from uuid import uuid4
 
     from omnibase_core.constants import (
+        DOMAIN_METRICS,
         TOPIC_EVENT_PUBLISH_INTENT,
         TOPIC_REGISTRATION_EVENTS,
+        TOPIC_TYPE_EVENTS,
+        topic_name,
     )
     from omnibase_core.enums.enum_node_kind import EnumNodeKind
     from omnibase_core.models.events.model_node_registered_event import (
         ModelNodeRegisteredEvent,
     )
 
-    # Create typed payload with all required fields
+    # Example 1: Using topic_name() for dynamic topic generation
+    metrics_topic = topic_name(DOMAIN_METRICS, TOPIC_TYPE_EVENTS)
+
+    # Example 2: Create typed payload with all required fields
     node_id = uuid4()
     payload = ModelNodeRegisteredEvent(
         node_id=node_id,
@@ -44,7 +50,7 @@ Example:
 Note:
     TOPIC_EVENT_PUBLISH_INTENT and TOPIC_REGISTRATION_EVENTS are defined in
     constants_topic_taxonomy.py and should be imported from omnibase_core.constants.
-
+    Use topic_name() to generate domain-specific topic names dynamically.
 """
 
 from __future__ import annotations

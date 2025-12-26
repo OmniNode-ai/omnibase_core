@@ -12,10 +12,11 @@ Specialized contract model for NodeEffect implementations providing:
 Strict typing is enforced: No Any types allowed in implementation.
 """
 
-from typing import ClassVar
+import threading
+from typing import Any, ClassVar
 from uuid import UUID, uuid4
 
-from pydantic import ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -64,6 +65,76 @@ from omnibase_core.models.utils.model_subcontract_constraint_validator import (
 
 # Import centralized conversion utilities
 
+# Lazy model rebuild flag - forward references are resolved on first use, not at import
+_models_rebuilt = False
+_rebuild_lock = threading.Lock()
+
+
+def _ensure_models_rebuilt(contract_effect_cls: type[BaseModel] | None = None) -> None:
+    """Ensure models are rebuilt to resolve forward references (lazy initialization).
+
+    This function implements lazy model rebuild to avoid importing ModelCustomFields
+    at module load time. The rebuild only happens on first ModelContractEffect
+    instantiation, improving import performance when the model isn't used.
+
+    The pattern:
+    1. Module-level flag tracks if rebuild has occurred
+    2. This function is called via __new__ on first instantiation
+    3. The rebuild resolves the forward reference chain:
+       ModelCircuitBreakerMetadata -> ModelCircuitBreaker -> ModelRoutingSubcontract
+    4. Then rebuilds ModelContractEffect to pick up the resolved types
+    5. Subsequent instantiations skip the rebuild (flag is already True)
+
+    Args:
+        contract_effect_cls: The ModelContractEffect class to rebuild. Must be provided
+            on first call to properly resolve the forward reference chain.
+
+    Thread Safety:
+        This function is thread-safe. It uses double-checked locking to ensure that
+        concurrent first-instantiation calls safely coordinate the rebuild. The pattern:
+        1. Fast path: Check flag without lock (subsequent calls return immediately)
+        2. Acquire lock only when rebuild might be needed
+        3. Re-check flag inside lock to handle race conditions
+        4. Perform rebuild and set flag atomically within lock
+    """
+    global _models_rebuilt
+    if _models_rebuilt:  # Fast path - no lock needed
+        return
+
+    with _rebuild_lock:
+        if (
+            _models_rebuilt
+        ):  # Double-check after acquiring lock  # type: ignore[unreachable]
+            return  # type: ignore[unreachable]
+
+        # Import ModelCustomFields to ensure it's available for forward reference resolution
+        # Rebuild the dependency chain in order (dependencies first)
+        # 1. ModelCircuitBreakerMetadata has forward reference to ModelCustomFields
+        from omnibase_core.models.configuration.model_circuit_breaker_metadata import (
+            ModelCircuitBreakerMetadata,
+        )
+        from omnibase_core.models.services.model_custom_fields import (
+            ModelCustomFields,
+        )
+
+        ModelCircuitBreakerMetadata.model_rebuild()
+
+        # 2. ModelCircuitBreaker uses ModelCircuitBreakerMetadata
+        from omnibase_core.models.configuration.model_circuit_breaker import (
+            ModelCircuitBreaker,
+        )
+
+        ModelCircuitBreaker.model_rebuild()
+
+        # 3. ModelRoutingSubcontract uses ModelCircuitBreaker
+        ModelRoutingSubcontract.model_rebuild()
+
+        # 4. Finally rebuild ModelContractEffect to pick up resolved types
+        if contract_effect_cls is not None:
+            contract_effect_cls.model_rebuild()
+
+        _models_rebuilt = True
+
 
 class ModelContractEffect(MixinNodeTypeValidator, ModelContractBase):
     """
@@ -81,6 +152,58 @@ class ModelContractEffect(MixinNodeTypeValidator, ModelContractBase):
 
     # Default node type for EFFECT contracts (used by MixinNodeTypeValidator)
     _DEFAULT_NODE_TYPE: ClassVar[EnumNodeType] = EnumNodeType.EFFECT_GENERIC
+
+    def __new__(cls, **_data: Any) -> "ModelContractEffect":
+        """Override __new__ to trigger lazy model rebuild before Pydantic validation.
+
+        Pydantic validates model completeness before calling model_validator,
+        so we must trigger the rebuild in __new__ which runs first.
+
+        Args:
+            **_data: Keyword arguments passed to Pydantic (handled by __init__).
+        """
+        _ensure_models_rebuilt(cls)
+        return super().__new__(cls)
+
+    @classmethod
+    def model_validate(
+        cls,
+        obj: Any,
+        *,
+        strict: bool | None = None,
+        from_attributes: bool | None = None,
+        context: Any | None = None,
+        extra: str | None = None,  # Literal['allow', 'ignore', 'forbid']
+        by_alias: bool | None = None,
+        by_name: bool | None = None,
+    ) -> "ModelContractEffect":
+        """Override model_validate to trigger lazy model rebuild before Pydantic validation.
+
+        Pydantic's model_validate checks schema completeness BEFORE creating an instance,
+        so __new__ is called too late. We must trigger the rebuild here first.
+
+        Args:
+            obj: The object to validate.
+            strict: Whether to enforce strict validation.
+            from_attributes: Whether to extract data from object attributes.
+            context: Optional context for validation.
+            extra: How to handle extra fields.
+            by_alias: Whether to use field aliases.
+            by_name: Whether to use field names.
+
+        Returns:
+            A validated ModelContractEffect instance.
+        """
+        _ensure_models_rebuilt(cls)
+        return super().model_validate(
+            obj,
+            strict=strict,
+            from_attributes=from_attributes,
+            context=context,
+            extra=extra,  # type: ignore[arg-type]
+            by_alias=by_alias,
+            by_name=by_name,
+        )
 
     def model_post_init(self, __context: object) -> None:
         """Post-initialization validation."""

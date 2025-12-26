@@ -1021,7 +1021,14 @@ class TestNodeOrchestratorParallelExecutionDeterminism:
         parallel_workflow_definition: ModelWorkflowDefinition,
         complex_dependency_steps_config: list[dict],
     ):
-        """Test that parallel execution respects dependency constraints."""
+        """Test that parallel execution respects dependency constraints.
+
+        Verifies that the execution ORDER respects dependencies by checking
+        that actions are emitted in valid topological order:
+        - Step 1 (root, NodeEffect) must be scheduled first
+        - Step 4 (merge, NodeReducer) must be scheduled last
+        - Steps 2 and 3 (branches, NodeCompute) must be scheduled between them
+        """
         node = NodeOrchestrator(test_container)
         node.workflow_definition = parallel_workflow_definition
 
@@ -1033,8 +1040,9 @@ class TestNodeOrchestratorParallelExecutionDeterminism:
 
         result = await node.process(input_data)
 
-        # Verify dependency order constraints
+        # Verify all steps completed
         completed = result.completed_steps
+        assert len(completed) == 4, "All 4 steps should complete"
 
         # All steps must be present in completed list
         assert str(FIXED_STEP_1_ID) in completed, "Root step 1 must be completed"

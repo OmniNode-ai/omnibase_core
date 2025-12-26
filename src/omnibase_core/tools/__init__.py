@@ -1,7 +1,10 @@
 """
-ONEX Tools Package
+ONEX Tools Package.
 
-Contains development tools including mypy plugins and validation utilities.
+This package provides development and analysis tools for the ONEX framework.
+
+Subpackages:
+    mypy_plugins: Custom mypy plugins for ONEX type safety enforcement
 """
 
 __all__: list[str] = []

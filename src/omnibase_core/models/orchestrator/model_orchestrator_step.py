@@ -1,12 +1,14 @@
+# SPDX-FileCopyrightText: 2025 OmniNode Team
+# SPDX-License-Identifier: Apache-2.0
 from pydantic import Field
 
 "\nOrchestrator Step Model\n\nType-safe orchestrator step that replaces Dict[str, Any] usage\nin orchestrator plans.\n"
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel
 
 from omnibase_core.models.services.model_custom_fields import ModelCustomFields
+from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelOrchestratorStep(BaseModel):
@@ -26,7 +28,7 @@ class ModelOrchestratorStep(BaseModel):
         default=None, description="Node to execute (for node steps)"
     )
     action: str | None = Field(default=None, description="Action to perform")
-    inputs: dict[str, Any] | None = Field(
+    inputs: SerializedDict | None = Field(
         default=None, description="Step input parameters"
     )
     timeout_seconds: int | None = Field(
