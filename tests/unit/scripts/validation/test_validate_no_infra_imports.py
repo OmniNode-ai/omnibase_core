@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
@@ -808,7 +807,7 @@ from omnibase_infra import kafka
 
     def test_handles_file_read_error(self, tmp_path: Path) -> None:
         """Test handling of file read errors by mocking file open."""
-        from unittest.mock import mock_open, patch
+        from unittest.mock import patch
 
         test_file = tmp_path / "error.py"
         test_file.write_text("# placeholder")

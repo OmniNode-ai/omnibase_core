@@ -373,14 +373,39 @@ class TestNodeOrchestratorExecutionOrderDeterminism:
         for order in orders[1:]:
             assert order == orders[0]
 
-        # Step 1 must come first, Step 4 must come last
+        # Verify dependency ordering in the diamond pattern:
+        #      Step 1 (root)
+        #      /    \
+        #   Step 2  Step 3
+        #      \    /
+        #      Step 4 (merge)
         for order in orders:
-            assert order[0] == FIXED_STEP_1_ID
-            assert order[-1] == FIXED_STEP_4_ID
-            # Steps 2 and 3 must come before 4
+            step_1_idx = order.index(FIXED_STEP_1_ID)
+            step_2_idx = order.index(FIXED_STEP_2_ID)
+            step_3_idx = order.index(FIXED_STEP_3_ID)
             step_4_idx = order.index(FIXED_STEP_4_ID)
-            assert order.index(FIXED_STEP_2_ID) < step_4_idx
-            assert order.index(FIXED_STEP_3_ID) < step_4_idx
+
+            # Step 1 must come first (no dependencies)
+            assert order[0] == FIXED_STEP_1_ID, "Step 1 (root) must be first"
+
+            # Step 1 must come before Steps 2 and 3 (they depend on Step 1)
+            assert step_1_idx < step_2_idx, (
+                "Step 1 must come before Step 2 (Step 2 depends on Step 1)"
+            )
+            assert step_1_idx < step_3_idx, (
+                "Step 1 must come before Step 3 (Step 3 depends on Step 1)"
+            )
+
+            # Steps 2 and 3 must come before Step 4 (Step 4 depends on both)
+            assert step_2_idx < step_4_idx, (
+                "Step 2 must come before Step 4 (Step 4 depends on Step 2)"
+            )
+            assert step_3_idx < step_4_idx, (
+                "Step 3 must come before Step 4 (Step 4 depends on Step 3)"
+            )
+
+            # Step 4 must come last (depends on Steps 2 and 3)
+            assert order[-1] == FIXED_STEP_4_ID, "Step 4 (merge) must be last"
 
     def test_get_execution_order_respects_declaration_order(
         self,

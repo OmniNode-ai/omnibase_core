@@ -176,7 +176,7 @@ class ModelEventPublishIntent(BaseModel):
     target_topic: str = Field(
         ...,
         description="Kafka topic where event should be published",
-        examples=["dev.omninode-bridge.codegen.metrics-recorded.v1"],
+        examples=["dev.omninode-bridge.registration.events.v1"],
     )
     target_key: str = Field(
         ...,
@@ -185,7 +185,7 @@ class ModelEventPublishIntent(BaseModel):
     target_event_type: str = Field(
         ...,
         description="Event type name (for routing and logging)",
-        examples=["GENERATION_METRICS_RECORDED", "NODE_GENERATION_COMPLETED"],
+        examples=["NODE_REGISTERED", "NODE_UNREGISTERED"],
     )
     target_event_payload: (
         ModelEventPayloadUnion
@@ -411,14 +411,9 @@ try:
 except ImportError as _import_error:
     # Handle case where ModelOnexError itself fails to import (early bootstrap)
     # This is expected during early module loading before all dependencies exist
-    import logging as _logging
-    import warnings as _warnings
-
-    _bootstrap_msg = (
-        f"ModelEventPublishIntent: automatic forward reference rebuild failed "
-        f"during bootstrap: {type(_import_error).__name__}: {_import_error}. "
-        f"Call _rebuild_model() explicitly after all dependencies are loaded."
+    # Use _log_rebuild_failure for consistent error handling pattern
+    _log_rebuild_failure(
+        error_code_str="IMPORT_ERROR",
+        error_msg=str(_import_error),
+        error_type="ImportError (bootstrap)",
     )
-    _logger = _logging.getLogger(__name__)
-    _logger.debug(_bootstrap_msg)  # Debug level - bootstrap failures are expected
-    _warnings.warn(_bootstrap_msg, UserWarning, stacklevel=1)

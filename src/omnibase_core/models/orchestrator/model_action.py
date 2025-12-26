@@ -293,7 +293,6 @@ class ModelAction(BaseModel):
         recommended_types = get_recommended_payloads_for_action_type(self.action_type)
 
         # Check if the payload type is among the recommended types
-        payload_type = type(self.payload)
         is_recommended = any(
             isinstance(self.payload, recommended_type)
             for recommended_type in recommended_types
@@ -301,6 +300,8 @@ class ModelAction(BaseModel):
 
         if not is_recommended:
             # Log for debugging - this isn't an error but may indicate misuse
+            # Get payload_type only when needed (inside this branch)
+            payload_type = type(self.payload)
             recommended_names = [t.__name__ for t in recommended_types]
             _logger.info(
                 "ModelAction: Payload type '%s' is not among recommended types %s "

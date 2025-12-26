@@ -1200,8 +1200,6 @@ class TestTypedConfigErrorScenarios:
 
         Verifies that ModelEffectOperationConfig requires io_config.
         """
-        from pydantic import ValidationError
-
         from omnibase_core.models.operations.model_effect_operation_config import (
             ModelEffectOperationConfig,
         )

@@ -19,8 +19,7 @@ from uuid import UUID, uuid4
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.enums.enum_reducer_types import EnumReductionType, EnumStreamingMode
-from omnibase_core.models.common.model_reducer_metadata import ModelReducerMetadata
+from omnibase_core.enums.enum_reducer_types import EnumReductionType
 from omnibase_core.models.reducer.model_intent import ModelIntent
 from omnibase_core.models.reducer.model_reducer_output import ModelReducerOutput
 from omnibase_core.models.reducer.payloads import ModelPayloadLogEvent

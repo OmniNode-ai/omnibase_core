@@ -1,7 +1,5 @@
 """Valid module with correct __all__ exports."""
 
-from typing import Any
-
 __all__ = ["MyClass", "my_function", "MY_CONSTANT", "imported_name"]
 
 # Import

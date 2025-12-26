@@ -17,7 +17,6 @@ from uuid import UUID
 import pytest
 
 from omnibase_core.container.service_registry import ServiceRegistry
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 # Test Protocol Interfaces

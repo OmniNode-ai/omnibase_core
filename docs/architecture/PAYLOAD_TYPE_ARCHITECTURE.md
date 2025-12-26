@@ -393,13 +393,14 @@ def handle_payload(payload: ProtocolIntentPayload) -> None:
 For scenarios requiring exhaustive handling guarantees, a discriminated union can be used:
 
 ```python
-from typing import Annotated, Literal
-from pydantic import Field
+from typing import Annotated, Any, Literal
+from pydantic import BaseModel, Field
 
 class ModelWebhookIntentPayload(BaseModel):
     intent_type: Literal["webhook.send"] = "webhook.send"
     url: str
     method: str = "POST"
+    body: dict[str, Any] | None = None  # Optional request body
 
 ExtensionIntentPayload = Annotated[
     ModelWebhookIntentPayload | ModelPluginExecutePayload,

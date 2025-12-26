@@ -44,7 +44,6 @@ from omnibase_core.models.contracts.subcontracts.model_fsm_subcontract import (
     ModelFSMSubcontract,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.fsm.model_fsm_state_snapshot import ModelFSMStateSnapshot
 from omnibase_core.models.fsm.model_fsm_transition_condition import (
     ModelFSMTransitionCondition,
 )

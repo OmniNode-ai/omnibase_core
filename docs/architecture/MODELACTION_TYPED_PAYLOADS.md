@@ -210,14 +210,14 @@ payload = create_action_payload(
 
 ### Source Files
 
-- **Type alias and factory**: `/src/omnibase_core/models/orchestrator/payloads/model_action_typed_payload.py`
-- **Package init**: `/src/omnibase_core/models/orchestrator/payloads/__init__.py`
-- **Base payloads**: `/src/omnibase_core/models/core/model_action_payload_*.py`
+- **Type alias and factory**: [`model_action_typed_payload.py`](../../src/omnibase_core/models/orchestrator/payloads/model_action_typed_payload.py)
+- **Package init**: [`__init__.py`](../../src/omnibase_core/models/orchestrator/payloads/__init__.py)
+- **Base payloads**: [`model_action_payload*.py`](../../src/omnibase_core/models/core/) (includes `model_action_payload.py`, `model_action_payload_base.py`, `model_action_payload_types.py`)
 
 ### Test Files
 
-- **Integration tests**: `/tests/unit/models/orchestrator/payloads/test_model_action_typed_payload.py`
-- **Base payload tests**: `/tests/unit/models/core/test_model_action_payload_types.py`
+- **Integration tests**: [`test_model_action_typed_payload.py`](../../tests/unit/models/orchestrator/payloads/test_model_action_typed_payload.py)
+- **Base payload tests**: [`test_model_action_payload_types.py`](../../tests/unit/models/core/test_model_action_payload_types.py)
 
 ## Migration Path
 

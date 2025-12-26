@@ -1041,7 +1041,6 @@ class TestValidateJsonPayload:
 
     def test_uuid_passes_in_permissive_mode(self) -> None:
         """Test UUID objects are accepted in default permissive mode (strict=False)."""
-        from datetime import datetime
 
         from omnibase_core.utils.workflow_executor import _validate_json_payload
 

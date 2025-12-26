@@ -22,14 +22,12 @@ Related:
 
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
 from typing import get_type_hints
 
 import pytest
 
 from omnibase_core.protocols.event_bus import (
     ProtocolEventBus,
-    ProtocolEventBusBase,
 )
 from omnibase_core.protocols.event_bus.protocol_event_bus_lifecycle import (
     ProtocolEventBusLifecycle,
@@ -457,9 +455,6 @@ class TestTypedDictEventBusHealth:
         assert "healthy" in hints, "healthy is a required field"
         assert "connected" in hints, "connected is a required field"
 
-        # Verify types (get origin for NotRequired wrapper)
-        from typing import get_origin
-
         # Required fields should be plain bool (not wrapped in NotRequired)
         assert hints["healthy"] is bool, "healthy should be bool type"
         assert hints["connected"] is bool, "connected should be bool type"
@@ -558,8 +553,6 @@ class TestISPIndependentImplementation:
         This pattern is common for Effect nodes that emit events but
         don't consume them.
         """
-        from collections.abc import Awaitable, Callable
-
         from omnibase_core.protocols.event_bus import ProtocolEventBusPublisher
         from omnibase_core.protocols.event_bus.protocol_event_envelope import (
             ProtocolEventEnvelope,
@@ -600,9 +593,6 @@ class TestISPIndependentImplementation:
         from collections.abc import Awaitable, Callable
 
         from omnibase_core.protocols.event_bus import ProtocolEventBusSubscriber
-        from omnibase_core.protocols.event_bus.protocol_event_message import (
-            ProtocolEventMessage,
-        )
 
         class SubscriberOnlyImpl:
             """Implementation that only subscribes to events."""

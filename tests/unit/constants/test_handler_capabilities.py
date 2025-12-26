@@ -25,8 +25,6 @@ Related:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import pytest
 
 from omnibase_core.enums.enum_compute_capability import EnumComputeCapability
@@ -37,9 +35,6 @@ from omnibase_core.enums.enum_node_requirement import EnumNodeRequirement
 from omnibase_core.enums.enum_orchestrator_capability import EnumOrchestratorCapability
 from omnibase_core.enums.enum_reducer_capability import EnumReducerCapability
 from omnibase_core.errors import UnsupportedCapabilityError
-
-if TYPE_CHECKING:
-    from collections.abc import Mapping
 
 # Module-level pytest marker for all tests in this file
 pytestmark = pytest.mark.unit

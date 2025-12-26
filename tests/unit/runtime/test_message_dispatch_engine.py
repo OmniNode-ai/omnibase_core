@@ -1825,7 +1825,6 @@ class TestPublishingOrder:
         be published first to maintain causality. Consumers should see
         events before any derived state updates or side-effect requests.
         """
-        from omnibase_core.enums.enum_node_kind import EnumNodeKind
         from omnibase_core.models.dispatch.model_handler_output import (
             ModelHandlerOutput,
         )
@@ -1865,7 +1864,6 @@ class TestPublishingOrder:
         derived from events. They must be published after events so that
         the state is consistent with the event stream.
         """
-        from omnibase_core.enums.enum_node_kind import EnumNodeKind
         from omnibase_core.models.dispatch.model_handler_output import (
             ModelHandlerOutput,
         )
@@ -1903,7 +1901,6 @@ class TestPublishingOrder:
         (events and projections) are complete before any side effects
         are triggered.
         """
-        from omnibase_core.enums.enum_node_kind import EnumNodeKind
         from omnibase_core.models.dispatch.model_handler_output import (
             ModelHandlerOutput,
         )
@@ -1939,7 +1936,6 @@ class TestPublishingOrder:
         order must be preserved during publishing. This ensures deterministic
         behavior and maintains causality within a handler's output.
         """
-        from omnibase_core.enums.enum_node_kind import EnumNodeKind
         from omnibase_core.models.dispatch.model_handler_output import (
             ModelHandlerOutput,
         )
@@ -1976,7 +1972,6 @@ class TestPublishingOrder:
         relative order must be preserved. This is important for projections
         that may have dependencies on each other.
         """
-        from omnibase_core.enums.enum_node_kind import EnumNodeKind
         from omnibase_core.models.dispatch.model_handler_output import (
             ModelHandlerOutput,
         )
@@ -2013,7 +2008,6 @@ class TestPublishingOrder:
         relative order must be preserved. This is critical when intents
         have sequential dependencies.
         """
-        from omnibase_core.enums.enum_node_kind import EnumNodeKind
         from omnibase_core.models.dispatch.model_handler_output import (
             ModelHandlerOutput,
         )
@@ -2059,7 +2053,6 @@ class TestPublishingOrder:
 
         Within each category, handler-returned order is preserved.
         """
-        from omnibase_core.enums.enum_node_kind import EnumNodeKind
         from omnibase_core.models.dispatch.model_handler_output import (
             ModelHandlerOutput,
         )
@@ -2140,7 +2133,6 @@ class TestPublishingOrder:
         2. All projections (from REDUCER only)
         3. All intents (from ORCHESTRATOR only)
         """
-        from omnibase_core.enums.enum_node_kind import EnumNodeKind
         from omnibase_core.models.dispatch.model_handler_output import (
             ModelHandlerOutput,
         )
@@ -2209,7 +2201,6 @@ class TestPublishingOrder:
         correlation_id for full causality tracing. These must be
         consistent across all outputs from the same handler invocation.
         """
-        from omnibase_core.enums.enum_node_kind import EnumNodeKind
         from omnibase_core.models.dispatch.model_handler_output import (
             ModelHandlerOutput,
         )

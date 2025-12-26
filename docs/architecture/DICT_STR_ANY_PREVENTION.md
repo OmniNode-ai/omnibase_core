@@ -165,7 +165,8 @@ When addressing tech debt, prioritize by impact:
 ## Related Documentation
 
 - [Type System Architecture](./TYPE_SYSTEM.md)
-- [ModelSchemaValue Type Definition](../../src/omnibase_core/types/type_schema_aliases.py)
+- [ModelSchemaValue Type Definition](../../src/omnibase_core/models/common/model_schema_value.py)
+- [SchemaDict and StepOutputs Type Aliases](../../src/omnibase_core/types/type_schema_aliases.py)
 - [ONEX Terminology](../standards/onex_terminology.md)
 
 ## Verification

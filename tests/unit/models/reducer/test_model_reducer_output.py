@@ -26,10 +26,8 @@ Notes:
     - Thread-safe for pytest-xdist parallel execution
 """
 
-import asyncio
 import concurrent.futures
 import threading
-import time
 from datetime import datetime
 from uuid import UUID, uuid4
 

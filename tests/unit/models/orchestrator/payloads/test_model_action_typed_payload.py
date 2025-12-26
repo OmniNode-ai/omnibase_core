@@ -338,7 +338,6 @@ class TestModelNodeActionTypeValidation:
     def test_empty_name_raises_validation_error(self):
         """Test that empty string name raises validation error with clear message."""
         from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-        from omnibase_core.models.core.model_action_category import ModelActionCategory
         from omnibase_core.models.core.model_node_action_type import ModelNodeActionType
         from omnibase_core.models.core.model_predefined_categories import OPERATION
         from omnibase_core.models.errors.model_onex_error import ModelOnexError

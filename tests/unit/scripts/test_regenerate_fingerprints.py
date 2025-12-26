@@ -28,7 +28,6 @@ import sys
 import tempfile
 from collections.abc import Generator
 from pathlib import Path
-from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -747,7 +746,6 @@ class TestContractModelDetection:
 
     def test_detect_fallback_to_yaml_contract(self) -> None:
         """Test fallback to ModelYamlContract for unknown types."""
-        from omnibase_core.models.contracts.model_yaml_contract import ModelYamlContract
 
         data = {
             "node_type": "UNKNOWN_TYPE",
