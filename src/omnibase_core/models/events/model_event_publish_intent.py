@@ -59,7 +59,7 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 if TYPE_CHECKING:
     from omnibase_core.models.events.payloads import ModelEventPayloadUnion
@@ -112,6 +112,59 @@ class ModelEventPublishIntent(BaseModel):
     """
 
     model_config = ConfigDict(extra="forbid", from_attributes=True)
+
+    @field_validator("target_event_payload", mode="before")
+    @classmethod
+    def _reject_dict_with_helpful_error(cls, v: object) -> object:
+        """
+        Reject dict payloads with clear migration guidance.
+
+        As of v0.4.0, dict[str, Any] payloads are no longer supported.
+        This validator provides a helpful error message explaining:
+        1. What went wrong
+        2. Why it changed
+        3. How to fix it
+
+        Args:
+            v: The value being validated for target_event_payload.
+
+        Returns:
+            The unmodified value if it's not a dict.
+
+        Raises:
+            ValueError: If the value is a dict, with migration guidance.
+        """
+        if isinstance(v, dict):
+            # Build a helpful error message with migration guidance
+            raise ValueError(
+                "dict[str, Any] payloads are no longer supported (removed in v0.4.0). "
+                "Use typed payloads from ModelEventPayloadUnion instead.\n\n"
+                "Migration example:\n"
+                "  # Before (no longer works):\n"
+                "  target_event_payload={'node_id': '...', 'name': '...'}\n\n"
+                "  # After (required):\n"
+                "  from omnibase_core.models.events.model_node_registered_event import (\n"
+                "      ModelNodeRegisteredEvent,\n"
+                "  )\n"
+                "  target_event_payload=ModelNodeRegisteredEvent(\n"
+                "      node_id=uuid4(),\n"
+                "      node_name='my_node',\n"
+                "      node_type=EnumNodeKind.COMPUTE,\n"
+                "  )\n\n"
+                "Available payload types:\n"
+                "  - ModelNodeRegisteredEvent (node lifecycle)\n"
+                "  - ModelNodeUnregisteredEvent (node lifecycle)\n"
+                "  - ModelSubscriptionCreatedEvent (subscriptions)\n"
+                "  - ModelSubscriptionFailedEvent (subscriptions)\n"
+                "  - ModelSubscriptionRemovedEvent (subscriptions)\n"
+                "  - ModelRuntimeReadyEvent (runtime status)\n"
+                "  - ModelNodeGraphReadyEvent (runtime status)\n"
+                "  - ModelWiringResultEvent (wiring)\n"
+                "  - ModelWiringErrorEvent (wiring)\n\n"
+                "See: docs/architecture/PAYLOAD_TYPE_ARCHITECTURE.md\n"
+                "Import: from omnibase_core.models.events.payloads import ModelEventPayloadUnion"
+            )
+        return v
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         """

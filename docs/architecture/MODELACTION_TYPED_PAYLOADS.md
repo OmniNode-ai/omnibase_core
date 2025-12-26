@@ -1,6 +1,41 @@
 # ModelAction Typed Payloads
 
 **Issue**: OMN-1008 - Replace `dict[str, Any]` in ModelAction with typed payloads
+**Status**: COMPLETE (v0.4.0)
+**Last Updated**: 2025-12-26
+
+---
+
+## Breaking Change (v0.4.0)
+
+> **CRITICAL**: `dict[str, Any]` payloads are **NO LONGER SUPPORTED** for `ModelAction.payload` as of v0.4.0.
+
+```python
+# BEFORE (no longer works in v0.4.0+)
+action = ModelAction(
+    action_type=EnumActionType.COMPUTE,
+    payload={"data": "value"}  # ValidationError!
+)
+
+# AFTER (required)
+from omnibase_core.models.core import ModelTransformationActionPayload
+
+action = ModelAction(
+    action_type=EnumActionType.COMPUTE,
+    payload=ModelTransformationActionPayload(
+        action_type=ModelNodeActionType(
+            category=EnumActionCategory.TRANSFORMATION,
+            name="transform",
+        ),
+        input_format="json",
+        output_format="yaml",
+    )
+)
+```
+
+**Migration**: See [Migrating from dict[str, Any]](../guides/MIGRATING_FROM_DICT_ANY.md) for step-by-step instructions.
+
+---
 
 ## Summary
 
@@ -10,7 +45,7 @@ This document explains the typed payload system for `ModelAction` and the design
 
 ### The Problem
 
-The original `ModelAction` class had an untyped payload field:
+The original `ModelAction` class had an untyped payload field (now removed):
 
 ```python
 class ModelAction(BaseModel):
@@ -221,23 +256,25 @@ payload = create_action_payload(
 
 ## Migration Path
 
-### Phase 1: Add Typed Payload Support (Current)
+### Phase 1: Add Typed Payload Support (COMPLETE)
 
 - Create `ActionPayloadType` type alias
 - Add factory functions for payload creation
 - Document usage patterns
 
-### Phase 2: Update ModelAction (Separate Task)
+### Phase 2: Update ModelAction (COMPLETE)
 
-- Replace `payload: dict[str, Any]` with `payload: ActionPayloadType`
-- Update all callers to use typed payloads
-- Add migration utilities if needed
+- Replaced `payload: dict[str, Any]` with `payload: SpecificActionPayload`
+- Updated all callers to use typed payloads
+- Added factory functions for payload creation
 
-### Phase 3: Deprecate Untyped Usage
+### Phase 3: Remove Untyped Usage (COMPLETE - v0.4.0)
 
-- Add deprecation warnings for dict payloads
-- Update all existing code
-- Remove legacy support
+> **Breaking Change**: This phase is **COMPLETE**. `dict[str, Any]` payloads are now **rejected with ValidationError**.
+
+- Removed `dict[str, Any]` support from `ModelAction.payload`
+- Updated all existing code to use typed payloads
+- Validation now enforced at construction time
 
 ## Semantic Action Reference
 

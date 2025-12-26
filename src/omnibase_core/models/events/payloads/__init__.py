@@ -65,6 +65,12 @@ from omnibase_core.models.events.payloads.model_event_payload_union import (
     ModelWiringErrorEvent,
     ModelWiringResultEvent,
 )
+from omnibase_core.utils.util_payload_migration import (
+    convert_dict_to_typed_payload,
+    get_migration_example,
+    get_supported_event_types,
+    infer_payload_type_from_dict,
+)
 
 __all__ = [
     # Union types
@@ -80,4 +86,9 @@ __all__ = [
     "ModelNodeGraphReadyEvent",
     "ModelWiringResultEvent",
     "ModelWiringErrorEvent",
+    # Migration helpers
+    "convert_dict_to_typed_payload",
+    "get_migration_example",
+    "get_supported_event_types",
+    "infer_payload_type_from_dict",
 ]

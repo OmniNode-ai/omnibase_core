@@ -666,3 +666,88 @@ class TestModelActionDependencies:
         assert dep1 in action.dependencies
         assert dep2 in action.dependencies
         assert dep3 in action.dependencies
+
+
+@pytest.mark.unit
+class TestModelActionUTCDatetime:
+    """Test ModelAction UTC datetime handling (OMN-1008).
+
+    These tests verify that ModelAction.created_at uses UTC-aware datetime
+    as part of the Core Payload Architecture improvements.
+    """
+
+    def test_action_created_at_is_utc_aware(self) -> None:
+        """Test that created_at is timezone-aware with UTC timezone.
+
+        This test verifies the fix from OMN-1008 where created_at was changed
+        from datetime.now() (naive) to datetime.now(UTC) (timezone-aware).
+        """
+        from datetime import UTC
+
+        action = ModelAction(
+            action_type=EnumActionType.COMPUTE,
+            target_node_type="compute",
+            lease_id=uuid4(),
+            epoch=1,
+            payload=_create_test_payload(),
+        )
+
+        # Verify created_at is timezone-aware
+        assert action.created_at.tzinfo is not None
+        # Verify it's UTC
+        assert action.created_at.tzinfo == UTC
+
+    def test_action_created_at_default_factory_utc(self) -> None:
+        """Test that default_factory produces UTC-aware datetime."""
+        from datetime import UTC
+
+        # Create multiple actions and verify all have UTC
+        actions = [
+            ModelAction(
+                action_type=EnumActionType.COMPUTE,
+                target_node_type="compute",
+                lease_id=uuid4(),
+                epoch=i,
+                payload=_create_test_payload(),
+            )
+            for i in range(5)
+        ]
+
+        for action in actions:
+            assert action.created_at.tzinfo == UTC
+
+    def test_action_serialization_preserves_utc(self) -> None:
+        """Test that serialization preserves UTC timezone info."""
+        from datetime import UTC
+
+        action = ModelAction(
+            action_type=EnumActionType.COMPUTE,
+            target_node_type="compute",
+            lease_id=uuid4(),
+            epoch=1,
+            payload=_create_test_payload(),
+        )
+
+        # Serialize to dict
+        data = action.model_dump()
+
+        # The datetime in the dict should still be UTC-aware
+        assert data["created_at"].tzinfo == UTC
+
+    def test_action_explicit_utc_datetime_accepted(self) -> None:
+        """Test that explicitly providing UTC datetime works correctly."""
+        from datetime import UTC
+
+        explicit_time = datetime.now(UTC)
+
+        action = ModelAction(
+            action_type=EnumActionType.COMPUTE,
+            target_node_type="compute",
+            lease_id=uuid4(),
+            epoch=1,
+            payload=_create_test_payload(),
+            created_at=explicit_time,
+        )
+
+        assert action.created_at == explicit_time
+        assert action.created_at.tzinfo == UTC

@@ -1,15 +1,58 @@
 # Payload Type Architecture (OMN-1008)
 
-**Status**: Proposed
+**Status**: Implemented
 **Author**: OmniNode Team
 **Created**: 2025-12-24
 **Last Updated**: 2025-12-26
 
 ---
 
+## Breaking Change (v0.4.0)
+
+> **CRITICAL**: `dict[str, Any]` payloads are **NO LONGER SUPPORTED** in the following models. This is a breaking change introduced in v0.4.0.
+
+**Affected Models**:
+- `ModelEventPublishIntent.target_event_payload`
+- `ModelIntent.payload`
+- `ModelAction.payload`
+- `ModelRuntimeDirective.payload`
+
+**What Happens Now**:
+```python
+# BEFORE (no longer works in v0.4.0+)
+intent = ModelEventPublishIntent(
+    target_event_type="node.registered",
+    target_event_payload={"node_id": "abc"}  # ValidationError!
+)
+
+# AFTER (required)
+from omnibase_core.models.events.payloads import ModelNodeRegisteredEvent
+
+intent = ModelEventPublishIntent(
+    target_event_type="node.registered",
+    target_event_payload=ModelNodeRegisteredEvent(
+        event_type="node.registered",
+        node_id="abc",
+        node_type="compute",
+        ...
+    )
+)
+```
+
+**ValidationError Example**:
+```
+pydantic_core._pydantic_core.ValidationError: 1 validation error for ModelEventPublishIntent
+target_event_payload
+  Input should be a valid dictionary or instance of <ModelEventPayload variants> [type=model_type, input_value={'node_id': 'abc'}, input_type=dict]
+```
+
+**Migration**: See [Migrating from dict[str, Any]](../guides/MIGRATING_FROM_DICT_ANY.md) for step-by-step instructions.
+
+---
+
 ## Decision Summary
 
-Replace `dict[str, Any]` payload fields in 4 core models with **Pydantic discriminated unions** to achieve compile-time type safety and exhaustive pattern matching.
+`dict[str, Any]` payload fields in 4 core models have been **replaced** with **Pydantic discriminated unions** to achieve compile-time type safety and exhaustive pattern matching.
 
 **Affected Models**:
 1. `ModelIntent` (extension intents)
@@ -691,7 +734,7 @@ ExtensionIntentPayload = Annotated[
 ]
 ```
 
-**Migration Path**: Deprecate raw `dict[str, Any]`, add adapter methods during transition.
+**Migration Status**: `dict[str, Any]` support has been **removed** in v0.4.0. All payloads must use typed models.
 
 ---
 
@@ -845,18 +888,18 @@ class ModelEventPublishIntent(BaseModel):
 
 ## Migration Strategy
 
-### Phase 1: Add Discriminated Union Types (Non-Breaking)
+> **Status: COMPLETE** - All phases have been implemented as of v0.4.0. `dict[str, Any]` support has been **removed**.
 
-1. Create payload model files:
+### Phase 1: Add Discriminated Union Types (COMPLETE)
+
+1. Created payload model files:
    - `model_extension_intent_payloads.py`
    - `model_directive_payloads.py`
    - `model_event_payloads.py`
 
-2. Define discriminated unions as type aliases
+2. Defined discriminated unions as type aliases
 
-3. Add `@deprecated` decorator to `dict[str, Any]` fields
-
-4. Add adapter methods for backwards compatibility:
+3. Added adapter methods for backwards compatibility:
    ```python
    @classmethod
    def from_dict_payload(cls, payload: dict[str, Any]) -> Self:
@@ -864,45 +907,39 @@ class ModelEventPublishIntent(BaseModel):
        ...
    ```
 
-### Phase 2: Dual-Accept Transition Period
+### Phase 2: Dual-Accept Transition Period (COMPLETE)
 
-1. Update model fields to accept both:
-   ```python
-   payload: ExtensionIntentPayload | dict[str, Any] = Field(...)
-   ```
+1. Updated model fields to accept both typed payloads and dicts temporarily
 
-2. Add runtime migration in validators:
-   ```python
-   @field_validator("payload", mode="before")
-   @classmethod
-   def migrate_dict_payload(cls, v):
-       # NOTE: The discriminator field name varies by model category:
-       #   - ModelIntent payloads: "intent_type"
-       #   - ModelRuntimeDirective payloads: "kind"
-       #   - ModelAction payloads: "action_type"
-       # This example uses "intent_type" for ModelIntent:
-       if isinstance(v, dict) and "intent_type" not in v:
-           # Infer and convert to typed payload
-           return infer_payload_type(v)
-       return v
-   ```
+2. Added runtime migration in validators with deprecation warnings
 
-3. Emit deprecation warnings for dict usage
+3. Emitted deprecation warnings for dict usage
 
-### Phase 3: Remove dict[str, Any] Support
+### Phase 3: Remove dict[str, Any] Support (COMPLETE - v0.4.0)
 
-1. Remove dual-accept, require typed payloads
-2. Update all callers
-3. Remove migration adapters
-4. Remove `@allow_dict_str_any` decorators
+> **Breaking Change**: This phase is now **COMPLETE**. `dict[str, Any]` payloads are **rejected with ValidationError**.
 
-### Timeline
+1. **Removed** dual-accept - typed payloads are now **required**
+2. **Updated** all callers to use typed payloads
+3. **Removed** `@allow_dict_str_any` decorators from core payload models
+4. **Validation enforced** - `dict[str, Any]` inputs raise `ValidationError`
 
-| Phase | Duration | Milestone |
-|-------|----------|-----------|
-| Phase 1 | 1-2 sprints | Types defined, adapters available |
-| Phase 2 | 2-3 sprints | All new code uses typed payloads |
-| Phase 3 | Post-v0.4.0 | Full migration complete |
+### Migration Timeline (Historical Reference)
+
+| Phase | Status | Version |
+|-------|--------|---------|
+| Phase 1 | COMPLETE | v0.3.x |
+| Phase 2 | COMPLETE | v0.3.x |
+| Phase 3 | **COMPLETE** | **v0.4.0** |
+
+### What This Means for You
+
+If you are upgrading from v0.3.x to v0.4.0 and were using `dict[str, Any]` payloads:
+
+1. **Identify all dict payload usage** in your code
+2. **Replace with typed payload models** (see examples above)
+3. **Run tests** to catch any remaining dict usage (ValidationError)
+4. **See**: [Migrating from dict[str, Any]](../guides/MIGRATING_FROM_DICT_ANY.md) for detailed instructions
 
 ---
 
@@ -1018,9 +1055,67 @@ delay = directive.payload.initial_delay_ms  # Autocomplete, type-checked
 
 ---
 
+## Forward Reference Resolution
+
+When using TYPE_CHECKING imports for payload types (to avoid circular dependencies), you must resolve forward references at runtime. The `util_forward_reference_resolver` module provides utilities for this.
+
+### Quick Start
+
+```python
+from typing import TYPE_CHECKING
+from pydantic import BaseModel
+
+if TYPE_CHECKING:
+    from mymodule.payloads import MyPayloadType
+
+class MyModel(BaseModel):
+    payload: MyPayloadType
+
+# At module level, after class definition:
+from omnibase_core.utils.util_forward_reference_resolver import (
+    rebuild_model_references,
+    auto_rebuild_on_module_load,
+)
+
+def _rebuild_model() -> None:
+    from mymodule.payloads import MyPayloadType
+    rebuild_model_references(
+        model_class=MyModel,
+        type_mappings={"MyPayloadType": MyPayloadType},
+    )
+
+auto_rebuild_on_module_load(
+    rebuild_func=_rebuild_model,
+    model_name="MyModel",
+)
+```
+
+### Error Handling Summary
+
+| Error Type | Behavior | User Action |
+|------------|----------|-------------|
+| ImportError | Deferred (logged) | Call `_rebuild_model()` after deps loaded |
+| TypeError | Fail-fast | Fix type annotations |
+| ValueError | Fail-fast | Fix model configuration |
+| PydanticSchemaGenerationError | Fail-fast | Fix schema definitions (missing types in type_mappings) |
+| PydanticUserError | Fail-fast | Fix Pydantic model config (ConfigDict issues) |
+
+### Edge Cases
+
+1. **Early Bootstrap**: If `auto_rebuild_on_module_load()` is called before dependencies are available, it logs at DEBUG level and defers. This is normal.
+
+2. **Missing Types**: If `type_mappings` doesn't include all forward-referenced types, `PydanticSchemaGenerationError` is raised with details about which type is missing.
+
+3. **Subclass Resolution**: Use `handle_subclass_forward_refs()` in `__init_subclass__` to ensure subclasses also resolve forward references.
+
+**Full Documentation**: See `util_forward_reference_resolver.py` module docstring for comprehensive error handling details, edge cases, and best practices.
+
+---
+
 ## References
 
 - [Pydantic Discriminated Unions](https://docs.pydantic.dev/latest/concepts/unions/#discriminated-unions)
 - [ONEX Four-Node Architecture](./ONEX_FOUR_NODE_ARCHITECTURE.md)
 - [Core Intents Implementation](../../src/omnibase_core/models/intents/__init__.py)
 - [SpecificActionPayload Union](../../src/omnibase_core/models/core/model_action_payload_types.py)
+- [Forward Reference Resolver](../../src/omnibase_core/utils/util_forward_reference_resolver.py)

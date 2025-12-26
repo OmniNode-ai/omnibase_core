@@ -1,12 +1,40 @@
 # Dict[str, Any] Prevention Guide
 
-**Last Updated**: 2025-12-24
+**Last Updated**: 2025-12-26
 **Status**: Active Enforcement
 **Error Code**: `[explicit-any]`
 
+---
+
+## Breaking Change (v0.4.0)
+
+> **CRITICAL**: `dict[str, Any]` payloads are **NO LONGER SUPPORTED** in core payload models.
+
+As of v0.4.0, the following models **reject** `dict[str, Any]` at validation time:
+
+| Model | Field | Required Type |
+|-------|-------|---------------|
+| `ModelEventPublishIntent` | `target_event_payload` | `ModelEventPayloadUnion` |
+| `ModelIntent` | `payload` | `ProtocolIntentPayload` |
+| `ModelAction` | `payload` | `SpecificActionPayload` |
+| `ModelRuntimeDirective` | `payload` | `ModelDirectivePayload` |
+
+**What Happens**:
+```python
+# This now raises ValidationError in v0.4.0+
+intent = ModelEventPublishIntent(
+    target_event_type="node.registered",
+    target_event_payload={"node_id": "abc"}  # ValidationError!
+)
+```
+
+**Migration**: See [Migrating from dict[str, Any]](../guides/MIGRATING_FROM_DICT_ANY.md) for step-by-step migration instructions.
+
+---
+
 ## Overview
 
-This document describes the mypy configuration for preventing new usage of `dict[str, Any]` in the codebase. The goal is to improve type safety by encouraging developers to use more specific types.
+This document describes the mypy configuration for preventing new usage of `dict[str, Any]` in the codebase. The goal is to improve type safety by requiring developers to use specific types.
 
 ## What is Enforced
 
@@ -85,9 +113,11 @@ from omnibase_core.models.common import ModelSchemaValue
 value: ModelSchemaValue = ModelSchemaValue.create_string("example")
 ```
 
-### Option 3: Use @allow_dict_any Decorator (Last Resort)
+### Option 3: Use @allow_dict_any Decorator (Last Resort - NOT for Payloads)
 
-If `dict[str, Any]` is truly unavoidable, document the justification:
+> **WARNING**: This option is **NOT available** for core payload models (`ModelEventPublishIntent`, `ModelIntent`, `ModelAction`, `ModelRuntimeDirective`). Those models **require** typed payloads as of v0.4.0.
+
+For other code where `dict[str, Any]` is truly unavoidable (e.g., external API integration), document the justification:
 
 ```python
 from omnibase_core.decorators import allow_dict_any
