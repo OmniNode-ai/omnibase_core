@@ -59,7 +59,9 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_workflow_execution import EnumExecutionMode
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.orchestrator.model_orchestrator_input_metadata import (
+    ModelOrchestratorInputMetadata,
+)
 
 
 class ModelOrchestratorInput(BaseModel):
@@ -88,7 +90,7 @@ class ModelOrchestratorInput(BaseModel):
             operations. Defaults to False.
         dependency_resolution_enabled: Whether to automatically resolve step
             dependencies based on declared inputs/outputs. Defaults to True.
-        metadata: Additional context metadata for tracking and custom behavior.
+        metadata: Typed workflow metadata for observability, FSM control, and persistence.
         timestamp: When this input was created. Auto-generated to current time.
 
     Example:
@@ -103,8 +105,9 @@ class ModelOrchestratorInput(BaseModel):
         ... )
         >>>
         >>> # To "update" a frozen model, use model_copy
-        >>> original = ModelOrchestratorInput(workflow_id=uuid4(), steps=[], metadata={})
-        >>> updated = original.model_copy(update={"metadata": {"key": "value"}})
+        >>> original = ModelOrchestratorInput(workflow_id=uuid4(), steps=[])
+        >>> new_meta = ModelOrchestratorInputMetadata(source="updated")
+        >>> updated = original.model_copy(update={"metadata": new_meta})
     """
 
     workflow_id: UUID = Field(..., description="Unique workflow identifier")
@@ -132,8 +135,9 @@ class ModelOrchestratorInput(BaseModel):
     dependency_resolution_enabled: bool = Field(
         default=True, description="Enable automatic dependency resolution"
     )
-    metadata: dict[str, ModelSchemaValue] = Field(
-        default_factory=dict, description="Additional workflow metadata"
+    metadata: ModelOrchestratorInputMetadata = Field(
+        default_factory=ModelOrchestratorInputMetadata,
+        description="Typed workflow metadata for observability, FSM control, and persistence",
     )
     timestamp: datetime = Field(
         default_factory=datetime.now, description="Workflow creation timestamp"

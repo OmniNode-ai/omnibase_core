@@ -85,7 +85,6 @@ from omnibase_core.enums.enum_workflow_execution import (
     EnumExecutionMode,
     EnumWorkflowState,
 )
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.contracts.subcontracts.model_workflow_definition import (
     ModelWorkflowDefinition,
@@ -98,6 +97,9 @@ from omnibase_core.models.workflow.execution.model_declarative_workflow_result i
 )
 from omnibase_core.models.workflow.execution.model_declarative_workflow_step_context import (
     ModelDeclarativeWorkflowStepContext as WorkflowStepExecutionContext,
+)
+from omnibase_core.models.workflow.execution.model_workflow_result_metadata import (
+    ModelWorkflowResultMetadata,
 )
 from omnibase_core.types.typed_dict_workflow_context import TypedDictWorkflowContext
 from omnibase_core.validation.reserved_enum_validator import validate_execution_mode
@@ -347,7 +349,14 @@ async def execute_workflow(
     result.execution_time_ms = execution_time_ms
 
     # Add workflow hash to metadata for integrity verification
-    result.metadata["workflow_hash"] = ModelSchemaValue.create_string(workflow_hash)
+    # Since ModelWorkflowResultMetadata is frozen, create new instance with updated hash
+    if result.metadata is not None:
+        result.metadata = ModelWorkflowResultMetadata(
+            execution_mode=result.metadata.execution_mode,
+            workflow_name=result.metadata.workflow_name,
+            workflow_hash=workflow_hash,
+            batch_size=result.metadata.batch_size,
+        )
 
     return result
 
@@ -750,12 +759,11 @@ async def _execute_sequential(
         failed_steps=failed_steps,
         actions_emitted=all_actions,
         execution_time_ms=0,  # Will be set by caller
-        metadata={
-            "execution_mode": ModelSchemaValue.create_string("sequential"),
-            "workflow_name": ModelSchemaValue.create_string(
-                workflow_definition.workflow_metadata.workflow_name
-            ),
-        },
+        metadata=ModelWorkflowResultMetadata(
+            execution_mode="sequential",
+            workflow_name=workflow_definition.workflow_metadata.workflow_name,
+            workflow_hash="",  # Will be set by execute_workflow after return
+        ),
     )
 
 
@@ -997,12 +1005,11 @@ async def _execute_parallel(
         failed_steps=failed_steps,
         actions_emitted=all_actions,
         execution_time_ms=0,
-        metadata={
-            "execution_mode": ModelSchemaValue.create_string("parallel"),
-            "workflow_name": ModelSchemaValue.create_string(
-                workflow_definition.workflow_metadata.workflow_name
-            ),
-        },
+        metadata=ModelWorkflowResultMetadata(
+            execution_mode="parallel",
+            workflow_name=workflow_definition.workflow_metadata.workflow_name,
+            workflow_hash="",  # Will be set by execute_workflow after return
+        ),
     )
 
 
@@ -1036,8 +1043,14 @@ async def _execute_batch(
     """
     # For batch mode, use sequential execution with batching metadata
     result = await _execute_sequential(workflow_definition, workflow_steps, workflow_id)
-    result.metadata["execution_mode"] = ModelSchemaValue.create_string("batch")
-    result.metadata["batch_size"] = ModelSchemaValue.create_number(len(workflow_steps))
+    # Since ModelWorkflowResultMetadata is frozen, create new instance with batch-specific values
+    if result.metadata is not None:
+        result.metadata = ModelWorkflowResultMetadata(
+            execution_mode="batch",
+            workflow_name=result.metadata.workflow_name,
+            workflow_hash=result.metadata.workflow_hash,
+            batch_size=len(workflow_steps),
+        )
     return result
 
 

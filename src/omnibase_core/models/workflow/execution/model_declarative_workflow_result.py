@@ -11,8 +11,10 @@ from datetime import UTC, datetime
 from uuid import UUID
 
 from omnibase_core.enums.enum_workflow_execution import EnumWorkflowState
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.orchestrator.model_action import ModelAction
+from omnibase_core.models.workflow.execution.model_workflow_result_metadata import (
+    ModelWorkflowResultMetadata,
+)
 
 
 class ModelDeclarativeWorkflowResult:
@@ -34,7 +36,7 @@ class ModelDeclarativeWorkflowResult:
         failed_steps: list[str],
         actions_emitted: list[ModelAction],
         execution_time_ms: int,
-        metadata: dict[str, ModelSchemaValue] | None = None,
+        metadata: ModelWorkflowResultMetadata | None = None,
     ):
         """
         Initialize declarative workflow execution result.
@@ -46,7 +48,7 @@ class ModelDeclarativeWorkflowResult:
             failed_steps: List of failed step IDs
             actions_emitted: List of actions emitted during execution
             execution_time_ms: Execution time in milliseconds
-            metadata: Optional execution metadata
+            metadata: Optional typed execution metadata
         """
         self.workflow_id = workflow_id
         self.execution_status = execution_status
@@ -54,7 +56,7 @@ class ModelDeclarativeWorkflowResult:
         self.failed_steps = failed_steps
         self.actions_emitted = actions_emitted
         self.execution_time_ms = execution_time_ms
-        self.metadata = metadata or {}
+        self.metadata = metadata
         self.timestamp = datetime.now(UTC).isoformat()
 
 
