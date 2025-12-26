@@ -384,8 +384,11 @@ websockets, wsproto
 
 The script excludes:
 - Protocol definition files with documentation examples (e.g., `protocols/http/protocol_http_client.py`)
-- Comments and TYPE_CHECKING blocks
+- Comment lines (lines starting with `#`)
+- Documentation examples (lines containing "Example:")
 - `__pycache__` and compiled files
+
+**Note**: TYPE_CHECKING blocks are documented as allowed (see [Allowed Patterns](#allowed-patterns)), but the current script does not actively detect and exclude them. If a TYPE_CHECKING import is flagged, manual review is required to determine if it's a false positive.
 
 ---
 
@@ -455,4 +458,4 @@ The script excludes:
 ---
 
 **Document Status**: IMPLEMENTED - All enforcement mechanisms in place
-**Verification**: Validated against commit f3c370b6 and scripts/check_transport_imports.py
+**Verification**: Validated against commit f3c370b6 and scripts/validate-no-transport-imports.sh

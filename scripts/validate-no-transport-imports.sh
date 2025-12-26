@@ -8,7 +8,7 @@
 #   Redis clients: redis, aioredis
 #   Database clients: asyncpg, psycopg2, psycopg, aiomysql
 #   Message queues: pika, aio-pika, kombu, celery
-#   gRPC: grpcio, grpcio-tools
+#   gRPC: grpc (import name; PyPI package is grpcio)
 #   WebSocket: websockets, wsproto
 
 set -e
@@ -45,16 +45,16 @@ FORBIDDEN_PACKAGES=(
     "aio_pika"
     "kombu"
     "celery"
-    # gRPC
+    # gRPC (import name is "grpc", not "grpcio" which is the PyPI package name)
     "grpc"
-    "grpcio"
     # WebSocket
     "websockets"
     "wsproto"
 )
 
-# Build alternation pattern for grep with word boundaries
-# Each package is wrapped in \b...\b to avoid false positives like redis_locking
+# Build alternation pattern for grep
+# Word boundary behavior is enforced by the IMPORT_PATTERN regex structure below,
+# not by wrapping individual packages in \b...\b
 PATTERN=""
 for pkg in "${FORBIDDEN_PACKAGES[@]}"; do
     if [ -n "$PATTERN" ]; then
@@ -78,15 +78,21 @@ EXCLUDE_PATTERN="protocols/http/__init__.py|protocols/http/protocol_http_client.
 # We use -P for Perl regex to get proper word boundaries
 VIOLATIONS=$(grep -RnP "$IMPORT_PATTERN" "$CORE_SRC" --include="*.py" 2>/dev/null | grep -vE "$EXCLUDE_PATTERN" || true)
 
-# Filter out TYPE_CHECKING blocks (these are type-only imports, not runtime dependencies)
-# and docstring/comment references
+# Filter out obvious false positives (comments, docstrings)
+#
+# LIMITATION: TYPE_CHECKING block detection
+# This script does NOT detect imports inside TYPE_CHECKING blocks, which would be
+# acceptable since they don't create runtime dependencies. Proper detection would
+# require parsing Python AST, which is impractical in a shell script.
+#
+# If this script flags an import that is inside a TYPE_CHECKING block:
+#   1. The import is likely acceptable (type-only, no runtime dependency)
+#   2. Manual review is required to confirm
+#   3. Consider adding the file to EXCLUDE_PATTERN if it's a legitimate type-only import
+#
 REAL_VIOLATIONS=""
 while IFS= read -r line; do
     [ -z "$line" ] && continue
-
-    # Extract file path and check if it's inside a TYPE_CHECKING block
-    # This is a simplified check - we flag the violation and let manual review determine
-    # For now, we allow TYPE_CHECKING imports as they don't create runtime dependencies
 
     # Skip lines that are clearly comments
     if echo "$line" | grep -qE "^[^:]+:[0-9]+:[[:space:]]*#"; then
@@ -116,7 +122,9 @@ if [ -n "$REAL_VIOLATIONS" ]; then
     echo "Solutions:"
     echo "  1. Define a protocol in omnibase_core for the capability you need"
     echo "  2. Implement the protocol in an infrastructure package"
-    echo "  3. Use TYPE_CHECKING imports if you only need types for annotations"
+    echo "  3. If this import is inside a TYPE_CHECKING block (type-only, no runtime dep):"
+    echo "     - Verify the import is guarded by 'if TYPE_CHECKING:'"
+    echo "     - Add the file to EXCLUDE_PATTERN in this script"
     exit 1
 fi
 
