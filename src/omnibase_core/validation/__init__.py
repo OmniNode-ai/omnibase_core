@@ -86,6 +86,7 @@ from .validators import (
     Duration,
     SemanticVersion,
     UUID,
+    create_enum_normalizer,
     validate_bcp47_locale,
     validate_duration,
     validate_semantic_version,
@@ -215,6 +216,8 @@ __all__ = [
     "validate_bcp47_locale",
     "validate_uuid",
     "validate_semantic_version",
+    # Enum normalizer factory
+    "create_enum_normalizer",
     # Pydantic Annotated types
     "Duration",
     "BCP47Locale",

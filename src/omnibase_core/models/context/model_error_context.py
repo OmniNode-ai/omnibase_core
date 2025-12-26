@@ -7,11 +7,21 @@ This module provides ModelErrorContext, a typed model for error-related
 metadata that supports correlation, retry logic, and categorization across
 the ONEX system.
 
+Error Code Format:
+    Error codes must follow the CATEGORY_NNN pattern (e.g., AUTH_001,
+    VALIDATION_123, SYSTEM_01). The format is validated using the regex
+    pattern: ^[A-Z][A-Z0-9_]*_\\d{1,4}$
+
+    For complete error code standards including valid/invalid examples,
+    standard categories, and best practices, see:
+    docs/conventions/ERROR_CODE_STANDARDS.md
+
 Thread Safety:
     ModelErrorContext is immutable (frozen=True) after creation, making it
     thread-safe for concurrent read access from multiple threads or async tasks.
 
 See Also:
+    - docs/conventions/ERROR_CODE_STANDARDS.md: Complete error code format specification
     - omnibase_core.models.context.model_session_context: Session context
     - omnibase_core.models.context.model_audit_metadata: Audit trail metadata
 """

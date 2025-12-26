@@ -19,6 +19,7 @@ See Also:
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums import EnumCheckpointType, EnumTriggerEvent
+from omnibase_core.utils.util_enum_normalizer import create_enum_normalizer
 
 __all__ = ["ModelCheckpointMetadata"]
 
@@ -104,16 +105,7 @@ class ModelCheckpointMetadata(BaseModel):
             The normalized value - EnumCheckpointType if valid enum value,
             else the original string for backward compatibility.
         """
-        if v is None:
-            return None
-        if isinstance(v, EnumCheckpointType):
-            return v
-        # Try to convert string to enum (v must be str at this point)
-        try:
-            return EnumCheckpointType(v.lower())
-        except ValueError:
-            # Keep as string if not a valid enum value (backward compat)
-            return v
+        return create_enum_normalizer(EnumCheckpointType)(v)
 
     @field_validator("trigger_event", mode="before")
     @classmethod
@@ -130,13 +122,4 @@ class ModelCheckpointMetadata(BaseModel):
             The normalized value - EnumTriggerEvent if valid enum value,
             else the original string for backward compatibility.
         """
-        if v is None:
-            return None
-        if isinstance(v, EnumTriggerEvent):
-            return v
-        # Try to convert string to enum (v must be str at this point)
-        try:
-            return EnumTriggerEvent(v.lower())
-        except ValueError:
-            # Keep as string if not a valid enum value (backward compat)
-            return v
+        return create_enum_normalizer(EnumTriggerEvent)(v)

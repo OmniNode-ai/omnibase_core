@@ -3,7 +3,7 @@ Shared validators for common patterns.
 
 This module provides reusable Pydantic validators for common data patterns:
 - ISO 8601 duration strings (e.g., "PT1H30M", "P1D")
-- BCP 47 locale tags (e.g., "en-US", "fr-FR", "zh-Hans-CN")
+- BCP 47 locale tags (e.g., "en-US", "fr-FR", "zh-Hans-CN") - simplified validator
 - UUID strings (with or without hyphens)
 - Semantic version strings (SemVer 2.0.0)
 
@@ -33,6 +33,14 @@ Usage:
         id: UUID
         version: SemanticVersion
 
+Note:
+    The BCP 47 locale validator is simplified and does NOT support:
+    - Private use subtags (x-private, en-x-custom)
+    - Extension subtags (en-US-u-ca-gregory, zh-Hant-t-...)
+    - Grandfathered irregular tags (i-default, i-ami)
+    - Multiple variant subtags
+    For full BCP 47 compliance, consider using a dedicated library like `langcodes`.
+
 Ticket: OMN-1054
 """
 
@@ -40,6 +48,9 @@ import re
 from typing import Annotated
 
 from pydantic import AfterValidator
+
+# Re-export from utils to maintain backward compatibility
+from omnibase_core.utils.util_enum_normalizer import create_enum_normalizer
 
 # =============================================================================
 # ISO 8601 Duration Validator
@@ -78,6 +89,10 @@ def validate_duration(value: str) -> str:
     - PT0.5S (fractional seconds)
     - P1W (1 week)
 
+    Note: Per ISO 8601, weeks (W) are an alternative representation and cannot
+    be combined with other date/time components. Valid: P1W, P2W.
+    Invalid: P1WT1H, P1Y1W, P1W1D.
+
     Args:
         value: Duration string to validate
 
@@ -85,14 +100,18 @@ def validate_duration(value: str) -> str:
         The validated duration string (unchanged if valid)
 
     Raises:
-        ValueError: If the format is invalid or the duration is empty (P or PT only)
+        ValueError: If the format is invalid, the duration is empty (P or PT only),
+            or weeks are combined with other components
 
     Examples:
         >>> validate_duration("PT1H30M")
         'PT1H30M'
         >>> validate_duration("P1D")
         'P1D'
+        >>> validate_duration("P1W")
+        'P1W'
         >>> validate_duration("invalid")  # Raises ValueError
+        >>> validate_duration("P1WT1H")  # Raises ValueError (weeks cannot combine)
     """
     if not value:
         msg = "Duration cannot be empty"
@@ -107,6 +126,16 @@ def validate_duration(value: str) -> str:
     groups = match.groups()
     if not any(groups):
         msg = f"Duration must specify at least one time component: '{value}'"
+        raise ValueError(msg)
+
+    # Per ISO 8601, weeks cannot be combined with other date/time components
+    # groups: (years, months, weeks, days, hours, minutes, seconds)
+    weeks = groups[2]
+    has_other_date = any(groups[0:2]) or groups[3]  # years, months, days
+    has_time = any(groups[4:7])  # hours, minutes, seconds
+
+    if weeks and (has_other_date or has_time):
+        msg = f"Invalid ISO 8601 duration '{value}': weeks (W) cannot be combined with other components"
         raise ValueError(msg)
 
     return value
@@ -136,17 +165,23 @@ _BCP47_LOCALE_PATTERN = re.compile(
 def validate_bcp47_locale(value: str) -> str:
     """Validate BCP 47 locale tag.
 
-    Validates that the input string is a valid BCP 47 language tag.
-    Supported formats include:
-    - Language only: "en", "fr", "zh"
-    - Language + region: "en-US", "fr-FR", "pt-BR"
-    - Language + script: "zh-Hans", "zh-Hant"
-    - Language + script + region: "zh-Hans-CN", "zh-Hant-TW"
-    - Language + region + variant: "en-GB-oed"
+    This is a simplified validator covering most common use cases.
 
-    Note: This is a simplified validator that covers most common use cases.
-    For full BCP 47 compliance including extensions and private use tags,
-    consider using a dedicated library like `langcodes`.
+    Limitations:
+        - Does NOT support private use subtags (x-private, en-x-custom)
+        - Does NOT support extension subtags (en-US-u-ca-gregory, zh-Hant-t-...)
+        - Does NOT support grandfathered irregular tags (i-default, i-ami, etc.)
+        - Does NOT support multiple variant subtags
+        - Only validates pattern format, not semantic validity of codes
+
+    Supported formats:
+        - Language only: "en", "fr", "zh"
+        - Language + region: "en-US", "fr-FR", "pt-BR"
+        - Language + script: "zh-Hans", "zh-Hant"
+        - Language + script + region: "zh-Hans-CN", "zh-Hant-TW"
+        - Language + region + variant: "en-GB-oed"
+
+    For full BCP 47 compliance, consider using a dedicated library like `langcodes`.
 
     Args:
         value: Locale tag string to validate
@@ -320,6 +355,11 @@ Use this type in Pydantic models for automatic validation:
         locale: BCP47Locale  # Validated as BCP 47 locale
 
 Examples of valid values: "en-US", "fr-FR", "zh-Hans-CN"
+
+Note:
+    This is a simplified validator. It does NOT support private use subtags
+    (x-...), extension subtags (u-..., t-...), or grandfathered tags (i-...).
+    For full BCP 47 compliance, consider using a dedicated library like `langcodes`.
 """
 
 UUID = Annotated[str, AfterValidator(validate_uuid)]
@@ -359,6 +399,8 @@ __all__ = [
     "validate_bcp47_locale",
     "validate_uuid",
     "validate_semantic_version",
+    # Enum normalizer factory
+    "create_enum_normalizer",
     # Pydantic Annotated types
     "Duration",
     "BCP47Locale",

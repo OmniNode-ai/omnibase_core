@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Likelihood Enumeration.
 
@@ -12,11 +14,13 @@ class EnumLikelihood(str, Enum):
     """Enumeration for likelihood or probability levels."""
 
     # Ordered from lowest to highest
-    VERY_LOW = "very_low"  # Very unlikely to occur (<10%)
-    LOW = "low"  # Unlikely to occur (10-30%)
-    MEDIUM = "medium"  # Moderately likely to occur (30-60%)
-    HIGH = "high"  # Likely to occur (60-85%)
-    VERY_HIGH = "very_high"  # Very likely to occur (>85%)
+    # Boundary note: Each level's lower bound is inclusive, upper bound is exclusive
+    # Example: 0.1 returns LOW (not VERY_LOW), 0.3 returns MEDIUM (not LOW)
+    VERY_LOW = "very_low"  # Very unlikely to occur (0% < p < 10%)
+    LOW = "low"  # Unlikely to occur (10% <= p < 30%)
+    MEDIUM = "medium"  # Moderately likely to occur (30% <= p < 60%)
+    HIGH = "high"  # Likely to occur (60% <= p < 85%)
+    VERY_HIGH = "very_high"  # Very likely to occur (85% <= p < 100%)
 
     # Special values
     UNKNOWN = "unknown"  # Likelihood cannot be determined

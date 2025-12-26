@@ -19,6 +19,7 @@ See Also:
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums import EnumLikelihood
+from omnibase_core.utils.util_enum_normalizer import create_enum_normalizer
 
 __all__ = ["ModelDetectionMetadata"]
 
@@ -99,13 +100,4 @@ class ModelDetectionMetadata(BaseModel):
             The normalized value - EnumLikelihood if valid enum value,
             else the original string for backward compatibility.
         """
-        if v is None:
-            return None
-        if isinstance(v, EnumLikelihood):
-            return v
-        # Try to convert string to enum (v must be str at this point)
-        try:
-            return EnumLikelihood(v.lower())
-        except ValueError:
-            # Keep as string if not a valid enum value (backward compat)
-            return v
+        return create_enum_normalizer(EnumLikelihood)(v)

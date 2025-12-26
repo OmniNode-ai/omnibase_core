@@ -55,7 +55,9 @@ class TestValidateDuration:
             # Combined date and time
             "P1DT1H",  # 1 day 1 hour
             "P1Y2M3DT4H5M6S",  # Full format
-            "P1WT1H",  # 1 week 1 hour
+            # Weeks alone (valid - weeks cannot be combined with other components)
+            "P52W",  # 52 weeks
+            "P100W",  # 100 weeks
         ],
     )
     def test_valid_durations(self, duration: str) -> None:
@@ -80,6 +82,26 @@ class TestValidateDuration:
     def test_invalid_durations(self, duration: str, error_fragment: str) -> None:
         """Test that invalid duration strings raise ValueError."""
         with pytest.raises(ValueError, match=error_fragment):
+            validate_duration(duration)
+
+    @pytest.mark.parametrize(
+        "duration",
+        [
+            "P1WT1H",  # weeks with hours
+            "P1WT30M",  # weeks with minutes
+            "P1WT45S",  # weeks with seconds
+            "P1WT1H30M45S",  # weeks with full time
+            "P1W1D",  # weeks with days
+            "P1M1W",  # months with weeks
+            "P1Y1W",  # years with weeks
+            "P1Y2M1W",  # years, months with weeks
+            "P1Y2M1W3D",  # years, months, weeks, days
+            "P1W1DT1H",  # weeks, days with time
+        ],
+    )
+    def test_weeks_cannot_be_combined(self, duration: str) -> None:
+        """Test that weeks cannot be combined with other components per ISO 8601."""
+        with pytest.raises(ValueError, match="weeks.*cannot be combined"):
             validate_duration(duration)
 
 
@@ -525,3 +547,303 @@ class TestImports:
         assert callable(validate_bcp47_locale)
         assert callable(validate_uuid)
         assert callable(validate_semantic_version)
+
+    def test_import_create_enum_normalizer(self) -> None:
+        """Test that create_enum_normalizer can be imported from multiple paths."""
+        from omnibase_core.utils import create_enum_normalizer as factory1
+        from omnibase_core.utils.util_enum_normalizer import (
+            create_enum_normalizer as factory2,
+        )
+        from omnibase_core.validation import create_enum_normalizer as factory3
+        from omnibase_core.validation.validators import (
+            create_enum_normalizer as factory4,
+        )
+
+        # All imports should be callable
+        assert callable(factory1)
+        assert callable(factory2)
+        assert callable(factory3)
+        assert callable(factory4)
+
+        # All should reference the same underlying function
+        assert factory1 is factory2
+        assert factory3 is factory4
+        # Validation re-exports from utils
+        assert factory3 is factory1
+
+
+# =============================================================================
+# Enum Normalizer Factory Tests
+# =============================================================================
+
+
+class TestCreateEnumNormalizer:
+    """Tests for create_enum_normalizer factory function."""
+
+    def test_none_input_returns_none(self) -> None:
+        """Test that None input returns None."""
+        from enum import Enum
+
+        from omnibase_core.validation.validators import create_enum_normalizer
+
+        class Color(Enum):
+            RED = "red"
+            BLUE = "blue"
+
+        normalizer = create_enum_normalizer(Color)
+        assert normalizer(None) is None
+
+    def test_enum_instance_returns_unchanged(self) -> None:
+        """Test that enum instance is returned unchanged."""
+        from enum import Enum
+
+        from omnibase_core.validation.validators import create_enum_normalizer
+
+        class Color(Enum):
+            RED = "red"
+            BLUE = "blue"
+
+        normalizer = create_enum_normalizer(Color)
+        result = normalizer(Color.RED)
+        assert result is Color.RED
+        assert isinstance(result, Color)
+
+    def test_valid_string_converted_to_enum(self) -> None:
+        """Test that valid string is converted to enum."""
+        from enum import Enum
+
+        from omnibase_core.validation.validators import create_enum_normalizer
+
+        class Color(Enum):
+            RED = "red"
+            BLUE = "blue"
+
+        normalizer = create_enum_normalizer(Color)
+        result = normalizer("red")
+        assert result == Color.RED
+        assert isinstance(result, Color)
+
+    def test_string_case_insensitive(self) -> None:
+        """Test that string conversion is case-insensitive (via lowercase)."""
+        from enum import Enum
+
+        from omnibase_core.validation.validators import create_enum_normalizer
+
+        class Color(Enum):
+            RED = "red"
+            BLUE = "blue"
+
+        normalizer = create_enum_normalizer(Color)
+        assert normalizer("RED") == Color.RED
+        assert normalizer("Red") == Color.RED
+        assert normalizer("rEd") == Color.RED
+
+    def test_invalid_string_kept_for_backward_compat(self) -> None:
+        """Test that invalid string is kept as-is for backward compatibility."""
+        from enum import Enum
+
+        from omnibase_core.validation.validators import create_enum_normalizer
+
+        class Color(Enum):
+            RED = "red"
+            BLUE = "blue"
+
+        normalizer = create_enum_normalizer(Color)
+        result = normalizer("green")
+        assert result == "green"
+        assert isinstance(result, str)
+
+    def test_with_pydantic_model(self) -> None:
+        """Test that normalizer works correctly with Pydantic models."""
+        from enum import Enum
+
+        from pydantic import BaseModel, field_validator
+
+        from omnibase_core.validation.validators import create_enum_normalizer
+
+        class Status(Enum):
+            ACTIVE = "active"
+            INACTIVE = "inactive"
+            PENDING = "pending"
+
+        class MyModel(BaseModel):
+            status: Status | str | None = None
+
+            @field_validator("status", mode="before")
+            @classmethod
+            def normalize_status(cls, v: Status | str | None) -> Status | str | None:
+                return create_enum_normalizer(Status)(v)
+
+        # Test with enum value
+        m1 = MyModel(status=Status.ACTIVE)
+        assert m1.status == Status.ACTIVE
+
+        # Test with valid string (lowercase)
+        m2 = MyModel(status="active")
+        assert m2.status == Status.ACTIVE
+
+        # Test with valid string (uppercase)
+        m3 = MyModel(status="ACTIVE")
+        assert m3.status == Status.ACTIVE
+
+        # Test with None
+        m4 = MyModel(status=None)
+        assert m4.status is None
+
+        # Test with invalid string (backward compat)
+        m5 = MyModel(status="unknown_status")
+        assert m5.status == "unknown_status"
+
+    def test_with_real_omnibase_enum(self) -> None:
+        """Test with real EnumTokenType from omnibase_core."""
+        from omnibase_core.enums import EnumTokenType
+        from omnibase_core.validation.validators import create_enum_normalizer
+
+        normalizer = create_enum_normalizer(EnumTokenType)
+
+        # Test with enum value
+        assert normalizer(EnumTokenType.BEARER) is EnumTokenType.BEARER
+
+        # Test with valid string
+        assert normalizer("bearer") == EnumTokenType.BEARER
+        assert normalizer("BEARER") == EnumTokenType.BEARER
+
+        # Test with None
+        assert normalizer(None) is None
+
+        # Test with unknown string (backward compat)
+        assert normalizer("custom_token") == "custom_token"
+
+    def test_normalizer_is_reusable(self) -> None:
+        """Test that the same normalizer can be called multiple times."""
+        from enum import Enum
+
+        from omnibase_core.validation.validators import create_enum_normalizer
+
+        class Priority(Enum):
+            LOW = "low"
+            MEDIUM = "medium"
+            HIGH = "high"
+
+        normalizer = create_enum_normalizer(Priority)
+
+        # Multiple calls with same normalizer
+        assert normalizer("low") == Priority.LOW
+        assert normalizer("MEDIUM") == Priority.MEDIUM
+        assert normalizer("high") == Priority.HIGH
+        assert normalizer(None) is None
+        assert normalizer("critical") == "critical"
+
+    def test_different_enum_types(self) -> None:
+        """Test that factory works with different enum types."""
+        from enum import Enum
+
+        from omnibase_core.validation.validators import create_enum_normalizer
+
+        class Color(Enum):
+            RED = "red"
+            BLUE = "blue"
+
+        class Size(Enum):
+            SMALL = "small"
+            LARGE = "large"
+
+        color_normalizer = create_enum_normalizer(Color)
+        size_normalizer = create_enum_normalizer(Size)
+
+        # Each normalizer works with its own enum type
+        assert color_normalizer("red") == Color.RED
+        assert size_normalizer("small") == Size.SMALL
+
+        # Cross-enum strings are kept as-is
+        assert color_normalizer("small") == "small"
+        assert size_normalizer("red") == "red"
+
+
+class TestEnumNormalizerWithContextModels:
+    """Integration tests with the actual context models using create_enum_normalizer."""
+
+    def test_session_context_authentication_method(self) -> None:
+        """Test that ModelSessionContext uses create_enum_normalizer correctly."""
+        from omnibase_core.enums import EnumAuthenticationMethod
+        from omnibase_core.models.context import ModelSessionContext
+
+        # Test with enum value
+        ctx1 = ModelSessionContext(authentication_method=EnumAuthenticationMethod.OAUTH2)
+        assert ctx1.authentication_method == EnumAuthenticationMethod.OAUTH2
+
+        # Test with string (lowercase)
+        ctx2 = ModelSessionContext(authentication_method="oauth2")
+        assert ctx2.authentication_method == EnumAuthenticationMethod.OAUTH2
+
+        # Test with string (uppercase)
+        ctx3 = ModelSessionContext(authentication_method="OAUTH2")
+        assert ctx3.authentication_method == EnumAuthenticationMethod.OAUTH2
+
+        # Test with None
+        ctx4 = ModelSessionContext(authentication_method=None)
+        assert ctx4.authentication_method is None
+
+        # Test with unknown string (backward compat)
+        ctx5 = ModelSessionContext(authentication_method="custom_auth")
+        assert ctx5.authentication_method == "custom_auth"
+
+    def test_authorization_context_token_type(self) -> None:
+        """Test that ModelAuthorizationContext uses create_enum_normalizer correctly."""
+        from omnibase_core.enums import EnumTokenType
+        from omnibase_core.models.context import ModelAuthorizationContext
+
+        # Test with enum value
+        ctx1 = ModelAuthorizationContext(token_type=EnumTokenType.BEARER)
+        assert ctx1.token_type == EnumTokenType.BEARER
+
+        # Test with string
+        ctx2 = ModelAuthorizationContext(token_type="bearer")
+        assert ctx2.token_type == EnumTokenType.BEARER
+
+        # Test backward compat
+        ctx3 = ModelAuthorizationContext(token_type="custom_token")
+        assert ctx3.token_type == "custom_token"
+
+    def test_checkpoint_metadata_enums(self) -> None:
+        """Test that ModelCheckpointMetadata uses create_enum_normalizer correctly."""
+        from omnibase_core.enums import EnumCheckpointType, EnumTriggerEvent
+        from omnibase_core.models.context import ModelCheckpointMetadata
+
+        # Test checkpoint_type
+        meta1 = ModelCheckpointMetadata(checkpoint_type="automatic")
+        assert meta1.checkpoint_type == EnumCheckpointType.AUTOMATIC
+
+        meta2 = ModelCheckpointMetadata(checkpoint_type=EnumCheckpointType.MANUAL)
+        assert meta2.checkpoint_type == EnumCheckpointType.MANUAL
+
+        # Test trigger_event
+        meta3 = ModelCheckpointMetadata(trigger_event="error")
+        assert meta3.trigger_event == EnumTriggerEvent.ERROR
+
+        meta4 = ModelCheckpointMetadata(trigger_event=EnumTriggerEvent.TIMEOUT)
+        assert meta4.trigger_event == EnumTriggerEvent.TIMEOUT
+
+        # Test backward compat
+        meta5 = ModelCheckpointMetadata(
+            checkpoint_type="custom_type", trigger_event="custom_event"
+        )
+        assert meta5.checkpoint_type == "custom_type"
+        assert meta5.trigger_event == "custom_event"
+
+    def test_detection_metadata_likelihood(self) -> None:
+        """Test that ModelDetectionMetadata uses create_enum_normalizer correctly."""
+        from omnibase_core.enums import EnumLikelihood
+        from omnibase_core.models.context import ModelDetectionMetadata
+
+        # Test with enum value
+        meta1 = ModelDetectionMetadata(false_positive_likelihood=EnumLikelihood.LOW)
+        assert meta1.false_positive_likelihood == EnumLikelihood.LOW
+
+        # Test with string
+        meta2 = ModelDetectionMetadata(false_positive_likelihood="high")
+        assert meta2.false_positive_likelihood == EnumLikelihood.HIGH
+
+        # Test backward compat
+        meta3 = ModelDetectionMetadata(false_positive_likelihood="uncertain")
+        assert meta3.false_positive_likelihood == "uncertain"

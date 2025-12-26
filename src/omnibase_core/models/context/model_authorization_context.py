@@ -21,6 +21,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums import EnumTokenType
+from omnibase_core.utils.util_enum_normalizer import create_enum_normalizer
 
 __all__ = ["ModelAuthorizationContext"]
 
@@ -95,16 +96,7 @@ class ModelAuthorizationContext(BaseModel):
             The normalized value - EnumTokenType if valid enum value, else the
             original string for backward compatibility.
         """
-        if v is None:
-            return None
-        if isinstance(v, EnumTokenType):
-            return v
-        # Try to convert string to enum (v must be str at this point)
-        try:
-            return EnumTokenType(v.lower())
-        except ValueError:
-            # Keep as string if not a valid enum value (backward compat)
-            return v
+        return create_enum_normalizer(EnumTokenType)(v)
     expiry: str | None = Field(
         default=None,
         description="Token expiry timestamp",

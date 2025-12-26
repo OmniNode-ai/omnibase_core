@@ -39,6 +39,8 @@ from omnibase_core.validation.validators.common_validators import (
     Duration,
     SemanticVersion,
     UUID,
+    # Enum normalizer factory
+    create_enum_normalizer,
     # Validator functions
     validate_bcp47_locale,
     validate_duration,
@@ -52,6 +54,8 @@ __all__ = [
     "validate_bcp47_locale",
     "validate_uuid",
     "validate_semantic_version",
+    # Enum normalizer factory
+    "create_enum_normalizer",
     # Pydantic Annotated types
     "Duration",
     "BCP47Locale",

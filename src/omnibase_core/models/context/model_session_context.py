@@ -21,6 +21,7 @@ import ipaddress
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums import EnumAuthenticationMethod
+from omnibase_core.utils.util_enum_normalizer import create_enum_normalizer
 
 __all__ = ["ModelSessionContext"]
 
@@ -113,16 +114,7 @@ class ModelSessionContext(BaseModel):
             The normalized value - EnumAuthenticationMethod if valid enum value,
             else the original string for backward compatibility.
         """
-        if v is None:
-            return None
-        if isinstance(v, EnumAuthenticationMethod):
-            return v
-        # Try to convert string to enum (v must be str at this point)
-        try:
-            return EnumAuthenticationMethod(v.lower())
-        except ValueError:
-            # Keep as string if not a valid enum value (backward compat)
-            return v
+        return create_enum_normalizer(EnumAuthenticationMethod)(v)
 
     @field_validator("client_ip", mode="before")
     @classmethod
