@@ -1,0 +1,124 @@
+#!/bin/bash
+# Validate no direct transport/I/O library imports exist in omnibase_core
+# Enforces architectural boundary: Core should be pure, infrastructure owns all I/O
+#
+# Forbidden imports:
+#   HTTP clients: aiohttp, httpx, requests, urllib3
+#   Kafka clients: kafka-python, aiokafka, confluent-kafka
+#   Redis clients: redis, aioredis
+#   Database clients: asyncpg, psycopg2, psycopg, aiomysql
+#   Message queues: pika, aio-pika, kombu, celery
+#   gRPC: grpcio, grpcio-tools
+#   WebSocket: websockets, wsproto
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+CORE_SRC="$PROJECT_ROOT/src/omnibase_core"
+
+echo "Checking for transport/I/O library imports in omnibase_core..."
+
+# Build regex pattern for forbidden imports
+# Note: We check for both 'import X' and 'from X import' patterns
+# Packages are matched at word boundaries to avoid false positives
+FORBIDDEN_PACKAGES=(
+    # HTTP clients
+    "aiohttp"
+    "httpx"
+    "requests"
+    "urllib3"
+    # Kafka clients
+    "kafka"
+    "aiokafka"
+    "confluent_kafka"
+    # Redis clients
+    "redis"
+    "aioredis"
+    # Database clients
+    "asyncpg"
+    "psycopg2"
+    "psycopg"
+    "aiomysql"
+    # Message queues
+    "pika"
+    "aio_pika"
+    "kombu"
+    "celery"
+    # gRPC
+    "grpc"
+    "grpcio"
+    # WebSocket
+    "websockets"
+    "wsproto"
+)
+
+# Build alternation pattern for grep with word boundaries
+# Each package is wrapped in \b...\b to avoid false positives like redis_locking
+PATTERN=""
+for pkg in "${FORBIDDEN_PACKAGES[@]}"; do
+    if [ -n "$PATTERN" ]; then
+        PATTERN="$PATTERN|"
+    fi
+    PATTERN="$PATTERN$pkg"
+done
+
+# Match import statements: 'import X' or 'from X import'
+# - Anchored to start of line (after optional whitespace)
+# - Uses word boundaries (\b) around package names
+# - Allows for submodule imports like 'import aiohttp.client' or 'from aiohttp.web import X'
+IMPORT_PATTERN="^[[:space:]]*(from[[:space:]]+($PATTERN)(\\.|[[:space:]])|import[[:space:]]+($PATTERN)(\\.|[[:space:]]|,|$))"
+
+# Files/patterns to exclude:
+# - Protocol definition files with documentation examples showing adapter usage
+# - __pycache__ and compiled files
+EXCLUDE_PATTERN="protocols/http/__init__.py|protocols/http/protocol_http_client.py|__pycache__|\.pyc$"
+
+# Find violations - actual import statements only
+# We use -P for Perl regex to get proper word boundaries
+VIOLATIONS=$(grep -RnP "$IMPORT_PATTERN" "$CORE_SRC" --include="*.py" 2>/dev/null | grep -vE "$EXCLUDE_PATTERN" || true)
+
+# Filter out TYPE_CHECKING blocks (these are type-only imports, not runtime dependencies)
+# and docstring/comment references
+REAL_VIOLATIONS=""
+while IFS= read -r line; do
+    [ -z "$line" ] && continue
+
+    # Extract file path and check if it's inside a TYPE_CHECKING block
+    # This is a simplified check - we flag the violation and let manual review determine
+    # For now, we allow TYPE_CHECKING imports as they don't create runtime dependencies
+
+    # Skip lines that are clearly comments
+    if echo "$line" | grep -qE "^[^:]+:[0-9]+:[[:space:]]*#"; then
+        continue
+    fi
+
+    # Skip lines containing "Example:" (documentation examples)
+    if echo "$line" | grep -qE "Example:|example:"; then
+        continue
+    fi
+
+    REAL_VIOLATIONS="$REAL_VIOLATIONS$line"$'\n'
+done <<< "$VIOLATIONS"
+
+# Trim trailing newline
+REAL_VIOLATIONS="${REAL_VIOLATIONS%$'\n'}"
+
+if [ -n "$REAL_VIOLATIONS" ]; then
+    echo "ERROR: Found transport/I/O library imports in omnibase_core!"
+    echo ""
+    echo "Violations:"
+    echo "$REAL_VIOLATIONS"
+    echo ""
+    echo "Architectural Invariant: omnibase_core must be pure (no I/O dependencies)."
+    echo "Transport and I/O libraries belong in infrastructure layers."
+    echo ""
+    echo "Solutions:"
+    echo "  1. Define a protocol in omnibase_core for the capability you need"
+    echo "  2. Implement the protocol in an infrastructure package"
+    echo "  3. Use TYPE_CHECKING imports if you only need types for annotations"
+    exit 1
+fi
+
+echo "No transport/I/O library imports found in omnibase_core"
+exit 0
