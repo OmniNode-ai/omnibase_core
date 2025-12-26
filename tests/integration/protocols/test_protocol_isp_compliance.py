@@ -22,7 +22,6 @@ Related:
 
 from __future__ import annotations
 
-import inspect
 from collections.abc import Awaitable, Callable
 from typing import get_type_hints
 
@@ -530,8 +529,12 @@ class TestTypedDictEventBusHealth:
         health_check = getattr(ProtocolEventBusLifecycle, "health_check", None)
         assert health_check is not None, "health_check method should exist"
 
-        # Resolve type hints
-        hints = get_type_hints(health_check)
+        # Resolve type hints with forward reference namespace
+        # (TypedDictEventBusHealth is imported under TYPE_CHECKING in the protocol)
+        forward_ref_ns = {
+            "TypedDictEventBusHealth": TypedDictEventBusHealth,
+        }
+        hints = get_type_hints(health_check, globalns=forward_ref_ns)
         assert "return" in hints, "health_check should have return type annotation"
 
         # The return type should be TypedDictEventBusHealth

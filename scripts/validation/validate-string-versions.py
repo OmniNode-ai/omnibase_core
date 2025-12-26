@@ -69,7 +69,7 @@ EXCLUDE_PATTERNS = [
     "alerts.yml",
     "grafana",
     "kubernetes",
-    "ci-cd.yml",  # GitHub Actions CI file
+    "ci-cd.yml",  # Generic CI/CD configuration file (e.g., ci-cd.yml, ci-cd-*.yml)
     "__pycache__",
     ".mypy_cache",
     ".pytest_cache",

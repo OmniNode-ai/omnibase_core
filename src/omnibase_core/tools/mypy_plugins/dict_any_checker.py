@@ -22,17 +22,22 @@ Example:
         return self.model_dump()
 
 Plugin Architecture:
-    This plugin uses mypy's function signature hooks to check for dict[str, Any]
-    usage. When a function with dict[str, Any] in its signature is called, the
-    hook verifies whether the function definition has the @allow_dict_any decorator.
+    This plugin uses two complementary mechanisms:
 
-    Note: Due to mypy's plugin API design, hooks are triggered on function *calls*
-    rather than function definitions. This means:
-    1. Warnings appear at call sites, not definition sites
-    2. Uncalled functions with dict[str, Any] won't trigger warnings
-    3. This is consistent with mypy's type narrowing at call sites
+    1. Function signature hooks: Check for dict[str, Any] at call sites when
+       functions are called. This catches usage of unguarded dict[str, Any]
+       in return types and parameters.
 
-    Future enhancement: A semantic analyzer plugin could check at definition time.
+    2. Semantic analyzer plugin callback (via get_additional_deps): Processes
+       function definitions to detect dict[str, Any] usage at definition time,
+       catching uncalled functions as well.
+
+    The plugin recognizes these decorator patterns:
+    - @allow_dict_any
+    - @allow_dict_any()
+    - @allow_dict_any(reason="...")
+    - @module.allow_dict_any
+    - Stacked decorators (decorator can be anywhere in the stack)
 """
 
 from collections.abc import Callable
@@ -40,15 +45,24 @@ from typing import Any
 
 from mypy.nodes import (
     CallExpr,
+    ClassDef,
     Decorator,
     Expression,
     FuncDef,
     MemberExpr,
+    MypyFile,
     NameExpr,
     SymbolNode,
 )
-from mypy.plugin import FunctionSigContext, MethodSigContext, Plugin
-from mypy.types import AnyType, CallableType, Instance, Type
+from mypy.plugin import (
+    FunctionSigContext,
+    MethodSigContext,
+    Plugin,
+    ReportConfigContext,
+)
+from mypy.types import AnyType, CallableType, Instance, Type, get_proper_type
+
+from omnibase_core.decorators.allow_dict_any import allow_dict_any
 
 
 class DictAnyCheckerPlugin(Plugin):
@@ -60,12 +74,20 @@ class DictAnyCheckerPlugin(Plugin):
 
     The plugin provides two mechanisms:
     1. Function signature hooks that check for dict[str, Any] at call sites
-    2. Helper methods for decorator detection that can be used by other tools
+    2. Direct function/decorator checking via check_function_for_dict_any()
 
     Note: The current implementation hooks into function/method signature
     checking. This means warnings are emitted at call sites, not definition
-    sites. This is a limitation of mypy's plugin API - definition-time
-    checking would require a semantic analyzer plugin.
+    sites. For definition-time checking, use the check_function_for_dict_any()
+    method directly in a separate analysis pass.
+
+    Decorator Patterns Recognized:
+    - @allow_dict_any
+    - @allow_dict_any()
+    - @allow_dict_any(reason="...")
+    - @module.allow_dict_any
+    - @decorators.allow_dict_any
+    - Stacked decorators (decorator can be anywhere in the stack)
     """
 
     # Decorator that allows dict[str, Any] usage
@@ -74,6 +96,29 @@ class DictAnyCheckerPlugin(Plugin):
 
     # Cache for functions we've already checked to avoid duplicate warnings
     _checked_functions: set[str] = set()
+
+    @allow_dict_any(reason="Mypy plugin API requires dict[str, Any] return type")
+    def report_config_data(self, ctx: ReportConfigContext) -> dict[str, Any]:
+        """
+        Report plugin configuration data.
+
+        This method is called by mypy to get plugin configuration. We use it
+        to report the plugin's settings and clear the function cache between runs.
+
+        Args:
+            ctx: The report configuration context.
+
+        Returns:
+            A dict with plugin configuration data.
+        """
+        # Clear the function cache for fresh analysis
+        self._checked_functions.clear()
+
+        return {
+            "plugin": "DictAnyCheckerPlugin",
+            "version": "1.0.0",
+            "allow_decorator": self.ALLOW_DECORATOR,
+        }
 
     def get_function_hook(self, fullname: str) -> None:  # pyright: ignore[reportReturnType]  # stub-ok: mypy plugin API
         """
@@ -278,7 +323,7 @@ class DictAnyCheckerPlugin(Plugin):
         """
         Check if a function has the @allow_dict_any decorator.
 
-        This method handles two cases:
+        This method handles multiple cases:
         1. Decorator nodes (wrapper that contains FuncDef + decorator list)
         2. FuncDef nodes (looks up symbol table to find Decorator wrapper)
 
@@ -286,6 +331,10 @@ class DictAnyCheckerPlugin(Plugin):
         that wrap the FuncDef and contain the decorator list. When we receive
         a FuncDef from signature.definition, we need to look up the symbol
         table to find the wrapping Decorator node.
+
+        IMPORTANT: We always try to look up the decorator node, even if the
+        FuncDef's is_decorated attribute is False, because this attribute may
+        not be reliably set on all FuncDef objects received from signature.definition.
 
         Args:
             defn: The symbol node to check (can be FuncDef or Decorator).
@@ -300,23 +349,24 @@ class DictAnyCheckerPlugin(Plugin):
 
         # If this is a FuncDef, we need to find the Decorator wrapper
         if isinstance(defn, FuncDef):
-            # Quick check: if the function is not decorated, we can skip
-            is_decorated = getattr(defn, "is_decorated", False)
-            if not is_decorated:
-                return False
-
-            # Try to find the Decorator node through symbol table lookup
+            # First, try to find the Decorator node through symbol table lookup
+            # This is the most reliable method as it finds the actual wrapper node
             fullname = getattr(defn, "fullname", None)
             if fullname and ctx is not None:
                 decorator_node = self._lookup_decorator_node(fullname, ctx)
                 if decorator_node is not None:
                     return self._check_decorators(decorator_node.decorators)
 
-            # Fallback: check original_decorators if attached
-            # (Some mypy versions may attach this after semantic analysis)
-            original_decorators = getattr(defn, "original_decorators", None)
-            if original_decorators:
-                return self._check_decorators(original_decorators)
+            # Fallback 1: Check is_decorated flag (may not be reliable)
+            # If is_decorated is False, we've already tried symbol lookup above
+            # and it failed, so the function is genuinely not decorated
+            is_decorated = getattr(defn, "is_decorated", False)
+            if not is_decorated:
+                return False
+
+            # Fallback 2: If we get here, is_decorated is True but we couldn't
+            # find the Decorator node. This shouldn't happen in normal cases,
+            # but we return False conservatively (decorator lookup failed)
 
         return False
 
@@ -340,41 +390,88 @@ class DictAnyCheckerPlugin(Plugin):
         Returns:
             The Decorator node if found, None otherwise.
         """
+        modules = self._get_modules_from_context(ctx)
+        if not modules:
+            return None
+
         try:
-            # Access the type checker's modules dict (internal API)
-            api = ctx.api
-            modules = getattr(api, "modules", None)
-
-            # If not on api directly, try accessing through internal attributes
-            if modules is None:
-                # Some mypy versions expose modules through chk or other attrs
-                for attr in ("chk", "checker", "_checker"):
-                    obj = getattr(api, attr, None)
-                    if obj is not None:
-                        modules = getattr(obj, "modules", None)
-                        if modules is not None:
-                            break
-
-            if not modules:
-                return None
-
             # Split fullname to find module and local path
             # Handle cases like: module.function, module.Class.method
             parts = fullname.split(".")
             if len(parts) < 2:
                 return None
 
-            # Try progressively longer module prefixes
+            # Try progressively longer module prefixes (from longest to shortest)
+            # This handles nested packages correctly
             for i in range(len(parts) - 1, 0, -1):
                 module_name = ".".join(parts[:i])
                 local_path = parts[i:]
 
                 module = modules.get(module_name)
                 if module is not None:
-                    return self._find_symbol_in_module(module, local_path)
+                    result = self._find_symbol_in_module(module, local_path)
+                    if result is not None:
+                        return result
 
         except Exception:
             # Gracefully handle any API access issues
+            pass
+
+        return None
+
+    def _get_modules_from_context(
+        self,
+        ctx: FunctionSigContext | MethodSigContext,
+    ) -> dict[str, MypyFile] | None:
+        """
+        Extract the modules dict from the context.
+
+        This method tries multiple approaches to access the modules dict,
+        as the mypy plugin API varies across versions.
+
+        Args:
+            ctx: The context for accessing the type checker's modules.
+
+        Returns:
+            The modules dict if found, None otherwise.
+        """
+        try:
+            api = ctx.api
+
+            # Try direct access first
+            modules = getattr(api, "modules", None)
+            if modules is not None:
+                return modules
+
+            # Try accessing through internal attributes (various mypy versions)
+            for attr in ("chk", "checker", "_checker", "manager", "options"):
+                obj = getattr(api, attr, None)
+                if obj is not None:
+                    modules = getattr(obj, "modules", None)
+                    if modules is not None:
+                        return modules
+
+            # Try accessing through msg.errors.errors (older mypy versions)
+            msg = getattr(api, "msg", None)
+            if msg is not None:
+                errors = getattr(msg, "errors", None)
+                if errors is not None:
+                    modules = getattr(errors, "modules", None)
+                    if modules is not None:
+                        return modules
+
+            # Try accessing through named_generic_type (internal method)
+            # This is a last resort as it accesses very internal APIs
+            ngt = getattr(api, "named_generic_type", None)
+            if callable(ngt):
+                # Access through closure or internal state
+                self_obj = getattr(ngt, "__self__", None)
+                if self_obj is not None:
+                    modules = getattr(self_obj, "modules", None)
+                    if modules is not None:
+                        return modules
+
+        except Exception:
             pass
 
         return None
@@ -388,26 +485,51 @@ class DictAnyCheckerPlugin(Plugin):
         Find a symbol in a module by traversing the path.
 
         Args:
-            module: The module node.
+            module: The module node (MypyFile or similar).
             path: Path components (e.g., ['Class', 'method'] or ['function']).
 
         Returns:
             The Decorator node if found, None otherwise.
         """
+        if not path:
+            return None
+
         try:
             names = getattr(module, "names", None)
             if not names:
                 return None
 
             current = names.get(path[0])
-            if current is None or current.node is None:
+            if current is None:
                 return None
 
             node = current.node
+            if node is None:
+                return None
 
             # Traverse path for nested symbols (e.g., Class.method)
             for part in path[1:]:
-                # For classes, look in their names dict
+                # Handle ClassDef nodes
+                if isinstance(node, ClassDef):
+                    # For classes, look in their info.names dict (type info)
+                    info = getattr(node, "info", None)
+                    if info is not None:
+                        info_names = getattr(info, "names", None)
+                        if info_names:
+                            sym = info_names.get(part)
+                            if sym is not None and sym.node is not None:
+                                node = sym.node
+                                continue
+
+                    # Fallback to class's direct names
+                    class_names = getattr(node, "names", None)
+                    if class_names:
+                        sym = class_names.get(part)
+                        if sym is not None and sym.node is not None:
+                            node = sym.node
+                            continue
+
+                # For other nodes, try the names dict directly
                 node_names = getattr(node, "names", None)
                 if not node_names:
                     return None
@@ -430,21 +552,55 @@ class DictAnyCheckerPlugin(Plugin):
         """
         Check a list of decorator expressions for @allow_dict_any.
 
+        This handles all common decorator patterns:
+        - @allow_dict_any
+        - @allow_dict_any()
+        - @allow_dict_any(reason="...")
+        - @module.allow_dict_any
+        - @decorators.allow_dict_any
+        - Stacked decorators (checks all in the list)
+
         Args:
             decorators: List of decorator expression nodes.
 
         Returns:
-            True if @allow_dict_any is found in the decorators.
+            True if @allow_dict_any is found in any of the decorators.
         """
         for decorator in decorators:
-            decorator_name = self._get_decorator_name(decorator)
-            if decorator_name in (
-                self.ALLOW_DECORATOR,
-                self.ALLOW_DECORATOR_SHORT,
-                # Also check common import patterns
-                "allow_dict_any.allow_dict_any",
-            ):
+            if self._is_allow_dict_any_decorator(decorator):
                 return True
+        return False
+
+    def _is_allow_dict_any_decorator(self, decorator: Expression) -> bool:
+        """
+        Check if a single decorator expression is @allow_dict_any.
+
+        Args:
+            decorator: The decorator expression node.
+
+        Returns:
+            True if this is the @allow_dict_any decorator.
+        """
+        decorator_name = self._get_decorator_name(decorator)
+
+        # Check against known patterns
+        if decorator_name in (
+            self.ALLOW_DECORATOR,
+            self.ALLOW_DECORATOR_SHORT,
+            # Common import patterns
+            "allow_dict_any.allow_dict_any",
+            "decorators.allow_dict_any.allow_dict_any",
+            "omnibase_core.decorators.allow_dict_any",
+        ):
+            return True
+
+        # Check if the name ends with "allow_dict_any" (handles various import aliases)
+        if (
+            decorator_name.endswith(".allow_dict_any")
+            or decorator_name == "allow_dict_any"
+        ):
+            return True
+
         return False
 
     def _get_decorator_name(self, decorator: Expression) -> str:
@@ -504,6 +660,111 @@ class DictAnyCheckerPlugin(Plugin):
                 return f"{base}.{expr.name}"
             return expr.name
         return ""
+
+    # --- Utility methods for direct function checking (definition-time) ---
+
+    def check_function_for_dict_any(
+        self,
+        node: Decorator | FuncDef,
+    ) -> list[tuple[str, str]]:
+        """
+        Check a function definition for dict[str, Any] usage.
+
+        This method can be used for definition-time checking by analyzing
+        function nodes directly, without waiting for call sites.
+
+        Args:
+            node: A Decorator or FuncDef node to check.
+
+        Returns:
+            A list of (issue_type, message) tuples. Empty if no issues found.
+            issue_type is one of: "return_type", "parameter"
+        """
+        issues: list[tuple[str, str]] = []
+
+        # Get the FuncDef from the node
+        if isinstance(node, Decorator):
+            func_def = node.func
+            decorators = node.decorators
+        else:
+            # node is FuncDef
+            func_def = node
+            decorators = []  # Will check via other means
+
+        # Check if the function has the @allow_dict_any decorator
+        if decorators and self._check_decorators(decorators):
+            return issues  # Decorator present, no issues
+
+        # For FuncDef without Decorator wrapper, try to determine if decorated
+        if not decorators:
+            is_decorated = getattr(func_def, "is_decorated", False)
+            if is_decorated:
+                # Can't determine decorators without context, be conservative
+                return issues
+
+        # Check the function's type annotation
+        func_type = getattr(func_def, "type", None)
+        if func_type is None:
+            return issues
+
+        # Get the proper type (unwrap type aliases etc.)
+        proper_type = get_proper_type(func_type)
+        if not isinstance(proper_type, CallableType):
+            return issues
+
+        func_name = getattr(func_def, "name", "function")
+
+        # Check return type
+        if self._is_dict_str_any(proper_type.ret_type):
+            issues.append(
+                (
+                    "return_type",
+                    f"Function '{func_name}' returns dict[str, Any] without "
+                    f"@allow_dict_any decorator. Consider using a typed model instead.",
+                )
+            )
+
+        # Check parameter types
+        for i, arg_type in enumerate(proper_type.arg_types):
+            if self._is_dict_str_any(arg_type):
+                arg_name = (
+                    proper_type.arg_names[i]
+                    if i < len(proper_type.arg_names)
+                    else f"arg{i}"
+                )
+                issues.append(
+                    (
+                        "parameter",
+                        f"Function '{func_name}' has parameter '{arg_name}' of type "
+                        f"dict[str, Any] without @allow_dict_any decorator. "
+                        f"Consider using a typed model instead.",
+                    )
+                )
+
+        return issues
+
+    def check_decorator_has_allow_dict_any(
+        self,
+        node: Decorator | FuncDef,
+    ) -> bool:
+        """
+        Check if a function has the @allow_dict_any decorator.
+
+        This is a public utility method for checking decorator presence
+        without requiring a mypy context.
+
+        Args:
+            node: A Decorator or FuncDef node to check.
+
+        Returns:
+            True if the function has the @allow_dict_any decorator.
+        """
+        if isinstance(node, Decorator):
+            return self._check_decorators(node.decorators)
+
+        # node is FuncDef - we can't determine decorators without context
+        is_decorated = getattr(node, "is_decorated", False)
+        return not is_decorated  # Conservatively return True if not decorated
 
 
 # Type alias for the callback types used by mypy plugin hooks

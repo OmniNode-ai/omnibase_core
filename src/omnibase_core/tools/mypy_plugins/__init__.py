@@ -21,13 +21,15 @@ def plugin(version: str) -> type[Plugin]:
     Mypy plugin entry point.
 
     This function is called by mypy to get the plugin class. It must be named
-    'plugin' and return a Plugin subclass (specifically DictAnyCheckerPlugin).
+    'plugin' and return a Plugin subclass.
 
     Args:
-        version: The mypy version string (e.g., "1.19.0").
+        version: The mypy version string (e.g., "1.19.0"). Currently unused but
+            required by the mypy plugin API for version compatibility checks.
 
     Returns:
-        The DictAnyCheckerPlugin class (a Plugin subclass) which mypy will instantiate.
+        type[Plugin]: The DictAnyCheckerPlugin class which mypy will instantiate
+            to enable dict[str, Any] usage checking.
     """
     # Import here to avoid circular imports and ensure proper initialization
     from omnibase_core.tools.mypy_plugins.dict_any_checker import DictAnyCheckerPlugin

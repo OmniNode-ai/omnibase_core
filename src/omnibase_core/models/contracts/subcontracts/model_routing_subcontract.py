@@ -20,7 +20,7 @@ Strict typing is enforced: No Any types allowed in implementation.
 """
 
 import threading
-from typing import Any, ClassVar, Literal
+from typing import Any, ClassVar, Literal, Self
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -129,13 +129,14 @@ class ModelRoutingSubcontract(BaseModel):
         context: Any | None = None,
         by_alias: bool | None = None,
         by_name: bool | None = None,
-    ) -> "ModelRoutingSubcontract":
-        """Override to ensure models are rebuilt before validation.
+    ) -> Self:
+        """Override to ensure model rebuild before validation.
 
         This ensures forward references are resolved when deserializing
-        nested structures via model_validate(). While __new__ handles direct
-        instantiation, model_validate() may bypass __new__ in certain
-        deserialization scenarios.
+        nested structures via model_validate(). The rebuild is triggered
+        before Pydantic validation to ensure all forward references in the
+        model hierarchy (ModelCircuitBreakerMetadata -> ModelCustomFields ->
+        ModelCircuitBreaker -> ModelRoutingSubcontract) are properly resolved.
 
         Args:
             obj: Object to validate (dict, model instance, etc.).
@@ -150,6 +151,7 @@ class ModelRoutingSubcontract(BaseModel):
             Validated ModelRoutingSubcontract instance.
         """
         _ensure_models_rebuilt(cls)
+        cls.model_rebuild()
         return super().model_validate(
             obj,
             strict=strict,
