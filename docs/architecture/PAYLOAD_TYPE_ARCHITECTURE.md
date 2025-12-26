@@ -383,21 +383,17 @@ class ModelAction(BaseModel):
 
 > **See**: [Discriminator Naming Conventions](#discriminator-naming-conventions) for the
 > rationale behind discriminator field naming across different payload categories.
-
-> **Note**: This example uses `kind` as the discriminator (not `action_type` from the table)
-> to align with Runtime Directive patterns. Since Approach B represents a hypothetical NEW
-> discriminated union design, it would follow the `kind` convention used for internal
-> coordination payloads rather than the existing `action_type` used by `SpecificActionPayload`.
-> This is a deliberate design choice if Approach B were implemented.
+> This example uses `action_type` as the discriminator to align with the Action Payloads
+> convention defined in the table above.
 
 ```python
 class ModelComputeActionPayload(BaseModel):
-    kind: Literal["compute"] = "compute"  # Uses 'kind' for new union design
+    action_type: Literal["compute"] = "compute"
     node_id: str
     input_data: dict[str, Any]
 
 class ModelEffectActionPayload(BaseModel):
-    kind: Literal["effect"] = "effect"
+    action_type: Literal["effect"] = "effect"
     effect_type: str
     params: dict[str, Any]
 
@@ -409,7 +405,7 @@ ActionPayload = Annotated[
     | ModelReduceActionPayload
     | ModelOrchestrateActionPayload
     | ModelCustomActionPayload,
-    Field(discriminator="kind"),  # New union uses 'kind'
+    Field(discriminator="action_type"),
 ]
 ```
 

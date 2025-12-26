@@ -123,7 +123,7 @@ Future Enhancement:
 """
 
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast
+from typing import Any, Generic, TypeVar, cast
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator

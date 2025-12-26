@@ -256,6 +256,7 @@ payload = create_action_payload(
 
 ## Related Documents
 
+- [Payload Type Architecture](./PAYLOAD_TYPE_ARCHITECTURE.md) - Comprehensive guide to typed payload architecture
 - [ONEX Four-Node Architecture](./ONEX_FOUR_NODE_ARCHITECTURE.md)
 - [dict[str, Any] Prevention Guide](./DICT_STR_ANY_PREVENTION.md)
 - [Container Types](./CONTAINER_TYPES.md)

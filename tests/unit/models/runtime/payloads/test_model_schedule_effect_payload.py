@@ -189,8 +189,8 @@ class TestModelScheduleEffectPayloadExtraFieldsRejected:
 class TestModelScheduleEffectPayloadEdgeCases:
     """Test edge cases."""
 
-    def test_effect_node_type_with_special_characters(self) -> None:
-        """Test effect_node_type with special characters."""
+    def test_effect_node_type_with_common_separators(self) -> None:
+        """Test effect_node_type with hyphens, underscores, and dots."""
         payload = ModelScheduleEffectPayload(effect_node_type="http-request_v2.0")
         assert payload.effect_node_type == "http-request_v2.0"
 

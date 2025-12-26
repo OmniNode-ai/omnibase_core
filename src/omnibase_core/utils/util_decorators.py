@@ -26,9 +26,11 @@ def allow_any_type(reason: str) -> Callable[[ClassType], ClassType]:
 
     def decorator(cls: ClassType) -> ClassType:
         # Add metadata to the class for documentation
+        # Use setattr/getattr for dynamic attribute access to maintain type safety
+        reasons: list[str] = getattr(cls, "_allow_any_reasons", None) or []
         if not hasattr(cls, "_allow_any_reasons"):
-            cls._allow_any_reasons = []  # type: ignore[attr-defined]
-        cls._allow_any_reasons.append(reason)  # type: ignore[attr-defined]
+            setattr(cls, "_allow_any_reasons", reasons)
+        reasons.append(reason)
         return cls
 
     return decorator
@@ -50,9 +52,11 @@ def allow_string_id(reason: str) -> Callable[[ClassType], ClassType]:
 
     def decorator(cls: ClassType) -> ClassType:
         # Add metadata to the class for documentation
+        # Use setattr/getattr for dynamic attribute access to maintain type safety
+        reasons: list[str] = getattr(cls, "_allow_string_id_reasons", None) or []
         if not hasattr(cls, "_allow_string_id_reasons"):
-            cls._allow_string_id_reasons = []  # type: ignore[attr-defined]
-        cls._allow_string_id_reasons.append(reason)  # type: ignore[attr-defined]
+            setattr(cls, "_allow_string_id_reasons", reasons)
+        reasons.append(reason)
         return cls
 
     return decorator

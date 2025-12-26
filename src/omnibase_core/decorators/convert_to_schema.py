@@ -43,9 +43,13 @@ The decorator will generate a model_validator that:
 
 from __future__ import annotations
 
+import logging
 import warnings
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, TypeVar
+
+# Module-level logger for conversion diagnostics
+_logger = logging.getLogger(__name__)
 
 from pydantic import VERSION as PYDANTIC_VERSION
 from pydantic import BaseModel
@@ -123,7 +127,19 @@ def _convert_list_value(
     ):
         # Let Pydantic handle deserialization
         return value
-    return [schema_cls.from_value(item) for item in value]
+    try:
+        return [schema_cls.from_value(item) for item in value]
+    except Exception as e:
+        _logger.exception(
+            "Failed to convert list items to ModelSchemaValue. "
+            "List had %d items, first item type: %s",
+            len(value),
+            type(value[0]).__name__ if value else "N/A",
+        )
+        raise ValueError(  # error-ok: schema conversion utility raising for invalid input
+            f"Failed to convert list to ModelSchemaValue: {e}. "
+            f"Ensure list items are convertible (primitives, dicts, or lists)."
+        ) from e
 
 
 # ONEX_EXCLUDE: dict_str_any - schema conversion utility for dynamic types
@@ -138,7 +154,18 @@ def _convert_dict_value(
     first_value = next(iter(value.values()))
     if isinstance(first_value, schema_cls):
         return value
-    return {k: schema_cls.from_value(v) for k, v in value.items()}
+    try:
+        return {k: schema_cls.from_value(v) for k, v in value.items()}
+    except Exception as e:
+        _logger.exception(
+            "Failed to convert dict values to ModelSchemaValue. Dict had %d keys: %s",
+            len(value),
+            list(value.keys())[:5],  # Show first 5 keys for debugging
+        )
+        raise ValueError(  # error-ok: schema conversion utility raising for invalid input
+            f"Failed to convert dict to ModelSchemaValue: {e}. "
+            f"Ensure dict values are convertible (primitives, dicts, or lists)."
+        ) from e
 
 
 def _convert_value(value: Any, schema_cls: type[ModelSchemaValue]) -> Any:
@@ -152,6 +179,8 @@ def _convert_value(value: Any, schema_cls: type[ModelSchemaValue]) -> Any:
         return None
     if value == []:
         return []
+    if value == {}:
+        return {}
     if isinstance(value, list):
         return _convert_list_value(value, schema_cls)
     if isinstance(value, dict):
@@ -262,6 +291,12 @@ def convert_to_schema(
         setattr(cls, validator_name, validator_method)
 
         # Create Decorator object matching Pydantic's internal structure
+        # Assertions for type checker - runtime check above guarantees these are non-None
+        assert Decorator is not None, "Decorator should be available"
+        assert ModelValidatorDecoratorInfo is not None, (
+            "ModelValidatorDecoratorInfo should be available"
+        )
+
         decorator_obj = Decorator(
             cls_ref=f"{cls.__module__}.{cls.__name__}:{id(cls)}",
             cls_var_name=validator_name,
@@ -339,6 +374,12 @@ def convert_list_to_schema(
         validator_name = f"_convert_list_to_schema_{'_'.join(sorted(field_names))}"
         setattr(cls, validator_name, validator_method)
 
+        # Assertions for type checker - runtime check above guarantees these are non-None
+        assert Decorator is not None, "Decorator should be available"
+        assert ModelValidatorDecoratorInfo is not None, (
+            "ModelValidatorDecoratorInfo should be available"
+        )
+
         decorator_obj = Decorator(
             cls_ref=f"{cls.__module__}.{cls.__name__}:{id(cls)}",
             cls_var_name=validator_name,
@@ -411,6 +452,12 @@ def convert_dict_to_schema(
         validator_method = classmethod(convert_dict_fields).__get__(None, cls)
         validator_name = f"_convert_dict_to_schema_{'_'.join(sorted(field_names))}"
         setattr(cls, validator_name, validator_method)
+
+        # Assertions for type checker - runtime check above guarantees these are non-None
+        assert Decorator is not None, "Decorator should be available"
+        assert ModelValidatorDecoratorInfo is not None, (
+            "ModelValidatorDecoratorInfo should be available"
+        )
 
         decorator_obj = Decorator(
             cls_ref=f"{cls.__module__}.{cls.__name__}:{id(cls)}",

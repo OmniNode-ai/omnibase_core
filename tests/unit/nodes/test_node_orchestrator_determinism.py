@@ -1000,15 +1000,33 @@ class TestNodeOrchestratorParallelExecutionDeterminism:
         # Verify dependency order constraints
         completed = result.completed_steps
 
-        # Step 1 must be completed (it's the root)
-        assert str(FIXED_STEP_1_ID) in completed
+        # All steps must be present in completed list
+        assert str(FIXED_STEP_1_ID) in completed, "Root step 1 must be completed"
+        assert str(FIXED_STEP_2_ID) in completed, "Step 2 must be completed"
+        assert str(FIXED_STEP_3_ID) in completed, "Step 3 must be completed"
+        assert str(FIXED_STEP_4_ID) in completed, "Step 4 must be completed"
 
-        # Step 4 must be completed and depends on Steps 2 and 3
-        assert str(FIXED_STEP_4_ID) in completed
+        # Verify dependency ordering: Step 1 must appear before Steps 2 and 3
+        # (Step 1 is the root that Steps 2 and 3 depend on)
+        step_1_idx = completed.index(str(FIXED_STEP_1_ID))
+        step_2_idx = completed.index(str(FIXED_STEP_2_ID))
+        step_3_idx = completed.index(str(FIXED_STEP_3_ID))
+        step_4_idx = completed.index(str(FIXED_STEP_4_ID))
 
-        # If step 4 completed, steps 2 and 3 must have completed before
-        assert str(FIXED_STEP_2_ID) in completed
-        assert str(FIXED_STEP_3_ID) in completed
+        assert step_1_idx < step_2_idx, (
+            "Step 1 must complete before Step 2 (dependency)"
+        )
+        assert step_1_idx < step_3_idx, (
+            "Step 1 must complete before Step 3 (dependency)"
+        )
+
+        # Verify Step 4 (merge) comes after both Step 2 and Step 3
+        assert step_2_idx < step_4_idx, (
+            "Step 2 must complete before Step 4 (dependency)"
+        )
+        assert step_3_idx < step_4_idx, (
+            "Step 3 must complete before Step 4 (dependency)"
+        )
 
 
 @pytest.mark.timeout(60)
