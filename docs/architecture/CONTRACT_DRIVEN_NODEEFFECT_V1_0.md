@@ -2739,7 +2739,7 @@ cb_key = str(operation.correlation_id)  # Stable identity
 > means transient resolution failures (e.g., secrets store temporarily unavailable,
 > environment not fully loaded) can be retried when allowed by the retry policy.
 > If resolution consistently fails, it will exhaust retries like any other failure.
-
+>
 > **Operation-Level Timeout**: Each operation has an `operation_timeout_ms` field
 > (default 60 seconds) that acts as a deadline for the entire operation including
 > all retries. This prevents retry stacking from exceeding intended time limits.

@@ -256,7 +256,7 @@ payload = create_action_payload(
 
 ## Related Documents
 
-- [Payload Type Architecture](./PAYLOAD_TYPE_ARCHITECTURE.md) - Comprehensive guide to typed payload architecture
-- [ONEX Four-Node Architecture](./ONEX_FOUR_NODE_ARCHITECTURE.md)
-- [dict[str, Any] Prevention Guide](./DICT_STR_ANY_PREVENTION.md)
-- [Container Types](./CONTAINER_TYPES.md)
+- [Payload Type Architecture](./PAYLOAD_TYPE_ARCHITECTURE.md) - Typed payload discriminated union design
+- [ONEX Four-Node Architecture](./ONEX_FOUR_NODE_ARCHITECTURE.md) - Core node type patterns
+- [dict[str, Any] Prevention Guide](./DICT_STR_ANY_PREVENTION.md) - Mypy enforcement for type safety
+- [Container Types](./CONTAINER_TYPES.md) - ModelContainer vs ModelONEXContainer

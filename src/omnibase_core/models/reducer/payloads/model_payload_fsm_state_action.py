@@ -1,5 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode Team
+#
 # SPDX-License-Identifier: Apache-2.0
-# Copyright 2025 OmniNode Team
 """
 ModelPayloadFSMStateAction - Typed payload for FSM state action execution intents.
 

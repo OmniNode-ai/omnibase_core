@@ -3,7 +3,7 @@
 > **Version**: 0.4.0
 > **Last Updated**: 2025-12-05
 > **Status**: Production
-
+>
 > **See Also**: [ONEX Terminology Guide](../standards/onex_terminology.md) for canonical definitions of all ONEX concepts.
 
 ## Overview

@@ -11,8 +11,6 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
-logger = logging.getLogger(__name__)
-
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors import ModelOnexError
 from omnibase_core.models.core.model_cli_command_definition import (
@@ -22,6 +20,8 @@ from omnibase_core.models.core.model_event_type import ModelEventType
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.models.core.model_node_reference import ModelNodeReference
 from omnibase_core.utils.util_safe_yaml_loader import load_and_validate_yaml_model
+
+logger = logging.getLogger(__name__)
 
 
 class ModelCliCommandRegistry(BaseModel):

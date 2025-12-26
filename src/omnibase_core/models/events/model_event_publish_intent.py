@@ -12,9 +12,8 @@ Example:
     from uuid import uuid4
 
     from omnibase_core.constants import (
-        DOMAIN_METRICS,
+        DOMAIN_REGISTRATION,
         TOPIC_EVENT_PUBLISH_INTENT,
-        TOPIC_REGISTRATION_EVENTS,
         TOPIC_TYPE_EVENTS,
         topic_name,
     )
@@ -24,21 +23,22 @@ Example:
     )
 
     # Example 1: Using topic_name() for dynamic topic generation
-    metrics_topic = topic_name(DOMAIN_METRICS, TOPIC_TYPE_EVENTS)
+    # This creates "dev.omninode-bridge.registration.events.v1"
+    registration_topic = topic_name(DOMAIN_REGISTRATION, TOPIC_TYPE_EVENTS)
 
     # Example 2: Create typed payload with all required fields
     node_id = uuid4()
     payload = ModelNodeRegisteredEvent(
         node_id=node_id,
-        node_name="my_node",
+        node_name="my_compute_node",
         node_type=EnumNodeKind.COMPUTE,
     )
 
     # Build intent with typed payload (recommended over dict[str, Any])
     intent = ModelEventPublishIntent(
         correlation_id=uuid4(),
-        created_by="my_reducer_v1_0_0",
-        target_topic=TOPIC_REGISTRATION_EVENTS,
+        created_by="registration_reducer_v1_0_0",
+        target_topic=registration_topic,  # Use the dynamically generated topic
         target_key=str(node_id),
         target_event_type="NODE_REGISTERED",
         target_event_payload=payload,
@@ -48,9 +48,9 @@ Example:
     await publish_to_kafka(TOPIC_EVENT_PUBLISH_INTENT, intent)
 
 Note:
-    TOPIC_EVENT_PUBLISH_INTENT and TOPIC_REGISTRATION_EVENTS are defined in
-    constants_topic_taxonomy.py and should be imported from omnibase_core.constants.
-    Use topic_name() to generate domain-specific topic names dynamically.
+    TOPIC_EVENT_PUBLISH_INTENT is defined in constants_topic_taxonomy.py and
+    should be imported from omnibase_core.constants. Use topic_name() to generate
+    domain-specific topic names dynamically.
 """
 
 from __future__ import annotations
@@ -124,18 +124,34 @@ class ModelEventPublishIntent(BaseModel):
         Args:
             **kwargs: Additional keyword arguments passed to parent class.
         """
+        import logging
+        import warnings
+
         super().__init_subclass__(**kwargs)
+        _logger = logging.getLogger(__name__)
+
         # Attempt to rebuild the model to resolve forward references
         # This ensures subclasses inherit properly resolved types
         try:
             _rebuild_model()
-        except (ImportError, TypeError, ValueError, AttributeError, RuntimeError):
-            # ImportError: Dependencies not yet available during early loading
-            # TypeError/ValueError: Type annotation issues during rebuild
-            # AttributeError: Module attribute access issues
-            # RuntimeError: Module manipulation issues
-            # If rebuild fails, Pydantic will lazily resolve on first use
-            pass
+        except ImportError as e:
+            # Dependencies not yet available during early loading
+            # This is expected during bootstrap - Pydantic will lazily resolve
+            _logger.debug(
+                "ModelEventPublishIntent subclass %s: forward reference rebuild "
+                "deferred (ImportError during bootstrap): %s",
+                cls.__name__,
+                e,
+            )
+        except (TypeError, ValueError) as e:
+            # Type annotation issues during rebuild - likely configuration error
+            _msg = (
+                f"ModelEventPublishIntent subclass {cls.__name__}: forward reference "
+                f"rebuild failed ({type(e).__name__}): {e}. "
+                f"Call _rebuild_model() explicitly after all dependencies are loaded."
+            )
+            _logger.warning(_msg)
+            warnings.warn(_msg, UserWarning, stacklevel=2)
 
     # Intent metadata
     intent_id: UUID = Field(

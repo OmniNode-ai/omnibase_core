@@ -182,7 +182,7 @@ class MixinHybridExecution[InputStateT, OutputStateT]:
 
             # Check if LlamaIndex is available
             try:
-                import llama_index.core.workflow
+                import llama_index.core.workflow  # noqa: F401
             except ImportError as e:
                 emit_log_event(
                     LogLevel.ERROR,

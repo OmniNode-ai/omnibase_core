@@ -58,7 +58,9 @@ def _ensure_models_rebuilt(contract_loader_cls: type[BaseModel] | None = None) -
             return  # type: ignore[unreachable]
 
         # Import ModelCustomFields to resolve forward references
-        from omnibase_core.models.services.model_custom_fields import ModelCustomFields
+        from omnibase_core.models.services.model_custom_fields import (  # noqa: F401
+            ModelCustomFields,
+        )
 
         # Rebuild intermediate models that may have forward references
         ModelContractContent.model_rebuild()

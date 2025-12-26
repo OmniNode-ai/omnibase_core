@@ -97,7 +97,7 @@ This FSM uses a **three-dimensional state classification system** to precisely d
 #### Key Distinctions
 
 > **Success vs Terminal**: A **success state** (`state_type: success`) indicates the workflow goal was achieved, but the FSM may still allow lifecycle transitions (e.g., graceful shutdown). A **terminal state** (`state_type: terminal`) has no outgoing transitions whatsoever.
-
+>
 > **Terminal vs Recoverable**: The `is_terminal` field indicates whether transitions OUT of a state exist. The `is_recoverable` field indicates whether ERROR RECOVERY (retry) is meaningful. These are independent concepts.
 
 #### Understanding `registered` vs `deregistered`
@@ -666,7 +666,7 @@ The garbage collection jobs should emit the following metrics for observability:
 > - A mechanism to eventually force-terminate if cleanup never succeeds
 > These requirements conflict with the shutdown context. External garbage collection is more appropriate.
 > **Future Enhancement**: A future version may add `partial_deregistered` for use cases requiring guaranteed cleanup before process termination (e.g., when releasing exclusive resources like distributed locks).
-
+>
 > **v1.0 Limitation - No `RETRY_DEREGISTRATION` Trigger**:
 > This FSM does not implement a `RETRY_DEREGISTRATION` trigger for the `deregistering` state. Unlike registration retries (`RETRY`, `RETRY_POSTGRES`), deregistration retries are not supported.
 > **Rationale**: Retry mechanisms assume the node remains operational to process retry outcomes. During shutdown:

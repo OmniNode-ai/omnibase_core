@@ -54,7 +54,7 @@ from .model_secret_health_check_result import ModelSecretHealthCheckResult
 from .model_security_summaries import ModelBackendConfigData
 
 try:
-    from dotenv import load_dotenv
+    from dotenv import load_dotenv  # noqa: F401
 
     DOTENV_AVAILABLE = True
 except ImportError:

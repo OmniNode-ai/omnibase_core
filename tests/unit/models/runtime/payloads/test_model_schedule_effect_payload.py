@@ -29,8 +29,8 @@ class TestModelScheduleEffectPayloadDiscriminator:
         payload = ModelScheduleEffectPayload(effect_node_type="http_request")
         assert payload.kind == "schedule_effect"
 
-    def test_kind_cannot_be_changed(self) -> None:
-        """Test that kind field cannot be set to different value."""
+    def test_kind_rejects_non_literal_value(self) -> None:
+        """Test that kind field rejects values other than 'schedule_effect'."""
         with pytest.raises(ValidationError):
             ModelScheduleEffectPayload(
                 effect_node_type="http_request",

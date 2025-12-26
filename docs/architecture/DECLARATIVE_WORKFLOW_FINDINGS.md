@@ -4,7 +4,7 @@
 > **Version**: v0.4.0
 > **Correlation ID**: `doc-review-declarative-workflows-2025-11-16`
 > **Status**: COMPLETED - DECLARATIVE NODES ARE NOW PRIMARY
-
+>
 > **UPDATE (v0.4.0)**: `NodeReducer` and `NodeOrchestrator` are now the **PRIMARY declarative implementations**. The "Declarative" suffix has been removed because these ARE the standard.
 
 ---

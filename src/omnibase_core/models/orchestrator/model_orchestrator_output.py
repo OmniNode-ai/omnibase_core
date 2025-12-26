@@ -192,10 +192,11 @@ class ModelOrchestratorOutput(BaseModel):
         """
         if not v:
             return []
-        if len(v) > 0 and isinstance(v[0], ModelAction):
+        # Note: len(v) > 0 check removed - guaranteed non-empty after early return
+        if isinstance(v[0], ModelAction):
             return v  # Already list[ModelAction]
         # Let Pydantic validate dicts as ModelAction
-        return v  # type: ignore[return-value]
+        return v
 
     # Custom outputs for extensibility
     custom_outputs: ModelCustomFields | None = Field(

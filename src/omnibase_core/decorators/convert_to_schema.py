@@ -112,9 +112,42 @@ except ImportError as e:
         e,
     )
 
+
 # Version compatibility check - warn if outside tested range
-_PYDANTIC_MAJOR = int(PYDANTIC_VERSION.split(".")[0])
-_PYDANTIC_MINOR = int(PYDANTIC_VERSION.split(".")[1])
+# Pre-release versions (e.g., "2.11.0a1", "2.11-dev") may have non-numeric suffixes.
+# Extract numeric portion only using a helper function.
+def _parse_version_component(version_str: str, index: int) -> int:
+    """Parse a version component, handling pre-release suffixes.
+
+    Args:
+        version_str: Full version string like "2.11.0a1" or "2.11-dev"
+        index: Which component to extract (0=major, 1=minor, 2=patch)
+
+    Returns:
+        The numeric portion of the version component.
+        Returns 0 if parsing fails.
+    """
+    try:
+        parts = version_str.split(".")
+        if index >= len(parts):
+            return 0
+        component = parts[index]
+        # Extract leading digits only (handles "11a1" -> 11, "0-dev" -> 0)
+        numeric_chars = []
+        for char in component:
+            if char.isdigit():
+                numeric_chars.append(char)
+            else:
+                break
+        if not numeric_chars:
+            return 0
+        return int("".join(numeric_chars))
+    except (ValueError, IndexError):
+        return 0
+
+
+_PYDANTIC_MAJOR = _parse_version_component(PYDANTIC_VERSION, 0)
+_PYDANTIC_MINOR = _parse_version_component(PYDANTIC_VERSION, 1)
 if _PYDANTIC_MAJOR != 2 or _PYDANTIC_MINOR < 6:
     warnings.warn(
         f"convert_to_schema decorator is tested with Pydantic 2.6+. "
@@ -163,15 +196,13 @@ def _convert_list_value(
         return []
     # Homogeneous list assumption: if first element is ModelSchemaValue,
     # all elements are (lists come from single serialization source)
-    if len(value) > 0 and isinstance(value[0], schema_cls):
+    # Note: len(value) > 0 check removed - guaranteed non-empty after early return
+    if isinstance(value[0], schema_cls):
         return value
     # Check if first element is a serialized ModelSchemaValue dict
     # (from model_dump round-trip)
-    if (
-        len(value) > 0
-        and isinstance(value[0], dict)
-        and _is_serialized_schema_value(value[0])
-    ):
+    # Note: len(value) > 0 check removed - guaranteed non-empty after early return
+    if isinstance(value[0], dict) and _is_serialized_schema_value(value[0]):
         # Let Pydantic handle deserialization
         return value
     try:
@@ -387,7 +418,10 @@ def convert_to_schema(
         validator_method = classmethod(convert_schema_fields).__get__(None, cls)
 
         # Generate a unique validator name
-        validator_name = f"_convert_to_schema_{'_'.join(sorted(field_names))}"
+        # Use double underscore separator to avoid name collisions.
+        # Example: ("a_b", "c") and ("a", "b_c") would both produce "a_b_c" with single
+        # underscore, but produce "a_b__c" and "a__b_c" with double underscore.
+        validator_name = f"_convert_to_schema_{'__'.join(sorted(field_names))}"
 
         # Add method to class
         setattr(cls, validator_name, validator_method)
@@ -488,7 +522,8 @@ def convert_list_to_schema(
             return data
 
         validator_method = classmethod(convert_list_fields).__get__(None, cls)
-        validator_name = f"_convert_list_to_schema_{'_'.join(sorted(field_names))}"
+        # Use double underscore separator to avoid name collisions
+        validator_name = f"_convert_list_to_schema_{'__'.join(sorted(field_names))}"
         setattr(cls, validator_name, validator_method)
 
         # Explicit None check for type narrowing - runtime check above guarantees availability
@@ -582,7 +617,8 @@ def convert_dict_to_schema(
             return data
 
         validator_method = classmethod(convert_dict_fields).__get__(None, cls)
-        validator_name = f"_convert_dict_to_schema_{'_'.join(sorted(field_names))}"
+        # Use double underscore separator to avoid name collisions
+        validator_name = f"_convert_dict_to_schema_{'__'.join(sorted(field_names))}"
         setattr(cls, validator_name, validator_method)
 
         # Explicit None check for type narrowing - runtime check above guarantees availability

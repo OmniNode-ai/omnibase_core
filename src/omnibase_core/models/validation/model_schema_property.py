@@ -63,12 +63,13 @@ def _rebuild_model() -> None:
         imports break the cycle, but require explicit resolution via model_rebuild().
     """
     try:
-        from .model_required_fields_model import ModelRequiredFieldsModel
-        from .model_schema_properties_model import ModelSchemaPropertiesModel
-
-        # Suppress unused variable warnings - imports inject types into namespace
-        _ = ModelRequiredFieldsModel
-        _ = ModelSchemaPropertiesModel
+        # Imports inject types into namespace for model_rebuild() forward reference resolution
+        from .model_required_fields_model import (  # noqa: F401
+            ModelRequiredFieldsModel,
+        )
+        from .model_schema_properties_model import (  # noqa: F401
+            ModelSchemaPropertiesModel,
+        )
 
         ModelSchemaProperty.model_rebuild()
     except ImportError:

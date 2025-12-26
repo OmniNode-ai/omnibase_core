@@ -289,6 +289,25 @@ class TestConvertToSchemaEdgeCases:
         assert model.values[1].to_value() is None
         assert model.values[2].to_value() == 3
 
+    def test_convert_dict_with_none_values(self):
+        """Test conversion of dict containing None values (not a None dict itself).
+
+        This tests that when a dict has None as one of its VALUES (e.g., {"key": None}),
+        the None is properly converted to ModelSchemaValue.null.
+        """
+
+        @convert_to_schema("metadata")
+        class TestModel(BaseModel):
+            metadata: dict[str, ModelSchemaValue] = Field(default_factory=dict)
+
+        model = TestModel(metadata={"key1": "value", "key2": None, "key3": 42})
+
+        assert len(model.metadata) == 3
+        assert model.metadata["key1"].get_string() == "value"
+        assert model.metadata["key2"].is_null()
+        assert model.metadata["key2"].to_value() is None
+        assert model.metadata["key3"].to_value() == 42
+
     def test_convert_mixed_type_list(self):
         """Test conversion of list with mixed types."""
 
@@ -352,6 +371,48 @@ class TestConvertToSchemaEdgeCases:
 
         assert len(model.values) == 1
         assert model.values[0].get_string() == ""
+
+    def test_field_names_with_underscores_no_collision(self):
+        """Test that field names with underscores don't cause validator name collisions.
+
+        Previously, ("a_b", "c") and ("a", "b_c") would both produce validator name
+        "_convert_to_schema_a_b_c". With double-underscore separator, they produce
+        "_convert_to_schema_a_b__c" and "_convert_to_schema_a__b_c" respectively.
+        """
+
+        # Model 1: fields "a_b" and "c"
+        @convert_to_schema("a_b", "c")
+        class TestModel1(BaseModel):
+            a_b: list[ModelSchemaValue] = Field(default_factory=list)
+            c: list[ModelSchemaValue] = Field(default_factory=list)
+
+        # Model 2: fields "a" and "b_c"
+        @convert_to_schema("a", "b_c")
+        class TestModel2(BaseModel):
+            a: list[ModelSchemaValue] = Field(default_factory=list)
+            b_c: list[ModelSchemaValue] = Field(default_factory=list)
+
+        # Both should work correctly with their respective fields
+        model1 = TestModel1(a_b=["x"], c=["y"])
+        assert model1.a_b[0].get_string() == "x"
+        assert model1.c[0].get_string() == "y"
+
+        model2 = TestModel2(a=["p"], b_c=["q"])
+        assert model2.a[0].get_string() == "p"
+        assert model2.b_c[0].get_string() == "q"
+
+        # Verify validator names are different (implementation detail, but good to verify)
+        # Note: Uses internal attribute, this is a white-box test
+        validators1 = TestModel1.__pydantic_decorators__.model_validators
+        validators2 = TestModel2.__pydantic_decorators__.model_validators
+
+        # Get the validator names that start with "_convert_to_schema_"
+        names1 = [k for k in validators1 if k.startswith("_convert_to_schema_")]
+        names2 = [k for k in validators2 if k.startswith("_convert_to_schema_")]
+
+        assert len(names1) == 1
+        assert len(names2) == 1
+        assert names1[0] != names2[0], "Validator names should be different"
 
 
 @pytest.mark.unit
@@ -602,3 +663,61 @@ class TestConvertToSchemaTypeChecking:
         for i, original in enumerate(original_values):
             restored = model.values[i].to_value()
             assert restored == original
+
+
+@pytest.mark.unit
+class TestVersionParsing:
+    """Test version parsing helper function for pre-release version compatibility."""
+
+    def test_parse_standard_version(self):
+        """Test parsing standard version strings like '2.11.0'."""
+        from omnibase_core.decorators.convert_to_schema import _parse_version_component
+
+        assert _parse_version_component("2.11.0", 0) == 2
+        assert _parse_version_component("2.11.0", 1) == 11
+        assert _parse_version_component("2.11.0", 2) == 0
+
+    def test_parse_prerelease_version(self):
+        """Test parsing pre-release versions like '2.11.0a1', '2.11.0rc1'."""
+        from omnibase_core.decorators.convert_to_schema import _parse_version_component
+
+        # Alpha versions
+        assert _parse_version_component("2.11.0a1", 0) == 2
+        assert _parse_version_component("2.11.0a1", 1) == 11
+        assert _parse_version_component("2.11.0a1", 2) == 0
+
+        # Release candidate versions
+        assert _parse_version_component("2.11.0rc1", 2) == 0
+
+    def test_parse_dev_version(self):
+        """Test parsing dev versions like '2.11-dev' or '3.0.0-dev'."""
+        from omnibase_core.decorators.convert_to_schema import _parse_version_component
+
+        # Dev version with hyphen
+        assert _parse_version_component("2.11-dev", 0) == 2
+        assert _parse_version_component("2.11-dev", 1) == 11
+        # Only two parts, so index 2 returns 0
+        assert _parse_version_component("2.11-dev", 2) == 0
+
+    def test_parse_component_beyond_end(self):
+        """Test parsing component index beyond available parts."""
+        from omnibase_core.decorators.convert_to_schema import _parse_version_component
+
+        assert _parse_version_component("2.11", 2) == 0
+        assert _parse_version_component("2", 1) == 0
+
+    def test_parse_non_numeric_start(self):
+        """Test parsing version with non-numeric start returns 0."""
+        from omnibase_core.decorators.convert_to_schema import _parse_version_component
+
+        # Edge case: component starts with non-digit
+        assert _parse_version_component("v2.11.0", 0) == 0
+        # But other parts parse fine
+        assert _parse_version_component("v2.11.0", 1) == 11
+
+    def test_parse_empty_string(self):
+        """Test parsing empty version string."""
+        from omnibase_core.decorators.convert_to_schema import _parse_version_component
+
+        assert _parse_version_component("", 0) == 0
+        assert _parse_version_component("", 1) == 0

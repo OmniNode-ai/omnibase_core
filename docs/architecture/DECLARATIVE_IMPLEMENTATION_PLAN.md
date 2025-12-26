@@ -4,7 +4,7 @@
 > **Date**: 2025-12-05
 > **Status**: ✅ **ALL PHASES COMPLETE** - Declarative nodes are now PRIMARY implementations
 > **Correlation ID**: `impl-plan-declarative-onex-2025-11-16`
-
+>
 > **UPDATE (v0.4.0)**: `NodeReducer` and `NodeOrchestrator` are now the **PRIMARY declarative implementations**. The "Declarative" suffix has been removed because these ARE the standard. Legacy imperative implementations have been **hard deleted** (no deprecation period, no `nodes/legacy/` namespace).
 
 ---
