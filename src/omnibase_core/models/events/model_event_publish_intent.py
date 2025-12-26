@@ -34,7 +34,7 @@ Example:
         node_type=EnumNodeKind.COMPUTE,
     )
 
-    # Build intent with typed payload (recommended over dict[str, Any])
+    # Build intent with typed payload
     intent = ModelEventPublishIntent(
         correlation_id=uuid4(),
         created_by="registration_reducer_v1_0_0",
@@ -124,34 +124,16 @@ class ModelEventPublishIntent(BaseModel):
         Args:
             **kwargs: Additional keyword arguments passed to parent class.
         """
-        import logging
-        import warnings
+        from omnibase_core.utils.util_forward_reference_resolver import (
+            handle_subclass_forward_refs,
+        )
 
         super().__init_subclass__(**kwargs)
-        _logger = logging.getLogger(__name__)
-
-        # Attempt to rebuild the model to resolve forward references
-        # This ensures subclasses inherit properly resolved types
-        try:
-            _rebuild_model()
-        except ImportError as e:
-            # Dependencies not yet available during early loading
-            # This is expected during bootstrap - Pydantic will lazily resolve
-            _logger.debug(
-                "ModelEventPublishIntent subclass %s: forward reference rebuild "
-                "deferred (ImportError during bootstrap): %s",
-                cls.__name__,
-                e,
-            )
-        except (TypeError, ValueError) as e:
-            # Type annotation issues during rebuild - likely configuration error
-            _msg = (
-                f"ModelEventPublishIntent subclass {cls.__name__}: forward reference "
-                f"rebuild failed ({type(e).__name__}): {e}. "
-                f"Call _rebuild_model() explicitly after all dependencies are loaded."
-            )
-            _logger.warning(_msg)
-            warnings.warn(_msg, UserWarning, stacklevel=2)
+        handle_subclass_forward_refs(
+            parent_model=ModelEventPublishIntent,
+            subclass=cls,
+            rebuild_func=_rebuild_model,
+        )
 
     # Intent metadata
     intent_id: UUID = Field(
@@ -187,16 +169,9 @@ class ModelEventPublishIntent(BaseModel):
         description="Event type name (for routing and logging)",
         examples=["NODE_REGISTERED", "NODE_UNREGISTERED"],
     )
-    target_event_payload: (
-        ModelEventPayloadUnion
-        | dict[str, Any]  # ONEX_EXCLUDE: dict_str_any - union with typed payloads
-    ) = Field(
+    target_event_payload: ModelEventPayloadUnion = Field(
         ...,
-        description=(
-            "Event payload to publish. Accepts typed payloads from "
-            "ModelEventPayloadUnion (recommended) or legacy dict[str, Any] "
-            "(deprecated, emits warning)."
-        ),
+        description="Event payload to publish. Must be a typed payload from ModelEventPayloadUnion.",
     )
 
     # Execution hints
@@ -258,10 +233,11 @@ def _rebuild_model() -> None:
         ModelOnexError: If imports fail or model rebuild fails due to
             missing dependencies or configuration issues.
     """
-    import sys
-
     from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
     from omnibase_core.models.errors.model_onex_error import ModelOnexError
+    from omnibase_core.utils.util_forward_reference_resolver import (
+        rebuild_model_references,
+    )
 
     try:
         # Lazy imports to avoid circular dependency during module load
@@ -279,72 +255,14 @@ def _rebuild_model() -> None:
             },
         ) from e
 
-    try:
-        # Import Pydantic-specific exceptions for precise error handling
-        from pydantic import PydanticSchemaGenerationError, PydanticUserError
-    except ImportError:
-        # Fallback for older Pydantic versions
-        PydanticSchemaGenerationError = TypeError  # type: ignore[misc, assignment]
-        PydanticUserError = ValueError  # type: ignore[misc, assignment]
-
-    try:
-        # Inject types into module globals for Pydantic to resolve forward references
-        current_module = sys.modules[__name__]
-        setattr(current_module, "ModelEventPayloadUnion", ModelEventPayloadUnion)
-        setattr(current_module, "ModelRetryPolicy", ModelRetryPolicy)
-
-        # Rebuild model with resolved types namespace
-        ModelEventPublishIntent.model_rebuild(
-            _types_namespace={
-                "ModelEventPayloadUnion": ModelEventPayloadUnion,
-                "ModelRetryPolicy": ModelRetryPolicy,
-            }
-        )
-    except PydanticSchemaGenerationError as e:
-        # Schema generation failed due to invalid type annotations
-        raise ModelOnexError(
-            message=f"Failed to generate schema for ModelEventPublishIntent: {e}",
-            error_code=EnumCoreErrorCode.INITIALIZATION_FAILED,
-            context={
-                "model": "ModelEventPublishIntent",
-                "error_type": "PydanticSchemaGenerationError",
-                "error_details": str(e),
-            },
-        ) from e
-    except PydanticUserError as e:
-        # User configuration error in Pydantic model definition
-        raise ModelOnexError(
-            message=f"Invalid Pydantic configuration for ModelEventPublishIntent: {e}",
-            error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
-            context={
-                "model": "ModelEventPublishIntent",
-                "error_type": "PydanticUserError",
-                "error_details": str(e),
-            },
-        ) from e
-    except (TypeError, ValueError) as e:
-        # TypeError: Invalid type annotations or type parameters
-        # ValueError: General validation/schema issues
-        raise ModelOnexError(
-            message=f"Failed to rebuild ModelEventPublishIntent: {e}",
-            error_code=EnumCoreErrorCode.INITIALIZATION_FAILED,
-            context={
-                "model": "ModelEventPublishIntent",
-                "error_type": type(e).__name__,
-                "error_details": str(e),
-            },
-        ) from e
-    except AttributeError as e:
-        # Module attribute access issues during rebuild
-        raise ModelOnexError(
-            message=f"Attribute error during ModelEventPublishIntent rebuild: {e}",
-            error_code=EnumCoreErrorCode.INITIALIZATION_FAILED,
-            context={
-                "model": "ModelEventPublishIntent",
-                "error_type": "AttributeError",
-                "error_details": str(e),
-            },
-        ) from e
+    # Delegate to the shared forward reference resolver utility
+    rebuild_model_references(
+        model_class=ModelEventPublishIntent,
+        type_mappings={
+            "ModelEventPayloadUnion": ModelEventPayloadUnion,
+            "ModelRetryPolicy": ModelRetryPolicy,
+        },
+    )
 
 
 # Automatic forward reference resolution
@@ -353,77 +271,11 @@ def _rebuild_model() -> None:
 # TYPE_CHECKING forward references. This ensures typed payload validation
 # works correctly without requiring manual intervention.
 
+from omnibase_core.utils.util_forward_reference_resolver import (
+    auto_rebuild_on_module_load,
+)
 
-def _log_rebuild_failure(
-    error_code_str: str, error_msg: str, error_type: str | None = None
-) -> None:
-    """Log and warn about rebuild failure in a consistent format."""
-    import logging as _logging
-    import warnings as _warnings
-
-    _full_msg = (
-        f"ModelEventPublishIntent: automatic forward reference rebuild failed"
-        f"{f' ({error_type})' if error_type else ''}: "
-        f"{error_code_str}: {error_msg}. "
-        f"Call _rebuild_model() explicitly after all dependencies are loaded."
-    )
-
-    _logger = _logging.getLogger(__name__)
-    _logger.warning(_full_msg)
-    _warnings.warn(_full_msg, UserWarning, stacklevel=3)
-
-
-try:
-    # Import ModelOnexError and error codes for specific exception handling
-    from omnibase_core.enums.enum_core_error_code import (
-        EnumCoreErrorCode as _EnumCoreErrorCode,
-    )
-    from omnibase_core.models.errors.model_onex_error import (
-        ModelOnexError as _ModelOnexError,
-    )
-
-    try:
-        _rebuild_model()
-    except _ModelOnexError as _rebuild_error:
-        # Structured error from _rebuild_model() - check error code
-        # Configuration and initialization errors should fail fast
-        _error_code = _rebuild_error.error_code
-
-        # Configuration errors should fail fast, not be deferred
-        # IMPORT_ERROR is expected during bootstrap and can be deferred
-        if _error_code in (
-            _EnumCoreErrorCode.CONFIGURATION_ERROR,
-            _EnumCoreErrorCode.INITIALIZATION_FAILED,
-        ):
-            # Re-raise configuration errors to fail fast
-            # These indicate real problems that should halt startup
-            raise
-
-        # For other error types (like IMPORT_ERROR), log and defer
-        if _error_code is None:
-            _error_code_str = "UNKNOWN"
-        elif hasattr(_error_code, "value"):
-            _error_code_str = str(_error_code.value)
-        else:
-            _error_code_str = str(_error_code)
-        _error_msg = _rebuild_error.message or str(_rebuild_error)
-        _log_rebuild_failure(_error_code_str, _error_msg, "ModelOnexError")
-    except (TypeError, ValueError, AttributeError) as _type_error:
-        # These specific exceptions from _rebuild_model() indicate
-        # configuration problems - re-raise to fail fast
-        raise
-    except RuntimeError as _runtime_error:
-        # RuntimeError during module manipulation is a critical failure
-        raise
-except ImportError as _import_error:
-    # Handle case where ModelOnexError itself fails to import (early bootstrap)
-    # This is expected during early module loading before all dependencies exist
-    # Use _log_rebuild_failure for consistent error handling pattern
-    import logging as _bootstrap_logging
-
-    _bootstrap_logger = _bootstrap_logging.getLogger(__name__)
-    _bootstrap_logger.debug(
-        "ModelEventPublishIntent: forward reference rebuild deferred "
-        "(ImportError during bootstrap): %s",
-        _import_error,
-    )
+auto_rebuild_on_module_load(
+    rebuild_func=_rebuild_model,
+    model_name="ModelEventPublishIntent",
+)

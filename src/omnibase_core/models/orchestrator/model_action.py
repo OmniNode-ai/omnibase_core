@@ -44,7 +44,7 @@ See Also:
 
 import logging
 import warnings
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Self
 from uuid import UUID, uuid4
 
@@ -209,8 +209,8 @@ class ModelAction(BaseModel):
     )
 
     created_at: datetime = Field(
-        default_factory=datetime.now,
-        description="Timestamp when action was created",
+        default_factory=lambda: datetime.now(UTC),
+        description="Timestamp when action was created (UTC)",
     )
 
     model_config = ConfigDict(

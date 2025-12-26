@@ -3,7 +3,7 @@
 **Status**: Proposed
 **Author**: OmniNode Team
 **Created**: 2025-12-24
-**Last Updated**: 2025-12-25
+**Last Updated**: 2025-12-26
 
 ---
 
@@ -24,12 +24,13 @@ Replace `dict[str, Any]` payload fields in 4 core models with **Pydantic discrim
 1. [Decision](#decision)
 2. [Payload Factory Functions](#payload-factory-functions)
 3. [Discriminator Naming Conventions](#discriminator-naming-conventions)
-4. [Rationale](#rationale)
-5. [Current State Analysis](#current-state-analysis)
-6. [Implementation by Model](#implementation-by-model)
-7. [Migration Strategy](#migration-strategy)
-8. [Examples](#examples)
-9. [Appendix: Type Safety Comparison](#appendix-type-safety-comparison)
+4. [Dual-Pattern Strategy: Protocols vs Discriminated Unions](#dual-pattern-strategy-protocols-vs-discriminated-unions)
+5. [Rationale](#rationale)
+6. [Current State Analysis](#current-state-analysis)
+7. [Implementation by Model](#implementation-by-model)
+8. [Migration Strategy](#migration-strategy)
+9. [Examples](#examples)
+10. [Appendix: Type Safety Comparison](#appendix-type-safety-comparison)
 
 ---
 
@@ -229,6 +230,234 @@ When adding a new payload to a discriminated union:
 - [ ] Add the payload to the appropriate **union type alias**
 - [ ] Update all **Effect dispatch handlers** for exhaustive pattern matching
 - [ ] Add **tests** for serialization/deserialization round-trip
+
+---
+
+## Dual-Pattern Strategy: Protocols vs Discriminated Unions
+
+The ONEX codebase intentionally uses **two different typing strategies** for payload types, each chosen based on specific architectural requirements:
+
+| Pattern | Use Case | Examples |
+|---------|----------|----------|
+| **Protocol-based** | Open extension points | `ProtocolIntentPayload`, `ProtocolActionPayload` |
+| **Discriminated Union** | Closed internal sets | `ModelDirectivePayload`, `ModelCoreRegistrationIntent` |
+
+This is a **deliberate design decision**, not an inconsistency.
+
+### When to Use Protocol-Based Payloads
+
+Use **Protocol-based typing** when the set of payload types is **open and extensible**:
+
+1. **External extension points** - Third-party plugins can define custom payloads
+2. **Unbounded type sets** - New payload types can be added without modifying core code
+3. **Decoupled development** - Teams can work independently on new payloads
+4. **Plugin architectures** - Payloads cross module boundaries
+
+**Key Characteristics**:
+- Structural typing (duck typing) - any conforming class works
+- No central union to maintain
+- Runtime validation via `isinstance()` with `@runtime_checkable`
+- Pattern matching uses structural `case` clauses
+
+**Example: ProtocolIntentPayload**
+
+```python
+from typing import Protocol, runtime_checkable
+
+@runtime_checkable
+class ProtocolIntentPayload(Protocol):
+    """Protocol for intent payloads - open for extension."""
+
+    @property
+    def intent_type(self) -> str:
+        """Intent type identifier for routing."""
+        ...
+
+
+# Third-party plugin defines custom payload - NO core changes needed
+class ModelPayloadWebhook(BaseModel):
+    """Plugin-defined payload that conforms to ProtocolIntentPayload."""
+    model_config = ConfigDict(frozen=True, extra="forbid")
+    intent_type: Literal["webhook.send"] = "webhook.send"
+    url: str
+    method: str = "POST"
+
+    # Automatically satisfies ProtocolIntentPayload via structural typing
+
+
+# Usage in core code - accepts ANY conforming payload
+def process_intent(payload: ProtocolIntentPayload) -> None:
+    match payload:
+        case ModelPayloadLogEvent():
+            handle_log(payload)
+        case ModelPayloadNotify():
+            handle_notify(payload)
+        case _:
+            # Handle unknown but protocol-conforming payloads
+            handle_generic(payload.intent_type, payload)
+```
+
+**When to choose Protocol**:
+- Plugins need to define custom payloads
+- You want to avoid "God union" anti-pattern (ever-growing union type)
+- Third-party code must integrate without source modification
+- The set of types will grow over time
+
+### When to Use Discriminated Unions
+
+Use **Discriminated Unions** when the set of payload types is **closed and known at compile time**:
+
+1. **Internal runtime signals** - All types are known, never extended externally
+2. **Exhaustive handling required** - Type checker must warn on unhandled cases
+3. **Compile-time guarantees** - All variants must be explicitly handled
+4. **Performance-critical dispatch** - O(1) lookup via Literal discriminator
+
+**Key Characteristics**:
+- Closed set of variants defined in one place
+- Pydantic `Field(discriminator="...")` enables automatic type resolution
+- Exhaustive pattern matching with type checker enforcement
+- Serialization/deserialization is automatic and type-safe
+
+**Example: ModelDirectivePayload (Runtime Directives)**
+
+```python
+from typing import Annotated, Literal
+from pydantic import BaseModel, Field
+
+class ModelScheduleEffectPayload(ModelDirectivePayloadBase):
+    """Schedule an effect for execution."""
+    kind: Literal["schedule_effect"] = "schedule_effect"
+    effect_node_type: str
+    effect_input: ModelSchemaValue | None = None
+
+class ModelRetryWithBackoffPayload(ModelDirectivePayloadBase):
+    """Retry with exponential backoff."""
+    kind: Literal["retry_with_backoff"] = "retry_with_backoff"
+    max_attempts: int = 3
+    initial_delay_ms: int = 1000
+    multiplier: float = 2.0
+
+class ModelCancelExecutionPayload(ModelDirectivePayloadBase):
+    """Cancel an in-flight execution."""
+    kind: Literal["cancel_execution"] = "cancel_execution"
+    execution_id: str
+    reason: str
+
+
+# Discriminated union - closed set, exhaustive matching
+ModelDirectivePayload = Annotated[
+    ModelScheduleEffectPayload
+    | ModelEnqueueHandlerPayload
+    | ModelRetryWithBackoffPayload
+    | ModelDelayUntilPayload
+    | ModelCancelExecutionPayload,
+    Field(discriminator="kind"),
+]
+
+
+# Usage - type checker enforces exhaustive handling
+def handle_directive(payload: ModelDirectivePayload) -> None:
+    match payload:
+        case ModelScheduleEffectPayload():
+            schedule_effect(payload.effect_node_type, payload.effect_input)
+        case ModelRetryWithBackoffPayload():
+            configure_retry(payload.max_attempts, payload.initial_delay_ms)
+        case ModelCancelExecutionPayload():
+            cancel(payload.execution_id, payload.reason)
+        # Type checker warns: "ModelEnqueueHandlerPayload" and
+        # "ModelDelayUntilPayload" are not handled!
+```
+
+**When to choose Discriminated Union**:
+- All types are known at compile time
+- External code should NOT add new variants
+- Exhaustive handling is a correctness requirement
+- Automatic JSON deserialization to correct type is needed
+
+### Trade-off Analysis
+
+| Aspect | Protocol-Based | Discriminated Union |
+|--------|----------------|---------------------|
+| **Extensibility** | Open - plugins can add types | Closed - all types in one place |
+| **Type Safety** | Structural (duck typing) | Nominal (exact type matching) |
+| **Exhaustiveness** | Cannot enforce (open set) | Type checker enforces all cases |
+| **Serialization** | Manual type resolution | Automatic via discriminator |
+| **Maintainability** | No central modification | Must update union for new types |
+| **Pattern Matching** | Works, but `case _` always needed | Complete, no catch-all required |
+| **Performance** | O(n) isinstance checks | O(1) discriminator lookup |
+| **Coupling** | Loose - no import required | Tight - must import all variants |
+
+### Decision Matrix
+
+Use this flowchart to decide which pattern to use:
+
+```
+                    ┌───────────────────────────────────┐
+                    │ Will external code define new     │
+                    │ payload types?                    │
+                    └─────────────┬─────────────────────┘
+                                  │
+                    ┌─────────────┴─────────────┐
+                    ▼                           ▼
+                  [YES]                       [NO]
+                    │                           │
+                    ▼                           ▼
+            ┌───────────────┐        ┌──────────────────────┐
+            │ Use Protocol  │        │ Is exhaustive        │
+            │ (e.g.,        │        │ handling required?   │
+            │ ProtocolIntent│        └──────────┬───────────┘
+            │ Payload)      │                   │
+            └───────────────┘         ┌─────────┴─────────┐
+                                      ▼                   ▼
+                                    [YES]               [NO]
+                                      │                   │
+                                      ▼                   ▼
+                            ┌─────────────────┐  ┌────────────────┐
+                            │ Use Discrimin-  │  │ Either works;  │
+                            │ ated Union      │  │ prefer Union   │
+                            │ (e.g., Model-   │  │ for serializa- │
+                            │ DirectivePayload│  │ tion benefits  │
+                            └─────────────────┘  └────────────────┘
+```
+
+### Examples in the Codebase
+
+| Model | Pattern | Rationale |
+|-------|---------|-----------|
+| `ProtocolIntentPayload` | Protocol | Plugins define custom intent payloads |
+| `ProtocolActionPayload` | Protocol | Orchestrators can emit custom actions |
+| `ModelDirectivePayload` | Union | Internal runtime signals, closed set |
+| `ModelCoreRegistrationIntent` | Union | Fixed set of registration operations |
+| `SpecificActionPayload` | Union | Known action categories for dispatch |
+
+### Hybrid Approach: Protocol + Union
+
+Some models use **both patterns** for maximum flexibility:
+
+1. **Core types**: Discriminated union for known, common payloads
+2. **Extension point**: Protocol for plugin-defined payloads
+3. **Fallback**: Generic payload for truly dynamic cases
+
+```python
+# Core payloads (discriminated union)
+CoreIntentPayload = Annotated[
+    ModelPayloadLogEvent | ModelPayloadNotify | ModelPayloadPersist,
+    Field(discriminator="intent_type"),
+]
+
+# Extension payloads (protocol)
+PluginIntentPayload = ProtocolIntentPayload  # Any conforming class
+
+# Combined usage in ModelIntent
+class ModelIntent(BaseModel):
+    intent_type: str
+    payload: CoreIntentPayload | PluginIntentPayload  # Both accepted
+```
+
+This hybrid approach provides:
+- **Type safety** for common cases (union)
+- **Extensibility** for plugins (protocol)
+- **No code changes** when plugins add payloads
 
 ---
 
