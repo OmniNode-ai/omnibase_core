@@ -209,7 +209,8 @@ class DictAnyCheckerPlugin(Plugin):
             self._checked_functions.add(fullname)
 
         # Check if the function has the allow_dict_any decorator
-        if self._has_allow_decorator(defn):
+        # Pass context to enable symbol table lookup for decorated functions
+        if self._has_allow_decorator(defn, ctx):
             return
 
         # Check return type
@@ -269,20 +270,26 @@ class DictAnyCheckerPlugin(Plugin):
         value_type = typ.args[1]
         return isinstance(value_type, AnyType)
 
-    def _has_allow_decorator(self, defn: SymbolNode) -> bool:
+    def _has_allow_decorator(
+        self,
+        defn: SymbolNode,
+        ctx: FunctionSigContext | MethodSigContext | None = None,
+    ) -> bool:
         """
         Check if a function has the @allow_dict_any decorator.
 
         This method handles two cases:
         1. Decorator nodes (wrapper that contains FuncDef + decorator list)
-        2. FuncDef nodes (checks for attached decorator info)
+        2. FuncDef nodes (looks up symbol table to find Decorator wrapper)
 
         In mypy's AST, decorated functions are represented as Decorator nodes
-        that wrap the FuncDef and contain the decorator list. We need to check
-        the original Decorator node to find the decorators.
+        that wrap the FuncDef and contain the decorator list. When we receive
+        a FuncDef from signature.definition, we need to look up the symbol
+        table to find the wrapping Decorator node.
 
         Args:
             defn: The symbol node to check (can be FuncDef or Decorator).
+            ctx: The context for accessing the type checker's symbol table.
 
         Returns:
             True if the function has the @allow_dict_any decorator.
@@ -291,24 +298,133 @@ class DictAnyCheckerPlugin(Plugin):
         if isinstance(defn, Decorator):
             return self._check_decorators(defn.decorators)
 
-        # If this is a FuncDef, we need to check if there's decorator info
-        # mypy sometimes attaches original_decorators to FuncDef
+        # If this is a FuncDef, we need to find the Decorator wrapper
         if isinstance(defn, FuncDef):
-            # Check original_decorators if available (from Decorator.original_decorators)
+            # Quick check: if the function is not decorated, we can skip
+            is_decorated = getattr(defn, "is_decorated", False)
+            if not is_decorated:
+                return False
+
+            # Try to find the Decorator node through symbol table lookup
+            fullname = getattr(defn, "fullname", None)
+            if fullname and ctx is not None:
+                decorator_node = self._lookup_decorator_node(fullname, ctx)
+                if decorator_node is not None:
+                    return self._check_decorators(decorator_node.decorators)
+
+            # Fallback: check original_decorators if attached
+            # (Some mypy versions may attach this after semantic analysis)
             original_decorators = getattr(defn, "original_decorators", None)
             if original_decorators:
                 return self._check_decorators(original_decorators)
 
-            # Check if there's decorator info attached to the type
-            # This can happen with semantic analysis
-            func_type = getattr(defn, "type", None)
-            if func_type and isinstance(func_type, CallableType):
-                # Check if the function was marked by our decorator
-                # The decorator sets _allow_dict_any = True at runtime
-                # We check for a semantic marker here
-                pass
-
         return False
+
+    def _lookup_decorator_node(
+        self,
+        fullname: str,
+        ctx: FunctionSigContext | MethodSigContext,
+    ) -> Decorator | None:
+        """
+        Look up the Decorator node from the symbol table.
+
+        When a function is decorated, the symbol table entry contains the
+        Decorator node (which wraps the FuncDef), but signature.definition
+        returns the inner FuncDef. This method finds the Decorator wrapper
+        by looking up the function in the symbol table.
+
+        Args:
+            fullname: The fully qualified name of the function.
+            ctx: The context for accessing the type checker's modules.
+
+        Returns:
+            The Decorator node if found, None otherwise.
+        """
+        try:
+            # Access the type checker's modules dict (internal API)
+            api = ctx.api
+            modules = getattr(api, "modules", None)
+
+            # If not on api directly, try accessing through internal attributes
+            if modules is None:
+                # Some mypy versions expose modules through chk or other attrs
+                for attr in ("chk", "checker", "_checker"):
+                    obj = getattr(api, attr, None)
+                    if obj is not None:
+                        modules = getattr(obj, "modules", None)
+                        if modules is not None:
+                            break
+
+            if not modules:
+                return None
+
+            # Split fullname to find module and local path
+            # Handle cases like: module.function, module.Class.method
+            parts = fullname.split(".")
+            if len(parts) < 2:
+                return None
+
+            # Try progressively longer module prefixes
+            for i in range(len(parts) - 1, 0, -1):
+                module_name = ".".join(parts[:i])
+                local_path = parts[i:]
+
+                module = modules.get(module_name)
+                if module is not None:
+                    return self._find_symbol_in_module(module, local_path)
+
+        except Exception:
+            # Gracefully handle any API access issues
+            pass
+
+        return None
+
+    def _find_symbol_in_module(
+        self,
+        module: Any,
+        path: list[str],
+    ) -> Decorator | None:
+        """
+        Find a symbol in a module by traversing the path.
+
+        Args:
+            module: The module node.
+            path: Path components (e.g., ['Class', 'method'] or ['function']).
+
+        Returns:
+            The Decorator node if found, None otherwise.
+        """
+        try:
+            names = getattr(module, "names", None)
+            if not names:
+                return None
+
+            current = names.get(path[0])
+            if current is None or current.node is None:
+                return None
+
+            node = current.node
+
+            # Traverse path for nested symbols (e.g., Class.method)
+            for part in path[1:]:
+                # For classes, look in their names dict
+                node_names = getattr(node, "names", None)
+                if not node_names:
+                    return None
+
+                sym = node_names.get(part)
+                if sym is None or sym.node is None:
+                    return None
+                node = sym.node
+
+            # Return if we found a Decorator node
+            if isinstance(node, Decorator):
+                return node
+
+        except Exception:
+            pass
+
+        return None
 
     def _check_decorators(self, decorators: list[Expression]) -> bool:
         """

@@ -653,11 +653,37 @@ class TestModelSemVerEdgeCases:
         assert version.major == large_num
 
     def test_comparison_with_different_types(self):
-        """Test comparison behavior with non-ModelSemVer types."""
+        """Test comparison behavior with non-ModelSemVer types.
+
+        Per Python's comparison protocol, when comparing with incompatible types:
+        - __eq__ returns NotImplemented, Python falls back to identity -> False
+        - __ne__ returns NotImplemented, Python falls back to identity -> True
+        - Ordering operators (__lt__, __le__, __gt__, __ge__) return NotImplemented,
+          causing Python to raise TypeError
+        """
         version = ModelSemVer(major=1, minor=2, patch=3)
-        # Equality should work and return False
+
+        # Equality comparisons work (return False for different types)
         assert version != "1.2.3"
-        assert version != "1.2.3"
+        assert version != 123
+        assert version != (1, 2, 3)
+        assert version != {"major": 1, "minor": 2, "patch": 3}
+
+        # Ordering comparisons raise TypeError for incompatible types
+        with pytest.raises(TypeError):
+            _ = version < "1.2.3"
+        with pytest.raises(TypeError):
+            _ = version <= "1.2.3"
+        with pytest.raises(TypeError):
+            _ = version > "1.2.3"
+        with pytest.raises(TypeError):
+            _ = version >= "1.2.3"
+
+        # Also test with other types
+        with pytest.raises(TypeError):
+            _ = version < 123
+        with pytest.raises(TypeError):
+            _ = version > (1, 2, 3)
 
     def test_model_validation_through_pydantic(self):
         """Test that Pydantic validation works correctly."""

@@ -17,13 +17,14 @@ This allows:
 
 Related:
     - PR #241: Protocol ISP compliance review
-    - docs/architecture/PROTOCOL_ISP_DESIGN.md
+    - docs/guides/ISP_PROTOCOL_MIGRATION.md
 """
 
 from __future__ import annotations
 
 import inspect
-from typing import Any, Protocol, get_type_hints, runtime_checkable
+from collections.abc import Awaitable, Callable
+from typing import get_type_hints
 
 import pytest
 
@@ -39,6 +40,9 @@ from omnibase_core.protocols.event_bus.protocol_event_bus_publisher import (
 )
 from omnibase_core.protocols.event_bus.protocol_event_bus_subscriber import (
     ProtocolEventBusSubscriber,
+)
+from omnibase_core.protocols.event_bus.protocol_event_message import (
+    ProtocolEventMessage,
 )
 
 
@@ -228,9 +232,15 @@ class TestISPUsagePatterns:
 
             def __init__(self, subscriber: ProtocolEventBusSubscriber):
                 self.subscriber = subscriber
+                self._unsubscribe: Callable[[], Awaitable[None]] | None = None
 
             async def start_consuming(self, topic: str) -> None:
-                await self.subscriber.subscribe(topic)
+                async def handler(msg: ProtocolEventMessage) -> None:
+                    pass  # Process message
+
+                self._unsubscribe = await self.subscriber.subscribe(
+                    topic, "consumer-group", handler
+                )
 
         hints = get_type_hints(ConsumerNode.__init__)
         assert hints.get("subscriber") == ProtocolEventBusSubscriber
@@ -247,9 +257,15 @@ class TestISPUsagePatterns:
 
             def __init__(self, event_bus: ProtocolEventBus):
                 self.event_bus = event_bus
+                self._unsubscribe: Callable[[], Awaitable[None]] | None = None
 
             async def publish_and_subscribe(self, topic: str) -> None:
-                await self.event_bus.subscribe(topic)
+                async def handler(msg: ProtocolEventMessage) -> None:
+                    pass  # Process message
+
+                self._unsubscribe = await self.event_bus.subscribe(
+                    topic, "client-group", handler
+                )
                 await self.event_bus.publish(topic, None, b"data")
 
         hints = get_type_hints(FullEventBusClient.__init__)
@@ -279,30 +295,356 @@ class TestProtocolModularityPrinciples:
         )
 
     def test_protocols_use_async_where_appropriate(self):
-        """Verify async methods are used for I/O operations.
+        """Verify I/O methods have proper async-compatible type signatures.
 
-        Publishing and subscribing are I/O operations and should be async.
+        Publishing and subscribing are I/O operations. We verify they have
+        proper return type annotations that indicate async usage (either
+        None for void async methods, or Awaitable types).
+
+        Note: Protocol methods cannot be directly introspected for `async def`
+        at runtime; async enforcement is done by type checkers (mypy).
         """
-        # Get the publish method and check if it's async
-        publish_method = getattr(ProtocolEventBusPublisher, "publish", None)
-        if publish_method is not None:
-            sig = inspect.signature(publish_method)
-            # Protocol methods are typically just '...' but we can check the annotations
-            # The return type should indicate async (coroutine)
-            assert True  # Protocol methods can't be easily introspected for async
+        # Import types needed for forward reference resolution
+        from omnibase_core.protocols.event_bus.protocol_event_envelope import (
+            ProtocolEventEnvelope,
+        )
+
+        # Build namespace for resolving forward references
+        forward_ref_ns = {
+            "ProtocolEventEnvelope": ProtocolEventEnvelope,
+        }
+
+        # Define I/O methods with their expected return type patterns
+        # (protocol, method_name, is_void_async) - void async methods return None
+        io_methods = [
+            (ProtocolEventBusPublisher, "publish", True),  # async def -> None
+            (ProtocolEventBusPublisher, "publish_envelope", True),  # async def -> None
+            (ProtocolEventBusSubscriber, "subscribe", False),  # async def -> Callable
+            (ProtocolEventBusLifecycle, "start", True),  # async def -> None
+            (ProtocolEventBusLifecycle, "shutdown", True),  # async def -> None
+        ]
+
+        for protocol, method_name, is_void_async in io_methods:
+            method = getattr(protocol, method_name, None)
+            assert method is not None, f"{protocol.__name__}.{method_name} should exist"
+
+            # Get the return type annotation with forward reference resolution
+            try:
+                hints = get_type_hints(
+                    method, globalns=forward_ref_ns, include_extras=True
+                )
+            except NameError:
+                # If we still can't resolve, try with the protocol's module globals
+                module = __import__(protocol.__module__, fromlist=[""])
+                hints = get_type_hints(
+                    method,
+                    globalns={**vars(module), **forward_ref_ns},
+                    include_extras=True,
+                )
+
+            return_type = hints.get("return")
+
+            if is_void_async:
+                # Void async methods should return None
+                assert return_type is type(None), (
+                    f"{protocol.__name__}.{method_name} is a void async method, "
+                    f"expected return type None, got: {return_type}"
+                )
+            else:
+                # Non-void async methods should have a specific return type
+                # (e.g., subscribe returns Callable[[], Awaitable[None]])
+                assert return_type is not None, (
+                    f"{protocol.__name__}.{method_name} should have a return type annotation"
+                )
 
     def test_protocol_methods_have_type_hints(self):
         """Verify protocol methods have complete type annotations.
 
         Type hints enable mypy strict mode compliance and better IDE support.
         """
-        # Check publisher protocol has typed methods
-        try:
-            hints = get_type_hints(ProtocolEventBusPublisher.publish)
-            # Should have at least topic, key, value parameters
-            assert "topic" in hints or len(hints) > 0, (
-                "ProtocolEventBusPublisher.publish should have type hints"
-            )
-        except Exception:
-            # Some protocol inspection may fail, that's acceptable
-            pass
+        # Import types needed for forward reference resolution
+        from omnibase_core.protocols.event_bus.protocol_event_envelope import (
+            ProtocolEventEnvelope,
+        )
+
+        # Build namespace for resolving forward references
+        forward_ref_ns = {
+            "ProtocolEventEnvelope": ProtocolEventEnvelope,
+        }
+
+        # Define required type hints for each protocol method
+        # Each tuple: (protocol, method_name, required_params)
+        methods_to_check = [
+            (ProtocolEventBusPublisher, "publish", ["topic", "key", "value"]),
+            (ProtocolEventBusPublisher, "publish_envelope", ["envelope", "topic"]),
+            (
+                ProtocolEventBusSubscriber,
+                "subscribe",
+                ["topic", "group_id", "on_message"],
+            ),
+            (ProtocolEventBusLifecycle, "start", []),
+            (ProtocolEventBusLifecycle, "shutdown", []),
+        ]
+
+        errors: list[str] = []
+        for protocol, method_name, required_params in methods_to_check:
+            method = getattr(protocol, method_name, None)
+            if method is None:
+                errors.append(f"{protocol.__name__}.{method_name} not found")
+                continue
+
+            try:
+                # Try with forward reference namespace first
+                hints = get_type_hints(
+                    method, globalns=forward_ref_ns, include_extras=True
+                )
+            except NameError:
+                # If forward refs still can't resolve, try with module globals
+                try:
+                    module = __import__(protocol.__module__, fromlist=[""])
+                    hints = get_type_hints(
+                        method,
+                        globalns={**vars(module), **forward_ref_ns},
+                        include_extras=True,
+                    )
+                except Exception as e:
+                    errors.append(
+                        f"{protocol.__name__}.{method_name} type hints not resolvable: {e}"
+                    )
+                    continue
+            except Exception as e:
+                errors.append(
+                    f"{protocol.__name__}.{method_name} type hints not resolvable: {e}"
+                )
+                continue
+
+            # Check required parameters have type hints
+            for param in required_params:
+                if param not in hints:
+                    errors.append(
+                        f"{protocol.__name__}.{method_name} missing type hint for '{param}'"
+                    )
+
+            # Verify return type is annotated
+            if "return" not in hints:
+                errors.append(
+                    f"{protocol.__name__}.{method_name} missing return type annotation"
+                )
+
+        assert not errors, "Type hint issues found:\n" + "\n".join(
+            f"  - {e}" for e in errors
+        )
+
+
+@pytest.mark.integration
+class TestTypedDictEventBusHealth:
+    """Test TypedDictEventBusHealth for event bus health check return type.
+
+    The TypedDictEventBusHealth provides typed structure for health check
+    results from ProtocolEventBusLifecycle.health_check().
+    """
+
+    def test_typed_dict_has_required_fields(self):
+        """Verify TypedDictEventBusHealth has required fields.
+
+        Required fields (healthy, connected) must always be present.
+        """
+        from typing import get_type_hints
+
+        from omnibase_core.types.typed_dict import TypedDictEventBusHealth
+
+        # Verify required keys exist in the TypedDict (resolve forward refs)
+        hints = get_type_hints(TypedDictEventBusHealth, include_extras=True)
+        assert "healthy" in hints, "healthy is a required field"
+        assert "connected" in hints, "connected is a required field"
+
+        # Verify types (get origin for NotRequired wrapper)
+        from typing import get_origin
+
+        # Required fields should be plain bool (not wrapped in NotRequired)
+        assert hints["healthy"] is bool, "healthy should be bool type"
+        assert hints["connected"] is bool, "connected should be bool type"
+
+    def test_typed_dict_has_optional_fields(self):
+        """Verify TypedDictEventBusHealth has expected optional fields.
+
+        Optional fields provide additional context about event bus health.
+        """
+        from typing import get_type_hints
+
+        from omnibase_core.types.typed_dict import TypedDictEventBusHealth
+
+        hints = get_type_hints(TypedDictEventBusHealth, include_extras=True)
+
+        # Check that optional fields are present
+        optional_fields = ["latency_ms", "pending_messages", "error", "status"]
+        for field in optional_fields:
+            assert field in hints, f"{field} should be an optional field"
+
+    def test_typed_dict_usage_example(self):
+        """Verify TypedDictEventBusHealth can be used as expected.
+
+        This test documents the correct usage pattern for the TypedDict.
+        """
+        from omnibase_core.types.typed_dict import TypedDictEventBusHealth
+
+        # Minimal valid health check result (required fields only)
+        minimal_result: TypedDictEventBusHealth = {
+            "healthy": True,
+            "connected": True,
+        }
+        assert minimal_result["healthy"] is True
+        assert minimal_result["connected"] is True
+
+        # Full health check result with optional fields
+        full_result: TypedDictEventBusHealth = {
+            "healthy": True,
+            "connected": True,
+            "latency_ms": 5.2,
+            "pending_messages": 0,
+            "status": "connected",
+        }
+        assert full_result["latency_ms"] == 5.2
+        assert full_result["pending_messages"] == 0
+
+        # Unhealthy result with error
+        error_result: TypedDictEventBusHealth = {
+            "healthy": False,
+            "connected": False,
+            "error": "Connection refused",
+        }
+        assert error_result["healthy"] is False
+        assert error_result.get("error") == "Connection refused"
+
+    def test_lifecycle_protocol_uses_typed_dict(self):
+        """Verify ProtocolEventBusLifecycle.health_check uses TypedDictEventBusHealth.
+
+        This ensures the protocol method return type is properly typed.
+        """
+        from typing import get_type_hints
+
+        from omnibase_core.protocols.event_bus import ProtocolEventBusLifecycle
+        from omnibase_core.types.typed_dict import TypedDictEventBusHealth
+
+        # Get the health_check method
+        health_check = getattr(ProtocolEventBusLifecycle, "health_check", None)
+        assert health_check is not None, "health_check method should exist"
+
+        # Resolve type hints
+        hints = get_type_hints(health_check)
+        assert "return" in hints, "health_check should have return type annotation"
+
+        # The return type should be TypedDictEventBusHealth
+        return_type = hints["return"]
+        assert return_type is TypedDictEventBusHealth, (
+            f"health_check should return TypedDictEventBusHealth, got {return_type}"
+        )
+
+
+@pytest.mark.integration
+class TestISPIndependentImplementation:
+    """Test that ISP-split protocols can be implemented independently.
+
+    This verifies the Interface Segregation Principle is correctly applied:
+    each split protocol can be implemented without implementing the others.
+    """
+
+    def test_can_implement_publisher_only(self):
+        """Verify a class can implement only ProtocolEventBusPublisher.
+
+        This pattern is common for Effect nodes that emit events but
+        don't consume them.
+        """
+        from collections.abc import Awaitable, Callable
+
+        from omnibase_core.protocols.event_bus import ProtocolEventBusPublisher
+        from omnibase_core.protocols.event_bus.protocol_event_envelope import (
+            ProtocolEventEnvelope,
+        )
+
+        class PublisherOnlyImpl:
+            """Implementation that only publishes events."""
+
+            async def publish(
+                self, topic: str, key: bytes | None, value: bytes
+            ) -> None:
+                pass
+
+            async def publish_envelope(
+                self, envelope: ProtocolEventEnvelope, topic: str | None = None
+            ) -> None:
+                pass
+
+            async def broadcast_to_environment(
+                self, topic: str, key: bytes | None, value: bytes
+            ) -> None:
+                pass
+
+            async def send_to_group(
+                self, group: str, topic: str, key: bytes | None, value: bytes
+            ) -> None:
+                pass
+
+        # Verify it's a valid ProtocolEventBusPublisher
+        instance = PublisherOnlyImpl()
+        assert isinstance(instance, ProtocolEventBusPublisher)
+
+    def test_can_implement_subscriber_only(self):
+        """Verify a class can implement only ProtocolEventBusSubscriber.
+
+        This pattern is common for consumer nodes that only receive events.
+        """
+        from collections.abc import Awaitable, Callable
+
+        from omnibase_core.protocols.event_bus import ProtocolEventBusSubscriber
+        from omnibase_core.protocols.event_bus.protocol_event_message import (
+            ProtocolEventMessage,
+        )
+
+        class SubscriberOnlyImpl:
+            """Implementation that only subscribes to events."""
+
+            async def subscribe(
+                self,
+                topic: str,
+                group_id: str,
+                on_message: Callable[[ProtocolEventMessage], Awaitable[None]],
+            ) -> Callable[[], Awaitable[None]]:
+                async def unsubscribe() -> None:
+                    pass
+
+                return unsubscribe
+
+            async def start_consuming(self) -> None:
+                pass
+
+        # Verify it's a valid ProtocolEventBusSubscriber
+        instance = SubscriberOnlyImpl()
+        assert isinstance(instance, ProtocolEventBusSubscriber)
+
+    def test_can_implement_lifecycle_only(self):
+        """Verify a class can implement only ProtocolEventBusLifecycle.
+
+        This pattern is common for lifecycle managers and health checkers.
+        """
+        from omnibase_core.protocols.event_bus import ProtocolEventBusLifecycle
+        from omnibase_core.types.typed_dict import TypedDictEventBusHealth
+
+        class LifecycleOnlyImpl:
+            """Implementation that only manages lifecycle."""
+
+            async def start(self) -> None:
+                pass
+
+            async def shutdown(self) -> None:
+                pass
+
+            async def close(self) -> None:
+                pass
+
+            async def health_check(self) -> TypedDictEventBusHealth:
+                return {"healthy": True, "connected": True}
+
+        # Verify it's a valid ProtocolEventBusLifecycle
+        instance = LifecycleOnlyImpl()
+        assert isinstance(instance, ProtocolEventBusLifecycle)

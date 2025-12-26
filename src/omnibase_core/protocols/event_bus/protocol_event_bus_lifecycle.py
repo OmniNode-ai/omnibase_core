@@ -13,7 +13,12 @@ Design Principles:
 
 from __future__ import annotations
 
-from typing import Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
+
+if TYPE_CHECKING:
+    from omnibase_core.types.typed_dict.typed_dict_event_bus_health import (
+        TypedDictEventBusHealth,
+    )
 
 
 @runtime_checkable
@@ -103,7 +108,7 @@ class ProtocolEventBusLifecycle(Protocol):
         """
         ...
 
-    async def health_check(self) -> dict[str, object]:
+    async def health_check(self) -> TypedDictEventBusHealth:
         """
         Perform a health check on the event bus.
 
@@ -111,16 +116,19 @@ class ProtocolEventBusLifecycle(Protocol):
         connection status, message queue depths, and any error conditions.
 
         Returns:
-            A dictionary containing health information. Common keys include:
-            - "healthy": bool - Overall health status
-            - "connected": bool - Connection to broker status
-            - "latency_ms": float - Current latency in milliseconds
-            - "pending_messages": int - Number of pending outgoing messages
-            - "error": str - Error message if unhealthy
+            TypedDictEventBusHealth: A TypedDict containing health information:
+                - healthy: bool - Overall health status (required)
+                - connected: bool - Connection to broker status (required)
+                - latency_ms: float - Current latency in milliseconds (optional)
+                - pending_messages: int - Number of pending outgoing messages (optional)
+                - error: str - Error message if unhealthy (optional)
+                - status: str - Detailed status string (optional)
+                - broker_available: bool - Whether broker is available (optional)
+                - consumer_lag: int - Current consumer lag (optional)
 
         Example:
             >>> health = await lifecycle.health_check()
-            >>> if health.get("healthy"):
+            >>> if health["healthy"]:
             ...     print("Event bus is healthy")
             ... else:
             ...     print(f"Event bus unhealthy: {health.get('error')}")

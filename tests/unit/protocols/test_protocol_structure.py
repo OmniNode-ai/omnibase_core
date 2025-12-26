@@ -19,7 +19,7 @@ from __future__ import annotations
 import importlib
 import inspect
 import pkgutil
-from typing import Any, Protocol, get_type_hints
+from typing import Protocol, get_type_hints
 
 import pytest
 
@@ -385,3 +385,86 @@ class TestProtocolImportability:
         for protocol in protocols:
             assert protocol is not None, f"Failed to import {protocol}"
             assert inspect.isclass(protocol), f"{protocol} should be a class"
+
+
+@pytest.mark.unit
+class TestProtocolMethodCompleteness:
+    """Test that key protocols define all expected methods and properties."""
+
+    def test_protocol_executable_has_required_methods(self):
+        """Verify ProtocolExecutable defines expected execution methods."""
+        from omnibase_core.protocols import ProtocolExecutable
+
+        expected_methods = ["execute"]
+        self._verify_members_exist(ProtocolExecutable, expected_methods)
+
+    def test_protocol_validatable_has_required_methods(self):
+        """Verify ProtocolValidatable defines expected validation methods."""
+        from omnibase_core.protocols import ProtocolValidatable
+
+        expected_methods = ["get_validation_context", "get_validation_id"]
+        self._verify_members_exist(ProtocolValidatable, expected_methods)
+
+    def test_protocol_identifiable_has_required_members(self):
+        """Verify ProtocolIdentifiable defines expected identity properties."""
+        from omnibase_core.protocols import ProtocolIdentifiable
+
+        expected_properties = ["id"]
+        self._verify_members_exist(ProtocolIdentifiable, expected_properties)
+
+    def test_protocol_configurable_has_required_methods(self):
+        """Verify ProtocolConfigurable defines expected configuration methods."""
+        from omnibase_core.protocols import ProtocolConfigurable
+
+        expected_methods = ["configure"]
+        self._verify_members_exist(ProtocolConfigurable, expected_methods)
+
+    def test_protocol_circuit_breaker_has_required_members(self):
+        """Verify ProtocolCircuitBreaker defines expected methods and properties."""
+        from omnibase_core.protocols import ProtocolCircuitBreaker
+
+        # Methods
+        expected_methods = ["record_success", "record_failure", "reset"]
+        self._verify_members_exist(ProtocolCircuitBreaker, expected_methods)
+
+        # Properties
+        expected_properties = ["is_open", "failure_count"]
+        self._verify_members_exist(ProtocolCircuitBreaker, expected_properties)
+
+    def test_protocol_event_bus_has_required_methods(self):
+        """Verify ProtocolEventBus defines expected event bus methods."""
+        from omnibase_core.protocols import ProtocolEventBus
+
+        expected_methods = ["publish", "subscribe"]
+        self._verify_members_exist(ProtocolEventBus, expected_methods)
+
+    def _verify_members_exist(
+        self, protocol_cls: type, expected_members: list[str]
+    ) -> None:
+        """Verify all expected members (methods or properties) exist on the protocol.
+
+        Args:
+            protocol_cls: The protocol class to check.
+            expected_members: List of member names (methods or properties) that should exist.
+
+        Raises:
+            AssertionError: If any expected member is missing.
+        """
+        actual_members: set[str] = set()
+
+        # Collect callable methods
+        for name, member in inspect.getmembers(protocol_cls):
+            if not name.startswith("_") and callable(member):
+                actual_members.add(name)
+
+        # Collect properties
+        for name in dir(protocol_cls):
+            if not name.startswith("_"):
+                attr = getattr(protocol_cls, name, None)
+                if isinstance(attr, property):
+                    actual_members.add(name)
+
+        missing_members = set(expected_members) - actual_members
+        assert not missing_members, (
+            f"{protocol_cls.__name__} is missing expected members: {missing_members}"
+        )
