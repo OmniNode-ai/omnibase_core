@@ -345,14 +345,26 @@ class TestModelDelayUntilPayloadEdgeCases:
         assert payload.reason == reason
 
     def test_reason_with_unicode(self) -> None:
-        """Test reason with unicode characters."""
-        reason = "Delay reason"
+        """Test reason with unicode characters from multiple scripts."""
+        # Test with actual unicode literals from various scripts
+        reason = "Delay: 测试 тест ελληνικά عربي 日本語 한국어 café résumé 🎉🚀"
         payload = ModelDelayUntilPayload(
             execute_at=datetime.now(UTC),
             operation_id=uuid4(),
             reason=reason,
         )
         assert payload.reason == reason
+        # Verify specific unicode characters are preserved
+        assert "测试" in payload.reason  # Chinese (Simplified)
+        assert "тест" in payload.reason  # Russian (Cyrillic)
+        assert "ελληνικά" in payload.reason  # Greek
+        assert "عربي" in payload.reason  # Arabic
+        assert "日本語" in payload.reason  # Japanese
+        assert "한국어" in payload.reason  # Korean
+        assert "café" in payload.reason  # Accented Latin
+        assert "résumé" in payload.reason  # Accented Latin
+        assert "🎉" in payload.reason  # Emoji (party popper)
+        assert "🚀" in payload.reason  # Emoji (rocket)
 
     def test_various_timezones(self) -> None:
         """Test execute_at with various timezones."""

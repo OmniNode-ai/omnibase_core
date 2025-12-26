@@ -159,7 +159,7 @@ The codebase uses **intentionally different discriminator field names** across p
 
 > **Note on Action Payloads**: Action payloads use `action_type: ModelNodeActionType` as the data field,
 > with a `kind` **property** (derived from `action_type.name`) to satisfy `ProtocolActionPayload`.
->
+
 > **Note on Reducer Intent Payloads**: Reducer Intent Payloads use a Protocol-based approach (`ProtocolIntentPayload`) rather than
 > a discriminated union, enabling open extensibility for plugins. Payload classes still define an
 > `intent_type` attribute for routing, but dispatch is structural (duck typing) rather than union-based.
@@ -177,7 +177,7 @@ The codebase uses **intentionally different discriminator field names** across p
 
 **Example**:
 ```python
-class PayloadLogEvent(ModelIntentPayloadBase):
+class ModelPayloadLogEvent(ModelIntentPayloadBase):
     # Discriminator FIRST for optimal union resolution
     intent_type: Literal["log_event"] = Field(
         default="log_event",
@@ -247,7 +247,7 @@ For **optimal O(1) discriminator lookup**, all payloads in discriminated unions 
 
 2. **Place discriminator FIRST** in the model definition:
    ```python
-   class PayloadLogEvent(ModelIntentPayloadBase):
+   class ModelPayloadLogEvent(ModelIntentPayloadBase):
        intent_type: Literal["log_event"] = ...  # FIRST
        level: str = ...                          # Other fields after
        message: str = ...
@@ -484,7 +484,7 @@ Some models use **both patterns** for maximum flexibility:
 ```python
 # Core payloads (discriminated union)
 CoreIntentPayload = Annotated[
-    ModelPayloadLogEvent | ModelPayloadNotify | ModelPayloadPersist,
+    ModelPayloadLogEvent | ModelPayloadNotify | ModelPayloadPersistState,
     Field(discriminator="intent_type"),
 ]
 

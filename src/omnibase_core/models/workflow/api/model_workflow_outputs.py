@@ -5,6 +5,8 @@ Type-safe workflow outputs that replace Dict[str, Any] usage
 for workflow execution results.
 """
 
+from typing import cast
+
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
@@ -97,16 +99,26 @@ class ModelWorkflowOutputs(BaseModel):
 
         This ensures consistent serialization when using model_dump() or
         model_dump_json(), matching the behavior of to_dict().
+
+        Note: We exclude field_values from the initial model_dump() to prevent
+        Pydantic from serializing ModelSchemaValue objects as nested dicts.
+        We then manually add field_values with proper primitive conversion.
         """
         if value is None:
             return None
-        result = value.model_dump(exclude_none=True)
-        # Convert field_values ModelSchemaValue objects to primitives
-        if result.get("field_values"):
-            result["field_values"] = {
-                k: (v.to_value() if isinstance(v, ModelSchemaValue) else v)
-                for k, v in value.field_values.items()
-            }
+
+        # Serialize base model, excluding field_values to avoid double-serialization
+        # of ModelSchemaValue objects (Pydantic would serialize them as nested dicts
+        # with value_type, string_value, etc. instead of primitive values)
+        result = value.model_dump(exclude_none=True, exclude={"field_values"})
+
+        # Manually serialize field_values, converting ModelSchemaValue to primitives
+        # Always include field_values (even if empty) for consistency
+        result["field_values"] = {
+            k: (v.to_value() if isinstance(v, ModelSchemaValue) else v)
+            for k, v in value.field_values.items()
+        }
+
         return result
 
     def add_output(
@@ -186,14 +198,18 @@ class ModelWorkflowOutputs(BaseModel):
 
         # Add custom outputs if present (convert ModelSchemaValue to primitives)
         if self.custom_outputs:
-            custom_dump = self.custom_outputs.model_dump(exclude_none=True)
-            # Convert field_values ModelSchemaValue objects to primitives
-            if custom_dump.get("field_values"):
-                custom_dump["field_values"] = {
-                    k: (v.to_value() if isinstance(v, ModelSchemaValue) else v)
-                    for k, v in self.custom_outputs.field_values.items()
-                }
+            # Exclude field_values from initial dump to avoid double-serialization
+            custom_dump = self.custom_outputs.model_dump(
+                exclude_none=True, exclude={"field_values"}
+            )
+            # Manually serialize field_values, converting ModelSchemaValue to primitives
+            custom_dump["field_values"] = {
+                k: (v.to_value() if isinstance(v, ModelSchemaValue) else v)
+                for k, v in self.custom_outputs.field_values.items()
+            }
             result.update(custom_dump)
 
         # Cast to TypedDict - the structure matches TypedDictWorkflowOutputsDict
-        return TypedDictWorkflowOutputsDict(**result)  # type: ignore[typeddict-item, no-any-return]
+        # Note: Using cast() because TypedDict is a structural type for static checking,
+        # not a runtime constructor. The result dict is built to match the TypedDict schema.
+        return cast(TypedDictWorkflowOutputsDict, result)

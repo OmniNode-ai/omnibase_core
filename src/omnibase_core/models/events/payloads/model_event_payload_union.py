@@ -22,10 +22,9 @@ Event Categories:
         - Tool discovery: request, response
 
 Note:
-    Import Order Matters: Discovery events must be imported AFTER runtime events
-    to avoid circular import issues. The runtime event imports properly initialize
-    the module graph (including ModelOnexEvent and related dependencies), allowing
-    subsequent discovery event imports to succeed.
+    Import Order: Imports are sorted alphabetically by module path (isort convention).
+    Discovery events from `omnibase_core.models.discovery.*` come before runtime
+    events from `omnibase_core.models.events.*` due to alphabetical ordering.
 
     For true discriminated union support with optimal performance,
     event models would need Literal types for event_type (e.g.,
@@ -34,12 +33,8 @@ Note:
     succeeds. This is correct but less efficient than discriminated unions.
 """
 
-# Runtime Events (ModelRuntimeEventBase subclasses)
-# These events do NOT trigger the circular import and are safe to use
 # Discovery Events (ModelOnexEvent subclasses)
-# IMPORTANT: These imports MUST come AFTER the runtime event imports above.
-# The runtime event imports properly initialize the module graph, allowing
-# discovery events to be imported without circular import issues.
+# These are service discovery events for tool and node introspection.
 from omnibase_core.models.discovery.model_introspection_response_event import (
     ModelIntrospectionResponseEvent,
 )
@@ -65,6 +60,9 @@ from omnibase_core.models.discovery.model_tooldiscoveryrequest import (
 from omnibase_core.models.discovery.model_tooldiscoveryresponse import (
     ModelToolDiscoveryResponse,
 )
+
+# Runtime Events (ModelRuntimeEventBase subclasses)
+# These are runtime lifecycle events for node registration, subscriptions, and wiring.
 from omnibase_core.models.events.model_node_graph_ready_event import (
     ModelNodeGraphReadyEvent,
 )

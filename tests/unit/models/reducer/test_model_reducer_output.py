@@ -1332,11 +1332,12 @@ class TestModelReducerOutputThreadSafety:
             ),
         )
         intent2 = ModelIntent(
-            intent_type="emit",
+            intent_type="emit_event",
             target="service2",
-            payload=ModelPayloadLogEvent(
-                level="INFO",
-                message="Test message",
+            payload=ModelPayloadEmitEvent(
+                event_type="test.concurrent.event",
+                event_data={"key": "value"},
+                topic="test-events",
             ),
         )
 
@@ -1690,11 +1691,12 @@ class TestModelReducerOutputImmutability:
             ),
         )
         intent2 = ModelIntent(
-            intent_type="emit",
+            intent_type="emit_event",
             target="service2",
-            payload=ModelPayloadLogEvent(
-                level="INFO",
-                message="Test message",
+            payload=ModelPayloadEmitEvent(
+                event_type="test.immutability.event",
+                event_data={"key": "value"},
+                topic="test-events",
             ),
         )
 

@@ -42,7 +42,6 @@ See Also:
     - docs/architecture/PAYLOAD_TYPE_ARCHITECTURE.md: General payload type architecture
 """
 
-import logging
 import warnings
 from datetime import UTC, datetime
 from typing import Self
@@ -58,9 +57,6 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.orchestrator.payloads.model_protocol_action_payload import (
     ProtocolActionPayload,
 )
-
-# Module-level logger for validation diagnostics
-_logger = logging.getLogger(__name__)
 
 
 class ModelAction(BaseModel):
@@ -306,17 +302,9 @@ class ModelAction(BaseModel):
         )
 
         if not is_recommended:
-            # Log for debugging - this isn't an error but may indicate misuse
             # Get payload_type only when needed (inside this branch)
             payload_type = type(self.payload)
             recommended_names = [t.__name__ for t in recommended_types]
-            _logger.info(
-                "ModelAction: Payload type '%s' is not among recommended types %s "
-                "for action_type=%s. This may be intentional for custom workflows.",
-                payload_type.__name__,
-                recommended_names,
-                self.action_type,
-            )
             # Issue informational warning for potential misuse
             warnings.warn(
                 f"ModelAction: Payload type '{payload_type.__name__}' is not among "
@@ -326,7 +314,7 @@ class ModelAction(BaseModel):
                 "a recommended payload type for better semantic alignment. "
                 "See get_recommended_payloads_for_action_type() for guidance.",
                 UserWarning,
-                stacklevel=3,  # Point through _validate_action_consistency to caller
+                stacklevel=3,
             )
 
 

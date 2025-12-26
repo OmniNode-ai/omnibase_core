@@ -12,8 +12,10 @@ Example:
     from uuid import uuid4
 
     from omnibase_core.constants import (
+        DOMAIN_METRICS,
         DOMAIN_REGISTRATION,
         TOPIC_EVENT_PUBLISH_INTENT,
+        TOPIC_REGISTRATION_EVENTS,
         TOPIC_TYPE_EVENTS,
         topic_name,
     )
@@ -22,35 +24,36 @@ Example:
         ModelNodeRegisteredEvent,
     )
 
-    # Example 1: Using topic_name() for dynamic topic generation
-    # This creates "onex.registration.events"
-    registration_topic = topic_name(DOMAIN_REGISTRATION, TOPIC_TYPE_EVENTS)
-
-    # Example 2: Create typed payload with all required fields
+    # Example 1: Using pre-defined topic constants (preferred)
+    # TOPIC_REGISTRATION_EVENTS = "onex.registration.events"
     node_id = uuid4()
     payload = ModelNodeRegisteredEvent(
         node_id=node_id,
         node_name="my_compute_node",
         node_type=EnumNodeKind.COMPUTE,
     )
-
-    # Build intent with typed payload
     intent = ModelEventPublishIntent(
         correlation_id=uuid4(),
         created_by="registration_reducer_v1_0_0",
-        target_topic=registration_topic,  # Use the dynamically generated topic
+        target_topic=TOPIC_REGISTRATION_EVENTS,  # Use pre-defined constant
         target_key=str(node_id),
         target_event_type="NODE_REGISTERED",
         target_event_payload=payload,
     )
+
+    # Example 2: Using topic_name() for dynamic topic generation
+    # Use when no pre-defined constant exists (e.g., custom domains)
+    metrics_topic = topic_name(DOMAIN_METRICS, TOPIC_TYPE_EVENTS)
+    # Creates "onex.metrics.events"
 
     # Publish to intent topic for execution by IntentExecutor
     await publish_to_kafka(TOPIC_EVENT_PUBLISH_INTENT, intent)
 
 Note:
     TOPIC_EVENT_PUBLISH_INTENT is defined in constants_topic_taxonomy.py and
-    should be imported from omnibase_core.constants. Use topic_name() to generate
-    domain-specific topic names dynamically.
+    should be imported from omnibase_core.constants. Use pre-defined topic
+    constants (e.g., TOPIC_REGISTRATION_EVENTS) when available, or use
+    topic_name() to generate domain-specific topic names dynamically.
 """
 
 from __future__ import annotations
@@ -259,6 +262,8 @@ def _rebuild_model() -> None:
         - If not called manually, Pydantic will attempt to resolve forward
           references on first validation, but explicit rebuild is recommended
           for predictable behavior.
+        - This function is automatically called via auto_rebuild_on_module_load()
+          when this module is imported.
 
     Why This Exists:
         ModelEventPublishIntent uses TYPE_CHECKING imports to avoid circular
@@ -284,31 +289,38 @@ def _rebuild_model() -> None:
 
     Raises:
         ModelOnexError: If imports fail or model rebuild fails due to
-            missing dependencies or configuration issues.
+            missing dependencies or configuration issues. Specific error codes:
+            - IMPORT_ERROR: Required modules (payloads, retry_policy) unavailable
+            - INITIALIZATION_FAILED: Schema generation or type resolution failed
+            - CONFIGURATION_ERROR: Invalid Pydantic model configuration
     """
+    # Import error handling utilities first - these are core dependencies
+    # that should always be available after initial bootstrap
     from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
     from omnibase_core.models.errors.model_onex_error import ModelOnexError
     from omnibase_core.utils.util_forward_reference_resolver import (
         rebuild_model_references,
     )
 
+    # Import payload types - these may fail during early bootstrap
     try:
-        # Lazy imports to avoid circular dependency during module load
         from omnibase_core.models.events.payloads import ModelEventPayloadUnion
         from omnibase_core.models.infrastructure.model_retry_policy import (
             ModelRetryPolicy,
         )
     except ImportError as e:
         raise ModelOnexError(
-            message=f"Failed to import required modules for model rebuild: {e}",
+            message=f"Failed to import payload types for ModelEventPublishIntent: {e}",
             error_code=EnumCoreErrorCode.IMPORT_ERROR,
             context={
                 "model": "ModelEventPublishIntent",
                 "missing_module": str(e),
+                "hint": "Ensure omnibase_core.models.events.payloads is importable",
             },
         ) from e
 
-    # Delegate to the shared forward reference resolver utility
+    # Rebuild model with resolved types - errors are handled by the utility
+    # which raises ModelOnexError with appropriate error codes
     rebuild_model_references(
         model_class=ModelEventPublishIntent,
         type_mappings={

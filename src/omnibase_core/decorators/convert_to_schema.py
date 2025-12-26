@@ -23,9 +23,22 @@ Internal APIs used:
 - cls.__pydantic_decorators__ (semi-public, used in Pydantic docs)
 
 Version Compatibility:
-- Tested with Pydantic 2.6+ through 2.11+
+- Tested with Pydantic 2.6+ through 2.11+ (including pre-release versions)
 - These internals are stable across Pydantic 2.x but may change in 3.x
 - If Pydantic adds a public API for dynamic validators, migrate to it
+
+Workaround Implementation Pattern:
+1. Import internal classes with graceful fallback (try/except ImportError)
+2. Store availability flag for runtime checks before decorator use
+3. Create Decorator wrapper object matching Pydantic's internal structure
+4. Register via cls.__pydantic_decorators__.model_validators dict
+5. Call model_rebuild(force=True) to apply the new validator
+
+What to Monitor in Future Pydantic Releases:
+- Any public API for dynamic validator registration (preferred migration target)
+- Changes to __pydantic_decorators__ structure or model_rebuild behavior
+- New class decorator patterns that don't require internal API access
+- Deprecation warnings in Pydantic's internal modules
 
 Alternative approaches considered and rejected:
 - create_model() with __validators__: Changes class identity, breaks isinstance checks
@@ -114,26 +127,51 @@ except ImportError as e:
 
 
 # Version compatibility check - warn if outside tested range
-# Pre-release versions (e.g., "2.11.0a1", "2.11-dev") may have non-numeric suffixes.
-# Extract numeric portion only using a helper function.
+# Pre-release versions (e.g., "2.11.0a1", "2.11-dev", "2.11.0b1") may have non-numeric suffixes.
+# Extract numeric portion only using a helper function for robust parsing.
 def _parse_version_component(version_str: str, index: int) -> int:
     """Parse a version component, handling pre-release suffixes.
 
+    This function safely extracts numeric version components from version strings
+    that may contain pre-release identifiers, build metadata, or other non-numeric
+    suffixes according to SemVer and PEP 440 conventions.
+
     Args:
-        version_str: Full version string like "2.11.0a1" or "2.11-dev"
+        version_str: Full version string. Supported formats include:
+            - Standard: "2.11.0", "3.0.0"
+            - Pre-release alpha/beta/rc: "2.11.0a1", "2.11.0b1", "2.11.0rc1"
+            - Development: "2.11-dev", "2.11.0.dev1"
+            - Post-release: "2.11.0.post1"
+            - Build metadata: "2.11.0+local"
         index: Which component to extract (0=major, 1=minor, 2=patch)
 
     Returns:
         The numeric portion of the version component.
-        Returns 0 if parsing fails.
+        Returns 0 for any of these cases:
+            - Parsing fails
+            - Index exceeds available components
+            - Component has no leading digits (e.g., "dev" -> 0)
+            - Empty version string
+
+    Examples:
+        >>> _parse_version_component("2.11.0b1", 0)  # major
+        2
+        >>> _parse_version_component("2.11.0b1", 1)  # minor
+        11
+        >>> _parse_version_component("2.11.0b1", 2)  # patch (extracts "0" from "0b1")
+        0
+        >>> _parse_version_component("2.11-dev", 1)  # minor (extracts "11" from "11-dev")
+        11
+        >>> _parse_version_component("2", 1)  # missing component
+        0
     """
     try:
         parts = version_str.split(".")
         if index >= len(parts):
             return 0
         component = parts[index]
-        # Extract leading digits only (handles "11a1" -> 11, "0-dev" -> 0)
-        numeric_chars = []
+        # Extract leading digits only (handles "11a1" -> 11, "0-dev" -> 0, "0b1" -> 0)
+        numeric_chars: list[str] = []
         for char in component:
             if char.isdigit():
                 numeric_chars.append(char)
@@ -273,6 +311,12 @@ def _convert_dict_value(
         because None can appear in both raw dicts (to be converted to null) and
         in dicts with mixed ModelSchemaValue instances. By finding the first
         non-None value, we can reliably determine if conversion is needed.
+
+    Note on serialized value handling:
+        Dict values may be serialized ModelSchemaValue dicts (from model_dump).
+        We detect this by checking if the first non-None value is a dict with
+        'value_type' key. In this case, we pass through for Pydantic deserialization
+        rather than wrapping in another ModelSchemaValue.
     """
     if value is None:
         return None
@@ -286,13 +330,46 @@ def _convert_dict_value(
         if v is not None:
             first_non_none_value = v
             break
+
+    # If all values are None, we still need to convert them to null ModelSchemaValue
+    if first_non_none_value is None:
+        try:
+            return {k: schema_cls.from_value(v) for k, v in value.items()}
+        except Exception as e:
+            sample_keys = list(value.keys())[:5]
+            _logger.warning(
+                "Failed to convert dict with all-None values to ModelSchemaValue. "
+                "Dict had %d keys (sample: %s). Error: %s",
+                len(value),
+                sample_keys,
+                str(e),
+            )
+            raise ModelOnexError(
+                message=(
+                    f"Failed to convert dict to ModelSchemaValue: {e}. "
+                    f"Ensure dict values are convertible (primitives, dicts, or lists)."
+                ),
+                error_code=EnumCoreErrorCode.CONVERSION_ERROR,
+                context={
+                    "dict_key_count": len(value),
+                    "sample_keys": sample_keys,
+                    "original_error": str(e),
+                },
+            ) from e
+
     # If we found a non-None value and it's already a ModelSchemaValue,
     # assume the dict is already converted (homogeneous assumption)
-    if first_non_none_value is not None and isinstance(
-        first_non_none_value, schema_cls
+    if isinstance(first_non_none_value, schema_cls):
+        return value
+
+    # Check if first non-None value is a serialized ModelSchemaValue dict
+    # (from model_dump round-trip). If so, let Pydantic handle deserialization.
+    if isinstance(first_non_none_value, dict) and _is_serialized_schema_value(
+        first_non_none_value
     ):
         return value
-    # If all values are None or we found raw values, convert everything
+
+    # Convert raw values to ModelSchemaValue
     try:
         return {k: schema_cls.from_value(v) for k, v in value.items()}
     except Exception as e:
@@ -462,11 +539,15 @@ def convert_to_schema(
         # Create a bound classmethod
         validator_method = classmethod(convert_schema_fields).__get__(None, cls)
 
-        # Generate a unique validator name
-        # Use double underscore separator to avoid name collisions.
-        # Example: ("a_b", "c") and ("a", "b_c") would both produce "a_b_c" with single
-        # underscore, but produce "a_b__c" and "a__b_c" with double underscore.
-        # Escape field names to prevent collisions when names contain '__'
+        # Generate a unique, deterministic validator name
+        # Collision prevention strategy:
+        # 1. Sort field names for determinism - same fields always produce same validator name
+        # 2. Use '__' (double underscore) as separator between field names
+        # 3. Escape '__' in field names to '___' to prevent ambiguity
+        #
+        # Example collision prevention:
+        #   ("a_b", "c") -> "a_b__c" vs ("a", "b_c") -> "a__b_c" (different!)
+        #   ("a__b",) -> "a___b" vs ("a", "b") -> "a__b" (different!)
         escaped_names = [
             _escape_field_name_for_validator(n) for n in sorted(field_names)
         ]
@@ -493,9 +574,18 @@ def convert_to_schema(
             )
 
         # Assign to local variables for type narrowing - type checkers cannot narrow
-        # module-level variables after guard checks due to potential concurrent modification
+        # module-level variables after guard checks due to potential concurrent modification.
+        # We add explicit assertions after assignment to guarantee type narrowing for all
+        # type checkers (mypy, pyright) that may not track the module-level None check.
         DecoratorClass = _Decorator
         ValidatorInfoClass = _ModelValidatorDecoratorInfo
+
+        # Explicit assertions for type narrowing - guaranteed by the None check above.
+        # These assertions satisfy strict type checkers that don't narrow module-level vars.
+        assert DecoratorClass is not None, "Guaranteed non-None by availability check"
+        assert ValidatorInfoClass is not None, (
+            "Guaranteed non-None by availability check"
+        )
 
         decorator_obj = DecoratorClass(
             cls_ref=f"{cls.__module__}.{cls.__name__}:{id(cls)}",
@@ -571,8 +661,7 @@ def convert_list_to_schema(
             return data
 
         validator_method = classmethod(convert_list_fields).__get__(None, cls)
-        # Use double underscore separator to avoid name collisions
-        # Escape field names to prevent collisions when names contain '__'
+        # Generate a unique, deterministic validator name (see convert_to_schema for details)
         escaped_names = [
             _escape_field_name_for_validator(n) for n in sorted(field_names)
         ]
@@ -596,9 +685,18 @@ def convert_list_to_schema(
             )
 
         # Assign to local variables for type narrowing - type checkers cannot narrow
-        # module-level variables after guard checks due to potential concurrent modification
+        # module-level variables after guard checks due to potential concurrent modification.
+        # We add explicit assertions after assignment to guarantee type narrowing for all
+        # type checkers (mypy, pyright) that may not track the module-level None check.
         DecoratorClass = _Decorator
         ValidatorInfoClass = _ModelValidatorDecoratorInfo
+
+        # Explicit assertions for type narrowing - guaranteed by the None check above.
+        # These assertions satisfy strict type checkers that don't narrow module-level vars.
+        assert DecoratorClass is not None, "Guaranteed non-None by availability check"
+        assert ValidatorInfoClass is not None, (
+            "Guaranteed non-None by availability check"
+        )
 
         decorator_obj = DecoratorClass(
             cls_ref=f"{cls.__module__}.{cls.__name__}:{id(cls)}",
@@ -670,8 +768,7 @@ def convert_dict_to_schema(
             return data
 
         validator_method = classmethod(convert_dict_fields).__get__(None, cls)
-        # Use double underscore separator to avoid name collisions
-        # Escape field names to prevent collisions when names contain '__'
+        # Generate a unique, deterministic validator name (see convert_to_schema for details)
         escaped_names = [
             _escape_field_name_for_validator(n) for n in sorted(field_names)
         ]
@@ -695,9 +792,18 @@ def convert_dict_to_schema(
             )
 
         # Assign to local variables for type narrowing - type checkers cannot narrow
-        # module-level variables after guard checks due to potential concurrent modification
+        # module-level variables after guard checks due to potential concurrent modification.
+        # We add explicit assertions after assignment to guarantee type narrowing for all
+        # type checkers (mypy, pyright) that may not track the module-level None check.
         DecoratorClass = _Decorator
         ValidatorInfoClass = _ModelValidatorDecoratorInfo
+
+        # Explicit assertions for type narrowing - guaranteed by the None check above.
+        # These assertions satisfy strict type checkers that don't narrow module-level vars.
+        assert DecoratorClass is not None, "Guaranteed non-None by availability check"
+        assert ValidatorInfoClass is not None, (
+            "Guaranteed non-None by availability check"
+        )
 
         decorator_obj = DecoratorClass(
             cls_ref=f"{cls.__module__}.{cls.__name__}:{id(cls)}",

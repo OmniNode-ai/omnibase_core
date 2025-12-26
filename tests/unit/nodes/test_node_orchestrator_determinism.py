@@ -1009,8 +1009,19 @@ class TestNodeOrchestratorParallelExecutionDeterminism:
         # Run multiple times
         results = [await node.process(input_data) for _ in range(5)]
 
-        # All should complete same steps (order may vary in parallel)
+        # Verify the first result has all expected steps completed
         first_completed_set = set(results[0].completed_steps)
+        expected_steps = {
+            str(FIXED_STEP_1_ID),
+            str(FIXED_STEP_2_ID),
+            str(FIXED_STEP_3_ID),
+            str(FIXED_STEP_4_ID),
+        }
+        assert first_completed_set == expected_steps, (
+            f"Expected all 4 steps to complete. Got: {first_completed_set}"
+        )
+
+        # All subsequent runs should complete same steps (order may vary in parallel)
         for result in results[1:]:
             assert set(result.completed_steps) == first_completed_set
 

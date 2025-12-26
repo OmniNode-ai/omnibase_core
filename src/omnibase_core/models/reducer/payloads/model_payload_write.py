@@ -56,10 +56,10 @@ class ModelPayloadWrite(ModelIntentPayloadBase):
             Placed first for optimal union type resolution performance.
         path: Target path for the write operation. For filesystems, this is
             the file path. For object storage, this is the object key.
-        content: The string content to write. For text (JSON, YAML, plain text),
-            pass the string directly. For binary data (images, PDFs, etc.),
-            you must first encode to a base64 string using
-            `base64.b64encode(data).decode('ascii')` - raw bytes are NOT supported.
+        content: Content to write. Type is strictly `str` - bytes are not accepted.
+            For text (JSON, YAML, plain text), pass the string directly. For binary
+            data (images, PDFs), first encode to base64 string using
+            `base64.b64encode(data).decode('ascii')`.
         content_type: MIME type of the content (e.g., "application/json",
             "image/png", "application/pdf"). Used by Effect to determine if
             base64 decoding is needed for binary types.
@@ -129,15 +129,12 @@ class ModelPayloadWrite(ModelIntentPayloadBase):
     content: str = Field(
         ...,
         description=(
-            "The string content to write. Raw bytes are NOT supported - binary data must "
-            "be base64-encoded first. For text content (JSON, YAML, plain text), pass the "
-            "string directly. For binary data (images, PDFs, archives), encode to base64 "
-            "string using `base64.b64encode(data).decode('ascii')`. The Effect handler "
-            "determines whether to decode base64 based on the content_type field: binary "
-            "MIME types (e.g., 'application/octet-stream', 'image/png', 'application/pdf') "
-            "trigger base64 decoding; text MIME types are written as-is. Example for "
-            "binary: content=base64.b64encode(image_bytes).decode('ascii'), "
-            "content_type='image/png'."
+            "Content to write as a string. Type is strictly `str` - bytes are not accepted. "
+            "For text (JSON, YAML, plain text), pass the string directly. For binary data "
+            "(images, PDFs, archives), first encode to base64 using "
+            "`base64.b64encode(data).decode('ascii')` then set content_type to the "
+            "appropriate binary MIME type (e.g., 'image/png'). The Effect handler uses "
+            "content_type to determine whether base64 decoding is needed before writing."
         ),
     )
 

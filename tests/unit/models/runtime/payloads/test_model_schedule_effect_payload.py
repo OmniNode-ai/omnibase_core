@@ -78,8 +78,8 @@ class TestModelScheduleEffectPayloadOptionalFields:
         payload = ModelScheduleEffectPayload(effect_node_type="test")
         assert payload.effect_input is None
 
-    def test_effect_input_with_schema_value(self) -> None:
-        """Test effect_input with ModelSchemaValue."""
+    def test_effect_input_with_object_value(self) -> None:
+        """Test effect_input with object ModelSchemaValue."""
         input_data = ModelSchemaValue.create_object({"url": "https://api.example.com"})
         payload = ModelScheduleEffectPayload(
             effect_node_type="http_request",
