@@ -66,11 +66,35 @@ Example:
     # Publish to intent topic for execution by IntentExecutor
     await publish_to_kafka(TOPIC_EVENT_PUBLISH_INTENT, custom_intent)
 
+    # Example 3: Using TOPIC_METRICS_EVENTS for metrics events
+    # Metrics events are published to the dedicated metrics domain topic
+    from omnibase_core.constants import TOPIC_METRICS_EVENTS
+    from omnibase_core.models.events.model_runtime_ready_event import (
+        ModelRuntimeReadyEvent,
+    )
+
+    metrics_payload = ModelRuntimeReadyEvent(
+        runtime_id=uuid4(),
+        node_count=10,
+        subscription_count=25,
+        event_bus_type="kafka",
+    )
+    metrics_intent = ModelEventPublishIntent(
+        correlation_id=uuid4(),
+        created_by="metrics_collector_v1_0_0",
+        target_topic=TOPIC_METRICS_EVENTS,  # Use pre-defined metrics topic
+        target_key=str(uuid4()),
+        target_event_type="RUNTIME_METRICS_RECORDED",
+        target_event_payload=metrics_payload,
+    )
+    await publish_to_kafka(TOPIC_EVENT_PUBLISH_INTENT, metrics_intent)
+
 Note:
     TOPIC_EVENT_PUBLISH_INTENT is defined in constants_topic_taxonomy.py and
     should be imported from omnibase_core.constants. Use pre-defined topic
-    constants (e.g., TOPIC_REGISTRATION_EVENTS) when available, or use
-    topic_name() to generate domain-specific topic names dynamically.
+    constants (e.g., TOPIC_REGISTRATION_EVENTS, TOPIC_METRICS_EVENTS) when
+    available, or use topic_name() to generate domain-specific topic names
+    dynamically.
 """
 
 from __future__ import annotations

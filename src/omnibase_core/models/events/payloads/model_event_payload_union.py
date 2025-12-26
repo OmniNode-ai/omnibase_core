@@ -94,19 +94,10 @@ from omnibase_core.models.events.model_wiring_result_event import (
 __all__ = [
     # Union types
     "ModelEventPayloadUnion",
-    "ModelRuntimeEventPayloadUnion",
     "ModelDiscoveryEventPayloadUnion",
-    # Re-export individual runtime event types for convenience
-    "ModelNodeRegisteredEvent",
-    "ModelNodeUnregisteredEvent",
-    "ModelSubscriptionCreatedEvent",
-    "ModelSubscriptionFailedEvent",
-    "ModelSubscriptionRemovedEvent",
-    "ModelRuntimeReadyEvent",
-    "ModelNodeGraphReadyEvent",
-    "ModelWiringResultEvent",
-    "ModelWiringErrorEvent",
+    "ModelRuntimeEventPayloadUnion",
     # Re-export individual discovery event types for convenience
+    # (discovery imports come before runtime - alphabetical by module path)
     "ModelIntrospectionResponseEvent",
     "ModelNodeHealthEvent",
     "ModelNodeIntrospectionEvent",
@@ -116,6 +107,16 @@ __all__ = [
     "ModelToolDiscoveryResponse",
     "ModelToolInvocationEvent",
     "ModelToolResponseEvent",
+    # Re-export individual runtime event types for convenience
+    "ModelNodeGraphReadyEvent",
+    "ModelNodeRegisteredEvent",
+    "ModelNodeUnregisteredEvent",
+    "ModelRuntimeReadyEvent",
+    "ModelSubscriptionCreatedEvent",
+    "ModelSubscriptionFailedEvent",
+    "ModelSubscriptionRemovedEvent",
+    "ModelWiringErrorEvent",
+    "ModelWiringResultEvent",
 ]
 
 

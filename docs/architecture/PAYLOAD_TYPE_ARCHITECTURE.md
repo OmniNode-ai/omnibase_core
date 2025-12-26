@@ -69,7 +69,7 @@ target_event_payload
 3. [Discriminator Naming Conventions](#discriminator-naming-conventions)
 4. [Dual-Pattern Strategy: Protocols vs Discriminated Unions](#dual-pattern-strategy-protocols-vs-discriminated-unions)
 5. [Rationale](#rationale)
-6. [Current State Analysis](#current-state-analysis)
+6. [Historical Context (Pre-v0.4.0)](#historical-context-pre-v040)
 7. [Implementation by Model](#implementation-by-model)
 8. [Migration Strategy](#migration-strategy)
 9. [Examples](#examples)
