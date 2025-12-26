@@ -503,7 +503,7 @@ class TestModelEventPayloadUsagePatterns:
             ),
             authorization_context=ModelAuthorizationContext(
                 client_id="mobile_app_v2",
-                scope="user:profile user:email",
+                scopes=["user:profile", "user:email"],
             ),
         )
         event_data.context.environment = "production"

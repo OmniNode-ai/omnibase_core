@@ -29,8 +29,8 @@ from .model_generic_collection import ModelGenericCollection
 from .model_generic_collection_summary import ModelGenericCollectionSummary
 from .model_generic_properties import ModelGenericProperties
 
-# Checkpoint metadata pattern
-from .model_checkpoint_metadata import ModelCheckpointMetadata
+# Storage checkpoint metadata pattern
+from .model_storage_checkpoint_metadata import ModelStorageCheckpointMetadata
 
 # Mixin metadata pattern
 from .model_mixin_code_patterns import ModelMixinCodePatterns
@@ -121,8 +121,8 @@ except ImportError:
     _WORKFLOW_MODELS_AVAILABLE = False
 
 __all__ = [
-    # Checkpoint metadata pattern
-    "ModelCheckpointMetadata",
+    # Storage checkpoint metadata pattern
+    "ModelStorageCheckpointMetadata",
     # Configuration base classes
     "ModelConfigurationBase",
     "ModelTypedConfiguration",

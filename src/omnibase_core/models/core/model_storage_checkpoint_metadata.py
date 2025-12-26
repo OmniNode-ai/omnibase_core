@@ -1,20 +1,32 @@
 #!/usr/bin/env python3
 """
-Checkpoint Metadata Model.
+Storage Checkpoint Metadata Model.
 
 Strongly-typed model for checkpoint metadata in ONEX storage backends.
 Replaces dict[str, str] for type safety.
+
+Note: This is distinct from ModelCheckpointMetadata in omnibase_core.models.context,
+which is used for workflow state tracking. This model is specifically for
+storage backend persistence metadata.
 """
 
 from pydantic import BaseModel, ConfigDict, Field
 
+__all__ = ["ModelStorageCheckpointMetadata"]
 
-class ModelCheckpointMetadata(BaseModel):
+
+class ModelStorageCheckpointMetadata(BaseModel):
     """
-    Typed metadata for checkpoint data.
+    Typed metadata for checkpoint data in storage backends.
 
     Provides structured storage for checkpoint-related metadata,
     replacing untyped dict[str, str] usage for type safety.
+
+    This model is used by storage backends (e.g., file system, S3, database)
+    to persist checkpoint metadata alongside checkpoint payloads.
+
+    Note: For workflow state checkpoint metadata, use
+    omnibase_core.models.context.ModelCheckpointMetadata instead.
     """
 
     model_config = ConfigDict(

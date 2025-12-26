@@ -84,7 +84,3 @@ class ModelAuthorizationContext(BaseModel):
         default=None,
         description="OAuth client ID",
     )
-    scope: str | None = Field(
-        default=None,
-        description="OAuth scope string (space-separated)",
-    )

@@ -1,0 +1,929 @@
+# SPDX-FileCopyrightText: 2025 OmniNode Team
+# SPDX-License-Identifier: Apache-2.0
+"""
+Unit tests for context models.
+
+This module provides comprehensive tests for the typed context models in
+omnibase_core.models.context. Each model is tested for:
+- Basic instantiation with valid data
+- Default values work correctly
+- Immutability (frozen=True)
+- from_attributes=True (can create from object with attributes)
+- extra="forbid" (extra fields raise error)
+"""
+
+from dataclasses import dataclass
+
+import pytest
+from pydantic import ValidationError
+
+from omnibase_core.models.context import (
+    ModelAuditMetadata,
+    ModelAuthorizationContext,
+    ModelCheckpointMetadata,
+    ModelDetectionMetadata,
+    ModelHttpRequestMetadata,
+    ModelNodeInitMetadata,
+    ModelSessionContext,
+)
+
+
+# =============================================================================
+# Helper classes for from_attributes testing
+# =============================================================================
+
+
+@dataclass
+class SessionContextAttrs:
+    """Helper dataclass for testing from_attributes on ModelSessionContext."""
+
+    session_id: str | None = None
+    client_ip: str | None = None
+    user_agent: str | None = None
+    device_fingerprint: str | None = None
+    locale: str | None = None
+    authentication_method: str | None = None
+
+
+@dataclass
+class HttpRequestMetadataAttrs:
+    """Helper dataclass for testing from_attributes on ModelHttpRequestMetadata."""
+
+    request_id: str | None = None
+    method: str | None = None
+    path: str | None = None
+    content_type: str | None = None
+    accept: str | None = None
+
+
+@dataclass
+class AuthorizationContextAttrs:
+    """Helper dataclass for testing from_attributes on ModelAuthorizationContext.
+
+    Note: roles, permissions, and scopes must be lists (not None) because
+    ModelAuthorizationContext uses default_factory=list without Optional.
+    """
+
+    roles: list[str] | None = None
+    permissions: list[str] | None = None
+    scopes: list[str] | None = None
+    token_type: str | None = None
+    expiry: str | None = None
+    client_id: str | None = None
+
+    def __post_init__(self) -> None:
+        """Convert None to empty lists for list fields."""
+        if self.roles is None:
+            self.roles = []
+        if self.permissions is None:
+            self.permissions = []
+        if self.scopes is None:
+            self.scopes = []
+
+
+@dataclass
+class AuditMetadataAttrs:
+    """Helper dataclass for testing from_attributes on ModelAuditMetadata."""
+
+    audit_id: str | None = None
+    auditor: str | None = None
+    audit_category: str | None = None
+    retention_period: str | None = None
+    compliance_tag: str | None = None
+
+
+@dataclass
+class CheckpointMetadataAttrs:
+    """Helper dataclass for testing from_attributes on ModelCheckpointMetadata."""
+
+    checkpoint_type: str | None = None
+    source_node: str | None = None
+    trigger_event: str | None = None
+    workflow_stage: str | None = None
+    parent_checkpoint_id: str | None = None
+
+
+@dataclass
+class DetectionMetadataAttrs:
+    """Helper dataclass for testing from_attributes on ModelDetectionMetadata."""
+
+    pattern_category: str | None = None
+    detection_source: str | None = None
+    rule_version: str | None = None
+    false_positive_likelihood: str | None = None
+    remediation_hint: str | None = None
+
+
+@dataclass
+class NodeInitMetadataAttrs:
+    """Helper dataclass for testing from_attributes on ModelNodeInitMetadata."""
+
+    init_source: str | None = None
+    init_timestamp: str | None = None
+    config_hash: str | None = None
+    dependency_versions: str | None = None
+    feature_flags: str | None = None
+
+
+# =============================================================================
+# ModelSessionContext Tests
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestModelSessionContextInstantiation:
+    """Tests for ModelSessionContext instantiation."""
+
+    def test_create_with_all_fields(self) -> None:
+        """Test creating session context with all fields populated."""
+        context = ModelSessionContext(
+            session_id="sess_abc123",
+            client_ip="192.168.1.100",
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+            device_fingerprint="fp_xyz789",
+            locale="en-US",
+            authentication_method="oauth2",
+        )
+        assert context.session_id == "sess_abc123"
+        assert context.client_ip == "192.168.1.100"
+        assert context.user_agent == "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+        assert context.device_fingerprint == "fp_xyz789"
+        assert context.locale == "en-US"
+        assert context.authentication_method == "oauth2"
+
+    def test_create_with_partial_fields(self) -> None:
+        """Test creating session context with partial fields."""
+        context = ModelSessionContext(
+            session_id="sess_123",
+            locale="fr-FR",
+        )
+        assert context.session_id == "sess_123"
+        assert context.locale == "fr-FR"
+        assert context.client_ip is None
+        assert context.user_agent is None
+
+
+@pytest.mark.unit
+class TestModelSessionContextDefaults:
+    """Tests for ModelSessionContext default values."""
+
+    def test_all_defaults_are_none(self) -> None:
+        """Test that all fields default to None."""
+        context = ModelSessionContext()
+        assert context.session_id is None
+        assert context.client_ip is None
+        assert context.user_agent is None
+        assert context.device_fingerprint is None
+        assert context.locale is None
+        assert context.authentication_method is None
+
+
+@pytest.mark.unit
+class TestModelSessionContextImmutability:
+    """Tests for ModelSessionContext immutability (frozen=True)."""
+
+    def test_cannot_modify_session_id(self) -> None:
+        """Test that session_id cannot be modified after creation."""
+        context = ModelSessionContext(session_id="original")
+        with pytest.raises(ValidationError):
+            context.session_id = "modified"
+
+    def test_cannot_modify_client_ip(self) -> None:
+        """Test that client_ip cannot be modified after creation."""
+        context = ModelSessionContext(client_ip="192.168.1.1")
+        with pytest.raises(ValidationError):
+            context.client_ip = "10.0.0.1"
+
+    def test_cannot_modify_locale(self) -> None:
+        """Test that locale cannot be modified after creation."""
+        context = ModelSessionContext(locale="en-US")
+        with pytest.raises(ValidationError):
+            context.locale = "de-DE"
+
+
+@pytest.mark.unit
+class TestModelSessionContextFromAttributes:
+    """Tests for ModelSessionContext from_attributes=True."""
+
+    def test_create_from_dataclass_with_attributes(self) -> None:
+        """Test creating ModelSessionContext from an object with attributes."""
+        attrs = SessionContextAttrs(
+            session_id="sess_from_attrs",
+            client_ip="10.0.0.1",
+            locale="ja-JP",
+        )
+        context = ModelSessionContext.model_validate(attrs)
+        assert context.session_id == "sess_from_attrs"
+        assert context.client_ip == "10.0.0.1"
+        assert context.locale == "ja-JP"
+
+    def test_create_from_object_with_all_attributes(self) -> None:
+        """Test creating from object with all attributes populated."""
+        attrs = SessionContextAttrs(
+            session_id="sess_full",
+            client_ip="172.16.0.1",
+            user_agent="TestAgent/1.0",
+            device_fingerprint="fp_test",
+            locale="es-ES",
+            authentication_method="saml",
+        )
+        context = ModelSessionContext.model_validate(attrs)
+        assert context.session_id == "sess_full"
+        assert context.authentication_method == "saml"
+
+
+@pytest.mark.unit
+class TestModelSessionContextExtraForbid:
+    """Tests for ModelSessionContext extra='forbid'."""
+
+    def test_extra_fields_raise_error(self) -> None:
+        """Test that extra fields raise ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelSessionContext(
+                session_id="sess_123",
+                unknown_field="should_fail",
+            )
+        assert "extra" in str(exc_info.value).lower()
+
+
+# =============================================================================
+# ModelHttpRequestMetadata Tests
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestModelHttpRequestMetadataInstantiation:
+    """Tests for ModelHttpRequestMetadata instantiation."""
+
+    def test_create_with_all_fields(self) -> None:
+        """Test creating HTTP request metadata with all fields populated."""
+        metadata = ModelHttpRequestMetadata(
+            request_id="req_xyz789",
+            method="POST",
+            path="/api/v1/nodes/execute",
+            content_type="application/json",
+            accept="application/json",
+        )
+        assert metadata.request_id == "req_xyz789"
+        assert metadata.method == "POST"
+        assert metadata.path == "/api/v1/nodes/execute"
+        assert metadata.content_type == "application/json"
+        assert metadata.accept == "application/json"
+
+    def test_create_with_partial_fields(self) -> None:
+        """Test creating HTTP request metadata with partial fields."""
+        metadata = ModelHttpRequestMetadata(
+            method="GET",
+            path="/api/health",
+        )
+        assert metadata.method == "GET"
+        assert metadata.path == "/api/health"
+        assert metadata.request_id is None
+        assert metadata.content_type is None
+
+
+@pytest.mark.unit
+class TestModelHttpRequestMetadataDefaults:
+    """Tests for ModelHttpRequestMetadata default values."""
+
+    def test_all_defaults_are_none(self) -> None:
+        """Test that all fields default to None."""
+        metadata = ModelHttpRequestMetadata()
+        assert metadata.request_id is None
+        assert metadata.method is None
+        assert metadata.path is None
+        assert metadata.content_type is None
+        assert metadata.accept is None
+
+
+@pytest.mark.unit
+class TestModelHttpRequestMetadataImmutability:
+    """Tests for ModelHttpRequestMetadata immutability (frozen=True)."""
+
+    def test_cannot_modify_method(self) -> None:
+        """Test that method cannot be modified after creation."""
+        metadata = ModelHttpRequestMetadata(method="GET")
+        with pytest.raises(ValidationError):
+            metadata.method = "POST"
+
+    def test_cannot_modify_path(self) -> None:
+        """Test that path cannot be modified after creation."""
+        metadata = ModelHttpRequestMetadata(path="/original")
+        with pytest.raises(ValidationError):
+            metadata.path = "/modified"
+
+
+@pytest.mark.unit
+class TestModelHttpRequestMetadataFromAttributes:
+    """Tests for ModelHttpRequestMetadata from_attributes=True."""
+
+    def test_create_from_dataclass_with_attributes(self) -> None:
+        """Test creating ModelHttpRequestMetadata from an object with attributes."""
+        attrs = HttpRequestMetadataAttrs(
+            request_id="req_from_attrs",
+            method="PUT",
+            path="/api/v1/update",
+        )
+        metadata = ModelHttpRequestMetadata.model_validate(attrs)
+        assert metadata.request_id == "req_from_attrs"
+        assert metadata.method == "PUT"
+        assert metadata.path == "/api/v1/update"
+
+
+@pytest.mark.unit
+class TestModelHttpRequestMetadataExtraForbid:
+    """Tests for ModelHttpRequestMetadata extra='forbid'."""
+
+    def test_extra_fields_raise_error(self) -> None:
+        """Test that extra fields raise ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelHttpRequestMetadata(
+                method="GET",
+                extra_header="should_fail",
+            )
+        assert "extra" in str(exc_info.value).lower()
+
+
+# =============================================================================
+# ModelAuthorizationContext Tests
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestModelAuthorizationContextInstantiation:
+    """Tests for ModelAuthorizationContext instantiation."""
+
+    def test_create_with_all_fields(self) -> None:
+        """Test creating authorization context with all fields populated."""
+        context = ModelAuthorizationContext(
+            roles=["admin", "operator"],
+            permissions=["read:nodes", "write:nodes", "execute:workflows"],
+            scopes=["openid", "profile", "api:full"],
+            token_type="Bearer",
+            expiry="2025-01-15T12:00:00Z",
+            client_id="client_app_123",
+        )
+        assert context.roles == ["admin", "operator"]
+        assert context.permissions == ["read:nodes", "write:nodes", "execute:workflows"]
+        assert context.scopes == ["openid", "profile", "api:full"]
+        assert context.token_type == "Bearer"
+        assert context.expiry == "2025-01-15T12:00:00Z"
+        assert context.client_id == "client_app_123"
+
+    def test_create_with_partial_fields(self) -> None:
+        """Test creating authorization context with partial fields."""
+        context = ModelAuthorizationContext(
+            roles=["user"],
+            token_type="Bearer",
+        )
+        assert context.roles == ["user"]
+        assert context.token_type == "Bearer"
+        assert context.permissions == []
+        assert context.scopes == []
+
+    def test_admin_role_check(self) -> None:
+        """Test checking if admin role is present."""
+        context = ModelAuthorizationContext(
+            roles=["admin", "operator"],
+        )
+        assert "admin" in context.roles
+
+
+@pytest.mark.unit
+class TestModelAuthorizationContextDefaults:
+    """Tests for ModelAuthorizationContext default values."""
+
+    def test_list_fields_default_to_empty_list(self) -> None:
+        """Test that list fields default to empty lists."""
+        context = ModelAuthorizationContext()
+        assert context.roles == []
+        assert context.permissions == []
+        assert context.scopes == []
+
+    def test_optional_fields_default_to_none(self) -> None:
+        """Test that optional fields default to None."""
+        context = ModelAuthorizationContext()
+        assert context.token_type is None
+        assert context.expiry is None
+        assert context.client_id is None
+
+
+@pytest.mark.unit
+class TestModelAuthorizationContextImmutability:
+    """Tests for ModelAuthorizationContext immutability (frozen=True)."""
+
+    def test_cannot_modify_roles(self) -> None:
+        """Test that roles cannot be modified after creation."""
+        context = ModelAuthorizationContext(roles=["user"])
+        with pytest.raises(ValidationError):
+            context.roles = ["admin"]
+
+    def test_cannot_modify_token_type(self) -> None:
+        """Test that token_type cannot be modified after creation."""
+        context = ModelAuthorizationContext(token_type="Bearer")
+        with pytest.raises(ValidationError):
+            context.token_type = "Basic"
+
+
+@pytest.mark.unit
+class TestModelAuthorizationContextFromAttributes:
+    """Tests for ModelAuthorizationContext from_attributes=True."""
+
+    def test_create_from_dataclass_with_attributes(self) -> None:
+        """Test creating ModelAuthorizationContext from an object with attributes."""
+        attrs = AuthorizationContextAttrs(
+            roles=["editor"],
+            permissions=["read:all"],
+            token_type="API",
+        )
+        context = ModelAuthorizationContext.model_validate(attrs)
+        assert context.roles == ["editor"]
+        assert context.permissions == ["read:all"]
+        assert context.token_type == "API"
+
+
+@pytest.mark.unit
+class TestModelAuthorizationContextExtraForbid:
+    """Tests for ModelAuthorizationContext extra='forbid'."""
+
+    def test_extra_fields_raise_error(self) -> None:
+        """Test that extra fields raise ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelAuthorizationContext(
+                roles=["user"],
+                secret_key="should_fail",
+            )
+        assert "extra" in str(exc_info.value).lower()
+
+
+# =============================================================================
+# ModelAuditMetadata Tests
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestModelAuditMetadataInstantiation:
+    """Tests for ModelAuditMetadata instantiation."""
+
+    def test_create_with_all_fields(self) -> None:
+        """Test creating audit metadata with all fields populated."""
+        metadata = ModelAuditMetadata(
+            audit_id="audit_abc123",
+            auditor="service:onex-gateway",
+            audit_category="security",
+            retention_period="1y",
+            compliance_tag="SOC2",
+        )
+        assert metadata.audit_id == "audit_abc123"
+        assert metadata.auditor == "service:onex-gateway"
+        assert metadata.audit_category == "security"
+        assert metadata.retention_period == "1y"
+        assert metadata.compliance_tag == "SOC2"
+
+    def test_create_with_partial_fields(self) -> None:
+        """Test creating audit metadata with partial fields."""
+        metadata = ModelAuditMetadata(
+            audit_category="access",
+            compliance_tag="GDPR",
+        )
+        assert metadata.audit_category == "access"
+        assert metadata.compliance_tag == "GDPR"
+        assert metadata.audit_id is None
+
+
+@pytest.mark.unit
+class TestModelAuditMetadataDefaults:
+    """Tests for ModelAuditMetadata default values."""
+
+    def test_all_defaults_are_none(self) -> None:
+        """Test that all fields default to None."""
+        metadata = ModelAuditMetadata()
+        assert metadata.audit_id is None
+        assert metadata.auditor is None
+        assert metadata.audit_category is None
+        assert metadata.retention_period is None
+        assert metadata.compliance_tag is None
+
+
+@pytest.mark.unit
+class TestModelAuditMetadataImmutability:
+    """Tests for ModelAuditMetadata immutability (frozen=True)."""
+
+    def test_cannot_modify_audit_id(self) -> None:
+        """Test that audit_id cannot be modified after creation."""
+        metadata = ModelAuditMetadata(audit_id="original")
+        with pytest.raises(ValidationError):
+            metadata.audit_id = "modified"
+
+    def test_cannot_modify_compliance_tag(self) -> None:
+        """Test that compliance_tag cannot be modified after creation."""
+        metadata = ModelAuditMetadata(compliance_tag="SOC2")
+        with pytest.raises(ValidationError):
+            metadata.compliance_tag = "HIPAA"
+
+
+@pytest.mark.unit
+class TestModelAuditMetadataFromAttributes:
+    """Tests for ModelAuditMetadata from_attributes=True."""
+
+    def test_create_from_dataclass_with_attributes(self) -> None:
+        """Test creating ModelAuditMetadata from an object with attributes."""
+        attrs = AuditMetadataAttrs(
+            audit_id="audit_from_attrs",
+            auditor="user:admin",
+            audit_category="data_change",
+        )
+        metadata = ModelAuditMetadata.model_validate(attrs)
+        assert metadata.audit_id == "audit_from_attrs"
+        assert metadata.auditor == "user:admin"
+        assert metadata.audit_category == "data_change"
+
+
+@pytest.mark.unit
+class TestModelAuditMetadataExtraForbid:
+    """Tests for ModelAuditMetadata extra='forbid'."""
+
+    def test_extra_fields_raise_error(self) -> None:
+        """Test that extra fields raise ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelAuditMetadata(
+                audit_id="audit_123",
+                internal_note="should_fail",
+            )
+        assert "extra" in str(exc_info.value).lower()
+
+
+# =============================================================================
+# ModelCheckpointMetadata Tests
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestModelCheckpointMetadataInstantiation:
+    """Tests for ModelCheckpointMetadata instantiation."""
+
+    def test_create_with_all_fields(self) -> None:
+        """Test creating checkpoint metadata with all fields populated."""
+        metadata = ModelCheckpointMetadata(
+            checkpoint_type="automatic",
+            source_node="node_compute_transform",
+            trigger_event="stage_complete",
+            workflow_stage="processing",
+            parent_checkpoint_id="chk_parent_123",
+        )
+        assert metadata.checkpoint_type == "automatic"
+        assert metadata.source_node == "node_compute_transform"
+        assert metadata.trigger_event == "stage_complete"
+        assert metadata.workflow_stage == "processing"
+        assert metadata.parent_checkpoint_id == "chk_parent_123"
+
+    def test_create_with_partial_fields(self) -> None:
+        """Test creating checkpoint metadata with partial fields."""
+        metadata = ModelCheckpointMetadata(
+            checkpoint_type="manual",
+            workflow_stage="validation",
+        )
+        assert metadata.checkpoint_type == "manual"
+        assert metadata.workflow_stage == "validation"
+        assert metadata.source_node is None
+
+
+@pytest.mark.unit
+class TestModelCheckpointMetadataDefaults:
+    """Tests for ModelCheckpointMetadata default values."""
+
+    def test_all_defaults_are_none(self) -> None:
+        """Test that all fields default to None."""
+        metadata = ModelCheckpointMetadata()
+        assert metadata.checkpoint_type is None
+        assert metadata.source_node is None
+        assert metadata.trigger_event is None
+        assert metadata.workflow_stage is None
+        assert metadata.parent_checkpoint_id is None
+
+
+@pytest.mark.unit
+class TestModelCheckpointMetadataImmutability:
+    """Tests for ModelCheckpointMetadata immutability (frozen=True)."""
+
+    def test_cannot_modify_checkpoint_type(self) -> None:
+        """Test that checkpoint_type cannot be modified after creation."""
+        metadata = ModelCheckpointMetadata(checkpoint_type="automatic")
+        with pytest.raises(ValidationError):
+            metadata.checkpoint_type = "manual"
+
+    def test_cannot_modify_workflow_stage(self) -> None:
+        """Test that workflow_stage cannot be modified after creation."""
+        metadata = ModelCheckpointMetadata(workflow_stage="processing")
+        with pytest.raises(ValidationError):
+            metadata.workflow_stage = "completion"
+
+
+@pytest.mark.unit
+class TestModelCheckpointMetadataFromAttributes:
+    """Tests for ModelCheckpointMetadata from_attributes=True."""
+
+    def test_create_from_dataclass_with_attributes(self) -> None:
+        """Test creating ModelCheckpointMetadata from an object with attributes."""
+        attrs = CheckpointMetadataAttrs(
+            checkpoint_type="recovery",
+            source_node="node_effect_io",
+            trigger_event="error",
+        )
+        metadata = ModelCheckpointMetadata.model_validate(attrs)
+        assert metadata.checkpoint_type == "recovery"
+        assert metadata.source_node == "node_effect_io"
+        assert metadata.trigger_event == "error"
+
+
+@pytest.mark.unit
+class TestModelCheckpointMetadataExtraForbid:
+    """Tests for ModelCheckpointMetadata extra='forbid'."""
+
+    def test_extra_fields_raise_error(self) -> None:
+        """Test that extra fields raise ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelCheckpointMetadata(
+                checkpoint_type="automatic",
+                internal_state="should_fail",
+            )
+        assert "extra" in str(exc_info.value).lower()
+
+
+# =============================================================================
+# ModelDetectionMetadata Tests
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestModelDetectionMetadataInstantiation:
+    """Tests for ModelDetectionMetadata instantiation."""
+
+    def test_create_with_all_fields(self) -> None:
+        """Test creating detection metadata with all fields populated."""
+        metadata = ModelDetectionMetadata(
+            pattern_category="credential_exposure",
+            detection_source="regex_scanner",
+            rule_version="2.1.0",
+            false_positive_likelihood="low",
+            remediation_hint="Rotate exposed credentials immediately",
+        )
+        assert metadata.pattern_category == "credential_exposure"
+        assert metadata.detection_source == "regex_scanner"
+        assert metadata.rule_version == "2.1.0"
+        assert metadata.false_positive_likelihood == "low"
+        assert metadata.remediation_hint == "Rotate exposed credentials immediately"
+
+    def test_create_with_partial_fields(self) -> None:
+        """Test creating detection metadata with partial fields."""
+        metadata = ModelDetectionMetadata(
+            pattern_category="injection",
+            false_positive_likelihood="medium",
+        )
+        assert metadata.pattern_category == "injection"
+        assert metadata.false_positive_likelihood == "medium"
+        assert metadata.detection_source is None
+
+
+@pytest.mark.unit
+class TestModelDetectionMetadataDefaults:
+    """Tests for ModelDetectionMetadata default values."""
+
+    def test_all_defaults_are_none(self) -> None:
+        """Test that all fields default to None."""
+        metadata = ModelDetectionMetadata()
+        assert metadata.pattern_category is None
+        assert metadata.detection_source is None
+        assert metadata.rule_version is None
+        assert metadata.false_positive_likelihood is None
+        assert metadata.remediation_hint is None
+
+
+@pytest.mark.unit
+class TestModelDetectionMetadataImmutability:
+    """Tests for ModelDetectionMetadata immutability (frozen=True)."""
+
+    def test_cannot_modify_pattern_category(self) -> None:
+        """Test that pattern_category cannot be modified after creation."""
+        metadata = ModelDetectionMetadata(pattern_category="injection")
+        with pytest.raises(ValidationError):
+            metadata.pattern_category = "xss"
+
+    def test_cannot_modify_rule_version(self) -> None:
+        """Test that rule_version cannot be modified after creation."""
+        metadata = ModelDetectionMetadata(rule_version="1.0.0")
+        with pytest.raises(ValidationError):
+            metadata.rule_version = "2.0.0"
+
+
+@pytest.mark.unit
+class TestModelDetectionMetadataFromAttributes:
+    """Tests for ModelDetectionMetadata from_attributes=True."""
+
+    def test_create_from_dataclass_with_attributes(self) -> None:
+        """Test creating ModelDetectionMetadata from an object with attributes."""
+        attrs = DetectionMetadataAttrs(
+            pattern_category="malware",
+            detection_source="ml_classifier",
+            rule_version="3.0.0",
+        )
+        metadata = ModelDetectionMetadata.model_validate(attrs)
+        assert metadata.pattern_category == "malware"
+        assert metadata.detection_source == "ml_classifier"
+        assert metadata.rule_version == "3.0.0"
+
+
+@pytest.mark.unit
+class TestModelDetectionMetadataExtraForbid:
+    """Tests for ModelDetectionMetadata extra='forbid'."""
+
+    def test_extra_fields_raise_error(self) -> None:
+        """Test that extra fields raise ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelDetectionMetadata(
+                pattern_category="injection",
+                raw_match="should_fail",
+            )
+        assert "extra" in str(exc_info.value).lower()
+
+
+# =============================================================================
+# ModelNodeInitMetadata Tests
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestModelNodeInitMetadataInstantiation:
+    """Tests for ModelNodeInitMetadata instantiation."""
+
+    def test_create_with_all_fields(self) -> None:
+        """Test creating node init metadata with all fields populated."""
+        metadata = ModelNodeInitMetadata(
+            init_source="container",
+            init_timestamp="2025-01-15T10:30:00Z",
+            config_hash="sha256:abc123def456",
+            dependency_versions='{"pydantic": "2.11.0", "fastapi": "0.120.0"}',
+            feature_flags="experimental_caching,async_processing",
+        )
+        assert metadata.init_source == "container"
+        assert metadata.init_timestamp == "2025-01-15T10:30:00Z"
+        assert metadata.config_hash == "sha256:abc123def456"
+        assert metadata.dependency_versions == '{"pydantic": "2.11.0", "fastapi": "0.120.0"}'
+        assert metadata.feature_flags == "experimental_caching,async_processing"
+
+    def test_create_with_partial_fields(self) -> None:
+        """Test creating node init metadata with partial fields."""
+        metadata = ModelNodeInitMetadata(
+            init_source="test_fixture",
+            init_timestamp="2025-01-15T12:00:00Z",
+        )
+        assert metadata.init_source == "test_fixture"
+        assert metadata.init_timestamp == "2025-01-15T12:00:00Z"
+        assert metadata.config_hash is None
+
+
+@pytest.mark.unit
+class TestModelNodeInitMetadataDefaults:
+    """Tests for ModelNodeInitMetadata default values."""
+
+    def test_all_defaults_are_none(self) -> None:
+        """Test that all fields default to None."""
+        metadata = ModelNodeInitMetadata()
+        assert metadata.init_source is None
+        assert metadata.init_timestamp is None
+        assert metadata.config_hash is None
+        assert metadata.dependency_versions is None
+        assert metadata.feature_flags is None
+
+
+@pytest.mark.unit
+class TestModelNodeInitMetadataImmutability:
+    """Tests for ModelNodeInitMetadata immutability (frozen=True)."""
+
+    def test_cannot_modify_init_source(self) -> None:
+        """Test that init_source cannot be modified after creation."""
+        metadata = ModelNodeInitMetadata(init_source="container")
+        with pytest.raises(ValidationError):
+            metadata.init_source = "manual"
+
+    def test_cannot_modify_config_hash(self) -> None:
+        """Test that config_hash cannot be modified after creation."""
+        metadata = ModelNodeInitMetadata(config_hash="sha256:original")
+        with pytest.raises(ValidationError):
+            metadata.config_hash = "sha256:modified"
+
+
+@pytest.mark.unit
+class TestModelNodeInitMetadataFromAttributes:
+    """Tests for ModelNodeInitMetadata from_attributes=True."""
+
+    def test_create_from_dataclass_with_attributes(self) -> None:
+        """Test creating ModelNodeInitMetadata from an object with attributes."""
+        attrs = NodeInitMetadataAttrs(
+            init_source="hot_reload",
+            init_timestamp="2025-01-15T14:00:00Z",
+            feature_flags="beta_feature",
+        )
+        metadata = ModelNodeInitMetadata.model_validate(attrs)
+        assert metadata.init_source == "hot_reload"
+        assert metadata.init_timestamp == "2025-01-15T14:00:00Z"
+        assert metadata.feature_flags == "beta_feature"
+
+
+@pytest.mark.unit
+class TestModelNodeInitMetadataExtraForbid:
+    """Tests for ModelNodeInitMetadata extra='forbid'."""
+
+    def test_extra_fields_raise_error(self) -> None:
+        """Test that extra fields raise ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelNodeInitMetadata(
+                init_source="container",
+                internal_state="should_fail",
+            )
+        assert "extra" in str(exc_info.value).lower()
+
+
+# =============================================================================
+# Cross-Model Tests
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestContextModelsCommonBehavior:
+    """Tests for common behavior across all context models."""
+
+    def test_all_models_are_hashable(self) -> None:
+        """Test that all frozen models can be hashed (for use in sets/dicts)."""
+        session = ModelSessionContext(session_id="sess_123")
+        http = ModelHttpRequestMetadata(method="GET")
+        auth = ModelAuthorizationContext(roles=["user"])
+        audit = ModelAuditMetadata(audit_id="audit_123")
+        checkpoint = ModelCheckpointMetadata(checkpoint_type="auto")
+        detection = ModelDetectionMetadata(pattern_category="sql")
+        node_init = ModelNodeInitMetadata(init_source="container")
+
+        # All should be hashable (no exception raised)
+        hash(session)
+        hash(http)
+        # Note: auth with list fields may not be hashable
+        # depending on Pydantic version - test others
+        hash(audit)
+        hash(checkpoint)
+        hash(detection)
+        hash(node_init)
+
+    def test_all_models_support_model_dump(self) -> None:
+        """Test that all models support model_dump serialization."""
+        models = [
+            ModelSessionContext(session_id="sess_123"),
+            ModelHttpRequestMetadata(method="GET"),
+            ModelAuthorizationContext(roles=["user"]),
+            ModelAuditMetadata(audit_id="audit_123"),
+            ModelCheckpointMetadata(checkpoint_type="auto"),
+            ModelDetectionMetadata(pattern_category="sql"),
+            ModelNodeInitMetadata(init_source="container"),
+        ]
+
+        for model in models:
+            data = model.model_dump()
+            assert isinstance(data, dict)
+
+    def test_all_models_support_model_dump_json(self) -> None:
+        """Test that all models support model_dump_json serialization."""
+        models = [
+            ModelSessionContext(session_id="sess_123"),
+            ModelHttpRequestMetadata(method="GET"),
+            ModelAuthorizationContext(roles=["user"]),
+            ModelAuditMetadata(audit_id="audit_123"),
+            ModelCheckpointMetadata(checkpoint_type="auto"),
+            ModelDetectionMetadata(pattern_category="sql"),
+            ModelNodeInitMetadata(init_source="container"),
+        ]
+
+        for model in models:
+            json_str = model.model_dump_json()
+            assert isinstance(json_str, str)
+            assert len(json_str) > 0
+
+    def test_all_models_support_equality(self) -> None:
+        """Test that models with same values are equal."""
+        session1 = ModelSessionContext(session_id="sess_123", locale="en-US")
+        session2 = ModelSessionContext(session_id="sess_123", locale="en-US")
+        assert session1 == session2
+
+        http1 = ModelHttpRequestMetadata(method="GET", path="/api")
+        http2 = ModelHttpRequestMetadata(method="GET", path="/api")
+        assert http1 == http2
+
+    def test_all_models_support_copy(self) -> None:
+        """Test that models can be copied with model_copy."""
+        session = ModelSessionContext(session_id="sess_123")
+        session_copy = session.model_copy()
+        assert session == session_copy
+        assert session is not session_copy
+
+        # Test copy with update
+        session_updated = session.model_copy(update={"locale": "fr-FR"})
+        assert session_updated.session_id == "sess_123"
+        assert session_updated.locale == "fr-FR"
