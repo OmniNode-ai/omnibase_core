@@ -21,7 +21,6 @@ from omnibase_core.models.core.model_storage_checkpoint_metadata import (
     ModelStorageCheckpointMetadata,
 )
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.types.type_serializable_value import SerializedDict
 
 # Rebuild ModelCheckpointData to resolve forward reference to SerializedDict
 ModelCheckpointData.model_rebuild()

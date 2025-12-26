@@ -421,10 +421,13 @@ def _convert_value(value: Any, schema_cls: type[ModelSchemaValue]) -> Any:
         return None
 
     # Handle empty collections explicitly - preserve collection type
-    # This is checked BEFORE isinstance to avoid unnecessary function calls
-    if value == []:
+    # Type-safe checks: verify type first, then check emptiness.
+    # This avoids calling helper functions for empty collections (optimization)
+    # and is safer than equality comparison (e.g., numpy arrays return arrays
+    # from == comparisons, not booleans).
+    if isinstance(value, list) and not value:
         return []
-    if value == {}:
+    if isinstance(value, dict) and not value:
         return {}
 
     # Convert based on collection type

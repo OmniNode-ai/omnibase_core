@@ -18,7 +18,10 @@ from uuid import UUID, uuid4
 import pytest
 
 from omnibase_core.enums.enum_workflow_coordination import EnumFailureRecoveryStrategy
-from omnibase_core.enums.enum_workflow_execution import EnumExecutionMode
+from omnibase_core.enums.enum_workflow_execution import (
+    EnumActionType,
+    EnumExecutionMode,
+)
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.contracts.subcontracts.model_coordination_rules import (
@@ -257,7 +260,14 @@ class TestNodeOrchestratorDeterministicOutput:
         action_types_1 = [action.action_type for action in result_1.actions_emitted]
         action_types_2 = [action.action_type for action in result_2.actions_emitted]
 
+        # Both runs must produce identical action types (determinism)
         assert action_types_1 == action_types_2
+        # Verify expected action types for the 3 sequential steps (effect, compute, compute)
+        assert action_types_1 == [
+            EnumActionType.EFFECT,
+            EnumActionType.COMPUTE,
+            EnumActionType.COMPUTE,
+        ]
 
     @pytest.mark.asyncio
     async def test_same_workflow_produces_same_target_node_types(
