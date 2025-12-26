@@ -257,7 +257,7 @@ with a list literal evaluates all conditions before checking.
 |-------|------|-------------------|
 | `ModelCanHandleResult` | `models/configuration/model_can_handle_result.py` | `self.can_handle` |
 | `ModelResult[T, E]` | `models/infrastructure/model_result.py` | `self.success` |
-| `ModelEnvelopePayload` | `models/common/model_envelope_payload.py` | `any(fields)` |
+| `ModelEnvelopePayload` | `models/common/model_envelope_payload.py` | `field or field or ...` (5 fields) |
 | `ModelQueryParameters` | `models/common/model_query_parameters.py` | `bool(self.items)` |
 | `ModelOptionalInt` | `models/common/model_optional_int.py` | `self.is_some()` |
 | `ModelOptionalString` | `models/core/model_optional_string.py` | `self.has_value()` |
