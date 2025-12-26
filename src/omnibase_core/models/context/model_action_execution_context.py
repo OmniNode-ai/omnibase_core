@@ -45,8 +45,9 @@ class ModelActionExecutionContext(BaseModel):
         environment: Execution environment name. Controls environment-specific
             behavior like logging levels, external service endpoints, and
             feature flags. Must be one of: development, staging, production.
-        timeout_seconds: Maximum execution time in seconds before the action
+        timeout_ms: Maximum execution time in milliseconds before the action
             is terminated. Prevents runaway processes and resource exhaustion.
+            Uses milliseconds for consistency with ONEX timeout conventions.
         retry_count: Current retry attempt number (0-indexed). Allows actions
             to adjust behavior based on retry state (e.g., exponential backoff).
         max_retries: Maximum number of retry attempts before permanent failure.
@@ -72,7 +73,7 @@ class ModelActionExecutionContext(BaseModel):
         ...     node_id="node_abc123",
         ...     workflow_id=UUID("550e8400-e29b-41d4-a716-446655440000"),
         ...     environment="production",
-        ...     timeout_seconds=60,
+        ...     timeout_ms=60000,
         ...     dry_run=False,
         ... )
         >>> context.environment
@@ -96,10 +97,14 @@ class ModelActionExecutionContext(BaseModel):
             "logging levels and feature flags. Must be: development, staging, or production."
         ),
     )
-    timeout_seconds: int = Field(
-        default=30,
+    timeout_ms: int = Field(
+        default=30000,
         ge=1,
-        description="Execution timeout in seconds. Minimum 1 second.",
+        description=(
+            "Execution timeout in milliseconds. Minimum 1 millisecond. "
+            "Default is 30000ms (30 seconds). Uses milliseconds for "
+            "consistency with ONEX timeout conventions."
+        ),
     )
     retry_count: int = Field(
         default=0,
@@ -130,14 +135,16 @@ class ModelActionExecutionContext(BaseModel):
 
     @field_validator("environment", mode="before")
     @classmethod
-    def validate_environment(cls, v: str) -> str:
+    def validate_environment(
+        cls, v: str
+    ) -> Literal["development", "staging", "production"]:
         """Validate that environment is one of the allowed values.
 
         Args:
             v: The environment string to validate.
 
         Returns:
-            The validated environment string (lowercase).
+            The validated environment as a Literal type (lowercase).
 
         Raises:
             ValueError: If the value is not a valid environment.
@@ -149,4 +156,5 @@ class ModelActionExecutionContext(BaseModel):
             raise ValueError(
                 f"Invalid environment '{v}': must be one of {sorted(allowed)}"
             )
-        return v
+        # Cast to Literal since we've validated it's a valid value
+        return v  # type: ignore[return-value]

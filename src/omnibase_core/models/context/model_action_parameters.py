@@ -12,6 +12,10 @@ Thread Safety:
     ModelActionParameters is immutable (frozen=True) after creation, making it
     thread-safe for concurrent read access from multiple threads or async tasks.
 
+    CAVEAT: The extensions dict field contents can still be mutated even on a
+    frozen model (Pydantic's frozen only prevents field reassignment, not mutation
+    of mutable container contents). Treat extensions as immutable by convention.
+
 See Also:
     - omnibase_core.models.context.model_session_context: Session context
     - omnibase_core.models.common.model_schema_value: Schema value type
@@ -47,8 +51,9 @@ class ModelActionParameters(BaseModel):
         idempotency_key: Unique key for idempotent execution. When provided,
             duplicate executions with the same key will return cached results
             instead of re-executing.
-        timeout_override_seconds: Override the default action timeout in seconds.
+        timeout_override_ms: Override the default action timeout in milliseconds.
             Must be positive. Use for long-running actions that exceed defaults.
+            Uses milliseconds for consistency with ONEX timeout conventions.
         input_path: Input file or resource path for file-based actions.
             Can be absolute or relative to the action's working directory.
         output_path: Output file or resource path for file-based actions.
@@ -61,11 +66,14 @@ class ModelActionParameters(BaseModel):
             Defaults to True for safety.
         extensions: Extension parameters for domain-specific needs.
             This is the ONLY dict field allowed - all common parameters
-            must be explicit fields.
+            must be explicit fields. WARNING: While model is frozen, dict
+            contents can still be mutated. Treat as immutable by convention.
 
     Thread Safety:
-        This model is frozen and immutable after creation.
-        Safe for concurrent read access across threads.
+        This model is frozen (field reassignment prevented) and safe for
+        concurrent read access across threads. CAVEAT: The extensions dict
+        contents CAN be mutated even on a frozen model. For true thread safety,
+        never modify extensions after model creation.
 
     Example:
         >>> from omnibase_core.models.context import ModelActionParameters
@@ -100,9 +108,13 @@ class ModelActionParameters(BaseModel):
             "same key return cached results instead of re-executing."
         ),
     )
-    timeout_override_seconds: int | None = Field(
+    timeout_override_ms: int | None = Field(
         default=None,
-        description="Override default action timeout in seconds. Must be positive.",
+        description=(
+            "Override the default action timeout in milliseconds. "
+            "Must be a positive integer when provided. Uses milliseconds for "
+            "consistency with ONEX timeout conventions."
+        ),
         gt=0,
     )
     input_path: str | None = Field(
@@ -128,11 +140,23 @@ class ModelActionParameters(BaseModel):
     # Note: Using dict[str, Any] instead of dict[str, ModelSchemaValue] to avoid
     # circular import. The extensions field is intentionally flexible for
     # domain-specific needs. Common parameters should be explicit typed fields above.
+    #
+    # IMPORTANT - Mutable Dict Limitation:
+    # While this model has frozen=True (Pydantic ConfigDict), the dict contents can
+    # still be mutated after model creation. Pydantic's frozen setting only prevents
+    # reassigning the field itself (e.g., `model.extensions = new_dict` raises an error),
+    # but does NOT prevent mutating the dict contents (e.g., `model.extensions["key"] = value`
+    # will succeed). For thread safety, treat this dict as immutable by convention:
+    # - Never modify the dict contents after model creation
+    # - Create a new model instance if you need different extension values
+    # - In multi-threaded contexts, create separate model instances per thread
     extensions: dict[str, Any] = Field(
         default_factory=dict,
         description=(
             "Extension parameters for domain-specific needs. This is the ONLY "
             "dict field allowed - all common parameters must be explicit fields. "
-            "Values should be JSON-serializable types."
+            "Values should be JSON-serializable types. "
+            "WARNING: While model is frozen, dict contents can be mutated. "
+            "Treat as immutable by convention for thread safety."
         ),
     )

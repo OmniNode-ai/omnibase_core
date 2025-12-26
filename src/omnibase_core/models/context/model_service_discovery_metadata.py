@@ -16,19 +16,30 @@ Thread Safety:
     ModelServiceDiscoveryMetadata is immutable (frozen=True) after creation, making it
     thread-safe for concurrent read access from multiple threads or async tasks.
 
+    CAVEAT: The list fields (capabilities, dependencies, tags) can still have their
+    contents mutated even on a frozen model (Pydantic's frozen only prevents field
+    reassignment, not mutation of mutable container contents). Treat these lists as
+    immutable by convention for thread safety.
+
 See Also:
     - omnibase_core.models.context.model_session_context: Session context metadata
     - omnibase_core.models.context.model_http_request_metadata: HTTP request metadata
 """
 
+from typing import Literal
 from urllib.parse import urlparse
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.models.primitives.model_semver import ModelSemVer
+
 __all__ = ["ModelServiceDiscoveryMetadata"]
 
-# Valid protocol values for service communication
+# Type alias for service protocols
+ServiceProtocol = Literal["grpc", "http", "https", "ws", "wss"]
+
+# Valid protocol values for service communication (for validation error messages)
 VALID_PROTOCOLS = frozenset({"grpc", "http", "https", "ws", "wss"})
 
 
@@ -46,32 +57,42 @@ class ModelServiceDiscoveryMetadata(BaseModel):
     Attributes:
         service_name: Unique service name for discovery. Required field
             that identifies the service in the registry.
-        service_version: Semantic version of the service (e.g., "1.2.3").
+        service_version: Semantic version of the service using ModelSemVer.
             Used for version-aware routing and compatibility checks.
         service_instance_id: UUID identifier for this service instance.
             Distinguishes between multiple instances of the same service.
         health_check_url: URL endpoint for health checks. Must be a valid
             HTTP(S) URL when provided (e.g., "https://service:8080/health").
         capabilities: List of service capabilities for feature discovery.
-            Services can advertise what operations they support.
+            Services can advertise what operations they support. WARNING:
+            While model is frozen, list contents can be mutated. Treat as
+            immutable by convention for thread safety.
         dependencies: List of service names this service depends on.
-            Used for dependency tracking and startup ordering.
+            Used for dependency tracking and startup ordering. WARNING:
+            While model is frozen, list contents can be mutated. Treat as
+            immutable by convention for thread safety.
         tags: Discovery tags for service categorization and filtering.
             Enables tag-based service lookup (e.g., ["production", "us-west"]).
+            WARNING: While model is frozen, list contents can be mutated.
+            Treat as immutable by convention for thread safety.
         protocol: Communication protocol for the service. Valid values are
             "grpc", "http", "https", "ws", "wss". Defaults to "grpc".
 
     Thread Safety:
-        This model is frozen and immutable after creation.
-        Safe for concurrent read access across threads.
+        This model is frozen (field reassignment prevented) and safe for
+        concurrent read access across threads. CAVEAT: The list fields
+        (capabilities, dependencies, tags) CAN have their contents mutated
+        even on a frozen model. For true thread safety, never modify list
+        contents after model creation.
 
     Example:
         >>> from uuid import UUID
         >>> from omnibase_core.models.context import ModelServiceDiscoveryMetadata
+        >>> from omnibase_core.models.primitives.model_semver import ModelSemVer
         >>>
         >>> metadata = ModelServiceDiscoveryMetadata(
         ...     service_name="user-service",
-        ...     service_version="2.1.0",
+        ...     service_version=ModelSemVer(major=2, minor=1, patch=0),
         ...     service_instance_id=UUID("550e8400-e29b-41d4-a716-446655440000"),
         ...     health_check_url="https://user-service:8080/health",
         ...     capabilities=["create_user", "delete_user", "list_users"],
@@ -90,9 +111,9 @@ class ModelServiceDiscoveryMetadata(BaseModel):
         min_length=1,
         description="Unique service name for discovery. Required identifier in the registry.",
     )
-    service_version: str | None = Field(
+    service_version: ModelSemVer | None = Field(
         default=None,
-        description="Semantic version of the service (e.g., '1.2.3').",
+        description="Semantic version of the service using ModelSemVer type.",
     )
     service_instance_id: UUID | None = Field(
         default=None,
@@ -102,33 +123,54 @@ class ModelServiceDiscoveryMetadata(BaseModel):
         default=None,
         description="Health check endpoint URL (e.g., 'https://service:8080/health').",
     )
+    # IMPORTANT - Mutable List Limitation:
+    # While this model has frozen=True (Pydantic ConfigDict), list contents can still
+    # be mutated after model creation. Pydantic's frozen setting only prevents reassigning
+    # the field itself (e.g., `model.capabilities = new_list` raises an error), but does
+    # NOT prevent mutating the list contents (e.g., `model.capabilities.append("value")`
+    # will succeed). For thread safety, treat these lists as immutable by convention:
+    # - Never modify list contents after model creation
+    # - Create a new model instance if you need different list values
+    # - In multi-threaded contexts, create separate model instances per thread
     capabilities: list[str] = Field(
         default_factory=list,
-        description="List of service capabilities for feature discovery.",
+        description=(
+            "List of service capabilities for feature discovery. "
+            "WARNING: While model is frozen, list contents can be mutated. "
+            "Treat as immutable by convention for thread safety."
+        ),
     )
     dependencies: list[str] = Field(
         default_factory=list,
-        description="List of service names this service depends on.",
+        description=(
+            "List of service names this service depends on. "
+            "WARNING: While model is frozen, list contents can be mutated. "
+            "Treat as immutable by convention for thread safety."
+        ),
     )
     tags: list[str] = Field(
         default_factory=list,
-        description="Discovery tags for service categorization and filtering.",
+        description=(
+            "Discovery tags for service categorization and filtering. "
+            "WARNING: While model is frozen, list contents can be mutated. "
+            "Treat as immutable by convention for thread safety."
+        ),
     )
-    protocol: str = Field(
+    protocol: ServiceProtocol = Field(
         default="grpc",
         description="Service protocol: 'grpc', 'http', 'https', 'ws', or 'wss'.",
     )
 
     @field_validator("protocol", mode="before")
     @classmethod
-    def validate_protocol(cls, v: str) -> str:
+    def validate_protocol(cls, v: str) -> ServiceProtocol:
         """Validate that protocol is a supported service communication protocol.
 
         Args:
             v: The protocol string to validate.
 
         Returns:
-            The validated protocol string (lowercase).
+            The validated protocol as a Literal type (lowercase).
 
         Raises:
             ValueError: If the value is not a valid protocol.
@@ -139,7 +181,8 @@ class ModelServiceDiscoveryMetadata(BaseModel):
         if normalized not in VALID_PROTOCOLS:
             valid_list = ", ".join(sorted(VALID_PROTOCOLS))
             raise ValueError(f"Invalid protocol '{v}': must be one of {valid_list}")
-        return normalized
+        # Cast to ServiceProtocol since we've validated it's a valid value
+        return normalized  # type: ignore[return-value]
 
     @field_validator("health_check_url", mode="before")
     @classmethod
@@ -166,19 +209,14 @@ class ModelServiceDiscoveryMetadata(BaseModel):
         if not v:
             return None
 
-        try:
-            parsed = urlparse(v)
-            # Validate scheme
-            if parsed.scheme not in ("http", "https"):
-                raise ValueError(
-                    f"Invalid health check URL '{v}': scheme must be 'http' or 'https', "
-                    f"got '{parsed.scheme or '(empty)'}'"
-                )
-            # Validate netloc (host[:port])
-            if not parsed.netloc:
-                raise ValueError(f"Invalid health check URL '{v}': missing host")
-            return v
-        except ValueError:
-            raise
-        except Exception as e:
-            raise ValueError(f"Invalid health check URL '{v}': {e}") from e
+        parsed = urlparse(v)
+        # Validate scheme
+        if parsed.scheme not in ("http", "https"):
+            raise ValueError(
+                f"Invalid health check URL '{v}': scheme must be 'http' or 'https', "
+                f"got '{parsed.scheme or '(empty)'}'"
+            )
+        # Validate netloc (host[:port])
+        if not parsed.netloc:
+            raise ValueError(f"Invalid health check URL '{v}': missing host")
+        return v

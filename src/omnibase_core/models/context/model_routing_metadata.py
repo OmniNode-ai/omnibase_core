@@ -17,13 +17,17 @@ See Also:
     - omnibase_core.models.context.model_http_request_metadata: HTTP request metadata
 """
 
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 __all__ = ["ModelRoutingMetadata"]
 
-# Valid load balance strategies
+# Type alias for load balance strategies
+LoadBalanceStrategy = Literal["round_robin", "least_connections", "random", "weighted"]
+
+# Valid load balance strategies (for validation error messages)
 VALID_LOAD_BALANCE_STRATEGIES = frozenset(
     {"round_robin", "least_connections", "random", "weighted"}
 )
@@ -81,7 +85,7 @@ class ModelRoutingMetadata(BaseModel):
         default=None,
         description="Preferred service instance ID for routing",
     )
-    load_balance_strategy: str = Field(
+    load_balance_strategy: LoadBalanceStrategy = Field(
         default="round_robin",
         description=(
             "Load balancing strategy. Valid values: round_robin, least_connections, "
@@ -104,23 +108,44 @@ class ModelRoutingMetadata(BaseModel):
     )
     timeout_override_ms: int | None = Field(
         default=None,
-        description="Override default timeout in milliseconds",
+        description=(
+            "Override the default service timeout in milliseconds. "
+            "Must be a positive integer when provided. None uses the default timeout."
+        ),
     )
     circuit_breaker_enabled: bool = Field(
         default=True,
         description="Enable circuit breaker for this route",
     )
 
+    @field_validator("timeout_override_ms")
+    @classmethod
+    def validate_timeout_positive(cls, v: int | None) -> int | None:
+        """Validate that timeout_override_ms is positive when provided.
+
+        Args:
+            v: The timeout value in milliseconds to validate.
+
+        Returns:
+            The validated timeout value.
+
+        Raises:
+            ValueError: If the value is not positive when provided.
+        """
+        if v is not None and v <= 0:
+            raise ValueError("timeout_override_ms must be positive")
+        return v
+
     @field_validator("load_balance_strategy", mode="before")
     @classmethod
-    def validate_load_balance_strategy(cls, v: str) -> str:
+    def validate_load_balance_strategy(cls, v: str) -> LoadBalanceStrategy:
         """Validate that load_balance_strategy is a valid strategy.
 
         Args:
             v: The load balance strategy string to validate.
 
         Returns:
-            The validated strategy string.
+            The validated strategy as a Literal type.
 
         Raises:
             ValueError: If the value is not a valid load balance strategy.
@@ -130,4 +155,5 @@ class ModelRoutingMetadata(BaseModel):
             raise ValueError(
                 f"Invalid load_balance_strategy '{v}': must be one of {valid_strategies}"
             )
-        return v
+        # Cast to LoadBalanceStrategy since we've validated it's a valid value
+        return v  # type: ignore[return-value]
