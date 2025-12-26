@@ -173,9 +173,11 @@ class ModelCustomFields(BaseModel):
 
 
 # Compatibility aliases
+# Note: ErrorDetails uses Any for generic context since this is a compatibility alias
+# for legacy code that doesn't use typed context models
 CustomFieldDefinition = ModelCustomFieldDefinition
 CustomFields = ModelCustomFields
-ErrorDetails = ModelErrorDetails
+ErrorDetails = ModelErrorDetails[Any]
 
 # Re-export for current standards
 __all__ = [

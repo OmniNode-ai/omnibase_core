@@ -206,7 +206,7 @@ class ModelErrorDetails(BaseModel, Generic[TContext]):
     )
     documentation_url: str | None = Field(default=None, description="Documentation URL")
 
-    model_config = ConfigDict(frozen=True, from_attributes=True)
+    model_config = ConfigDict(frozen=True, from_attributes=True, extra="forbid")
 
     # ONEX_EXCLUDE: dict_str_any - factory input
     @classmethod
@@ -266,13 +266,20 @@ class ModelErrorDetails(BaseModel, Generic[TContext]):
         # Make a defensive copy to avoid mutating the caller's input
         data = data.copy()
 
-        # Handle legacy format
+        # Handle legacy format - convert legacy field names to standard names
+        # and remove unused legacy fields (required for extra="forbid")
         if "error_code" not in data and "code" in data:
             data["error_code"] = data.pop("code")
+        elif "code" in data:
+            del data["code"]  # Remove unused legacy field
+
         if "error_type" not in data:
             data["error_type"] = "runtime"
+
         if "error_message" not in data and "message" in data:
             data["error_message"] = data.pop("message")
+        elif "message" in data:
+            del data["message"]  # Remove unused legacy field
 
         return cls(**data)
 

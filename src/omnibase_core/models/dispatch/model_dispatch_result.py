@@ -285,7 +285,7 @@ class ModelDispatchResult(BaseModel):
         status: EnumDispatchStatus,
         message: str,
         code: str | None = None,
-        details: ModelErrorDetails | None = None,  # type: ignore[type-arg]
+        details: ModelErrorDetails[Any] | None = None,
     ) -> "ModelDispatchResult":
         """
         Create a new result with error information.

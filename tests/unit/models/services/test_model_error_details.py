@@ -864,6 +864,22 @@ class TestModelErrorDetailsEdgeCases:
         assert errors[0]["loc"] == ("retry_after_seconds",)
         assert errors[0]["type"] == "greater_than_equal"
 
+    def test_extra_fields_forbidden(self):
+        """Test that extra fields are forbidden (extra='forbid' in ConfigDict)."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelErrorDetails(
+                error_code="ERR001",
+                error_type="validation",
+                error_message="Test error",
+                unknown_field="should_not_be_allowed",  # type: ignore[call-arg]
+            )
+
+        # Verify the error is about extra fields being forbidden
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert errors[0]["type"] == "extra_forbidden"
+        assert "unknown_field" in str(errors[0]["loc"])
+
 
 @pytest.mark.unit
 class TestModelErrorDetailsRecoverySuggestions:
