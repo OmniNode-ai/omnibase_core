@@ -31,7 +31,7 @@ class ModelStorageCheckpointMetadata(BaseModel):
 
     model_config = ConfigDict(
         frozen=True,
-        extra="ignore",
+        extra="forbid",
         from_attributes=True,
     )
 

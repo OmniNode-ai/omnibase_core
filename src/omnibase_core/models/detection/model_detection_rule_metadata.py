@@ -38,6 +38,12 @@ class ModelDetectionRuleMetadata(BaseModel):
         ... )
     """
 
+    model_config = ConfigDict(
+        frozen=True,
+        extra="forbid",
+        from_attributes=True,
+    )
+
     rule_id: str | None = Field(
         default=None,
         description="Identifier of the detection rule that matched",
@@ -66,11 +72,4 @@ class ModelDetectionRuleMetadata(BaseModel):
     extra: dict[str, str] = Field(
         default_factory=dict,
         description="Additional string key-value pairs for extensibility",
-    )
-
-    model_config = ConfigDict(
-        frozen=True,
-        from_attributes=True,
-        extra="forbid",
-        validate_assignment=True,
     )

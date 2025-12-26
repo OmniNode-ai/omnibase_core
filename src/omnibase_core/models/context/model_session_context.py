@@ -32,7 +32,10 @@ class ModelSessionContext(BaseModel):
         session_id: Unique session identifier for tracking user sessions
             across multiple requests.
         client_ip: IP address of the client making the request. May be
-            the actual client IP or a forwarded IP from proxies.
+            the actual client IP or a forwarded IP from proxies. Security:
+            Validate and sanitize before logging to prevent log injection
+            attacks. Consider GDPR/privacy implications before storage.
+            Supports both IPv4 and IPv6 formats (up to 45 characters).
         user_agent: User agent string identifying the client application
             (e.g., browser, CLI tool, API client).
         device_fingerprint: Device fingerprint for session binding and
@@ -65,7 +68,11 @@ class ModelSessionContext(BaseModel):
     )
     client_ip: str | None = Field(
         default=None,
-        description="Client IP address",
+        description=(
+            "Client IP address. Security: Validate/sanitize before logging to prevent "
+            "log injection. Consider GDPR/privacy implications for storage. Supports "
+            "both IPv4 and IPv6 (up to 45 chars)."
+        ),
     )
     user_agent: str | None = Field(
         default=None,

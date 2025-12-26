@@ -20,6 +20,22 @@ Thread Safety:
     All models in this module are frozen (immutable) after creation.
     Safe for concurrent read access across threads.
 
+Usage Notes:
+    Checkpoint Metadata Models:
+        There are two checkpoint metadata models with distinct purposes:
+
+        - ModelCheckpointMetadata (this module):
+            For workflow state tracking. Use when you need to capture checkpoint
+            state within a workflow context, including trigger events, workflow
+            stage, and checkpoint version. This model is part of the typed context
+            system and focuses on operational metadata.
+
+        - ModelStorageCheckpointMetadata (omnibase_core.models.core):
+            For storage backend persistence. Use when implementing checkpoint
+            storage backends that need retention policies, storage labels, and
+            blob store integration. This model focuses on persistence concerns
+            like TTL, storage tier, and backend-specific metadata.
+
 Example:
     >>> from omnibase_core.models.context import (
     ...     ModelSessionContext,
