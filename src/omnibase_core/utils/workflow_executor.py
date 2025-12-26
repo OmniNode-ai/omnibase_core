@@ -349,13 +349,13 @@ async def execute_workflow(
     result.execution_time_ms = execution_time_ms
 
     # Add workflow hash to metadata for integrity verification
-    # Since ModelWorkflowResultMetadata is frozen, create new instance with updated hash
+    # Since ModelWorkflowResultMetadata is frozen, use model_copy() to create new instance
+    # Note: result.metadata is never None in practice since _execute_sequential,
+    # _execute_parallel, and _execute_batch all create metadata. The check is
+    # defensive to satisfy type checking.
     if result.metadata is not None:
-        result.metadata = ModelWorkflowResultMetadata(
-            execution_mode=result.metadata.execution_mode,
-            workflow_name=result.metadata.workflow_name,
-            workflow_hash=workflow_hash,
-            batch_size=result.metadata.batch_size,
+        result.metadata = result.metadata.model_copy(
+            update={"workflow_hash": workflow_hash}
         )
 
     return result
@@ -1043,13 +1043,10 @@ async def _execute_batch(
     """
     # For batch mode, use sequential execution with batching metadata
     result = await _execute_sequential(workflow_definition, workflow_steps, workflow_id)
-    # Since ModelWorkflowResultMetadata is frozen, create new instance with batch-specific values
+    # Since ModelWorkflowResultMetadata is frozen, use model_copy() to create new instance
     if result.metadata is not None:
-        result.metadata = ModelWorkflowResultMetadata(
-            execution_mode="batch",
-            workflow_name=result.metadata.workflow_name,
-            workflow_hash=result.metadata.workflow_hash,
-            batch_size=len(workflow_steps),
+        result.metadata = result.metadata.model_copy(
+            update={"execution_mode": "batch", "batch_size": len(workflow_steps)}
         )
     return result
 

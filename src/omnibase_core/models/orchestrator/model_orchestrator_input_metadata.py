@@ -99,3 +99,6 @@ class ModelOrchestratorInputMetadata(BaseModel):
         default=False,
         description="Whether to persist workflow results",
     )
+
+
+__all__ = ["ModelOrchestratorInputMetadata"]
