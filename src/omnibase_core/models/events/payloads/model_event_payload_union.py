@@ -10,33 +10,22 @@ Using typed payloads instead of dict[str, Any] provides:
 - Explicit documentation of supported event types
 
 Event Categories:
-    Runtime Events (ModelRuntimeEventBase subclasses) - Currently included:
+    Runtime Events (ModelRuntimeEventBase subclasses):
         - Node lifecycle: registration, unregistration
         - Subscription lifecycle: created, failed, removed
         - Runtime status: ready, graph ready
         - Wiring: result, error
 
-    Discovery Events (ModelOnexEvent subclasses) - TODO: Add when circular import resolved:
+    Discovery Events (ModelOnexEvent subclasses):
         - Tool lifecycle: invocation, response
         - Node discovery: introspection, health, shutdown
         - Tool discovery: request, response
 
 Note:
-    Discovery events (ModelOnexEvent subclasses) are currently excluded due to a
-    pre-existing circular import issue in the codebase. When importing
-    omnibase_core.models.discovery, a circular import chain occurs:
-        discovery -> core -> common -> validation -> contracts -> mixins -> discovery
-
-    Once this circular import is resolved, the following types should be added:
-        - ModelToolInvocationEvent
-        - ModelToolResponseEvent
-        - ModelNodeHealthEvent
-        - ModelNodeShutdownEvent
-        - ModelNodeIntrospectionEvent
-        - ModelIntrospectionResponseEvent
-        - ModelRequestIntrospectionEvent
-        - ModelToolDiscoveryRequest
-        - ModelToolDiscoveryResponse
+    Import Order Matters: Discovery events must be imported AFTER runtime events
+    to avoid circular import issues. The runtime event imports properly initialize
+    the module graph (including ModelOnexEvent and related dependencies), allowing
+    subsequent discovery event imports to succeed.
 
     For true discriminated union support with optimal performance,
     event models would need Literal types for event_type (e.g.,
@@ -47,6 +36,35 @@ Note:
 
 # Runtime Events (ModelRuntimeEventBase subclasses)
 # These events do NOT trigger the circular import and are safe to use
+# Discovery Events (ModelOnexEvent subclasses)
+# IMPORTANT: These imports MUST come AFTER the runtime event imports above.
+# The runtime event imports properly initialize the module graph, allowing
+# discovery events to be imported without circular import issues.
+from omnibase_core.models.discovery.model_introspection_response_event import (
+    ModelIntrospectionResponseEvent,
+)
+from omnibase_core.models.discovery.model_node_introspection_event import (
+    ModelNodeIntrospectionEvent,
+)
+from omnibase_core.models.discovery.model_node_shutdown_event import (
+    ModelNodeShutdownEvent,
+)
+from omnibase_core.models.discovery.model_nodehealthevent import ModelNodeHealthEvent
+from omnibase_core.models.discovery.model_request_introspection_event import (
+    ModelRequestIntrospectionEvent,
+)
+from omnibase_core.models.discovery.model_tool_invocation_event import (
+    ModelToolInvocationEvent,
+)
+from omnibase_core.models.discovery.model_tool_response_event import (
+    ModelToolResponseEvent,
+)
+from omnibase_core.models.discovery.model_tooldiscoveryrequest import (
+    ModelToolDiscoveryRequest,
+)
+from omnibase_core.models.discovery.model_tooldiscoveryresponse import (
+    ModelToolDiscoveryResponse,
+)
 from omnibase_core.models.events.model_node_graph_ready_event import (
     ModelNodeGraphReadyEvent,
 )
@@ -75,22 +93,11 @@ from omnibase_core.models.events.model_wiring_result_event import (
     ModelWiringResultEvent,
 )
 
-# NOTE: Discovery Events are excluded due to pre-existing circular import.
-# See module docstring for details on which events to add once resolved.
-# Imports would be:
-#   from omnibase_core.models.discovery.model_introspection_response_event import ...
-#   from omnibase_core.models.discovery.model_nodehealthevent import ...
-#   from omnibase_core.models.discovery.model_nodeintrospectionevent import ...
-#   from omnibase_core.models.discovery.model_node_shutdown_event import ...
-#   from omnibase_core.models.discovery.model_request_introspection_event import ...
-#   from omnibase_core.models.discovery.model_tool_invocation_event import ...
-#   from omnibase_core.models.discovery.model_tool_response_event import ...
-#   from omnibase_core.models.discovery.model_tooldiscoveryrequest import ...
-#   from omnibase_core.models.discovery.model_tooldiscoveryresponse import ...
-
 __all__ = [
+    # Union types
     "ModelEventPayloadUnion",
     "ModelRuntimeEventPayloadUnion",
+    "ModelDiscoveryEventPayloadUnion",
     # Re-export individual runtime event types for convenience
     "ModelNodeRegisteredEvent",
     "ModelNodeUnregisteredEvent",
@@ -101,12 +108,21 @@ __all__ = [
     "ModelNodeGraphReadyEvent",
     "ModelWiringResultEvent",
     "ModelWiringErrorEvent",
+    # Re-export individual discovery event types for convenience
+    "ModelIntrospectionResponseEvent",
+    "ModelNodeHealthEvent",
+    "ModelNodeIntrospectionEvent",
+    "ModelNodeShutdownEvent",
+    "ModelRequestIntrospectionEvent",
+    "ModelToolDiscoveryRequest",
+    "ModelToolDiscoveryResponse",
+    "ModelToolInvocationEvent",
+    "ModelToolResponseEvent",
 ]
 
 
 # Type alias for runtime event payloads (9 types)
-# These are the events that can be published via ModelEventPublishIntent
-# without triggering circular imports
+# These are ModelRuntimeEventBase subclasses for runtime lifecycle events
 ModelRuntimeEventPayloadUnion = (
     ModelNodeRegisteredEvent
     | ModelNodeUnregisteredEvent
@@ -120,19 +136,23 @@ ModelRuntimeEventPayloadUnion = (
 )
 
 
-# Main type alias for all event payloads
-# Currently only includes runtime events due to circular import issue.
-# Once the circular import in omnibase_core.models.discovery is resolved,
-# this union should be expanded to include:
-#   ModelToolInvocationEvent,
-#   ModelToolResponseEvent,
-#   ModelNodeHealthEvent,
-#   ModelNodeShutdownEvent,
-#   ModelNodeIntrospectionEvent,
-#   ModelIntrospectionResponseEvent,
-#   ModelRequestIntrospectionEvent,
-#   ModelToolDiscoveryRequest,
-#   ModelToolDiscoveryResponse,
+# Type alias for discovery event payloads (9 types)
+# These are ModelOnexEvent subclasses for service discovery events
+ModelDiscoveryEventPayloadUnion = (
+    ModelIntrospectionResponseEvent
+    | ModelNodeHealthEvent
+    | ModelNodeIntrospectionEvent
+    | ModelNodeShutdownEvent
+    | ModelRequestIntrospectionEvent
+    | ModelToolDiscoveryRequest
+    | ModelToolDiscoveryResponse
+    | ModelToolInvocationEvent
+    | ModelToolResponseEvent
+)
+
+
+# Main type alias for all event payloads (18 types total)
+# Includes both runtime events and discovery events.
 #
 # Usage:
 #     from omnibase_core.models.events.payloads import ModelEventPayloadUnion
@@ -140,8 +160,8 @@ ModelRuntimeEventPayloadUnion = (
 #     def process_event(payload: ModelEventPayloadUnion) -> None:
 #         if isinstance(payload, ModelNodeRegisteredEvent):
 #             handle_registration(payload)
-#         elif isinstance(payload, ModelWiringResultEvent):
-#             handle_wiring(payload)
+#         elif isinstance(payload, ModelToolInvocationEvent):
+#             handle_tool_invocation(payload)
 #         # ... etc
 #
-ModelEventPayloadUnion = ModelRuntimeEventPayloadUnion
+ModelEventPayloadUnion = ModelRuntimeEventPayloadUnion | ModelDiscoveryEventPayloadUnion
