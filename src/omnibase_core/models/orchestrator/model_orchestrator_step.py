@@ -8,7 +8,6 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from omnibase_core.models.services.model_custom_fields import ModelCustomFields
-from omnibase_core.types.type_serializable_value import SerializedDict
 
 
 class ModelOrchestratorStep(BaseModel):
@@ -28,7 +27,7 @@ class ModelOrchestratorStep(BaseModel):
         default=None, description="Node to execute (for node steps)"
     )
     action: str | None = Field(default=None, description="Action to perform")
-    inputs: SerializedDict | None = Field(
+    inputs: ModelCustomFields | None = Field(
         default=None, description="Step input parameters"
     )
     timeout_seconds: int | None = Field(

@@ -98,7 +98,7 @@ import warnings
 from typing import Self
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.models.reducer.payloads.model_protocol_intent_payload import (
     ProtocolIntentPayload,
@@ -187,39 +187,6 @@ class ModelIntent(BaseModel):
         description="Optional epoch if this intent relates to versioned state",
         ge=0,
     )
-
-    @field_validator("payload", mode="before")
-    @classmethod
-    def _warn_on_dict_payload(cls, v: object) -> object:
-        """
-        Emit deprecation warning when dict payloads are used.
-
-        This validator detects when a dict is passed as the payload and warns
-        that typed payloads should be used instead. Dict payloads are deprecated
-        in v0.4.0 and will be removed in a future version.
-
-        Args:
-            v: The incoming payload value (before Pydantic validation)
-
-        Returns:
-            The unchanged value (validation continues normally)
-
-        Note:
-            stacklevel=3 is used because the call stack is:
-            1. warnings.warn() (this function)
-            2. Pydantic field validation machinery
-            3. User code that creates the ModelIntent
-        """
-        if isinstance(v, dict):
-            warnings.warn(
-                "Using dict[str, Any] for ModelIntent payload is deprecated. "
-                "Use typed payloads from omnibase_core.models.reducer.payloads "
-                "(e.g., ModelPayloadLogEvent, ModelPayloadNotify, ModelPayloadExtension). "
-                "Dict payloads will be removed in a future version.",
-                DeprecationWarning,
-                stacklevel=3,
-            )
-        return v
 
     @model_validator(mode="after")
     def _validate_intent_type_consistency(self) -> Self:
