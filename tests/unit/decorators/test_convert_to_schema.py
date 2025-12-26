@@ -414,6 +414,56 @@ class TestConvertToSchemaEdgeCases:
         assert len(names2) == 1
         assert names1[0] != names2[0], "Validator names should be different"
 
+    def test_field_names_with_double_underscores_no_collision(self):
+        """Test that field names with double underscores don't cause validator name collisions.
+
+        Without escaping, ("a__b", "c") and ("a", "b__c") would both produce validator name
+        "_convert_to_schema_a__b__c". With escaping __ to ___, they produce
+        "_convert_to_schema_a___b__c" and "_convert_to_schema_a__b___c" respectively.
+        """
+
+        # Model 1: fields "a__b" and "c"
+        @convert_to_schema("a__b", "c")
+        class TestModel1(BaseModel):
+            a__b: list[ModelSchemaValue] = Field(default_factory=list)
+            c: list[ModelSchemaValue] = Field(default_factory=list)
+
+        # Model 2: fields "a" and "b__c"
+        @convert_to_schema("a", "b__c")
+        class TestModel2(BaseModel):
+            a: list[ModelSchemaValue] = Field(default_factory=list)
+            b__c: list[ModelSchemaValue] = Field(default_factory=list)
+
+        # Both should work correctly with their respective fields
+        model1 = TestModel1(a__b=["x"], c=["y"])
+        assert model1.a__b[0].get_string() == "x"
+        assert model1.c[0].get_string() == "y"
+
+        model2 = TestModel2(a=["p"], b__c=["q"])
+        assert model2.a[0].get_string() == "p"
+        assert model2.b__c[0].get_string() == "q"
+
+        # Verify validator names are different (implementation detail, but good to verify)
+        validators1 = TestModel1.__pydantic_decorators__.model_validators
+        validators2 = TestModel2.__pydantic_decorators__.model_validators
+
+        names1 = [k for k in validators1 if k.startswith("_convert_to_schema_")]
+        names2 = [k for k in validators2 if k.startswith("_convert_to_schema_")]
+
+        assert len(names1) == 1
+        assert len(names2) == 1
+        assert names1[0] != names2[0], (
+            f"Validator names should be different: {names1[0]} vs {names2[0]}"
+        )
+
+        # Verify the escaped names are correct
+        # "a__b" and "c" sorted = ["a__b", "c"], escaped = ["a___b", "c"]
+        # -> "_convert_to_schema_a___b__c"
+        assert "_convert_to_schema_a___b__c" in validators1
+        # "a" and "b__c" sorted = ["a", "b__c"], escaped = ["a", "b___c"]
+        # -> "_convert_to_schema_a__b___c"
+        assert "_convert_to_schema_a__b___c" in validators2
+
 
 @pytest.mark.unit
 class TestConvertListToSchemaSpecialized:
@@ -721,3 +771,93 @@ class TestVersionParsing:
 
         assert _parse_version_component("", 0) == 0
         assert _parse_version_component("", 1) == 0
+
+
+@pytest.mark.unit
+class TestEscapeFieldNameForValidator:
+    """Test the field name escape function for validator name generation."""
+
+    def test_escape_single_underscore_unchanged(self):
+        """Test that single underscores are not escaped."""
+        from omnibase_core.decorators.convert_to_schema import (
+            _escape_field_name_for_validator,
+        )
+
+        assert _escape_field_name_for_validator("a_b") == "a_b"
+        assert _escape_field_name_for_validator("foo_bar_baz") == "foo_bar_baz"
+
+    def test_escape_double_underscore(self):
+        """Test that double underscores are escaped to triple."""
+        from omnibase_core.decorators.convert_to_schema import (
+            _escape_field_name_for_validator,
+        )
+
+        assert _escape_field_name_for_validator("a__b") == "a___b"
+        assert _escape_field_name_for_validator("foo__bar") == "foo___bar"
+
+    def test_escape_multiple_double_underscores(self):
+        """Test that multiple double underscores are all escaped."""
+        from omnibase_core.decorators.convert_to_schema import (
+            _escape_field_name_for_validator,
+        )
+
+        assert _escape_field_name_for_validator("a__b__c") == "a___b___c"
+
+    def test_escape_triple_underscore(self):
+        """Test that triple underscores have their __ portion escaped."""
+        from omnibase_core.decorators.convert_to_schema import (
+            _escape_field_name_for_validator,
+        )
+
+        # "a___b" contains "a__" + "_b", so __ gets escaped to ___
+        # Result: "a____b" (4 underscores)
+        assert _escape_field_name_for_validator("a___b") == "a____b"
+
+    def test_escape_no_underscores(self):
+        """Test that names without underscores are unchanged."""
+        from omnibase_core.decorators.convert_to_schema import (
+            _escape_field_name_for_validator,
+        )
+
+        assert _escape_field_name_for_validator("abc") == "abc"
+        assert _escape_field_name_for_validator("foobar") == "foobar"
+
+
+@pytest.mark.unit
+class TestDictNoneHandlingEdgeCases:
+    """Test edge cases for dict conversion with None values."""
+
+    def test_dict_with_all_none_values(self):
+        """Test conversion of dict where ALL values are None."""
+
+        @convert_to_schema("metadata")
+        class TestModel(BaseModel):
+            metadata: dict[str, ModelSchemaValue] = Field(default_factory=dict)
+
+        model = TestModel(metadata={"key1": None, "key2": None, "key3": None})
+
+        assert len(model.metadata) == 3
+        assert all(v.is_null() for v in model.metadata.values())
+        assert model.metadata["key1"].to_value() is None
+        assert model.metadata["key2"].to_value() is None
+        assert model.metadata["key3"].to_value() is None
+
+    def test_dict_with_first_value_none(self):
+        """Test conversion where the first value happens to be None.
+
+        Dict iteration order is insertion order in Python 3.7+, so this tests
+        the scenario where the first iterated value is None but others need
+        conversion.
+        """
+
+        @convert_to_schema("metadata")
+        class TestModel(BaseModel):
+            metadata: dict[str, ModelSchemaValue] = Field(default_factory=dict)
+
+        # Create dict with None as first value
+        model = TestModel(metadata={"first": None, "second": "value", "third": 42})
+
+        assert len(model.metadata) == 3
+        assert model.metadata["first"].is_null()
+        assert model.metadata["second"].get_string() == "value"
+        assert model.metadata["third"].to_value() == 42

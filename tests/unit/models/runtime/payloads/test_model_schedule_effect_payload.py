@@ -29,8 +29,12 @@ class TestModelScheduleEffectPayloadDiscriminator:
         payload = ModelScheduleEffectPayload(effect_node_type="http_request")
         assert payload.kind == "schedule_effect"
 
-    def test_kind_rejects_non_literal_value(self) -> None:
-        """Test that kind field rejects values other than 'schedule_effect'."""
+    def test_kind_rejects_invalid_discriminator_value(self) -> None:
+        """Test that kind field rejects values other than 'schedule_effect'.
+
+        The kind field is a Literal['schedule_effect'] discriminator, so any other
+        value should be rejected by Pydantic validation.
+        """
         with pytest.raises(ValidationError):
             ModelScheduleEffectPayload(
                 effect_node_type="http_request",

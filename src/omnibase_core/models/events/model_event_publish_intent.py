@@ -23,7 +23,7 @@ Example:
     )
 
     # Example 1: Using topic_name() for dynamic topic generation
-    # This creates "dev.omninode-bridge.registration.events.v1"
+    # This creates "onex.registration.events"
     registration_topic = topic_name(DOMAIN_REGISTRATION, TOPIC_TYPE_EVENTS)
 
     # Example 2: Create typed payload with all required fields
@@ -374,7 +374,10 @@ def _log_rebuild_failure(
 
 
 try:
-    # Import ModelOnexError for specific exception handling
+    # Import ModelOnexError and error codes for specific exception handling
+    from omnibase_core.enums.enum_core_error_code import (
+        EnumCoreErrorCode as _EnumCoreErrorCode,
+    )
     from omnibase_core.models.errors.model_onex_error import (
         ModelOnexError as _ModelOnexError,
     )
@@ -382,38 +385,45 @@ try:
     try:
         _rebuild_model()
     except _ModelOnexError as _rebuild_error:
-        # Structured error from _rebuild_model() - extract details for logging
-        # ModelOnexError has error_code: EnumOnexErrorCode | str | None
+        # Structured error from _rebuild_model() - check error code
+        # Configuration and initialization errors should fail fast
         _error_code = _rebuild_error.error_code
+
+        # Configuration errors should fail fast, not be deferred
+        # IMPORT_ERROR is expected during bootstrap and can be deferred
+        if _error_code in (
+            _EnumCoreErrorCode.CONFIGURATION_ERROR,
+            _EnumCoreErrorCode.INITIALIZATION_FAILED,
+        ):
+            # Re-raise configuration errors to fail fast
+            # These indicate real problems that should halt startup
+            raise
+
+        # For other error types (like IMPORT_ERROR), log and defer
         if _error_code is None:
             _error_code_str = "UNKNOWN"
         elif hasattr(_error_code, "value"):
-            _error_code_str = str(_error_code.value)  # type: ignore[union-attr]
+            _error_code_str = str(_error_code.value)
         else:
             _error_code_str = str(_error_code)
         _error_msg = _rebuild_error.message or str(_rebuild_error)
         _log_rebuild_failure(_error_code_str, _error_msg, "ModelOnexError")
     except (TypeError, ValueError, AttributeError) as _type_error:
-        # Specific exception types that could escape _rebuild_model()
-        # These are recoverable - Pydantic will lazily resolve on first use
-        _log_rebuild_failure(
-            type(_type_error).__name__,
-            str(_type_error),
-            "type_error",
-        )
+        # These specific exceptions from _rebuild_model() indicate
+        # configuration problems - re-raise to fail fast
+        raise
     except RuntimeError as _runtime_error:
-        # RuntimeError could occur during module manipulation
-        _log_rebuild_failure(
-            "RUNTIME_ERROR",
-            str(_runtime_error),
-            "RuntimeError",
-        )
+        # RuntimeError during module manipulation is a critical failure
+        raise
 except ImportError as _import_error:
     # Handle case where ModelOnexError itself fails to import (early bootstrap)
     # This is expected during early module loading before all dependencies exist
     # Use _log_rebuild_failure for consistent error handling pattern
-    _log_rebuild_failure(
-        error_code_str="IMPORT_ERROR",
-        error_msg=str(_import_error),
-        error_type="ImportError (bootstrap)",
+    import logging as _bootstrap_logging
+
+    _bootstrap_logger = _bootstrap_logging.getLogger(__name__)
+    _bootstrap_logger.debug(
+        "ModelEventPublishIntent: forward reference rebuild deferred "
+        "(ImportError during bootstrap): %s",
+        _import_error,
     )

@@ -40,7 +40,11 @@ from omnibase_core.models.common.model_reducer_metadata import ModelReducerMetad
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.reducer.model_intent import ModelIntent
 from omnibase_core.models.reducer.model_reducer_output import ModelReducerOutput
-from omnibase_core.models.reducer.payloads import ModelPayloadLogEvent
+from omnibase_core.models.reducer.payloads import (
+    ModelPayloadEmitEvent,
+    ModelPayloadLogEvent,
+    ModelPayloadNotify,
+)
 
 pytestmark = pytest.mark.unit
 
@@ -1095,19 +1099,22 @@ class TestModelReducerOutputEdgeCases:
             ),
         )
         intent2 = ModelIntent(
-            intent_type="emit",
+            intent_type="emit_event",
             target="service2",
-            payload=ModelPayloadLogEvent(
-                level="INFO",
-                message="Test message",
+            payload=ModelPayloadEmitEvent(
+                event_type="test.event",
+                event_data={"key": "value"},
+                topic="test-events",
             ),
         )
         intent3 = ModelIntent(
             intent_type="notify",
             target="service3",
-            payload=ModelPayloadLogEvent(
-                level="INFO",
-                message="Test message",
+            payload=ModelPayloadNotify(
+                channel="slack",
+                recipients=["#test-channel"],
+                subject="Test Notification",
+                body="Test notification message",
             ),
         )
 

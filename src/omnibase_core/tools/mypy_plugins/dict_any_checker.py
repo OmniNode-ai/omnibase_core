@@ -41,7 +41,7 @@ Plugin Architecture:
 """
 
 from collections.abc import Callable
-from typing import Any
+from typing import Any, cast
 
 from mypy.nodes import (
     CallExpr,
@@ -441,7 +441,7 @@ class DictAnyCheckerPlugin(Plugin):
             # Try direct access first
             modules = getattr(api, "modules", None)
             if modules is not None:
-                return modules
+                return cast(dict[str, MypyFile], modules)
 
             # Try accessing through internal attributes (various mypy versions)
             for attr in ("chk", "checker", "_checker", "manager", "options"):
@@ -449,7 +449,7 @@ class DictAnyCheckerPlugin(Plugin):
                 if obj is not None:
                     modules = getattr(obj, "modules", None)
                     if modules is not None:
-                        return modules
+                        return cast(dict[str, MypyFile], modules)
 
             # Try accessing through msg.errors.errors (older mypy versions)
             msg = getattr(api, "msg", None)
@@ -458,7 +458,7 @@ class DictAnyCheckerPlugin(Plugin):
                 if errors is not None:
                     modules = getattr(errors, "modules", None)
                     if modules is not None:
-                        return modules
+                        return cast(dict[str, MypyFile], modules)
 
             # Try accessing through named_generic_type (internal method)
             # This is a last resort as it accesses very internal APIs
@@ -469,7 +469,7 @@ class DictAnyCheckerPlugin(Plugin):
                 if self_obj is not None:
                     modules = getattr(self_obj, "modules", None)
                     if modules is not None:
-                        return modules
+                        return cast(dict[str, MypyFile], modules)
 
         except Exception:
             pass

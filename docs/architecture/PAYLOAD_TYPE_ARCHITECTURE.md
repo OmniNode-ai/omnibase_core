@@ -61,8 +61,8 @@ The codebase uses **intentionally different discriminator field names** across p
 
 > **Note on Action Payloads**: Action payloads use `action_type: ModelNodeActionType` as the data field,
 > with a `kind` **property** (derived from `action_type.name`) to satisfy `ProtocolActionPayload`.
-
-> **Note**: Reducer Intent Payloads use a Protocol-based approach (`ProtocolIntentPayload`) rather than
+>
+> **Note on Reducer Intent Payloads**: Reducer Intent Payloads use a Protocol-based approach (`ProtocolIntentPayload`) rather than
 > a discriminated union, enabling open extensibility for plugins. Payload classes still define an
 > `intent_type` attribute for routing, but dispatch is structural (duck typing) rather than union-based.
 

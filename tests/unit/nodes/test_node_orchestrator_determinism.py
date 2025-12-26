@@ -1036,6 +1036,10 @@ class TestNodeOrchestratorParallelExecutionDeterminism:
 
         # All should emit same number of actions
         expected_count = len(results[0].actions_emitted)
+        # Verify the count is correct (4 steps in complex_dependency_steps_config)
+        assert expected_count == 4, (
+            f"Expected 4 actions for 4 workflow steps, got {expected_count}"
+        )
         for result in results[1:]:
             assert len(result.actions_emitted) == expected_count
 

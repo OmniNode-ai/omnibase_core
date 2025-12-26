@@ -182,6 +182,34 @@ def _is_serialized_schema_value(
     return value.get("value_type") in valid_types
 
 
+def _escape_field_name_for_validator(name: str) -> str:
+    """Escape field name for use in validator name to prevent collisions.
+
+    The validator name uses '__' (double underscore) as a separator between
+    field names. To prevent collisions when field names themselves contain '__',
+    we escape '__' to '___' (triple underscore).
+
+    This ensures unambiguous parsing:
+    - '__' in the result always means separator
+    - '___' in the result always means escaped '__' from the original name
+
+    Examples:
+        >>> _escape_field_name_for_validator("a_b")  # Single underscore: unchanged
+        'a_b'
+        >>> _escape_field_name_for_validator("a__b")  # Double underscore: escaped
+        'a___b'
+        >>> _escape_field_name_for_validator("a___b")  # Triple underscore: still escapes __
+        'a____b'
+
+    Args:
+        name: The field name to escape.
+
+    Returns:
+        The escaped field name safe for use in validator names.
+    """
+    return name.replace("__", "___")
+
+
 def _convert_list_value(
     value: list[Any] | None, schema_cls: type[ModelSchemaValue]
 ) -> list[Any] | None:
@@ -239,15 +267,32 @@ def _convert_dict_value(
 
     Returns None if input is None (preserves optional field semantics).
     Returns {} if input is an empty dict.
+
+    Note on None handling:
+        When checking if values are already ModelSchemaValue, we skip None values
+        because None can appear in both raw dicts (to be converted to null) and
+        in dicts with mixed ModelSchemaValue instances. By finding the first
+        non-None value, we can reliably determine if conversion is needed.
     """
     if value is None:
         return None
     if not value:  # Empty dict
         return {}
     # Check if values are already ModelSchemaValue
-    first_value = next(iter(value.values()))
-    if isinstance(first_value, schema_cls):
+    # Skip None values when determining conversion status, as None can appear
+    # in both raw dicts and dicts that are already partially converted.
+    first_non_none_value = None
+    for v in value.values():
+        if v is not None:
+            first_non_none_value = v
+            break
+    # If we found a non-None value and it's already a ModelSchemaValue,
+    # assume the dict is already converted (homogeneous assumption)
+    if first_non_none_value is not None and isinstance(
+        first_non_none_value, schema_cls
+    ):
         return value
+    # If all values are None or we found raw values, convert everything
     try:
         return {k: schema_cls.from_value(v) for k, v in value.items()}
     except Exception as e:
@@ -421,7 +466,11 @@ def convert_to_schema(
         # Use double underscore separator to avoid name collisions.
         # Example: ("a_b", "c") and ("a", "b_c") would both produce "a_b_c" with single
         # underscore, but produce "a_b__c" and "a__b_c" with double underscore.
-        validator_name = f"_convert_to_schema_{'__'.join(sorted(field_names))}"
+        # Escape field names to prevent collisions when names contain '__'
+        escaped_names = [
+            _escape_field_name_for_validator(n) for n in sorted(field_names)
+        ]
+        validator_name = f"_convert_to_schema_{'__'.join(escaped_names)}"
 
         # Add method to class
         setattr(cls, validator_name, validator_method)
@@ -523,7 +572,11 @@ def convert_list_to_schema(
 
         validator_method = classmethod(convert_list_fields).__get__(None, cls)
         # Use double underscore separator to avoid name collisions
-        validator_name = f"_convert_list_to_schema_{'__'.join(sorted(field_names))}"
+        # Escape field names to prevent collisions when names contain '__'
+        escaped_names = [
+            _escape_field_name_for_validator(n) for n in sorted(field_names)
+        ]
+        validator_name = f"_convert_list_to_schema_{'__'.join(escaped_names)}"
         setattr(cls, validator_name, validator_method)
 
         # Explicit None check for type narrowing - runtime check above guarantees availability
@@ -618,7 +671,11 @@ def convert_dict_to_schema(
 
         validator_method = classmethod(convert_dict_fields).__get__(None, cls)
         # Use double underscore separator to avoid name collisions
-        validator_name = f"_convert_dict_to_schema_{'__'.join(sorted(field_names))}"
+        # Escape field names to prevent collisions when names contain '__'
+        escaped_names = [
+            _escape_field_name_for_validator(n) for n in sorted(field_names)
+        ]
+        validator_name = f"_convert_dict_to_schema_{'__'.join(escaped_names)}"
         setattr(cls, validator_name, validator_method)
 
         # Explicit None check for type narrowing - runtime check above guarantees availability

@@ -256,7 +256,7 @@ class ModelAction(BaseModel):
                 "Consider reducing retry_count or timeout_ms to prevent "
                 "excessive blocking in orchestration workflows.",
                 UserWarning,
-                stacklevel=2,
+                stacklevel=3,
             )
 
         # Validate payload type integration when using typed payloads
