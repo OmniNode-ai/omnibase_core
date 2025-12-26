@@ -75,6 +75,36 @@ class ModelPayloadWrite(ModelIntentPayloadBase):
         ...     content_type="application/json",
         ...     metadata={"generator": "report-service", "version": "1.0"},
         ... )
+
+    Design Notes:
+        Current Implementation:
+            Binary data must be base64-encoded to a string before being passed
+            to the content field. The Effect handler determines whether to decode
+            based on the content_type field (binary MIME types trigger decoding).
+            This approach keeps the model simple with a single string type.
+
+        Future Enhancement:
+            A future version could support ``content: str | bytes`` with a Pydantic
+            field validator to handle automatic base64 encoding on serialization.
+            This would make binary content handling more explicit at the type level::
+
+                content: str | bytes = Field(...)
+
+                @field_serializer("content")
+                def serialize_content(self, v: str | bytes) -> str:
+                    if isinstance(v, bytes):
+                        return base64.b64encode(v).decode("ascii")
+                    return v
+
+            Trade-offs:
+                - Current (str-only): Simpler model, no serialization overhead,
+                  consistent JSON representation, but requires manual encoding.
+                - Future (str | bytes): More explicit type safety, automatic
+                  encoding, but adds serialization complexity and requires
+                  validators to maintain JSON compatibility.
+
+            The current string-only approach was chosen for simplicity and to
+            ensure straightforward JSON serialization without custom logic.
     """
 
     # NOTE: Discriminator field is placed FIRST for optimal union type resolution.

@@ -22,13 +22,14 @@ Replace `dict[str, Any]` payload fields in 4 core models with **Pydantic discrim
 ## Table of Contents
 
 1. [Decision](#decision)
-2. [Discriminator Naming Conventions](#discriminator-naming-conventions)
-3. [Rationale](#rationale)
-4. [Current State Analysis](#current-state-analysis)
-5. [Implementation by Model](#implementation-by-model)
-6. [Migration Strategy](#migration-strategy)
-7. [Examples](#examples)
-8. [Appendix: Type Safety Comparison](#appendix-type-safety-comparison)
+2. [Payload Factory Functions](#payload-factory-functions)
+3. [Discriminator Naming Conventions](#discriminator-naming-conventions)
+4. [Rationale](#rationale)
+5. [Current State Analysis](#current-state-analysis)
+6. [Implementation by Model](#implementation-by-model)
+7. [Migration Strategy](#migration-strategy)
+8. [Examples](#examples)
+9. [Appendix: Type Safety Comparison](#appendix-type-safety-comparison)
 
 ---
 
@@ -42,6 +43,59 @@ Adopt **discriminated unions with Pydantic's `Field(discriminator="...")`** patt
 2. **Annotated union aliases** - Define type aliases using `Annotated[Union[...], Field(discriminator="...")]`
 3. **Closed sets for core types** - Known, finite payload types per model
 4. **Open extension points** - Keep string-based routing for plugins/extensions where needed
+
+---
+
+## Payload Factory Functions
+
+For runtime payload creation, the following factory functions are provided to bridge `EnumActionType` with semantic payload types:
+
+### `create_action_payload()`
+
+Creates typed action payloads by mapping semantic actions to the appropriate payload class:
+
+```python
+from omnibase_core.enums.enum_workflow_execution import EnumActionType
+from omnibase_core.models.orchestrator.payloads import create_action_payload
+
+# Create a typed payload for a data operation
+payload = create_action_payload(
+    action_type=EnumActionType.EFFECT,
+    semantic_action="read",
+    target_path="/data/users.json",
+    filters={"active": True},
+)
+# Returns ModelDataActionPayload with full type safety
+```
+
+### `get_payload_type_for_semantic_action()`
+
+Returns the payload class for a given semantic action string:
+
+```python
+from omnibase_core.models.orchestrator.payloads.model_action_typed_payload import (
+    get_payload_type_for_semantic_action,
+)
+
+payload_type = get_payload_type_for_semantic_action("read")
+# Returns ModelDataActionPayload
+
+payload_type = get_payload_type_for_semantic_action("transform")
+# Returns ModelTransformationActionPayload
+```
+
+### `get_recommended_payloads_for_action_type()`
+
+Returns the list of commonly used payload types for each `EnumActionType`:
+
+```python
+from omnibase_core.models.orchestrator.payloads import get_recommended_payloads_for_action_type
+
+payloads = get_recommended_payloads_for_action_type(EnumActionType.COMPUTE)
+# Returns [ModelTransformationActionPayload, ModelValidationActionPayload, ...]
+```
+
+**See Also**: [ModelAction Typed Payloads](./MODELACTION_TYPED_PAYLOADS.md) for comprehensive usage examples and the semantic action reference table.
 
 ---
 

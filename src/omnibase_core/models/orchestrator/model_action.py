@@ -171,7 +171,14 @@ class ModelAction(BaseModel):
             "the action based on retry_count and backoff policy. For long-running "
             "operations (e.g., large file transfers, complex computations), increase "
             "this value up to the maximum of 300000ms (5 minutes). Consider breaking "
-            "very long operations into smaller actions with progress checkpoints."
+            "very long operations into smaller actions with progress checkpoints. "
+            "\n\n"
+            "Note: Timeout enforcement is pending implementation in the action "
+            "execution layer. Currently, the timeout_ms value is propagated from "
+            "workflow steps (via utils/workflow_executor.py) and FSM transitions "
+            "(via utils/fsm_executor.py) but is not yet enforced at action execution "
+            "time. For compute pipeline timeouts, see ModelComputeSubcontract.pipeline_timeout_ms "
+            "which IS enforced in utils/compute_executor.py using ThreadPoolExecutor."
         ),
         ge=100,
         le=300000,  # Max 5 minutes

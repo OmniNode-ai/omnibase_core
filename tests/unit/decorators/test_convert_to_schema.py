@@ -772,6 +772,70 @@ class TestVersionParsing:
         assert _parse_version_component("", 0) == 0
         assert _parse_version_component("", 1) == 0
 
+    def test_parse_hyphenated_prerelease_with_dot_suffix(self):
+        """Test parsing version with hyphenated pre-release suffix containing dots.
+
+        Covers edge case: "3.0.0-alpha.1" where the pre-release suffix
+        includes a dot separator that could interfere with version splitting.
+        """
+        from omnibase_core.decorators.convert_to_schema import _parse_version_component
+
+        # "3.0.0-alpha.1" splits to ["3", "0", "0-alpha", "1"]
+        # Major: 3
+        assert _parse_version_component("3.0.0-alpha.1", 0) == 3
+        # Minor: 0
+        assert _parse_version_component("3.0.0-alpha.1", 1) == 0
+        # Patch: "0-alpha" -> extracts leading "0"
+        assert _parse_version_component("3.0.0-alpha.1", 2) == 0
+        # 4th component: "1" -> 1
+        assert _parse_version_component("3.0.0-alpha.1", 3) == 1
+
+    def test_parse_build_metadata_suffix(self):
+        """Test parsing version with build metadata suffix.
+
+        Covers edge case: "2.11-dev+commit.sha" where build metadata
+        (after +) contains additional dots and characters.
+        """
+        from omnibase_core.decorators.convert_to_schema import _parse_version_component
+
+        # "2.11-dev+commit.sha" splits to ["2", "11-dev+commit", "sha"]
+        # Major: 2
+        assert _parse_version_component("2.11-dev+commit.sha", 0) == 2
+        # Minor: "11-dev+commit" -> extracts leading "11"
+        assert _parse_version_component("2.11-dev+commit.sha", 1) == 11
+        # Patch: "sha" -> no leading digits -> 0
+        assert _parse_version_component("2.11-dev+commit.sha", 2) == 0
+
+    def test_parse_four_component_version_with_dev_suffix(self):
+        """Test parsing 4-component version with dev suffix.
+
+        Covers edge case: "1.0.0.dev1" which is a common pattern
+        in Python packaging for development versions.
+        """
+        from omnibase_core.decorators.convert_to_schema import _parse_version_component
+
+        # "1.0.0.dev1" splits to ["1", "0", "0", "dev1"]
+        # Major: 1
+        assert _parse_version_component("1.0.0.dev1", 0) == 1
+        # Minor: 0
+        assert _parse_version_component("1.0.0.dev1", 1) == 0
+        # Patch: 0
+        assert _parse_version_component("1.0.0.dev1", 2) == 0
+        # 4th component: "dev1" -> no leading digits -> 0
+        assert _parse_version_component("1.0.0.dev1", 3) == 0
+
+    def test_parse_component_all_non_numeric(self):
+        """Test parsing component that is entirely non-numeric.
+
+        Covers edge case where a version component has no leading digits at all.
+        """
+        from omnibase_core.decorators.convert_to_schema import _parse_version_component
+
+        # "alpha" -> no leading digits -> 0
+        assert _parse_version_component("1.0.alpha", 2) == 0
+        # "beta-2" starts with non-digit -> 0
+        assert _parse_version_component("1.0.beta-2", 2) == 0
+
 
 @pytest.mark.unit
 class TestEscapeFieldNameForValidator:
