@@ -76,6 +76,13 @@ done
 # - Allows for submodule imports like 'import aiohttp.client' or 'from aiohttp.web import X'
 IMPORT_PATTERN="^[[:space:]]*(from[[:space:]]+($PATTERN)(\\.|[[:space:]])|import[[:space:]]+($PATTERN)(\\.|[[:space:]]|,|$))"
 
+# Test cases (commented out, for manual verification):
+# echo "import aiohttp" | grep -P "$IMPORT_PATTERN"              # Should match
+# echo "import aiohttp_helper" | grep -P "$IMPORT_PATTERN"       # Should NOT match
+# echo "from aiohttp import ClientSession" | grep -P "$IMPORT_PATTERN"  # Should match
+# echo "from aiohttp.web import Application" | grep -P "$IMPORT_PATTERN"  # Should match
+# echo "import aiohttp, httpx" | grep -P "$IMPORT_PATTERN"       # Should match
+
 # Files/patterns to exclude:
 # - Protocol definition files with documentation examples showing adapter usage
 # - __pycache__ and compiled files
@@ -99,6 +106,15 @@ VIOLATIONS=$(grep -RnP "$IMPORT_PATTERN" "$CORE_SRC" --include="*.py" 2>/dev/nul
 #   - Only execute during static type analysis (mypy, pyright)
 #   - Create NO runtime dependencies
 #   - Are guarded by: if TYPE_CHECKING: ... from aiohttp import ClientSession
+#
+# Concrete examples of what IS vs IS NOT detected:
+#
+#   This WOULD be detected (single line - VIOLATION):
+#       from aiohttp import ClientSession
+#
+#   This would NOT be detected (multi-line TYPE_CHECKING guard - ALLOWED):
+#       if TYPE_CHECKING:
+#           from aiohttp import ClientSession  # grep can't detect the guard
 #
 # If this script flags an import that is inside a TYPE_CHECKING block:
 #   1. VERIFY: Open the file and confirm the import is inside 'if TYPE_CHECKING:'
