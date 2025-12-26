@@ -27,7 +27,6 @@ from omnibase_core.models.context import (
     ModelSessionContext,
 )
 
-
 # =============================================================================
 # Helper classes for from_attributes testing
 # =============================================================================

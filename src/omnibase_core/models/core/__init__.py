@@ -29,9 +29,6 @@ from .model_generic_collection import ModelGenericCollection
 from .model_generic_collection_summary import ModelGenericCollectionSummary
 from .model_generic_properties import ModelGenericProperties
 
-# Storage checkpoint metadata pattern
-from .model_storage_checkpoint_metadata import ModelStorageCheckpointMetadata
-
 # Mixin metadata pattern
 from .model_mixin_code_patterns import ModelMixinCodePatterns
 from .model_mixin_config_field import ModelMixinConfigField
@@ -51,6 +48,9 @@ from .model_onex_version import ModelOnexVersionInfo
 # Generic metadata pattern
 from .model_protocol_metadata import ModelGenericMetadata
 from .model_result_accessor import ModelResultAccessor
+
+# Storage checkpoint metadata pattern
+from .model_storage_checkpoint_metadata import ModelStorageCheckpointMetadata
 
 # Tool integration models
 from .model_tool_integration import ModelToolIntegration

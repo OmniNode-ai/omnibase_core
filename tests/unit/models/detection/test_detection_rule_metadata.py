@@ -21,7 +21,6 @@ from omnibase_core.models.detection.model_detection_rule_metadata import (
 )
 from omnibase_core.models.security.model_detection_match import ModelDetectionMatch
 
-
 # =============================================================================
 # Basic Instantiation Tests
 # =============================================================================
