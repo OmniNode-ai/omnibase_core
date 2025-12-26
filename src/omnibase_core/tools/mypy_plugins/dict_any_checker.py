@@ -20,11 +20,35 @@ Example:
     @allow_dict_any(reason="Pydantic serialization")
     def serialize() -> dict[str, Any]:
         return self.model_dump()
+
+Plugin Architecture:
+    This plugin uses mypy's function signature hooks to check for dict[str, Any]
+    usage. When a function with dict[str, Any] in its signature is called, the
+    hook verifies whether the function definition has the @allow_dict_any decorator.
+
+    Note: Due to mypy's plugin API design, hooks are triggered on function *calls*
+    rather than function definitions. This means:
+    1. Warnings appear at call sites, not definition sites
+    2. Uncalled functions with dict[str, Any] won't trigger warnings
+    3. This is consistent with mypy's type narrowing at call sites
+
+    Future enhancement: A semantic analyzer plugin could check at definition time.
 """
 
-from mypy.nodes import FuncDef
-from mypy.plugin import Plugin
-from mypy.types import AnyType, Instance, Type
+from collections.abc import Callable
+from typing import Any
+
+from mypy.nodes import (
+    CallExpr,
+    Decorator,
+    Expression,
+    FuncDef,
+    MemberExpr,
+    NameExpr,
+    SymbolNode,
+)
+from mypy.plugin import FunctionSigContext, MethodSigContext, Plugin
+from mypy.types import AnyType, CallableType, Instance, Type
 
 
 class DictAnyCheckerPlugin(Plugin):
@@ -33,41 +57,185 @@ class DictAnyCheckerPlugin(Plugin):
 
     This plugin hooks into mypy's type checking to detect when dict[str, Any]
     is used in function signatures without the @allow_dict_any decorator.
+
+    The plugin provides two mechanisms:
+    1. Function signature hooks that check for dict[str, Any] at call sites
+    2. Helper methods for decorator detection that can be used by other tools
+
+    Note: The current implementation hooks into function/method signature
+    checking. This means warnings are emitted at call sites, not definition
+    sites. This is a limitation of mypy's plugin API - definition-time
+    checking would require a semantic analyzer plugin.
     """
 
     # Decorator that allows dict[str, Any] usage
     ALLOW_DECORATOR = "omnibase_core.decorators.allow_dict_any.allow_dict_any"
     ALLOW_DECORATOR_SHORT = "allow_dict_any"
 
-    def get_function_hook(self, fullname: str) -> None:  # stub-ok: mypy plugin API
+    # Cache for functions we've already checked to avoid duplicate warnings
+    _checked_functions: set[str] = set()
+
+    def get_function_hook(self, fullname: str) -> None:  # pyright: ignore[reportReturnType]  # stub-ok: mypy plugin API
         """
         Return a hook for function calls if needed.
 
-        This method is called by mypy for each function call. We don't need
-        function call hooks for this plugin, but the method must be defined.
+        Note: This returns None because function *call* hooks are for modifying
+        the return type of function calls (e.g., type narrowing). For signature
+        checking, we use get_function_signature_hook instead.
 
         Args:
             fullname: Fully qualified name of the function.
 
         Returns:
-            None - we don't hook into function calls.
+            None - signature checking is done via get_function_signature_hook.
         """
         return
 
-    def get_method_hook(self, fullname: str) -> None:  # stub-ok: mypy plugin API
+    def get_method_hook(self, fullname: str) -> None:  # pyright: ignore[reportReturnType]  # stub-ok: mypy plugin API
         """
         Return a hook for method calls if needed.
 
-        This method is called by mypy for each method call. We don't need
-        method call hooks for this plugin, but the method must be defined.
+        Note: This returns None because method *call* hooks are for modifying
+        the return type of method calls. For signature checking, we use
+        get_method_signature_hook instead.
 
         Args:
             fullname: Fully qualified name of the method.
 
         Returns:
-            None - we don't hook into method calls.
+            None - signature checking is done via get_method_signature_hook.
         """
         return
+
+    def get_function_signature_hook(
+        self, fullname: str
+    ) -> Callable[[FunctionSigContext], CallableType] | None:
+        """
+        Return a hook for checking function signatures.
+
+        This hook is called when mypy processes a call to a function. We use it
+        to check if the function uses dict[str, Any] without the @allow_dict_any
+        decorator and emit a note if so.
+
+        Args:
+            fullname: Fully qualified name of the function being called.
+
+        Returns:
+            A callback that checks the signature, or None for non-matching functions.
+        """
+        # Check if this is a function we should inspect
+        # We check all functions but only warn once per function
+        if fullname in self._checked_functions:
+            return None
+
+        return self._check_function_signature
+
+    def get_method_signature_hook(
+        self, fullname: str
+    ) -> Callable[[MethodSigContext], CallableType] | None:
+        """
+        Return a hook for checking method signatures.
+
+        This hook is called when mypy processes a call to a method. We use it
+        to check if the method uses dict[str, Any] without the @allow_dict_any
+        decorator and emit a note if so.
+
+        Args:
+            fullname: Fully qualified name of the method being called.
+
+        Returns:
+            A callback that checks the signature, or None for non-matching methods.
+        """
+        # Check if this is a method we should inspect
+        if fullname in self._checked_functions:
+            return None
+
+        return self._check_method_signature
+
+    def _check_function_signature(self, ctx: FunctionSigContext) -> CallableType:
+        """
+        Check a function signature for dict[str, Any] usage.
+
+        Args:
+            ctx: The function signature context from mypy.
+
+        Returns:
+            The unmodified signature (we only emit notes, don't change types).
+        """
+        signature = ctx.default_signature
+        self._check_signature_for_dict_any(signature, ctx)
+        return signature
+
+    def _check_method_signature(self, ctx: MethodSigContext) -> CallableType:
+        """
+        Check a method signature for dict[str, Any] usage.
+
+        Args:
+            ctx: The method signature context from mypy.
+
+        Returns:
+            The unmodified signature (we only emit notes, don't change types).
+        """
+        signature = ctx.default_signature
+        self._check_signature_for_dict_any(signature, ctx)
+        return signature
+
+    def _check_signature_for_dict_any(
+        self,
+        signature: CallableType,
+        ctx: FunctionSigContext | MethodSigContext,
+    ) -> None:
+        """
+        Check a callable signature for dict[str, Any] usage.
+
+        If dict[str, Any] is found in parameters or return type, check if the
+        function has the @allow_dict_any decorator. If not, emit a note.
+
+        Args:
+            signature: The callable type to check.
+            ctx: The context for emitting messages.
+        """
+        # Get the function definition if available
+        defn = signature.definition
+        if defn is None:
+            return
+
+        # Check if we've already processed this function
+        fullname = getattr(defn, "fullname", None)
+        if fullname and fullname in self._checked_functions:
+            return
+
+        if fullname:
+            self._checked_functions.add(fullname)
+
+        # Check if the function has the allow_dict_any decorator
+        if self._has_allow_decorator(defn):
+            return
+
+        # Check return type
+        if self._is_dict_str_any(signature.ret_type):
+            func_name = getattr(defn, "name", "function")
+            ctx.api.fail(
+                f"Function '{func_name}' returns dict[str, Any] without "
+                f"@allow_dict_any decorator. Consider using a typed model instead.",
+                ctx.context,
+            )
+
+        # Check parameter types
+        for i, arg_type in enumerate(signature.arg_types):
+            if self._is_dict_str_any(arg_type):
+                func_name = getattr(defn, "name", "function")
+                arg_name = (
+                    signature.arg_names[i]
+                    if i < len(signature.arg_names)
+                    else f"arg{i}"
+                )
+                ctx.api.fail(
+                    f"Function '{func_name}' has parameter '{arg_name}' of type "
+                    f"dict[str, Any] without @allow_dict_any decorator. "
+                    f"Consider using a typed model instead.",
+                    ctx.context,
+                )
 
     def _is_dict_str_any(self, typ: Type) -> bool:
         """
@@ -101,30 +269,129 @@ class DictAnyCheckerPlugin(Plugin):
         value_type = typ.args[1]
         return isinstance(value_type, AnyType)
 
-    def _has_allow_decorator(self, defn: FuncDef) -> bool:
+    def _has_allow_decorator(self, defn: SymbolNode) -> bool:
         """
         Check if a function has the @allow_dict_any decorator.
 
-        This checks the function's decorator list for the allow_dict_any decorator,
-        handling both the full module path and the short name.
+        This method handles two cases:
+        1. Decorator nodes (wrapper that contains FuncDef + decorator list)
+        2. FuncDef nodes (checks for attached decorator info)
+
+        In mypy's AST, decorated functions are represented as Decorator nodes
+        that wrap the FuncDef and contain the decorator list. We need to check
+        the original Decorator node to find the decorators.
 
         Args:
-            defn: The FuncDef node to check.
+            defn: The symbol node to check (can be FuncDef or Decorator).
 
         Returns:
             True if the function has the @allow_dict_any decorator.
         """
-        # FuncDef doesn't directly have decorators, they're in the parent Decorator node
-        # We need to check if this function was wrapped by a Decorator
-        # This is handled by mypy's internal structure
+        # If this is a Decorator node, check its decorators list directly
+        if isinstance(defn, Decorator):
+            return self._check_decorators(defn.decorators)
 
-        # Check if the function has the _allow_dict_any attribute marker
-        # This is set by the runtime decorator
-        if hasattr(defn, "decorators"):
-            # In case decorators are attached directly (shouldn't happen normally)
-            return True
+        # If this is a FuncDef, we need to check if there's decorator info
+        # mypy sometimes attaches original_decorators to FuncDef
+        if isinstance(defn, FuncDef):
+            # Check original_decorators if available (from Decorator.original_decorators)
+            original_decorators = getattr(defn, "original_decorators", None)
+            if original_decorators:
+                return self._check_decorators(original_decorators)
+
+            # Check if there's decorator info attached to the type
+            # This can happen with semantic analysis
+            func_type = getattr(defn, "type", None)
+            if func_type and isinstance(func_type, CallableType):
+                # Check if the function was marked by our decorator
+                # The decorator sets _allow_dict_any = True at runtime
+                # We check for a semantic marker here
+                pass
 
         return False
 
+    def _check_decorators(self, decorators: list[Expression]) -> bool:
+        """
+        Check a list of decorator expressions for @allow_dict_any.
+
+        Args:
+            decorators: List of decorator expression nodes.
+
+        Returns:
+            True if @allow_dict_any is found in the decorators.
+        """
+        for decorator in decorators:
+            decorator_name = self._get_decorator_name(decorator)
+            if decorator_name in (
+                self.ALLOW_DECORATOR,
+                self.ALLOW_DECORATOR_SHORT,
+                # Also check common import patterns
+                "allow_dict_any.allow_dict_any",
+            ):
+                return True
+        return False
+
+    def _get_decorator_name(self, decorator: Expression) -> str:
+        """
+        Extract the name of a decorator from its AST node.
+
+        Handles different decorator patterns:
+        - @decorator (NameExpr)
+        - @module.decorator (MemberExpr)
+        - @decorator() or @decorator(args) (CallExpr wrapping the above)
+
+        Args:
+            decorator: The decorator expression node.
+
+        Returns:
+            The decorator name as a string, or empty string if unknown.
+        """
+        # Handle @decorator() or @decorator(args) - CallExpr wrapping a NameExpr/MemberExpr
+        if isinstance(decorator, CallExpr):
+            return self._get_decorator_name(decorator.callee)
+
+        # Handle @decorator - simple name reference
+        if isinstance(decorator, NameExpr):
+            # Use fullname if available (resolved by semantic analysis)
+            if decorator.fullname:
+                return decorator.fullname
+            return decorator.name
+
+        # Handle @module.decorator - member expression
+        if isinstance(decorator, MemberExpr):
+            # Use fullname if available (resolved by semantic analysis)
+            if decorator.fullname:
+                return decorator.fullname
+            # Fall back to constructing the name manually
+            expr_name = self._get_expression_name(decorator.expr)
+            if expr_name:
+                return f"{expr_name}.{decorator.name}"
+            return decorator.name
+
+        return ""
+
+    def _get_expression_name(self, expr: Expression) -> str:
+        """
+        Get the string representation of an expression for name resolution.
+
+        Args:
+            expr: The expression node.
+
+        Returns:
+            String representation of the expression, or empty string.
+        """
+        if isinstance(expr, NameExpr):
+            return expr.name
+        if isinstance(expr, MemberExpr):
+            base = self._get_expression_name(expr.expr)
+            if base:
+                return f"{base}.{expr.name}"
+            return expr.name
+        return ""
+
+
+# Type alias for the callback types used by mypy plugin hooks
+FunctionSigCallback = Callable[[FunctionSigContext], CallableType]
+MethodSigCallback = Callable[[MethodSigContext], CallableType]
 
 __all__ = ["DictAnyCheckerPlugin"]

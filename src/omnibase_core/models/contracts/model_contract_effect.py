@@ -12,6 +12,7 @@ Specialized contract model for NodeEffect implementations providing:
 Strict typing is enforced: No Any types allowed in implementation.
 """
 
+import threading
 from typing import Any, ClassVar
 from uuid import UUID, uuid4
 
@@ -66,6 +67,7 @@ from omnibase_core.models.utils.model_subcontract_constraint_validator import (
 
 # Lazy model rebuild flag - forward references are resolved on first use, not at import
 _models_rebuilt = False
+_rebuild_lock = threading.Lock()
 
 
 def _ensure_models_rebuilt(contract_effect_cls: type[BaseModel] | None = None) -> None:
@@ -88,11 +90,23 @@ def _ensure_models_rebuilt(contract_effect_cls: type[BaseModel] | None = None) -
             on first call to properly resolve the forward reference chain.
 
     Thread Safety:
-        This function is not thread-safe by itself, but Pydantic's model_rebuild()
-        is idempotent, so concurrent calls during initial import are safe.
+        This function is thread-safe. It uses double-checked locking to ensure that
+        concurrent first-instantiation calls safely coordinate the rebuild. The pattern:
+        1. Fast path: Check flag without lock (subsequent calls return immediately)
+        2. Acquire lock only when rebuild might be needed
+        3. Re-check flag inside lock to handle race conditions
+        4. Perform rebuild and set flag atomically within lock
     """
     global _models_rebuilt
-    if not _models_rebuilt:
+    if _models_rebuilt:  # Fast path - no lock needed
+        return
+
+    with _rebuild_lock:
+        if (
+            _models_rebuilt
+        ):  # Double-check after acquiring lock  # type: ignore[unreachable]
+            return  # type: ignore[unreachable]
+
         # Import ModelCustomFields to ensure it's available for forward reference resolution
         # Rebuild the dependency chain in order (dependencies first)
         # 1. ModelCircuitBreakerMetadata has forward reference to ModelCustomFields

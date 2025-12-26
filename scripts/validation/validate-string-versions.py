@@ -943,8 +943,11 @@ def main() -> int:
     """Main entry point for the validation hook."""
     try:
         if len(sys.argv) < 2:
-            print("Usage: validate-string-versions.py [--dir] <path1> [path2] ...")
+            print(
+                "Usage: validate-string-versions.py [--dir] [--verbose|-v] <path1> [path2] ..."
+            )
             print("  --dir: Recursively scan directories for YAML and Python files")
+            print("  --verbose, -v: Show which files are being skipped and why")
             print("  Without --dir: Treat arguments as individual YAML/Python files")
             return 1
 
@@ -954,14 +957,23 @@ def main() -> int:
             print(f"Error: Failed to initialize validator: {e}")
             return 1
 
-        # Check for directory scan mode
+        # Check for directory scan mode and verbose flag
         scan_dirs = False
+        verbose = False
         args = sys.argv[1:]
 
         try:
-            if args and args[0] == "--dir":
-                scan_dirs = True
-                args = args[1:]
+            # Parse flags (can appear in any order before paths)
+            while args and args[0].startswith("-"):
+                if args[0] == "--dir":
+                    scan_dirs = True
+                    args = args[1:]
+                elif args[0] in ("--verbose", "-v"):
+                    verbose = True
+                    args = args[1:]
+                else:
+                    print(f"Warning: Unknown flag: {args[0]}")
+                    args = args[1:]
         except Exception as e:
             print(f"Error: Failed to parse arguments: {e}")
             return 1
@@ -993,8 +1005,8 @@ def main() -> int:
                             # Setup timeout for directory scanning (30 seconds)
                             try:
                                 with timeout_context("directory_scan"):
-                                    # Recursively find all YAML and Python files, excluding non-ONEX directories
-                                    # See EXCLUDE_PATTERNS constant for rationale on each exclusion
+                                    # Recursively find all YAML and Python files
+                                    # Filter using EXCLUDE_PATTERNS constant (see rationale above)
                                     try:
                                         all_files = (
                                             list(path.rglob("*.yaml"))
@@ -1017,19 +1029,32 @@ def main() -> int:
                                         for file_path in all_files:
                                             try:
                                                 should_exclude = False
+                                                matched_pattern = None
                                                 path_parts = file_path.parts
                                                 file_name = file_path.name
 
                                                 # Check if any path component or filename matches exclusion patterns
+                                                # Note: Uses startswith() for filename matching to catch prefixed
+                                                # files (e.g., "ci-cd.yml" matches pattern "ci-cd") while avoiding
+                                                # false positives from substring matches within filenames.
                                                 for pattern in EXCLUDE_PATTERNS:
-                                                    if (
-                                                        pattern in path_parts
-                                                        or file_name.startswith(pattern)
-                                                    ):
+                                                    if pattern in path_parts:
                                                         should_exclude = True
+                                                        matched_pattern = (
+                                                            f"path contains '{pattern}'"
+                                                        )
+                                                        break
+                                                    if file_name.startswith(pattern):
+                                                        should_exclude = True
+                                                        matched_pattern = f"filename starts with '{pattern}'"
                                                         break
 
-                                                if not should_exclude:
+                                                if should_exclude:
+                                                    if verbose:
+                                                        print(
+                                                            f"Skipping (excluded): {file_path} ({matched_pattern})"
+                                                        )
+                                                else:
                                                     yaml_files.append(file_path)
                                             except Exception as e:
                                                 print(
@@ -1067,14 +1092,27 @@ def main() -> int:
                             continue
 
                         # Skip excluded paths using shared EXCLUDE_PATTERNS constant
+                        # Note: Uses startswith() for filename matching to catch prefixed
+                        # files (e.g., "ci-cd.yml" matches pattern "ci-cd") while avoiding
+                        # false positives from substring matches within filenames.
                         path_parts = path.parts
                         file_name = path.name
                         should_exclude = False
+                        matched_pattern = None
                         for pattern in EXCLUDE_PATTERNS:
-                            if pattern in path_parts or file_name.startswith(pattern):
+                            if pattern in path_parts:
                                 should_exclude = True
+                                matched_pattern = f"path contains '{pattern}'"
+                                break
+                            if file_name.startswith(pattern):
+                                should_exclude = True
+                                matched_pattern = f"filename starts with '{pattern}'"
                                 break
                         if should_exclude:
+                            if verbose:
+                                print(
+                                    f"Skipping (excluded): {path} ({matched_pattern})"
+                                )
                             continue
 
                         if path.suffix.lower() in [".yaml", ".yml", ".py"]:

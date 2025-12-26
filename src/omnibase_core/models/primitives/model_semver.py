@@ -162,7 +162,11 @@ class ModelSemVer(BaseModel):
     def validate_prerelease(
         cls, v: tuple[str | int, ...] | list[str | int] | None
     ) -> tuple[str | int, ...] | None:
-        """Validate and normalize prerelease identifiers."""
+        """Validate and normalize prerelease identifiers.
+
+        Per SemVer 2.0.0 spec, purely numeric identifiers are stored as int type
+        for proper numeric comparison (e.g., "1" -> 1, so 1 < 2 < 10, not "1" < "10" < "2").
+        """
         if v is None:
             return None
         if isinstance(v, list):
@@ -174,7 +178,8 @@ class ModelSemVer(BaseModel):
             )
         if len(v) == 0:
             return None  # Empty tuple treated as no prerelease
-        # Validate each identifier
+        # Validate and normalize each identifier
+        normalized: list[str | int] = []
         for identifier in v:
             if isinstance(identifier, int):
                 if identifier < 0:
@@ -182,6 +187,7 @@ class ModelSemVer(BaseModel):
                         error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                         message=f"Numeric prerelease identifier cannot be negative: {identifier}",
                     )
+                normalized.append(identifier)
             elif isinstance(identifier, str):
                 if not _PRERELEASE_ALPHANUMERIC_PATTERN.match(identifier):
                     raise ModelOnexError(
@@ -195,12 +201,18 @@ class ModelSemVer(BaseModel):
                         error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                         message=f"Invalid prerelease identifier '{identifier}': numeric identifiers must not have leading zeros",
                     )
+                # Per SemVer 2.0.0 spec: purely numeric identifiers should be stored as int
+                # This ensures proper numeric comparison (1 < 2 < 10, not "1" < "10" < "2")
+                if _PRERELEASE_NUMERIC_PATTERN.match(identifier):
+                    normalized.append(int(identifier))
+                else:
+                    normalized.append(identifier)
             else:
                 raise ModelOnexError(
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=f"Prerelease identifier must be str or int, got {type(identifier).__name__}",
                 )
-        return v
+        return tuple(normalized)
 
     @field_validator("build", mode="before")
     @classmethod
@@ -350,7 +362,17 @@ class ModelSemVer(BaseModel):
             and self.prerelease == other.prerelease
         )
 
-    def __lt__(self, other: "ModelSemVer") -> bool:
+    def __ne__(self, other: object) -> bool:
+        """Check inequality with another ModelSemVer.
+
+        Explicit implementation for clarity, though Python 3 provides a default.
+        """
+        result = self.__eq__(other)
+        if result is NotImplemented:
+            return NotImplemented
+        return not result
+
+    def __lt__(self, other: object) -> bool:
         """Check if this version is less than another (per SemVer spec).
 
         Precedence rules:
@@ -362,56 +384,32 @@ class ModelSemVer(BaseModel):
            - Numeric < alphanumeric
            - Fewer identifiers < more identifiers (if all preceding are equal)
         4. Build metadata is IGNORED
+
+        Returns:
+            bool: True if self < other
+            NotImplemented: If other is not a ModelSemVer instance
         """
-        # Compare major.minor.patch first
-        if (self.major, self.minor, self.patch) != (
-            other.major,
-            other.minor,
-            other.patch,
-        ):
-            return (self.major, self.minor, self.patch) < (
-                other.major,
-                other.minor,
-                other.patch,
-            )
+        if not isinstance(other, ModelSemVer):
+            return NotImplemented
+        return self.precedence_key() < other.precedence_key()
 
-        # Same major.minor.patch - compare prerelease
-        self_pre = self.prerelease
-        other_pre = other.prerelease
-
-        # No prerelease > any prerelease
-        if self_pre is None and other_pre is None:
-            return False
-        if self_pre is None:
-            return False  # self has no prerelease, other does -> self > other
-        if other_pre is None:
-            return True  # self has prerelease, other doesn't -> self < other
-
-        # Both have prerelease - compare identifier by identifier
-        for i in range(min(len(self_pre), len(other_pre))):
-            cmp = _compare_prerelease_identifier(self_pre[i], other_pre[i])
-            if cmp < 0:
-                return True
-            if cmp > 0:
-                return False
-
-        # All compared identifiers are equal
-        # Fewer identifiers = lower precedence
-        return len(self_pre) < len(other_pre)
-
-    def __le__(self, other: "ModelSemVer") -> bool:
+    def __le__(self, other: object) -> bool:
         """Check if this version is less than or equal to another."""
-        return self == other or self < other
+        if not isinstance(other, ModelSemVer):
+            return NotImplemented
+        return self.precedence_key() <= other.precedence_key()
 
-    def __gt__(self, other: "ModelSemVer") -> bool:
+    def __gt__(self, other: object) -> bool:
         """Check if this version is greater than another."""
         if not isinstance(other, ModelSemVer):
             return NotImplemented
-        return other < self
+        return self.precedence_key() > other.precedence_key()
 
-    def __ge__(self, other: "ModelSemVer") -> bool:
+    def __ge__(self, other: object) -> bool:
         """Check if this version is greater than or equal to another."""
-        return self == other or self > other
+        if not isinstance(other, ModelSemVer):
+            return NotImplemented
+        return self.precedence_key() >= other.precedence_key()
 
     def __hash__(self) -> int:
         """Return hash value for use in sets and as dict keys.

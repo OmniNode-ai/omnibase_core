@@ -19,7 +19,8 @@ for ONEX microservices ecosystem.
 Strict typing is enforced: No Any types allowed in implementation.
 """
 
-from typing import Any, ClassVar
+import threading
+from typing import Any, ClassVar, Literal
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -39,6 +40,7 @@ from .model_routing_metrics import ModelRoutingMetrics
 
 # Lazy model rebuild flag - forward references are resolved on first use, not at import
 _models_rebuilt = False
+_rebuild_lock = threading.Lock()
 
 
 def _ensure_models_rebuilt(
@@ -63,11 +65,23 @@ def _ensure_models_rebuilt(
             provided on first call to properly resolve the forward reference chain.
 
     Thread Safety:
-        This function is not thread-safe by itself, but Pydantic's model_rebuild()
-        is idempotent, so concurrent calls during initial import are safe.
+        This function is thread-safe. It uses double-checked locking to ensure that
+        concurrent first-instantiation calls safely coordinate the rebuild. The pattern:
+        1. Fast path: Check flag without lock (subsequent calls return immediately)
+        2. Acquire lock only when rebuild might be needed
+        3. Re-check flag inside lock to handle race conditions
+        4. Perform rebuild and set flag atomically within lock
     """
     global _models_rebuilt
-    if not _models_rebuilt:
+    if _models_rebuilt:  # Fast path - no lock needed
+        return
+
+    with _rebuild_lock:
+        if (
+            _models_rebuilt
+        ):  # Double-check after acquiring lock  # type: ignore[unreachable]
+            return  # type: ignore[unreachable]
+
         from omnibase_core.models.services.model_custom_fields import ModelCustomFields
 
         # First rebuild the metadata model to resolve its forward reference
@@ -103,6 +117,48 @@ class ModelRoutingSubcontract(BaseModel):
         """
         _ensure_models_rebuilt(cls)
         return super().__new__(cls)
+
+    @classmethod
+    def model_validate(
+        cls,
+        obj: Any,
+        *,
+        strict: bool | None = None,
+        extra: Literal["allow", "ignore", "forbid"] | None = None,
+        from_attributes: bool | None = None,
+        context: Any | None = None,
+        by_alias: bool | None = None,
+        by_name: bool | None = None,
+    ) -> "ModelRoutingSubcontract":
+        """Override to ensure models are rebuilt before validation.
+
+        This ensures forward references are resolved when deserializing
+        nested structures via model_validate(). While __new__ handles direct
+        instantiation, model_validate() may bypass __new__ in certain
+        deserialization scenarios.
+
+        Args:
+            obj: Object to validate (dict, model instance, etc.).
+            strict: Whether to enforce strict validation.
+            extra: How to handle extra fields ('allow', 'ignore', 'forbid').
+            from_attributes: Whether to extract data from object attributes.
+            context: Additional context for validation.
+            by_alias: Whether to use field aliases for validation.
+            by_name: Whether to use field names for validation.
+
+        Returns:
+            Validated ModelRoutingSubcontract instance.
+        """
+        _ensure_models_rebuilt(cls)
+        return super().model_validate(
+            obj,
+            strict=strict,
+            extra=extra,
+            from_attributes=from_attributes,
+            context=context,
+            by_alias=by_alias,
+            by_name=by_name,
+        )
 
     # Interface version for code generation stability
     INTERFACE_VERSION: ClassVar[ModelSemVer] = ModelSemVer(major=1, minor=0, patch=0)

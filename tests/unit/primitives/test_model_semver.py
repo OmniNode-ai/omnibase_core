@@ -1170,6 +1170,116 @@ class TestSemVer20Serialization:
 
 
 @pytest.mark.unit
+class TestSemVerKeyMethods:
+    """Test exact_key() vs precedence_key() distinction.
+
+    This test class explicitly documents the difference between these two methods:
+
+    - precedence_key(): Used for version ordering/comparison per SemVer 2.0.0 spec.
+      Build metadata is IGNORED because it doesn't affect version precedence.
+
+    - exact_key(): Used for exact identity/caching where build metadata matters.
+      Includes ALL version components including build metadata.
+
+    See SemVer 2.0.0 spec section 10: "Build metadata SHOULD be ignored when
+    determining version precedence."
+    """
+
+    def test_precedence_key_ignores_build_metadata(self):
+        """Verify precedence_key() ignores build metadata per SemVer spec.
+
+        Per SemVer 2.0.0 section 10: "Build metadata SHOULD be ignored when
+        determining version precedence." Two versions that differ only in
+        build metadata should have identical precedence_key() values.
+        """
+        v1 = ModelSemVer.parse("1.0.0+build.123")
+        v2 = ModelSemVer.parse("1.0.0+build.456")
+        assert v1.precedence_key() == v2.precedence_key()
+
+    def test_exact_key_includes_build_metadata(self):
+        """Verify exact_key() includes build metadata for caching.
+
+        Unlike precedence_key(), exact_key() includes build metadata.
+        This is useful for caching scenarios where different builds of
+        the same version should be tracked separately.
+        """
+        v1 = ModelSemVer.parse("1.0.0+build.123")
+        v2 = ModelSemVer.parse("1.0.0+build.456")
+        assert v1.exact_key() != v2.exact_key()
+
+    def test_precedence_key_ordering(self):
+        """Verify precedence_key() produces correct sort order.
+
+        Per SemVer 2.0.0 spec section 11, precedence is determined by:
+        1. Major, minor, patch versions (numeric comparison)
+        2. Prerelease versions have lower precedence than release versions
+        3. Prerelease identifiers are compared left to right
+        """
+        versions = [
+            ModelSemVer.parse("1.0.0-alpha"),
+            ModelSemVer.parse("1.0.0-alpha.1"),
+            ModelSemVer.parse("1.0.0-beta"),
+            ModelSemVer.parse("1.0.0"),
+        ]
+        sorted_versions = sorted(versions, key=lambda v: v.precedence_key())
+        assert [str(v) for v in sorted_versions] == [
+            "1.0.0-alpha",
+            "1.0.0-alpha.1",
+            "1.0.0-beta",
+            "1.0.0",
+        ]
+
+    def test_exact_key_for_cache_deduplication(self):
+        """Verify exact_key() enables cache entry separation by build metadata.
+
+        When using versions as cache keys and build metadata matters,
+        exact_key() should be used instead of the version object directly.
+        """
+        v1 = ModelSemVer.parse("1.0.0+build.123")
+        v2 = ModelSemVer.parse("1.0.0+build.456")
+
+        # Using exact_key() for cache: separate entries
+        cache: dict[
+            tuple[int, int, int, tuple[str | int, ...] | None, tuple[str, ...] | None],
+            str,
+        ] = {}
+        cache[v1.exact_key()] = "data for build 123"
+        cache[v2.exact_key()] = "data for build 456"
+        assert len(cache) == 2
+
+    def test_precedence_key_vs_exact_key_with_prerelease(self):
+        """Verify both keys handle prerelease correctly but differ on build.
+
+        Both methods should produce equal results for the prerelease component,
+        but exact_key() should additionally include build metadata.
+        """
+        v1 = ModelSemVer.parse("1.0.0-beta.1+build.100")
+        v2 = ModelSemVer.parse("1.0.0-beta.1+build.200")
+
+        # Same prerelease means same precedence
+        assert v1.precedence_key() == v2.precedence_key()
+
+        # Different builds mean different exact identity
+        assert v1.exact_key() != v2.exact_key()
+
+        # Verify exact_key contains the build metadata
+        assert v1.exact_key()[4] == ("build", "100")
+        assert v2.exact_key()[4] == ("build", "200")
+
+    def test_precedence_key_numeric_vs_alphanumeric_ordering(self):
+        """Verify numeric prerelease identifiers sort before alphanumeric.
+
+        Per SemVer 2.0.0 spec: "Numeric identifiers always have lower
+        precedence than alphanumeric identifiers."
+        """
+        v_numeric = ModelSemVer.parse("1.0.0-1")
+        v_alpha = ModelSemVer.parse("1.0.0-alpha")
+
+        # Numeric should sort before alphanumeric
+        assert v_numeric.precedence_key() < v_alpha.precedence_key()
+
+
+@pytest.mark.unit
 class TestSemVerPrereleaseLeadingZerosValidation:
     """Test that numeric prerelease identifiers with leading zeros are rejected.
 

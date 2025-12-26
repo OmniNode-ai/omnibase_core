@@ -27,7 +27,7 @@ def plugin(version: str) -> type[Plugin]:
         version: The mypy version string (e.g., "1.19.0").
 
     Returns:
-        The ONEXPlugin class which mypy will instantiate.
+        The DictAnyCheckerPlugin class which mypy will instantiate.
     """
     # Import here to avoid circular imports and ensure proper initialization
     from omnibase_core.tools.mypy_plugins.dict_any_checker import DictAnyCheckerPlugin
