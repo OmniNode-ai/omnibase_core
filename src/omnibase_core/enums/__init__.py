@@ -232,6 +232,10 @@ from .enum_validation import EnumErrorSeverity, EnumValidationLevel, EnumValidat
 from .enum_validation_rule_type import EnumValidationRuleType
 from .enum_value_type import EnumValueType
 
+# Vector store enums
+from .enum_vector_distance_metric import EnumVectorDistanceMetric
+from .enum_vector_filter_operator import EnumVectorFilterOperator
+
 # Version and contract enums
 from .enum_version_status import EnumVersionStatus
 
@@ -416,6 +420,9 @@ __all__ = [
     "EnumHeaderTransformationType",
     "EnumQueryParameterTransformationType",
     "EnumResponseHeaderTransformationType",
+    # Vector store domain
+    "EnumVectorDistanceMetric",
+    "EnumVectorFilterOperator",
     # NOTE: Removed from __all__ due to missing module files or circular imports:
     # - "EnumRegistryType" (module doesn't exist)
     # - "ModelServiceModeEnum" (replaced with correct "EnumServiceMode")

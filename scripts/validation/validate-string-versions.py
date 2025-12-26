@@ -174,12 +174,18 @@ class PythonASTValidator(ast.NodeVisitor):
             "version_compatibility",  # Compatibility strings
             "execution_id",  # Some execution IDs may need to be strings for compatibility
             "version_str",  # Parameter names for parsing functions
-            # EXTERNAL_SYSTEMS (5 fields)
+            # EXTERNAL_SYSTEMS (10 fields)
             "external_id",  # External system identifiers (not ONEX-managed)
             "certificate_id",  # X.509 certificate IDs
             "service_id",  # Consul service identifiers (external system constraint)
             "consul_service_id",  # Consul service identifiers (prefixed variant)
             "network_id",  # Network identifiers (VPC, subnet names - external systems)
+            # GRAPH_DATABASE_IDS (4 fields - Neo4j/Memgraph external identifiers)
+            "element_id",  # Neo4j 5.x element ID format (e.g., "4:abc-def:123")
+            "start_node_id",  # References external database node element ID
+            "end_node_id",  # References external database node element ID
+            # VECTOR_STORE_IDS (1 field - Qdrant/Pinecone external identifiers)
+            "embedding_id",  # External vector store ID (Qdrant, Pinecone, etc.)
             # DISTRIBUTED_TRACING (4 unique fields - OpenTelemetry standard)
             "trace_id",  # OpenTelemetry trace identifier
             "span_id",  # OpenTelemetry span identifier
@@ -194,7 +200,7 @@ class PythonASTValidator(ast.NodeVisitor):
             "version_string",  # Template variable tokens
             "version_directory_pattern",  # File path patterns
             "version_requirement",  # Dependency constraint patterns
-            # EXTERNAL_VERSIONS (7 fields)
+            # EXTERNAL_VERSIONS (8 fields)
             "python_version",  # Python interpreter version string
             "tool_version",  # External tool versions
             "minimum_tls_version",  # TLS protocol versions (e.g., "1.2", "1.3")
@@ -202,6 +208,7 @@ class PythonASTValidator(ast.NodeVisitor):
             "runtime_version",  # Runtime environment versions
             "command_version",  # CLI command versions
             "node_specific_version",  # Node-specific version metadata
+            "database_version",  # External database version (Neo4j, Memgraph, etc.)
             # METADATA_VERSIONS (4 fields in model_node_metadata_block.py)
             # These use regex constraints for legacy compatibility
             "metadata_version",  # Metadata block version
