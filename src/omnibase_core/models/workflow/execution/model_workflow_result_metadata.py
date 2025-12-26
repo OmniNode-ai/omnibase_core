@@ -104,7 +104,11 @@ class ModelWorkflowResultMetadata(BaseModel):
 
     workflow_hash: str = Field(
         default="",
-        description="SHA-256 hash of workflow definition for integrity verification (64-char hex)",
+        pattern=r"^$|^[a-fA-F0-9]{64}$",
+        description=(
+            "SHA-256 hash of workflow definition for integrity verification. "
+            "Must be empty string or exactly 64 hexadecimal characters (0-9, a-f, A-F)."
+        ),
     )
 
     batch_size: int | None = Field(

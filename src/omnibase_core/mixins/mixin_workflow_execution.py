@@ -7,10 +7,15 @@ ModelWorkflowDefinition.
 Typing: Strongly typed with strategic Any usage for mixin kwargs and configuration dicts.
 """
 
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 if TYPE_CHECKING:
+    from omnibase_core.models.workflow.execution.model_workflow_state_snapshot import (
+        ModelWorkflowStateSnapshot,
+    )
     from omnibase_core.types.typed_dict_mixin_types import TypedDictWorkflowStepConfig
 
 from omnibase_core.enums.enum_workflow_execution import EnumExecutionMode
@@ -18,7 +23,6 @@ from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.contracts.subcontracts.model_workflow_definition import (
     ModelWorkflowDefinition,
 )
-from omnibase_core.models.workflow import ModelWorkflowStateSnapshot
 from omnibase_core.types.type_workflow_context import WorkflowContextType
 from omnibase_core.utils.workflow_executor import (
     WorkflowExecutionResult,
@@ -116,6 +120,12 @@ class MixinWorkflowExecution:
             state is replaced, not merged. Step IDs are stored as tuples
             for immutability.
         """
+        # Lazy import to avoid circular import at module load time.
+        # The TYPE_CHECKING import provides type hints; this provides the runtime class.
+        from omnibase_core.models.workflow.execution.model_workflow_state_snapshot import (
+            ModelWorkflowStateSnapshot,
+        )
+
         self._workflow_state = ModelWorkflowStateSnapshot(
             workflow_id=workflow_id,
             current_step_index=current_step_index,
@@ -181,6 +191,16 @@ class MixinWorkflowExecution:
         completed_ids = [UUID(step_id) for step_id in result.completed_steps]
         failed_ids = [UUID(step_id) for step_id in result.failed_steps]
 
+        # Metadata is always present when result comes from execute_workflow().
+        # All internal execution paths (_execute_sequential, _execute_parallel,
+        # _execute_batch) explicitly create ModelWorkflowResultMetadata.
+        # The Optional type in ModelDeclarativeWorkflowResult exists for API
+        # flexibility (direct instantiation), not for the execute_workflow() path.
+        assert result.metadata is not None, (
+            "execute_workflow() must always return result with metadata; "
+            "this indicates a bug in workflow_executor.py"
+        )
+
         self.update_workflow_state(
             workflow_id=workflow_id,
             current_step_index=len(completed_ids) + len(failed_ids),
@@ -190,11 +210,7 @@ class MixinWorkflowExecution:
                 "execution_status": result.execution_status.value,
                 "execution_time_ms": result.execution_time_ms,
                 "actions_count": len(result.actions_emitted),
-                **(
-                    result.metadata.model_dump(exclude_unset=True)
-                    if result.metadata
-                    else {}
-                ),
+                **result.metadata.model_dump(exclude_unset=True),
             },
         )
 
@@ -255,7 +271,7 @@ class MixinWorkflowExecution:
 
     def create_workflow_steps_from_config(
         self,
-        steps_config: list["TypedDictWorkflowStepConfig"],
+        steps_config: list[TypedDictWorkflowStepConfig],
     ) -> list[ModelWorkflowStep]:
         """
         Create ModelWorkflowStep instances from configuration dictionaries.

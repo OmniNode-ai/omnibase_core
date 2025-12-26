@@ -1,54 +1,15 @@
 """Tests for ModelWorkflowResultMetadata.
 
-Note: Due to a pre-existing circular import issue in omnibase_core.models.workflow,
-this test defines the model inline for validation testing. The actual model file
-at src/omnibase_core/models/workflow/execution/model_workflow_result_metadata.py
-is the canonical implementation that passes mypy strict mode.
-
-The model definition here mirrors the canonical implementation exactly.
+Tests the production model at:
+src/omnibase_core/models/workflow/execution/model_workflow_result_metadata.py
 """
 
-from typing import Literal
-
 import pytest
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import ValidationError
 
-
-# Inline model definition to avoid circular import during test collection
-# This mirrors the canonical implementation exactly
-class ModelWorkflowResultMetadata(BaseModel):
-    """Typed metadata for declarative workflow execution results.
-
-    Replaces dict[str, ModelSchemaValue] with strongly-typed fields.
-    All fields are based on actual usage audit of workflow_executor.py.
-    """
-
-    model_config = ConfigDict(
-        frozen=True,
-        extra="forbid",
-        from_attributes=True,
-    )
-
-    execution_mode: Literal["sequential", "parallel", "batch"] = Field(
-        ...,
-        description="Workflow execution mode",
-    )
-
-    workflow_name: str = Field(
-        ...,
-        description="Name of the executed workflow from workflow definition",
-    )
-
-    workflow_hash: str = Field(
-        default="",
-        description="SHA-256 hash of workflow definition for integrity verification (64-char hex)",
-    )
-
-    batch_size: int | None = Field(
-        default=None,
-        description="Number of workflow steps (only set for batch execution mode)",
-    )
-
+from omnibase_core.models.workflow.execution.model_workflow_result_metadata import (
+    ModelWorkflowResultMetadata,
+)
 
 pytestmark = pytest.mark.unit
 
@@ -147,3 +108,98 @@ class TestModelWorkflowResultMetadata:
                 workflow_name="test",
             )
             assert metadata.execution_mode == mode
+
+    def test_workflow_hash_valid_64_char_hex_lowercase(self) -> None:
+        """Test that valid 64-char lowercase hex hash is accepted."""
+        valid_hash = "a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456"
+        metadata = ModelWorkflowResultMetadata(
+            execution_mode="sequential",
+            workflow_name="test",
+            workflow_hash=valid_hash,
+        )
+        assert metadata.workflow_hash == valid_hash
+
+    def test_workflow_hash_valid_64_char_hex_uppercase(self) -> None:
+        """Test that valid 64-char uppercase hex hash is accepted."""
+        valid_hash = "A1B2C3D4E5F6789012345678901234567890ABCDEF1234567890ABCDEF123456"
+        metadata = ModelWorkflowResultMetadata(
+            execution_mode="sequential",
+            workflow_name="test",
+            workflow_hash=valid_hash,
+        )
+        assert metadata.workflow_hash == valid_hash
+
+    def test_workflow_hash_valid_64_char_hex_mixed_case(self) -> None:
+        """Test that valid 64-char mixed case hex hash is accepted."""
+        valid_hash = "a1B2c3D4e5F6789012345678901234567890AbCdEf1234567890aBcDeF123456"
+        metadata = ModelWorkflowResultMetadata(
+            execution_mode="sequential",
+            workflow_name="test",
+            workflow_hash=valid_hash,
+        )
+        assert metadata.workflow_hash == valid_hash
+
+    def test_workflow_hash_empty_string_allowed(self) -> None:
+        """Test that empty string is allowed as default."""
+        metadata = ModelWorkflowResultMetadata(
+            execution_mode="sequential",
+            workflow_name="test",
+            workflow_hash="",
+        )
+        assert metadata.workflow_hash == ""
+
+    def test_workflow_hash_invalid_too_short(self) -> None:
+        """Test that hash shorter than 64 chars is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelWorkflowResultMetadata(
+                execution_mode="sequential",
+                workflow_name="test",
+                workflow_hash="a1b2c3d4",  # Only 8 chars
+            )
+        error_str = str(exc_info.value)
+        assert "workflow_hash" in error_str
+
+    def test_workflow_hash_invalid_too_long(self) -> None:
+        """Test that hash longer than 64 chars is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelWorkflowResultMetadata(
+                execution_mode="sequential",
+                workflow_name="test",
+                workflow_hash="a" * 65,  # 65 chars
+            )
+        error_str = str(exc_info.value)
+        assert "workflow_hash" in error_str
+
+    def test_workflow_hash_invalid_non_hex_characters(self) -> None:
+        """Test that non-hex characters are rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelWorkflowResultMetadata(
+                execution_mode="sequential",
+                workflow_name="test",
+                # 'g' and 'z' are not valid hex characters
+                workflow_hash="g1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdefz23456",
+            )
+        error_str = str(exc_info.value)
+        assert "workflow_hash" in error_str
+
+    def test_workflow_hash_invalid_special_characters(self) -> None:
+        """Test that special characters are rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelWorkflowResultMetadata(
+                execution_mode="sequential",
+                workflow_name="test",
+                workflow_hash="a1b2c3d4-5f67-8901-2345-678901234567890abcdef1234567890ab",
+            )
+        error_str = str(exc_info.value)
+        assert "workflow_hash" in error_str
+
+    def test_workflow_hash_invalid_whitespace(self) -> None:
+        """Test that whitespace is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelWorkflowResultMetadata(
+                execution_mode="sequential",
+                workflow_name="test",
+                workflow_hash=" " * 64,  # 64 spaces
+            )
+        error_str = str(exc_info.value)
+        assert "workflow_hash" in error_str

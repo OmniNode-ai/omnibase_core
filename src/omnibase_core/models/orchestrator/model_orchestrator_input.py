@@ -75,6 +75,18 @@ class ModelOrchestratorInput(BaseModel):
     configuration for execution modes, parallelism, timeouts, and failure
     handling. Used by NodeOrchestrator to coordinate multi-step workflows.
 
+    Thread Safety:
+        This model is top-level frozen (frozen=True), meaning you cannot reassign
+        fields after creation. However, the `metadata` field contains a mutable
+        ModelOrchestratorInputMetadata object that CAN be modified in place.
+
+        Warning:
+            Do NOT mutate nested metadata across threads without synchronization.
+            If thread safety is required, either:
+            (a) Treat metadata as read-only after creation, or
+            (b) Use explicit locks when accessing metadata across threads, or
+            (c) Create new instances using `model_copy(update={"metadata": ...})`
+
     Attributes:
         workflow_id: Unique identifier for this workflow instance.
         steps: List of workflow step definitions. Each step is a dictionary
