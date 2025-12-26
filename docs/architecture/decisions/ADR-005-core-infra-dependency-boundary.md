@@ -347,7 +347,7 @@ TYPE_CHECKING imports are **allowed** per the [Allowed Patterns](#allowed-patter
 - Create NO runtime dependencies
 - Are guarded by `if TYPE_CHECKING:`
 
-If the script flags an import that is inside a TYPE_CHECKING block, see the detailed resolution steps in the script's comments at `scripts/validate-no-transport-imports.sh` (lines 85-107).
+If the script flags an import that is inside a TYPE_CHECKING block, see the detailed resolution steps in the script's comments at `scripts/validate-no-transport-imports.sh` (lines 103-108).
 
 ### Pre-commit Integration (Optional)
 
@@ -403,7 +403,7 @@ The script applies two types of exclusions:
 - Comment lines (lines starting with `#`)
 - Documentation examples (lines containing "Example:" or "example:")
 
-**Note**: For TYPE_CHECKING block handling, see [TYPE_CHECKING Import Limitation](#type_checking-import-limitation) above.
+**Note**: TYPE_CHECKING blocks are NOT automatically excluded by the script. The grep-based approach cannot detect multi-line TYPE_CHECKING blocks; this is a known limitation, not an exclusion feature. See [TYPE_CHECKING Import Limitation](#type_checking-import-limitation) above for details.
 
 ---
 

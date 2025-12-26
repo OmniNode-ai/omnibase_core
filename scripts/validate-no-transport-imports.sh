@@ -2,6 +2,11 @@
 # Validate no direct transport/I/O library imports exist in omnibase_core
 # Enforces architectural boundary: Core should be pure, infrastructure owns all I/O
 #
+# LIMITATION: This script uses grep-based pattern matching which cannot detect imports
+# inside `if TYPE_CHECKING:` blocks (which span multiple lines). Complete detection would
+# require AST-based parsing. TYPE_CHECKING imports are ALLOWED per ADR-005 since they
+# create no runtime dependencies. See the detailed LIMITATION comment below (~line 90).
+#
 # Forbidden imports:
 #   HTTP clients: aiohttp, httpx, requests, urllib3
 #   Kafka clients: kafka-python, aiokafka, confluent-kafka
@@ -21,7 +26,7 @@ echo "Checking for transport/I/O library imports in omnibase_core..."
 
 # Build regex pattern for forbidden imports
 # Note: We check for both 'import X' and 'from X import' patterns
-# Packages are matched at word boundaries to avoid false positives
+# Packages are matched with trailing delimiters (not \b) to avoid false positives
 FORBIDDEN_PACKAGES=(
     # HTTP clients
     "aiohttp"
@@ -53,7 +58,7 @@ FORBIDDEN_PACKAGES=(
 )
 
 # Build alternation pattern for grep
-# Word boundary behavior is enforced by the IMPORT_PATTERN regex structure below:
+# Trailing delimiter matching is enforced by the IMPORT_PATTERN regex structure (line 77):
 #   - For 'from X import': requires whitespace or '.' after package name via (\.|[[:space:]])
 #   - For 'import X': requires whitespace, '.', ',', or end-of-line via (\.|[[:space:]]|,|$)
 # This prevents false positives like 'aiohttp_helper' matching 'aiohttp'
@@ -67,7 +72,7 @@ done
 
 # Match import statements: 'import X' or 'from X import'
 # - Anchored to start of line (after optional whitespace)
-# - Enforces word boundaries via trailing delimiter (see lines 56-59 for details)
+# - Uses trailing delimiters to prevent partial matches (see lines 61-64 above)
 # - Allows for submodule imports like 'import aiohttp.client' or 'from aiohttp.web import X'
 IMPORT_PATTERN="^[[:space:]]*(from[[:space:]]+($PATTERN)(\\.|[[:space:]])|import[[:space:]]+($PATTERN)(\\.|[[:space:]]|,|$))"
 
@@ -77,7 +82,7 @@ IMPORT_PATTERN="^[[:space:]]*(from[[:space:]]+($PATTERN)(\\.|[[:space:]])|import
 EXCLUDE_PATTERN="protocols/http/__init__.py|protocols/http/protocol_http_client.py|__pycache__|\.pyc$"
 
 # Find violations - actual import statements only
-# We use -P for Perl regex to get proper word boundaries
+# We use -P for Perl regex to enable extended regex features
 VIOLATIONS=$(grep -RnP "$IMPORT_PATTERN" "$CORE_SRC" --include="*.py" 2>/dev/null | grep -vE "$EXCLUDE_PATTERN" || true)
 
 # Filter out obvious false positives (comments, docstrings)
@@ -98,7 +103,7 @@ VIOLATIONS=$(grep -RnP "$IMPORT_PATTERN" "$CORE_SRC" --include="*.py" 2>/dev/nul
 # If this script flags an import that is inside a TYPE_CHECKING block:
 #   1. VERIFY: Open the file and confirm the import is inside 'if TYPE_CHECKING:'
 #   2. CONFIRM: The import is for type annotations only (not runtime usage)
-#   3. EXCLUDE: Add the file path to EXCLUDE_PATTERN above (line ~77)
+#   3. EXCLUDE: Add the file path to EXCLUDE_PATTERN above (line ~82)
 #      Example: EXCLUDE_PATTERN="...|path/to/file.py"
 #   4. DOCUMENT: Add a comment in the file explaining the TYPE_CHECKING usage
 #
@@ -139,12 +144,12 @@ if [ -n "$REAL_VIOLATIONS" ]; then
     echo "  1. Define a protocol in omnibase_core for the capability you need"
     echo "  2. Implement the protocol in an infrastructure package"
     echo "  3. If this import is inside a TYPE_CHECKING block (allowed per ADR-005):"
-    echo "     a. VERIFY: Open the file and confirm the import is inside 'if TYPE_CHECKING:'"
-    echo "     b. CONFIRM: The import is for type annotations only (not runtime usage)"
-    echo "     c. EXCLUDE: Add the file path to EXCLUDE_PATTERN above (line ~77)"
+    echo "     1. VERIFY: Open the file and confirm the import is inside 'if TYPE_CHECKING:'"
+    echo "     2. CONFIRM: The import is for type annotations only (not runtime usage)"
+    echo "     3. EXCLUDE: Add the file path to EXCLUDE_PATTERN above (line ~82)"
     echo "        Example: EXCLUDE_PATTERN=\"...|path/to/file.py\""
-    echo "     d. DOCUMENT: Add a comment in the file explaining the TYPE_CHECKING usage"
-    echo "     See the LIMITATION comment in this script (lines 85-107) for details."
+    echo "     4. DOCUMENT: Add a comment in the file explaining the TYPE_CHECKING usage"
+    echo "     See the LIMITATION comment in this script (lines 90-112) for details."
     exit 1
 fi
 
