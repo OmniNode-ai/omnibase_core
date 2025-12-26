@@ -6,6 +6,7 @@ Enhanced for tool-as-a-service architecture with strong typing throughout.
 """
 
 from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -123,8 +124,7 @@ class ModelActionMetadata(BaseModel):
         default=None,
         description="Action result data as JSON-serializable data",
     )
-    # Unparameterized ModelErrorDetails allows any context type at runtime
-    error_details: ModelErrorDetails | None = Field(  # type: ignore[type-arg]
+    error_details: ModelErrorDetails[Any] | None = Field(
         default=None,
         description="Structured error details if action failed",
     )
