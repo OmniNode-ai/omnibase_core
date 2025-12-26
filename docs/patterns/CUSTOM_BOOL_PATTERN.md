@@ -62,7 +62,7 @@ The `__bool__` method should return `True` when the result represents a **meanin
 | **Match results** | `ModelCategoryMatchResult` | `self.matched` |
 | **Capability checks** | `ModelCanHandleResult` | `self.can_handle` |
 | **Reducer execution results** | `ModelReducerExecutionResult` | `self.has_intents` |
-| **Containers with content** | `ModelEnvelopePayload` | `any(self.fields)` |
+| **Containers with content** | `ModelEnvelopePayload` | `field or field or ...` |
 
 ### ❌ Do NOT Use This Pattern For
 
@@ -246,6 +246,18 @@ def __bool__(self) -> bool:
 **Note**: Prefer `or` chaining over `any([...])` for efficiency. The `or` operator
 short-circuits (stops evaluating after the first `True`), while `any([...])`
 with a list literal evaluates all conditions before checking.
+
+### 6. Helper Method Delegation
+
+Delegate to a helper method for complex or reusable boolean logic.
+
+```python
+def __bool__(self) -> bool:
+    return self.is_some()
+```
+
+**Use when**: Boolean logic is complex, reusable, or benefits from a descriptive method name
+that clearly communicates intent (e.g., `is_some()`, `has_value()`, `is_valid()`).
 
 ---
 
