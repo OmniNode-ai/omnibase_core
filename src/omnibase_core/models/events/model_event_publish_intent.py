@@ -12,8 +12,6 @@ Example:
     from uuid import uuid4
 
     from omnibase_core.constants import (
-        DOMAIN_METRICS,
-        DOMAIN_REGISTRATION,
         TOPIC_EVENT_PUBLISH_INTENT,
         TOPIC_REGISTRATION_EVENTS,
         TOPIC_TYPE_EVENTS,
@@ -42,12 +40,31 @@ Example:
     )
 
     # Example 2: Using topic_name() for dynamic topic generation
-    # Use when no pre-defined constant exists (e.g., custom domains)
-    metrics_topic = topic_name(DOMAIN_METRICS, TOPIC_TYPE_EVENTS)
-    # Creates "onex.metrics.events"
+    # Use when you need a custom domain topic (e.g., service-specific domains)
+    from omnibase_core.models.events.model_runtime_ready_event import (
+        ModelRuntimeReadyEvent,
+    )
+
+    custom_domain_topic = topic_name("my-service", TOPIC_TYPE_EVENTS)
+    # Creates "onex.my-service.events"
+
+    runtime_payload = ModelRuntimeReadyEvent(
+        runtime_id=uuid4(),
+        node_count=5,
+        subscription_count=10,
+        event_bus_type="kafka",
+    )
+    custom_intent = ModelEventPublishIntent(
+        correlation_id=uuid4(),
+        created_by="custom_service_v1_0_0",
+        target_topic=custom_domain_topic,  # Use dynamically generated topic
+        target_key=str(uuid4()),
+        target_event_type="RUNTIME_READY",
+        target_event_payload=runtime_payload,
+    )
 
     # Publish to intent topic for execution by IntentExecutor
-    await publish_to_kafka(TOPIC_EVENT_PUBLISH_INTENT, intent)
+    await publish_to_kafka(TOPIC_EVENT_PUBLISH_INTENT, custom_intent)
 
 Note:
     TOPIC_EVENT_PUBLISH_INTENT is defined in constants_topic_taxonomy.py and
@@ -256,14 +273,33 @@ def _rebuild_model() -> None:
     Forward references are necessary to avoid circular imports during
     module initialization.
 
-    When to Call:
-        - Call this function ONCE after your application has finished loading
-          all dependent modules (e.g., during application startup).
-        - If not called manually, Pydantic will attempt to resolve forward
-          references on first validation, but explicit rebuild is recommended
-          for predictable behavior.
-        - This function is automatically called via auto_rebuild_on_module_load()
-          when this module is imported.
+    Automatic Invocation:
+        **In most cases, you do NOT need to call this function manually.**
+
+        This function is automatically invoked in two scenarios:
+
+        1. **Module Load**: When this module is first imported,
+           ``auto_rebuild_on_module_load()`` is called at module level,
+           which triggers ``_rebuild_model()`` to resolve forward references.
+
+        2. **Subclassing**: When a class inherits from ModelEventPublishIntent,
+           the ``__init_subclass__`` hook calls ``handle_subclass_forward_refs()``,
+           which invokes ``_rebuild_model()`` to ensure the subclass has
+           resolved forward references.
+
+        These automatic mechanisms ensure that ModelEventPublishIntent works
+        correctly out of the box without manual intervention.
+
+    When to Call Manually:
+        You may need to call this function explicitly only in rare edge cases:
+
+        - **Testing isolation**: When running tests that mock dependencies,
+          you may need to call ``_rebuild_model()`` to reset the model state.
+        - **Hot reloading**: When using development servers that reload modules,
+          calling ``_rebuild_model()`` ensures forward references are resolved
+          after the reload.
+        - **Debugging**: When debugging forward reference issues, explicitly
+          calling this function can help identify where the problem occurs.
 
     Why This Exists:
         ModelEventPublishIntent uses TYPE_CHECKING imports to avoid circular
@@ -272,15 +308,18 @@ def _rebuild_model() -> None:
         properly validate typed payloads.
 
     Example:
-        >>> # In your application startup code:
+        >>> # Typically not needed - automatic resolution handles this
         >>> from omnibase_core.models.events.model_event_publish_intent import (
         ...     ModelEventPublishIntent,
+        ... )
+        >>> # Just use the model directly - forward refs are already resolved
+        >>> intent = ModelEventPublishIntent(...)
+        >>>
+        >>> # Only call _rebuild_model() for debugging or testing:
+        >>> from omnibase_core.models.events.model_event_publish_intent import (
         ...     _rebuild_model,
         ... )
-        >>> _rebuild_model()  # Resolve forward references
-        >>>
-        >>> # Now ModelEventPublishIntent can validate typed payloads
-        >>> intent = ModelEventPublishIntent(...)
+        >>> _rebuild_model()  # Explicit rebuild (rarely needed)
 
     Note:
         This pattern is common in Pydantic models that use TYPE_CHECKING
@@ -290,9 +329,16 @@ def _rebuild_model() -> None:
     Raises:
         ModelOnexError: If imports fail or model rebuild fails due to
             missing dependencies or configuration issues. Specific error codes:
-            - IMPORT_ERROR: Required modules (payloads, retry_policy) unavailable
-            - INITIALIZATION_FAILED: Schema generation or type resolution failed
-            - CONFIGURATION_ERROR: Invalid Pydantic model configuration
+
+            - **IMPORT_ERROR**: Required modules (payloads, retry_policy)
+              are not yet available. This typically occurs during early
+              bootstrap when module loading order prevents imports.
+            - **INITIALIZATION_FAILED**: Schema generation or type resolution
+              failed. This indicates invalid type annotations or incompatible
+              type constraints in the model definition.
+            - **CONFIGURATION_ERROR**: Invalid Pydantic model configuration.
+              This indicates problems with ConfigDict options or conflicting
+              field definitions.
     """
     # Import error handling utilities first - these are core dependencies
     # that should always be available after initial bootstrap
@@ -319,15 +365,34 @@ def _rebuild_model() -> None:
             },
         ) from e
 
-    # Rebuild model with resolved types - errors are handled by the utility
-    # which raises ModelOnexError with appropriate error codes
-    rebuild_model_references(
-        model_class=ModelEventPublishIntent,
-        type_mappings={
-            "ModelEventPayloadUnion": ModelEventPayloadUnion,
-            "ModelRetryPolicy": ModelRetryPolicy,
-        },
-    )
+    # Rebuild model with resolved types
+    # The utility function handles Pydantic-specific errors and raises
+    # ModelOnexError with appropriate error codes (INITIALIZATION_FAILED,
+    # CONFIGURATION_ERROR). We catch any unexpected errors and wrap them
+    # with context for debugging.
+    try:
+        rebuild_model_references(
+            model_class=ModelEventPublishIntent,
+            type_mappings={
+                "ModelEventPayloadUnion": ModelEventPayloadUnion,
+                "ModelRetryPolicy": ModelRetryPolicy,
+            },
+        )
+    except ModelOnexError:
+        # Re-raise ModelOnexError as-is - already has proper error codes
+        raise
+    except RuntimeError as e:
+        # RuntimeError during module manipulation is a critical failure
+        raise ModelOnexError(
+            message=f"Runtime error during ModelEventPublishIntent rebuild: {e}",
+            error_code=EnumCoreErrorCode.INITIALIZATION_FAILED,
+            context={
+                "model": "ModelEventPublishIntent",
+                "error_type": "RuntimeError",
+                "error_details": str(e),
+                "hint": "Check for module manipulation issues or circular imports",
+            },
+        ) from e
 
 
 # Automatic forward reference resolution

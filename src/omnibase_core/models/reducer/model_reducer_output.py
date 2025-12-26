@@ -128,6 +128,9 @@ class ModelReducerOutput[T_Output](BaseModel):
     model_config = ConfigDict(
         extra="forbid",
         frozen=True,
+        # arbitrary_types_allowed: Required for generic type parameter T_Output which can be
+        # any user-defined type (Pydantic models, dataclasses, custom classes, etc.) that
+        # Pydantic cannot automatically serialize without this setting.
         arbitrary_types_allowed=True,
     )
 

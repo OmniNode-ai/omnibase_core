@@ -159,6 +159,9 @@ class ModelOrchestratorInput(BaseModel):
     )
 
     model_config = ConfigDict(
+        # arbitrary_types_allowed: Required for steps field which contains heterogeneous
+        # dict[str, Any] structures that may include user-defined types, callable references,
+        # or complex nested objects that are not standard Pydantic-serializable types.
         arbitrary_types_allowed=True,
         use_enum_values=False,
         frozen=True,

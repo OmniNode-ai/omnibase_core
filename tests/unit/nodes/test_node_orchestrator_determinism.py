@@ -990,8 +990,50 @@ class TestNodeOrchestratorStateSerializationDeterminism:
             version=ModelSemVer(major=1, minor=0, patch=0),
         )
 
-        # Hashes should be identical for equivalent definitions
-        assert def_1.compute_workflow_hash() == def_2.compute_workflow_hash()
+        # Create a DIFFERENT workflow definition to prove hashes discriminate
+        def_3 = ModelWorkflowDefinition(
+            workflow_metadata=ModelWorkflowDefinitionMetadata(
+                workflow_name="different_workflow",  # Different name
+                workflow_version=ModelSemVer(
+                    major=2, minor=0, patch=0
+                ),  # Different version
+                version=ModelSemVer(major=1, minor=0, patch=0),
+                description="Different workflow",  # Different description
+                execution_mode="parallel",  # Different execution mode
+            ),
+            execution_graph=ModelExecutionGraph(
+                nodes=[],
+                version=ModelSemVer(major=1, minor=0, patch=0),
+            ),
+            coordination_rules=ModelCoordinationRules(
+                parallel_execution_allowed=True,  # Different coordination
+                failure_recovery_strategy=EnumFailureRecoveryStrategy.ABORT,  # Different strategy
+                version=ModelSemVer(major=1, minor=0, patch=0),
+            ),
+            version=ModelSemVer(major=1, minor=0, patch=0),
+        )
+
+        hash_1 = def_1.compute_workflow_hash()
+        hash_2 = def_2.compute_workflow_hash()
+        hash_3 = def_3.compute_workflow_hash()
+
+        # Verify hashes are meaningful (not None or empty)
+        assert hash_1 is not None, "Hash should not be None"
+        assert hash_1 != "", "Hash should not be empty"
+        assert len(hash_1) > 0, "Hash should have content"
+
+        # Equivalent definitions should produce same hash
+        assert hash_1 == hash_2, (
+            f"Equivalent definitions should have same hash. "
+            f"def_1: {hash_1}, def_2: {hash_2}"
+        )
+
+        # Different definitions should produce different hashes
+        # This prevents the test from passing with a broken hash that returns constants
+        assert hash_1 != hash_3, (
+            f"Different definitions should have different hashes. "
+            f"def_1: {hash_1}, def_3: {hash_3}"
+        )
 
 
 @pytest.mark.timeout(60)

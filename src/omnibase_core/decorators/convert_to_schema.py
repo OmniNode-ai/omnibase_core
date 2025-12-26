@@ -106,7 +106,27 @@ _Decorator: type[DecoratorType[Any]] | None = None
 _ModelValidatorDecoratorInfo: type[ModelValidatorDecoratorInfoType] | None = None
 
 try:
-    # Import and assign in one block to help type checkers understand the flow
+    # PYDANTIC INTERNAL API IMPORTS (Pydantic 2.x specific)
+    # =====================================================
+    # These imports access Pydantic's internal decorator registration mechanism.
+    # This is a documented limitation - no public API exists for dynamically
+    # adding model validators to an existing class post-creation.
+    #
+    # Decorator: Wrapper object that holds validator function + metadata
+    #   - cls_ref: String identifying the class (module.ClassName:id)
+    #   - cls_var_name: Name of the validator method on the class
+    #   - func: The actual validator function
+    #   - shim: Optional wrapper (we use None)
+    #   - info: ModelValidatorDecoratorInfo with validation mode
+    #
+    # ModelValidatorDecoratorInfo: Metadata for model validators
+    #   - mode: "before" (wrap) or "after" (plain) validation mode
+    #
+    # PYDANTIC 3.x MIGRATION NOTES:
+    # - These internal classes may be relocated or renamed in Pydantic 3.x
+    # - Monitor Pydantic changelog for changes to _internal._decorators module
+    # - If a public API for dynamic validators is added, migrate to it
+    # - Key change indicator: deprecation warnings in Pydantic 2.x releases
     from pydantic._internal._decorators import Decorator as _DecoratorImport
     from pydantic._internal._decorators import (
         ModelValidatorDecoratorInfo as _ModelValidatorDecoratorInfoImport,
@@ -117,7 +137,11 @@ try:
     _ModelValidatorDecoratorInfo = _ModelValidatorDecoratorInfoImport
     _PYDANTIC_INTERNALS_AVAILABLE = True
 except ImportError as e:
-    # Capture error for diagnostic messages in runtime checks
+    # Capture error for diagnostic messages in runtime checks.
+    # This typically happens when:
+    # 1. Pydantic version < 2.0 (internal structure different)
+    # 2. Pydantic 3.x changes internal module layout
+    # 3. Pydantic is installed without full dependencies
     _PYDANTIC_IMPORT_ERROR = e
     _logger.debug(
         "Pydantic internal APIs not available: %s. "
@@ -434,21 +458,42 @@ def _convert_value(value: Any, schema_cls: type[ModelSchemaValue]) -> Any:
     if isinstance(value, list):
         return _convert_list_value(value, schema_cls)
     if isinstance(value, dict):
-        # Check if this is a serialized ModelSchemaValue (from model_dump)
-        # If so, let Pydantic handle the deserialization directly
-        if _is_serialized_schema_value(value):
-            return value
+        # Note: We do NOT check _is_serialized_schema_value here for dict fields.
+        # For dict[str, ModelSchemaValue] fields, we always want to convert the
+        # values of the dict, not treat the dict itself as a serialized value.
+        # The _convert_dict_value function handles serialized values within
+        # the dict (i.e., when dict VALUES are serialized ModelSchemaValue dicts).
+        #
+        # A dict like {"value_type": "string", "value": "hello"} passed to a
+        # dict[str, ModelSchemaValue] field should have both keys converted to
+        # ModelSchemaValue instances, NOT be passed through as a single value.
         return _convert_dict_value(value, schema_cls)
 
-    # For unexpected types, log a warning and return as-is
-    # This allows Pydantic's type validation to catch the error with proper context
-    _logger.warning(
-        "Unexpected value type in schema conversion: %s (value: %r). "
-        "Expected list or dict. Value will be passed through for Pydantic validation.",
-        type(value).__name__,
-        value if not isinstance(value, (bytes, bytearray)) else "<binary data>",
+    # For unexpected types, raise an error instead of silently passing through.
+    # The decorator is designed for list[ModelSchemaValue] or dict[str, ModelSchemaValue]
+    # fields only. Unexpected types indicate a configuration error that should be
+    # surfaced to the developer, not silently ignored.
+    value_repr = (
+        repr(value) if not isinstance(value, (bytes, bytearray)) else "<binary data>"
     )
-    return value
+    _logger.error(
+        "Unexpected value type in schema conversion: %s (value: %s). "
+        "Expected list or dict for schema conversion. Check field type annotations.",
+        type(value).__name__,
+        value_repr,
+    )
+    raise ModelOnexError(
+        message=(
+            f"Cannot convert value of type '{type(value).__name__}' to ModelSchemaValue. "
+            f"The @convert_to_schema decorator only supports list[ModelSchemaValue] or "
+            f"dict[str, ModelSchemaValue] fields. Received: {value_repr}"
+        ),
+        error_code=EnumCoreErrorCode.CONVERSION_ERROR,
+        context={
+            "value_type": type(value).__name__,
+            "expected_types": ["list", "dict"],
+        },
+    )
 
 
 def convert_to_schema(
@@ -590,18 +635,29 @@ def convert_to_schema(
             "Guaranteed non-None by availability check"
         )
 
+        # PYDANTIC INTERNAL: Create Decorator object matching Pydantic's internal structure
+        # This is the core workaround for dynamic validator registration.
+        # The Decorator class wraps our validator with the metadata Pydantic needs.
+        # Pydantic 3.x migration: Check if Decorator signature/structure changes.
         decorator_obj = DecoratorClass(
             cls_ref=f"{cls.__module__}.{cls.__name__}:{id(cls)}",
             cls_var_name=validator_name,
             func=validator_method,
-            shim=None,
-            info=ValidatorInfoClass(mode="before"),
+            shim=None,  # No wrapper needed for simple validators
+            info=ValidatorInfoClass(
+                mode="before"
+            ),  # "before" = runs before field validation
         )
 
-        # Add to pydantic_decorators
+        # PYDANTIC INTERNAL: Register via __pydantic_decorators__ (semi-public API)
+        # This dict is documented in Pydantic but its structure may change.
+        # Pydantic 3.x migration: Monitor for changes to model_validators dict structure.
         cls.__pydantic_decorators__.model_validators[validator_name] = decorator_obj
 
-        # Rebuild the model to register the new validator with Pydantic
+        # PYDANTIC INTERNAL: model_rebuild() applies the new validator
+        # force=True ensures the model is rebuilt even if it appears unchanged.
+        # This is required because we modified __pydantic_decorators__ directly.
+        # Pydantic 3.x migration: Check if model_rebuild signature/behavior changes.
         cls.model_rebuild(force=True)
 
         return cls
@@ -701,6 +757,7 @@ def convert_list_to_schema(
             "Guaranteed non-None by availability check"
         )
 
+        # PYDANTIC INTERNAL: See convert_to_schema for detailed documentation
         decorator_obj = DecoratorClass(
             cls_ref=f"{cls.__module__}.{cls.__name__}:{id(cls)}",
             cls_var_name=validator_name,
@@ -708,6 +765,7 @@ def convert_list_to_schema(
             shim=None,
             info=ValidatorInfoClass(mode="before"),
         )
+        # PYDANTIC INTERNAL: Register and rebuild (see convert_to_schema for details)
         cls.__pydantic_decorators__.model_validators[validator_name] = decorator_obj
         cls.model_rebuild(force=True)
 
@@ -808,6 +866,7 @@ def convert_dict_to_schema(
             "Guaranteed non-None by availability check"
         )
 
+        # PYDANTIC INTERNAL: See convert_to_schema for detailed documentation
         decorator_obj = DecoratorClass(
             cls_ref=f"{cls.__module__}.{cls.__name__}:{id(cls)}",
             cls_var_name=validator_name,
@@ -815,6 +874,7 @@ def convert_dict_to_schema(
             shim=None,
             info=ValidatorInfoClass(mode="before"),
         )
+        # PYDANTIC INTERNAL: Register and rebuild (see convert_to_schema for details)
         cls.__pydantic_decorators__.model_validators[validator_name] = decorator_obj
         cls.model_rebuild(force=True)
 

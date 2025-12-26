@@ -434,7 +434,7 @@ def handle_directive(payload: ModelDirectivePayload) -> None:
 
 Use this flowchart to decide which pattern to use:
 
-```
+```text
                     ┌───────────────────────────────────┐
                     │ Will external code define new     │
                     │ payload types?                    │
@@ -569,17 +569,20 @@ The ONEX codebase already successfully uses discriminated unions:
 
 ---
 
-## Current State Analysis
+## Historical Context (Pre-v0.4.0)
+
+> **Note**: This section documents the PREVIOUS state of these models for historical context.
+> As of v0.4.0, `dict[str, Any]` has been **REMOVED** from all these models.
 
 ### ModelIntent (Extension Intents)
 
 **Location**: `src/omnibase_core/models/reducer/model_intent.py`
 
-**Current Implementation**:
+**Previous Implementation (REMOVED in v0.4.0)**:
 ```python
 class ModelIntent(BaseModel):
     intent_type: str  # e.g., "webhook.send", "plugin.execute"
-    payload: dict[str, Any]  # <-- Target for replacement
+    payload: dict[str, Any]  # <-- REMOVED: Now uses ProtocolIntentPayload
 ```
 
 **Architecture Context**:
@@ -597,11 +600,11 @@ class ModelIntent(BaseModel):
 
 **Location**: `src/omnibase_core/models/orchestrator/model_action.py`
 
-**Current Implementation**:
+**Previous Implementation (REMOVED in v0.4.0)**:
 ```python
 class ModelAction(BaseModel):
     action_type: EnumActionType  # COMPUTE, EFFECT, REDUCE, ORCHESTRATE, CUSTOM
-    payload: dict[str, Any]  # <-- Target for replacement
+    payload: dict[str, Any]  # <-- REMOVED: Now uses SpecificActionPayload
 ```
 
 **Architecture Context**:
@@ -619,11 +622,11 @@ class ModelAction(BaseModel):
 
 **Location**: `src/omnibase_core/models/runtime/model_runtime_directive.py`
 
-**Current Implementation**:
+**Previous Implementation (REMOVED in v0.4.0)**:
 ```python
 class ModelRuntimeDirective(BaseModel):
     directive_type: EnumDirectiveType  # SCHEDULE_EFFECT, ENQUEUE_HANDLER, etc.
-    payload: dict[str, Any]  # <-- Target for replacement
+    payload: dict[str, Any]  # <-- REMOVED: Now uses ModelDirectivePayload
 ```
 
 **Architecture Context**:
@@ -646,11 +649,11 @@ class ModelRuntimeDirective(BaseModel):
 
 **Location**: `src/omnibase_core/models/events/model_event_publish_intent.py`
 
-**Current Implementation**:
+**Previous Implementation (REMOVED in v0.4.0)**:
 ```python
 class ModelEventPublishIntent(BaseModel):
     target_event_type: str  # Event type name for routing
-    target_event_payload: dict[str, Any]  # <-- Target for replacement
+    target_event_payload: dict[str, Any]  # <-- REMOVED: Now uses ModelEventPayloadUnion
 ```
 
 **Architecture Context**:
