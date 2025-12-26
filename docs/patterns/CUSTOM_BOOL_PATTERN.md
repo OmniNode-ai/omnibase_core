@@ -229,18 +229,23 @@ def __bool__(self) -> bool:
 
 ### 5. Composite State Check
 
-Check multiple fields for meaningful content.
+Check multiple fields for meaningful content using short-circuit evaluation.
 
 ```python
 def __bool__(self) -> bool:
-    return any([
-        self.field_a is not None,
-        self.field_b is not None,
-        bool(self.collection),
-    ])
+    # Use short-circuit evaluation for efficiency - stops at first True
+    return (
+        self.field_a is not None
+        or self.field_b is not None
+        or bool(self.collection)
+    )
 ```
 
 **Use when**: Model has multiple optional fields that indicate "emptiness".
+
+**Note**: Prefer `or` chaining over `any([...])` for efficiency. The `or` operator
+short-circuits (stops evaluating after the first `True`), while `any([...])`
+with a list literal evaluates all conditions before checking.
 
 ---
 
