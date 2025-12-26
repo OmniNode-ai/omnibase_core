@@ -196,7 +196,9 @@ class ModelErrorDetails(BaseModel, Generic[TContext]):
 
     # Recovery information
     retry_after_seconds: int | None = Field(
-        default=None, description="Retry after seconds"
+        default=None,
+        description="Retry after seconds",
+        ge=0,
     )
     recovery_suggestions: list[str] | None = Field(
         default=None,

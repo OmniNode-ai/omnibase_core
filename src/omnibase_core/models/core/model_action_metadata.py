@@ -172,7 +172,7 @@ class ModelActionMetadata(BaseModel):
         if result_data:
             self.result_data = result_data
 
-    def mark_failed(self, error_details: ModelErrorDetails) -> None:  # type: ignore[type-arg]
+    def mark_failed(self, error_details: ModelErrorDetails[Any]) -> None:
         """Mark the action as failed with structured error details."""
         self.completed_at = datetime.now(UTC)
         self.status = "failed"

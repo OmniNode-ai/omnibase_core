@@ -848,19 +848,21 @@ class TestModelErrorDetailsEdgeCases:
         assert error1 == error2
         assert error1 != error3
 
-    def test_negative_retry_after_seconds(self):
-        """Test model with negative retry_after_seconds (no validation prevents it)."""
-        error = ModelErrorDetails(
-            error_code="ERR001",
-            error_type="timeout",
-            error_message="Test error",
-            retry_after_seconds=-1,
-        )
+    def test_negative_retry_after_seconds_raises_validation_error(self):
+        """Test that negative retry_after_seconds raises ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelErrorDetails(
+                error_code="ERR001",
+                error_type="timeout",
+                error_message="Test error",
+                retry_after_seconds=-1,
+            )
 
-        # Negative value is allowed by the model (no validation constraint)
-        assert error.retry_after_seconds == -1
-        # But is_retryable should still return True (it checks "is not None")
-        assert error.is_retryable() is True
+        # Verify the error is about the ge=0 constraint
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert errors[0]["loc"] == ("retry_after_seconds",)
+        assert errors[0]["type"] == "greater_than_equal"
 
 
 @pytest.mark.unit
