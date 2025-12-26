@@ -183,7 +183,7 @@ class ModelDispatchResult(BaseModel):
         default=None,
         description="Error code if the dispatch failed.",
     )
-    error_details: ModelErrorDetails | None = Field(
+    error_details: ModelErrorDetails | None = Field(  # type: ignore[type-arg]
         default=None,
         description="Additional error details for debugging.",
     )
@@ -284,7 +284,7 @@ class ModelDispatchResult(BaseModel):
         status: EnumDispatchStatus,
         message: str,
         code: str | None = None,
-        details: ModelErrorDetails | None = None,
+        details: ModelErrorDetails | None = None,  # type: ignore[type-arg]
     ) -> "ModelDispatchResult":
         """
         Create a new result with error information.

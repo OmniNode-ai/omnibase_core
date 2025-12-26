@@ -123,7 +123,7 @@ class ModelActionMetadata(BaseModel):
         default=None,
         description="Action result data as JSON-serializable data",
     )
-    error_details: ModelErrorDetails | None = Field(
+    error_details: ModelErrorDetails | None = Field(  # type: ignore[type-arg]
         default=None,
         description="Structured error details if action failed",
     )
@@ -171,7 +171,7 @@ class ModelActionMetadata(BaseModel):
         if result_data:
             self.result_data = result_data
 
-    def mark_failed(self, error_details: ModelErrorDetails) -> None:
+    def mark_failed(self, error_details: ModelErrorDetails) -> None:  # type: ignore[type-arg]
         """Mark the action as failed with structured error details."""
         self.completed_at = datetime.now(UTC)
         self.status = "failed"

@@ -20,15 +20,19 @@ See Also:
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, Generic, TypeVar
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
+# Type variable for generic context data
+# Bound to BaseModel to ensure type safety for typed context models
+TContext = TypeVar("TContext", bound=BaseModel)
 
-class ModelErrorDetails(BaseModel):
+
+class ModelErrorDetails(BaseModel, Generic[TContext]):
     """Structured error details with typed fields for ONEX error handling.
 
     This model replaces dict[str, Any] usage for error_details fields, providing:
@@ -38,12 +42,19 @@ class ModelErrorDetails(BaseModel):
     - **Support for nested errors** via inner_errors field
     - **Recovery information** (retry_after_seconds, recovery_suggestions)
     - **Correlation tracking** (request_id, session_id, user_id)
+    - **Generic context data** via TContext type parameter
+
+    Generic Parameters:
+        TContext: The type of context data. When unparameterized, defaults to
+            dict[str, ModelSchemaValue]. Can be specialized to typed context
+            models like ModelTraceContext, ModelValidationContext, etc.
 
     Use Cases:
         - Capturing detailed error context for debugging
         - Structured error logging and monitoring
         - API error responses with consistent format
         - Error aggregation in reducers and orchestrators
+        - Type-safe error context with domain-specific models
 
     Thread Safety:
         Instances are immutable (frozen=True) after creation, making them
@@ -62,13 +73,14 @@ class ModelErrorDetails(BaseModel):
         request_id: Optional UUID for request correlation.
         user_id: Optional UUID of the user who triggered the error.
         session_id: Optional UUID for session tracking.
-        context_data: Additional typed context using ModelSchemaValue.
+        context_data: Additional typed context. Accepts either a typed model
+            (when parameterized) or dict[str, ModelSchemaValue] (default).
         retry_after_seconds: Optional hint for when to retry (rate limiting).
         recovery_suggestions: Optional list of recovery actions.
         documentation_url: Optional link to relevant documentation.
 
     Example:
-        Basic error details::
+        Basic error details (backwards compatible)::
 
             from omnibase_core.models.services import ModelErrorDetails
 
@@ -91,6 +103,27 @@ class ModelErrorDetails(BaseModel):
                     "Wait 60 seconds before retrying",
                     "Consider using exponential backoff",
                 ],
+            )
+
+        With typed context (generic usage)::
+
+            from pydantic import BaseModel, ConfigDict
+
+            class ValidationContext(BaseModel):
+                model_config = ConfigDict(frozen=True)
+                field_name: str
+                expected: str
+                actual: str
+
+            error = ModelErrorDetails[ValidationContext](
+                error_code="VAL001",
+                error_type="validation",
+                error_message="Invalid field value",
+                context_data=ValidationContext(
+                    field_name="email",
+                    expected="valid email format",
+                    actual="not-an-email",
+                ),
             )
 
         Nested errors for error chains::
@@ -144,7 +177,8 @@ class ModelErrorDetails(BaseModel):
 
     # Error details
     stack_trace: list[str] | None = Field(default=None, description="Stack trace lines")
-    inner_errors: list[ModelErrorDetails] | None = Field(
+    # Note: inner_errors can contain any ModelErrorDetails variant
+    inner_errors: list[ModelErrorDetails] | None = Field(  # type: ignore[type-arg]
         default=None,
         description="Nested errors",
     )
@@ -154,10 +188,10 @@ class ModelErrorDetails(BaseModel):
     user_id: UUID | None = Field(default=None, description="User ID")
     session_id: UUID | None = Field(default=None, description="Session ID")
 
-    # Additional context
-    context_data: dict[str, ModelSchemaValue] = Field(
+    # Additional context - supports both typed context (TContext) and dict
+    context_data: TContext | dict[str, ModelSchemaValue] = Field(
         default_factory=dict,
-        description="Additional error context",
+        description="Additional error context. Can be a typed context model or dict.",
     )
 
     # Recovery information
@@ -174,7 +208,7 @@ class ModelErrorDetails(BaseModel):
 
     # ONEX_EXCLUDE: dict_str_any - factory input
     @classmethod
-    def from_dict(cls, data: dict[str, Any] | None) -> ModelErrorDetails | None:
+    def from_dict(cls, data: dict[str, Any] | None) -> ModelErrorDetails | None:  # type: ignore[type-arg]
         """Create ModelErrorDetails from a dictionary.
 
         This factory method provides easy migration from legacy dict[str, Any]
