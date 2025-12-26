@@ -10,7 +10,15 @@ from uuid import UUID
 
 from pydantic import Field
 
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+# Direct module imports to avoid circular import via context/__init__.py
+from omnibase_core.models.context.model_action_execution_context import (
+    ModelActionExecutionContext,
+)
+from omnibase_core.models.context.model_action_parameters import ModelActionParameters
+from omnibase_core.models.context.model_routing_metadata import ModelRoutingMetadata
+from omnibase_core.models.context.model_service_discovery_metadata import (
+    ModelServiceDiscoveryMetadata,
+)
 
 from .model_node_action import ModelNodeAction
 from .model_onex_base_state import ModelOnexInputState
@@ -28,12 +36,12 @@ class ModelActionPayload(ModelOnexInputState):
     """
 
     action: ModelNodeAction = Field(default=..., description="The action to execute")
-    parameters: dict[str, ModelSchemaValue] = Field(
-        default_factory=dict,
+    parameters: ModelActionParameters = Field(
+        default_factory=ModelActionParameters,
         description="Action execution parameters with strong typing",
     )
-    execution_context: dict[str, ModelSchemaValue] = Field(
-        default_factory=dict,
+    execution_context: ModelActionExecutionContext = Field(
+        default_factory=ModelActionExecutionContext,
         description="Execution context and environment metadata",
     )
 
@@ -52,8 +60,8 @@ class ModelActionPayload(ModelOnexInputState):
         default=None,
         description="Target service for action execution",
     )
-    routing_metadata: dict[str, ModelSchemaValue] = Field(
-        default_factory=dict,
+    routing_metadata: ModelRoutingMetadata = Field(
+        default_factory=ModelRoutingMetadata,
         description="Service routing and load balancing metadata",
     )
     trust_level: float = Field(
@@ -64,8 +72,8 @@ class ModelActionPayload(ModelOnexInputState):
     )
 
     # Tool-as-a-Service metadata with strong typing
-    service_metadata: dict[str, ModelSchemaValue] = Field(
-        default_factory=dict,
+    service_metadata: ModelServiceDiscoveryMetadata | None = Field(
+        default=None,
         description="Service discovery and composition metadata",
     )
     tool_discovery_tags: list[str] = Field(
@@ -88,7 +96,7 @@ class ModelActionPayload(ModelOnexInputState):
             parent_correlation_id=self.correlation_id,
             execution_chain=self.execution_chain.copy(),
             trust_level=min(self.trust_level, kwargs.get("trust_level", 1.0)),
-            service_metadata=self.service_metadata.copy(),
+            service_metadata=self.service_metadata,  # Immutable, no copy needed
             version=self.version,  # Required field from ModelOnexInputState
             **kwargs,
         )

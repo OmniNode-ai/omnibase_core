@@ -15,6 +15,10 @@ Models:
     - ModelCheckpointMetadata: Checkpoint state persistence metadata
     - ModelDetectionMetadata: Security pattern detection metadata
     - ModelNodeInitMetadata: Node initialization tracking metadata
+    - ModelActionExecutionContext: Action/node execution context (OMN-1049)
+    - ModelRoutingMetadata: Service routing and load balancing (OMN-1049)
+    - ModelServiceDiscoveryMetadata: Service discovery and composition (OMN-1049)
+    - ModelActionParameters: Typed action execution parameters (OMN-1049)
 
 Thread Safety:
     All models in this module are frozen (immutable) after creation.
@@ -52,6 +56,10 @@ Example:
     ... )
 """
 
+from omnibase_core.models.context.model_action_execution_context import (
+    ModelActionExecutionContext,
+)
+from omnibase_core.models.context.model_action_parameters import ModelActionParameters
 from omnibase_core.models.context.model_audit_metadata import ModelAuditMetadata
 from omnibase_core.models.context.model_authorization_context import (
     ModelAuthorizationContext,
@@ -64,14 +72,22 @@ from omnibase_core.models.context.model_http_request_metadata import (
     ModelHttpRequestMetadata,
 )
 from omnibase_core.models.context.model_node_init_metadata import ModelNodeInitMetadata
+from omnibase_core.models.context.model_routing_metadata import ModelRoutingMetadata
+from omnibase_core.models.context.model_service_discovery_metadata import (
+    ModelServiceDiscoveryMetadata,
+)
 from omnibase_core.models.context.model_session_context import ModelSessionContext
 
 __all__ = [
+    "ModelActionExecutionContext",
+    "ModelActionParameters",
     "ModelAuditMetadata",
     "ModelAuthorizationContext",
     "ModelCheckpointMetadata",
     "ModelDetectionMetadata",
     "ModelHttpRequestMetadata",
     "ModelNodeInitMetadata",
+    "ModelRoutingMetadata",
+    "ModelServiceDiscoveryMetadata",
     "ModelSessionContext",
 ]
