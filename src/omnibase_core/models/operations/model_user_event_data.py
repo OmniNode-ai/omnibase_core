@@ -3,6 +3,11 @@ from typing import Literal
 from pydantic import Field
 
 from omnibase_core.enums.enum_event_type import EnumEventType
+from omnibase_core.models.common.model_request_metadata import ModelRequestMetadata
+from omnibase_core.models.context import (
+    ModelAuthorizationContext,
+    ModelSessionContext,
+)
 from omnibase_core.models.operations.model_event_data_base import ModelEventDataBase
 
 
@@ -16,15 +21,15 @@ class ModelUserEventData(ModelEventDataBase):
     user_action: str = Field(
         default=..., description="User action that triggered the event"
     )
-    session_context: dict[str, str] = Field(
-        default_factory=dict,
-        description="User session context",
+    session_context: ModelSessionContext | None = Field(
+        default=None,
+        description="User session context (session_id, device, locale, etc.)",
     )
-    request_metadata: dict[str, str] = Field(
-        default_factory=dict,
-        description="Request metadata",
+    request_metadata: ModelRequestMetadata | None = Field(
+        default=None,
+        description="Request metadata (trace_id, source, environment, etc.)",
     )
-    authorization_context: dict[str, str] = Field(
-        default_factory=dict,
-        description="User authorization context",
+    authorization_context: ModelAuthorizationContext | None = Field(
+        default=None,
+        description="User authorization context (auth method, roles, permissions)",
     )

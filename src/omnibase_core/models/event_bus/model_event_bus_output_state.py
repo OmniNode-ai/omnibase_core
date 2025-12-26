@@ -78,7 +78,7 @@ class ModelEventBusOutputState(BaseModel):
         description="Specific error code for programmatic handling",
         max_length=50,
     )
-    error_details: ModelErrorDetails | None = Field(
+    error_details: ModelErrorDetails[Any] | None = Field(
         default=None, description="Detailed error information for debugging"
     )
     metrics: ModelMonitoringMetrics = Field(

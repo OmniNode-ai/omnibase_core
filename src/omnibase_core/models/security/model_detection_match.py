@@ -2,6 +2,11 @@
 Detection Match Model.
 
 Represents a single detection match within content during sensitive information detection.
+
+Thread Safety
+-------------
+This model is immutable (frozen=True) and safe to share across threads after creation.
+All fields are read-only once the instance is created.
 """
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -9,6 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from omnibase_core.enums.enum_detection_method import EnumDetectionMethod
 from omnibase_core.enums.enum_detection_type import EnumDetectionType
 from omnibase_core.enums.enum_sensitivity_level import EnumSensitivityLevel
+from omnibase_core.models.detection import ModelDetectionRuleMetadata
 
 __all__ = [
     "ModelDetectionMatch",
@@ -64,13 +70,14 @@ class ModelDetectionMatch(BaseModel):
         description="Text context after the match",
     )
 
-    metadata: dict[str, str] = Field(
-        default_factory=dict,
-        description="Additional detection metadata (string values only)",
+    metadata: ModelDetectionRuleMetadata | None = Field(
+        default=None,
+        description="Typed metadata for the detection rule that triggered this match",
     )
 
     model_config = ConfigDict(
+        frozen=True,
+        from_attributes=True,
         use_enum_values=True,
-        validate_assignment=True,
         extra="forbid",
     )

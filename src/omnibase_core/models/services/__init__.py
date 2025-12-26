@@ -16,7 +16,7 @@ from omnibase_core.models.operations.model_workflow_parameters import (
 )
 
 from .model_custom_field_definition import ModelCustomFieldDefinition
-from .model_error_details import ModelErrorDetails
+from .model_error_details import ErrorContext, ModelErrorDetails, TContext
 from .model_execution_priority import ModelExecutionPriority
 from .model_external_service_config import ModelExternalServiceConfig
 from .model_network_config import ModelNetworkConfig
@@ -90,8 +90,10 @@ from .model_service_type import ModelServiceType
 
 __all__ = [
     "EnumFallbackStrategyType",
+    "ErrorContext",
     "ModelCustomFieldDefinition",
     "ModelErrorDetails",
+    "TContext",
     "ModelEventBusConfig",
     "ModelExecutionPriority",
     "ModelExternalServiceConfig",

@@ -149,7 +149,8 @@ class ModelWorkflowOutputs(BaseModel):
         # Convert to ModelSchemaValue for type safety
         if not isinstance(value, ModelSchemaValue):
             value = ModelSchemaValue.from_value(value)
-        self.custom_outputs.set_field(key, value)
+        # Use immutable API - with_field returns new instance
+        self.custom_outputs = self.custom_outputs.with_field(key, value)
 
     def get_output(
         self, key: str, default: ModelSchemaValue | None = None

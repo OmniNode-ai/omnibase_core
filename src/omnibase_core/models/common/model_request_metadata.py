@@ -43,6 +43,10 @@ class ModelRequestMetadata(BaseModel):
         default=None,
         description="User agent making the request",
     )
+    ip_address: str | None = Field(
+        default=None,
+        description="Client IP address",
+    )
     environment: str | None = Field(
         default=None,
         description="Deployment environment (dev, staging, prod)",
