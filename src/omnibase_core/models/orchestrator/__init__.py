@@ -82,6 +82,7 @@ from .model_orchestrator import *
 from .model_orchestrator_context import ModelOrchestratorContext
 from .model_orchestrator_graph import ModelOrchestratorGraph
 from .model_orchestrator_input import ModelOrchestratorInput
+from .model_orchestrator_input_metadata import ModelOrchestratorInputMetadata
 from .model_orchestrator_output import ModelOrchestratorOutput
 from .model_orchestrator_plan import ModelOrchestratorPlan
 from .model_orchestrator_result import ModelOrchestratorResult
@@ -94,6 +95,7 @@ __all__ = [
     "ModelOrchestratorContext",
     "ModelOrchestratorGraph",
     "ModelOrchestratorInput",
+    "ModelOrchestratorInputMetadata",
     "ModelOrchestratorOutput",
     "ModelOrchestratorPlan",
     "ModelOrchestratorResult",

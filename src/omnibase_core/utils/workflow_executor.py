@@ -85,7 +85,6 @@ from omnibase_core.enums.enum_workflow_execution import (
     EnumExecutionMode,
     EnumWorkflowState,
 )
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.contracts.subcontracts.model_workflow_definition import (
     ModelWorkflowDefinition,
@@ -98,6 +97,9 @@ from omnibase_core.models.workflow.execution.model_declarative_workflow_result i
 )
 from omnibase_core.models.workflow.execution.model_declarative_workflow_step_context import (
     ModelDeclarativeWorkflowStepContext as WorkflowStepExecutionContext,
+)
+from omnibase_core.models.workflow.execution.model_workflow_result_metadata import (
+    ModelWorkflowResultMetadata,
 )
 from omnibase_core.types.typed_dict_workflow_context import TypedDictWorkflowContext
 from omnibase_core.validation.reserved_enum_validator import validate_execution_mode
@@ -344,10 +346,20 @@ async def execute_workflow(
     # Ensure minimum 1ms to avoid zero values for very fast executions
     end_time = time.perf_counter()
     execution_time_ms = max(1, int((end_time - start_time) * 1000))
+    # Note: ModelDeclarativeWorkflowResult is intentionally a mutable plain Python class
+    # (not a frozen Pydantic model) because execution_time_ms must be set after execution
+    # completes, when the actual duration is known.
     result.execution_time_ms = execution_time_ms
 
     # Add workflow hash to metadata for integrity verification
-    result.metadata["workflow_hash"] = ModelSchemaValue.create_string(workflow_hash)
+    # Since ModelWorkflowResultMetadata is frozen, use model_copy() to create new instance
+    # Note: result.metadata is never None in practice since _execute_sequential,
+    # _execute_parallel, and _execute_batch all create metadata. The check is
+    # defensive to satisfy type checking.
+    if result.metadata is not None:
+        result.metadata = result.metadata.model_copy(
+            update={"workflow_hash": workflow_hash}
+        )
 
     return result
 
@@ -750,12 +762,11 @@ async def _execute_sequential(
         failed_steps=failed_steps,
         actions_emitted=all_actions,
         execution_time_ms=0,  # Will be set by caller
-        metadata={
-            "execution_mode": ModelSchemaValue.create_string("sequential"),
-            "workflow_name": ModelSchemaValue.create_string(
-                workflow_definition.workflow_metadata.workflow_name
-            ),
-        },
+        metadata=ModelWorkflowResultMetadata(
+            execution_mode="sequential",
+            workflow_name=workflow_definition.workflow_metadata.workflow_name,
+            workflow_hash="",  # Will be set by execute_workflow after return
+        ),
     )
 
 
@@ -997,12 +1008,11 @@ async def _execute_parallel(
         failed_steps=failed_steps,
         actions_emitted=all_actions,
         execution_time_ms=0,
-        metadata={
-            "execution_mode": ModelSchemaValue.create_string("parallel"),
-            "workflow_name": ModelSchemaValue.create_string(
-                workflow_definition.workflow_metadata.workflow_name
-            ),
-        },
+        metadata=ModelWorkflowResultMetadata(
+            execution_mode="parallel",
+            workflow_name=workflow_definition.workflow_metadata.workflow_name,
+            workflow_hash="",  # Will be set by execute_workflow after return
+        ),
     )
 
 
@@ -1036,8 +1046,11 @@ async def _execute_batch(
     """
     # For batch mode, use sequential execution with batching metadata
     result = await _execute_sequential(workflow_definition, workflow_steps, workflow_id)
-    result.metadata["execution_mode"] = ModelSchemaValue.create_string("batch")
-    result.metadata["batch_size"] = ModelSchemaValue.create_number(len(workflow_steps))
+    # Since ModelWorkflowResultMetadata is frozen, use model_copy() to create new instance
+    if result.metadata is not None:
+        result.metadata = result.metadata.model_copy(
+            update={"execution_mode": "batch", "batch_size": len(workflow_steps)}
+        )
     return result
 
 

@@ -9,6 +9,7 @@ from .model_declarative_workflow_step_context import ModelDeclarativeWorkflowSte
 from .model_dependency_graph import ModelDependencyGraph
 from .model_workflow_execution_result import ModelWorkflowExecutionResult
 from .model_workflow_input_state import ModelWorkflowInputState
+from .model_workflow_result_metadata import ModelWorkflowResultMetadata
 from .model_workflow_state_snapshot import (
     CONTEXT_MAX_KEYS,
     CONTEXT_MAX_NESTING_DEPTH,
@@ -28,6 +29,7 @@ __all__ = [
     "ModelDependencyGraph",
     "ModelWorkflowExecutionResult",
     "ModelWorkflowInputState",
+    "ModelWorkflowResultMetadata",
     "ModelWorkflowStateSnapshot",
     "ModelWorkflowStepExecution",
 ]

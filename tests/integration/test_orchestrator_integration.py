@@ -34,7 +34,6 @@ from omnibase_core.enums.enum_workflow_execution import (
     EnumExecutionMode,
     EnumWorkflowState,
 )
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.contracts.subcontracts.model_coordination_rules import (
@@ -55,6 +54,9 @@ from omnibase_core.models.contracts.subcontracts.model_workflow_node import (
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.orchestrator.model_orchestrator_input import (
     ModelOrchestratorInput,
+)
+from omnibase_core.models.orchestrator.model_orchestrator_input_metadata import (
+    ModelOrchestratorInputMetadata,
 )
 from omnibase_core.models.orchestrator.model_orchestrator_output import (
     ModelOrchestratorOutput,
@@ -480,11 +482,11 @@ class TestOrchestratorIntegration:
             workflow_id=workflow_id,
             steps=steps,
             execution_mode=EnumExecutionMode.SEQUENTIAL,
-            metadata={
-                "source": ModelSchemaValue.create_string("integration_test"),
-                "environment": ModelSchemaValue.create_string("test"),
-                "correlation_id": ModelSchemaValue.create_string(str(uuid4())),
-            },
+            metadata=ModelOrchestratorInputMetadata(
+                source="integration_test",
+                environment="test",
+                correlation_id=uuid4(),
+            ),
         )
 
         # Act
