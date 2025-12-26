@@ -29,6 +29,9 @@ from .model_generic_collection import ModelGenericCollection
 from .model_generic_collection_summary import ModelGenericCollectionSummary
 from .model_generic_properties import ModelGenericProperties
 
+# Checkpoint metadata pattern
+from .model_checkpoint_metadata import ModelCheckpointMetadata
+
 # Mixin metadata pattern
 from .model_mixin_code_patterns import ModelMixinCodePatterns
 from .model_mixin_config_field import ModelMixinConfigField
@@ -118,6 +121,8 @@ except ImportError:
     _WORKFLOW_MODELS_AVAILABLE = False
 
 __all__ = [
+    # Checkpoint metadata pattern
+    "ModelCheckpointMetadata",
     # Configuration base classes
     "ModelConfigurationBase",
     "ModelTypedConfiguration",

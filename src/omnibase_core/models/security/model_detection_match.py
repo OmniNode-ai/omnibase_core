@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from omnibase_core.enums.enum_detection_method import EnumDetectionMethod
 from omnibase_core.enums.enum_detection_type import EnumDetectionType
 from omnibase_core.enums.enum_sensitivity_level import EnumSensitivityLevel
+from omnibase_core.models.detection import ModelDetectionMetadata
 
 __all__ = [
     "ModelDetectionMatch",
@@ -64,9 +65,9 @@ class ModelDetectionMatch(BaseModel):
         description="Text context after the match",
     )
 
-    metadata: dict[str, str] = Field(
-        default_factory=dict,
-        description="Additional detection metadata (string values only)",
+    metadata: ModelDetectionMetadata | None = Field(
+        default=None,
+        description="Typed metadata for the detection match",
     )
 
     model_config = ConfigDict(
