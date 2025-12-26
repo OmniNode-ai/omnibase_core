@@ -8,9 +8,12 @@ coordination operations with comprehensive configuration for execution modes,
 parallelism, timeouts, and failure handling strategies.
 
 Thread Safety:
-    ModelOrchestratorInput is immutable (frozen=True) and thread-safe.
-    All instances are read-only after creation, making them safe to share
-    across threads without synchronization.
+    ModelOrchestratorInput itself is frozen (frozen=True), meaning top-level
+    fields cannot be reassigned after creation. However, the `metadata` field
+    contains a mutable ModelOrchestratorInputMetadata object that can be
+    modified in place. If thread safety is required, either:
+    (a) Do not mutate metadata after creation, or
+    (b) Use appropriate synchronization when accessing metadata across threads.
 
 Key Features:
     - Multiple execution modes (SEQUENTIAL, PARALLEL, CONDITIONAL)
