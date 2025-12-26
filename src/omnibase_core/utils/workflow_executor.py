@@ -346,6 +346,9 @@ async def execute_workflow(
     # Ensure minimum 1ms to avoid zero values for very fast executions
     end_time = time.perf_counter()
     execution_time_ms = max(1, int((end_time - start_time) * 1000))
+    # Note: ModelDeclarativeWorkflowResult is intentionally a mutable plain Python class
+    # (not a frozen Pydantic model) because execution_time_ms must be set after execution
+    # completes, when the actual duration is known.
     result.execution_time_ms = execution_time_ms
 
     # Add workflow hash to metadata for integrity verification

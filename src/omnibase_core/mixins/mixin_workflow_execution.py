@@ -190,7 +190,11 @@ class MixinWorkflowExecution:
                 "execution_status": result.execution_status.value,
                 "execution_time_ms": result.execution_time_ms,
                 "actions_count": len(result.actions_emitted),
-                **result.metadata,
+                **(
+                    result.metadata.model_dump(exclude_unset=True)
+                    if result.metadata
+                    else {}
+                ),
             },
         )
 
