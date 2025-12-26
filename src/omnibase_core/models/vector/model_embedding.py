@@ -11,6 +11,8 @@ Thread Safety:
     making them thread-safe for concurrent read access.
 """
 
+import math
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
@@ -74,15 +76,38 @@ class ModelEmbedding(BaseModel):
         description="Optional namespace for multi-tenant organization",
     )
 
-    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
-
     @field_validator("vector")
     @classmethod
-    def validate_vector_not_empty(cls, v: list[float]) -> list[float]:
-        """Validate that the vector is not empty."""
-        if len(v) == 0:
-            raise ValueError("Vector cannot be empty")
+    def validate_no_nan_or_inf(cls, v: list[float]) -> list[float]:
+        """Validate that vector contains no NaN or Inf values.
+
+        Embedding vectors must contain only finite numeric values. NaN or Inf
+        values indicate corrupted data or computational errors and would cause
+        undefined behavior in similarity calculations.
+
+        Args:
+            v: The embedding vector to validate.
+
+        Returns:
+            The validated vector if all values are finite.
+
+        Raises:
+            ValueError: If any value in the vector is NaN or Inf.
+        """
+        for i, value in enumerate(v):
+            if math.isnan(value):
+                raise ValueError(
+                    f"Embedding vector contains NaN at index {i}. "
+                    "All values must be finite numbers."
+                )
+            if math.isinf(value):
+                raise ValueError(
+                    f"Embedding vector contains Inf at index {i}. "
+                    "All values must be finite numbers."
+                )
         return v
+
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
 
 __all__ = ["ModelEmbedding"]

@@ -1,7 +1,13 @@
-"""
-Graph Relationship Model
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
+"""Graph relationship model.
 
 Type-safe model representing a relationship/edge in a graph database.
+
+Thread Safety:
+    ModelGraphRelationship instances are immutable (frozen=True) after creation,
+    making them thread-safe for concurrent read access.
 """
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -52,3 +58,6 @@ class ModelGraphRelationship(BaseModel):
         default=...,
         description="Element ID of the target/end node",
     )
+
+
+__all__ = ["ModelGraphRelationship"]

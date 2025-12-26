@@ -3,11 +3,11 @@
 # SPDX-License-Identifier: Apache-2.0
 """Metadata filter model for vector queries.
 
-This module provides the ModelMetadataFilter class for defining
+This module provides the ModelVectorMetadataFilter class for defining
 metadata-based filtering conditions in vector search operations.
 
 Thread Safety:
-    ModelMetadataFilter instances are immutable (frozen=True) after creation,
+    ModelVectorMetadataFilter instances are immutable (frozen=True) after creation,
     making them thread-safe for concurrent read access.
 """
 
@@ -35,12 +35,12 @@ class ModelVectorMetadataFilter(BaseModel):
         Exact match filter::
 
             from omnibase_core.models.vector import (
-                ModelMetadataFilter,
+                ModelVectorMetadataFilter,
                 EnumVectorFilterOperator,
             )
             from omnibase_core.models.common import ModelSchemaValue
 
-            filter = ModelMetadataFilter(
+            filter = ModelVectorMetadataFilter(
                 field="category",
                 operator=EnumVectorFilterOperator.EQ,
                 value=ModelSchemaValue.from_value("science"),
@@ -48,7 +48,7 @@ class ModelVectorMetadataFilter(BaseModel):
 
         Range filter::
 
-            filter = ModelMetadataFilter(
+            filter = ModelVectorMetadataFilter(
                 field="year",
                 operator=EnumVectorFilterOperator.GTE,
                 value=ModelSchemaValue.from_value(2020),
@@ -56,7 +56,7 @@ class ModelVectorMetadataFilter(BaseModel):
 
         List membership filter::
 
-            filter = ModelMetadataFilter(
+            filter = ModelVectorMetadataFilter(
                 field="status",
                 operator=EnumVectorFilterOperator.IN,
                 value=ModelSchemaValue.from_value(["published", "reviewed"]),

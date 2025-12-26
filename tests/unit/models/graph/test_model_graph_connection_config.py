@@ -124,8 +124,8 @@ class TestModelGraphConnectionConfigImmutability:
 class TestModelGraphConnectionConfigMethods:
     """Test ModelGraphConnectionConfig methods."""
 
-    def test_get_masked_uri_without_password(self):
-        """Test get_masked_uri when no password is set."""
+    def test_get_masked_uri_no_embedded_credentials(self):
+        """Test get_masked_uri when URI has no embedded credentials."""
         config = ModelGraphConnectionConfig(
             uri="bolt://localhost:7687",
         )
@@ -133,17 +133,44 @@ class TestModelGraphConnectionConfigMethods:
         masked = config.get_masked_uri()
         assert masked == "bolt://localhost:7687"
 
-    def test_get_masked_uri_with_password(self):
-        """Test get_masked_uri when password is set."""
+    def test_get_masked_uri_with_embedded_credentials(self):
+        """Test get_masked_uri masks embedded credentials in URI."""
+        config = ModelGraphConnectionConfig(
+            uri="bolt://admin:secretpass@localhost:7687",
+        )
+
+        masked = config.get_masked_uri()
+        # Credentials should be masked
+        assert masked == "bolt://***:***@localhost:7687"
+        # Original credentials should not appear
+        assert "admin" not in masked
+        assert "secretpass" not in masked
+
+    def test_get_masked_uri_with_embedded_credentials_neo4j(self):
+        """Test get_masked_uri with neo4j:// scheme."""
+        config = ModelGraphConnectionConfig(
+            uri="neo4j://user:password123@cluster.example.com:7687",
+        )
+
+        masked = config.get_masked_uri()
+        assert masked == "neo4j://***:***@cluster.example.com:7687"
+        assert "user" not in masked
+        assert "password123" not in masked
+
+    def test_get_masked_uri_separate_password_field(self):
+        """Test that password in SecretStr field doesn't affect URI masking.
+
+        The get_masked_uri method only masks credentials embedded in the URI,
+        not the separate password field which is stored securely via SecretStr.
+        """
         config = ModelGraphConnectionConfig(
             uri="bolt://localhost:7687",
             password=SecretStr("mypassword"),
         )
 
         masked = config.get_masked_uri()
-        # Note: The current implementation does simple string replace
-        # The URI typically doesn't contain the password
-        assert "mypassword" not in masked or "***" in masked
+        # URI has no embedded credentials, so it should be unchanged
+        assert masked == "bolt://localhost:7687"
 
 
 @pytest.mark.unit
@@ -185,6 +212,8 @@ class TestModelGraphConnectionConfigSerialization:
 
         data = config.model_dump()
 
-        # SecretStr serializes as the secret value by default
-        # or can be configured to mask
+        # SecretStr is preserved in the model_dump output
         assert data["password"] is not None
+        # Verify we can access the secret value if needed
+        assert isinstance(data["password"], SecretStr)
+        assert data["password"].get_secret_value() == "secretpassword"

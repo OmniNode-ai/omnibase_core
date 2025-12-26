@@ -1,7 +1,13 @@
-"""
-Graph Handler Metadata Model
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
+"""Graph handler metadata model.
 
 Type-safe model representing metadata about a graph database handler.
+
+Thread Safety:
+    ModelGraphHandlerMetadata instances are immutable (frozen=True) after creation,
+    making them thread-safe for concurrent read access.
 """
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -37,3 +43,6 @@ class ModelGraphHandlerMetadata(BaseModel):
         default=True,
         description="Whether the handler supports transactional operations",
     )
+
+
+__all__ = ["ModelGraphHandlerMetadata"]

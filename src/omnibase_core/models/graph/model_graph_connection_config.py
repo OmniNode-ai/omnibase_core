@@ -1,5 +1,7 @@
-"""
-Graph Connection Config Model
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
+"""Graph Connection Config Model.
 
 Type-safe model for graph database connection configuration.
 """
@@ -49,12 +51,25 @@ class ModelGraphConnectionConfig(BaseModel):
     )
 
     def get_masked_uri(self) -> str:
-        """Get URI with password masked for logging purposes.
+        """Get URI with credentials masked for safe logging.
 
         Returns:
-            URI string with password replaced by asterisks.
+            URI string safe for logging (credentials masked if present in URI).
         """
-        if self.password is not None:
-            # Simple masking - full implementation would parse URI
-            return self.uri.replace(self.password.get_secret_value(), "***")
+        # The password is stored separately via SecretStr, not embedded in URI.
+        # For URIs with embedded credentials (e.g., neo4j://user:pass@host),
+        # parse and mask the credentials portion.
+        if "://" in self.uri and "@" in self.uri:
+            # URI format: scheme://[user:pass@]host:port
+            scheme_end = self.uri.index("://") + 3
+            scheme = self.uri[:scheme_end]
+            rest = self.uri[scheme_end:]
+            if "@" in rest:
+                # Credentials present in URI
+                at_pos = rest.index("@")
+                host_part = rest[at_pos + 1 :]
+                return f"{scheme}***:***@{host_part}"
         return self.uri
+
+
+__all__ = ["ModelGraphConnectionConfig"]

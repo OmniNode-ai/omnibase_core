@@ -1,5 +1,7 @@
-"""
-Graph Database Node Model
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
+"""Graph Database Node Model.
 
 Type-safe model representing a node in a graph database (Neo4j, Memgraph, etc.).
 Distinct from ModelGraphNode which is used for workflow visualization.
@@ -47,3 +49,6 @@ class ModelGraphDatabaseNode(BaseModel):
         default_factory=dict,
         description="Key-value properties stored on the node",
     )
+
+
+__all__ = ["ModelGraphDatabaseNode"]

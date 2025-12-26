@@ -47,3 +47,6 @@ class ModelGraphHealthStatus(BaseModel):
         description="Number of active connections in the pool",
         ge=0,
     )
+
+
+__all__ = ["ModelGraphHealthStatus"]

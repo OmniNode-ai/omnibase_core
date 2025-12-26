@@ -1,4 +1,12 @@
-"""Producer health status model for event bus health monitoring."""
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
+"""Producer health status model for event bus health monitoring.
+
+Thread Safety:
+    ModelProducerHealthStatus instances are immutable (frozen=True) after creation,
+    making them thread-safe for concurrent read access.
+"""
 
 from datetime import UTC, datetime
 
@@ -24,7 +32,7 @@ class ModelProducerHealthStatus(BaseModel):
         broker_count: Number of connected brokers.
     """
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     healthy: bool = Field(
         ...,
@@ -224,3 +232,6 @@ class ModelProducerHealthStatus(BaseModel):
             messages_failed=0,
             broker_count=0,
         )
+
+
+__all__ = ["ModelProducerHealthStatus"]

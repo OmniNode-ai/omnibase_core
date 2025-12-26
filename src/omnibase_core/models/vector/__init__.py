@@ -15,7 +15,7 @@ The models are organized into these categories:
 **Core Models:**
     - ModelEmbedding: Single embedding with metadata
     - ModelVectorSearchResult: Single search result
-    - ModelMetadataFilter: Metadata filter condition
+    - ModelVectorMetadataFilter: Metadata filter condition
 
 **Configuration Models:**
     - ModelVectorConnectionConfig: Connection parameters
@@ -58,15 +58,13 @@ Example:
 """
 
 # Enums
-from omnibase_core.enums.enum_vector_distance_metric import (
-    EnumVectorDistanceMetric,
-)
-from omnibase_core.enums.enum_vector_filter_operator import (
-    EnumVectorFilterOperator,
-)
+from omnibase_core.enums.enum_vector_distance_metric import EnumVectorDistanceMetric
+from omnibase_core.enums.enum_vector_filter_operator import EnumVectorFilterOperator
 
 # Core models
 from omnibase_core.models.vector.model_embedding import ModelEmbedding
+
+# Configuration models
 from omnibase_core.models.vector.model_hnsw_config import ModelHnswConfig
 from omnibase_core.models.vector.model_quantization_config import (
     ModelQuantizationConfig,
@@ -76,8 +74,6 @@ from omnibase_core.models.vector.model_quantization_config import (
 from omnibase_core.models.vector.model_vector_batch_store_result import (
     ModelVectorBatchStoreResult,
 )
-
-# Configuration models
 from omnibase_core.models.vector.model_vector_connection_config import (
     ModelVectorConnectionConfig,
 )
@@ -92,9 +88,7 @@ from omnibase_core.models.vector.model_vector_handler_metadata import (
 from omnibase_core.models.vector.model_vector_health_status import (
     ModelVectorHealthStatus,
 )
-from omnibase_core.models.vector.model_vector_index_config import (
-    ModelVectorIndexConfig,
-)
+from omnibase_core.models.vector.model_vector_index_config import ModelVectorIndexConfig
 from omnibase_core.models.vector.model_vector_index_result import ModelVectorIndexResult
 from omnibase_core.models.vector.model_vector_metadata_filter import (
     ModelVectorMetadataFilter,

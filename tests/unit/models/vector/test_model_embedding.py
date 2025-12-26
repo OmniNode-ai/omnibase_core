@@ -3,6 +3,8 @@
 # SPDX-License-Identifier: Apache-2.0
 """Tests for ModelEmbedding."""
 
+import math
+
 import pytest
 from pydantic import ValidationError
 
@@ -138,8 +140,8 @@ class TestModelEmbeddingSerialization:
         assert isinstance(json_str, str)
         assert "doc" in json_str
 
-    def test_from_dict(self):
-        """Test creating from dictionary."""
+    def test_model_validate(self):
+        """Test deserializing from dictionary via model_validate."""
         data = {
             "id": "doc_from_dict",
             "vector": [0.5, 0.6],
@@ -171,8 +173,8 @@ class TestModelEmbeddingEdgeCases:
 
     def test_unicode_id(self):
         """Test embedding with unicode ID."""
-        embedding = ModelEmbedding(id="doc_", vector=[0.1, 0.2])
-        assert embedding.id == "doc_"
+        embedding = ModelEmbedding(id="doc_\u4e2d\u6587_\U0001f600", vector=[0.1, 0.2])
+        assert embedding.id == "doc_\u4e2d\u6587_\U0001f600"
 
     def test_whitespace_namespace(self):
         """Test embedding with whitespace in namespace."""
@@ -182,3 +184,68 @@ class TestModelEmbeddingEdgeCases:
             namespace="my namespace",
         )
         assert embedding.namespace == "my namespace"
+
+
+@pytest.mark.unit
+class TestModelEmbeddingNaNInfValidation:
+    """Tests for ModelEmbedding NaN/Inf validation."""
+
+    def test_nan_value_raises(self):
+        """Test that NaN value in vector raises validation error."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelEmbedding(id="doc", vector=[0.1, float("nan"), 0.3])
+        assert "NaN" in str(exc_info.value)
+        assert "index 1" in str(exc_info.value)
+
+    def test_inf_value_raises(self):
+        """Test that Inf value in vector raises validation error."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelEmbedding(id="doc", vector=[0.1, float("inf"), 0.3])
+        assert "Inf" in str(exc_info.value)
+        assert "index 1" in str(exc_info.value)
+
+    def test_negative_inf_value_raises(self):
+        """Test that negative Inf value in vector raises validation error."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelEmbedding(id="doc", vector=[float("-inf"), 0.2, 0.3])
+        assert "Inf" in str(exc_info.value)
+        assert "index 0" in str(exc_info.value)
+
+    def test_nan_at_end_raises(self):
+        """Test that NaN at end of vector raises validation error."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelEmbedding(id="doc", vector=[0.1, 0.2, math.nan])
+        assert "NaN" in str(exc_info.value)
+        assert "index 2" in str(exc_info.value)
+
+    def test_multiple_nan_values_reports_first(self):
+        """Test that multiple NaN values reports the first occurrence."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelEmbedding(
+                id="doc", vector=[float("nan"), 0.2, float("nan"), float("inf")]
+            )
+        # Should report the first NaN at index 0
+        assert "index 0" in str(exc_info.value)
+
+    def test_valid_vector_passes(self):
+        """Test that valid finite vectors pass validation."""
+        # Normal values
+        embedding = ModelEmbedding(id="doc", vector=[0.1, 0.2, 0.3])
+        assert embedding.vector == [0.1, 0.2, 0.3]
+
+        # Negative values
+        embedding = ModelEmbedding(id="doc2", vector=[-0.5, 0.0, 0.5])
+        assert embedding.vector == [-0.5, 0.0, 0.5]
+
+        # Very small values
+        embedding = ModelEmbedding(id="doc3", vector=[1e-10, -1e-10, 0.0])
+        assert len(embedding.vector) == 3
+
+        # Very large (but finite) values
+        embedding = ModelEmbedding(id="doc4", vector=[1e30, -1e30, 0.0])
+        assert len(embedding.vector) == 3
+
+    def test_zero_values_pass(self):
+        """Test that zero values pass validation."""
+        embedding = ModelEmbedding(id="doc", vector=[0.0, 0.0, 0.0])
+        assert embedding.vector == [0.0, 0.0, 0.0]

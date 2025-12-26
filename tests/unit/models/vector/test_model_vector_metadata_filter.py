@@ -138,16 +138,30 @@ class TestModelVectorMetadataFilterSerialization:
         assert data["field"] == "category"
         assert data["operator"] == "eq"
 
-    def test_from_dict(self):
-        """Test creating from dictionary."""
+    def test_model_validate(self):
+        """Test deserializing from dictionary via model_validate."""
         data = {
             "field": "year",
             "operator": "gte",
-            "value": {"value_type": "int", "int_value": 2020},
+            "value": {
+                "value_type": "number",
+                "string_value": None,
+                "boolean_value": None,
+                "null_value": None,
+                "array_value": None,
+                "object_value": None,
+                "number_value": {
+                    "value": 2020.0,
+                    "value_type": "integer",
+                    "is_validated": True,
+                    "source": None,
+                },
+            },
         }
         filter_model = ModelVectorMetadataFilter.model_validate(data)
         assert filter_model.field == "year"
         assert filter_model.operator == EnumVectorFilterOperator.GTE
+        assert filter_model.value.to_value() == 2020
 
 
 @pytest.mark.unit
@@ -157,11 +171,11 @@ class TestModelVectorMetadataFilterEdgeCases:
     def test_unicode_field_name(self):
         """Test filter with unicode field name."""
         filter_model = ModelVectorMetadataFilter(
-            field="field_name",
+            field="field_\u4e2d\u6587_name",
             operator=EnumVectorFilterOperator.EQ,
             value=ModelSchemaValue.from_value("test"),
         )
-        assert "field" in filter_model.field
+        assert filter_model.field == "field_\u4e2d\u6587_name"
 
     def test_numeric_value(self):
         """Test filter with numeric value."""

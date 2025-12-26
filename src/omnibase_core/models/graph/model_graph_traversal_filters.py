@@ -1,5 +1,7 @@
-"""
-Graph Traversal Filters Model
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
+"""Graph Traversal Filters Model.
 
 Type-safe model for configuring graph traversal filter criteria.
 """
@@ -39,3 +41,6 @@ class ModelGraphTraversalFilters(BaseModel):
         default_factory=dict,
         description="Relationship property filters (key-value pairs to match)",
     )
+
+
+__all__ = ["ModelGraphTraversalFilters"]

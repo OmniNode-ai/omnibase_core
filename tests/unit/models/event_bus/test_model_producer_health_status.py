@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
 """Tests for ModelProducerHealthStatus."""
 
 from datetime import UTC, datetime
@@ -33,7 +36,6 @@ class TestModelProducerHealthStatus:
 
     def test_initialization_with_all_fields(self):
         """Test initialization with all fields."""
-        now = datetime.now(UTC)
         status = ModelProducerHealthStatus(
             healthy=True,
             latency_ms=5.5,
@@ -400,7 +402,6 @@ class TestModelProducerHealthStatus:
 
     def test_serialization(self):
         """Test model serialization."""
-        now = datetime.now(UTC)
         status = ModelProducerHealthStatus(
             healthy=True,
             latency_ms=5.5,

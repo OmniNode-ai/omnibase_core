@@ -10,12 +10,13 @@ Thread Safety:
     ModelVectorConnectionConfig instances are immutable (frozen=True) after creation,
     making them thread-safe for concurrent read access.
 
-Security Note:
-    The api_key field contains sensitive credentials. Ensure proper handling
-    in logging and serialization to avoid credential exposure.
+Security:
+    The api_key field uses SecretStr to prevent accidental exposure in logs
+    or error messages. Use api_key.get_secret_value() when the actual
+    credential is needed.
 """
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
 
 
 class ModelVectorConnectionConfig(BaseModel):
@@ -54,9 +55,9 @@ class ModelVectorConnectionConfig(BaseModel):
         min_length=1,
         description="Base URL of the vector store service",
     )
-    api_key: str | None = Field(
+    api_key: SecretStr | None = Field(
         default=None,
-        description="Optional API key for authentication (sensitive)",
+        description="Optional API key for authentication (secured with SecretStr)",
     )
     timeout: float = Field(
         default=30.0,

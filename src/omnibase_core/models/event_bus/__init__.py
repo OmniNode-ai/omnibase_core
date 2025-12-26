@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
 """Event bus models for ONEX message handling."""
 
 from .model_delivery_result import ModelDeliveryResult

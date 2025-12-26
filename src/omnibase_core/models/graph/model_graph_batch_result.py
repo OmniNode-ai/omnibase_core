@@ -46,3 +46,6 @@ class ModelGraphBatchResult(BaseModel):
         default=False,
         description="Whether a rollback occurred during batch execution",
     )
+
+
+__all__ = ["ModelGraphBatchResult"]

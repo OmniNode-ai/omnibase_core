@@ -1,4 +1,12 @@
-"""Delivery result model for event bus message publishing confirmation."""
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
+"""Delivery result model for event bus message publishing confirmation.
+
+Thread Safety:
+    ModelDeliveryResult instances are immutable (frozen=True) after creation,
+    making them thread-safe for concurrent read access.
+"""
 
 from datetime import UTC, datetime
 
@@ -21,7 +29,7 @@ class ModelDeliveryResult(BaseModel):
         error_message: Error message if delivery failed.
     """
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     success: bool = Field(
         ...,
@@ -143,3 +151,6 @@ class ModelDeliveryResult(BaseModel):
             timestamp=None,
             error_message=error_message,
         )
+
+
+__all__ = ["ModelDeliveryResult"]

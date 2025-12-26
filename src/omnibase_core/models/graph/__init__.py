@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
 """Graph data structure models.
 
 Type-safe graph models for orchestrator workflows and graph-based
@@ -42,12 +45,8 @@ from omnibase_core.models.graph.model_graph_node import ModelGraphNode
 from omnibase_core.models.graph.model_graph_query_counters import (
     ModelGraphQueryCounters,
 )
-from omnibase_core.models.graph.model_graph_query_result import (
-    ModelGraphQueryResult,
-)
-from omnibase_core.models.graph.model_graph_query_summary import (
-    ModelGraphQuerySummary,
-)
+from omnibase_core.models.graph.model_graph_query_result import ModelGraphQueryResult
+from omnibase_core.models.graph.model_graph_query_summary import ModelGraphQuerySummary
 from omnibase_core.models.graph.model_graph_relationship import ModelGraphRelationship
 from omnibase_core.models.graph.model_graph_traversal_filters import (
     ModelGraphTraversalFilters,

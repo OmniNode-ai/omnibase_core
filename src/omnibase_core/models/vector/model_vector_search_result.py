@@ -24,9 +24,29 @@ class ModelVectorSearchResult(BaseModel):
 
     Attributes:
         id: Unique identifier of the matching embedding.
-        score: Similarity score (interpretation depends on distance metric).
-            For cosine: 0-2 range, lower is more similar.
-            For dot product: higher is more similar.
+        score: Similarity/distance score. Interpretation depends on both the
+            distance metric AND the vector store backend:
+
+            **Cosine metric** (backend-specific):
+                - Qdrant: Returns cosine distance (1 - cosine_similarity).
+                  Range 0-2, where 0 = identical, 2 = opposite. Lower is better.
+                - Pinecone: Returns cosine similarity directly.
+                  Range -1 to 1, where 1 = identical. Higher is better.
+                - Other backends may vary; consult their documentation.
+
+            **Euclidean metric**:
+                - Returns L2 distance. Range 0 to infinity.
+                - Lower values indicate more similar vectors.
+
+            **Dot product metric**:
+                - Returns dot product value. Range varies by normalization.
+                - Higher values indicate more similar vectors.
+
+            **Manhattan metric**:
+                - Returns L1 distance. Range 0 to infinity.
+                - Lower values indicate more similar vectors.
+
+            Always verify score interpretation with your specific backend.
         metadata: Optional metadata associated with the matching embedding.
         vector: Optional embedding vector (if requested in search).
 

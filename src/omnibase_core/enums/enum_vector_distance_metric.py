@@ -15,10 +15,21 @@ class EnumVectorDistanceMetric(str, Enum):
 
     These metrics determine how similarity between vectors is computed:
 
-    - COSINE: Measures angle between vectors (range: 0-2, lower = more similar)
+    - COSINE: Angular similarity between vectors. This enum value represents the
+      metric type; actual return values depend on the backend implementation:
+        - Qdrant: Returns cosine distance (1 - cosine_similarity), range 0-2
+        - Pinecone: Returns cosine similarity directly, range -1 to 1
+        - Other backends may vary; consult backend documentation
+      Generally, values closer to 0 (distance) or 1 (similarity) indicate more
+      similar vectors.
     - EUCLIDEAN: Measures straight-line distance (L2 norm)
     - DOT_PRODUCT: Dot product similarity (higher = more similar)
     - MANHATTAN: Sum of absolute differences (L1 norm)
+
+    Note:
+        This enum specifies which metric algorithm to use. The interpretation of
+        returned values (distance vs similarity, value ranges) is backend-specific.
+        Always consult the documentation of your vector store backend.
 
     Example:
         >>> from omnibase_core.enums import EnumVectorDistanceMetric

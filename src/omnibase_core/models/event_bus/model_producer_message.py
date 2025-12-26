@@ -1,4 +1,12 @@
-"""Producer message model for event bus message publishing."""
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
+"""Producer message model for event bus message publishing.
+
+Thread Safety:
+    ModelProducerMessage instances are immutable (frozen=True) after creation,
+    making them thread-safe for concurrent read access.
+"""
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -18,7 +26,7 @@ class ModelProducerMessage(BaseModel):
         partition: Optional specific partition number for targeted delivery.
     """
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     topic: str = Field(
         ...,
@@ -131,3 +139,6 @@ class ModelProducerMessage(BaseModel):
             value=value.encode("utf-8"),
             headers={k: v.encode("utf-8") for k, v in headers.items()},
         )
+
+
+__all__ = ["ModelProducerMessage"]

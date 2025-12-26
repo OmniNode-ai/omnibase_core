@@ -1,7 +1,13 @@
-"""
-Graph Delete Result Model
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
+"""Graph delete result model.
 
 Type-safe model representing the result of a graph node/relationship deletion.
+
+Thread Safety:
+    ModelGraphDeleteResult instances are immutable (frozen=True) after creation,
+    making them thread-safe for concurrent read access.
 """
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -39,3 +45,6 @@ class ModelGraphDeleteResult(BaseModel):
         description="Time taken to execute the deletion in milliseconds",
         ge=0.0,
     )
+
+
+__all__ = ["ModelGraphDeleteResult"]

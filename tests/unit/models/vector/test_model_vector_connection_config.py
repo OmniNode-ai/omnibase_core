@@ -27,7 +27,8 @@ class TestModelVectorConnectionConfigInstantiation:
             url="https://my-cluster.vectordb.io",
             api_key="sk-xxxxx",
         )
-        assert config.api_key == "sk-xxxxx"
+        assert config.api_key is not None
+        assert config.api_key.get_secret_value() == "sk-xxxxx"
 
     def test_create_with_timeout(self):
         """Test creating connection config with custom timeout."""
@@ -54,7 +55,8 @@ class TestModelVectorConnectionConfigInstantiation:
             pool_size=50,
         )
         assert config.url == "https://api.vectordb.io"
-        assert config.api_key == "secret-key"
+        assert config.api_key is not None
+        assert config.api_key.get_secret_value() == "secret-key"
         assert config.timeout == 120.0
         assert config.pool_size == 50
 
@@ -135,7 +137,10 @@ class TestModelVectorConnectionConfigSerialization:
         )
         data = config.model_dump()
         assert data["url"] == "http://localhost:6333"
-        assert data["api_key"] == "test-key"
+        # api_key is SecretStr, so access the secret value
+        api_key = data["api_key"]
+        assert api_key is not None
+        assert api_key.get_secret_value() == "test-key"
 
     def test_from_dict(self):
         """Test creating from dictionary."""

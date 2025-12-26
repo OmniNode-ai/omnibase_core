@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-"""
-Comprehensive ID and Version Validation Hook for ONEX Architecture
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
+"""Comprehensive ID and Version Validation Hook for ONEX Architecture.
 
 Validates that:
 1. Contract YAML files use proper ModelSemVer format instead of string versions
@@ -174,13 +176,13 @@ class PythonASTValidator(ast.NodeVisitor):
             "version_compatibility",  # Compatibility strings
             "execution_id",  # Some execution IDs may need to be strings for compatibility
             "version_str",  # Parameter names for parsing functions
-            # EXTERNAL_SYSTEMS (10 fields)
+            # EXTERNAL_SYSTEMS (5 fields)
             "external_id",  # External system identifiers (not ONEX-managed)
             "certificate_id",  # X.509 certificate IDs
             "service_id",  # Consul service identifiers (external system constraint)
             "consul_service_id",  # Consul service identifiers (prefixed variant)
             "network_id",  # Network identifiers (VPC, subnet names - external systems)
-            # GRAPH_DATABASE_IDS (4 fields - Neo4j/Memgraph external identifiers)
+            # GRAPH_DATABASE_IDS (3 fields - Neo4j/Memgraph external identifiers)
             "element_id",  # Neo4j 5.x element ID format (e.g., "4:abc-def:123")
             "start_node_id",  # References external database node element ID
             "end_node_id",  # References external database node element ID
@@ -196,7 +198,7 @@ class PythonASTValidator(ast.NodeVisitor):
             # Whitelisted globally for simplicity as they're Kafka identifiers
             "client_id",  # Kafka client ID (also used in discovery for compatibility)
             "group_id",  # Kafka consumer group ID
-            # VERSION_TEMPLATES (4 fields)
+            # VERSION_TEMPLATES (3 fields)
             "version_string",  # Template variable tokens
             "version_directory_pattern",  # File path patterns
             "version_requirement",  # Dependency constraint patterns
@@ -209,7 +211,7 @@ class PythonASTValidator(ast.NodeVisitor):
             "command_version",  # CLI command versions
             "node_specific_version",  # Node-specific version metadata
             "database_version",  # External database version (Neo4j, Memgraph, etc.)
-            # METADATA_VERSIONS (4 fields in model_node_metadata_block.py)
+            # METADATA_VERSIONS (3 fields in model_node_metadata_block.py)
             # These use regex constraints for legacy compatibility
             "metadata_version",  # Metadata block version
             "protocol_version",  # Protocol version
