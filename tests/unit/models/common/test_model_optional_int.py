@@ -1143,9 +1143,7 @@ class TestModelOptionalIntChainedOperations:
     def test_map_chain_preserving_none(self) -> None:
         """Test that None propagates through map chain."""
         value = ModelOptionalInt(value=None)
-        result = (
-            value.map(lambda x: x * 2).map(lambda x: x + 10).map(lambda x: x // 2)
-        )
+        result = value.map(lambda x: x * 2).map(lambda x: x + 10).map(lambda x: x // 2)
         assert result.is_none() is True
 
     def test_map_to_zero_preserves_some(self) -> None:
@@ -1231,9 +1229,10 @@ class TestModelOptionalIntErrorContextValidation:
         """Test that infinity error provides context."""
         with pytest.raises(ModelOnexError) as exc_info:
             ModelOptionalInt(value=float("inf"))
-        assert "infinity" in str(exc_info.value).lower() or "inf" in str(
-            exc_info.value
-        ).lower()
+        assert (
+            "infinity" in str(exc_info.value).lower()
+            or "inf" in str(exc_info.value).lower()
+        )
 
 
 @pytest.mark.unit

@@ -274,17 +274,17 @@ class TestModelQueryParametersGetBool:
         for val in unrecognized_values:
             params = ModelQueryParameters.from_dict({"flag": val})
             # With default=True, should return True (not False!)
-            assert (
-                params.get_bool("flag", default=True) is True
-            ), f"Expected True for unrecognized string '{val}' with default=True"
+            assert params.get_bool("flag", default=True) is True, (
+                f"Expected True for unrecognized string '{val}' with default=True"
+            )
             # With default=None, should return None
-            assert (
-                params.get_bool("flag", default=None) is None
-            ), f"Expected None for unrecognized string '{val}' with default=None"
+            assert params.get_bool("flag", default=None) is None, (
+                f"Expected None for unrecognized string '{val}' with default=None"
+            )
             # With default=False, should return False
-            assert (
-                params.get_bool("flag", default=False) is False
-            ), f"Expected False for unrecognized string '{val}' with default=False"
+            assert params.get_bool("flag", default=False) is False, (
+                f"Expected False for unrecognized string '{val}' with default=False"
+            )
 
     def test_get_bool_whitespace_handling(self) -> None:
         """Test that whitespace is properly stripped."""
