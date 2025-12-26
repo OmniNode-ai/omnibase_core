@@ -285,6 +285,30 @@ class TestModelRetryContext:
         assert restored.attempt == original.attempt
         assert restored.retryable == original.retryable
 
+    def test_next_retry_at_accepts_past_datetime(self) -> None:
+        """Test that next_retry_at accepts past datetime values.
+
+        This is intentional behavior to support:
+        - Historical tracking of missed retry windows
+        - Recording when a retry was originally scheduled
+        - Testing scenarios with deterministic timestamps
+
+        No future-time validation is enforced because the field
+        documents scheduling intent, not current validity.
+        """
+        past_time = datetime.now(UTC) - timedelta(hours=1)
+
+        # Should not raise - past times are valid
+        context = ModelRetryContext(
+            attempt=2,
+            retryable=True,
+            next_retry_at=past_time,
+        )
+
+        assert context.next_retry_at == past_time
+        assert context.attempt == 2
+        assert context.retryable is True
+
 
 @pytest.mark.unit
 class TestModelResourceContext:

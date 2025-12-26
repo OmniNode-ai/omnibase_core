@@ -177,7 +177,10 @@ class ModelErrorDetails(BaseModel, Generic[TContext]):
 
     # Error details
     stack_trace: list[str] | None = Field(default=None, description="Stack trace lines")
-    # Note: inner_errors can contain any ModelErrorDetails variant
+    # Note: type: ignore[type-arg] is intentional here. inner_errors needs to accept
+    # ANY ModelErrorDetails variant (with any TContext), not just the same TContext as
+    # the parent. This enables flexible error chaining where a validation error (with
+    # ValidationContext) can contain a network error (with TraceContext) as an inner error.
     inner_errors: list[ModelErrorDetails] | None = Field(  # type: ignore[type-arg]
         default=None,
         description="Nested errors",
@@ -324,9 +327,22 @@ class ModelErrorDetails(BaseModel, Generic[TContext]):
     def serialize_datetime(self, value: datetime | None) -> str | None:
         """Serialize datetime to ISO 8601 format string.
 
-        This serializer ensures consistent datetime formatting when the model
-        is serialized to JSON or dict. Uses ISO 8601 format for interoperability
-        with JavaScript, APIs, and logging systems.
+        This explicit serializer ensures consistent string output in BOTH
+        model_dump() (Python mode) AND model_dump(mode='json'). This differs
+        from Pydantic's default behavior where model_dump() preserves datetime
+        objects.
+
+        Design Rationale:
+            ModelErrorDetails is frequently logged/dumped for debugging, where
+            consistent string output simplifies error analysis. Context models
+            (ModelRetryContext, etc.) intentionally do NOT have explicit
+            serializers to preserve datetime objects for programmatic access
+            (comparisons, arithmetic operations).
+
+        Format Notes:
+            - Uses isoformat() which produces "+00:00" for UTC timezone
+            - Pydantic's default JSON serialization uses "Z" for UTC
+            - Both are valid ISO 8601 and universally interoperable
 
         Args:
             value: The datetime value to serialize, or None.
