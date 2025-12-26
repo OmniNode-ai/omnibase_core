@@ -259,15 +259,16 @@ class TestModelOptionalStringEdgeCases:
     def test_unicode_string(self) -> None:
         """Test string with unicode characters."""
         # Test with various unicode: Japanese, accented chars, emoji, Chinese
-        unicode_value = (
-            "\u3053\u3093\u306b\u3061\u306f \u00d1o\u00f1o \U0001f389 \u4e2d\u6587"
-        )
+        unicode_value = "こんにちは Ñoño 🎉 中文 café"
         opt = ModelOptionalString(value=unicode_value)
         assert bool(opt) is True
         assert opt.value == unicode_value
         assert opt.has_value() is True
-        # Verify non-ASCII characters are present
-        assert any(ord(c) > 127 for c in opt.value)
+        # Verify specific unicode characters are present
+        assert "こんにちは" in opt.value
+        assert "🎉" in opt.value
+        assert "中文" in opt.value
+        assert "café" in opt.value
 
     def test_long_string(self) -> None:
         """Test very long string."""
