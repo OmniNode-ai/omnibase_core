@@ -244,6 +244,15 @@ class ProtocolContractLoader:
                             # Construct typed ModelContractDependency from dict
                             dep = ModelContractDependency.model_validate(dep_item)
                             dependencies.append(dep)
+                        else:
+                            emit_log_event(
+                                LogLevel.WARNING,
+                                f"Skipping non-dict dependency item: {dep_item!r}",
+                                context={
+                                    "contract_path": str(contract_path),
+                                    "item_type": type(dep_item).__name__,
+                                },
+                            )
 
             # Parse node type (default to COMPUTE_GENERIC if not specified)
             # No backwards compatibility - invalid enum values must fail fast

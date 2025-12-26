@@ -841,7 +841,7 @@ class TestNodeOrchestratorStateSerializationDeterminism:
         simple_workflow_definition: ModelWorkflowDefinition,
         sequential_steps_config: list[dict],
     ):
-        """Test that output metrics are deterministic after serialization roundtrip."""
+        """Test that output metrics are deterministic across multiple executions."""
         node = NodeOrchestrator(test_container)
         node.workflow_definition = simple_workflow_definition
 
@@ -851,15 +851,31 @@ class TestNodeOrchestratorStateSerializationDeterminism:
             execution_mode=EnumExecutionMode.SEQUENTIAL,
         )
 
-        result = await node.process(input_data)
+        # Run workflow multiple times and serialize outputs
+        result_1 = await node.process(input_data)
+        result_2 = await node.process(input_data)
+        result_3 = await node.process(input_data)
 
-        # Serialize output to dict
-        serialized_output = result.model_dump()
+        serialized_1 = result_1.model_dump()
+        serialized_2 = result_2.model_dump()
+        serialized_3 = result_3.model_dump()
 
-        # Metrics should be preserved exactly in serialized form
-        assert serialized_output["metrics"] == result.metrics
-        assert serialized_output["completed_steps"] == result.completed_steps
-        assert serialized_output["failed_steps"] == result.failed_steps
+        # All serialized metrics should be identical (determinism)
+        assert serialized_1["metrics"] == serialized_2["metrics"]
+        assert serialized_2["metrics"] == serialized_3["metrics"]
+
+        # All serialized step lists should be identical
+        assert serialized_1["completed_steps"] == serialized_2["completed_steps"]
+        assert serialized_2["completed_steps"] == serialized_3["completed_steps"]
+
+        assert serialized_1["failed_steps"] == serialized_2["failed_steps"]
+        assert serialized_2["failed_steps"] == serialized_3["failed_steps"]
+
+        # Verify expected values (not just equality to each other)
+        assert serialized_1["metrics"]["actions_count"] == 3  # 3 steps
+        assert serialized_1["metrics"]["completed_count"] == 3
+        assert serialized_1["metrics"]["failed_count"] == 0
+        assert len(serialized_1["completed_steps"]) == 3
 
     def test_workflow_definition_hash_is_deterministic(
         self,

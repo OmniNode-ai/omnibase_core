@@ -68,31 +68,33 @@ def apply_config(config: Config) -> None:
     ...
 ```
 
-### Option 2: Use ModelSchemaValue (ONEX Standard)
+### Option 2: Use SchemaDict or ModelSchemaValue (ONEX Standard)
 
-For schema-related data, use the `ModelSchemaValue` type alias:
+For schema-related data, use the ONEX type aliases:
 
 ```python
-from omnibase_core.types import ModelSchemaValue
+# For dict[str, Any] replacement in schema contexts
+from omnibase_core.types.type_schema_aliases import SchemaDict
 
-def process_schema(data: ModelSchemaValue) -> ModelSchemaValue:
+def process_schema(data: SchemaDict) -> SchemaDict:
     ...
+
+# For individual typed values
+from omnibase_core.models.common import ModelSchemaValue
+
+value: ModelSchemaValue = ModelSchemaValue.create_string("example")
 ```
 
-### Option 3: Use @allow_dict_str_any Decorator (Last Resort)
+### Option 3: Use @allow_dict_any Decorator (Last Resort)
 
 If `dict[str, Any]` is truly unavoidable, document the justification:
 
 ```python
-from omnibase_core.utils.util_decorators import allow_dict_str_any
+from omnibase_core.decorators import allow_dict_any
 
-@allow_dict_str_any(
-    "External API returns untyped JSON that varies by endpoint. "
-    "Type narrowing happens in individual handlers."
-)
-class ExternalApiClient:
-    def fetch(self, endpoint: str) -> dict[str, Any]:  # type: ignore[explicit-any]
-        ...
+@allow_dict_any(reason="External API returns untyped JSON that varies by endpoint")
+def fetch(self, endpoint: str) -> dict[str, Any]:  # type: ignore[explicit-any]
+    ...
 ```
 
 **Note**: Even with the decorator, you still need `# type: ignore[explicit-any]` for mypy. The decorator is for documentation and validation scripts.

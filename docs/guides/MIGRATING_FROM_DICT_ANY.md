@@ -346,27 +346,21 @@ python_value = value.to_value()
 ```
 
 > **Note: `get_number()` Returns `ModelNumericValue`, Not a Python Number**
->
 > The `get_number()` method returns a `ModelNumericValue` wrapper, not a raw `int` or `float`.
 > However, `ModelNumericValue` implements `__eq__()` to support direct comparison with Python numbers:
->
 > ```python
 > value = ModelSchemaValue.from_value(42)
 > num = value.get_number()  # Returns ModelNumericValue
->
 > # Direct comparison works due to ModelNumericValue.__eq__()
 > assert num == 42       # True - compares with int
 > assert num == 42.0     # True - compares with float
->
 > # To get the raw Python value:
 > raw_int = num.to_python_value()      # Returns int (42) or float based on original type
 > raw_float = num.as_float()           # Always returns float (42.0)
 > raw_int_forced = num.as_int()        # Always returns int (42)
->
 > # Or use to_value() on the ModelSchemaValue directly:
 > python_value = value.to_value()      # Returns 42 (int)
 > ```
->
 > **When to Use Each Method**:
 > - **Direct comparison** (`num == 42`): For assertions and conditionals
 > - **`to_python_value()`**: When you need the raw number preserving original type (int vs float)

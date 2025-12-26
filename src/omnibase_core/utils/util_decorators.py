@@ -27,9 +27,14 @@ def allow_any_type(reason: str) -> Callable[[ClassType], ClassType]:
     def decorator(cls: ClassType) -> ClassType:
         # Add metadata to the class for documentation
         # Use setattr/getattr for dynamic attribute access to maintain type safety
-        reasons: list[str] = getattr(cls, "_allow_any_reasons", None) or []
-        if not hasattr(cls, "_allow_any_reasons"):
+        # Note: Use explicit None check instead of `or []` to handle falsy values correctly
+        # (empty list should be preserved, not replaced with a new list)
+        attr_value = getattr(cls, "_allow_any_reasons", None)
+        if attr_value is None:
+            reasons: list[str] = []
             setattr(cls, "_allow_any_reasons", reasons)
+        else:
+            reasons = attr_value
         reasons.append(reason)
         return cls
 
@@ -53,9 +58,14 @@ def allow_string_id(reason: str) -> Callable[[ClassType], ClassType]:
     def decorator(cls: ClassType) -> ClassType:
         # Add metadata to the class for documentation
         # Use setattr/getattr for dynamic attribute access to maintain type safety
-        reasons: list[str] = getattr(cls, "_allow_string_id_reasons", None) or []
-        if not hasattr(cls, "_allow_string_id_reasons"):
+        # Note: Use explicit None check instead of `or []` to handle falsy values correctly
+        # (empty list should be preserved, not replaced with a new list)
+        attr_value = getattr(cls, "_allow_string_id_reasons", None)
+        if attr_value is None:
+            reasons: list[str] = []
             setattr(cls, "_allow_string_id_reasons", reasons)
+        else:
+            reasons = attr_value
         reasons.append(reason)
         return cls
 

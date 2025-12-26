@@ -5,7 +5,9 @@ Type-safe workflow outputs that replace Dict[str, Any] usage
 for workflow execution results.
 """
 
-from pydantic import BaseModel, ConfigDict, Field
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.services.model_custom_fields import ModelCustomFields
@@ -72,6 +74,42 @@ class ModelWorkflowOutputs(BaseModel):
         default=None,
         description="Custom output fields for workflow-specific data",
     )
+
+    @field_serializer("data", when_used="always")
+    def serialize_data(
+        self, values: dict[str, ModelSchemaValue] | None
+    ) -> dict[str, object] | None:
+        """
+        Serialize data field by converting ModelSchemaValue to primitives.
+
+        This ensures consistent serialization when using model_dump() or
+        model_dump_json(), matching the behavior of to_dict().
+        """
+        if values is None:
+            return None
+        return {k: v.to_value() for k, v in values.items()}
+
+    @field_serializer("custom_outputs", when_used="always")
+    def serialize_custom_outputs(
+        self, value: ModelCustomFields | None
+    ) -> dict[str, object] | None:
+        """
+        Serialize custom_outputs field by converting ModelSchemaValue objects
+        in field_values to primitives.
+
+        This ensures consistent serialization when using model_dump() or
+        model_dump_json(), matching the behavior of to_dict().
+        """
+        if value is None:
+            return None
+        result = value.model_dump(exclude_none=True)
+        # Convert field_values ModelSchemaValue objects to primitives
+        if result.get("field_values"):
+            result["field_values"] = {
+                k: (v.to_value() if isinstance(v, ModelSchemaValue) else v)
+                for k, v in value.field_values.items()
+            }
+        return result
 
     def add_output(
         self,

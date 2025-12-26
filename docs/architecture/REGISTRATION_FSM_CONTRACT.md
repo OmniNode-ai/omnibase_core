@@ -22,7 +22,6 @@ The Registration FSM provides:
 ### Document Organization
 
 > **v1.0 Scope**: This document is comprehensive by design, providing a complete FSM contract specification for the Dual Registration Reducer.
->
 > **Future Enhancement**: If the patterns in this document are reused across multiple FSMs, consider extracting reusable subsections into standalone guides:
 > - `docs/patterns/GUARD_EXPRESSION_REFERENCE.md` - Reusable guard syntax guide
 > - `docs/patterns/FSM_TIMEOUT_PATTERNS.md` - Reusable timeout handling patterns
@@ -660,27 +659,20 @@ The garbage collection jobs should emit the following metrics for observability:
 **v1.0 Limitations**:
 
 > **v1.0 Limitation - No `partial_deregistered` State**:
->
 > This FSM does not implement a `partial_deregistered` error state (analogous to `partial_registered`). In v1.0, deregistration failures proceed directly to `deregistered` with best-effort cleanup.
->
 > **Rationale**: A `partial_deregistered` state would require:
 > - The node to remain alive to process retry transitions
 > - Complex logic to determine which cleanup succeeded
 > - A mechanism to eventually force-terminate if cleanup never succeeds
->
 > These requirements conflict with the shutdown context. External garbage collection is more appropriate.
->
 > **Future Enhancement**: A future version may add `partial_deregistered` for use cases requiring guaranteed cleanup before process termination (e.g., when releasing exclusive resources like distributed locks).
 
 > **v1.0 Limitation - No `RETRY_DEREGISTRATION` Trigger**:
->
 > This FSM does not implement a `RETRY_DEREGISTRATION` trigger for the `deregistering` state. Unlike registration retries (`RETRY`, `RETRY_POSTGRES`), deregistration retries are not supported.
->
 > **Rationale**: Retry mechanisms assume the node remains operational to process retry outcomes. During shutdown:
 > - Process may be killed by orchestrator (SIGKILL) before retry completes
 > - Resources are being released, making retries unreliable
 > - External garbage collection provides eventual consistency without node participation
->
 > **Recommended Alternative**: Implement robust garbage collection jobs as documented above rather than in-process retry mechanisms.
 
 ---
@@ -909,7 +901,6 @@ actions:
 **CONTINUE Trigger Semantics**: The `CONTINUE` trigger enables automatic state progression without requiring an external event. Unlike external triggers (e.g., `REGISTER`, `DEREGISTER`) or Effect-sourced triggers (e.g., `POSTGRES_SUCCEEDED`), `CONTINUE` is a **synthetic internal trigger** that the Reducer emits to itself.
 
 > **TL;DR**: Use single-step execution (recommended for production, <10ms latency). Use two-step only for debugging (adds 50-100ms but makes checkpoint observable).
->
 > **CRITICAL - Error Handling**: CONTINUE failures MUST trigger `FATAL_ERROR` transition to `failed` state. Since CONTINUE is internal with no external retry mechanism, failures indicate system-level issues requiring investigation. See [CONTINUE Trigger Failure Handling](#continue-trigger-failure-handling) for detailed implementation patterns and recovery strategies.
 
 **Implementation Pattern**:
@@ -1340,7 +1331,6 @@ Guards are conditions that must evaluate to `true` for a transition to occur.
 > - [Transition 9: retry_consul](#transition-9-retry_consul) - Retrying Consul from `partial_registered`
 > - [Transition 10: retry_postgres](#transition-10-retry_postgres) - Retrying PostgreSQL from `partial_registered`
 > - [Transition 14: retry_from_failed](#transition-14-retry_from_failed) - Retrying full workflow from `failed`
->
 > When this guard fails (i.e., `retry_count >= 3`), the **Orchestrator** (not the Reducer) must detect the guard failure and emit the `RETRY_EXHAUSTED` trigger to transition to `failed` state. See [Exhaustion Handling](#retry-limit-enforcement) for implementation details.
 
 ### Guard Expression Syntax

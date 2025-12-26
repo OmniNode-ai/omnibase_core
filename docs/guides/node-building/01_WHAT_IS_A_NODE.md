@@ -9,14 +9,11 @@
 A **node** in the ONEX framework is a **self-contained, reusable component** that performs a specific type of operation within a microservices architecture. Think of nodes as specialized workers, each designed to excel at one particular kind of task.
 
 > **📘 Terminology Note: Service Wrappers vs Custom Nodes**
->
 > You'll encounter several related terms in ONEX documentation:
 > - **Service Wrapper**: Pre-configured node implementations like `ModelServiceCompute` that combine a base node with common mixins. These are production-ready and recommended for most use cases.
 > - **Custom Node**: A node you build by directly inheriting from `NodeCoreBase` when you need specialized composition or unique mixin combinations.
 > - **ModelService\***: The family of service wrapper classes (`ModelServiceEffect`, `ModelServiceCompute`, `ModelServiceReducer`, `ModelServiceOrchestrator`).
->
 > **Rule of thumb**: Start with service wrappers (`ModelService*`) for standard implementations. Only create custom nodes when you need specialized behavior.
->
 > See [MIXIN_ARCHITECTURE.md](../../architecture/MIXIN_ARCHITECTURE.md#service-wrappers-and-mixin-mapping) for complete details.
 
 ### Simple Analogy

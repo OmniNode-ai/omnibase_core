@@ -211,7 +211,8 @@ def create_action_payload(
     Args:
         action_type: The EnumActionType (COMPUTE, EFFECT, REDUCE, ORCHESTRATE, CUSTOM)
         semantic_action: Optional semantic action name (e.g., "read", "transform").
-                         If not provided, a default based on action_type is used.
+                         If not provided or empty, a default based on action_type is used.
+                         Empty string is treated as None for convenience.
         **kwargs: Additional keyword arguments passed to the payload constructor
 
     Returns:
@@ -238,8 +239,9 @@ def create_action_payload(
         ... )
         >>> assert isinstance(payload, ModelTransformationActionPayload)
     """
-    # Determine semantic action name
-    if semantic_action is None:
+    # Treat empty string as None for convenience - use default action for type
+    # This handles edge case where semantic_action="" is passed
+    if semantic_action is None or semantic_action == "":
         # Use default based on action type
         default_names = {
             EnumActionType.COMPUTE: "process",

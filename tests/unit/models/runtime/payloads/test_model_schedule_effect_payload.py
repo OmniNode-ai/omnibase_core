@@ -53,8 +53,8 @@ class TestModelScheduleEffectPayloadRequiredFields:
             ModelScheduleEffectPayload()  # type: ignore[call-arg]
         assert "effect_node_type" in str(exc_info.value)
 
-    def test_effect_node_type_min_length(self) -> None:
-        """Test that effect_node_type must have min_length of 1."""
+    def test_effect_node_type_rejects_empty_string(self) -> None:
+        """Test that effect_node_type rejects empty string (min_length=1)."""
         with pytest.raises(ValidationError) as exc_info:
             ModelScheduleEffectPayload(effect_node_type="")
         assert "effect_node_type" in str(exc_info.value)

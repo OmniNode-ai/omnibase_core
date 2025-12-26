@@ -56,10 +56,10 @@ class ModelPayloadWrite(ModelIntentPayloadBase):
             Placed first for optimal union type resolution performance.
         path: Target path for the write operation. For filesystems, this is
             the file path. For object storage, this is the object key.
-        content: The content to write. Type is always `str` for both text and
-            binary content. For text (JSON, YAML, plain text), pass directly.
-            For binary (images, PDFs, etc.), encode to base64 string using
-            `base64.b64encode(data).decode('ascii')`.
+        content: The string content to write. For text (JSON, YAML, plain text),
+            pass the string directly. For binary data (images, PDFs, etc.),
+            you must first encode to a base64 string using
+            `base64.b64encode(data).decode('ascii')` - raw bytes are NOT supported.
         content_type: MIME type of the content (e.g., "application/json",
             "image/png", "application/pdf"). Used by Effect to determine if
             base64 decoding is needed for binary types.
@@ -99,14 +99,14 @@ class ModelPayloadWrite(ModelIntentPayloadBase):
     content: str = Field(
         ...,
         description=(
-            "The content to write. Type is always `str` for both text and binary content. "
-            "For text content (JSON, YAML, plain text), pass the string directly. "
-            "For binary data (images, PDFs, archives), encode to base64 string using "
-            "`base64.b64encode(data).decode('ascii')`. The Effect handler determines "
-            "whether to decode base64 based on the content_type field: binary MIME types "
-            "(e.g., 'application/octet-stream', 'image/png', 'application/pdf') trigger "
-            "base64 decoding; text MIME types are written as-is. "
-            "Example for binary: content=base64.b64encode(image_bytes).decode('ascii'), "
+            "The string content to write. Raw bytes are NOT supported - binary data must "
+            "be base64-encoded first. For text content (JSON, YAML, plain text), pass the "
+            "string directly. For binary data (images, PDFs, archives), encode to base64 "
+            "string using `base64.b64encode(data).decode('ascii')`. The Effect handler "
+            "determines whether to decode base64 based on the content_type field: binary "
+            "MIME types (e.g., 'application/octet-stream', 'image/png', 'application/pdf') "
+            "trigger base64 decoding; text MIME types are written as-is. Example for "
+            "binary: content=base64.b64encode(image_bytes).decode('ascii'), "
             "content_type='image/png'."
         ),
     )

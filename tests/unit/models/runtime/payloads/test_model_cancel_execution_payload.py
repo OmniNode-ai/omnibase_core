@@ -256,7 +256,7 @@ class TestModelCancelExecutionPayloadEdgeCases:
     def test_reason_with_unicode(self) -> None:
         """Test reason with unicode characters from multiple scripts."""
         # Test with actual unicode literals from various scripts
-        reason = "Cancellation: 测试 тест ελληνικά عربي 日本語 한국어 emoji"
+        reason = "Cancellation: 测试 тест ελληνικά عربي 日本語 한국어 café résumé 🎉🚀"
         payload = ModelCancelExecutionPayload(
             execution_id=uuid4(),
             reason=reason,
@@ -269,6 +269,10 @@ class TestModelCancelExecutionPayloadEdgeCases:
         assert "عربي" in payload.reason  # Arabic
         assert "日本語" in payload.reason  # Japanese
         assert "한국어" in payload.reason  # Korean
+        assert "café" in payload.reason  # Accented Latin
+        assert "résumé" in payload.reason  # Accented Latin
+        assert "🎉" in payload.reason  # Emoji (party popper)
+        assert "🚀" in payload.reason  # Emoji (rocket)
 
     def test_all_flags_false(self) -> None:
         """Test with all boolean flags set to False."""

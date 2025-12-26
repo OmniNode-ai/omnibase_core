@@ -101,7 +101,7 @@ class ModelScheduleEffectPayload(ModelDirectivePayloadBase):
 
 #### 3. `action_type` (Action Payloads)
 
-**Location**: `omnibase_core/models/core/model_action_payload_*.py`
+**Location**: `omnibase_core/models/core/model_action_payload*.py`
 
 **Rationale**:
 - Uses rich `ModelNodeActionType` for **semantic categorization** (not Literal)

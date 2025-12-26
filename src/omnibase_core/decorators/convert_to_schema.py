@@ -110,9 +110,15 @@ def _is_serialized_schema_value(
 
 def _convert_list_value(
     value: list[Any] | None, schema_cls: type[ModelSchemaValue]
-) -> list[Any]:
-    """Convert a list value to list of ModelSchemaValue."""
-    if not value:
+) -> list[Any] | None:
+    """Convert a list value to list of ModelSchemaValue.
+
+    Returns None if input is None (preserves optional field semantics).
+    Returns [] if input is an empty list.
+    """
+    if value is None:
+        return None
+    if not value:  # Empty list
         return []
     # Homogeneous list assumption: if first element is ModelSchemaValue,
     # all elements are (lists come from single serialization source)
@@ -146,9 +152,15 @@ def _convert_list_value(
 def _convert_dict_value(
     value: dict[str, Any] | None,
     schema_cls: type[ModelSchemaValue],
-) -> dict[str, Any]:
-    """Convert a dict value to dict of ModelSchemaValue."""
-    if not value:
+) -> dict[str, Any] | None:
+    """Convert a dict value to dict of ModelSchemaValue.
+
+    Returns None if input is None (preserves optional field semantics).
+    Returns {} if input is an empty dict.
+    """
+    if value is None:
+        return None
+    if not value:  # Empty dict
         return {}
     # Check if values are already ModelSchemaValue
     first_value = next(iter(value.values()))

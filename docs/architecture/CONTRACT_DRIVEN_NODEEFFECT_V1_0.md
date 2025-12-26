@@ -786,7 +786,6 @@ class ModelEffectResponseHandling(BaseModel):
 > response field extraction. There is NO silent fallback between engines:
 > - `jsonpath`: Requires `jsonpath_ng` package. Fails fast if not installed.
 > - `dotpath`: Simple `$.field.subfield` syntax. No external dependencies.
->
 > Both engines reject non-primitive extraction results (lists, dicts). Only
 > `str`, `int`, `float`, `bool`, and `None` are allowed. Attempting to extract
 > a complex type will raise `ModelOnexError` with `EXTRACTION_ERROR`.
@@ -1441,17 +1440,14 @@ class EffectHandlerRegistry(BaseModel):
 > # In SPI initialization (e.g., omnibase_spi/bootstrap.py)
 > from omnibase_core.registry.effect_handler_registry import EffectHandlerRegistry
 > from omnibase_core.enums.enum_effect_handler_type import EnumEffectHandlerType
->
 > def register_effect_handlers(container: ModelONEXContainer) -> None:
 >     """Register all effect handlers with the registry."""
 >     registry = EffectHandlerRegistry()
->
 >     # Register SPI implementations
 >     registry.register(EnumEffectHandlerType.HTTP, "HttpRestAdapter")
 >     registry.register(EnumEffectHandlerType.DB, "DbAdapter")
 >     registry.register(EnumEffectHandlerType.KAFKA, "KafkaAdapter")
 >     registry.register(EnumEffectHandlerType.FILESYSTEM, "FilesystemHandler")
->
 >     # Register the registry itself for Core consumption
 >     container.register_service("EffectHandlerRegistry", registry)
 > ```

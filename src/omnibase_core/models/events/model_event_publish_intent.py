@@ -9,7 +9,12 @@ Pattern:
 
 Example:
     # Reducer publishes intent instead of direct event (typed payload)
-    from omnibase_core.constants import TOPIC_EVENT_PUBLISH_INTENT
+    from uuid import uuid4
+
+    from omnibase_core.constants import (
+        TOPIC_EVENT_PUBLISH_INTENT,
+        TOPIC_REGISTRATION_EVENTS,
+    )
     from omnibase_core.models.events.payloads import ModelNodeRegisteredEvent
 
     payload = ModelNodeRegisteredEvent(
@@ -18,9 +23,12 @@ Example:
         ...
     )
     intent = ModelEventPublishIntent(
-        target_topic=TOPIC_METRICS_RECORDED,
+        correlation_id=uuid4(),
+        created_by="my_reducer_v1_0_0",
+        target_topic=TOPIC_REGISTRATION_EVENTS,
+        target_key=str(payload.runtime_id),
+        target_event_type="NODE_REGISTERED",
         target_event_payload=payload,
-        ...
     )
     await publish_to_kafka(TOPIC_EVENT_PUBLISH_INTENT, intent)
 
@@ -112,15 +120,16 @@ class ModelEventPublishIntent(BaseModel):
         description="Event type name (for routing and logging)",
         examples=["GENERATION_METRICS_RECORDED", "NODE_GENERATION_COMPLETED"],
     )
-    target_event_payload: ModelEventPayloadUnion | dict[str, Any] = (
-        Field(  # dict-any-ok: union with typed payloads
-            ...,
-            description=(
-                "Event payload to publish. Accepts typed payloads from "
-                "ModelEventPayloadUnion (recommended) or legacy dict[str, Any] "
-                "(deprecated, emits warning)."
-            ),
-        )
+    target_event_payload: (
+        ModelEventPayloadUnion
+        | dict[str, Any]  # ONEX_EXCLUDE: dict_str_any - union with typed payloads
+    ) = Field(
+        ...,
+        description=(
+            "Event payload to publish. Accepts typed payloads from "
+            "ModelEventPayloadUnion (recommended) or legacy dict[str, Any] "
+            "(deprecated, emits warning)."
+        ),
     )
 
     # Execution hints
@@ -236,8 +245,16 @@ def _rebuild_model() -> None:
 # works correctly without requiring manual intervention.
 try:
     _rebuild_model()
-except Exception:
+except Exception as _rebuild_error:
     # If automatic rebuild fails (e.g., during early import phase),
     # fall back to Pydantic's lazy resolution. Users can call
     # _rebuild_model() explicitly after all dependencies are loaded.
-    pass
+    import warnings
+
+    warnings.warn(
+        f"ModelEventPublishIntent: automatic forward reference rebuild failed: "
+        f"{type(_rebuild_error).__name__}: {_rebuild_error}. "
+        f"Call _rebuild_model() explicitly after all dependencies are loaded.",
+        UserWarning,
+        stacklevel=1,
+    )

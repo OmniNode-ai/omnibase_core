@@ -83,6 +83,7 @@ Example (Typed Payload):
     ... )
 
 See Also:
+    - docs/architecture/PAYLOAD_TYPE_ARCHITECTURE.md: Typed payload architecture guide
     - omnibase_core.models.reducer.payloads: Typed payload models
     - omnibase_core.models.reducer.payloads.ProtocolIntentPayload: Payload protocol
     - omnibase_core.models.intents: Core infrastructure intents (discriminated union)

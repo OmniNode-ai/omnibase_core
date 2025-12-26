@@ -243,6 +243,27 @@ class TestCreateActionPayload:
         payload = create_action_payload(action_type=EnumActionType.ORCHESTRATE)
         assert payload.action_type.name == "coordinate"
 
+    def test_empty_string_semantic_action_uses_default(self):
+        """Test that empty string semantic_action falls back to default.
+
+        This handles the edge case where semantic_action="" is passed,
+        treating it the same as None and using the type-appropriate default.
+        """
+        # Empty string should behave like None - use default for action type
+        payload = create_action_payload(
+            action_type=EnumActionType.COMPUTE,
+            semantic_action="",
+        )
+        # Should use default "process" for COMPUTE type
+        assert payload.action_type.name == "process"
+
+        # Verify for other action types too
+        effect_payload = create_action_payload(
+            action_type=EnumActionType.EFFECT,
+            semantic_action="",
+        )
+        assert effect_payload.action_type.name == "execute"
+
     def test_kwargs_passed_to_payload(self):
         """Test that additional kwargs are passed to the payload."""
         payload = create_action_payload(
@@ -308,6 +329,52 @@ class TestGetPayloadTypeForSemanticAction:
         """Test that unknown actions default to ModelOperationalActionPayload."""
         payload_type = get_payload_type_for_semantic_action("unknown_action")
         assert payload_type is ModelOperationalActionPayload
+
+
+@pytest.mark.unit
+class TestModelNodeActionTypeValidation:
+    """Test ModelNodeActionType validation edge cases."""
+
+    def test_empty_name_raises_validation_error(self):
+        """Test that empty string name raises validation error with clear message."""
+        from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+        from omnibase_core.models.core.model_action_category import ModelActionCategory
+        from omnibase_core.models.core.model_node_action_type import ModelNodeActionType
+        from omnibase_core.models.core.model_predefined_categories import OPERATION
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelNodeActionType(
+                name="",  # Empty string should be rejected
+                category=OPERATION,
+                display_name="Empty",
+                description="Test empty name",
+            )
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "cannot be empty" in exc_info.value.message
+
+    def test_whitespace_only_name_raises_validation_error(self):
+        """Test that whitespace-only name raises validation error.
+
+        Whitespace-only names fail the lowercase check (since ' '.islower() is False)
+        before reaching the alphanumeric check.
+        """
+        from omnibase_core.models.core.model_node_action_type import ModelNodeActionType
+        from omnibase_core.models.core.model_predefined_categories import OPERATION
+        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelNodeActionType(
+                name="   ",  # Whitespace only should be rejected
+                category=OPERATION,
+                display_name="Whitespace",
+                description="Test whitespace name",
+            )
+
+        # Should fail - whitespace fails lowercase check first
+        # (because ' '.islower() returns False)
+        assert exc_info.value.error_code is not None
 
 
 @pytest.mark.unit

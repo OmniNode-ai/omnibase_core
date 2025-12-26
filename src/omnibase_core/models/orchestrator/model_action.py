@@ -34,6 +34,10 @@ Typed Payloads (v0.4.0+):
         - ModelRegistryActionPayload: Registry operations
         - ModelFilesystemActionPayload: File system operations
         - ModelCustomActionPayload: Custom extension payloads
+
+See Also:
+    - docs/architecture/MODELACTION_TYPED_PAYLOADS.md: ModelAction typed payload architecture
+    - docs/architecture/PAYLOAD_TYPE_ARCHITECTURE.md: General payload type architecture
 """
 
 import logging
@@ -276,15 +280,9 @@ class ModelAction(BaseModel):
         )
 
         # Get recommended payload types for this action_type
+        # Note: All EnumActionType values have recommendations defined in
+        # _ACTION_TYPE_TO_PAYLOAD_RECOMMENDATIONS, so this always returns a non-empty list
         recommended_types = get_recommended_payloads_for_action_type(self.action_type)
-
-        # If no recommendations exist for this action_type, skip validation
-        if not recommended_types:
-            _logger.debug(
-                "No recommended payload types for action_type=%s, skipping validation",
-                self.action_type,
-            )
-            return
 
         # Check if the payload type is among the recommended types
         payload_type = type(self.payload)

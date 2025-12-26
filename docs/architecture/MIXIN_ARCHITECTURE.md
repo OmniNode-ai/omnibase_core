@@ -11,17 +11,13 @@ The ONEX framework implements a sophisticated mixin system (also called "subcont
 ### Terminology: Mixin vs Subcontract
 
 > **📘 Key Distinction:**
->
 > **"Mixin"** and **"subcontract"** refer to the **same concept** in ONEX, viewed from different perspectives:
->
 > - **Mixin** (Implementation View): Emphasizes the composable, reusable behavior that nodes can "mix in" to gain capabilities. Think: Python multiple inheritance, behavior composition.
 > - **Subcontract** (Contract View): Emphasizes the formal contract/specification that defines the mixin's interface, configuration, and constraints. Think: API specification, formal agreement.
->
 > **Usage Guidelines**:
 > - Use **"mixin"** when discussing implementation, composition, and runtime behavior
 > - Use **"subcontract"** when discussing contracts, validation, and formal specifications
 > - File naming can use either: `mixin_health_check.yaml` or `health_check_subcontract.yaml`
->
 > **In Practice**: Both terms are interchangeable. This document uses "mixin" primarily but references "subcontracts" in contract-related contexts.
 
 ### Core Principles
