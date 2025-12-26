@@ -848,19 +848,37 @@ class TestModelErrorDetailsEdgeCases:
         assert error1 == error2
         assert error1 != error3
 
-    def test_negative_retry_after_seconds(self):
-        """Test model with negative retry_after_seconds (no validation prevents it)."""
-        error = ModelErrorDetails(
-            error_code="ERR001",
-            error_type="timeout",
-            error_message="Test error",
-            retry_after_seconds=-1,
-        )
+    def test_negative_retry_after_seconds_raises_validation_error(self):
+        """Test that negative retry_after_seconds raises ValidationError."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelErrorDetails(
+                error_code="ERR001",
+                error_type="timeout",
+                error_message="Test error",
+                retry_after_seconds=-1,
+            )
 
-        # Negative value is allowed by the model (no validation constraint)
-        assert error.retry_after_seconds == -1
-        # But is_retryable should still return True (it checks "is not None")
-        assert error.is_retryable() is True
+        # Verify the error is about the ge=0 constraint
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert errors[0]["loc"] == ("retry_after_seconds",)
+        assert errors[0]["type"] == "greater_than_equal"
+
+    def test_extra_fields_forbidden(self):
+        """Test that extra fields are forbidden (extra='forbid' in ConfigDict)."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelErrorDetails(
+                error_code="ERR001",
+                error_type="validation",
+                error_message="Test error",
+                unknown_field="should_not_be_allowed",  # type: ignore[call-arg]
+            )
+
+        # Verify the error is about extra fields being forbidden
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert errors[0]["type"] == "extra_forbidden"
+        assert "unknown_field" in str(errors[0]["loc"])
 
 
 @pytest.mark.unit
@@ -1094,6 +1112,210 @@ class TestModelErrorDetailsStackTrace:
         )
 
         assert error.stack_trace == []
+
+
+@pytest.mark.unit
+class TestModelErrorDetailsGeneric:
+    """Test generic TContext functionality for ModelErrorDetails."""
+
+    def test_unparameterized_backwards_compatible(self):
+        """Test that unparameterized usage still works (backwards compatibility)."""
+        error = ModelErrorDetails(
+            error_code="ERR001",
+            error_type="validation",
+            error_message="Test message",
+        )
+        assert error.context_data == {}
+        assert isinstance(error.context_data, dict)
+        assert error.error_code == "ERR001"
+
+    def test_context_data_with_dict_legacy_pattern(self):
+        """Test context_data accepts dict (legacy pattern)."""
+        error = ModelErrorDetails(
+            error_code="ERR001",
+            error_type="validation",
+            error_message="Test",
+            context_data={"key": ModelSchemaValue.from_value("value")},
+        )
+        assert "key" in error.context_data
+        assert error.context_data["key"].to_value() == "value"
+
+    def test_parameterized_with_typed_context(self):
+        """Test parameterized usage with typed context model."""
+        from pydantic import BaseModel, ConfigDict
+
+        class SimpleContext(BaseModel):
+            model_config = ConfigDict(frozen=True)
+            field_name: str | None = None
+            expected_value: str | None = None
+
+        error = ModelErrorDetails[SimpleContext](
+            error_code="ERR001",
+            error_type="validation",
+            error_message="Test",
+            context_data=SimpleContext(
+                field_name="email", expected_value="valid@email.com"
+            ),
+        )
+        assert error.context_data.field_name == "email"
+        assert error.context_data.expected_value == "valid@email.com"
+
+    def test_parameterized_with_complex_typed_context(self):
+        """Test parameterized usage with more complex typed context model."""
+        from pydantic import BaseModel, ConfigDict
+
+        class ValidationContext(BaseModel):
+            model_config = ConfigDict(frozen=True)
+            field_name: str
+            expected: str
+            actual: str
+            constraint_violated: str | None = None
+
+        error = ModelErrorDetails[ValidationContext](
+            error_code="VAL001",
+            error_type="validation",
+            error_message="Invalid field value",
+            component="user_service",
+            operation="validate_email",
+            context_data=ValidationContext(
+                field_name="email",
+                expected="valid email format",
+                actual="not-an-email",
+                constraint_violated="email_format",
+            ),
+        )
+
+        assert error.error_code == "VAL001"
+        assert error.context_data.field_name == "email"
+        assert error.context_data.expected == "valid email format"
+        assert error.context_data.actual == "not-an-email"
+        assert error.context_data.constraint_violated == "email_format"
+
+    def test_serialization_with_typed_context(self):
+        """Test serialization of typed context works correctly."""
+        from pydantic import BaseModel, ConfigDict
+
+        class SimpleContext(BaseModel):
+            model_config = ConfigDict(frozen=True)
+            key: str
+            value: int
+
+        error = ModelErrorDetails[SimpleContext](
+            error_code="ERR001",
+            error_type="runtime",
+            error_message="Test",
+            context_data=SimpleContext(key="test_key", value=42),
+        )
+
+        # Serialize to dict
+        data = error.model_dump()
+        assert data["context_data"]["key"] == "test_key"
+        assert data["context_data"]["value"] == 42
+
+        # Serialize to JSON
+        json_str = error.model_dump_json()
+        assert '"key":"test_key"' in json_str or '"key": "test_key"' in json_str
+        assert '"value":42' in json_str or '"value": 42' in json_str
+
+    def test_typed_context_preserves_all_fields(self):
+        """Test that typed context preserves all error detail fields."""
+        from uuid import uuid4
+
+        from pydantic import BaseModel, ConfigDict
+
+        class TraceContext(BaseModel):
+            model_config = ConfigDict(frozen=True)
+            trace_id: str
+            span_id: str
+
+        request_id = uuid4()
+        error = ModelErrorDetails[TraceContext](
+            error_code="TRACE001",
+            error_type="runtime",
+            error_message="Trace test",
+            component="trace_service",
+            operation="track_request",
+            request_id=request_id,
+            retry_after_seconds=30,
+            recovery_suggestions=["Check trace logs"],
+            context_data=TraceContext(trace_id="abc123", span_id="def456"),
+        )
+
+        assert error.error_code == "TRACE001"
+        assert error.component == "trace_service"
+        assert error.operation == "track_request"
+        assert error.request_id == request_id
+        assert error.retry_after_seconds == 30
+        assert error.recovery_suggestions == ["Check trace logs"]
+        assert error.context_data.trace_id == "abc123"
+        assert error.context_data.span_id == "def456"
+
+    def test_typed_context_is_retryable_works(self):
+        """Test is_retryable method works with typed context."""
+        from pydantic import BaseModel, ConfigDict
+
+        class RateLimitContext(BaseModel):
+            model_config = ConfigDict(frozen=True)
+            limit: int
+            remaining: int
+
+        error = ModelErrorDetails[RateLimitContext](
+            error_code="RATE001",
+            error_type="rate_limit",
+            error_message="Rate limited",
+            retry_after_seconds=60,
+            context_data=RateLimitContext(limit=100, remaining=0),
+        )
+
+        assert error.is_retryable() is True
+        assert error.context_data.limit == 100
+        assert error.context_data.remaining == 0
+
+    def test_unparameterized_with_inner_errors(self):
+        """Test unparameterized usage with inner_errors (backwards compatible)."""
+        inner = ModelErrorDetails(
+            error_code="INNER001",
+            error_type="validation",
+            error_message="Inner error",
+        )
+        outer = ModelErrorDetails(
+            error_code="OUTER001",
+            error_type="runtime",
+            error_message="Outer error",
+            inner_errors=[inner],
+        )
+
+        assert outer.inner_errors is not None
+        assert len(outer.inner_errors) == 1
+        assert outer.inner_errors[0].error_code == "INNER001"
+        assert outer.context_data == {}
+
+    def test_parameterized_with_inner_errors(self):
+        """Test parameterized usage with inner_errors."""
+        from pydantic import BaseModel, ConfigDict
+
+        class ErrorContext(BaseModel):
+            model_config = ConfigDict(frozen=True)
+            phase: str
+
+        inner = ModelErrorDetails[ErrorContext](
+            error_code="INNER001",
+            error_type="validation",
+            error_message="Inner error",
+            context_data=ErrorContext(phase="validation"),
+        )
+        outer = ModelErrorDetails[ErrorContext](
+            error_code="OUTER001",
+            error_type="runtime",
+            error_message="Outer error",
+            inner_errors=[inner],
+            context_data=ErrorContext(phase="processing"),
+        )
+
+        assert outer.inner_errors is not None
+        assert len(outer.inner_errors) == 1
+        assert outer.context_data.phase == "processing"
+        assert outer.inner_errors[0].context_data.phase == "validation"
 
 
 if __name__ == "__main__":
