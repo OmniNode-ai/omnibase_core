@@ -252,6 +252,11 @@ class ModelErrorDetails(BaseModel, Generic[TContext]):
             This method does NOT mutate the input dictionary. A defensive
             copy is made before any modifications to preserve caller's data.
 
+            This method returns an unparameterized ModelErrorDetails instance,
+            losing generic type information. For typed context, instantiate
+            ModelErrorDetails[TContext] directly instead of using this factory
+            method.
+
         """
         if data is None:
             return None

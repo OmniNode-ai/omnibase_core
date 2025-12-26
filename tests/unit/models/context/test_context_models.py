@@ -48,11 +48,16 @@ class TestModelTraceContext:
         assert context.span_id == span_id
         assert context.correlation_id == correlation_id
 
-    def test_default_values(self) -> None:
-        """Test that all fields default to None."""
-        context = ModelTraceContext()
+    def test_required_field(self) -> None:
+        """Test that trace_id is required."""
+        with pytest.raises(ValidationError):
+            ModelTraceContext()  # type: ignore[call-arg]
 
-        assert context.trace_id is None
+    def test_optional_fields_default_to_none(self) -> None:
+        """Test that optional fields default to None."""
+        context = ModelTraceContext(trace_id=uuid4())
+
+        assert context.trace_id is not None
         assert context.span_id is None
         assert context.correlation_id is None
 
@@ -142,23 +147,28 @@ class TestModelOperationalContext:
         assert context.operation_name == "create_user"
         assert context.timeout_ms == 5000
 
-    def test_default_values(self) -> None:
-        """Test that all fields default to None."""
-        context = ModelOperationalContext()
+    def test_required_field(self) -> None:
+        """Test that operation_name is required."""
+        with pytest.raises(ValidationError):
+            ModelOperationalContext()  # type: ignore[call-arg]
 
+    def test_optional_fields_default_to_none(self) -> None:
+        """Test that optional fields default to None."""
+        context = ModelOperationalContext(operation_name="test")
+
+        assert context.operation_name == "test"
         assert context.operation_id is None
-        assert context.operation_name is None
         assert context.timeout_ms is None
 
     def test_timeout_validation(self) -> None:
         """Test timeout_ms validation (must be >= 0)."""
         # Valid timeout
-        context = ModelOperationalContext(timeout_ms=0)
+        context = ModelOperationalContext(operation_name="test", timeout_ms=0)
         assert context.timeout_ms == 0
 
         # Invalid timeout (negative)
         with pytest.raises(ValidationError):
-            ModelOperationalContext(timeout_ms=-1)
+            ModelOperationalContext(operation_name="test", timeout_ms=-1)
 
     def test_frozen_immutability(self) -> None:
         """Test that the model is immutable (frozen)."""
@@ -293,11 +303,16 @@ class TestModelResourceContext:
         assert context.resource_type == "document"
         assert context.namespace == "workspace/engineering"
 
-    def test_default_values(self) -> None:
-        """Test that all fields default to None."""
-        context = ModelResourceContext()
+    def test_required_field(self) -> None:
+        """Test that resource_id is required."""
+        with pytest.raises(ValidationError):
+            ModelResourceContext()  # type: ignore[call-arg]
 
-        assert context.resource_id is None
+    def test_optional_fields_default_to_none(self) -> None:
+        """Test that optional fields default to None."""
+        context = ModelResourceContext(resource_id=uuid4())
+
+        assert context.resource_id is not None
         assert context.resource_type is None
         assert context.namespace is None
 
@@ -368,30 +383,31 @@ class TestModelUserContext:
         assert context.session_id == session_id
         assert context.tenant_id == tenant_id
 
-    def test_default_values(self) -> None:
-        """Test that all fields default to None."""
-        context = ModelUserContext()
+    def test_required_field(self) -> None:
+        """Test that user_id is required."""
+        with pytest.raises(ValidationError):
+            ModelUserContext()  # type: ignore[call-arg]
 
-        assert context.user_id is None
+    def test_optional_fields_default_to_none(self) -> None:
+        """Test that optional fields default to None."""
+        context = ModelUserContext(user_id=uuid4())
+
+        assert context.user_id is not None
         assert context.session_id is None
         assert context.tenant_id is None
 
-    def test_anonymous_session(self) -> None:
-        """Test anonymous session without user_id."""
-        session_id = uuid4()
-        tenant_id = uuid4()
-        context = ModelUserContext(
-            session_id=session_id,
-            tenant_id=tenant_id,
-        )
+    def test_minimal_user_context(self) -> None:
+        """Test minimal user context with only user_id."""
+        user_id = uuid4()
+        context = ModelUserContext(user_id=user_id)
 
-        assert context.user_id is None
-        assert context.session_id == session_id
-        assert context.tenant_id == tenant_id
+        assert context.user_id == user_id
+        assert context.session_id is None
+        assert context.tenant_id is None
 
     def test_frozen_immutability(self) -> None:
         """Test that the model is immutable (frozen)."""
-        context = ModelUserContext(tenant_id=uuid4())
+        context = ModelUserContext(user_id=uuid4(), tenant_id=uuid4())
 
         with pytest.raises(ValidationError):
             context.tenant_id = uuid4()  # type: ignore[misc]
@@ -439,11 +455,16 @@ class TestModelValidationContext:
         assert context.expected == "valid email format"
         assert context.actual == "not-an-email"
 
-    def test_default_values(self) -> None:
-        """Test that all fields default to None."""
-        context = ModelValidationContext()
+    def test_required_field(self) -> None:
+        """Test that field_name is required."""
+        with pytest.raises(ValidationError):
+            ModelValidationContext()  # type: ignore[call-arg]
 
-        assert context.field_name is None
+    def test_optional_fields_default_to_none(self) -> None:
+        """Test that optional fields default to None."""
+        context = ModelValidationContext(field_name="test")
+
+        assert context.field_name == "test"
         assert context.expected is None
         assert context.actual is None
 
@@ -549,13 +570,14 @@ class TestContextModelsIntegration:
     def test_models_can_be_used_as_dict_values(self) -> None:
         """Test that context models can be stored in dictionaries."""
         resource_id = uuid4()
+        user_id = uuid4()
         tenant_id = uuid4()
         contexts = {
             "trace": ModelTraceContext(trace_id=uuid4()),
             "operation": ModelOperationalContext(operation_name="test"),
             "retry": ModelRetryContext(attempt=1),
             "resource": ModelResourceContext(resource_id=resource_id),
-            "user": ModelUserContext(tenant_id=tenant_id),
+            "user": ModelUserContext(user_id=user_id, tenant_id=tenant_id),
             "validation": ModelValidationContext(field_name="email"),
         }
 
@@ -564,6 +586,7 @@ class TestContextModelsIntegration:
         assert contexts["operation"].operation_name == "test"
         assert contexts["retry"].attempt == 1
         assert contexts["resource"].resource_id == resource_id
+        assert contexts["user"].user_id == user_id
         assert contexts["user"].tenant_id == tenant_id
         assert contexts["validation"].field_name == "email"
 

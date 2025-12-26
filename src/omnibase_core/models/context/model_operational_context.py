@@ -54,7 +54,7 @@ class ModelOperationalContext(BaseModel):
                 timeout_ms=5000,
             )
 
-        Minimal context::
+        Minimal context (operation_name is required)::
 
             context = ModelOperationalContext(
                 operation_name="validate_input",
@@ -71,8 +71,7 @@ class ModelOperationalContext(BaseModel):
         default=None,
         description="Unique identifier for this specific operation instance",
     )
-    operation_name: str | None = Field(
-        default=None,
+    operation_name: str = Field(
         description="Human-readable name describing the operation",
     )
     timeout_ms: int | None = Field(

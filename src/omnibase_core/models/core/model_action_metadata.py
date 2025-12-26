@@ -123,6 +123,7 @@ class ModelActionMetadata(BaseModel):
         default=None,
         description="Action result data as JSON-serializable data",
     )
+    # Unparameterized ModelErrorDetails allows any context type at runtime
     error_details: ModelErrorDetails | None = Field(  # type: ignore[type-arg]
         default=None,
         description="Structured error details if action failed",

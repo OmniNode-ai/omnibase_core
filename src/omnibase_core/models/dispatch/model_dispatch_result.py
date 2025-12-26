@@ -183,6 +183,7 @@ class ModelDispatchResult(BaseModel):
         default=None,
         description="Error code if the dispatch failed.",
     )
+    # Unparameterized ModelErrorDetails allows any context type at runtime
     error_details: ModelErrorDetails | None = Field(  # type: ignore[type-arg]
         default=None,
         description="Additional error details for debugging.",

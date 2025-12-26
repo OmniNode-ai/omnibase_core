@@ -54,7 +54,7 @@ class ModelTraceContext(BaseModel):
                 correlation_id=uuid4(),
             )
 
-        Partial context (some fields optional)::
+        Minimal context (trace_id is required)::
 
             context = ModelTraceContext(
                 trace_id=uuid4(),
@@ -67,8 +67,7 @@ class ModelTraceContext(BaseModel):
 
     model_config = ConfigDict(frozen=True, from_attributes=True, extra="forbid")
 
-    trace_id: UUID | None = Field(
-        default=None,
+    trace_id: UUID = Field(
         description="Unique identifier for the entire trace/request flow",
     )
     span_id: UUID | None = Field(

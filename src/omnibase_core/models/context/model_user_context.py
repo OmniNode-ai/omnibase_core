@@ -54,10 +54,10 @@ class ModelUserContext(BaseModel):
                 tenant_id=uuid4(),
             )
 
-        Anonymous session::
+        Minimal context (user_id is required)::
 
             context = ModelUserContext(
-                session_id=uuid4(),
+                user_id=uuid4(),
             )
 
     See Also:
@@ -67,8 +67,7 @@ class ModelUserContext(BaseModel):
 
     model_config = ConfigDict(frozen=True, from_attributes=True, extra="forbid")
 
-    user_id: UUID | None = Field(
-        default=None,
+    user_id: UUID = Field(
         description="Unique identifier for the authenticated user",
     )
     session_id: UUID | None = Field(

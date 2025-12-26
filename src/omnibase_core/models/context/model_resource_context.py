@@ -54,11 +54,10 @@ class ModelResourceContext(BaseModel):
                 namespace="workspace/engineering",
             )
 
-        Minimal resource identification::
+        Minimal resource identification (resource_id is required)::
 
             context = ModelResourceContext(
                 resource_id=uuid4(),
-                resource_type="user",
             )
 
     See Also:
@@ -68,8 +67,7 @@ class ModelResourceContext(BaseModel):
 
     model_config = ConfigDict(frozen=True, from_attributes=True, extra="forbid")
 
-    resource_id: UUID | None = Field(
-        default=None,
+    resource_id: UUID = Field(
         description="Unique identifier for the specific resource",
     )
     resource_type: str | None = Field(

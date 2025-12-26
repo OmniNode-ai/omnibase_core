@@ -66,8 +66,7 @@ class ModelValidationContext(BaseModel):
 
     model_config = ConfigDict(frozen=True, from_attributes=True, extra="forbid")
 
-    field_name: str | None = Field(
-        default=None,
+    field_name: str = Field(
         description="Name of the field that failed validation",
     )
     expected: str | None = Field(
