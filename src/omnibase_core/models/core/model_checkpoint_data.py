@@ -13,6 +13,9 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_checkpoint_status import EnumCheckpointStatus
 from omnibase_core.enums.enum_checkpoint_type import EnumCheckpointType
+from omnibase_core.models.core.model_storage_checkpoint_metadata import (
+    ModelStorageCheckpointMetadata,
+)
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 if TYPE_CHECKING:
@@ -45,9 +48,9 @@ class ModelCheckpointData(BaseModel):
         default_factory=dict,
     )
 
-    metadata: dict[str, str] = Field(
-        description="Checkpoint metadata",
-        default_factory=dict,
+    metadata: ModelStorageCheckpointMetadata | None = Field(
+        default=None,
+        description="Typed metadata for checkpoint categorization and organization",
     )
 
     created_at: datetime = Field(

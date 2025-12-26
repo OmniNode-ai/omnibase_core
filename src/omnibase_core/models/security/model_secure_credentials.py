@@ -342,7 +342,7 @@ class ModelSecureCredentials(BaseModel, ABC):
             result="masked",
             security_level="audit",
             compliance_tags=["credential_masking", "audit_trail"],
-            audit_metadata={k: str(v) for k, v in masked_dict.items()},
+            audit_metadata=None,  # Masked data stored elsewhere, not in typed metadata
         )
 
     def export_to_env_template(self, env_prefix: str = "ONEX_") -> str:

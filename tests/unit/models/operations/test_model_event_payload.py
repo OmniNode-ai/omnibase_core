@@ -44,10 +44,12 @@ class TestModelEventPayload:
 
     def test_user_event_creation(self):
         """Test creating user event payload."""
+        from omnibase_core.models.context import ModelSessionContext
+
         event_data = ModelUserEventData(
             event_type=EnumEventType.USER,
             user_action="login",
-            session_context={"session_id": "abc123"},
+            session_context=ModelSessionContext(session_id="abc123"),
         )
 
         payload = ModelEventPayload(
@@ -57,7 +59,7 @@ class TestModelEventPayload:
 
         assert payload.event_type == EnumEventType.USER
         assert payload.event_data.user_action == "login"
-        assert payload.event_data.session_context["session_id"] == "abc123"
+        assert payload.event_data.session_context.session_id == "abc123"
 
     def test_workflow_event_creation(self):
         """Test creating workflow event payload."""
@@ -221,11 +223,16 @@ class TestModelEventPayloadSerialization:
 
     def test_user_event_serialization(self):
         """Test JSON serialization of user event."""
+        from omnibase_core.models.common.model_request_metadata import (
+            ModelRequestMetadata,
+        )
+        from omnibase_core.models.context import ModelSessionContext
+
         event_data = ModelUserEventData(
             event_type=EnumEventType.USER,
             user_action="password_reset",
-            session_context={"reset_token": "token123"},
-            request_metadata={"ip": "192.168.1.1"},
+            session_context=ModelSessionContext(session_id="token123"),
+            request_metadata=ModelRequestMetadata(ip_address="192.168.1.1"),
         )
 
         payload = ModelEventPayload(
@@ -237,7 +244,7 @@ class TestModelEventPayloadSerialization:
 
         assert serialized["event_type"] == EnumEventType.USER
         assert serialized["event_data"]["user_action"] == "password_reset"
-        assert serialized["event_data"]["session_context"]["reset_token"] == "token123"
+        assert serialized["event_data"]["session_context"]["session_id"] == "token123"
 
     def test_workflow_event_deserialization(self):
         """Test JSON deserialization of workflow event."""
@@ -475,21 +482,29 @@ class TestModelEventPayloadUsagePatterns:
 
     def test_user_authentication_event(self):
         """Test user authentication event payload pattern."""
+        from omnibase_core.models.common.model_request_metadata import (
+            ModelRequestMetadata,
+        )
+        from omnibase_core.models.context import (
+            ModelAuthorizationContext,
+            ModelSessionContext,
+        )
+
         event_data = ModelUserEventData(
             event_type=EnumEventType.USER,
             user_action="authentication",
-            session_context={
-                "session_id": "sess_abc123def456",
-                "authentication_method": "oauth2",
-            },
-            request_metadata={
-                "ip_address": "192.168.1.100",
-                "user_agent": "MyApp/2.1.0 (iOS 17.0)",
-            },
-            authorization_context={
-                "client_id": "mobile_app_v2",
-                "scope": "user:profile user:email",
-            },
+            session_context=ModelSessionContext(
+                session_id="sess_abc123def456",
+                authentication_method="oauth2",
+            ),
+            request_metadata=ModelRequestMetadata(
+                ip_address="192.168.1.100",
+                user_agent="MyApp/2.1.0 (iOS 17.0)",
+            ),
+            authorization_context=ModelAuthorizationContext(
+                client_id="mobile_app_v2",
+                scopes=["user:profile", "user:email"],
+            ),
         )
         event_data.context.environment = "production"
         event_data.attributes.category = "security"
@@ -506,7 +521,7 @@ class TestModelEventPayloadUsagePatterns:
         # Verify authentication event structure
         assert payload.event_type == EnumEventType.USER
         assert payload.event_data.user_action == "authentication"
-        assert payload.event_data.session_context["authentication_method"] == "oauth2"
+        assert payload.event_data.session_context.authentication_method == "oauth2"
         assert payload.event_data.context.environment == "production"
         assert payload.routing_info.routing_key == "user.auth.success"
 

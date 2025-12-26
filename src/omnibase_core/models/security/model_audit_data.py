@@ -9,6 +9,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.models.context import ModelAuditMetadata
+
 
 class ModelAuditData(BaseModel):
     """Audit data representation."""
@@ -26,7 +28,7 @@ class ModelAuditData(BaseModel):
         default_factory=list,
         description="Compliance tags",
     )
-    audit_metadata: dict[str, str] = Field(
-        default_factory=dict,
-        description="Additional audit metadata",
+    audit_metadata: ModelAuditMetadata | None = Field(
+        default=None,
+        description="Structured audit metadata with typed fields",
     )
