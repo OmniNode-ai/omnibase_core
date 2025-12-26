@@ -179,6 +179,26 @@ class TestModelRoutingMetadataValidation:
         with pytest.raises(ValidationError):
             ModelRoutingMetadata(load_balance_strategy="")
 
+    def test_load_balance_strategy_normalizes_uppercase(self) -> None:
+        """Test that uppercase load_balance_strategy is normalized to lowercase."""
+        metadata = ModelRoutingMetadata(load_balance_strategy="ROUND_ROBIN")
+        assert metadata.load_balance_strategy == "round_robin"
+
+    def test_load_balance_strategy_normalizes_mixed_case(self) -> None:
+        """Test that mixed case load_balance_strategy is normalized to lowercase."""
+        metadata = ModelRoutingMetadata(load_balance_strategy="Weighted")
+        assert metadata.load_balance_strategy == "weighted"
+
+    def test_load_balance_strategy_strips_whitespace(self) -> None:
+        """Test that whitespace is stripped from load_balance_strategy."""
+        metadata = ModelRoutingMetadata(load_balance_strategy="  random  ")
+        assert metadata.load_balance_strategy == "random"
+
+    def test_load_balance_strategy_normalizes_combined(self) -> None:
+        """Test that uppercase and whitespace are both normalized."""
+        metadata = ModelRoutingMetadata(load_balance_strategy="  LEAST_CONNECTIONS  ")
+        assert metadata.load_balance_strategy == "least_connections"
+
     def test_weight_minimum_is_0(self) -> None:
         """Test that weight minimum is 0.0."""
         metadata = ModelRoutingMetadata(weight=0.0)

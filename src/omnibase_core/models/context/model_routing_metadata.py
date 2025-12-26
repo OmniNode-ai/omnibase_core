@@ -108,6 +108,7 @@ class ModelRoutingMetadata(BaseModel):
     )
     timeout_override_ms: int | None = Field(
         default=None,
+        gt=0,
         description=(
             "Override the default service timeout in milliseconds. "
             "Must be a positive integer when provided. None uses the default timeout."
@@ -118,42 +119,29 @@ class ModelRoutingMetadata(BaseModel):
         description="Enable circuit breaker for this route",
     )
 
-    @field_validator("timeout_override_ms")
-    @classmethod
-    def validate_timeout_positive(cls, v: int | None) -> int | None:
-        """Validate that timeout_override_ms is positive when provided.
-
-        Args:
-            v: The timeout value in milliseconds to validate.
-
-        Returns:
-            The validated timeout value.
-
-        Raises:
-            ValueError: If the value is not positive when provided.
-        """
-        if v is not None and v <= 0:
-            raise ValueError("timeout_override_ms must be positive")
-        return v
-
     @field_validator("load_balance_strategy", mode="before")
     @classmethod
     def validate_load_balance_strategy(cls, v: str) -> LoadBalanceStrategy:
-        """Validate that load_balance_strategy is a valid strategy.
+        """Validate and normalize load_balance_strategy to a valid strategy.
 
         Args:
             v: The load balance strategy string to validate.
 
         Returns:
-            The validated strategy as a Literal type.
+            The validated and normalized strategy as a Literal type (lowercase).
 
         Raises:
-            ValueError: If the value is not a valid load balance strategy.
+            ValueError: If the value is not a string or not a valid strategy.
         """
-        if v not in VALID_LOAD_BALANCE_STRATEGIES:
+        if not isinstance(v, str):
+            raise ValueError(
+                f"load_balance_strategy must be a string, got {type(v).__name__}"
+            )
+        normalized = v.lower().strip()
+        if normalized not in VALID_LOAD_BALANCE_STRATEGIES:
             valid_strategies = ", ".join(sorted(VALID_LOAD_BALANCE_STRATEGIES))
             raise ValueError(
                 f"Invalid load_balance_strategy '{v}': must be one of {valid_strategies}"
             )
         # Cast to LoadBalanceStrategy since we've validated it's a valid value
-        return v  # type: ignore[return-value]
+        return normalized  # type: ignore[return-value]
