@@ -181,18 +181,6 @@ The following libraries are **FORBIDDEN** as direct dependencies in omnibase_cor
 | **Secret Stores** | `hvac` | `ProtocolSecretStore` |
 | **Service Discovery** | `consul` | `ProtocolServiceDiscovery` |
 
-### Known Technical Debt
-
-The following transport/I/O dependencies remain in `omnibase_core` and are acknowledged as technical debt requiring future migration:
-
-| Dependency | Category | Protocol Alternative | Status |
-|------------|----------|---------------------|--------|
-| `asyncpg` | Database | `ProtocolRepository` | Pending migration |
-| `psycopg2-binary` | Database | `ProtocolRepository` | Pending migration |
-| `python-consul` | Service Discovery | `ProtocolServiceDiscovery` | Pending migration |
-
-These dependencies were not removed in the initial ADR-005 implementation to limit scope. Follow-up issues will track their migration to `omnibase_infra`.
-
 ### Allowed Patterns
 
 While runtime imports are forbidden, these patterns ARE allowed:
