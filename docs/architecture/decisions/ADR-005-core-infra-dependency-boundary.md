@@ -87,7 +87,7 @@ Direct dependencies on transport/I/O libraries (aiohttp, httpx, kafka, redis, as
 
 ## Problem Statement
 
-Prior to commit `f3c370b6`, `omnibase_core` included `aiohttp` as a direct dependency. This violated the architectural principle that:
+Before commit `f3c370b6`, `omnibase_core` included `aiohttp` as a direct dependency. This violated the architectural principle that:
 
 > **Core provides abstractions; Infra provides implementations.**
 
@@ -338,6 +338,17 @@ The transport import check runs in CI as part of the test workflow:
   run: ./scripts/validate-no-transport-imports.sh
 ```
 
+### TYPE_CHECKING Import Limitation
+
+**Important**: The grep-based validation script cannot detect imports inside `TYPE_CHECKING` blocks because these blocks span multiple lines. Proper detection would require Python AST parsing, which is impractical in a shell script.
+
+TYPE_CHECKING imports are **allowed** per the [Allowed Patterns](#allowed-patterns) section because they:
+- Only execute during static type analysis (mypy, pyright)
+- Create NO runtime dependencies
+- Are guarded by `if TYPE_CHECKING:`
+
+If the script flags an import that is inside a TYPE_CHECKING block, see the detailed resolution steps in the script's comments at `scripts/validate-no-transport-imports.sh` (lines 85-107).
+
 ### Pre-commit Integration (Optional)
 
 For local enforcement, add to `.pre-commit-config.yaml`:
@@ -382,15 +393,17 @@ websockets, wsproto
 
 ### Exclusions
 
-The script excludes:
-- Protocol definition files with documentation examples (e.g., `protocols/http/protocol_http_client.py`)
-- Comment lines (lines starting with `#`)
-- Documentation examples (lines containing "Example:")
-- `__pycache__` and compiled files
+The script applies two types of exclusions:
 
-**Note**: TYPE_CHECKING blocks are documented as allowed (see [Allowed Patterns](#allowed-patterns)), but the current script does not detect imports inside TYPE_CHECKING blocks (this would require Python AST parsing). If a TYPE_CHECKING import is flagged:
-1. Verify the import is guarded by `if TYPE_CHECKING:` (acceptable - no runtime dependency)
-2. If confirmed as type-only, add the file to `EXCLUDE_PATTERN` in the validation script
+**File-level exclusions** (via `EXCLUDE_PATTERN`):
+- HTTP protocol definition files: `protocols/http/__init__.py`, `protocols/http/protocol_http_client.py`
+- Compiled files: `__pycache__/`, `*.pyc`
+
+**Line-level filtering** (post-grep):
+- Comment lines (lines starting with `#`)
+- Documentation examples (lines containing "Example:" or "example:")
+
+**Note**: For TYPE_CHECKING block handling, see [TYPE_CHECKING Import Limitation](#type_checking-import-limitation) above.
 
 ---
 

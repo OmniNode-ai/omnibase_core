@@ -67,7 +67,7 @@ done
 
 # Match import statements: 'import X' or 'from X import'
 # - Anchored to start of line (after optional whitespace)
-# - Uses word boundaries (\b) around package names
+# - Enforces word boundaries via trailing delimiter (see lines 56-59 for details)
 # - Allows for submodule imports like 'import aiohttp.client' or 'from aiohttp.web import X'
 IMPORT_PATTERN="^[[:space:]]*(from[[:space:]]+($PATTERN)(\\.|[[:space:]])|import[[:space:]]+($PATTERN)(\\.|[[:space:]]|,|$))"
 
@@ -98,7 +98,7 @@ VIOLATIONS=$(grep -RnP "$IMPORT_PATTERN" "$CORE_SRC" --include="*.py" 2>/dev/nul
 # If this script flags an import that is inside a TYPE_CHECKING block:
 #   1. VERIFY: Open the file and confirm the import is inside 'if TYPE_CHECKING:'
 #   2. CONFIRM: The import is for type annotations only (not runtime usage)
-#   3. EXCLUDE: Add the file path to EXCLUDE_PATTERN above (line ~75)
+#   3. EXCLUDE: Add the file path to EXCLUDE_PATTERN above (line ~77)
 #      Example: EXCLUDE_PATTERN="...|path/to/file.py"
 #   4. DOCUMENT: Add a comment in the file explaining the TYPE_CHECKING usage
 #
@@ -139,11 +139,12 @@ if [ -n "$REAL_VIOLATIONS" ]; then
     echo "  1. Define a protocol in omnibase_core for the capability you need"
     echo "  2. Implement the protocol in an infrastructure package"
     echo "  3. If this import is inside a TYPE_CHECKING block (allowed per ADR-005):"
-    echo "     a. VERIFY: Confirm the import is inside 'if TYPE_CHECKING:'"
-    echo "     b. CONFIRM: The import is for type annotations only (not runtime)"
-    echo "     c. EXCLUDE: Add the file path to EXCLUDE_PATTERN in this script"
-    echo "     d. DOCUMENT: Add a comment in the file explaining the usage"
-    echo "     See the LIMITATION comment in this script for details."
+    echo "     a. VERIFY: Open the file and confirm the import is inside 'if TYPE_CHECKING:'"
+    echo "     b. CONFIRM: The import is for type annotations only (not runtime usage)"
+    echo "     c. EXCLUDE: Add the file path to EXCLUDE_PATTERN above (line ~77)"
+    echo "        Example: EXCLUDE_PATTERN=\"...|path/to/file.py\""
+    echo "     d. DOCUMENT: Add a comment in the file explaining the TYPE_CHECKING usage"
+    echo "     See the LIMITATION comment in this script (lines 85-107) for details."
     exit 1
 fi
 

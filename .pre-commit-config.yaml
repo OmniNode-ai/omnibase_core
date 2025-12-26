@@ -420,6 +420,19 @@ repos:
         always_run: true
         stages: [pre-commit]
 
+      # ONEX Transport Import Prevention (ADR-005)
+      # Enforces core-infra dependency boundary: omnibase_core must be pure
+      # Detects forbidden imports: aiohttp, httpx, requests, kafka, redis, asyncpg, etc.
+      # Fast grep-based check (~1s) - safe for pre-commit
+      # See: docs/architecture/adr/ADR-005-core-infra-dependency-boundary.md
+      - id: validate-no-transport-imports
+        name: ONEX Transport Import Prevention
+        entry: ./scripts/validate-no-transport-imports.sh
+        language: script
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
       # Documentation link validation - prevents broken links in CI
       - id: validate-doc-links
         name: ONEX Documentation Link Validation
