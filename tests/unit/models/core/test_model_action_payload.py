@@ -77,16 +77,22 @@ def create_test_version() -> ModelSemVer:
 
 @dataclass
 class ActionPayloadAttrs:
-    """Helper dataclass for testing from_attributes on ModelActionPayload."""
+    """Helper dataclass for testing from_attributes on ModelActionPayload.
+
+    Note: Fields that have default_factory in ModelActionPayload must have
+    non-None defaults here to work with from_attributes=True validation.
+    """
 
     action: ModelNodeAction
     version: ModelSemVer
-    parameters: ModelActionParameters | None = None
-    execution_context: ModelActionExecutionContext | None = None
+    parameters: ModelActionParameters = field(default_factory=ModelActionParameters)
+    execution_context: ModelActionExecutionContext = field(
+        default_factory=ModelActionExecutionContext
+    )
     parent_correlation_id: UUID | None = None
     execution_chain: list[str] = field(default_factory=list)
     target_service: str | None = None
-    routing_metadata: ModelRoutingMetadata | None = None
+    routing_metadata: ModelRoutingMetadata = field(default_factory=ModelRoutingMetadata)
     trust_level: float = 1.0
     service_metadata: ModelServiceDiscoveryMetadata | None = None
     tool_discovery_tags: list[str] = field(default_factory=list)
@@ -554,6 +560,92 @@ class TestModelActionPayloadMethods:
         assert child_payload.target_service == "custom-target"
         assert child_payload.tool_discovery_tags == ["tag1", "tag2"]
 
+    def test_create_child_payload_trust_level_via_kwargs_takes_minimum(self) -> None:
+        """Test that trust_level passed in kwargs takes minimum with parent.
+
+        This tests the fix for the duplicate keyword argument bug where passing
+        trust_level in kwargs would conflict with the explicit trust_level parameter.
+        """
+        action = create_test_action()
+        version = create_test_version()
+
+        # Parent has trust_level 0.8
+        parent_payload = ModelActionPayload(
+            action=action, version=version, trust_level=0.8
+        )
+
+        child_action = create_test_action(name="child_action")
+
+        # Child requests trust_level 0.5 via kwargs - should take min(0.8, 0.5) = 0.5
+        child_payload = parent_payload.create_child_payload(
+            child_action,
+            trust_level=0.5,
+        )
+        assert child_payload.trust_level == 0.5
+
+        # Child requests trust_level 0.9 via kwargs - should take min(0.8, 0.9) = 0.8
+        child_payload_higher = parent_payload.create_child_payload(
+            child_action,
+            trust_level=0.9,
+        )
+        assert child_payload_higher.trust_level == 0.8
+
+    def test_create_child_payload_trust_level_default_when_not_in_kwargs(self) -> None:
+        """Test that trust_level uses default 1.0 when not passed in kwargs.
+
+        When no trust_level is provided in kwargs, the default 1.0 is used,
+        and the child inherits the parent's trust level via min(parent, 1.0).
+        """
+        action = create_test_action()
+        version = create_test_version()
+
+        # Parent with trust_level 0.7
+        parent_payload = ModelActionPayload(
+            action=action, version=version, trust_level=0.7
+        )
+
+        child_action = create_test_action(name="child_action")
+
+        # No trust_level in kwargs - should use min(0.7, 1.0) = 0.7
+        child_payload = parent_payload.create_child_payload(child_action)
+        assert child_payload.trust_level == 0.7
+
+        # With fully trusted parent - should use min(1.0, 1.0) = 1.0
+        parent_full_trust = ModelActionPayload(
+            action=action, version=version, trust_level=1.0
+        )
+        child_full_trust = parent_full_trust.create_child_payload(child_action)
+        assert child_full_trust.trust_level == 1.0
+
+    def test_create_child_payload_trust_level_in_kwargs_no_duplicate_error(
+        self,
+    ) -> None:
+        """Test that passing trust_level in kwargs does not cause duplicate argument error.
+
+        Regression test for bug where trust_level in kwargs would conflict with
+        the explicit trust_level parameter in the ModelActionPayload constructor.
+        """
+        action = create_test_action()
+        version = create_test_version()
+
+        parent_payload = ModelActionPayload(
+            action=action, version=version, trust_level=0.6
+        )
+
+        child_action = create_test_action(name="child_action")
+
+        # This should NOT raise TypeError about duplicate keyword argument
+        child_payload = parent_payload.create_child_payload(
+            child_action,
+            trust_level=0.4,
+            target_service="test-service",
+        )
+
+        # Verify it works correctly
+        assert child_payload.trust_level == 0.4  # min(0.6, 0.4) = 0.4
+        assert child_payload.target_service == "test-service"
+        assert child_payload.parent_correlation_id == parent_payload.correlation_id
+
 
 # =============================================================================
 # Serialization Tests
@@ -957,6 +1049,70 @@ class TestModelActionPayloadIntegration:
         assert restored.routing_metadata.priority == 10
         assert restored.service_metadata is not None
         assert restored.service_metadata.tags == ["tag1"]
+
+
+# =============================================================================
+# From Attributes Tests
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestModelActionPayloadFromAttributes:
+    """Tests for ModelActionPayload from_attributes=True."""
+
+    def test_create_from_dataclass_with_attributes(self) -> None:
+        """Test creating ModelActionPayload from an object with attributes."""
+        action = create_test_action()
+        version = create_test_version()
+        attrs = ActionPayloadAttrs(
+            action=action,
+            version=version,
+            target_service="from-attrs-service",
+            trust_level=0.75,
+        )
+        payload = ModelActionPayload.model_validate(attrs)
+        assert payload.action == action
+        assert payload.version == version
+        assert payload.target_service == "from-attrs-service"
+        assert payload.trust_level == 0.75
+
+    def test_create_from_object_with_all_attributes(self) -> None:
+        """Test creating from object with all attributes populated."""
+        action = create_test_action()
+        version = create_test_version()
+        parent_id = uuid4()
+        parameters = ModelActionParameters(action_name="attrs_test")
+        execution_context = ModelActionExecutionContext(
+            environment="production", timeout_ms=60000
+        )
+        routing = ModelRoutingMetadata(target_region="eu-west-1")
+        service_meta = ModelServiceDiscoveryMetadata(
+            service_name="full-attrs-service",
+            service_version=ModelSemVer(major=1, minor=0, patch=0),
+        )
+
+        attrs = ActionPayloadAttrs(
+            action=action,
+            version=version,
+            parameters=parameters,
+            execution_context=execution_context,
+            parent_correlation_id=parent_id,
+            execution_chain=["step1", "step2"],
+            target_service="full-service",
+            routing_metadata=routing,
+            trust_level=0.9,
+            service_metadata=service_meta,
+            tool_discovery_tags=["tag1", "tag2"],
+        )
+        payload = ModelActionPayload.model_validate(attrs)
+
+        assert payload.action == action
+        assert payload.parameters == parameters
+        assert payload.execution_context == execution_context
+        assert payload.parent_correlation_id == parent_id
+        assert payload.execution_chain == ["step1", "step2"]
+        assert payload.routing_metadata == routing
+        assert payload.service_metadata == service_meta
 
 
 if __name__ == "__main__":

@@ -265,6 +265,62 @@ class TestModelRoutingMetadataValidation:
             ModelRoutingMetadata(timeout_override_ms=-1)
         assert "timeout_override_ms" in str(exc_info.value).lower()
 
+    def test_load_balance_strategy_rejects_non_string_types(self) -> None:
+        """Test that load_balance_strategy rejects non-string types.
+
+        The validator must check isinstance before performing string operations
+        to provide clear error messages for type mismatches.
+        """
+        # Test with integer
+        with pytest.raises(ValidationError) as exc_info:
+            ModelRoutingMetadata(load_balance_strategy=123)  # type: ignore[arg-type]
+        assert (
+            "must be a string" in str(exc_info.value)
+            or "load_balance_strategy" in str(exc_info.value).lower()
+        )
+
+        # Test with list
+        with pytest.raises(ValidationError):
+            ModelRoutingMetadata(load_balance_strategy=["round_robin"])  # type: ignore[arg-type]
+
+        # Test with dict
+        with pytest.raises(ValidationError):
+            ModelRoutingMetadata(load_balance_strategy={"strategy": "round_robin"})  # type: ignore[arg-type]
+
+    def test_weight_zero_is_explicitly_allowed(self) -> None:
+        """Test that weight=0.0 is explicitly allowed for disabled routing.
+
+        Weight of 0.0 is a valid use case for temporarily disabling a route
+        in weighted load balancing without removing the configuration.
+        This is intentional and should not trigger validation errors.
+        """
+        metadata = ModelRoutingMetadata(weight=0.0)
+        assert metadata.weight == 0.0
+
+        # Verify the model accepts it cleanly (no warnings, no special handling)
+        data = metadata.model_dump()
+        assert data["weight"] == 0.0
+
+    def test_timeout_override_ms_accepts_minimum_value(self) -> None:
+        """Test that timeout_override_ms accepts minimum value of 1."""
+        metadata = ModelRoutingMetadata(timeout_override_ms=1)
+        assert metadata.timeout_override_ms == 1
+
+    def test_timeout_override_ms_boundary_validation(self) -> None:
+        """Test timeout boundary validation (must be > 0, not >= 0).
+
+        The field uses gt=0 (greater than), not ge=0 (greater than or equal),
+        so the minimum valid value is 1, not 0.
+        """
+        # Value of 1 should work (minimum valid)
+        metadata = ModelRoutingMetadata(timeout_override_ms=1)
+        assert metadata.timeout_override_ms == 1
+
+        # Value of 0 should fail (gt=0 constraint)
+        with pytest.raises(ValidationError) as exc_info:
+            ModelRoutingMetadata(timeout_override_ms=0)
+        assert "timeout_override_ms" in str(exc_info.value).lower()
+
 
 # =============================================================================
 # Immutability Tests

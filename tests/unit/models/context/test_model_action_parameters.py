@@ -217,6 +217,30 @@ class TestModelActionParametersValidation:
         assert params.extensions["dict_key"] == {"nested": "value"}
         assert params.extensions["null_key"] is None
 
+    def test_timeout_override_ms_accepts_minimum_value(self) -> None:
+        """Test that timeout_override_ms accepts minimum value of 1.
+
+        The minimum valid value is 1 (not 0) because the field uses gt=0.
+        """
+        params = ModelActionParameters(timeout_override_ms=1)
+        assert params.timeout_override_ms == 1
+
+    def test_timeout_override_ms_boundary_validation(self) -> None:
+        """Test timeout boundary validation (must be > 0, not >= 0).
+
+        The field uses gt=0 (greater than), not ge=0 (greater than or equal),
+        so the minimum valid value is 1, not 0. This is intentional to prevent
+        a timeout of 0ms which would cause immediate timeouts.
+        """
+        # Value of 1 should work (minimum valid)
+        params = ModelActionParameters(timeout_override_ms=1)
+        assert params.timeout_override_ms == 1
+
+        # Value of 0 should fail (gt=0 constraint)
+        with pytest.raises(ValidationError) as exc_info:
+            ModelActionParameters(timeout_override_ms=0)
+        assert "timeout_override_ms" in str(exc_info.value).lower()
+
 
 # =============================================================================
 # Immutability Tests

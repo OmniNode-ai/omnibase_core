@@ -46,7 +46,7 @@ See Also:
 from typing import Any
 from uuid import UUID
 
-from pydantic import Field
+from pydantic import ConfigDict, Field
 
 # Direct module imports to avoid circular import via context/__init__.py
 from omnibase_core.models.context.model_action_execution_context import (
@@ -154,6 +154,8 @@ class ModelActionPayload(ModelOnexInputState):
         >>> child_payload.parent_correlation_id == payload.correlation_id
         True
     """
+
+    model_config = ConfigDict(from_attributes=True)
 
     action: ModelNodeAction = Field(default=..., description="The action to execute")
     parameters: ModelActionParameters = Field(
@@ -302,11 +304,13 @@ class ModelActionPayload(ModelOnexInputState):
             >>> child_payload.execution_chain  # Copy of parent's chain
             ['process_batch']
         """
+        # Pop trust_level from kwargs to avoid duplicate keyword argument error
+        child_trust_level = kwargs.pop("trust_level", 1.0)
         return ModelActionPayload(
             action=child_action,
             parent_correlation_id=self.correlation_id,
             execution_chain=self.execution_chain.copy(),
-            trust_level=min(self.trust_level, kwargs.get("trust_level", 1.0)),
+            trust_level=min(self.trust_level, child_trust_level),
             service_metadata=self.service_metadata,  # Immutable, no copy needed
             version=self.version,  # Required field from ModelOnexInputState
             **kwargs,

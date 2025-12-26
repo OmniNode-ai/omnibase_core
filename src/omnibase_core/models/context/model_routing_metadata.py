@@ -22,7 +22,11 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-__all__ = ["ModelRoutingMetadata"]
+__all__ = [
+    "ModelRoutingMetadata",
+    "LoadBalanceStrategy",
+    "VALID_LOAD_BALANCE_STRATEGIES",
+]
 
 # Type alias for load balance strategies
 LoadBalanceStrategy = Literal["round_robin", "least_connections", "random", "weighted"]

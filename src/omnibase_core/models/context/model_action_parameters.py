@@ -32,8 +32,10 @@ __all__ = ["ModelActionParameters"]
 
 
 @allow_dict_str_any(
-    "Extensions field intentionally allows flexible dict for domain-specific "
-    "parameters that cannot be pre-defined."
+    "Extensions field intentionally allows flexible dict[str, Any] for domain-specific "
+    "parameters that cannot be pre-defined. The extensions dict serves as an escape hatch "
+    "for custom configuration that doesn't fit the typed fields above. All common parameters "
+    "should use explicit typed fields; extensions is for truly dynamic needs."
 )
 class ModelActionParameters(BaseModel):
     """Typed parameters for action execution.
@@ -137,9 +139,14 @@ class ModelActionParameters(BaseModel):
         default=True,
         description="Whether to validate output after execution",
     )
-    # Note: Using dict[str, Any] instead of dict[str, ModelSchemaValue] to avoid
-    # circular import. The extensions field is intentionally flexible for
-    # domain-specific needs. Common parameters should be explicit typed fields above.
+    # ARCHITECTURE DECISION: Using dict[str, Any] for extensions field.
+    #
+    # Rationale:
+    # 1. Avoids circular import with dict[str, ModelSchemaValue]
+    # 2. Provides escape hatch for truly dynamic domain-specific needs
+    # 3. Common/recurring parameters should be promoted to explicit typed fields
+    #
+    # See also: @allow_dict_str_any decorator justification above.
     #
     # IMPORTANT - Mutable Dict Limitation:
     # While this model has frozen=True (Pydantic ConfigDict), the dict contents can
