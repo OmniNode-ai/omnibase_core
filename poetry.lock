@@ -4242,4 +4242,4 @@ full = ["psutil"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "b13e5e994974e56197a0acf99bcf346c609a76fc0eaf002d1772c411f038f689"
+content-hash = "3a33ea7842463a861c773747f3a4c4ace287768cd03da14a990ff2cb0fcf3460"

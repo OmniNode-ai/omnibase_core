@@ -26,8 +26,14 @@ DI Container Registration:
     The following example shows the complete integration pattern for
     registering an HTTP client with the ONEX DI container.
 
-    Step 1: Create an adapter implementation
-        # adapters/http_adapter.py
+    IMPORTANT: Adapter implementations belong in omnibase_infra, NOT omnibase_core.
+    omnibase_core defines protocols (interfaces) only. Concrete implementations
+    that depend on external libraries (aiohttp, httpx, etc.) must live in the
+    infrastructure layer to maintain clean architecture boundaries.
+
+    Step 1: Create an adapter implementation (in omnibase_infra)
+        # NOTE: This adapter implementation belongs in omnibase_infra, not omnibase_core.
+        # Example location: omnibase_infra/adapters/http/aiohttp_client_adapter.py
         import aiohttp
         from typing import Any
         from omnibase_core.protocols.http import (
@@ -80,7 +86,8 @@ DI Container Registration:
         from omnibase_core.models.container.model_onex_container import (
             ModelONEXContainer,
         )
-        from myproject.adapters.http_adapter import AioHttpClientAdapter
+        # Import adapter from omnibase_infra (NOT from omnibase_core):
+        from omnibase_infra.adapters.http import AioHttpClientAdapter
 
         async def setup_container() -> ModelONEXContainer:
             container = ModelONEXContainer()

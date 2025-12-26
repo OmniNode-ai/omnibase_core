@@ -24,6 +24,11 @@ Migration Guide:
     This section helps migrate existing code from direct HTTP library usage
     to protocol-based dependency injection.
 
+    IMPORTANT: Adapter implementations belong in omnibase_infra, NOT omnibase_core.
+    omnibase_core defines protocols (interfaces) only. Concrete implementations
+    that depend on external libraries (aiohttp, httpx, etc.) must live in the
+    infrastructure layer to maintain clean architecture boundaries.
+
     Step 1: Identify direct HTTP library imports
         # Before - tight coupling to aiohttp
         import aiohttp
@@ -34,8 +39,9 @@ Migration Guide:
                     async with session.get(url) as response:
                         return await response.json()
 
-    Step 2: Create an adapter implementing ProtocolHttpClient
-        # adapter.py
+    Step 2: Create an adapter implementing ProtocolHttpClient (in omnibase_infra)
+        # NOTE: This adapter implementation belongs in omnibase_infra, not omnibase_core.
+        # Example location: omnibase_infra/adapters/http/aiohttp_client_adapter.py
         import aiohttp
         from omnibase_core.protocols.http import (
             ProtocolHttpClient,
@@ -91,6 +97,9 @@ Migration Guide:
 
     Step 4: Wire up via DI container
         # In your application setup
+        # Import adapter from omnibase_infra (NOT from omnibase_core):
+        from omnibase_infra.adapters.http import AioHttpClientAdapter
+
         session = aiohttp.ClientSession()
         adapter = AioHttpClientAdapter(session)
         container.register_service("ProtocolHttpClient", adapter)
@@ -227,6 +236,16 @@ class ProtocolHttpClient(Protocol):
     Implementations can wrap aiohttp.ClientSession, httpx.AsyncClient,
     or other async HTTP libraries.
 
+    IMPORTANT - Architecture Boundary:
+        This protocol is defined in omnibase_core. Concrete implementations
+        (e.g., AioHttpClientAdapter, HttpxClientAdapter) belong in omnibase_infra,
+        NOT in omnibase_core. This maintains clean architecture separation:
+
+        - omnibase_core: Protocols (interfaces) only - no external dependencies
+        - omnibase_infra: Concrete implementations with external library dependencies
+
+        Example implementation location: omnibase_infra/adapters/http/
+
     This protocol enables dependency inversion - components depend on
     this protocol rather than concrete HTTP libraries, allowing:
     - Easier unit testing with mock implementations
@@ -263,6 +282,12 @@ class ProtocolHttpClient(Protocol):
                 await adapter.close()  # If implementation supports it
 
     Example implementation wrapper for aiohttp:
+        # NOTE: This adapter implementation belongs in omnibase_infra, not omnibase_core.
+        # Example location: omnibase_infra/adapters/http/aiohttp_client_adapter.py
+        #
+        # omnibase_core defines protocols only. Concrete implementations that depend
+        # on external libraries (aiohttp, httpx, etc.) must live in omnibase_infra.
+
         class AioHttpClientAdapter:
             def __init__(self, session: aiohttp.ClientSession):
                 self._session = session
@@ -281,6 +306,9 @@ class ProtocolHttpClient(Protocol):
 
     Example with proper lifecycle:
         # Container registration (typical ONEX pattern)
+        # Import adapter from omnibase_infra (NOT from omnibase_core):
+        from omnibase_infra.adapters.http import AioHttpClientAdapter
+
         session = aiohttp.ClientSession()
         client = AioHttpClientAdapter(session)
         container.register_service("ProtocolHttpClient", client)

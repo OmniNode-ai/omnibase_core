@@ -46,8 +46,7 @@ dependencies = [
     "redis>=6.4.0,<7.0.0",
     "dependency-injector>=4.48.1,<5.0.0",
     "click>=8.1.0,<9.0.0",
-    "rich>=13.7.0,<14.0.0",
-    "aiohttp>=3.9.0,<4.0.0"
+    "rich>=13.7.0,<14.0.0"
 ]
 
 [project.urls]
@@ -96,7 +95,6 @@ dependency-injector = "^4.48.3"
 # CLI Dependencies
 click = "^8.3.1"
 rich = "^13.7.0"
-aiohttp = "^3.9.0"
 
 # Optional CLI Dependencies
 psutil = {version = "^7.1.3", optional = true}
