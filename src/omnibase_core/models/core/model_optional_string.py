@@ -52,9 +52,11 @@ class ModelOptionalString(BaseModel):
             >>> value = ModelOptionalString(value="hello")
             >>> if value:
             ...     print(f"Got: {value.value}")
+            Got: hello
 
             >>> empty = ModelOptionalString(value=None)
             >>> if not empty:
             ...     print("No value")
+            No value
         """
         return self.has_value()

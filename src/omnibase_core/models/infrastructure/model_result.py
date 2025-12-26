@@ -338,10 +338,12 @@ class ModelResult[T, E](
             >>> result = ModelResult.ok("data")
             >>> if result:
             ...     print(f"Got: {result.value}")
+            Got: data
 
             >>> error = ModelResult.err("failed")
             >>> if not error:
             ...     print(f"Error: {error.error}")
+            Error: failed
         """
         return self.success
 

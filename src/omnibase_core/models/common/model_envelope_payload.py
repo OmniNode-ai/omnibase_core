@@ -518,10 +518,12 @@ class ModelEnvelopePayload(BaseModel):
             >>> payload = ModelEnvelopePayload(event_type="test")
             >>> if payload:
             ...     print("Payload has content")
+            Payload has content
 
             >>> empty = ModelEnvelopePayload()
             >>> if not empty:
             ...     print("Payload is empty")
+            Payload is empty
         """
         return (
             self.event_type is not None

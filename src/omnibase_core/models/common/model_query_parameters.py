@@ -320,10 +320,12 @@ class ModelQueryParameters(BaseModel):
             >>> params = ModelQueryParameters(items={"page": 1})
             >>> if params:
             ...     print("Has parameters")
+            Has parameters
 
             >>> empty = ModelQueryParameters()
             >>> if not empty:
             ...     print("No parameters")
+            No parameters
         """
         return bool(self.items)
 

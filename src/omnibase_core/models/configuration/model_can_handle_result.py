@@ -34,5 +34,6 @@ class ModelCanHandleResult(BaseModel):
             >>> result = ModelCanHandleResult(can_handle=True)
             >>> if result:
             ...     print("Handler can process this content")
+            Handler can process this content
         """
         return self.can_handle
