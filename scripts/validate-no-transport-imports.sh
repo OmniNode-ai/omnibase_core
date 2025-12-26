@@ -53,8 +53,10 @@ FORBIDDEN_PACKAGES=(
 )
 
 # Build alternation pattern for grep
-# Word boundary behavior is enforced by the IMPORT_PATTERN regex structure below,
-# not by wrapping individual packages in \b...\b
+# Word boundary behavior is enforced by the IMPORT_PATTERN regex structure below:
+#   - For 'from X import': requires whitespace or '.' after package name via (\.|[[:space:]])
+#   - For 'import X': requires whitespace, '.', ',', or end-of-line via (\.|[[:space:]]|,|$)
+# This prevents false positives like 'aiohttp_helper' matching 'aiohttp'
 PATTERN=""
 for pkg in "${FORBIDDEN_PACKAGES[@]}"; do
     if [ -n "$PATTERN" ]; then
@@ -80,15 +82,29 @@ VIOLATIONS=$(grep -RnP "$IMPORT_PATTERN" "$CORE_SRC" --include="*.py" 2>/dev/nul
 
 # Filter out obvious false positives (comments, docstrings)
 #
+# ============================================================================
 # LIMITATION: TYPE_CHECKING block detection
-# This script does NOT detect imports inside TYPE_CHECKING blocks, which would be
-# acceptable since they don't create runtime dependencies. Proper detection would
-# require parsing Python AST, which is impractical in a shell script.
+# ============================================================================
+# This script cannot detect imports inside TYPE_CHECKING blocks because:
+#   - TYPE_CHECKING blocks span multiple lines (if TYPE_CHECKING: ... import ...)
+#   - Proper detection requires Python AST parsing, impractical in a shell script
+#   - See ADR-005 for architectural context on why TYPE_CHECKING imports are allowed
+#
+# TYPE_CHECKING imports are ALLOWED per ADR-005 because they:
+#   - Only execute during static type analysis (mypy, pyright)
+#   - Create NO runtime dependencies
+#   - Are guarded by: if TYPE_CHECKING: ... from aiohttp import ClientSession
 #
 # If this script flags an import that is inside a TYPE_CHECKING block:
-#   1. The import is likely acceptable (type-only, no runtime dependency)
-#   2. Manual review is required to confirm
-#   3. Consider adding the file to EXCLUDE_PATTERN if it's a legitimate type-only import
+#   1. VERIFY: Open the file and confirm the import is inside 'if TYPE_CHECKING:'
+#   2. CONFIRM: The import is for type annotations only (not runtime usage)
+#   3. EXCLUDE: Add the file path to EXCLUDE_PATTERN above (line ~75)
+#      Example: EXCLUDE_PATTERN="...|path/to/file.py"
+#   4. DOCUMENT: Add a comment in the file explaining the TYPE_CHECKING usage
+#
+# To manually check a flagged file:
+#   grep -B5 "from aiohttp" path/to/file.py  # Look for TYPE_CHECKING guard
+# ============================================================================
 #
 REAL_VIOLATIONS=""
 while IFS= read -r line; do
@@ -122,9 +138,12 @@ if [ -n "$REAL_VIOLATIONS" ]; then
     echo "Solutions:"
     echo "  1. Define a protocol in omnibase_core for the capability you need"
     echo "  2. Implement the protocol in an infrastructure package"
-    echo "  3. If this import is inside a TYPE_CHECKING block (type-only, no runtime dep):"
-    echo "     - Verify the import is guarded by 'if TYPE_CHECKING:'"
-    echo "     - Add the file to EXCLUDE_PATTERN in this script"
+    echo "  3. If this import is inside a TYPE_CHECKING block (allowed per ADR-005):"
+    echo "     a. VERIFY: Confirm the import is inside 'if TYPE_CHECKING:'"
+    echo "     b. CONFIRM: The import is for type annotations only (not runtime)"
+    echo "     c. EXCLUDE: Add the file path to EXCLUDE_PATTERN in this script"
+    echo "     d. DOCUMENT: Add a comment in the file explaining the usage"
+    echo "     See the LIMITATION comment in this script for details."
     exit 1
 fi
 

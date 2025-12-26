@@ -373,8 +373,8 @@ asyncpg, psycopg2, psycopg, aiomysql
 # Message queues
 pika, aio_pika, kombu, celery
 
-# gRPC
-grpc, grpcio
+# gRPC (import name is "grpc"; "grpcio" is the PyPI package name)
+grpc
 
 # WebSocket
 websockets, wsproto
@@ -388,7 +388,9 @@ The script excludes:
 - Documentation examples (lines containing "Example:")
 - `__pycache__` and compiled files
 
-**Note**: TYPE_CHECKING blocks are documented as allowed (see [Allowed Patterns](#allowed-patterns)), but the current script does not actively detect and exclude them. If a TYPE_CHECKING import is flagged, manual review is required to determine if it's a false positive.
+**Note**: TYPE_CHECKING blocks are documented as allowed (see [Allowed Patterns](#allowed-patterns)), but the current script does not detect imports inside TYPE_CHECKING blocks (this would require Python AST parsing). If a TYPE_CHECKING import is flagged:
+1. Verify the import is guarded by `if TYPE_CHECKING:` (acceptable - no runtime dependency)
+2. If confirmed as type-only, add the file to `EXCLUDE_PATTERN` in the validation script
 
 ---
 
