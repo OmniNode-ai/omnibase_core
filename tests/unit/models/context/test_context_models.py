@@ -17,6 +17,13 @@ from dataclasses import dataclass
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.enums import (
+    EnumAuthenticationMethod,
+    EnumCheckpointType,
+    EnumLikelihood,
+    EnumTokenType,
+    EnumTriggerEvent,
+)
 from omnibase_core.models.context import (
     ModelAuditMetadata,
     ModelAuthorizationContext,
@@ -365,7 +372,8 @@ class TestModelAuthorizationContextInstantiation:
         assert context.roles == ["admin", "operator"]
         assert context.permissions == ["read:nodes", "write:nodes", "execute:workflows"]
         assert context.scopes == ["openid", "profile", "api:full"]
-        assert context.token_type == "Bearer"
+        # token_type is now normalized to EnumTokenType
+        assert context.token_type == EnumTokenType.BEARER
         assert context.expiry == "2025-01-15T12:00:00Z"
         assert context.client_id == "client_app_123"
 
@@ -376,7 +384,8 @@ class TestModelAuthorizationContextInstantiation:
             token_type="Bearer",
         )
         assert context.roles == ["user"]
-        assert context.token_type == "Bearer"
+        # token_type is now normalized to EnumTokenType
+        assert context.token_type == EnumTokenType.BEARER
         assert context.permissions == []
         assert context.scopes == []
 
@@ -930,3 +939,327 @@ class TestContextModelsCommonBehavior:
         session_updated = session.model_copy(update={"locale": "fr-FR"})
         assert session_updated.session_id == "sess_123"
         assert session_updated.locale == "fr-FR"
+
+
+# =============================================================================
+# Enum Backward Compatibility Tests (OMN-1054)
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestModelAuthorizationContextEnumSupport:
+    """Tests for ModelAuthorizationContext enum support with backward compatibility."""
+
+    def test_token_type_accepts_enum_value(self) -> None:
+        """Test that token_type accepts EnumTokenType directly."""
+        context = ModelAuthorizationContext(
+            token_type=EnumTokenType.BEARER,
+        )
+        assert context.token_type == EnumTokenType.BEARER
+        assert isinstance(context.token_type, EnumTokenType)
+
+    def test_token_type_accepts_string_and_normalizes_to_enum(self) -> None:
+        """Test that token_type accepts string and normalizes to enum."""
+        context = ModelAuthorizationContext(
+            token_type="bearer",
+        )
+        assert context.token_type == EnumTokenType.BEARER
+        assert isinstance(context.token_type, EnumTokenType)
+
+    def test_token_type_accepts_uppercase_string(self) -> None:
+        """Test that token_type accepts uppercase string and normalizes."""
+        context = ModelAuthorizationContext(
+            token_type="BEARER",
+        )
+        assert context.token_type == EnumTokenType.BEARER
+
+    def test_token_type_keeps_unknown_string_for_backward_compat(self) -> None:
+        """Test that unknown strings are kept as-is for backward compatibility."""
+        context = ModelAuthorizationContext(
+            token_type="CustomToken",
+        )
+        # Unknown strings are kept as-is (original case preserved)
+        assert context.token_type == "CustomToken"
+        assert isinstance(context.token_type, str)
+
+    def test_token_type_none_allowed(self) -> None:
+        """Test that token_type accepts None."""
+        context = ModelAuthorizationContext(token_type=None)
+        assert context.token_type is None
+
+    def test_existing_bearer_string_still_works(self) -> None:
+        """Test backward compatibility: existing 'Bearer' string still works."""
+        # This is a common existing usage pattern
+        context = ModelAuthorizationContext(
+            roles=["admin"],
+            token_type="Bearer",
+        )
+        # Should normalize to enum
+        assert context.token_type == EnumTokenType.BEARER
+
+
+@pytest.mark.unit
+class TestModelSessionContextEnumSupport:
+    """Tests for ModelSessionContext enum support with backward compatibility."""
+
+    def test_authentication_method_accepts_enum_value(self) -> None:
+        """Test that authentication_method accepts EnumAuthenticationMethod directly."""
+        context = ModelSessionContext(
+            authentication_method=EnumAuthenticationMethod.OAUTH2,
+        )
+        assert context.authentication_method == EnumAuthenticationMethod.OAUTH2
+        assert isinstance(context.authentication_method, EnumAuthenticationMethod)
+
+    def test_authentication_method_accepts_string_and_normalizes(self) -> None:
+        """Test that authentication_method accepts string and normalizes to enum."""
+        context = ModelSessionContext(
+            authentication_method="oauth2",
+        )
+        assert context.authentication_method == EnumAuthenticationMethod.OAUTH2
+        assert isinstance(context.authentication_method, EnumAuthenticationMethod)
+
+    def test_authentication_method_accepts_saml_string(self) -> None:
+        """Test that authentication_method accepts 'saml' string."""
+        context = ModelSessionContext(
+            authentication_method="saml",
+        )
+        assert context.authentication_method == EnumAuthenticationMethod.SAML
+
+    def test_authentication_method_keeps_unknown_string(self) -> None:
+        """Test that unknown strings are kept for backward compatibility."""
+        context = ModelSessionContext(
+            authentication_method="custom_sso",
+        )
+        assert context.authentication_method == "custom_sso"
+        assert isinstance(context.authentication_method, str)
+
+    def test_authentication_method_none_allowed(self) -> None:
+        """Test that authentication_method accepts None."""
+        context = ModelSessionContext(authentication_method=None)
+        assert context.authentication_method is None
+
+    def test_existing_oauth2_string_still_works(self) -> None:
+        """Test backward compatibility: existing usage patterns still work."""
+        context = ModelSessionContext(
+            session_id="sess_123",
+            authentication_method="oauth2",
+        )
+        assert context.authentication_method == EnumAuthenticationMethod.OAUTH2
+
+
+@pytest.mark.unit
+class TestModelCheckpointMetadataEnumSupport:
+    """Tests for ModelCheckpointMetadata enum support with backward compatibility."""
+
+    def test_checkpoint_type_accepts_enum_value(self) -> None:
+        """Test that checkpoint_type accepts EnumCheckpointType directly."""
+        metadata = ModelCheckpointMetadata(
+            checkpoint_type=EnumCheckpointType.AUTOMATIC,
+        )
+        assert metadata.checkpoint_type == EnumCheckpointType.AUTOMATIC
+        assert isinstance(metadata.checkpoint_type, EnumCheckpointType)
+
+    def test_checkpoint_type_accepts_string_and_normalizes(self) -> None:
+        """Test that checkpoint_type accepts string and normalizes to enum."""
+        metadata = ModelCheckpointMetadata(
+            checkpoint_type="automatic",
+        )
+        assert metadata.checkpoint_type == EnumCheckpointType.AUTOMATIC
+
+    def test_checkpoint_type_manual_string(self) -> None:
+        """Test that checkpoint_type accepts 'manual' string."""
+        metadata = ModelCheckpointMetadata(
+            checkpoint_type="manual",
+        )
+        assert metadata.checkpoint_type == EnumCheckpointType.MANUAL
+
+    def test_checkpoint_type_keeps_unknown_string(self) -> None:
+        """Test that unknown strings are kept for backward compatibility."""
+        metadata = ModelCheckpointMetadata(
+            checkpoint_type="custom_checkpoint",
+        )
+        assert metadata.checkpoint_type == "custom_checkpoint"
+
+    def test_trigger_event_accepts_enum_value(self) -> None:
+        """Test that trigger_event accepts EnumTriggerEvent directly."""
+        metadata = ModelCheckpointMetadata(
+            trigger_event=EnumTriggerEvent.STAGE_COMPLETE,
+        )
+        assert metadata.trigger_event == EnumTriggerEvent.STAGE_COMPLETE
+        assert isinstance(metadata.trigger_event, EnumTriggerEvent)
+
+    def test_trigger_event_accepts_string_and_normalizes(self) -> None:
+        """Test that trigger_event accepts string and normalizes to enum."""
+        metadata = ModelCheckpointMetadata(
+            trigger_event="stage_complete",
+        )
+        assert metadata.trigger_event == EnumTriggerEvent.STAGE_COMPLETE
+
+    def test_trigger_event_error_string(self) -> None:
+        """Test that trigger_event accepts 'error' string."""
+        metadata = ModelCheckpointMetadata(
+            trigger_event="error",
+        )
+        assert metadata.trigger_event == EnumTriggerEvent.ERROR
+
+    def test_trigger_event_keeps_unknown_string(self) -> None:
+        """Test that unknown trigger events are kept for backward compatibility."""
+        metadata = ModelCheckpointMetadata(
+            trigger_event="custom_trigger",
+        )
+        assert metadata.trigger_event == "custom_trigger"
+
+    def test_both_fields_accept_none(self) -> None:
+        """Test that both fields accept None."""
+        metadata = ModelCheckpointMetadata(
+            checkpoint_type=None,
+            trigger_event=None,
+        )
+        assert metadata.checkpoint_type is None
+        assert metadata.trigger_event is None
+
+    def test_existing_string_usage_still_works(self) -> None:
+        """Test backward compatibility: existing usage patterns still work."""
+        metadata = ModelCheckpointMetadata(
+            checkpoint_type="automatic",
+            source_node="node_compute_transform",
+            trigger_event="stage_complete",
+            workflow_stage="processing",
+        )
+        assert metadata.checkpoint_type == EnumCheckpointType.AUTOMATIC
+        assert metadata.trigger_event == EnumTriggerEvent.STAGE_COMPLETE
+
+
+@pytest.mark.unit
+class TestModelDetectionMetadataEnumSupport:
+    """Tests for ModelDetectionMetadata enum support with backward compatibility."""
+
+    def test_false_positive_likelihood_accepts_enum_value(self) -> None:
+        """Test that false_positive_likelihood accepts EnumLikelihood directly."""
+        metadata = ModelDetectionMetadata(
+            false_positive_likelihood=EnumLikelihood.LOW,
+        )
+        assert metadata.false_positive_likelihood == EnumLikelihood.LOW
+        assert isinstance(metadata.false_positive_likelihood, EnumLikelihood)
+
+    def test_false_positive_likelihood_accepts_string_and_normalizes(self) -> None:
+        """Test that false_positive_likelihood accepts string and normalizes."""
+        metadata = ModelDetectionMetadata(
+            false_positive_likelihood="low",
+        )
+        assert metadata.false_positive_likelihood == EnumLikelihood.LOW
+
+    def test_false_positive_likelihood_medium_string(self) -> None:
+        """Test that false_positive_likelihood accepts 'medium' string."""
+        metadata = ModelDetectionMetadata(
+            false_positive_likelihood="medium",
+        )
+        assert metadata.false_positive_likelihood == EnumLikelihood.MEDIUM
+
+    def test_false_positive_likelihood_high_string(self) -> None:
+        """Test that false_positive_likelihood accepts 'high' string."""
+        metadata = ModelDetectionMetadata(
+            false_positive_likelihood="high",
+        )
+        assert metadata.false_positive_likelihood == EnumLikelihood.HIGH
+
+    def test_false_positive_likelihood_very_low_string(self) -> None:
+        """Test that false_positive_likelihood accepts 'very_low' string."""
+        metadata = ModelDetectionMetadata(
+            false_positive_likelihood="very_low",
+        )
+        assert metadata.false_positive_likelihood == EnumLikelihood.VERY_LOW
+
+    def test_false_positive_likelihood_keeps_unknown_string(self) -> None:
+        """Test that unknown strings are kept for backward compatibility."""
+        metadata = ModelDetectionMetadata(
+            false_positive_likelihood="negligible",
+        )
+        assert metadata.false_positive_likelihood == "negligible"
+        assert isinstance(metadata.false_positive_likelihood, str)
+
+    def test_false_positive_likelihood_none_allowed(self) -> None:
+        """Test that false_positive_likelihood accepts None."""
+        metadata = ModelDetectionMetadata(false_positive_likelihood=None)
+        assert metadata.false_positive_likelihood is None
+
+    def test_existing_string_usage_still_works(self) -> None:
+        """Test backward compatibility: existing usage patterns still work."""
+        metadata = ModelDetectionMetadata(
+            pattern_category="credential_exposure",
+            detection_source="regex_scanner",
+            rule_version="2.1.0",
+            false_positive_likelihood="low",
+            remediation_hint="Rotate exposed credentials immediately",
+        )
+        assert metadata.false_positive_likelihood == EnumLikelihood.LOW
+        assert metadata.pattern_category == "credential_exposure"
+
+
+@pytest.mark.unit
+class TestEnumSerializationRoundTrip:
+    """Tests for enum serialization and deserialization round-trip."""
+
+    def test_authorization_context_enum_serialization(self) -> None:
+        """Test that enum values serialize correctly."""
+        context = ModelAuthorizationContext(
+            token_type=EnumTokenType.JWT,
+        )
+        data = context.model_dump()
+        assert data["token_type"] == "jwt"
+
+        # Round-trip: recreate from serialized data
+        context2 = ModelAuthorizationContext.model_validate(data)
+        assert context2.token_type == EnumTokenType.JWT
+
+    def test_session_context_enum_serialization(self) -> None:
+        """Test that authentication_method enum serializes correctly."""
+        context = ModelSessionContext(
+            authentication_method=EnumAuthenticationMethod.SAML,
+        )
+        data = context.model_dump()
+        assert data["authentication_method"] == "saml"
+
+        # Round-trip
+        context2 = ModelSessionContext.model_validate(data)
+        assert context2.authentication_method == EnumAuthenticationMethod.SAML
+
+    def test_checkpoint_metadata_enum_serialization(self) -> None:
+        """Test that checkpoint enums serialize correctly."""
+        metadata = ModelCheckpointMetadata(
+            checkpoint_type=EnumCheckpointType.RECOVERY,
+            trigger_event=EnumTriggerEvent.ERROR,
+        )
+        data = metadata.model_dump()
+        assert data["checkpoint_type"] == "recovery"
+        assert data["trigger_event"] == "error"
+
+        # Round-trip
+        metadata2 = ModelCheckpointMetadata.model_validate(data)
+        assert metadata2.checkpoint_type == EnumCheckpointType.RECOVERY
+        assert metadata2.trigger_event == EnumTriggerEvent.ERROR
+
+    def test_detection_metadata_enum_serialization(self) -> None:
+        """Test that likelihood enum serializes correctly."""
+        metadata = ModelDetectionMetadata(
+            false_positive_likelihood=EnumLikelihood.VERY_HIGH,
+        )
+        data = metadata.model_dump()
+        assert data["false_positive_likelihood"] == "very_high"
+
+        # Round-trip
+        metadata2 = ModelDetectionMetadata.model_validate(data)
+        assert metadata2.false_positive_likelihood == EnumLikelihood.VERY_HIGH
+
+    def test_json_serialization_round_trip(self) -> None:
+        """Test that enum values survive JSON serialization round-trip."""
+        context = ModelAuthorizationContext(
+            roles=["admin"],
+            token_type=EnumTokenType.OAUTH2,
+        )
+        json_str = context.model_dump_json()
+        assert '"oauth2"' in json_str
+
+        # Round-trip from JSON
+        context2 = ModelAuthorizationContext.model_validate_json(json_str)
+        assert context2.token_type == EnumTokenType.OAUTH2

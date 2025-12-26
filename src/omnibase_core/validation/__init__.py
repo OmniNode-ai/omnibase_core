@@ -80,6 +80,18 @@ from .reserved_enum_validator import RESERVED_EXECUTION_MODES, validate_executio
 from .types import validate_union_usage_directory, validate_union_usage_file
 from .validation_utils import ModelProtocolInfo
 
+# Import common validators (OMN-1054)
+from .validators import (
+    BCP47Locale,
+    Duration,
+    SemanticVersion,
+    UUID,
+    validate_bcp47_locale,
+    validate_duration,
+    validate_semantic_version,
+    validate_uuid,
+)
+
 # Import workflow linter
 from .workflow_linter import WorkflowLinter
 from .workflow_validator import (
@@ -197,4 +209,15 @@ __all__ = [
     # while validate_execution_mode_string takes str (for YAML/config parsing)
     "RESERVED_EXECUTION_MODES",
     "validate_execution_mode",
+    # Common validators (OMN-1054)
+    # Validator functions
+    "validate_duration",
+    "validate_bcp47_locale",
+    "validate_uuid",
+    "validate_semantic_version",
+    # Pydantic Annotated types
+    "Duration",
+    "BCP47Locale",
+    "UUID",
+    "SemanticVersion",
 ]

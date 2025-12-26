@@ -239,6 +239,14 @@ from .enum_version_status import EnumVersionStatus
 from .enum_workflow_coordination import EnumFailureRecoveryStrategy
 from .enum_workflow_dependency_type import EnumWorkflowDependencyType
 
+# Checkpoint-related enums
+from .enum_checkpoint_type import EnumCheckpointType
+
+# Token and authentication context enums (OMN-1054)
+from .enum_token_type import EnumTokenType
+from .enum_trigger_event import EnumTriggerEvent
+from .enum_likelihood import EnumLikelihood
+
 # NOTE: ModelEnumStatusMigrator is defined in models.core.model_status_migrator
 # It was moved from enums to eliminate circular imports
 # Users should import it directly: from omnibase_core.models.core.model_status_migrator import ModelEnumStatusMigrator
@@ -416,6 +424,12 @@ __all__ = [
     "EnumHeaderTransformationType",
     "EnumQueryParameterTransformationType",
     "EnumResponseHeaderTransformationType",
+    # Checkpoint domain
+    "EnumCheckpointType",
+    # Token and authentication context domain (OMN-1054)
+    "EnumTokenType",
+    "EnumTriggerEvent",
+    "EnumLikelihood",
     # NOTE: Removed from __all__ due to missing module files or circular imports:
     # - "EnumRegistryType" (module doesn't exist)
     # - "ModelServiceModeEnum" (replaced with correct "EnumServiceMode")

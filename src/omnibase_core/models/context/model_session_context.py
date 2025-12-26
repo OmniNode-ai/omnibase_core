@@ -20,6 +20,8 @@ import ipaddress
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.enums import EnumAuthenticationMethod
+
 __all__ = ["ModelSessionContext"]
 
 
@@ -88,10 +90,39 @@ class ModelSessionContext(BaseModel):
         default=None,
         description="User locale (e.g., en-US)",
     )
-    authentication_method: str | None = Field(
+    authentication_method: EnumAuthenticationMethod | str | None = Field(
         default=None,
-        description="Authentication method used (e.g., oauth2, saml, basic)",
+        description=(
+            "Authentication method used (e.g., oauth2, saml, basic). "
+            "Accepts EnumAuthenticationMethod or string."
+        ),
     )
+
+    @field_validator("authentication_method", mode="before")
+    @classmethod
+    def normalize_authentication_method(
+        cls, v: EnumAuthenticationMethod | str | None
+    ) -> EnumAuthenticationMethod | str | None:
+        """Accept both enum and string values for backward compatibility.
+
+        Args:
+            v: The authentication method value, either as EnumAuthenticationMethod,
+               string, or None.
+
+        Returns:
+            The normalized value - EnumAuthenticationMethod if valid enum value,
+            else the original string for backward compatibility.
+        """
+        if v is None:
+            return None
+        if isinstance(v, EnumAuthenticationMethod):
+            return v
+        # Try to convert string to enum (v must be str at this point)
+        try:
+            return EnumAuthenticationMethod(v.lower())
+        except ValueError:
+            # Keep as string if not a valid enum value (backward compat)
+            return v
 
     @field_validator("client_ip", mode="before")
     @classmethod

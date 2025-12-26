@@ -1,0 +1,199 @@
+# SPDX-FileCopyrightText: 2025 OmniNode Team
+# SPDX-License-Identifier: Apache-2.0
+"""
+Metrics context model for observability and distributed tracing.
+
+This module provides ModelMetricsContext, a typed model for observability
+metadata that replaces untyped dict[str, str] fields. It captures distributed
+tracing information following the W3C Trace Context standard.
+
+Thread Safety:
+    ModelMetricsContext is immutable (frozen=True) after creation, making it
+    thread-safe for concurrent read access from multiple threads or async tasks.
+
+See Also:
+    - omnibase_core.models.context.model_session_context: Session context
+    - omnibase_core.models.context.model_audit_metadata: Audit trail metadata
+    - W3C Trace Context: https://www.w3.org/TR/trace-context/
+"""
+
+import re
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+__all__ = ["ModelMetricsContext"]
+
+# W3C Trace Context format patterns
+# trace_id: 32 lowercase hex characters (128 bits)
+# span_id: 16 lowercase hex characters (64 bits)
+_TRACE_ID_PATTERN = re.compile(r"^[0-9a-f]{32}$")
+_SPAN_ID_PATTERN = re.compile(r"^[0-9a-f]{16}$")
+
+
+class ModelMetricsContext(BaseModel):
+    """Context model for observability and distributed tracing metadata.
+
+    Supports W3C Trace Context standard for distributed tracing. All fields
+    are optional as metrics context may be partially populated depending on
+    the observability infrastructure and sampling decisions.
+
+    Attributes:
+        trace_id: Distributed trace ID in W3C Trace Context format (32 lowercase
+            hex characters representing 128 bits). Identifies a distributed trace
+            across multiple services.
+        span_id: Current span ID (16 lowercase hex characters representing 64 bits).
+            Identifies a single operation within a trace.
+        parent_span_id: Parent span ID for establishing hierarchy in the trace tree.
+            None for root spans.
+        sampling_rate: Sampling rate between 0.0 and 1.0. Determines the probability
+            that a trace is recorded. None indicates default sampling behavior.
+        service_name: Name of the originating service (e.g., "onex-gateway",
+            "compute-service"). Used for service map visualization.
+        service_version: Version of the service in semver format (e.g., "1.2.3").
+            Useful for correlating behavior changes with deployments.
+        environment: Deployment environment identifier (e.g., "dev", "staging",
+            "prod"). Enables filtering traces by environment.
+
+    Thread Safety:
+        This model is frozen and immutable after creation.
+        Safe for concurrent read access across threads.
+
+    Example:
+        >>> from omnibase_core.models.context import ModelMetricsContext
+        >>>
+        >>> ctx = ModelMetricsContext(
+        ...     trace_id="0af7651916cd43dd8448eb211c80319c",
+        ...     span_id="b7ad6b7169203331",
+        ...     sampling_rate=0.1,
+        ...     service_name="onex-gateway",
+        ...     service_version="1.2.3",
+        ...     environment="prod",
+        ... )
+        >>> ctx.is_sampled()
+        True
+        >>> ctx.has_parent()
+        False
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
+
+    trace_id: str | None = Field(
+        default=None,
+        description="Distributed trace ID (W3C Trace Context format: 32 hex chars)",
+    )
+    span_id: str | None = Field(
+        default=None,
+        description="Current span ID (16 hex chars)",
+    )
+    parent_span_id: str | None = Field(
+        default=None,
+        description="Parent span ID for hierarchy",
+    )
+    sampling_rate: float | None = Field(
+        default=None,
+        description="Sampling rate (0.0-1.0)",
+    )
+    service_name: str | None = Field(
+        default=None,
+        description="Originating service name",
+    )
+    service_version: str | None = Field(
+        default=None,
+        description="Service version (semver)",
+    )
+    environment: str | None = Field(
+        default=None,
+        description="Deployment environment (dev, staging, prod)",
+    )
+
+    @field_validator("trace_id", mode="before")
+    @classmethod
+    def validate_trace_id(cls, value: str | None) -> str | None:
+        """Validate trace_id is in W3C Trace Context format (32 hex chars).
+
+        Args:
+            value: The trace ID string to validate, or None.
+
+        Returns:
+            The validated trace ID string (lowercase), or None if input is None.
+
+        Raises:
+            ValueError: If the value is not a valid W3C trace ID format.
+        """
+        if value is None:
+            return None
+        # Normalize to lowercase for comparison
+        normalized = value.lower()
+        if not _TRACE_ID_PATTERN.match(normalized):
+            raise ValueError(
+                f"Invalid trace_id '{value}': must be 32 lowercase hex characters "
+                "(W3C Trace Context format)"
+            )
+        return normalized
+
+    @field_validator("span_id", "parent_span_id", mode="before")
+    @classmethod
+    def validate_span_id(cls, value: str | None) -> str | None:
+        """Validate span_id/parent_span_id is 16 hex characters.
+
+        Args:
+            value: The span ID string to validate, or None.
+
+        Returns:
+            The validated span ID string (lowercase), or None if input is None.
+
+        Raises:
+            ValueError: If the value is not a valid span ID format.
+        """
+        if value is None:
+            return None
+        # Normalize to lowercase for comparison
+        normalized = value.lower()
+        if not _SPAN_ID_PATTERN.match(normalized):
+            raise ValueError(
+                f"Invalid span_id '{value}': must be 16 lowercase hex characters"
+            )
+        return normalized
+
+    @field_validator("sampling_rate", mode="before")
+    @classmethod
+    def validate_sampling_rate(cls, value: float | None) -> float | None:
+        """Validate sampling_rate is between 0.0 and 1.0.
+
+        Args:
+            value: The sampling rate to validate, or None.
+
+        Returns:
+            The validated sampling rate, or None if input is None.
+
+        Raises:
+            ValueError: If the value is not between 0.0 and 1.0 inclusive.
+        """
+        if value is None:
+            return None
+        if not 0.0 <= value <= 1.0:
+            raise ValueError(
+                f"Invalid sampling_rate {value}: must be between 0.0 and 1.0 inclusive"
+            )
+        return value
+
+    def is_sampled(self) -> bool:
+        """Check if this context should be sampled for recording.
+
+        Returns True if sampling_rate is None (default sampling) or if
+        sampling_rate is greater than 0.
+
+        Returns:
+            True if the trace should be sampled, False otherwise.
+        """
+        if self.sampling_rate is None:
+            return True
+        return self.sampling_rate > 0.0
+
+    def has_parent(self) -> bool:
+        """Check if this span has a parent span.
+
+        Returns:
+            True if parent_span_id is set, False otherwise.
+        """
+        return self.parent_span_id is not None

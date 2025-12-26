@@ -20,6 +20,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.enums import EnumTokenType
+
 __all__ = ["ModelAuthorizationContext"]
 
 
@@ -74,10 +76,35 @@ class ModelAuthorizationContext(BaseModel):
         default_factory=list,
         description="OAuth scopes",
     )
-    token_type: str | None = Field(
+    token_type: EnumTokenType | str | None = Field(
         default=None,
-        description="Token type (e.g., Bearer)",
+        description="Token type (e.g., Bearer, API, JWT). Accepts EnumTokenType or string.",
     )
+
+    @field_validator("token_type", mode="before")
+    @classmethod
+    def normalize_token_type(
+        cls, v: EnumTokenType | str | None
+    ) -> EnumTokenType | str | None:
+        """Accept both enum and string values for backward compatibility.
+
+        Args:
+            v: The token type value, either as EnumTokenType, string, or None.
+
+        Returns:
+            The normalized value - EnumTokenType if valid enum value, else the
+            original string for backward compatibility.
+        """
+        if v is None:
+            return None
+        if isinstance(v, EnumTokenType):
+            return v
+        # Try to convert string to enum (v must be str at this point)
+        try:
+            return EnumTokenType(v.lower())
+        except ValueError:
+            # Keep as string if not a valid enum value (backward compat)
+            return v
     expiry: str | None = Field(
         default=None,
         description="Token expiry timestamp",

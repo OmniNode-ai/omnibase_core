@@ -16,7 +16,9 @@ See Also:
     - omnibase_core.models.context.model_audit_metadata: Audit metadata
 """
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from omnibase_core.enums import EnumLikelihood
 
 __all__ = ["ModelDetectionMetadata"]
 
@@ -71,11 +73,39 @@ class ModelDetectionMetadata(BaseModel):
         default=None,
         description="Detection rule version",
     )
-    false_positive_likelihood: str | None = Field(
+    false_positive_likelihood: EnumLikelihood | str | None = Field(
         default=None,
-        description="FP likelihood (low/medium/high)",
+        description=(
+            "FP likelihood (e.g., low, medium, high, very_low, very_high). "
+            "Accepts EnumLikelihood or string."
+        ),
     )
     remediation_hint: str | None = Field(
         default=None,
         description="Suggested remediation",
     )
+
+    @field_validator("false_positive_likelihood", mode="before")
+    @classmethod
+    def normalize_false_positive_likelihood(
+        cls, v: EnumLikelihood | str | None
+    ) -> EnumLikelihood | str | None:
+        """Accept both enum and string values for backward compatibility.
+
+        Args:
+            v: The likelihood value, either as EnumLikelihood, string, or None.
+
+        Returns:
+            The normalized value - EnumLikelihood if valid enum value,
+            else the original string for backward compatibility.
+        """
+        if v is None:
+            return None
+        if isinstance(v, EnumLikelihood):
+            return v
+        # Try to convert string to enum (v must be str at this point)
+        try:
+            return EnumLikelihood(v.lower())
+        except ValueError:
+            # Keep as string if not a valid enum value (backward compat)
+            return v
