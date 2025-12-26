@@ -49,6 +49,9 @@ from .model_onex_version import ModelOnexVersionInfo
 from .model_protocol_metadata import ModelGenericMetadata
 from .model_result_accessor import ModelResultAccessor
 
+# Storage checkpoint metadata pattern
+from .model_storage_checkpoint_metadata import ModelStorageCheckpointMetadata
+
 # Tool integration models
 from .model_tool_integration import ModelToolIntegration
 from .model_tool_integration_summary import ModelToolIntegrationSummary
@@ -118,6 +121,8 @@ except ImportError:
     _WORKFLOW_MODELS_AVAILABLE = False
 
 __all__ = [
+    # Storage checkpoint metadata pattern
+    "ModelStorageCheckpointMetadata",
     # Configuration base classes
     "ModelConfigurationBase",
     "ModelTypedConfiguration",

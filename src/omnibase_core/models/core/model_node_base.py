@@ -11,6 +11,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.models.context import ModelNodeInitMetadata
 from omnibase_core.models.core.model_container_reference import ModelContainerReference
 from omnibase_core.models.core.model_contract_content import ModelContractContent
 from omnibase_core.models.primitives.model_semver import ModelSemVer
@@ -39,9 +40,9 @@ class ModelNodeBase(BaseModel):
         default=..., description="Node classification type"
     )
     event_bus: object = Field(default=None, description="Event bus instance")
-    initialization_metadata: dict[str, str] = Field(
-        default_factory=dict,
-        description="Initialization metadata",
+    initialization_metadata: ModelNodeInitMetadata | None = Field(
+        default=None,
+        description="Typed initialization metadata for the node",
     )
 
     model_config = ConfigDict(
