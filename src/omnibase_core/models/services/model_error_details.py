@@ -26,10 +26,36 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.context import (
+    ModelOperationalContext,
+    ModelResourceContext,
+    ModelRetryContext,
+    ModelTraceContext,
+    ModelUserContext,
+    ModelValidationContext,
+)
 
 # Type variable for generic context data
 # Bound to BaseModel to ensure type safety for typed context models
 TContext = TypeVar("TContext", bound=BaseModel)
+
+# Type alias for common error context types
+# This union covers the most frequently used context models in error handling
+ErrorContext = (
+    ModelTraceContext
+    | ModelOperationalContext
+    | ModelRetryContext
+    | ModelResourceContext
+    | ModelUserContext
+    | ModelValidationContext
+    | dict[str, ModelSchemaValue]
+)
+
+__all__ = [
+    "ModelErrorDetails",
+    "TContext",
+    "ErrorContext",
+]
 
 
 class ModelErrorDetails(BaseModel, Generic[TContext]):
@@ -70,6 +96,7 @@ class ModelErrorDetails(BaseModel, Generic[TContext]):
         timestamp: When the error occurred (defaults to current UTC time).
         stack_trace: Optional list of stack trace lines for debugging.
         inner_errors: Optional list of nested ModelErrorDetails for error chains.
+            Recommended max depth: 5 levels to prevent excessive nesting and memory issues.
         request_id: Optional UUID for request correlation.
         user_id: Optional UUID of the user who triggered the error.
         session_id: Optional UUID for session tracking.
@@ -183,7 +210,11 @@ class ModelErrorDetails(BaseModel, Generic[TContext]):
     # ValidationContext) can contain a network error (with TraceContext) as an inner error.
     inner_errors: list[ModelErrorDetails] | None = Field(  # type: ignore[type-arg]
         default=None,
-        description="Nested errors",
+        description=(
+            "Nested errors for error chaining. Recommended max depth: 5 levels "
+            "to prevent excessive nesting and memory issues. Each inner error "
+            "can have its own context type."
+        ),
     )
 
     # Contextual data

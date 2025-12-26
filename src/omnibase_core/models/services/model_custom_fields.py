@@ -64,7 +64,7 @@ class ModelCustomFields(BaseModel):
         description="Allow fields not in definitions",
     )
 
-    model_config = ConfigDict()
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     @field_validator("field_values")
     @classmethod

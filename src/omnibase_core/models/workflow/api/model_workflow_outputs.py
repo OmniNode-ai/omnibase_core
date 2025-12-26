@@ -148,9 +148,13 @@ class ModelWorkflowOutputs(BaseModel):
         if self.data:
             result["data"] = {key: value.to_value() for key, value in self.data.items()}
 
-        # Add custom outputs if present
+        # Add custom outputs if present (convert ModelSchemaValue to raw values)
         if self.custom_outputs:
-            result.update(self.custom_outputs.field_values)
+            for key, value in self.custom_outputs.field_values.items():
+                if isinstance(value, ModelSchemaValue):
+                    result[key] = value.to_value()
+                else:
+                    result[key] = value
 
         # Cast to TypedDict - the structure matches TypedDictWorkflowOutputsDict
         return TypedDictWorkflowOutputsDict(**result)  # type: ignore[typeddict-item, no-any-return]
