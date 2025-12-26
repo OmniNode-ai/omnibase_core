@@ -1089,7 +1089,7 @@ class TestModelReducerOutputEdgeCases:
         Validates that the model correctly stores and preserves multiple intents
         in their specified order, maintaining intent chain integrity."""
         intent1 = ModelIntent(
-            intent_type="log",
+            intent_type="log_event",
             target="service1",
             payload=ModelPayloadLogEvent(
                 level="INFO",
@@ -1319,7 +1319,7 @@ class TestModelReducerOutputThreadSafety:
         Validates that the intents tuple can be safely accessed and iterated
         from multiple threads without race conditions."""
         intent1 = ModelIntent(
-            intent_type="log",
+            intent_type="log_event",
             target="service1",
             payload=ModelPayloadLogEvent(
                 level="INFO",
@@ -1677,7 +1677,7 @@ class TestModelReducerOutputImmutability:
 
         Validates that the tuple structure prevents modification attempts."""
         intent1 = ModelIntent(
-            intent_type="log",
+            intent_type="log_event",
             target="service1",
             payload=ModelPayloadLogEvent(
                 level="INFO",
@@ -1715,7 +1715,7 @@ class TestModelReducerOutputImmutability:
 
         Validates deep immutability for intent objects."""
         intent = ModelIntent(
-            intent_type="log",
+            intent_type="log_event",
             target="service",
             payload=ModelPayloadLogEvent(
                 level="INFO",

@@ -53,11 +53,15 @@ The codebase uses **intentionally different discriminator field names** across p
 
 | Payload Category | Discriminator Field | Pattern | Union Type |
 |------------------|---------------------|---------|------------|
-| **Reducer Intent Payloads** | `intent_type` | `Literal["..."]` | `ModelIntentPayloadUnion` |
+| **Reducer Intent Payloads** | `intent_type` | `Literal["..."]` | `ProtocolIntentPayload` (Protocol-based) |
 | **Runtime Directive Payloads** | `kind` | `Literal["..."]` | `ModelDirectivePayload` |
 | **Action Payloads** | `action_type` | `ModelNodeActionType` | `SpecificActionPayload` |
 | **Core Registration Intents** | `kind` | `Literal["..."]` | `ModelCoreRegistrationIntent` |
 | **Event Payloads** | `event_type` | (varies) | `ModelEventPayloadUnion` |
+
+> **Note**: Reducer Intent Payloads use a Protocol-based approach (`ProtocolIntentPayload`) rather than
+> a discriminated union, enabling open extensibility for plugins. Payload classes still define an
+> `intent_type` attribute for routing, but dispatch is structural (duck typing) rather than union-based.
 
 ### Rationale for Different Names
 
@@ -101,7 +105,9 @@ class ModelScheduleEffectPayload(ModelDirectivePayloadBase):
 
 #### 3. `action_type` (Action Payloads)
 
-**Location**: `omnibase_core/models/core/model_action_payload*.py`
+**Locations**:
+- Base payloads: `omnibase_core/models/core/model_action_payload*.py`
+- Type alias and factory: `omnibase_core/models/orchestrator/payloads/model_action_typed_payload.py`
 
 **Rationale**:
 - Uses rich `ModelNodeActionType` for **semantic categorization** (not Literal)
@@ -110,8 +116,9 @@ class ModelScheduleEffectPayload(ModelDirectivePayloadBase):
 - Matches the semantic action being performed, not just a type tag
 
 **Note**: Action payloads do not use the discriminated union pattern. Instead, they use
-a factory function (`create_specific_action_payload`) that selects the payload type based
-on the action's semantic category.
+a factory function (`create_specific_action_payload` in `model_action_payload_types.py` or
+`create_action_payload` in `model_action_typed_payload.py`) that selects the payload type
+based on the action's semantic category.
 
 ### Performance Requirements
 
@@ -320,12 +327,54 @@ class ModelEventPublishIntent(BaseModel):
 
 **Discriminator Field**: `intent_type` (existing)
 
-**Payload Field**: `payload` -> `ExtensionIntentPayload | ModelGenericIntentPayload`
+**Payload Field**: `payload` -> `ProtocolIntentPayload` (Protocol-based)
 
 > **See**: [Discriminator Naming Conventions](#discriminator-naming-conventions) for why
 > Extension Intent payloads use `intent_type` instead of `kind`.
 
-**Approach**:
+**Current Implementation** (Protocol-based):
+
+ModelIntent uses a Protocol-based approach (`ProtocolIntentPayload`) rather than a
+discriminated union, enabling open extensibility for plugins while maintaining type safety:
+
+```python
+from omnibase_core.models.reducer.payloads import ProtocolIntentPayload
+
+class ModelIntent(BaseModel):
+    intent_type: str  # Routing key (e.g., "log_event", "notify")
+    payload: ProtocolIntentPayload  # Protocol-typed payload
+```
+
+Payload classes define an `intent_type` attribute for routing, enabling structural
+pattern matching in Effect nodes:
+
+```python
+from omnibase_core.models.reducer.payloads import ModelPayloadLogEvent, ModelPayloadNotify
+
+# Create intent with typed payload
+intent = ModelIntent(
+    intent_type="log_event",
+    target="logging",
+    payload=ModelPayloadLogEvent(
+        level="INFO",
+        message="Operation completed",
+        context={"duration_ms": 125},
+    ),
+)
+
+# Structural pattern matching in Effect
+def handle_payload(payload: ProtocolIntentPayload) -> None:
+    match payload:
+        case ModelPayloadLogEvent():
+            log(payload.level, payload.message)
+        case ModelPayloadNotify():
+            notify(payload.channel, payload.message)
+```
+
+**Alternative Approach** (Discriminated Union - for closed sets):
+
+For scenarios requiring exhaustive handling guarantees, a discriminated union can be used:
+
 ```python
 from typing import Annotated, Literal
 from pydantic import Field
@@ -334,30 +383,11 @@ class ModelWebhookIntentPayload(BaseModel):
     intent_type: Literal["webhook.send"] = "webhook.send"
     url: str
     method: str = "POST"
-    headers: dict[str, str] = {}
-    body: dict[str, Any] = {}
-
-class ModelPluginExecutePayload(BaseModel):
-    intent_type: Literal["plugin.execute"] = "plugin.execute"
-    plugin_id: str
-    action: str
-    params: dict[str, Any] = {}
-
-class ModelGenericIntentPayload(BaseModel):
-    """Fallback for truly dynamic plugin payloads."""
-    intent_type: Literal["generic"] = "generic"
-    data: dict[str, Any]
 
 ExtensionIntentPayload = Annotated[
-    ModelWebhookIntentPayload
-    | ModelPluginExecutePayload
-    | ModelGenericIntentPayload,
+    ModelWebhookIntentPayload | ModelPluginExecutePayload,
     Field(discriminator="intent_type"),
 ]
-
-class ModelIntent(BaseModel):
-    intent_type: str
-    payload: ExtensionIntentPayload
 ```
 
 **Migration Path**: Deprecate raw `dict[str, Any]`, add adapter methods during transition.

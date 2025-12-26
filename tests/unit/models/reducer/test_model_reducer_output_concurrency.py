@@ -47,7 +47,7 @@ class TestModelReducerOutputThreadSafety:
         race conditions, data corruption, or access violations."""
         # Create a single instance with intents
         intent = ModelIntent(
-            intent_type="log",
+            intent_type="log_event",
             target="service",
             payload=ModelPayloadLogEvent(
                 level="INFO",

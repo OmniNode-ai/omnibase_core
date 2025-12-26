@@ -877,18 +877,38 @@ class TestNodeOrchestratorStateSerializationDeterminism:
         assert serialized_1["metrics"]["failed_count"] == 0
         assert len(serialized_1["completed_steps"]) == 3
 
-    def test_workflow_definition_hash_is_deterministic(
+    def test_workflow_definition_hash_is_deterministic_across_serialization(
         self,
         simple_workflow_definition: ModelWorkflowDefinition,
     ):
-        """Test that workflow definition hash is deterministic."""
-        # Compute hash multiple times
-        hash_1 = simple_workflow_definition.compute_workflow_hash()
-        hash_2 = simple_workflow_definition.compute_workflow_hash()
-        hash_3 = simple_workflow_definition.compute_workflow_hash()
+        """Test that workflow definition hash is deterministic across serialization.
 
-        # All hashes should be identical
-        assert hash_1 == hash_2 == hash_3
+        This test verifies that the hash is based on content, not object identity,
+        by serializing and deserializing the workflow definition and comparing hashes.
+        This catches issues like:
+        - Hash based on object id() or memory address
+        - Non-deterministic serialization order
+        - Timestamp or random salt in hash computation
+        """
+        # Get hash of original object
+        original_hash = simple_workflow_definition.compute_workflow_hash()
+
+        # Serialize and deserialize to create a NEW object with same content
+        serialized = simple_workflow_definition.model_dump()
+        restored_definition = ModelWorkflowDefinition.model_validate(serialized)
+
+        # The restored object should produce the same hash
+        restored_hash = restored_definition.compute_workflow_hash()
+
+        assert original_hash == restored_hash, (
+            f"Hash should be deterministic across serialization. "
+            f"Original: {original_hash}, Restored: {restored_hash}"
+        )
+
+        # Also verify we're actually testing different objects (not cached)
+        assert simple_workflow_definition is not restored_definition, (
+            "Test must compare different object instances"
+        )
 
     def test_equivalent_workflow_definitions_have_same_hash(
         self,

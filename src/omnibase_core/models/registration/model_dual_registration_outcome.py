@@ -236,14 +236,17 @@ class ModelDualRegistrationOutcome(BaseModel):
         both_failed = not self.postgres_applied and not self.consul_applied
 
         if self.status == "success" and not both_succeeded:
+            # error-ok: Pydantic validator requires ValueError
             raise ValueError(
                 "status='success' requires both postgres_applied and consul_applied to be True"
             )
         if self.status == "failed" and not both_failed:
+            # error-ok: Pydantic validator requires ValueError
             raise ValueError(
                 "status='failed' requires both postgres_applied and consul_applied to be False"
             )
         if self.status == "partial" and (both_succeeded or both_failed):
+            # error-ok: Pydantic validator requires ValueError
             raise ValueError(
                 "status='partial' requires exactly one operation to succeed"
             )

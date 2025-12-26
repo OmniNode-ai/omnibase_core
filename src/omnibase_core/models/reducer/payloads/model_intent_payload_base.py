@@ -37,7 +37,7 @@ Example:
     ...     data: str
 
 See Also:
-    omnibase_core.models.reducer.payloads.model_intent_payload_union: Discriminated union type
+    omnibase_core.models.reducer.payloads.model_protocol_intent_payload: Protocol for intent payloads
     omnibase_core.models.reducer.model_intent: Extension intent model
     omnibase_core.nodes.NodeReducer: Reducer node implementation
     omnibase_core.nodes.NodeEffect: Effect node implementation
@@ -58,7 +58,7 @@ class ModelIntentPayloadBase(BaseModel):
 
     Subclassing Requirements:
         1. Define `intent_type: Literal["your.intent"] = "your.intent"` as discriminator
-        2. Add payload to ModelIntentPayloadUnion in model_intent_payload_union.py
+        2. Ensure payload implements ProtocolIntentPayload (see model_protocol_intent_payload.py)
         3. Update all Effect dispatch handlers for exhaustive matching
 
     Configuration:

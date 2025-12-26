@@ -28,7 +28,7 @@ Example:
 
 See Also:
     omnibase_core.models.reducer.payloads.ModelIntentPayloadBase: Base class
-    omnibase_core.models.reducer.payloads.model_intent_payload_union: Union type
+    omnibase_core.models.reducer.payloads.model_protocol_intent_payload: Protocol for intent payloads
 """
 
 from typing import Literal

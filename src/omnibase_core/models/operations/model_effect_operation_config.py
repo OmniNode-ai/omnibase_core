@@ -40,7 +40,6 @@ from omnibase_core.models.contracts.subcontracts.model_effect_circuit_breaker im
     ModelEffectCircuitBreaker,
 )
 from omnibase_core.models.contracts.subcontracts.model_effect_io_configs import (
-    EffectIOConfig,
     ModelDbIOConfig,
     ModelFilesystemIOConfig,
     ModelHttpIOConfig,
@@ -269,6 +268,7 @@ class ModelEffectOperationConfig(BaseModel):
             io_config = data.get("io_config")
             if io_config is None:
                 # io_config is required
+                # error-ok: Pydantic validator requires ValueError
                 raise ValueError("io_config is required")
         return data
 

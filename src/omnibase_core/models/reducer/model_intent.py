@@ -192,13 +192,15 @@ class ModelIntent(BaseModel):
         Validate that intent_type matches the payload's intent_type.
 
         This ensures consistency between the intent's routing type and the
-        payload's discriminator field.
+        payload's discriminator field. If they don't match, a warning is logged
+        but the model is still valid (to support extension use cases).
 
         Returns:
             Self: The validated model instance
 
-        Raises:
-            ValueError: If intent_type doesn't match payload.intent_type
+        Note:
+            This validator logs a warning if intent_type differs from
+            payload.intent_type but does not raise an error.
         """
         payload_intent_type = self.payload.intent_type
         if self.intent_type != payload_intent_type:

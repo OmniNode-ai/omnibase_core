@@ -59,7 +59,6 @@ assert isinstance(payload, ModelDataActionPayload)
 
 from typing import Any
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_workflow_execution import EnumActionType
 from omnibase_core.models.core.model_action_category import ModelActionCategory
 from omnibase_core.models.core.model_action_payload_types import (
@@ -103,7 +102,6 @@ from omnibase_core.models.core.model_transformation_action_payload import (
 from omnibase_core.models.core.model_validation_action_payload import (
     ModelValidationActionPayload,
 )
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 __all__ = [
     # Type alias for ModelAction.payload field
@@ -217,9 +215,6 @@ def create_action_payload(
 
     Returns:
         Appropriate SpecificActionPayload instance
-
-    Raises:
-        ModelOnexError: If the semantic action cannot be mapped to a payload type
 
     Example:
         >>> # Create a data payload for an EFFECT action

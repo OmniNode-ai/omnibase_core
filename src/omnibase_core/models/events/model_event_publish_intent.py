@@ -15,18 +15,22 @@ Example:
         TOPIC_EVENT_PUBLISH_INTENT,
         TOPIC_REGISTRATION_EVENTS,
     )
-    from omnibase_core.models.events.payloads import ModelNodeRegisteredEvent
+    from omnibase_core.enums.enum_node_kind import EnumNodeKind
+    from omnibase_core.models.events.model_node_registered_event import (
+        ModelNodeRegisteredEvent,
+    )
 
+    node_id = uuid4()
     payload = ModelNodeRegisteredEvent(
+        node_id=node_id,
         node_name="my_node",
-        runtime_id=uuid4(),
-        ...
+        node_type=EnumNodeKind.COMPUTE,
     )
     intent = ModelEventPublishIntent(
         correlation_id=uuid4(),
         created_by="my_reducer_v1_0_0",
         target_topic=TOPIC_REGISTRATION_EVENTS,
-        target_key=str(payload.runtime_id),
+        target_key=str(node_id),
         target_event_type="NODE_REGISTERED",
         target_event_payload=payload,
     )
@@ -72,15 +76,25 @@ class ModelEventPublishIntent(BaseModel):
         retry_policy: Optional retry configuration
 
     Example:
-        from omnibase_core.models.events.payloads import ModelNodeRegisteredEvent
+        from uuid import uuid4
+        from omnibase_core.enums.enum_node_kind import EnumNodeKind
+        from omnibase_core.models.events.model_node_registered_event import (
+            ModelNodeRegisteredEvent,
+        )
 
+        node_id = uuid4()
+        payload = ModelNodeRegisteredEvent(
+            node_id=node_id,
+            node_name="my_service",
+            node_type=EnumNodeKind.COMPUTE,
+        )
         intent = ModelEventPublishIntent(
             correlation_id=uuid4(),
             created_by="my_node_v1",
             target_topic="dev.runtime.node-registered.v1",
             target_key=str(node_id),
             target_event_type="NODE_REGISTERED",
-            target_event_payload=ModelNodeRegisteredEvent(...),
+            target_event_payload=payload,
         )
     """
 
@@ -227,13 +241,17 @@ def _rebuild_model() -> None:
                 "ModelRetryPolicy": ModelRetryPolicy,
             }
         )
-    except Exception as e:
+    except (TypeError, ValueError, AttributeError) as e:
+        # TypeError: Invalid type annotations or type parameters
+        # ValueError: Pydantic validation/schema issues
+        # AttributeError: Module attribute access issues during rebuild
         raise ModelOnexError(
             message=f"Failed to rebuild ModelEventPublishIntent: {e}",
             error_code=EnumCoreErrorCode.INITIALIZATION_FAILED,
             context={
                 "model": "ModelEventPublishIntent",
                 "error_type": type(e).__name__,
+                "error_details": str(e),
             },
         ) from e
 
@@ -243,17 +261,55 @@ def _rebuild_model() -> None:
 # Invoke _rebuild_model() automatically on module load to resolve
 # TYPE_CHECKING forward references. This ensures typed payload validation
 # works correctly without requiring manual intervention.
-try:
-    _rebuild_model()
-except Exception as _rebuild_error:
-    # If automatic rebuild fails (e.g., during early import phase),
-    # fall back to Pydantic's lazy resolution. Users can call
-    # _rebuild_model() explicitly after all dependencies are loaded.
-    import warnings
 
-    warnings.warn(
-        f"ModelEventPublishIntent: automatic forward reference rebuild failed: "
-        f"{type(_rebuild_error).__name__}: {_rebuild_error}. "
+try:
+    # Import ModelOnexError for specific exception handling
+    from omnibase_core.models.errors.model_onex_error import (
+        ModelOnexError as _ModelOnexError,
+    )
+
+    try:
+        _rebuild_model()
+    except _ModelOnexError as _rebuild_error:
+        # If automatic rebuild fails due to import or initialization issues,
+        # fall back to Pydantic's lazy resolution. Users can call
+        # _rebuild_model() explicitly after all dependencies are loaded.
+        import logging as _logging
+        import warnings as _warnings
+
+        # Extract error code and message safely
+        # ModelOnexError has error_code: EnumOnexErrorCode | str | None
+        # Use getattr with hasattr to handle enum or string values
+        _error_code = _rebuild_error.error_code
+        if _error_code is None:
+            _error_code_str = "UNKNOWN"
+        elif hasattr(_error_code, "value"):
+            _error_code_str = str(_error_code.value)  # type: ignore[union-attr]
+        else:
+            _error_code_str = str(_error_code)
+        _error_msg = _rebuild_error.message or str(_rebuild_error)
+
+        _logger = _logging.getLogger(__name__)
+        _logger.warning(
+            "ModelEventPublishIntent: automatic forward reference rebuild failed: "
+            "%s: %s. Call _rebuild_model() explicitly after all dependencies are loaded.",
+            _error_code_str,
+            _error_msg,
+        )
+        _warnings.warn(
+            f"ModelEventPublishIntent: automatic forward reference rebuild failed: "
+            f"{_error_code_str}: {_error_msg}. "
+            f"Call _rebuild_model() explicitly after all dependencies are loaded.",
+            UserWarning,
+            stacklevel=1,
+        )
+except ImportError as _import_error:
+    # Handle case where ModelOnexError itself fails to import (early bootstrap)
+    import warnings as _warnings
+
+    _warnings.warn(
+        f"ModelEventPublishIntent: automatic forward reference rebuild failed during bootstrap: "
+        f"{type(_import_error).__name__}: {_import_error}. "
         f"Call _rebuild_model() explicitly after all dependencies are loaded.",
         UserWarning,
         stacklevel=1,

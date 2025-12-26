@@ -96,12 +96,18 @@ class ModelAction(BaseModel):
         >>> from omnibase_core.enums.enum_workflow_execution import EnumActionType
         >>> from omnibase_core.models.orchestrator.payloads import ModelDataActionPayload
         >>> from omnibase_core.models.core.model_node_action_type import ModelNodeActionType
+        >>> from omnibase_core.models.core.model_predefined_categories import OPERATION
         >>>
         >>> action = ModelAction(
-        ...     action_type=EnumActionType.INVOKE,
-        ...     target_node_type="compute",
+        ...     action_type=EnumActionType.EFFECT,
+        ...     target_node_type="NodeEffect",
         ...     payload=ModelDataActionPayload(
-        ...         action_type=ModelNodeActionType(category="data", operation="process"),
+        ...         action_type=ModelNodeActionType(
+        ...             name="read",
+        ...             category=OPERATION,
+        ...             display_name="Read Data",
+        ...             description="Read data from storage",
+        ...         ),
         ...     ),
         ...     lease_id=uuid4(),
         ...     epoch=1,

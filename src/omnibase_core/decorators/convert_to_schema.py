@@ -54,19 +54,47 @@ _logger = logging.getLogger(__name__)
 from pydantic import VERSION as PYDANTIC_VERSION
 from pydantic import BaseModel
 
+# Import error codes for structured error handling
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors import ModelOnexError
+
+# Type-only imports for type checker satisfaction
+if TYPE_CHECKING:
+    from pydantic._internal._decorators import (
+        Decorator as DecoratorType,
+    )
+    from pydantic._internal._decorators import (
+        ModelValidatorDecoratorInfo as ModelValidatorDecoratorInfoType,
+    )
+
+    from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+
 # Pydantic internal API import with proper fallback handling.
 # This is documented as a known limitation - no public API exists for
 # dynamically adding model validators post-creation.
-try:
-    from pydantic._internal._decorators import Decorator, ModelValidatorDecoratorInfo
+#
+# Runtime imports stored in module-level variables with explicit types
+# to satisfy type checkers while handling ImportError gracefully.
+# Note: Using type[Any] since Decorator is a generic class and we don't
+# need to track the specific type parameter at runtime.
+_PYDANTIC_INTERNALS_AVAILABLE: bool = False
+_PYDANTIC_IMPORT_ERROR: ImportError | None = None
+_Decorator: type[DecoratorType[Any]] | None = None
+_ModelValidatorDecoratorInfo: type[ModelValidatorDecoratorInfoType] | None = None
 
+try:
+    from pydantic._internal._decorators import (
+        Decorator as _DecoratorImport,
+    )
+    from pydantic._internal._decorators import (
+        ModelValidatorDecoratorInfo as _ModelValidatorDecoratorInfoImport,
+    )
+
+    _Decorator = _DecoratorImport
+    _ModelValidatorDecoratorInfo = _ModelValidatorDecoratorInfoImport
     _PYDANTIC_INTERNALS_AVAILABLE = True
 except ImportError as e:
-    _PYDANTIC_INTERNALS_AVAILABLE = False
     _PYDANTIC_IMPORT_ERROR = e
-    # Provide type stubs to prevent NameError at module load time
-    Decorator = None  # type: ignore[assignment, misc]
-    ModelValidatorDecoratorInfo = None  # type: ignore[assignment, misc]
 
 # Version compatibility check - warn if outside tested range
 _PYDANTIC_MAJOR = int(PYDANTIC_VERSION.split(".")[0])
@@ -78,9 +106,6 @@ if _PYDANTIC_MAJOR != 2 or _PYDANTIC_MINOR < 6:
         UserWarning,
         stacklevel=2,
     )
-
-if TYPE_CHECKING:
-    from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -136,15 +161,25 @@ def _convert_list_value(
     try:
         return [schema_cls.from_value(item) for item in value]
     except Exception as e:
-        _logger.exception(
+        first_item_type = type(value[0]).__name__ if value else "N/A"
+        _logger.warning(
             "Failed to convert list items to ModelSchemaValue. "
-            "List had %d items, first item type: %s",
+            "List had %d items, first item type: %s. Error: %s",
             len(value),
-            type(value[0]).__name__ if value else "N/A",
+            first_item_type,
+            str(e),
         )
-        raise ValueError(  # error-ok: schema conversion utility raising for invalid input
-            f"Failed to convert list to ModelSchemaValue: {e}. "
-            f"Ensure list items are convertible (primitives, dicts, or lists)."
+        raise ModelOnexError(
+            message=(
+                f"Failed to convert list to ModelSchemaValue: {e}. "
+                f"Ensure list items are convertible (primitives, dicts, or lists)."
+            ),
+            error_code=EnumCoreErrorCode.CONVERSION_ERROR,
+            context={
+                "list_length": len(value),
+                "first_item_type": first_item_type,
+                "original_error": str(e),
+            },
         ) from e
 
 
@@ -169,14 +204,25 @@ def _convert_dict_value(
     try:
         return {k: schema_cls.from_value(v) for k, v in value.items()}
     except Exception as e:
-        _logger.exception(
-            "Failed to convert dict values to ModelSchemaValue. Dict had %d keys: %s",
+        sample_keys = list(value.keys())[:5]
+        _logger.warning(
+            "Failed to convert dict values to ModelSchemaValue. "
+            "Dict had %d keys (sample: %s). Error: %s",
             len(value),
-            list(value.keys())[:5],  # Show first 5 keys for debugging
+            sample_keys,
+            str(e),
         )
-        raise ValueError(  # error-ok: schema conversion utility raising for invalid input
-            f"Failed to convert dict to ModelSchemaValue: {e}. "
-            f"Ensure dict values are convertible (primitives, dicts, or lists)."
+        raise ModelOnexError(
+            message=(
+                f"Failed to convert dict to ModelSchemaValue: {e}. "
+                f"Ensure dict values are convertible (primitives, dicts, or lists)."
+            ),
+            error_code=EnumCoreErrorCode.CONVERSION_ERROR,
+            context={
+                "dict_key_count": len(value),
+                "sample_keys": sample_keys,
+                "original_error": str(e),
+            },
         ) from e
 
 
@@ -303,18 +349,28 @@ def convert_to_schema(
         setattr(cls, validator_name, validator_method)
 
         # Create Decorator object matching Pydantic's internal structure
-        # Assertions for type checker - runtime check above guarantees these are non-None
-        assert Decorator is not None, "Decorator should be available"
-        assert ModelValidatorDecoratorInfo is not None, (
-            "ModelValidatorDecoratorInfo should be available"
-        )
+        # Explicit None check for type narrowing - runtime check above guarantees availability
+        if _Decorator is None or _ModelValidatorDecoratorInfo is None:
+            raise ModelOnexError(
+                message=(
+                    "Pydantic internal decorator classes are not available. "
+                    "This should not occur after the availability check above."
+                ),
+                error_code=EnumCoreErrorCode.DEPENDENCY_UNAVAILABLE,
+                context={
+                    "decorator_available": _Decorator is not None,
+                    "validator_info_available": _ModelValidatorDecoratorInfo
+                    is not None,
+                    "pydantic_version": PYDANTIC_VERSION,
+                },
+            )
 
-        decorator_obj = Decorator(
+        decorator_obj = _Decorator(
             cls_ref=f"{cls.__module__}.{cls.__name__}:{id(cls)}",
             cls_var_name=validator_name,
             func=validator_method,
             shim=None,
-            info=ModelValidatorDecoratorInfo(mode="before"),
+            info=_ModelValidatorDecoratorInfo(mode="before"),
         )
 
         # Add to pydantic_decorators
@@ -386,18 +442,28 @@ def convert_list_to_schema(
         validator_name = f"_convert_list_to_schema_{'_'.join(sorted(field_names))}"
         setattr(cls, validator_name, validator_method)
 
-        # Assertions for type checker - runtime check above guarantees these are non-None
-        assert Decorator is not None, "Decorator should be available"
-        assert ModelValidatorDecoratorInfo is not None, (
-            "ModelValidatorDecoratorInfo should be available"
-        )
+        # Explicit None check for type narrowing - runtime check above guarantees availability
+        if _Decorator is None or _ModelValidatorDecoratorInfo is None:
+            raise ModelOnexError(
+                message=(
+                    "Pydantic internal decorator classes are not available. "
+                    "This should not occur after the availability check above."
+                ),
+                error_code=EnumCoreErrorCode.DEPENDENCY_UNAVAILABLE,
+                context={
+                    "decorator_available": _Decorator is not None,
+                    "validator_info_available": _ModelValidatorDecoratorInfo
+                    is not None,
+                    "pydantic_version": PYDANTIC_VERSION,
+                },
+            )
 
-        decorator_obj = Decorator(
+        decorator_obj = _Decorator(
             cls_ref=f"{cls.__module__}.{cls.__name__}:{id(cls)}",
             cls_var_name=validator_name,
             func=validator_method,
             shim=None,
-            info=ModelValidatorDecoratorInfo(mode="before"),
+            info=_ModelValidatorDecoratorInfo(mode="before"),
         )
         cls.__pydantic_decorators__.model_validators[validator_name] = decorator_obj
         cls.model_rebuild(force=True)
@@ -465,18 +531,28 @@ def convert_dict_to_schema(
         validator_name = f"_convert_dict_to_schema_{'_'.join(sorted(field_names))}"
         setattr(cls, validator_name, validator_method)
 
-        # Assertions for type checker - runtime check above guarantees these are non-None
-        assert Decorator is not None, "Decorator should be available"
-        assert ModelValidatorDecoratorInfo is not None, (
-            "ModelValidatorDecoratorInfo should be available"
-        )
+        # Explicit None check for type narrowing - runtime check above guarantees availability
+        if _Decorator is None or _ModelValidatorDecoratorInfo is None:
+            raise ModelOnexError(
+                message=(
+                    "Pydantic internal decorator classes are not available. "
+                    "This should not occur after the availability check above."
+                ),
+                error_code=EnumCoreErrorCode.DEPENDENCY_UNAVAILABLE,
+                context={
+                    "decorator_available": _Decorator is not None,
+                    "validator_info_available": _ModelValidatorDecoratorInfo
+                    is not None,
+                    "pydantic_version": PYDANTIC_VERSION,
+                },
+            )
 
-        decorator_obj = Decorator(
+        decorator_obj = _Decorator(
             cls_ref=f"{cls.__module__}.{cls.__name__}:{id(cls)}",
             cls_var_name=validator_name,
             func=validator_method,
             shim=None,
-            info=ModelValidatorDecoratorInfo(mode="before"),
+            info=_ModelValidatorDecoratorInfo(mode="before"),
         )
         cls.__pydantic_decorators__.model_validators[validator_name] = decorator_obj
         cls.model_rebuild(force=True)

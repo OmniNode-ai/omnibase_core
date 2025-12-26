@@ -5,10 +5,13 @@ Manages dynamic discovery and registration of CLI commands from node contracts.
 This replaces hardcoded command enums with flexible, contract-driven command discovery.
 """
 
+import logging
 from collections.abc import Mapping
 from pathlib import Path
 
 from pydantic import BaseModel, Field
+
+logger = logging.getLogger(__name__)
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors import ModelOnexError
@@ -172,10 +175,10 @@ class ModelCliCommandRegistry(BaseModel):
                         commands_discovered += 1
                 except Exception as e:
                     # Log error but continue processing other commands
-                    import logging
-
-                    logging.debug(
-                        f"Failed to create command from contract for node '{node_name}': {e}"
+                    logger.debug(
+                        "Failed to create command from contract for node '%s': %s",
+                        node_name,
+                        e,
                     )
 
             return commands_discovered

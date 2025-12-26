@@ -20,7 +20,7 @@ class TestModelIntentInstantiation:
     def test_create_intent_with_required_fields(self):
         """Test creating a ModelIntent with only required fields."""
         intent = ModelIntent(
-            intent_type="log",
+            intent_type="log_event",
             target="metrics_service",
             payload=ModelPayloadLogEvent(
                 level="INFO",
@@ -30,7 +30,7 @@ class TestModelIntentInstantiation:
 
         assert intent is not None
         assert isinstance(intent, ModelIntent)
-        assert intent.intent_type == "log"
+        assert intent.intent_type == "log_event"
         assert intent.target == "metrics_service"
         assert isinstance(intent.intent_id, UUID)
         assert intent.priority == 1
@@ -67,7 +67,7 @@ class TestModelIntentInstantiation:
     def test_intent_id_auto_generation(self):
         """Test that intent_id is auto-generated when not provided."""
         intent1 = ModelIntent(
-            intent_type="log",
+            intent_type="log_event",
             target="service",
             payload=ModelPayloadLogEvent(
                 level="INFO",
@@ -75,7 +75,7 @@ class TestModelIntentInstantiation:
             ),
         )
         intent2 = ModelIntent(
-            intent_type="log",
+            intent_type="log_event",
             target="service",
             payload=ModelPayloadLogEvent(
                 level="INFO",
@@ -96,14 +96,14 @@ class TestModelIntentFieldValidation:
         """Test intent_type field validation."""
         # Valid intent_type
         intent = ModelIntent(
-            intent_type="log",
+            intent_type="log_event",
             target="service",
             payload=ModelPayloadLogEvent(
                 level="INFO",
                 message="Test message",
             ),
         )
-        assert intent.intent_type == "log"
+        assert intent.intent_type == "log_event"
 
         # Test min_length validation - empty string should fail
         with pytest.raises(ValidationError) as exc_info:
@@ -133,7 +133,7 @@ class TestModelIntentFieldValidation:
         """Test target field validation."""
         # Valid target
         intent = ModelIntent(
-            intent_type="log",
+            intent_type="log_event",
             target="metrics_service",
             payload=ModelPayloadLogEvent(
                 level="INFO",
@@ -145,7 +145,7 @@ class TestModelIntentFieldValidation:
         # Test min_length validation - empty string should fail
         with pytest.raises(ValidationError) as exc_info:
             ModelIntent(
-                intent_type="log",
+                intent_type="log_event",
                 target="",
                 payload=ModelPayloadLogEvent(
                     level="INFO",
@@ -157,7 +157,7 @@ class TestModelIntentFieldValidation:
         # Test max_length validation - 201 chars should fail
         with pytest.raises(ValidationError) as exc_info:
             ModelIntent(
-                intent_type="log",
+                intent_type="log_event",
                 target="x" * 201,
                 payload=ModelPayloadLogEvent(
                     level="INFO",
@@ -171,7 +171,7 @@ class TestModelIntentFieldValidation:
         # Valid priorities (1-10)
         for priority in range(1, 11):
             intent = ModelIntent(
-                intent_type="log",
+                intent_type="log_event",
                 target="service",
                 payload=ModelPayloadLogEvent(
                     level="INFO",
@@ -184,7 +184,7 @@ class TestModelIntentFieldValidation:
         # Test lower boundary - 0 should fail
         with pytest.raises(ValidationError) as exc_info:
             ModelIntent(
-                intent_type="log",
+                intent_type="log_event",
                 target="service",
                 payload=ModelPayloadLogEvent(
                     level="INFO",
@@ -197,7 +197,7 @@ class TestModelIntentFieldValidation:
         # Test upper boundary - 11 should fail
         with pytest.raises(ValidationError) as exc_info:
             ModelIntent(
-                intent_type="log",
+                intent_type="log_event",
                 target="service",
                 payload=ModelPayloadLogEvent(
                     level="INFO",
@@ -210,7 +210,7 @@ class TestModelIntentFieldValidation:
     def test_priority_default_value(self):
         """Test priority default value is 1."""
         intent = ModelIntent(
-            intent_type="log",
+            intent_type="log_event",
             target="service",
             payload=ModelPayloadLogEvent(
                 level="INFO",
@@ -241,7 +241,7 @@ class TestModelIntentFieldValidation:
         # Valid epochs (>= 0)
         for epoch in [0, 1, 10, 100, 1000]:
             intent = ModelIntent(
-                intent_type="log",
+                intent_type="log_event",
                 target="service",
                 payload=ModelPayloadLogEvent(
                     level="INFO",
@@ -254,7 +254,7 @@ class TestModelIntentFieldValidation:
         # Test lower boundary - negative should fail
         with pytest.raises(ValidationError) as exc_info:
             ModelIntent(
-                intent_type="log",
+                intent_type="log_event",
                 target="service",
                 payload=ModelPayloadLogEvent(
                     level="INFO",
@@ -267,7 +267,7 @@ class TestModelIntentFieldValidation:
     def test_epoch_default_value(self):
         """Test epoch default value is None."""
         intent = ModelIntent(
-            intent_type="log",
+            intent_type="log_event",
             target="service",
             payload=ModelPayloadLogEvent(
                 level="INFO",
@@ -280,7 +280,7 @@ class TestModelIntentFieldValidation:
         """Test lease_id UUID validation."""
         test_lease_id = uuid4()
         intent = ModelIntent(
-            intent_type="log",
+            intent_type="log_event",
             target="service",
             payload=ModelPayloadLogEvent(
                 level="INFO",
@@ -295,7 +295,7 @@ class TestModelIntentFieldValidation:
     def test_lease_id_default_value(self):
         """Test lease_id default value is None."""
         intent = ModelIntent(
-            intent_type="log",
+            intent_type="log_event",
             target="service",
             payload=ModelPayloadLogEvent(
                 level="INFO",
@@ -342,7 +342,7 @@ class TestModelIntentSerialization:
     def test_model_dump_json(self):
         """Test serializing intent to JSON string."""
         intent = ModelIntent(
-            intent_type="log",
+            intent_type="log_event",
             target="service",
             payload=ModelPayloadLogEvent(
                 level="INFO",
@@ -515,7 +515,7 @@ class TestModelIntentEdgeCases:
 
         # Missing target
         with pytest.raises(ValidationError) as exc_info:
-            ModelIntent(intent_type="log")
+            ModelIntent(intent_type="log_event")
         assert "target" in str(exc_info.value)
 
     def test_intent_type_boundary_values(self):
@@ -546,7 +546,7 @@ class TestModelIntentEdgeCases:
         """Test target at exact boundaries."""
         # Exactly 1 character (minimum)
         intent = ModelIntent(
-            intent_type="log",
+            intent_type="log_event",
             target="s",
             payload=ModelPayloadLogEvent(
                 level="INFO",
@@ -557,7 +557,7 @@ class TestModelIntentEdgeCases:
 
         # Exactly 200 characters (maximum)
         intent = ModelIntent(
-            intent_type="log",
+            intent_type="log_event",
             target="s" * 200,
             payload=ModelPayloadLogEvent(
                 level="INFO",
@@ -570,7 +570,7 @@ class TestModelIntentEdgeCases:
         """Test priority at exact boundaries."""
         # Exactly 1 (minimum)
         intent = ModelIntent(
-            intent_type="log",
+            intent_type="log_event",
             target="service",
             payload=ModelPayloadLogEvent(
                 level="INFO",
@@ -582,7 +582,7 @@ class TestModelIntentEdgeCases:
 
         # Exactly 10 (maximum)
         intent = ModelIntent(
-            intent_type="log",
+            intent_type="log_event",
             target="service",
             payload=ModelPayloadLogEvent(
                 level="INFO",
@@ -595,7 +595,7 @@ class TestModelIntentEdgeCases:
     def test_epoch_boundary_value(self):
         """Test epoch at boundary (0)."""
         intent = ModelIntent(
-            intent_type="log",
+            intent_type="log_event",
             target="service",
             payload=ModelPayloadLogEvent(
                 level="INFO",
@@ -609,7 +609,7 @@ class TestModelIntentEdgeCases:
         """Test that invalid UUID format raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
             ModelIntent(
-                intent_type="log",
+                intent_type="log_event",
                 target="service",
                 intent_id="not-a-uuid",
             )
@@ -662,7 +662,7 @@ class TestModelIntentModelConfig:
     def test_frozen_model_prevents_assignment(self):
         """Test that frozen model prevents direct attribute assignment."""
         intent = ModelIntent(
-            intent_type="log",
+            intent_type="log_event",
             target="service",
             payload=ModelPayloadLogEvent(
                 level="INFO",
@@ -681,7 +681,7 @@ class TestModelIntentModelConfig:
     def test_model_copy_with_valid_values(self):
         """Test that model_copy works for valid value updates."""
         intent = ModelIntent(
-            intent_type="log",
+            intent_type="log_event",
             target="service",
             payload=ModelPayloadLogEvent(
                 level="INFO",
@@ -698,7 +698,7 @@ class TestModelIntentModelConfig:
     def test_validated_copy_with_invalid_values(self):
         """Test that validated copies reject invalid values."""
         intent = ModelIntent(
-            intent_type="log",
+            intent_type="log_event",
             target="service",
             payload=ModelPayloadLogEvent(
                 level="INFO",
@@ -756,7 +756,7 @@ class TestModelIntentMetadata:
         from pydantic import BaseModel
 
         intent = ModelIntent(
-            intent_type="log",
+            intent_type="log_event",
             target="service",
             payload=ModelPayloadLogEvent(
                 level="INFO",
@@ -781,7 +781,7 @@ class TestModelIntentComparison:
 
         intent1 = ModelIntent(
             intent_id=test_id,
-            intent_type="log",
+            intent_type="log_event",
             target="service",
             payload=test_payload,
             priority=5,
@@ -791,7 +791,7 @@ class TestModelIntentComparison:
 
         intent2 = ModelIntent(
             intent_id=test_id,
-            intent_type="log",
+            intent_type="log_event",
             target="service",
             payload=test_payload,
             priority=5,
@@ -804,7 +804,7 @@ class TestModelIntentComparison:
     def test_inequality_different_values(self):
         """Test inequality with different field values."""
         intent1 = ModelIntent(
-            intent_type="log",
+            intent_type="log_event",
             target="service1",
             payload=ModelPayloadLogEvent(
                 level="INFO",
@@ -812,7 +812,7 @@ class TestModelIntentComparison:
             ),
         )
         intent2 = ModelIntent(
-            intent_type="log",
+            intent_type="log_event",
             target="service2",
             payload=ModelPayloadLogEvent(
                 level="INFO",
@@ -868,7 +868,7 @@ class TestModelIntentStringRepresentation:
     def test_str_representation(self):
         """Test string representation of ModelIntent."""
         intent = ModelIntent(
-            intent_type="log",
+            intent_type="log_event",
             target="service",
             payload=ModelPayloadLogEvent(
                 level="INFO",
@@ -883,7 +883,7 @@ class TestModelIntentStringRepresentation:
     def test_repr_representation(self):
         """Test repr representation of ModelIntent."""
         intent = ModelIntent(
-            intent_type="log",
+            intent_type="log_event",
             target="service",
             payload=ModelPayloadLogEvent(
                 level="INFO",
