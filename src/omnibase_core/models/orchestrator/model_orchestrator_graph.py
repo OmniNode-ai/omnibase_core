@@ -21,3 +21,6 @@ class ModelOrchestratorGraph(BaseModel):
     graph_name: str = Field(default=..., description="Graph name")
     nodes: list[ModelGraphNode] = Field(default_factory=list, description="Graph nodes")
     edges: list[ModelGraphEdge] = Field(default_factory=list, description="Graph edges")
+
+
+__all__ = ["ModelOrchestratorGraph"]

@@ -30,6 +30,7 @@ jobs:
   #   - docs-validation: Documentation link validation
   #   - node-purity-check: Declarative node purity guarantees
   #   - mypy-validation-scripts: Type check validation scripts
+  #   - core-infra-boundary: Transport/I/O import validation (ADR-005)
   #
   # Phase 2 - Full Test Suite (after Phase 1 completes):
   #   - test-parallel: 20 splits of full test suite (~3 min each)
@@ -449,6 +450,39 @@ jobs:
           fi
 
   # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
+  # Core-Infra Boundary Validation (ADR-005)
+  # Enforces that omnibase_core has no direct transport/I/O library imports
+  # Complements the Python-based check in mypy-validation-scripts with a simple grep scan
+  core-infra-boundary:
+    name: Core-Infra Boundary
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate No Transport Imports (ADR-005)
+        run: |
+          chmod +x ./scripts/validate-no-transport-imports.sh
+          ./scripts/validate-no-transport-imports.sh
+
+      - name: Core-Infra boundary summary
+        if: always()
+        run: |
+          echo "## Core-Infra Boundary Validation (ADR-005)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Validates that omnibase_core has no direct transport/I/O imports:" >> $GITHUB_STEP_SUMMARY
+          echo "- No HTTP clients (aiohttp, httpx, requests, urllib3)" >> $GITHUB_STEP_SUMMARY
+          echo "- No Kafka clients (kafka-python, aiokafka, confluent-kafka)" >> $GITHUB_STEP_SUMMARY
+          echo "- No Redis clients (redis, aioredis)" >> $GITHUB_STEP_SUMMARY
+          echo "- No Database clients (asyncpg, psycopg2, aiomysql)" >> $GITHUB_STEP_SUMMARY
+          echo "- No Message queues (pika, kombu, celery)" >> $GITHUB_STEP_SUMMARY
+          echo "- No gRPC or WebSocket libraries" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "See: docs/architecture/decisions/ADR-005-core-infra-dependency-boundary.md" >> $GITHUB_STEP_SUMMARY
+
+  # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
   # Quick documentation check (not blocking test-parallel)
   # Rationale: Doc link validation is independent of code correctness
   docs-validation:
@@ -546,7 +580,7 @@ jobs:
   test-summary:
     name: Test Summary
     runs-on: ubuntu-latest
-    needs: [test-parallel, lint, pyright, exports-validation, mypy-validation-scripts, docs-validation, node-purity-check]
+    needs: [test-parallel, lint, pyright, exports-validation, mypy-validation-scripts, core-infra-boundary, docs-validation, node-purity-check]
     if: always()
 
     steps:
@@ -557,6 +591,7 @@ jobs:
           pyright="${{ needs.pyright.result }}"
           exports="${{ needs.exports-validation.result }}"
           mypy_scripts="${{ needs.mypy-validation-scripts.result }}"
+          core_infra="${{ needs.core-infra-boundary.result }}"
           docs="${{ needs.docs-validation.result }}"
           purity="${{ needs.node-purity-check.result }}"
 
@@ -565,24 +600,27 @@ jobs:
              [[ "$pyright" == "success" ]] && \
              [[ "$exports" == "success" ]] && \
              [[ "$mypy_scripts" == "success" ]] && \
+             [[ "$core_infra" == "success" ]] && \
              [[ "$docs" == "success" ]] && \
              [[ "$purity" == "success" ]]; then
-            echo "✅ All tests passed successfully"
-            echo "Parallel Tests (20 splits): ✅ Passed"
-            echo "Code Quality: ✅ Passed"
-            echo "Pyright Type Checking: ✅ Passed"
-            echo "Exports Validation: ✅ Passed"
-            echo "Mypy Validation Scripts: ✅ Passed"
-            echo "Documentation: ✅ Passed"
-            echo "Node Purity: ✅ Passed"
+            echo "All tests passed successfully"
+            echo "Parallel Tests (20 splits): Passed"
+            echo "Code Quality: Passed"
+            echo "Pyright Type Checking: Passed"
+            echo "Exports Validation: Passed"
+            echo "Mypy Validation Scripts: Passed"
+            echo "Core-Infra Boundary: Passed"
+            echo "Documentation: Passed"
+            echo "Node Purity: Passed"
             exit 0
           else
-            echo "❌ Tests failed"
+            echo "Tests failed"
             echo "Parallel Tests: $parallel"
             echo "Lint: $lint"
             echo "Pyright: $pyright"
             echo "Exports: $exports"
             echo "Mypy Scripts: $mypy_scripts"
+            echo "Core-Infra Boundary: $core_infra"
             echo "Documentation: $docs"
             echo "Node Purity: $purity"
             exit 1

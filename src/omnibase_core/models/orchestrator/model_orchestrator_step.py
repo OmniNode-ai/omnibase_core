@@ -55,3 +55,6 @@ class ModelOrchestratorStep(BaseModel):
     custom_fields: ModelCustomFields | None = Field(
         default=None, description="Custom fields for step-specific data"
     )
+
+
+__all__ = ["ModelOrchestratorStep"]

@@ -193,8 +193,9 @@ class TestMixinWorkflowExecution:
             workflow_definition, simple_steps, workflow_id
         )
 
-        assert "execution_mode" in result.metadata
-        assert result.metadata["execution_mode"].to_value() == "sequential"
+        # result.metadata is now a typed ModelWorkflowResultMetadata, not a dict
+        assert result.metadata is not None
+        assert result.metadata.execution_mode == "sequential"
 
     @pytest.mark.asyncio
     async def test_execute_workflow_emits_actions(

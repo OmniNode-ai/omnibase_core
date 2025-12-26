@@ -287,10 +287,10 @@ class TestSingleStepExecution:
             execution_mode=EnumExecutionMode.SEQUENTIAL,
         )
 
-        assert "execution_mode" in result.metadata
-        assert result.metadata["execution_mode"].get_string() == "sequential"
-        assert "workflow_name" in result.metadata
-        assert "workflow_hash" in result.metadata
+        assert result.metadata is not None
+        assert result.metadata.execution_mode == "sequential"
+        assert result.metadata.workflow_name != ""
+        assert result.metadata.workflow_hash != ""
 
 
 # =============================================================================

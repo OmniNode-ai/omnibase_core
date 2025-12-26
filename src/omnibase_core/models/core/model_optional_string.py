@@ -38,5 +38,25 @@ class ModelOptionalString(BaseModel):
         return self
 
     def __bool__(self) -> bool:
-        """Boolean representation based on value presence."""
+        """Boolean representation based on value presence.
+
+        Warning:
+            This differs from standard Pydantic behavior where ``bool(model)``
+            always returns ``True``. Here, ``bool(optional)`` returns ``False``
+            when the value is ``None``, enabling idiomatic presence checks.
+
+        Returns:
+            bool: True if value is present (not None), False if None.
+
+        Example:
+            >>> value = ModelOptionalString(value="hello")
+            >>> if value:
+            ...     print(f"Got: {value.value}")
+            Got: hello
+
+            >>> empty = ModelOptionalString(value=None)
+            >>> if not empty:
+            ...     print("No value")
+            No value
+        """
         return self.has_value()

@@ -328,3 +328,6 @@ class ModelAction(BaseModel):
                 UserWarning,
                 stacklevel=3,  # Point through _validate_action_consistency to caller
             )
+
+
+__all__ = ["ModelAction"]

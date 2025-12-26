@@ -386,3 +386,40 @@ class TestModelQueryParametersDunder:
         """Test __bool__ without parameters."""
         params = ModelQueryParameters()
         assert bool(params) is False
+
+    def test_bool_idiomatic_check_with_params(self) -> None:
+        """Test idiomatic if check when parameters exist."""
+        params = ModelQueryParameters.from_dict({"page": 1})
+        assert params  # Idiomatic check should pass
+
+    def test_bool_idiomatic_check_empty(self) -> None:
+        """Test idiomatic if check when empty."""
+        params = ModelQueryParameters()
+        assert not params  # Idiomatic check should pass
+
+    def test_bool_differs_from_standard_pydantic(self) -> None:
+        """Test that __bool__ differs from standard Pydantic behavior.
+
+        Standard Pydantic models always return True for bool(model) because
+        the instance exists. ModelQueryParameters overrides this to return
+        False when items is empty.
+        """
+        empty = ModelQueryParameters()
+        # Standard Pydantic would return True here, but we return False
+        assert bool(empty) is False
+
+        with_params = ModelQueryParameters.from_dict({"limit": 10})
+        assert bool(with_params) is True
+
+    def test_bool_with_multiple_params(self) -> None:
+        """Test bool() with multiple parameters."""
+        params = ModelQueryParameters.from_dict(
+            {
+                "page": 1,
+                "limit": 10,
+                "sort": "name",
+                "order": "asc",
+            }
+        )
+        assert bool(params) is True
+        assert params  # Idiomatic check

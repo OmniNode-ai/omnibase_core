@@ -399,11 +399,17 @@ async def my_operation(self):
 ### Mixin System
 
 ```python
+from omnibase_core.nodes import NodeCompute
 from omnibase_core.mixins.mixin_discovery_responder import MixinDiscoveryResponder
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
-class MyNode(NodeCoreBase, MixinDiscoveryResponder):
+class NodeMyServiceCompute(NodeCompute, MixinDiscoveryResponder):
     """Node with discovery capabilities."""
-    pass
+    def __init__(self, container: ModelONEXContainer):
+        super().__init__(container)
+        # Always use protocol names for DI
+        self.logger = container.get_service("ProtocolLogger")
+        self.event_bus = container.get_service("ProtocolEventBus")
 ```
 
 **Available Mixins**: `MixinDiscoveryResponder`, `MixinEventHandler`, `MixinEventListener`, `MixinNodeExecutor`, `MixinNodeLifecycle`, `MixinRequestResponseIntrospection`, `MixinWorkflowExecution`
@@ -584,7 +590,7 @@ poetry add --group dev package-name        # Add dev dependency
 
 ---
 
-**Last Updated**: 2025-12-19 | **Version**: 0.4.0 | **Python**: 3.12+
+**Last Updated**: 2025-12-26 | **Version**: 0.4.0 | **Python**: 3.12+
 
 **Ready to build?** → [Node Building Guide](docs/guides/node-building/README.md)
 **Need help?** → [Documentation Index](docs/INDEX.md)

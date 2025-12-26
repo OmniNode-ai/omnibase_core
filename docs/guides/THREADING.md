@@ -1712,8 +1712,21 @@ class TestNodeComputeThreadSafety:
 | ModelComputeInput/Output | Yes (frozen=True) | None needed |
 | ModelReducerInput/Output | Yes (frozen=True) | None needed |
 | ModelEffectInput/Output | Yes (frozen=True) | None needed |
-| ModelOrchestratorInput/Output | Yes (frozen=True) | None needed |
+| ModelOrchestratorInput | Partial* | See note below |
+| ModelOrchestratorOutput | Yes (frozen=True) | None needed |
 | EffectIOConfig models | Yes (frozen=True) | None needed |
+
+**\*ModelOrchestratorInput Thread Safety Note**:
+
+`ModelOrchestratorInput` is top-level frozen (`frozen=True`), but contains a mutable `metadata` field of type `ModelOrchestratorInputMetadata` (`frozen=False`). This means:
+
+- Top-level fields (workflow_id, steps, execution_mode, etc.) cannot be reassigned
+- The `metadata` object CAN be mutated in place (e.g., `input.metadata.source = "new"`)
+
+**Mitigation**:
+1. **Treat as read-only** after creation (recommended)
+2. **Use model_copy()** to create modified copies: `input.model_copy(update={"metadata": new_metadata})`
+3. **Use explicit locks** if mutation across threads is required
 
 ### Workflow Contract Models (v0.4.0+)
 

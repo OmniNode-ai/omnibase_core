@@ -39,7 +39,6 @@ from omnibase_core.enums.enum_workflow_execution import (
     EnumActionType,
     EnumExecutionMode,
 )
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.contracts.subcontracts.model_coordination_rules import (
     ModelCoordinationRules,
@@ -60,6 +59,9 @@ from omnibase_core.models.core.model_action_metadata import ModelActionMetadata
 from omnibase_core.models.orchestrator.model_action import ModelAction
 from omnibase_core.models.orchestrator.model_orchestrator_input import (
     ModelOrchestratorInput,
+)
+from omnibase_core.models.orchestrator.model_orchestrator_input_metadata import (
+    ModelOrchestratorInputMetadata,
 )
 from omnibase_core.models.orchestrator.model_orchestrator_output import (
     ModelOrchestratorOutput,
@@ -160,7 +162,7 @@ class TestModelOrchestratorInputSerialization:
             failure_strategy="fail_fast",
             load_balancing_enabled=False,
             dependency_resolution_enabled=True,
-            metadata={"key": ModelSchemaValue.create_string("value")},
+            metadata=ModelOrchestratorInputMetadata(source="test"),
         )
         json_str = model.model_dump_json()
         assert isinstance(json_str, str)
@@ -193,7 +195,7 @@ class TestModelOrchestratorInputSerialization:
             failure_strategy="continue_on_error",
             load_balancing_enabled=True,
             dependency_resolution_enabled=False,
-            metadata={"env": ModelSchemaValue.create_string("test")},
+            metadata=ModelOrchestratorInputMetadata(environment="test"),
         )
         json_str = model.model_dump_json()
         restored = ModelOrchestratorInput.model_validate_json(json_str)
@@ -240,7 +242,12 @@ class TestModelOrchestratorInputFieldValidation:
         assert model.failure_strategy == "fail_fast"
         assert model.load_balancing_enabled is False
         assert model.dependency_resolution_enabled is True
-        assert model.metadata == {}
+        assert isinstance(model.metadata, ModelOrchestratorInputMetadata)
+        assert model.metadata.source is None
+        assert model.metadata.environment is None
+        assert model.metadata.correlation_id is None
+        assert model.metadata.trigger == "process"
+        assert model.metadata.persist_result is False
 
     def test_execution_mode_enum_values(self) -> None:
         """Test all execution mode enum values work."""
@@ -1760,14 +1767,17 @@ class TestOrchestratorModelsSerializationParametrized:
 class TestOrchestratorModelsEdgeCases:
     """Edge cases for orchestrator models."""
 
-    def test_orchestrator_input_empty_metadata(self) -> None:
-        """Test OrchestratorInput with empty metadata."""
+    def test_orchestrator_input_default_metadata(self) -> None:
+        """Test OrchestratorInput with default metadata."""
         model = ModelOrchestratorInput(
             workflow_id=uuid4(),
             steps=[],
-            metadata={},
+            metadata=ModelOrchestratorInputMetadata(),
         )
-        assert model.metadata == {}
+        assert isinstance(model.metadata, ModelOrchestratorInputMetadata)
+        assert model.metadata.source is None
+        assert model.metadata.environment is None
+        assert model.metadata.trigger == "process"
 
     def test_orchestrator_output_empty_collections(self) -> None:
         """Test OrchestratorOutput with empty collections."""

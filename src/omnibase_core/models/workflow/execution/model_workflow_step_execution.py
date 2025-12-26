@@ -19,7 +19,6 @@ from omnibase_core.enums.enum_workflow_execution import (
     EnumExecutionMode,
     EnumWorkflowState,
 )
-from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.orchestrator.model_action import ModelAction
 
 __all__ = ["ModelWorkflowStepExecution"]
@@ -94,11 +93,6 @@ class ModelWorkflowStepExecution(BaseModel):
         description="Number of retry attempts on failure",
         ge=0,
         le=10,
-    )
-
-    metadata: dict[str, ModelSchemaValue] = Field(
-        default_factory=dict,
-        description="Additional metadata for step execution",
     )
 
     # Runtime state tracking

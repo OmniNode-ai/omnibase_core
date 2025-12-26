@@ -150,3 +150,6 @@ class ModelLoadBalancer:
             utilization=len(self.active_operations) / self.max_concurrent_operations,
             total_operations=sum(self.operation_counts.values()),
         )
+
+
+__all__ = ["ModelLoadBalancer"]

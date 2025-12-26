@@ -306,7 +306,27 @@ class ModelQueryParameters(BaseModel):
         return len(self.items)
 
     def __bool__(self) -> bool:
-        """Return True if there are any parameters."""
+        """Return True if there are any parameters.
+
+        Warning:
+            This differs from standard Pydantic behavior where ``bool(model)``
+            always returns ``True``. An empty parameters collection returns
+            ``False``, enabling idiomatic emptiness checks.
+
+        Returns:
+            bool: True if there are parameters, False if empty.
+
+        Example:
+            >>> params = ModelQueryParameters(items={"page": 1})
+            >>> if params:
+            ...     print("Has parameters")
+            Has parameters
+
+            >>> empty = ModelQueryParameters()
+            >>> if not empty:
+            ...     print("No parameters")
+            No parameters
+        """
         return bool(self.items)
 
     def __contains__(self, key: str) -> bool:

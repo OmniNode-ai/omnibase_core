@@ -29,3 +29,6 @@ class ModelOrchestratorPlan(BaseModel):
     custom_metadata: ModelCustomFields | None = Field(
         default=None, description="Custom metadata fields"
     )
+
+
+__all__ = ["ModelOrchestratorPlan"]

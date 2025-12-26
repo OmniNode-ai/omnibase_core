@@ -415,3 +415,38 @@ class TestModelEnvelopePayloadLenBool:
         """Test bool() with data field."""
         payload = ModelEnvelopePayload(data={"key": "value"})
         assert bool(payload) is True
+
+    def test_bool_idiomatic_check_with_content(self) -> None:
+        """Test idiomatic if check when payload has content."""
+        payload = ModelEnvelopePayload(event_type="test")
+        assert payload  # Idiomatic check should pass
+
+    def test_bool_idiomatic_check_empty(self) -> None:
+        """Test idiomatic if check when payload is empty."""
+        payload = ModelEnvelopePayload()
+        assert not payload  # Idiomatic check should pass
+
+    def test_bool_differs_from_standard_pydantic(self) -> None:
+        """Test that __bool__ differs from standard Pydantic behavior.
+
+        Standard Pydantic models always return True for bool(model) because
+        the instance exists. ModelEnvelopePayload overrides this to return
+        False when all fields are empty/None.
+        """
+        empty = ModelEnvelopePayload()
+        # Standard Pydantic would return True here, but we return False
+        assert bool(empty) is False
+
+        with_content = ModelEnvelopePayload(source="test-service")
+        assert bool(with_content) is True
+
+    def test_bool_with_all_typed_fields(self) -> None:
+        """Test bool() with all typed fields set."""
+        payload = ModelEnvelopePayload(
+            event_type="user.created",
+            source="auth-service",
+            timestamp="2024-01-15T10:30:00Z",
+            correlation_id="abc-123",
+        )
+        assert bool(payload) is True
+        assert payload  # Idiomatic check

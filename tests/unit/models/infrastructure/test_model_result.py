@@ -726,3 +726,242 @@ class TestModelResultComplexScenarios:
         assert result.is_err()
         assert "Host cannot be empty" in result.error
         assert "Port must be an integer" in result.error
+
+
+@pytest.mark.unit
+class TestModelResultProtocolMethods:
+    """Test protocol method implementations (Executable, Configurable, Serializable)."""
+
+    def test_execute_returns_true_on_success(self):
+        """Test execute protocol method returns True on successful execution."""
+        result = ModelResult.ok("test_value")
+
+        assert result.execute() is True
+
+    def test_execute_with_no_kwargs(self):
+        """Test execute with no keyword arguments."""
+        result = ModelResult.ok(42)
+
+        success = result.execute()
+
+        assert success is True
+
+    def test_execute_with_kwargs_ignores_unknown_fields(self):
+        """Test execute ignores kwargs for non-existent attributes."""
+        result = ModelResult.ok("value")
+
+        # Unknown fields should be silently ignored
+        success = result.execute(unknown_field="ignored")
+
+        assert success is True
+
+    def test_configure_returns_true_on_success(self):
+        """Test configure protocol method returns True on successful configuration."""
+        result = ModelResult.ok("test_value")
+
+        assert result.configure() is True
+
+    def test_configure_with_no_kwargs(self):
+        """Test configure with no keyword arguments."""
+        result = ModelResult.ok(42)
+
+        success = result.configure()
+
+        assert success is True
+
+    def test_configure_with_kwargs_ignores_unknown_fields(self):
+        """Test configure ignores kwargs for non-existent attributes."""
+        result = ModelResult.ok("value")
+
+        # Unknown fields should be silently ignored
+        success = result.configure(unknown_field="ignored")
+
+        assert success is True
+
+    def test_serialize_returns_dict(self):
+        """Test serialize protocol method returns a dictionary."""
+        result = ModelResult.ok("test_value")
+
+        serialized = result.serialize()
+
+        assert isinstance(serialized, dict)
+
+    def test_serialize_success_result(self):
+        """Test serialize returns correct dict for success result."""
+        result = ModelResult.ok({"data": "test"})
+
+        serialized = result.serialize()
+
+        assert serialized["success"] is True
+        assert serialized["value"] == {"data": "test"}
+        assert serialized["error"] is None
+
+    def test_serialize_error_result(self):
+        """Test serialize returns correct dict for error result."""
+        result = ModelResult.err("error_message")
+
+        serialized = result.serialize()
+
+        assert serialized["success"] is False
+        assert serialized["value"] is None
+        assert serialized["error"] == "error_message"
+
+    def test_serialize_matches_model_dump(self):
+        """Test serialize output matches model_dump output."""
+        result = ModelResult.ok([1, 2, 3])
+
+        serialized = result.serialize()
+        model_dumped = result.model_dump(exclude_none=False, by_alias=True)
+
+        assert serialized == model_dumped
+
+    def test_serialize_complex_value(self):
+        """Test serialize with complex nested value."""
+        complex_value = {
+            "nested": {"deep": {"value": 123}},
+            "list": [1, 2, 3],
+            "string": "test",
+        }
+        result = ModelResult.ok(complex_value)
+
+        serialized = result.serialize()
+
+        assert serialized["value"] == complex_value
+
+
+@pytest.mark.unit
+class TestModelResultEdgeCases:
+    """Test edge cases and boundary conditions."""
+
+    def test_generic_type_with_none_allowed_in_error_type(self):
+        """Test Result with error type that allows None serialization."""
+        # String error type converts properly
+        result: ModelResult[str, str] = ModelResult.err("error")
+        assert result.error == "error"
+
+    def test_exception_serialization_in_error(self):
+        """Test that exceptions are serialized to strings."""
+        exc = ValueError("original exception")
+        result = ModelResult.err(exc)
+
+        # Exception should be converted to string
+        assert isinstance(result.error, str)
+        assert "original exception" in result.error
+
+    def test_exception_serialization_in_try_result(self):
+        """Test try_result converts exceptions to strings."""
+
+        def raises():
+            raise RuntimeError("test error")
+
+        result = try_result(raises)
+
+        assert result.is_err()
+        assert isinstance(result.error, str)
+        assert "test error" in result.error
+
+    def test_deeply_nested_value_types(self):
+        """Test deeply nested data structures."""
+        nested = {"level1": {"level2": {"level3": {"data": [1, 2, 3]}}}}
+        result = ModelResult.ok(nested)
+
+        assert result.is_ok()
+        assert result.unwrap() == nested
+
+    def test_large_list_value(self):
+        """Test with large list values."""
+        large_list = list(range(1000))
+        result = ModelResult.ok(large_list)
+
+        assert result.is_ok()
+        assert result.unwrap() == large_list
+        assert len(result.unwrap()) == 1000
+
+    def test_unicode_in_values_and_errors(self):
+        """Test unicode characters in values and errors."""
+        unicode_value = "Test with unicode: \u2603 \u2764 \u2728"
+        result = ModelResult.ok(unicode_value)
+
+        assert result.is_ok()
+        assert result.unwrap() == unicode_value
+
+        unicode_error = "Error: \u274c Failed with \u26a0"
+        error_result = ModelResult.err(unicode_error)
+
+        assert error_result.is_err()
+        assert error_result.error == unicode_error
+
+    def test_empty_string_as_error(self):
+        """Test empty string as error value."""
+        result = ModelResult.err("")
+
+        assert result.is_err()
+        assert result.error == ""
+
+    def test_zero_as_value(self):
+        """Test zero as success value."""
+        result = ModelResult.ok(0)
+
+        assert result.is_ok()
+        assert result.unwrap() == 0
+        # Zero value but still success
+        assert bool(result) is True
+
+    def test_false_as_value(self):
+        """Test False as success value."""
+        result = ModelResult.ok(False)
+
+        assert result.is_ok()
+        assert result.unwrap() is False
+        # False value but still success
+        assert bool(result) is True
+
+    def test_empty_list_as_value(self):
+        """Test empty list as success value."""
+        result = ModelResult.ok([])
+
+        assert result.is_ok()
+        assert result.unwrap() == []
+
+    def test_empty_dict_as_value(self):
+        """Test empty dict as success value."""
+        result = ModelResult.ok({})
+
+        assert result.is_ok()
+        assert result.unwrap() == {}
+
+    def test_callable_in_unwrap_or_else_receives_correct_error(self):
+        """Test that unwrap_or_else receives the exact error value."""
+        error_obj = {"code": 404, "message": "Not found"}
+        result = ModelResult.err(error_obj)
+
+        received_error = None
+
+        def capture_error(e: Any) -> str:
+            nonlocal received_error
+            received_error = e
+            return "default"
+
+        result.unwrap_or_else(capture_error)
+
+        assert received_error == error_obj
+
+    def test_map_preserves_error_type(self):
+        """Test that map preserves original error when result is error."""
+        original_error = "original"
+        result = ModelResult.err(original_error)
+
+        mapped = result.map(lambda x: x * 2)
+
+        assert mapped.is_err()
+        assert mapped.error == original_error
+
+    def test_map_err_preserves_value_type(self):
+        """Test that map_err preserves original value when result is success."""
+        original_value = [1, 2, 3]
+        result = ModelResult.ok(original_value)
+
+        mapped = result.map_err(lambda e: f"transformed: {e}")
+
+        assert mapped.is_ok()
+        assert mapped.unwrap() == original_value
