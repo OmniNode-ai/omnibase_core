@@ -32,6 +32,7 @@ Architecture Decision Records (ADRs) document significant architectural decision
 | [ADR-002](./ADR-002-context-mutability-design-decision.md) | Context Mutability Design Decision | 🟢 **IMPLEMENTED** | 2025-12-15 | Immutability, Workflow State, FSM Snapshots |
 | [ADR-003](./ADR-003-reducer-output-exception-consistency.md) | Reducer Output Exception Consistency | 🟢 **IMPLEMENTED** | 2025-12-16 | Error Handling, Validation, Sentinel Pattern |
 | [ADR-004](./ADR-004-registration-trigger-architecture.md) | Registration Trigger Architecture | 🟢 **ACCEPTED** | 2025-12-19 | Registration, Events, Commands, Orchestrator |
+| [ADR-005](./ADR-005-core-infra-dependency-boundary.md) | Core-Infra Dependency Boundary | 🟢 **IMPLEMENTED** | 2025-12-26 | Dependency Inversion, Transport Libraries, Architecture Boundary |
 
 ---
 
@@ -53,6 +54,7 @@ Architecture Decision Records (ADRs) document significant architectural decision
 
 ### Dependency Injection & Architecture
 - ADR-001: Protocol-Based DI Architecture
+- ADR-005: Core-Infra Dependency Boundary
 - RISK-009: CI Workflow Modification Risk
 
 ### State Management & Immutability
@@ -88,7 +90,6 @@ When creating a new ADR:
 
 ---
 
-**Last Updated**: 2025-12-19
-**Total ADRs**: 4 (3 implemented, 1 accepted)
+**Last Updated**: 2025-12-26
+**Total ADRs**: 5 (4 implemented, 1 accepted)
 **Total Risk Records**: 1 mitigated
-**Correlation ID**: `95cac850-05a3-43e2-9e57-ccbbef683f43`
