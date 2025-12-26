@@ -5,21 +5,34 @@ This module defines the intent event used for coordinating event publishing
 between nodes without performing direct domain I/O.
 
 Pattern:
-    Node (builds intent) → Kafka (intent topic) → IntentExecutor → Kafka (domain topic)
+    Node (builds intent) -> Kafka (intent topic) -> IntentExecutor -> Kafka (domain topic)
 
 Example:
     # Reducer publishes intent instead of direct event
-    from omnibase_core.constants import TOPIC_EVENT_PUBLISH_INTENT
+    from omnibase_core.constants import (
+        DOMAIN_METRICS,
+        TOPIC_EVENT_PUBLISH_INTENT,
+        TOPIC_TYPE_EVENTS,
+        topic_name,
+    )
+
+    # Generate topic name using taxonomy function
+    metrics_topic = topic_name(DOMAIN_METRICS, TOPIC_TYPE_EVENTS)
 
     intent = ModelEventPublishIntent(
-        target_topic=TOPIC_METRICS_RECORDED,
-        target_event=metrics_event
+        correlation_id=uuid4(),
+        created_by="metrics_reducer_v1_0_0",
+        target_topic=metrics_topic,  # "onex.metrics.events"
+        target_key="metrics-123",
+        target_event_type="GENERATION_METRICS_RECORDED",
+        target_event_payload={"metric": "value"},
     )
     await publish_to_kafka(TOPIC_EVENT_PUBLISH_INTENT, intent)
 
 Note:
     TOPIC_EVENT_PUBLISH_INTENT is now defined in constants_topic_taxonomy.py
-    and should be imported from omnibase_core.constants.
+    and should be imported from omnibase_core.constants. Use topic_name()
+    to generate domain-specific topic names dynamically.
 """
 
 from datetime import UTC, datetime
@@ -56,7 +69,7 @@ class ModelEventPublishIntent(BaseModel):
         retry_policy: Optional retry configuration
     """
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
 
     # Intent metadata
     intent_id: UUID = Field(

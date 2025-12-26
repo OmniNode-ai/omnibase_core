@@ -55,6 +55,25 @@ SpecificActionPayload = (
 )
 
 
+__all__ = [
+    # Payload type classes
+    "ModelCustomActionPayload",
+    "ModelDataActionPayload",
+    "ModelFilesystemActionPayload",
+    "ModelLifecycleActionPayload",
+    "ModelManagementActionPayload",
+    "ModelMonitoringActionPayload",
+    "ModelOperationalActionPayload",
+    "ModelRegistryActionPayload",
+    "ModelTransformationActionPayload",
+    "ModelValidationActionPayload",
+    # Type alias
+    "SpecificActionPayload",
+    # Factory function
+    "create_specific_action_payload",
+]
+
+
 def create_specific_action_payload(
     action_type: ModelNodeActionType,
     **kwargs: Any,

@@ -481,11 +481,17 @@ class TestModelNodeType:
 
         expected_data = {
             "type_id": node_type.type_id,
-            "type_name": "CONTRACT_TO_MODEL",
+            "type_name": EnumTypeName.CONTRACT_TO_MODEL,
             "description": "Test node for serialization",
-            "category": "testing",
+            "category": EnumConfigCategory.TESTING,
             "dependencies": ["DEP_A", "DEP_B"],
-            "version_compatibility": {"major": 1, "minor": 5, "patch": 0},
+            "version_compatibility": {
+                "major": 1,
+                "minor": 5,
+                "patch": 0,
+                "prerelease": None,
+                "build": None,
+            },
             "execution_priority": 75,
             "is_generator": True,
             "is_validator": False,

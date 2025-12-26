@@ -986,7 +986,14 @@ class TestNodeOrchestratorParallelExecutionDeterminism:
         parallel_workflow_definition: ModelWorkflowDefinition,
         complex_dependency_steps_config: list[dict],
     ):
-        """Test that parallel execution respects dependency constraints."""
+        """Test that parallel execution respects dependency constraints.
+
+        Verifies that the execution ORDER respects dependencies by checking
+        that actions are emitted in valid topological order:
+        - Step 1 (root, NodeEffect) must be scheduled first
+        - Step 4 (merge, NodeReducer) must be scheduled last
+        - Steps 2 and 3 (branches, NodeCompute) must be scheduled between them
+        """
         node = NodeOrchestrator(test_container)
         node.workflow_definition = parallel_workflow_definition
 
@@ -998,18 +1005,36 @@ class TestNodeOrchestratorParallelExecutionDeterminism:
 
         result = await node.process(input_data)
 
-        # Verify dependency order constraints
+        # Verify all steps completed
         completed = result.completed_steps
+        assert len(completed) == 4, "All 4 steps should complete"
 
-        # Step 1 must be completed (it's the root)
-        assert str(FIXED_STEP_1_ID) in completed
+        # Verify dependency order by checking action emission order
+        # This tests EXECUTION order, not just completion membership
+        actions = result.actions_emitted
+        assert len(actions) == 4, "Should emit exactly 4 actions for 4 steps"
 
-        # Step 4 must be completed and depends on Steps 2 and 3
-        assert str(FIXED_STEP_4_ID) in completed
+        # Get action target types in emission order
+        action_targets = [action.target_node_type for action in actions]
 
-        # If step 4 completed, steps 2 and 3 must have completed before
-        assert str(FIXED_STEP_2_ID) in completed
-        assert str(FIXED_STEP_3_ID) in completed
+        # Step 1 (root, effect) MUST be scheduled first - it has no dependencies
+        assert action_targets[0] == "NodeEffect", (
+            f"Root step (NodeEffect) must be scheduled first, "
+            f"but got {action_targets[0]}"
+        )
+
+        # Step 4 (merge, reducer) MUST be scheduled last - it depends on 2 and 3
+        assert action_targets[-1] == "NodeReducer", (
+            f"Merge step (NodeReducer) must be scheduled last, "
+            f"but got {action_targets[-1]}"
+        )
+
+        # Steps 2 and 3 (branches, compute) must be scheduled in between
+        # They can be in either order since they're parallel, but both must appear
+        middle_targets = action_targets[1:-1]
+        assert sorted(middle_targets) == ["NodeCompute", "NodeCompute"], (
+            f"Branch steps (2x NodeCompute) must be in middle, but got {middle_targets}"
+        )
 
 
 @pytest.mark.timeout(60)

@@ -11,6 +11,9 @@ from omnibase_core.types.typed_dict.typed_dict_discovery_extended_stats import (
 from omnibase_core.types.typed_dict.typed_dict_discovery_stats import (
     TypedDictDiscoveryStats,
 )
+from omnibase_core.types.typed_dict.typed_dict_event_bus_health import (
+    TypedDictEventBusHealth,
+)
 from omnibase_core.types.typed_dict.typed_dict_event_metadata import (
     TypedDictEventMetadata,
 )
@@ -66,6 +69,7 @@ __all__ = [
     "TypedDictCacheStats",
     "TypedDictDiscoveryExtendedStats",
     "TypedDictDiscoveryStats",
+    "TypedDictEventBusHealth",
     "TypedDictEventMetadata",
     "TypedDictExecutorHealth",
     "TypedDictFSMContext",

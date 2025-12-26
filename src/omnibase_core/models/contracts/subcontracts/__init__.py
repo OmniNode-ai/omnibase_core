@@ -22,7 +22,6 @@ Strong typing with comprehensive type safety.
 
 # Re-export constant from canonical location
 from omnibase_core.constants import IDEMPOTENCY_DEFAULTS
-from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 from omnibase_core.models.core.model_health_check_result import ModelHealthCheckResult
 from omnibase_core.models.core.model_workflow_metrics import ModelWorkflowMetrics
 from omnibase_core.models.fsm.model_fsm_operation import ModelFSMOperation
@@ -218,7 +217,6 @@ __all__ = [
     "ModelRetrySubcontract",
     # Routing subcontracts and components
     "ModelRoutingSubcontract",
-    "ModelCircuitBreaker",
     "ModelLoadBalancing",
     "ModelRequestTransformation",
     "ModelRouteDefinition",

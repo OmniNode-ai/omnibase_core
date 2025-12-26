@@ -8,7 +8,7 @@ Enhanced for tool-as-a-service architecture with strong typing throughout.
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.core.model_core_performance_metrics import (
@@ -43,6 +43,11 @@ class ModelActionMetadata(BaseModel):
         - mcp_endpoint/graphql_endpoint: Optional for nodes not exposing these
           protocol endpoints.
     """
+
+    model_config = ConfigDict(
+        extra="forbid",
+        from_attributes=True,
+    )
 
     # Core identification
     action_id: UUID = Field(

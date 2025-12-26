@@ -4,9 +4,14 @@ Circuit Breaker Metadata Model
 Type-safe circuit breaker metadata that replaces Dict[str, Any] usage.
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.services.model_custom_fields import ModelCustomFields
+if TYPE_CHECKING:
+    from omnibase_core.models.services.model_custom_fields import ModelCustomFields
 
 
 class ModelCircuitBreakerMetadata(BaseModel):

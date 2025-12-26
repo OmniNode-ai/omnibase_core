@@ -10,6 +10,27 @@ Design Principles:
 - Minimal interfaces: Only define what Core actually needs
 - Runtime checkable: Use @runtime_checkable for duck typing support
 - Complete type hints: Full mypy strict mode compliance
+- Interface Segregation: Separate protocols for publish, subscribe, lifecycle
+
+ISP-Compliant Protocols:
+    The event bus protocols follow the Interface Segregation Principle (ISP).
+    Components should depend on the minimal interface they need:
+
+    - ProtocolEventBusPublisher: For components that only publish events
+    - ProtocolEventBusSubscriber: For components that only subscribe to events
+    - ProtocolEventBusLifecycle: For components that manage lifecycle
+    - ProtocolEventBus: Full interface combining all capabilities
+
+Example:
+    >>> # Import only what you need
+    >>> from omnibase_core.protocols.event_bus import ProtocolEventBusPublisher
+    >>>
+    >>> class MyPublisher:
+    ...     def __init__(self, publisher: ProtocolEventBusPublisher):
+    ...         self.publisher = publisher
+    ...
+    ...     async def emit(self, data: bytes) -> None:
+    ...         await self.publisher.publish("my.topic", None, data)
 """
 
 from __future__ import annotations
@@ -24,11 +45,20 @@ from omnibase_core.protocols.event_bus.protocol_event_bus_base import (
 from omnibase_core.protocols.event_bus.protocol_event_bus_headers import (
     ProtocolEventBusHeaders,
 )
+from omnibase_core.protocols.event_bus.protocol_event_bus_lifecycle import (
+    ProtocolEventBusLifecycle,
+)
 from omnibase_core.protocols.event_bus.protocol_event_bus_log_emitter import (
     ProtocolEventBusLogEmitter,
 )
+from omnibase_core.protocols.event_bus.protocol_event_bus_publisher import (
+    ProtocolEventBusPublisher,
+)
 from omnibase_core.protocols.event_bus.protocol_event_bus_registry import (
     ProtocolEventBusRegistry,
+)
+from omnibase_core.protocols.event_bus.protocol_event_bus_subscriber import (
+    ProtocolEventBusSubscriber,
 )
 from omnibase_core.protocols.event_bus.protocol_event_envelope import (
     ProtocolEventEnvelope,
@@ -50,7 +80,11 @@ __all__ = [
     "ProtocolEventBusHeaders",
     # Adapters
     "ProtocolKafkaEventBusAdapter",
-    # Event Bus
+    # Event Bus - ISP-compliant protocols (prefer these for minimal dependencies)
+    "ProtocolEventBusPublisher",
+    "ProtocolEventBusSubscriber",
+    "ProtocolEventBusLifecycle",
+    # Event Bus - Full interface (combines Publisher, Subscriber, Lifecycle)
     "ProtocolEventBus",
     "ProtocolEventBusBase",
     "ProtocolSyncEventBus",

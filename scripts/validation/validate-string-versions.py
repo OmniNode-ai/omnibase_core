@@ -18,6 +18,7 @@ This prevents runtime issues and ensures proper type compliance.
 
 from __future__ import annotations
 
+import argparse
 import ast
 import os
 import re
@@ -44,6 +45,73 @@ MAX_PYTHON_FILE_SIZE = 10 * 1024 * 1024  # 10MB - prevent DoS attacks on Python 
 MAX_YAML_FILE_SIZE = 50 * 1024 * 1024  # 50MB - prevent DoS attacks on YAML files
 DIRECTORY_SCAN_TIMEOUT = 30  # seconds
 VALIDATION_TIMEOUT = 600  # 10 minutes
+
+# Exclusion patterns for validation (shared between directory and individual file modes)
+#
+# MATCHING BEHAVIOR:
+# - Path component matching: Pattern is checked against each directory/file in the path
+#   (e.g., "tests" matches any file under a "tests" directory)
+# - Filename prefix matching: Pattern is checked with startswith() against the filename
+#   (e.g., "ci-cd" matches "ci-cd.yml" but not "my-ci-cd.yml")
+#
+# EXCLUSION RATIONALE:
+# - protocols: Protocol files define interfaces/type stubs that may reference version
+#   formats in docstrings and type hints for documentation purposes. These are abstract
+#   interfaces, not runtime implementations, so the string version anti-pattern doesn't apply.
+# - tests: Test files may contain version strings as test data
+# - archive, archived: Legacy code not subject to current standards
+# - deployment, .github, kubernetes, etc.: CI/CD and deployment configs use string versions by convention
+EXCLUDE_PATTERNS = [
+    "deployment",
+    ".github",
+    "docker-compose",
+    "prometheus",
+    "alerts.yml",
+    "grafana",
+    "kubernetes",
+    "ci-cd.yml",  # Generic CI/CD configuration file (e.g., ci-cd.yml, ci-cd-*.yml)
+    "__pycache__",
+    ".mypy_cache",
+    ".pytest_cache",
+    "node_modules",
+    "archive",  # Exclude archived code
+    "archived",  # Exclude archived code (alternative naming)
+    "tests",  # Exclude test files
+    "examples_validation_container_usage.py",  # Exclude specific example files
+    "protocols",  # Exclude Protocol classes (see rationale above)
+]
+
+
+def should_exclude_file(file_path: Path, verbose: bool = False) -> bool:
+    """
+    Check if a file should be excluded from validation based on EXCLUDE_PATTERNS.
+
+    Args:
+        file_path: Path to the file to check
+        verbose: If True, print reason for exclusion
+
+    Returns:
+        True if the file should be excluded, False otherwise
+    """
+    path_parts = file_path.parts
+    file_name = file_path.name
+
+    for pattern in EXCLUDE_PATTERNS:
+        # Check if any path component matches the pattern
+        if pattern in path_parts:
+            if verbose:
+                print(f"Skipping (excluded): {file_path} (path contains '{pattern}')")
+            return True
+        # Check if filename starts with the pattern
+        if file_name.startswith(pattern):
+            if verbose:
+                print(
+                    f"Skipping (excluded): {file_path} (filename starts with '{pattern}')"
+                )
+            return True
+
+    return False
+
 
 # Add src to Python path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
@@ -913,10 +981,43 @@ def setup_timeout_handler():
 def main() -> int:
     """Main entry point for the validation hook."""
     try:
-        if len(sys.argv) < 2:
-            print("Usage: validate-string-versions.py [--dir] <path1> [path2] ...")
-            print("  --dir: Recursively scan directories for YAML and Python files")
-            print("  Without --dir: Treat arguments as individual YAML/Python files")
+        # Parse command line arguments using argparse
+        parser = argparse.ArgumentParser(
+            description="Validate YAML and Python files for string version/ID anti-patterns",
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+            epilog="""
+Examples:
+  %(prog)s --dir src/                    # Scan src/ directory recursively
+  %(prog)s --dir -v src/                 # Scan with verbose output
+  %(prog)s file1.yaml file2.py           # Check specific files
+  %(prog)s --verbose tests/test.yaml     # Check file with verbose output
+            """,
+        )
+        parser.add_argument(
+            "--dir",
+            action="store_true",
+            dest="scan_dirs",
+            help="Recursively scan directories for YAML and Python files",
+        )
+        parser.add_argument(
+            "-v",
+            "--verbose",
+            action="store_true",
+            help="Show detailed output (excluded files, files being checked)",
+        )
+        parser.add_argument(
+            "paths",
+            nargs="*",
+            help="Files or directories to validate",
+        )
+
+        parsed_args = parser.parse_args()
+        scan_dirs = parsed_args.scan_dirs
+        verbose = parsed_args.verbose
+        args = parsed_args.paths
+
+        if not args:
+            print("Error: No paths provided")
             return 1
 
         try:
@@ -925,21 +1026,11 @@ def main() -> int:
             print(f"Error: Failed to initialize validator: {e}")
             return 1
 
-        # Check for directory scan mode
-        scan_dirs = False
-        args = sys.argv[1:]
-
-        try:
-            if args and args[0] == "--dir":
-                scan_dirs = True
-                args = args[1:]
-        except Exception as e:
-            print(f"Error: Failed to parse arguments: {e}")
-            return 1
-
-        if not args:
-            print("Error: No paths provided")
-            return 1
+        if verbose:
+            print("Verbose mode enabled")
+            print(f"Scan directories mode: {scan_dirs}")
+            print(f"Input paths: {args}")
+            print()
 
         yaml_files = []
 
@@ -964,38 +1055,8 @@ def main() -> int:
                             # Setup timeout for directory scanning (30 seconds)
                             try:
                                 with timeout_context("directory_scan"):
-                                    # Recursively find all YAML and Python files, but exclude non-ONEX directories
-                                    #
-                                    # EXCLUSION RATIONALE:
-                                    # - protocols/: Protocol files define interfaces/type stubs that may
-                                    #   reference version formats in docstrings and type hints for
-                                    #   documentation purposes. These are abstract interfaces, not runtime
-                                    #   implementations, so the string version anti-pattern doesn't apply.
-                                    #   Protocol files document API contracts and may legitimately include
-                                    #   version string examples in their docstrings.
-                                    # - tests/: Test files may contain version strings as test data
-                                    # - archive/archived/: Legacy code not subject to current standards
-                                    #
-                                    exclude_patterns = [
-                                        "deployment",
-                                        ".github",
-                                        "docker-compose",
-                                        "prometheus",
-                                        "alerts.yml",
-                                        "grafana",
-                                        "kubernetes",
-                                        "ci-cd.yml",  # GitHub Actions CI file
-                                        "__pycache__",
-                                        ".mypy_cache",
-                                        ".pytest_cache",
-                                        "node_modules",
-                                        "archive",  # Exclude archived code
-                                        "archived",  # Exclude archived code (alternative naming)
-                                        "tests",  # Exclude test files
-                                        "examples_validation_container_usage.py",  # Exclude specific example files
-                                        "protocols",  # Exclude Protocol classes (see EXCLUSION RATIONALE above)
-                                    ]
-
+                                    # Recursively find all YAML and Python files
+                                    # Filter using EXCLUDE_PATTERNS constant (see rationale above)
                                     try:
                                         all_files = (
                                             list(path.rglob("*.yaml"))
@@ -1013,24 +1074,13 @@ def main() -> int:
                                         )
                                         continue
 
-                                    # Filter out excluded files using path components
+                                    # Filter out excluded files using helper function
                                     try:
                                         for file_path in all_files:
                                             try:
-                                                should_exclude = False
-                                                path_parts = file_path.parts
-                                                file_name = file_path.name
-
-                                                # Check if any path component or filename matches exclusion patterns
-                                                for pattern in exclude_patterns:
-                                                    if (
-                                                        pattern in path_parts
-                                                        or file_name.startswith(pattern)
-                                                    ):
-                                                        should_exclude = True
-                                                        break
-
-                                                if not should_exclude:
+                                                if not should_exclude_file(
+                                                    file_path, verbose
+                                                ):
                                                     yaml_files.append(file_path)
                                             except Exception as e:
                                                 print(
@@ -1058,13 +1108,17 @@ def main() -> int:
                         print(f"Warning: Error processing argument '{arg}': {e}")
                         continue
             else:
-                # Individual file mode
+                # Individual file mode - uses should_exclude_file helper
                 for arg in args:
                     try:
                         path = Path(arg)
 
                         if not path.exists():
                             print(f"Warning: File does not exist: {path}")
+                            continue
+
+                        # Skip excluded paths using helper function
+                        if should_exclude_file(path, verbose):
                             continue
 
                         if path.suffix.lower() in [".yaml", ".yml", ".py"]:
@@ -1084,6 +1138,17 @@ def main() -> int:
                 "✅ String Version Validation PASSED (no YAML or Python files to check)"
             )
             return 0
+
+        # Show file count summary in verbose mode
+        if verbose:
+            yaml_count = sum(
+                1 for f in yaml_files if f.suffix.lower() in [".yaml", ".yml"]
+            )
+            py_count = sum(1 for f in yaml_files if f.suffix.lower() == ".py")
+            print(
+                f"Files to validate: {len(yaml_files)} total ({yaml_count} YAML, {py_count} Python)"
+            )
+            print()
 
         try:
             # Setup timeout for validation (10 minutes)
