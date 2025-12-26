@@ -768,7 +768,10 @@ class TestModelNodeInitMetadataInstantiation:
         assert metadata.init_source == "container"
         assert metadata.init_timestamp == "2025-01-15T10:30:00Z"
         assert metadata.config_hash == "sha256:abc123def456"
-        assert metadata.dependency_versions == '{"pydantic": "2.11.0", "fastapi": "0.120.0"}'
+        assert (
+            metadata.dependency_versions
+            == '{"pydantic": "2.11.0", "fastapi": "0.120.0"}'
+        )
         assert metadata.feature_flags == "experimental_caching,async_processing"
 
     def test_create_with_partial_fields(self) -> None:
