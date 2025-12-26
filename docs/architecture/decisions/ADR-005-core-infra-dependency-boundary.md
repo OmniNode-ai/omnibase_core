@@ -181,6 +181,18 @@ The following libraries are **FORBIDDEN** as direct dependencies in omnibase_cor
 | **Secret Stores** | `hvac` | `ProtocolSecretStore` |
 | **Service Discovery** | `consul` | `ProtocolServiceDiscovery` |
 
+### Known Technical Debt
+
+The following transport/I/O dependencies remain in `omnibase_core` and are acknowledged as technical debt requiring future migration:
+
+| Dependency | Category | Protocol Alternative | Status |
+|------------|----------|---------------------|--------|
+| `asyncpg` | Database | `ProtocolRepository` | Pending migration |
+| `psycopg2-binary` | Database | `ProtocolRepository` | Pending migration |
+| `python-consul` | Service Discovery | `ProtocolServiceDiscovery` | Pending migration |
+
+These dependencies were not removed in the initial ADR-005 implementation to limit scope. Follow-up issues will track their migration to `omnibase_infra`.
+
 ### Allowed Patterns
 
 While runtime imports are forbidden, these patterns ARE allowed:
@@ -349,9 +361,9 @@ TYPE_CHECKING imports are **allowed** per the [Allowed Patterns](#allowed-patter
 
 If the script flags an import that is inside a TYPE_CHECKING block, see the detailed resolution steps in the script's comments at `scripts/validate-no-transport-imports.sh` (lines 103-108).
 
-### Pre-commit Integration (Optional)
+### Pre-commit Integration
 
-For local enforcement, add to `.pre-commit-config.yaml`:
+The transport import check is enabled by default in `.pre-commit-config.yaml`:
 
 ```yaml
 - repo: local
