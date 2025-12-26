@@ -504,7 +504,25 @@ class ModelEnvelopePayload(BaseModel):
         return count
 
     def __bool__(self) -> bool:
-        """Return True if there are any payload items."""
+        """Return True if there are any payload items.
+
+        Warning:
+            This differs from standard Pydantic behavior where ``bool(model)``
+            always returns ``True``. An "empty" payload (all fields None/empty)
+            returns ``False``, enabling idiomatic emptiness checks.
+
+        Returns:
+            bool: True if any payload field has data, False if all are empty.
+
+        Example:
+            >>> payload = ModelEnvelopePayload(event_type="test")
+            >>> if payload:
+            ...     print("Payload has content")
+
+            >>> empty = ModelEnvelopePayload()
+            >>> if not empty:
+            ...     print("Payload is empty")
+        """
         return (
             self.event_type is not None
             or self.source is not None

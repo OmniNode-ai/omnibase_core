@@ -200,6 +200,7 @@ def serialize_error(error: ModelOnexError) -> TypedDictValidationErrorSerialized
 |----------|-------------|--------|
 | [Circuit Breaker Pattern](patterns/CIRCUIT_BREAKER_PATTERN.md) | Circuit breaker implementation | ✅ Available |
 | [Configuration Management](patterns/CONFIGURATION_MANAGEMENT.md) | Config patterns | ✅ Available |
+| [Custom `__bool__` Pattern](patterns/CUSTOM_BOOL_PATTERN.md) | Result model truthiness | ✅ Available |
 | [Performance Benchmarks](guides/PERFORMANCE_BENCHMARKS.md) | Performance testing | ✅ Available |
 
 ### Performance & Optimization

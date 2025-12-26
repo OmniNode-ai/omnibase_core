@@ -324,7 +324,25 @@ class ModelResult[T, E](
         return f"Error: {self.error}"
 
     def __bool__(self) -> bool:
-        """Boolean conversion - True if success, False if error."""
+        """Boolean conversion - True if success, False if error.
+
+        Warning:
+            This differs from standard Pydantic behavior where ``bool(model)``
+            always returns ``True``. Here, ``bool(result)`` returns the value
+            of ``success``, enabling idiomatic error checking patterns.
+
+        Returns:
+            bool: True if the result represents success, False if error.
+
+        Example:
+            >>> result = ModelResult.ok("data")
+            >>> if result:
+            ...     print(f"Got: {result.value}")
+
+            >>> error = ModelResult.err("failed")
+            >>> if not error:
+            ...     print(f"Error: {error.error}")
+        """
         return self.success
 
     # Protocol method implementations

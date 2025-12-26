@@ -416,15 +416,23 @@ class ModelOptionalInt(BaseModel):
         }
 
     def __bool__(self) -> bool:
-        """
-        Boolean representation based on value presence.
+        """Boolean representation based on value presence.
+
+        Warning:
+            This differs from standard Pydantic behavior where ``bool(model)``
+            always returns ``True``. Here, ``bool(optional)`` returns ``False``
+            when the value is ``None``, enabling idiomatic presence checks.
+            Note that ``0`` is a valid value and returns ``True``.
 
         Returns:
-            bool: True if value is present, False if None
+            bool: True if value is present (not None), False if None.
 
-        Examples:
+        Example:
             >>> value = ModelOptionalInt(value=42)
             >>> assert bool(value) is True
+
+            >>> zero = ModelOptionalInt(value=0)
+            >>> assert bool(zero) is True  # 0 is a valid value
 
             >>> empty = ModelOptionalInt(value=None)
             >>> assert bool(empty) is False
