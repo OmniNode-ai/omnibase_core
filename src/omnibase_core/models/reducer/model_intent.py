@@ -19,10 +19,10 @@ Intent System Architecture:
        - Use for: registration, persistence, lifecycle, core workflows
 
     2. Extension Intents (this module):
-       - Generic ModelIntent with typed payload
+       - Generic ModelIntent with Protocol-typed payload
        - Open set for plugins and extensions
        - String-based intent_type routing
-       - Runtime validation
+       - Runtime validation via Protocol
        - Use for: plugins, experimental features, third-party integrations
 
 Design Pattern:
@@ -50,60 +50,64 @@ When to Use ModelIntent vs Core Intents:
     - Want compile-time type safety
     - Building core infrastructure
 
+Typed Payloads (v0.4.0+):
+    ModelIntent requires typed payloads implementing ProtocolIntentPayload.
+    All payload classes must have an `intent_type` attribute for routing.
+
+    Typed Payload Categories:
+        - Logging: ModelPayloadLogEvent, ModelPayloadMetric
+        - Persistence: ModelPayloadPersistState, ModelPayloadPersistResult
+        - FSM: ModelPayloadFSMStateAction, ModelPayloadFSMTransitionAction, ModelPayloadFSMCompleted
+        - Events: ModelPayloadEmitEvent
+        - I/O: ModelPayloadWrite, ModelPayloadHTTP
+        - Notifications: ModelPayloadNotify
+        - Extensions: ModelPayloadExtension (catch-all for plugins)
+
 Intent Types (Extension Examples):
     - "plugin.execute": Execute a plugin action
     - "webhook.send": Send a webhook notification
     - "custom.transform": Apply custom data transformation
     - "experimental.feature": Test experimental feature
 
-Example:
+Example (Typed Payload):
     >>> from omnibase_core.models.reducer import ModelIntent
-    >>> from omnibase_core.models.context import ModelReducerIntentPayload
+    >>> from omnibase_core.models.reducer.payloads import ModelPayloadLogEvent
     >>>
-    >>> # With typed payload (recommended for structured data)
+    >>> # Create intent with typed payload
     >>> intent = ModelIntent(
-    ...     intent_type="fsm.transition",
-    ...     target="user_workflow",
-    ...     payload=ModelReducerIntentPayload(
-    ...         target_state="active",
-    ...         source_state="pending",
-    ...         trigger="user_verified",
-    ...         entity_type="user",
+    ...     intent_type="log_event",
+    ...     target="logging",
+    ...     payload=ModelPayloadLogEvent(
+    ...         level="INFO",
+    ...         message="Processing completed",
+    ...         context={"duration_ms": 125},
     ...     ),
-    ...     priority=5,
-    ... )
-    >>>
-    >>> # With dict payload (backwards compatible)
-    >>> intent = ModelIntent(
-    ...     intent_type="webhook.send",
-    ...     target="notifications",
-    ...     payload={"url": "https://...", "method": "POST", "body": {}},
-    ...     priority=5,
     ... )
 
 See Also:
+    - docs/architecture/PAYLOAD_TYPE_ARCHITECTURE.md: Typed payload architecture guide
+    - omnibase_core.models.reducer.payloads: Typed payload models
+    - omnibase_core.models.reducer.payloads.ProtocolIntentPayload: Payload protocol
     - omnibase_core.models.intents: Core infrastructure intents (discriminated union)
     - omnibase_core.nodes.node_reducer: Emits intents during reduction
     - omnibase_core.nodes.node_effect: Executes intents
 """
 
-from __future__ import annotations
-
-from typing import Any
+import logging
+import warnings
+from typing import Self
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from omnibase_core.models.context.model_reducer_intent_payload import (
-    ModelReducerIntentPayload,
+from omnibase_core.models.reducer.payloads.model_protocol_intent_payload import (
+    ProtocolIntentPayload,
 )
-from omnibase_core.utils.util_decorators import allow_dict_str_any
+
+# Module-level logger for validation diagnostics
+_logger = logging.getLogger(__name__)
 
 
-@allow_dict_str_any(
-    "Intent payloads support both typed ModelReducerIntentPayload and flexible dict[str, Any] "
-    "for flexible payloads when typed fields are not applicable."
-)
 class ModelIntent(BaseModel):
     """
     Extension intent declaration for plugin and experimental workflows.
@@ -122,30 +126,14 @@ class ModelIntent(BaseModel):
         - Intent to apply custom transformation
         - Intent for experimental features
 
-    Example:
-        Basic usage with dict (backwards compatible)::
-
-            intent = ModelIntent(
-                intent_type="webhook.send",
-                target="notifications",
-                payload={"url": "https://...", "method": "POST"},
-            )
-
-        With typed ModelReducerIntentPayload (recommended for FSM transitions)::
-
-            from omnibase_core.models.context import ModelReducerIntentPayload
-
-            intent = ModelIntent(
-                intent_type="fsm.transition",
-                target="user_workflow",
-                payload=ModelReducerIntentPayload(
-                    target_state="active",
-                    source_state="pending",
-                    trigger="user_verified",
-                    entity_type="user",
-                    operation="activate",
-                ),
-            )
+    Attributes:
+        intent_id: Unique identifier for this intent (auto-generated UUID).
+        intent_type: Type of intent for routing (e.g., "log_event", "notify").
+        target: Target for the intent execution (service, channel, topic).
+        payload: Typed payload implementing ProtocolIntentPayload.
+        priority: Execution priority (1-10, higher = more urgent).
+        lease_id: Optional lease ID for leased workflow tracking.
+        epoch: Optional epoch for versioned state tracking.
 
     See Also:
         omnibase_core.models.context.ModelReducerIntentPayload: Typed payload for structured intents
@@ -161,7 +149,7 @@ class ModelIntent(BaseModel):
 
     intent_type: str = Field(
         ...,
-        description="Type of intent (log, emit_event, write, notify)",
+        description="Type of intent (log_event, emit_event, write, notify, etc.)",
         min_length=1,
         max_length=100,
     )
@@ -173,12 +161,12 @@ class ModelIntent(BaseModel):
         max_length=200,
     )
 
-    payload: ModelReducerIntentPayload | dict[str, Any] = Field(
-        default_factory=dict,
+    payload: ProtocolIntentPayload = Field(
+        ...,
         description=(
-            "Intent payload data. Accepts either a typed ModelReducerIntentPayload for "
-            "structured FSM transitions and side effect requests, or a flexible "
-            "dict[str, Any] for flexible payloads in extension workflows."
+            "Intent payload implementing ProtocolIntentPayload. "
+            "Use typed payloads from omnibase_core.models.reducer.payloads "
+            "(e.g., ModelPayloadLogEvent, ModelPayloadNotify, ModelPayloadExtension)."
         ),
     )
 
@@ -201,10 +189,69 @@ class ModelIntent(BaseModel):
         ge=0,
     )
 
+    @model_validator(mode="after")
+    def _validate_intent_type_consistency(self) -> Self:
+        """
+        Validate that intent_type matches the payload's intent_type.
+
+        This ensures consistency between the intent's routing type and the
+        payload's discriminator field. If they don't match, a warning is logged
+        but the model is still valid (to support extension use cases).
+
+        Returns:
+            Self: The validated model instance
+
+        Note:
+            This validator logs a warning if intent_type differs from
+            payload.intent_type but does not raise an error.
+        """
+        payload_intent_type = self.payload.intent_type
+        if self.intent_type != payload_intent_type:
+            _logger.warning(
+                "ModelIntent intent_type='%s' differs from payload.intent_type='%s'. "
+                "This may cause routing issues. Consider using the same value.",
+                self.intent_type,
+                payload_intent_type,
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _validate_lease_epoch_consistency(self) -> Self:
+        """
+        Validate cross-field consistency for lease semantics.
+
+        If epoch is set (versioned state tracking), lease_id should ideally also
+        be set to ensure proper single-writer semantics. This validation emits
+        a warning for potentially misconfigured intents that have versioning
+        without ownership proof.
+
+        Note:
+            This is a warning rather than an error because ModelIntent supports
+            extension and experimental workflows where epoch may be used for
+            simple versioning without the full lease semantics. For core
+            infrastructure intents requiring strict single-writer guarantees,
+            use the discriminated union in omnibase_core.models.intents.
+
+        Returns:
+            Self: The validated model instance
+        """
+        if self.epoch is not None and self.lease_id is None:
+            warnings.warn(
+                f"ModelIntent has epoch ({self.epoch}) set without lease_id. "
+                "For proper single-writer semantics in distributed workflows, "
+                "consider providing a lease_id to prove ownership. "
+                "For extension intents without coordination requirements, "
+                "this warning can be safely ignored.",
+                UserWarning,
+                stacklevel=3,
+            )
+        return self
+
     model_config = ConfigDict(
         extra="forbid",
         frozen=True,
         use_enum_values=False,
         validate_assignment=True,
         from_attributes=True,
+        arbitrary_types_allowed=True,  # Required for Protocol types
     )

@@ -108,7 +108,7 @@ class ModelOnexEvent(BaseModel):
             Validated event type (string or ModelEventType)
 
         Raises:
-            ValueError: If event type is invalid
+            ModelOnexError: If event type is invalid
         """
         # If it's already a ModelEventType, return it as-is
         if isinstance(v, ModelEventType):

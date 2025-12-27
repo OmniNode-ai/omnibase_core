@@ -5,12 +5,15 @@ Provides centralized registry for CLI actions discovered from node contracts,
 enabling third-party nodes to register their own actions dynamically.
 """
 
+import logging
 from pathlib import Path
 from typing import cast
 
 from omnibase_core.models.cli.model_cli_action import ModelCliAction
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.utils.util_safe_yaml_loader import load_and_validate_yaml_model
+
+logger = logging.getLogger(__name__)
 
 
 class ModelActionRegistry:
@@ -79,7 +82,9 @@ class ModelActionRegistry:
         for contract_file in contract_files:
             try:
                 actions_discovered += self._discover_from_contract(contract_file)
-            except Exception:
+            except Exception as e:
+                # fallback-ok: resilient discovery - skip invalid contracts with debug logging
+                logger.debug("Failed to discover actions from %s: %s", contract_file, e)
                 continue
 
         return actions_discovered

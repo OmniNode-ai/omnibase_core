@@ -77,16 +77,15 @@ class ModelCustomSettings(BaseModel):
         cls,
         data: SerializedDict | None,
     ) -> Optional["ModelCustomSettings"]:
-        """Create from dictionary for easy migration."""
+        """Create from dictionary.
+
+        Data must be in the structured format with general_settings,
+        advanced_settings, and experimental_settings keys.
+        """
         if data is None:
             return None
 
-        # Check if already in new format
-        if "general_settings" in data:
-            return cls(**data)
-
-        # Legacy format - all settings in flat dict
-        return cls(general_settings=data.copy())
+        return cls(**data)
 
     def get_setting(
         self, key: str, default: SerializableValue = None

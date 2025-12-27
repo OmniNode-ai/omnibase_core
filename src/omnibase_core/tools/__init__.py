@@ -1,5 +1,5 @@
 """
-ONEX tools package.
+ONEX Tools Package.
 
 This package provides development and analysis tools for the ONEX framework.
 

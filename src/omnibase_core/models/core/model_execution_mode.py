@@ -152,9 +152,6 @@ class ModelExecutionMode(BaseModel):
             return cls.INMEMORY()
         if mode_upper == "EVENT_BUS":
             return cls.EVENT_BUS()
-        # Legacy compatibility
-        if mode_upper == "KAFKA":
-            return cls.EVENT_BUS()
         # Unknown mode - create a generic one
         return cls(
             name=mode_upper,

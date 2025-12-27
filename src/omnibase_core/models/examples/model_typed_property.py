@@ -77,6 +77,7 @@ class ModelTypedProperty(BaseModel):
             if isinstance(self.value.value, expected_type):
                 return self.value.value
         except Exception:
+            # fallback-ok: type conversion failures return default value
             pass
         return default
 

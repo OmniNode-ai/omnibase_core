@@ -56,6 +56,8 @@ from omnibase_core.enums.enum_numeric_value_type import EnumNumericValueType
 from omnibase_core.models.common.model_coercion_mode import EnumCoercionMode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
+__all__ = ["ModelNumericStringValue"]
+
 
 class ModelNumericStringValue(BaseModel):
     """
@@ -665,7 +667,3 @@ class ModelNumericStringValue(BaseModel):
         "use_enum_values": False,
         "validate_assignment": True,
     }
-
-
-# Export for use
-__all__ = ["ModelNumericStringValue"]

@@ -50,13 +50,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.utils.util_decorators import allow_dict_str_any
 
-
-@allow_dict_str_any(
-    "serialize_for_io() returns dict[str, Any] for JSON serialization at I/O boundary. "
-    "This is the serialization point where typed data becomes untyped for transport."
-)
 class ModelCoreIntent(BaseModel):
     """Base class for all core infrastructure intents.
 

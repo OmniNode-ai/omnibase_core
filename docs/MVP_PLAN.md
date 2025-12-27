@@ -712,7 +712,6 @@ Nodes are being reorganized but the meta-model they adhere to is not defined. Wi
 **Related docs**: `PROJECT_REFACTORING_PLAN.md`, `ARCHITECTURE_EVOLUTION_OVERVIEW.md`
 
 > **SUPERSEDED (v0.4.0)**: This phase was originally planned to move legacy nodes to a `nodes/legacy/` namespace with deprecation warnings. However, after confirming there were **no existing users** of the legacy node implementations, the decision was made to **hard delete** the legacy code entirely. The issues below are retained for historical reference but are no longer applicable.
->
 > **What Actually Happened**:
 > - Legacy nodes (`NodeReducerLegacy`, `NodeOrchestratorLegacy`) were **never created**
 > - The `nodes/legacy/` namespace was **never created**
@@ -1974,11 +1973,9 @@ Create documentation explaining how to interpret and fix CI purity failures. Pre
 ## Future Phases (Post v0.4.0)
 
 > **IMPORTANT - Repository Boundaries**:
->
 > - **Issues F.1-F.4 (Mixin Migration)**: Remain in `omnibase_core` scope - these are internal refactoring tasks
 > - **Issues F.5-F.10 (Runtime Host MVP)**: **DEPRECATED** - Moved to `omnibase_infra` v0.1.0 plan. These are retained here as legacy planning context only. **Do not implement these in `omnibase_core`**
 > - **Issues F.11-F.13 (Developer Tooling)**: Remain in `omnibase_core` scope - CLI tools for core development
->
 > **Repository Scope Distinction**:
 > - `omnibase_core`: Foundational models, protocols, base classes, and core utilities (no infrastructure dependencies)
 > - `omnibase_spi`: Protocol definitions and interfaces (pure abstractions)

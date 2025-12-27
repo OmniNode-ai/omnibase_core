@@ -12,7 +12,7 @@ Tests comprehensive workflow contract linting functionality including:
 - Warning aggregation for large workflows
 """
 
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import pytest
 

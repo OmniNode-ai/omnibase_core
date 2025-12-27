@@ -127,12 +127,10 @@ Screenshots should be explicitly discouraged for evidence that can be captured a
 
 > **CRITICAL WARNING FOR EVIDENCE STORAGE**: Logs, screenshots, gists, and any other evidence
 > artifacts MUST be scrubbed for PII and secrets BEFORE posting. This applies to:
->
 > - Terminal output logs (may contain environment variables, paths with usernames)
 > - Screenshots (may show sensitive data in editor tabs, terminal history)
 > - GitHub Gists (publicly accessible by default)
 > - CI/CD logs (may contain build secrets, API tokens)
->
 > **Review every artifact before posting. There is no "undo" for published secrets.**
 
 ---
@@ -1332,7 +1330,6 @@ sys.exit(0)  # Explicit success exit
 
 > **IMPORTANT**: Commands in this section use temporary directories for isolated testing.
 > Choose the appropriate approach for your platform:
->
 > | Platform | Temporary Directory | Example |
 > |----------|---------------------|---------|
 > | Linux | `${TMPDIR:-/tmp}` | `cd ${TMPDIR:-/tmp}` |
@@ -1340,9 +1337,7 @@ sys.exit(0)  # Explicit success exit
 > | Windows (PowerShell) | `$env:TEMP` | `cd $env:TEMP` |
 > | Windows (CMD) | `%TEMP%` | `cd %TEMP%` |
 > | Project-local (any OS) | `./tmp` or `../_downstream_test` | `mkdir -p ../_downstream_test && cd ../_downstream_test` |
->
-> **Recommendation**: Use project-local directories (e.g., `../_downstream_test`) for better reproducibility
-> and easier cleanup. These directories should be added to `.gitignore`.
+> **Recommendation**: Use project-local directories (e.g., `../_downstream_test`) for better reproducibility and easier cleanup. These directories should be added to `.gitignore`.
 
 ### 9.1 Public API Stability
 

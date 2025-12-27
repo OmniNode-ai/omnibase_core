@@ -14,12 +14,11 @@ from __future__ import annotations
 
 import copy
 from typing import Any
-from uuid import UUID, uuid4
+from uuid import UUID
 
 import pytest
 
 from omnibase_core.models.compute.model_compute_input import ModelComputeInput
-from omnibase_core.models.compute.model_compute_output import ModelComputeOutput
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.nodes.node_compute import NodeCompute
 

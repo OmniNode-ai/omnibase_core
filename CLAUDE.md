@@ -1,10 +1,6 @@
 # CLAUDE.md - Omnibase Core Project Instructions
 
-> **Version**: 0.4.0 | **Python**: 3.12+ | **Framework**: ONEX Core
->
-> **No Backwards Compatibility**: Until v0.4.0 is released, breaking changes may occur between commits.
->
-> **Shared Infrastructure**: See **`~/.claude/CLAUDE.md`** for common OmniNode infrastructure (PostgreSQL, Kafka/Redpanda, Docker networking, environment variables).
+> **Version**: 0.4.0 | **Python**: 3.12+ | **Framework**: ONEX Core | **No Backwards Compatibility**: Until v0.4.0 is released, breaking changes may occur between commits. **Shared Infrastructure**: See **`~/.claude/CLAUDE.md`** for common OmniNode infrastructure (PostgreSQL, Kafka/Redpanda, Docker networking, environment variables).
 
 ---
 

@@ -568,7 +568,6 @@ class TestUnionTypeDetection:
 
     def test_typing_union_detection_basic(self):
         """Test that typing.Union is detected at runtime."""
-        import types
         from typing import Union, get_origin
 
         # typing.Union detection (intentionally using legacy syntax to test detection)

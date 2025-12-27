@@ -1,19 +1,23 @@
+# SPDX-License-Identifier: Apache-2.0
 """
 ONEX mypy plugins package.
 
 This package provides custom mypy plugins for enforcing ONEX type safety patterns.
 Available plugins:
 
-- dict_any_checker: Checks for unguarded dict[str, Any] usage
+- DictAnyCheckerPlugin: Checks for unguarded dict[str, Any] usage
 
 Usage in mypy.ini or pyproject.toml:
     [tool.mypy]
     plugins = ["omnibase_core.tools.mypy_plugins"]
 
 The package exposes a plugin() function as required by mypy's plugin API.
+For direct access to the plugin class, import DictAnyCheckerPlugin.
 """
 
 from mypy.plugin import Plugin
+
+from omnibase_core.tools.mypy_plugins.dict_any_checker import DictAnyCheckerPlugin
 
 
 def plugin(version: str) -> type[Plugin]:
@@ -31,10 +35,7 @@ def plugin(version: str) -> type[Plugin]:
         type[Plugin]: The DictAnyCheckerPlugin class which mypy will instantiate
             to enable dict[str, Any] usage checking.
     """
-    # Import here to avoid circular imports and ensure proper initialization
-    from omnibase_core.tools.mypy_plugins.dict_any_checker import DictAnyCheckerPlugin
-
     return DictAnyCheckerPlugin
 
 
-__all__ = ["plugin"]
+__all__ = ["plugin", "DictAnyCheckerPlugin"]

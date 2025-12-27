@@ -96,6 +96,10 @@ TOPIC_RUNTIME_COMMANDS = topic_name(DOMAIN_RUNTIME, TOPIC_TYPE_COMMANDS)
 TOPIC_RUNTIME_EVENTS = topic_name(DOMAIN_RUNTIME, TOPIC_TYPE_EVENTS)
 TOPIC_RUNTIME_INTENTS = topic_name(DOMAIN_RUNTIME, TOPIC_TYPE_INTENTS)
 
+# Metrics Domain Topics
+TOPIC_METRICS_EVENTS = topic_name(DOMAIN_METRICS, TOPIC_TYPE_EVENTS)
+TOPIC_METRICS_INTENTS = topic_name(DOMAIN_METRICS, TOPIC_TYPE_INTENTS)
+
 # Intent Publisher Topic (coordination)
 # Note: This is the central intent topic used by MixinIntentPublisher
 TOPIC_EVENT_PUBLISH_INTENT = topic_name(DOMAIN_RUNTIME, TOPIC_TYPE_INTENTS)
@@ -140,6 +144,9 @@ __all__ = [
     "TOPIC_RUNTIME_COMMANDS",
     "TOPIC_RUNTIME_EVENTS",
     "TOPIC_RUNTIME_INTENTS",
+    # Metrics topics
+    "TOPIC_METRICS_EVENTS",
+    "TOPIC_METRICS_INTENTS",
     # Special topics
     "TOPIC_EVENT_PUBLISH_INTENT",
     # Cleanup policies

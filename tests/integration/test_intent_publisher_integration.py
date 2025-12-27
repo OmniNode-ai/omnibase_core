@@ -21,15 +21,18 @@ from unittest.mock import AsyncMock
 from uuid import UUID, uuid4
 
 import pytest
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
+from omnibase_core.enums.enum_node_kind import EnumNodeKind
 from omnibase_core.mixins.mixin_intent_publisher import MixinIntentPublisher
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.events.model_intent_events import (
     TOPIC_EVENT_PUBLISH_INTENT,
-    ModelEventPublishIntent,
     ModelIntentExecutionResult,
+)
+from omnibase_core.models.events.model_node_registered_event import (
+    ModelNodeRegisteredEvent,
 )
 from omnibase_core.models.reducer.model_intent_publish_result import (
     ModelIntentPublishResult,
@@ -180,7 +183,7 @@ class TestIntentPublisherIntegration:
         return data
 
     @pytest.fixture
-    def mock_kafka_client(self):
+    def mock_kafka_client(self) -> AsyncMock:
         """
         Create mock Kafka client with realistic behavior.
 
@@ -189,7 +192,7 @@ class TestIntentPublisherIntegration:
         client = AsyncMock()
         client.published_messages = []
 
-        async def mock_publish(topic: str, key: str, value: str):
+        async def mock_publish(topic: str, key: str, value: str) -> None:
             """Mock publish that records messages."""
             client.published_messages.append(
                 {
@@ -204,19 +207,19 @@ class TestIntentPublisherIntegration:
         return client
 
     @pytest.fixture
-    def container_with_kafka(self, mock_kafka_client):
+    def container_with_kafka(self, mock_kafka_client: AsyncMock) -> ModelONEXContainer:
         """Create container with mocked Kafka client."""
         container = ModelONEXContainer()
 
         # Register kafka_client service
         original_get_service = container.get_service
 
-        def mock_get_service(service_name: str):
+        def mock_get_service(service_name: str) -> AsyncMock | None:
             if service_name == "kafka_client":
                 return mock_kafka_client
             return original_get_service(service_name)
 
-        container.get_service = mock_get_service
+        container.get_service = mock_get_service  # type: ignore[method-assign]
         return container
 
     # ========================================================================
@@ -391,33 +394,37 @@ class TestIntentPublisherIntegration:
     async def test_intent_payload_complete_delivery(
         self, container_with_kafka, mock_kafka_client
     ):
-        """Test that complete event payload is delivered in intent."""
+        """Test that complete event payload is delivered in intent.
+
+        Uses typed ModelNodeRegisteredEvent from ModelEventPayloadUnion.
+        """
         reducer = MockReducerWithIntentPublisher(container_with_kafka)
 
-        # Create event with detailed payload
-        metrics_event = SampleMetricsEvent(
-            metrics_id=uuid4(),
-            operation_name="complex_operation",
-            duration_ms=350.75,
-            success=True,
+        # Create typed event from ModelEventPayloadUnion
+        node_id = uuid4()
+        node_event = ModelNodeRegisteredEvent(
+            node_id=node_id,
+            node_name="test-compute-node",
+            node_type=EnumNodeKind.COMPUTE,
         )
 
         await reducer.publish_event_intent(
-            target_topic="dev.omninode.metrics.v1",
-            target_key=str(metrics_event.metrics_id),
-            event=metrics_event,
+            target_topic="dev.omninode.registration.v1",
+            target_key=str(node_id),
+            event=node_event,
         )
 
         # Extract intent payload
         message = mock_kafka_client.published_messages[0]
         intent = self.extract_intent_from_message(message["value"])
 
-        # Verify all event fields present in payload
+        # Verify typed event fields are present in payload
         event_payload = intent["target_event_payload"]
-        assert event_payload["metrics_id"] == str(metrics_event.metrics_id)
-        assert event_payload["operation_name"] == "complex_operation"
-        assert event_payload["duration_ms"] == 350.75
-        assert event_payload["success"] is True
+        assert event_payload["node_id"] == str(node_id)
+        assert event_payload["node_name"] == "test-compute-node"
+        assert (
+            event_payload["node_type"] == "compute"
+        )  # EnumNodeKind value is lowercase
         assert "timestamp" in event_payload
 
     @pytest.mark.asyncio
@@ -539,20 +546,26 @@ class TestIntentPublisherIntegration:
 
     @pytest.mark.asyncio
     async def test_malformed_event_rejected(self, container_with_kafka):
-        """Test that non-Pydantic events are rejected."""
+        """Test that dict payloads are rejected by Pydantic validation.
+
+        As of v0.4.0, only typed payloads from ModelEventPayloadUnion are
+        accepted. Dict payloads trigger a ValidationError with migration guidance.
+        """
         reducer = MockReducerWithIntentPublisher(container_with_kafka)
 
-        # Create object without model_dump method
+        # Dict payloads are no longer accepted - typed events required
         invalid_event = {"not": "a pydantic model"}
 
-        with pytest.raises(
-            ModelOnexError, match="Event must be a Pydantic model with model_dump"
-        ):
+        with pytest.raises(ValidationError) as exc_info:
             await reducer.publish_event_intent(
                 target_topic="dev.omninode.test.v1",
                 target_key="test",
                 event=invalid_event,  # type: ignore[arg-type]
             )
+
+        # Verify helpful error message from ModelEventPublishIntent validator
+        error_message = str(exc_info.value)
+        assert "dict[str, Any] payloads are no longer supported" in error_message
 
     def test_kafka_client_missing_from_container(self):
         """Test error when kafka_client service is not registered."""
@@ -666,50 +679,54 @@ class TestIntentPublisherIntegration:
         2. Simulate intent executor consuming intent
         3. Executor publishes execution result
         4. Validate correlation throughout
+
+        Uses typed ModelNodeRegisteredEvent from ModelEventPayloadUnion.
         """
         reducer = MockReducerWithIntentPublisher(container_with_kafka)
         correlation_id = uuid4()
+        node_id = uuid4()
 
-        # Step 1: Reducer publishes intent
-        metrics_event = SampleMetricsEvent(
-            operation_name="workflow_test", duration_ms=250, success=True
+        # Step 1: Reducer publishes intent with typed event
+        node_event = ModelNodeRegisteredEvent(
+            node_id=node_id,
+            node_name="workflow-test-node",
+            node_type=EnumNodeKind.COMPUTE,
         )
 
         result = await reducer.publish_event_intent(
-            target_topic="dev.omninode.metrics.v1",
+            target_topic="dev.omninode.registration.v1",
             target_key="workflow-key",
-            event=metrics_event,
+            event=node_event,
             correlation_id=correlation_id,
         )
 
-        # Step 2: Simulate intent executor consuming intent
+        # Step 2: Simulate intent executor consuming intent (as raw dict from Kafka)
         message = mock_kafka_client.published_messages[0]
         intent_data = self.extract_intent_from_message(message["value"])
-        intent = ModelEventPublishIntent(**intent_data)
 
-        # Verify executor receives complete intent
-        assert intent.correlation_id == correlation_id
-        assert intent.target_topic == "dev.omninode.metrics.v1"
-        assert intent.target_key == "workflow-key"
-        assert intent.target_event_type == "SampleMetricsEvent"
+        # Verify executor receives complete intent (don't reconstruct model - use dict)
+        assert UUID(intent_data["correlation_id"]) == correlation_id
+        assert intent_data["target_topic"] == "dev.omninode.registration.v1"
+        assert intent_data["target_key"] == "workflow-key"
+        assert intent_data["target_event_type"] == "ModelNodeRegisteredEvent"
 
         # Step 3: Simulate executor publishing to target topic
         # (In real system, executor would call Effect node)
         executor_message = {
-            "topic": intent.target_topic,
-            "key": intent.target_key,
-            "payload": intent.target_event_payload,
-            "correlation_id": str(intent.correlation_id),
+            "topic": intent_data["target_topic"],
+            "key": intent_data["target_key"],
+            "payload": intent_data["target_event_payload"],
+            "correlation_id": intent_data["correlation_id"],
         }
 
         # Step 4: Validate correlation preserved throughout
         assert executor_message["correlation_id"] == str(correlation_id)
-        assert executor_message["payload"]["operation_name"] == "workflow_test"
+        assert executor_message["payload"]["node_name"] == "workflow-test-node"
 
         # Step 5: Simulate execution result
         execution_result = ModelIntentExecutionResult(
-            intent_id=intent.intent_id,
-            correlation_id=intent.correlation_id,
+            intent_id=UUID(intent_data["intent_id"]),
+            correlation_id=correlation_id,
             success=True,
             execution_duration_ms=15.5,
         )

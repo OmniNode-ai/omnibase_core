@@ -70,7 +70,7 @@ def __getattr__(name: str) -> object:
         "validate_patterns",
         "validate_union_usage",
     }:
-        from .validation import (
+        from .validation import (  # noqa: F401
             ModelValidationResult,
             ModelValidationSuite,
             validate_all,
@@ -89,7 +89,7 @@ def __getattr__(name: str) -> object:
         "EnumImportStatus",
         "ModelModuleImportResult",
     }:
-        from .validation import (
+        from .validation import (  # noqa: F401
             CircularImportValidationResult,
             CircularImportValidator,
             EnumImportStatus,

@@ -3,19 +3,13 @@
 from pydantic import Field
 
 "\nOrchestrator Step Model\n\nType-safe orchestrator step that replaces Dict[str, Any] usage\nin orchestrator plans.\n"
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel
 
 from omnibase_core.models.services.model_custom_fields import ModelCustomFields
-from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 
-@allow_dict_str_any(
-    "Orchestrator step requires flexible inputs for step-specific parameters "
-    "that vary across different step types and workflow configurations."
-)
 class ModelOrchestratorStep(BaseModel):
     """
     Type-safe orchestrator step.
@@ -33,7 +27,7 @@ class ModelOrchestratorStep(BaseModel):
         default=None, description="Node to execute (for node steps)"
     )
     action: str | None = Field(default=None, description="Action to perform")
-    inputs: dict[str, Any] | None = Field(
+    inputs: ModelCustomFields | None = Field(
         default=None, description="Step input parameters"
     )
     timeout_seconds: int | None = Field(

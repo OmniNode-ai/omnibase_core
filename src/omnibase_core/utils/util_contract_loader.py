@@ -25,6 +25,7 @@ from omnibase_core.models.core.model_contract_content import ModelContractConten
 from omnibase_core.models.core.model_contract_definitions import (
     ModelContractDefinitions,
 )
+from omnibase_core.models.core.model_contract_dependency import ModelContractDependency
 from omnibase_core.models.core.model_contract_loader import ModelContractLoader
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.models.core.model_tool_specification import ModelToolSpecification
@@ -232,16 +233,28 @@ class ProtocolContractLoader:
             definitions = ModelContractDefinitions()
 
             # Parse dependencies section (optional, for Phase 0 pattern)
-            # Pass raw dictionaries to ModelContractContent and let Pydantic handle validation
-            dependencies: list[dict[str, object]] | None = None
+            # Construct ModelContractDependency objects from raw dicts for type safety
+            dependencies: list[ModelContractDependency] | None = None
             if "dependencies" in raw_content:
                 deps_data = raw_content["dependencies"]
                 if isinstance(deps_data, list):
                     dependencies = []
-                    for dep_item in deps_data:
+                    for index, dep_item in enumerate(deps_data):
                         if isinstance(dep_item, dict):
-                            # Keep as dict - Pydantic will validate and convert to ModelContractDependency
-                            dependencies.append(dep_item)
+                            # Construct typed ModelContractDependency from dict
+                            dep = ModelContractDependency.model_validate(dep_item)
+                            dependencies.append(dep)
+                        else:
+                            emit_log_event(
+                                LogLevel.WARNING,
+                                f"Skipping non-dict dependency item at index {index}: {type(dep_item).__name__}",
+                                context={
+                                    "contract_path": str(contract_path),
+                                    "item_type": type(dep_item).__name__,
+                                    "index": index,
+                                    "item_repr": repr(dep_item)[:100],
+                                },
+                            )
 
             # Parse node type (default to COMPUTE_GENERIC if not specified)
             # No backwards compatibility - invalid enum values must fail fast
@@ -273,7 +286,7 @@ class ProtocolContractLoader:
                 input_state=input_state,
                 output_state=output_state,
                 definitions=definitions,
-                dependencies=dependencies,  # type: ignore[arg-type]  # Pydantic validator converts dicts to ModelContractDependency
+                dependencies=dependencies,
                 contract_name=None,
                 description=None,
                 name=None,

@@ -418,7 +418,7 @@ def test_contracts_no_circular_imports() -> None:
         import omnibase_core.models.contracts.model_validation_rules
 
         # Import model_validation_rules_converter
-        import omnibase_core.models.utils.model_validation_rules_converter
+        import omnibase_core.models.utils.model_validation_rules_converter  # noqa: F401
 
         # If we got here, no circular imports!
         print("✓ No circular dependencies in contracts modules")

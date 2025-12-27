@@ -93,6 +93,10 @@ class ModelSecureCredentials(BaseModel, ABC):
 
     def _mask_if_sensitive_string(self, value: str, mask_level: str) -> str:
         """Mask string if it appears to be sensitive based on patterns."""
+        # Only check patterns for aggressive masking
+        if mask_level != "aggressive":
+            return value
+
         # Patterns that indicate sensitive data
         sensitive_patterns = [
             r"^[A-Za-z0-9+/]{40,}={0,2}$",  # Base64 encoded (likely secret)
@@ -102,10 +106,9 @@ class ModelSecureCredentials(BaseModel, ABC):
             r"-----BEGIN[^-]+-----.*-----END[^-]+-----",  # Certificate/key
         ]
 
-        if mask_level == "aggressive":
-            for pattern in sensitive_patterns:
-                if re.match(pattern, value, re.DOTALL):
-                    return self._mask_secret_value(value, mask_level)
+        for pattern in sensitive_patterns:
+            if re.match(pattern, value, re.DOTALL):
+                return self._mask_secret_value(value, mask_level)
 
         return value
 
@@ -236,7 +239,6 @@ class ModelSecureCredentials(BaseModel, ABC):
                 try:
                     # Attempt to set the field value
                     if hasattr(self, field_name):
-                        self.__class__.model_fields[field_name]
                         if isinstance(getattr(self, field_name), SecretStr):
                             setattr(self, field_name, SecretStr(env_value))
                         else:
@@ -333,9 +335,6 @@ class ModelSecureCredentials(BaseModel, ABC):
 
     def to_audit_dict(self) -> ModelAuditData:
         """Get dictionary for audit logging (aggressive masking)."""
-        mask_data = self.get_masked_dict(mask_level="aggressive")
-        # Convert mask_data to proper audit format with required fields
-        masked_dict = mask_data.to_dict()
         return ModelAuditData(
             action="credential_access",
             resource=f"{self.__class__.__name__}",

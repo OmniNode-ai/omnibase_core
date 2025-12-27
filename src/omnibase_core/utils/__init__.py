@@ -4,7 +4,7 @@ Omnibase Core - Utilities
 Utility functions and helpers for ONEX architecture.
 """
 
-from .util_decorators import allow_any_type, allow_dict_str_any
+from .util_decorators import allow_any_type
 from .util_hash import (
     deterministic_cache_key,
     deterministic_error_code,
@@ -18,7 +18,6 @@ from .util_hash import (
 # here to avoid circular dependencies during initial module loading
 __all__ = [
     "allow_any_type",
-    "allow_dict_str_any",
     "deterministic_cache_key",
     "deterministic_error_code",
     "deterministic_hash",

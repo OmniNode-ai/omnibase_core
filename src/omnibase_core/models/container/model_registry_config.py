@@ -3,13 +3,8 @@
 from pydantic import BaseModel, Field
 
 from omnibase_core.types.type_serializable_value import SerializedDict
-from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 
-@allow_dict_str_any(
-    "Registry configuration needs flexible dict for arbitrary configuration parameters "
-    "specific to different service registries and deployment environments."
-)
 class ModelServiceRegistryConfig(BaseModel):
     """
     Service registry configuration.

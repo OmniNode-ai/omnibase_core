@@ -171,10 +171,12 @@ class ModelDispatchRoute(BaseModel):
         # Basic validation: must not be empty or only whitespace
         if not v or not v.strip():
             msg = "Topic pattern cannot be empty or whitespace"
+            # error-ok: Pydantic validator requires ValueError
             raise ValueError(msg)
         # Pattern should not start/end with dots (invalid topic structure)
         if v.startswith(".") or v.endswith("."):
             msg = "Topic pattern cannot start or end with a dot"
+            # error-ok: Pydantic validator requires ValueError
             raise ValueError(msg)
         return v
 

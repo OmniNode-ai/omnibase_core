@@ -28,26 +28,20 @@ Generic Parameters:
 """
 
 from datetime import UTC, datetime
-from typing import Any, Generic
+from typing import Self
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_directive_type import EnumDirectiveType
-from omnibase_core.models.context import ModelRuntimeDirectivePayload
-from omnibase_core.models.services.model_error_details import TContext
-from omnibase_core.utils.util_decorators import allow_dict_str_any
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.runtime.payloads import ModelDirectivePayload
 
 __all__ = ["ModelRuntimeDirective"]
 
 
-@allow_dict_str_any(
-    "Directive payload supports ModelRuntimeDirectivePayload (preferred typed option), "
-    "custom TContext types via Generic[TContext], and dict[str, Any] for backwards "
-    "compatibility. ModelRuntimeDirectivePayload covers all standard directive types; "
-    "TContext provides flexibility for specialized use cases."
-)
-class ModelRuntimeDirective(BaseModel, Generic[TContext]):
+class ModelRuntimeDirective(BaseModel):
     """
     Internal-only runtime directive.
 
@@ -55,57 +49,22 @@ class ModelRuntimeDirective(BaseModel, Generic[TContext]):
     NEVER returned from handlers.
     Produced by runtime after interpreting intents or events.
 
-    Payload Types:
-        The payload field accepts three types (in order of preference):
-
-        1. ModelRuntimeDirectivePayload (preferred): Typed payload with structured
-           fields for all standard directive types.
-        2. TContext (via Generic): Custom typed payloads for specialized use cases.
-        3. dict[str, Any]: Backwards compatible untyped payloads.
-
-    Generic Parameters:
-        TContext: Optional custom payload type for specialized use cases not
-            covered by ModelRuntimeDirectivePayload.
+    The payload field is a typed discriminated union that ensures type safety.
+    The directive_type must match the payload.kind field (validated automatically).
 
     Thread Safety:
         This model is frozen (immutable) after creation.
 
     Example:
-        Using ModelRuntimeDirectivePayload (preferred)::
-
-            from omnibase_core.models.context import ModelRuntimeDirectivePayload
-
-            directive = ModelRuntimeDirective(
-                directive_type=EnumDirectiveType.RETRY_WITH_BACKOFF,
-                correlation_id=uuid4(),
-                payload=ModelRuntimeDirectivePayload(
-                    backoff_base_ms=1000,
-                    backoff_multiplier=2.0,
-                    jitter_ms=100,
-                ),
-            )
-
-        Using dict (backwards compatible)::
-
-            directive = ModelRuntimeDirective(
-                directive_type=EnumDirectiveType.SCHEDULE_EFFECT,
-                correlation_id=uuid4(),
-                payload={"handler_args": {"key": "value"}},
-            )
-
-        With custom typed payload (specialized)::
-
-            from pydantic import BaseModel, ConfigDict
-
-            class CustomPayload(BaseModel):
-                model_config = ConfigDict(frozen=True)
-                custom_field: str
-
-            directive = ModelRuntimeDirective[CustomPayload](
-                directive_type=EnumDirectiveType.SCHEDULE_EFFECT,
-                correlation_id=uuid4(),
-                payload=CustomPayload(custom_field="value"),
-            )
+        >>> from uuid import uuid4
+        >>> from omnibase_core.enums.enum_directive_type import EnumDirectiveType
+        >>> from omnibase_core.models.runtime.payloads import ModelScheduleEffectPayload
+        >>>
+        >>> directive = ModelRuntimeDirective(
+        ...     directive_type=EnumDirectiveType.SCHEDULE_EFFECT,
+        ...     correlation_id=uuid4(),
+        ...     payload=ModelScheduleEffectPayload(effect_node_type="http_request"),
+        ... )
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
@@ -119,13 +78,8 @@ class ModelRuntimeDirective(BaseModel, Generic[TContext]):
     target_handler_id: str | None = Field(
         default=None, description="Target handler for execution"
     )
-    payload: ModelRuntimeDirectivePayload | TContext | dict[str, Any] = Field(
-        default_factory=dict,
-        description=(
-            "Directive-specific payload. Accepts ModelRuntimeDirectivePayload (preferred "
-            "typed option with structured fields for all directive types), custom TContext "
-            "types via Generic[TContext], or dict[str, Any] for flexible payloads."
-        ),
+    payload: ModelDirectivePayload = Field(
+        ..., description="Typed directive-specific payload (discriminated by 'kind')"
     )
     delay_ms: int | None = Field(
         default=None, ge=0, description="Delay before execution in ms"
@@ -140,3 +94,27 @@ class ModelRuntimeDirective(BaseModel, Generic[TContext]):
         default_factory=lambda: datetime.now(UTC),
         description="When this directive was created (UTC)",
     )
+
+    @model_validator(mode="after")
+    def _validate_payload_matches_type(self) -> Self:
+        """
+        Validate that payload.kind matches directive_type.
+
+        This ensures type consistency between the directive type enum
+        and the actual payload provided, preventing mismatched directives.
+
+        Raises:
+            ModelOnexError: If payload.kind doesn't match directive_type.value
+        """
+        expected_kind = self.directive_type.value
+        if self.payload.kind != expected_kind:
+            raise ModelOnexError(
+                message=(
+                    f"Payload kind '{self.payload.kind}' doesn't match "
+                    f"directive_type '{expected_kind}'"
+                ),
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                payload_kind=self.payload.kind,
+                expected_kind=expected_kind,
+            )
+        return self

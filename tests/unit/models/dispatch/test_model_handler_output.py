@@ -23,6 +23,7 @@ from pydantic import BaseModel, ValidationError
 
 from omnibase_core.enums.enum_node_kind import EnumNodeKind
 from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # ============================================================================
 # Fixtures
@@ -336,7 +337,7 @@ class TestModelHandlerOutputOptionAConstraints:
         sample_projection,
     ) -> None:
         """Test that ORCHESTRATOR fails when emitting projections."""
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelHandlerOutput(
                 input_envelope_id=sample_envelope_id,
                 correlation_id=sample_correlation_id,
@@ -353,7 +354,7 @@ class TestModelHandlerOutputOptionAConstraints:
         sample_handler_id,
     ) -> None:
         """ORCHESTRATOR cannot set result - use events[] and intents[] only."""
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelHandlerOutput(
                 input_envelope_id=sample_envelope_id,
                 correlation_id=sample_correlation_id,
@@ -389,7 +390,7 @@ class TestModelHandlerOutputOptionAConstraints:
         self, sample_envelope_id, sample_correlation_id, sample_handler_id, sample_event
     ) -> None:
         """Test that REDUCER fails when emitting events."""
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelHandlerOutput(
                 input_envelope_id=sample_envelope_id,
                 correlation_id=sample_correlation_id,
@@ -407,7 +408,7 @@ class TestModelHandlerOutputOptionAConstraints:
         sample_intent,
     ) -> None:
         """Test that REDUCER fails when emitting intents."""
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelHandlerOutput(
                 input_envelope_id=sample_envelope_id,
                 correlation_id=sample_correlation_id,
@@ -442,7 +443,7 @@ class TestModelHandlerOutputOptionAConstraints:
         sample_intent,
     ) -> None:
         """Test that EFFECT fails when emitting intents."""
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelHandlerOutput(
                 input_envelope_id=sample_envelope_id,
                 correlation_id=sample_correlation_id,
@@ -460,7 +461,7 @@ class TestModelHandlerOutputOptionAConstraints:
         sample_projection,
     ) -> None:
         """Test that EFFECT fails when emitting projections."""
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelHandlerOutput(
                 input_envelope_id=sample_envelope_id,
                 correlation_id=sample_correlation_id,
@@ -477,7 +478,7 @@ class TestModelHandlerOutputOptionAConstraints:
         self, sample_envelope_id, sample_correlation_id, sample_handler_id, sample_event
     ) -> None:
         """Test that COMPUTE fails when emitting events (OMN-941 constraint)."""
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelHandlerOutput(
                 input_envelope_id=sample_envelope_id,
                 correlation_id=sample_correlation_id,
@@ -496,7 +497,7 @@ class TestModelHandlerOutputOptionAConstraints:
         sample_intent,
     ) -> None:
         """Test that COMPUTE fails when emitting intents."""
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelHandlerOutput(
                 input_envelope_id=sample_envelope_id,
                 correlation_id=sample_correlation_id,
@@ -515,7 +516,7 @@ class TestModelHandlerOutputOptionAConstraints:
         sample_projection,
     ) -> None:
         """Test that COMPUTE fails when emitting projections."""
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelHandlerOutput(
                 input_envelope_id=sample_envelope_id,
                 correlation_id=sample_correlation_id,
@@ -1150,7 +1151,7 @@ class TestInvalidNodeKindOutputCombinations:
         sample_projection,
     ) -> None:
         """Test ORCHESTRATOR with projections raises ValueError."""
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelHandlerOutput(
                 input_envelope_id=sample_envelope_id,
                 correlation_id=sample_correlation_id,
@@ -1167,7 +1168,7 @@ class TestInvalidNodeKindOutputCombinations:
         self, sample_envelope_id, sample_correlation_id, sample_handler_id, sample_event
     ) -> None:
         """Test REDUCER with events raises ValueError."""
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelHandlerOutput(
                 input_envelope_id=sample_envelope_id,
                 correlation_id=sample_correlation_id,
@@ -1188,7 +1189,7 @@ class TestInvalidNodeKindOutputCombinations:
         sample_intent,
     ) -> None:
         """Test REDUCER with intents raises ValueError."""
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelHandlerOutput(
                 input_envelope_id=sample_envelope_id,
                 correlation_id=sample_correlation_id,
@@ -1209,7 +1210,7 @@ class TestInvalidNodeKindOutputCombinations:
         sample_intent,
     ) -> None:
         """Test EFFECT with intents raises ValueError."""
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelHandlerOutput(
                 input_envelope_id=sample_envelope_id,
                 correlation_id=sample_correlation_id,
@@ -1230,7 +1231,7 @@ class TestInvalidNodeKindOutputCombinations:
         sample_projection,
     ) -> None:
         """Test EFFECT with projections raises ValueError."""
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelHandlerOutput(
                 input_envelope_id=sample_envelope_id,
                 correlation_id=sample_correlation_id,
@@ -1251,7 +1252,7 @@ class TestInvalidNodeKindOutputCombinations:
         sample_intent,
     ) -> None:
         """Test COMPUTE with intents raises ValueError (OMN-941 updated)."""
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelHandlerOutput(
                 input_envelope_id=sample_envelope_id,
                 correlation_id=sample_correlation_id,
@@ -1273,7 +1274,7 @@ class TestInvalidNodeKindOutputCombinations:
         sample_projection,
     ) -> None:
         """Test COMPUTE with projections raises ValueError (OMN-941 updated)."""
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelHandlerOutput(
                 input_envelope_id=sample_envelope_id,
                 correlation_id=sample_correlation_id,
@@ -1307,7 +1308,7 @@ class TestComputeNodeConstraints:
         self, sample_envelope_id, sample_correlation_id, sample_handler_id
     ) -> None:
         """Test that COMPUTE node raises ValueError when result=None and allow_void_compute=False."""
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelHandlerOutput(
                 input_envelope_id=sample_envelope_id,
                 correlation_id=sample_correlation_id,
@@ -1357,7 +1358,7 @@ class TestComputeNodeConstraints:
         self, sample_envelope_id, sample_correlation_id, sample_handler_id, sample_event
     ) -> None:
         """Test that COMPUTE node raises ValueError when emitting events."""
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelHandlerOutput(
                 input_envelope_id=sample_envelope_id,
                 correlation_id=sample_correlation_id,
@@ -1379,7 +1380,7 @@ class TestComputeNodeConstraints:
         sample_intent,
     ) -> None:
         """Test that COMPUTE node raises ValueError when emitting intents."""
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelHandlerOutput(
                 input_envelope_id=sample_envelope_id,
                 correlation_id=sample_correlation_id,
@@ -1401,7 +1402,7 @@ class TestComputeNodeConstraints:
         sample_projection,
     ) -> None:
         """Test that COMPUTE node raises ValueError when emitting projections."""
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelHandlerOutput(
                 input_envelope_id=sample_envelope_id,
                 correlation_id=sample_correlation_id,
@@ -1628,7 +1629,7 @@ class TestJsonLedgerSafe:
         self, sample_envelope_id, sample_correlation_id, sample_handler_id
     ) -> None:
         """Test that bytes is NOT JSON-ledger-safe (should raise ValueError)."""
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelHandlerOutput(
                 input_envelope_id=sample_envelope_id,
                 correlation_id=sample_correlation_id,
@@ -1644,7 +1645,7 @@ class TestJsonLedgerSafe:
         self, sample_envelope_id, sample_correlation_id, sample_handler_id
     ) -> None:
         """Test that datetime is NOT JSON-ledger-safe (should raise ValueError)."""
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelHandlerOutput(
                 input_envelope_id=sample_envelope_id,
                 correlation_id=sample_correlation_id,
@@ -1662,7 +1663,7 @@ class TestJsonLedgerSafe:
         """Test that UUID is NOT JSON-ledger-safe (should raise ValueError)."""
         from uuid import uuid4
 
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelHandlerOutput(
                 input_envelope_id=sample_envelope_id,
                 correlation_id=sample_correlation_id,
@@ -1685,7 +1686,7 @@ class TestJsonLedgerSafe:
 
         custom_obj = CustomClass(42)
 
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelHandlerOutput(
                 input_envelope_id=sample_envelope_id,
                 correlation_id=sample_correlation_id,
@@ -1701,7 +1702,7 @@ class TestJsonLedgerSafe:
         self, sample_envelope_id, sample_correlation_id, sample_handler_id
     ) -> None:
         """Test that bytearray is NOT JSON-ledger-safe (should raise ValueError)."""
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelHandlerOutput(
                 input_envelope_id=sample_envelope_id,
                 correlation_id=sample_correlation_id,
@@ -1719,7 +1720,7 @@ class TestJsonLedgerSafe:
         """Test that dict with non-ledger-safe values is rejected."""
         from uuid import uuid4
 
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelHandlerOutput(
                 input_envelope_id=sample_envelope_id,
                 correlation_id=sample_correlation_id,
@@ -1735,7 +1736,7 @@ class TestJsonLedgerSafe:
         self, sample_envelope_id, sample_correlation_id, sample_handler_id
     ) -> None:
         """Test that list with non-ledger-safe values is rejected."""
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelHandlerOutput(
                 input_envelope_id=sample_envelope_id,
                 correlation_id=sample_correlation_id,
@@ -1751,7 +1752,7 @@ class TestJsonLedgerSafe:
         self, sample_envelope_id, sample_correlation_id, sample_handler_id
     ) -> None:
         """Test that dict with integer keys is NOT JSON-ledger-safe (only str keys allowed)."""
-        with pytest.raises(ValueError) as exc_info:
+        with pytest.raises(ModelOnexError) as exc_info:
             ModelHandlerOutput(
                 input_envelope_id=sample_envelope_id,
                 correlation_id=sample_correlation_id,

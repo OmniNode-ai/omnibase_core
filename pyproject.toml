@@ -199,7 +199,6 @@ ignore = [
     "S110",      # Try except pass (technical debt)
     "S112",      # Try except continue (technical debt)
     "SIM108",    # If else block instead of if exp (technical debt)
-    "F401",      # Unused import (technical debt)
     "S311",      # Suspicious non-cryptographic random usage (technical debt)
     "S324",      # Hashlib insecure hash function (technical debt)
     "PLR1714",   # Repeated equality comparison (technical debt)

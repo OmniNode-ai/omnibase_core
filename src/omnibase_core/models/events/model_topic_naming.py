@@ -120,6 +120,7 @@ class ModelTopicNaming(BaseModel):
         if v_lower not in cls.ENVIRONMENT_VALUES:
             valid = ", ".join(sorted(cls.ENVIRONMENT_VALUES))
             msg = f"Environment must be one of: {valid}. Got: {v}"
+            # error-ok: Pydantic validator requires ValueError
             raise ValueError(msg)
         return v_lower
 
@@ -133,6 +134,7 @@ class ModelTopicNaming(BaseModel):
                 f"Domain must start with letter and contain only lowercase letters, "
                 f"numbers, and hyphens. Got: {v}"
             )
+            # error-ok: Pydantic validator requires ValueError
             raise ValueError(msg)
         return v_lower
 

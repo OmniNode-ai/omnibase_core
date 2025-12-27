@@ -69,9 +69,9 @@ from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 
 @allow_dict_str_any(
-    "Effect operations support typed operation_data (via ModelEffectInputData) and "
-    "dict[str, Any] for flexible payloads with various external I/O types"
-    "(database queries, API payloads, file operations, etc.)."
+    "Effect operations support typed operation_data (ModelEffectInputData) and "
+    "dict[str, Any] for flexible payloads with various external I/O types "
+    "(database queries, API payloads, file operations, message queue bodies)."
 )
 class ModelEffectInput(BaseModel):
     """

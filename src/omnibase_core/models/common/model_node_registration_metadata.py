@@ -100,10 +100,12 @@ class ModelNodeRegistrationMetadata(BaseModel):
         if not v:
             return {}
         if len(v) > 50:
+            # error-ok: Pydantic validator requires ValueError
             raise ValueError("Maximum 50 labels allowed")
         # Validate key format (simplified k8s pattern)
         for key in v:
             if not _LABEL_KEY_PATTERN.match(key.lower()):
+                # error-ok: Pydantic validator requires ValueError
                 raise ValueError(
                     f"Invalid label key format: '{key}'. "
                     f"Label keys must match pattern: {_LABEL_KEY_PATTERN.pattern} "

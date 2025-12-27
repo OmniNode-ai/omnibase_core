@@ -29,8 +29,6 @@ from omnibase_core.models.contracts.subcontracts.model_fsm_subcontract import (
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.validation.fsm_analysis import (
-    ModelAmbiguousTransition,
-    ModelFSMAnalysisResult,
     analyze_fsm,
 )
 

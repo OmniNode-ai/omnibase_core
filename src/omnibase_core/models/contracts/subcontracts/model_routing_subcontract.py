@@ -82,7 +82,9 @@ def _ensure_models_rebuilt(
         ):  # Double-check after acquiring lock  # type: ignore[unreachable]
             return  # type: ignore[unreachable]
 
-        from omnibase_core.models.services.model_custom_fields import ModelCustomFields
+        from omnibase_core.models.services.model_custom_fields import (  # noqa: F401
+            ModelCustomFields,
+        )
 
         # First rebuild the metadata model to resolve its forward reference
         ModelCircuitBreakerMetadata.model_rebuild()

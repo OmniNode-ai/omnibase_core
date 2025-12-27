@@ -73,6 +73,7 @@ class ModelRuntimeReadyEvent(ModelRuntimeEventBase):
                 f"node_count ({self.node_count}) does not match "
                 f"len(nodes_wired) ({len(self.nodes_wired)})"
             )
+            # error-ok: Pydantic validator requires ValueError
             raise ValueError(msg)
         return self
 

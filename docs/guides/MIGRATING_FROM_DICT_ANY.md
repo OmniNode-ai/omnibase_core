@@ -1,10 +1,56 @@
 # Migrating from dict[str, Any] to Typed Models
 
 **Version**: 0.4.0
-**Last Updated**: 2025-12-25
+**Last Updated**: 2025-12-26
 **Correlation ID**: `dict-any-migration-001`
 
-> **Type Safety Enhancement**: This guide covers the migration from untyped `dict[str, Any]` patterns to strongly-typed Pydantic models introduced in PR #240.
+---
+
+## Breaking Change (v0.4.0)
+
+> **CRITICAL**: `dict[str, Any]` payloads are **NO LONGER SUPPORTED** as of v0.4.0. This is a **breaking change**.
+
+If you are upgrading from v0.3.x and were using `dict[str, Any]` payloads, your code **will fail** with `ValidationError` until migrated.
+
+**Affected Models**:
+| Model | Field | Status |
+|-------|-------|--------|
+| `ModelEventPublishIntent` | `target_event_payload` | **dict REMOVED** |
+| `ModelIntent` | `payload` | **dict REMOVED** |
+| `ModelAction` | `payload` | **dict REMOVED** |
+| `ModelRuntimeDirective` | `payload` | **dict REMOVED** |
+
+**ValidationError Example**:
+```python
+# This code worked in v0.3.x but FAILS in v0.4.0+
+intent = ModelEventPublishIntent(
+    target_event_type="node.registered",
+    target_event_payload={"node_id": "abc", "node_type": "compute"}
+)
+# Raises:
+# pydantic_core._pydantic_core.ValidationError: 1 validation error for ModelEventPublishIntent
+# target_event_payload
+#   Input should be a valid dictionary or instance of ModelNodeRegisteredEvent...
+```
+
+**Required Fix**:
+```python
+from omnibase_core.models.events.payloads import ModelNodeRegisteredEvent
+
+intent = ModelEventPublishIntent(
+    target_event_type="node.registered",
+    target_event_payload=ModelNodeRegisteredEvent(
+        event_type="node.registered",
+        node_id="abc",
+        node_type="compute",
+        # ... other required fields
+    )
+)
+```
+
+---
+
+> **Type Safety Enhancement**: This guide covers the migration from untyped `dict[str, Any]` patterns to strongly-typed Pydantic models.
 
 ## Table of Contents
 
@@ -22,6 +68,8 @@
 ---
 
 ## Overview
+
+> **Status**: As of v0.4.0, the migration is **mandatory**. `dict[str, Any]` support has been **removed** from core payload models.
 
 ONEX has replaced `dict[str, Any]` usage in key interfaces with strongly-typed Pydantic models. This improves:
 
@@ -346,27 +394,21 @@ python_value = value.to_value()
 ```
 
 > **Note: `get_number()` Returns `ModelNumericValue`, Not a Python Number**
->
 > The `get_number()` method returns a `ModelNumericValue` wrapper, not a raw `int` or `float`.
 > However, `ModelNumericValue` implements `__eq__()` to support direct comparison with Python numbers:
->
 > ```python
 > value = ModelSchemaValue.from_value(42)
 > num = value.get_number()  # Returns ModelNumericValue
->
 > # Direct comparison works due to ModelNumericValue.__eq__()
 > assert num == 42       # True - compares with int
 > assert num == 42.0     # True - compares with float
->
 > # To get the raw Python value:
 > raw_int = num.to_python_value()      # Returns int (42) or float based on original type
 > raw_float = num.as_float()           # Always returns float (42.0)
 > raw_int_forced = num.as_int()        # Always returns int (42)
->
 > # Or use to_value() on the ModelSchemaValue directly:
 > python_value = value.to_value()      # Returns 42 (int)
 > ```
->
 > **When to Use Each Method**:
 > - **Direct comparison** (`num == 42`): For assertions and conditionals
 > - **`to_python_value()`**: When you need the raw number preserving original type (int vs float)

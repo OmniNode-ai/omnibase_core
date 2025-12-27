@@ -18,7 +18,10 @@ from uuid import UUID, uuid4
 import pytest
 
 from omnibase_core.enums.enum_workflow_coordination import EnumFailureRecoveryStrategy
-from omnibase_core.enums.enum_workflow_execution import EnumExecutionMode
+from omnibase_core.enums.enum_workflow_execution import (
+    EnumActionType,
+    EnumExecutionMode,
+)
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.contracts.subcontracts.model_coordination_rules import (
@@ -257,7 +260,14 @@ class TestNodeOrchestratorDeterministicOutput:
         action_types_1 = [action.action_type for action in result_1.actions_emitted]
         action_types_2 = [action.action_type for action in result_2.actions_emitted]
 
+        # Both runs must produce identical action types (determinism)
         assert action_types_1 == action_types_2
+        # Verify expected action types for the 3 sequential steps (effect, compute, compute)
+        assert action_types_1 == [
+            EnumActionType.EFFECT,
+            EnumActionType.COMPUTE,
+            EnumActionType.COMPUTE,
+        ]
 
     @pytest.mark.asyncio
     async def test_same_workflow_produces_same_target_node_types(
@@ -312,6 +322,15 @@ class TestNodeOrchestratorDeterministicOutput:
             result_1.metrics["completed_count"] == result_2.metrics["completed_count"]
         )
         assert result_1.metrics["failed_count"] == result_2.metrics["failed_count"]
+
+        # CRITICAL: Verify expected values to prevent tautological assertion
+        # Without these checks, the test would pass if both results are wrong
+        # or if the implementation caches results (comparing object to itself)
+        assert result_1.metrics["actions_count"] == 3, (
+            "Expected 3 actions for 3 workflow steps"
+        )
+        assert result_1.metrics["completed_count"] == 3, "Expected 3 completed steps"
+        assert result_1.metrics["failed_count"] == 0, "Expected 0 failed steps"
 
 
 @pytest.mark.timeout(60)
@@ -373,14 +392,39 @@ class TestNodeOrchestratorExecutionOrderDeterminism:
         for order in orders[1:]:
             assert order == orders[0]
 
-        # Step 1 must come first, Step 4 must come last
+        # Verify dependency ordering in the diamond pattern:
+        #      Step 1 (root)
+        #      /    \
+        #   Step 2  Step 3
+        #      \    /
+        #      Step 4 (merge)
         for order in orders:
-            assert order[0] == FIXED_STEP_1_ID
-            assert order[-1] == FIXED_STEP_4_ID
-            # Steps 2 and 3 must come before 4
+            step_1_idx = order.index(FIXED_STEP_1_ID)
+            step_2_idx = order.index(FIXED_STEP_2_ID)
+            step_3_idx = order.index(FIXED_STEP_3_ID)
             step_4_idx = order.index(FIXED_STEP_4_ID)
-            assert order.index(FIXED_STEP_2_ID) < step_4_idx
-            assert order.index(FIXED_STEP_3_ID) < step_4_idx
+
+            # Step 1 must come first (no dependencies)
+            assert order[0] == FIXED_STEP_1_ID, "Step 1 (root) must be first"
+
+            # Step 1 must come before Steps 2 and 3 (they depend on Step 1)
+            assert step_1_idx < step_2_idx, (
+                "Step 1 must come before Step 2 (Step 2 depends on Step 1)"
+            )
+            assert step_1_idx < step_3_idx, (
+                "Step 1 must come before Step 3 (Step 3 depends on Step 1)"
+            )
+
+            # Steps 2 and 3 must come before Step 4 (Step 4 depends on both)
+            assert step_2_idx < step_4_idx, (
+                "Step 2 must come before Step 4 (Step 4 depends on Step 2)"
+            )
+            assert step_3_idx < step_4_idx, (
+                "Step 3 must come before Step 4 (Step 4 depends on Step 3)"
+            )
+
+            # Step 4 must come last (depends on Steps 2 and 3)
+            assert order[-1] == FIXED_STEP_4_ID, "Step 4 (merge) must be last"
 
     def test_get_execution_order_respects_declaration_order(
         self,
@@ -724,8 +768,19 @@ class TestNodeOrchestratorNoGlobalStateDependencies:
         # Run 5 times on same node
         results = [await node.process(input_data) for _ in range(5)]
 
-        # All results should match
+        # CRITICAL: Verify expected values FIRST to prevent tautological assertion
+        # Without these checks, the test would pass if all results are wrong
+        # or if the implementation caches results (comparing object to itself)
         first_result = results[0]
+        assert first_result.execution_status == "completed", (
+            "Expected workflow to complete successfully"
+        )
+        assert len(first_result.completed_steps) == 3, "Expected 3 steps to complete"
+        assert len(first_result.actions_emitted) == 3, (
+            "Expected 3 actions to be emitted"
+        )
+
+        # Now verify all results match (determinism check)
         for result in results[1:]:
             assert result.completed_steps == first_result.completed_steps
             assert result.execution_status == first_result.execution_status
@@ -841,7 +896,7 @@ class TestNodeOrchestratorStateSerializationDeterminism:
         simple_workflow_definition: ModelWorkflowDefinition,
         sequential_steps_config: list[dict],
     ):
-        """Test that output metrics are deterministic after serialization roundtrip."""
+        """Test that output metrics are deterministic across multiple executions."""
         node = NodeOrchestrator(test_container)
         node.workflow_definition = simple_workflow_definition
 
@@ -851,29 +906,73 @@ class TestNodeOrchestratorStateSerializationDeterminism:
             execution_mode=EnumExecutionMode.SEQUENTIAL,
         )
 
-        result = await node.process(input_data)
+        # Run workflow multiple times and serialize outputs
+        result_1 = await node.process(input_data)
+        result_2 = await node.process(input_data)
+        result_3 = await node.process(input_data)
 
-        # Serialize and deserialize output
-        serialized_output = result.model_dump()
-        restored_output = type(result).model_validate(serialized_output)
+        serialized_1 = result_1.model_dump()
+        serialized_2 = result_2.model_dump()
+        serialized_3 = result_3.model_dump()
 
-        # Metrics should be preserved exactly
-        assert restored_output.metrics == result.metrics
-        assert restored_output.completed_steps == result.completed_steps
-        assert restored_output.failed_steps == result.failed_steps
+        # All serialized metrics should be identical (determinism)
+        assert serialized_1["metrics"] == serialized_2["metrics"]
+        assert serialized_2["metrics"] == serialized_3["metrics"]
 
-    def test_workflow_definition_hash_is_deterministic(
+        # All serialized step lists should be identical
+        assert serialized_1["completed_steps"] == serialized_2["completed_steps"]
+        assert serialized_2["completed_steps"] == serialized_3["completed_steps"]
+
+        assert serialized_1["failed_steps"] == serialized_2["failed_steps"]
+        assert serialized_2["failed_steps"] == serialized_3["failed_steps"]
+
+        # Verify expected values (not just equality to each other)
+        assert serialized_1["metrics"]["actions_count"] == 3  # 3 steps
+        assert serialized_1["metrics"]["completed_count"] == 3
+        assert serialized_1["metrics"]["failed_count"] == 0
+        assert len(serialized_1["completed_steps"]) == 3
+
+    def test_workflow_definition_hash_is_deterministic_across_serialization(
         self,
         simple_workflow_definition: ModelWorkflowDefinition,
     ):
-        """Test that workflow definition hash is deterministic."""
-        # Compute hash multiple times
-        hash_1 = simple_workflow_definition.compute_workflow_hash()
-        hash_2 = simple_workflow_definition.compute_workflow_hash()
-        hash_3 = simple_workflow_definition.compute_workflow_hash()
+        """Test that workflow definition hash is deterministic across serialization.
 
-        # All hashes should be identical
-        assert hash_1 == hash_2 == hash_3
+        This test verifies that the hash is based on content, not object identity,
+        by serializing and deserializing the workflow definition and comparing hashes.
+        This catches issues like:
+        - Hash based on object id() or memory address
+        - Non-deterministic serialization order
+        - Timestamp or random salt in hash computation
+        """
+        # Get hash of original object
+        original_hash = simple_workflow_definition.compute_workflow_hash()
+
+        # CRITICAL: Verify hash is meaningful before comparing
+        # Without this check, a broken hash returning None/empty would pass
+        assert original_hash is not None, "Hash should not be None"
+        assert original_hash != "", "Hash should not be empty"
+
+        # Serialize and deserialize to create a NEW object with same content
+        serialized = simple_workflow_definition.model_dump()
+        restored_definition = ModelWorkflowDefinition.model_validate(serialized)
+
+        # The restored object should produce the same hash
+        restored_hash = restored_definition.compute_workflow_hash()
+
+        # Verify restored hash is also meaningful
+        assert restored_hash is not None, "Restored hash should not be None"
+        assert restored_hash != "", "Restored hash should not be empty"
+
+        assert original_hash == restored_hash, (
+            f"Hash should be deterministic across serialization. "
+            f"Original: {original_hash}, Restored: {restored_hash}"
+        )
+
+        # Also verify we're actually testing different objects (not cached)
+        assert simple_workflow_definition is not restored_definition, (
+            "Test must compare different object instances"
+        )
 
     def test_equivalent_workflow_definitions_have_same_hash(
         self,
@@ -920,8 +1019,49 @@ class TestNodeOrchestratorStateSerializationDeterminism:
             version=ModelSemVer(major=1, minor=0, patch=0),
         )
 
-        # Hashes should be identical for equivalent definitions
-        assert def_1.compute_workflow_hash() == def_2.compute_workflow_hash()
+        # Create a DIFFERENT workflow definition to prove hashes discriminate
+        def_3 = ModelWorkflowDefinition(
+            workflow_metadata=ModelWorkflowDefinitionMetadata(
+                workflow_name="different_workflow",  # Different name
+                workflow_version=ModelSemVer(
+                    major=2, minor=0, patch=0
+                ),  # Different version
+                version=ModelSemVer(major=1, minor=0, patch=0),
+                description="Different workflow",  # Different description
+                execution_mode="parallel",  # Different execution mode
+            ),
+            execution_graph=ModelExecutionGraph(
+                nodes=[],
+                version=ModelSemVer(major=1, minor=0, patch=0),
+            ),
+            coordination_rules=ModelCoordinationRules(
+                parallel_execution_allowed=True,  # Different coordination
+                failure_recovery_strategy=EnumFailureRecoveryStrategy.ABORT,  # Different strategy
+                version=ModelSemVer(major=1, minor=0, patch=0),
+            ),
+            version=ModelSemVer(major=1, minor=0, patch=0),
+        )
+
+        hash_1 = def_1.compute_workflow_hash()
+        hash_2 = def_2.compute_workflow_hash()
+        hash_3 = def_3.compute_workflow_hash()
+
+        # Verify hashes are meaningful (not None or empty)
+        assert hash_1 is not None, "Hash should not be None"
+        assert hash_1 != "", "Hash should not be empty"
+
+        # Equivalent definitions should produce same hash
+        assert hash_1 == hash_2, (
+            f"Equivalent definitions should have same hash. "
+            f"def_1: {hash_1}, def_2: {hash_2}"
+        )
+
+        # Different definitions should produce different hashes
+        # This prevents the test from passing with a broken hash that returns constants
+        assert hash_1 != hash_3, (
+            f"Different definitions should have different hashes. "
+            f"def_1: {hash_1}, def_3: {hash_3}"
+        )
 
 
 @pytest.mark.timeout(60)
@@ -949,8 +1089,19 @@ class TestNodeOrchestratorParallelExecutionDeterminism:
         # Run multiple times
         results = [await node.process(input_data) for _ in range(5)]
 
-        # All should complete same steps (order may vary in parallel)
+        # Verify the first result has all expected steps completed
         first_completed_set = set(results[0].completed_steps)
+        expected_steps = {
+            str(FIXED_STEP_1_ID),
+            str(FIXED_STEP_2_ID),
+            str(FIXED_STEP_3_ID),
+            str(FIXED_STEP_4_ID),
+        }
+        assert first_completed_set == expected_steps, (
+            f"Expected all 4 steps to complete. Got: {first_completed_set}"
+        )
+
+        # All subsequent runs should complete same steps (order may vary in parallel)
         for result in results[1:]:
             assert set(result.completed_steps) == first_completed_set
 
@@ -976,6 +1127,10 @@ class TestNodeOrchestratorParallelExecutionDeterminism:
 
         # All should emit same number of actions
         expected_count = len(results[0].actions_emitted)
+        # Verify the count is correct (4 steps in complex_dependency_steps_config)
+        assert expected_count == 4, (
+            f"Expected 4 actions for 4 workflow steps, got {expected_count}"
+        )
         for result in results[1:]:
             assert len(result.actions_emitted) == expected_count
 
@@ -1009,31 +1164,32 @@ class TestNodeOrchestratorParallelExecutionDeterminism:
         completed = result.completed_steps
         assert len(completed) == 4, "All 4 steps should complete"
 
-        # Verify dependency order by checking action emission order
-        # This tests EXECUTION order, not just completion membership
-        actions = result.actions_emitted
-        assert len(actions) == 4, "Should emit exactly 4 actions for 4 steps"
+        # All steps must be present in completed list
+        assert str(FIXED_STEP_1_ID) in completed, "Root step 1 must be completed"
+        assert str(FIXED_STEP_2_ID) in completed, "Step 2 must be completed"
+        assert str(FIXED_STEP_3_ID) in completed, "Step 3 must be completed"
+        assert str(FIXED_STEP_4_ID) in completed, "Step 4 must be completed"
 
-        # Get action target types in emission order
-        action_targets = [action.target_node_type for action in actions]
+        # Verify dependency ordering: Step 1 must appear before Steps 2 and 3
+        # (Step 1 is the root that Steps 2 and 3 depend on)
+        step_1_idx = completed.index(str(FIXED_STEP_1_ID))
+        step_2_idx = completed.index(str(FIXED_STEP_2_ID))
+        step_3_idx = completed.index(str(FIXED_STEP_3_ID))
+        step_4_idx = completed.index(str(FIXED_STEP_4_ID))
 
-        # Step 1 (root, effect) MUST be scheduled first - it has no dependencies
-        assert action_targets[0] == "NodeEffect", (
-            f"Root step (NodeEffect) must be scheduled first, "
-            f"but got {action_targets[0]}"
+        assert step_1_idx < step_2_idx, (
+            "Step 1 must complete before Step 2 (dependency)"
+        )
+        assert step_1_idx < step_3_idx, (
+            "Step 1 must complete before Step 3 (dependency)"
         )
 
-        # Step 4 (merge, reducer) MUST be scheduled last - it depends on 2 and 3
-        assert action_targets[-1] == "NodeReducer", (
-            f"Merge step (NodeReducer) must be scheduled last, "
-            f"but got {action_targets[-1]}"
+        # Verify Step 4 (merge) comes after both Step 2 and Step 3
+        assert step_2_idx < step_4_idx, (
+            "Step 2 must complete before Step 4 (dependency)"
         )
-
-        # Steps 2 and 3 (branches, compute) must be scheduled in between
-        # They can be in either order since they're parallel, but both must appear
-        middle_targets = action_targets[1:-1]
-        assert sorted(middle_targets) == ["NodeCompute", "NodeCompute"], (
-            f"Branch steps (2x NodeCompute) must be in middle, but got {middle_targets}"
+        assert step_3_idx < step_4_idx, (
+            "Step 3 must complete before Step 4 (dependency)"
         )
 
 

@@ -16,7 +16,6 @@ import ast
 import sys
 import textwrap
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 import pytest
 
@@ -36,7 +35,6 @@ from check_node_purity import (
     FORBIDDEN_THREADING_MODULES,
     VALID_NODE_BASE_CLASSES,
     PurityAnalyzer,
-    PurityCheckResult,
     Severity,
     ViolationType,
     _safe_relative_path,

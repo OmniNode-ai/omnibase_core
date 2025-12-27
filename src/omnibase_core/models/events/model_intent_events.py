@@ -16,9 +16,16 @@ from omnibase_core.constants.constants_topic_taxonomy import (
 from omnibase_core.models.events.model_event_publish_intent import (
     ModelEventPublishIntent,
 )
+from omnibase_core.models.events.model_event_publish_intent import (
+    _rebuild_model as _rebuild_event_publish_intent,
+)
 from omnibase_core.models.events.model_intent_execution_result import (
     ModelIntentExecutionResult,
 )
+
+# Rebuild forward references for ModelEventPublishIntent
+# This resolves ModelEventPayloadUnion and ModelRetryPolicy type annotations
+_rebuild_event_publish_intent()
 
 __all__ = [
     "TOPIC_EVENT_PUBLISH_INTENT",

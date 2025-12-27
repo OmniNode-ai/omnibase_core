@@ -22,8 +22,7 @@ Requirements from OMN-157:
 """
 
 from datetime import UTC, datetime
-from typing import Any
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 import pytest
 from pydantic import ValidationError
