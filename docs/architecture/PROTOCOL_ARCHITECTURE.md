@@ -44,11 +44,11 @@ The omnibase_core project follows a **protocol-driven architecture** where:
 
 Total: **3 protocols**
 
-#### 1.1 PatternChecker
+#### 1.1 ProtocolPatternChecker
 **Location**: `src/omnibase_core/validation/patterns.py:28`
 
 ```python
-class PatternChecker(Protocol):
+class ProtocolPatternChecker(Protocol):
     """Protocol for pattern checkers with issues tracking."""
 
     issues: list[str]
@@ -440,7 +440,7 @@ else:
 │                                                               │
 │  ┌─────────────────────────────────────────────────────┐   │
 │  │ Internal Protocols                                  │   │
-│  │  ├── validation/patterns.py::PatternChecker       │   │
+│  │  ├── validation/patterns.py::ProtocolPatternChecker       │   │
 │  │  ├── mixins/mixin_serializable.py::MixinSerializable│  │
 │  │  └── models/core/model_status_protocol.py::EnumStatusProtocol │
 │  └─────────────────────────────────────────────────────┘   │
@@ -570,10 +570,10 @@ PrimitiveValueType = TypeVar("PrimitiveValueType", str, int, float, bool)
 ---
 
 ### Violation Type 4: Mutable Protocol State ⚠️
-**Status**: FOUND in `PatternChecker`
+**Status**: FOUND in `ProtocolPatternChecker`
 
 ```python
-class PatternChecker(Protocol):
+class ProtocolPatternChecker(Protocol):
     issues: list[str]  # ⚠️ Mutable state in protocol
 ```
 
@@ -585,7 +585,7 @@ class PatternChecker(Protocol):
 
 ```python
 # Better design
-class PatternChecker(Protocol):
+class ProtocolPatternChecker(Protocol):
     def visit(self, node: ast.AST) -> None: ...
     def get_issues(self) -> list[str]: ...  # Getter instead of property
 ```
@@ -598,18 +598,18 @@ class PatternChecker(Protocol):
 **Example**:
 ```python
 # Current: Not runtime checkable
-class PatternChecker(Protocol):
+class ProtocolPatternChecker(Protocol):
     issues: list[str]
     def visit(self, node: ast.AST) -> None: ...
 
 # Better: Runtime checkable
 @runtime_checkable
-class PatternChecker(Protocol):
+class ProtocolPatternChecker(Protocol):
     issues: list[str]
     def visit(self, node: ast.AST) -> None: ...
 
 # Enables runtime checks
-if isinstance(obj, PatternChecker):
+if isinstance(obj, ProtocolPatternChecker):
     obj.visit(ast_node)
 ```
 
@@ -624,7 +624,7 @@ if isinstance(obj, PatternChecker):
 
 ```python
 # Before
-class PatternChecker(Protocol):
+class ProtocolPatternChecker(Protocol):
     issues: list[str]
     def visit(self, node: ast.AST) -> None: ...
 
@@ -632,7 +632,7 @@ class PatternChecker(Protocol):
 from typing import Protocol, runtime_checkable
 
 @runtime_checkable
-class PatternChecker(Protocol):
+class ProtocolPatternChecker(Protocol):
     issues: list[str]
     def visit(self, node: ast.AST) -> None: ...
 ```
@@ -715,14 +715,14 @@ import pytest
 from typing import get_type_hints
 
 def test_pattern_checker_protocol_compliance():
-    """Test that all checker implementations satisfy PatternChecker protocol."""
-    from omnibase_core.validation.patterns import PatternChecker
+    """Test that all checker implementations satisfy ProtocolPatternChecker protocol."""
+    from omnibase_core.validation.patterns import ProtocolPatternChecker
     from omnibase_core.validation.checker_pydantic_pattern import PydanticPatternChecker
 
     checker = PydanticPatternChecker("test.py")
 
     # Runtime check
-    assert isinstance(checker, PatternChecker)
+    assert isinstance(checker, ProtocolPatternChecker)
 
     # Interface check
     assert hasattr(checker, "issues")
@@ -753,7 +753,7 @@ def test_serializable_mixin_protocol():
 
 **Current Convention** (GOOD):
 - Core protocols: `Protocol<Name>` (e.g., `ProtocolSerializable`)
-- Internal protocols: Descriptive names (e.g., `PatternChecker`, `MixinSerializable`)
+- Internal protocols: Descriptive names (e.g., `ProtocolPatternChecker`, `MixinSerializable`)
 - Aliases: Short names (e.g., `Serializable`, `Configurable`)
 
 **Keep this pattern** - it's clear and consistent.
@@ -771,7 +771,7 @@ Add docstrings to all protocols explaining:
 
 ```python
 @runtime_checkable
-class PatternChecker(Protocol):
+class ProtocolPatternChecker(Protocol):
     """
     Protocol for AST pattern validation checkers.
 
@@ -801,7 +801,7 @@ class PatternChecker(Protocol):
                     if not node.name.startswith("test_"):
                         self.issues.append("Function must start with test_")
 
-        checker: PatternChecker = MyChecker()  # Type-safe!
+        checker: ProtocolPatternChecker = MyChecker()  # Type-safe!
     """
 
     issues: list[str]
@@ -838,7 +838,7 @@ EnumExecutionStatusV2
 
 ### Validation Protocols
 ```text
-PatternChecker (omnibase_core)
+ProtocolPatternChecker (omnibase_core)
   ↓ (implementations)
 PydanticPatternChecker
 NamingConventionChecker
@@ -994,7 +994,7 @@ grep -r "def model_dump\|def serialize\|def get_name" src/omnibase_core --includ
 ## Appendix: Complete Protocol Catalog
 
 ### omnibase_core Internal Protocols (3)
-1. **PatternChecker** - AST validation contract
+1. **ProtocolPatternChecker** - AST validation contract
 2. **MixinSerializable** - Recursive serialization
 3. **EnumStatusProtocol** - Status migration
 
