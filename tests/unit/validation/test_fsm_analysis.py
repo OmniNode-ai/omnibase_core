@@ -831,8 +831,6 @@ class TestFSMAnalysisAmbiguousTransitions:
         from_state, trigger, priority) are rejected during model validation.
         This test verifies that behavior.
         """
-        from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
         states = [
             ModelFSMStateDefinition(
                 version=base_version,
@@ -1050,8 +1048,6 @@ class TestFSMAnalysisAmbiguousTransitions:
         Wildcard-to-wildcard ambiguity: '*' + trigger -> {stateA, stateB} at same priority
         is now caught during construction as duplicate structural transitions.
         """
-        from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
         states = [
             ModelFSMStateDefinition(
                 version=base_version,
