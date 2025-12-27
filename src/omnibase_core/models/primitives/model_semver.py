@@ -128,6 +128,11 @@ class ModelSemVer(BaseModel):
     Always use structured format: ModelSemVer(major=X, minor=Y, patch=Z)
     """
 
+    # from_attributes=True allows Pydantic to accept objects with matching
+    # attributes even when class identity differs (e.g., in pytest-xdist
+    # parallel execution where model classes are imported in separate workers)
+    model_config = ConfigDict(frozen=True, extra="ignore", from_attributes=True)
+
     major: int = Field(ge=0, description="Major version number")
     minor: int = Field(ge=0, description="Minor version number")
     patch: int = Field(ge=0, description="Patch version number")
@@ -139,11 +144,6 @@ class ModelSemVer(BaseModel):
         default=None,
         description="Build metadata identifiers (ignored for precedence)",
     )
-
-    # from_attributes=True allows Pydantic to accept objects with matching
-    # attributes even when class identity differs (e.g., in pytest-xdist
-    # parallel execution where model classes are imported in separate workers)
-    model_config = ConfigDict(frozen=True, extra="ignore", from_attributes=True)
 
     @field_validator("major", "minor", "patch")
     @classmethod

@@ -3,9 +3,10 @@
 from uuid import uuid4
 
 import pytest
+from pydantic import ValidationError
+
 from omnibase_core.models.graph.model_graph_batch_result import ModelGraphBatchResult
 from omnibase_core.models.graph.model_graph_query_result import ModelGraphQueryResult
-from pydantic import ValidationError
 
 
 @pytest.mark.unit
