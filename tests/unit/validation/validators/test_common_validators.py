@@ -15,6 +15,7 @@ from collections.abc import Callable
 import pytest
 from pydantic import BaseModel, ValidationError
 
+from omnibase_core.errors import OnexError
 from omnibase_core.validation.validators import (
     BCP47Locale,
     Duration,
@@ -105,8 +106,9 @@ class TestValidateDuration:
     )
     def test_weeks_cannot_be_combined(self, duration: str) -> None:
         """Test that weeks cannot be combined with other components per ISO 8601."""
-        with pytest.raises(ValueError, match=r"weeks.*cannot be combined"):
+        with pytest.raises(OnexError) as exc_info:
             validate_duration(duration)
+        assert "weeks (W) cannot be combined" in str(exc_info.value)
 
 
 @pytest.mark.unit

@@ -1051,7 +1051,8 @@ class TestFSMAnalysisAmbiguousTransitions:
         Wildcard-to-wildcard ambiguity: '*' + trigger -> {stateA, stateB} at same priority
         is now caught during construction as duplicate structural transitions.
         """
-        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+        # Note: Use top-level import (line 29) to avoid class identity issues
+        # in pytest-xdist parallel execution
 
         states = [
             ModelFSMStateDefinition(
@@ -1724,7 +1725,8 @@ class TestFSMAnalysisEdgeCases:
         Since OMN-575, duplicate structural transitions (same from_state, trigger,
         priority) are rejected at FSM construction time. This applies to wildcards too.
         """
-        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+        # Note: Use top-level import (line 29) to avoid class identity issues
+        # in pytest-xdist parallel execution
 
         states = [
             ModelFSMStateDefinition(

@@ -49,7 +49,9 @@ class TestModelEventPayload:
         event_data = ModelUserEventData(
             event_type=EnumEventType.USER,
             user_action="login",
-            session_context=ModelSessionContext(session_id="abc123"),
+            session_context=ModelSessionContext(
+                session_id="550e8400-e29b-41d4-a716-446655440000"
+            ),
         )
 
         payload = ModelEventPayload(
@@ -59,7 +61,10 @@ class TestModelEventPayload:
 
         assert payload.event_type == EnumEventType.USER
         assert payload.event_data.user_action == "login"
-        assert payload.event_data.session_context.session_id == "abc123"
+        assert (
+            str(payload.event_data.session_context.session_id)
+            == "550e8400-e29b-41d4-a716-446655440000"
+        )
 
     def test_workflow_event_creation(self):
         """Test creating workflow event payload."""
@@ -231,7 +236,9 @@ class TestModelEventPayloadSerialization:
         event_data = ModelUserEventData(
             event_type=EnumEventType.USER,
             user_action="password_reset",
-            session_context=ModelSessionContext(session_id="token123"),
+            session_context=ModelSessionContext(
+                session_id="550e8400-e29b-41d4-a716-446655440001"
+            ),
             request_metadata=ModelRequestMetadata(ip_address="192.168.1.1"),
         )
 
@@ -244,7 +251,10 @@ class TestModelEventPayloadSerialization:
 
         assert serialized["event_type"] == EnumEventType.USER
         assert serialized["event_data"]["user_action"] == "password_reset"
-        assert serialized["event_data"]["session_context"]["session_id"] == "token123"
+        assert (
+            str(serialized["event_data"]["session_context"]["session_id"])
+            == "550e8400-e29b-41d4-a716-446655440001"
+        )
 
     def test_workflow_event_deserialization(self):
         """Test JSON deserialization of workflow event."""
@@ -494,7 +504,7 @@ class TestModelEventPayloadUsagePatterns:
             event_type=EnumEventType.USER,
             user_action="authentication",
             session_context=ModelSessionContext(
-                session_id="sess_abc123def456",
+                session_id="550e8400-e29b-41d4-a716-446655440002",
                 authentication_method="oauth2",
             ),
             request_metadata=ModelRequestMetadata(

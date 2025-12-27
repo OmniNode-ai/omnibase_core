@@ -94,7 +94,7 @@ Pure computation with no side effects or runtime dependencies.
 | 28 | `ModelLogData` | Structured log data model | D | `models/mixins/model_log_data.py` |
 | 29 | `MixinNodeExecutor` | Persistent executor mode | R | `NodeRuntime.executor_service` |
 | 30 | `MixinNodeIdFromContract` | Load node ID from contract | D | `utils/node_id.py` |
-| 31 | `MixinNodeIntrospectionData` | Introspection data container | D | `models/introspection/` (already a model) |
+| 31 | `ModelNodeIntrospectionData` | Introspection data container | D | `models/mixins/model_node_introspection_data.py` |
 | 32 | `MixinNodeLifecycle` | Node lifecycle events | R | `NodeRuntime.lifecycle_manager` |
 | 33 | `MixinNodeService` | Service interface for nodes | R | `NodeRuntime.service_interface` |
 | 34 | `MixinRedaction` | Sensitive field redaction | D | `utils/redaction.py` |
@@ -162,7 +162,7 @@ Pure computation with no side effects or runtime dependencies.
 | `MixinFSMExecution` | `domain/fsm/executor.py` |
 | `MixinContractStateReducer` | `domain/fsm/contract_reducer.py` |
 | `ModelLogData` | `models/mixins/model_log_data.py` |
-| `MixinNodeIntrospectionData` | `models/introspection/` (already a model) |
+| `ModelNodeIntrospectionData` | `models/mixins/model_node_introspection_data.py` |
 
 ---
 
