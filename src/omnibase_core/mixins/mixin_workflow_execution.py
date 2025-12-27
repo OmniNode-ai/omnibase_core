@@ -18,18 +18,41 @@ if TYPE_CHECKING:
     )
     from omnibase_core.types.typed_dict_mixin_types import TypedDictWorkflowStepConfig
 
+    # These imports are for type hints only - actual imports are done lazily in methods
+    # to avoid circular import with workflow_executor
+    from omnibase_core.utils.workflow_executor import (
+        WorkflowExecutionResult,
+    )
+
 from omnibase_core.enums.enum_workflow_execution import EnumExecutionMode
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.contracts.subcontracts.model_workflow_definition import (
     ModelWorkflowDefinition,
 )
 from omnibase_core.types.type_workflow_context import WorkflowContextType
-from omnibase_core.utils.workflow_executor import (
-    WorkflowExecutionResult,
-    execute_workflow,
-    get_execution_order,
-    validate_workflow_definition,
-)
+
+
+# Lazy import helper to avoid circular import with workflow_executor
+def _get_workflow_executor() -> tuple[
+    type[WorkflowExecutionResult],
+    Any,  # execute_workflow function
+    Any,  # get_execution_order function
+    Any,  # validate_workflow_definition function
+]:
+    """Lazily import workflow_executor to avoid circular import."""
+    from omnibase_core.utils.workflow_executor import (
+        WorkflowExecutionResult,
+        execute_workflow,
+        get_execution_order,
+        validate_workflow_definition,
+    )
+
+    return (
+        WorkflowExecutionResult,
+        execute_workflow,
+        get_execution_order,
+        validate_workflow_definition,
+    )
 
 
 class MixinWorkflowExecution:
@@ -179,6 +202,8 @@ class MixinWorkflowExecution:
             if snapshot:
                 print(f"Completed steps: {len(snapshot.completed_step_ids)}")
         """
+        # Lazy import to avoid circular import with workflow_executor
+        _, execute_workflow, _, _ = _get_workflow_executor()
         result = await execute_workflow(
             workflow_definition,
             workflow_steps,
@@ -244,6 +269,8 @@ class MixinWorkflowExecution:
             else:
                 print("Workflow contract is valid!")
         """
+        # Lazy import to avoid circular import with workflow_executor
+        _, _, _, validate_workflow_definition = _get_workflow_executor()
         return await validate_workflow_definition(workflow_definition, workflow_steps)
 
     def get_workflow_execution_order(
@@ -267,6 +294,8 @@ class MixinWorkflowExecution:
             order = self.get_workflow_execution_order(steps)
             print(f"Execution order: {order}")
         """
+        # Lazy import to avoid circular import with workflow_executor
+        _, _, get_execution_order, _ = _get_workflow_executor()
         return get_execution_order(workflow_steps)
 
     def create_workflow_steps_from_config(

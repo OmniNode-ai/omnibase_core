@@ -62,8 +62,9 @@ from omnibase_core.models.validation.model_lint_statistics import ModelLintStati
 from omnibase_core.models.validation.model_lint_warning import ModelLintWarning
 
 # Type alias for valid step types (placed after imports per PEP 8)
+# v1.0.4 Fix 41: "conditional" is NOT a valid step type in v1.0. Removed.
 StepTypeLiteral = Literal[
-    "compute", "effect", "reducer", "orchestrator", "conditional", "parallel", "custom"
+    "compute", "effect", "reducer", "orchestrator", "parallel", "custom"
 ]
 
 __all__ = [

@@ -295,10 +295,14 @@ class TestWorkflowValidation:
     async def test_empty_workflow(
         self, simple_workflow_definition: ModelWorkflowDefinition
     ):
-        """Test validation with no steps."""
+        """Test validation with no steps.
+
+        v1.0.3 Fix 29: Empty workflows are VALID and succeed immediately with
+        COMPLETED state. No actions are emitted. This is not an error condition.
+        """
         errors = await validate_workflow_definition(simple_workflow_definition, [])
-        assert len(errors) > 0
-        assert any("no steps" in error.lower() for error in errors)
+        # v1.0.3 Fix 29: Empty workflows are valid, no errors expected
+        assert len(errors) == 0
 
     @pytest.mark.asyncio
     async def test_invalid_dependency(
@@ -454,11 +458,13 @@ class TestDisabledSteps:
 
         result = await execute_workflow(simple_workflow_definition, steps, uuid4())
 
+        # v1.0.2 Fix 10: Disabled steps are treated as satisfied dependencies.
         # Step 1 should complete
-        # Step 2 should be skipped (disabled)
-        # Step 3 should fail (dependency not met)
-        assert len(result.completed_steps) == 1
-        assert len(result.failed_steps) == 1  # Step 3 fails
+        # Step 2 should be skipped (disabled, but satisfies dependency per Fix 10)
+        # Step 3 should complete (its dependency Step 2 is satisfied)
+        assert len(result.completed_steps) == 2  # Step 1 and Step 3
+        assert len(result.failed_steps) == 0  # No failures
+        assert len(result.skipped_steps) == 1  # Step 2 is skipped
 
 
 @pytest.mark.unit
@@ -1297,21 +1303,24 @@ class TestPriorityOrderingIntegration:
             for action in result.actions_emitted
         ]
 
-        # Verify priority order: high (1), medium (5), low (10)
-        assert emitted_step_ids[0] == high_priority_id, (
-            f"Expected high priority step first, got {emitted_step_ids[0]}"
+        # v1.0.2-v1.0.4 Normative: Emission order follows declaration order, NOT priority.
+        # Priority is passed to action.priority for target node scheduling.
+        # Steps are emitted in declaration order: low, medium, high
+        assert emitted_step_ids[0] == low_priority_id, (
+            f"Expected low priority step first (declared first), got {emitted_step_ids[0]}"
         )
         assert emitted_step_ids[1] == medium_priority_id, (
-            f"Expected medium priority step second, got {emitted_step_ids[1]}"
+            f"Expected medium priority step second (declared second), got {emitted_step_ids[1]}"
         )
-        assert emitted_step_ids[2] == low_priority_id, (
-            f"Expected low priority step third, got {emitted_step_ids[2]}"
+        assert emitted_step_ids[2] == high_priority_id, (
+            f"Expected high priority step third (declared third), got {emitted_step_ids[2]}"
         )
 
-        # Also verify action priorities are set correctly
-        assert result.actions_emitted[0].priority == 1
+        # Verify action priorities are set correctly (priority IS passed to action)
+        # Order by declaration: low (10), medium (5), high (1)
+        assert result.actions_emitted[0].priority == 10
         assert result.actions_emitted[1].priority == 5
-        assert result.actions_emitted[2].priority == 10
+        assert result.actions_emitted[2].priority == 1
 
     @pytest.mark.asyncio
     async def test_parallel_workflow_respects_priority_in_wave(
@@ -1492,13 +1501,15 @@ class TestPriorityOrderingIntegration:
         # Step D must be last (depends on B and C)
         assert emitted_step_ids[3] == step_d_id, "Step D (final) must execute last"
 
-        # Steps B and C can be in either order based on priority
-        # B has priority 1, C has priority 10, so B should come before C
+        # v1.0.2-v1.0.4 Normative: Emission order follows declaration order, NOT priority.
+        # Steps B and C are ordered by their declaration position:
+        # - Step C is declared at index 0, Step B is declared at index 3
+        # - So C should come before B in emission order
         b_index = emitted_step_ids.index(step_b_id)
         c_index = emitted_step_ids.index(step_c_id)
-        assert b_index < c_index, (
-            f"Step B (priority 1) should execute before Step C (priority 10). "
-            f"B index: {b_index}, C index: {c_index}"
+        assert c_index < b_index, (
+            f"Step C (declared first) should execute before Step B (declared last). "
+            f"C index: {c_index}, B index: {b_index}"
         )
 
     @pytest.mark.asyncio
@@ -1644,10 +1655,12 @@ class TestPriorityOrdering:
 
         order = _get_topological_order(steps)
 
-        # Should be ordered: high (1), medium (5), low (10)
-        assert order[0] == high_priority_id
+        # v1.0.2-v1.0.4 Normative: Emission order follows declaration order, NOT priority.
+        # Priority is passed to action.priority for target node scheduling.
+        # Steps are ordered by their position in the list: low (0), medium (1), high (2)
+        assert order[0] == low_priority_id
         assert order[1] == medium_priority_id
-        assert order[2] == low_priority_id
+        assert order[2] == high_priority_id
 
     def test_priority_clamped_to_10(self) -> None:
         """Test that priority values over 10 are clamped to 10."""
@@ -1746,8 +1759,9 @@ class TestPriorityOrdering:
 
         # Parent first (due to dependency)
         assert order[0] == parent_id
-        # High priority child (1) before low priority child (10)
-        assert order.index(high_priority_child_id) < order.index(low_priority_child_id)
+        # v1.0.2-v1.0.4 Normative: Children ordered by declaration order, NOT priority.
+        # Low priority child is declared before high priority child, so it comes first.
+        assert order.index(low_priority_child_id) < order.index(high_priority_child_id)
 
     def test_default_priority_uses_model_default(self) -> None:
         """Test that default priority (100) is clamped to 10 in topological order."""
@@ -1757,13 +1771,15 @@ class TestPriorityOrdering:
         high_priority_id = uuid4()
 
         # Create steps where one uses default priority (100) and another has explicit high priority (1)
-        # Default priority (100) should be clamped to 10
+        # v1.0.2-v1.0.4 Normative: Priority does NOT affect emission order.
+        # Emission order follows YAML declaration order.
+        # Priority is passed to action.priority for target node scheduling.
         steps = [
             ModelWorkflowStep(
                 step_id=default_priority_id,
                 step_name="Default Priority Step",
                 step_type="compute",
-                # priority defaults to 100, clamped to 10
+                # priority defaults to 100, clamped to 10 in action
             ),
             ModelWorkflowStep(
                 step_id=high_priority_id,
@@ -1775,8 +1791,9 @@ class TestPriorityOrdering:
 
         order = _get_topological_order(steps)
 
-        # High priority (1) should come before default priority (100 clamped to 10)
-        assert order.index(high_priority_id) < order.index(default_priority_id)
+        # v1.0.2-v1.0.4: Declaration order determines emission order, NOT priority
+        # Default priority step is declared first, so it comes first
+        assert order.index(default_priority_id) < order.index(high_priority_id)
 
     def test_default_priority_in_create_action_for_step(self) -> None:
         """Test that _create_action_for_step clamps default priority (100) to 10."""

@@ -391,19 +391,24 @@ class TestActionTypeMapping:
 
         assert action.action_type == EnumActionType.CUSTOM
 
-    def test_conditional_step_type_fallback(self) -> None:
-        """Test that conditional step type falls back to CUSTOM action type."""
-        step = ModelWorkflowStep(
-            step_id=uuid4(),
-            step_name="conditional_step",
-            step_type="conditional",
-        )
-        workflow_id = uuid4()
+    def test_conditional_step_type_rejected(self) -> None:
+        """Test that conditional step type is rejected per v1.0.4 Fix 41.
 
-        action, _ = _create_action_for_step(step, workflow_id)
+        v1.0.4 Normative: step_type="conditional" MUST raise validation error.
+        Conditional nodes are reserved for v1.1.
+        """
+        import pytest
+        from pydantic import ValidationError
 
-        # Unknown types fall back to CUSTOM
-        assert action.action_type == EnumActionType.CUSTOM
+        with pytest.raises(ValidationError) as exc_info:
+            ModelWorkflowStep(
+                step_id=uuid4(),
+                step_name="conditional_step",
+                step_type="conditional",  # type: ignore[arg-type]
+            )
+
+        # Verify error mentions the invalid step_type
+        assert "step_type" in str(exc_info.value)
 
     def test_parallel_step_type_fallback(self) -> None:
         """Test that parallel step type falls back to CUSTOM action type."""
@@ -449,17 +454,34 @@ class TestTargetNodeTypeMapping:
 
         assert action.target_node_type == expected_target_node_type
 
-    def test_unknown_step_type_fallback(self) -> None:
-        """Test that unknown step types fall back to NodeCustom."""
+    def test_unknown_step_type_rejected_at_validation(self) -> None:
+        """Test that unknown step types are rejected at validation time.
+
+        v1.0.4 Fix 41: step_type must be compute|effect|reducer|orchestrator|custom|parallel.
+        Invalid step types are rejected during model validation, not during action creation.
+        This ensures all step types that reach action creation are valid and mapped.
+        """
+        from pydantic import ValidationError
+
+        with pytest.raises(ValidationError):
+            ModelWorkflowStep(
+                step_id=uuid4(),
+                step_name="invalid_step",
+                step_type="invalid_type",  # type: ignore[arg-type]
+            )
+
+    def test_parallel_step_type_maps_to_custom(self) -> None:
+        """Test that parallel step type maps to NodeCustom target node type."""
         step = ModelWorkflowStep(
             step_id=uuid4(),
-            step_name="conditional_step",
-            step_type="conditional",  # Not in the mapping
+            step_name="parallel_step",
+            step_type="parallel",
         )
         workflow_id = uuid4()
 
         action, _ = _create_action_for_step(step, workflow_id)
 
+        # parallel step type should map to NodeCustom
         assert action.target_node_type == "NodeCustom"
 
 
