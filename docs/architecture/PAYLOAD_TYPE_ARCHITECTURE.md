@@ -12,12 +12,14 @@
 > **CRITICAL**: `dict[str, Any]` payloads are **NO LONGER SUPPORTED** in the following models. This is a breaking change introduced in v0.4.0.
 
 **Affected Models**:
+
 - `ModelEventPublishIntent.target_event_payload`
 - `ModelIntent.payload`
 - `ModelAction.payload`
 - `ModelRuntimeDirective.payload`
 
 **What Happens Now**:
+
 ```python
 # BEFORE (no longer works in v0.4.0+)
 intent = ModelEventPublishIntent(
@@ -40,7 +42,8 @@ intent = ModelEventPublishIntent(
 ```
 
 **ValidationError Example**:
-```
+
+```text
 pydantic_core._pydantic_core.ValidationError: 1 validation error for ModelEventPublishIntent
 target_event_payload
   Input should be a valid dictionary or instance of <ModelEventPayload variants> [type=model_type, input_value={'node_id': 'abc'}, input_type=dict]
@@ -55,6 +58,7 @@ target_event_payload
 `dict[str, Any]` payload fields in 4 core models have been **replaced** with **Pydantic discriminated unions** to achieve compile-time type safety and exhaustive pattern matching.
 
 **Affected Models**:
+
 1. `ModelIntent` (extension intents)
 2. `ModelAction` (orchestrator actions)
 3. `ModelRuntimeDirective` (internal runtime signals)
@@ -159,7 +163,7 @@ The codebase uses **intentionally different discriminator field names** across p
 
 > **Note on Action Payloads**: Action payloads use `action_type: ModelNodeActionType` as the data field,
 > with a `kind` **property** (derived from `action_type.name`) to satisfy `ProtocolActionPayload`.
-
+>
 > **Note on Reducer Intent Payloads**: Reducer Intent Payloads use a Protocol-based approach (`ProtocolIntentPayload`) rather than
 > a discriminated union, enabling open extensibility for plugins. Payload classes still define an
 > `intent_type` attribute for routing, but dispatch is structural (duck typing) rather than union-based.
@@ -171,11 +175,13 @@ The codebase uses **intentionally different discriminator field names** across p
 **Location**: `src/omnibase_core/models/reducer/payloads/`
 
 **Rationale**:
+
 - Aligns semantically with `ModelIntent.intent_type` field
 - Clearly indicates this payload describes an *intent* to perform a side effect
 - The discriminator value matches what the Effect node uses for dispatch routing
 
 **Example**:
+
 ```python
 class ModelPayloadLogEvent(ModelIntentPayloadBase):
     # Discriminator FIRST for optimal union resolution
@@ -192,11 +198,13 @@ class ModelPayloadLogEvent(ModelIntentPayloadBase):
 **Location**: `src/omnibase_core/models/runtime/payloads/`
 
 **Rationale**:
+
 - Short, unambiguous internal convention for runtime-level coordination
 - Matches Kubernetes and other infrastructure patterns (e.g., `kind: Deployment`)
 - Used for internal runtime signals that never leave the system boundary
 
 **Example**:
+
 ```python
 class ModelScheduleEffectPayload(ModelDirectivePayloadBase):
     kind: Literal["schedule_effect"] = "schedule_effect"
@@ -207,10 +215,12 @@ class ModelScheduleEffectPayload(ModelDirectivePayloadBase):
 #### 3. `action_type` (Action Payloads)
 
 **Locations**:
+
 - Base payloads: `src/omnibase_core/models/core/model_action_payload*.py`
 - Type alias and factory: `src/omnibase_core/models/orchestrator/payloads/model_action_typed_payload.py`
 
 **Rationale**:
+
 - Uses rich `ModelNodeActionType` for **semantic categorization** (not Literal)
 - Enables category-based dispatch (lifecycle, data, transformation, validation, etc.)
 - This is NOT a Pydantic discriminated union - uses type matching instead
@@ -240,12 +250,14 @@ based on the action's semantic category.
 For **optimal O(1) discriminator lookup**, all payloads in discriminated unions MUST:
 
 1. **Use Literal types** for the discriminator field:
+
    ```python
    intent_type: Literal["log_event"] = "log_event"  # Correct
    intent_type: str = "log_event"                    # Wrong - O(n) lookup
    ```
 
 2. **Place discriminator FIRST** in the model definition:
+
    ```python
    class ModelPayloadLogEvent(ModelIntentPayloadBase):
        intent_type: Literal["log_event"] = ...  # FIRST
@@ -254,6 +266,7 @@ For **optimal O(1) discriminator lookup**, all payloads in discriminated unions 
    ```
 
 3. **Include Field() with description** for documentation:
+
    ```python
    intent_type: Literal["log_event"] = Field(
        default="log_event",
@@ -297,12 +310,13 @@ Use **Protocol-based typing** when the set of payload types is **open and extens
 4. **Plugin architectures** - Payloads cross module boundaries
 
 **Key Characteristics**:
+
 - Structural typing (duck typing) - any conforming class works
 - No central union to maintain
 - Runtime validation via `isinstance()` with `@runtime_checkable`
 - Pattern matching uses structural `case` clauses
 
-**Example: ProtocolIntentPayload**
+#### Example: ProtocolIntentPayload
 
 ```python
 from typing import Protocol, runtime_checkable
@@ -341,6 +355,7 @@ def process_intent(payload: ProtocolIntentPayload) -> None:
 ```
 
 **When to choose Protocol**:
+
 - Plugins need to define custom payloads
 - You want to avoid "God union" anti-pattern (ever-growing union type)
 - Third-party code must integrate without source modification
@@ -356,12 +371,13 @@ Use **Discriminated Unions** when the set of payload types is **closed and known
 4. **Performance-critical dispatch** - O(1) lookup via Literal discriminator
 
 **Key Characteristics**:
+
 - Closed set of variants defined in one place
 - Pydantic `Field(discriminator="...")` enables automatic type resolution
 - Exhaustive pattern matching with type checker enforcement
 - Serialization/deserialization is automatic and type-safe
 
-**Example: ModelDirectivePayload (Runtime Directives)**
+#### Example: ModelDirectivePayload (Runtime Directives)
 
 ```python
 from typing import Annotated, Literal
@@ -412,6 +428,7 @@ def handle_directive(payload: ModelDirectivePayload) -> None:
 ```
 
 **When to choose Discriminated Union**:
+
 - All types are known at compile time
 - External code should NOT add new variants
 - Exhaustive handling is a correctness requirement
@@ -498,6 +515,7 @@ class ModelIntent(BaseModel):
 ```
 
 This hybrid approach provides:
+
 - **Type safety** for common cases (union)
 - **Extensibility** for plugins (protocol)
 - **No code changes** when plugins add payloads
@@ -547,6 +565,7 @@ ModelIntent.model_validate(intent_dict)  # Resolves to ModelWebhookIntentPayload
 The ONEX codebase already successfully uses discriminated unions:
 
 1. **Core Intents** (`omnibase_core.models.intents`):
+
    ```python
    ModelCoreRegistrationIntent = Annotated[
        ModelConsulRegisterIntent
@@ -557,6 +576,7 @@ The ONEX codebase already successfully uses discriminated unions:
    ```
 
 2. **Action Payloads** (`SpecificActionPayload`):
+
    ```python
    SpecificActionPayload = (
        ModelLifecycleActionPayload
@@ -579,6 +599,7 @@ The ONEX codebase already successfully uses discriminated unions:
 **Location**: `src/omnibase_core/models/reducer/model_intent.py`
 
 **Previous Implementation (REMOVED in v0.4.0)**:
+
 ```python
 class ModelIntent(BaseModel):
     intent_type: str  # e.g., "webhook.send", "plugin.execute"
@@ -586,6 +607,7 @@ class ModelIntent(BaseModel):
 ```
 
 **Architecture Context**:
+
 - Two-tier intent system exists:
   - **Core Intents**: Already use discriminated union (`ModelCoreRegistrationIntent`)
   - **Extension Intents**: Generic `ModelIntent` for plugins (this model)
@@ -601,6 +623,7 @@ class ModelIntent(BaseModel):
 **Location**: `src/omnibase_core/models/orchestrator/model_action.py`
 
 **Previous Implementation (REMOVED in v0.4.0)**:
+
 ```python
 class ModelAction(BaseModel):
     action_type: EnumActionType  # COMPUTE, EFFECT, REDUCE, ORCHESTRATE, CUSTOM
@@ -608,6 +631,7 @@ class ModelAction(BaseModel):
 ```
 
 **Architecture Context**:
+
 - `SpecificActionPayload` union ALREADY EXISTS with 10 typed payloads
 - `EnumActionType` has 5 values: `COMPUTE`, `EFFECT`, `REDUCE`, `ORCHESTRATE`, `CUSTOM`
 - Each action type has different payload requirements
@@ -623,6 +647,7 @@ class ModelAction(BaseModel):
 **Location**: `src/omnibase_core/models/runtime/model_runtime_directive.py`
 
 **Previous Implementation (REMOVED in v0.4.0)**:
+
 ```python
 class ModelRuntimeDirective(BaseModel):
     directive_type: EnumDirectiveType  # SCHEDULE_EFFECT, ENQUEUE_HANDLER, etc.
@@ -630,6 +655,7 @@ class ModelRuntimeDirective(BaseModel):
 ```
 
 **Architecture Context**:
+
 - INTERNAL-ONLY (never published to event bus, never in handler outputs)
 - ZERO external usages (greenfield opportunity)
 - 5 directive types with distinct payload schemas:
@@ -650,6 +676,7 @@ class ModelRuntimeDirective(BaseModel):
 **Location**: `src/omnibase_core/models/events/model_event_publish_intent.py`
 
 **Previous Implementation (REMOVED in v0.4.0)**:
+
 ```python
 class ModelEventPublishIntent(BaseModel):
     target_event_type: str  # Event type name for routing
@@ -657,6 +684,7 @@ class ModelEventPublishIntent(BaseModel):
 ```
 
 **Architecture Context**:
+
 - Coordinates event publishing to Kafka
 - 23+ event classes exist as Pydantic models in `models/events/`
 - Events already have their own typed schemas
@@ -748,6 +776,7 @@ ExtensionIntentPayload = Annotated[
 **Payload Field**: `payload` -> `ActionPayload`
 
 **Approach A** (Leverage existing `SpecificActionPayload`):
+
 ```python
 from omnibase_core.models.core.model_action_payload_types import SpecificActionPayload
 
@@ -798,6 +827,7 @@ ActionPayload = Annotated[
 **Payload Field**: `payload` -> `DirectivePayload`
 
 **Approach**:
+
 ```python
 from typing import Literal
 
@@ -856,6 +886,7 @@ class ModelRuntimeDirective(BaseModel):
 **Payload Field**: `target_event_payload` -> `EventPayload`
 
 **Approach**:
+
 ```python
 from omnibase_core.models.events import (
     ModelNodeRegisteredEvent,
@@ -903,6 +934,7 @@ class ModelEventPublishIntent(BaseModel):
 2. Defined discriminated unions as type aliases
 
 3. Added adapter methods for backwards compatibility:
+
    ```python
    @classmethod
    def from_dict_payload(cls, payload: dict[str, Any]) -> Self:

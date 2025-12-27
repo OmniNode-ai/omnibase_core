@@ -20,6 +20,7 @@ As of v0.4.0, the following models **reject** `dict[str, Any]` at validation tim
 | `ModelRuntimeDirective` | `payload` | `ModelDirectivePayload` |
 
 **What Happens**:
+
 ```python
 # This now raises ValidationError in v0.4.0+
 intent = ModelEventPublishIntent(
@@ -41,6 +42,7 @@ This document describes the mypy configuration for preventing new usage of `dict
 The mypy option `disallow_any_explicit = True` is enabled globally. This catches:
 
 1. **Explicit `Any` in type annotations**:
+
    ```python
    # ERROR: Explicit "Any" is not allowed [explicit-any]
    def process(data: dict[str, Any]) -> dict[str, Any]:
@@ -48,6 +50,7 @@ The mypy option `disallow_any_explicit = True` is enabled globally. This catches
    ```
 
 2. **`Any` as a return type**:
+
    ```python
    # ERROR: Explicit "Any" is not allowed [explicit-any]
    def get_value() -> Any:
@@ -55,6 +58,7 @@ The mypy option `disallow_any_explicit = True` is enabled globally. This catches
    ```
 
 3. **`Any` in class attributes**:
+
    ```python
    class MyClass:
        # ERROR: Explicit "Any" is not allowed [explicit-any]

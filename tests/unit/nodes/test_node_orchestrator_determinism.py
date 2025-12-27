@@ -928,12 +928,22 @@ class TestNodeOrchestratorStateSerializationDeterminism:
         # Get hash of original object
         original_hash = simple_workflow_definition.compute_workflow_hash()
 
+        # CRITICAL: Verify hash is meaningful before comparing
+        # Without this check, a broken hash returning None/empty would pass
+        assert original_hash is not None, "Hash should not be None"
+        assert original_hash != "", "Hash should not be empty"
+        assert len(original_hash) > 0, "Hash should have content"
+
         # Serialize and deserialize to create a NEW object with same content
         serialized = simple_workflow_definition.model_dump()
         restored_definition = ModelWorkflowDefinition.model_validate(serialized)
 
         # The restored object should produce the same hash
         restored_hash = restored_definition.compute_workflow_hash()
+
+        # Verify restored hash is also meaningful
+        assert restored_hash is not None, "Restored hash should not be None"
+        assert restored_hash != "", "Restored hash should not be empty"
 
         assert original_hash == restored_hash, (
             f"Hash should be deterministic across serialization. "

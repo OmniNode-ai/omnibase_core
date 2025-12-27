@@ -53,6 +53,7 @@ class ModelAction(BaseModel):
 ```
 
 This pattern:
+
 - Loses compile-time type checking
 - Requires runtime validation
 - Makes IDE autocomplete ineffective

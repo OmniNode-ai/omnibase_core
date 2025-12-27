@@ -41,8 +41,8 @@ class TestModelScheduleEffectPayloadDiscriminator:
                 kind="other_kind",  # type: ignore[arg-type]
             )
 
-    def test_kind_auto_set_when_not_explicitly_provided(self) -> None:
-        """Test that kind is automatically set to 'schedule_effect' when not explicitly provided."""
+    def test_kind_default_value(self) -> None:
+        """Test that kind has correct default value when not explicitly provided."""
         payload = ModelScheduleEffectPayload(effect_node_type="test")
         assert payload.kind == "schedule_effect"
 

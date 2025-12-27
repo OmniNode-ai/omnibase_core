@@ -151,7 +151,7 @@ ModelDiscoveryEventPayloadUnion = (
 
 
 # Main type alias for all event payloads (18 types total)
-# Includes both runtime events and discovery events.
+# Includes both discovery events and runtime events (alphabetical order).
 #
 # Usage:
 #     from omnibase_core.models.events.payloads import ModelEventPayloadUnion
@@ -163,4 +163,4 @@ ModelDiscoveryEventPayloadUnion = (
 #             handle_tool_invocation(payload)
 #         # ... etc
 #
-ModelEventPayloadUnion = ModelRuntimeEventPayloadUnion | ModelDiscoveryEventPayloadUnion
+ModelEventPayloadUnion = ModelDiscoveryEventPayloadUnion | ModelRuntimeEventPayloadUnion

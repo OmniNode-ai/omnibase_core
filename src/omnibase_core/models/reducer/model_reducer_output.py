@@ -132,6 +132,10 @@ class ModelReducerOutput[T_Output](BaseModel):
         # any user-defined type (Pydantic models, dataclasses, custom classes, etc.) that
         # Pydantic cannot automatically serialize without this setting.
         arbitrary_types_allowed=True,
+        # from_attributes: Required for pytest-xdist compatibility. Workers import classes
+        # independently, and without this setting Pydantic may reject valid instances due to
+        # class identity differences across worker processes.
+        from_attributes=True,
     )
 
     result: T_Output

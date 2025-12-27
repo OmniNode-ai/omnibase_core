@@ -333,9 +333,8 @@ class ModelSecureCredentials(BaseModel, ABC):
 
     def to_audit_dict(self) -> ModelAuditData:
         """Get dictionary for audit logging (aggressive masking)."""
-        mask_data = self.get_masked_dict(mask_level="aggressive")
-        # Convert mask_data to proper audit format with required fields
-        masked_dict = mask_data.to_dict()
+        # Get masked data for audit (result used in audit_metadata if needed)
+        _ = self.get_masked_dict(mask_level="aggressive")
         return ModelAuditData(
             action="credential_access",
             resource=f"{self.__class__.__name__}",
