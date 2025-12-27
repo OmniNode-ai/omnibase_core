@@ -1723,8 +1723,6 @@ class TestFSMAnalysisEdgeCases:
         Since OMN-575, duplicate structural transitions (same from_state, trigger,
         priority) are rejected at FSM construction time. This applies to wildcards too.
         """
-        from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
         states = [
             ModelFSMStateDefinition(
                 version=base_version,

@@ -15,6 +15,7 @@ from omnibase_core.constants import (
     MAX_DESCRIPTION_LENGTH,
     MAX_ERROR_MESSAGE_LENGTH,
     MAX_KEY_LENGTH,
+    MAX_NAME_LENGTH,
 )
 from omnibase_core.enums.enum_workflow_status import EnumWorkflowStatus
 from omnibase_core.models.primitives.model_semver import ModelSemVer
@@ -39,7 +40,7 @@ class ModelWorkflow(BaseModel):
         default=...,
         description="Human-readable workflow name",
         min_length=1,
-        max_length=200,
+        max_length=MAX_NAME_LENGTH,
     )
 
     version: ModelSemVer = Field(
