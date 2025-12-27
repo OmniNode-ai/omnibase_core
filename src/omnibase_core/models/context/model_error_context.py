@@ -30,10 +30,38 @@ import re
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-__all__ = ["ModelErrorContext"]
+__all__ = [
+    "ModelErrorContext",
+    # Error category constants
+    "CATEGORY_VALIDATION",
+    "CATEGORY_AUTH",
+    "CATEGORY_SYSTEM",
+    "CATEGORY_NETWORK",
+    # Category groupings
+    "CLIENT_ERROR_CATEGORIES",
+    "SERVER_ERROR_CATEGORIES",
+]
 
 # Pattern for error codes: CATEGORY_NNN (e.g., AUTH_001, VALIDATION_123)
 ERROR_CODE_PATTERN = re.compile(r"^[A-Z][A-Z0-9_]*_\d{1,4}$")
+
+# -----------------------------------------------------------------------------
+# Error Category Constants
+# -----------------------------------------------------------------------------
+# These constants define the standard error categories used for classification.
+# Using constants ensures consistency and makes refactoring easier.
+
+# Client-side error categories (caused by invalid input or auth issues)
+CATEGORY_VALIDATION = "validation"
+CATEGORY_AUTH = "auth"
+
+# Server-side error categories (caused by internal failures or network issues)
+CATEGORY_SYSTEM = "system"
+CATEGORY_NETWORK = "network"
+
+# Tuple collections for category classification
+CLIENT_ERROR_CATEGORIES: tuple[str, ...] = (CATEGORY_VALIDATION, CATEGORY_AUTH)
+SERVER_ERROR_CATEGORIES: tuple[str, ...] = (CATEGORY_SYSTEM, CATEGORY_NETWORK)
 
 
 class ModelErrorContext(BaseModel):
@@ -48,15 +76,19 @@ class ModelErrorContext(BaseModel):
         error_code: Structured error code following CATEGORY_NNN format
             (e.g., "AUTH_001", "VALIDATION_123"). Used for programmatic
             error handling and documentation references.
-        error_category: Error category for broad classification. Common
-            values: "validation", "auth", "system", "network". Used for
-            error routing and handling strategies.
+        error_category: Error category for broad classification. Use the
+            module-level constants (CATEGORY_VALIDATION, CATEGORY_AUTH,
+            CATEGORY_SYSTEM, CATEGORY_NETWORK) for standard values.
+            Used for error routing and handling strategies.
         correlation_id: Request correlation ID for distributed tracing.
             Links related errors across service boundaries.
         stack_trace_id: Reference to stored stack trace. Used when full
             stack traces are stored separately for security/size reasons.
         retry_count: Number of retry attempts made for this operation.
-            Must be >= 0 if provided.
+            Must be >= 0 if provided. None indicates retries are not
+            applicable (e.g., operation doesn't support retries); 0
+            indicates retries are applicable but none attempted yet.
+            See should_retry() for retry decision logic.
         is_retryable: Whether the error can be retried. Used by retry
             logic to determine if automatic retry should be attempted.
 
@@ -100,7 +132,12 @@ class ModelErrorContext(BaseModel):
     )
     retry_count: int | None = Field(
         default=None,
-        description="Number of retry attempts made",
+        description=(
+            "Number of retry attempts made. None indicates retries are not "
+            "applicable to this error context (e.g., the operation does not "
+            "support retries or retry tracking is disabled); 0 indicates that "
+            "retries are applicable but no retry attempts have been made yet."
+        ),
     )
     is_retryable: bool | None = Field(
         default=None,
@@ -184,11 +221,13 @@ class ModelErrorContext(BaseModel):
         """Check if this is a client-side error.
 
         Client errors are typically caused by invalid input or
-        authentication/authorization issues.
+        authentication/authorization issues. Uses the CLIENT_ERROR_CATEGORIES
+        constant tuple for classification.
 
         Returns:
-            True if error_category is "validation" or "auth",
-            False otherwise (including when error_category is None).
+            True if error_category is in CLIENT_ERROR_CATEGORIES
+            (currently "validation" or "auth"), False otherwise
+            (including when error_category is None).
 
         Example:
             >>> ctx = ModelErrorContext(error_category="validation")
@@ -198,17 +237,19 @@ class ModelErrorContext(BaseModel):
             >>> ctx.is_client_error()
             False
         """
-        return self.error_category in ("validation", "auth")
+        return self.error_category in CLIENT_ERROR_CATEGORIES
 
     def is_server_error(self) -> bool:
         """Check if this is a server-side error.
 
         Server errors are typically caused by internal system failures
-        or network issues.
+        or network issues. Uses the SERVER_ERROR_CATEGORIES constant
+        tuple for classification.
 
         Returns:
-            True if error_category is "system" or "network",
-            False otherwise (including when error_category is None).
+            True if error_category is in SERVER_ERROR_CATEGORIES
+            (currently "system" or "network"), False otherwise
+            (including when error_category is None).
 
         Example:
             >>> ctx = ModelErrorContext(error_category="system")
@@ -218,4 +259,4 @@ class ModelErrorContext(BaseModel):
             >>> ctx.is_server_error()
             False
         """
-        return self.error_category in ("system", "network")
+        return self.error_category in SERVER_ERROR_CATEGORIES

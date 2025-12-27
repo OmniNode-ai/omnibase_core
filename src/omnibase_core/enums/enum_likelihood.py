@@ -36,6 +36,21 @@ class EnumLikelihood(str, Enum):
         """
         Get the approximate numeric probability range for a likelihood level.
 
+        Boundary Behavior:
+            - Ranges are [lower, upper) meaning lower bound is inclusive, upper is exclusive
+            - Exception: IMPOSSIBLE returns (0.0, 0.0) - exactly 0%
+            - Exception: CERTAIN returns (1.0, 1.0) - exactly 100%
+            - Exception: VERY_HIGH includes 1.0: [0.85, 1.0) but from_probability(1.0) -> CERTAIN
+            - UNKNOWN returns (0.0, 1.0) representing the full range of uncertainty
+
+        Threshold boundaries (used by from_probability):
+            - 0.0: IMPOSSIBLE (exactly 0.0) or VERY_LOW (0.0 < p < 0.1)
+            - 0.1: LOW begins [0.1, 0.3)
+            - 0.3: MEDIUM begins [0.3, 0.6)
+            - 0.6: HIGH begins [0.6, 0.85)
+            - 0.85: VERY_HIGH begins [0.85, 1.0)
+            - 1.0: CERTAIN (exactly 1.0)
+
         Args:
             likelihood: The likelihood level to convert
 
@@ -60,11 +75,35 @@ class EnumLikelihood(str, Enum):
         Convert a numeric probability to a likelihood level.
 
         Args:
-            probability: A float between 0.0 and 1.0
+            probability: A float between 0.0 and 1.0 (inclusive)
 
         Returns:
             The corresponding likelihood level
+
+        Raises:
+            ValueError: If probability is outside the valid range [0.0, 1.0]
+
+        Boundary Behavior:
+            - 0.0: Returns IMPOSSIBLE
+            - (0.0, 0.1): Returns VERY_LOW
+            - [0.1, 0.3): Returns LOW
+            - [0.3, 0.6): Returns MEDIUM
+            - [0.6, 0.85): Returns HIGH
+            - [0.85, 1.0): Returns VERY_HIGH
+            - 1.0: Returns CERTAIN
+
+        Examples:
+            >>> EnumLikelihood.from_probability(0.5)
+            <EnumLikelihood.MEDIUM: 'medium'>
+            >>> EnumLikelihood.from_probability(0.0)
+            <EnumLikelihood.IMPOSSIBLE: 'impossible'>
+            >>> EnumLikelihood.from_probability(1.0)
+            <EnumLikelihood.CERTAIN: 'certain'>
         """
+        if not 0.0 <= probability <= 1.0:
+            raise ValueError(
+                f"probability must be between 0.0 and 1.0, got {probability}"
+            )
         if probability <= 0.0:
             return cls.IMPOSSIBLE
         elif probability < 0.1:

@@ -14,10 +14,10 @@ import pytest
 from pydantic import BaseModel, ValidationError
 
 from omnibase_core.validation.validators import (
-    UUID,
     BCP47Locale,
     Duration,
     SemanticVersion,
+    UUIDString,
     validate_bcp47_locale,
     validate_duration,
     validate_semantic_version,
@@ -29,6 +29,7 @@ from omnibase_core.validation.validators import (
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestValidateDuration:
     """Tests for validate_duration function."""
 
@@ -104,6 +105,7 @@ class TestValidateDuration:
             validate_duration(duration)
 
 
+@pytest.mark.unit
 class TestDurationAnnotatedType:
     """Tests for Duration Annotated type with Pydantic."""
 
@@ -131,6 +133,7 @@ class TestDurationAnnotatedType:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestValidateBCP47Locale:
     """Tests for validate_bcp47_locale function."""
 
@@ -195,6 +198,7 @@ class TestValidateBCP47Locale:
             validate_bcp47_locale(locale)
 
 
+@pytest.mark.unit
 class TestBCP47LocaleAnnotatedType:
     """Tests for BCP47Locale Annotated type with Pydantic."""
 
@@ -222,6 +226,7 @@ class TestBCP47LocaleAnnotatedType:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestValidateUUID:
     """Tests for validate_uuid function."""
 
@@ -320,14 +325,15 @@ class TestValidateUUID:
         assert result_lower == result_upper == result_no_hyphens
 
 
-class TestUUIDAnnotatedType:
-    """Tests for UUID Annotated type with Pydantic."""
+@pytest.mark.unit
+class TestUUIDStringAnnotatedType:
+    """Tests for UUIDString Annotated type with Pydantic."""
 
     def test_valid_uuid_in_model(self) -> None:
         """Test that valid UUIDs work in Pydantic models."""
 
         class Entity(BaseModel):
-            id: UUID
+            id: UUIDString
 
         entity = Entity(id="550e8400-e29b-41d4-a716-446655440000")
         assert entity.id == "550e8400-e29b-41d4-a716-446655440000"
@@ -336,7 +342,7 @@ class TestUUIDAnnotatedType:
         """Test that UUIDs are normalized in Pydantic models."""
 
         class Entity(BaseModel):
-            id: UUID
+            id: UUIDString
 
         entity = Entity(id="550E8400E29B41D4A716446655440000")
         assert entity.id == "550e8400-e29b-41d4-a716-446655440000"
@@ -345,7 +351,7 @@ class TestUUIDAnnotatedType:
         """Test that invalid UUIDs raise ValidationError."""
 
         class Entity(BaseModel):
-            id: UUID
+            id: UUIDString
 
         with pytest.raises(ValidationError):
             Entity(id="invalid-uuid")
@@ -356,6 +362,7 @@ class TestUUIDAnnotatedType:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestValidateSemanticVersion:
     """Tests for validate_semantic_version function."""
 
@@ -428,6 +435,7 @@ class TestValidateSemanticVersion:
             validate_semantic_version(version)
 
 
+@pytest.mark.unit
 class TestSemanticVersionAnnotatedType:
     """Tests for SemanticVersion Annotated type with Pydantic."""
 
@@ -464,6 +472,7 @@ class TestSemanticVersionAnnotatedType:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestMultipleValidatorsInModel:
     """Tests for using multiple validators in a single Pydantic model."""
 
@@ -471,7 +480,7 @@ class TestMultipleValidatorsInModel:
         """Test that all validators work together in a single model."""
 
         class ComplexConfig(BaseModel):
-            id: UUID
+            id: UUIDString
             version: SemanticVersion
             locale: BCP47Locale
             timeout: Duration
@@ -492,7 +501,7 @@ class TestMultipleValidatorsInModel:
         """Test that validators work with optional fields."""
 
         class OptionalConfig(BaseModel):
-            id: UUID
+            id: UUIDString
             version: SemanticVersion | None = None
             locale: BCP47Locale | None = None
             timeout: Duration | None = None
@@ -517,16 +526,17 @@ class TestMultipleValidatorsInModel:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestImports:
     """Tests for import paths."""
 
     def test_import_from_validators_package(self) -> None:
         """Test that validators can be imported from the validators package."""
         from omnibase_core.validation.validators import (
-            UUID,
             BCP47Locale,
             Duration,
             SemanticVersion,
+            UUIDString,
             validate_bcp47_locale,
             validate_duration,
             validate_semantic_version,
@@ -538,14 +548,16 @@ class TestImports:
         assert callable(validate_bcp47_locale)
         assert callable(validate_uuid)
         assert callable(validate_semantic_version)
+        # Verify UUIDString is the annotated type (not callable, but usable as type)
+        assert UUIDString is not None
 
     def test_import_from_validation_package(self) -> None:
         """Test that validators can be imported from the main validation package."""
         from omnibase_core.validation import (
-            UUID,
             BCP47Locale,
             Duration,
             SemanticVersion,
+            UUIDString,
             validate_bcp47_locale,
             validate_duration,
             validate_semantic_version,
@@ -557,6 +569,8 @@ class TestImports:
         assert callable(validate_bcp47_locale)
         assert callable(validate_uuid)
         assert callable(validate_semantic_version)
+        # Verify UUIDString is the annotated type (not callable, but usable as type)
+        assert UUIDString is not None
 
     def test_import_create_enum_normalizer(self) -> None:
         """Test that create_enum_normalizer can be imported from multiple paths."""
@@ -587,6 +601,7 @@ class TestImports:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestCreateEnumNormalizer:
     """Tests for create_enum_normalizer factory function."""
 
@@ -770,6 +785,7 @@ class TestCreateEnumNormalizer:
         assert size_normalizer("red") == "red"
 
 
+@pytest.mark.unit
 class TestEnumNormalizerWithContextModels:
     """Integration tests with the actual context models using create_enum_normalizer."""
 

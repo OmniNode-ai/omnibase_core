@@ -170,9 +170,8 @@ class TestEnumLikelihoodFromProbability:
     """Test cases for from_probability class method."""
 
     def test_from_probability_impossible(self):
-        """Test that 0.0 and negative values return IMPOSSIBLE."""
+        """Test that 0.0 returns IMPOSSIBLE."""
         assert EnumLikelihood.from_probability(0.0) == EnumLikelihood.IMPOSSIBLE
-        assert EnumLikelihood.from_probability(-0.5) == EnumLikelihood.IMPOSSIBLE
 
     def test_from_probability_very_low(self):
         """Test that values 0 < p < 0.1 return VERY_LOW."""
@@ -208,9 +207,19 @@ class TestEnumLikelihoodFromProbability:
         assert EnumLikelihood.from_probability(0.99999) == EnumLikelihood.VERY_HIGH
 
     def test_from_probability_certain(self):
-        """Test that 1.0 and values > 1.0 return CERTAIN."""
+        """Test that 1.0 returns CERTAIN."""
         assert EnumLikelihood.from_probability(1.0) == EnumLikelihood.CERTAIN
-        assert EnumLikelihood.from_probability(1.5) == EnumLikelihood.CERTAIN
+
+    def test_from_probability_invalid_range(self):
+        """Test that out-of-range probabilities raise ValueError."""
+        with pytest.raises(ValueError, match=r"probability must be between 0\.0 and 1\.0"):
+            EnumLikelihood.from_probability(-0.5)
+        with pytest.raises(ValueError, match=r"probability must be between 0\.0 and 1\.0"):
+            EnumLikelihood.from_probability(1.5)
+        with pytest.raises(ValueError, match=r"probability must be between 0\.0 and 1\.0"):
+            EnumLikelihood.from_probability(-1.0)
+        with pytest.raises(ValueError, match=r"probability must be between 0\.0 and 1\.0"):
+            EnumLikelihood.from_probability(2.0)
 
     def test_from_probability_boundary_at_0_1(self):
         """Test boundary behavior at 0.1 (VERY_LOW/LOW threshold).

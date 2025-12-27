@@ -82,13 +82,15 @@ from .validation_utils import ModelProtocolInfo
 
 # Import common validators (OMN-1054)
 from .validators import (
-    UUID,
     BCP47Locale,
     Duration,
+    ErrorCode,
     SemanticVersion,
+    UUIDString,
     create_enum_normalizer,
     validate_bcp47_locale,
     validate_duration,
+    validate_error_code,
     validate_semantic_version,
     validate_uuid,
 )
@@ -216,11 +218,13 @@ __all__ = [
     "validate_bcp47_locale",
     "validate_uuid",
     "validate_semantic_version",
+    "validate_error_code",
     # Enum normalizer factory
     "create_enum_normalizer",
     # Pydantic Annotated types
     "Duration",
     "BCP47Locale",
-    "UUID",
+    "UUIDString",
     "SemanticVersion",
+    "ErrorCode",
 ]

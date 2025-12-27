@@ -23,14 +23,14 @@ Usage:
     from omnibase_core.validation.validators import (
         Duration,
         BCP47Locale,
-        UUID,
+        UUIDString,
         SemanticVersion,
     )
 
     class MyModel(BaseModel):
         timeout: Duration
         locale: BCP47Locale
-        id: UUID
+        id: UUIDString
         version: SemanticVersion
 
 Note:
@@ -330,6 +330,104 @@ def validate_semantic_version(value: str) -> str:
 
 
 # =============================================================================
+# Error Code Validator
+# =============================================================================
+
+# Error Code Pattern Design Decision (OMN-1054):
+#
+# ONEX uses TWO distinct error code formats for different purposes:
+#
+# 1. STRUCTURED ERROR CODES (validated here): CATEGORY_NNN
+#    Pattern: ^[A-Z][A-Z0-9_]*_\d{1,4}$
+#    Examples: AUTH_001, VALIDATION_123, NETWORK_TIMEOUT_001, SYSTEM_01
+#    Use case: API errors, model validation errors, structured error tracking
+#    - Multi-character category prefixes ARE supported (AUTH, VALIDATION, NETWORK_TIMEOUT)
+#    - Underscore separator is REQUIRED before the numeric suffix
+#    - 1-4 digits allowed for the numeric suffix
+#
+# 2. LINT-STYLE SHORT CODES (NOT validated here): XNNN
+#    Pattern: ^[A-Z]\d{3}$
+#    Examples: W001, E001, I001
+#    Use case: Workflow linting, static analysis warnings (see workflow_linter.py)
+#    - Single-character category prefix (W=warning, E=error, I=info)
+#    - No underscore separator
+#    - Fixed 3-digit suffix
+#
+# Why keep them separate?
+# - Structured codes prioritize readability and self-documentation (AUTH_001 is clearer than A001)
+# - Lint-style codes prioritize brevity for dense warning lists
+# - Different validation requirements and use cases
+#
+# If you need lint-style short codes (W001, E001), use a separate validator or
+# the workflow_linter module directly. This validator enforces structured codes.
+
+_ERROR_CODE_PATTERN = re.compile(r"^[A-Z][A-Z0-9_]*_\d{1,4}$")
+
+
+def validate_error_code(value: str) -> str:
+    """Validate structured error code format (CATEGORY_NNN).
+
+    Validates that the input string follows the ONEX structured error code
+    format: CATEGORY_NNN where:
+    - CATEGORY: One or more uppercase letters, digits, or underscores,
+      starting with an uppercase letter (e.g., AUTH, VALIDATION, NETWORK_TIMEOUT)
+    - Underscore separator (required)
+    - NNN: 1-4 digit numeric suffix (e.g., 001, 123, 1234)
+
+    Note: This validator does NOT support lint-style short codes (W001, E001).
+    Those follow a different pattern (single letter + 3 digits, no underscore)
+    used in workflow linting. See module docstring for design rationale.
+
+    Args:
+        value: Error code string to validate
+
+    Returns:
+        The validated error code string (unchanged if valid)
+
+    Raises:
+        ValueError: If the format is invalid
+
+    Examples:
+        >>> validate_error_code("AUTH_001")
+        'AUTH_001'
+        >>> validate_error_code("VALIDATION_123")
+        'VALIDATION_123'
+        >>> validate_error_code("NETWORK_TIMEOUT_001")
+        'NETWORK_TIMEOUT_001'
+        >>> validate_error_code("E001")  # Raises ValueError (lint-style not supported)
+        >>> validate_error_code("auth_001")  # Raises ValueError (must be uppercase)
+    """
+    if not value:
+        msg = "Error code cannot be empty"
+        raise ValueError(msg)
+
+    if not _ERROR_CODE_PATTERN.match(value):
+        msg = (
+            f"Invalid error code format: '{value}'. "
+            "Expected CATEGORY_NNN pattern (e.g., AUTH_001, VALIDATION_123). "
+            "For lint-style short codes (W001, E001), use workflow_linter module."
+        )
+        raise ValueError(msg)
+
+    return value
+
+
+ErrorCode = Annotated[str, AfterValidator(validate_error_code)]
+"""Annotated type for structured error codes (CATEGORY_NNN format).
+
+Use this type in Pydantic models for automatic validation:
+
+    class ErrorReport(BaseModel):
+        code: ErrorCode  # Validated as CATEGORY_NNN
+
+Examples of valid values: "AUTH_001", "VALIDATION_123", "NETWORK_TIMEOUT_001"
+
+Note: Does NOT support lint-style short codes (W001, E001).
+For those, see the workflow_linter module.
+"""
+
+
+# =============================================================================
 # Pydantic Annotated Types
 # =============================================================================
 
@@ -362,16 +460,18 @@ Note:
     For full BCP 47 compliance, consider using a dedicated library like `langcodes`.
 """
 
-UUID = Annotated[str, AfterValidator(validate_uuid)]
+UUIDString = Annotated[str, AfterValidator(validate_uuid)]
 """Annotated type for UUID strings.
 
 Use this type in Pydantic models for automatic validation:
 
     class Entity(BaseModel):
-        id: UUID  # Validated and normalized UUID
+        id: UUIDString  # Validated and normalized UUID
 
 Examples of valid values: "550e8400-e29b-41d4-a716-446655440000"
 Note: UUIDs are normalized to lowercase with hyphens.
+
+Note: Named UUIDString (not UUID) to avoid shadowing Python's built-in uuid module.
 """
 
 SemanticVersion = Annotated[str, AfterValidator(validate_semantic_version)]
@@ -399,11 +499,13 @@ __all__ = [
     "validate_bcp47_locale",
     "validate_uuid",
     "validate_semantic_version",
+    "validate_error_code",
     # Enum normalizer factory
     "create_enum_normalizer",
     # Pydantic Annotated types
     "Duration",
     "BCP47Locale",
-    "UUID",
+    "UUIDString",
     "SemanticVersion",
+    "ErrorCode",
 ]

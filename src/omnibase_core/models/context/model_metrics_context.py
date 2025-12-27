@@ -21,6 +21,8 @@ import re
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.validation.validators import validate_semantic_version
+
 __all__ = ["ModelMetricsContext"]
 
 # W3C Trace Context format patterns
@@ -176,6 +178,27 @@ class ModelMetricsContext(BaseModel):
                 f"Invalid sampling_rate {value}: must be between 0.0 and 1.0 inclusive"
             )
         return value
+
+    @field_validator("service_version", mode="before")
+    @classmethod
+    def validate_service_version_semver(cls, value: str | None) -> str | None:
+        """Validate service_version follows SemVer 2.0.0 format.
+
+        Validates that service_version conforms to Semantic Versioning 2.0.0
+        specification (e.g., "1.0.0", "2.1.3-beta.1", "1.0.0+build.123").
+
+        Args:
+            value: The version string to validate, or None.
+
+        Returns:
+            The validated version string unchanged, or None if input is None.
+
+        Raises:
+            ValueError: If the version doesn't match SemVer 2.0.0 format.
+        """
+        if value is None:
+            return None
+        return validate_semantic_version(value)
 
     def is_sampled(self) -> bool:
         """Check if this context should be sampled for recording.
