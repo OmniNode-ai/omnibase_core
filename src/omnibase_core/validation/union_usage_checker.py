@@ -184,17 +184,51 @@ class UnionUsageChecker(ast.NodeVisitor):
                         )
 
     def visit_Subscript(self, node: ast.Subscript) -> None:
-        """Visit subscript nodes to detect Union[...] type definitions.
+        """Visit subscript nodes to detect Union[...] and Optional[...] type definitions.
 
         Called by the AST visitor for each subscript node. Checks if the
-        subscript is a Union type and processes it.
+        subscript is a Union or Optional type and processes it.
 
         Args:
             node: AST Subscript node to visit.
         """
-        if isinstance(node.value, ast.Name) and node.value.id == "Union":
-            self._process_union_types(node, node.slice, node.lineno)
+        if isinstance(node.value, ast.Name):
+            if node.value.id == "Union":
+                self._process_union_types(node, node.slice, node.lineno)
+            elif node.value.id == "Optional":
+                self._process_optional_type(node, node.slice, node.lineno)
         self.generic_visit(node)
+
+    def _process_optional_type(
+        self, _node: ast.AST, slice_node: ast.AST, line_no: int
+    ) -> None:
+        """Process Optional[T] syntax and flag for PEP 604 conversion.
+
+        Detects legacy Optional[T] syntax and reports it as an issue,
+        suggesting T | None as the preferred ONEX pattern.
+
+        Args:
+            _node: The AST node for the Optional subscript (unused but kept for signature).
+            slice_node: The AST node for the subscript slice (the type argument).
+            line_no: Line number where the Optional is defined.
+        """
+        # Extract the inner type from Optional[T]
+        inner_type = self._extract_type_name(slice_node)
+
+        # Create a synthetic union pattern for tracking
+        union_types = [inner_type, "None"]
+        self.union_count += 1
+
+        union_pattern = ModelUnionPattern(union_types, line_no, self.file_path)
+        self.union_patterns.append(union_pattern)
+
+        # Analyze the pattern for consistency with other union handling
+        self._analyze_union_pattern(union_pattern)
+
+        # Flag Optional[T] as deprecated - use T | None instead (PEP 604)
+        self.issues.append(
+            f"Line {line_no}: Use {inner_type} | None instead of Optional[{inner_type}] (PEP 604)"
+        )
 
     def visit_BinOp(self, node: ast.BinOp) -> None:
         """Visit binary operation nodes to detect modern union syntax (A | B).

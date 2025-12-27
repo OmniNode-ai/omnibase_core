@@ -5,7 +5,7 @@ This model provides business-specific priority management for execution contexts
 supporting priority values, preemption logic, resource allocation, and escalation policies.
 """
 
-from typing import Optional
+from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
@@ -57,7 +57,7 @@ class ModelExecutionPriority(BaseModel):
         ge=0,
     )
 
-    escalation_priority: Optional["ModelExecutionPriority"] = Field(
+    escalation_priority: ModelExecutionPriority | None = Field(
         default=None,
         description="Priority to escalate to after timeout",
     )
@@ -67,7 +67,7 @@ class ModelExecutionPriority(BaseModel):
         description="Additional priority metadata",
     )
 
-    def should_preempt(self, other: "ModelExecutionPriority") -> bool:
+    def should_preempt(self, other: ModelExecutionPriority) -> bool:
         """
         Check if this priority should preempt another
 
@@ -79,7 +79,7 @@ class ModelExecutionPriority(BaseModel):
         """
         return self.priority_value > other.priority_value and other.preemptible
 
-    def can_be_preempted_by(self, other: "ModelExecutionPriority") -> bool:
+    def can_be_preempted_by(self, other: ModelExecutionPriority) -> bool:
         """
         Check if this priority can be preempted by another
 

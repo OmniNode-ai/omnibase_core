@@ -2,9 +2,10 @@
 Error summary model to replace dictionary usage for get_error_summary() returns.
 """
 
+from __future__ import annotations
+
 from collections.abc import Mapping
 from datetime import UTC, datetime
-from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
@@ -71,9 +72,7 @@ class ModelErrorSummary(BaseModel):
     model_config = ConfigDict()
 
     @classmethod
-    def from_dict(
-        cls, data: Mapping[str, object] | None
-    ) -> Optional["ModelErrorSummary"]:
+    def from_dict(cls, data: Mapping[str, object] | None) -> ModelErrorSummary | None:
         """Create from dictionary for easy migration."""
         if data is None:
             return None
