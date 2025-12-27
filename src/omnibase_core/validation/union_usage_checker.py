@@ -222,6 +222,9 @@ class UnionUsageChecker(ast.NodeVisitor):
         union_pattern = ModelUnionPattern(union_types, line_no, self.file_path)
         self.union_patterns.append(union_pattern)
 
+        # Analyze the pattern for consistency with other union handling
+        self._analyze_union_pattern(union_pattern)
+
         # Flag Optional[T] as deprecated - use T | None instead (PEP 604)
         self.issues.append(
             f"Line {line_no}: Use {inner_type} | None instead of Optional[{inner_type}] (PEP 604)"

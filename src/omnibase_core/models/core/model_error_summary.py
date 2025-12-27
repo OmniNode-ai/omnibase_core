@@ -72,9 +72,7 @@ class ModelErrorSummary(BaseModel):
     model_config = ConfigDict()
 
     @classmethod
-    def from_dict(
-        cls, data: Mapping[str, object] | None
-    ) -> ModelErrorSummary | None:
+    def from_dict(cls, data: Mapping[str, object] | None) -> ModelErrorSummary | None:
         """Create from dictionary for easy migration."""
         if data is None:
             return None
