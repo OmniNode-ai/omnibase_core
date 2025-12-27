@@ -5,7 +5,7 @@ Load balancing policy model that combines algorithm selection, node weights,
 health checks, session affinity, and circuit breaker configurations.
 """
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -51,7 +51,7 @@ class ModelLoadBalancingPolicy(BaseModel):
         description="Load balancing algorithm configuration",
     )
 
-    node_weights: Optional["ModelNodeWeights"] = Field(
+    node_weights: "ModelNodeWeights | None" = Field(
         default=None,
         description="Node weights for weighted algorithms",
     )

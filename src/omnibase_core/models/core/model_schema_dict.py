@@ -5,8 +5,9 @@ This model replaces dictionary usage in schema definitions by providing
 a structured representation of schema dictionaries.
 """
 
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -60,7 +61,7 @@ class ModelSchemaDict(BaseModel):
     )
 
     # Array constraints
-    items: Optional["ModelSchemaDict"] = Field(
+    items: ModelSchemaDict | None = Field(
         default=None, description="Array items schema"
     )
     min_items: int | None = Field(

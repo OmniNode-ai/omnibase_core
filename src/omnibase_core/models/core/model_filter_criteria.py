@@ -2,8 +2,10 @@
 Filter criteria model to replace Dict[str, Any] usage for filter fields.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -88,7 +90,7 @@ class ModelFilterCriteria(BaseModel):
     def from_dict(
         cls,
         data: SerializedDict | None,
-    ) -> Optional["ModelFilterCriteria"]:
+    ) -> ModelFilterCriteria | None:
         """Create from dictionary for easy migration."""
         if data is None:
             return None

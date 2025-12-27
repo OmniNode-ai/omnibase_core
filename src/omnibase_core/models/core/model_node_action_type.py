@@ -5,7 +5,9 @@ Rich action type model that replaces EnumNodeActionType with full metadata suppo
 Self-contained action definitions with built-in categorization and validation.
 """
 
-from typing import ClassVar, Optional
+from __future__ import annotations
+
+from typing import ClassVar
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -148,7 +150,7 @@ class ModelNodeActionType(BaseModel):
         cls._registry[action_type.name] = action_type
 
     @classmethod
-    def get_by_name(cls, name: str) -> Optional["ModelNodeActionType"]:
+    def get_by_name(cls, name: str) -> ModelNodeActionType | None:
         """Get action type by name from registry."""
         return cls._registry.get(name)
 

@@ -2,8 +2,9 @@
 Custom settings model.
 """
 
+from __future__ import annotations
+
 from datetime import UTC, datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -76,7 +77,7 @@ class ModelCustomSettings(BaseModel):
     def from_dict(
         cls,
         data: SerializedDict | None,
-    ) -> Optional["ModelCustomSettings"]:
+    ) -> ModelCustomSettings | None:
         """Create from dictionary.
 
         Data must be in the structured format with general_settings,
