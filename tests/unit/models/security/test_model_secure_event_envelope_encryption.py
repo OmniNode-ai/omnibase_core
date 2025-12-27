@@ -1,0 +1,520 @@
+"""
+Tests for ModelSecureEventEnvelope encryption and decryption methods.
+
+This module tests the AES-256-GCM encryption/decryption functionality
+for secure event envelope payloads, including round-trip verification,
+error handling, and metadata validation.
+"""
+
+import base64
+from datetime import UTC, datetime
+from uuid import uuid4
+
+import pytest
+
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.core.model_onex_event import ModelOnexEvent
+from omnibase_core.models.core.model_route_spec import ModelRouteSpec
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.security.model_encryption_metadata import (
+    ModelEncryptionMetadata,
+)
+from omnibase_core.models.security.model_secure_event_envelope_class import (
+    ModelSecureEventEnvelope,
+)
+
+
+@pytest.fixture
+def sample_node_id():
+    """Provide a consistent node ID for tests."""
+    return uuid4()
+
+
+@pytest.fixture
+def sample_payload(sample_node_id) -> ModelOnexEvent:
+    """Create a valid ModelOnexEvent for testing."""
+    return ModelOnexEvent(
+        event_type="core.node.start",
+        node_id=sample_node_id,
+        timestamp=datetime.now(UTC),
+        event_id=uuid4(),
+    )
+
+
+@pytest.fixture
+def sample_complex_payload(sample_node_id) -> ModelOnexEvent:
+    """Create a complex ModelOnexEvent with metadata for testing."""
+    return ModelOnexEvent(
+        event_type="user.mycompany.workflow_complete",
+        node_id=sample_node_id,
+        timestamp=datetime.now(UTC),
+        event_id=uuid4(),
+        correlation_id=uuid4(),
+    )
+
+
+@pytest.fixture
+def sample_envelope(sample_payload, sample_node_id) -> ModelSecureEventEnvelope:
+    """Create a valid ModelSecureEventEnvelope for testing."""
+    route_spec = ModelRouteSpec.create_direct_route(f"node://{uuid4()}")
+    return ModelSecureEventEnvelope(
+        payload=sample_payload,
+        route_spec=route_spec,
+        source_node_id=sample_node_id,
+        content_hash="a" * 64,  # Initial content hash
+    )
+
+
+@pytest.fixture
+def complex_envelope(
+    sample_complex_payload, sample_node_id
+) -> ModelSecureEventEnvelope:
+    """Create a complex ModelSecureEventEnvelope for testing."""
+    route_spec = ModelRouteSpec.create_direct_route(f"node://{uuid4()}")
+    return ModelSecureEventEnvelope(
+        payload=sample_complex_payload,
+        route_spec=route_spec,
+        source_node_id=sample_node_id,
+        content_hash="b" * 64,
+    )
+
+
+@pytest.fixture
+def encryption_key() -> str:
+    """Provide a test encryption key."""
+    return "test-encryption-key-for-aes-256-gcm"
+
+
+@pytest.fixture
+def different_encryption_key() -> str:
+    """Provide a different encryption key for negative testing."""
+    return "different-encryption-key-for-testing"
+
+
+@pytest.mark.unit
+class TestEncryptPayloadSuccess:
+    """Test successful encryption scenarios."""
+
+    def test_encrypt_payload_success(self, sample_envelope, encryption_key):
+        """Test encrypting a payload with a valid key."""
+        # Verify initial state
+        assert sample_envelope.is_encrypted is False
+        assert sample_envelope.encrypted_payload is None
+        assert sample_envelope.encryption_metadata is None
+
+        # Encrypt the payload
+        sample_envelope.encrypt_payload(encryption_key)
+
+        # Assert encryption completed successfully
+        assert sample_envelope.is_encrypted is True
+        assert sample_envelope.encrypted_payload is not None
+
+        # Verify encrypted_payload is valid base64
+        try:
+            decoded = base64.b64decode(sample_envelope.encrypted_payload)
+            assert len(decoded) > 0
+        except Exception as e:
+            pytest.fail(f"encrypted_payload is not valid base64: {e}")
+
+        # Verify encryption_metadata is set with correct algorithm
+        assert sample_envelope.encryption_metadata is not None
+        assert sample_envelope.encryption_metadata.algorithm == "AES-256-GCM"
+
+    def test_encrypt_payload_with_complex_payload(self, complex_envelope, encryption_key):
+        """Test encryption with a complex payload containing multiple fields."""
+        complex_envelope.encrypt_payload(encryption_key)
+
+        assert complex_envelope.is_encrypted is True
+        assert complex_envelope.encrypted_payload is not None
+        assert complex_envelope.encryption_metadata is not None
+        assert complex_envelope.encryption_metadata.algorithm == "AES-256-GCM"
+
+
+@pytest.mark.unit
+class TestEncryptPayloadErrors:
+    """Test encryption error scenarios."""
+
+    def test_encrypt_already_encrypted_raises_error(
+        self, sample_envelope, encryption_key
+    ):
+        """Test that encrypting an already encrypted envelope raises an error."""
+        # First encryption
+        sample_envelope.encrypt_payload(encryption_key)
+        assert sample_envelope.is_encrypted is True
+
+        # Second encryption should raise ModelOnexError
+        with pytest.raises(ModelOnexError) as exc_info:
+            sample_envelope.encrypt_payload(encryption_key)
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "already encrypted" in str(exc_info.value.message).lower()
+
+    def test_encrypt_with_unsupported_algorithm_raises_error(
+        self, sample_envelope, encryption_key
+    ):
+        """Test that using an unsupported algorithm raises an error."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            sample_envelope.encrypt_payload(encryption_key, algorithm="AES-128-CBC")
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "unsupported" in str(exc_info.value.message).lower()
+
+
+@pytest.mark.unit
+class TestDecryptPayloadSuccess:
+    """Test successful decryption scenarios."""
+
+    def test_decrypt_payload_success(self, sample_envelope, encryption_key):
+        """Test decrypting a payload returns the original data."""
+        # Store original payload for comparison
+        original_event_type = sample_envelope.payload.event_type
+        original_node_id = sample_envelope.payload.node_id
+
+        # Encrypt the payload
+        sample_envelope.encrypt_payload(encryption_key)
+        assert sample_envelope.is_encrypted is True
+
+        # Decrypt the payload
+        decrypted_payload = sample_envelope.decrypt_payload(encryption_key)
+
+        # Verify the decrypted payload matches the original
+        assert decrypted_payload.event_type == original_event_type
+        assert decrypted_payload.node_id == original_node_id
+
+
+@pytest.mark.unit
+class TestDecryptPayloadErrors:
+    """Test decryption error scenarios."""
+
+    def test_decrypt_not_encrypted_raises_error(self, sample_envelope, encryption_key):
+        """Test that decrypting an unencrypted envelope raises an error."""
+        # Envelope is not encrypted
+        assert sample_envelope.is_encrypted is False
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            sample_envelope.decrypt_payload(encryption_key)
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "not encrypted" in str(exc_info.value.message).lower()
+
+    def test_decrypt_missing_metadata_raises_error(
+        self, sample_envelope, encryption_key
+    ):
+        """Test that decrypting with missing metadata raises an error."""
+        # Manually set is_encrypted without proper metadata
+        sample_envelope.is_encrypted = True
+        sample_envelope.encrypted_payload = None
+        sample_envelope.encryption_metadata = None
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            sample_envelope.decrypt_payload(encryption_key)
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert "missing" in str(exc_info.value.message).lower()
+
+    def test_decrypt_missing_encrypted_payload_raises_error(
+        self, sample_envelope, encryption_key
+    ):
+        """Test that decrypting with missing encrypted_payload raises an error."""
+        # Set encrypted flag but only provide metadata, no actual encrypted payload
+        sample_envelope.is_encrypted = True
+        sample_envelope.encrypted_payload = None
+        sample_envelope.encryption_metadata = ModelEncryptionMetadata(
+            algorithm="AES-256-GCM",
+            key_id=uuid4(),
+            iv=base64.b64encode(b"0123456789ab").decode("utf-8"),
+            auth_tag=base64.b64encode(b"0123456789abcdef").decode("utf-8"),
+        )
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            sample_envelope.decrypt_payload(encryption_key)
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+
+
+@pytest.mark.unit
+class TestRoundTripEncryption:
+    """Test round-trip encryption and decryption scenarios."""
+
+    def test_round_trip_encrypt_decrypt(self, complex_envelope, encryption_key):
+        """Test that encrypt->decrypt preserves data integrity."""
+        # Store original payload for comparison
+        original_event_type = complex_envelope.payload.event_type
+        original_node_id = complex_envelope.payload.node_id
+        original_correlation_id = complex_envelope.payload.correlation_id
+
+        # Encrypt the payload
+        complex_envelope.encrypt_payload(encryption_key)
+
+        # Verify encryption state
+        assert complex_envelope.is_encrypted is True
+        assert complex_envelope.encrypted_payload is not None
+        assert complex_envelope.encryption_metadata is not None
+
+        # Decrypt and verify data integrity
+        decrypted = complex_envelope.decrypt_payload(encryption_key)
+        assert decrypted.event_type == original_event_type
+        assert decrypted.node_id == original_node_id
+        assert decrypted.correlation_id == original_correlation_id
+
+    def test_encrypt_updates_content_hash(self, sample_envelope, encryption_key):
+        """Test that encryption updates the content hash."""
+        original_hash = sample_envelope.content_hash
+
+        sample_envelope.encrypt_payload(encryption_key)
+
+        # Content hash should be updated after encryption
+        assert sample_envelope.content_hash != original_hash
+
+
+@pytest.mark.unit
+class TestDecryptWrongKey:
+    """Test decryption with wrong key scenarios."""
+
+    def test_decrypt_wrong_key_fails(
+        self, sample_envelope, encryption_key, different_encryption_key
+    ):
+        """Test that decryption with wrong key fails with security violation error."""
+        # Encrypt with key1
+        sample_envelope.encrypt_payload(encryption_key)
+        assert sample_envelope.is_encrypted is True
+
+        # Attempt to decrypt with different key should raise security error
+        with pytest.raises(ModelOnexError) as exc_info:
+            sample_envelope.decrypt_payload(different_encryption_key)
+
+        # Should be a security violation error
+        assert exc_info.value.error_code == EnumCoreErrorCode.SECURITY_VIOLATION
+        assert "authentication tag" in str(exc_info.value.message).lower() or \
+               "wrong key" in str(exc_info.value.message).lower()
+
+
+@pytest.mark.unit
+class TestEncryptionMetadataPopulated:
+    """Test that encryption metadata is correctly populated."""
+
+    def test_encryption_metadata_algorithm(self, sample_envelope, encryption_key):
+        """Test that encryption metadata has correct algorithm."""
+        sample_envelope.encrypt_payload(encryption_key)
+
+        assert sample_envelope.encryption_metadata is not None
+        assert sample_envelope.encryption_metadata.algorithm == "AES-256-GCM"
+
+    def test_encryption_metadata_iv_is_valid_base64(
+        self, sample_envelope, encryption_key
+    ):
+        """Test that encryption metadata IV is valid base64."""
+        sample_envelope.encrypt_payload(encryption_key)
+
+        assert sample_envelope.encryption_metadata is not None
+        iv = sample_envelope.encryption_metadata.iv
+
+        # Verify IV is valid base64
+        try:
+            decoded_iv = base64.b64decode(iv)
+            # AES-GCM standard IV is 12 bytes
+            assert len(decoded_iv) == 12
+        except Exception as e:
+            pytest.fail(f"IV is not valid base64: {e}")
+
+    def test_encryption_metadata_auth_tag_is_valid_base64(
+        self, sample_envelope, encryption_key
+    ):
+        """Test that encryption metadata auth tag is valid base64."""
+        sample_envelope.encrypt_payload(encryption_key)
+
+        assert sample_envelope.encryption_metadata is not None
+        auth_tag = sample_envelope.encryption_metadata.auth_tag
+
+        # Verify auth_tag is valid base64
+        try:
+            decoded_tag = base64.b64decode(auth_tag)
+            # AES-GCM standard auth tag is 16 bytes
+            assert len(decoded_tag) == 16
+        except Exception as e:
+            pytest.fail(f"auth_tag is not valid base64: {e}")
+
+    def test_encryption_metadata_key_id_is_uuid(self, sample_envelope, encryption_key):
+        """Test that encryption metadata key_id is a valid UUID."""
+        from uuid import UUID
+
+        sample_envelope.encrypt_payload(encryption_key)
+
+        assert sample_envelope.encryption_metadata is not None
+        key_id = sample_envelope.encryption_metadata.key_id
+
+        # Verify key_id is a valid UUID
+        assert isinstance(key_id, UUID)
+        # Verify it's not a nil UUID
+        assert key_id != UUID("00000000-0000-0000-0000-000000000000")
+
+    def test_encryption_metadata_complete(self, sample_envelope, encryption_key):
+        """Test that all encryption metadata fields are populated."""
+        sample_envelope.encrypt_payload(encryption_key)
+
+        metadata = sample_envelope.encryption_metadata
+        assert metadata is not None
+
+        # All required fields should be present
+        assert metadata.algorithm is not None
+        assert metadata.key_id is not None
+        assert metadata.iv is not None
+        assert metadata.auth_tag is not None
+
+        # Optional fields should have defaults
+        assert metadata.encrypted_key is None  # Only for asymmetric encryption
+        assert metadata.recipient_keys == {}  # Empty dict by default
+
+
+@pytest.mark.unit
+class TestEncryptionDeterminism:
+    """Test encryption randomness and security properties."""
+
+    def test_encryption_produces_different_ciphertext(
+        self, sample_payload, sample_node_id, encryption_key
+    ):
+        """Test that encrypting the same payload twice produces different ciphertext."""
+        route_spec = ModelRouteSpec.create_direct_route(f"node://{uuid4()}")
+
+        # Create two identical envelopes
+        envelope1 = ModelSecureEventEnvelope(
+            payload=sample_payload,
+            route_spec=route_spec,
+            source_node_id=sample_node_id,
+            content_hash="a" * 64,
+        )
+
+        # Need to create a new payload with same data to avoid sharing
+        payload2 = ModelOnexEvent(
+            event_type=sample_payload.event_type,
+            node_id=sample_payload.node_id,
+            timestamp=sample_payload.timestamp,
+            event_id=sample_payload.event_id,
+        )
+        envelope2 = ModelSecureEventEnvelope(
+            payload=payload2,
+            route_spec=route_spec,
+            source_node_id=sample_node_id,
+            content_hash="a" * 64,
+        )
+
+        # Encrypt both
+        envelope1.encrypt_payload(encryption_key)
+        envelope2.encrypt_payload(encryption_key)
+
+        # Ciphertext should be different (due to random IV)
+        assert envelope1.encrypted_payload != envelope2.encrypted_payload
+
+        # IVs should be different
+        assert envelope1.encryption_metadata.iv != envelope2.encryption_metadata.iv
+
+        # Key IDs should be different (used as salt)
+        assert envelope1.encryption_metadata.key_id != envelope2.encryption_metadata.key_id
+
+    def test_iv_is_unique_per_encryption(
+        self, sample_payload, sample_node_id, encryption_key
+    ):
+        """Test that each encryption uses a unique IV."""
+        ivs = set()
+
+        for _ in range(5):
+            route_spec = ModelRouteSpec.create_direct_route(f"node://{uuid4()}")
+            envelope = ModelSecureEventEnvelope(
+                payload=sample_payload,
+                route_spec=route_spec,
+                source_node_id=sample_node_id,
+                content_hash="a" * 64,
+            )
+            envelope.encrypt_payload(encryption_key)
+            ivs.add(envelope.encryption_metadata.iv)
+
+        # All IVs should be unique
+        assert len(ivs) == 5
+
+
+@pytest.mark.unit
+class TestCreateSecureEncrypted:
+    """Test the create_secure_encrypted class method."""
+
+    def test_create_secure_encrypted(
+        self, sample_payload, sample_node_id, encryption_key
+    ):
+        """Test creating an encrypted envelope using the factory method."""
+        destination = f"node://{uuid4()}"
+
+        envelope = ModelSecureEventEnvelope.create_secure_encrypted(
+            payload=sample_payload,
+            destination=destination,
+            source_node_id=sample_node_id,
+            encryption_key=encryption_key,
+            content_hash="a" * 64,  # Required field
+        )
+
+        # Verify envelope is encrypted
+        assert envelope.is_encrypted is True
+        assert envelope.encrypted_payload is not None
+        assert envelope.encryption_metadata is not None
+        assert envelope.encryption_metadata.algorithm == "AES-256-GCM"
+
+        # Verify routing
+        assert envelope.route_spec.final_destination == destination
+        assert envelope.source_node_id == sample_node_id
+
+    def test_create_secure_encrypted_with_options(
+        self, sample_payload, sample_node_id, encryption_key
+    ):
+        """Test creating an encrypted envelope with additional options."""
+        destination = f"node://{uuid4()}"
+
+        envelope = ModelSecureEventEnvelope.create_secure_encrypted(
+            payload=sample_payload,
+            destination=destination,
+            source_node_id=sample_node_id,
+            encryption_key=encryption_key,
+            authorized_roles=["admin", "operator"],
+            content_hash="a" * 64,  # Required field
+        )
+
+        assert envelope.is_encrypted is True
+        assert envelope.authorized_roles == ["admin", "operator"]
+
+
+@pytest.mark.unit
+class TestEncryptionEdgeCases:
+    """Test edge cases for encryption."""
+
+    def test_encrypt_with_empty_key(self, sample_envelope):
+        """Test encryption with empty key - should still work (key derivation handles it)."""
+        # Empty string key is technically valid (PBKDF2 will derive a key from it)
+        # This tests that the encryption doesn't crash with empty input
+        sample_envelope.encrypt_payload("")
+
+        assert sample_envelope.is_encrypted is True
+        assert sample_envelope.encrypted_payload is not None
+
+    def test_encrypt_with_unicode_key(self, sample_envelope):
+        """Test encryption with unicode characters in key."""
+        unicode_key = "test-key-with-unicode-\u00e9\u00e8\u00ea\u4e2d\u6587"
+
+        sample_envelope.encrypt_payload(unicode_key)
+
+        assert sample_envelope.is_encrypted is True
+        assert sample_envelope.encrypted_payload is not None
+
+    def test_encrypt_with_very_long_key(self, sample_envelope):
+        """Test encryption with a very long key."""
+        long_key = "a" * 10000
+
+        sample_envelope.encrypt_payload(long_key)
+
+        assert sample_envelope.is_encrypted is True
+        assert sample_envelope.encrypted_payload is not None
+
+    def test_encrypt_with_special_characters_key(self, sample_envelope):
+        """Test encryption with special characters in key."""
+        special_key = "!@#$%^&*()_+-=[]{}|;':\",./<>?"
+
+        sample_envelope.encrypt_payload(special_key)
+
+        assert sample_envelope.is_encrypted is True
+        assert sample_envelope.encrypted_payload is not None

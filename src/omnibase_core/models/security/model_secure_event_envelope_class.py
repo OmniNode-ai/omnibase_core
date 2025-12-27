@@ -194,8 +194,8 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
 
     model_config = ConfigDict(from_attributes=True)
 
-    @field_serializer("timestamp")
-    def serialize_timestamp(self, value: datetime) -> str:
+    @field_serializer("envelope_timestamp")
+    def serialize_envelope_timestamp(self, value: datetime) -> str:
         """Serialize datetime to ISO format."""
         return value.isoformat()
 
@@ -520,7 +520,23 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
         encryption_key: str,
         algorithm: str = "AES-256-GCM",
     ) -> None:
-        """Encrypt the envelope payload."""
+        """Encrypt the envelope payload using AES-256-GCM.
+
+        Args:
+            encryption_key: Password/key string for encryption
+            algorithm: Encryption algorithm (only AES-256-GCM supported)
+
+        Raises:
+            ModelOnexError: If payload is already encrypted or algorithm unsupported
+        """
+        import base64
+        import json
+        import os
+
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+        from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+
         if self.is_encrypted:
             msg = "Payload is already encrypted"
             raise ModelOnexError(
@@ -528,17 +544,80 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
                 message=msg,
             )
 
-        # AI_PROMPT: Implement actual encryption using cryptography library
-        # This should use AES-256-GCM with proper key derivation
-        msg = (
-            "Encryption implementation required: Use cryptography library "
-            "to implement AES-256-GCM encryption with proper IV generation "
-            "and authentication tag creation"
+        if algorithm != "AES-256-GCM":
+            msg = f"Unsupported encryption algorithm: {algorithm}. Only AES-256-GCM is supported."
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
+
+        # Generate random key_id (used as salt for key derivation)
+        key_id = uuid4()
+        salt = key_id.bytes  # 16 bytes from UUID
+
+        # Derive 32-byte key using PBKDF2 with SHA-256
+        kdf = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=salt,
+            iterations=100000,
         )
-        raise NotImplementedError(msg)  # stub-ok: planned security feature
+        derived_key = kdf.derive(encryption_key.encode("utf-8"))
+
+        # Generate random 12-byte IV (standard for GCM)
+        iv = os.urandom(12)
+
+        # Serialize payload to JSON
+        payload_json = json.dumps(
+            self.payload.model_dump(mode="json"), ensure_ascii=False
+        )
+        plaintext = payload_json.encode("utf-8")
+
+        # Encrypt using AES-256-GCM
+        # AESGCM automatically appends the 16-byte auth tag to ciphertext
+        aesgcm = AESGCM(derived_key)
+        ciphertext_with_tag = aesgcm.encrypt(iv, plaintext, None)
+
+        # Extract auth tag (last 16 bytes) for metadata storage
+        auth_tag = ciphertext_with_tag[-16:]
+
+        # Store encrypted data as base64 (includes auth tag)
+        self.encrypted_payload = base64.b64encode(ciphertext_with_tag).decode("utf-8")
+
+        # Create encryption metadata
+        self.encryption_metadata = ModelEncryptionMetadata(
+            algorithm=algorithm,
+            key_id=key_id,
+            iv=base64.b64encode(iv).decode("utf-8"),
+            auth_tag=base64.b64encode(auth_tag).decode("utf-8"),
+        )
+
+        # Mark as encrypted
+        self.is_encrypted = True
+
+        # Update content hash after encryption
+        self._update_content_hash()
 
     def decrypt_payload(self, decryption_key: str) -> ModelOnexEvent:
-        """Decrypt the envelope payload."""
+        """Decrypt the envelope payload using AES-256-GCM.
+
+        Args:
+            decryption_key: Password/key string for decryption (must match encryption key)
+
+        Returns:
+            ModelOnexEvent: The decrypted event payload
+
+        Raises:
+            ModelOnexError: If payload is not encrypted, missing data, or decryption fails
+        """
+        import base64
+        import json
+
+        from cryptography.exceptions import InvalidTag
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+        from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+
         if not self.is_encrypted:
             msg = "Payload is not encrypted"
             raise ModelOnexError(
@@ -553,14 +632,50 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
                 message=msg,
             )
 
-        # AI_PROMPT: Implement actual decryption using cryptography library
-        # This should use AES-256-GCM with proper key derivation
-        msg = (
-            "Decryption implementation required: Use cryptography library "
-            "to implement AES-256-GCM decryption with IV and authentication "
-            "tag verification"
+        if self.encryption_metadata.algorithm != "AES-256-GCM":
+            msg = f"Unsupported encryption algorithm: {self.encryption_metadata.algorithm}"
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
+
+        # Use key_id bytes as salt (same as encryption)
+        salt = self.encryption_metadata.key_id.bytes
+
+        # Derive key using same PBKDF2 method
+        kdf = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=salt,
+            iterations=100000,
         )
-        raise NotImplementedError(msg)  # stub-ok: planned security feature
+        derived_key = kdf.derive(decryption_key.encode("utf-8"))
+
+        # Decode base64 encrypted payload and IV
+        ciphertext_with_tag = base64.b64decode(self.encrypted_payload)
+        iv = base64.b64decode(self.encryption_metadata.iv)
+
+        # Decrypt using AESGCM (authentication is automatic - raises InvalidTag on failure)
+        aesgcm = AESGCM(derived_key)
+        try:
+            plaintext = aesgcm.decrypt(iv, ciphertext_with_tag, None)
+        except InvalidTag as e:
+            msg = "Decryption failed: authentication tag verification failed (wrong key or tampered data)"
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.SECURITY_VIOLATION,
+                message=msg,
+            ) from e
+
+        # Parse JSON back to ModelOnexEvent
+        try:
+            payload_dict = json.loads(plaintext.decode("utf-8"))
+            return ModelOnexEvent.model_validate(payload_dict)
+        except (json.JSONDecodeError, ValueError) as e:
+            msg = f"Failed to parse decrypted payload: {e}"
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            ) from e
 
     def check_authorization(
         self,
