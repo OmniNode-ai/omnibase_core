@@ -5,7 +5,9 @@ Rich action type model that replaces EnumNodeActionType with full metadata suppo
 Self-contained action definitions with built-in categorization and validation.
 """
 
-from typing import ClassVar, Optional
+from __future__ import annotations
+
+from typing import ClassVar
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -66,7 +68,7 @@ class ModelNodeActionType(BaseModel):
     )
 
     # Class-level registry for action type management
-    _registry: ClassVar[dict[str, "ModelNodeActionType"]] = {}
+    _registry: ClassVar[dict[str, ModelNodeActionType]] = {}
 
     @field_validator("security_level")
     @classmethod
@@ -143,12 +145,12 @@ class ModelNodeActionType(BaseModel):
         return hash(self.name)
 
     @classmethod
-    def register(cls, action_type: "ModelNodeActionType") -> None:
+    def register(cls, action_type: ModelNodeActionType) -> None:
         """Register an action type in the global registry."""
         cls._registry[action_type.name] = action_type
 
     @classmethod
-    def get_by_name(cls, name: str) -> Optional["ModelNodeActionType"]:
+    def get_by_name(cls, name: str) -> ModelNodeActionType | None:
         """Get action type by name from registry."""
         return cls._registry.get(name)
 
@@ -156,24 +158,24 @@ class ModelNodeActionType(BaseModel):
     def get_by_category(
         cls,
         category: ModelActionCategory,
-    ) -> list["ModelNodeActionType"]:
+    ) -> list[ModelNodeActionType]:
         """Get all action types in a specific category."""
         return [
             action for action in cls._registry.values() if action.category == category
         ]
 
     @classmethod
-    def get_all_registered(cls) -> list["ModelNodeActionType"]:
+    def get_all_registered(cls) -> list[ModelNodeActionType]:
         """Get all registered action types."""
         return list(cls._registry.values())
 
     @classmethod
-    def get_destructive_actions(cls) -> list["ModelNodeActionType"]:
+    def get_destructive_actions(cls) -> list[ModelNodeActionType]:
         """Get all destructive action types."""
         return [action for action in cls._registry.values() if action.is_destructive]
 
     @classmethod
-    def get_by_security_level(cls, security_level: str) -> list["ModelNodeActionType"]:
+    def get_by_security_level(cls, security_level: str) -> list[ModelNodeActionType]:
         """Get all action types requiring specific security level."""
         return [
             action

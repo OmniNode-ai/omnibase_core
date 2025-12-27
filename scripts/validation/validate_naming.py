@@ -491,7 +491,7 @@ class NamingConventionValidator:
                     if not self._is_exception_class(node.name):
                         # If it looks like it should match but doesn't, file naming is relevant
                         return True
-        except:
+        except Exception:
             pass
         return False
 

@@ -85,6 +85,9 @@ def aggressive_gc_cleanup() -> Generator[None, None, None]:
     CRITICAL: Stops all event listener threads BEFORE gc.collect() to prevent
     deadlock when Mock objects in background threads are accessed during
     garbage collection.
+
+    Note: Exception handling includes FileNotFoundError to handle race conditions
+    during parallel test execution where cleanup may access already-deleted files.
     """
     yield  # Let test run
 
@@ -92,16 +95,28 @@ def aggressive_gc_cleanup() -> Generator[None, None, None]:
     # Background threads with Mock objects can deadlock during gc.collect()
     # Note: Don't wait for daemon threads - they'll be cleaned up automatically
     # Waiting can cause timeouts in tests with 5s limits
-    for thread in threading.enumerate():
-        if thread.name and "event_listener" in thread.name:
-            # Thread is daemon - will be cleaned up automatically on test exit
-            # Only do a quick check without blocking
-            if thread.is_alive():
-                # Give thread 0.1s max - if not stopped, move on (it's daemon)
-                thread.join(timeout=0.1)
+    try:
+        for thread in threading.enumerate():
+            if thread.name and "event_listener" in thread.name:
+                # Thread is daemon - will be cleaned up automatically on test exit
+                # Only do a quick check without blocking
+                if thread.is_alive():
+                    # Give thread 0.1s max - if not stopped, move on (it's daemon)
+                    try:
+                        thread.join(timeout=0.1)
+                    except (RuntimeError, FileNotFoundError, OSError):
+                        # Thread cleanup failed - move on
+                        pass
+    except (RuntimeError, FileNotFoundError, OSError):
+        # Thread enumeration failed (race condition during cleanup)
+        pass
 
     # Now safe to collect garbage - daemon threads don't block gc
-    gc.collect()
+    try:
+        gc.collect()
+    except (FileNotFoundError, OSError):
+        # GC cleanup may fail if files are already removed by parallel workers
+        pass
 
 
 @pytest.fixture(autouse=True)
@@ -112,6 +127,10 @@ def event_loop_cleanup() -> Generator[None, None, None]:
     Ensures no dangling event loops or tasks that could accumulate memory.
     Specifically handles health monitor tasks that may have long sleep intervals.
     Suppresses asyncio exception logging during cleanup to prevent noise.
+
+    Note: Exception handling includes FileNotFoundError and OSError to handle
+    race conditions during parallel test execution where cleanup may access
+    already-deleted files or resources.
     """
     yield  # Let test run
 
@@ -168,15 +187,22 @@ def event_loop_cleanup() -> Generator[None, None, None]:
                                     asyncio.InvalidStateError,
                                 ):
                                     pass
+                    except (FileNotFoundError, OSError):
+                        # Race condition - files already cleaned up by parallel workers
+                        pass
                     except Exception:
                         # Best effort cleanup - don't fail tests due to cleanup issues
                         pass
             finally:
                 # Restore original exception handler
-                loop.set_exception_handler(old_exception_handler)
+                try:
+                    loop.set_exception_handler(old_exception_handler)
+                except (RuntimeError, FileNotFoundError, OSError):
+                    # Loop may be closed or resources unavailable
+                    pass
 
-    except RuntimeError:
-        # Event loop issues - that's fine, just skip cleanup
+    except (RuntimeError, FileNotFoundError, OSError):
+        # Event loop issues or file cleanup race - just skip cleanup
         pass
 
 
@@ -317,6 +343,10 @@ def cleanup_service_tasks(
 
     Note: This is a sync fixture to avoid PytestRemovedIn9Warning when applied
     to sync tests. It performs async cleanup only when an event loop is available.
+
+    Note: Exception handling includes FileNotFoundError and OSError to handle
+    race conditions during parallel test execution where cleanup may access
+    already-deleted files or resources.
     """
     yield  # Let test run
 
@@ -359,8 +389,15 @@ def cleanup_service_tasks(
                         task.cancel()
             finally:
                 # Restore original exception handler
-                loop.set_exception_handler(old_exception_handler)
+                try:
+                    loop.set_exception_handler(old_exception_handler)
+                except (RuntimeError, FileNotFoundError, OSError):
+                    # Loop may be closed or resources unavailable
+                    pass
 
+    except (FileNotFoundError, OSError):
+        # Race condition - files already cleaned up by parallel workers
+        pass
     except Exception:
         # Best effort cleanup - don't fail tests
         pass

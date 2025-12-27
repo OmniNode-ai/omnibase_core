@@ -41,12 +41,6 @@ Key Components:
         Lease-based action model for single-writer semantics in distributed
         workflow coordination.
 
-    ModelPlan:
-        Generic plan model for workflow planning and scheduling.
-
-    ModelGraph:
-        Graph structure for representing workflow dependencies and relationships.
-
 Thread Safety:
     Most models in this module are immutable after creation. ModelLoadBalancer
     uses asyncio.Semaphore for thread-safe concurrency control.
@@ -72,9 +66,7 @@ See Also:
     - docs/guides/node-building/06_ORCHESTRATOR_NODE_TUTORIAL.md: Tutorial
 """
 
-from omnibase_core.models.graph import ModelGraph
 from omnibase_core.models.infrastructure.model_protocol_action import ModelAction
-from omnibase_core.models.services.model_plan import ModelPlan
 
 # Re-export aggregator
 from .model_load_balancer import ModelLoadBalancer
@@ -90,7 +82,6 @@ from .model_orchestrator_step import ModelOrchestratorStep
 
 __all__ = [
     "ModelAction",
-    "ModelGraph",
     "ModelLoadBalancer",
     "ModelOrchestratorContext",
     "ModelOrchestratorGraph",
@@ -100,5 +91,4 @@ __all__ = [
     "ModelOrchestratorPlan",
     "ModelOrchestratorResult",
     "ModelOrchestratorStep",
-    "ModelPlan",
 ]
