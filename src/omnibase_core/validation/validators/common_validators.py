@@ -49,7 +49,6 @@ from typing import Annotated
 
 from pydantic import AfterValidator
 
-# Re-export from utils to maintain backward compatibility
 from omnibase_core.utils.util_enum_normalizer import create_enum_normalizer
 
 # =============================================================================

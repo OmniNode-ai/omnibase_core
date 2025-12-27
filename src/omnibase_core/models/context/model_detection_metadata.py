@@ -91,13 +91,13 @@ class ModelDetectionMetadata(BaseModel):
     def normalize_false_positive_likelihood(
         cls, v: EnumLikelihood | str | None
     ) -> EnumLikelihood | str | None:
-        """Accept both enum and string values for backward compatibility.
+        """Normalize likelihood value from string or enum input.
 
         Args:
             v: The likelihood value, either as EnumLikelihood, string, or None.
 
         Returns:
             The normalized value - EnumLikelihood if valid enum value,
-            else the original string for backward compatibility.
+            otherwise the original string for extensibility.
         """
         return create_enum_normalizer(EnumLikelihood)(v)

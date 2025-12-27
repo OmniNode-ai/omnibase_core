@@ -19,18 +19,18 @@ class TestErrorCodePatternSync:
 
     The ERROR_CODE_PATTERN is defined in two locations:
     1. omnibase_core.validation.validators.common_validators.ERROR_CODE_PATTERN
-    2. omnibase_core.models.context.model_error_context.ERROR_CODE_PATTERN
+    2. omnibase_core.models.context.model_error_metadata.ERROR_CODE_PATTERN
 
     This duplication is INTENTIONAL to avoid circular imports:
     - common_validators is used for direct validation via validate_error_code()
-    - model_error_context defines it locally for Pydantic model validation
+    - model_error_metadata defines it locally for Pydantic model validation
 
     Both MUST use the same pattern: ^[A-Z][A-Z0-9_]*_\\d{1,4}$
     """
 
     def test_error_code_patterns_are_identical(self) -> None:
         """Verify ERROR_CODE_PATTERN is identical in both locations."""
-        from omnibase_core.models.context.model_error_context import (
+        from omnibase_core.models.context.model_error_metadata import (
             ERROR_CODE_PATTERN as MODEL_PATTERN,
         )
         from omnibase_core.validation.validators.common_validators import (
@@ -254,7 +254,7 @@ class TestPatternCompilationConsistency:
 
     def test_error_code_patterns_no_flags(self) -> None:
         """Verify ERROR_CODE_PATTERN is compiled without special flags."""
-        from omnibase_core.models.context.model_error_context import (
+        from omnibase_core.models.context.model_error_metadata import (
             ERROR_CODE_PATTERN as MODEL_PATTERN,
         )
         from omnibase_core.validation.validators.common_validators import (

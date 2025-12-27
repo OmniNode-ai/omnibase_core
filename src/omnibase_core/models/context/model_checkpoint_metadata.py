@@ -95,7 +95,7 @@ class ModelCheckpointMetadata(BaseModel):
     def normalize_checkpoint_type(
         cls, v: EnumCheckpointType | str | None
     ) -> EnumCheckpointType | str | None:
-        """Accept both enum and string values for backward compatibility.
+        """Normalize checkpoint type from string or enum input.
 
         Args:
             v: The checkpoint type value, either as EnumCheckpointType,
@@ -103,7 +103,7 @@ class ModelCheckpointMetadata(BaseModel):
 
         Returns:
             The normalized value - EnumCheckpointType if valid enum value,
-            else the original string for backward compatibility.
+            otherwise the original string for extensibility.
         """
         return create_enum_normalizer(EnumCheckpointType)(v)
 
@@ -112,7 +112,7 @@ class ModelCheckpointMetadata(BaseModel):
     def normalize_trigger_event(
         cls, v: EnumTriggerEvent | str | None
     ) -> EnumTriggerEvent | str | None:
-        """Accept both enum and string values for backward compatibility.
+        """Normalize trigger event from string or enum input.
 
         Args:
             v: The trigger event value, either as EnumTriggerEvent,
@@ -120,6 +120,6 @@ class ModelCheckpointMetadata(BaseModel):
 
         Returns:
             The normalized value - EnumTriggerEvent if valid enum value,
-            else the original string for backward compatibility.
+            otherwise the original string for extensibility.
         """
         return create_enum_normalizer(EnumTriggerEvent)(v)
