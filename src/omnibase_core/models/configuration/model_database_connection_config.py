@@ -3,6 +3,10 @@ import re
 
 from pydantic import BaseModel, Field, SecretStr, field_validator
 
+from omnibase_core.constants.constants_field_limits import (
+    MAX_IDENTIFIER_LENGTH,
+    MAX_NAME_LENGTH,
+)
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -26,16 +30,16 @@ class ModelDatabaseConnectionConfig(BaseModel):
         default=...,
         description="Database host",
         pattern=r"^[a-zA-Z0-9\-\.]+$",
-        max_length=255,
+        max_length=MAX_NAME_LENGTH,
     )
     port: int = Field(default=..., description="Database port", ge=1, le=65535)
     database: str = Field(
         default=...,
         description="Database name",
         pattern=r"^[a-zA-Z0-9_\-]+$",
-        max_length=100,
+        max_length=MAX_IDENTIFIER_LENGTH,
     )
-    username: str = Field(default=..., description="Database username", max_length=100)
+    username: str = Field(default=..., description="Database username", max_length=MAX_IDENTIFIER_LENGTH)
     password: SecretStr = Field(default=..., description="Database password (secured)")
     ssl_enabled: bool = Field(
         default=False, description="Whether to use SSL connection"

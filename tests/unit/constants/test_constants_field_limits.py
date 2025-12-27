@@ -14,7 +14,6 @@ import pytest
 pytestmark = pytest.mark.unit
 
 
-@pytest.mark.unit
 class TestIdentifierLimitConstants:
     """Test cases for identifier limit constants."""
 
@@ -83,7 +82,6 @@ class TestIdentifierLimitConstants:
         assert MAX_NAME_LENGTH > MAX_IDENTIFIER_LENGTH
 
 
-@pytest.mark.unit
 class TestPathLimitConstants:
     """Test cases for path limit constants."""
 
@@ -135,9 +133,32 @@ class TestPathLimitConstants:
         assert MAX_URL_LENGTH > MAX_PATH_LENGTH
 
 
-@pytest.mark.unit
 class TestContentLimitConstants:
     """Test cases for content limit constants."""
+
+    def test_max_reason_length_value(self) -> None:
+        """Test MAX_REASON_LENGTH has expected value."""
+        from omnibase_core.constants.constants_field_limits import MAX_REASON_LENGTH
+
+        assert MAX_REASON_LENGTH == 500
+
+    def test_max_reason_length_type(self) -> None:
+        """Test MAX_REASON_LENGTH is an integer."""
+        from omnibase_core.constants.constants_field_limits import MAX_REASON_LENGTH
+
+        assert isinstance(MAX_REASON_LENGTH, int)
+
+    def test_max_message_length_value(self) -> None:
+        """Test MAX_MESSAGE_LENGTH has expected value."""
+        from omnibase_core.constants.constants_field_limits import MAX_MESSAGE_LENGTH
+
+        assert MAX_MESSAGE_LENGTH == 1500
+
+    def test_max_message_length_type(self) -> None:
+        """Test MAX_MESSAGE_LENGTH is an integer."""
+        from omnibase_core.constants.constants_field_limits import MAX_MESSAGE_LENGTH
+
+        assert isinstance(MAX_MESSAGE_LENGTH, int)
 
     def test_max_description_length_value(self) -> None:
         """Test MAX_DESCRIPTION_LENGTH has expected value."""
@@ -193,8 +214,12 @@ class TestContentLimitConstants:
             MAX_DESCRIPTION_LENGTH,
             MAX_ERROR_MESSAGE_LENGTH,
             MAX_LOG_MESSAGE_LENGTH,
+            MAX_MESSAGE_LENGTH,
+            MAX_REASON_LENGTH,
         )
 
+        assert MAX_REASON_LENGTH > 0
+        assert MAX_MESSAGE_LENGTH > 0
         assert MAX_DESCRIPTION_LENGTH > 0
         assert MAX_ERROR_MESSAGE_LENGTH > 0
         assert MAX_LOG_MESSAGE_LENGTH > 0
@@ -202,20 +227,23 @@ class TestContentLimitConstants:
     def test_content_limits_hierarchy(self) -> None:
         """Test content limits follow expected hierarchy.
 
-        Descriptions are shortest, then errors, then logs.
+        Reason (shortest) < Message < Description < Error < Log (longest).
         This allows for increasingly detailed content.
         """
         from omnibase_core.constants.constants_field_limits import (
             MAX_DESCRIPTION_LENGTH,
             MAX_ERROR_MESSAGE_LENGTH,
             MAX_LOG_MESSAGE_LENGTH,
+            MAX_MESSAGE_LENGTH,
+            MAX_REASON_LENGTH,
         )
 
-        assert MAX_DESCRIPTION_LENGTH < MAX_ERROR_MESSAGE_LENGTH
+        assert MAX_REASON_LENGTH < MAX_DESCRIPTION_LENGTH
+        assert MAX_DESCRIPTION_LENGTH < MAX_MESSAGE_LENGTH
+        assert MAX_MESSAGE_LENGTH < MAX_ERROR_MESSAGE_LENGTH
         assert MAX_ERROR_MESSAGE_LENGTH < MAX_LOG_MESSAGE_LENGTH
 
 
-@pytest.mark.unit
 class TestCollectionLimitConstants:
     """Test cases for collection limit constants."""
 
@@ -243,15 +271,29 @@ class TestCollectionLimitConstants:
 
         assert isinstance(MAX_LABELS_COUNT, int)
 
+    def test_max_label_length_value(self) -> None:
+        """Test MAX_LABEL_LENGTH has expected value."""
+        from omnibase_core.constants.constants_field_limits import MAX_LABEL_LENGTH
+
+        assert MAX_LABEL_LENGTH == 100
+
+    def test_max_label_length_type(self) -> None:
+        """Test MAX_LABEL_LENGTH is an integer."""
+        from omnibase_core.constants.constants_field_limits import MAX_LABEL_LENGTH
+
+        assert isinstance(MAX_LABEL_LENGTH, int)
+
     def test_collection_constants_are_positive(self) -> None:
         """Test all collection limit constants are positive."""
         from omnibase_core.constants.constants_field_limits import (
+            MAX_LABEL_LENGTH,
             MAX_LABELS_COUNT,
             MAX_TAGS_COUNT,
         )
 
         assert MAX_TAGS_COUNT > 0
         assert MAX_LABELS_COUNT > 0
+        assert MAX_LABEL_LENGTH > 0
 
     def test_labels_allow_more_than_tags(self) -> None:
         """Test MAX_LABELS_COUNT is greater than MAX_TAGS_COUNT.
@@ -267,7 +309,6 @@ class TestCollectionLimitConstants:
         assert MAX_LABELS_COUNT > MAX_TAGS_COUNT
 
 
-@pytest.mark.unit
 class TestModuleImports:
     """Test cases for module import functionality."""
 
@@ -278,10 +319,13 @@ class TestModuleImports:
             MAX_ERROR_MESSAGE_LENGTH,
             MAX_IDENTIFIER_LENGTH,
             MAX_KEY_LENGTH,
+            MAX_LABEL_LENGTH,
             MAX_LABELS_COUNT,
             MAX_LOG_MESSAGE_LENGTH,
+            MAX_MESSAGE_LENGTH,
             MAX_NAME_LENGTH,
             MAX_PATH_LENGTH,
+            MAX_REASON_LENGTH,
             MAX_TAGS_COUNT,
             MAX_URL_LENGTH,
         )
@@ -292,11 +336,14 @@ class TestModuleImports:
         assert isinstance(MAX_KEY_LENGTH, int)
         assert isinstance(MAX_PATH_LENGTH, int)
         assert isinstance(MAX_URL_LENGTH, int)
+        assert isinstance(MAX_REASON_LENGTH, int)
+        assert isinstance(MAX_MESSAGE_LENGTH, int)
         assert isinstance(MAX_DESCRIPTION_LENGTH, int)
         assert isinstance(MAX_ERROR_MESSAGE_LENGTH, int)
         assert isinstance(MAX_LOG_MESSAGE_LENGTH, int)
         assert isinstance(MAX_TAGS_COUNT, int)
         assert isinstance(MAX_LABELS_COUNT, int)
+        assert isinstance(MAX_LABEL_LENGTH, int)
 
     def test_all_constants_in_module_all(self) -> None:
         """Test that all constants are listed in __all__."""
@@ -308,11 +355,14 @@ class TestModuleImports:
             "MAX_KEY_LENGTH",
             "MAX_PATH_LENGTH",
             "MAX_URL_LENGTH",
+            "MAX_REASON_LENGTH",
+            "MAX_MESSAGE_LENGTH",
             "MAX_DESCRIPTION_LENGTH",
             "MAX_ERROR_MESSAGE_LENGTH",
             "MAX_LOG_MESSAGE_LENGTH",
             "MAX_TAGS_COUNT",
             "MAX_LABELS_COUNT",
+            "MAX_LABEL_LENGTH",
         ]
 
         for export in expected_exports:
@@ -324,11 +374,10 @@ class TestModuleImports:
         """Test __all__ contains exactly the expected number of exports."""
         from omnibase_core.constants import constants_field_limits
 
-        # Should have exactly 10 constants
-        assert len(constants_field_limits.__all__) == 10
+        # Should have exactly 13 constants
+        assert len(constants_field_limits.__all__) == 13
 
 
-@pytest.mark.unit
 class TestModuleDocumentation:
     """Test cases for module documentation."""
 
@@ -347,7 +396,6 @@ class TestModuleDocumentation:
         assert "field" in docstring or "limit" in docstring
 
 
-@pytest.mark.unit
 class TestConstantsUsability:
     """Test cases for constant usability patterns."""
 
@@ -422,7 +470,6 @@ class TestConstantsUsability:
         assert config["description_max"] == 1000
 
 
-@pytest.mark.unit
 class TestConstantImmutability:
     """Test cases verifying constants behave as expected."""
 
@@ -433,10 +480,13 @@ class TestConstantImmutability:
             MAX_ERROR_MESSAGE_LENGTH,
             MAX_IDENTIFIER_LENGTH,
             MAX_KEY_LENGTH,
+            MAX_LABEL_LENGTH,
             MAX_LABELS_COUNT,
             MAX_LOG_MESSAGE_LENGTH,
+            MAX_MESSAGE_LENGTH,
             MAX_NAME_LENGTH,
             MAX_PATH_LENGTH,
+            MAX_REASON_LENGTH,
             MAX_TAGS_COUNT,
             MAX_URL_LENGTH,
         )
@@ -447,11 +497,14 @@ class TestConstantImmutability:
             MAX_KEY_LENGTH,
             MAX_PATH_LENGTH,
             MAX_URL_LENGTH,
+            MAX_REASON_LENGTH,
+            MAX_MESSAGE_LENGTH,
             MAX_DESCRIPTION_LENGTH,
             MAX_ERROR_MESSAGE_LENGTH,
             MAX_LOG_MESSAGE_LENGTH,
             MAX_TAGS_COUNT,
             MAX_LABELS_COUNT,
+            MAX_LABEL_LENGTH,
         ]
 
         for constant in constants:
@@ -464,10 +517,13 @@ class TestConstantImmutability:
             MAX_ERROR_MESSAGE_LENGTH,
             MAX_IDENTIFIER_LENGTH,
             MAX_KEY_LENGTH,
+            MAX_LABEL_LENGTH,
             MAX_LABELS_COUNT,
             MAX_LOG_MESSAGE_LENGTH,
+            MAX_MESSAGE_LENGTH,
             MAX_NAME_LENGTH,
             MAX_PATH_LENGTH,
+            MAX_REASON_LENGTH,
             MAX_TAGS_COUNT,
             MAX_URL_LENGTH,
         )
@@ -478,11 +534,14 @@ class TestConstantImmutability:
             "MAX_KEY_LENGTH": MAX_KEY_LENGTH,
             "MAX_PATH_LENGTH": MAX_PATH_LENGTH,
             "MAX_URL_LENGTH": MAX_URL_LENGTH,
+            "MAX_REASON_LENGTH": MAX_REASON_LENGTH,
+            "MAX_MESSAGE_LENGTH": MAX_MESSAGE_LENGTH,
             "MAX_DESCRIPTION_LENGTH": MAX_DESCRIPTION_LENGTH,
             "MAX_ERROR_MESSAGE_LENGTH": MAX_ERROR_MESSAGE_LENGTH,
             "MAX_LOG_MESSAGE_LENGTH": MAX_LOG_MESSAGE_LENGTH,
             "MAX_TAGS_COUNT": MAX_TAGS_COUNT,
             "MAX_LABELS_COUNT": MAX_LABELS_COUNT,
+            "MAX_LABEL_LENGTH": MAX_LABEL_LENGTH,
         }
 
         for name, value in constants.items():
@@ -491,7 +550,6 @@ class TestConstantImmutability:
             assert type(value) is int, f"{name} should be exactly int type"
 
 
-@pytest.mark.unit
 class TestConstantsSummary:
     """Summary test cases for all constants."""
 
@@ -502,10 +560,13 @@ class TestConstantsSummary:
             MAX_ERROR_MESSAGE_LENGTH,
             MAX_IDENTIFIER_LENGTH,
             MAX_KEY_LENGTH,
+            MAX_LABEL_LENGTH,
             MAX_LABELS_COUNT,
             MAX_LOG_MESSAGE_LENGTH,
+            MAX_MESSAGE_LENGTH,
             MAX_NAME_LENGTH,
             MAX_PATH_LENGTH,
+            MAX_REASON_LENGTH,
             MAX_TAGS_COUNT,
             MAX_URL_LENGTH,
         )
@@ -516,11 +577,14 @@ class TestConstantsSummary:
             "MAX_KEY_LENGTH": 100,
             "MAX_PATH_LENGTH": 255,
             "MAX_URL_LENGTH": 2048,
+            "MAX_REASON_LENGTH": 500,
+            "MAX_MESSAGE_LENGTH": 1500,
             "MAX_DESCRIPTION_LENGTH": 1000,
             "MAX_ERROR_MESSAGE_LENGTH": 2000,
             "MAX_LOG_MESSAGE_LENGTH": 4000,
             "MAX_TAGS_COUNT": 50,
             "MAX_LABELS_COUNT": 100,
+            "MAX_LABEL_LENGTH": 100,
         }
 
         actual = {
@@ -529,11 +593,14 @@ class TestConstantsSummary:
             "MAX_KEY_LENGTH": MAX_KEY_LENGTH,
             "MAX_PATH_LENGTH": MAX_PATH_LENGTH,
             "MAX_URL_LENGTH": MAX_URL_LENGTH,
+            "MAX_REASON_LENGTH": MAX_REASON_LENGTH,
+            "MAX_MESSAGE_LENGTH": MAX_MESSAGE_LENGTH,
             "MAX_DESCRIPTION_LENGTH": MAX_DESCRIPTION_LENGTH,
             "MAX_ERROR_MESSAGE_LENGTH": MAX_ERROR_MESSAGE_LENGTH,
             "MAX_LOG_MESSAGE_LENGTH": MAX_LOG_MESSAGE_LENGTH,
             "MAX_TAGS_COUNT": MAX_TAGS_COUNT,
             "MAX_LABELS_COUNT": MAX_LABELS_COUNT,
+            "MAX_LABEL_LENGTH": MAX_LABEL_LENGTH,
         }
 
         for name, expected_value in expected.items():

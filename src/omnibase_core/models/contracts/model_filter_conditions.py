@@ -13,6 +13,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, field_validator
 
+from omnibase_core.constants.constants_field_limits import MAX_IDENTIFIER_LENGTH
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -56,7 +57,7 @@ class ModelFilterConditions(BaseModel):
     event_type: str | None = Field(
         default=None,
         description="Exact event type match",
-        max_length=100,
+        max_length=MAX_IDENTIFIER_LENGTH,
     )
 
     source: str | None = Field(
@@ -172,7 +173,7 @@ class ModelFilterConditions(BaseModel):
     category: str | None = Field(
         default=None,
         description="Event category filter",
-        max_length=100,
+        max_length=MAX_IDENTIFIER_LENGTH,
     )
 
     # Advanced filters

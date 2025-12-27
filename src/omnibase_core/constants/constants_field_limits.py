@@ -9,7 +9,7 @@ These constants are used by:
 - Model fields requiring max_length validation
 - Identifier and name fields across all ONEX models
 - Path and URL fields in configuration models
-- Content fields such as descriptions, errors, and logs
+- Content fields such as descriptions, messages, reasons, errors, and logs
 - Collection fields with size constraints
 """
 
@@ -40,8 +40,14 @@ MAX_URL_LENGTH: int = 2048
 # Content Limits
 # =============================================================================
 
+# Maximum length for reason/rationale fields (short explanations)
+MAX_REASON_LENGTH: int = 500
+
 # Maximum length for description fields
 MAX_DESCRIPTION_LENGTH: int = 1000
+
+# Maximum length for general message fields
+MAX_MESSAGE_LENGTH: int = 1500
 
 # Maximum length for error messages
 MAX_ERROR_MESSAGE_LENGTH: int = 2000
@@ -59,6 +65,9 @@ MAX_TAGS_COUNT: int = 50
 # Maximum number of labels per entity
 MAX_LABELS_COUNT: int = 100
 
+# Maximum length for individual label strings
+MAX_LABEL_LENGTH: int = 100
+
 __all__ = [
     # Identifier limits
     "MAX_IDENTIFIER_LENGTH",
@@ -68,10 +77,13 @@ __all__ = [
     "MAX_PATH_LENGTH",
     "MAX_URL_LENGTH",
     # Content limits
+    "MAX_REASON_LENGTH",
     "MAX_DESCRIPTION_LENGTH",
+    "MAX_MESSAGE_LENGTH",
     "MAX_ERROR_MESSAGE_LENGTH",
     "MAX_LOG_MESSAGE_LENGTH",
     # Collection limits
     "MAX_TAGS_COUNT",
     "MAX_LABELS_COUNT",
+    "MAX_LABEL_LENGTH",
 ]

@@ -7,7 +7,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from omnibase_core.constants import MAX_ERROR_MESSAGE_LENGTH
+from omnibase_core.constants import MAX_ERROR_MESSAGE_LENGTH, MAX_IDENTIFIER_LENGTH
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 from omnibase_core.models.core.model_error_summary import ModelErrorSummary
@@ -63,10 +63,10 @@ class ModelEventBusOutputState(BaseModel):
     correlation_id: UUID | None = Field(
         default=None,
         description="Correlation ID for tracking across operations",
-        max_length=100,
+        max_length=MAX_IDENTIFIER_LENGTH,
     )
     event_id: UUID | None = Field(
-        default=None, description="Unique event identifier", max_length=100
+        default=None, description="Unique event identifier", max_length=MAX_IDENTIFIER_LENGTH
     )
     processing_time_ms: int | None = Field(
         default=None, description="Processing time in milliseconds", ge=0

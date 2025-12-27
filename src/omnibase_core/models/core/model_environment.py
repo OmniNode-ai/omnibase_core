@@ -31,6 +31,7 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl
 
+from omnibase_core.constants.constants_field_limits import MAX_IDENTIFIER_LENGTH
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.core.model_feature_flags import ModelFeatureFlags
 
@@ -70,7 +71,7 @@ class ModelEnvironment(BaseModel):
         default=...,
         description="Human-readable environment name",
         min_length=1,
-        max_length=100,
+        max_length=MAX_IDENTIFIER_LENGTH,
     )
 
     description: str | None = Field(

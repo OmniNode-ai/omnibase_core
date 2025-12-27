@@ -12,6 +12,8 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.constants.constants_field_limits import MAX_IDENTIFIER_LENGTH
+
 __all__ = ["ModelWorkflowStep"]
 
 
@@ -141,7 +143,7 @@ class ModelWorkflowStep(BaseModel):
     parallel_group: str | None = Field(
         default=None,
         description="Group identifier for parallel execution",
-        max_length=100,
+        max_length=MAX_IDENTIFIER_LENGTH,
     )
 
     max_parallel_instances: int = Field(

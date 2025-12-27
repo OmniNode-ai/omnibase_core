@@ -16,6 +16,7 @@ from typing import ClassVar, cast
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.constants.constants_field_limits import MAX_IDENTIFIER_LENGTH
 from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_dependency_type import EnumDependencyType
@@ -94,7 +95,7 @@ class ModelContractBase(BaseModel, ABC):
     dependencies: list[ModelDependency] = Field(
         default_factory=list,
         description="Required protocol dependencies with structured specification",
-        max_length=100,  # Prevent memory issues with extensive dependency lists
+        max_length=MAX_IDENTIFIER_LENGTH,  # Prevent memory issues with extensive dependency lists
     )
 
     protocol_interfaces: list[str] = Field(

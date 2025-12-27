@@ -12,6 +12,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.constants.constants_field_limits import MAX_NAME_LENGTH
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors import OnexError
 
@@ -94,7 +95,7 @@ class ModelActionDedupBase(BaseModel):
         ...,
         description="Entity identifier (workflow_key, entity_id, etc.)",
         min_length=1,
-        max_length=255,
+        max_length=MAX_NAME_LENGTH,
     )
 
     action_id: UUID = Field(
