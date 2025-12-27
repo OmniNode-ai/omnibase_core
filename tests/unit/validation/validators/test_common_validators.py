@@ -681,7 +681,10 @@ class TestImports:
         assert callable(validate_bcp47_locale)
         assert callable(validate_uuid)
         assert callable(validate_semantic_version)
-        # Verify UUIDString is the annotated type (not callable, but usable as type)
+        # Verify type aliases are importable (not callable, but usable as types)
+        assert BCP47Locale is not None
+        assert Duration is not None
+        assert SemanticVersion is not None
         assert UUIDString is not None
 
     def test_import_from_validation_package(self) -> None:
@@ -702,7 +705,10 @@ class TestImports:
         assert callable(validate_bcp47_locale)
         assert callable(validate_uuid)
         assert callable(validate_semantic_version)
-        # Verify UUIDString is the annotated type (not callable, but usable as type)
+        # Verify type aliases are importable (not callable, but usable as types)
+        assert BCP47Locale is not None
+        assert Duration is not None
+        assert SemanticVersion is not None
         assert UUIDString is not None
 
     def test_import_create_enum_normalizer(self) -> None:
@@ -1360,6 +1366,98 @@ class TestValidatorNoneHandlingInModels:
                 id="550e8400-e29b-41d4-a716-446655440000",
                 version="1.0.0",
             )
+
+
+@pytest.mark.unit
+class TestValidatorsNoneHandlingDirect:
+    """Test handling of None values passed directly to validator functions.
+
+    These tests verify what happens when None is passed directly to validators
+    (not via Pydantic model optional fields). The validators use `if not value:`
+    checks which treat None similarly to empty strings.
+    """
+
+    def test_validate_duration_none_raises_value_error(self) -> None:
+        """Test that None raises ValueError (treated as empty)."""
+        # None triggers the `if not value:` check
+        with pytest.raises(ValueError, match="cannot be empty"):
+            validate_duration(None)  # type: ignore[arg-type]
+
+    def test_validate_bcp47_locale_none_raises_value_error(self) -> None:
+        """Test that None raises ValueError (treated as empty)."""
+        with pytest.raises(ValueError, match="cannot be empty"):
+            validate_bcp47_locale(None)  # type: ignore[arg-type]
+
+    def test_validate_uuid_none_raises_value_error(self) -> None:
+        """Test that None raises ValueError (treated as empty)."""
+        with pytest.raises(ValueError, match="cannot be empty"):
+            validate_uuid(None)  # type: ignore[arg-type]
+
+    def test_validate_semantic_version_none_raises_value_error(self) -> None:
+        """Test that None raises ValueError (treated as empty)."""
+        with pytest.raises(ValueError, match="cannot be empty"):
+            validate_semantic_version(None)  # type: ignore[arg-type]
+
+    def test_validate_error_code_none_raises_value_error(self) -> None:
+        """Test that None raises ValueError (treated as empty)."""
+        with pytest.raises(ValueError, match="cannot be empty"):
+            validate_error_code(None)  # type: ignore[arg-type]
+
+
+@pytest.mark.unit
+class TestValidatorsTypeEdgeCases:
+    """Test handling of non-string types passed to validators."""
+
+    @pytest.mark.parametrize(
+        ("validator_func", "valid_input"),
+        [
+            (validate_duration, "PT1H"),
+            (validate_bcp47_locale, "en-US"),
+            (validate_uuid, "550e8400-e29b-41d4-a716-446655440000"),
+            (validate_semantic_version, "1.0.0"),
+            (validate_error_code, "AUTH_001"),
+        ],
+    )
+    def test_validators_with_integer_input(
+        self, validator_func: Callable[[str], str], valid_input: str
+    ) -> None:
+        """Test that validators reject integer inputs."""
+        with pytest.raises((ValueError, TypeError, AttributeError)):
+            validator_func(123)  # type: ignore[arg-type]
+
+    @pytest.mark.parametrize(
+        ("validator_func", "valid_input"),
+        [
+            (validate_duration, "PT1H"),
+            (validate_bcp47_locale, "en-US"),
+            (validate_uuid, "550e8400-e29b-41d4-a716-446655440000"),
+            (validate_semantic_version, "1.0.0"),
+            (validate_error_code, "AUTH_001"),
+        ],
+    )
+    def test_validators_with_list_input(
+        self, validator_func: Callable[[str], str], valid_input: str
+    ) -> None:
+        """Test that validators reject list inputs."""
+        with pytest.raises((ValueError, TypeError, AttributeError)):
+            validator_func([valid_input])  # type: ignore[arg-type]
+
+    @pytest.mark.parametrize(
+        ("validator_func", "valid_input"),
+        [
+            (validate_duration, "PT1H"),
+            (validate_bcp47_locale, "en-US"),
+            (validate_uuid, "550e8400-e29b-41d4-a716-446655440000"),
+            (validate_semantic_version, "1.0.0"),
+            (validate_error_code, "AUTH_001"),
+        ],
+    )
+    def test_validators_with_dict_input(
+        self, validator_func: Callable[[str], str], valid_input: str
+    ) -> None:
+        """Test that validators reject dict inputs."""
+        with pytest.raises((ValueError, TypeError, AttributeError)):
+            validator_func({"value": valid_input})  # type: ignore[arg-type]
 
 
 @pytest.mark.unit

@@ -30,7 +30,11 @@ class EnumLikelihood(str, Enum):
         At exact boundary values, the probability maps to the HIGHER category.
         For example, 0.1 exactly returns LOW (not VERY_LOW), and 0.3 exactly
         returns MEDIUM (not LOW). This follows the [lower, upper) convention
-        where the lower bound is inclusive.
+        where the lower bound is inclusive for most categories.
+
+        Special cases:
+            - VERY_LOW uses (0.0, 0.1) notation: 0.0 is EXCLUDED (returns IMPOSSIBLE)
+            - IMPOSSIBLE and CERTAIN are singletons: exactly 0.0 and 1.0 respectively
 
     Probability Mapping (used by from_probability):
         IMPOSSIBLE: {0.0}           - Exactly 0% probability
@@ -52,8 +56,8 @@ class EnumLikelihood(str, Enum):
     """
 
     # Ordered from lowest to highest probability
-    # Notation: [lower, upper) means lower <= p < upper
-    VERY_LOW = "very_low"  # (0.0, 0.1) - Very unlikely, but not impossible
+    # Notation: [a, b) = inclusive lower, exclusive upper; (a, b) = exclusive both ends
+    VERY_LOW = "very_low"  # (0.0, 0.1) - Very unlikely, but not impossible (0 excluded)
     LOW = "low"  # [0.1, 0.3) - Unlikely to occur
     MEDIUM = "medium"  # [0.3, 0.6) - Moderately likely
     HIGH = "high"  # [0.6, 0.85) - Likely to occur
@@ -111,9 +115,12 @@ class EnumLikelihood(str, Enum):
             UNKNOWN:    (0.0, 1.0)  - Full range [0.0, 1.0]: indeterminate
 
         Note:
-            The returned tuple (min, max) represents boundary values. The actual
-            interval semantics (inclusive/exclusive) are defined by from_probability().
-            Use from_probability() for precise probability-to-likelihood mapping.
+            The returned tuple (min, max) represents boundary values only, NOT the
+            actual interval semantics. For example, both VERY_LOW and LOW return
+            tuples containing 0.1, but VERY_LOW excludes it (upper bound) while
+            LOW includes it (lower bound). The actual inclusive/exclusive semantics
+            are defined by from_probability(). Use from_probability() for precise
+            probability-to-likelihood mapping.
 
         Args:
             likelihood: The likelihood level to convert

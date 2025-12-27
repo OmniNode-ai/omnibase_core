@@ -6,6 +6,7 @@ Used by context models to specify what event triggered an action or checkpoint.
 """
 
 from enum import Enum
+from functools import cache
 
 
 class EnumTriggerEvent(str, Enum):
@@ -35,6 +36,35 @@ class EnumTriggerEvent(str, Enum):
         return self.value
 
     @classmethod
+    @cache
+    def _automatic_triggers(cls) -> frozenset["EnumTriggerEvent"]:
+        """Return cached frozenset of automatic trigger events.
+
+        Uses functools.cache for memoization to avoid recreating the frozenset on each call.
+        """
+        return frozenset(
+            {
+                cls.STAGE_COMPLETE,
+                cls.STEP_COMPLETE,
+                cls.ERROR,
+                cls.TIMEOUT,
+                cls.SCHEDULED,
+                cls.THRESHOLD_EXCEEDED,
+                cls.STARTUP,
+                cls.SHUTDOWN,
+            }
+        )
+
+    @classmethod
+    @cache
+    def _error_triggers(cls) -> frozenset["EnumTriggerEvent"]:
+        """Return cached frozenset of error-related trigger events.
+
+        Uses functools.cache for memoization to avoid recreating the frozenset on each call.
+        """
+        return frozenset({cls.ERROR, cls.TIMEOUT, cls.THRESHOLD_EXCEEDED})
+
+    @classmethod
     def is_automatic(cls, trigger: "EnumTriggerEvent") -> bool:
         """
         Check if the trigger is automatic (not user-initiated).
@@ -45,17 +75,7 @@ class EnumTriggerEvent(str, Enum):
         Returns:
             True if automatic, False if manual
         """
-        automatic_triggers = {
-            cls.STAGE_COMPLETE,
-            cls.STEP_COMPLETE,
-            cls.ERROR,
-            cls.TIMEOUT,
-            cls.SCHEDULED,
-            cls.THRESHOLD_EXCEEDED,
-            cls.STARTUP,
-            cls.SHUTDOWN,
-        }
-        return trigger in automatic_triggers
+        return trigger in cls._automatic_triggers()
 
     @classmethod
     def is_error_related(cls, trigger: "EnumTriggerEvent") -> bool:
@@ -68,5 +88,4 @@ class EnumTriggerEvent(str, Enum):
         Returns:
             True if error-related, False otherwise
         """
-        error_triggers = {cls.ERROR, cls.TIMEOUT, cls.THRESHOLD_EXCEEDED}
-        return trigger in error_triggers
+        return trigger in cls._error_triggers()

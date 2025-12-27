@@ -4,6 +4,7 @@ Single responsibility: Centralized checkpoint type definitions.
 """
 
 from enum import Enum
+from functools import cache
 
 
 class EnumCheckpointType(str, Enum):
@@ -35,6 +36,35 @@ class EnumCheckpointType(str, Enum):
         return self.value
 
     @classmethod
+    @cache
+    def _recovery_types(cls) -> frozenset["EnumCheckpointType"]:
+        """Return cached frozenset of recovery-related checkpoint types.
+
+        Uses functools.cache for memoization to avoid recreating the frozenset on each call.
+        """
+        return frozenset({cls.FAILURE_RECOVERY, cls.RECOVERY, cls.SNAPSHOT})
+
+    @classmethod
+    @cache
+    def _automatic_types(cls) -> frozenset["EnumCheckpointType"]:
+        """Return cached frozenset of automatic checkpoint types.
+
+        Uses functools.cache for memoization to avoid recreating the frozenset on each call.
+        """
+        return frozenset(
+            {
+                cls.AUTOMATIC,
+                cls.FAILURE_RECOVERY,
+                cls.RECOVERY,
+                cls.STEP_COMPLETION,
+                cls.STAGE_COMPLETION,
+                cls.SNAPSHOT,
+                cls.INCREMENTAL,
+                cls.COMPOSITION_BOUNDARY,
+            }
+        )
+
+    @classmethod
     def is_recovery_related(cls, checkpoint_type: "EnumCheckpointType") -> bool:
         """
         Check if the checkpoint type is related to recovery operations.
@@ -45,8 +75,7 @@ class EnumCheckpointType(str, Enum):
         Returns:
             True if recovery-related, False otherwise
         """
-        recovery_types = {cls.FAILURE_RECOVERY, cls.RECOVERY, cls.SNAPSHOT}
-        return checkpoint_type in recovery_types
+        return checkpoint_type in cls._recovery_types()
 
     @classmethod
     def is_automatic(cls, checkpoint_type: "EnumCheckpointType") -> bool:
@@ -59,14 +88,4 @@ class EnumCheckpointType(str, Enum):
         Returns:
             True if automatic, False if manual
         """
-        automatic_types = {
-            cls.AUTOMATIC,
-            cls.FAILURE_RECOVERY,
-            cls.RECOVERY,
-            cls.STEP_COMPLETION,
-            cls.STAGE_COMPLETION,
-            cls.SNAPSHOT,
-            cls.INCREMENTAL,
-            cls.COMPOSITION_BOUNDARY,
-        }
-        return checkpoint_type in automatic_types
+        return checkpoint_type in cls._automatic_types()
