@@ -662,8 +662,8 @@ Imperative mixins typically:
 | `MixinCanonicalSerialization` | Canonical form serialization | ALL | Deterministic serialization |
 | `MixinLazyValue` | Lazy evaluation | ALL | Deferred computation |
 | `MixinNodeIntrospectionData` | Introspection data structures | ALL | Data models |
-| `MixinLogData` | Structured logging data | ALL | Log formatting |
-| `MixinCompletionData` | Completion tracking data | ALL | Status tracking |
+| `ModelLogData` | Structured logging data | ALL | Log formatting |
+| `ModelCompletionData` | Completion tracking data | ALL | Status tracking |
 | `MixinCLIHandler` | CLI command handling | ALL | Command-line interface |
 | `MixinValidation` | Input validation | ALL | Data validation |
 | `MixinSecurity` | Security utilities | ALL | Auth/authz helpers |

@@ -65,7 +65,7 @@ Pure computation with no side effects or runtime dependencies.
 | # | Mixin Name | Purpose | Class | Target Location |
 |---|------------|---------|-------|-----------------|
 | 1 | `MixinCaching` | In-memory caching for node operations | R | `NodeRuntime.cache_service` |
-| 2 | `MixinCompletionData` | Tracks completion status/progress | R | `NodeRuntime.completion_tracker` |
+| 2 | `ModelCompletionData` | Tracks completion status/progress | R | `NodeRuntime.completion_tracker` |
 | 3 | `MixinLazyValue` | Lazy evaluation wrapper class | D | `utils/lazy.py` |
 | 4 | `MixinMetrics` | Prometheus-style metrics collection | R | `NodeRuntime.metrics_service` |
 | 5 | `MixinNodeSetup` | Standard node initialization | R | `NodeRuntime.__init__()` |
@@ -91,7 +91,7 @@ Pure computation with no side effects or runtime dependencies.
 | 25 | `MixinIntrospection` | Node introspection response | R | `NodeRuntime.introspection_service` |
 | 26 | `MixinIntrospectionPublisher` | Publish introspection events | R | `NodeRuntime.introspection_publisher` |
 | 27 | `MixinLazyEvaluation` | Lazy evaluation patterns | D | `utils/lazy.py` |
-| 28 | `MixinLogData` | Structured log data model | D | `models/logging/` (already a model) |
+| 28 | `ModelLogData` | Structured log data model | D | `models/mixins/model_log_data.py` |
 | 29 | `MixinNodeExecutor` | Persistent executor mode | R | `NodeRuntime.executor_service` |
 | 30 | `MixinNodeIdFromContract` | Load node ID from contract | D | `utils/node_id.py` |
 | 31 | `MixinNodeIntrospectionData` | Introspection data container | D | `models/introspection/` (already a model) |
@@ -114,7 +114,7 @@ Pure computation with no side effects or runtime dependencies.
 | Mixin | Target |
 |-------|--------|
 | `MixinCaching` | `NodeRuntime.cache_service` |
-| `MixinCompletionData` | `NodeRuntime.completion_tracker` |
+| `ModelCompletionData` | `NodeRuntime.completion_tracker` |
 | `MixinMetrics` | `NodeRuntime.metrics_service` |
 | `MixinNodeSetup` | `NodeRuntime.__init__()` |
 | `MixinIntentPublisher` | `NodeRuntime.intent_emitter` |
@@ -161,7 +161,7 @@ Pure computation with no side effects or runtime dependencies.
 | `MixinUtils` | `utils/canonical.py` |
 | `MixinFSMExecution` | `domain/fsm/executor.py` |
 | `MixinContractStateReducer` | `domain/fsm/contract_reducer.py` |
-| `MixinLogData` | `models/logging/` (already a model) |
+| `ModelLogData` | `models/mixins/model_log_data.py` |
 | `MixinNodeIntrospectionData` | `models/introspection/` (already a model) |
 
 ---

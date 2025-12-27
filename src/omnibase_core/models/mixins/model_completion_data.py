@@ -9,7 +9,7 @@ Canonical payload for completion events following ONEX naming conventions.
 from pydantic import BaseModel, ConfigDict, StrictBool, StrictInt, StrictStr
 
 
-class MixinCompletionData(BaseModel):
+class ModelCompletionData(BaseModel):
     """
     Canonical payload for completion events following ONEX naming conventions.
 

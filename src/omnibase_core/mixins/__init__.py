@@ -17,7 +17,7 @@ from omnibase_core.mixins.mixin_canonical_serialization import (
 from omnibase_core.mixins.mixin_cli_handler import MixinCLIHandler
 
 # Models and protocols extracted from mixin_event_bus
-from omnibase_core.mixins.mixin_completion_data import MixinCompletionData
+from omnibase_core.models.mixins.model_completion_data import ModelCompletionData
 from omnibase_core.mixins.mixin_compute_execution import MixinComputeExecution
 from omnibase_core.mixins.mixin_contract_metadata import MixinContractMetadata
 from omnibase_core.mixins.mixin_contract_state_reducer import MixinContractStateReducer
@@ -50,7 +50,10 @@ from omnibase_core.mixins.mixin_introspection_publisher import (
     MixinIntrospectionPublisher,
 )
 from omnibase_core.mixins.mixin_lazy_evaluation import MixinLazyEvaluation
-from omnibase_core.mixins.mixin_log_data import MixinLogData
+from omnibase_core.models.mixins.model_log_data import ModelLogData
+from omnibase_core.models.mixins.model_node_introspection_data import (
+    ModelNodeIntrospectionData,
+)
 from omnibase_core.mixins.mixin_node_executor import MixinNodeExecutor
 from omnibase_core.mixins.mixin_node_id_from_contract import MixinNodeIdFromContract
 from omnibase_core.mixins.mixin_node_lifecycle import MixinNodeLifecycle
@@ -96,8 +99,9 @@ __all__ = [
     "MixinToolExecution",
     "MixinWorkflowExecution",
     "MixinEventBus",
-    "MixinCompletionData",
-    "MixinLogData",
+    "ModelCompletionData",
+    "ModelLogData",
+    "ModelNodeIntrospectionData",
     "LogEmitter",
     "ProtocolEventBusRegistry",
     "MixinNodeIntrospection",

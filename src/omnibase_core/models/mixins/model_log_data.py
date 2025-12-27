@@ -8,7 +8,7 @@ Log data model for structured logging in event bus operations.
 from pydantic import BaseModel
 
 
-class MixinLogData(BaseModel):
+class ModelLogData(BaseModel):
     """Log data model for structured logging in event bus operations."""
 
     error: str | None = None
