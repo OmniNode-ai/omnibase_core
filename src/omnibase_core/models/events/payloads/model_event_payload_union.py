@@ -120,6 +120,22 @@ __all__ = [
 ]
 
 
+# Type alias for discovery event payloads (9 types)
+# These are ModelOnexEvent subclasses for service discovery events
+# Defined first for alphabetical consistency (discovery < runtime)
+ModelDiscoveryEventPayloadUnion = (
+    ModelIntrospectionResponseEvent
+    | ModelNodeHealthEvent
+    | ModelNodeIntrospectionEvent
+    | ModelNodeShutdownEvent
+    | ModelRequestIntrospectionEvent
+    | ModelToolDiscoveryRequest
+    | ModelToolDiscoveryResponse
+    | ModelToolInvocationEvent
+    | ModelToolResponseEvent
+)
+
+
 # Type alias for runtime event payloads (9 types)
 # These are ModelRuntimeEventBase subclasses for runtime lifecycle events
 ModelRuntimeEventPayloadUnion = (
@@ -132,21 +148,6 @@ ModelRuntimeEventPayloadUnion = (
     | ModelNodeGraphReadyEvent
     | ModelWiringResultEvent
     | ModelWiringErrorEvent
-)
-
-
-# Type alias for discovery event payloads (9 types)
-# These are ModelOnexEvent subclasses for service discovery events
-ModelDiscoveryEventPayloadUnion = (
-    ModelIntrospectionResponseEvent
-    | ModelNodeHealthEvent
-    | ModelNodeIntrospectionEvent
-    | ModelNodeShutdownEvent
-    | ModelRequestIntrospectionEvent
-    | ModelToolDiscoveryRequest
-    | ModelToolDiscoveryResponse
-    | ModelToolInvocationEvent
-    | ModelToolResponseEvent
 )
 
 

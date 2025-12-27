@@ -93,6 +93,10 @@ class ModelSecureCredentials(BaseModel, ABC):
 
     def _mask_if_sensitive_string(self, value: str, mask_level: str) -> str:
         """Mask string if it appears to be sensitive based on patterns."""
+        # Only check patterns for aggressive masking
+        if mask_level != "aggressive":
+            return value
+
         # Patterns that indicate sensitive data
         sensitive_patterns = [
             r"^[A-Za-z0-9+/]{40,}={0,2}$",  # Base64 encoded (likely secret)
@@ -102,10 +106,9 @@ class ModelSecureCredentials(BaseModel, ABC):
             r"-----BEGIN[^-]+-----.*-----END[^-]+-----",  # Certificate/key
         ]
 
-        if mask_level == "aggressive":
-            for pattern in sensitive_patterns:
-                if re.match(pattern, value, re.DOTALL):
-                    return self._mask_secret_value(value, mask_level)
+        for pattern in sensitive_patterns:
+            if re.match(pattern, value, re.DOTALL):
+                return self._mask_secret_value(value, mask_level)
 
         return value
 

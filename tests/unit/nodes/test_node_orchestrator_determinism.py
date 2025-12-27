@@ -323,6 +323,15 @@ class TestNodeOrchestratorDeterministicOutput:
         )
         assert result_1.metrics["failed_count"] == result_2.metrics["failed_count"]
 
+        # CRITICAL: Verify expected values to prevent tautological assertion
+        # Without these checks, the test would pass if both results are wrong
+        # or if the implementation caches results (comparing object to itself)
+        assert result_1.metrics["actions_count"] == 3, (
+            "Expected 3 actions for 3 workflow steps"
+        )
+        assert result_1.metrics["completed_count"] == 3, "Expected 3 completed steps"
+        assert result_1.metrics["failed_count"] == 0, "Expected 0 failed steps"
+
 
 @pytest.mark.timeout(60)
 @pytest.mark.unit
@@ -759,8 +768,19 @@ class TestNodeOrchestratorNoGlobalStateDependencies:
         # Run 5 times on same node
         results = [await node.process(input_data) for _ in range(5)]
 
-        # All results should match
+        # CRITICAL: Verify expected values FIRST to prevent tautological assertion
+        # Without these checks, the test would pass if all results are wrong
+        # or if the implementation caches results (comparing object to itself)
         first_result = results[0]
+        assert first_result.execution_status == "completed", (
+            "Expected workflow to complete successfully"
+        )
+        assert len(first_result.completed_steps) == 3, "Expected 3 steps to complete"
+        assert len(first_result.actions_emitted) == 3, (
+            "Expected 3 actions to be emitted"
+        )
+
+        # Now verify all results match (determinism check)
         for result in results[1:]:
             assert result.completed_steps == first_result.completed_steps
             assert result.execution_status == first_result.execution_status

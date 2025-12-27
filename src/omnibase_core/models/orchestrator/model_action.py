@@ -235,9 +235,6 @@ class ModelAction(BaseModel):
 
         Returns:
             UTC-aware datetime
-
-        Note:
-            Uses stacklevel=3 to attribute warnings to the caller, not the validator.
         """
         if v.tzinfo is None:
             # Naive datetime: assume UTC and add tzinfo

@@ -198,7 +198,9 @@ When addressing tech debt, prioritize by impact:
 
 ## Related Documentation
 
-- [Type System Architecture](./TYPE_SYSTEM.md)
+- [Payload Type Architecture](./PAYLOAD_TYPE_ARCHITECTURE.md) - Typed payload discriminated union design
+- [ModelAction Typed Payloads](./MODELACTION_TYPED_PAYLOADS.md) - Action payload implementation guide
+- [Type System Architecture](./TYPE_SYSTEM.md) - Core type patterns
 - [ModelSchemaValue Type Definition](../../src/omnibase_core/models/common/model_schema_value.py)
 - [SchemaDict and StepOutputs Type Aliases](../../src/omnibase_core/types/type_schema_aliases.py)
 - [ONEX Terminology](../standards/onex_terminology.md)

@@ -61,7 +61,7 @@ class ModelPayloadWrite(ModelIntentPayloadBase):
             the file path. For object storage, this is the object key.
         content: Content to write. Type is strictly `str` - bytes are not accepted.
             For text (JSON, YAML, plain text), pass the string directly. For binary
-            data (images, PDFs), first encode to base64 string using
+            data (images, PDFs, archives), first encode to base64 string using
             `base64.b64encode(data).decode('ascii')`.
         content_type: MIME type of the content (e.g., "application/json",
             "image/png", "application/pdf"). Used by Effect to determine if

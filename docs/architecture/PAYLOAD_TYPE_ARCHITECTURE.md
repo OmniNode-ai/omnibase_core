@@ -216,7 +216,8 @@ class ModelScheduleEffectPayload(ModelDirectivePayloadBase):
 
 **Locations**:
 
-- Base payloads: `src/omnibase_core/models/core/model_action_payload*.py`
+- Base class and types: `src/omnibase_core/models/core/model_action_payload_base.py`, `model_action_payload_types.py`
+- Specific payloads: `src/omnibase_core/models/core/model_*_action_payload.py` (e.g., `model_data_action_payload.py`, `model_lifecycle_action_payload.py`, `model_transformation_action_payload.py`, etc.)
 - Type alias and factory: `src/omnibase_core/models/orchestrator/payloads/model_action_typed_payload.py`
 
 **Rationale**:
@@ -755,6 +756,8 @@ from pydantic import BaseModel, Field
 from omnibase_core.models.common import ModelSchemaValue
 
 class ModelWebhookIntentPayload(BaseModel):
+    # NOTE: Extension Intent payloads use `intent_type` as discriminator
+    # (NOT `kind` - that's used by Core Registration Intents)
     intent_type: Literal["webhook.send"] = "webhook.send"
     url: str
     method: str = "POST"
@@ -762,7 +765,7 @@ class ModelWebhookIntentPayload(BaseModel):
 
 ExtensionIntentPayload = Annotated[
     ModelWebhookIntentPayload | ModelPluginExecutePayload,
-    Field(discriminator="intent_type"),
+    Field(discriminator="intent_type"),  # Uses intent_type, not kind
 ]
 ```
 

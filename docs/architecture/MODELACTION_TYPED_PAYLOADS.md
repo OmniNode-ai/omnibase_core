@@ -248,7 +248,8 @@ payload = create_action_payload(
 
 - **Type alias and factory**: [`model_action_typed_payload.py`](../../src/omnibase_core/models/orchestrator/payloads/model_action_typed_payload.py)
 - **Package init**: [`__init__.py`](../../src/omnibase_core/models/orchestrator/payloads/__init__.py)
-- **Base payloads**: [`model_action_payload*.py`](../../src/omnibase_core/models/core/) (includes `model_action_payload.py`, `model_action_payload_base.py`, `model_action_payload_types.py`)
+- **Base class and types**: [`model_action_payload_base.py`](../../src/omnibase_core/models/core/model_action_payload_base.py), [`model_action_payload_types.py`](../../src/omnibase_core/models/core/model_action_payload_types.py)
+- **Specific payloads**: Located in [`models/core/`](../../src/omnibase_core/models/core/) - includes `model_data_action_payload.py`, `model_lifecycle_action_payload.py`, `model_transformation_action_payload.py`, `model_validation_action_payload.py`, and others
 
 ### Test Files
 

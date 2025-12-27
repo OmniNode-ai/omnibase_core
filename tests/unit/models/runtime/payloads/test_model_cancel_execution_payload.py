@@ -30,8 +30,12 @@ class TestModelCancelExecutionPayloadDiscriminator:
         payload = ModelCancelExecutionPayload(execution_id=uuid4())
         assert payload.kind == "cancel_execution"
 
-    def test_kind_cannot_be_changed(self) -> None:
-        """Test that kind field cannot be set to different value."""
+    def test_kind_rejects_invalid_discriminator_value(self) -> None:
+        """Test that kind field rejects values other than 'cancel_execution'.
+
+        The kind field is a Literal['cancel_execution'] discriminator, so any other
+        value should be rejected by Pydantic validation.
+        """
         with pytest.raises(ValidationError):
             ModelCancelExecutionPayload(
                 execution_id=uuid4(),
@@ -224,6 +228,12 @@ class TestModelCancelExecutionPayloadImmutability:
         payload = ModelCancelExecutionPayload(execution_id=uuid4(), force=False)
         with pytest.raises(ValidationError):
             payload.force = True  # type: ignore[misc]
+
+    def test_cannot_modify_kind(self) -> None:
+        """Test that kind cannot be modified."""
+        payload = ModelCancelExecutionPayload(execution_id=uuid4())
+        with pytest.raises(ValidationError):
+            payload.kind = "other"  # type: ignore[misc]
 
 
 @pytest.mark.unit
