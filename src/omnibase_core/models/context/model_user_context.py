@@ -15,7 +15,7 @@ See Also:
     - ModelTraceContext: Distributed tracing context
 """
 
-from uuid import UUID
+import uuid
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -67,14 +67,14 @@ class ModelUserContext(BaseModel):
 
     model_config = ConfigDict(frozen=True, from_attributes=True, extra="forbid")
 
-    user_id: UUID = Field(
+    user_id: uuid.UUID = Field(
         description="Unique identifier for the authenticated user",
     )
-    session_id: UUID | None = Field(
+    session_id: uuid.UUID | None = Field(
         default=None,
         description="Unique identifier for the user's current session",
     )
-    tenant_id: UUID | None = Field(
+    tenant_id: uuid.UUID | None = Field(
         default=None,
         description="Identifier for the tenant in multi-tenant systems",
     )

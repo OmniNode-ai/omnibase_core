@@ -831,7 +831,8 @@ class TestFSMAnalysisAmbiguousTransitions:
         from_state, trigger, priority) are rejected during model validation.
         This test verifies that behavior.
         """
-        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+        # Note: Use top-level import (line 29) to avoid class identity issues
+        # in pytest-xdist parallel execution
 
         states = [
             ModelFSMStateDefinition(
