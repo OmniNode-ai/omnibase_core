@@ -101,11 +101,11 @@ class ModelReducerIntentPayload(BaseModel):
             payload = ModelReducerIntentPayload(
                 entity_type="notification",
                 operation="send",
-                data={
-                    "channel": "email",
-                    "recipient": "user@example.com",
-                    "template": "welcome_email",
-                },
+                data=(
+                    ("channel", "email"),
+                    ("recipient", "user@example.com"),
+                    ("template", "welcome_email"),
+                ),
                 idempotency_key="notif_12345",
                 timeout_ms=5000,
             )
@@ -115,10 +115,10 @@ class ModelReducerIntentPayload(BaseModel):
             payload = ModelReducerIntentPayload(
                 entity_type="validation",
                 operation="report",
-                validation_errors=[
+                validation_errors=(
                     "Field 'email' is required",
                     "Field 'age' must be >= 0",
-                ],
+                ),
             )
 
         Retry-aware payload::
@@ -126,7 +126,7 @@ class ModelReducerIntentPayload(BaseModel):
             payload = ModelReducerIntentPayload(
                 entity_type="webhook",
                 operation="send",
-                data={"url": "https://api.example.com/hook"},
+                data=(("url", "https://api.example.com/hook"),),
                 retry_count=2,
                 max_retries=5,
                 timeout_ms=10000,

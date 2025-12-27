@@ -3,12 +3,12 @@
 # SPDX-License-Identifier: Apache-2.0
 """Effect operation data context model for effect node inputs.
 
-This module provides ModelEffectOperationData, a typed context model for
+This module provides ModelEffectInputData, a typed context model for
 describing effect operation targets, parameters, and operational characteristics.
 Used as a typed context parameter in Generic patterns for effect operations.
 
 Thread Safety:
-    ModelEffectOperationData instances are immutable (frozen=True) after creation,
+    ModelEffectInputData instances are immutable (frozen=True) after creation,
     making them thread-safe for concurrent read access across multiple threads.
 
 Note:
@@ -109,9 +109,9 @@ class ModelEffectInputData(BaseModel):
 
             from omnibase_core.models.effect import ModelEffectInput
 
-            input_data = ModelEffectInput[ModelEffectOperationData](
+            input_data = ModelEffectInput[ModelEffectInputData](
                 effect_type=EnumEffectType.API_CALL,
-                operation_data=ModelEffectOperationData(
+                operation_data=ModelEffectInputData(
                     effect_type=EnumEffectType.API_CALL,
                     resource_path="https://api.example.com/users",
                     target_system="user-service",

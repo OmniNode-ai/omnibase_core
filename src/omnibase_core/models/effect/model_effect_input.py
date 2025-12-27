@@ -143,7 +143,7 @@ class ModelEffectInput(BaseModel):
         default_factory=dict,
         description=(
             "Operation payload data. Accepts ModelEffectInputData for typed effect "
-            "operations or dict[str, Any] for flexible payloads. Structure depends"
+            "operations or dict[str, Any] for flexible payloads. Structure depends "
             "on effect_type (e.g., SQL query for database, URL for API)."
         ),
     )

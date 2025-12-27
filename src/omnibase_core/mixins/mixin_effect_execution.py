@@ -447,8 +447,16 @@ class MixinEffectExecution:
         # For v1.0, we expect a single operation configuration.
         operations_config: list[ModelEffectOperationConfig] = []
 
+        # Normalize operation_data to dict for key access
+        # operation_data can be ModelEffectInputData (Pydantic model) or dict[str, Any]
+        operation_data_dict: dict[str, Any] = (
+            input_data.operation_data
+            if isinstance(input_data.operation_data, dict)
+            else input_data.operation_data.model_dump()
+        )
+
         # Check for subcontract first (preferred pattern)
-        effect_subcontract = input_data.operation_data.get("effect_subcontract")
+        effect_subcontract = operation_data_dict.get("effect_subcontract")
         if effect_subcontract is not None:
             # Subcontract can be a dict (serialized) or object with .operations attribute
             if isinstance(effect_subcontract, dict):
@@ -506,7 +514,7 @@ class MixinEffectExecution:
         # Fallback to direct operations list if subcontract not provided
         # PERFORMANCE OPTIMIZATION (PR #240): Use isinstance checks before model_dump fallback
         if not operations_config:
-            raw_operations = input_data.operation_data.get("operations", [])
+            raw_operations = operation_data_dict.get("operations", [])
             for raw_op in raw_operations:
                 if isinstance(raw_op, ModelEffectOperationConfig):
                     operations_config.append(raw_op)
@@ -719,7 +727,12 @@ class MixinEffectExecution:
             ModelOnexError: On template resolution failures or missing values.
         """
         # Resolution context
-        context_data = input_data.operation_data
+        # Normalize operation_data to dict for key access and field extraction
+        # operation_data can be ModelEffectInputData (Pydantic model) or dict
+        if isinstance(input_data.operation_data, dict):
+            context_data = input_data.operation_data
+        else:
+            context_data = input_data.operation_data.model_dump()
 
         def resolve_template(match: re.Match[str]) -> str:
             """Resolve a single ${...} placeholder."""
