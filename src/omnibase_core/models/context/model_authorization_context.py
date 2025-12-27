@@ -21,7 +21,6 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums import EnumTokenType
-from omnibase_core.utils.util_enum_normalizer import create_enum_normalizer
 
 __all__ = ["ModelAuthorizationContext"]
 
@@ -77,26 +76,44 @@ class ModelAuthorizationContext(BaseModel):
         default_factory=list,
         description="OAuth scopes",
     )
-    token_type: EnumTokenType | str | None = Field(
+    token_type: EnumTokenType | None = Field(
         default=None,
-        description="Token type (e.g., Bearer, API, JWT). Accepts EnumTokenType or string.",
+        description="Token type (e.g., Bearer, API, JWT). Must be a valid EnumTokenType value.",
     )
 
     @field_validator("token_type", mode="before")
     @classmethod
     def normalize_token_type(
         cls, v: EnumTokenType | str | None
-    ) -> EnumTokenType | str | None:
-        """Accept both enum and string values for backward compatibility.
+    ) -> EnumTokenType | None:
+        """Validate and normalize token type to EnumTokenType.
+
+        Performs strict validation: accepts EnumTokenType values or string
+        representations that match valid enum values (case-insensitive).
+        Invalid values raise ValueError.
 
         Args:
             v: The token type value, either as EnumTokenType, string, or None.
 
         Returns:
-            The normalized value - EnumTokenType if valid enum value, else the
-            original string for backward compatibility.
+            The normalized EnumTokenType value, or None if input is None.
+
+        Raises:
+            ValueError: If the string value is not a valid EnumTokenType member.
         """
-        return create_enum_normalizer(EnumTokenType)(v)
+        if v is None:
+            return None
+        if isinstance(v, EnumTokenType):
+            return v
+        if isinstance(v, str):
+            try:
+                return EnumTokenType(v.lower())
+            except ValueError:
+                valid_values = [e.value for e in EnumTokenType]
+                raise ValueError(
+                    f"Invalid token_type '{v}'. Must be one of: {valid_values}"
+                ) from None
+        raise ValueError(f"token_type must be EnumTokenType or str, got {type(v)}")
 
     expiry: str | None = Field(
         default=None,

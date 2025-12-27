@@ -19,7 +19,7 @@ See Also:
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums import EnumLikelihood
-from omnibase_core.utils.util_enum_normalizer import create_enum_normalizer
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 __all__ = ["ModelDetectionMetadata"]
 
@@ -70,15 +70,15 @@ class ModelDetectionMetadata(BaseModel):
         default=None,
         description="Source of detection",
     )
-    rule_version: str | None = Field(
+    rule_version: ModelSemVer | None = Field(
         default=None,
         description="Detection rule version",
     )
-    false_positive_likelihood: EnumLikelihood | str | None = Field(
+    false_positive_likelihood: EnumLikelihood | None = Field(
         default=None,
         description=(
             "FP likelihood (e.g., low, medium, high, very_low, very_high). "
-            "Accepts EnumLikelihood or string."
+            "Accepts EnumLikelihood enum values or valid string representations."
         ),
     )
     remediation_hint: str | None = Field(
@@ -90,14 +90,28 @@ class ModelDetectionMetadata(BaseModel):
     @classmethod
     def normalize_false_positive_likelihood(
         cls, v: EnumLikelihood | str | None
-    ) -> EnumLikelihood | str | None:
-        """Accept both enum and string values for backward compatibility.
+    ) -> EnumLikelihood | None:
+        """Normalize string values to EnumLikelihood with strict validation.
+
+        Converts valid string representations to EnumLikelihood enum values.
+        Invalid values raise ValueError to enforce type safety.
 
         Args:
             v: The likelihood value, either as EnumLikelihood, string, or None.
 
         Returns:
-            The normalized value - EnumLikelihood if valid enum value,
-            else the original string for backward compatibility.
+            The normalized EnumLikelihood value, or None if input is None.
+
+        Raises:
+            ValueError: If string value is not a valid EnumLikelihood member.
+            TypeError: If value is neither EnumLikelihood, str, nor None.
         """
-        return create_enum_normalizer(EnumLikelihood)(v)
+        if v is None:
+            return None
+        if isinstance(v, EnumLikelihood):
+            return v
+        if isinstance(v, str):
+            return EnumLikelihood(v.lower())  # Raises ValueError if invalid
+        raise TypeError(  # error-ok: Pydantic validator requires TypeError
+            f"Expected EnumLikelihood or str, got {type(v).__name__}"
+        )

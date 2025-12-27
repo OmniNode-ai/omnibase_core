@@ -1460,7 +1460,7 @@ class TestMetadataModelsCommonBehavior:
         session = ModelSessionContext(session_id="sess_123")
         http = ModelHttpRequestMetadata(method="GET")
         audit = ModelAuditMetadata(audit_id="audit_123")
-        checkpoint = ModelCheckpointMetadata(checkpoint_type="auto")
+        checkpoint = ModelCheckpointMetadata(checkpoint_type="automatic")
         detection = ModelDetectionMetadata(pattern_category="sql")
         node_init = ModelNodeInitMetadata(init_source="container")
 
@@ -1481,7 +1481,7 @@ class TestMetadataModelsCommonBehavior:
             ModelHttpRequestMetadata(method="GET"),
             ModelAuthorizationContext(roles=["user"]),
             ModelAuditMetadata(audit_id="audit_123"),
-            ModelCheckpointMetadata(checkpoint_type="auto"),
+            ModelCheckpointMetadata(checkpoint_type="automatic"),
             ModelDetectionMetadata(pattern_category="sql"),
             ModelNodeInitMetadata(init_source="container"),
         ]
@@ -1497,7 +1497,7 @@ class TestMetadataModelsCommonBehavior:
             ModelHttpRequestMetadata(method="GET"),
             ModelAuthorizationContext(roles=["user"]),
             ModelAuditMetadata(audit_id="audit_123"),
-            ModelCheckpointMetadata(checkpoint_type="auto"),
+            ModelCheckpointMetadata(checkpoint_type="automatic"),
             ModelDetectionMetadata(pattern_category="sql"),
             ModelNodeInitMetadata(init_source="container"),
         ]
@@ -1759,21 +1759,21 @@ class TestModelDetectionMetadataEnumSupport:
         )
         assert metadata.false_positive_likelihood == EnumLikelihood.VERY_LOW
 
-    def test_false_positive_likelihood_keeps_unknown_string(self) -> None:
-        """Test that unknown strings are kept for backward compatibility."""
-        metadata = ModelDetectionMetadata(
-            false_positive_likelihood="negligible",
-        )
-        assert metadata.false_positive_likelihood == "negligible"
-        assert isinstance(metadata.false_positive_likelihood, str)
+    def test_false_positive_likelihood_rejects_invalid_string(self) -> None:
+        """Test that unknown strings raise ValueError for strict validation."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelDetectionMetadata(
+                false_positive_likelihood="negligible",
+            )
+        assert "is not a valid EnumLikelihood" in str(exc_info.value)
 
     def test_false_positive_likelihood_none_allowed(self) -> None:
         """Test that false_positive_likelihood accepts None."""
         metadata = ModelDetectionMetadata(false_positive_likelihood=None)
         assert metadata.false_positive_likelihood is None
 
-    def test_existing_string_usage_still_works(self) -> None:
-        """Test backward compatibility: existing usage patterns still work."""
+    def test_string_normalization_to_enum(self) -> None:
+        """Test that valid string values are normalized to enum."""
         metadata = ModelDetectionMetadata(
             pattern_category="credential_exposure",
             detection_source="regex_scanner",

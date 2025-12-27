@@ -17,11 +17,11 @@ See Also:
 """
 
 import ipaddress
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums import EnumAuthenticationMethod
-from omnibase_core.utils.util_enum_normalizer import create_enum_normalizer
 
 __all__ = ["ModelSessionContext"]
 
@@ -67,7 +67,7 @@ class ModelSessionContext(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
-    session_id: str | None = Field(
+    session_id: UUID | None = Field(
         default=None,
         description="Session identifier",
     )
@@ -91,11 +91,11 @@ class ModelSessionContext(BaseModel):
         default=None,
         description="User locale (e.g., en-US)",
     )
-    authentication_method: EnumAuthenticationMethod | str | None = Field(
+    authentication_method: EnumAuthenticationMethod | None = Field(
         default=None,
         description=(
             "Authentication method used (e.g., oauth2, saml, basic). "
-            "Accepts EnumAuthenticationMethod or string."
+            "Must be a valid EnumAuthenticationMethod value."
         ),
     )
 
@@ -103,18 +103,39 @@ class ModelSessionContext(BaseModel):
     @classmethod
     def normalize_authentication_method(
         cls, v: EnumAuthenticationMethod | str | None
-    ) -> EnumAuthenticationMethod | str | None:
-        """Accept both enum and string values for backward compatibility.
+    ) -> EnumAuthenticationMethod | None:
+        """Validate and normalize authentication method to enum.
+
+        Accepts enum values directly or string representations (case-insensitive).
+        Invalid string values raise ValueError.
 
         Args:
             v: The authentication method value, either as EnumAuthenticationMethod,
                string, or None.
 
         Returns:
-            The normalized value - EnumAuthenticationMethod if valid enum value,
-            else the original string for backward compatibility.
+            The normalized EnumAuthenticationMethod value, or None if input is None.
+
+        Raises:
+            ValueError: If the string value is not a valid EnumAuthenticationMethod.
         """
-        return create_enum_normalizer(EnumAuthenticationMethod)(v)
+        if v is None:
+            return None
+        if isinstance(v, EnumAuthenticationMethod):
+            return v
+        if isinstance(v, str):
+            try:
+                return EnumAuthenticationMethod(v.lower())
+            except ValueError:
+                valid_values = [e.value for e in EnumAuthenticationMethod]
+                raise ValueError(
+                    f"Invalid authentication method '{v}'. "
+                    f"Must be one of: {valid_values}"
+                ) from None
+        raise ValueError(
+            f"authentication_method must be EnumAuthenticationMethod or str, "
+            f"got {type(v).__name__}"
+        )
 
     @field_validator("client_ip", mode="before")
     @classmethod

@@ -15,7 +15,7 @@ Available Context Models:
         - ModelRuntimeDirectivePayload: Runtime directive parameters
         - ModelUserContext: User and session tracking
         - ModelValidationContext: Field-level validation details
-        - ModelErrorContext: Error tracking with correlation and retry support
+        - ModelOperationalErrorContext: Error tracking with correlation and retry support
         - ModelMetricsContext: Observability and distributed tracing metadata
 
     Effect Context:
@@ -113,7 +113,6 @@ from omnibase_core.models.context.model_detection_metadata import ModelDetection
 from omnibase_core.models.context.model_effect_input_data import (
     ModelEffectInputData,
 )
-from omnibase_core.models.context.model_error_context import ModelErrorContext
 from omnibase_core.models.context.model_http_request_metadata import (
     ModelHttpRequestMetadata,
 )
@@ -123,6 +122,9 @@ from omnibase_core.models.context.model_node_init_metadata import ModelNodeInitM
 # Error/Retry context models
 from omnibase_core.models.context.model_operational_context import (
     ModelOperationalContext,
+)
+from omnibase_core.models.context.model_operational_error_context import (
+    ModelOperationalErrorContext,
 )
 from omnibase_core.models.context.model_reducer_intent_payload import (
     ModelReducerIntentPayload,
@@ -163,7 +165,7 @@ __all__ = [
     "ModelAuthorizationContext",
     "ModelCheckpointMetadata",
     "ModelDetectionMetadata",
-    "ModelErrorContext",
+    "ModelOperationalErrorContext",
     "ModelHttpRequestMetadata",
     "ModelMetricsContext",
     "ModelNodeInitMetadata",

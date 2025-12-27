@@ -1,11 +1,17 @@
 # SPDX-FileCopyrightText: 2025 OmniNode Team
 # SPDX-License-Identifier: Apache-2.0
 """
-Error context model for structured error metadata.
+Operational error context model for structured error metadata.
 
-This module provides ModelErrorContext, a typed model for error-related
+This module provides ModelOperationalErrorContext, a typed model for error-related
 metadata that supports correlation, retry logic, and categorization across
 the ONEX system.
+
+Note:
+    This was previously named ModelErrorContext but was renamed to avoid
+    filename collision with models/common/model_error_context.py which
+    contains a different model for error location context (file_path,
+    line_number, column_number).
 
 Error Code Format:
     Error codes must follow the CATEGORY_NNN pattern (e.g., AUTH_001,
@@ -17,7 +23,7 @@ Error Code Format:
     docs/conventions/ERROR_CODE_STANDARDS.md
 
 Thread Safety:
-    ModelErrorContext is immutable (frozen=True) after creation, making it
+    ModelOperationalErrorContext is immutable (frozen=True) after creation, making it
     thread-safe for concurrent read access from multiple threads or async tasks.
 
 See Also:
@@ -27,11 +33,12 @@ See Also:
 """
 
 import re
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 __all__ = [
-    "ModelErrorContext",
+    "ModelOperationalErrorContext",
     # Error code pattern (also defined in common_validators for direct use)
     "ERROR_CODE_PATTERN",
     # Error category constants
@@ -54,7 +61,7 @@ __all__ = [
 # - common_validators: For direct validation via validate_error_code()
 #
 # The duplication is intentional to avoid circular imports. The validation module
-# imports from models, and importing from validation in model_error_context would
+# imports from models, and importing from validation in model_operational_error_context would
 # create a circular dependency chain. Both patterns MUST be kept in sync.
 #
 # The pattern supports multi-character category prefixes with underscores:
@@ -62,7 +69,7 @@ __all__ = [
 # - Invalid: E001 (lint-style, no underscore), auth_001 (lowercase)
 #
 # If you need to modify this pattern, update BOTH locations:
-# 1. omnibase_core.models.context.model_error_context.ERROR_CODE_PATTERN
+# 1. omnibase_core.models.context.model_operational_error_context.ERROR_CODE_PATTERN
 # 2. omnibase_core.validation.validators.common_validators.ERROR_CODE_PATTERN
 #
 # For direct validation (not in Pydantic models), prefer using:
@@ -88,13 +95,18 @@ CLIENT_ERROR_CATEGORIES: tuple[str, ...] = (CATEGORY_VALIDATION, CATEGORY_AUTH)
 SERVER_ERROR_CATEGORIES: tuple[str, ...] = (CATEGORY_SYSTEM, CATEGORY_NETWORK)
 
 
-class ModelErrorContext(BaseModel):
-    """Context model for structured error metadata.
+class ModelOperationalErrorContext(BaseModel):
+    """Context model for structured operational error metadata.
 
     Provides consistent error tracking across the system with support for
     correlation, retry logic, and categorization. All fields are optional
     as error metadata may be partially populated depending on the error
     source and context.
+
+    Note:
+        This class was previously named ModelErrorContext but was renamed to
+        avoid confusion with omnibase_core.models.common.ModelErrorContext
+        which is used for error location context (file_path, line_number, etc.).
 
     Attributes:
         error_code: Structured error code following CATEGORY_NNN format
@@ -121,9 +133,9 @@ class ModelErrorContext(BaseModel):
         Safe for concurrent read access across threads.
 
     Example:
-        >>> from omnibase_core.models.context import ModelErrorContext
+        >>> from omnibase_core.models.context import ModelOperationalErrorContext
         >>>
-        >>> error_ctx = ModelErrorContext(
+        >>> error_ctx = ModelOperationalErrorContext(
         ...     error_code="AUTH_001",
         ...     error_category="auth",
         ...     correlation_id="req_abc123",
@@ -150,7 +162,7 @@ class ModelErrorContext(BaseModel):
         default=None,
         description="Request correlation ID for tracing",
     )
-    stack_trace_id: str | None = Field(
+    stack_trace_id: UUID | None = Field(
         default=None,
         description="Reference to stored stack trace",
     )
@@ -240,10 +252,10 @@ class ModelErrorContext(BaseModel):
             retry_count is None or >= max_retries.
 
         Example:
-            >>> ctx = ModelErrorContext(is_retryable=True, retry_count=1)
+            >>> ctx = ModelOperationalErrorContext(is_retryable=True, retry_count=1)
             >>> ctx.should_retry(max_retries=3)
             True
-            >>> ctx = ModelErrorContext(is_retryable=True, retry_count=3)
+            >>> ctx = ModelOperationalErrorContext(is_retryable=True, retry_count=3)
             >>> ctx.should_retry(max_retries=3)
             False
         """
@@ -267,7 +279,7 @@ class ModelErrorContext(BaseModel):
         Example:
             Extending client categories in a subclass::
 
-                class MyErrorContext(ModelErrorContext):
+                class MyErrorContext(ModelOperationalErrorContext):
                     @classmethod
                     def get_client_error_categories(cls) -> tuple[str, ...]:
                         return super().get_client_error_categories() + ("rate_limit",)
@@ -288,7 +300,7 @@ class ModelErrorContext(BaseModel):
         Example:
             Extending server categories in a subclass::
 
-                class MyErrorContext(ModelErrorContext):
+                class MyErrorContext(ModelOperationalErrorContext):
                     @classmethod
                     def get_server_error_categories(cls) -> tuple[str, ...]:
                         return super().get_server_error_categories() + ("database",)
@@ -312,10 +324,10 @@ class ModelErrorContext(BaseModel):
             the get_client_error_categories() class method.
 
         Example:
-            >>> ctx = ModelErrorContext(error_category="validation")
+            >>> ctx = ModelOperationalErrorContext(error_category="validation")
             >>> ctx.is_client_error()
             True
-            >>> ctx = ModelErrorContext(error_category="system")
+            >>> ctx = ModelOperationalErrorContext(error_category="system")
             >>> ctx.is_client_error()
             False
         """
@@ -338,10 +350,10 @@ class ModelErrorContext(BaseModel):
             the get_server_error_categories() class method.
 
         Example:
-            >>> ctx = ModelErrorContext(error_category="system")
+            >>> ctx = ModelOperationalErrorContext(error_category="system")
             >>> ctx.is_server_error()
             True
-            >>> ctx = ModelErrorContext(error_category="auth")
+            >>> ctx = ModelOperationalErrorContext(error_category="auth")
             >>> ctx.is_server_error()
             False
         """

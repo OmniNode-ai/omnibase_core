@@ -16,10 +16,11 @@ See Also:
     - omnibase_core.models.workflow: Workflow state models
 """
 
+from uuid import UUID
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums import EnumCheckpointType, EnumTriggerEvent
-from omnibase_core.utils.util_enum_normalizer import create_enum_normalizer
 
 __all__ = ["ModelCheckpointMetadata"]
 
@@ -49,6 +50,7 @@ class ModelCheckpointMetadata(BaseModel):
 
     Example:
         >>> from omnibase_core.models.context import ModelCheckpointMetadata
+        >>> from omnibase_core.enums import EnumCheckpointType
         >>>
         >>> checkpoint = ModelCheckpointMetadata(
         ...     checkpoint_type="automatic",
@@ -57,35 +59,35 @@ class ModelCheckpointMetadata(BaseModel):
         ...     workflow_stage="processing",
         ...     parent_checkpoint_id="chk_parent_123",
         ... )
-        >>> checkpoint.checkpoint_type
-        'automatic'
+        >>> checkpoint.checkpoint_type == EnumCheckpointType.AUTOMATIC
+        True
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
-    checkpoint_type: EnumCheckpointType | str | None = Field(
+    checkpoint_type: EnumCheckpointType | None = Field(
         default=None,
         description=(
             "Type of checkpoint (e.g., automatic, manual, recovery). "
-            "Accepts EnumCheckpointType or string."
+            "Must be a valid EnumCheckpointType value."
         ),
     )
     source_node: str | None = Field(
         default=None,
         description="Source node identifier",
     )
-    trigger_event: EnumTriggerEvent | str | None = Field(
+    trigger_event: EnumTriggerEvent | None = Field(
         default=None,
         description=(
             "Event that triggered checkpoint (e.g., stage_complete, error, timeout). "
-            "Accepts EnumTriggerEvent or string."
+            "Must be a valid EnumTriggerEvent value."
         ),
     )
     workflow_stage: str | None = Field(
         default=None,
         description="Current workflow stage",
     )
-    parent_checkpoint_id: str | None = Field(
+    parent_checkpoint_id: UUID | None = Field(
         default=None,
         description="Parent checkpoint ID",
     )
@@ -94,32 +96,70 @@ class ModelCheckpointMetadata(BaseModel):
     @classmethod
     def normalize_checkpoint_type(
         cls, v: EnumCheckpointType | str | None
-    ) -> EnumCheckpointType | str | None:
-        """Accept both enum and string values for backward compatibility.
+    ) -> EnumCheckpointType | None:
+        """Normalize and validate checkpoint type to EnumCheckpointType.
+
+        Accepts enum values directly or string representations. Strings are
+        normalized via case-insensitive matching to valid enum values.
 
         Args:
             v: The checkpoint type value, either as EnumCheckpointType,
                string, or None.
 
         Returns:
-            The normalized value - EnumCheckpointType if valid enum value,
-            else the original string for backward compatibility.
+            The EnumCheckpointType value, or None if input is None.
+
+        Raises:
+            ValueError: If the string value is not a valid EnumCheckpointType.
         """
-        return create_enum_normalizer(EnumCheckpointType)(v)
+        if v is None:
+            return None
+        if isinstance(v, EnumCheckpointType):
+            return v
+        if isinstance(v, str):
+            try:
+                return EnumCheckpointType(v.lower())
+            except ValueError:
+                valid_values = [e.value for e in EnumCheckpointType]
+                raise ValueError(
+                    f"Invalid checkpoint_type '{v}'. Must be one of: {valid_values}"
+                ) from None
+        raise ValueError(
+            f"checkpoint_type must be EnumCheckpointType or str, got {type(v)}"
+        )
 
     @field_validator("trigger_event", mode="before")
     @classmethod
     def normalize_trigger_event(
         cls, v: EnumTriggerEvent | str | None
-    ) -> EnumTriggerEvent | str | None:
-        """Accept both enum and string values for backward compatibility.
+    ) -> EnumTriggerEvent | None:
+        """Normalize and validate trigger event to EnumTriggerEvent.
+
+        Accepts enum values directly or string representations. Strings are
+        normalized via case-insensitive matching to valid enum values.
 
         Args:
             v: The trigger event value, either as EnumTriggerEvent,
                string, or None.
 
         Returns:
-            The normalized value - EnumTriggerEvent if valid enum value,
-            else the original string for backward compatibility.
+            The EnumTriggerEvent value, or None if input is None.
+
+        Raises:
+            ValueError: If the string value is not a valid EnumTriggerEvent.
         """
-        return create_enum_normalizer(EnumTriggerEvent)(v)
+        if v is None:
+            return None
+        if isinstance(v, EnumTriggerEvent):
+            return v
+        if isinstance(v, str):
+            try:
+                return EnumTriggerEvent(v.lower())
+            except ValueError:
+                valid_values = [e.value for e in EnumTriggerEvent]
+                raise ValueError(
+                    f"Invalid trigger_event '{v}'. Must be one of: {valid_values}"
+                ) from None
+        raise ValueError(
+            f"trigger_event must be EnumTriggerEvent or str, got {type(v)}"
+        )
