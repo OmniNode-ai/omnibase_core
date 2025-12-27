@@ -20,9 +20,16 @@ import re
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-# Pattern for valid error codes: UPPERCASE_CATEGORY_123 format
-# Must start with letter, contain uppercase letters/numbers, underscore(s), and end with number(s)
-ERROR_CODE_PATTERN = re.compile(r"^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*_[0-9]+$")
+# Pattern for error codes: CATEGORY_NNN format (e.g., AUTH_001, VALIDATION_123)
+#
+# IMPORTANT: This pattern is defined here AND in model_operational_error_context.py.
+# Both patterns MUST be kept in sync. See that module for detailed documentation
+# on the pattern format and rationale.
+#
+# The pattern supports multi-character category prefixes with underscores:
+# - Valid: AUTH_001, VALIDATION_123, NETWORK_TIMEOUT_001, SYSTEM_01
+# - Invalid: E001 (lint-style, no underscore), auth_001 (lowercase)
+ERROR_CODE_PATTERN = re.compile(r"^[A-Z][A-Z0-9_]*_\d{1,4}$")
 
 
 class ModelErrorContext(BaseModel):

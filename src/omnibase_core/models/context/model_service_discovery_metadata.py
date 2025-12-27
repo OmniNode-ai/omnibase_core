@@ -173,10 +173,13 @@ class ModelServiceDiscoveryMetadata(BaseModel):
             The validated protocol as a Literal type (lowercase).
 
         Raises:
+            TypeError: If the value is not a string.
             ValueError: If the value is not a valid protocol.
         """
         if not isinstance(v, str):
-            raise ValueError(f"Protocol must be a string, got {type(v).__name__}")
+            raise TypeError(  # error-ok: Pydantic validator requires TypeError for type checks
+                f"Protocol must be a string, got {type(v).__name__}"
+            )
         normalized = v.lower().strip()
         if normalized not in VALID_PROTOCOLS:
             valid_list = ", ".join(sorted(VALID_PROTOCOLS))
@@ -196,12 +199,13 @@ class ModelServiceDiscoveryMetadata(BaseModel):
             The validated URL string, or None if input is None.
 
         Raises:
+            TypeError: If the value is not a string (and not None).
             ValueError: If the value is not a valid HTTP(S) URL.
         """
         if v is None:
             return None
         if not isinstance(v, str):
-            raise ValueError(
+            raise TypeError(  # error-ok: Pydantic validator requires TypeError for type checks
                 f"Health check URL must be a string, got {type(v).__name__}"
             )
 

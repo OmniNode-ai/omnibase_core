@@ -100,6 +100,7 @@ class ModelAuthorizationContext(BaseModel):
 
         Raises:
             ValueError: If the string value is not a valid EnumTokenType member.
+            TypeError: If the value is neither EnumTokenType, str, nor None.
         """
         if v is None:
             return None
@@ -113,7 +114,9 @@ class ModelAuthorizationContext(BaseModel):
                 raise ValueError(
                     f"Invalid token_type '{v}'. Must be one of: {valid_values}"
                 ) from None
-        raise ValueError(f"token_type must be EnumTokenType or str, got {type(v)}")
+        raise TypeError(  # error-ok: Pydantic validator requires TypeError for type checks
+            f"token_type must be EnumTokenType or str, got {type(v).__name__}"
+        )
 
     expiry: str | None = Field(
         default=None,

@@ -93,6 +93,40 @@ Example:
         )
 """
 
+# Public API - placed at top for visibility (after docstring, before imports)
+__all__ = [
+    # Error/Retry context models
+    "ModelErrorContext",
+    "ModelOperationalContext",
+    "ModelResourceContext",
+    "ModelRetryContext",
+    "ModelRuntimeDirectivePayload",
+    "ModelTraceContext",
+    "ModelUserContext",
+    "ModelValidationContext",
+    # Effect context models
+    "ModelEffectInputData",
+    # Intent context models
+    "ModelReducerIntentPayload",
+    # Metadata context models
+    "ModelAuditMetadata",
+    "ModelAuthorizationContext",
+    "ModelCheckpointMetadata",
+    "ModelDetectionMetadata",
+    "ModelOperationalErrorContext",
+    "ModelHttpRequestMetadata",
+    "ModelMetricsContext",
+    "ModelNodeInitMetadata",
+    "ModelSessionContext",
+    # Action/Routing context models (OMN-1049)
+    "LoadBalanceStrategy",
+    "ModelActionExecutionContext",
+    "ModelActionParameters",
+    "ModelRoutingMetadata",
+    "ModelServiceDiscoveryMetadata",
+    "VALID_LOAD_BALANCE_STRATEGIES",
+]
+
 # Action/Routing context models (OMN-1049)
 from omnibase_core.models.context.model_action_execution_context import (
     ModelActionExecutionContext,
@@ -110,9 +144,7 @@ from omnibase_core.models.context.model_checkpoint_metadata import (
     ModelCheckpointMetadata,
 )
 from omnibase_core.models.context.model_detection_metadata import ModelDetectionMetadata
-from omnibase_core.models.context.model_effect_input_data import (
-    ModelEffectInputData,
-)
+from omnibase_core.models.context.model_effect_input_data import ModelEffectInputData
 from omnibase_core.models.context.model_http_request_metadata import (
     ModelHttpRequestMetadata,
 )
@@ -147,36 +179,3 @@ from omnibase_core.models.context.model_session_context import ModelSessionConte
 from omnibase_core.models.context.model_trace_context import ModelTraceContext
 from omnibase_core.models.context.model_user_context import ModelUserContext
 from omnibase_core.models.context.model_validation_context import ModelValidationContext
-
-__all__ = [
-    # Error/Retry context models
-    "ModelErrorContext",
-    "ModelOperationalContext",
-    "ModelResourceContext",
-    "ModelRetryContext",
-    "ModelRuntimeDirectivePayload",
-    "ModelTraceContext",
-    "ModelUserContext",
-    "ModelValidationContext",
-    # Effect context models
-    "ModelEffectInputData",
-    # Intent context models
-    "ModelReducerIntentPayload",
-    # Metadata context models
-    "ModelAuditMetadata",
-    "ModelAuthorizationContext",
-    "ModelCheckpointMetadata",
-    "ModelDetectionMetadata",
-    "ModelOperationalErrorContext",
-    "ModelHttpRequestMetadata",
-    "ModelMetricsContext",
-    "ModelNodeInitMetadata",
-    "ModelSessionContext",
-    # Action/Routing context models (OMN-1049)
-    "LoadBalanceStrategy",
-    "ModelActionExecutionContext",
-    "ModelActionParameters",
-    "ModelRoutingMetadata",
-    "ModelServiceDiscoveryMetadata",
-    "VALID_LOAD_BALANCE_STRATEGIES",
-]

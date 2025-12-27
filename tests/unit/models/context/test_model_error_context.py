@@ -22,6 +22,10 @@ from pydantic import ValidationError
 
 from omnibase_core.models.context import ModelErrorContext
 
+# Test configuration constants
+UNIT_TEST_TIMEOUT_SECONDS: int = 30
+
+
 # =============================================================================
 # Helper classes for from_attributes testing
 # =============================================================================
@@ -45,6 +49,7 @@ class ErrorContextAttrs:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(UNIT_TEST_TIMEOUT_SECONDS)
 class TestModelErrorContextInstantiation:
     """Tests for ModelErrorContext instantiation."""
 
@@ -95,6 +100,7 @@ class TestModelErrorContextInstantiation:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(UNIT_TEST_TIMEOUT_SECONDS)
 class TestModelErrorContextDefaults:
     """Tests for ModelErrorContext default values."""
 
@@ -115,6 +121,7 @@ class TestModelErrorContextDefaults:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(UNIT_TEST_TIMEOUT_SECONDS)
 class TestModelErrorContextValidation:
     """Tests for ModelErrorContext field validation."""
 
@@ -187,6 +194,7 @@ class TestModelErrorContextValidation:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(UNIT_TEST_TIMEOUT_SECONDS)
 class TestModelErrorContextShouldRetry:
     """Tests for ModelErrorContext.should_retry() method."""
 
@@ -277,6 +285,7 @@ class TestModelErrorContextShouldRetry:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(UNIT_TEST_TIMEOUT_SECONDS)
 class TestModelErrorContextIsClientError:
     """Tests for ModelErrorContext.is_client_error() method."""
 
@@ -312,6 +321,7 @@ class TestModelErrorContextIsClientError:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(UNIT_TEST_TIMEOUT_SECONDS)
 class TestModelErrorContextIsServerError:
     """Tests for ModelErrorContext.is_server_error() method."""
 
@@ -347,6 +357,7 @@ class TestModelErrorContextIsServerError:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(UNIT_TEST_TIMEOUT_SECONDS)
 class TestModelErrorContextHelperMethodsOrthogonality:
     """Tests for orthogonality of is_client_error and is_server_error."""
 
@@ -387,6 +398,7 @@ class TestModelErrorContextHelperMethodsOrthogonality:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(UNIT_TEST_TIMEOUT_SECONDS)
 class TestModelErrorContextImmutability:
     """Tests for ModelErrorContext immutability (frozen=True)."""
 
@@ -427,6 +439,7 @@ class TestModelErrorContextImmutability:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(UNIT_TEST_TIMEOUT_SECONDS)
 class TestModelErrorContextFromAttributes:
     """Tests for ModelErrorContext from_attributes=True."""
 
@@ -476,6 +489,7 @@ class TestModelErrorContextFromAttributes:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(UNIT_TEST_TIMEOUT_SECONDS)
 class TestModelErrorContextExtraForbid:
     """Tests for ModelErrorContext extra='forbid'."""
 
@@ -505,6 +519,7 @@ class TestModelErrorContextExtraForbid:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(UNIT_TEST_TIMEOUT_SECONDS)
 class TestModelErrorContextEdgeCases:
     """Tests for ModelErrorContext edge cases."""
 

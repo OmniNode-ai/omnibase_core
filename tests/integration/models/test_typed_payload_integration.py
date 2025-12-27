@@ -46,7 +46,8 @@ from uuid import uuid4
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.enums.enum_effect_types import EnumEffectType, EnumTransactionState
+from omnibase_core.enums.enum_effect_types import EnumEffectType
+from omnibase_core.enums.enum_transaction_state import EnumTransactionState
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.context import (
     ModelEffectInputData,
@@ -281,8 +282,8 @@ class TestTypedPayloadInNodeWorkflows:
         result: ModelEffectOutput = asyncio.run(effect_node.process(input_data))
 
         # Assert: Processing completed successfully
-        # Note: Compare by value since there are two EnumTransactionState definitions
-        # (enum_transaction_state.py and enum_effect_types.py)
+        # Note: Compare by value because ModelEffectOutput uses EnumTransactionState from
+        # enum_effect_types.py while test imports from canonical enum_transaction_state.py
         assert result.transaction_state.value == EnumTransactionState.COMMITTED.value
         mock_http_handler.execute.assert_called_once()
 
@@ -400,7 +401,8 @@ class TestBackwardsCompatibility:
 
         # Should process successfully
         result: ModelEffectOutput = asyncio.run(effect_node.process(input_data))
-        # Note: Compare by value since there are two EnumTransactionState definitions
+        # Note: Compare by value because ModelEffectOutput uses EnumTransactionState from
+        # enum_effect_types.py while test imports from canonical enum_transaction_state.py
         assert result.transaction_state.value == EnumTransactionState.COMMITTED.value
 
     def test_union_type_accepts_dict_and_model(self) -> None:
@@ -848,7 +850,8 @@ class TestWorkflowIntegration:
 
         result = asyncio.run(effect_node.process(input_data))
 
-        # Note: Compare by value since there are two EnumTransactionState definitions
+        # Note: Compare by value because ModelEffectOutput uses EnumTransactionState from
+        # enum_effect_types.py while test imports from canonical enum_transaction_state.py
         assert result.transaction_state.value == EnumTransactionState.COMMITTED.value
         assert result.effect_type == EnumEffectType.API_CALL
         assert result.processing_time_ms >= 0.0

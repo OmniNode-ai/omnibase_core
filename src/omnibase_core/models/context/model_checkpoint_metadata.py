@@ -111,6 +111,7 @@ class ModelCheckpointMetadata(BaseModel):
 
         Raises:
             ValueError: If the string value is not a valid EnumCheckpointType.
+            TypeError: If the value is neither EnumCheckpointType, str, nor None.
         """
         if v is None:
             return None
@@ -124,8 +125,8 @@ class ModelCheckpointMetadata(BaseModel):
                 raise ValueError(
                     f"Invalid checkpoint_type '{v}'. Must be one of: {valid_values}"
                 ) from None
-        raise ValueError(
-            f"checkpoint_type must be EnumCheckpointType or str, got {type(v)}"
+        raise TypeError(  # error-ok: Pydantic validator requires TypeError for type checks
+            f"checkpoint_type must be EnumCheckpointType or str, got {type(v).__name__}"
         )
 
     @field_validator("trigger_event", mode="before")
@@ -147,6 +148,7 @@ class ModelCheckpointMetadata(BaseModel):
 
         Raises:
             ValueError: If the string value is not a valid EnumTriggerEvent.
+            TypeError: If the value is neither EnumTriggerEvent, str, nor None.
         """
         if v is None:
             return None
@@ -160,6 +162,6 @@ class ModelCheckpointMetadata(BaseModel):
                 raise ValueError(
                     f"Invalid trigger_event '{v}'. Must be one of: {valid_values}"
                 ) from None
-        raise ValueError(
-            f"trigger_event must be EnumTriggerEvent or str, got {type(v)}"
+        raise TypeError(  # error-ok: Pydantic validator requires TypeError for type checks
+            f"trigger_event must be EnumTriggerEvent or str, got {type(v).__name__}"
         )

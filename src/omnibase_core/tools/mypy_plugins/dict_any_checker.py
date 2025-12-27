@@ -471,7 +471,9 @@ class DictAnyCheckerPlugin(Plugin):
                     if modules is not None:
                         return cast("dict[str, MypyFile]", modules)
 
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: mypy API access may fail on version differences
             pass
 
         return None
@@ -543,7 +545,7 @@ class DictAnyCheckerPlugin(Plugin):
             if isinstance(node, Decorator):
                 return node
 
-        except Exception:
+        except Exception:  # fallback-ok: symbol lookup may fail for unanalyzed code
             pass
 
         return None

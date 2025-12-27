@@ -13,7 +13,7 @@ Tests all context model functionality including:
 
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 from pydantic import ValidationError
@@ -40,6 +40,7 @@ from omnibase_core.models.context import (
     ModelUserContext,
     ModelValidationContext,
 )
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 # =============================================================================
 # Helper classes for from_attributes testing (Metadata models)
@@ -50,7 +51,7 @@ from omnibase_core.models.context import (
 class SessionContextAttrs:
     """Helper dataclass for testing from_attributes on ModelSessionContext."""
 
-    session_id: str | None = None
+    session_id: UUID | None = None
     client_ip: str | None = None
     user_agent: str | None = None
     device_fingerprint: str | None = None
@@ -664,28 +665,30 @@ class TestModelSessionContextInstantiation:
 
     def test_create_with_all_fields(self) -> None:
         """Test creating session context with all fields populated."""
+        test_session_id = uuid4()
         context = ModelSessionContext(
-            session_id="sess_abc123",
+            session_id=test_session_id,
             client_ip="192.168.1.100",
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
             device_fingerprint="fp_xyz789",
             locale="en-US",
             authentication_method="oauth2",
         )
-        assert context.session_id == "sess_abc123"
+        assert context.session_id == test_session_id
         assert context.client_ip == "192.168.1.100"
         assert context.user_agent == "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
         assert context.device_fingerprint == "fp_xyz789"
         assert context.locale == "en-US"
-        assert context.authentication_method == "oauth2"
+        assert context.authentication_method == EnumAuthenticationMethod.OAUTH2
 
     def test_create_with_partial_fields(self) -> None:
         """Test creating session context with partial fields."""
+        test_session_id = uuid4()
         context = ModelSessionContext(
-            session_id="sess_123",
+            session_id=test_session_id,
             locale="fr-FR",
         )
-        assert context.session_id == "sess_123"
+        assert context.session_id == test_session_id
         assert context.locale == "fr-FR"
         assert context.client_ip is None
         assert context.user_agent is None
@@ -712,9 +715,10 @@ class TestModelSessionContextImmutability:
 
     def test_cannot_modify_session_id(self) -> None:
         """Test that session_id cannot be modified after creation."""
-        context = ModelSessionContext(session_id="original")
+        test_session_id = uuid4()
+        context = ModelSessionContext(session_id=test_session_id)
         with pytest.raises(ValidationError):
-            context.session_id = "modified"
+            context.session_id = uuid4()
 
     def test_cannot_modify_client_ip(self) -> None:
         """Test that client_ip cannot be modified after creation."""
@@ -735,20 +739,22 @@ class TestModelSessionContextFromAttributes:
 
     def test_create_from_dataclass_with_attributes(self) -> None:
         """Test creating ModelSessionContext from an object with attributes."""
+        test_session_id = uuid4()
         attrs = SessionContextAttrs(
-            session_id="sess_from_attrs",
+            session_id=test_session_id,
             client_ip="10.0.0.1",
             locale="ja-JP",
         )
         context = ModelSessionContext.model_validate(attrs)
-        assert context.session_id == "sess_from_attrs"
+        assert context.session_id == test_session_id
         assert context.client_ip == "10.0.0.1"
         assert context.locale == "ja-JP"
 
     def test_create_from_object_with_all_attributes(self) -> None:
         """Test creating from object with all attributes populated."""
+        test_session_id = uuid4()
         attrs = SessionContextAttrs(
-            session_id="sess_full",
+            session_id=test_session_id,
             client_ip="172.16.0.1",
             user_agent="TestAgent/1.0",
             device_fingerprint="fp_test",
@@ -756,8 +762,8 @@ class TestModelSessionContextFromAttributes:
             authentication_method="saml",
         )
         context = ModelSessionContext.model_validate(attrs)
-        assert context.session_id == "sess_full"
-        assert context.authentication_method == "saml"
+        assert context.session_id == test_session_id
+        assert context.authentication_method == EnumAuthenticationMethod.SAML
 
 
 @pytest.mark.unit
@@ -768,7 +774,7 @@ class TestModelSessionContextExtraForbid:
         """Test that extra fields raise ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
             ModelSessionContext(
-                session_id="sess_123",
+                session_id=uuid4(),
                 unknown_field="should_fail",
             )
         assert "extra" in str(exc_info.value).lower()
@@ -954,12 +960,12 @@ class TestModelAuthorizationContextFromAttributes:
         attrs = AuthorizationContextAttrs(
             roles=["editor"],
             permissions=["read:all"],
-            token_type="API",
+            token_type="api_key",
         )
         context = ModelAuthorizationContext.model_validate(attrs)
         assert context.roles == ["editor"]
         assert context.permissions == ["read:all"]
-        assert context.token_type == "API"
+        assert context.token_type == EnumTokenType.API_KEY
 
 
 @pytest.mark.unit
@@ -1074,18 +1080,19 @@ class TestModelCheckpointMetadataInstantiation:
 
     def test_create_with_all_fields(self) -> None:
         """Test creating checkpoint metadata with all fields populated."""
+        parent_id = uuid4()
         metadata = ModelCheckpointMetadata(
             checkpoint_type="automatic",
             source_node="node_compute_transform",
             trigger_event="stage_complete",
             workflow_stage="processing",
-            parent_checkpoint_id="chk_parent_123",
+            parent_checkpoint_id=parent_id,
         )
-        assert metadata.checkpoint_type == "automatic"
+        assert metadata.checkpoint_type == EnumCheckpointType.AUTOMATIC
         assert metadata.source_node == "node_compute_transform"
-        assert metadata.trigger_event == "stage_complete"
+        assert metadata.trigger_event == EnumTriggerEvent.STAGE_COMPLETE
         assert metadata.workflow_stage == "processing"
-        assert metadata.parent_checkpoint_id == "chk_parent_123"
+        assert metadata.parent_checkpoint_id == parent_id
 
     def test_create_with_partial_fields(self) -> None:
         """Test creating checkpoint metadata with partial fields."""
@@ -1175,8 +1182,8 @@ class TestModelDetectionMetadataInstantiation:
         )
         assert metadata.pattern_category == "credential_exposure"
         assert metadata.detection_source == "regex_scanner"
-        assert metadata.rule_version == "2.1.0"
-        assert metadata.false_positive_likelihood == "low"
+        assert metadata.rule_version == ModelSemVer(major=2, minor=1, patch=0)
+        assert metadata.false_positive_likelihood == EnumLikelihood.LOW
         assert metadata.remediation_hint == "Rotate exposed credentials immediately"
 
     def test_create_with_partial_fields(self) -> None:
@@ -1235,7 +1242,7 @@ class TestModelDetectionMetadataFromAttributes:
         metadata = ModelDetectionMetadata.model_validate(attrs)
         assert metadata.pattern_category == "malware"
         assert metadata.detection_source == "ml_classifier"
-        assert metadata.rule_version == "3.0.0"
+        assert metadata.rule_version == ModelSemVer(major=3, minor=0, patch=0)
 
 
 @pytest.mark.unit
@@ -1457,7 +1464,7 @@ class TestMetadataModelsCommonBehavior:
 
     def test_all_models_are_hashable(self) -> None:
         """Test that all frozen models can be hashed (for use in sets/dicts)."""
-        session = ModelSessionContext(session_id="sess_123")
+        session = ModelSessionContext(session_id=uuid4())
         http = ModelHttpRequestMetadata(method="GET")
         audit = ModelAuditMetadata(audit_id="audit_123")
         checkpoint = ModelCheckpointMetadata(checkpoint_type="automatic")
@@ -1477,7 +1484,7 @@ class TestMetadataModelsCommonBehavior:
     def test_all_models_support_model_dump(self) -> None:
         """Test that all models support model_dump serialization."""
         models = [
-            ModelSessionContext(session_id="sess_123"),
+            ModelSessionContext(session_id=uuid4()),
             ModelHttpRequestMetadata(method="GET"),
             ModelAuthorizationContext(roles=["user"]),
             ModelAuditMetadata(audit_id="audit_123"),
@@ -1493,7 +1500,7 @@ class TestMetadataModelsCommonBehavior:
     def test_all_models_support_model_dump_json(self) -> None:
         """Test that all models support model_dump_json serialization."""
         models = [
-            ModelSessionContext(session_id="sess_123"),
+            ModelSessionContext(session_id=uuid4()),
             ModelHttpRequestMetadata(method="GET"),
             ModelAuthorizationContext(roles=["user"]),
             ModelAuditMetadata(audit_id="audit_123"),
@@ -1509,8 +1516,9 @@ class TestMetadataModelsCommonBehavior:
 
     def test_all_models_support_equality(self) -> None:
         """Test that models with same values are equal."""
-        session1 = ModelSessionContext(session_id="sess_123", locale="en-US")
-        session2 = ModelSessionContext(session_id="sess_123", locale="en-US")
+        test_session_id = uuid4()
+        session1 = ModelSessionContext(session_id=test_session_id, locale="en-US")
+        session2 = ModelSessionContext(session_id=test_session_id, locale="en-US")
         assert session1 == session2
 
         http1 = ModelHttpRequestMetadata(method="GET", path="/api")
@@ -1519,14 +1527,15 @@ class TestMetadataModelsCommonBehavior:
 
     def test_all_models_support_copy(self) -> None:
         """Test that models can be copied with model_copy."""
-        session = ModelSessionContext(session_id="sess_123")
+        test_session_id = uuid4()
+        session = ModelSessionContext(session_id=test_session_id)
         session_copy = session.model_copy()
         assert session == session_copy
         assert session is not session_copy
 
         # Test copy with update
         session_updated = session.model_copy(update={"locale": "fr-FR"})
-        assert session_updated.session_id == "sess_123"
+        assert session_updated.session_id == test_session_id
         assert session_updated.locale == "fr-FR"
 
 
@@ -1562,14 +1571,14 @@ class TestModelAuthorizationContextEnumSupport:
         )
         assert context.token_type == EnumTokenType.BEARER
 
-    def test_token_type_keeps_unknown_string_for_backward_compat(self) -> None:
-        """Test that unknown strings are kept as-is for backward compatibility."""
-        context = ModelAuthorizationContext(
-            token_type="CustomToken",
-        )
-        # Unknown strings are kept as-is (original case preserved)
-        assert context.token_type == "CustomToken"
-        assert isinstance(context.token_type, str)
+    def test_token_type_rejects_unknown_string(self) -> None:
+        """Test that unknown strings raise ValidationError (strict validation)."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelAuthorizationContext(
+                token_type="CustomToken",
+            )
+        # Unknown strings are rejected with a helpful error message
+        assert "Invalid token_type" in str(exc_info.value)
 
     def test_token_type_none_allowed(self) -> None:
         """Test that token_type accepts None."""
@@ -1614,13 +1623,14 @@ class TestModelSessionContextEnumSupport:
         )
         assert context.authentication_method == EnumAuthenticationMethod.SAML
 
-    def test_authentication_method_keeps_unknown_string(self) -> None:
-        """Test that unknown strings are kept for backward compatibility."""
-        context = ModelSessionContext(
-            authentication_method="custom_sso",
-        )
-        assert context.authentication_method == "custom_sso"
-        assert isinstance(context.authentication_method, str)
+    def test_authentication_method_rejects_unknown_string(self) -> None:
+        """Test that unknown strings raise ValidationError (strict validation)."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelSessionContext(
+                authentication_method="custom_sso",
+            )
+        # Unknown strings are rejected with a helpful error message
+        assert "Invalid authentication method" in str(exc_info.value)
 
     def test_authentication_method_none_allowed(self) -> None:
         """Test that authentication_method accepts None."""
@@ -1629,8 +1639,9 @@ class TestModelSessionContextEnumSupport:
 
     def test_existing_oauth2_string_still_works(self) -> None:
         """Test backward compatibility: existing usage patterns still work."""
+        test_session_id = uuid4()
         context = ModelSessionContext(
-            session_id="sess_123",
+            session_id=test_session_id,
             authentication_method="oauth2",
         )
         assert context.authentication_method == EnumAuthenticationMethod.OAUTH2
@@ -1662,12 +1673,14 @@ class TestModelCheckpointMetadataEnumSupport:
         )
         assert metadata.checkpoint_type == EnumCheckpointType.MANUAL
 
-    def test_checkpoint_type_keeps_unknown_string(self) -> None:
-        """Test that unknown strings are kept for backward compatibility."""
-        metadata = ModelCheckpointMetadata(
-            checkpoint_type="custom_checkpoint",
-        )
-        assert metadata.checkpoint_type == "custom_checkpoint"
+    def test_checkpoint_type_rejects_unknown_string(self) -> None:
+        """Test that unknown strings raise ValidationError (strict validation)."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelCheckpointMetadata(
+                checkpoint_type="custom_checkpoint",
+            )
+        # Unknown strings are rejected with a helpful error message
+        assert "Invalid checkpoint_type" in str(exc_info.value)
 
     def test_trigger_event_accepts_enum_value(self) -> None:
         """Test that trigger_event accepts EnumTriggerEvent directly."""
@@ -1691,12 +1704,14 @@ class TestModelCheckpointMetadataEnumSupport:
         )
         assert metadata.trigger_event == EnumTriggerEvent.ERROR
 
-    def test_trigger_event_keeps_unknown_string(self) -> None:
-        """Test that unknown trigger events are kept for backward compatibility."""
-        metadata = ModelCheckpointMetadata(
-            trigger_event="custom_trigger",
-        )
-        assert metadata.trigger_event == "custom_trigger"
+    def test_trigger_event_rejects_unknown_string(self) -> None:
+        """Test that unknown strings raise ValidationError (strict validation)."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelCheckpointMetadata(
+                trigger_event="custom_trigger",
+            )
+        # Unknown strings are rejected with a helpful error message
+        assert "Invalid trigger_event" in str(exc_info.value)
 
     def test_both_fields_accept_none(self) -> None:
         """Test that both fields accept None."""
