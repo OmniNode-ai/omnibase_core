@@ -932,7 +932,6 @@ class TestNodeOrchestratorStateSerializationDeterminism:
         # Without this check, a broken hash returning None/empty would pass
         assert original_hash is not None, "Hash should not be None"
         assert original_hash != "", "Hash should not be empty"
-        assert len(original_hash) > 0, "Hash should have content"
 
         # Serialize and deserialize to create a NEW object with same content
         serialized = simple_workflow_definition.model_dump()
@@ -1030,7 +1029,6 @@ class TestNodeOrchestratorStateSerializationDeterminism:
         # Verify hashes are meaningful (not None or empty)
         assert hash_1 is not None, "Hash should not be None"
         assert hash_1 != "", "Hash should not be empty"
-        assert len(hash_1) > 0, "Hash should have content"
 
         # Equivalent definitions should produce same hash
         assert hash_1 == hash_2, (

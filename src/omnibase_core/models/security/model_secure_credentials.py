@@ -236,7 +236,6 @@ class ModelSecureCredentials(BaseModel, ABC):
                 try:
                     # Attempt to set the field value
                     if hasattr(self, field_name):
-                        self.__class__.model_fields[field_name]
                         if isinstance(getattr(self, field_name), SecretStr):
                             setattr(self, field_name, SecretStr(env_value))
                         else:

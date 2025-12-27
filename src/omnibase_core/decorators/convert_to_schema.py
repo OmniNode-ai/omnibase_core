@@ -413,15 +413,34 @@ def _convert_dict_value(
             ) from e
 
     # If we found a non-None value and it's already a ModelSchemaValue,
-    # assume the dict is already converted (homogeneous assumption)
+    # assume the dict is already converted (homogeneous assumption).
+    # However, we still need to convert any None values to ModelSchemaValue.
     if isinstance(first_non_none_value, schema_cls):
+        # Check if there are any None values that need conversion
+        has_none_values = any(v is None for v in value.values())
+        if has_none_values:
+            # Convert None values while preserving already-converted values
+            return {
+                k: schema_cls.from_value(v) if v is None else v
+                for k, v in value.items()
+            }
         return value
 
     # Check if first non-None value is a serialized ModelSchemaValue dict
     # (from model_dump round-trip). If so, let Pydantic handle deserialization.
+    # However, we still need to convert any None values to ModelSchemaValue
+    # since raw None cannot be deserialized by Pydantic into ModelSchemaValue.
     if isinstance(first_non_none_value, dict) and _is_serialized_schema_value(
         first_non_none_value
     ):
+        # Check if there are any None values that need conversion
+        has_none_values = any(v is None for v in value.values())
+        if has_none_values:
+            # Convert None values while preserving already-serialized values
+            return {
+                k: schema_cls.from_value(v) if v is None else v
+                for k, v in value.items()
+            }
         return value
 
     # Convert raw values to ModelSchemaValue
