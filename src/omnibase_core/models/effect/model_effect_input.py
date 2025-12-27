@@ -56,7 +56,7 @@ See Also:
     - docs/guides/node-building/04_EFFECT_NODE_TUTORIAL.md: Effect node tutorial
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any, Self
 from uuid import UUID, uuid4
 
@@ -107,7 +107,7 @@ class ModelEffectInput(BaseModel):
             Operations exceeding this timeout are cancelled. Defaults to 30000 (30 seconds).
         metadata: Typed metadata for tracking, tracing, correlation, and operation context.
             Includes fields like trace_id, correlation_id, environment, tags, and priority.
-        timestamp: When this input was created. Auto-generated to current time.
+        timestamp: When this input was created. Auto-generated to current UTC time.
 
     Example:
         Untyped usage (backwards compatible)::
@@ -171,8 +171,8 @@ class ModelEffectInput(BaseModel):
         ),
     )
     timestamp: datetime = Field(
-        default_factory=datetime.now,
-        description="When this input was created. Auto-generated to current time.",
+        default_factory=lambda: datetime.now(UTC),
+        description="When this input was created. Auto-generated to current UTC time.",
     )
 
     @model_validator(mode="after")

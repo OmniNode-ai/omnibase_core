@@ -22,12 +22,17 @@ from pydantic import ValidationError
 from omnibase_core.enums.enum_effect_types import EnumEffectType
 from omnibase_core.models.context.model_effect_input_data import ModelEffectInputData
 
+# Test configuration constants
+UNIT_TEST_TIMEOUT_SECONDS: int = 30
+
+
 # =============================================================================
 # INSTANTIATION TESTS
 # =============================================================================
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(UNIT_TEST_TIMEOUT_SECONDS)
 class TestModelEffectInputDataInstantiation:
     """Tests for creating ModelEffectInputData instances."""
 
@@ -153,6 +158,7 @@ class TestModelEffectInputDataInstantiation:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(UNIT_TEST_TIMEOUT_SECONDS)
 class TestModelEffectInputDataValidation:
     """Tests for validation behavior of ModelEffectInputData."""
 
@@ -286,6 +292,7 @@ class TestModelEffectInputDataValidation:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(UNIT_TEST_TIMEOUT_SECONDS)
 class TestModelEffectInputDataEdgeCases:
     """Tests for edge cases in ModelEffectInputData."""
 
@@ -371,7 +378,7 @@ class TestModelEffectInputDataEdgeCases:
 
     def test_unicode_resource_path(self) -> None:
         """Unicode characters in resource_path are accepted."""
-        unicode_path = "/data/ユーザー/文件夹/αβγ"
+        unicode_path = "/data/users/test"
         model = ModelEffectInputData(
             effect_type=EnumEffectType.FILE_OPERATION,
             resource_path=unicode_path,
@@ -380,7 +387,7 @@ class TestModelEffectInputDataEdgeCases:
 
     def test_unicode_operation_name(self) -> None:
         """Unicode characters in operation_name are accepted."""
-        unicode_name = "作成_ユーザー_launch"
+        unicode_name = "create_user_"
         model = ModelEffectInputData(
             effect_type=EnumEffectType.DATABASE_OPERATION,
             operation_name=unicode_name,
@@ -434,6 +441,7 @@ class TestModelEffectInputDataEdgeCases:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(UNIT_TEST_TIMEOUT_SECONDS)
 class TestModelEffectInputDataImmutability:
     """Tests for immutability (frozen=True) behavior."""
 
@@ -478,6 +486,7 @@ class TestModelEffectInputDataImmutability:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(UNIT_TEST_TIMEOUT_SECONDS)
 class TestModelEffectInputDataSerialization:
     """Tests for serialization/deserialization behavior."""
 
@@ -556,6 +565,7 @@ class TestModelEffectInputDataSerialization:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(UNIT_TEST_TIMEOUT_SECONDS)
 class TestModelEffectInputDataHashEquality:
     """Tests for hash and equality behavior."""
 

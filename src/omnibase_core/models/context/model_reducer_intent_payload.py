@@ -64,14 +64,16 @@ class ModelReducerIntentPayload(BaseModel):
             Used for transition validation and audit logging.
         trigger: Event or action that triggered this intent. Corresponds to
             FSM trigger names for state machine intents.
-        entity_id: Identifier of the entity being operated on (e.g., user_id,
+        entity_id: UUID identifying the entity being operated on (e.g., user_id,
             workflow_id, resource_id).
         entity_type: Type classification of the entity (e.g., "user", "workflow",
             "resource") for routing and processing.
         operation: Specific operation to perform (e.g., "create", "update",
             "delete", "validate", "transform").
-        data: Core payload data as serializable key-value pairs. Use for
-            intent-specific data that doesn't fit other fields.
+        data: Core payload data as immutable key-value pairs (tuple of tuples,
+            NOT a dict). Type is tuple[tuple[str, SerializableValue], ...].
+            Use for intent-specific data that doesn't fit other fields.
+            Use get_data_as_dict() to convert to dict when needed.
         validation_errors: List of validation error messages when the intent
             relates to validation failures or feedback.
         idempotency_key: Client-provided key for idempotent processing. Effects
@@ -100,10 +102,11 @@ class ModelReducerIntentPayload(BaseModel):
 
         Side effect payload (notification)::
 
+            # Note: data is tuple of tuples, NOT a dict (immutable by design)
             payload = ModelReducerIntentPayload(
                 entity_type="notification",
                 operation="send",
-                data=(
+                data=(  # tuple[tuple[str, SerializableValue], ...]
                     ("channel", "email"),
                     ("recipient", "user@example.com"),
                     ("template", "welcome_email"),
@@ -128,7 +131,7 @@ class ModelReducerIntentPayload(BaseModel):
             payload = ModelReducerIntentPayload(
                 entity_type="webhook",
                 operation="send",
-                data=(("url", "https://api.example.com/hook"),),
+                data=(("url", "https://api.example.com/hook"),),  # tuple of tuples
                 retry_count=2,
                 max_retries=5,
                 timeout_ms=10000,
@@ -165,7 +168,7 @@ class ModelReducerIntentPayload(BaseModel):
     # Entity identification
     entity_id: UUID | None = Field(
         default=None,
-        description="Identifier of the entity being operated on",
+        description="UUID identifying the entity being operated on",
     )
     entity_type: str | None = Field(
         default=None,
