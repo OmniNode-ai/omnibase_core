@@ -7,6 +7,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.constants import MAX_ERROR_MESSAGE_LENGTH
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 from omnibase_core.models.core.model_error_summary import ModelErrorSummary
@@ -54,7 +55,7 @@ class ModelEventBusOutputState(BaseModel):
         default=...,
         description="Human-readable result message with details",
         min_length=1,
-        max_length=2000,
+        max_length=MAX_ERROR_MESSAGE_LENGTH,
     )
     output_field: ModelEventBusOutputField | None = Field(
         default=None, description="Canonical output field with processing results"

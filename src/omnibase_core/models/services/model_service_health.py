@@ -12,6 +12,7 @@ from urllib.parse import urlparse
 
 from pydantic import BaseModel, Field, field_validator
 
+from omnibase_core.constants import MAX_DESCRIPTION_LENGTH, MAX_IDENTIFIER_LENGTH
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_service_health_status import EnumServiceHealthStatus
 from omnibase_core.enums.enum_service_type import EnumServiceType
@@ -47,7 +48,7 @@ class ModelServiceHealth(BaseModel):
         default=...,
         description="Name of the external service",
         min_length=1,
-        max_length=100,
+        max_length=MAX_IDENTIFIER_LENGTH,
     )
 
     service_type: EnumServiceType = Field(
@@ -69,7 +70,7 @@ class ModelServiceHealth(BaseModel):
     error_message: str | None = Field(
         default=None,
         description="Detailed error message if service is unhealthy",
-        max_length=1000,
+        max_length=MAX_DESCRIPTION_LENGTH,
     )
 
     error_code: str | None = Field(
