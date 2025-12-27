@@ -57,10 +57,10 @@ See Also:
 """
 
 from datetime import datetime
-from typing import Any
+from typing import Any, Self
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.enums.enum_effect_types import EnumEffectType
 from omnibase_core.models.context import ModelEffectInputData
@@ -147,15 +147,75 @@ class ModelEffectInput(BaseModel):
             "on effect_type (e.g., SQL query for database, URL for API)."
         ),
     )
-    operation_id: UUID = Field(default_factory=uuid4)
+    operation_id: UUID = Field(
+        default_factory=uuid4,
+        description=(
+            "Unique identifier for tracking this operation. Auto-generated UUID "
+            "by default. Used for correlation and idempotency."
+        ),
+    )
     transaction_enabled: bool = True
     retry_enabled: bool = True
     max_retries: int = 3
     retry_delay_ms: int = 1000
     circuit_breaker_enabled: bool = False
     timeout_ms: int = 30000
-    metadata: ModelEffectMetadata = Field(default_factory=ModelEffectMetadata)
-    timestamp: datetime = Field(default_factory=datetime.now)
+    metadata: ModelEffectMetadata = Field(
+        default_factory=ModelEffectMetadata,
+        description=(
+            "Typed metadata for tracking, tracing, correlation, and operation "
+            "context. Includes fields like trace_id, correlation_id, environment, "
+            "tags, and priority."
+        ),
+    )
+    timestamp: datetime = Field(
+        default_factory=datetime.now,
+        description="When this input was created. Auto-generated to current time.",
+    )
+
+    @model_validator(mode="after")
+    def _validate_effect_type_consistency(self) -> Self:
+        """Validate effect_type consistency between parent and operation_data.
+
+        When operation_data is a typed ModelEffectInputData (not a dict), its
+        effect_type must match the parent effect_type. This prevents confusing
+        bugs where routing decisions (based on parent effect_type) conflict with
+        the actual data structure (based on nested effect_type).
+
+        Returns:
+            Self for method chaining.
+
+        Raises:
+            ValueError: If operation_data.effect_type differs from parent effect_type.
+
+        Example:
+            # Valid - both effect_types match:
+            ModelEffectInput(
+                effect_type=EnumEffectType.API_CALL,
+                operation_data=ModelEffectInputData(
+                    effect_type=EnumEffectType.API_CALL,  # Matches parent
+                    resource_path="https://api.example.com",
+                ),
+            )
+
+            # Invalid - mismatched effect_types raise ValueError:
+            ModelEffectInput(
+                effect_type=EnumEffectType.API_CALL,
+                operation_data=ModelEffectInputData(
+                    effect_type=EnumEffectType.DATABASE_OPERATION,  # Mismatch!
+                ),
+            )
+        """
+        if isinstance(self.operation_data, ModelEffectInputData):
+            if self.operation_data.effect_type != self.effect_type:
+                raise ValueError(
+                    f"effect_type mismatch: parent effect_type is "
+                    f"{self.effect_type.value!r} but operation_data.effect_type is "
+                    f"{self.operation_data.effect_type.value!r}. When using typed "
+                    f"ModelEffectInputData, both effect_type fields must match to "
+                    f"ensure consistent routing and data handling."
+                )
+        return self
 
 
 __all__ = ["ModelEffectInput"]

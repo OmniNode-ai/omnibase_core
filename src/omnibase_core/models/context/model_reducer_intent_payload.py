@@ -36,6 +36,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.types.type_serializable_value import SerializableValue
 
+__all__ = ["ModelReducerIntentPayload"]
+
 
 class ModelReducerIntentPayload(BaseModel):
     """Typed payload for reducer intents (FSM state transitions and side effects).
@@ -193,7 +195,7 @@ class ModelReducerIntentPayload(BaseModel):
     # Execution control
     idempotency_key: str | None = Field(
         default=None,
-        description="Client-provided key for idempotent processing",
+        description="Key for idempotent operations (duplicates with same key are deduplicated)",
         min_length=1,
         max_length=256,
     )

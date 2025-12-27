@@ -134,14 +134,14 @@ class ModelEffectInputData(BaseModel):
     effect_type: EnumEffectType = Field(
         description=(
             "Type of side effect operation (DATABASE_OPERATION, API_CALL, "
-            "FILE_OPERATION, etc.). Determines handler routing."
+            "FILE_OPERATION, etc.) that determines handler routing"
         ),
     )
     resource_path: str | None = Field(
         default=None,
         description=(
-            "Target resource path or URI for the effect operation. "
-            "Interpretation depends on effect_type (file path, URL, table name, etc.)."
+            "Target resource path or URI for the effect operation "
+            "(interpretation depends on effect_type: file path, URL, table name, etc.)"
         ),
         max_length=4096,
     )
@@ -149,43 +149,31 @@ class ModelEffectInputData(BaseModel):
         default=None,
         description=(
             "Identifier for the target external system (e.g., 'postgres', 's3', "
-            "'kafka', 'rest-api'). Used for routing and monitoring."
+            "'kafka', 'rest-api') used for routing and monitoring"
         ),
         max_length=256,
     )
     idempotency_key: str | None = Field(
         default=None,
-        description=(
-            "Key for idempotent operations. Duplicate operations with the same "
-            "key are safely deduplicated."
-        ),
+        description="Key for idempotent operations (duplicates with same key are deduplicated)",
         max_length=512,
     )
     operation_name: str | None = Field(
         default=None,
-        description=(
-            "Human-readable name for the operation. Used for logging, tracing, "
-            "and monitoring dashboards."
-        ),
+        description="Human-readable name for the operation used in logging and tracing",
         max_length=256,
     )
     resource_id: UUID | None = Field(
         default=None,
-        description=(
-            "UUID identifying a specific resource being operated on. "
-            "Useful for audit trails and cross-referencing."
-        ),
+        description="UUID identifying the specific resource being operated on",
     )
     content_type: str | None = Field(
         default=None,
-        description=(
-            "MIME type or content type hint for the operation payload "
-            "(e.g., 'application/json', 'text/plain')."
-        ),
+        description="MIME type or content type hint for the operation payload (e.g., 'application/json')",
         max_length=256,
     )
     encoding: str | None = Field(
         default=None,
-        description="Character encoding for text-based operations (e.g., 'utf-8').",
+        description="Character encoding for text-based operations (e.g., 'utf-8')",
         max_length=64,
     )
