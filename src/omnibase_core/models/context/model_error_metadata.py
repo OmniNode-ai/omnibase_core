@@ -33,6 +33,7 @@ See Also:
 """
 
 import re
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -161,7 +162,7 @@ class ModelErrorMetadata(BaseModel):
         default=None,
         description="Request correlation ID for tracing",
     )
-    stack_trace_id: str | None = Field(
+    stack_trace_id: UUID | None = Field(
         default=None,
         description="Reference to stored stack trace",
     )

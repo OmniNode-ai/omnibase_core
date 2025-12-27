@@ -17,6 +17,7 @@ See Also:
 """
 
 import ipaddress
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -67,7 +68,7 @@ class ModelSessionContext(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
-    session_id: str | None = Field(
+    session_id: UUID | None = Field(
         default=None,
         description="Session identifier",
     )

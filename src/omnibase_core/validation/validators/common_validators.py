@@ -49,6 +49,8 @@ from typing import Annotated
 
 from pydantic import AfterValidator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors import OnexError
 from omnibase_core.utils.util_enum_normalizer import create_enum_normalizer
 
 # =============================================================================
@@ -114,18 +116,18 @@ def validate_duration(value: str) -> str:
     """
     if not value:
         msg = "Duration cannot be empty"
-        raise ValueError(msg)
+        raise OnexError(message=msg, error_code=EnumCoreErrorCode.VALIDATION_ERROR)
 
     match = _ISO8601_DURATION_PATTERN.match(value)
     if not match:
         msg = f"Invalid ISO 8601 duration format: '{value}'"
-        raise ValueError(msg)
+        raise OnexError(message=msg, error_code=EnumCoreErrorCode.VALIDATION_ERROR)
 
     # Check that at least one component is present (not just "P" or "PT")
     groups = match.groups()
     if not any(groups):
         msg = f"Duration must specify at least one time component: '{value}'"
-        raise ValueError(msg)
+        raise OnexError(message=msg, error_code=EnumCoreErrorCode.VALIDATION_ERROR)
 
     # Per ISO 8601, weeks cannot be combined with other date/time components
     # groups: (years, months, weeks, days, hours, minutes, seconds)
@@ -135,7 +137,7 @@ def validate_duration(value: str) -> str:
 
     if weeks and (has_other_date or has_time):
         msg = f"Invalid ISO 8601 duration '{value}': weeks (W) cannot be combined with other components"
-        raise ValueError(msg)
+        raise OnexError(message=msg, error_code=EnumCoreErrorCode.VALIDATION_ERROR)
 
     return value
 
@@ -200,12 +202,12 @@ def validate_bcp47_locale(value: str) -> str:
     """
     if not value:
         msg = "Locale cannot be empty"
-        raise ValueError(msg)
+        raise OnexError(message=msg, error_code=EnumCoreErrorCode.VALIDATION_ERROR)
 
     match = _BCP47_LOCALE_PATTERN.match(value)
     if not match:
         msg = f"Invalid BCP 47 locale format: '{value}'"
-        raise ValueError(msg)
+        raise OnexError(message=msg, error_code=EnumCoreErrorCode.VALIDATION_ERROR)
 
     return value
 
@@ -253,12 +255,12 @@ def validate_uuid(value: str) -> str:
     """
     if not value:
         msg = "UUID cannot be empty"
-        raise ValueError(msg)
+        raise OnexError(message=msg, error_code=EnumCoreErrorCode.VALIDATION_ERROR)
 
     match = _UUID_PATTERN.match(value)
     if not match:
         msg = f"Invalid UUID format: '{value}'"
-        raise ValueError(msg)
+        raise OnexError(message=msg, error_code=EnumCoreErrorCode.VALIDATION_ERROR)
 
     # Normalize to lowercase with hyphens
     groups = match.groups()
@@ -318,12 +320,12 @@ def validate_semantic_version(value: str) -> str:
     """
     if not value:
         msg = "Version cannot be empty"
-        raise ValueError(msg)
+        raise OnexError(message=msg, error_code=EnumCoreErrorCode.VALIDATION_ERROR)
 
     match = _SEMVER_PATTERN.match(value)
     if not match:
         msg = f"Invalid semantic version format: '{value}'"
-        raise ValueError(msg)
+        raise OnexError(message=msg, error_code=EnumCoreErrorCode.VALIDATION_ERROR)
 
     return value
 
@@ -399,7 +401,7 @@ def validate_error_code(value: str) -> str:
     """
     if not value:
         msg = "Error code cannot be empty"
-        raise ValueError(msg)
+        raise OnexError(message=msg, error_code=EnumCoreErrorCode.VALIDATION_ERROR)
 
     if not ERROR_CODE_PATTERN.match(value):
         msg = (
@@ -407,7 +409,7 @@ def validate_error_code(value: str) -> str:
             "Expected CATEGORY_NNN pattern (e.g., AUTH_001, VALIDATION_123). "
             "For lint-style short codes (W001, E001), use workflow_linter module."
         )
-        raise ValueError(msg)
+        raise OnexError(message=msg, error_code=EnumCoreErrorCode.VALIDATION_ERROR)
 
     return value
 

@@ -16,6 +16,8 @@ See Also:
     - omnibase_core.models.workflow: Workflow state models
 """
 
+from uuid import UUID
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums import EnumCheckpointType, EnumTriggerEvent
@@ -85,7 +87,7 @@ class ModelCheckpointMetadata(BaseModel):
         default=None,
         description="Current workflow stage",
     )
-    parent_checkpoint_id: str | None = Field(
+    parent_checkpoint_id: UUID | None = Field(
         default=None,
         description="Parent checkpoint ID",
     )

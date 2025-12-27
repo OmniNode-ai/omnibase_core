@@ -16,6 +16,7 @@ covering:
 """
 
 from dataclasses import dataclass
+from uuid import UUID, uuid4
 
 import pytest
 from pydantic import ValidationError
@@ -34,7 +35,7 @@ class ErrorMetadataAttrs:
     error_code: str | None = None
     error_category: str | None = None
     correlation_id: str | None = None
-    stack_trace_id: str | None = None
+    stack_trace_id: UUID | None = None
     retry_count: int | None = None
     is_retryable: bool | None = None
 
@@ -50,18 +51,19 @@ class TestModelErrorMetadataInstantiation:
 
     def test_create_with_all_fields(self) -> None:
         """Test creating error metadata with all fields populated."""
+        stack_trace_uuid = uuid4()
         metadata = ModelErrorMetadata(
             error_code="AUTH_001",
             error_category="auth",
             correlation_id="req_abc123",
-            stack_trace_id="trace_xyz789",
+            stack_trace_id=stack_trace_uuid,
             retry_count=2,
             is_retryable=True,
         )
         assert metadata.error_code == "AUTH_001"
         assert metadata.error_category == "auth"
         assert metadata.correlation_id == "req_abc123"
-        assert metadata.stack_trace_id == "trace_xyz789"
+        assert metadata.stack_trace_id == stack_trace_uuid
         assert metadata.retry_count == 2
         assert metadata.is_retryable is True
 
@@ -444,11 +446,12 @@ class TestModelErrorMetadataFromAttributes:
 
     def test_create_from_object_with_all_attributes(self) -> None:
         """Test creating from object with all attributes populated."""
+        stack_trace_uuid = uuid4()
         attrs = ErrorMetadataAttrs(
             error_code="SYSTEM_500",
             error_category="system",
             correlation_id="req_full",
-            stack_trace_id="trace_full",
+            stack_trace_id=stack_trace_uuid,
             retry_count=3,
             is_retryable=False,
         )
@@ -456,7 +459,7 @@ class TestModelErrorMetadataFromAttributes:
         assert metadata.error_code == "SYSTEM_500"
         assert metadata.error_category == "system"
         assert metadata.correlation_id == "req_full"
-        assert metadata.stack_trace_id == "trace_full"
+        assert metadata.stack_trace_id == stack_trace_uuid
         assert metadata.retry_count == 3
         assert metadata.is_retryable is False
 
