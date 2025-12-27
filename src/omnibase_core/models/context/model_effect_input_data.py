@@ -29,6 +29,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_effect_types import EnumEffectType
 
+__all__ = ["ModelEffectInputData"]
+
 
 class ModelEffectInputData(BaseModel):
     """Typed context for effect operation data.
@@ -187,6 +189,3 @@ class ModelEffectInputData(BaseModel):
         description="Character encoding for text-based operations (e.g., 'utf-8').",
         max_length=64,
     )
-
-
-__all__ = ["ModelEffectInputData"]

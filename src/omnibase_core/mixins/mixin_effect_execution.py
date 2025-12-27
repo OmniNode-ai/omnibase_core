@@ -154,6 +154,7 @@ from omnibase_core.constants.constants_effect import (
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_effect_types import EnumTransactionState
 from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
+from omnibase_core.models.context import ModelEffectInputData
 from omnibase_core.models.contracts.subcontracts.model_effect_io_configs import (
     EffectIOConfig,
     ModelDbIOConfig,
@@ -448,12 +449,7 @@ class MixinEffectExecution:
         operations_config: list[ModelEffectOperationConfig] = []
 
         # Normalize operation_data to dict for key access
-        # operation_data can be ModelEffectInputData (Pydantic model) or dict[str, Any]
-        operation_data_dict: dict[str, Any] = (
-            input_data.operation_data
-            if isinstance(input_data.operation_data, dict)
-            else input_data.operation_data.model_dump()
-        )
+        operation_data_dict = self._normalize_operation_data(input_data.operation_data)
 
         # Check for subcontract first (preferred pattern)
         effect_subcontract = operation_data_dict.get("effect_subcontract")
@@ -726,13 +722,8 @@ class MixinEffectExecution:
         Raises:
             ModelOnexError: On template resolution failures or missing values.
         """
-        # Resolution context
-        # Normalize operation_data to dict for key access and field extraction
-        # operation_data can be ModelEffectInputData (Pydantic model) or dict
-        if isinstance(input_data.operation_data, dict):
-            context_data = input_data.operation_data
-        else:
-            context_data = input_data.operation_data.model_dump()
+        # Resolution context - normalize operation_data to dict for field extraction
+        context_data = self._normalize_operation_data(input_data.operation_data)
 
         def resolve_template(match: re.Match[str]) -> str:
             """Resolve a single ${...} placeholder."""
@@ -1079,6 +1070,26 @@ class MixinEffectExecution:
 
         # Return as string
         return value
+
+    @allow_dict_any
+    def _normalize_operation_data(
+        self, operation_data: ModelEffectInputData | dict[str, Any]
+    ) -> dict[str, Any]:
+        """Normalize operation_data to dict for key access.
+
+        This helper consolidates the repeated pattern of converting operation_data
+        (which can be either a ModelEffectInputData Pydantic model or a dict) into
+        a dict for uniform key access during template resolution and field extraction.
+
+        Args:
+            operation_data: Either a ModelEffectInputData model or a dict.
+
+        Returns:
+            dict[str, Any]: The operation data as a dictionary.
+        """
+        if isinstance(operation_data, dict):
+            return operation_data
+        return operation_data.model_dump()
 
     async def _execute_with_retry(
         self,
