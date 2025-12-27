@@ -28,6 +28,7 @@ from omnibase_core.models.context.model_reducer_intent_payload import (
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelReducerIntentPayloadInstantiation:
     """Tests for creating ModelReducerIntentPayload instances."""
 
@@ -143,6 +144,7 @@ class TestModelReducerIntentPayloadInstantiation:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelReducerIntentPayloadValidation:
     """Tests for validation behavior of ModelReducerIntentPayload."""
 
@@ -303,6 +305,7 @@ class TestModelReducerIntentPayloadValidation:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelReducerIntentPayloadEdgeCases:
     """Tests for edge cases in ModelReducerIntentPayload."""
 
@@ -347,19 +350,19 @@ class TestModelReducerIntentPayloadEdgeCases:
 
     def test_unicode_in_target_state(self) -> None:
         """Unicode characters in target_state are accepted."""
-        unicode_state = "active"
+        unicode_state = "حالة_نشطة"
         model = ModelReducerIntentPayload(target_state=unicode_state)
         assert model.target_state == unicode_state
 
     def test_unicode_in_trigger(self) -> None:
         """Unicode characters in trigger are accepted."""
-        unicode_trigger = "event"
+        unicode_trigger = "δημιουργία_γεγονός"
         model = ModelReducerIntentPayload(trigger=unicode_trigger)
         assert model.trigger == unicode_trigger
 
     def test_unicode_in_operation(self) -> None:
         """Unicode characters in operation are accepted."""
-        unicode_op = "create"
+        unicode_op = "用户创建_launch"
         model = ModelReducerIntentPayload(operation=unicode_op)
         assert model.operation == unicode_op
 
@@ -436,6 +439,7 @@ class TestModelReducerIntentPayloadEdgeCases:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelReducerIntentPayloadHelperMethods:
     """Tests for helper methods of ModelReducerIntentPayload."""
 
@@ -607,6 +611,7 @@ class TestModelReducerIntentPayloadHelperMethods:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelReducerIntentPayloadImmutability:
     """Tests for immutability (frozen=True) behavior."""
 
@@ -646,6 +651,7 @@ class TestModelReducerIntentPayloadImmutability:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelReducerIntentPayloadSerialization:
     """Tests for serialization/deserialization behavior."""
 
@@ -734,6 +740,7 @@ class TestModelReducerIntentPayloadSerialization:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelReducerIntentPayloadHashEquality:
     """Tests for hash and equality behavior."""
 

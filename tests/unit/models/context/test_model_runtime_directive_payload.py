@@ -27,6 +27,7 @@ from omnibase_core.models.context.model_runtime_directive_payload import (
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelRuntimeDirectivePayloadInstantiation:
     """Tests for creating ModelRuntimeDirectivePayload instances."""
 
@@ -124,6 +125,7 @@ class TestModelRuntimeDirectivePayloadInstantiation:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelRuntimeDirectivePayloadValidation:
     """Tests for validation behavior of ModelRuntimeDirectivePayload."""
 
@@ -237,6 +239,7 @@ class TestModelRuntimeDirectivePayloadValidation:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelRuntimeDirectivePayloadEdgeCases:
     """Tests for edge cases in ModelRuntimeDirectivePayload."""
 
@@ -424,6 +427,7 @@ class TestModelRuntimeDirectivePayloadEdgeCases:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelRuntimeDirectivePayloadImmutability:
     """Tests for immutability (frozen=True) behavior."""
 
@@ -464,6 +468,7 @@ class TestModelRuntimeDirectivePayloadImmutability:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelRuntimeDirectivePayloadSerialization:
     """Tests for serialization/deserialization behavior."""
 
@@ -549,6 +554,7 @@ class TestModelRuntimeDirectivePayloadSerialization:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelRuntimeDirectivePayloadHashEquality:
     """Tests for hash and equality behavior."""
 
@@ -602,6 +608,7 @@ class TestModelRuntimeDirectivePayloadHashEquality:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelRuntimeDirectivePayloadUseCases:
     """Tests for specific use case scenarios."""
 

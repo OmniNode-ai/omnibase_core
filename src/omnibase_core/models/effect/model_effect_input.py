@@ -67,6 +67,8 @@ from omnibase_core.models.context import ModelEffectInputData
 from omnibase_core.models.effect.model_effect_metadata import ModelEffectMetadata
 from omnibase_core.utils.util_decorators import allow_dict_str_any
 
+__all__ = ["ModelEffectInput"]
+
 
 @allow_dict_str_any(
     "Effect operations support typed operation_data (ModelEffectInputData) and "
@@ -216,6 +218,3 @@ class ModelEffectInput(BaseModel):
                     f"ensure consistent routing and data handling."
                 )
         return self
-
-
-__all__ = ["ModelEffectInput"]

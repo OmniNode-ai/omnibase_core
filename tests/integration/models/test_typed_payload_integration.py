@@ -44,8 +44,10 @@ from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 import pytest
+from pydantic import ValidationError
 
-from omnibase_core.enums.enum_effect_types import EnumEffectType, EnumTransactionState
+from omnibase_core.enums.enum_effect_types import EnumEffectType
+from omnibase_core.enums.enum_transaction_state import EnumTransactionState
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.context import (
     ModelEffectInputData,
@@ -280,7 +282,9 @@ class TestTypedPayloadInNodeWorkflows:
         result: ModelEffectOutput = asyncio.run(effect_node.process(input_data))
 
         # Assert: Processing completed successfully
-        assert result.transaction_state == EnumTransactionState.COMMITTED
+        # Note: Compare by value since there are two EnumTransactionState definitions
+        # (enum_transaction_state.py and enum_effect_types.py)
+        assert result.transaction_state.value == EnumTransactionState.COMMITTED.value
         mock_http_handler.execute.assert_called_once()
 
 
@@ -397,7 +401,8 @@ class TestBackwardsCompatibility:
 
         # Should process successfully
         result: ModelEffectOutput = asyncio.run(effect_node.process(input_data))
-        assert result.transaction_state == EnumTransactionState.COMMITTED
+        # Note: Compare by value since there are two EnumTransactionState definitions
+        assert result.transaction_state.value == EnumTransactionState.COMMITTED.value
 
     def test_union_type_accepts_dict_and_model(self) -> None:
         """Test that union type ModelEffectInputData | dict accepts both."""
@@ -654,7 +659,7 @@ class TestErrorHandling:
             "resource_path": "/test",
         }
 
-        with pytest.raises(Exception):  # Pydantic ValidationError
+        with pytest.raises(ValidationError):
             ModelEffectInputData(**invalid_dict)
 
     def test_invalid_enum_value_raises_validation_error(self) -> None:
@@ -664,44 +669,44 @@ class TestErrorHandling:
             "resource_path": "/test",
         }
 
-        with pytest.raises(Exception):  # Pydantic ValidationError
+        with pytest.raises(ValidationError):
             ModelEffectInputData(**invalid_dict)
 
     def test_reducer_intent_payload_validation_errors(self) -> None:
         """Test ModelReducerIntentPayload field validation."""
         # retry_count must be >= 0
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             ModelReducerIntentPayload(retry_count=-1)
 
         # max_retries must be >= 0
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             ModelReducerIntentPayload(max_retries=-1)
 
         # timeout_ms must be >= 0
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             ModelReducerIntentPayload(timeout_ms=-1)
 
     def test_runtime_directive_payload_validation_errors(self) -> None:
         """Test ModelRuntimeDirectivePayload field validation."""
         # priority must be >= 0
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             ModelRuntimeDirectivePayload(priority=-1)
 
         # backoff_base_ms must be >= 0
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             ModelRuntimeDirectivePayload(backoff_base_ms=-1)
 
         # backoff_multiplier must be > 0
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             ModelRuntimeDirectivePayload(backoff_multiplier=0.0)
 
         # jitter_ms must be >= 0
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             ModelRuntimeDirectivePayload(jitter_ms=-1)
 
     def test_extra_fields_rejected_by_typed_models(self) -> None:
         """Test that extra fields are rejected (extra='forbid')."""
-        with pytest.raises(Exception):  # Pydantic ValidationError
+        with pytest.raises(ValidationError):
             ModelEffectInputData(
                 effect_type=EnumEffectType.API_CALL,
                 resource_path="/test",
@@ -726,7 +731,7 @@ class TestImmutability:
             resource_path="/test",
         )
 
-        with pytest.raises(Exception):  # Pydantic ValidationError for frozen model
+        with pytest.raises(ValidationError):
             model.resource_path = "/modified"
 
     def test_reducer_intent_payload_is_immutable(self) -> None:
@@ -736,7 +741,7 @@ class TestImmutability:
             entity_type="user",
         )
 
-        with pytest.raises(Exception):  # Pydantic ValidationError for frozen model
+        with pytest.raises(ValidationError):
             payload.target_state = "inactive"
 
     def test_runtime_directive_payload_is_immutable(self) -> None:
@@ -745,7 +750,7 @@ class TestImmutability:
             priority=1,
         )
 
-        with pytest.raises(Exception):  # Pydantic ValidationError for frozen model
+        with pytest.raises(ValidationError):
             payload.priority = 2
 
     def test_reducer_intent_payload_with_incremented_retry_creates_new_instance(
@@ -844,7 +849,8 @@ class TestWorkflowIntegration:
 
         result = asyncio.run(effect_node.process(input_data))
 
-        assert result.transaction_state == EnumTransactionState.COMMITTED
+        # Note: Compare by value since there are two EnumTransactionState definitions
+        assert result.transaction_state.value == EnumTransactionState.COMMITTED.value
         assert result.effect_type == EnumEffectType.API_CALL
         assert result.processing_time_ms >= 0.0
 

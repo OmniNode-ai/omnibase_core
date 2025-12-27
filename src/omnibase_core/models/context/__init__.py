@@ -130,6 +130,9 @@ from omnibase_core.models.context.model_routing_metadata import (
     LoadBalanceStrategy,
     ModelRoutingMetadata,
 )
+from omnibase_core.models.context.model_runtime_directive_payload import (
+    ModelRuntimeDirectivePayload,
+)
 from omnibase_core.models.context.model_service_discovery_metadata import (
     ModelServiceDiscoveryMetadata,
 )
@@ -143,6 +146,7 @@ __all__ = [
     "ModelOperationalContext",
     "ModelResourceContext",
     "ModelRetryContext",
+    "ModelRuntimeDirectivePayload",
     "ModelTraceContext",
     "ModelUserContext",
     "ModelValidationContext",

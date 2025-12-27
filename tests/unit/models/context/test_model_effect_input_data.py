@@ -27,6 +27,7 @@ from omnibase_core.models.context.model_effect_input_data import ModelEffectInpu
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelEffectInputDataInstantiation:
     """Tests for creating ModelEffectInputData instances."""
 
@@ -151,6 +152,7 @@ class TestModelEffectInputDataInstantiation:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelEffectInputDataValidation:
     """Tests for validation behavior of ModelEffectInputData."""
 
@@ -283,6 +285,7 @@ class TestModelEffectInputDataValidation:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelEffectInputDataEdgeCases:
     """Tests for edge cases in ModelEffectInputData."""
 
@@ -368,7 +371,7 @@ class TestModelEffectInputDataEdgeCases:
 
     def test_unicode_resource_path(self) -> None:
         """Unicode characters in resource_path are accepted."""
-        unicode_path = "/data/users/test"
+        unicode_path = "/data/ユーザー/文件夹/αβγ"
         model = ModelEffectInputData(
             effect_type=EnumEffectType.FILE_OPERATION,
             resource_path=unicode_path,
@@ -377,7 +380,7 @@ class TestModelEffectInputDataEdgeCases:
 
     def test_unicode_operation_name(self) -> None:
         """Unicode characters in operation_name are accepted."""
-        unicode_name = "create_user_"
+        unicode_name = "作成_ユーザー_launch"
         model = ModelEffectInputData(
             effect_type=EnumEffectType.DATABASE_OPERATION,
             operation_name=unicode_name,
@@ -430,6 +433,7 @@ class TestModelEffectInputDataEdgeCases:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelEffectInputDataImmutability:
     """Tests for immutability (frozen=True) behavior."""
 
@@ -473,6 +477,7 @@ class TestModelEffectInputDataImmutability:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelEffectInputDataSerialization:
     """Tests for serialization/deserialization behavior."""
 
@@ -550,6 +555,7 @@ class TestModelEffectInputDataSerialization:
 # =============================================================================
 
 
+@pytest.mark.unit
 class TestModelEffectInputDataHashEquality:
     """Tests for hash and equality behavior."""
 
