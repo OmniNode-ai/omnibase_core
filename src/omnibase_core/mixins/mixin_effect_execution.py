@@ -143,6 +143,7 @@ def allow_dict_any[F: Callable[..., object]](func: F) -> F:
     return func
 
 
+from omnibase_core.constants import TIMEOUT_DEFAULT_MS
 from omnibase_core.constants.constants_effect import (
     DEBUG_THREAD_SAFETY,
     DEFAULT_MAX_FIELD_EXTRACTION_DEPTH,
@@ -390,7 +391,7 @@ class MixinEffectExecution:
                                 "url_template": "...",
                                 ...
                             },
-                            "operation_timeout_ms": 30000,
+                            "operation_timeout_ms": TIMEOUT_DEFAULT_MS,
                             "response_handling": {...},  # Optional
                             "retry_policy": {...},       # Optional
                             "circuit_breaker": {...}     # Optional

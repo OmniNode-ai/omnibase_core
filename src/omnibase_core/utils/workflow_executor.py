@@ -79,6 +79,7 @@ import time
 from datetime import datetime
 from uuid import UUID, uuid4
 
+from omnibase_core.constants import TIMEOUT_DEFAULT_MS
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_workflow_execution import (
     EnumActionType,
@@ -396,7 +397,7 @@ async def validate_workflow_definition(
                 workflow_metadata=ModelWorkflowMetadata(
                     workflow_name="etl_pipeline",
                     execution_mode="sequential",
-                    timeout_ms=30000,
+                    timeout_ms=TIMEOUT_DEFAULT_MS,
                 )
             )
 

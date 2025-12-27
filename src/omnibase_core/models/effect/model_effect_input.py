@@ -50,6 +50,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.constants import TIMEOUT_DEFAULT_MS
 from omnibase_core.enums.enum_effect_types import EnumEffectType
 from omnibase_core.models.effect.model_effect_metadata import ModelEffectMetadata
 
@@ -105,7 +106,7 @@ class ModelEffectInput(BaseModel):
     max_retries: int = 3
     retry_delay_ms: int = 1000
     circuit_breaker_enabled: bool = False
-    timeout_ms: int = 30000
+    timeout_ms: int = TIMEOUT_DEFAULT_MS
     metadata: ModelEffectMetadata = Field(default_factory=ModelEffectMetadata)
     timestamp: datetime = Field(default_factory=datetime.now)
 

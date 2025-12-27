@@ -49,6 +49,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from omnibase_core.constants import TIMEOUT_DEFAULT_MS, TIMEOUT_LONG_MS
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_workflow_execution import EnumActionType
 from omnibase_core.models.core.model_action_metadata import ModelActionMetadata
@@ -160,7 +161,7 @@ class ModelAction(BaseModel):
     )
 
     timeout_ms: int = Field(
-        default=30000,
+        default=TIMEOUT_DEFAULT_MS,
         description=(
             "Execution timeout in milliseconds. When exceeded, the action execution "
             "is cancelled and a TimeoutError is raised. The Orchestrator may retry "
@@ -177,7 +178,7 @@ class ModelAction(BaseModel):
             "which IS enforced in utils/compute_executor.py using ThreadPoolExecutor."
         ),
         ge=100,
-        le=300000,  # Max 5 minutes
+        le=TIMEOUT_LONG_MS,  # Max 5 minutes
     )
 
     # Lease management fields for single-writer semantics
