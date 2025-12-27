@@ -22,7 +22,6 @@ from .model_external_service_config import ModelExternalServiceConfig
 from .model_network_config import ModelNetworkConfig
 from .model_node_service_config import ModelNodeServiceConfig
 from .model_node_weights import ModelNodeWeights
-from .model_plan import ModelPlan
 from .model_retry_strategy import ModelRetryStrategy
 from .model_routing_preferences import ModelRoutingPreferences
 from .model_service_configuration import EnumFallbackStrategyType, ModelFallbackStrategy
@@ -31,37 +30,12 @@ from .model_service_health import ModelServiceHealth
 from .model_service_registry_config import ModelServiceRegistryConfig
 from .model_service_type import ModelServiceType
 
-# NOTE: Orchestrator models moved to omnibase_core.models.orchestrator (Phase 3)
-# from omnibase_core.models.orchestrator.model_orchestrator_output import (
-#     ModelOrchestratorOutput,
-# )
-# from omnibase_core.models.orchestrator.model_orchestrator import (
-#     GraphModel,
-#     OrchestratorGraphModel,
-#     OrchestratorPlanModel,
-#     OrchestratorResultModel,
-#     PlanModel,
-# )
-# from omnibase_core.models.orchestrator.model_orchestrator_graph import (
-#     ModelOrchestratorGraph,
-# )
-# from omnibase_core.models.orchestrator.model_orchestrator_plan import (
-#     ModelOrchestratorPlan,
-# )
-# from omnibase_core.models.orchestrator.model_orchestrator_result import (
-#     ModelOrchestratorResult,
-# )
-# from omnibase_core.models.orchestrator.model_orchestrator_step import (
-#     ModelOrchestratorStep,
-# )
-
-
 # NOTE: Models have been reorganized (2025-11-13):
 # Phase 1:
 # - Docker models moved to: omnibase_core.models.docker
 #   (ModelDockerBuildConfig, ModelDockerComposeConfig, etc.)
 # - Graph models moved to: omnibase_core.models.graph
-#   (ModelGraph, ModelGraphEdge, ModelGraphNode)
+#   (ModelGraphEdge, ModelGraphNode, etc.)
 #
 # Phase 2:
 # - Event Bus models moved to: omnibase_core.models.event_bus
@@ -103,7 +77,6 @@ __all__ = [
     "ModelNetworkConfig",
     "ModelNodeServiceConfig",
     "ModelNodeWeights",
-    "ModelPlan",
     "ModelResourceLimits",
     "ModelRetryStrategy",
     "ModelRoutingPreferences",
@@ -113,8 +86,4 @@ __all__ = [
     "ModelServiceRegistryConfig",
     "ModelServiceType",
     "ModelWorkflowParameters",
-    # NOTE: Orchestrator models moved to omnibase_core.models.orchestrator
-    # (GraphModel, ModelOrchestratorGraph, ModelOrchestratorOutput,
-    #  ModelOrchestratorPlan, ModelOrchestratorResult, ModelOrchestratorStep,
-    #  OrchestratorGraphModel, OrchestratorPlanModel, OrchestratorResultModel, PlanModel)
 ]
