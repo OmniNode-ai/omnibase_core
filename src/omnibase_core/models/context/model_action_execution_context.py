@@ -147,14 +147,15 @@ class ModelActionExecutionContext(BaseModel):
             The validated environment as a Literal type (lowercase).
 
         Raises:
-            ValueError: If the value is not a valid environment.
+            ValueError: If the value is not a string or not a valid environment.
         """
-        if isinstance(v, str):
-            v = v.lower()
+        if not isinstance(v, str):
+            raise ValueError(f"environment must be a string, got {type(v).__name__}")
+        normalized = v.lower().strip()
         allowed = {"development", "staging", "production"}
-        if v not in allowed:
+        if normalized not in allowed:
             raise ValueError(
                 f"Invalid environment '{v}': must be one of {sorted(allowed)}"
             )
         # Cast to Literal since we've validated it's a valid value
-        return v  # type: ignore[return-value]
+        return normalized  # type: ignore[return-value]

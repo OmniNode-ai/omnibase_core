@@ -244,6 +244,65 @@ class TestModelActionExecutionContextValidation:
         context = ModelActionExecutionContext(workflow_id=uuid_str)  # type: ignore[arg-type]
         assert context.workflow_id == UUID(uuid_str)
 
+    def test_environment_rejects_non_string_integer(self) -> None:
+        """Test that environment rejects integer with clear error."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelActionExecutionContext(environment=123)  # type: ignore[arg-type]
+        # Should mention environment field and the invalid value
+        error_str = str(exc_info.value).lower()
+        assert "environment" in error_str
+
+    def test_environment_rejects_non_string_list(self) -> None:
+        """Test that environment rejects list with clear error."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelActionExecutionContext(environment=["production"])  # type: ignore[arg-type]
+        error_str = str(exc_info.value).lower()
+        assert "environment" in error_str
+
+    def test_environment_rejects_non_string_dict(self) -> None:
+        """Test that environment rejects dict with clear error."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelActionExecutionContext(environment={"env": "production"})  # type: ignore[arg-type]
+        error_str = str(exc_info.value).lower()
+        assert "environment" in error_str
+
+    def test_environment_rejects_none_explicitly(self) -> None:
+        """Test that environment rejects None value explicitly passed."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelActionExecutionContext(environment=None)  # type: ignore[arg-type]
+        error_str = str(exc_info.value).lower()
+        assert "environment" in error_str
+
+    def test_environment_normalizes_uppercase(self) -> None:
+        """Test that environment normalizes all-uppercase to lowercase."""
+        context = ModelActionExecutionContext(environment="DEVELOPMENT")
+        assert context.environment == "development"
+
+    def test_environment_normalizes_mixed_case(self) -> None:
+        """Test that environment normalizes mixed case to lowercase."""
+        context = ModelActionExecutionContext(environment="PrOdUcTiOn")
+        assert context.environment == "production"
+
+    def test_environment_strips_leading_whitespace(self) -> None:
+        """Test that environment strips leading whitespace."""
+        context = ModelActionExecutionContext(environment="  production")
+        assert context.environment == "production"
+
+    def test_environment_strips_trailing_whitespace(self) -> None:
+        """Test that environment strips trailing whitespace."""
+        context = ModelActionExecutionContext(environment="staging  ")
+        assert context.environment == "staging"
+
+    def test_environment_strips_both_whitespace(self) -> None:
+        """Test that environment strips both leading and trailing whitespace."""
+        context = ModelActionExecutionContext(environment="  development  ")
+        assert context.environment == "development"
+
+    def test_environment_strips_whitespace_with_mixed_case(self) -> None:
+        """Test that environment handles whitespace and case normalization together."""
+        context = ModelActionExecutionContext(environment="  PRODUCTION  ")
+        assert context.environment == "production"
+
 
 # =============================================================================
 # Immutability Tests

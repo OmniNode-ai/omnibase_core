@@ -758,12 +758,10 @@ class TestModelActionPayloadSerialization:
 
         data = payload.model_dump(exclude_none=True)
 
-        # None fields should be excluded
-        assert (
-            "parent_correlation_id" not in data
-            or data.get("parent_correlation_id") is not None
-        )
-        assert "target_service" not in data or data.get("target_service") is not None
+        # Fields that were None should be excluded from the output
+        assert "parent_correlation_id" not in data
+        assert "target_service" not in data
+        assert "service_metadata" not in data
 
 
 # =============================================================================
