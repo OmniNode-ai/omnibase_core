@@ -93,7 +93,7 @@ class ModelRoutingMetadata(BaseModel):
         default="round_robin",
         description=(
             "Load balancing strategy. Valid values: round_robin, least_connections, "
-            "random, weighted"
+            "random, weighted."
         ),
     )
     sticky_session_id: UUID | None = Field(

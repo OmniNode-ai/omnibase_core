@@ -486,8 +486,14 @@ class NodeEffect(NodeCoreBase, MixinEffectExecution):
                 operations.append(op_dict)
 
             # Create new input_data with operations populated
+            # Convert operation_data to dict for unpacking (handles ModelEffectInputData)
+            operation_data_dict = (
+                input_data.operation_data
+                if isinstance(input_data.operation_data, dict)
+                else input_data.operation_data.model_dump()
+            )
             updated_operation_data = {
-                **input_data.operation_data,
+                **operation_data_dict,
                 "operations": operations,
             }
             input_data = input_data.model_copy(

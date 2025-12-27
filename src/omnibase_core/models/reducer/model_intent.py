@@ -136,6 +136,7 @@ class ModelIntent(BaseModel):
         epoch: Optional epoch for versioned state tracking.
 
     See Also:
+        omnibase_core.models.context.ModelReducerIntentPayload: Typed payload for structured intents
         omnibase_core.models.intents.ModelCoreIntent: Base class for core intents
         omnibase_core.models.intents.ModelCoreRegistrationIntent: Discriminated union type alias
             for core infrastructure intents (registration, persistence, lifecycle)

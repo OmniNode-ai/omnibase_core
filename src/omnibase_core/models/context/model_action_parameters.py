@@ -101,7 +101,7 @@ class ModelActionParameters(BaseModel):
     )
     action_version: ModelSemVer | None = Field(
         default=None,
-        description="Semantic version of the action using ModelSemVer type.",
+        description="Semantic version of the action using ModelSemVer type",
     )
     idempotency_key: str | None = Field(
         default=None,

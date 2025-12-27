@@ -109,19 +109,19 @@ class ModelServiceDiscoveryMetadata(BaseModel):
     service_name: str = Field(
         ...,
         min_length=1,
-        description="Unique service name for discovery. Required identifier in the registry.",
+        description="Unique service name for discovery (required identifier in the registry)",
     )
     service_version: ModelSemVer | None = Field(
         default=None,
-        description="Semantic version of the service using ModelSemVer type.",
+        description="Semantic version of the service using ModelSemVer type",
     )
     service_instance_id: UUID | None = Field(
         default=None,
-        description="UUID identifier for this service instance.",
+        description="UUID identifier for this service instance",
     )
     health_check_url: str | None = Field(
         default=None,
-        description="Health check endpoint URL (e.g., 'https://service:8080/health').",
+        description="Health check endpoint URL (e.g., 'https://service:8080/health')",
     )
     # IMPORTANT - Mutable List Limitation:
     # While this model has frozen=True (Pydantic ConfigDict), list contents can still
@@ -158,7 +158,7 @@ class ModelServiceDiscoveryMetadata(BaseModel):
     )
     protocol: ServiceProtocol = Field(
         default="grpc",
-        description="Service protocol: 'grpc', 'http', 'https', 'ws', or 'wss'.",
+        description="Service protocol: 'grpc', 'http', 'https', 'ws', or 'wss'",
     )
 
     @field_validator("protocol", mode="before")
