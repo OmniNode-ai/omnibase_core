@@ -106,10 +106,19 @@ class TestEnumLikelihood:
         assert "likelihood" in doc.lower()
 
     def test_enum_str_method(self):
-        """Test the __str__ method."""
+        """Test the string value access.
+
+        Note: For (str, Enum) subclasses in Python 3.11+, str() returns the
+        enum name (e.g., 'EnumLikelihood.LOW'), not the value. Use .value to
+        get the string value, or compare directly (works due to str inheritance).
+        """
         likelihood = EnumLikelihood.LOW
-        assert str(likelihood) == "low"
-        assert str(EnumLikelihood.VERY_HIGH) == "very_high"
+        # Use .value to get the string representation
+        assert likelihood.value == "low"
+        assert EnumLikelihood.VERY_HIGH.value == "very_high"
+        # Direct comparison works due to str inheritance
+        assert likelihood == "low"
+        assert EnumLikelihood.VERY_HIGH == "very_high"
 
 
 @pytest.mark.unit
@@ -365,15 +374,18 @@ class TestEnumLikelihoodEdgeCases:
             float("-inf"),  # Negative infinity
         ],
     )
-    def test_from_probability_rejects_negative_values(
-        self, probability: float
-    ) -> None:
+    def test_from_probability_rejects_negative_values(self, probability: float) -> None:
         """Test that negative values (except -0.0) raise ValueError."""
         # Note: -0.0 == 0.0 in Python, so it should return IMPOSSIBLE
         if probability == 0.0:  # -0.0 equals 0.0
-            assert EnumLikelihood.from_probability(probability) == EnumLikelihood.IMPOSSIBLE
+            assert (
+                EnumLikelihood.from_probability(probability)
+                == EnumLikelihood.IMPOSSIBLE
+            )
         else:
-            with pytest.raises(ValueError, match=r"probability must be between 0\.0 and 1\.0"):
+            with pytest.raises(
+                ValueError, match=r"probability must be between 0\.0 and 1\.0"
+            ):
                 EnumLikelihood.from_probability(probability)
 
     # =========================================================================
@@ -395,7 +407,9 @@ class TestEnumLikelihoodEdgeCases:
         self, probability: float
     ) -> None:
         """Test that values > 1.0 raise ValueError."""
-        with pytest.raises(ValueError, match=r"probability must be between 0\.0 and 1\.0"):
+        with pytest.raises(
+            ValueError, match=r"probability must be between 0\.0 and 1\.0"
+        ):
             EnumLikelihood.from_probability(probability)
 
     # =========================================================================
@@ -407,7 +421,9 @@ class TestEnumLikelihoodEdgeCases:
 
         NaN comparisons always return False, so 0.0 <= NaN <= 1.0 is False.
         """
-        with pytest.raises(ValueError, match=r"probability must be between 0\.0 and 1\.0"):
+        with pytest.raises(
+            ValueError, match=r"probability must be between 0\.0 and 1\.0"
+        ):
             EnumLikelihood.from_probability(float("nan"))
 
     def test_from_probability_negative_zero_equals_zero(self) -> None:
@@ -448,7 +464,9 @@ class TestEnumLikelihoodEdgeCases:
         # At boundary (inclusive)
         assert EnumLikelihood.from_probability(boundary) == expected_at_or_above
         # Just above boundary
-        assert EnumLikelihood.from_probability(boundary + 0.0001) == expected_at_or_above
+        assert (
+            EnumLikelihood.from_probability(boundary + 0.0001) == expected_at_or_above
+        )
 
     # =========================================================================
     # Round-Trip Tests

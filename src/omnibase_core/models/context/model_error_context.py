@@ -53,6 +53,10 @@ __all__ = [
 # - This module: For use in Pydantic model validation (avoids circular imports)
 # - common_validators: For direct validation via validate_error_code()
 #
+# The duplication is intentional to avoid circular imports. The validation module
+# imports from models, and importing from validation in model_error_context would
+# create a circular dependency chain. Both patterns MUST be kept in sync.
+#
 # The pattern supports multi-character category prefixes with underscores:
 # - Valid: AUTH_001, VALIDATION_123, NETWORK_TIMEOUT_001, SYSTEM_01
 # - Invalid: E001 (lint-style, no underscore), auth_001 (lowercase)
@@ -196,6 +200,8 @@ class ModelErrorContext(BaseModel):
         Note:
             For direct validation outside Pydantic models, prefer using
             validate_error_code() from common_validators instead.
+            The pattern is intentionally duplicated here to avoid circular
+            imports - see module-level comments for details.
 
         Args:
             value: The error code string or None.
@@ -213,7 +219,8 @@ class ModelErrorContext(BaseModel):
         if not ERROR_CODE_PATTERN.match(value):
             raise ValueError(
                 f"Invalid error_code format '{value}': expected CATEGORY_NNN "
-                f"pattern (e.g., AUTH_001, VALIDATION_123)"
+                f"pattern (e.g., AUTH_001, VALIDATION_123). "
+                f"For lint-style short codes (W001, E001), use workflow_linter module."
             )
         return value
 

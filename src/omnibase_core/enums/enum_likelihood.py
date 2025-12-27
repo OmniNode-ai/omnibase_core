@@ -8,6 +8,9 @@ Used by context models to express probability or confidence levels.
 from __future__ import annotations
 
 from enum import Enum
+from functools import cache
+
+__all__ = ["EnumLikelihood"]
 
 
 class EnumLikelihood(str, Enum):
@@ -17,18 +20,27 @@ class EnumLikelihood(str, Enum):
     This enum represents discrete probability ranges for risk assessment and
     confidence estimation. Each level maps to a specific probability range
     using standard mathematical interval notation:
-    - [a, b) means a <= x < b (inclusive lower, exclusive upper)
-    - {x} means exactly x (singleton)
+
+    Interval Notation:
+        - [a, b) means a <= x < b (inclusive lower, exclusive upper)
+        - (a, b) means a < x < b (exclusive both ends)
+        - {x} means exactly x (singleton set)
+
+    Boundary Behavior:
+        At exact boundary values, the probability maps to the HIGHER category.
+        For example, 0.1 exactly returns LOW (not VERY_LOW), and 0.3 exactly
+        returns MEDIUM (not LOW). This follows the [lower, upper) convention
+        where the lower bound is inclusive.
 
     Probability Mapping (used by from_probability):
         IMPOSSIBLE: {0.0}           - Exactly 0% probability
-        VERY_LOW:   (0.0, 0.1)      - Greater than 0% and less than 10%
-        LOW:        [0.1, 0.3)      - 10% to less than 30%
-        MEDIUM:     [0.3, 0.6)      - 30% to less than 60%
-        HIGH:       [0.6, 0.85)     - 60% to less than 85%
-        VERY_HIGH:  [0.85, 1.0)     - 85% to less than 100%
+        VERY_LOW:   (0.0, 0.1)      - Greater than 0%, less than 10%
+        LOW:        [0.1, 0.3)      - 10% (inclusive) to less than 30%
+        MEDIUM:     [0.3, 0.6)      - 30% (inclusive) to less than 60%
+        HIGH:       [0.6, 0.85)     - 60% (inclusive) to less than 85%
+        VERY_HIGH:  [0.85, 1.0)     - 85% (inclusive) to less than 100%
         CERTAIN:    {1.0}           - Exactly 100% probability
-        UNKNOWN:    Full range      - Probability cannot be determined
+        UNKNOWN:    [0.0, 1.0]      - Probability cannot be determined
 
     Examples:
         >>> EnumLikelihood.from_probability(0.0)
@@ -53,39 +65,22 @@ class EnumLikelihood(str, Enum):
     IMPOSSIBLE = "impossible"  # {0.0} - Will never occur (exactly 0%)
 
     def __str__(self) -> str:
-        """Return the string value of the likelihood level."""
+        """Return the string value of the likelihood level.
+
+        Note: Although this class inherits from str, the default Enum.__str__
+        returns 'EnumLikelihood.MEMBER_NAME' format. This override ensures
+        str(EnumLikelihood.LOW) returns 'low' for consistent string representation.
+        """
         return self.value
 
     @classmethod
-    def get_numeric_range(cls, likelihood: EnumLikelihood) -> tuple[float, float]:
+    @cache
+    def _get_probability_ranges(cls) -> dict[EnumLikelihood, tuple[float, float]]:
+        """Return cached probability ranges dictionary.
+
+        Uses functools.cache for memoization to avoid recreating the dict on each call.
         """
-        Get the numeric probability range for a likelihood level.
-
-        Returns a tuple (min, max) representing the probability range for the
-        given likelihood level. For standard levels, ranges use [min, max)
-        notation (inclusive min, exclusive max).
-
-        Range Definitions:
-            IMPOSSIBLE: (0.0, 0.0)  - Singleton: exactly 0%
-            VERY_LOW:   (0.0, 0.1)  - Exclusive both ends: 0% < p < 10%
-            LOW:        (0.1, 0.3)  - 10% <= p < 30%
-            MEDIUM:     (0.3, 0.6)  - 30% <= p < 60%
-            HIGH:       (0.6, 0.85) - 60% <= p < 85%
-            VERY_HIGH:  (0.85, 1.0) - 85% <= p < 100%
-            CERTAIN:    (1.0, 1.0)  - Singleton: exactly 100%
-            UNKNOWN:    (0.0, 1.0)  - Full range (probability indeterminate)
-
-        Note:
-            The returned ranges are approximate representations. Use
-            from_probability() for precise probability-to-likelihood mapping.
-
-        Args:
-            likelihood: The likelihood level to convert
-
-        Returns:
-            A tuple of (min_probability, max_probability) as floats in [0.0, 1.0]
-        """
-        ranges: dict[EnumLikelihood, tuple[float, float]] = {
+        return {
             cls.IMPOSSIBLE: (0.0, 0.0),
             cls.VERY_LOW: (0.0, 0.1),
             cls.LOW: (0.1, 0.3),
@@ -93,9 +88,40 @@ class EnumLikelihood(str, Enum):
             cls.HIGH: (0.6, 0.85),
             cls.VERY_HIGH: (0.85, 1.0),
             cls.CERTAIN: (1.0, 1.0),
-            cls.UNKNOWN: (0.0, 1.0),  # Full range when unknown
+            cls.UNKNOWN: (0.0, 1.0),
         }
-        return ranges.get(likelihood, (0.0, 1.0))
+
+    @classmethod
+    def get_numeric_range(cls, likelihood: EnumLikelihood) -> tuple[float, float]:
+        """
+        Get the numeric probability range for a likelihood level.
+
+        Returns a tuple (min, max) representing the probability range for the
+        given likelihood level. The tuple values represent the boundaries;
+        see the class docstring for precise boundary semantics.
+
+        Range Definitions (returned as tuple values):
+            IMPOSSIBLE: (0.0, 0.0)  - Singleton {0.0}: exactly 0%
+            VERY_LOW:   (0.0, 0.1)  - Range (0.0, 0.1): 0% < p < 10%
+            LOW:        (0.1, 0.3)  - Range [0.1, 0.3): 10% <= p < 30%
+            MEDIUM:     (0.3, 0.6)  - Range [0.3, 0.6): 30% <= p < 60%
+            HIGH:       (0.6, 0.85) - Range [0.6, 0.85): 60% <= p < 85%
+            VERY_HIGH:  (0.85, 1.0) - Range [0.85, 1.0): 85% <= p < 100%
+            CERTAIN:    (1.0, 1.0)  - Singleton {1.0}: exactly 100%
+            UNKNOWN:    (0.0, 1.0)  - Full range [0.0, 1.0]: indeterminate
+
+        Note:
+            The returned tuple (min, max) represents boundary values. The actual
+            interval semantics (inclusive/exclusive) are defined by from_probability().
+            Use from_probability() for precise probability-to-likelihood mapping.
+
+        Args:
+            likelihood: The likelihood level to convert
+
+        Returns:
+            A tuple of (min_probability, max_probability) as floats in [0.0, 1.0]
+        """
+        return cls._get_probability_ranges().get(likelihood, (0.0, 1.0))
 
     @classmethod
     def from_probability(cls, probability: float) -> EnumLikelihood:

@@ -10,16 +10,20 @@ This module tests the shared validators for common patterns:
 Ticket: OMN-1054
 """
 
+from collections.abc import Callable
+
 import pytest
 from pydantic import BaseModel, ValidationError
 
 from omnibase_core.validation.validators import (
     BCP47Locale,
     Duration,
+    ErrorCode,
     SemanticVersion,
     UUIDString,
     validate_bcp47_locale,
     validate_duration,
+    validate_error_code,
     validate_semantic_version,
     validate_uuid,
 )
@@ -468,6 +472,135 @@ class TestSemanticVersionAnnotatedType:
 
 
 # =============================================================================
+# Error Code Validator Tests
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestValidateErrorCode:
+    """Tests for validate_error_code function."""
+
+    @pytest.mark.parametrize(
+        "error_code",
+        [
+            # Simple category codes
+            "AUTH_001",
+            "AUTH_1",
+            "AUTH_1234",
+            # Multi-word categories
+            "VALIDATION_123",
+            "NETWORK_TIMEOUT_001",
+            "FILE_NOT_FOUND_42",
+            # With numbers in category
+            "ERROR2_001",
+            "V2_AUTH_123",
+            # Edge cases for digit count
+            "X_1",  # Minimum: 1 digit
+            "X_12",  # 2 digits
+            "X_123",  # 3 digits
+            "X_1234",  # Maximum: 4 digits
+            # Various valid patterns
+            "SYSTEM_01",
+            "DB_CONNECTION_999",
+            "API_RATE_LIMIT_0001",
+        ],
+    )
+    def test_valid_error_codes(self, error_code: str) -> None:
+        """Test that valid error code strings are accepted."""
+        result = validate_error_code(error_code)
+        assert result == error_code
+
+    @pytest.mark.parametrize(
+        ("error_code", "error_fragment"),
+        [
+            ("", "cannot be empty"),
+            # Lint-style short codes (not supported)
+            ("E001", "Invalid error code format"),
+            ("W001", "Invalid error code format"),
+            ("I001", "Invalid error code format"),
+            # Missing underscore
+            ("AUTH001", "Invalid error code format"),
+            # Lowercase not allowed
+            ("auth_001", "Invalid error code format"),
+            ("Auth_001", "Invalid error code format"),
+            # Missing numeric suffix
+            ("AUTH_", "Invalid error code format"),
+            ("AUTH", "Invalid error code format"),
+            # Starting with number
+            ("1AUTH_001", "Invalid error code format"),
+            ("123_001", "Invalid error code format"),
+            # Too many digits (>4)
+            ("AUTH_12345", "Invalid error code format"),
+            # Invalid characters
+            ("AUTH-001", "Invalid error code format"),  # Hyphen instead of underscore
+            ("AUTH.001", "Invalid error code format"),  # Dot separator
+            ("AUTH 001", "Invalid error code format"),  # Space
+            # Only numbers
+            ("123_456", "Invalid error code format"),
+            # Unicode/special characters
+            ("AUTH_\u00e9001", "Invalid error code format"),  # Unicode in code
+        ],
+    )
+    def test_invalid_error_codes(self, error_code: str, error_fragment: str) -> None:
+        """Test that invalid error code strings raise ValueError."""
+        with pytest.raises(ValueError, match=error_fragment):
+            validate_error_code(error_code)
+
+
+@pytest.mark.unit
+class TestErrorCodeAnnotatedType:
+    """Tests for ErrorCode Annotated type with Pydantic."""
+
+    def test_valid_error_code_in_model(self) -> None:
+        """Test that valid error codes work in Pydantic models."""
+
+        class ErrorReport(BaseModel):
+            code: ErrorCode
+
+        report = ErrorReport(code="AUTH_001")
+        assert report.code == "AUTH_001"
+
+    def test_complex_error_code_in_model(self) -> None:
+        """Test that complex error codes work in Pydantic models."""
+
+        class ErrorReport(BaseModel):
+            code: ErrorCode
+
+        report = ErrorReport(code="NETWORK_TIMEOUT_001")
+        assert report.code == "NETWORK_TIMEOUT_001"
+
+    def test_invalid_error_code_in_model(self) -> None:
+        """Test that invalid error codes raise ValidationError."""
+
+        class ErrorReport(BaseModel):
+            code: ErrorCode
+
+        with pytest.raises(ValidationError):
+            ErrorReport(code="invalid")
+
+    def test_lint_style_code_rejected_in_model(self) -> None:
+        """Test that lint-style short codes are rejected in Pydantic models."""
+
+        class ErrorReport(BaseModel):
+            code: ErrorCode
+
+        with pytest.raises(ValidationError):
+            ErrorReport(code="E001")
+
+    def test_optional_error_code_in_model(self) -> None:
+        """Test that optional ErrorCode fields accept None."""
+
+        class ErrorReport(BaseModel):
+            code: ErrorCode | None = None
+
+        report = ErrorReport(code=None)
+        assert report.code is None
+
+        report2 = ErrorReport()
+        assert report2.code is None
+
+
+# =============================================================================
 # Integration Tests
 # =============================================================================
 
@@ -901,10 +1034,11 @@ class TestValidatorEdgeCases:
             (validate_bcp47_locale, "en-US"),
             (validate_uuid, "550e8400-e29b-41d4-a716-446655440000"),
             (validate_semantic_version, "1.0.0"),
+            (validate_error_code, "AUTH_001"),
         ],
     )
     def test_validators_reject_leading_whitespace(
-        self, validator_func, valid_input: str
+        self, validator_func: Callable[[str], str], valid_input: str
     ) -> None:
         """Test that validators reject inputs with leading whitespace."""
         with pytest.raises(ValueError):
@@ -917,10 +1051,11 @@ class TestValidatorEdgeCases:
             (validate_bcp47_locale, "en-US"),
             (validate_uuid, "550e8400-e29b-41d4-a716-446655440000"),
             (validate_semantic_version, "1.0.0"),
+            (validate_error_code, "AUTH_001"),
         ],
     )
     def test_validators_reject_trailing_whitespace(
-        self, validator_func, valid_input: str
+        self, validator_func: Callable[[str], str], valid_input: str
     ) -> None:
         """Test that validators reject inputs with trailing whitespace."""
         with pytest.raises(ValueError):
@@ -933,10 +1068,11 @@ class TestValidatorEdgeCases:
             (validate_bcp47_locale, "en-US"),
             (validate_uuid, "550e8400-e29b-41d4-a716-446655440000"),
             (validate_semantic_version, "1.0.0"),
+            (validate_error_code, "AUTH_001"),
         ],
     )
     def test_validators_reject_surrounding_whitespace(
-        self, validator_func, valid_input: str
+        self, validator_func: Callable[[str], str], valid_input: str
     ) -> None:
         """Test that validators reject inputs with surrounding whitespace."""
         with pytest.raises(ValueError):
@@ -949,9 +1085,12 @@ class TestValidatorEdgeCases:
             validate_bcp47_locale,
             validate_uuid,
             validate_semantic_version,
+            validate_error_code,
         ],
     )
-    def test_validators_reject_whitespace_only(self, validator_func) -> None:
+    def test_validators_reject_whitespace_only(
+        self, validator_func: Callable[[str], str]
+    ) -> None:
         """Test that validators reject whitespace-only inputs."""
         with pytest.raises(ValueError):
             validator_func("   ")
@@ -971,9 +1110,12 @@ class TestValidatorEdgeCases:
             validate_bcp47_locale,
             validate_uuid,
             validate_semantic_version,
+            validate_error_code,
         ],
     )
-    def test_validators_reject_empty_string(self, validator_func) -> None:
+    def test_validators_reject_empty_string(
+        self, validator_func: Callable[[str], str]
+    ) -> None:
         """Test that all validators reject empty strings with clear message."""
         with pytest.raises(ValueError, match="cannot be empty"):
             validator_func("")
@@ -1103,6 +1245,49 @@ class TestValidatorEdgeCases:
         result = validate_semantic_version("1.0.0-1.2.3")
         assert result == "1.0.0-1.2.3"
 
+    # =========================================================================
+    # Error Code Validator Edge Cases
+    # =========================================================================
+
+    def test_error_code_single_letter_category(self) -> None:
+        """Test error codes with single letter categories."""
+        # Single letter followed by underscore and digits
+        result = validate_error_code("A_1")
+        assert result == "A_1"
+        result = validate_error_code("X_999")
+        assert result == "X_999"
+
+    def test_error_code_boundary_digit_counts(self) -> None:
+        """Test error codes at boundary digit counts (1-4 digits)."""
+        # 1 digit (minimum)
+        result = validate_error_code("ERR_1")
+        assert result == "ERR_1"
+        # 4 digits (maximum)
+        result = validate_error_code("ERR_9999")
+        assert result == "ERR_9999"
+        # 5 digits should fail (tested elsewhere)
+
+    def test_error_code_with_underscores_in_category(self) -> None:
+        """Test error codes with underscores in category name."""
+        result = validate_error_code("NETWORK_CONN_001")
+        assert result == "NETWORK_CONN_001"
+        result = validate_error_code("DB_SQL_SYNTAX_1")
+        assert result == "DB_SQL_SYNTAX_1"
+
+    def test_error_code_with_numbers_in_category(self) -> None:
+        """Test error codes with numbers embedded in category."""
+        result = validate_error_code("V2_AUTH_123")
+        assert result == "V2_AUTH_123"
+        result = validate_error_code("ERROR404_001")
+        assert result == "ERROR404_001"
+
+    def test_error_code_leading_zeros_in_suffix(self) -> None:
+        """Test error codes with leading zeros in numeric suffix."""
+        result = validate_error_code("AUTH_001")
+        assert result == "AUTH_001"
+        result = validate_error_code("AUTH_0001")
+        assert result == "AUTH_0001"
+
 
 @pytest.mark.unit
 class TestValidatorNoneHandlingInModels:
@@ -1147,6 +1332,18 @@ class TestValidatorNoneHandlingInModels:
         package = Package(version=None)
         assert package.version is None
 
+    def test_optional_error_code_accepts_none(self) -> None:
+        """Test that optional ErrorCode fields accept None."""
+
+        class ErrorReport(BaseModel):
+            code: ErrorCode | None = None
+
+        report = ErrorReport(code=None)
+        assert report.code is None
+
+        report2 = ErrorReport()
+        assert report2.code is None
+
     def test_required_fields_reject_none(self) -> None:
         """Test that required validated fields reject None properly."""
 
@@ -1158,7 +1355,7 @@ class TestValidatorNoneHandlingInModels:
 
         with pytest.raises(ValidationError):
             Config(
-                timeout=None,  # type: ignore
+                timeout=None,
                 locale="en-US",
                 id="550e8400-e29b-41d4-a716-446655440000",
                 version="1.0.0",
