@@ -18,6 +18,9 @@ Usage:
         validate_error_code,
     )
 
+    # Compiled regex patterns (cached at module level for performance)
+    from omnibase_core.validation.validators import ERROR_CODE_PATTERN
+
     # Pydantic Annotated types
     from omnibase_core.validation.validators import (
         Duration,
@@ -38,6 +41,8 @@ Ticket: OMN-1054
 """
 
 from omnibase_core.validation.validators.common_validators import (
+    # Compiled regex patterns (cached at module level)
+    ERROR_CODE_PATTERN,
     # Pydantic Annotated types
     BCP47Locale,
     Duration,
@@ -61,6 +66,8 @@ __all__ = [
     "validate_uuid",
     "validate_semantic_version",
     "validate_error_code",
+    # Compiled regex patterns (cached at module level)
+    "ERROR_CODE_PATTERN",
     # Enum normalizer factory
     "create_enum_normalizer",
     # Pydantic Annotated types

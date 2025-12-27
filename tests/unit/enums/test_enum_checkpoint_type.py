@@ -37,7 +37,7 @@ class TestEnumCheckpointType:
     def test_enum_iteration(self):
         """Test that enum can be iterated."""
         values = list(EnumCheckpointType)
-        assert len(values) == 5
+        assert len(values) == 9
         assert EnumCheckpointType.MANUAL in values
         assert EnumCheckpointType.COMPOSITION_BOUNDARY in values
 
@@ -83,7 +83,11 @@ class TestEnumCheckpointType:
             "manual",
             "automatic",
             "failure_recovery",
+            "recovery",
             "step_completion",
+            "stage_completion",
+            "snapshot",
+            "incremental",
             "composition_boundary",
         }
 

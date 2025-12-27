@@ -875,3 +875,404 @@ class TestEnumNormalizerWithContextModels:
         # Test backward compat
         meta3 = ModelDetectionMetadata(false_positive_likelihood="uncertain")
         assert meta3.false_positive_likelihood == "uncertain"
+
+
+# =============================================================================
+# Edge Case Tests for Validators
+# =============================================================================
+
+
+@pytest.mark.unit
+class TestValidatorEdgeCases:
+    """Edge case tests for all validators.
+
+    These tests focus on boundary conditions, whitespace handling,
+    and type edge cases that may cause unexpected behavior.
+    """
+
+    # =========================================================================
+    # Whitespace Handling Tests
+    # =========================================================================
+
+    @pytest.mark.parametrize(
+        ("validator_func", "valid_input"),
+        [
+            (validate_duration, "PT1H"),
+            (validate_bcp47_locale, "en-US"),
+            (validate_uuid, "550e8400-e29b-41d4-a716-446655440000"),
+            (validate_semantic_version, "1.0.0"),
+        ],
+    )
+    def test_validators_reject_leading_whitespace(
+        self, validator_func, valid_input: str
+    ) -> None:
+        """Test that validators reject inputs with leading whitespace."""
+        with pytest.raises(ValueError):
+            validator_func(f" {valid_input}")
+
+    @pytest.mark.parametrize(
+        ("validator_func", "valid_input"),
+        [
+            (validate_duration, "PT1H"),
+            (validate_bcp47_locale, "en-US"),
+            (validate_uuid, "550e8400-e29b-41d4-a716-446655440000"),
+            (validate_semantic_version, "1.0.0"),
+        ],
+    )
+    def test_validators_reject_trailing_whitespace(
+        self, validator_func, valid_input: str
+    ) -> None:
+        """Test that validators reject inputs with trailing whitespace."""
+        with pytest.raises(ValueError):
+            validator_func(f"{valid_input} ")
+
+    @pytest.mark.parametrize(
+        ("validator_func", "valid_input"),
+        [
+            (validate_duration, "PT1H"),
+            (validate_bcp47_locale, "en-US"),
+            (validate_uuid, "550e8400-e29b-41d4-a716-446655440000"),
+            (validate_semantic_version, "1.0.0"),
+        ],
+    )
+    def test_validators_reject_surrounding_whitespace(
+        self, validator_func, valid_input: str
+    ) -> None:
+        """Test that validators reject inputs with surrounding whitespace."""
+        with pytest.raises(ValueError):
+            validator_func(f"  {valid_input}  ")
+
+    @pytest.mark.parametrize(
+        "validator_func",
+        [
+            validate_duration,
+            validate_bcp47_locale,
+            validate_uuid,
+            validate_semantic_version,
+        ],
+    )
+    def test_validators_reject_whitespace_only(self, validator_func) -> None:
+        """Test that validators reject whitespace-only inputs."""
+        with pytest.raises(ValueError):
+            validator_func("   ")
+        with pytest.raises(ValueError):
+            validator_func("\t")
+        with pytest.raises(ValueError):
+            validator_func("\n")
+
+    # =========================================================================
+    # None and Empty String Edge Cases
+    # =========================================================================
+
+    @pytest.mark.parametrize(
+        "validator_func",
+        [
+            validate_duration,
+            validate_bcp47_locale,
+            validate_uuid,
+            validate_semantic_version,
+        ],
+    )
+    def test_validators_reject_empty_string(self, validator_func) -> None:
+        """Test that all validators reject empty strings with clear message."""
+        with pytest.raises(ValueError, match="cannot be empty"):
+            validator_func("")
+
+    # =========================================================================
+    # UUID Validator Edge Cases
+    # =========================================================================
+
+    def test_uuid_validator_handles_braces(self) -> None:
+        """Test that UUID validator rejects Microsoft-style braced UUIDs."""
+        # Some systems use braced UUIDs like {uuid}
+        with pytest.raises(ValueError, match="Invalid UUID format"):
+            validate_uuid("{550e8400-e29b-41d4-a716-446655440000}")
+
+    def test_uuid_validator_handles_urn(self) -> None:
+        """Test that UUID validator rejects URN-formatted UUIDs."""
+        # URN format: urn:uuid:xxx
+        with pytest.raises(ValueError, match="Invalid UUID format"):
+            validate_uuid("urn:uuid:550e8400-e29b-41d4-a716-446655440000")
+
+    def test_uuid_validator_all_zeros(self) -> None:
+        """Test that nil UUID (all zeros) is valid."""
+        result = validate_uuid("00000000-0000-0000-0000-000000000000")
+        assert result == "00000000-0000-0000-0000-000000000000"
+
+    def test_uuid_validator_all_ones(self) -> None:
+        """Test that max UUID (all f's) is valid."""
+        result = validate_uuid("ffffffff-ffff-ffff-ffff-ffffffffffff")
+        assert result == "ffffffff-ffff-ffff-ffff-ffffffffffff"
+
+    # =========================================================================
+    # Duration Validator Edge Cases
+    # =========================================================================
+
+    def test_duration_validator_zero_duration(self) -> None:
+        """Test that zero duration is valid."""
+        result = validate_duration("PT0S")
+        assert result == "PT0S"
+
+    def test_duration_validator_large_values(self) -> None:
+        """Test that large duration values are valid."""
+        result = validate_duration("P999Y")
+        assert result == "P999Y"
+        result = validate_duration("PT999999999S")
+        assert result == "PT999999999S"
+
+    def test_duration_validator_decimal_precision(self) -> None:
+        """Test that decimal seconds with various precisions are valid."""
+        assert validate_duration("PT0.1S") == "PT0.1S"
+        assert validate_duration("PT0.01S") == "PT0.01S"
+        assert validate_duration("PT0.001S") == "PT0.001S"
+        assert validate_duration("PT0.123456789S") == "PT0.123456789S"
+
+    def test_duration_validator_case_sensitivity(self) -> None:
+        """Test that duration validators are case-sensitive (uppercase only)."""
+        # ISO 8601 durations use uppercase letters
+        with pytest.raises(ValueError):
+            validate_duration("pt1h")  # lowercase not valid
+        with pytest.raises(ValueError):
+            validate_duration("p1d")  # lowercase not valid
+
+    # =========================================================================
+    # Locale Validator Edge Cases
+    # =========================================================================
+
+    def test_locale_validator_case_sensitivity(self) -> None:
+        """Test that locale validator handles case correctly.
+
+        Language subtags are case-insensitive per BCP 47, but our validator
+        may be strict. Test current behavior.
+        """
+        # Standard lowercase language
+        assert validate_bcp47_locale("en") == "en"
+        # Standard uppercase region
+        assert validate_bcp47_locale("en-US") == "en-US"
+        # Mixed case (depends on implementation)
+        result = validate_bcp47_locale("EN-us")
+        assert result is not None  # Just verify it doesn't crash
+
+    def test_locale_validator_grandfathered_tags(self) -> None:
+        """Test behavior with grandfathered language tags.
+
+        Some grandfathered tags like 'i-default' exist in BCP 47.
+        Our validator may or may not support them.
+        """
+        # These may fail or pass depending on implementation
+        # Just ensure they don't crash unexpectedly
+        try:
+            validate_bcp47_locale("i-default")
+        except ValueError:
+            pass  # Expected if not supported
+
+    def test_locale_validator_private_use(self) -> None:
+        """Test behavior with private use subtags."""
+        # Private use subtags start with 'x-'
+        try:
+            validate_bcp47_locale("x-custom")
+        except ValueError:
+            pass  # May not be supported
+
+    # =========================================================================
+    # Semantic Version Validator Edge Cases
+    # =========================================================================
+
+    def test_semver_validator_zero_version(self) -> None:
+        """Test that 0.0.0 is a valid semantic version."""
+        result = validate_semantic_version("0.0.0")
+        assert result == "0.0.0"
+
+    def test_semver_validator_very_large_numbers(self) -> None:
+        """Test semantic versions with very large numbers."""
+        result = validate_semantic_version("999999.999999.999999")
+        assert result == "999999.999999.999999"
+
+    def test_semver_validator_prerelease_with_hyphens(self) -> None:
+        """Test prerelease identifiers containing hyphens."""
+        result = validate_semantic_version("1.0.0-alpha-beta-gamma")
+        assert result == "1.0.0-alpha-beta-gamma"
+
+    def test_semver_validator_build_metadata_with_dots(self) -> None:
+        """Test build metadata with multiple dot-separated parts."""
+        result = validate_semantic_version("1.0.0+build.123.abc.def")
+        assert result == "1.0.0+build.123.abc.def"
+
+    def test_semver_validator_prerelease_numeric_only(self) -> None:
+        """Test prerelease with numeric-only identifiers."""
+        result = validate_semantic_version("1.0.0-1.2.3")
+        assert result == "1.0.0-1.2.3"
+
+
+@pytest.mark.unit
+class TestValidatorNoneHandlingInModels:
+    """Test None handling when validators are used in Pydantic models."""
+
+    def test_optional_duration_accepts_none(self) -> None:
+        """Test that optional Duration fields accept None."""
+
+        class Config(BaseModel):
+            timeout: Duration | None = None
+
+        config = Config(timeout=None)
+        assert config.timeout is None
+
+        config2 = Config()
+        assert config2.timeout is None
+
+    def test_optional_locale_accepts_none(self) -> None:
+        """Test that optional BCP47Locale fields accept None."""
+
+        class Config(BaseModel):
+            locale: BCP47Locale | None = None
+
+        config = Config(locale=None)
+        assert config.locale is None
+
+    def test_optional_uuid_accepts_none(self) -> None:
+        """Test that optional UUIDString fields accept None."""
+
+        class Entity(BaseModel):
+            parent_id: UUIDString | None = None
+
+        entity = Entity(parent_id=None)
+        assert entity.parent_id is None
+
+    def test_optional_version_accepts_none(self) -> None:
+        """Test that optional SemanticVersion fields accept None."""
+
+        class Package(BaseModel):
+            version: SemanticVersion | None = None
+
+        package = Package(version=None)
+        assert package.version is None
+
+    def test_required_fields_reject_none(self) -> None:
+        """Test that required validated fields reject None properly."""
+
+        class Config(BaseModel):
+            timeout: Duration
+            locale: BCP47Locale
+            id: UUIDString
+            version: SemanticVersion
+
+        with pytest.raises(ValidationError):
+            Config(
+                timeout=None,  # type: ignore
+                locale="en-US",
+                id="550e8400-e29b-41d4-a716-446655440000",
+                version="1.0.0",
+            )
+
+
+@pytest.mark.unit
+class TestEnumNormalizerEdgeCases:
+    """Edge case tests for create_enum_normalizer factory."""
+
+    def test_normalizer_with_empty_string(self) -> None:
+        """Test that empty string is kept as-is (backward compat)."""
+        from enum import Enum
+
+        from omnibase_core.validation.validators import create_enum_normalizer
+
+        class Status(Enum):
+            ACTIVE = "active"
+
+        normalizer = create_enum_normalizer(Status)
+        result = normalizer("")
+        assert result == ""
+
+    def test_normalizer_with_whitespace_string(self) -> None:
+        """Test that whitespace-only string is kept as-is."""
+        from enum import Enum
+
+        from omnibase_core.validation.validators import create_enum_normalizer
+
+        class Status(Enum):
+            ACTIVE = "active"
+
+        normalizer = create_enum_normalizer(Status)
+        result = normalizer("   ")
+        assert result == "   "
+
+    def test_normalizer_preserves_string_with_whitespace(self) -> None:
+        """Test that strings with surrounding whitespace are kept as-is."""
+        from enum import Enum
+
+        from omnibase_core.validation.validators import create_enum_normalizer
+
+        class Status(Enum):
+            ACTIVE = "active"
+
+        normalizer = create_enum_normalizer(Status)
+        # Whitespace prevents matching, so kept as-is
+        result = normalizer(" active ")
+        assert result == " active "
+
+    def test_normalizer_with_unicode_string(self) -> None:
+        """Test normalizer with unicode strings."""
+        from enum import Enum
+
+        from omnibase_core.validation.validators import create_enum_normalizer
+
+        class Status(Enum):
+            ACTIVE = "active"
+            PENDING = "pending"
+
+        normalizer = create_enum_normalizer(Status)
+        # Unicode string that doesn't match any enum value
+        result = normalizer("\u0041CTIVE")  # 'A' as unicode + 'CTIVE'
+        # This should normalize to 'active' via lowercase
+        assert result == Status.ACTIVE
+
+    def test_normalizer_with_mixed_case_enum_values(self) -> None:
+        """Test normalizer with enums that have mixed case values.
+
+        The normalizer lowercases the input and looks for exact match.
+        Enums with mixed-case values like "InProgress" won't match
+        lowercased input "inprogress" because the enum value is "InProgress".
+        This is expected - normalizer works best with lowercase enum values.
+        """
+        from enum import Enum
+
+        from omnibase_core.validation.validators import create_enum_normalizer
+
+        class CamelStatus(Enum):
+            InProgress = "InProgress"
+            Completed = "Completed"
+
+        normalizer = create_enum_normalizer(CamelStatus)
+        # Lowercase input won't match mixed-case enum value "InProgress"
+        # because normalizer does enum_class(input.lower())
+        result = normalizer("inprogress")
+        # Kept as string since no exact match found
+        assert result == "inprogress"
+
+        # Original case preserved when no match found
+        result2 = normalizer("InProgress")
+        # "InProgress".lower() = "inprogress", no match, so original kept
+        assert result2 == "InProgress"
+
+        # Enum instance passes through unchanged
+        result3 = normalizer(CamelStatus.InProgress)
+        assert result3 is CamelStatus.InProgress
+
+    def test_normalizer_with_numeric_enum_values(self) -> None:
+        """Test normalizer behavior with enums that have non-string values."""
+        from enum import Enum
+
+        from omnibase_core.validation.validators import create_enum_normalizer
+
+        class Priority(Enum):
+            LOW = 1
+            MEDIUM = 2
+            HIGH = 3
+
+        normalizer = create_enum_normalizer(Priority)
+        # String input won't match integer values
+        result = normalizer("1")
+        assert result == "1"  # Kept as-is
+
+        # Enum value should pass through
+        result = normalizer(Priority.LOW)
+        assert result is Priority.LOW

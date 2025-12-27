@@ -361,7 +361,8 @@ def validate_semantic_version(value: str) -> str:
 # If you need lint-style short codes (W001, E001), use a separate validator or
 # the workflow_linter module directly. This validator enforces structured codes.
 
-_ERROR_CODE_PATTERN = re.compile(r"^[A-Z][A-Z0-9_]*_\d{1,4}$")
+# Module-level compiled pattern for regex caching (compiled once at import time)
+ERROR_CODE_PATTERN = re.compile(r"^[A-Z][A-Z0-9_]*_\d{1,4}$")
 
 
 def validate_error_code(value: str) -> str:
@@ -401,7 +402,7 @@ def validate_error_code(value: str) -> str:
         msg = "Error code cannot be empty"
         raise ValueError(msg)
 
-    if not _ERROR_CODE_PATTERN.match(value):
+    if not ERROR_CODE_PATTERN.match(value):
         msg = (
             f"Invalid error code format: '{value}'. "
             "Expected CATEGORY_NNN pattern (e.g., AUTH_001, VALIDATION_123). "
@@ -500,6 +501,8 @@ __all__ = [
     "validate_uuid",
     "validate_semantic_version",
     "validate_error_code",
+    # Compiled regex patterns (cached at module level)
+    "ERROR_CODE_PATTERN",
     # Enum normalizer factory
     "create_enum_normalizer",
     # Pydantic Annotated types

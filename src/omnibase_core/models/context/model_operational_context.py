@@ -15,7 +15,7 @@ See Also:
     - ModelRetryContext: Retry-specific metadata
 """
 
-from uuid import UUID
+import uuid
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -67,7 +67,7 @@ class ModelOperationalContext(BaseModel):
 
     model_config = ConfigDict(frozen=True, from_attributes=True, extra="forbid")
 
-    operation_id: UUID | None = Field(
+    operation_id: uuid.UUID | None = Field(
         default=None,
         description="Unique identifier for this specific operation instance",
     )

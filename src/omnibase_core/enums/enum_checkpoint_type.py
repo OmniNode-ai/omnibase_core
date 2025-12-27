@@ -59,4 +59,14 @@ class EnumCheckpointType(str, Enum):
         Returns:
             True if automatic, False if manual
         """
-        return checkpoint_type != cls.MANUAL
+        automatic_types = {
+            cls.AUTOMATIC,
+            cls.FAILURE_RECOVERY,
+            cls.RECOVERY,
+            cls.STEP_COMPLETION,
+            cls.STAGE_COMPLETION,
+            cls.SNAPSHOT,
+            cls.INCREMENTAL,
+            cls.COMPOSITION_BOUNDARY,
+        }
+        return checkpoint_type in automatic_types

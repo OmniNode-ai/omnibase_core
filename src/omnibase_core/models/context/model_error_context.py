@@ -32,6 +32,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 __all__ = [
     "ModelErrorContext",
+    # Error code pattern (also defined in common_validators for direct use)
+    "ERROR_CODE_PATTERN",
     # Error category constants
     "CATEGORY_VALIDATION",
     "CATEGORY_AUTH",
@@ -42,7 +44,25 @@ __all__ = [
     "SERVER_ERROR_CATEGORIES",
 ]
 
+# -----------------------------------------------------------------------------
+# Error Code Pattern
+# -----------------------------------------------------------------------------
 # Pattern for error codes: CATEGORY_NNN (e.g., AUTH_001, VALIDATION_123)
+#
+# IMPORTANT: This pattern is defined here AND in common_validators.
+# - This module: For use in Pydantic model validation (avoids circular imports)
+# - common_validators: For direct validation via validate_error_code()
+#
+# The pattern supports multi-character category prefixes with underscores:
+# - Valid: AUTH_001, VALIDATION_123, NETWORK_TIMEOUT_001, SYSTEM_01
+# - Invalid: E001 (lint-style, no underscore), auth_001 (lowercase)
+#
+# If you need to modify this pattern, update BOTH locations:
+# 1. omnibase_core.models.context.model_error_context.ERROR_CODE_PATTERN
+# 2. omnibase_core.validation.validators.common_validators.ERROR_CODE_PATTERN
+#
+# For direct validation (not in Pydantic models), prefer using:
+#   from omnibase_core.validation.validators import validate_error_code
 ERROR_CODE_PATTERN = re.compile(r"^[A-Z][A-Z0-9_]*_\d{1,4}$")
 
 # -----------------------------------------------------------------------------
@@ -170,6 +190,13 @@ class ModelErrorContext(BaseModel):
         The pattern is optional but recommended for consistency. Accepts
         formats like AUTH_001, VALIDATION_123, SYSTEM_01.
 
+        Uses the module-level ERROR_CODE_PATTERN which is compiled once
+        at import time for performance (regex caching).
+
+        Note:
+            For direct validation outside Pydantic models, prefer using
+            validate_error_code() from common_validators instead.
+
         Args:
             value: The error code string or None.
 
@@ -181,6 +208,8 @@ class ModelErrorContext(BaseModel):
         """
         if value is None:
             return None
+        if not value:
+            raise ValueError("Error code cannot be empty")
         if not ERROR_CODE_PATTERN.match(value):
             raise ValueError(
                 f"Invalid error_code format '{value}': expected CATEGORY_NNN "
@@ -217,17 +246,63 @@ class ModelErrorContext(BaseModel):
             return False
         return self.retry_count < max_retries
 
+    @classmethod
+    def get_client_error_categories(cls) -> tuple[str, ...]:
+        """Get the tuple of error categories considered client errors.
+
+        Override this method in subclasses to extend or customize
+        the client error category classification.
+
+        Returns:
+            Tuple of category strings that are considered client errors.
+            Default: ("validation", "auth")
+
+        Example:
+            Extending client categories in a subclass::
+
+                class MyErrorContext(ModelErrorContext):
+                    @classmethod
+                    def get_client_error_categories(cls) -> tuple[str, ...]:
+                        return super().get_client_error_categories() + ("rate_limit",)
+        """
+        return CLIENT_ERROR_CATEGORIES
+
+    @classmethod
+    def get_server_error_categories(cls) -> tuple[str, ...]:
+        """Get the tuple of error categories considered server errors.
+
+        Override this method in subclasses to extend or customize
+        the server error category classification.
+
+        Returns:
+            Tuple of category strings that are considered server errors.
+            Default: ("system", "network")
+
+        Example:
+            Extending server categories in a subclass::
+
+                class MyErrorContext(ModelErrorContext):
+                    @classmethod
+                    def get_server_error_categories(cls) -> tuple[str, ...]:
+                        return super().get_server_error_categories() + ("database",)
+        """
+        return SERVER_ERROR_CATEGORIES
+
     def is_client_error(self) -> bool:
         """Check if this is a client-side error.
 
         Client errors are typically caused by invalid input or
-        authentication/authorization issues. Uses the CLIENT_ERROR_CATEGORIES
-        constant tuple for classification.
+        authentication/authorization issues. Uses get_client_error_categories()
+        for classification, which can be overridden in subclasses.
 
         Returns:
-            True if error_category is in CLIENT_ERROR_CATEGORIES
-            (currently "validation" or "auth"), False otherwise
+            True if error_category is in the client error categories
+            (default: "validation" or "auth"), False otherwise
             (including when error_category is None).
+
+        Note:
+            To extend client error categories in a subclass, override
+            the get_client_error_categories() class method.
 
         Example:
             >>> ctx = ModelErrorContext(error_category="validation")
@@ -237,19 +312,23 @@ class ModelErrorContext(BaseModel):
             >>> ctx.is_client_error()
             False
         """
-        return self.error_category in CLIENT_ERROR_CATEGORIES
+        return self.error_category in self.get_client_error_categories()
 
     def is_server_error(self) -> bool:
         """Check if this is a server-side error.
 
         Server errors are typically caused by internal system failures
-        or network issues. Uses the SERVER_ERROR_CATEGORIES constant
-        tuple for classification.
+        or network issues. Uses get_server_error_categories() for
+        classification, which can be overridden in subclasses.
 
         Returns:
-            True if error_category is in SERVER_ERROR_CATEGORIES
-            (currently "system" or "network"), False otherwise
+            True if error_category is in the server error categories
+            (default: "system" or "network"), False otherwise
             (including when error_category is None).
+
+        Note:
+            To extend server error categories in a subclass, override
+            the get_server_error_categories() class method.
 
         Example:
             >>> ctx = ModelErrorContext(error_category="system")
@@ -259,4 +338,4 @@ class ModelErrorContext(BaseModel):
             >>> ctx.is_server_error()
             False
         """
-        return self.error_category in SERVER_ERROR_CATEGORIES
+        return self.error_category in self.get_server_error_categories()

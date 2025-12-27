@@ -21,8 +21,6 @@ import re
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from omnibase_core.validation.validators import validate_semantic_version
-
 __all__ = ["ModelMetricsContext"]
 
 # W3C Trace Context format patterns
@@ -30,6 +28,40 @@ __all__ = ["ModelMetricsContext"]
 # span_id: 16 lowercase hex characters (64 bits)
 _TRACE_ID_PATTERN = re.compile(r"^[0-9a-f]{32}$")
 _SPAN_ID_PATTERN = re.compile(r"^[0-9a-f]{16}$")
+
+# SemVer 2.0.0 pattern - duplicated from common_validators to avoid circular imports.
+# The canonical definition is in omnibase_core.validation.validators.common_validators
+# Pattern breakdown:
+# - MAJOR.MINOR.PATCH: each a non-negative integer (no leading zeros except 0 itself)
+# - PRERELEASE: optional, dot-separated identifiers (alphanumeric + hyphen)
+# - BUILD: optional, dot-separated identifiers (alphanumeric + hyphen)
+_SEMVER_PATTERN = re.compile(
+    r"^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)"
+    r"(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)"
+    r"(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?"
+    r"(?:\+(?P<build>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"
+)
+
+
+def _validate_semver(value: str) -> str:
+    """Validate SemVer 2.0.0 version string (local helper to avoid circular imports).
+
+    Args:
+        value: Version string to validate
+
+    Returns:
+        The validated version string (unchanged if valid)
+
+    Raises:
+        ValueError: If the format is invalid
+    """
+    if not value:
+        raise ValueError("Semantic version cannot be empty")
+
+    if not _SEMVER_PATTERN.match(value):
+        raise ValueError(f"Invalid semantic version format: '{value}'")
+
+    return value
 
 
 class ModelMetricsContext(BaseModel):
@@ -198,7 +230,7 @@ class ModelMetricsContext(BaseModel):
         """
         if value is None:
             return None
-        return validate_semantic_version(value)
+        return _validate_semver(value)
 
     def is_sampled(self) -> bool:
         """Check if this context should be sampled for recording.
