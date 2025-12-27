@@ -90,7 +90,7 @@ class ModelWorkflowStep(BaseModel):
         """
         if v not in VALID_STEP_TYPES:
             raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.ORCHESTRATOR_STRUCT_INVALID_STEP_TYPE,
                 message=(
                     f"Invalid step_type '{v}'. v1.0.4 requires one of: "
                     f"{', '.join(sorted(VALID_STEP_TYPES))}. "

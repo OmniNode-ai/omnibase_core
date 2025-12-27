@@ -713,11 +713,12 @@ class TestOrchestratorIntegrationEdgeCases:
     def test_contract_validation_without_steps(
         self, orchestrator_with_contract_factory: OrchestratorWithContractFactory
     ) -> None:
-        """Test workflow contract validation without steps (structural validation only).
+        """Test workflow contract validation without steps (empty workflows are valid).
 
         Note: validate_contract() validates the workflow definition structure without
-        steps. It correctly returns an error when no steps are provided because a
-        workflow with no steps is not valid for execution.
+        steps. Empty workflows are explicitly VALID by design. The workflow executor
+        returns a COMPLETED status with 0 actions when no steps are defined.
+        This is intentional behavior per workflow_executor.py lines 522-524.
         """
         # Arrange
         workflow_definition = create_test_workflow_definition(
@@ -730,9 +731,8 @@ class TestOrchestratorIntegrationEdgeCases:
         # Act: Validate contract (without steps)
         errors = asyncio.run(orchestrator.validate_contract())
 
-        # Assert: Should return error about no steps (expected behavior)
-        assert len(errors) == 1
-        assert "no steps" in errors[0].lower()
+        # Assert: Empty workflows are valid - no validation errors expected
+        assert len(errors) == 0
 
     def test_workflow_step_validation(
         self, orchestrator_with_contract_factory: OrchestratorWithContractFactory

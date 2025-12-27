@@ -333,8 +333,8 @@ class WorkflowLinter:
 
         for node in workflow.execution_graph.nodes:
             # Map node_type to step_type using module-level constant
-            # Valid step_types: compute, effect, reducer, orchestrator,
-            #                   conditional, parallel, custom
+            # Valid step_types per v1.0.4: compute, effect, reducer, orchestrator,
+            # parallel, custom. Note: "conditional" is reserved for v1.1+.
             # Handle None node_type gracefully - defaults to "custom" step type
             node_type_value = (
                 node.node_type.value.lower() if node.node_type else "custom"

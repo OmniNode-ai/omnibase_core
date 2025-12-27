@@ -14,6 +14,23 @@ v1.0 Note:
 
     See: docs/architecture/CONTRACT_DRIVEN_NODEORCHESTRATOR_V1_0.md
     Section: "Execution Graph Prohibition (v1.0.4 Normative)"
+
+v1.1+ Roadmap:
+    The execution_graph field is reserved for future versions (v1.1+) where it
+    will enable advanced workflow features:
+
+    - **v1.1 (Planned)**: Graph-based execution validation - the executor will
+      optionally validate that steps match the declared graph structure.
+
+    - **v1.2+ (Planned)**: Graph-driven optimizations including parallel
+      execution path detection, critical path analysis, and automatic
+      step reordering for performance.
+
+    - **v1.3+ (Planned)**: Visual workflow editor integration - the graph
+      structure will be used to render and edit workflows graphically.
+
+    Until these features are implemented, the executor MUST ignore this field
+    and rely solely on ModelOrchestratorInput.steps + depends_on declarations.
 """
 
 from pydantic import BaseModel, Field
@@ -34,13 +51,19 @@ class ModelExecutionGraph(BaseModel):
 
         The execution_graph field exists for:
         - Contract schema definition
-        - Future version extensibility
+        - Future version extensibility (v1.1+)
         - Documentation of workflow structure
 
         The v1.0 executor:
         - MUST NOT read this field during execution
         - MUST NOT validate steps against graph nodes
         - MUST NOT emit warnings for graph/step mismatches
+
+    v1.1+ Roadmap:
+        This field will be actively used starting in v1.1 for:
+        - Graph-based execution validation (v1.1)
+        - Parallel execution optimization (v1.2+)
+        - Visual workflow editing (v1.3+)
     """
 
     # Model version for instance tracking

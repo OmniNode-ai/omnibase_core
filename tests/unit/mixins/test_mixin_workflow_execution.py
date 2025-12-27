@@ -265,13 +265,19 @@ class TestMixinWorkflowValidation:
     async def test_validate_workflow_contract_empty_steps(
         self, workflow_definition: ModelWorkflowDefinition
     ):
-        """Test validation fails for workflow with no steps."""
+        """Test validation passes for workflow with no steps (empty workflows are valid).
+
+        Empty workflows are explicitly VALID by design. The workflow executor
+        treats empty workflows as valid and returns a COMPLETED status with
+        0 actions. This is intentional behavior per workflow_executor.py
+        lines 522-524 which explicitly does NOT add an error for empty workflows.
+        """
         node = MockNodeWithWorkflowMixin()
 
         errors = await node.validate_workflow_contract(workflow_definition, [])
 
-        assert len(errors) > 0
-        assert any("no steps" in error.lower() for error in errors)
+        # Empty workflows are valid - no validation errors expected
+        assert len(errors) == 0
 
     @pytest.mark.asyncio
     async def test_validate_workflow_contract_invalid_dependency(
@@ -480,14 +486,27 @@ class TestMixinIntegration:
         assert len(result.actions_emitted) == len(simple_steps)
 
     @pytest.mark.asyncio
-    async def test_mixin_handles_executor_errors(
+    async def test_mixin_handles_empty_workflow_successfully(
         self, workflow_definition: ModelWorkflowDefinition
     ):
-        """Test mixin properly handles executor errors."""
+        """Test mixin handles empty workflows successfully (empty workflows are valid).
+
+        Empty workflows are explicitly VALID by design. The workflow executor
+        returns a COMPLETED status with 0 actions when no steps are defined.
+        This is intentional behavior per workflow_executor.py lines 349-368
+        and 522-524.
+        """
         node = MockNodeWithWorkflowMixin()
+        workflow_id = uuid4()
 
-        # Empty steps should trigger validation error
-        with pytest.raises(ModelOnexError) as exc_info:
-            await node.execute_workflow_from_contract(workflow_definition, [], uuid4())
+        # Empty workflow should execute successfully
+        result = await node.execute_workflow_from_contract(
+            workflow_definition, [], workflow_id
+        )
 
-        assert "validation failed" in str(exc_info.value).lower()
+        # Empty workflow completes with 0 steps and 0 actions
+        assert result.workflow_id == workflow_id
+        assert result.execution_status == EnumWorkflowState.COMPLETED
+        assert len(result.completed_steps) == 0
+        assert len(result.failed_steps) == 0
+        assert len(result.actions_emitted) == 0

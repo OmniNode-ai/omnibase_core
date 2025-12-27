@@ -36,6 +36,7 @@ class ModelWorkflowDefinitionMetadata(BaseModel):
         default=600000,
         description="Workflow timeout in milliseconds",
         ge=1000,
+        le=86400000,  # Max 24 hours - prevents DoS via excessively long timeouts
     )
 
     workflow_hash: str | None = Field(
