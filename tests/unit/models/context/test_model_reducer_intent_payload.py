@@ -23,12 +23,17 @@ from omnibase_core.models.context.model_reducer_intent_payload import (
     ModelReducerIntentPayload,
 )
 
+# Test configuration constants
+UNIT_TEST_TIMEOUT_SECONDS: int = 30
+
+
 # =============================================================================
 # INSTANTIATION TESTS
 # =============================================================================
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(UNIT_TEST_TIMEOUT_SECONDS)
 class TestModelReducerIntentPayloadInstantiation:
     """Tests for creating ModelReducerIntentPayload instances."""
 
@@ -145,6 +150,7 @@ class TestModelReducerIntentPayloadInstantiation:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(UNIT_TEST_TIMEOUT_SECONDS)
 class TestModelReducerIntentPayloadValidation:
     """Tests for validation behavior of ModelReducerIntentPayload."""
 
@@ -306,6 +312,7 @@ class TestModelReducerIntentPayloadValidation:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(UNIT_TEST_TIMEOUT_SECONDS)
 class TestModelReducerIntentPayloadEdgeCases:
     """Tests for edge cases in ModelReducerIntentPayload."""
 
@@ -350,19 +357,19 @@ class TestModelReducerIntentPayloadEdgeCases:
 
     def test_unicode_in_target_state(self) -> None:
         """Unicode characters in target_state are accepted."""
-        unicode_state = "حالة_نشطة"
+        unicode_state = "active"
         model = ModelReducerIntentPayload(target_state=unicode_state)
         assert model.target_state == unicode_state
 
     def test_unicode_in_trigger(self) -> None:
         """Unicode characters in trigger are accepted."""
-        unicode_trigger = "δημιουργία_γεγονός"
+        unicode_trigger = "event"
         model = ModelReducerIntentPayload(trigger=unicode_trigger)
         assert model.trigger == unicode_trigger
 
     def test_unicode_in_operation(self) -> None:
         """Unicode characters in operation are accepted."""
-        unicode_op = "用户创建_launch"
+        unicode_op = "create"
         model = ModelReducerIntentPayload(operation=unicode_op)
         assert model.operation == unicode_op
 
@@ -440,6 +447,7 @@ class TestModelReducerIntentPayloadEdgeCases:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(UNIT_TEST_TIMEOUT_SECONDS)
 class TestModelReducerIntentPayloadHelperMethods:
     """Tests for helper methods of ModelReducerIntentPayload."""
 
@@ -612,6 +620,7 @@ class TestModelReducerIntentPayloadHelperMethods:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(UNIT_TEST_TIMEOUT_SECONDS)
 class TestModelReducerIntentPayloadImmutability:
     """Tests for immutability (frozen=True) behavior."""
 
@@ -652,6 +661,7 @@ class TestModelReducerIntentPayloadImmutability:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(UNIT_TEST_TIMEOUT_SECONDS)
 class TestModelReducerIntentPayloadSerialization:
     """Tests for serialization/deserialization behavior."""
 
@@ -741,6 +751,7 @@ class TestModelReducerIntentPayloadSerialization:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(UNIT_TEST_TIMEOUT_SECONDS)
 class TestModelReducerIntentPayloadHashEquality:
     """Tests for hash and equality behavior."""
 

@@ -125,7 +125,7 @@ class ModelRuntimeDirectivePayload(BaseModel):
     )
     execution_mode: str | None = Field(
         default=None,
-        description="Execution mode: 'sync' for synchronous, 'async' for asynchronous",
+        description="Execution mode for handler invocation ('sync' or 'async')",
     )
 
     # Queue and priority parameters (ENQUEUE_HANDLER)

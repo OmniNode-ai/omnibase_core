@@ -22,12 +22,17 @@ from omnibase_core.models.context.model_runtime_directive_payload import (
     ModelRuntimeDirectivePayload,
 )
 
+# Test configuration constants
+UNIT_TEST_TIMEOUT_SECONDS: int = 30
+
+
 # =============================================================================
 # INSTANTIATION TESTS
 # =============================================================================
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(UNIT_TEST_TIMEOUT_SECONDS)
 class TestModelRuntimeDirectivePayloadInstantiation:
     """Tests for creating ModelRuntimeDirectivePayload instances."""
 
@@ -126,6 +131,7 @@ class TestModelRuntimeDirectivePayloadInstantiation:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(UNIT_TEST_TIMEOUT_SECONDS)
 class TestModelRuntimeDirectivePayloadValidation:
     """Tests for validation behavior of ModelRuntimeDirectivePayload."""
 
@@ -240,6 +246,7 @@ class TestModelRuntimeDirectivePayloadValidation:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(UNIT_TEST_TIMEOUT_SECONDS)
 class TestModelRuntimeDirectivePayloadEdgeCases:
     """Tests for edge cases in ModelRuntimeDirectivePayload."""
 
@@ -428,6 +435,7 @@ class TestModelRuntimeDirectivePayloadEdgeCases:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(UNIT_TEST_TIMEOUT_SECONDS)
 class TestModelRuntimeDirectivePayloadImmutability:
     """Tests for immutability (frozen=True) behavior."""
 
@@ -469,6 +477,7 @@ class TestModelRuntimeDirectivePayloadImmutability:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(UNIT_TEST_TIMEOUT_SECONDS)
 class TestModelRuntimeDirectivePayloadSerialization:
     """Tests for serialization/deserialization behavior."""
 
@@ -555,6 +564,7 @@ class TestModelRuntimeDirectivePayloadSerialization:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(UNIT_TEST_TIMEOUT_SECONDS)
 class TestModelRuntimeDirectivePayloadHashEquality:
     """Tests for hash and equality behavior."""
 
@@ -609,6 +619,7 @@ class TestModelRuntimeDirectivePayloadHashEquality:
 
 
 @pytest.mark.unit
+@pytest.mark.timeout(UNIT_TEST_TIMEOUT_SECONDS)
 class TestModelRuntimeDirectivePayloadUseCases:
     """Tests for specific use case scenarios."""
 
