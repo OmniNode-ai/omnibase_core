@@ -35,7 +35,7 @@ class ModelProjectionBase(BaseModel):
             tag: str  # PENDING, PROCESSING, COMPLETED (indexed)
             namespace: str  # Multi-tenant isolation (indexed)
             updated_at: datetime
-            indices: Optional[dict[str, Any]]
+            indices: dict[str, Any] | None
 
         # Usage in projection store
         projection = await proj_store.get_state(
