@@ -15,7 +15,6 @@ This ensures consistent use of modern Python typing syntax across the codebase.
 
 import argparse
 import ast
-import re
 import sys
 from pathlib import Path
 
@@ -128,7 +127,7 @@ class TypingSyntaxDetector(ast.NodeVisitor):
         # Fallback to basic representation
         try:
             return ast.unparse(node)
-        except:
+        except Exception:
             return "Unknown"
 
 

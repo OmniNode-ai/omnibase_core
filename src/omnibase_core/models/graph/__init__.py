@@ -9,7 +9,6 @@ data structures used in the ONEX framework.
 This module provides two categories of models:
 
 1. Workflow Visualization Models:
-   - ModelGraph: Container for workflow graph structure
    - ModelGraphEdge: Edge in an orchestrator workflow graph
    - ModelGraphNode: Node in an orchestrator workflow graph
 
@@ -26,10 +25,7 @@ This module provides two categories of models:
    - ModelGraphConnectionConfig: Connection configuration
 """
 
-# Workflow visualization models (existing)
-from omnibase_core.models.graph.model_graph import ModelGraph
-
-# Database CRUD models (new)
+# Database CRUD models
 from omnibase_core.models.graph.model_graph_batch_result import ModelGraphBatchResult
 from omnibase_core.models.graph.model_graph_connection_config import (
     ModelGraphConnectionConfig,
@@ -57,7 +53,6 @@ from omnibase_core.models.graph.model_graph_traversal_result import (
 
 __all__ = [
     # Workflow visualization models
-    "ModelGraph",
     "ModelGraphEdge",
     "ModelGraphNode",
     # Database CRUD models

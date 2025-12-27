@@ -831,6 +831,9 @@ class TestFSMAnalysisAmbiguousTransitions:
         from_state, trigger, priority) are rejected during model validation.
         This test verifies that behavior.
         """
+        # Note: Use top-level import (line 29) to avoid class identity issues
+        # in pytest-xdist parallel execution
+
         states = [
             ModelFSMStateDefinition(
                 version=base_version,
