@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from enum import Enum
 from functools import cache
+from typing import cast
 
 __all__ = ["EnumLikelihood"]
 
@@ -75,7 +76,7 @@ class EnumLikelihood(str, Enum):
         returns 'EnumLikelihood.MEMBER_NAME' format. This override ensures
         str(EnumLikelihood.LOW) returns 'low' for consistent string representation.
         """
-        return self.value
+        return cast(str, self.value)
 
     @classmethod
     @cache
