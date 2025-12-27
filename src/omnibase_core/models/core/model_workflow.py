@@ -50,7 +50,7 @@ class ModelWorkflow(BaseModel):
     description: str = Field(
         default="",
         description="Detailed description of workflow purpose and behavior",
-        max_length=MAX_ERROR_MESSAGE_LENGTH,
+        max_length=MAX_DESCRIPTION_LENGTH,
     )
 
     category: str = Field(
@@ -112,7 +112,7 @@ class ModelWorkflow(BaseModel):
     error_message: str | None = Field(
         default=None,
         description="Error message if workflow failed",
-        max_length=MAX_DESCRIPTION_LENGTH,
+        max_length=MAX_ERROR_MESSAGE_LENGTH,
     )
 
     model_config = {
