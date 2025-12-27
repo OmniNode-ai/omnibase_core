@@ -110,7 +110,11 @@ from omnibase_core.models.context.model_operational_context import (
 )
 from omnibase_core.models.context.model_resource_context import ModelResourceContext
 from omnibase_core.models.context.model_retry_context import ModelRetryContext
-from omnibase_core.models.context.model_routing_metadata import ModelRoutingMetadata
+from omnibase_core.models.context.model_routing_metadata import (
+    VALID_LOAD_BALANCE_STRATEGIES,
+    LoadBalanceStrategy,
+    ModelRoutingMetadata,
+)
 from omnibase_core.models.context.model_service_discovery_metadata import (
     ModelServiceDiscoveryMetadata,
 )
@@ -136,8 +140,10 @@ __all__ = [
     "ModelNodeInitMetadata",
     "ModelSessionContext",
     # Action/Routing context models (OMN-1049)
+    "LoadBalanceStrategy",
     "ModelActionExecutionContext",
     "ModelActionParameters",
     "ModelRoutingMetadata",
     "ModelServiceDiscoveryMetadata",
+    "VALID_LOAD_BALANCE_STRATEGIES",
 ]
