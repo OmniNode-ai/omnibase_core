@@ -140,7 +140,8 @@ class ModelOrchestratorInput(BaseModel):
         default=5, description="Maximum number of parallel steps"
     )
     global_timeout_ms: int = Field(
-        default=TIMEOUT_LONG_MS, description="Global workflow timeout (5 minutes default)"
+        default=TIMEOUT_LONG_MS,
+        description="Global workflow timeout (5 minutes default)",
     )
     failure_strategy: str = Field(
         default="fail_fast", description="Strategy for handling failures"
