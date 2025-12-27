@@ -26,6 +26,12 @@ Available Context Models:
         - ModelDetectionMetadata: Security pattern detection metadata
         - ModelNodeInitMetadata: Node initialization tracking metadata
 
+    Action/Routing Context (OMN-1049):
+        - ModelActionExecutionContext: Action/node execution context
+        - ModelRoutingMetadata: Service routing and load balancing
+        - ModelServiceDiscoveryMetadata: Service discovery and composition
+        - ModelActionParameters: Typed action execution parameters
+
 Thread Safety:
     All context models are immutable (frozen=True) after creation,
     making them thread-safe for concurrent read access.
@@ -80,7 +86,12 @@ Example:
         )
 """
 
-# Error/Retry context models
+# Action/Routing context models (OMN-1049)
+from omnibase_core.models.context.model_action_execution_context import (
+    ModelActionExecutionContext,
+)
+from omnibase_core.models.context.model_action_parameters import ModelActionParameters
+
 # Metadata context models
 from omnibase_core.models.context.model_audit_metadata import ModelAuditMetadata
 from omnibase_core.models.context.model_authorization_context import (
@@ -96,11 +107,21 @@ from omnibase_core.models.context.model_http_request_metadata import (
 )
 from omnibase_core.models.context.model_metrics_context import ModelMetricsContext
 from omnibase_core.models.context.model_node_init_metadata import ModelNodeInitMetadata
+
+# Error/Retry context models
 from omnibase_core.models.context.model_operational_context import (
     ModelOperationalContext,
 )
 from omnibase_core.models.context.model_resource_context import ModelResourceContext
 from omnibase_core.models.context.model_retry_context import ModelRetryContext
+from omnibase_core.models.context.model_routing_metadata import (
+    VALID_LOAD_BALANCE_STRATEGIES,
+    LoadBalanceStrategy,
+    ModelRoutingMetadata,
+)
+from omnibase_core.models.context.model_service_discovery_metadata import (
+    ModelServiceDiscoveryMetadata,
+)
 from omnibase_core.models.context.model_session_context import ModelSessionContext
 from omnibase_core.models.context.model_trace_context import ModelTraceContext
 from omnibase_core.models.context.model_user_context import ModelUserContext
@@ -124,4 +145,11 @@ __all__ = [
     "ModelMetricsContext",
     "ModelNodeInitMetadata",
     "ModelSessionContext",
+    # Action/Routing context models (OMN-1049)
+    "LoadBalanceStrategy",
+    "ModelActionExecutionContext",
+    "ModelActionParameters",
+    "ModelRoutingMetadata",
+    "ModelServiceDiscoveryMetadata",
+    "VALID_LOAD_BALANCE_STRATEGIES",
 ]

@@ -479,12 +479,12 @@ class TestStepMetadata:
         )
 
         for action in result.actions_emitted:
-            # Check workflow ID in payload
-            assert "workflow_id" in action.payload
-            assert action.payload["workflow_id"] == str(workflow_id)
+            # Check workflow ID in payload metadata (typed payloads store step info in metadata)
+            assert "workflow_id" in action.payload.metadata
+            assert action.payload.metadata["workflow_id"] == str(workflow_id)
 
-            # Check step ID in payload
-            assert "step_id" in action.payload
+            # Check step ID in payload metadata
+            assert "step_id" in action.payload.metadata
 
             # Check step name in metadata parameters
             assert "step_name" in action.metadata.parameters
@@ -1039,7 +1039,6 @@ class TestValidateJsonPayload:
 
     def test_uuid_passes_in_permissive_mode(self) -> None:
         """Test UUID objects are accepted in default permissive mode (strict=False)."""
-        from datetime import datetime
 
         from omnibase_core.utils.workflow_executor import _validate_json_payload
 
@@ -1294,7 +1293,8 @@ class TestPriorityOrderingIntegration:
 
         # Extract step IDs from actions in emission order
         emitted_step_ids = [
-            UUID(action.payload["step_id"]) for action in result.actions_emitted
+            UUID(action.payload.metadata["step_id"])
+            for action in result.actions_emitted
         ]
 
         # Verify priority order: high (1), medium (5), low (10)
@@ -1384,7 +1384,8 @@ class TestPriorityOrderingIntegration:
 
         # Extract step IDs from actions in emission order
         emitted_step_ids = [
-            UUID(action.payload["step_id"]) for action in result.actions_emitted
+            UUID(action.payload.metadata["step_id"])
+            for action in result.actions_emitted
         ]
 
         # First action should be parent (wave 1)
@@ -1398,7 +1399,7 @@ class TestPriorityOrderingIntegration:
 
         # Verify action priorities are set correctly for the wave
         action_priorities = [
-            (a.priority, UUID(a.payload["step_id"])) for a in wave2_actions
+            (a.priority, UUID(a.payload.metadata["step_id"])) for a in wave2_actions
         ]
 
         # Group by step ID for verification
@@ -1481,7 +1482,8 @@ class TestPriorityOrderingIntegration:
 
         # Extract step IDs from actions in emission order
         emitted_step_ids = [
-            UUID(action.payload["step_id"]) for action in result.actions_emitted
+            UUID(action.payload.metadata["step_id"])
+            for action in result.actions_emitted
         ]
 
         # Step A must be first (no dependencies)
@@ -1552,7 +1554,7 @@ class TestPriorityOrderingIntegration:
 
         # Map actions by step ID
         actions_by_step_id = {
-            UUID(a.payload["step_id"]): a for a in result.actions_emitted
+            UUID(a.payload.metadata["step_id"]): a for a in result.actions_emitted
         }
 
         # Verify priority values on emitted actions
@@ -1910,12 +1912,12 @@ class TestWorkflowContextIntegration:
         assert result.execution_status == EnumWorkflowState.COMPLETED
         assert len(result.completed_steps) == 3
 
-        # Verify each action's payload contains expected data
+        # Verify each action's payload metadata contains expected data
         for action in result.actions_emitted:
-            assert "workflow_id" in action.payload
-            assert action.payload["workflow_id"] == str(workflow_id)
-            assert "step_id" in action.payload
-            assert "step_name" in action.payload
+            assert "workflow_id" in action.payload.metadata
+            assert action.payload.metadata["workflow_id"] == str(workflow_id)
+            assert "step_id" in action.payload.metadata
+            assert "step_name" in action.payload.metadata
 
     @pytest.mark.asyncio
     async def test_parallel_execution_builds_context_per_wave(
@@ -2633,8 +2635,8 @@ class TestWorkflowExecutorPerformance:
         for action in result.actions_emitted:
             assert action.action_id is not None
             assert action.action_type is not None
-            assert "workflow_id" in action.payload
-            assert "step_id" in action.payload
+            assert "workflow_id" in action.payload.metadata
+            assert "step_id" in action.payload.metadata
 
         # Verify metadata is present
         assert result.metadata is not None
@@ -3267,12 +3269,14 @@ class TestWorkflowSizeLimitEnforcement:
             nonlocal call_count
             call_count += 1
             action, _ = _create_action_for_step(step, workflow_id)
-            # Inject large data into payload (simulating future payload expansion)
-            action.payload["large_data"] = "x" * large_payload_size
+            # Inject large data into payload metadata (simulating future payload expansion)
+            action.payload.metadata["large_data"] = "x" * large_payload_size
             # Return tuple with updated payload size
             import json
 
-            new_payload_size = len(json.dumps(action.payload).encode("utf-8"))
+            new_payload_size = len(
+                json.dumps(action.payload.model_dump()).encode("utf-8")
+            )
             return (action, new_payload_size)
 
         with patch(
@@ -3335,11 +3339,13 @@ class TestWorkflowSizeLimitEnforcement:
             nonlocal call_count
             call_count += 1
             action, _ = _create_action_for_step(step, workflow_id)
-            action.payload["large_data"] = "x" * large_payload_size
+            action.payload.metadata["large_data"] = "x" * large_payload_size
             # Return tuple with updated payload size
             import json
 
-            new_payload_size = len(json.dumps(action.payload).encode("utf-8"))
+            new_payload_size = len(
+                json.dumps(action.payload.model_dump()).encode("utf-8")
+            )
             return (action, new_payload_size)
 
         with patch(
@@ -3404,12 +3410,14 @@ class TestWorkflowSizeLimitEnforcement:
             nonlocal call_count
             call_count += 1
             action, _ = _create_action_for_step(step, workflow_id)
-            # Inject large data into payload (simulating future payload expansion)
-            action.payload["large_data"] = "x" * large_payload_size
+            # Inject large data into payload metadata (simulating future payload expansion)
+            action.payload.metadata["large_data"] = "x" * large_payload_size
             # Return tuple with updated payload size
             import json
 
-            new_payload_size = len(json.dumps(action.payload).encode("utf-8"))
+            new_payload_size = len(
+                json.dumps(action.payload.model_dump()).encode("utf-8")
+            )
             return (action, new_payload_size)
 
         with patch(

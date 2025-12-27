@@ -56,13 +56,8 @@ from uuid import UUID
 from omnibase_core.types.typed_dict_load_balancer_stats import (
     TypedDictLoadBalancerStats,
 )
-from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 
-@allow_dict_str_any(
-    "Load balancer get_stats() returns dict[str, Any] for flexible statistics "
-    "reporting with mixed numeric types (int, float)."
-)
 class ModelLoadBalancer:
     """
     Load balancer for distributing workflow operations.

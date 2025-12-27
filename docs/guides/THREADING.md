@@ -514,6 +514,40 @@ input_data = ModelComputeInput(
 # Safe to share across threads - no mutable state
 ```
 
+### ⚠️ Shallow Immutability Warning
+
+**CRITICAL**: `frozen=True` provides **shallow immutability only**. Nested mutable objects (dicts, lists) can still be modified in place:
+
+```python
+from omnibase_core.models.reducer.payloads import ModelPayloadLogEvent
+
+payload = ModelPayloadLogEvent(
+    level="INFO",
+    message="Test",
+    context={"count": 0}
+)
+
+# ✅ This raises ValidationError (top-level field is frozen):
+payload.level = "ERROR"  # ValidationError!
+
+# ⚠️ This SUCCEEDS - nested dict is NOT frozen:
+payload.context["count"] = 999  # Modifies in place!
+payload.context["new_key"] = "injected"  # Also works!
+```
+
+**Thread Safety Implication**: If multiple threads share a frozen model with mutable nested data, they can race on modifying that nested data.
+
+**Mitigation Options**:
+
+1. **Treat nested data as read-only** (recommended for most cases)
+2. **Use `model_copy(deep=True)`** to create thread-safe independent copies:
+   ```python
+   # Each thread gets its own deep copy
+   thread_local_payload = payload.model_copy(deep=True)
+   thread_local_payload.context["count"] = 999  # Safe - isolated copy
+   ```
+3. **Use immutable nested types** where possible (e.g., `tuple` instead of `list`)
+
 ### Mutable State Requires Synchronization
 
 Any mutable state (caches, counters, registries) needs explicit synchronization:

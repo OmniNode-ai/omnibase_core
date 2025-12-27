@@ -7,13 +7,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.types.type_serializable_value import SerializedDict
-from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 
-@allow_dict_str_any(
-    "Service metadata configuration requires flexible dict for service-specific "
-    "settings that vary across implementations (e.g., connection pooling, timeouts)."
-)
 class ModelServiceMetadata(BaseModel):
     """
     Service registration metadata.

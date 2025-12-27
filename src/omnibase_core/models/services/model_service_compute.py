@@ -166,7 +166,3 @@ class ModelServiceCompute(
             container: ONEX container providing service dependencies
         """
         super().__init__(container)
-
-
-# Backwards-compatible alias
-ServiceComputeNode = ModelServiceCompute

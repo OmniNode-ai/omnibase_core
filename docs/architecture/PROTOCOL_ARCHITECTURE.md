@@ -10,12 +10,10 @@
 > **Note (v0.4.0 - Dependency Inversion)**: This document was originally written when
 > `omnibase_core` depended on `omnibase_spi` for protocol definitions. As of v0.3.6, the
 > dependency was **inverted** - SPI now depends on Core, not the reverse.
->
 > **Current Architecture (v0.3.6+)**:
 > - **omnibase_core.protocols** now defines Core-native protocol interfaces
 > - **omnibase_spi** depends on Core and may extend protocols for cross-service use
 > - **omnibase_infra** implements SPI protocols using transport libraries
->
 > Historical references to "importing from omnibase_spi" should be understood as now
 > importing from `omnibase_core.protocols`. See the [Import Compatibility Matrix](IMPORT_COMPATIBILITY_MATRIX.md)
 > for the current import paths.

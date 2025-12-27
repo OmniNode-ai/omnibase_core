@@ -115,7 +115,7 @@ class ModelSubcontractConstraintValidator:
             original_contract_data: Optional original contract data for lazy evaluation
 
         Raises:
-            ValueError: If subcontract constraints are violated
+            ModelOnexError: If subcontract constraints are violated
         """
         # Use provided contract data or original data for validation
         data_to_validate = (

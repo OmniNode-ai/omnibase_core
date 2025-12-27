@@ -14,12 +14,10 @@ OMN-657: Ensures YAML contract loading preserves order and converts types correc
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
 import pytest
 import yaml
-from pydantic import ValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_node_type import EnumNodeType
@@ -36,9 +34,6 @@ from omnibase_core.models.contracts.subcontracts.model_workflow_definition impor
 )
 from omnibase_core.models.contracts.subcontracts.model_workflow_definition_metadata import (
     ModelWorkflowDefinitionMetadata,
-)
-from omnibase_core.models.contracts.subcontracts.model_workflow_node import (
-    ModelWorkflowNode,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer

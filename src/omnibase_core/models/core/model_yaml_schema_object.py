@@ -41,6 +41,7 @@ class ModelYamlSchemaObject(BaseModel):
         undefined_required = required_set - property_names
 
         if undefined_required:
+            # error-ok: Pydantic validator requires ValueError
             raise ValueError(
                 f"required_properties contains undefined properties: "
                 f"{sorted(undefined_required)}. "

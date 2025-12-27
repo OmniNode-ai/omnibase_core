@@ -20,8 +20,6 @@ See Also:
     - ModelFSMTransitionAction: Uses ModelActionConfigParameter for action parameters
 """
 
-from typing import Any
-
 import pytest
 from pydantic import ValidationError
 

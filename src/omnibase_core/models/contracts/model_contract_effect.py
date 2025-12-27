@@ -113,7 +113,7 @@ def _ensure_models_rebuilt(contract_effect_cls: type[BaseModel] | None = None) -
         from omnibase_core.models.configuration.model_circuit_breaker_metadata import (
             ModelCircuitBreakerMetadata,
         )
-        from omnibase_core.models.services.model_custom_fields import (
+        from omnibase_core.models.services.model_custom_fields import (  # noqa: F401
             ModelCustomFields,
         )
 

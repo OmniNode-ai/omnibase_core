@@ -33,5 +33,6 @@ class ModelMappingConfig(BaseModel):
     def validate_field_mappings(cls, v: dict[str, str]) -> dict[str, str]:
         """Validate that field_mappings is not empty."""
         if not v:
+            # error-ok: Pydantic validator requires ValueError
             raise ValueError("field_mappings cannot be empty")
         return v

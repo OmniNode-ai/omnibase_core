@@ -30,13 +30,8 @@ from omnibase_core.models.examples.model_security_config import ModelSecurityCon
 from omnibase_core.models.health.model_health_check_config import ModelHealthCheckConfig
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.services.model_network_config import ModelNetworkConfig
-from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 
-@allow_dict_str_any(
-    "Service config uses intermediate dict[str, Any] for factory method construction "
-    "to enable flexible configuration from environment variables."
-)
 class ModelNodeServiceConfig(BaseModel):
     """
     Comprehensive ONEX node service configuration model.

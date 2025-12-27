@@ -186,6 +186,7 @@ class ModelComputeSubcontract(BaseModel):
                     if name in seen and name not in duplicates:
                         duplicates.append(name)
                     seen.add(name)
+                # error-ok: Pydantic validator requires ValueError
                 raise ValueError(
                     f"Pipeline step names must be unique. Duplicates found: {duplicates}"
                 )

@@ -3,7 +3,7 @@ Comprehensive tests for ONEX pattern exclusion decorators.
 
 Tests cover:
 - ONEXPatternExclusion class functionality
-- Pattern-specific decorators (allow_any_type, allow_dict_str_any, etc.)
+- Pattern-specific decorators (allow_any_type, etc.)
 - Generic pattern exclusion decorator
 - Pattern checking utility functions
 - File-based exclusion detection
@@ -20,7 +20,6 @@ import pytest
 from omnibase_core.decorators.pattern_exclusions import (
     ONEXPatternExclusion,
     allow_any_type,
-    allow_dict_str_any,
     allow_legacy_pattern,
     allow_mixed_types,
     exclude_from_onex_standards,
@@ -177,31 +176,6 @@ class TestAllowAnyType:
 
 
 @pytest.mark.unit
-class TestAllowDictStrAny:
-    """Test allow_dict_str_any decorator."""
-
-    def test_allow_dict_str_any_basic(self):
-        """Test basic allow_dict_str_any decorator."""
-
-        @allow_dict_str_any("Statistics summary with mixed types")
-        def get_stats():
-            return {"count": 10, "average": 5.5, "valid": True}
-
-        assert has_pattern_exclusion(get_stats, "dict_str_any")
-        assert "Statistics summary" in get_stats._onex_exclusion_reason
-
-    def test_allow_dict_str_any_with_reviewer(self):
-        """Test allow_dict_str_any with reviewer approval."""
-
-        @allow_dict_str_any("Legacy API compatibility", reviewer="tech_lead")
-        def legacy_endpoint():
-            return {}
-
-        assert has_pattern_exclusion(legacy_endpoint, "dict_str_any")
-        assert legacy_endpoint._onex_exclusion_reviewer == "tech_lead"
-
-
-@pytest.mark.unit
 class TestAllowMixedTypes:
     """Test allow_mixed_types decorator."""
 
@@ -333,13 +307,13 @@ class TestHasPatternExclusion:
     def test_has_pattern_exclusion_on_class(self):
         """Test pattern exclusion detection on classes."""
 
-        @allow_dict_str_any("Class uses dynamic data")
+        @allow_any_type("Class uses dynamic data")
         @pytest.mark.unit
         class TestClass:
             pass
 
-        assert has_pattern_exclusion(TestClass, "dict_str_any") is True
-        assert has_pattern_exclusion(TestClass, "any_type") is False
+        assert has_pattern_exclusion(TestClass, "any_type") is True
+        assert has_pattern_exclusion(TestClass, "dict_str_any") is False
 
 
 @pytest.mark.unit
@@ -502,7 +476,7 @@ def regular_function():
             # Write decorator followed by function
             f.write("# Header line 1\n")
             f.write("# Header line 2\n")
-            f.write("@allow_dict_str_any('Test')\n")  # Line 3
+            f.write("@allow_any_type('Test')\n")  # Line 3
             f.write("def test_function():\n")  # Line 4
             for i in range(10):
                 f.write(f"    line_{i} = {i}\n")
@@ -514,7 +488,7 @@ def regular_function():
             result_within_range = is_excluded_from_pattern_check(
                 temp_path,
                 5,
-                "dict_str_any",
+                "any_type",
             )
             # Should find the decorator looking backward
             assert result_within_range is True
@@ -581,12 +555,12 @@ class TestEdgeCasesAndComplexScenarios:
         """Test decorator on class methods."""
 
         class DataProcessor:
-            @allow_dict_str_any("Method uses dynamic data")
+            @allow_any_type("Method uses dynamic data")
             def process(self, data):
                 return data
 
         processor = DataProcessor()
-        assert has_pattern_exclusion(processor.process, "dict_str_any")
+        assert has_pattern_exclusion(processor.process, "any_type")
         assert processor.process({"key": "value"}) == {"key": "value"}
 
     def test_decorator_on_staticmethod(self):
@@ -617,13 +591,13 @@ class TestEdgeCasesAndComplexScenarios:
     def test_nested_class_decoration(self):
         """Test decoration on nested classes."""
 
-        @allow_dict_str_any("Outer class")
+        @allow_any_type("Outer class")
         class OuterClass:
             @allow_any_type("Inner class")
             class InnerClass:
                 pass
 
-        assert has_pattern_exclusion(OuterClass, "dict_str_any")
+        assert has_pattern_exclusion(OuterClass, "any_type")
         assert has_pattern_exclusion(OuterClass.InnerClass, "any_type")
 
     def test_exclusion_metadata_doesnt_interfere(self):
@@ -641,20 +615,20 @@ class TestEdgeCasesAndComplexScenarios:
         """Test that decorator order doesn't matter for pattern accumulation."""
 
         @allow_any_type("First")
-        @allow_dict_str_any("Second")
+        @allow_legacy_pattern("custom_pattern", "Second")
         def func1():
             pass
 
-        @allow_dict_str_any("Second")
+        @allow_legacy_pattern("custom_pattern", "Second")
         @allow_any_type("First")
         def func2():
             pass
 
         # Both should have both exclusions regardless of order
         assert has_pattern_exclusion(func1, "any_type")
-        assert has_pattern_exclusion(func1, "dict_str_any")
+        assert has_pattern_exclusion(func1, "custom_pattern")
         assert has_pattern_exclusion(func2, "any_type")
-        assert has_pattern_exclusion(func2, "dict_str_any")
+        assert has_pattern_exclusion(func2, "custom_pattern")
 
     def test_exclusion_with_empty_reason(self):
         """Test exclusion with empty reason string."""

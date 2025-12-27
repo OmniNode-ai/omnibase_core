@@ -551,9 +551,7 @@ Actions now include `lease_id` and `epoch` for idempotent retries, preventing du
 
 ### Migration Guide (v0.3.x to v0.4.0)
 
-> **Estimated Migration Time**: 30-60 minutes for typical projects
->
-> **Full Guide**: See [`docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md`](docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md) for comprehensive migration instructions with complete examples.
+> **Estimated Migration Time**: 30-60 minutes for typical projects. **Full Guide**: See [`docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md`](docs/guides/MIGRATING_TO_DECLARATIVE_NODES.md) for comprehensive migration instructions with complete examples.
 
 #### Quick Migration Checklist
 

@@ -23,16 +23,14 @@ Requirements from CONTRACT_STABILITY_SPEC.md:
 
 import json
 from datetime import datetime
-from typing import ClassVar
 
 import pytest
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.contracts import (
     ContractHashRegistry,
     ModelContractFingerprint,
     ModelContractNormalizationConfig,
-    ModelDriftDetails,
     ModelDriftResult,
     compute_contract_fingerprint,
     normalize_contract,
@@ -1276,7 +1274,7 @@ class TestContractHashRegistryConcurrency:
             operations across multiple method calls are NOT atomic.
         """
         import threading
-        from concurrent.futures import ThreadPoolExecutor, as_completed
+        from concurrent.futures import ThreadPoolExecutor
 
         # Create a shared registry WITHOUT external locking
         # WARNING: This is intentionally unsafe for demonstration purposes

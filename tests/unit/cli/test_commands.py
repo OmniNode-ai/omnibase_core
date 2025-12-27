@@ -18,7 +18,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
 
-import click
 import pytest
 from click.testing import CliRunner
 
@@ -29,10 +28,7 @@ from omnibase_core.cli.commands import (
     _display_validation_result,
     cli,
     get_version,
-    health,
-    info,
     print_version,
-    validate,
 )
 from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
 

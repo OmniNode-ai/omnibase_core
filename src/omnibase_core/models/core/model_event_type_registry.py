@@ -5,6 +5,7 @@ Provides centralized registry for event types discovered from node contracts,
 enabling third-party plugins to register their own event types dynamically.
 """
 
+import logging
 from pathlib import Path
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -13,6 +14,8 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.utils.util_safe_yaml_loader import load_and_validate_yaml_model
 
 from .model_event_type import ModelEventType
+
+logger = logging.getLogger(__name__)
 
 
 class ModelEventTypeRegistry:
@@ -81,7 +84,9 @@ class ModelEventTypeRegistry:
         for contract_file in contract_files:
             try:
                 events_discovered += self._discover_from_contract(contract_file)
-            except Exception:
+            except Exception as e:
+                # fallback-ok: resilient discovery - skip invalid contracts with debug logging
+                logger.debug("Failed to discover events from %s: %s", contract_file, e)
                 continue
 
         return events_discovered

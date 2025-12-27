@@ -84,7 +84,30 @@ class ModelNodeActionType(BaseModel):
     @field_validator("name")
     @classmethod
     def validate_name_format(cls, v: str) -> str:
-        """Validate action name follows naming conventions."""
+        """Validate action name follows naming conventions.
+
+        Action names must be:
+        - Non-empty (at least one character)
+        - Lowercase only
+        - Alphanumeric with underscores only (no spaces or special chars)
+
+        Args:
+            v: The action name to validate.
+
+        Returns:
+            The validated action name.
+
+        Raises:
+            ModelOnexError: If the name is empty, not lowercase, or contains
+                invalid characters.
+        """
+        # Check for empty string first with clear error message
+        if not v:
+            msg = "Action name cannot be empty"
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
         if not v.islower():
             msg = "Action name must be lowercase"
             raise ModelOnexError(

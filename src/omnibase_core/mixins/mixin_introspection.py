@@ -385,8 +385,6 @@ class MixinNodeIntrospection(ABC):
             output_state_schema=f"{node_name}_output.schema.json",
             cli_interface=ModelCLIInterface(
                 entrypoint=cls.get_cli_entrypoint(),
-                required_args=cls.get_cli_required_args(),
-                optional_args=cls.get_cli_optional_args(),
                 exit_codes=cls.get_cli_exit_codes(),
                 supports_introspect=True,
             ),

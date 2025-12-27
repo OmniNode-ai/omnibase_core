@@ -319,7 +319,7 @@ class TestNodeReducerDeterministicTransitions:
 
             # Extract action-related intents
             action_intents = [
-                intent.payload.get("action_name", "")
+                getattr(intent.payload, "action_name", "")
                 for intent in result.intents
                 if intent.intent_type == "fsm_state_action"
             ]
@@ -761,8 +761,8 @@ class TestNodeReducerNoHiddenEntropy:
                     "intent_type": intent.intent_type,
                     "target": intent.target,
                     "priority": intent.priority,
-                    # Payload structure but exclude any timestamps
-                    "payload_keys": sorted(intent.payload.keys()),
+                    # Payload structure - use model_fields for typed payloads
+                    "payload_keys": sorted(intent.payload.model_fields.keys()),
                 }
                 for intent in result.intents
             ]

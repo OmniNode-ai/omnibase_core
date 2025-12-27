@@ -8,7 +8,6 @@ This document describes the validation domain's protocol compliance with Core-na
 > **Note (v0.3.6+)**: The `omnibase_spi` dependency was removed in v0.3.6 as part of
 > the dependency inversion refactoring. SPI now depends on Core (not the reverse).
 > Protocol definitions are now Core-native in `omnibase_core.protocols`.
->
 > References to `omnibase_spi` protocols in this document are preserved for historical
 > context but should be understood as referring to the current `omnibase_core.protocols`
 > module. See the [Import Compatibility Matrix](IMPORT_COMPATIBILITY_MATRIX.md) for
@@ -153,7 +152,6 @@ print(f"Duplicates: {result.duplicates_found}")
 > **Note (v0.3.6+)**: The protocol compliance tests were updated in v0.3.6 when
 > protocol definitions moved from `omnibase_spi` to `omnibase_core.protocols`.
 > Tests now verify compliance against Core-native protocols:
->
 > - Protocol implementation verification (`isinstance()` checks against Core protocols)
 > - Required attributes presence and types
 > - Required methods presence and callability

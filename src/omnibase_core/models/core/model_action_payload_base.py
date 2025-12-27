@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2025 OmniNode AI <https://omninode.ai>
+# SPDX-License-Identifier: Apache-2.0
 """
 Action Payload Base Model.
 
@@ -17,6 +19,7 @@ class ModelActionPayloadBase(BaseModel):
     Base class for action-specific payload types.
 
     Provides common fields and validation for all action payload types.
+    Implements ProtocolActionPayload via the `kind` property.
     """
 
     action_type: ModelNodeActionType = Field(
@@ -33,3 +36,16 @@ class ModelActionPayloadBase(BaseModel):
     )
 
     model_config = ConfigDict(use_enum_values=True, from_attributes=True)
+
+    @property
+    def kind(self) -> str:
+        """Action type identifier for routing (implements ProtocolActionPayload).
+
+        Returns the action type name for dispatch/routing purposes.
+        This property enables all subclasses to automatically satisfy
+        the ProtocolActionPayload protocol.
+
+        Returns:
+            str: The action type name (e.g., "start", "complete", "transform").
+        """
+        return self.action_type.name

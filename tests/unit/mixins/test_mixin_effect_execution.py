@@ -16,6 +16,7 @@ This module provides comprehensive coverage for:
 VERSION: 1.0.0 - Aligned with MixinEffectExecution v1.0.0
 """
 
+import importlib.util
 import os
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -26,7 +27,6 @@ import pytest
 # Module-level pytest marker for all tests in this file
 pytestmark = pytest.mark.unit
 
-from omnibase_core.enums.enum_effect_handler_type import EnumEffectHandlerType
 from omnibase_core.enums.enum_effect_types import EnumEffectType, EnumTransactionState
 from omnibase_core.mixins.mixin_effect_execution import MixinEffectExecution
 from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
@@ -1453,12 +1453,7 @@ class TestExtractResponseFields:
         validates the appropriate behavior.
         """
         # Check if jsonpath-ng is available
-        try:
-            import jsonpath_ng
-
-            jsonpath_available = True
-        except ImportError:
-            jsonpath_available = False
+        jsonpath_available = importlib.util.find_spec("jsonpath_ng") is not None
 
         response = {"data": {"user": {"id": 123}}}
         response_handling = {
@@ -1494,12 +1489,7 @@ class TestExtractResponseFields:
         validates the appropriate behavior.
         """
         # Check if jsonpath-ng is available
-        try:
-            import jsonpath_ng
-
-            jsonpath_available = True
-        except ImportError:
-            jsonpath_available = False
+        jsonpath_available = importlib.util.find_spec("jsonpath_ng") is not None
 
         response = {"data": "value"}
         # No extraction_engine specified - should default to jsonpath

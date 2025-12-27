@@ -5,6 +5,7 @@ Manages dynamic discovery and registration of CLI commands from node contracts.
 This replaces hardcoded command enums with flexible, contract-driven command discovery.
 """
 
+import logging
 from collections.abc import Mapping
 from pathlib import Path
 
@@ -19,6 +20,8 @@ from omnibase_core.models.core.model_event_type import ModelEventType
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.models.core.model_node_reference import ModelNodeReference
 from omnibase_core.utils.util_safe_yaml_loader import load_and_validate_yaml_model
+
+logger = logging.getLogger(__name__)
 
 
 class ModelCliCommandRegistry(BaseModel):
@@ -170,9 +173,13 @@ class ModelCliCommandRegistry(BaseModel):
                     if command:
                         self.register_command(command)
                         commands_discovered += 1
-                except Exception:
+                except Exception as e:
                     # Log error but continue processing other commands
-                    pass
+                    logger.debug(
+                        "Failed to create command from contract for node '%s': %s",
+                        node_name,
+                        e,
+                    )
 
             return commands_discovered
 

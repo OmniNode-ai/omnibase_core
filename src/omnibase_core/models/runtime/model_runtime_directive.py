@@ -15,23 +15,19 @@ Used for execution mechanics (scheduling, retries, delays).
 """
 
 from datetime import UTC, datetime
-from typing import Any
+from typing import Self
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_directive_type import EnumDirectiveType
-from omnibase_core.utils.util_decorators import allow_dict_str_any
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.runtime.payloads import ModelDirectivePayload
 
 __all__ = ["ModelRuntimeDirective"]
 
 
-@allow_dict_str_any(
-    "Directive payload structure is dynamic and depends on directive_type. "
-    "Each EnumDirectiveType has different payload requirements (e.g., retry config, "
-    "scheduling params, handler args). Defining a union of all possible payloads "
-    "would couple this model to all directive implementations."
-)
 class ModelRuntimeDirective(BaseModel):
     """
     Internal-only runtime directive.
@@ -40,8 +36,22 @@ class ModelRuntimeDirective(BaseModel):
     NEVER returned from handlers.
     Produced by runtime after interpreting intents or events.
 
+    The payload field is a typed discriminated union that ensures type safety.
+    The directive_type must match the payload.kind field (validated automatically).
+
     Thread Safety:
         This model is frozen (immutable) after creation.
+
+    Example:
+        >>> from uuid import uuid4
+        >>> from omnibase_core.enums.enum_directive_type import EnumDirectiveType
+        >>> from omnibase_core.models.runtime.payloads import ModelScheduleEffectPayload
+        >>>
+        >>> directive = ModelRuntimeDirective(
+        ...     directive_type=EnumDirectiveType.SCHEDULE_EFFECT,
+        ...     correlation_id=uuid4(),
+        ...     payload=ModelScheduleEffectPayload(effect_node_type="http_request"),
+        ... )
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
@@ -55,8 +65,8 @@ class ModelRuntimeDirective(BaseModel):
     target_handler_id: str | None = Field(
         default=None, description="Target handler for execution"
     )
-    payload: dict[str, Any] = Field(
-        default_factory=dict, description="Directive-specific payload"
+    payload: ModelDirectivePayload = Field(
+        ..., description="Typed directive-specific payload (discriminated by 'kind')"
     )
     delay_ms: int | None = Field(
         default=None, ge=0, description="Delay before execution in ms"
@@ -71,3 +81,27 @@ class ModelRuntimeDirective(BaseModel):
         default_factory=lambda: datetime.now(UTC),
         description="When this directive was created (UTC)",
     )
+
+    @model_validator(mode="after")
+    def _validate_payload_matches_type(self) -> Self:
+        """
+        Validate that payload.kind matches directive_type.
+
+        This ensures type consistency between the directive type enum
+        and the actual payload provided, preventing mismatched directives.
+
+        Raises:
+            ModelOnexError: If payload.kind doesn't match directive_type.value
+        """
+        expected_kind = self.directive_type.value
+        if self.payload.kind != expected_kind:
+            raise ModelOnexError(
+                message=(
+                    f"Payload kind '{self.payload.kind}' doesn't match "
+                    f"directive_type '{expected_kind}'"
+                ),
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                payload_kind=self.payload.kind,
+                expected_kind=expected_kind,
+            )
+        return self

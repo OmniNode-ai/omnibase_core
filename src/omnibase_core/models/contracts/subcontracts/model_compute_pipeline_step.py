@@ -175,6 +175,7 @@ class ModelComputePipelineStep(BaseModel):
         """Ensure correct config is provided for step type."""
         if self.step_type == EnumComputeStepType.TRANSFORMATION:
             if self.transformation_type is None:
+                # error-ok: Pydantic validator requires ValueError
                 raise ValueError(
                     "transformation_type required for transformation steps"
                 )
@@ -182,6 +183,7 @@ class ModelComputePipelineStep(BaseModel):
                 self.transformation_config is None
                 and self.transformation_type != EnumTransformationType.IDENTITY
             ):
+                # error-ok: Pydantic validator requires ValueError
                 raise ValueError(
                     "transformation_config required for non-identity transformations"
                 )
@@ -190,13 +192,16 @@ class ModelComputePipelineStep(BaseModel):
                 self.transformation_type == EnumTransformationType.IDENTITY
                 and self.transformation_config is not None
             ):
+                # error-ok: Pydantic validator requires ValueError
                 raise ValueError(
                     "transformation_config must be None for IDENTITY transformations"
                 )
         if self.step_type == EnumComputeStepType.MAPPING:
             if self.mapping_config is None:
+                # error-ok: Pydantic validator requires ValueError
                 raise ValueError("mapping_config required for mapping steps")
         if self.step_type == EnumComputeStepType.VALIDATION:
             if self.validation_config is None:
+                # error-ok: Pydantic validator requires ValueError
                 raise ValueError("validation_config required for validation steps")
         return self

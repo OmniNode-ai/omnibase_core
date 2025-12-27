@@ -177,59 +177,6 @@ class ModelNodeConfiguration(BaseModel):
             except ValueError:
                 self.connection.protocol = None
 
-    @property
-    def custom_settings(self) -> dict[str, str] | None:
-        """Custom string settings (backward compatible)."""
-        return (
-            self.custom_properties.custom_strings
-            if self.custom_properties.custom_strings
-            else None
-        )
-
-    @custom_settings.setter
-    def custom_settings(self, value: dict[str, str] | None) -> None:
-        """Set custom string settings."""
-        if value:
-            self.custom_properties.custom_strings.update(value)
-        else:
-            self.custom_properties.custom_strings.clear()
-
-    @property
-    def custom_flags(self) -> dict[str, bool] | None:
-        """Custom boolean flags (backward compatible)."""
-        return (
-            self.custom_properties.custom_flags
-            if self.custom_properties.custom_flags
-            else None
-        )
-
-    @custom_flags.setter
-    def custom_flags(self, value: dict[str, bool] | None) -> None:
-        """Set custom boolean flags."""
-        if value:
-            self.custom_properties.custom_flags.update(value)
-        else:
-            self.custom_properties.custom_flags.clear()
-
-    @property
-    def custom_limits(self) -> dict[str, int] | None:
-        """Custom numeric limits (backward compatible)."""
-        numeric_props = self.custom_properties.custom_numbers
-        if not numeric_props:
-            return None
-        # Convert float values to int
-        return {k: int(v) for k, v in numeric_props.items()}
-
-    @custom_limits.setter
-    def custom_limits(self, value: dict[str, int] | None) -> None:
-        """Set custom numeric limits."""
-        if value:
-            # Convert int values to float for storage
-            float_values = {k: float(v) for k, v in value.items()}
-            self.custom_properties.custom_numbers.update(float_values)
-        else:
-            self.custom_properties.custom_numbers.clear()
-
     def get_configuration_summary(self) -> TypedDictNodeConfigurationSummary:
         """Get comprehensive configuration summary."""
         return {

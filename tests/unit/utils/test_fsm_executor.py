@@ -245,7 +245,8 @@ class TestFSMTransitionSuccess:
         ]
 
         # Should have exit actions for "idle" and entry actions for "running"
-        action_names = [i.payload.get("action_name") for i in action_intents]
+        # Access action_name directly from typed payload (ModelPayloadFSMStateAction)
+        action_names = [i.payload.action_name for i in action_intents]
         assert "log_idle_exit" in action_names
         assert "log_running_entry" in action_names
 
@@ -790,9 +791,12 @@ class TestPersistenceIntents:
 
         persist_intent = persist_intents[0]
         assert persist_intent.target == "state_persistence"
-        assert persist_intent.payload["fsm_name"] == "test_fsm"
-        assert persist_intent.payload["state"] == "running"
-        assert persist_intent.payload["previous_state"] == "idle"
+        # Access attributes directly from typed payload (ModelPayloadPersistState)
+        # state_data contains the FSM state information
+        assert persist_intent.payload.state_key == "fsm:test_fsm:state"
+        assert persist_intent.payload.state_data["fsm_name"] == "test_fsm"
+        assert persist_intent.payload.state_data["state"] == "running"
+        assert persist_intent.payload.state_data["previous_state"] == "idle"
 
     @pytest.mark.asyncio
     async def test_no_persistence_intent_when_disabled(
@@ -825,10 +829,11 @@ class TestMetricsIntents:
 
         metric_intent = metric_intents[0]
         assert metric_intent.target == "metrics_service"
-        assert metric_intent.payload["metric_name"] == "fsm_transition"
-        assert metric_intent.payload["tags"]["fsm"] == "test_fsm"
-        assert metric_intent.payload["tags"]["from_state"] == "idle"
-        assert metric_intent.payload["tags"]["to_state"] == "running"
+        # Access attributes directly from typed payload (ModelPayloadMetric)
+        assert metric_intent.payload.name == "fsm.transition"
+        assert metric_intent.payload.labels["fsm"] == "test_fsm"
+        assert metric_intent.payload.labels["from_state"] == "idle"
+        assert metric_intent.payload.labels["to_state"] == "running"
 
 
 @pytest.mark.unit

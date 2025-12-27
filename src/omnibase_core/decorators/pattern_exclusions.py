@@ -78,28 +78,6 @@ def allow_any_type(reason: str, reviewer: str | None = None) -> ONEXPatternExclu
     )
 
 
-def allow_dict_str_any(
-    reason: str, reviewer: str | None = None
-) -> ONEXPatternExclusion:
-    """
-    Allow usage of Dict[str, Any] type annotation.
-
-    Args:
-        reason: Justification for allowing Dict[str, Any] usage
-        reviewer: Optional code reviewer who approved this
-
-    Example:
-        @allow_dict_str_any("Statistics summary with mixed value types")
-        def get_execution_summary(self) -> Dict[str, Any]:
-            ...
-    """
-    return ONEXPatternExclusion(
-        excluded_patterns={"dict_str_any"},
-        reason=reason,
-        reviewer=reviewer,
-    )
-
-
 def allow_dict_any[F: Callable[..., object]](func: F) -> F:
     """
     Simple decorator to allow dict[str, Any] usage in specific functions.
@@ -109,9 +87,9 @@ def allow_dict_any[F: Callable[..., object]](func: F) -> F:
     2. Validator methods that accept raw untyped data before conversion
     3. Legacy integration where gradual typing is being applied
 
-    Unlike allow_dict_str_any, this is a simple pass-through decorator
-    that doesn't require reason arguments, making it suitable for
-    common serialization patterns where the justification is implicit.
+    This is a simple pass-through decorator that doesn't require reason
+    arguments, making it suitable for common serialization patterns
+    where the justification is implicit.
 
     Example:
         @allow_dict_any

@@ -12,22 +12,18 @@ from unittest.mock import AsyncMock, Mock, patch
 from uuid import UUID, uuid4
 
 import pytest
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
+from omnibase_core.enums.enum_node_kind import EnumNodeKind
 from omnibase_core.mixins.mixin_intent_publisher import MixinIntentPublisher
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.events.model_intent_events import TOPIC_EVENT_PUBLISH_INTENT
+from omnibase_core.models.events.model_node_registered_event import (
+    ModelNodeRegisteredEvent,
+)
 from omnibase_core.models.reducer.model_intent_publish_result import (
     ModelIntentPublishResult,
 )
-
-
-class MockEventModel(BaseModel):
-    """Mock event model for intent publishing tests."""
-
-    event_id: UUID
-    message: str
-    value: int
 
 
 class MockNodeWithIntentPublisher(MixinIntentPublisher):
@@ -93,12 +89,12 @@ class TestMixinIntentPublisher:
         Create test event model for publishing.
 
         Returns:
-            MockEventModel: Sample event instance
+            ModelNodeRegisteredEvent: Sample typed event instance
         """
-        return MockEventModel(
-            event_id=uuid4(),
-            message="Test event",
-            value=42,
+        return ModelNodeRegisteredEvent(
+            node_id=uuid4(),
+            node_name="test-node",
+            node_type=EnumNodeKind.COMPUTE,
         )
 
     def test_initialization_success(self, mock_container):
@@ -279,27 +275,27 @@ class TestMixinIntentPublisher:
 
     @pytest.mark.asyncio
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
-    async def test_publish_event_intent_event_without_model_dump(self, test_node):
+    async def test_publish_event_intent_rejects_dict_payload(self, test_node):
         """
-        Test error handling for events without model_dump() method.
+        Test that dict payloads are rejected by Pydantic validation.
 
-        Validates that non-Pydantic events are rejected.
+        As of v0.4.0, only typed payloads from ModelEventPayloadUnion are accepted.
+        Dict payloads trigger a ValidationError with helpful migration guidance.
         """
+        # Dict payloads are no longer accepted - typed events required
+        invalid_event = {"node_id": str(uuid4()), "node_name": "test"}
 
-        class InvalidEvent:
-            """Event without model_dump() method."""
-
-        invalid_event = InvalidEvent()
-
-        with pytest.raises(ModelOnexError) as exc_info:
+        with pytest.raises(ValidationError) as exc_info:
             await test_node.publish_event_intent(
                 target_topic="dev.omninode.test.v1",
                 target_key="test-key",
                 event=invalid_event,  # type: ignore[arg-type]
             )
 
-        assert "model_dump" in str(exc_info.value)
-        assert "Pydantic" in str(exc_info.value)
+        # Verify helpful error message from ModelEventPublishIntent validator
+        error_message = str(exc_info.value)
+        assert "dict[str, Any] payloads are no longer supported" in error_message
+        assert "ModelEventPayloadUnion" in error_message
 
     @pytest.mark.asyncio
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
@@ -391,8 +387,8 @@ class TestMixinIntentPublisher:
             event=test_event,
         )
 
-        # Event type should be MockEventModel.__name__
-        assert test_event.__class__.__name__ == "MockEventModel"
+        # Event type should be the typed payload class name
+        assert test_event.__class__.__name__ == "ModelNodeRegisteredEvent"
 
     @pytest.mark.asyncio
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests
@@ -408,11 +404,11 @@ class TestMixinIntentPublisher:
             event=test_event,
         )
 
-        # Verify event can be serialized
+        # Verify event can be serialized (typed event fields)
         payload = test_event.model_dump()
-        assert "event_id" in payload
-        assert "message" in payload
-        assert "value" in payload
+        assert "node_id" in payload
+        assert "node_name" in payload
+        assert "node_type" in payload
 
     @pytest.mark.asyncio
     @pytest.mark.timeout(90)  # Longer timeout for CI async tests

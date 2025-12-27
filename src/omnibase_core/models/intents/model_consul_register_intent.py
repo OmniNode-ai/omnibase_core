@@ -55,17 +55,12 @@ from typing import Any, Literal
 from pydantic import Field
 
 from omnibase_core.models.intents.model_core_intent_base import ModelCoreIntent
-from omnibase_core.utils.util_decorators import allow_dict_str_any, allow_string_id
+from omnibase_core.utils.util_decorators import allow_string_id
 
 
 @allow_string_id(
     "Consul service IDs are strings by design (external system constraint). "
     "Consul uses string identifiers for service instances, not UUIDs."
-)
-@allow_dict_str_any(
-    "Health check configuration is passed directly to Consul API which accepts "
-    "arbitrary key-value pairs including non-string values (intervals as int, "
-    "flags as bool, nested dicts for headers, etc.)."
 )
 class ModelConsulRegisterIntent(ModelCoreIntent):
     """Intent to register a service with Consul service discovery.
