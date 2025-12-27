@@ -543,7 +543,7 @@ class MixinRequestResponseIntrospection:
                 and hasattr(self._event_bus, "is_connected")
             ) and not self._event_bus.is_connected():
                 return EnumNodeCurrentStatus.DEGRADED
-        except:  # fallback-ok: status check returns DEGRADED on error, safe fallback for health reporting
+        except Exception:  # fallback-ok: catches non-fatal exceptions, returns DEGRADED for health reporting
             return EnumNodeCurrentStatus.DEGRADED
 
         return EnumNodeCurrentStatus.READY

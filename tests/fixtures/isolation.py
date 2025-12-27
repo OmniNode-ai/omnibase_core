@@ -388,6 +388,10 @@ def fresh_asyncio_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
 
     Yields:
         The new event loop.
+
+    Note: Exception handling includes FileNotFoundError and OSError to handle
+    race conditions during parallel test execution where cleanup may access
+    already-deleted files or resources.
     """
     # Save the current event loop if any
     try:
@@ -418,6 +422,9 @@ def fresh_asyncio_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
                 )
 
             new_loop.close()
+        except (FileNotFoundError, OSError):
+            # Race condition - files already cleaned up by parallel workers
+            pass
         except Exception:
             # Best effort cleanup
             pass
@@ -426,6 +433,9 @@ def fresh_asyncio_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
         if old_loop is not None and not old_loop_running:
             try:
                 asyncio.set_event_loop(old_loop)
+            except (FileNotFoundError, OSError, RuntimeError):
+                # Race condition or loop already closed
+                pass
             except Exception:
                 pass
 

@@ -119,7 +119,7 @@ class GenericPatternValidator(ast.NodeVisitor):
         """Convert AST annotation to string representation."""
         try:
             return ast.unparse(annotation)
-        except:
+        except Exception:
             return str(annotation)
 
     def _is_redundant_primitive_union(self, annotation_str: str) -> bool:
