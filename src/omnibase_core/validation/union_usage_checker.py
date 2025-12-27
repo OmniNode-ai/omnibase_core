@@ -200,7 +200,7 @@ class UnionUsageChecker(ast.NodeVisitor):
         self.generic_visit(node)
 
     def _process_optional_type(
-        self, node: ast.AST, slice_node: ast.AST, line_no: int
+        self, _node: ast.AST, slice_node: ast.AST, line_no: int
     ) -> None:
         """Process Optional[T] syntax and flag for PEP 604 conversion.
 
@@ -208,7 +208,7 @@ class UnionUsageChecker(ast.NodeVisitor):
         suggesting T | None as the preferred ONEX pattern.
 
         Args:
-            node: The AST node for the Optional subscript (unused but kept for signature).
+            _node: The AST node for the Optional subscript (unused but kept for signature).
             slice_node: The AST node for the subscript slice (the type argument).
             line_no: Line number where the Optional is defined.
         """
