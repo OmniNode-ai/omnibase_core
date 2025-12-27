@@ -14,6 +14,8 @@ Available Context Models:
         - ModelResourceContext: Resource identification
         - ModelUserContext: User and session tracking
         - ModelValidationContext: Field-level validation details
+        - ModelErrorContext: Error tracking with correlation and retry support
+        - ModelMetricsContext: Observability and distributed tracing metadata
 
     Metadata Context:
         - ModelSessionContext: Session identification and client context
@@ -99,9 +101,11 @@ from omnibase_core.models.context.model_checkpoint_metadata import (
     ModelCheckpointMetadata,
 )
 from omnibase_core.models.context.model_detection_metadata import ModelDetectionMetadata
+from omnibase_core.models.context.model_error_context import ModelErrorContext
 from omnibase_core.models.context.model_http_request_metadata import (
     ModelHttpRequestMetadata,
 )
+from omnibase_core.models.context.model_metrics_context import ModelMetricsContext
 from omnibase_core.models.context.model_node_init_metadata import ModelNodeInitMetadata
 
 # Error/Retry context models
@@ -136,7 +140,9 @@ __all__ = [
     "ModelAuthorizationContext",
     "ModelCheckpointMetadata",
     "ModelDetectionMetadata",
+    "ModelErrorContext",
     "ModelHttpRequestMetadata",
+    "ModelMetricsContext",
     "ModelNodeInitMetadata",
     "ModelSessionContext",
     # Action/Routing context models (OMN-1049)

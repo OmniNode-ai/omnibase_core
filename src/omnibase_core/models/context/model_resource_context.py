@@ -15,7 +15,7 @@ See Also:
     - ModelErrorDetails: Error handling with resource context
 """
 
-from uuid import UUID
+import uuid
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -67,7 +67,7 @@ class ModelResourceContext(BaseModel):
 
     model_config = ConfigDict(frozen=True, from_attributes=True, extra="forbid")
 
-    resource_id: UUID = Field(
+    resource_id: uuid.UUID = Field(
         description="Unique identifier for the specific resource",
     )
     resource_type: str | None = Field(

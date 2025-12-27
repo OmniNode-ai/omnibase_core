@@ -28,6 +28,9 @@ from .enum_case_mode import EnumCaseMode
 # Category filter enums
 from .enum_category_filter import EnumCategoryFilter
 
+# Checkpoint-related enums
+from .enum_checkpoint_type import EnumCheckpointType
+
 # Circuit breaker state enum (standalone for cross-repo standardization)
 from .enum_circuit_breaker_state import EnumCircuitBreakerState
 
@@ -111,6 +114,7 @@ from .enum_import_status import EnumImportStatus
 
 # Language and localization enums
 from .enum_language_code import EnumLanguageCode
+from .enum_likelihood import EnumLikelihood
 from .enum_log_format import EnumLogFormat
 
 # Log level enum
@@ -203,6 +207,9 @@ from .enum_service_tier import EnumServiceTier
 from .enum_service_type_category import EnumServiceTypeCategory
 from .enum_state_update_operation import EnumStateUpdateOperation
 
+# Token and authentication context enums (OMN-1054)
+from .enum_token_type import EnumTokenType
+
 # Tool-related enums
 from .enum_tool_category import EnumToolCategory
 
@@ -221,6 +228,7 @@ from .enum_transition_type import EnumTransitionType
 
 # Tree sync enums
 from .enum_tree_sync_status import EnumTreeSyncStatus
+from .enum_trigger_event import EnumTriggerEvent
 
 # Trim mode enums (contract-driven NodeCompute v1.0)
 from .enum_trim_mode import EnumTrimMode
@@ -425,6 +433,12 @@ __all__ = [
     # Vector store domain
     "EnumVectorDistanceMetric",
     "EnumVectorFilterOperator",
+    # Checkpoint domain
+    "EnumCheckpointType",
+    # Token and authentication context domain (OMN-1054)
+    "EnumTokenType",
+    "EnumTriggerEvent",
+    "EnumLikelihood",
     # NOTE: Removed from __all__ due to missing module files or circular imports:
     # - "EnumRegistryType" (module doesn't exist)
     # - "ModelServiceModeEnum" (replaced with correct "EnumServiceMode")

@@ -18,9 +18,9 @@ class TestEnumAuthenticationMethod:
         assert EnumAuthenticationMethod.MULTI_FACTOR.value == "multi_factor"
 
     def test_enum_count(self) -> None:
-        """Test that enum has exactly 5 members."""
+        """Test that enum has exactly 10 members."""
         members = list(EnumAuthenticationMethod)
-        assert len(members) == 5
+        assert len(members) == 10
 
     def test_string_enum_behavior(self) -> None:
         """Test that enum inherits from str."""
@@ -48,7 +48,7 @@ class TestEnumAuthenticationMethod:
         methods = list(EnumAuthenticationMethod)
         assert EnumAuthenticationMethod.NONE in methods
         assert EnumAuthenticationMethod.MULTI_FACTOR in methods
-        assert len(methods) == 5
+        assert len(methods) == 10
 
     def test_enum_membership_check(self) -> None:
         """Test membership checks."""
@@ -57,8 +57,8 @@ class TestEnumAuthenticationMethod:
 
     def test_enum_string_representation(self) -> None:
         """Test string representation."""
-        # str() returns the enum name, not value (even though it inherits from str)
-        assert str(EnumAuthenticationMethod.TOKEN) == "EnumAuthenticationMethod.TOKEN"
+        # str() returns the value due to custom __str__ method
+        assert str(EnumAuthenticationMethod.TOKEN) == "token"
         assert (
             repr(EnumAuthenticationMethod.BASIC)
             == "<EnumAuthenticationMethod.BASIC: 'basic'>"

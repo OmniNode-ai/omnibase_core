@@ -15,7 +15,7 @@ See Also:
     - ModelErrorDetails: Error handling with context support
 """
 
-from uuid import UUID
+import uuid
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -67,14 +67,14 @@ class ModelTraceContext(BaseModel):
 
     model_config = ConfigDict(frozen=True, from_attributes=True, extra="forbid")
 
-    trace_id: UUID = Field(
+    trace_id: uuid.UUID = Field(
         description="Unique identifier for the entire trace/request flow",
     )
-    span_id: UUID | None = Field(
+    span_id: uuid.UUID | None = Field(
         default=None,
         description="Unique identifier for the current span within the trace",
     )
-    correlation_id: UUID | None = Field(
+    correlation_id: uuid.UUID | None = Field(
         default=None,
         description="Business-level correlation identifier for related operations",
     )

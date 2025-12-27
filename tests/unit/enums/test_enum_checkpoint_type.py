@@ -37,7 +37,7 @@ class TestEnumCheckpointType:
     def test_enum_iteration(self):
         """Test that enum can be iterated."""
         values = list(EnumCheckpointType)
-        assert len(values) == 5
+        assert len(values) == 9
         assert EnumCheckpointType.MANUAL in values
         assert EnumCheckpointType.COMPOSITION_BOUNDARY in values
 
@@ -83,7 +83,11 @@ class TestEnumCheckpointType:
             "manual",
             "automatic",
             "failure_recovery",
+            "recovery",
             "step_completion",
+            "stage_completion",
+            "snapshot",
+            "incremental",
             "composition_boundary",
         }
 
@@ -110,3 +114,92 @@ class TestEnumCheckpointType:
 
         # Test boundary checkpoint
         assert EnumCheckpointType.COMPOSITION_BOUNDARY in EnumCheckpointType
+
+
+@pytest.mark.unit
+class TestEnumCheckpointTypeIsRecoveryRelated:
+    """Test cases for is_recovery_related class method."""
+
+    @pytest.mark.parametrize(
+        "checkpoint_type",
+        [
+            EnumCheckpointType.FAILURE_RECOVERY,
+            EnumCheckpointType.RECOVERY,
+            EnumCheckpointType.SNAPSHOT,
+        ],
+    )
+    def test_recovery_related_returns_true(
+        self, checkpoint_type: EnumCheckpointType
+    ) -> None:
+        """Test that recovery-related checkpoint types return True."""
+        assert EnumCheckpointType.is_recovery_related(checkpoint_type) is True
+
+    @pytest.mark.parametrize(
+        "checkpoint_type",
+        [
+            EnumCheckpointType.MANUAL,
+            EnumCheckpointType.AUTOMATIC,
+            EnumCheckpointType.STEP_COMPLETION,
+            EnumCheckpointType.STAGE_COMPLETION,
+            EnumCheckpointType.INCREMENTAL,
+            EnumCheckpointType.COMPOSITION_BOUNDARY,
+        ],
+    )
+    def test_non_recovery_related_returns_false(
+        self, checkpoint_type: EnumCheckpointType
+    ) -> None:
+        """Test that non-recovery checkpoint types return False."""
+        assert EnumCheckpointType.is_recovery_related(checkpoint_type) is False
+
+
+@pytest.mark.unit
+class TestEnumCheckpointTypeIsAutomatic:
+    """Test cases for is_automatic class method."""
+
+    def test_manual_is_not_automatic(self) -> None:
+        """Test that MANUAL checkpoint type is not automatic."""
+        assert EnumCheckpointType.is_automatic(EnumCheckpointType.MANUAL) is False
+
+    @pytest.mark.parametrize(
+        "checkpoint_type",
+        [
+            EnumCheckpointType.AUTOMATIC,
+            EnumCheckpointType.FAILURE_RECOVERY,
+            EnumCheckpointType.RECOVERY,
+            EnumCheckpointType.STEP_COMPLETION,
+            EnumCheckpointType.STAGE_COMPLETION,
+            EnumCheckpointType.SNAPSHOT,
+            EnumCheckpointType.INCREMENTAL,
+            EnumCheckpointType.COMPOSITION_BOUNDARY,
+        ],
+    )
+    def test_automatic_checkpoint_types(
+        self, checkpoint_type: EnumCheckpointType
+    ) -> None:
+        """Test that automatic checkpoint types return True."""
+        assert EnumCheckpointType.is_automatic(checkpoint_type) is True
+
+    def test_all_checkpoint_types_are_classified(self) -> None:
+        """Test that all checkpoint types are classified as either automatic or manual."""
+        for checkpoint_type in EnumCheckpointType:
+            result = EnumCheckpointType.is_automatic(checkpoint_type)
+            assert isinstance(result, bool)
+
+
+@pytest.mark.unit
+class TestEnumCheckpointTypeStrMethod:
+    """Test cases for __str__ method."""
+
+    def test_str_returns_value(self) -> None:
+        """Test that __str__ returns the enum value."""
+        assert str(EnumCheckpointType.MANUAL) == "manual"
+        assert str(EnumCheckpointType.AUTOMATIC) == "automatic"
+        assert str(EnumCheckpointType.FAILURE_RECOVERY) == "failure_recovery"
+        assert str(EnumCheckpointType.STEP_COMPLETION) == "step_completion"
+        assert str(EnumCheckpointType.COMPOSITION_BOUNDARY) == "composition_boundary"
+
+    def test_str_in_format_string(self) -> None:
+        """Test that enum works correctly in format strings."""
+        checkpoint = EnumCheckpointType.SNAPSHOT
+        formatted = f"Checkpoint type: {checkpoint}"
+        assert formatted == "Checkpoint type: snapshot"
