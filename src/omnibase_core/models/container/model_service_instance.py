@@ -8,13 +8,8 @@ from pydantic import BaseModel, Field
 
 from omnibase_core.protocols import LiteralInjectionScope, LiteralServiceLifecycle
 from omnibase_core.types.type_serializable_value import SerializedDict
-from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 
-@allow_dict_str_any(
-    "Service instance metadata requires flexible dict for service-specific tracking data "
-    "including health metrics, configuration overrides, and runtime state."
-)
 class ModelServiceInstance(BaseModel):
     """
     Service instance information.

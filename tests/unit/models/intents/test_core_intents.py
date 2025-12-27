@@ -1658,7 +1658,7 @@ class TestSerializationEdgeCases:
         self, correlation_id: UUID
     ) -> None:
         """Test datetime fields serialize to ISO format string."""
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         class RecordWithDatetime(BaseModel):
             node_id: str
@@ -1690,7 +1690,7 @@ class TestSerializationEdgeCases:
 
     def test_datetime_roundtrip_preserves_timezone(self, correlation_id: UUID) -> None:
         """Test datetime round-trip preserves timezone information."""
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         class RecordWithTZDatetime(BaseModel):
             timestamp: datetime

@@ -59,6 +59,7 @@ from omnibase_core.models.orchestrator.model_orchestrator_input import (
 from omnibase_core.models.orchestrator.model_orchestrator_output import (
     ModelOrchestratorOutput,
 )
+from omnibase_core.models.orchestrator.payloads import create_action_payload
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.models.workflow import ModelWorkflowStateSnapshot
 from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
@@ -425,7 +426,11 @@ class TestModelActionLeaseConcurrency:
                 action = ModelAction(
                     action_type=EnumActionType.COMPUTE,
                     target_node_type="NodeCompute",
-                    payload={"task_id": task_id},
+                    payload=create_action_payload(
+                        action_type=EnumActionType.COMPUTE,
+                        semantic_action="process",
+                        parameters={"task_id": task_id},
+                    ),
                     lease_id=uuid4(),  # Unique lease per action
                     epoch=task_id,  # Use task_id as epoch
                 )
@@ -474,7 +479,11 @@ class TestModelActionLeaseConcurrency:
             action = ModelAction(
                 action_type=EnumActionType.COMPUTE,
                 target_node_type=shared_resource,
-                payload={"task_id": task_id},
+                payload=create_action_payload(
+                    action_type=EnumActionType.COMPUTE,
+                    semantic_action="process",
+                    parameters={"task_id": task_id},
+                ),
                 lease_id=uuid4(),
                 epoch=epoch,
             )
@@ -519,7 +528,11 @@ class TestModelActionLeaseConcurrency:
         action = ModelAction(
             action_type=EnumActionType.COMPUTE,
             target_node_type="NodeCompute",
-            payload={"test": "data"},
+            payload=create_action_payload(
+                action_type=EnumActionType.COMPUTE,
+                semantic_action="process",
+                parameters={"test": "data"},
+            ),
             lease_id=uuid4(),
             epoch=1,
         )
@@ -571,7 +584,11 @@ class TestModelActionLeaseConcurrency:
             action = ModelAction(
                 action_type=EnumActionType.EFFECT,
                 target_node_type="NodeEffect",
-                payload={"async_task_id": task_id},
+                payload=create_action_payload(
+                    action_type=EnumActionType.EFFECT,
+                    semantic_action="execute",
+                    parameters={"async_task_id": task_id},
+                ),
                 lease_id=uuid4(),
                 epoch=task_id,
             )

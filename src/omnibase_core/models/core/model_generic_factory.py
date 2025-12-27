@@ -117,7 +117,7 @@ class ModelGenericFactory[T: BaseModel]:
             New instance of T
 
         Raises:
-            ValueError: If builder name is not registered
+            ModelOnexError: If builder name is not registered
         """
         if builder_name not in self._builders:
             raise ModelOnexError(

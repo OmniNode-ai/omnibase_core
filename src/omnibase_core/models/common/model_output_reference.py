@@ -91,11 +91,13 @@ class ModelOutputReference(BaseModel):
     def validate_source_reference_format(cls, v: str) -> str:
         """Validate that source_reference contains exactly one dot separator."""
         if "." not in v:
+            # error-ok: Pydantic validator requires ValueError
             raise ValueError(
                 f"source_reference must be in format 'node_id.output_name', got: {v}"
             )
         parts = v.split(".", 1)
         if len(parts) != 2 or not parts[0] or not parts[1]:
+            # error-ok: Pydantic validator requires ValueError
             raise ValueError(
                 f"source_reference must have non-empty node_id and output_name, got: {v}"
             )

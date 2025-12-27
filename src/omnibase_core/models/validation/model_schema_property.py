@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING
 from pydantic import BaseModel
 
 from omnibase_core.types.json_types import JsonValue, PrimitiveValue
-from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 if TYPE_CHECKING:
     from omnibase_core.models.validation.model_required_fields_model import (
@@ -20,10 +19,6 @@ if TYPE_CHECKING:
     )
 
 
-@allow_dict_str_any(
-    "Schema property default field accepts dict[str, Any] for JSON schema "
-    "default value compatibility with complex nested structures."
-)
 class ModelSchemaProperty(BaseModel):
     """
     Strongly typed model for a single property in a JSON schema.
@@ -42,12 +37,39 @@ class ModelSchemaProperty(BaseModel):
     model_config = {"arbitrary_types_allowed": True, "extra": "allow"}
 
 
-# Rebuild the model to resolve forward references
+# Forward Reference Resolution
+# ============================
+# This module uses TYPE_CHECKING imports to break circular dependencies with
+# ModelSchemaPropertiesModel and ModelRequiredFieldsModel. Forward references
+# are resolved by calling model_rebuild() at module import time.
+
+
 def _rebuild_model() -> None:
-    """Rebuild the model to resolve forward references."""
+    """
+    Rebuild the model to resolve TYPE_CHECKING forward references.
+
+    This function resolves forward references used by ModelSchemaProperty
+    (ModelSchemaPropertiesModel, ModelRequiredFieldsModel). These are defined
+    under TYPE_CHECKING to avoid circular import errors during module initialization.
+
+    Pattern:
+        - Called automatically at module import (see below)
+        - Safe to call multiple times (Pydantic handles idempotently)
+        - Fails gracefully if referenced modules not yet loaded
+
+    Why This Exists:
+        ModelSchemaProperty references ModelSchemaPropertiesModel and
+        ModelRequiredFieldsModel, creating a circular dependency. TYPE_CHECKING
+        imports break the cycle, but require explicit resolution via model_rebuild().
+    """
     try:
-        from .model_required_fields_model import ModelRequiredFieldsModel
-        from .model_schema_properties_model import ModelSchemaPropertiesModel
+        # Imports inject types into namespace for model_rebuild() forward reference resolution
+        from .model_required_fields_model import (  # noqa: F401
+            ModelRequiredFieldsModel,
+        )
+        from .model_schema_properties_model import (  # noqa: F401
+            ModelSchemaPropertiesModel,
+        )
 
         ModelSchemaProperty.model_rebuild()
     except ImportError:
@@ -55,5 +77,6 @@ def _rebuild_model() -> None:
         pass
 
 
-# Call rebuild on module import
+# Automatically resolve forward references on module import.
+# This is the recommended pattern for self-contained modules.
 _rebuild_model()

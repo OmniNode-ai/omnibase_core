@@ -69,13 +69,8 @@ T = TypeVar("T")
 from omnibase_core.models.container.model_base_model_onex_container import (
     _BaseModelONEXContainer,
 )
-from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 
-@allow_dict_str_any(
-    "Container service cache and performance stats use dict[str, Any] for "
-    "flexible service instance storage and statistics reporting."
-)
 class ModelONEXContainer:
     """
     Model ONEX dependency injection container.

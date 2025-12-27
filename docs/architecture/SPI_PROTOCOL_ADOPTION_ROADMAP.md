@@ -7,17 +7,14 @@
 > **IMPORTANT (v0.3.6+)**: This document is **HISTORICAL** and no longer reflects the
 > current architecture. As of v0.3.6, the dependency was **inverted** - SPI now depends
 > on Core, not the reverse.
->
 > **What Changed**:
 > - Protocol definitions moved from `omnibase_spi` to `omnibase_core.protocols`
 > - `omnibase_core` is now the source of truth for all protocol interfaces
 > - SPI imports Core protocols (not the other way around)
->
 > **Current Documentation**:
 > - [Import Compatibility Matrix](IMPORT_COMPATIBILITY_MATRIX.md) - Current import paths
 > - [Protocol Architecture](PROTOCOL_ARCHITECTURE.md) - Updated protocol documentation
 > - [Dependency Inversion](DEPENDENCY_INVERSION.md) - Current architecture patterns
->
 > The content below is preserved for historical reference only.
 
 ---

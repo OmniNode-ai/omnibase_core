@@ -1090,44 +1090,6 @@ class TestAllowDictAnyDecoratorExclusion:
             "Non-decorated function should still have DICT_ANY violations"
         )
 
-    def test_allow_dict_str_any_decorator_variant(
-        self, analyze_source: Callable[[str], PurityAnalyzer]
-    ) -> None:
-        """Test that @allow_dict_str_any decorator also works."""
-        source = """
-        from typing import Dict, Any
-        from omnibase_core.infrastructure.node_core_base import NodeCoreBase
-        from omnibase_core.decorators import allow_dict_str_any
-
-        class NodeMyCompute(NodeCoreBase):
-            @allow_dict_str_any("JSON interface requirement")
-            def serialize(self, data: Dict[str, Any]) -> Dict[str, Any]:
-                return data
-        """
-        analyzer = analyze_source(source)
-
-        dict_any_violations = [
-            v
-            for v in analyzer.violations
-            if v.violation_type == ViolationType.DICT_ANY_TYPE_HINT
-        ]
-        assert len(dict_any_violations) == 0, (
-            "@allow_dict_str_any should exclude function from DICT_ANY checks"
-        )
-
-        # CRITICAL: @allow_dict_str_any should NOT affect Any import detection
-        # The `from typing import Any` should STILL be flagged as a violation
-        any_import_violations = [
-            v
-            for v in analyzer.violations
-            if v.violation_type == ViolationType.ANY_IMPORT
-        ]
-        assert len(any_import_violations) >= 1, (
-            "@allow_dict_str_any should NOT suppress ANY_IMPORT violations - "
-            "the decorator only excludes Dict[str, Any] type hints, "
-            "not the import of Any itself"
-        )
-
 
 @pytest.mark.timeout(30)
 @pytest.mark.unit

@@ -40,14 +40,13 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel
-
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError as OnexError
 from omnibase_core.models.events.model_intent_events import (
     TOPIC_EVENT_PUBLISH_INTENT,
     ModelEventPublishIntent,
 )
+from omnibase_core.models.events.payloads import ModelEventPayloadUnion
 from omnibase_core.models.reducer.model_intent_publish_result import (
     ModelIntentPublishResult,
 )
@@ -153,7 +152,7 @@ class MixinIntentPublisher:
         self,
         target_topic: str,
         target_key: str,
-        event: BaseModel,
+        event: ModelEventPayloadUnion,
         correlation_id: UUID | None = None,
         priority: int = 5,
     ) -> ModelIntentPublishResult:
@@ -167,7 +166,7 @@ class MixinIntentPublisher:
         Args:
             target_topic: Kafka topic where event should be published
             target_key: Kafka key for the event
-            event: Event to publish (Pydantic model with model_dump())
+            event: Typed event payload from ModelEventPayloadUnion
             correlation_id: Optional correlation ID (generated if not provided)
             priority: Intent priority 1-10 (1=highest, default=5)
 
@@ -175,7 +174,6 @@ class MixinIntentPublisher:
             ModelIntentPublishResult with intent_id and metadata
 
         Raises:
-            AttributeError: If event doesn't have model_dump() method
             ValueError: If priority is out of range
             Exception: If Kafka publishing fails
 
@@ -188,13 +186,6 @@ class MixinIntentPublisher:
             print(f"Intent published: {result.intent_id}")
         """
         # Validate inputs
-        if not hasattr(event, "model_dump"):
-            raise OnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Event must be a Pydantic model with model_dump() method. "
-                f"Got: {type(event).__name__}",
-            )
-
         if not (1 <= priority <= 10):
             raise OnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -215,7 +206,7 @@ class MixinIntentPublisher:
             target_topic=target_topic,
             target_key=target_key,
             target_event_type=event.__class__.__name__,
-            target_event_payload=event.model_dump(),
+            target_event_payload=event,
             priority=priority,
         )
 

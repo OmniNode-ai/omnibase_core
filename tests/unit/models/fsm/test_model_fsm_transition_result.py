@@ -23,7 +23,6 @@ pytestmark = pytest.mark.unit
 from omnibase_core.models.fsm.model_fsm_transition_result import (
     ModelFSMTransitionResult,
 )
-from omnibase_core.models.reducer.model_intent import ModelIntent
 
 
 @pytest.mark.unit

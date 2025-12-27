@@ -21,7 +21,6 @@ In this tutorial, you'll build a production-ready **Data Processing Pipeline Orc
 > - **Event to Orchestrator**: External events trigger workflow coordination
 > - **Command to Orchestrator**: API/CLI commands initiate workflows
 > - **Action to Effect**: Orchestrator emits Actions that Effect nodes execute
->
 > ORCHESTRATOR nodes coordinate but do NOT perform direct I/O - they emit Actions.
 > See [Canonical Execution Shapes](../../architecture/CANONICAL_EXECUTION_SHAPES.md) for the complete pattern.
 

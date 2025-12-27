@@ -77,7 +77,7 @@ class ModelValidationSchemaRule(BaseModel):
         - ENUM rules contain valid enum value lists
 
         Raises:
-            ValueError: If validation_rule format doesn't match rule_type
+            ModelOnexError: If validation_rule format doesn't match rule_type
 
         Returns:
             Self for method chaining
@@ -104,7 +104,7 @@ class ModelValidationSchemaRule(BaseModel):
             rule: The regex pattern to validate
 
         Raises:
-            ValueError: If regex pattern is invalid
+            ModelOnexError: If regex pattern is invalid
         """
         try:
             re.compile(rule)
@@ -125,7 +125,7 @@ class ModelValidationSchemaRule(BaseModel):
             rule: The JSON schema fragment to validate
 
         Raises:
-            ValueError: If JSON is malformed
+            ModelOnexError: If JSON is malformed
         """
         try:
             parsed = json.loads(rule)
@@ -160,7 +160,7 @@ class ModelValidationSchemaRule(BaseModel):
             rule: The range expression to validate
 
         Raises:
-            ValueError: If range format is invalid
+            ModelOnexError: If range format is invalid
         """
         # Basic range validation - must contain ".."
         if ".." not in rule:
@@ -223,7 +223,7 @@ class ModelValidationSchemaRule(BaseModel):
             rule: The enum values list to validate
 
         Raises:
-            ValueError: If enum format is invalid
+            ModelOnexError: If enum format is invalid
         """
         # Split by comma and strip whitespace
         values = [v.strip() for v in rule.split(",")]

@@ -92,6 +92,7 @@ from omnibase_core.models.contracts.subcontracts.model_workflow_definition impor
 from omnibase_core.models.core.model_action_metadata import ModelActionMetadata
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.orchestrator.model_action import ModelAction
+from omnibase_core.models.orchestrator.payloads import create_action_payload
 from omnibase_core.models.workflow.execution.model_declarative_workflow_result import (
     ModelDeclarativeWorkflowResult as WorkflowExecutionResult,
 )
@@ -1278,23 +1279,31 @@ def _create_action_for_step(
     # docs/architecture/CONTRACT_DRIVEN_NODEORCHESTRATOR_V1_0.md (Section: "Step Priority vs Action Priority")
     action_priority = min(step.priority, 10) if step.priority else 1
 
-    # Build payload
-    payload: dict[str, object] = {
-        "workflow_id": str(workflow_id),
-        "step_id": str(step.step_id),
-        "step_name": step.step_name,
-    }
+    # Build typed payload using the action type factory
+    # The workflow context is passed as metadata since typed payloads have specific fields
+    # semantic_action is not specified - factory uses type-appropriate defaults:
+    #   COMPUTE -> "process", EFFECT -> "execute", REDUCE -> "aggregate", ORCHESTRATE -> "coordinate"
+    typed_payload = create_action_payload(
+        action_type=action_type,
+        metadata={
+            "workflow_id": str(workflow_id),
+            "step_id": str(step.step_id),
+            "step_name": step.step_name,
+        },
+    )
 
     # Serialize payload once for both validation and size checking (OMN-670: Performance optimization)
     # This replaces the previous two-step approach that called json.dumps() twice
     try:
-        payload_json = json.dumps(payload, default=_json_default_for_workflow)
+        payload_json = json.dumps(
+            typed_payload.model_dump(), default=_json_default_for_workflow
+        )
     except (TypeError, ValueError) as e:
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             message=f"Payload is not JSON-serializable for step '{step.step_name}': {e}",
             context={
-                "payload_keys": list(payload.keys()),
+                "payload_type": type(typed_payload).__name__,
                 "step_context": step.step_name,
             },
         ) from e
@@ -1325,7 +1334,7 @@ def _create_action_for_step(
         action_id=uuid4(),
         action_type=action_type,
         target_node_type=target_node_type,
-        payload=payload,
+        payload=typed_payload,
         dependencies=step.depends_on,
         priority=action_priority,
         timeout_ms=step.timeout_ms,

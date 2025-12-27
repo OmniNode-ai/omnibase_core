@@ -609,8 +609,8 @@ class TestActionPayload:
 
         action, _ = _create_action_for_step(step, workflow_id)
 
-        assert "workflow_id" in action.payload
-        assert action.payload["workflow_id"] == str(workflow_id)
+        assert "workflow_id" in action.payload.metadata
+        assert action.payload.metadata["workflow_id"] == str(workflow_id)
 
     def test_payload_contains_step_id(self) -> None:
         """Test that payload contains step_id as string."""
@@ -624,8 +624,8 @@ class TestActionPayload:
 
         action, _ = _create_action_for_step(step, workflow_id)
 
-        assert "step_id" in action.payload
-        assert action.payload["step_id"] == str(step_id)
+        assert "step_id" in action.payload.metadata
+        assert action.payload.metadata["step_id"] == str(step_id)
 
     def test_payload_contains_step_name(self) -> None:
         """Test that payload contains step_name."""
@@ -638,8 +638,8 @@ class TestActionPayload:
 
         action, _ = _create_action_for_step(step, workflow_id)
 
-        assert "step_name" in action.payload
-        assert action.payload["step_name"] == "name_payload_step"
+        assert "step_name" in action.payload.metadata
+        assert action.payload.metadata["step_name"] == "name_payload_step"
 
     def test_payload_is_json_serializable(self) -> None:
         """Test that payload can be serialized to JSON."""
@@ -654,13 +654,15 @@ class TestActionPayload:
 
         action, _ = _create_action_for_step(step, workflow_id)
 
-        # Should not raise
-        json_str = json.dumps(action.payload)
+        # Should not raise - use model_dump for typed payloads
+        payload_dict = action.payload.model_dump(mode="json")
+        json_str = json.dumps(payload_dict)
         assert isinstance(json_str, str)
 
-        # Should round-trip correctly
+        # Should contain expected metadata
         parsed = json.loads(json_str)
-        assert parsed == action.payload
+        assert "metadata" in parsed
+        assert parsed["metadata"]["step_name"] == "json_payload_step"
 
 
 @pytest.mark.unit
@@ -750,7 +752,7 @@ class TestEdgeCases:
 
         action, _ = _create_action_for_step(step, workflow_id)
 
-        assert action.payload["step_name"] == long_name
+        assert action.payload.metadata["step_name"] == long_name
 
     def test_minimum_timeout(self) -> None:
         """Test action creation with minimum timeout_ms."""

@@ -78,8 +78,9 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
         # Homogeneous list assumption: if first element is ModelSchemaValue,
         # all elements are (lists come from single serialization source).
         # If already ModelSchemaValue instances, return as-is
-        if len(v) > 0 and isinstance(v[0], ModelSchemaValue):
-            return v  # type: ignore[return-value]
+        # Note: len(v) > 0 check removed - guaranteed non-empty after early return
+        if isinstance(v[0], ModelSchemaValue):
+            return v
         # Convert raw values to ModelSchemaValue
         return [ModelSchemaValue.from_value(item) for item in v]
 

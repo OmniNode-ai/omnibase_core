@@ -26,7 +26,6 @@ from omnibase_core.models.contracts.subcontracts.model_compute_subcontract impor
     ModelComputeSubcontract,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.transformations.model_mapping_config import ModelMappingConfig
 from omnibase_core.models.transformations.model_transform_case_config import (
     ModelTransformCaseConfig,
 )
@@ -41,9 +40,6 @@ from omnibase_core.models.transformations.model_transform_trim_config import (
 )
 from omnibase_core.models.transformations.model_transform_unicode_config import (
     ModelTransformUnicodeConfig,
-)
-from omnibase_core.models.transformations.model_validation_step_config import (
-    ModelValidationStepConfig,
 )
 from omnibase_core.utils.compute_executor import (
     execute_compute_pipeline,

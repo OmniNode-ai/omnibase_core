@@ -36,6 +36,7 @@ from omnibase_core.enums.enum_reducer_types import EnumReductionType, EnumStream
 from omnibase_core.models.common.model_reducer_metadata import ModelReducerMetadata
 from omnibase_core.models.reducer.model_intent import ModelIntent
 from omnibase_core.models.reducer.model_reducer_output import ModelReducerOutput
+from omnibase_core.models.reducer.payloads import ModelPayloadMetric
 
 
 @pytest.mark.performance
@@ -477,9 +478,12 @@ class TestModelReducerOutputPerformance:
         intents = tuple(
             ModelIntent(
                 intent_id=uuid4(),
-                intent_type="log_metrics",
+                intent_type="record_metric",
                 target="metrics_service",
-                payload={"metric": f"metric_{i}", "value": i},
+                payload=ModelPayloadMetric(
+                    name=f"metric_{i}",
+                    value=float(i),
+                ),
             )
             for i in range(intent_count)
         )

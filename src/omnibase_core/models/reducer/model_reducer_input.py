@@ -107,7 +107,14 @@ class ModelReducerInput[T_Input](BaseModel):
     model_config = ConfigDict(
         extra="forbid",
         frozen=True,
+        # arbitrary_types_allowed: Required for generic type parameter T_Input which can be
+        # any user-defined type (Pydantic models, dataclasses, custom classes, etc.) that
+        # Pydantic cannot automatically serialize without this setting.
         arbitrary_types_allowed=True,
+        # from_attributes: Required for pytest-xdist compatibility. Workers import classes
+        # independently, and without this setting Pydantic may reject valid instances due to
+        # class identity differences across worker processes.
+        from_attributes=True,
     )
 
     data: list[T_Input]

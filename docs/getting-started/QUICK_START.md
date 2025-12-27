@@ -159,19 +159,16 @@ class NodeDoublerCompute(NodeCompute):
 ```
 
 > **💡 Why Use the Four Node Types?**
->
 > ONEX v0.4.0 provides four pre-configured node classes (**NodeCompute**, **NodeEffect**, **NodeReducer**, **NodeOrchestrator**):
-> - ✅ Eliminate 80+ lines of boilerplate initialization
-> - ✅ Include all necessary mixins (caching, logging, metrics, error handling)
-> - ✅ Production-ready with best-practice patterns
-> - ✅ Type-safe and fully tested
->
+> - Eliminate 80+ lines of boilerplate initialization
+> - Include all necessary mixins (caching, logging, metrics, error handling)
+> - Production-ready with best-practice patterns
+> - Type-safe and fully tested
 > **When to use each**:
 > - **NodeCompute**: Pure data processing (calculations, transformations, validations)
 > - **NodeEffect**: External interactions (APIs, databases, file systems, events)
 > - **NodeReducer**: FSM-driven state aggregation (streaming data, conflict resolution, state machines)
 > - **NodeOrchestrator**: Workflow-driven coordination (multi-step workflows, dependencies, parallel execution)
->
 > For detailed guides on each type, see:
 > - [COMPUTE Tutorial](../guides/node-building/03_COMPUTE_NODE_TUTORIAL.md)
 > - [EFFECT Tutorial](../guides/node-building/04_EFFECT_NODE_TUTORIAL.md)

@@ -21,17 +21,8 @@ from omnibase_core.enums.enum_validation_value_type import EnumValidationValueTy
 from omnibase_core.types.typed_dict_validation_value_serialized import (
     TypedDictValidationValueSerialized,
 )
-from omnibase_core.utils.util_decorators import allow_dict_str_any
-
-# ONEX validation values - use discriminated union pattern instead of broad unions
-# ValidationValueType replaced with EnumValidationValueType + structured fields
-# InputValueType replaced with ModelSchemaValue.from_value() conversion
 
 
-@allow_dict_str_any(
-    "Validation value factory methods require dict[str, Any] input "
-    "for conversion to strongly-typed ModelValidationValue instances."
-)
 class ModelValidationValue(BaseModel):
     """
     Validation value object with discriminated union pattern.

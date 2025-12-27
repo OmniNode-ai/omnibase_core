@@ -29,7 +29,9 @@ class ModelTransformJsonPathConfig(BaseModel):
     def validate_path(cls, v: str) -> str:
         """Validate that path is non-empty and starts with '$'."""
         if not v or not v.strip():
+            # error-ok: Pydantic validator requires ValueError
             raise ValueError("path cannot be empty")
         if not v.startswith("$"):
+            # error-ok: Pydantic validator requires ValueError
             raise ValueError("path must start with '$'")
         return v

@@ -36,11 +36,11 @@ from .model_custom_field_definition import ModelCustomFieldDefinition
 from .model_error_details import ModelErrorDetails
 
 
-@allow_dict_str_any(
-    "Custom fields require flexible dictionary for extensibility across 20+ models",
-)
 @allow_any_type(
     "Custom field values need Any type for flexibility in graph nodes, orchestrator steps, and metadata",
+)
+@allow_dict_str_any(
+    "Custom fields require dict[str, Any] for user-defined dynamic field values and batch operations",
 )
 class ModelCustomFields(BaseModel):
     """
@@ -68,10 +68,11 @@ class ModelCustomFields(BaseModel):
         description="Custom field definitions",
     )
 
-    # Field values
-    field_values: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Custom field values",
+    field_values: dict[str, Any] = (
+        Field(  # dict-any-ok: dynamic user-defined field values
+            default_factory=dict,
+            description="Custom field values",
+        )
     )
 
     # Metadata
@@ -126,6 +127,11 @@ class ModelCustomFields(BaseModel):
                         )
 
         return v
+
+    # REMOVED: to_dict deprecated method - use model_dump(exclude_none=True) instead
+    # REMOVED: from_dict factory method - use Pydantic model_validate() instead
+    # Factory methods bypass Pydantic validation and violate ONEX architecture.
+    # Migration: Replace ModelCustomFields.from_dict(data) with ModelCustomFields(**data)
 
     def get_field(self, name: str, default: Any = None) -> Any:
         """Get a custom field value.
