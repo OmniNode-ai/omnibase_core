@@ -17,14 +17,9 @@ from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.validation.workflow_constants import VALID_STEP_TYPES
 
 __all__ = ["ModelWorkflowStep", "VALID_STEP_TYPES"]
-
-# v1.0.4 Normative: Valid step types per CONTRACT_DRIVEN_NODEORCHESTRATOR_V1_0.md
-# Fix 41: step_type MUST be one of these values. "conditional" is NOT valid.
-VALID_STEP_TYPES: frozenset[str] = frozenset(
-    {"compute", "effect", "reducer", "orchestrator", "custom", "parallel"}
-)
 
 
 class ModelWorkflowStep(BaseModel):
@@ -167,7 +162,11 @@ class ModelWorkflowStep(BaseModel):
     # This matches Python's heapq and typical task queue implementations.
     priority: int = Field(
         default=100,
-        description="Step execution priority (lower = higher priority, executes first)",
+        description=(
+            "Used to derive action priority on the queue; does not affect DAG "
+            "topological order. Lower values = higher priority. Declaration order "
+            "is the tiebreaker for steps at the same dependency level."
+        ),
         ge=1,
         le=1000,
     )

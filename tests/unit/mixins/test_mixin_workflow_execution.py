@@ -265,19 +265,22 @@ class TestMixinWorkflowValidation:
     async def test_validate_workflow_contract_empty_steps(
         self, workflow_definition: ModelWorkflowDefinition
     ):
-        """Test validation passes for workflow with no steps (empty workflows are valid).
+        """Test validation passes for workflow with no steps (zero errors).
 
-        Empty workflows are explicitly VALID by design. The workflow executor
-        treats empty workflows as valid and returns a COMPLETED status with
-        0 actions. This is intentional behavior per workflow_executor.py
-        lines 522-524 which explicitly does NOT add an error for empty workflows.
+        Empty workflows are explicitly VALID by design per v1.0.3 Fix 29.
+        The workflow executor treats empty workflows as valid and returns
+        a COMPLETED status with 0 actions. This is intentional behavior per
+        workflow_executor.py lines 522-524 which explicitly does NOT add an
+        error for empty workflows.
         """
         node = MockNodeWithWorkflowMixin()
 
         errors = await node.validate_workflow_contract(workflow_definition, [])
 
-        # Empty workflows are valid - no validation errors expected
-        assert len(errors) == 0
+        # v1.0.3 Fix 29: Empty workflows should pass validation with zero errors
+        assert errors == [], (
+            f"Empty workflow should succeed per v1.0.3 Fix 29, but got errors: {errors}"
+        )
 
     @pytest.mark.asyncio
     async def test_validate_workflow_contract_invalid_dependency(

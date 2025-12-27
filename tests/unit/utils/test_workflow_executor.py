@@ -1235,23 +1235,27 @@ class TestComputeWorkflowHash:
 
 
 @pytest.mark.unit
-class TestPriorityOrderingIntegration:
-    """Integration tests for priority ordering in real workflow execution.
+class TestDeclarationOrderIntegration:
+    """Integration tests for declaration-order semantics in workflow execution.
 
-    These tests verify that priority ordering works end-to-end through actual
-    workflow execution, not just the internal _get_topological_order function.
+    These tests verify that topological/execution order works end-to-end:
+    - Dependencies are always respected first
+    - For steps at the same dependency level, declaration order is the tiebreaker
+    - Priority is passed through to actions for downstream scheduling, NOT used
+      for orchestrator-side ordering
     """
 
     @pytest.mark.asyncio
-    async def test_sequential_workflow_respects_priority_ordering(
+    async def test_sequential_workflow_respects_declaration_order(
         self,
         simple_workflow_definition: ModelWorkflowDefinition,
     ) -> None:
-        """Verify sequential workflow execution emits actions in priority order.
+        """Verify sequential workflow execution emits actions in declaration order.
 
         When executing a sequential workflow with independent steps (no dependencies),
-        higher priority steps (lower priority value) should be executed first,
-        and their actions should be emitted in priority order.
+        steps are emitted in declaration order (order they appear in the workflow).
+        Priority values are passed through to the emitted actions for downstream
+        scheduling, but do NOT affect orchestrator-side emission order.
         """
         workflow_id = uuid4()
 
@@ -1323,16 +1327,17 @@ class TestPriorityOrderingIntegration:
         assert result.actions_emitted[2].priority == 1
 
     @pytest.mark.asyncio
-    async def test_parallel_workflow_respects_priority_in_wave(
+    async def test_parallel_workflow_passes_priority_to_actions(
         self,
         simple_workflow_definition: ModelWorkflowDefinition,
     ) -> None:
-        """Verify parallel workflow execution respects priority within a wave.
+        """Verify parallel workflow execution passes priority to emitted actions.
 
         In parallel execution, steps are grouped into "waves" based on dependencies.
-        Within a single wave (all steps have their dependencies met), the actions
-        should be processed/emitted in priority order, with higher priority steps
-        (lower priority value) coming first.
+        Within a single wave (all steps have their dependencies met), each step's
+        priority value is passed through to its emitted action. This allows
+        downstream nodes to schedule/process actions according to priority,
+        while the orchestrator itself does not reorder based on priority.
         """
         workflow_id = uuid4()
 
@@ -1420,14 +1425,16 @@ class TestPriorityOrderingIntegration:
         assert priority_by_step[low_priority_child_id] == 10
 
     @pytest.mark.asyncio
-    async def test_sequential_workflow_priority_with_dependencies(
+    async def test_sequential_workflow_declaration_order_with_dependencies(
         self,
         simple_workflow_definition: ModelWorkflowDefinition,
     ) -> None:
-        """Verify dependencies take precedence over priority in sequential execution.
+        """Verify dependencies take precedence, then declaration order is tiebreaker.
 
-        When steps have dependencies, the topological order is respected first,
-        then priority is used to order steps at the same dependency level.
+        When steps have dependencies, topological order is respected first.
+        For steps at the same dependency level, declaration order (position in
+        workflow definition) is the tiebreaker, NOT priority. Priority is passed
+        to actions for downstream scheduling.
         """
         workflow_id = uuid4()
 
@@ -1581,8 +1588,15 @@ class TestPriorityOrderingIntegration:
 
 
 @pytest.mark.unit
-class TestPriorityOrdering:
-    """Tests for priority-aware topological ordering in _get_topological_order."""
+class TestDeclarationOrderTopological:
+    """Tests for declaration-order semantics in _get_topological_order.
+
+    These tests verify:
+    - Dependencies are respected first (topological ordering)
+    - For steps at the same dependency level, declaration order is the tiebreaker
+    - Priority values do NOT affect ordering (they are passed to actions for
+      downstream scheduling only)
+    """
 
     def test_equal_priority_ordered_by_declaration_order(self) -> None:
         """Test steps with equal priority are ordered by declaration order."""
@@ -1622,8 +1636,13 @@ class TestPriorityOrdering:
         assert order[1] == step2_id
         assert order[2] == step3_id
 
-    def test_different_priorities_ordered_by_priority(self) -> None:
-        """Test steps with different priorities are ordered by priority (lower first)."""
+    def test_different_priorities_uses_declaration_order(self) -> None:
+        """Test steps with different priorities are ordered by declaration order.
+
+        v1.0.2-v1.0.4 Normative: Priority does NOT affect emission order.
+        Emission order follows declaration order. Priority is passed to
+        action.priority for target node scheduling.
+        """
         from omnibase_core.utils.workflow_executor import _get_topological_order
 
         low_priority_id = uuid4()
@@ -1631,7 +1650,7 @@ class TestPriorityOrdering:
         high_priority_id = uuid4()
 
         # Different priorities, no dependencies
-        # Lower priority value = higher importance, should be first
+        # Declaration order determines emission order, NOT priority values
         steps = [
             ModelWorkflowStep(
                 step_id=low_priority_id,
@@ -1722,10 +1741,14 @@ class TestPriorityOrdering:
         # first_step must come before second_step due to dependency
         assert order.index(first_step_id) < order.index(second_step_id)
 
-    def test_priority_ordering_among_independent_steps_with_shared_dependency(
+    def test_declaration_order_among_independent_steps_with_shared_dependency(
         self,
     ) -> None:
-        """Test priority ordering for independent steps that share a dependency."""
+        """Test declaration order for independent steps that share a dependency.
+
+        For steps at the same dependency level (children of the same parent),
+        declaration order is the tiebreaker, NOT priority.
+        """
         from omnibase_core.utils.workflow_executor import _get_topological_order
 
         parent_id = uuid4()
@@ -1763,17 +1786,21 @@ class TestPriorityOrdering:
         # Low priority child is declared before high priority child, so it comes first.
         assert order.index(low_priority_child_id) < order.index(high_priority_child_id)
 
-    def test_default_priority_uses_model_default(self) -> None:
-        """Test that default priority (100) is clamped to 10 in topological order."""
+    def test_default_priority_clamped_uses_declaration_order(self) -> None:
+        """Test that default priority (100) is clamped and declaration order applies.
+
+        v1.0.2-v1.0.4 Normative: Priority does NOT affect emission order.
+        Emission order follows declaration order. Priority values (including
+        the default of 100, clamped to 10) are passed to action.priority
+        for target node scheduling.
+        """
         from omnibase_core.utils.workflow_executor import _get_topological_order
 
         default_priority_id = uuid4()
         high_priority_id = uuid4()
 
         # Create steps where one uses default priority (100) and another has explicit high priority (1)
-        # v1.0.2-v1.0.4 Normative: Priority does NOT affect emission order.
-        # Emission order follows YAML declaration order.
-        # Priority is passed to action.priority for target node scheduling.
+        # Declaration order determines emission order, NOT priority values
         steps = [
             ModelWorkflowStep(
                 step_id=default_priority_id,

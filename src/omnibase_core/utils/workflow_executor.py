@@ -126,11 +126,10 @@ from omnibase_core.models.workflow.execution.model_workflow_result_metadata impo
 )
 from omnibase_core.types.typed_dict_workflow_context import TypedDictWorkflowContext
 from omnibase_core.validation.reserved_enum_validator import validate_execution_mode
-
-# v1.0.3 Constants (copied from workflow_validator.py to avoid circular import)
-# These must be kept in sync with workflow_validator.py
-RESERVED_STEP_TYPES: frozenset[str] = frozenset({"conditional"})
-MIN_TIMEOUT_MS: int = 100
+from omnibase_core.validation.workflow_constants import (
+    MIN_TIMEOUT_MS,
+    RESERVED_STEP_TYPES,
+)
 
 
 def _get_limit_from_env(env_var: str, default: int, min_val: int, max_val: int) -> int:
@@ -1670,19 +1669,41 @@ def _get_topological_order(
     return result
 
 
+# Resource exhaustion protection constant for DFS cycle detection
+# Must be kept in sync with workflow_validator.py
+# Value of 10,000 iterations supports workflows with up to ~5,000 steps
+# (worst case: each step visited twice during DFS traversal)
+# See workflow_validator.py module docstring "Security Considerations" for full documentation.
+MAX_DFS_ITERATIONS = 10_000
+
+
 def _has_dependency_cycles(
     workflow_steps: list[ModelWorkflowStep],
 ) -> bool:
     """
     Check if workflow contains dependency cycles.
 
-    Uses DFS-based cycle detection.
+    Uses DFS-based cycle detection with iteration bounds to prevent
+    resource exhaustion from malicious or malformed inputs.
+
+    Security Considerations:
+        The MAX_DFS_ITERATIONS constant (10,000) protects against denial-of-service
+        attacks from maliciously crafted workflow graphs. Without this limit, an
+        attacker could submit workflows designed to cause infinite loops or excessive
+        CPU consumption during cycle detection.
+
+        If cycle detection exceeds MAX_DFS_ITERATIONS, a ModelOnexError is raised
+        with detailed context for debugging and audit logging.
 
     Args:
         workflow_steps: Workflow steps to check
 
     Returns:
         True if cycles detected, False otherwise
+
+    Raises:
+        ModelOnexError: If cycle detection exceeds MAX_DFS_ITERATIONS,
+            indicating possible malicious input or malformed workflow.
     """
     # Build adjacency list
     step_ids = {step.step_id for step in workflow_steps}
@@ -1694,11 +1715,30 @@ def _has_dependency_cycles(
                 # Note: dependency is reversed - we go FROM dependent TO dependency
                 edges[step.step_id].append(dep_id)
 
-    # DFS-based cycle detection
+    # DFS-based cycle detection with iteration tracking
     visited: set[UUID] = set()
     rec_stack: set[UUID] = set()
+    iterations = 0  # Track iterations for resource exhaustion protection
 
     def has_cycle_dfs(node: UUID) -> bool:
+        nonlocal iterations
+        iterations += 1
+
+        # Resource exhaustion protection - prevent malicious/malformed inputs
+        if iterations > MAX_DFS_ITERATIONS:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=(
+                    f"Cycle detection exceeded {MAX_DFS_ITERATIONS} iterations - "
+                    "possible malicious input or malformed workflow"
+                ),
+                context={
+                    "step_count": len(workflow_steps),
+                    "max_iterations": MAX_DFS_ITERATIONS,
+                    "last_node": str(node),
+                },
+            )
+
         visited.add(node)
         rec_stack.add(node)
 
@@ -1794,6 +1834,7 @@ def verify_workflow_integrity(
 
 # Public API
 __all__ = [
+    "MAX_DFS_ITERATIONS",
     "MAX_STEP_PAYLOAD_SIZE_BYTES",
     "MAX_TOTAL_PAYLOAD_SIZE_BYTES",
     "MAX_WORKFLOW_STEPS",

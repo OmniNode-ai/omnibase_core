@@ -22,15 +22,19 @@ v1.1+ Roadmap:
     - **v1.1 (Planned)**: Graph-based execution validation - the executor will
       optionally validate that steps match the declared graph structure.
 
-    - **v1.2+ (Planned)**: Graph-driven optimizations including parallel
-      execution path detection, critical path analysis, and automatic
-      step reordering for performance.
+    - **v1.2+ (Planned)**: Graph-driven optimizations including:
+      - Parallel execution constraints and wave optimization
+      - Resource allocation hints for compute-intensive steps
+      - Cross-step data flow optimization
+      - Critical path analysis and automatic step reordering
 
     - **v1.3+ (Planned)**: Visual workflow editor integration - the graph
       structure will be used to render and edit workflows graphically.
 
     Until these features are implemented, the executor MUST ignore this field
     and rely solely on ModelOrchestratorInput.steps + depends_on declarations.
+
+    See Linear ticket OMN-656 for tracking of execution_graph activation timeline.
 """
 
 from pydantic import BaseModel, Field
@@ -62,8 +66,12 @@ class ModelExecutionGraph(BaseModel):
     v1.1+ Roadmap:
         This field will be actively used starting in v1.1 for:
         - Graph-based execution validation (v1.1)
-        - Parallel execution optimization (v1.2+)
+        - Parallel execution constraints and wave optimization (v1.2+)
+        - Resource allocation hints for compute-intensive steps (v1.2+)
+        - Cross-step data flow optimization (v1.2+)
         - Visual workflow editing (v1.3+)
+
+        See Linear ticket OMN-656 for tracking of execution_graph activation.
     """
 
     # Model version for instance tracking

@@ -1229,11 +1229,10 @@ class TestComplexWorkflows:
         # v1.0.2 Fix 10: Disabled steps are auto-satisfied
         # A completes normally
         assert str(step_a) in result.completed_steps
-        # B is skipped (disabled) - not in completed_steps
-        assert (
-            str(step_b) in result.skipped_steps
-            or str(step_b) not in result.completed_steps
-        )
+        # B is skipped (disabled) - must be in skipped_steps, not completed or failed
+        assert str(step_b) in result.skipped_steps
+        assert str(step_b) not in result.completed_steps
+        assert str(step_b) not in result.failed_steps
         # C should complete because B (disabled) is treated as auto-satisfied
         assert str(step_c) in result.completed_steps, (
             "Step C should complete because disabled step B is auto-satisfied per v1.0.2 Fix 10"

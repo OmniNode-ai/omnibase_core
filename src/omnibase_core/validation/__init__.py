@@ -80,6 +80,14 @@ from .reserved_enum_validator import RESERVED_EXECUTION_MODES, validate_executio
 from .types import validate_union_usage_directory, validate_union_usage_file
 from .validation_utils import ModelProtocolInfo
 
+# Import workflow constants (OMN-PR255)
+from .workflow_constants import (
+    MAX_TIMEOUT_MS,
+    MIN_TIMEOUT_MS,
+    RESERVED_STEP_TYPES,
+    VALID_STEP_TYPES,
+)
+
 # Import workflow linter
 from .workflow_linter import WorkflowLinter
 from .workflow_validator import (
@@ -197,4 +205,9 @@ __all__ = [
     # while validate_execution_mode_string takes str (for YAML/config parsing)
     "RESERVED_EXECUTION_MODES",
     "validate_execution_mode",
+    # Workflow constants (OMN-PR255)
+    "MAX_TIMEOUT_MS",
+    "MIN_TIMEOUT_MS",
+    "RESERVED_STEP_TYPES",
+    "VALID_STEP_TYPES",
 ]

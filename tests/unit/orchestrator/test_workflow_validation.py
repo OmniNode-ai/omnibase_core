@@ -770,17 +770,17 @@ class TestInvariantEnforcement:
     async def test_empty_workflow_succeeds(
         self, base_workflow_definition: ModelWorkflowDefinition
     ) -> None:
-        """Test that empty workflow (no steps) succeeds immediately.
+        """Test that empty workflow (no steps) produces zero validation errors.
 
         v1.0.3 Fix 29: Empty workflows SUCCEED immediately with COMPLETED state.
         This is the correct behavior - an empty workflow has nothing to fail.
+        The validation should produce NO errors whatsoever, not just filter
+        out "no steps" errors.
         """
         errors = await validate_workflow_definition(base_workflow_definition, [])
 
-        # v1.0.3 Fix 29: Empty workflows should pass validation (no errors)
-        # Filter for structural "no steps" errors
-        no_steps_errors = [e for e in errors if "no steps" in e.lower()]
-        assert len(no_steps_errors) == 0, (
+        # v1.0.3 Fix 29: Empty workflows should pass validation with zero errors
+        assert errors == [], (
             f"Empty workflow should succeed per v1.0.3 Fix 29, but got errors: {errors}"
         )
 

@@ -89,6 +89,10 @@ from omnibase_core.models.validation.model_workflow_validation_result import (
     ModelWorkflowValidationResult,
 )
 from omnibase_core.validation.reserved_enum_validator import validate_execution_mode
+from omnibase_core.validation.workflow_constants import (
+    MIN_TIMEOUT_MS,
+    RESERVED_STEP_TYPES,
+)
 
 # Type aliases for clarity (Python 3.12+ syntax)
 type StepIdToName = Mapping[UUID, str]
@@ -115,14 +119,9 @@ RESERVED_EXECUTION_MODES: frozenset[str] = frozenset({"conditional", "streaming"
 # Using tuple for immutability and ordered iteration (for consistent error messages).
 ACCEPTED_EXECUTION_MODES: tuple[str, ...] = ("sequential", "parallel", "batch")
 
-# Reserved step types that are not yet implemented per ONEX v1.0 contract.
-# Fix 40 (v1.0.3): step_type="conditional" MUST raise ModelOnexError in v1.0.
-# Conditional nodes are reserved for v1.1.
-# Using frozenset for immutability and O(1) membership testing.
-RESERVED_STEP_TYPES: frozenset[str] = frozenset({"conditional"})
-
 # Accepted step types that are currently supported in v1.0.
 # Using tuple for immutability and ordered iteration.
+# NOTE: RESERVED_STEP_TYPES and MIN_TIMEOUT_MS are imported from workflow_constants.
 ACCEPTED_STEP_TYPES: tuple[str, ...] = (
     "compute",
     "effect",
@@ -131,10 +130,6 @@ ACCEPTED_STEP_TYPES: tuple[str, ...] = (
     "parallel",
     "custom",
 )
-
-# Minimum timeout value in milliseconds per v1.0.3 schema.
-# Fix 38 (v1.0.3): timeout_ms MUST be >= 100. Any value <100 MUST raise ModelOnexError.
-MIN_TIMEOUT_MS: int = 100
 
 __all__ = [
     "WorkflowValidator",
@@ -151,12 +146,13 @@ __all__ = [
     "validate_execution_mode_string",
     "validate_step_type",
     "validate_step_timeout",
-    # Constants
+    # Constants (defined in this module)
     "MAX_DFS_ITERATIONS",
     "RESERVED_EXECUTION_MODES",
     "ACCEPTED_EXECUTION_MODES",
-    "RESERVED_STEP_TYPES",
     "ACCEPTED_STEP_TYPES",
+    # Re-exported from workflow_constants (canonical source)
+    "RESERVED_STEP_TYPES",
     "MIN_TIMEOUT_MS",
 ]
 
