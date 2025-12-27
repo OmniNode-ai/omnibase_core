@@ -58,14 +58,22 @@ Intent Types (Extension Examples):
 
 Example:
     >>> from omnibase_core.models.reducer import ModelIntent
-    >>> from pydantic import BaseModel
+    >>> from omnibase_core.models.context import ModelReducerIntentPayload
     >>>
-    >>> class WebhookPayload(BaseModel):
-    ...     url: str
-    ...     method: str
-    ...     body: dict
+    >>> # With typed payload (recommended for structured data)
+    >>> intent = ModelIntent(
+    ...     intent_type="fsm.transition",
+    ...     target="user_workflow",
+    ...     payload=ModelReducerIntentPayload(
+    ...         target_state="active",
+    ...         source_state="pending",
+    ...         trigger="user_verified",
+    ...         entity_type="user",
+    ...     ),
+    ...     priority=5,
+    ... )
     >>>
-    >>> # Extension intent for webhook plugin
+    >>> # With dict payload (backwards compatible)
     >>> intent = ModelIntent(
     ...     intent_type="webhook.send",
     ...     target="notifications",
@@ -79,17 +87,22 @@ See Also:
     - omnibase_core.nodes.node_effect: Executes intents
 """
 
+from __future__ import annotations
+
 from typing import Any
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.models.context.model_reducer_intent_payload import (
+    ModelReducerIntentPayload,
+)
 from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 
 @allow_dict_str_any(
-    "Intent payloads require flexible dict[str, Any] to carry arbitrary data "
-    "for side effects (event data, log metadata, storage payloads, etc.)."
+    "Intent payloads support both typed ModelReducerIntentPayload and flexible dict[str, Any] "
+    "for flexible payloads when typed fields are not applicable."
 )
 class ModelIntent(BaseModel):
     """
@@ -98,7 +111,7 @@ class ModelIntent(BaseModel):
     For core infrastructure intents (registration, persistence, lifecycle),
     use the discriminated union in omnibase_core.models.intents instead.
 
-    The Reducer is a pure function: δ(state, action) → (new_state, intents[])
+    The Reducer is a pure function: delta(state, action) -> (new_state, intents[])
     Instead of performing side effects directly, it emits Intents describing
     what side effects should occur. The Effect node consumes these Intents
     and executes them.
@@ -109,7 +122,33 @@ class ModelIntent(BaseModel):
         - Intent to apply custom transformation
         - Intent for experimental features
 
+    Example:
+        Basic usage with dict (backwards compatible)::
+
+            intent = ModelIntent(
+                intent_type="webhook.send",
+                target="notifications",
+                payload={"url": "https://...", "method": "POST"},
+            )
+
+        With typed ModelReducerIntentPayload (recommended for FSM transitions)::
+
+            from omnibase_core.models.context import ModelReducerIntentPayload
+
+            intent = ModelIntent(
+                intent_type="fsm.transition",
+                target="user_workflow",
+                payload=ModelReducerIntentPayload(
+                    target_state="active",
+                    source_state="pending",
+                    trigger="user_verified",
+                    entity_type="user",
+                    operation="activate",
+                ),
+            )
+
     See Also:
+        omnibase_core.models.context.ModelReducerIntentPayload: Typed payload for structured intents
         omnibase_core.models.intents.ModelCoreIntent: Base class for core intents
         omnibase_core.models.intents.ModelCoreRegistrationIntent: Discriminated union type alias
             for core infrastructure intents (registration, persistence, lifecycle)
@@ -134,9 +173,13 @@ class ModelIntent(BaseModel):
         max_length=200,
     )
 
-    payload: dict[str, Any] = Field(
+    payload: ModelReducerIntentPayload | dict[str, Any] = Field(
         default_factory=dict,
-        description="Intent payload data",
+        description=(
+            "Intent payload data. Accepts either a typed ModelReducerIntentPayload for "
+            "structured FSM transitions and side effect requests, or a flexible "
+            "dict[str, Any] for flexible payloads in extension workflows."
+        ),
     )
 
     priority: int = Field(

@@ -37,6 +37,18 @@ Example:
     ...     circuit_breaker_enabled=True,
     ...     timeout_ms=5000,
     ... )
+    >>>
+    >>> # Typed operation data using ModelEffectInputData (recommended for new code)
+    >>> from omnibase_core.models.context import ModelEffectInputData
+    >>> typed_input = ModelEffectInput(
+    ...     effect_type=EnumEffectType.API_CALL,
+    ...     operation_data=ModelEffectInputData(
+    ...         effect_type=EnumEffectType.API_CALL,
+    ...         resource_path="https://api.example.com/users",
+    ...         target_system="user-service",
+    ...         operation_name="create_user",
+    ...     ),
+    ... )
 
 See Also:
     - omnibase_core.models.effect.model_effect_output: Corresponding output model
@@ -51,13 +63,15 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_effect_types import EnumEffectType
+from omnibase_core.models.context import ModelEffectInputData
 from omnibase_core.models.effect.model_effect_metadata import ModelEffectMetadata
 from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 
 @allow_dict_str_any(
-    "Effect operations require flexible operation_data for various external I/O types "
-    "(database queries, API payloads, file operations, etc.) and metadata for tracking."
+    "Effect operations support typed operation_data (via ModelEffectInputData) and "
+    "dict[str, Any] for flexible payloads with various external I/O types"
+    "(database queries, API payloads, file operations, etc.)."
 )
 class ModelEffectInput(BaseModel):
     """
@@ -70,8 +84,9 @@ class ModelEffectInput(BaseModel):
     Attributes:
         effect_type: Type of side effect operation (DATABASE_OPERATION, API_CALL, etc.).
             Determines which handler processes the operation.
-        operation_data: Payload data for the operation. Structure depends on
-            effect_type (e.g., SQL query for database, URL for API).
+        operation_data: Payload data for the operation. Accepts ModelEffectInputData
+            for typed effect operations or dict[str, Any] for flexible payloads.
+            Structure depends on effect_type (e.g., SQL query for database, URL for API).
         operation_id: Unique identifier for tracking this operation. Auto-generated
             UUID by default. Used for correlation and idempotency.
         transaction_enabled: Whether to wrap the operation in a transaction.
@@ -93,17 +108,45 @@ class ModelEffectInput(BaseModel):
         timestamp: When this input was created. Auto-generated to current time.
 
     Example:
-        >>> # File operation with timeout
-        >>> input_data = ModelEffectInput(
-        ...     effect_type=EnumEffectType.FILE_OPERATION,
-        ...     operation_data={"path": "/data/output.json", "action": "write"},
-        ...     timeout_ms=10000,
-        ...     transaction_enabled=False,
-        ... )
+        Untyped usage (backwards compatible)::
+
+            input_data = ModelEffectInput(
+                effect_type=EnumEffectType.FILE_OPERATION,
+                operation_data={"path": "/data/output.json", "action": "write"},
+                timeout_ms=10000,
+                transaction_enabled=False,
+            )
+
+        Using ModelEffectInputData (recommended for new code)::
+
+            from omnibase_core.models.context import ModelEffectInputData
+
+            typed_input = ModelEffectInput(
+                effect_type=EnumEffectType.FILE_OPERATION,
+                operation_data=ModelEffectInputData(
+                    effect_type=EnumEffectType.FILE_OPERATION,
+                    resource_path="/data/output.json",
+                    target_system="local-fs",
+                    operation_name="write_output",
+                ),
+                timeout_ms=10000,
+            )
+
+    See Also:
+        - omnibase_core.models.effect.model_effect_output: Corresponding output model
+        - omnibase_core.nodes.node_effect: NodeEffect implementation
+        - docs/guides/node-building/04_EFFECT_NODE_TUTORIAL.md: Effect node tutorial
     """
 
     effect_type: EnumEffectType
-    operation_data: dict[str, Any]
+    operation_data: ModelEffectInputData | dict[str, Any] = Field(
+        default_factory=dict,
+        description=(
+            "Operation payload data. Accepts ModelEffectInputData for typed effect "
+            "operations or dict[str, Any] for flexible payloads. Structure depends"
+            "on effect_type (e.g., SQL query for database, URL for API)."
+        ),
+    )
     operation_id: UUID = Field(default_factory=uuid4)
     transaction_enabled: bool = True
     retry_enabled: bool = True

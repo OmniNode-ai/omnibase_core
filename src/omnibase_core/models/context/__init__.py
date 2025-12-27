@@ -12,8 +12,15 @@ Available Context Models:
         - ModelOperationalContext: Operation-level metadata
         - ModelRetryContext: Retry-related metadata
         - ModelResourceContext: Resource identification
+        - ModelRuntimeDirectivePayload: Runtime directive parameters
         - ModelUserContext: User and session tracking
         - ModelValidationContext: Field-level validation details
+
+    Effect Context:
+        - ModelEffectInputData: Effect operation targets and parameters
+
+    Intent Context:
+        - ModelReducerIntentPayload: Typed payload for reducer intents (FSM transitions)
 
     Metadata Context:
         - ModelSessionContext: Session identification and client context
@@ -79,6 +86,7 @@ Example:
 """
 
 # Error/Retry context models
+# Effect context models
 # Metadata context models
 from omnibase_core.models.context.model_audit_metadata import ModelAuditMetadata
 from omnibase_core.models.context.model_authorization_context import (
@@ -88,6 +96,9 @@ from omnibase_core.models.context.model_checkpoint_metadata import (
     ModelCheckpointMetadata,
 )
 from omnibase_core.models.context.model_detection_metadata import ModelDetectionMetadata
+from omnibase_core.models.context.model_effect_input_data import (
+    ModelEffectInputData,
+)
 from omnibase_core.models.context.model_http_request_metadata import (
     ModelHttpRequestMetadata,
 )
@@ -95,8 +106,14 @@ from omnibase_core.models.context.model_node_init_metadata import ModelNodeInitM
 from omnibase_core.models.context.model_operational_context import (
     ModelOperationalContext,
 )
+from omnibase_core.models.context.model_reducer_intent_payload import (
+    ModelReducerIntentPayload,
+)
 from omnibase_core.models.context.model_resource_context import ModelResourceContext
 from omnibase_core.models.context.model_retry_context import ModelRetryContext
+from omnibase_core.models.context.model_runtime_directive_payload import (
+    ModelRuntimeDirectivePayload,
+)
 from omnibase_core.models.context.model_session_context import ModelSessionContext
 from omnibase_core.models.context.model_trace_context import ModelTraceContext
 from omnibase_core.models.context.model_user_context import ModelUserContext
@@ -107,9 +124,14 @@ __all__ = [
     "ModelOperationalContext",
     "ModelResourceContext",
     "ModelRetryContext",
+    "ModelRuntimeDirectivePayload",
     "ModelTraceContext",
     "ModelUserContext",
     "ModelValidationContext",
+    # Effect context models
+    "ModelEffectInputData",
+    # Intent context models
+    "ModelReducerIntentPayload",
     # Metadata context models
     "ModelAuditMetadata",
     "ModelAuthorizationContext",
