@@ -143,7 +143,6 @@ def allow_dict_any[F: Callable[..., object]](func: F) -> F:
     return func
 
 
-from omnibase_core.constants import TIMEOUT_DEFAULT_MS
 from omnibase_core.constants.constants_effect import (
     DEBUG_THREAD_SAFETY,
     DEFAULT_MAX_FIELD_EXTRACTION_DEPTH,
