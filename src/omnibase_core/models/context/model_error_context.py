@@ -122,9 +122,7 @@ class ModelErrorContext(BaseModel):
             ValueError: If retry_count is negative.
         """
         if value is not None and value < 0:
-            raise ValueError(
-                f"retry_count must be >= 0, got {value}"
-            )
+            raise ValueError(f"retry_count must be >= 0, got {value}")
         return value
 
     @field_validator("error_code", mode="before")

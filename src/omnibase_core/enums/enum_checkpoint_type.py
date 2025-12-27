@@ -26,7 +26,9 @@ class EnumCheckpointType(str, Enum):
     INCREMENTAL = "incremental"  # Incremental state changes since last checkpoint
 
     # Boundary checkpoints
-    COMPOSITION_BOUNDARY = "composition_boundary"  # At composition/decomposition boundaries
+    COMPOSITION_BOUNDARY = (
+        "composition_boundary"  # At composition/decomposition boundaries
+    )
 
     def __str__(self) -> str:
         """Return the string value of the checkpoint type."""

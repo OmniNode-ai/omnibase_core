@@ -32,7 +32,7 @@ class EnumLikelihood(str, Enum):
         return self.value
 
     @classmethod
-    def get_numeric_range(cls, likelihood: "EnumLikelihood") -> tuple[float, float]:
+    def get_numeric_range(cls, likelihood: EnumLikelihood) -> tuple[float, float]:
         """
         Get the approximate numeric probability range for a likelihood level.
 
@@ -55,7 +55,7 @@ class EnumLikelihood(str, Enum):
         return ranges.get(likelihood, (0.0, 1.0))
 
     @classmethod
-    def from_probability(cls, probability: float) -> "EnumLikelihood":
+    def from_probability(cls, probability: float) -> EnumLikelihood:
         """
         Convert a numeric probability to a likelihood level.
 
@@ -81,7 +81,7 @@ class EnumLikelihood(str, Enum):
             return cls.CERTAIN
 
     @classmethod
-    def is_determinable(cls, likelihood: "EnumLikelihood") -> bool:
+    def is_determinable(cls, likelihood: EnumLikelihood) -> bool:
         """
         Check if the likelihood represents a determinable probability.
 

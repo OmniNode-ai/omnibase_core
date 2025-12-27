@@ -21,7 +21,6 @@ from pydantic import ValidationError
 
 from omnibase_core.models.context import ModelMetricsContext
 
-
 # =============================================================================
 # Helper classes for from_attributes testing
 # =============================================================================
@@ -122,9 +121,7 @@ class TestModelMetricsContextImmutability:
 
     def test_cannot_modify_trace_id(self) -> None:
         """Test that trace_id cannot be modified after creation."""
-        context = ModelMetricsContext(
-            trace_id="0af7651916cd43dd8448eb211c80319c"
-        )
+        context = ModelMetricsContext(trace_id="0af7651916cd43dd8448eb211c80319c")
         with pytest.raises(ValidationError):
             context.trace_id = "1111111111111111111111111111111"
 
@@ -215,16 +212,12 @@ class TestModelMetricsContextTraceIdValidator:
 
     def test_valid_trace_id_32_hex_chars(self) -> None:
         """Test valid trace_id with 32 hex characters."""
-        context = ModelMetricsContext(
-            trace_id="0af7651916cd43dd8448eb211c80319c"
-        )
+        context = ModelMetricsContext(trace_id="0af7651916cd43dd8448eb211c80319c")
         assert context.trace_id == "0af7651916cd43dd8448eb211c80319c"
 
     def test_trace_id_normalized_to_lowercase(self) -> None:
         """Test that trace_id is normalized to lowercase."""
-        context = ModelMetricsContext(
-            trace_id="0AF7651916CD43DD8448EB211C80319C"
-        )
+        context = ModelMetricsContext(trace_id="0AF7651916CD43DD8448EB211C80319C")
         assert context.trace_id == "0af7651916cd43dd8448eb211c80319c"
 
     def test_invalid_trace_id_too_short(self) -> None:
@@ -236,9 +229,7 @@ class TestModelMetricsContextTraceIdValidator:
     def test_invalid_trace_id_too_long(self) -> None:
         """Test invalid trace_id with more than 32 characters."""
         with pytest.raises(ValidationError) as exc_info:
-            ModelMetricsContext(
-                trace_id="0af7651916cd43dd8448eb211c80319c0000"
-            )
+            ModelMetricsContext(trace_id="0af7651916cd43dd8448eb211c80319c0000")
         assert "32 lowercase hex characters" in str(exc_info.value)
 
     def test_invalid_trace_id_non_hex_chars(self) -> None:

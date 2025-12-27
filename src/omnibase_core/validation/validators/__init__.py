@@ -34,11 +34,11 @@ Ticket: OMN-1054
 """
 
 from omnibase_core.validation.validators.common_validators import (
+    UUID,
     # Pydantic Annotated types
     BCP47Locale,
     Duration,
     SemanticVersion,
-    UUID,
     # Enum normalizer factory
     create_enum_normalizer,
     # Validator functions

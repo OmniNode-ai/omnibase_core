@@ -22,7 +22,6 @@ from pydantic import ValidationError
 
 from omnibase_core.models.context import ModelErrorContext
 
-
 # =============================================================================
 # Helper classes for from_attributes testing
 # =============================================================================

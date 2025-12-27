@@ -15,13 +15,11 @@ to avoid circular imports when used in models.
 Ticket: OMN-1054
 """
 
+from collections.abc import Callable
 from enum import Enum
-from typing import Callable, TypeVar
-
-E = TypeVar("E", bound=Enum)
 
 
-def create_enum_normalizer(
+def create_enum_normalizer[E: Enum](
     enum_class: type[E],
 ) -> Callable[[E | str | None], E | str | None]:
     """Create a Pydantic field validator for enum normalization with backward compatibility.

@@ -97,6 +97,7 @@ class ModelAuthorizationContext(BaseModel):
             original string for backward compatibility.
         """
         return create_enum_normalizer(EnumTokenType)(v)
+
     expiry: str | None = Field(
         default=None,
         description="Token expiry timestamp",

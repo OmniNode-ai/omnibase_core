@@ -14,16 +14,15 @@ import pytest
 from pydantic import BaseModel, ValidationError
 
 from omnibase_core.validation.validators import (
+    UUID,
     BCP47Locale,
     Duration,
     SemanticVersion,
-    UUID,
     validate_bcp47_locale,
     validate_duration,
     validate_semantic_version,
     validate_uuid,
 )
-
 
 # =============================================================================
 # Duration Validator Tests
@@ -66,7 +65,7 @@ class TestValidateDuration:
         assert result == duration
 
     @pytest.mark.parametrize(
-        "duration,error_fragment",
+        ("duration", "error_fragment"),
         [
             ("", "cannot be empty"),
             ("P", "must specify at least one time component"),
@@ -101,9 +100,8 @@ class TestValidateDuration:
     )
     def test_weeks_cannot_be_combined(self, duration: str) -> None:
         """Test that weeks cannot be combined with other components per ISO 8601."""
-        with pytest.raises(ValueError, match="weeks.*cannot be combined"):
+        with pytest.raises(ValueError, match=r"weeks.*cannot be combined"):
             validate_duration(duration)
-
 
 
 class TestDurationAnnotatedType:
@@ -178,7 +176,7 @@ class TestValidateBCP47Locale:
         assert result == locale
 
     @pytest.mark.parametrize(
-        "locale,error_fragment",
+        ("locale", "error_fragment"),
         [
             ("", "cannot be empty"),
             ("e", "Invalid BCP 47 locale format"),  # Too short
@@ -195,7 +193,6 @@ class TestValidateBCP47Locale:
         """Test that invalid locale strings raise ValueError."""
         with pytest.raises(ValueError, match=error_fragment):
             validate_bcp47_locale(locale)
-
 
 
 class TestBCP47LocaleAnnotatedType:
@@ -229,7 +226,7 @@ class TestValidateUUID:
     """Tests for validate_uuid function."""
 
     @pytest.mark.parametrize(
-        "uuid_str,expected",
+        ("uuid_str", "expected"),
         [
             # Standard format with hyphens
             (
@@ -277,7 +274,7 @@ class TestValidateUUID:
         assert result == expected
 
     @pytest.mark.parametrize(
-        "uuid_str,error_fragment",
+        ("uuid_str", "error_fragment"),
         [
             ("", "cannot be empty"),
             ("invalid-uuid", "Invalid UUID format"),
@@ -286,17 +283,28 @@ class TestValidateUUID:
                 "550e8400-e29b-41d4-a716-4466554400000",
                 "Invalid UUID format",
             ),  # Too long
-            ("550e8400-e29b-41d4-a716-44665544000g", "Invalid UUID format"),  # Invalid char
-            ("550e8400-e29b-41d4-a716-44665544000", "Invalid UUID format"),  # Missing digit
-            ("550e8400_e29b_41d4_a716_446655440000", "Invalid UUID format"),  # Underscores
-            ("550e8400e29b41d4a71644665544000", "Invalid UUID format"),  # One digit short
+            (
+                "550e8400-e29b-41d4-a716-44665544000g",
+                "Invalid UUID format",
+            ),  # Invalid char
+            (
+                "550e8400-e29b-41d4-a716-44665544000",
+                "Invalid UUID format",
+            ),  # Missing digit
+            (
+                "550e8400_e29b_41d4_a716_446655440000",
+                "Invalid UUID format",
+            ),  # Underscores
+            (
+                "550e8400e29b41d4a71644665544000",
+                "Invalid UUID format",
+            ),  # One digit short
         ],
     )
     def test_invalid_uuids(self, uuid_str: str, error_fragment: str) -> None:
         """Test that invalid UUID strings raise ValueError."""
         with pytest.raises(ValueError, match=error_fragment):
             validate_uuid(uuid_str)
-
 
     def test_uuid_normalization(self) -> None:
         """Test that UUIDs are normalized consistently."""
@@ -390,7 +398,7 @@ class TestValidateSemanticVersion:
         assert result == version
 
     @pytest.mark.parametrize(
-        "version,error_fragment",
+        ("version", "error_fragment"),
         [
             ("", "cannot be empty"),
             ("1", "Invalid semantic version format"),
@@ -402,7 +410,10 @@ class TestValidateSemanticVersion:
             ("01.0.0", "Invalid semantic version format"),  # Leading zero
             ("1.00.0", "Invalid semantic version format"),  # Leading zero
             ("1.0.00", "Invalid semantic version format"),  # Leading zero
-            ("1.0.0-01", "Invalid semantic version format"),  # Leading zero in prerelease
+            (
+                "1.0.0-01",
+                "Invalid semantic version format",
+            ),  # Leading zero in prerelease
             ("1.0.0-alpha..1", "Invalid semantic version format"),  # Double dot
             ("1.0.0+build..1", "Invalid semantic version format"),  # Double dot
             ("a.b.c", "Invalid semantic version format"),  # Non-numeric
@@ -415,7 +426,6 @@ class TestValidateSemanticVersion:
         """Test that invalid version strings raise ValueError."""
         with pytest.raises(ValueError, match=error_fragment):
             validate_semantic_version(version)
-
 
 
 class TestSemanticVersionAnnotatedType:
@@ -513,10 +523,10 @@ class TestImports:
     def test_import_from_validators_package(self) -> None:
         """Test that validators can be imported from the validators package."""
         from omnibase_core.validation.validators import (
+            UUID,
             BCP47Locale,
             Duration,
             SemanticVersion,
-            UUID,
             validate_bcp47_locale,
             validate_duration,
             validate_semantic_version,
@@ -532,10 +542,10 @@ class TestImports:
     def test_import_from_validation_package(self) -> None:
         """Test that validators can be imported from the main validation package."""
         from omnibase_core.validation import (
+            UUID,
             BCP47Locale,
             Duration,
             SemanticVersion,
-            UUID,
             validate_bcp47_locale,
             validate_duration,
             validate_semantic_version,
@@ -769,7 +779,9 @@ class TestEnumNormalizerWithContextModels:
         from omnibase_core.models.context import ModelSessionContext
 
         # Test with enum value
-        ctx1 = ModelSessionContext(authentication_method=EnumAuthenticationMethod.OAUTH2)
+        ctx1 = ModelSessionContext(
+            authentication_method=EnumAuthenticationMethod.OAUTH2
+        )
         assert ctx1.authentication_method == EnumAuthenticationMethod.OAUTH2
 
         # Test with string (lowercase)

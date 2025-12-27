@@ -82,10 +82,10 @@ from .validation_utils import ModelProtocolInfo
 
 # Import common validators (OMN-1054)
 from .validators import (
+    UUID,
     BCP47Locale,
     Duration,
     SemanticVersion,
-    UUID,
     create_enum_normalizer,
     validate_bcp47_locale,
     validate_duration,
