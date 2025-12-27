@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-"""
-Comprehensive ID and Version Validation Hook for ONEX Architecture
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
+"""Comprehensive ID and Version Validation Hook for ONEX Architecture.
 
 Validates that:
 1. Contract YAML files use proper ModelSemVer format instead of string versions
@@ -180,6 +182,12 @@ class PythonASTValidator(ast.NodeVisitor):
             "service_id",  # Consul service identifiers (external system constraint)
             "consul_service_id",  # Consul service identifiers (prefixed variant)
             "network_id",  # Network identifiers (VPC, subnet names - external systems)
+            # GRAPH_DATABASE_IDS (3 fields - Neo4j/Memgraph external identifiers)
+            "element_id",  # Neo4j 5.x element ID format (e.g., "4:abc-def:123")
+            "start_node_id",  # References external database node element ID
+            "end_node_id",  # References external database node element ID
+            # VECTOR_STORE_IDS (1 field - Qdrant/Pinecone external identifiers)
+            "embedding_id",  # External vector store ID (Qdrant, Pinecone, etc.)
             # DISTRIBUTED_TRACING (4 unique fields - OpenTelemetry standard)
             "trace_id",  # OpenTelemetry trace identifier
             "span_id",  # OpenTelemetry span identifier
@@ -190,11 +198,11 @@ class PythonASTValidator(ast.NodeVisitor):
             # Whitelisted globally for simplicity as they're Kafka identifiers
             "client_id",  # Kafka client ID (also used in discovery for compatibility)
             "group_id",  # Kafka consumer group ID
-            # VERSION_TEMPLATES (4 fields)
+            # VERSION_TEMPLATES (3 fields)
             "version_string",  # Template variable tokens
             "version_directory_pattern",  # File path patterns
             "version_requirement",  # Dependency constraint patterns
-            # EXTERNAL_VERSIONS (7 fields)
+            # EXTERNAL_VERSIONS (8 fields)
             "python_version",  # Python interpreter version string
             "tool_version",  # External tool versions
             "minimum_tls_version",  # TLS protocol versions (e.g., "1.2", "1.3")
@@ -202,7 +210,8 @@ class PythonASTValidator(ast.NodeVisitor):
             "runtime_version",  # Runtime environment versions
             "command_version",  # CLI command versions
             "node_specific_version",  # Node-specific version metadata
-            # METADATA_VERSIONS (4 fields in model_node_metadata_block.py)
+            "database_version",  # External database version (Neo4j, Memgraph, etc.)
+            # METADATA_VERSIONS (3 fields in model_node_metadata_block.py)
             # These use regex constraints for legacy compatibility
             "metadata_version",  # Metadata block version
             "protocol_version",  # Protocol version
