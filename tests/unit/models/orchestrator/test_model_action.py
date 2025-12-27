@@ -66,11 +66,13 @@ class TestModelActionBasicCreation:
 
     def test_action_full_creation(self) -> None:
         """Test creating ModelAction with all fields specified."""
+        from datetime import UTC
+
         action_id = uuid4()
         lease_id = uuid4()
         dep1 = uuid4()
         dep2 = uuid4()
-        created = datetime.now()
+        created = datetime.now(UTC)
 
         # Create typed metadata
         custom_metadata = ModelActionMetadata()
@@ -751,3 +753,63 @@ class TestModelActionUTCDatetime:
 
         assert action.created_at == explicit_time
         assert action.created_at.tzinfo == UTC
+
+    def test_action_naive_datetime_converted_to_utc(self) -> None:
+        """Test that naive datetime is converted to UTC-aware.
+
+        When a naive datetime (no timezone info) is provided, the validator
+        should assume UTC and add the UTC tzinfo.
+        """
+        from datetime import UTC
+
+        # Create naive datetime (no tzinfo)
+        naive_time = datetime(2025, 6, 15, 12, 30, 45)
+        assert naive_time.tzinfo is None  # Confirm it's naive
+
+        action = ModelAction(
+            action_type=EnumActionType.COMPUTE,
+            target_node_type="compute",
+            lease_id=uuid4(),
+            epoch=1,
+            payload=_create_test_payload(),
+            created_at=naive_time,
+        )
+
+        # Verify converted to UTC-aware
+        assert action.created_at.tzinfo is not None
+        assert action.created_at.tzinfo == UTC
+        # Verify the time value is preserved
+        assert action.created_at.year == 2025
+        assert action.created_at.month == 6
+        assert action.created_at.day == 15
+        assert action.created_at.hour == 12
+        assert action.created_at.minute == 30
+        assert action.created_at.second == 45
+
+    def test_action_other_timezone_converted_to_utc(self) -> None:
+        """Test that non-UTC timezone datetime is converted to UTC.
+
+        When a datetime with a non-UTC timezone is provided, the validator
+        should convert it to the equivalent UTC time.
+        """
+        from datetime import UTC, timedelta, timezone
+
+        # Create datetime with offset timezone (e.g., UTC+5)
+        tz_plus_5 = timezone(timedelta(hours=5))
+        other_tz_time = datetime(2025, 6, 15, 17, 30, 45, tzinfo=tz_plus_5)
+
+        action = ModelAction(
+            action_type=EnumActionType.COMPUTE,
+            target_node_type="compute",
+            lease_id=uuid4(),
+            epoch=1,
+            payload=_create_test_payload(),
+            created_at=other_tz_time,
+        )
+
+        # Verify converted to UTC
+        assert action.created_at.tzinfo == UTC
+        # Verify the time is correctly converted (17:30 UTC+5 = 12:30 UTC)
+        assert action.created_at.hour == 12
+        assert action.created_at.minute == 30
+        assert action.created_at.second == 45

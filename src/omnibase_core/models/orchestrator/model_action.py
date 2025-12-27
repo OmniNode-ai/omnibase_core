@@ -47,7 +47,7 @@ from datetime import UTC, datetime
 from typing import Self
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_workflow_execution import EnumActionType
@@ -216,6 +216,36 @@ class ModelAction(BaseModel):
         from_attributes=True,
         arbitrary_types_allowed=True,  # Required for Protocol types
     )
+
+    @field_validator("created_at", mode="before")
+    @classmethod
+    def _ensure_utc_aware(cls, v: datetime) -> datetime:
+        """
+        Ensure created_at is always UTC-aware.
+
+        This validator standardizes datetime handling:
+        - Naive datetime (no tzinfo): Assumes UTC, adds UTC tzinfo
+        - Non-UTC aware datetime: Converts to UTC equivalent
+
+        This ensures consistent UTC timestamps for distributed coordination
+        and action tracking across time zones.
+
+        Args:
+            v: The datetime value to validate
+
+        Returns:
+            UTC-aware datetime
+
+        Note:
+            Uses stacklevel=3 to attribute warnings to the caller, not the validator.
+        """
+        if v.tzinfo is None:
+            # Naive datetime: assume UTC and add tzinfo
+            return v.replace(tzinfo=UTC)
+        elif v.tzinfo != UTC:
+            # Non-UTC timezone: convert to UTC
+            return v.astimezone(UTC)
+        return v
 
     @model_validator(mode="after")
     def _validate_action_consistency(self) -> Self:

@@ -66,26 +66,25 @@ Example:
     # Publish to intent topic for execution by IntentExecutor
     await publish_to_kafka(TOPIC_EVENT_PUBLISH_INTENT, custom_intent)
 
-    # Example 3: Using TOPIC_METRICS_EVENTS for metrics events
-    # Metrics events are published to the dedicated metrics domain topic
+    # Example 3: Using TOPIC_METRICS_EVENTS for node health metrics
+    # Health events can be published to the metrics domain topic for monitoring
     from omnibase_core.constants import TOPIC_METRICS_EVENTS
-    from omnibase_core.models.events.model_runtime_ready_event import (
-        ModelRuntimeReadyEvent,
-    )
+    from omnibase_core.models.events.payloads import ModelNodeHealthEvent
 
-    metrics_payload = ModelRuntimeReadyEvent(
-        runtime_id=uuid4(),
-        node_count=10,
-        subscription_count=25,
-        event_bus_type="kafka",
+    node_id = uuid4()
+    health_payload = ModelNodeHealthEvent.create_healthy_report(
+        node_id=node_id,
+        node_name="worker-node-01",
+        uptime_seconds=3600,
+        response_time_ms=25.5,
     )
     metrics_intent = ModelEventPublishIntent(
         correlation_id=uuid4(),
-        created_by="metrics_collector_v1_0_0",
+        created_by="health_monitor_v1_0_0",
         target_topic=TOPIC_METRICS_EVENTS,  # Use pre-defined metrics topic
-        target_key=str(uuid4()),
-        target_event_type="RUNTIME_METRICS_RECORDED",
-        target_event_payload=metrics_payload,
+        target_key=str(node_id),
+        target_event_type="NODE_HEALTH",
+        target_event_payload=health_payload,
     )
     await publish_to_kafka(TOPIC_EVENT_PUBLISH_INTENT, metrics_intent)
 
@@ -390,10 +389,18 @@ def _rebuild_model() -> None:
         ) from e
 
     # Rebuild model with resolved types
+    #
     # The utility function handles Pydantic-specific errors and raises
     # ModelOnexError with appropriate error codes (INITIALIZATION_FAILED,
-    # CONFIGURATION_ERROR). We catch any unexpected errors and wrap them
-    # with context for debugging.
+    # CONFIGURATION_ERROR). We handle specific exception types here:
+    #
+    # - ModelOnexError: Re-raised as-is (already has proper error codes)
+    # - TypeError/ValueError: Wrapped with context (type annotation issues)
+    # - AttributeError: Wrapped with context (module/attribute issues)
+    # - RuntimeError: Wrapped with context (module manipulation failures)
+    #
+    # NOTE: We intentionally DO NOT use `except Exception` to avoid masking
+    # unexpected errors. Unknown exceptions should propagate for debugging.
     try:
         rebuild_model_references(
             model_class=ModelEventPublishIntent,
@@ -405,6 +412,30 @@ def _rebuild_model() -> None:
     except ModelOnexError:
         # Re-raise ModelOnexError as-is - already has proper error codes
         raise
+    except (TypeError, ValueError) as e:
+        # Type annotation or value issues not caught by utility
+        raise ModelOnexError(
+            message=f"Type error during ModelEventPublishIntent rebuild: {e}",
+            error_code=EnumCoreErrorCode.INITIALIZATION_FAILED,
+            context={
+                "model": "ModelEventPublishIntent",
+                "error_type": type(e).__name__,
+                "error_details": str(e),
+                "hint": "Check type annotations and model configuration",
+            },
+        ) from e
+    except AttributeError as e:
+        # Module or attribute access issues
+        raise ModelOnexError(
+            message=f"Attribute error during ModelEventPublishIntent rebuild: {e}",
+            error_code=EnumCoreErrorCode.INITIALIZATION_FAILED,
+            context={
+                "model": "ModelEventPublishIntent",
+                "error_type": "AttributeError",
+                "error_details": str(e),
+                "hint": "Check module loading and attribute access",
+            },
+        ) from e
     except RuntimeError as e:
         # RuntimeError during module manipulation is a critical failure
         raise ModelOnexError(

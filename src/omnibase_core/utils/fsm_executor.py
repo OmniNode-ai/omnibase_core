@@ -10,7 +10,10 @@ while maintaining type clarity for FSM-specific usage.
 """
 
 from datetime import UTC, datetime
-from typing import Any, Literal, SupportsFloat, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
+
+if TYPE_CHECKING:
+    from typing import SupportsFloat
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.contracts.subcontracts.model_fsm_state_definition import (
@@ -545,7 +548,7 @@ async def _evaluate_single_condition(
     elif operator == ">":
         try:
             # Cast to SupportsFloat - TypeError caught if not actually numeric
-            return float(cast(SupportsFloat, field_value) or 0) > float(
+            return float(cast("SupportsFloat", field_value) or 0) > float(
                 expected_value or "0"
             )
         except (TypeError, ValueError):
@@ -553,7 +556,7 @@ async def _evaluate_single_condition(
     elif operator == "<":
         try:
             # Cast to SupportsFloat - TypeError caught if not actually numeric
-            return float(cast(SupportsFloat, field_value) or 0) < float(
+            return float(cast("SupportsFloat", field_value) or 0) < float(
                 expected_value or "0"
             )
         except (TypeError, ValueError):
@@ -561,7 +564,7 @@ async def _evaluate_single_condition(
     elif operator == ">=":
         try:
             # Cast to SupportsFloat - TypeError caught if not actually numeric
-            return float(cast(SupportsFloat, field_value) or 0) >= float(
+            return float(cast("SupportsFloat", field_value) or 0) >= float(
                 expected_value or "0"
             )
         except (TypeError, ValueError):
@@ -569,7 +572,7 @@ async def _evaluate_single_condition(
     elif operator == "<=":
         try:
             # Cast to SupportsFloat - TypeError caught if not actually numeric
-            return float(cast(SupportsFloat, field_value) or 0) <= float(
+            return float(cast("SupportsFloat", field_value) or 0) <= float(
                 expected_value or "0"
             )
         except (TypeError, ValueError):

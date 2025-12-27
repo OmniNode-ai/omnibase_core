@@ -163,7 +163,7 @@ The codebase uses **intentionally different discriminator field names** across p
 
 > **Note on Action Payloads**: Action payloads use `action_type: ModelNodeActionType` as the data field,
 > with a `kind` **property** (derived from `action_type.name`) to satisfy `ProtocolActionPayload`.
->
+
 > **Note on Reducer Intent Payloads**: Reducer Intent Payloads use a Protocol-based approach (`ProtocolIntentPayload`) rather than
 > a discriminated union, enabling open extensibility for plugins. Payload classes still define an
 > `intent_type` attribute for routing, but dispatch is structural (duck typing) rather than union-based.
@@ -451,7 +451,7 @@ def handle_directive(payload: ModelDirectivePayload) -> None:
 
 Use this flowchart to decide which pattern to use:
 
-```text
+```plaintext
                     ┌───────────────────────────────────┐
                     │ Will external code define new     │
                     │ payload types?                    │
@@ -750,14 +750,15 @@ def handle_payload(payload: ProtocolIntentPayload) -> None:
 For scenarios requiring exhaustive handling guarantees, a discriminated union can be used:
 
 ```python
-from typing import Annotated, Any, Literal
+from typing import Annotated, Literal
 from pydantic import BaseModel, Field
+from omnibase_core.models.common import ModelSchemaValue
 
 class ModelWebhookIntentPayload(BaseModel):
     intent_type: Literal["webhook.send"] = "webhook.send"
     url: str
     method: str = "POST"
-    body: dict[str, Any] | None = None  # Optional request body
+    body: ModelSchemaValue | None = None  # Optional request body (typed)
 
 ExtensionIntentPayload = Annotated[
     ModelWebhookIntentPayload | ModelPluginExecutePayload,
