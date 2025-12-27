@@ -32,15 +32,60 @@ from omnibase_core.models.security.model_signature_requirements import (
 
 
 class ModelTrustPolicy(BaseModel):
-    """
-    Trust policy engine for signature and compliance requirements.
+    """Trust policy engine for signature and compliance requirements.
 
     Defines flexible rules for signature requirements, certificate validation,
-    and compliance enforcement across different security contexts.
+    and compliance enforcement across different security contexts. This is the
+    core policy engine used by ModelSecureEventEnvelope to enforce security
+    requirements.
+
+    A trust policy consists of:
+        - Global settings (default trust level, encryption requirements)
+        - Signature requirements (minimum signatures, allowed algorithms)
+        - Certificate settings (trusted CAs, revocation checking)
+        - Node trust settings (trusted/blocked nodes)
+        - Policy rules (conditional requirements based on context)
+        - Compliance settings (frameworks, audit retention)
+
+    Attributes:
+        policy_id: Unique identifier for this policy (auto-generated UUID).
+        name: Human-readable policy name (required).
+        version: Semantic version of the policy (required).
+        description: Optional detailed description.
+        created_at: When the policy was created.
+        created_by: Policy creator identifier (required).
+        organization: Optional organization name.
+        default_trust_level: Default trust level for envelopes.
+        certificate_validation: Certificate validation strictness.
+        encryption_requirement: Payload encryption requirement.
+        global_minimum_signatures: Minimum signatures required globally.
+        rules: Ordered list of conditional policy rules.
+        enforcement_mode: How violations are handled (strict/permissive/monitor).
+        effective_from: When policy becomes effective.
+        expires_at: Optional policy expiration time.
+
+    Example:
+        >>> from omnibase_core.models.security.model_trustpolicy import ModelTrustPolicy
+        >>> policy = ModelTrustPolicy(
+        ...     name="Production Security",
+        ...     version="1.0.0",
+        ...     created_by="security-team",
+        ...     global_minimum_signatures=2,
+        ...     encryption_requirement="required",
+        ... )
+        >>> policy.create_default_rules()
+        >>> policy.is_active()
+        True
+
+    Note:
+        This model uses from_attributes=True to support pytest-xdist parallel
+        execution where class identity may differ between workers.
     """
 
     # Class configuration
-    model_config = ConfigDict(validate_assignment=True, extra="forbid")
+    model_config = ConfigDict(
+        validate_assignment=True, extra="forbid", from_attributes=True
+    )
 
     # Constants
     MAX_MINIMUM_SIGNATURES: ClassVar[int] = 100
@@ -249,7 +294,24 @@ class ModelTrustPolicy(BaseModel):
         return self
 
     def is_active(self, check_time: datetime | None = None) -> bool:
-        """Check if policy is currently active."""
+        """Check if the policy is currently active based on time bounds.
+
+        A policy is considered active if the check time falls within the
+        effective_from and expires_at window (if set).
+
+        Args:
+            check_time: Optional datetime to check against. If None, uses
+                the current UTC time.
+
+        Returns:
+            True if the policy is currently active and should be enforced,
+            False if the policy is not yet effective or has expired.
+
+        Example:
+            >>> policy = ModelTrustPolicy(name="Test", version="1.0.0", created_by="admin")
+            >>> policy.is_active()
+            True
+        """
         if check_time is None:
             check_time = datetime.now(UTC)
 
@@ -259,7 +321,29 @@ class ModelTrustPolicy(BaseModel):
         return not (self.expires_at and check_time > self.expires_at)
 
     def add_rule(self, rule: ModelPolicyRule) -> None:
-        """Add a new policy rule."""
+        """Add a new policy rule to this trust policy.
+
+        Rules are appended to the rules list and evaluated in order during
+        policy enforcement. Later rules can override or augment requirements
+        from earlier rules.
+
+        Args:
+            rule: The ModelPolicyRule to add to this policy.
+
+        Raises:
+            ModelOnexError: If the policy is not currently active.
+
+        Example:
+            >>> policy = ModelTrustPolicy(name="Test", version="1.0.0", created_by="admin")
+            >>> rule = ModelPolicyRule(
+            ...     name="Production Security",
+            ...     conditions=ModelRuleCondition(environment="production"),
+            ...     minimum_signatures=2,
+            ... )
+            >>> policy.add_rule(rule)
+            >>> len(policy.rules)
+            1
+        """
         if not self.is_active():
             raise ModelOnexError(
                 message="Cannot add rules to inactive policy",
@@ -270,7 +354,27 @@ class ModelTrustPolicy(BaseModel):
     def get_applicable_rules(
         self, context: ModelRuleCondition
     ) -> list[ModelPolicyRule]:
-        """Get rules that apply to the given context."""
+        """Get all rules that apply to the given execution context.
+
+        Iterates through all policy rules and returns those that are both
+        active and whose conditions match the provided context.
+
+        Args:
+            context: ModelRuleCondition containing the current execution
+                context to evaluate against rule conditions.
+
+        Returns:
+            List of ModelPolicyRule instances that are active and match
+            the context. Rules are returned in their defined order.
+
+        Example:
+            >>> policy = ModelTrustPolicy(name="Test", version="1.0.0", created_by="admin")
+            >>> policy.create_default_rules()
+            >>> context = ModelRuleCondition(environment="production")
+            >>> applicable = policy.get_applicable_rules(context)
+            >>> len(applicable) >= 1
+            True
+        """
         applicable_rules = []
 
         for rule in self.rules:
@@ -282,7 +386,39 @@ class ModelTrustPolicy(BaseModel):
     def evaluate_signature_requirements(
         self, context: ModelRuleCondition
     ) -> ModelSignatureRequirements:
-        """Evaluate signature requirements for given context."""
+        """Evaluate and aggregate signature requirements for a given context.
+
+        Computes the effective signature requirements by starting with global
+        policy defaults and then applying all matching rules in order. Later
+        rules can increase minimum signatures or add required algorithms.
+
+        The aggregation logic:
+            - minimum_signatures: Takes the maximum across all rules
+            - required_algorithms: Union of all rule requirements
+            - trusted_nodes: Union of global and all rule trusted nodes
+            - compliance_tags: Union of all rule compliance tags
+
+        Args:
+            context: ModelRuleCondition containing the current execution
+                context to evaluate against rule conditions.
+
+        Returns:
+            ModelSignatureRequirements with the aggregated requirements
+            from all applicable rules and global defaults.
+
+        Example:
+            >>> policy = ModelTrustPolicy(
+            ...     name="Test",
+            ...     version="1.0.0",
+            ...     created_by="admin",
+            ...     global_minimum_signatures=1,
+            ... )
+            >>> policy.create_default_rules()
+            >>> context = ModelRuleCondition(environment="production")
+            >>> requirements = policy.evaluate_signature_requirements(context)
+            >>> requirements.minimum_signatures >= 1
+            True
+        """
         applicable_rules = self.get_applicable_rules(context)
 
         # Start with global defaults
@@ -313,7 +449,7 @@ class ModelTrustPolicy(BaseModel):
             certificate_validation=ModelCertificateValidationLevel(
                 level=self.certificate_validation
             ),
-            applicable_rules=[rule.rule_id for rule in applicable_rules],
+            applicable_rules=[str(rule.rule_id) for rule in applicable_rules],
         )
 
         # Apply rules in order (later rules override earlier ones)
@@ -342,7 +478,35 @@ class ModelTrustPolicy(BaseModel):
         chain: Any,  # Would be ModelSignatureChain in full implementation
         context: ModelRuleCondition | None = None,
     ) -> ModelPolicyValidationResult:
-        """Validate signature chain against policy."""
+        """Validate a signature chain against this trust policy.
+
+        Evaluates whether a signature chain meets the requirements defined
+        by this policy and its applicable rules. The validation checks
+        signature counts, algorithms, trusted signers, and compliance tags.
+
+        Args:
+            chain: The signature chain to validate. Expected to be a
+                ModelSignatureChain instance with signatures to verify.
+            context: Optional ModelRuleCondition for contextual evaluation.
+                If None, a default empty context is used.
+
+        Returns:
+            ModelPolicyValidationResult containing:
+                - status: "compliant", "warning", or "violated"
+                - severity: Severity level of any violations
+                - violations: List of policy violation descriptions
+                - warnings: List of warning messages
+                - requirements: The evaluated signature requirements
+
+        Raises:
+            ModelOnexError: If the policy is not currently active.
+
+        Example:
+            >>> policy = ModelTrustPolicy(name="Test", version="1.0.0", created_by="admin")
+            >>> result = policy.validate_signature_chain(signature_chain)
+            >>> result.status
+            'compliant'
+        """
         if not self.is_active():
             raise ModelOnexError(
                 message="Cannot validate with inactive policy",
@@ -356,6 +520,7 @@ class ModelTrustPolicy(BaseModel):
                 environment=None,
                 operation_type_condition=None,
                 security_level_condition=None,
+                hop_count_condition=None,
                 source_node_id=None,
                 destination=None,
                 hop_count=None,
@@ -394,7 +559,39 @@ class ModelTrustPolicy(BaseModel):
         )
 
     def create_default_rules(self) -> None:
-        """Create default policy rules for common scenarios."""
+        """Create a standard set of policy rules for common security scenarios.
+
+        Populates the policy with three pre-configured rules covering typical
+        enterprise security requirements:
+
+        1. **High Security Operations**: For operations marked as high_security
+           with high or critical security levels. Requires 3 signatures,
+           RS256/ES256 algorithms, and SOX/HIPAA/GDPR compliance tags.
+
+        2. **Production Environment**: For any operation in production
+           environment. Requires 2 signatures with RS256/ES256/PS256 algorithms
+           and detailed audit logging.
+
+        3. **Development Environment**: Relaxed requirements for development
+           with 1 signature minimum and manual override allowed.
+
+        Side Effects:
+            Appends three ModelPolicyRule instances to self.rules.
+
+        Example:
+            >>> policy = ModelTrustPolicy(name="Test", version="1.0.0", created_by="admin")
+            >>> len(policy.rules)
+            0
+            >>> policy.create_default_rules()
+            >>> len(policy.rules)
+            3
+            >>> policy.rules[0].name
+            'High Security Operations'
+
+        Note:
+            These rules are intended as a starting point. Production deployments
+            should customize rules based on specific security requirements.
+        """
         # High security rule for sensitive operations
         high_security_rule = ModelPolicyRule(
             name="High Security Operations",
@@ -407,8 +604,9 @@ class ModelTrustPolicy(BaseModel):
                     {"$in": ["high_security"]}
                 ),
                 security_level_condition=ModelRuleConditionValue.model_validate(
-                    {"$gte": 3}
+                    {"$in": ["high", "critical"]}
                 ),
+                hop_count_condition=None,
                 source_node_id=None,
                 destination=None,
                 hop_count=None,
@@ -440,6 +638,7 @@ class ModelTrustPolicy(BaseModel):
                 environment="production",
                 operation_type_condition=None,
                 security_level_condition=None,
+                hop_count_condition=None,
                 source_node_id=None,
                 destination=None,
                 hop_count=None,
@@ -471,6 +670,7 @@ class ModelTrustPolicy(BaseModel):
                 environment="development",
                 operation_type_condition=None,
                 security_level_condition=None,
+                hop_count_condition=None,
                 source_node_id=None,
                 destination=None,
                 hop_count=None,

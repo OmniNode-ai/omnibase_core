@@ -218,16 +218,16 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
     def validate_minimum_signatures(cls, v: int) -> int:
         """Validate minimum signature count."""
         if v < 0:
-            msg = "Minimum signatures cannot be negative"
             raise ModelOnexError(
+                message="Minimum signatures cannot be negative",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=msg,
+                context={"minimum_signatures": v, "min_allowed": 0},
             )
         if v > 50:
-            msg = "Minimum signatures cannot exceed 50"
             raise ModelOnexError(
+                message="Minimum signatures cannot exceed 50",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=msg,
+                context={"minimum_signatures": v, "max_allowed": 50},
             )
         return v
 
@@ -274,6 +274,31 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
         content_str = str(hash_input).encode("utf-8")
         self.content_hash = hashlib.sha256(content_str).hexdigest()
 
+    def _create_encryption_aad(self) -> bytes:
+        """Create Additional Authenticated Data (AAD) for AES-GCM encryption.
+
+        AAD binds the ciphertext to this specific envelope's identity, preventing
+        ciphertext transplantation attacks where encrypted data from one envelope
+        is moved to another envelope.
+
+        The AAD includes:
+        - envelope_id: Unique identifier for this envelope
+        - source_node_id: Origin node that created this envelope
+        - envelope_timestamp: When the envelope was created
+
+        Returns:
+            bytes: Concatenated AAD suitable for AESGCM encrypt/decrypt
+        """
+        # Create deterministic AAD from envelope identity fields
+        # These fields should never change after envelope creation
+        aad_components = [
+            str(self.envelope_id),
+            str(self.source_node_id),
+            self.envelope_timestamp.isoformat(),
+        ]
+        aad_string = "|".join(aad_components)
+        return aad_string.encode("utf-8")
+
     def validate_content_integrity(self) -> bool:
         """Validate envelope content hasn't been tampered with."""
         current_hash = self.content_hash
@@ -300,10 +325,15 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
 
         # Ensure signature includes current content hash
         if signature.envelope_state_hash != self.content_hash:
-            msg = "Signature envelope state hash mismatch"
             raise ModelOnexError(
+                message="Signature envelope state hash mismatch",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=msg,
+                context={
+                    "envelope_id": str(self.envelope_id),
+                    "expected_hash": self.content_hash[:16] + "...",
+                    "signature_hash": signature.envelope_state_hash[:16] + "...",
+                    "operation": "add_signature",
+                },
             )
 
         # Add to signature chain
@@ -520,14 +550,62 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
         encryption_key: str,
         algorithm: str = "AES-256-GCM",
     ) -> None:
-        """Encrypt the envelope payload using AES-256-GCM.
+        """Encrypt the envelope payload using AES-256-GCM authenticated encryption.
+
+        Encrypts the event payload using industry-standard AES-256-GCM (Galois/Counter
+        Mode) with PBKDF2 key derivation. This provides both confidentiality and
+        authenticity guarantees.
+
+        Security Features:
+            - **Key Derivation**: PBKDF2-HMAC-SHA256 with 600,000 iterations
+              (OWASP 2023 guidelines) derives a 256-bit key from the password.
+            - **Random Salt**: A fresh UUID is generated as salt for each encryption,
+              stored in encryption_metadata.key_id.
+            - **Random IV**: A cryptographically random 12-byte initialization vector
+              is generated per encryption for semantic security.
+            - **Authentication**: AES-GCM provides a 128-bit authentication tag that
+              detects any tampering with the ciphertext.
+            - **AAD Binding**: Additional Authenticated Data (AAD) binds the
+              ciphertext to this envelope's identity (envelope_id, source_node_id,
+              timestamp) to prevent ciphertext transplantation attacks.
 
         Args:
-            encryption_key: Password/key string for encryption
-            algorithm: Encryption algorithm (only AES-256-GCM supported)
+            encryption_key: Password or key string for encryption. This is processed
+                through PBKDF2 to derive the actual encryption key. Should be a
+                strong secret with sufficient entropy.
+            algorithm: Encryption algorithm to use. Currently only "AES-256-GCM"
+                is supported. Defaults to "AES-256-GCM".
 
         Raises:
-            ModelOnexError: If payload is already encrypted or algorithm unsupported
+            ModelOnexError: With VALIDATION_ERROR code if:
+                - The payload is already encrypted (is_encrypted is True)
+                - An unsupported algorithm is specified
+
+        Side Effects:
+            - Sets is_encrypted to True
+            - Populates encrypted_payload with base64-encoded ciphertext
+            - Populates encryption_metadata with cryptographic parameters
+            - Updates content_hash to reflect the encrypted state
+
+        Example:
+            >>> envelope = ModelSecureEventEnvelope.create_secure_direct(
+            ...     payload=event,
+            ...     destination="node-b",
+            ...     source_node_id=source_id,
+            ... )
+            >>> envelope.encrypt_payload("my-secret-key")
+            >>> envelope.is_encrypted
+            True
+            >>> envelope.encryption_metadata.algorithm
+            'AES-256-GCM'
+
+        Note:
+            The same encryption_key must be provided to decrypt_payload() to
+            successfully decrypt the data. Store this key securely.
+
+        See Also:
+            decrypt_payload: To decrypt an encrypted payload.
+            create_secure_encrypted: Factory method that creates and encrypts in one step.
         """
         import base64
         import json
@@ -538,17 +616,24 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
         from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
         if self.is_encrypted:
-            msg = "Payload is already encrypted"
             raise ModelOnexError(
+                message="Payload is already encrypted",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=msg,
+                context={
+                    "envelope_id": str(self.envelope_id),
+                    "operation": "encrypt_payload",
+                },
             )
 
         if algorithm != "AES-256-GCM":
-            msg = f"Unsupported encryption algorithm: {algorithm}. Only AES-256-GCM is supported."
             raise ModelOnexError(
+                message=f"Unsupported encryption algorithm: {algorithm}. Only AES-256-GCM is supported.",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=msg,
+                context={
+                    "requested_algorithm": algorithm,
+                    "supported_algorithms": ["AES-256-GCM"],
+                    "envelope_id": str(self.envelope_id),
+                },
             )
 
         # Generate random key_id (used as salt for key derivation)
@@ -556,11 +641,12 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
         salt = key_id.bytes  # 16 bytes from UUID
 
         # Derive 32-byte key using PBKDF2 with SHA-256
+        # OWASP recommends 600,000+ iterations for PBKDF2-SHA256 (2023 guidelines)
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
             length=32,
             salt=salt,
-            iterations=100000,
+            iterations=600000,
         )
         derived_key = kdf.derive(encryption_key.encode("utf-8"))
 
@@ -573,10 +659,15 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
         )
         plaintext = payload_json.encode("utf-8")
 
-        # Encrypt using AES-256-GCM
+        # Create Additional Authenticated Data (AAD) from envelope metadata
+        # AAD binds ciphertext to this specific envelope, preventing transplantation
+        # attacks where ciphertext from one envelope is moved to another
+        aad = self._create_encryption_aad()
+
+        # Encrypt using AES-256-GCM with AAD
         # AESGCM automatically appends the 16-byte auth tag to ciphertext
         aesgcm = AESGCM(derived_key)
-        ciphertext_with_tag = aesgcm.encrypt(iv, plaintext, None)
+        ciphertext_with_tag = aesgcm.encrypt(iv, plaintext, aad)
 
         # Extract auth tag (last 16 bytes) for metadata storage
         auth_tag = ciphertext_with_tag[-16:]
@@ -584,12 +675,16 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
         # Store encrypted data as base64 (includes auth tag)
         self.encrypted_payload = base64.b64encode(ciphertext_with_tag).decode("utf-8")
 
-        # Create encryption metadata
+        # Create encryption metadata with AAD hash for verification
+        import hashlib
+
+        aad_hash = hashlib.sha256(aad).hexdigest()
         self.encryption_metadata = ModelEncryptionMetadata(
             algorithm=algorithm,
             key_id=key_id,
             iv=base64.b64encode(iv).decode("utf-8"),
             auth_tag=base64.b64encode(auth_tag).decode("utf-8"),
+            aad_hash=aad_hash,
         )
 
         # Mark as encrypted
@@ -599,16 +694,60 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
         self._update_content_hash()
 
     def decrypt_payload(self, decryption_key: str) -> ModelOnexEvent:
-        """Decrypt the envelope payload using AES-256-GCM.
+        """Decrypt the envelope payload using AES-256-GCM authenticated decryption.
+
+        Decrypts an encrypted payload, verifying authenticity via the GCM
+        authentication tag and AAD binding. This method reverses the encryption
+        performed by encrypt_payload().
+
+        Security Verification:
+            - **Key Derivation**: Derives the same 256-bit key using PBKDF2
+              with the stored salt (key_id).
+            - **AAD Verification**: Verifies the AAD hash matches the stored
+              value, detecting ciphertext transplantation attacks.
+            - **Authentication**: GCM mode verifies the 128-bit auth tag,
+              detecting any tampering with the ciphertext or AAD.
+            - **Secure Failure**: Raises SECURITY_VIOLATION on any authentication
+              failure, preventing timing attacks.
 
         Args:
-            decryption_key: Password/key string for decryption (must match encryption key)
+            decryption_key: Password or key string for decryption. Must be the
+                same value that was passed to encrypt_payload(). The key is
+                processed through PBKDF2 to derive the actual decryption key.
 
         Returns:
-            ModelOnexEvent: The decrypted event payload
+            ModelOnexEvent: The decrypted and validated event payload,
+                reconstructed from the JSON-serialized plaintext.
 
         Raises:
-            ModelOnexError: If payload is not encrypted, missing data, or decryption fails
+            ModelOnexError: With VALIDATION_ERROR code if:
+                - The payload is not encrypted (is_encrypted is False)
+                - Missing encrypted_payload or encryption_metadata
+                - Unsupported encryption algorithm in metadata
+                - Failed to parse decrypted JSON payload
+            ModelOnexError: With SECURITY_VIOLATION code if:
+                - AAD hash mismatch (envelope metadata was modified)
+                - Authentication tag verification failed (wrong key or
+                  ciphertext tampering)
+
+        Example:
+            >>> # First encrypt a payload
+            >>> envelope.encrypt_payload("my-secret-key")
+            >>> envelope.is_encrypted
+            True
+            >>> # Then decrypt it
+            >>> decrypted_event = envelope.decrypt_payload("my-secret-key")
+            >>> decrypted_event.event_type
+            'my_event_type'
+
+        Note:
+            This method does NOT modify the envelope state. The envelope
+            remains encrypted after calling this method. To work with the
+            decrypted payload, use the returned ModelOnexEvent.
+
+        See Also:
+            encrypt_payload: To encrypt a payload.
+            _create_encryption_aad: For AAD binding details.
         """
         import base64
         import json
@@ -619,35 +758,49 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
         from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
         if not self.is_encrypted:
-            msg = "Payload is not encrypted"
             raise ModelOnexError(
+                message="Payload is not encrypted",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=msg,
+                context={
+                    "envelope_id": str(self.envelope_id),
+                    "operation": "decrypt_payload",
+                },
             )
 
         if not self.encrypted_payload or not self.encryption_metadata:
-            msg = "Missing encryption data"
             raise ModelOnexError(
+                message="Missing encryption data",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=msg,
+                context={
+                    "envelope_id": str(self.envelope_id),
+                    "has_encrypted_payload": bool(self.encrypted_payload),
+                    "has_encryption_metadata": bool(self.encryption_metadata),
+                    "operation": "decrypt_payload",
+                },
             )
 
         if self.encryption_metadata.algorithm != "AES-256-GCM":
-            msg = f"Unsupported encryption algorithm: {self.encryption_metadata.algorithm}"
             raise ModelOnexError(
+                message=f"Unsupported encryption algorithm: {self.encryption_metadata.algorithm}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=msg,
+                context={
+                    "envelope_id": str(self.envelope_id),
+                    "algorithm": self.encryption_metadata.algorithm,
+                    "supported_algorithms": ["AES-256-GCM"],
+                    "operation": "decrypt_payload",
+                },
             )
 
         # Use key_id bytes as salt (same as encryption)
         salt = self.encryption_metadata.key_id.bytes
 
         # Derive key using same PBKDF2 method
+        # Must match encryption iteration count (600,000 per OWASP guidelines)
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
             length=32,
             salt=salt,
-            iterations=100000,
+            iterations=600000,
         )
         derived_key = kdf.derive(decryption_key.encode("utf-8"))
 
@@ -655,15 +808,41 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
         ciphertext_with_tag = base64.b64decode(self.encrypted_payload)
         iv = base64.b64decode(self.encryption_metadata.iv)
 
-        # Decrypt using AESGCM (authentication is automatic - raises InvalidTag on failure)
+        # Recreate AAD from envelope metadata for authenticated decryption
+        # AAD must match exactly what was used during encryption
+        aad = self._create_encryption_aad()
+
+        # Verify AAD hash matches stored hash (if available) for extra validation
+        if self.encryption_metadata.aad_hash:
+            import hashlib
+
+            current_aad_hash = hashlib.sha256(aad).hexdigest()
+            if current_aad_hash != self.encryption_metadata.aad_hash:
+                raise ModelOnexError(
+                    message="Decryption failed: envelope metadata has been modified (ciphertext transplantation detected)",
+                    error_code=EnumCoreErrorCode.SECURITY_VIOLATION,
+                    context={
+                        "envelope_id": str(self.envelope_id),
+                        "expected_aad_hash": self.encryption_metadata.aad_hash[:16]
+                        + "...",
+                        "actual_aad_hash": current_aad_hash[:16] + "...",
+                        "operation": "decrypt_payload",
+                    },
+                )
+
+        # Decrypt using AESGCM with AAD (authentication is automatic - raises InvalidTag on failure)
         aesgcm = AESGCM(derived_key)
         try:
-            plaintext = aesgcm.decrypt(iv, ciphertext_with_tag, None)
+            plaintext = aesgcm.decrypt(iv, ciphertext_with_tag, aad)
         except InvalidTag as e:
-            msg = "Decryption failed: authentication tag verification failed (wrong key or tampered data)"
             raise ModelOnexError(
+                message="Decryption failed: authentication tag verification failed (wrong key, tampered data, or envelope metadata modified)",
                 error_code=EnumCoreErrorCode.SECURITY_VIOLATION,
-                message=msg,
+                context={
+                    "envelope_id": str(self.envelope_id),
+                    "algorithm": self.encryption_metadata.algorithm,
+                    "operation": "decrypt_payload",
+                },
             ) from e
 
         # Parse JSON back to ModelOnexEvent
@@ -671,10 +850,14 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
             payload_dict = json.loads(plaintext.decode("utf-8"))
             return ModelOnexEvent.model_validate(payload_dict)
         except (json.JSONDecodeError, ValueError) as e:
-            msg = f"Failed to parse decrypted payload: {e}"
             raise ModelOnexError(
+                message=f"Failed to parse decrypted payload: {e}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=msg,
+                context={
+                    "envelope_id": str(self.envelope_id),
+                    "error_type": type(e).__name__,
+                    "operation": "decrypt_payload",
+                },
             ) from e
 
     def check_authorization(

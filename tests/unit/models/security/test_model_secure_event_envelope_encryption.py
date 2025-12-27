@@ -95,8 +95,10 @@ def different_encryption_key() -> str:
 class TestEncryptPayloadSuccess:
     """Test successful encryption scenarios."""
 
-    def test_encrypt_payload_success(self, sample_envelope, encryption_key):
-        """Test encrypting a payload with a valid key."""
+    def test_encrypt_payload_with_valid_key_sets_encrypted_state_and_metadata(
+        self, sample_envelope, encryption_key
+    ):
+        """Test that encrypting a payload with a valid key sets encrypted state and metadata."""
         # Verify initial state
         assert sample_envelope.is_encrypted is False
         assert sample_envelope.encrypted_payload is None
@@ -120,7 +122,9 @@ class TestEncryptPayloadSuccess:
         assert sample_envelope.encryption_metadata is not None
         assert sample_envelope.encryption_metadata.algorithm == "AES-256-GCM"
 
-    def test_encrypt_payload_with_complex_payload(self, complex_envelope, encryption_key):
+    def test_encrypt_payload_with_complex_payload(
+        self, complex_envelope, encryption_key
+    ):
         """Test encryption with a complex payload containing multiple fields."""
         complex_envelope.encrypt_payload(encryption_key)
 
@@ -164,8 +168,10 @@ class TestEncryptPayloadErrors:
 class TestDecryptPayloadSuccess:
     """Test successful decryption scenarios."""
 
-    def test_decrypt_payload_success(self, sample_envelope, encryption_key):
-        """Test decrypting a payload returns the original data."""
+    def test_decrypt_payload_with_correct_key_returns_original_data(
+        self, sample_envelope, encryption_key
+    ):
+        """Test that decrypting a payload with the correct key returns the original data."""
         # Store original payload for comparison
         original_event_type = sample_envelope.payload.event_type
         original_node_id = sample_envelope.payload.node_id
@@ -285,8 +291,10 @@ class TestDecryptWrongKey:
 
         # Should be a security violation error
         assert exc_info.value.error_code == EnumCoreErrorCode.SECURITY_VIOLATION
-        assert "authentication tag" in str(exc_info.value.message).lower() or \
-               "wrong key" in str(exc_info.value.message).lower()
+        assert (
+            "authentication tag" in str(exc_info.value.message).lower()
+            or "wrong key" in str(exc_info.value.message).lower()
+        )
 
 
 @pytest.mark.unit
@@ -409,7 +417,9 @@ class TestEncryptionDeterminism:
         assert envelope1.encryption_metadata.iv != envelope2.encryption_metadata.iv
 
         # Key IDs should be different (used as salt)
-        assert envelope1.encryption_metadata.key_id != envelope2.encryption_metadata.key_id
+        assert (
+            envelope1.encryption_metadata.key_id != envelope2.encryption_metadata.key_id
+        )
 
     def test_iv_is_unique_per_encryption(
         self, sample_payload, sample_node_id, encryption_key
@@ -483,17 +493,35 @@ class TestCreateSecureEncrypted:
 class TestEncryptionEdgeCases:
     """Test edge cases for encryption."""
 
-    def test_encrypt_with_empty_key(self, sample_envelope):
-        """Test encryption with empty key - should still work (key derivation handles it)."""
-        # Empty string key is technically valid (PBKDF2 will derive a key from it)
-        # This tests that the encryption doesn't crash with empty input
+    def test_encrypt_payload_with_empty_key_succeeds_with_pbkdf2_derivation(
+        self, sample_envelope
+    ):
+        """Test that encryption with an empty key succeeds due to PBKDF2 key derivation.
+
+        Edge Case: Empty string as encryption key
+
+        Why this behavior is expected:
+        - PBKDF2-HMAC-SHA256 key derivation function accepts any byte string as input,
+          including empty strings, and will derive a cryptographically secure 256-bit key
+        - The derived key is combined with a random salt (key_id UUID), ensuring unique
+          keys even when the same passphrase is used multiple times
+        - This test verifies the implementation doesn't crash or reject empty input
+
+        Security Note:
+        - While technically valid, empty keys should NOT be used in production as they
+          provide minimal entropy before key derivation
+        - The key derivation function (PBKDF2 with 100,000 iterations) adds computational
+          cost but cannot compensate for zero-entropy input against targeted attacks
+        - Production systems should enforce minimum key length policies at the application
+          layer, not within the encryption primitive itself
+        """
         sample_envelope.encrypt_payload("")
 
         assert sample_envelope.is_encrypted is True
         assert sample_envelope.encrypted_payload is not None
 
-    def test_encrypt_with_unicode_key(self, sample_envelope):
-        """Test encryption with unicode characters in key."""
+    def test_encrypt_payload_with_unicode_key_succeeds(self, sample_envelope):
+        """Test that encryption succeeds with unicode characters in the key."""
         unicode_key = "test-key-with-unicode-\u00e9\u00e8\u00ea\u4e2d\u6587"
 
         sample_envelope.encrypt_payload(unicode_key)
@@ -501,8 +529,8 @@ class TestEncryptionEdgeCases:
         assert sample_envelope.is_encrypted is True
         assert sample_envelope.encrypted_payload is not None
 
-    def test_encrypt_with_very_long_key(self, sample_envelope):
-        """Test encryption with a very long key."""
+    def test_encrypt_payload_with_very_long_key_succeeds(self, sample_envelope):
+        """Test that encryption succeeds with a very long key (10,000 characters)."""
         long_key = "a" * 10000
 
         sample_envelope.encrypt_payload(long_key)
@@ -510,11 +538,169 @@ class TestEncryptionEdgeCases:
         assert sample_envelope.is_encrypted is True
         assert sample_envelope.encrypted_payload is not None
 
-    def test_encrypt_with_special_characters_key(self, sample_envelope):
-        """Test encryption with special characters in key."""
+    def test_encrypt_payload_with_special_characters_key_succeeds(
+        self, sample_envelope
+    ):
+        """Test that encryption succeeds with special characters in the key."""
         special_key = "!@#$%^&*()_+-=[]{}|;':\",./<>?"
 
         sample_envelope.encrypt_payload(special_key)
 
         assert sample_envelope.is_encrypted is True
         assert sample_envelope.encrypted_payload is not None
+
+
+@pytest.mark.unit
+class TestAADFunctionality:
+    """Test Additional Authenticated Data (AAD) functionality for ciphertext transplantation prevention."""
+
+    def test_aad_hash_is_populated_after_encryption(
+        self, sample_envelope, encryption_key
+    ):
+        """Test that AAD hash is populated in encryption metadata."""
+        sample_envelope.encrypt_payload(encryption_key)
+
+        assert sample_envelope.encryption_metadata is not None
+        assert sample_envelope.encryption_metadata.aad_hash is not None
+        # AAD hash should be a valid SHA-256 hex string (64 characters)
+        assert len(sample_envelope.encryption_metadata.aad_hash) == 64
+
+    def test_aad_hash_is_deterministic(self, sample_envelope, encryption_key):
+        """Test that AAD hash is deterministic for the same envelope."""
+        # Encrypt the envelope
+        sample_envelope.encrypt_payload(encryption_key)
+        aad_hash = sample_envelope.encryption_metadata.aad_hash
+
+        # Create the AAD manually and verify hash matches
+        import hashlib
+
+        aad = sample_envelope._create_encryption_aad()
+        expected_hash = hashlib.sha256(aad).hexdigest()
+
+        assert aad_hash == expected_hash
+
+    def test_aad_contains_envelope_identity(self, sample_envelope, encryption_key):
+        """Test that AAD contains envelope identity fields."""
+        aad = sample_envelope._create_encryption_aad()
+        aad_string = aad.decode("utf-8")
+
+        # AAD should contain envelope_id, source_node_id, and timestamp
+        assert str(sample_envelope.envelope_id) in aad_string
+        assert str(sample_envelope.source_node_id) in aad_string
+        assert sample_envelope.envelope_timestamp.isoformat() in aad_string
+
+    def test_modified_envelope_id_fails_decryption(
+        self, sample_envelope, encryption_key
+    ):
+        """Test that modifying envelope_id after encryption causes decryption to fail."""
+        # Encrypt the payload
+        sample_envelope.encrypt_payload(encryption_key)
+        assert sample_envelope.is_encrypted is True
+
+        # Tamper with envelope_id (simulate ciphertext transplantation)
+        original_envelope_id = sample_envelope.envelope_id
+        sample_envelope.envelope_id = uuid4()  # Different UUID
+        assert sample_envelope.envelope_id != original_envelope_id
+
+        # Decryption should fail due to AAD mismatch
+        with pytest.raises(ModelOnexError) as exc_info:
+            sample_envelope.decrypt_payload(encryption_key)
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.SECURITY_VIOLATION
+        assert "transplantation" in str(exc_info.value.message).lower()
+
+    def test_modified_source_node_id_fails_decryption(
+        self, sample_envelope, encryption_key
+    ):
+        """Test that modifying source_node_id after encryption causes decryption to fail."""
+        # Encrypt the payload
+        sample_envelope.encrypt_payload(encryption_key)
+        assert sample_envelope.is_encrypted is True
+
+        # Tamper with source_node_id
+        original_source_node_id = sample_envelope.source_node_id
+        sample_envelope.source_node_id = uuid4()  # Different UUID
+        assert sample_envelope.source_node_id != original_source_node_id
+
+        # Decryption should fail due to AAD mismatch
+        with pytest.raises(ModelOnexError) as exc_info:
+            sample_envelope.decrypt_payload(encryption_key)
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.SECURITY_VIOLATION
+        assert "transplantation" in str(exc_info.value.message).lower()
+
+    def test_modified_timestamp_fails_decryption(self, sample_envelope, encryption_key):
+        """Test that modifying envelope_timestamp after encryption causes decryption to fail."""
+        from datetime import timedelta
+
+        # Encrypt the payload
+        sample_envelope.encrypt_payload(encryption_key)
+        assert sample_envelope.is_encrypted is True
+
+        # Tamper with timestamp
+        original_timestamp = sample_envelope.envelope_timestamp
+        sample_envelope.envelope_timestamp = original_timestamp + timedelta(seconds=1)
+        assert sample_envelope.envelope_timestamp != original_timestamp
+
+        # Decryption should fail due to AAD mismatch
+        with pytest.raises(ModelOnexError) as exc_info:
+            sample_envelope.decrypt_payload(encryption_key)
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.SECURITY_VIOLATION
+        assert "transplantation" in str(exc_info.value.message).lower()
+
+    def test_unmodified_envelope_decrypts_successfully(
+        self, sample_envelope, encryption_key
+    ):
+        """Test that an unmodified envelope decrypts successfully with AAD verification."""
+        # Store original values
+        original_event_type = sample_envelope.payload.event_type
+        original_node_id = sample_envelope.payload.node_id
+
+        # Encrypt the payload
+        sample_envelope.encrypt_payload(encryption_key)
+        assert sample_envelope.is_encrypted is True
+        assert sample_envelope.encryption_metadata.aad_hash is not None
+
+        # Decrypt without modifying envelope
+        decrypted_payload = sample_envelope.decrypt_payload(encryption_key)
+
+        # Verify data integrity
+        assert decrypted_payload.event_type == original_event_type
+        assert decrypted_payload.node_id == original_node_id
+
+    def test_ciphertext_transplantation_attack_prevented(
+        self, sample_payload, sample_node_id, encryption_key
+    ):
+        """Test that moving ciphertext between envelopes is detected and rejected."""
+        # Create two different envelopes
+        route_spec1 = ModelRouteSpec.create_direct_route(f"node://{uuid4()}")
+        route_spec2 = ModelRouteSpec.create_direct_route(f"node://{uuid4()}")
+
+        envelope1 = ModelSecureEventEnvelope(
+            payload=sample_payload,
+            route_spec=route_spec1,
+            source_node_id=sample_node_id,
+            content_hash="a" * 64,
+        )
+
+        envelope2 = ModelSecureEventEnvelope(
+            payload=sample_payload,
+            route_spec=route_spec2,
+            source_node_id=uuid4(),  # Different source node
+            content_hash="b" * 64,
+        )
+
+        # Encrypt envelope1
+        envelope1.encrypt_payload(encryption_key)
+
+        # Attempt to transplant ciphertext to envelope2
+        envelope2.encrypted_payload = envelope1.encrypted_payload
+        envelope2.encryption_metadata = envelope1.encryption_metadata
+        envelope2.is_encrypted = True
+
+        # Decryption of envelope2 should fail (ciphertext was encrypted for envelope1)
+        with pytest.raises(ModelOnexError) as exc_info:
+            envelope2.decrypt_payload(encryption_key)
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.SECURITY_VIOLATION

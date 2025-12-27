@@ -89,9 +89,14 @@ class ModelSignatureChain(BaseModel):
             return v
         for i, signature in enumerate(v):
             if signature.hop_index != i:
-                msg = f"Signature at position {i} has hop_index {signature.hop_index}"
                 raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR, message=msg
+                    message=f"Signature at position {i} has hop_index {signature.hop_index}",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    context={
+                        "position": i,
+                        "expected_hop_index": i,
+                        "actual_hop_index": signature.hop_index,
+                    },
                 )
         return v
 
@@ -132,13 +137,15 @@ class ModelSignatureChain(BaseModel):
                     "signature_node_id": signature.node_id,
                 },
             )
-            msg = f"Failed to add signature to chain: {e!s}"
             raise ModelOnexError(
-                msg,
+                message=f"Failed to add signature to chain: {e!s}",
                 error_code=EnumCoreErrorCode.SECURITY_VIOLATION,
-                component="signature_chain",
-                operation="add_signature",
-            )
+                context={
+                    "chain_id": str(self.chain_id),
+                    "signature_node_id": str(signature.node_id),
+                    "operation": "add_signature",
+                },
+            ) from e
 
     def _can_add_signature(self, signature: ModelNodeSignature) -> bool:
         """Check if signature can be added to the chain."""
@@ -220,13 +227,15 @@ class ModelSignatureChain(BaseModel):
                 },
             )
             self.validation_status = EnumChainValidationStatus.INVALID
-            msg = f"Chain integrity validation failed: {e!s}"
             raise ModelOnexError(
-                msg,
+                message=f"Chain integrity validation failed: {e!s}",
                 error_code=EnumCoreErrorCode.SECURITY_VIOLATION,
-                component="signature_chain",
-                operation="validate_chain_integrity",
-            )
+                context={
+                    "chain_id": str(self.chain_id),
+                    "signatures_count": len(self.signatures),
+                    "operation": "validate_chain_integrity",
+                },
+            ) from e
 
     def _validate_signing_policy(self) -> bool:
         """Validate chain meets signing policy requirements."""

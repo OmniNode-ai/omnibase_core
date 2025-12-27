@@ -87,12 +87,13 @@ class ModelEncryptionAlgorithm(BaseModel):
             from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
             from omnibase_core.errors import ModelOnexError
 
-            msg = f"Unsupported encryption algorithm: {v}"
             raise ModelOnexError(
-                msg,
-                error_code=EnumCoreErrorCode.VALIDATION_FAILED,
-                component="encryption_algorithm",
-                operation="validate_algorithm_name",
+                message=f"Unsupported encryption algorithm: {v}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={
+                    "algorithm": v,
+                    "supported_algorithms": sorted(known_algorithms),
+                },
             )
 
         return v
