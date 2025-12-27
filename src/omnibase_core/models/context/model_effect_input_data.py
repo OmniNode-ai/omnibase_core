@@ -43,7 +43,7 @@ class ModelEffectInputData(BaseModel):
         - Database operation parameters
         - File operation target identification
         - Event emission configuration
-        - Generic TContext parameter for ModelEffectInput
+        - Typed operation_data for ModelEffectInput
 
     Thread Safety:
         Instances are immutable (frozen=True) after creation, making them
@@ -109,7 +109,7 @@ class ModelEffectInputData(BaseModel):
 
             from omnibase_core.models.effect import ModelEffectInput
 
-            input_data = ModelEffectInput[ModelEffectInputData](
+            input_data = ModelEffectInput(
                 effect_type=EnumEffectType.API_CALL,
                 operation_data=ModelEffectInputData(
                     effect_type=EnumEffectType.API_CALL,
