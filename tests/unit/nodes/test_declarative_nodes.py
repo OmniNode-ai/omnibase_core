@@ -408,14 +408,18 @@ class TestNodeOrchestrator:
         test_container: ModelONEXContainer,
         simple_workflow_definition: ModelWorkflowDefinition,
     ):
-        """Test contract validation."""
+        """Test contract validation.
+
+        v1.0.3 Fix 29: Empty workflows are valid and should not produce errors.
+        Empty workflows succeed immediately with COMPLETED state.
+        """
         node = NodeOrchestrator(test_container)
         node.workflow_definition = simple_workflow_definition
 
         errors = await node.validate_contract()
 
-        # Empty workflow has validation error
-        assert len(errors) > 0
+        # v1.0.3 Fix 29: Empty workflows are valid (no steps = no errors)
+        assert len(errors) == 0
 
     @pytest.mark.asyncio
     async def test_validate_contract_without_definition(
