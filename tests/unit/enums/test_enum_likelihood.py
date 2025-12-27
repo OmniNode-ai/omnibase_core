@@ -212,13 +212,21 @@ class TestEnumLikelihoodFromProbability:
 
     def test_from_probability_invalid_range(self):
         """Test that out-of-range probabilities raise ValueError."""
-        with pytest.raises(ValueError, match=r"probability must be between 0\.0 and 1\.0"):
+        with pytest.raises(
+            ValueError, match=r"probability must be between 0\.0 and 1\.0"
+        ):
             EnumLikelihood.from_probability(-0.5)
-        with pytest.raises(ValueError, match=r"probability must be between 0\.0 and 1\.0"):
+        with pytest.raises(
+            ValueError, match=r"probability must be between 0\.0 and 1\.0"
+        ):
             EnumLikelihood.from_probability(1.5)
-        with pytest.raises(ValueError, match=r"probability must be between 0\.0 and 1\.0"):
+        with pytest.raises(
+            ValueError, match=r"probability must be between 0\.0 and 1\.0"
+        ):
             EnumLikelihood.from_probability(-1.0)
-        with pytest.raises(ValueError, match=r"probability must be between 0\.0 and 1\.0"):
+        with pytest.raises(
+            ValueError, match=r"probability must be between 0\.0 and 1\.0"
+        ):
             EnumLikelihood.from_probability(2.0)
 
     def test_from_probability_boundary_at_0_1(self):
