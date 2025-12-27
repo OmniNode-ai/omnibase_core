@@ -79,7 +79,7 @@ class ModelGenericMetadata(BaseModel):
     @classmethod
     def from_dict(
         cls,
-        data: "SerializedDict | None",
+        data: SerializedDict | None,
     ) -> ModelGenericMetadata | None:
         """Create from dictionary for easy migration."""
         if data is None:

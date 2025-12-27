@@ -67,7 +67,7 @@ class ModelExecutionPriority(BaseModel):
         description="Additional priority metadata",
     )
 
-    def should_preempt(self, other: "ModelExecutionPriority") -> bool:
+    def should_preempt(self, other: ModelExecutionPriority) -> bool:
         """
         Check if this priority should preempt another
 
@@ -79,7 +79,7 @@ class ModelExecutionPriority(BaseModel):
         """
         return self.priority_value > other.priority_value and other.preemptible
 
-    def can_be_preempted_by(self, other: "ModelExecutionPriority") -> bool:
+    def can_be_preempted_by(self, other: ModelExecutionPriority) -> bool:
         """
         Check if this priority can be preempted by another
 

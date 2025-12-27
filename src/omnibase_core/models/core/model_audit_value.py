@@ -3,6 +3,7 @@ Audit value model to replace Dict[str, Any] usage in audit entries.
 """
 
 from __future__ import annotations
+
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
