@@ -225,11 +225,6 @@ class TestModelRuntimeDirectivePayloadValidation:
         errors = exc_info.value.errors()
         assert any(e["loc"] == ("execute_at",) for e in errors)
 
-    def test_string_cleanup_required_coerced_to_bool(self) -> None:
-        """String 'yes' is coerced to bool by Pydantic."""
-        # Pydantic may coerce truthy strings to True
-        # Test with actually invalid value instead
-
     def test_invalid_cleanup_required_type_rejected(self) -> None:
         """Non-coercible cleanup_required raises ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
@@ -400,14 +395,57 @@ class TestModelRuntimeDirectivePayloadEdgeCases:
 
     def test_unicode_in_strings(self) -> None:
         """Unicode characters in string fields are accepted."""
+        # Japanese: async mode, queue, timeout reason
         model = ModelRuntimeDirectivePayload(
-            execution_mode="mode",
-            queue_name="queue",
-            cancellation_reason="reason",
+            execution_mode="\u975e\u540c\u671f",  # asynchronous
+            queue_name="\u30ad\u30e5\u30fc",  # queue
+            cancellation_reason="\u30bf\u30a4\u30e0\u30a2\u30a6\u30c8",  # timeout
         )
-        assert model.execution_mode == "mode"
-        assert model.queue_name == "queue"
-        assert model.cancellation_reason == "reason"
+        assert model.execution_mode == "\u975e\u540c\u671f"
+        assert model.queue_name == "\u30ad\u30e5\u30fc"
+        assert model.cancellation_reason == "\u30bf\u30a4\u30e0\u30a2\u30a6\u30c8"
+
+    def test_unicode_accented_latin(self) -> None:
+        """Accented Latin unicode characters in string fields are accepted."""
+        # French: cafe, naive
+        model = ModelRuntimeDirectivePayload(
+            execution_mode="caf\u00e9",
+            queue_name="na\u00efve",
+            cancellation_reason="Op\u00e9ration annul\u00e9e",
+        )
+        assert model.execution_mode == "caf\u00e9"
+        assert model.queue_name == "na\u00efve"
+        assert model.cancellation_reason == "Op\u00e9ration annul\u00e9e"
+
+    def test_unicode_chinese(self) -> None:
+        """Chinese unicode characters in string fields are accepted."""
+        # Chinese: queue, cancel reason
+        model = ModelRuntimeDirectivePayload(
+            queue_name="\u961f\u5217",  # queue
+            cancellation_reason="\u7528\u6237\u53d6\u6d88",  # user cancelled
+        )
+        assert model.queue_name == "\u961f\u5217"
+        assert model.cancellation_reason == "\u7528\u6237\u53d6\u6d88"
+
+    def test_unicode_arabic(self) -> None:
+        """Arabic unicode characters in string fields are accepted."""
+        # Arabic: queue, reason
+        model = ModelRuntimeDirectivePayload(
+            queue_name="\u0637\u0627\u0628\u0648\u0631",  # queue
+            cancellation_reason="\u0633\u0628\u0628",  # reason
+        )
+        assert model.queue_name == "\u0637\u0627\u0628\u0648\u0631"
+        assert model.cancellation_reason == "\u0633\u0628\u0628"
+
+    def test_unicode_emoji(self) -> None:
+        """Emoji unicode characters in string fields are accepted."""
+        # Emoji: rocket
+        model = ModelRuntimeDirectivePayload(
+            queue_name="priority_\U0001f680",
+            cancellation_reason="Error \u26a0\ufe0f",
+        )
+        assert model.queue_name == "priority_\U0001f680"
+        assert model.cancellation_reason == "Error \u26a0\ufe0f"
 
     def test_special_characters_in_strings(self) -> None:
         """Special characters in string fields are accepted."""

@@ -357,21 +357,52 @@ class TestModelReducerIntentPayloadEdgeCases:
 
     def test_unicode_in_target_state(self) -> None:
         """Unicode characters in target_state are accepted."""
-        unicode_state = "active"
+        # Japanese: active (katsudou)
+        unicode_state = "\u6d3b\u52d5"
+        model = ModelReducerIntentPayload(target_state=unicode_state)
+        assert model.target_state == unicode_state
+
+    def test_unicode_in_target_state_accented(self) -> None:
+        """Accented unicode characters in target_state are accepted."""
+        # French: active with accent (activee)
+        unicode_state = "activ\u00e9e"
         model = ModelReducerIntentPayload(target_state=unicode_state)
         assert model.target_state == unicode_state
 
     def test_unicode_in_trigger(self) -> None:
         """Unicode characters in trigger are accepted."""
-        unicode_trigger = "event"
+        # Chinese: event (shijian)
+        unicode_trigger = "\u4e8b\u4ef6"
+        model = ModelReducerIntentPayload(trigger=unicode_trigger)
+        assert model.trigger == unicode_trigger
+
+    def test_unicode_in_trigger_emoji(self) -> None:
+        """Emoji unicode characters in trigger are accepted."""
+        # Rocket emoji
+        unicode_trigger = "launch_\U0001f680"
         model = ModelReducerIntentPayload(trigger=unicode_trigger)
         assert model.trigger == unicode_trigger
 
     def test_unicode_in_operation(self) -> None:
         """Unicode characters in operation are accepted."""
-        unicode_op = "create"
+        # Arabic: create (inshaA)
+        unicode_op = "\u0625\u0646\u0634\u0627\u0621"
         model = ModelReducerIntentPayload(operation=unicode_op)
         assert model.operation == unicode_op
+
+    def test_unicode_in_operation_mixed(self) -> None:
+        """Mixed unicode scripts in operation are accepted."""
+        # Accented Latin: cafe naive
+        unicode_op = "caf\u00e9_na\u00efve"
+        model = ModelReducerIntentPayload(operation=unicode_op)
+        assert model.operation == unicode_op
+
+    def test_unicode_in_entity_type(self) -> None:
+        """Unicode characters in entity_type are accepted."""
+        # Japanese: user (yuuzaa)
+        unicode_type = "\u30e6\u30fc\u30b6\u30fc"
+        model = ModelReducerIntentPayload(entity_type=unicode_type)
+        assert model.entity_type == unicode_type
 
     def test_empty_data_tuple(self) -> None:
         """Empty data tuple is accepted."""

@@ -46,8 +46,7 @@ from uuid import uuid4
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.enums.enum_effect_types import EnumEffectType
-from omnibase_core.enums.enum_transaction_state import EnumTransactionState
+from omnibase_core.enums.enum_effect_types import EnumEffectType, EnumTransactionState
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.context import (
     ModelEffectInputData,

@@ -378,7 +378,48 @@ class TestModelEffectInputDataEdgeCases:
 
     def test_unicode_resource_path(self) -> None:
         """Unicode characters in resource_path are accepted."""
-        unicode_path = "/data/users/test"
+        # Test with actual unicode: accented Latin characters (cafe, naive)
+        unicode_path = "/data/users/caf\u00e9_na\u00efve/customers"
+        model = ModelEffectInputData(
+            effect_type=EnumEffectType.FILE_OPERATION,
+            resource_path=unicode_path,
+        )
+        assert model.resource_path == unicode_path
+
+    def test_unicode_resource_path_japanese(self) -> None:
+        """Japanese unicode characters in resource_path are accepted."""
+        # Japanese: nihongo (Japanese language)
+        unicode_path = "/data/users/\u65e5\u672c\u8a9e/user_id"
+        model = ModelEffectInputData(
+            effect_type=EnumEffectType.FILE_OPERATION,
+            resource_path=unicode_path,
+        )
+        assert model.resource_path == unicode_path
+
+    def test_unicode_resource_path_chinese(self) -> None:
+        """Chinese unicode characters in resource_path are accepted."""
+        # Chinese: zhongwen (Chinese language)
+        unicode_path = "/data/users/\u4e2d\u6587/files"
+        model = ModelEffectInputData(
+            effect_type=EnumEffectType.FILE_OPERATION,
+            resource_path=unicode_path,
+        )
+        assert model.resource_path == unicode_path
+
+    def test_unicode_resource_path_arabic(self) -> None:
+        """Arabic unicode characters in resource_path are accepted."""
+        # Arabic: al-arabiya (Arabic)
+        unicode_path = "/data/users/\u0627\u0644\u0639\u0631\u0628\u064a\u0629/docs"
+        model = ModelEffectInputData(
+            effect_type=EnumEffectType.FILE_OPERATION,
+            resource_path=unicode_path,
+        )
+        assert model.resource_path == unicode_path
+
+    def test_unicode_resource_path_emoji(self) -> None:
+        """Emoji unicode characters in resource_path are accepted."""
+        # Rocket emoji
+        unicode_path = "/data/users/\U0001f680/launch"
         model = ModelEffectInputData(
             effect_type=EnumEffectType.FILE_OPERATION,
             resource_path=unicode_path,
@@ -387,12 +428,33 @@ class TestModelEffectInputDataEdgeCases:
 
     def test_unicode_operation_name(self) -> None:
         """Unicode characters in operation_name are accepted."""
-        unicode_name = "create_user_"
+        # Test with actual unicode: accented Latin characters (cafe)
+        unicode_name = "create_user_caf\u00e9"
         model = ModelEffectInputData(
             effect_type=EnumEffectType.DATABASE_OPERATION,
             operation_name=unicode_name,
         )
         assert model.operation_name == unicode_name
+
+    def test_unicode_operation_name_multilingual(self) -> None:
+        """Multilingual unicode in operation_name is accepted."""
+        # Japanese characters: data processing
+        unicode_name = "\u30c7\u30fc\u30bf\u51e6\u7406"
+        model = ModelEffectInputData(
+            effect_type=EnumEffectType.DATABASE_OPERATION,
+            operation_name=unicode_name,
+        )
+        assert model.operation_name == unicode_name
+
+    def test_unicode_target_system(self) -> None:
+        """Unicode characters in target_system are accepted."""
+        # Chinese characters: system
+        unicode_system = "\u7cfb\u7edf"
+        model = ModelEffectInputData(
+            effect_type=EnumEffectType.API_CALL,
+            target_system=unicode_system,
+        )
+        assert model.target_system == unicode_system
 
     def test_special_characters_in_resource_path(self) -> None:
         """Special characters in resource_path are accepted."""

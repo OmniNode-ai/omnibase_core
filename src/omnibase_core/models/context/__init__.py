@@ -131,6 +131,7 @@ from omnibase_core.models.context.model_reducer_intent_payload import (
 )
 from omnibase_core.models.context.model_resource_context import ModelResourceContext
 from omnibase_core.models.context.model_retry_context import ModelRetryContext
+from omnibase_core.models.context.model_retry_error_context import ModelErrorContext
 from omnibase_core.models.context.model_routing_metadata import (
     VALID_LOAD_BALANCE_STRATEGIES,
     LoadBalanceStrategy,
@@ -149,6 +150,7 @@ from omnibase_core.models.context.model_validation_context import ModelValidatio
 
 __all__ = [
     # Error/Retry context models
+    "ModelErrorContext",
     "ModelOperationalContext",
     "ModelResourceContext",
     "ModelRetryContext",

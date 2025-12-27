@@ -34,7 +34,7 @@ class ErrorContextAttrs:
     error_code: str | None = None
     error_category: str | None = None
     correlation_id: str | None = None
-    stack_trace_id: str | None = None
+    stack_trace_ref: str | None = None
     retry_count: int | None = None
     is_retryable: bool | None = None
 
@@ -54,14 +54,14 @@ class TestModelErrorContextInstantiation:
             error_code="AUTH_001",
             error_category="auth",
             correlation_id="req_abc123",
-            stack_trace_id="trace_xyz789",
+            stack_trace_ref="trace_xyz789",
             retry_count=2,
             is_retryable=True,
         )
         assert context.error_code == "AUTH_001"
         assert context.error_category == "auth"
         assert context.correlation_id == "req_abc123"
-        assert context.stack_trace_id == "trace_xyz789"
+        assert context.stack_trace_ref == "trace_xyz789"
         assert context.retry_count == 2
         assert context.is_retryable is True
 
@@ -74,7 +74,7 @@ class TestModelErrorContextInstantiation:
         assert context.error_code == "VALIDATION_123"
         assert context.error_category == "validation"
         assert context.correlation_id is None
-        assert context.stack_trace_id is None
+        assert context.stack_trace_ref is None
         assert context.retry_count is None
         assert context.is_retryable is None
 
@@ -104,7 +104,7 @@ class TestModelErrorContextDefaults:
         assert context.error_code is None
         assert context.error_category is None
         assert context.correlation_id is None
-        assert context.stack_trace_id is None
+        assert context.stack_trace_ref is None
         assert context.retry_count is None
         assert context.is_retryable is None
 
@@ -448,7 +448,7 @@ class TestModelErrorContextFromAttributes:
             error_code="SYSTEM_500",
             error_category="system",
             correlation_id="req_full",
-            stack_trace_id="trace_full",
+            stack_trace_ref="trace_full",
             retry_count=3,
             is_retryable=False,
         )
@@ -456,7 +456,7 @@ class TestModelErrorContextFromAttributes:
         assert context.error_code == "SYSTEM_500"
         assert context.error_category == "system"
         assert context.correlation_id == "req_full"
-        assert context.stack_trace_id == "trace_full"
+        assert context.stack_trace_ref == "trace_full"
         assert context.retry_count == 3
         assert context.is_retryable is False
 
