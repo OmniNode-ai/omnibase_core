@@ -11,7 +11,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.constants.constants_field_limits import MAX_NAME_LENGTH
+from omnibase_core.constants.constants_field_limits import MAX_IDENTIFIER_LENGTH
 
 
 class ModelProjectionWatermark(BaseModel):
@@ -77,7 +77,7 @@ class ModelProjectionWatermark(BaseModel):
         ...,
         description="Event stream partition identifier (Kafka partition, shard ID, etc.)",
         min_length=1,
-        max_length=MAX_NAME_LENGTH,
+        max_length=MAX_IDENTIFIER_LENGTH,
     )
 
     offset: int = Field(

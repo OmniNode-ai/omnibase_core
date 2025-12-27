@@ -37,7 +37,7 @@ We will create a centralized constants module (`constants_field_limits.py`) cont
 
 ### Implementation Location
 
-```
+```text
 src/omnibase_core/constants/constants_field_limits.py
 ```
 
@@ -204,7 +204,7 @@ Do not add a constant when:
 
 ### Naming Convention
 
-```
+```text
 MAX_{SEMANTIC_TYPE}_{UNIT}
 
 Examples:
