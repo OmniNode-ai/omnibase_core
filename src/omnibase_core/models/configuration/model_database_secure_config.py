@@ -114,7 +114,9 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         max_length=500,  # Increased to accommodate file paths
     )
 
-    username: str = Field(default=..., description="Database username", max_length=MAX_IDENTIFIER_LENGTH)
+    username: str = Field(
+        default=..., description="Database username", max_length=MAX_IDENTIFIER_LENGTH
+    )
 
     password: SecretStr = Field(default=..., description="Database password (secured)")
 

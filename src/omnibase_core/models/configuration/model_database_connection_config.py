@@ -39,7 +39,9 @@ class ModelDatabaseConnectionConfig(BaseModel):
         pattern=r"^[a-zA-Z0-9_\-]+$",
         max_length=MAX_IDENTIFIER_LENGTH,
     )
-    username: str = Field(default=..., description="Database username", max_length=MAX_IDENTIFIER_LENGTH)
+    username: str = Field(
+        default=..., description="Database username", max_length=MAX_IDENTIFIER_LENGTH
+    )
     password: SecretStr = Field(default=..., description="Database password (secured)")
     ssl_enabled: bool = Field(
         default=False, description="Whether to use SSL connection"

@@ -227,7 +227,7 @@ class TestContentLimitConstants:
     def test_content_limits_hierarchy(self) -> None:
         """Test content limits follow expected hierarchy.
 
-        Reason (shortest) < Message < Description < Error < Log (longest).
+        Reason (shortest) < Description < Message < Error < Log (longest).
         This allows for increasingly detailed content.
         """
         from omnibase_core.constants.constants_field_limits import (

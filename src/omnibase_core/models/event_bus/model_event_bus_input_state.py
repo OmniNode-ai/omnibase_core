@@ -48,7 +48,9 @@ class ModelEventBusInputState(BaseModel):
         max_length=MAX_IDENTIFIER_LENGTH,
     )
     event_id: UUID | None = Field(
-        default=None, description="Unique event identifier", max_length=MAX_IDENTIFIER_LENGTH
+        default=None,
+        description="Unique event identifier",
+        max_length=MAX_IDENTIFIER_LENGTH,
     )
     integration: bool | None = Field(
         default=None, description="Integration mode flag for testing and validation"

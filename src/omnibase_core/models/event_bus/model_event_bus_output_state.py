@@ -66,7 +66,9 @@ class ModelEventBusOutputState(BaseModel):
         max_length=MAX_IDENTIFIER_LENGTH,
     )
     event_id: UUID | None = Field(
-        default=None, description="Unique event identifier", max_length=MAX_IDENTIFIER_LENGTH
+        default=None,
+        description="Unique event identifier",
+        max_length=MAX_IDENTIFIER_LENGTH,
     )
     processing_time_ms: int | None = Field(
         default=None, description="Processing time in milliseconds", ge=0
