@@ -443,7 +443,9 @@ import re
 import time
 from functools import lru_cache
 
-_PROTOCOL_CACHE_TTL = 300.0
+from omnibase_core.constants import DEFAULT_CACHE_TTL_SECONDS
+
+_PROTOCOL_CACHE_TTL = float(DEFAULT_CACHE_TTL_SECONDS)
 # Use list to hold mutable timestamp without global statement
 _protocol_cache_state: list[float] = [0.0]
 

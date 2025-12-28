@@ -51,6 +51,48 @@ TIMEOUT_MIN_MS: int = 1000
 # asynchronous workflows or broken into smaller chunks.
 TIMEOUT_MAX_MS: int = 600000
 
+# =============================================================================
+# Thread/Process Timeouts (seconds)
+# =============================================================================
+
+# Thread join timeout: 5 seconds
+# Rationale: Default timeout for thread.join() operations. Provides sufficient
+# time for threads to complete cleanup while preventing indefinite blocking
+# during shutdown sequences.
+THREAD_JOIN_TIMEOUT_SECONDS: float = 5.0
+
+# Process shutdown timeout: 10 seconds
+# Rationale: Timeout for graceful process shutdown. Allows child processes
+# adequate time to flush buffers, close connections, and perform cleanup
+# before forced termination.
+PROCESS_SHUTDOWN_TIMEOUT_SECONDS: float = 10.0
+
+# =============================================================================
+# Network Timeouts (seconds/milliseconds)
+# =============================================================================
+
+# HTTP request timeout: 30 seconds
+# Rationale: Default HTTP request timeout matching TIMEOUT_DEFAULT_MS.
+# Suitable for most REST API calls, webhook deliveries, and external
+# service integrations.
+HTTP_REQUEST_TIMEOUT_SECONDS: float = 30.0
+
+# Kafka request timeout: 5000ms (5 seconds)
+# Rationale: Kafka broker request timeout for producer/consumer operations.
+# Balances responsiveness with network reliability. Aligns with Kafka's
+# default request.timeout.ms configuration.
+KAFKA_REQUEST_TIMEOUT_MS: int = 5000
+
+# =============================================================================
+# Cache Timeouts (seconds)
+# =============================================================================
+
+# Default cache TTL: 300 seconds (5 minutes)
+# Rationale: Default time-to-live for cached data. Provides a balance between
+# cache efficiency and data freshness for typical application caches including
+# configuration lookups, discovery results, and computed values.
+DEFAULT_CACHE_TTL_SECONDS: int = 300
+
 __all__ = [
     # Standard timeout values
     "TIMEOUT_DEFAULT_MS",
@@ -58,4 +100,12 @@ __all__ = [
     # Timeout bounds
     "TIMEOUT_MIN_MS",
     "TIMEOUT_MAX_MS",
+    # Thread/Process timeouts
+    "THREAD_JOIN_TIMEOUT_SECONDS",
+    "PROCESS_SHUTDOWN_TIMEOUT_SECONDS",
+    # Network timeouts
+    "HTTP_REQUEST_TIMEOUT_SECONDS",
+    "KAFKA_REQUEST_TIMEOUT_MS",
+    # Cache timeouts
+    "DEFAULT_CACHE_TTL_SECONDS",
 ]
