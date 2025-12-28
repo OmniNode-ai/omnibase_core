@@ -1209,7 +1209,11 @@ class TestVerifyWorkflowIntegrity:
     def test_mismatched_hash_raises_error(
         self, simple_workflow_definition: ModelWorkflowDefinition
     ) -> None:
-        """Test that mismatched hash raises ModelOnexError with proper context."""
+        """Test that mismatched hash raises ModelOnexError with proper context.
+
+        Hash mismatch is a SECURITY_VIOLATION (not just VALIDATION_ERROR) because
+        it indicates potential tampering with workflow definitions.
+        """
         from omnibase_core.utils.workflow_executor import verify_workflow_integrity
 
         wrong_hash = "invalid_hash_that_does_not_match"
@@ -1219,15 +1223,15 @@ class TestVerifyWorkflowIntegrity:
                 simple_workflow_definition, expected_hash=wrong_hash
             )
 
-        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        # Hash mismatch is a security concern, not just validation
+        assert exc_info.value.error_code == EnumCoreErrorCode.SECURITY_VIOLATION
         assert "hash mismatch" in exc_info.value.message.lower()
-        # Context is nested: additional_context -> context -> {expected_hash, actual_hash, ...}
-        # due to ModelOnexError's **context pattern
+        # Context contains workflow_name for audit logging
+        # Note: expected_hash and actual_hash are NOT included in context to avoid
+        # leaking hash values in error messages (security best practice)
         assert exc_info.value.context is not None
         additional_ctx = exc_info.value.context.get("additional_context", {})
         inner_ctx = additional_ctx.get("context", {})
-        assert inner_ctx.get("expected_hash") == wrong_hash
-        assert "actual_hash" in inner_ctx
         assert (
             inner_ctx.get("workflow_name")
             == simple_workflow_definition.workflow_metadata.workflow_name
@@ -3169,7 +3173,9 @@ class TestWorkflowSizeLimits:
             for i in range(num_steps)
         ]
 
-        # Should raise validation error, not hang
+        # Should raise workflow execution failure, not hang
+        # ORCHESTRATOR_EXEC_WORKFLOW_FAILED is used for workflow validation failures
+        # during execution setup (more specific than generic VALIDATION_ERROR)
         with pytest.raises(ModelOnexError) as exc_info:
             await execute_workflow(
                 workflow_definition=simple_workflow_definition,
@@ -3177,7 +3183,10 @@ class TestWorkflowSizeLimits:
                 workflow_id=uuid4(),
             )
 
-        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert (
+            exc_info.value.error_code
+            == EnumCoreErrorCode.ORCHESTRATOR_EXEC_WORKFLOW_FAILED
+        )
         assert "non-existent" in exc_info.value.message.lower()
 
     @pytest.mark.asyncio

@@ -300,7 +300,7 @@ async def execute_workflow(
     )
     if validation_errors:
         raise ModelOnexError(
-            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.ORCHESTRATOR_EXEC_WORKFLOW_FAILED,
             message=f"Workflow validation failed: {', '.join(validation_errors)}",
             context={"workflow_id": str(workflow_id), "errors": validation_errors},
         )
@@ -608,7 +608,7 @@ def get_execution_order(
     """
     if _has_dependency_cycles(workflow_steps):
         raise ModelOnexError(
-            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.ORCHESTRATOR_SEMANTIC_CYCLE_DETECTED,
             message="Cannot compute execution order: workflow contains cycles",
             context={},
         )
@@ -1709,7 +1709,7 @@ def _has_dependency_cycles(
         # Resource exhaustion protection - prevent malicious/malformed inputs
         if iterations > MAX_DFS_ITERATIONS:
             raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.ORCHESTRATOR_EXEC_ITERATION_LIMIT_EXCEEDED,
                 message=(
                     f"Cycle detection exceeded {MAX_DFS_ITERATIONS} iterations - "
                     "possible malicious input or malformed workflow"
@@ -1804,11 +1804,9 @@ def verify_workflow_integrity(
     # Compare hashes
     if actual_hash != expected_hash:
         raise ModelOnexError(
-            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.SECURITY_VIOLATION,
             message="Workflow integrity check failed: hash mismatch detected",
             context={
-                "expected_hash": expected_hash,
-                "actual_hash": actual_hash,
                 "workflow_name": workflow_definition.workflow_metadata.workflow_name,
             },
         )

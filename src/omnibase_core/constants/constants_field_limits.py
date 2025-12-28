@@ -73,8 +73,29 @@ MAX_LABEL_LENGTH: int = 100
 # =============================================================================
 
 # Maximum iterations for DFS cycle detection in workflow validation.
-# This protects against denial-of-service attacks from maliciously crafted
-# workflow graphs or extremely complex dependency structures.
+# SINGLE SOURCE OF TRUTH (SSOT) for this constant.
+#
+# This constant is CRITICAL for security - it prevents denial-of-service attacks
+# from maliciously crafted workflow graphs that could cause infinite loops or
+# excessive CPU consumption during cycle detection.
+#
+# Value of 10,000 iterations is calibrated to support legitimate workflows with
+# up to ~5,000 steps (worst case: each step visited twice during DFS traversal)
+# while providing protection against resource exhaustion attacks.
+#
+# If cycle detection exceeds MAX_DFS_ITERATIONS, a ModelOnexError is raised
+# with detailed context including step_count, max_iterations, and last_node
+# for debugging and audit logging.
+#
+# Used by:
+# - workflow_validator.py: WorkflowValidator.detect_cycles()
+# - workflow_executor.py: _has_dependency_cycles()
+# - model_dependency_graph.py: ModelDependencyGraph.has_cycles()
+#
+# NOTE: workflow_constants.py re-imports this constant for workflow-specific
+# exports. Both import paths are valid:
+# - from omnibase_core.constants import MAX_DFS_ITERATIONS (recommended)
+# - from omnibase_core.validation.workflow_constants import MAX_DFS_ITERATIONS
 MAX_DFS_ITERATIONS: int = 10_000
 
 # Maximum iterations for BFS traversal in workflow linting.

@@ -78,6 +78,13 @@ def _get_limit_from_env(env_var: str, default: int, min_val: int, max_val: int) 
         try:
             int_value = int(value)
             result = max(min_val, min(int_value, max_val))
+            # Log warning when value is clamped to bounds (DoS prevention)
+            if int_value != result:
+                logging.warning(
+                    f"{env_var} value {int_value} clamped to {result} "
+                    f"(bounds: {min_val}-{max_val}). "
+                    "This prevents DoS attacks via extreme configuration values."
+                )
         except ValueError:
             logging.warning(
                 f"Invalid value for {env_var}: {value}, using default {default}"
@@ -140,23 +147,12 @@ MIN_TIMEOUT_MS: int = 100
 MAX_TIMEOUT_MS: int = 86400000
 
 # Resource exhaustion protection constant for DFS cycle detection.
-# This constant is CRITICAL for security - it prevents denial-of-service attacks
-# from maliciously crafted workflow graphs that could cause infinite loops or
-# excessive CPU consumption during cycle detection.
+# CANONICAL SOURCE: omnibase_core.constants.constants_field_limits
+# Re-exported here for workflow-specific convenience.
 #
-# Value of 10,000 iterations is calibrated to support legitimate workflows with
-# up to ~5,000 steps (worst case: each step visited twice during DFS traversal)
-# while providing protection against resource exhaustion attacks.
-#
-# If cycle detection exceeds MAX_DFS_ITERATIONS, a ModelOnexError is raised
-# with detailed context including step_count, max_iterations, and last_node
-# for debugging and audit logging.
-#
-# Used by:
-# - workflow_validator.py: WorkflowValidator.detect_cycles()
-# - workflow_executor.py: _has_dependency_cycles()
-# - model_dependency_graph.py: ModelDependencyGraph.has_cycles()
-MAX_DFS_ITERATIONS: int = 10_000
+# See constants_field_limits.py for full documentation on security rationale,
+# value calibration, and usage locations.
+from omnibase_core.constants.constants_field_limits import MAX_DFS_ITERATIONS
 
 # v1.0.4 Normative: Valid step types per CONTRACT_DRIVEN_NODEORCHESTRATOR_V1_0.md
 # Fix 41: step_type MUST be one of these values. "conditional" is NOT valid in v1.0.

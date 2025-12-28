@@ -91,7 +91,6 @@ from omnibase_core.models.validation.model_workflow_validation_result import (
 )
 from omnibase_core.validation.reserved_enum_validator import validate_execution_mode
 from omnibase_core.validation.workflow_constants import (
-    MAX_DFS_ITERATIONS,
     MIN_TIMEOUT_MS,
     RESERVED_STEP_TYPES,
 )
@@ -107,7 +106,7 @@ type InDegreeMap = dict[UUID, int]
 
 # MAX_DFS_ITERATIONS: Resource exhaustion protection constant for DFS cycle detection.
 # Imported from omnibase_core.constants.constants_field_limits (canonical source).
-# Also available from workflow_constants.py for backwards compatibility.
+# Re-exported from workflow_constants.py for import path flexibility.
 # Prevents malicious or malformed inputs from causing infinite loops in DFS.
 # Value of 10,000 supports workflows with up to ~5,000 steps.
 # See module docstring "Security Considerations" for full documentation.
@@ -1130,7 +1129,7 @@ def validate_execution_mode_string(mode: str) -> None:
         # at all. This is different from "reserved" modes which are valid enum values
         # but not accepted in v1.0.
         raise ModelOnexError(
-            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.ORCHESTRATOR_SEMANTIC_INVALID_EXECUTION_MODE,
             message=(
                 f"Unrecognized execution mode '{mode}'. "
                 f"Accepted modes: {', '.join(ACCEPTED_EXECUTION_MODES)}. "
@@ -1197,7 +1196,7 @@ def validate_step_type(step_type: str, step_name: str = "") -> None:
     if step_type_lower in RESERVED_STEP_TYPES:
         step_context = f" for step '{step_name}'" if step_name else ""
         raise ModelOnexError(
-            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.ORCHESTRATOR_STRUCT_INVALID_STEP_TYPE,
             message=(
                 f"step_type '{step_type}' is reserved for v1.1{step_context}. "
                 f"Accepted step types in v1.0: {', '.join(ACCEPTED_STEP_TYPES)}. "
@@ -1253,7 +1252,7 @@ def validate_step_timeout(timeout_ms: int, step_name: str = "") -> None:
     if timeout_ms < MIN_TIMEOUT_MS:
         step_context = f" for step '{step_name}'" if step_name else ""
         raise ModelOnexError(
-            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.ORCHESTRATOR_STRUCT_INVALID_FIELD_TYPE,
             message=(
                 f"timeout_ms value {timeout_ms} is below minimum{step_context}. "
                 f"timeout_ms MUST be >= {MIN_TIMEOUT_MS}ms per ONEX v1.0.3 schema."

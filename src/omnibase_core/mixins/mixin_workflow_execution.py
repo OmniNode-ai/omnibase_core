@@ -78,6 +78,7 @@ def _get_workflow_executor() -> tuple[
 
     return _workflow_executor_cache
 
+
 # Module-level cache for lazy-imported ModelWorkflowStateSnapshot class.
 # This avoids repeated import overhead when update_workflow_state() is called frequently.
 _workflow_state_snapshot_class: type | None = None

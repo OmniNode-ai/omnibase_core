@@ -22,7 +22,7 @@ from omnibase_core.constants.constants_field_limits import (
 )
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.validation.workflow_constants import VALID_STEP_TYPES
+from omnibase_core.validation.workflow_constants import MIN_TIMEOUT_MS, VALID_STEP_TYPES
 
 __all__ = ["ModelWorkflowStep", "VALID_STEP_TYPES"]
 
@@ -119,11 +119,23 @@ class ModelWorkflowStep(BaseModel):
         return v
 
     # Execution configuration
+    # DESIGN DECISION: Workflow step timeout is capped at TIMEOUT_LONG_MS (5 minutes)
+    # rather than MAX_TIMEOUT_MS (24 hours). Rationale:
+    # 1. Individual workflow steps should complete within bounded time
+    # 2. Long-running operations (>5 min) should be async or broken into smaller steps
+    # 3. This prevents single steps from blocking entire workflow pipelines
+    # 4. MAX_TIMEOUT_MS (24 hours) is for aggregate workflow duration, not per-step
+    # See: constants_timeouts.py for timeout design rationale
     timeout_ms: int = Field(
         default=TIMEOUT_DEFAULT_MS,
-        description="Step execution timeout in milliseconds",
-        ge=100,
-        le=TIMEOUT_LONG_MS,  # Max 5 minutes (TIMEOUT_LONG_MS)
+        description=(
+            "Step execution timeout in milliseconds. "
+            "Min: 100ms (prevents unrealistic timeouts), Max: 5 minutes "
+            "(TIMEOUT_LONG_MS - individual steps should complete quickly; "
+            "longer operations should use async patterns)."
+        ),
+        ge=MIN_TIMEOUT_MS,  # Min 100ms per v1.0.3 normative constraint
+        le=TIMEOUT_LONG_MS,  # Max 5 minutes (per-step limit, NOT 24-hour aggregate limit)
     )
 
     retry_count: int = Field(
