@@ -6,7 +6,7 @@ from omnibase_core.models.discovery.model_node_introspection_event import (
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
-class MixinNodeIntrospectionData(BaseModel):
+class ModelNodeIntrospectionData(BaseModel):
     """
     Strongly typed container for node introspection data.
 

@@ -1,12 +1,12 @@
 """
-RuntimeNodeInstance - Lightweight execution wrapper for ONEX nodes.
+ModelRuntimeNodeInstance - Lightweight execution wrapper for ONEX nodes.
 
-This module provides the RuntimeNodeInstance class, which serves as a lightweight
+This module provides the ModelRuntimeNodeInstance class, which serves as a lightweight
 wrapper around node execution. It handles lifecycle management (initialize/shutdown)
 and envelope reception, delegating actual execution to EnvelopeRouter.
 
 Architecture Pattern - Delegation:
-    RuntimeNodeInstance follows the ONEX delegation pattern where the instance itself
+    ModelRuntimeNodeInstance follows the ONEX delegation pattern where the instance itself
     contains NO business logic or I/O operations. All execution is delegated
     to the EnvelopeRouter, which handles:
 
@@ -17,13 +17,13 @@ Architecture Pattern - Delegation:
     - Retry logic and circuit breaking
 
     This separation ensures:
-    1. RuntimeNodeInstance remains a pure coordination layer
+    1. ModelRuntimeNodeInstance remains a pure coordination layer
     2. Testing is simplified (mock the runtime, test the instance)
     3. Different runtime implementations can be swapped without changing instances
     4. The instance can be serialized/deserialized for distributed scenarios
 
 Why Delegation?
-    Direct execution in RuntimeNodeInstance would couple envelope handling to the
+    Direct execution in ModelRuntimeNodeInstance would couple envelope handling to the
     instance lifecycle, making it difficult to:
     - Share execution infrastructure across multiple instances
     - Implement cross-cutting concerns (logging, tracing) consistently
@@ -33,12 +33,12 @@ Why Delegation?
 Usage:
     .. code-block:: python
 
-        from omnibase_core.runtime import RuntimeNodeInstance
+        from omnibase_core.models.runtime import ModelRuntimeNodeInstance
         from omnibase_core.enums import EnumNodeType
         from omnibase_core.models.contracts import ModelContractCompute
 
         # Create a node instance with its contract
-        instance = RuntimeNodeInstance(
+        instance = ModelRuntimeNodeInstance(
             slug="my-compute-node",
             node_type=EnumNodeType.COMPUTE_GENERIC,
             contract=my_contract,
@@ -59,7 +59,7 @@ Usage:
 Thread Safety:
     WARNING: The _runtime and _initialized PrivateAttrs are NOT thread-safe.
 
-    RuntimeNodeInstance uses frozen=True configuration, making the model fields
+    ModelRuntimeNodeInstance uses frozen=True configuration, making the model fields
     (slug, node_type, contract) immutable after creation. However, the private
     attributes (_runtime, _initialized) are mutable and have no synchronization.
 
@@ -85,6 +85,7 @@ Thread Safety:
 Related:
     - OMN-227: NodeInstance execution wrapper
     - OMN-228: EnvelopeRouter with execute_with_handler
+    - OMN-1067: Move RuntimeNodeInstance to models/runtime/
     - ModelOnexEnvelope: The envelope format handled by this instance
     - ModelContractBase: The contract defining node behavior
 
@@ -116,7 +117,7 @@ Future Considerations:
 
 from __future__ import annotations
 
-__all__ = ["RuntimeNodeInstance", "NodeInstance"]
+__all__ = ["ModelRuntimeNodeInstance", "NodeInstance"]
 
 from typing import TYPE_CHECKING
 
@@ -132,11 +133,11 @@ if TYPE_CHECKING:
     from omnibase_core.runtime.protocol_node_runtime import ProtocolNodeRuntime
 
 
-class RuntimeNodeInstance(BaseModel):
+class ModelRuntimeNodeInstance(BaseModel):
     """
     Lightweight execution wrapper for ONEX nodes.
 
-    RuntimeNodeInstance is a thin coordination layer that:
+    ModelRuntimeNodeInstance is a thin coordination layer that:
     - Holds node identity (slug, type, contract)
     - Manages lifecycle (initialize, shutdown)
     - Receives envelopes and delegates to runtime
@@ -155,7 +156,7 @@ class RuntimeNodeInstance(BaseModel):
     Example:
         .. code-block:: python
 
-            instance = RuntimeNodeInstance(
+            instance = ModelRuntimeNodeInstance(
                 slug="metrics-aggregator",
                 node_type=EnumNodeType.REDUCER_GENERIC,
                 contract=aggregator_contract,
@@ -236,7 +237,7 @@ class RuntimeNodeInstance(BaseModel):
         Example:
             .. code-block:: python
 
-                instance = RuntimeNodeInstance(...)
+                instance = ModelRuntimeNodeInstance(...)
                 instance.set_runtime(my_runtime)  # Call once during setup
 
         Note:
@@ -247,11 +248,11 @@ class RuntimeNodeInstance(BaseModel):
         """
         if self._runtime is not None:
             raise ModelOnexError(
-                message=f"Runtime already set for RuntimeNodeInstance '{self.slug}'. "
+                message=f"Runtime already set for ModelRuntimeNodeInstance '{self.slug}'. "
                 "Cannot replace runtime during execution.",
                 error_code=EnumCoreErrorCode.INVALID_STATE,
                 node_slug=self.slug,
-                node_type=str(self.node_type),
+                node_type=self.node_type,
             )
         self._runtime = runtime
 
@@ -283,11 +284,11 @@ class RuntimeNodeInstance(BaseModel):
         """
         if self._runtime is None:
             raise ModelOnexError(
-                message=f"Runtime not set for RuntimeNodeInstance '{self.slug}'. "
+                message=f"Runtime not set for ModelRuntimeNodeInstance '{self.slug}'. "
                 "Call set_runtime() before accessing runtime.",
                 error_code=EnumCoreErrorCode.INVALID_STATE,
                 node_slug=self.slug,
-                node_type=str(self.node_type),
+                node_type=self.node_type,
             )
         return self._runtime
 
@@ -319,20 +320,20 @@ class RuntimeNodeInstance(BaseModel):
         """
         if self._runtime is None:
             raise ModelOnexError(
-                message=f"Cannot initialize RuntimeNodeInstance '{self.slug}' without runtime. "
+                message=f"Cannot initialize ModelRuntimeNodeInstance '{self.slug}' without runtime. "
                 "Call set_runtime() before initialize().",
                 error_code=EnumCoreErrorCode.INVALID_STATE,
                 node_slug=self.slug,
-                node_type=str(self.node_type),
+                node_type=self.node_type,
             )
 
         if self._initialized:
             raise ModelOnexError(
-                message=f"RuntimeNodeInstance '{self.slug}' is already initialized. "
+                message=f"ModelRuntimeNodeInstance '{self.slug}' is already initialized. "
                 "Cannot initialize twice.",
                 error_code=EnumCoreErrorCode.INVALID_STATE,
                 node_slug=self.slug,
-                node_type=str(self.node_type),
+                node_type=self.node_type,
             )
 
         self._initialized = True
@@ -372,10 +373,10 @@ class RuntimeNodeInstance(BaseModel):
         """
         if not self._initialized:
             raise ModelOnexError(
-                message=f"Cannot shutdown RuntimeNodeInstance '{self.slug}' that is not initialized.",
+                message=f"Cannot shutdown ModelRuntimeNodeInstance '{self.slug}' that is not initialized.",
                 error_code=EnumCoreErrorCode.INVALID_STATE,
                 node_slug=self.slug,
-                node_type=str(self.node_type),
+                node_type=self.node_type,
             )
 
         self._initialized = False
@@ -441,11 +442,11 @@ class RuntimeNodeInstance(BaseModel):
                 getattr(envelope, "operation", None) if envelope else None
             )
             raise ModelOnexError(
-                message=f"RuntimeNodeInstance '{self.slug}' is not initialized. "
+                message=f"ModelRuntimeNodeInstance '{self.slug}' is not initialized. "
                 "Call initialize() before handling envelopes.",
                 error_code=EnumCoreErrorCode.INVALID_STATE,
                 node_slug=self.slug,
-                node_type=str(self.node_type),
+                node_type=self.node_type,
                 envelope_operation=envelope_operation,
             )
 
@@ -457,10 +458,10 @@ class RuntimeNodeInstance(BaseModel):
         Human-readable string representation.
 
         Returns:
-            str: Format "RuntimeNodeInstance[slug=..., type=..., initialized=...]"
+            str: Format "ModelRuntimeNodeInstance[slug=..., type=..., initialized=...]"
         """
         return (
-            f"RuntimeNodeInstance["
+            f"ModelRuntimeNodeInstance["
             f"slug={self.slug}, "
             f"type={self.node_type}, "
             f"initialized={self._initialized}]"
@@ -474,7 +475,7 @@ class RuntimeNodeInstance(BaseModel):
             str: Detailed format including contract name
         """
         return (
-            f"RuntimeNodeInstance("
+            f"ModelRuntimeNodeInstance("
             f"slug={self.slug!r}, "
             f"node_type={self.node_type!r}, "
             f"contract={self.contract.name!r}, "
@@ -483,4 +484,4 @@ class RuntimeNodeInstance(BaseModel):
 
 
 # Primary export alias
-NodeInstance = RuntimeNodeInstance
+NodeInstance = ModelRuntimeNodeInstance

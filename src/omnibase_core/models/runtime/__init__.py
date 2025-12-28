@@ -2,6 +2,10 @@
 
 from omnibase_core.models.runtime.model_handler_metadata import ModelHandlerMetadata
 from omnibase_core.models.runtime.model_runtime_directive import ModelRuntimeDirective
+from omnibase_core.models.runtime.model_runtime_node_instance import (
+    ModelRuntimeNodeInstance,
+    NodeInstance,
+)
 from omnibase_core.models.runtime.payloads import (
     ModelCancelExecutionPayload,
     ModelDelayUntilPayload,
@@ -16,6 +20,8 @@ __all__ = [
     # Core runtime models
     "ModelHandlerMetadata",
     "ModelRuntimeDirective",
+    "ModelRuntimeNodeInstance",
+    "NodeInstance",
     # Directive payload types (re-exported for convenience)
     "ModelDirectivePayload",
     "ModelDirectivePayloadBase",

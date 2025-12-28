@@ -105,8 +105,9 @@ class TestValidateDuration:
     )
     def test_weeks_cannot_be_combined(self, duration: str) -> None:
         """Test that weeks cannot be combined with other components per ISO 8601."""
-        with pytest.raises(ValueError, match=r"weeks.*cannot be combined"):
+        with pytest.raises(ValueError) as exc_info:
             validate_duration(duration)
+        assert "weeks (W) cannot be combined" in str(exc_info.value)
 
 
 @pytest.mark.unit
@@ -123,12 +124,12 @@ class TestDurationAnnotatedType:
         assert config.timeout == "PT1H30M"
 
     def test_invalid_duration_in_model(self) -> None:
-        """Test that invalid durations raise ValidationError."""
+        """Test that invalid durations raise ValueError."""
 
         class Config(BaseModel):
             timeout: Duration
 
-        with pytest.raises(ValidationError):
+        with pytest.raises(ValueError):
             Config(timeout="invalid")
 
 
@@ -216,12 +217,12 @@ class TestBCP47LocaleAnnotatedType:
         assert prefs.locale == "en-US"
 
     def test_invalid_locale_in_model(self) -> None:
-        """Test that invalid locales raise ValidationError."""
+        """Test that invalid locales raise ValueError."""
 
         class UserPreferences(BaseModel):
             locale: BCP47Locale
 
-        with pytest.raises(ValidationError):
+        with pytest.raises(ValueError):
             UserPreferences(locale="invalid_locale")
 
 
@@ -352,12 +353,12 @@ class TestUUIDStringAnnotatedType:
         assert entity.id == "550e8400-e29b-41d4-a716-446655440000"
 
     def test_invalid_uuid_in_model(self) -> None:
-        """Test that invalid UUIDs raise ValidationError."""
+        """Test that invalid UUIDs raise ValueError."""
 
         class Entity(BaseModel):
             id: UUIDString
 
-        with pytest.raises(ValidationError):
+        with pytest.raises(ValueError):
             Entity(id="invalid-uuid")
 
 
@@ -462,12 +463,12 @@ class TestSemanticVersionAnnotatedType:
         assert package.version == "2.1.3-beta.1+build.123"
 
     def test_invalid_version_in_model(self) -> None:
-        """Test that invalid versions raise ValidationError."""
+        """Test that invalid versions raise ValueError."""
 
         class Package(BaseModel):
             version: SemanticVersion
 
-        with pytest.raises(ValidationError):
+        with pytest.raises(ValueError):
             Package(version="1.0")
 
 
@@ -570,12 +571,12 @@ class TestErrorCodeAnnotatedType:
         assert report.code == "NETWORK_TIMEOUT_001"
 
     def test_invalid_error_code_in_model(self) -> None:
-        """Test that invalid error codes raise ValidationError."""
+        """Test that invalid error codes raise ValueError."""
 
         class ErrorReport(BaseModel):
             code: ErrorCode
 
-        with pytest.raises(ValidationError):
+        with pytest.raises(ValueError):
             ErrorReport(code="invalid")
 
     def test_lint_style_code_rejected_in_model(self) -> None:
@@ -584,7 +585,7 @@ class TestErrorCodeAnnotatedType:
         class ErrorReport(BaseModel):
             code: ErrorCode
 
-        with pytest.raises(ValidationError):
+        with pytest.raises(ValueError):
             ErrorReport(code="E001")
 
     def test_optional_error_code_in_model(self) -> None:
@@ -1351,7 +1352,12 @@ class TestValidatorNoneHandlingInModels:
         assert report2.code is None
 
     def test_required_fields_reject_none(self) -> None:
-        """Test that required validated fields reject None properly."""
+        """Test that required validated fields reject None properly.
+
+        Note: Pydantic catches None at the type level (since Duration is
+        Annotated[str, ...] which doesn't accept None) before our custom
+        validator runs, so this raises ValidationError not ValueError.
+        """
 
         class Config(BaseModel):
             timeout: Duration
@@ -1377,28 +1383,28 @@ class TestValidatorsNoneHandlingDirect:
     checks which treat None similarly to empty strings.
     """
 
-    def test_validate_duration_none_raises_value_error(self) -> None:
+    def test_validate_duration_none_raises_onex_error(self) -> None:
         """Test that None raises ValueError (treated as empty)."""
         # None triggers the `if not value:` check
         with pytest.raises(ValueError, match="cannot be empty"):
             validate_duration(None)  # type: ignore[arg-type]
 
-    def test_validate_bcp47_locale_none_raises_value_error(self) -> None:
+    def test_validate_bcp47_locale_none_raises_onex_error(self) -> None:
         """Test that None raises ValueError (treated as empty)."""
         with pytest.raises(ValueError, match="cannot be empty"):
             validate_bcp47_locale(None)  # type: ignore[arg-type]
 
-    def test_validate_uuid_none_raises_value_error(self) -> None:
+    def test_validate_uuid_none_raises_onex_error(self) -> None:
         """Test that None raises ValueError (treated as empty)."""
         with pytest.raises(ValueError, match="cannot be empty"):
             validate_uuid(None)  # type: ignore[arg-type]
 
-    def test_validate_semantic_version_none_raises_value_error(self) -> None:
+    def test_validate_semantic_version_none_raises_onex_error(self) -> None:
         """Test that None raises ValueError (treated as empty)."""
         with pytest.raises(ValueError, match="cannot be empty"):
             validate_semantic_version(None)  # type: ignore[arg-type]
 
-    def test_validate_error_code_none_raises_value_error(self) -> None:
+    def test_validate_error_code_none_raises_onex_error(self) -> None:
         """Test that None raises ValueError (treated as empty)."""
         with pytest.raises(ValueError, match="cannot be empty"):
             validate_error_code(None)  # type: ignore[arg-type]

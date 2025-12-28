@@ -13,7 +13,7 @@ Tests all context model functionality including:
 
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 from pydantic import ValidationError
@@ -40,6 +40,7 @@ from omnibase_core.models.context import (
     ModelUserContext,
     ModelValidationContext,
 )
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 # =============================================================================
 # Helper classes for from_attributes testing (Metadata models)
@@ -50,7 +51,7 @@ from omnibase_core.models.context import (
 class SessionContextAttrs:
     """Helper dataclass for testing from_attributes on ModelSessionContext."""
 
-    session_id: str | None = None
+    session_id: UUID | None = None
     client_ip: str | None = None
     user_agent: str | None = None
     device_fingerprint: str | None = None
@@ -113,7 +114,7 @@ class CheckpointMetadataAttrs:
     source_node: str | None = None
     trigger_event: str | None = None
     workflow_stage: str | None = None
-    parent_checkpoint_id: str | None = None
+    parent_checkpoint_id: UUID | None = None
 
 
 @dataclass
@@ -122,7 +123,7 @@ class DetectionMetadataAttrs:
 
     pattern_category: str | None = None
     detection_source: str | None = None
-    rule_version: str | None = None
+    rule_version: ModelSemVer | None = None
     false_positive_likelihood: str | None = None
     remediation_hint: str | None = None
 
@@ -664,15 +665,16 @@ class TestModelSessionContextInstantiation:
 
     def test_create_with_all_fields(self) -> None:
         """Test creating session context with all fields populated."""
+        session_uuid = uuid4()
         context = ModelSessionContext(
-            session_id="sess_abc123",
+            session_id=session_uuid,
             client_ip="192.168.1.100",
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
             device_fingerprint="fp_xyz789",
             locale="en-US",
             authentication_method="oauth2",
         )
-        assert context.session_id == "sess_abc123"
+        assert context.session_id == session_uuid
         assert context.client_ip == "192.168.1.100"
         assert context.user_agent == "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
         assert context.device_fingerprint == "fp_xyz789"
@@ -681,11 +683,12 @@ class TestModelSessionContextInstantiation:
 
     def test_create_with_partial_fields(self) -> None:
         """Test creating session context with partial fields."""
+        session_uuid = uuid4()
         context = ModelSessionContext(
-            session_id="sess_123",
+            session_id=session_uuid,
             locale="fr-FR",
         )
-        assert context.session_id == "sess_123"
+        assert context.session_id == session_uuid
         assert context.locale == "fr-FR"
         assert context.client_ip is None
         assert context.user_agent is None
@@ -712,9 +715,10 @@ class TestModelSessionContextImmutability:
 
     def test_cannot_modify_session_id(self) -> None:
         """Test that session_id cannot be modified after creation."""
-        context = ModelSessionContext(session_id="original")
+        original_uuid = uuid4()
+        context = ModelSessionContext(session_id=original_uuid)
         with pytest.raises(ValidationError):
-            context.session_id = "modified"
+            context.session_id = uuid4()
 
     def test_cannot_modify_client_ip(self) -> None:
         """Test that client_ip cannot be modified after creation."""
@@ -735,20 +739,22 @@ class TestModelSessionContextFromAttributes:
 
     def test_create_from_dataclass_with_attributes(self) -> None:
         """Test creating ModelSessionContext from an object with attributes."""
+        session_uuid = uuid4()
         attrs = SessionContextAttrs(
-            session_id="sess_from_attrs",
+            session_id=session_uuid,
             client_ip="10.0.0.1",
             locale="ja-JP",
         )
         context = ModelSessionContext.model_validate(attrs)
-        assert context.session_id == "sess_from_attrs"
+        assert context.session_id == session_uuid
         assert context.client_ip == "10.0.0.1"
         assert context.locale == "ja-JP"
 
     def test_create_from_object_with_all_attributes(self) -> None:
         """Test creating from object with all attributes populated."""
+        session_uuid = uuid4()
         attrs = SessionContextAttrs(
-            session_id="sess_full",
+            session_id=session_uuid,
             client_ip="172.16.0.1",
             user_agent="TestAgent/1.0",
             device_fingerprint="fp_test",
@@ -756,7 +762,7 @@ class TestModelSessionContextFromAttributes:
             authentication_method="saml",
         )
         context = ModelSessionContext.model_validate(attrs)
-        assert context.session_id == "sess_full"
+        assert context.session_id == session_uuid
         assert context.authentication_method == "saml"
 
 
@@ -768,7 +774,7 @@ class TestModelSessionContextExtraForbid:
         """Test that extra fields raise ValidationError."""
         with pytest.raises(ValidationError) as exc_info:
             ModelSessionContext(
-                session_id="sess_123",
+                session_id=uuid4(),
                 unknown_field="should_fail",
             )
         assert "extra" in str(exc_info.value).lower()
@@ -1074,18 +1080,19 @@ class TestModelCheckpointMetadataInstantiation:
 
     def test_create_with_all_fields(self) -> None:
         """Test creating checkpoint metadata with all fields populated."""
+        parent_uuid = uuid4()
         metadata = ModelCheckpointMetadata(
             checkpoint_type="automatic",
             source_node="node_compute_transform",
             trigger_event="stage_complete",
             workflow_stage="processing",
-            parent_checkpoint_id="chk_parent_123",
+            parent_checkpoint_id=parent_uuid,
         )
         assert metadata.checkpoint_type == "automatic"
         assert metadata.source_node == "node_compute_transform"
         assert metadata.trigger_event == "stage_complete"
         assert metadata.workflow_stage == "processing"
-        assert metadata.parent_checkpoint_id == "chk_parent_123"
+        assert metadata.parent_checkpoint_id == parent_uuid
 
     def test_create_with_partial_fields(self) -> None:
         """Test creating checkpoint metadata with partial fields."""
@@ -1169,13 +1176,13 @@ class TestModelDetectionMetadataInstantiation:
         metadata = ModelDetectionMetadata(
             pattern_category="credential_exposure",
             detection_source="regex_scanner",
-            rule_version="2.1.0",
+            rule_version=ModelSemVer(major=2, minor=1, patch=0),
             false_positive_likelihood="low",
             remediation_hint="Rotate exposed credentials immediately",
         )
         assert metadata.pattern_category == "credential_exposure"
         assert metadata.detection_source == "regex_scanner"
-        assert metadata.rule_version == "2.1.0"
+        assert metadata.rule_version == ModelSemVer(major=2, minor=1, patch=0)
         assert metadata.false_positive_likelihood == "low"
         assert metadata.remediation_hint == "Rotate exposed credentials immediately"
 
@@ -1216,9 +1223,11 @@ class TestModelDetectionMetadataImmutability:
 
     def test_cannot_modify_rule_version(self) -> None:
         """Test that rule_version cannot be modified after creation."""
-        metadata = ModelDetectionMetadata(rule_version="1.0.0")
+        metadata = ModelDetectionMetadata(
+            rule_version=ModelSemVer(major=1, minor=0, patch=0)
+        )
         with pytest.raises(ValidationError):
-            metadata.rule_version = "2.0.0"
+            metadata.rule_version = ModelSemVer(major=2, minor=0, patch=0)
 
 
 @pytest.mark.unit
@@ -1230,12 +1239,12 @@ class TestModelDetectionMetadataFromAttributes:
         attrs = DetectionMetadataAttrs(
             pattern_category="malware",
             detection_source="ml_classifier",
-            rule_version="3.0.0",
+            rule_version=ModelSemVer(major=3, minor=0, patch=0),
         )
         metadata = ModelDetectionMetadata.model_validate(attrs)
         assert metadata.pattern_category == "malware"
         assert metadata.detection_source == "ml_classifier"
-        assert metadata.rule_version == "3.0.0"
+        assert metadata.rule_version == ModelSemVer(major=3, minor=0, patch=0)
 
 
 @pytest.mark.unit
@@ -1457,7 +1466,7 @@ class TestMetadataModelsCommonBehavior:
 
     def test_all_models_are_hashable(self) -> None:
         """Test that all frozen models can be hashed (for use in sets/dicts)."""
-        session = ModelSessionContext(session_id="sess_123")
+        session = ModelSessionContext(session_id=uuid4())
         http = ModelHttpRequestMetadata(method="GET")
         audit = ModelAuditMetadata(audit_id="audit_123")
         checkpoint = ModelCheckpointMetadata(checkpoint_type="auto")
@@ -1477,7 +1486,7 @@ class TestMetadataModelsCommonBehavior:
     def test_all_models_support_model_dump(self) -> None:
         """Test that all models support model_dump serialization."""
         models = [
-            ModelSessionContext(session_id="sess_123"),
+            ModelSessionContext(session_id=uuid4()),
             ModelHttpRequestMetadata(method="GET"),
             ModelAuthorizationContext(roles=["user"]),
             ModelAuditMetadata(audit_id="audit_123"),
@@ -1493,7 +1502,7 @@ class TestMetadataModelsCommonBehavior:
     def test_all_models_support_model_dump_json(self) -> None:
         """Test that all models support model_dump_json serialization."""
         models = [
-            ModelSessionContext(session_id="sess_123"),
+            ModelSessionContext(session_id=uuid4()),
             ModelHttpRequestMetadata(method="GET"),
             ModelAuthorizationContext(roles=["user"]),
             ModelAuditMetadata(audit_id="audit_123"),
@@ -1509,8 +1518,9 @@ class TestMetadataModelsCommonBehavior:
 
     def test_all_models_support_equality(self) -> None:
         """Test that models with same values are equal."""
-        session1 = ModelSessionContext(session_id="sess_123", locale="en-US")
-        session2 = ModelSessionContext(session_id="sess_123", locale="en-US")
+        session_uuid = uuid4()
+        session1 = ModelSessionContext(session_id=session_uuid, locale="en-US")
+        session2 = ModelSessionContext(session_id=session_uuid, locale="en-US")
         assert session1 == session2
 
         http1 = ModelHttpRequestMetadata(method="GET", path="/api")
@@ -1519,14 +1529,15 @@ class TestMetadataModelsCommonBehavior:
 
     def test_all_models_support_copy(self) -> None:
         """Test that models can be copied with model_copy."""
-        session = ModelSessionContext(session_id="sess_123")
+        session_uuid = uuid4()
+        session = ModelSessionContext(session_id=session_uuid)
         session_copy = session.model_copy()
         assert session == session_copy
         assert session is not session_copy
 
         # Test copy with update
         session_updated = session.model_copy(update={"locale": "fr-FR"})
-        assert session_updated.session_id == "sess_123"
+        assert session_updated.session_id == session_uuid
         assert session_updated.locale == "fr-FR"
 
 
@@ -1630,7 +1641,7 @@ class TestModelSessionContextEnumSupport:
     def test_existing_oauth2_string_still_works(self) -> None:
         """Test backward compatibility: existing usage patterns still work."""
         context = ModelSessionContext(
-            session_id="sess_123",
+            session_id=uuid4(),
             authentication_method="oauth2",
         )
         assert context.authentication_method == EnumAuthenticationMethod.OAUTH2
@@ -1777,7 +1788,7 @@ class TestModelDetectionMetadataEnumSupport:
         metadata = ModelDetectionMetadata(
             pattern_category="credential_exposure",
             detection_source="regex_scanner",
-            rule_version="2.1.0",
+            rule_version=ModelSemVer(major=2, minor=1, patch=0),
             false_positive_likelihood="low",
             remediation_hint="Rotate exposed credentials immediately",
         )
