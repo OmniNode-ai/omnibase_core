@@ -988,9 +988,14 @@ async def _execute_parallel(
         """
         Execute a single workflow step asynchronously.
 
-        Inner async function designed for parallel execution via asyncio.gather.
-        Returns a tuple pattern that enables safe error handling in concurrent
-        contexts without raising exceptions that would cancel sibling tasks.
+        Inner async function that executes a step and returns a result tuple.
+        Returns a tuple pattern that enables safe error handling without raising
+        exceptions, allowing the caller to process results uniformly.
+
+        v1.0.5 Note:
+            Steps are executed sequentially within each wave (not concurrently).
+            The tuple return pattern is maintained for API stability and future
+            compatibility when true parallelism is introduced in v1.1+.
 
         Args:
             step: The workflow step to execute, containing step metadata,
@@ -1006,17 +1011,15 @@ async def _execute_parallel(
             - error: Exception if execution failed, None if succeeded
 
             Exactly one of action/error will be None (mutually exclusive).
-            This tuple pattern allows the caller to process results from
-            asyncio.gather without individual try/except blocks per task.
+            This tuple pattern allows the caller to process results uniformly.
 
             The payload_size is returned to avoid redundant JSON serialization
             in the caller (OMN-670: Performance optimization).
 
         Note:
             This function catches all exceptions and returns them in the tuple
-            rather than re-raising. This is intentional for parallel execution:
-            - Prevents one failing step from canceling other parallel steps
-            - Allows batch processing of all results after gather completes
+            rather than re-raising. This is intentional for uniform error handling:
+            - Allows batch processing of all results after wave execution completes
             - Caller is responsible for logging and handling returned errors
             - wave_context provides read-only access to prior wave outputs
         """
@@ -1095,7 +1098,8 @@ async def _execute_parallel(
             break
 
         # Build workflow context for this wave from prior wave outputs
-        # Steps in the same wave cannot see each other's outputs (they run in parallel)
+        # Steps in the same wave cannot see each other's outputs (logically parallel,
+        # executed sequentially in v1.0 per Fix 57)
         wave_context = _build_workflow_context(
             workflow_id, completed_step_ids, step_outputs
         )
