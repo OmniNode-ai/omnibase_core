@@ -1,11 +1,6 @@
-from collections.abc import Callable
-from typing import Any, cast
-
-from pydantic import Field
-
-from omnibase_core.errors import OnexError
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
 """
 Unified Event Bus Mixin for ONEX Nodes
 
@@ -16,31 +11,52 @@ Provides comprehensive event bus capabilities including:
 - ONEX standards compliance
 - Error handling and logging
 
-This mixin replaces and unifies MixinEventListener and MixinEventBusCompletion.
+This mixin uses composition with ModelEventBusRuntimeState and
+ModelEventBusListenerHandle for state management, avoiding BaseModel
+inheritance to prevent MRO conflicts in multi-inheritance scenarios.
+
+Thread Safety:
+    This mixin is NOT thread-safe. Each node instance should have its own
+    mixin instance. Do not share instances across threads without external
+    synchronization.
 """
 
 import threading
 import uuid
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Generic, TypeVar, cast
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, StrictStr, ValidationError
+# Generic type parameters for typed event processing
+InputStateT = TypeVar("InputStateT")
+OutputStateT = TypeVar("OutputStateT")
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
+from omnibase_core.errors import OnexError
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.events.model_topic_naming import (
     validate_message_topic_alignment,
 )
-from omnibase_core.protocols import ProtocolEventEnvelope
-
-# Local imports from extracted classes
 from omnibase_core.models.mixins.model_completion_data import ModelCompletionData
 from omnibase_core.models.mixins.model_log_data import ModelLogData
+from omnibase_core.protocols import ProtocolEventEnvelope
+from omnibase_core.protocols.event_bus import (
+    ProtocolEventBus,
+    ProtocolEventBusRegistry,
+)
+
+if TYPE_CHECKING:
+    from omnibase_core.models.event_bus import (
+        ModelEventBusListenerHandle,
+        ModelEventBusRuntimeState,
+    )
 
 
-class MixinEventBus[InputStateT, OutputStateT](BaseModel):
+class MixinEventBus(Generic[InputStateT, OutputStateT]):
     """
     Unified mixin for all event bus operations in ONEX nodes.
 
@@ -50,138 +66,128 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
     - ONEX standards compliance (no dictionaries, proper models)
     - Protocol-based polymorphism for event bus access
     - Error handling and structured logging
+    - Type-safe event processing via generic type parameters
+
+    Design:
+    - NO BaseModel inheritance (avoids MRO conflicts)
+    - NO __init__ method (uses lazy state accessors)
+    - Explicit binding required before publishing (fail-fast)
+    - Composition with ModelEventBusRuntimeState and ModelEventBusListenerHandle
+    - Generic[InputStateT, OutputStateT] for type-safe event processing
+
+    Type Parameters:
+        InputStateT: The type of input state for event processing
+        OutputStateT: The type of output state returned from processing
+
+    Usage:
+        class MyNode(MixinEventBus[MyInputState, MyOutputState], SomeOtherBase):
+            def __init__(self, event_bus: ProtocolEventBus):
+                super().__init__()
+                self.bind_event_bus(event_bus)
+
+            def process(self, input_state: MyInputState) -> MyOutputState:
+                # Type-safe processing
+                return MyOutputState(...)
     """
 
-    model_config = ConfigDict(
-        extra="forbid",  # Strict validation, no extra fields
-        arbitrary_types_allowed=True,  # Allow threading objects
-    )
+    # --- Lazy State Accessors (avoid MRO hazards) ---
 
-    # Fields following ONEX naming conventions (node_name computed if empty)
-    node_name: StrictStr = Field(
-        default="",  # Computed in model_post_init if empty
-        description="Name of this node",
-    )
-    registry: object | None = Field(
-        default=None,
-        description="Registry with event bus access",
-    )
-    event_bus: object | None = Field(
-        default=None,
-        description="Direct event bus reference",
-    )
-    contract_path: StrictStr | None = Field(
-        default=None,
-        description="Path to contract file",
-    )
+    @property
+    def _event_bus_runtime_state(self) -> "ModelEventBusRuntimeState":
+        """Lazy accessor for runtime state - creates on first access."""
+        from omnibase_core.models.event_bus import ModelEventBusRuntimeState
 
-    # Private fields for event listening (excluded from serialization)
-    event_listener_thread: threading.Thread | None = Field(
-        default=None,
-        exclude=True,
-    )
-    stop_event: threading.Event | None = Field(default=None, exclude=True)
-    event_subscriptions: list[object] = Field(default_factory=list, exclude=True)
+        attr_name = "_mixin_event_bus_state"
+        if not hasattr(self, attr_name):
+            state = ModelEventBusRuntimeState.create_unbound()
+            object.__setattr__(self, attr_name, state)
+        return cast(ModelEventBusRuntimeState, object.__getattribute__(self, attr_name))
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    @property
+    def _event_bus_listener_handle(self) -> "ModelEventBusListenerHandle | None":
+        """Lazy accessor for listener handle - may be None if never started."""
+        from omnibase_core.models.event_bus import ModelEventBusListenerHandle
+
+        attr_name = "_mixin_event_bus_listener"
+        if not hasattr(self, attr_name):
+            return None
+        return cast(
+            ModelEventBusListenerHandle | None,
+            object.__getattribute__(self, attr_name),
+        )
+
+    # --- Explicit Binding Methods ---
+
+    def bind_event_bus(self, event_bus: ProtocolEventBus) -> None:
+        """Explicitly bind an event bus. Required before publishing.
+
+        Args:
+            event_bus: The event bus instance to bind.
         """
-        Initialize MixinEventBus with proper BaseModel initialization.
-
-        This ensures __pydantic_extra__ is properly initialized before
-        other mixins try to set attributes. Accepts both positional args
-        (from MRO chain) and keyword args (for BaseModel fields).
-
-        Note: We need to handle the case where this mixin is used in classes
-        that inherit from both BaseModel (via this mixin) and non-Pydantic
-        classes (like NodeCoreBase). We use object.__setattr__() to bypass
-        Pydantic validation for fields that will be set by parent classes.
-        """
-        # Default node_name if not provided
-        if "node_name" not in kwargs:
-            kwargs["node_name"] = "UnknownNode"
-
-        # Initialize BaseModel's internal state manually to avoid validation errors
-        # for fields that are set by other parent classes (like NodeCoreBase)
-        try:
-            # Try normal initialization first
-            super().__init__(**kwargs)
-        except ValidationError:
-            # If Pydantic validation fails (due to required fields from non-Pydantic parents),
-            # initialize BaseModel's internals manually and let parent __init__ set fields
-            emit_log_event(
-                LogLevel.DEBUG,
-                "Using fallback initialization for MixinEventBus due to mixed Pydantic/non-Pydantic inheritance",
-                {"node_name": kwargs.get("node_name", "UnknownNode")},
-            )
-            object.__setattr__(self, "__pydantic_extra__", {})
-            object.__setattr__(self, "__pydantic_fields_set__", set())
-            object.__setattr__(self, "__pydantic_private__", {})
-
-            # Set our own fields
-            for field_name, field_value in kwargs.items():
-                object.__setattr__(self, field_name, field_value)
-
-            # Call next in MRO (skip BaseModel validation)
-            # Find the next class after BaseModel in MRO
-            mro = type(self).__mro__
-            for i, cls in enumerate(mro):
-                if cls is MixinEventBus:
-                    # Skip to class after MixinMetrics (next non-Pydantic class)
-                    for j in range(i + 1, len(mro)):
-                        if hasattr(mro[j], "__init__") and mro[j] is not BaseModel:
-                            # Call the next __init__ in chain if it exists
-                            if mro[j].__init__ is not object.__init__:  # type: ignore[misc]
-                                mro[j].__init__(self, *args, **kwargs)  # type: ignore[misc]
-                            break
-                    break
-
-    def model_post_init(self, __context: Any) -> None:
-        """Initialize threading objects after Pydantic validation."""
-        # Compute node_name from class name if not provided or empty
-        if not self.node_name or self.node_name == "UnknownNode":
-            object.__setattr__(self, "node_name", self.__class__.__name__)
-
-        self.event_listener_thread = None
-        self.stop_event = threading.Event()
-        self.event_subscriptions = []
+        object.__setattr__(self, "_bound_event_bus", event_bus)
+        self._event_bus_runtime_state.is_bound = True
 
         emit_log_event(
             LogLevel.DEBUG,
-            "🏗️ MIXIN_INIT: Initializing unified MixinEventBus",
-            ModelLogData(node_name=self.node_name),
+            "MIXIN_BIND: Event bus bound to mixin",
+            ModelLogData(node_name=self.get_node_name()),
         )
 
-        # Auto-start listener if event bus is available after full initialization
-        if self._has_event_bus():
-            timer = threading.Timer(0.1, self._auto_start_listener)
-            timer.daemon = True
-            timer.start()
+    def bind_registry(self, registry: ProtocolEventBusRegistry) -> None:
+        """Bind a registry that has event_bus access.
 
-    # --- Node Interface Methods (to be overridden by subclasses) ------------
-
-    def get_node_name(self) -> str:
-        """Get the name of this node."""
-        return self.node_name
-
-    def get_node_id(self) -> UUID:
-        """Get the UUID for this node (derived from node name)."""
-        # Try to get actual node_id if available, otherwise generate from name
-        if hasattr(self, "_node_id") and isinstance(self._node_id, UUID):
-            return self._node_id
-        # Generate deterministic UUID from node name using standard uuid5
-        # Uses DNS namespace as a well-known namespace for name-based UUIDs
-        return uuid.uuid5(uuid.NAMESPACE_DNS, self.node_name)
-
-    def process(self, input_state: InputStateT) -> OutputStateT:
+        Args:
+            registry: A registry implementing ProtocolEventBusRegistry.
         """
-        Process input state and return output state.
+        object.__setattr__(self, "_bound_registry", registry)
+        if registry.event_bus is not None:
+            self._event_bus_runtime_state.is_bound = True
 
-        Default implementation - override in subclasses for actual processing.
+        emit_log_event(
+            LogLevel.DEBUG,
+            "MIXIN_BIND: Registry bound to mixin",
+            ModelLogData(node_name=self.get_node_name()),
+        )
+
+    def bind_contract_path(self, contract_path: str) -> None:
+        """Bind contract path for event patterns.
+
+        Args:
+            contract_path: Path to the contract YAML file.
         """
-        msg = "Subclasses must implement process method"
-        raise NotImplementedError(msg)  # stub-ok: abstract method
+        self._event_bus_runtime_state.contract_path = contract_path
 
-    # --- Event Bus Access (Protocol-based) ----------------------------------
+    def bind_node_name(self, node_name: str) -> None:
+        """Bind the node name for event publishing.
+
+        Args:
+            node_name: The name of this node.
+        """
+        self._event_bus_runtime_state.node_name = node_name
+
+    # --- Fail-Fast Event Bus Access ---
+
+    def _require_event_bus(self) -> Any:
+        """Get event bus or raise RuntimeError if not bound.
+
+        Note:
+            Returns Any because event bus implementations use duck-typing.
+            The protocol types (ProtocolEventBus, etc.) are used for binding,
+            but runtime behavior relies on hasattr checks for method availability.
+
+        Returns:
+            The bound event bus instance.
+
+        Raises:
+            RuntimeError: If no event bus is bound.
+        """
+        bus = self._get_event_bus()
+        if bus is None:
+            raise RuntimeError(
+                f"Event bus not bound on {self.__class__.__name__}. "
+                "Call bind_event_bus() or bind_registry() before publishing."
+            )
+        return bus
 
     def _get_event_bus(self) -> Any:
         """
@@ -189,16 +195,67 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
 
         Note: Returns Any because event bus implementations use duck-typing
         and don't conform to a single protocol interface.
+
+        Returns:
+            The event bus instance or None if not bound.
         """
-        # Try registry first
-        if hasattr(self, "registry") and hasattr(self.registry, "event_bus"):
-            return getattr(self.registry, "event_bus", None)
-        # Fall back to direct event_bus attribute
-        return getattr(self, "event_bus", None)
+        # Try direct event_bus binding first
+        if hasattr(self, "_bound_event_bus"):
+            bus = object.__getattribute__(self, "_bound_event_bus")
+            if bus is not None:
+                return bus
+
+        # Try registry binding
+        if hasattr(self, "_bound_registry"):
+            registry = object.__getattribute__(self, "_bound_registry")
+            if hasattr(registry, "event_bus"):
+                return getattr(registry, "event_bus", None)
+
+        return None
 
     def _has_event_bus(self) -> bool:
         """Check if event bus is available."""
         return self._get_event_bus() is not None
+
+    # --- Node Interface Methods (to be overridden by subclasses) ---
+
+    def get_node_name(self) -> str:
+        """Get the name of this node."""
+        state = self._event_bus_runtime_state
+        if state.node_name:
+            return state.node_name
+        return self.__class__.__name__
+
+    def get_node_id(self) -> UUID:
+        """Get the UUID for this node (derived from node name)."""
+        # Try to get actual node_id if available, otherwise generate from name
+        if hasattr(self, "_node_id") and isinstance(
+            object.__getattribute__(self, "_node_id"), UUID
+        ):
+            return cast(UUID, object.__getattribute__(self, "_node_id"))
+        # Generate deterministic UUID from node name using standard uuid5
+        # Uses DNS namespace as a well-known namespace for name-based UUIDs
+        return uuid.uuid5(uuid.NAMESPACE_DNS, self.get_node_name())
+
+    def process(self, input_state: InputStateT) -> OutputStateT:
+        """
+        Process input state and return output state.
+
+        Default implementation - override in subclasses for actual processing.
+
+        Args:
+            input_state: The typed input state to process.
+
+        Returns:
+            The typed output state after processing.
+
+        Raises:
+            NotImplementedError: If not overridden in subclass.
+        """
+        msg = "Subclasses must implement process method"
+        raise NotImplementedError(msg)  # stub-ok: abstract method
+
+    # --- Topic Validation ---
 
     def _validate_topic_alignment(
         self,
@@ -224,8 +281,6 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
             >>> self._validate_topic_alignment("dev.user.events.v1", envelope)  # OK
             >>> self._validate_topic_alignment("dev.user.commands.v1", envelope)  # Raises
         """
-        # Import here to avoid circular imports at module level
-
         # Only validate if envelope has message_category property
         if not hasattr(envelope, "message_category"):
             self._log_warn(
@@ -242,7 +297,7 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
         )
         validate_message_topic_alignment(topic, message_category, message_type_name)
 
-    # --- Event Completion Publishing ----------------------------------------
+    # --- Event Completion Publishing ---
 
     async def publish_event(
         self,
@@ -259,14 +314,11 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
             event_type: Type of event to publish
             payload: Event payload data (ModelOnexEvent or None for a new event)
             correlation_id: Optional correlation ID for tracking
+
+        Raises:
+            RuntimeError: If event bus is not bound.
         """
-        bus = self._get_event_bus()
-        if bus is None:
-            self._log_warn(
-                "No event bus available for event publishing",
-                pattern="event_bus.missing",
-            )
-            return
+        bus = self._require_event_bus()
 
         try:
             # Build event using ModelOnexEvent or use provided payload
@@ -301,6 +353,8 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
 
             self._log_info(f"Published event: {event_type}", event_type)
 
+        except RuntimeError:
+            raise  # Re-raise RuntimeError from _require_event_bus
         except Exception as e:
             self._log_error(
                 f"Failed to publish event: {e!r}",
@@ -319,14 +373,11 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
         Args:
             event_type: Event type string (e.g., "generation.health.complete")
             data: Completion data model
+
+        Raises:
+            RuntimeError: If event bus is not bound.
         """
-        bus = self._get_event_bus()
-        if bus is None:
-            self._log_warn(
-                "No event bus available in registry for completion event",
-                pattern="event_bus.missing",
-            )
-            return
+        bus = self._require_event_bus()
 
         # Check if bus is async-only (has async methods but not sync methods)
         has_async = hasattr(bus, "apublish") or hasattr(bus, "apublish_async")
@@ -355,6 +406,8 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
                     context={"bus_type": type(bus).__name__, "event_type": event_type},
                 )
             self._log_info(f"Published completion event: {event_type}", event_type)
+        except RuntimeError:
+            raise  # Re-raise RuntimeError from _require_event_bus
         except Exception as e:
             self._log_error(
                 f"Failed to publish completion event: {e!r}",
@@ -375,14 +428,11 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
         Args:
             event_type: Event type string (e.g., "generation.health.complete")
             data: Completion data model
+
+        Raises:
+            RuntimeError: If event bus is not bound.
         """
-        bus = self._get_event_bus()
-        if bus is None:
-            self._log_warn(
-                "No event bus available in registry for completion event",
-                pattern="event_bus.missing",
-            )
-            return
+        bus = self._require_event_bus()
 
         try:
             event = self._build_event(event_type, data)
@@ -413,6 +463,8 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
 
             self._log_info(f"Published completion event: {event_type}", event_type)
 
+        except RuntimeError:
+            raise  # Re-raise RuntimeError from _require_event_bus
         except Exception as e:
             self._log_error(
                 f"Failed to publish completion event: {e!r}",
@@ -435,7 +487,7 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
             **event_kwargs,
         )
 
-    # --- Event Listening and Subscription -----------------------------------
+    # --- Event Listening and Subscription ---
 
     def get_event_patterns(self) -> list[str]:
         """
@@ -445,7 +497,7 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
         Override in subclasses for custom patterns.
         """
         try:
-            contract_path = getattr(self, "contract_path", None)
+            contract_path = self._event_bus_runtime_state.contract_path
             if not contract_path:
                 self._log_warn(
                     "No contract_path found, cannot determine event patterns",
@@ -524,41 +576,70 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
                 error_code=EnumCoreErrorCode.VALIDATION_FAILED,
             ) from e
 
-    def start_event_listener(self) -> None:
-        """Start the event listener thread."""
-        if not self._has_event_bus():
-            self._log_warn(
-                "Cannot start event listener: no event bus available",
-                "event_listener",
-            )
-            return
+    def start_event_listener(self) -> "ModelEventBusListenerHandle":
+        """Start event listener. Returns handle for lifecycle management.
 
-        if self.event_listener_thread and self.event_listener_thread.is_alive():
+        Idempotent - returns existing handle if already running.
+
+        Returns:
+            Handle for managing the listener lifecycle.
+
+        Raises:
+            RuntimeError: If no event bus is available.
+        """
+        from omnibase_core.models.event_bus import ModelEventBusListenerHandle
+
+        # Return existing handle if already running
+        existing = self._event_bus_listener_handle
+        if existing is not None and existing.is_active():
             self._log_warn("Event listener already running", "event_listener")
-            return
+            return existing
 
-        if self.stop_event is not None:
-            self.stop_event.clear()
-        self.event_listener_thread = threading.Thread(
+        if not self._has_event_bus():
+            raise RuntimeError(
+                f"Cannot start event listener on {self.__class__.__name__}: "
+                "no event bus available. Call bind_event_bus() or bind_registry() first."
+            )
+
+        # Create new handle
+        handle = ModelEventBusListenerHandle(
+            stop_event=threading.Event(),
+            is_running=True,
+        )
+
+        # Create and start thread
+        handle.listener_thread = threading.Thread(
             target=self._event_listener_loop,
+            args=(handle,),
             daemon=True,
             name=f"EventListener-{self.get_node_name()}",
         )
-        self.event_listener_thread.start()
+        handle.listener_thread.start()
+
+        # Store handle
+        object.__setattr__(self, "_mixin_event_bus_listener", handle)
 
         self._log_info("Event listener started", "event_listener")
+        return handle
 
-    def stop_event_listener(self) -> None:
-        """Stop the event listener thread."""
-        if not self.event_listener_thread:
-            return
+    def stop_event_listener(
+        self, handle: "ModelEventBusListenerHandle | None" = None
+    ) -> bool:
+        """Stop event listener. Safe to call multiple times.
 
-        if self.stop_event is not None:
-            self.stop_event.set()
+        Args:
+            handle: Optional handle. If None, stops current listener.
+
+        Returns:
+            True if stopped cleanly, False if timeout or no listener.
+        """
+        target = handle or self._event_bus_listener_handle
+        if target is None:
+            return True  # Nothing to stop
 
         # Unsubscribe from all events - fail fast if bus doesn't support unsubscribe
         bus = self._get_event_bus()
-        if bus:
+        if bus and target.subscriptions:
             if not hasattr(bus, "unsubscribe"):
                 raise OnexError(
                     message="Event bus does not support 'unsubscribe' method",
@@ -566,7 +647,7 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
                     context={"bus_type": type(bus).__name__},
                 )
 
-            for subscription in self.event_subscriptions:
+            for subscription in target.subscriptions:
                 try:
                     bus.unsubscribe(subscription)
                 except Exception as e:
@@ -576,27 +657,42 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
                         error=e,
                     )
 
-        self.event_subscriptions.clear()
-
-        if self.event_listener_thread.is_alive():
-            self.event_listener_thread.join(timeout=5.0)
-
+        result = target.stop()
         self._log_info("Event listener stopped", "event_listener")
+        return result
 
-    def _auto_start_listener(self) -> None:
-        """Auto-start listener after initialization delay."""
-        try:
-            if self._has_event_bus():
-                self.start_event_listener()
-        except Exception as e:
-            self._log_error(
-                f"Failed to auto-start listener: {e!r}",
-                "auto_start",
-                error=e,
-            )
+    def dispose_event_bus_resources(self) -> None:
+        """Clean up all event bus resources. Call on shutdown."""
+        handle = self._event_bus_listener_handle
+        if handle is not None:
+            handle.stop()
 
-    def _event_listener_loop(self) -> None:
-        """Main event listener loop."""
+        # Clear bindings
+        for attr in (
+            "_bound_event_bus",
+            "_bound_registry",
+            "_mixin_event_bus_listener",
+        ):
+            if hasattr(self, attr):
+                try:
+                    object.__delattr__(self, attr)
+                except AttributeError:
+                    pass  # Already deleted
+
+        self._event_bus_runtime_state.reset()
+
+        emit_log_event(
+            LogLevel.DEBUG,
+            "MIXIN_DISPOSE: Event bus resources disposed",
+            ModelLogData(node_name=self.get_node_name()),
+        )
+
+    def _event_listener_loop(self, handle: "ModelEventBusListenerHandle") -> None:
+        """Main event listener loop.
+
+        Args:
+            handle: The listener handle for this loop.
+        """
         try:
             patterns = self.get_event_patterns()
             if not patterns:
@@ -624,9 +720,9 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
             # Subscribe to all patterns
             for pattern in patterns:
                 try:
-                    handler = self._create_event_handler(pattern)
-                    subscription = bus.subscribe(handler, event_type=pattern)
-                    self.event_subscriptions.append(subscription)
+                    event_handler = self._create_event_handler(pattern)
+                    subscription = bus.subscribe(event_handler, event_type=pattern)
+                    handle.subscriptions.append(subscription)
                     self._log_info(f"Subscribed to pattern: {pattern}", pattern)
                 except Exception as e:
                     self._log_error(
@@ -636,7 +732,7 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
                     )
 
             # Keep thread alive
-            while self.stop_event is not None and not self.stop_event.wait(1.0):
+            while handle.stop_event is not None and not handle.stop_event.wait(1.0):
                 pass
 
         except Exception as e:
@@ -725,7 +821,17 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
         return handler
 
     def _event_to_input_state(self, event: ModelOnexEvent) -> InputStateT:
-        """Convert ModelOnexEvent to input state for processing."""
+        """Convert ModelOnexEvent to typed input state for processing.
+
+        Args:
+            event: The incoming event to convert.
+
+        Returns:
+            The typed input state extracted from the event.
+
+        Raises:
+            ModelOnexError: If input state class cannot be determined.
+        """
         try:
             input_state_class = self._get_input_state_class()
             if not input_state_class:
@@ -746,11 +852,10 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
 
             # Try to create input state from event data
             if hasattr(input_state_class, "from_event"):
-                result = input_state_class.from_event(event)
-                return cast("InputStateT", result)
+                result: InputStateT = input_state_class.from_event(event)
+                return result
             # Create from event data directly
-            result = input_state_class(**event_data)
-            return cast("InputStateT", result)
+            return cast(InputStateT, input_state_class(**event_data))
 
         except Exception as e:
             self._log_error(
@@ -781,7 +886,7 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
                 },
             ) from e
 
-    # --- Logging Helpers -----------------------------------------------------
+    # --- Logging Helpers ---
 
     def _log_info(self, msg: str, pattern: str) -> None:
         """Log info message with pattern."""

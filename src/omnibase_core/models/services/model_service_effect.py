@@ -57,25 +57,12 @@ from omnibase_core.mixins.mixin_node_service import MixinNodeService
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.nodes.node_effect import NodeEffect
 
-# Type aliases for MixinEventBus generic parameters
-# These use Any for flexibility in the base ModelServiceEffect class.
-# Concrete implementations SHOULD override with specific state types for type safety.
-#
-# Example override in subclass:
-#   from omnibase_core.models.state.model_database_state import ModelDatabaseState
-#   ServiceInputState = ModelDatabaseState
-#   ServiceOutputState = ModelDatabaseState
-#
-# This provides type checking for event payloads while keeping the base class flexible.
-ServiceInputState = Any
-ServiceOutputState = Any
 
-
-class ModelServiceEffect(  # type: ignore[misc]
+class ModelServiceEffect(  # type: ignore[misc]  # MRO method signature conflicts between mixins
     MixinNodeService,
     NodeEffect,
     MixinHealthCheck,
-    MixinEventBus[ServiceInputState, ServiceOutputState],
+    MixinEventBus[Any, Any],
     MixinMetrics,
 ):
     """
@@ -125,9 +112,14 @@ class ModelServiceEffect(  # type: ignore[misc]
         to allow cleanup of any event subscriptions or handlers. Override this
         method in subclasses to add custom cleanup logic.
 
-        Default implementation does nothing as MixinEventBus manages its own
-        event subscriptions internally.
+        Calls dispose_event_bus_resources() to clean up MixinEventBus state
+        if available, otherwise falls back to stop_event_listener().
         """
-        # Default implementation - no cleanup needed as MixinEventBus manages itself
+        # Dispose event bus resources (threads, subscriptions, etc.)
+        # Use new dispose method if available (refactored MixinEventBus),
+        # otherwise fall back to legacy stop_event_listener
+        if hasattr(self, "dispose_event_bus_resources"):
+            self.dispose_event_bus_resources()
+        elif hasattr(self, "stop_event_listener"):
+            self.stop_event_listener()
         # Subclasses can override this to add custom event handler cleanup
-        return
