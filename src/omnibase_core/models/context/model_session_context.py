@@ -135,19 +135,15 @@ class ModelSessionContext(BaseModel):
     def normalize_authentication_method(
         cls, v: EnumAuthenticationMethod | str | None
     ) -> EnumAuthenticationMethod | str | None:
-        """Validate and normalize authentication method to enum.
-
-        Uses flexible normalization: accepts enum values directly or
-        string representations. Valid strings are converted to enum, unknown
-        strings are preserved as-is for flexible input handling.
+        """Normalize authentication method from string or enum input.
 
         Args:
             v: The authentication method value, either as EnumAuthenticationMethod,
                string, or None.
 
         Returns:
-            The normalized EnumAuthenticationMethod value, None, or the original
-            string if no match found.
+            The normalized value - EnumAuthenticationMethod if valid enum value,
+            otherwise the original string for extensibility.
         """
         return create_enum_normalizer(EnumAuthenticationMethod)(v)
 

@@ -13,7 +13,7 @@ Thread Safety:
 
 See Also:
     - ModelRetryContext: For retry-specific metadata
-    - ModelOperationalErrorContext: For operational error tracking
+    - ModelErrorMetadata: For structured error metadata with retry support
 """
 
 import re
@@ -23,7 +23,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 # Pattern for error codes: CATEGORY_NNN format (e.g., AUTH_001, VALIDATION_123)
 #
 # NOTE: This pattern is intentionally duplicated in:
-#   1. omnibase_core.models.context.model_operational_error_context.ERROR_CODE_PATTERN
+#   1. omnibase_core.models.context.model_error_metadata.ERROR_CODE_PATTERN
 #   2. omnibase_core.validation.validators.common_validators.ERROR_CODE_PATTERN
 #
 # The duplication is required to avoid circular imports. The import chain is:
@@ -93,7 +93,7 @@ class ModelErrorContext(BaseModel):
 
     See Also:
         - ModelRetryContext: For retry-specific metadata
-        - ModelOperationalErrorContext: For operational error tracking
+        - ModelErrorMetadata: For structured error metadata with retry support
     """
 
     model_config = ConfigDict(frozen=True, from_attributes=True, extra="forbid")

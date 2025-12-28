@@ -30,7 +30,8 @@ Design Patterns:
 Related:
     - OMN-228: EnvelopeRouter implementation
     - OMN-226: ProtocolHandler protocol
-    - OMN-227: RuntimeNodeInstance wrapper
+    - OMN-227: ModelRuntimeNodeInstance wrapper
+    - OMN-1067: Move RuntimeNodeInstance to models/runtime/
 
 .. versionadded:: 0.4.0
 """
@@ -54,8 +55,10 @@ from omnibase_core.runtime.protocol_node_runtime import ProtocolNodeRuntime
 from omnibase_core.types.typed_dict_routing_info import TypedDictRoutingInfo
 
 if TYPE_CHECKING:
+    from omnibase_core.models.runtime.model_runtime_node_instance import (
+        ModelRuntimeNodeInstance,
+    )
     from omnibase_core.protocols.runtime.protocol_handler import ProtocolHandler
-    from omnibase_core.runtime.runtime_node_instance import RuntimeNodeInstance
 
 logger = logging.getLogger(__name__)
 
@@ -300,7 +303,7 @@ class EnvelopeRouter(ProtocolNodeRuntime):
 
         .. code-block:: python
 
-            from omnibase_core.runtime import EnvelopeRouter, RuntimeNodeInstance
+            from omnibase_core.runtime import EnvelopeRouter, ModelRuntimeNodeInstance
 
             runtime = EnvelopeRouter()
             runtime.register_handler(http_handler)
@@ -308,12 +311,12 @@ class EnvelopeRouter(ProtocolNodeRuntime):
 
             response = await runtime.execute_with_handler(envelope, my_node_instance)
 
-    Integration Example (EnvelopeRouter + RuntimeNodeInstance):
+    Integration Example (EnvelopeRouter + ModelRuntimeNodeInstance):
         Complete workflow showing handler registration, node setup, and execution:
 
         .. code-block:: python
 
-            from omnibase_core.runtime import EnvelopeRouter, RuntimeNodeInstance
+            from omnibase_core.runtime import EnvelopeRouter, ModelRuntimeNodeInstance
             from omnibase_core.enums import EnumNodeType, EnumHandlerType
             from omnibase_core.models.core.model_onex_envelope import ModelOnexEnvelope
 
@@ -323,7 +326,7 @@ class EnvelopeRouter(ProtocolNodeRuntime):
             router.register_handler(db_handler)     # handler_type=DATABASE
 
             # 2. Create and register node instance
-            instance = RuntimeNodeInstance(
+            instance = ModelRuntimeNodeInstance(
                 slug="my-compute-node",
                 node_type=EnumNodeType.COMPUTE_GENERIC,
                 contract=my_contract,
@@ -378,7 +381,7 @@ class EnvelopeRouter(ProtocolNodeRuntime):
     See Also:
         - :class:`~omnibase_core.protocols.runtime.protocol_handler.ProtocolHandler`:
           Protocol for handler implementations
-        - :class:`~omnibase_core.runtime.runtime_node_instance.RuntimeNodeInstance`:
+        - :class:`~omnibase_core.models.runtime.model_runtime_node_instance.ModelRuntimeNodeInstance`:
           Node instance wrapper
         - :doc:`/docs/guides/THREADING`: Comprehensive thread safety guidelines
           including production checklists, synchronization patterns, and the
@@ -407,7 +410,7 @@ class EnvelopeRouter(ProtocolNodeRuntime):
             registries during the registration phase.
         """
         self._handlers: dict[EnumHandlerType, ProtocolHandler] = {}
-        self._nodes: dict[str, RuntimeNodeInstance] = {}
+        self._nodes: dict[str, ModelRuntimeNodeInstance] = {}
         self._frozen: bool = False
         # Lock protects registration methods to ensure atomic frozen check + modify
         self._registration_lock: threading.Lock = threading.Lock()
@@ -545,7 +548,7 @@ class EnvelopeRouter(ProtocolNodeRuntime):
             self._handlers[handler_type] = handler
 
     @standard_error_handling("Node registration")
-    def register_node(self, node: RuntimeNodeInstance) -> None:
+    def register_node(self, node: ModelRuntimeNodeInstance) -> None:
         """
         Register a node instance by its slug.
 
@@ -553,7 +556,7 @@ class EnvelopeRouter(ProtocolNodeRuntime):
         duplicate slug registration raises an error (slugs must be unique).
 
         Args:
-            node: A RuntimeNodeInstance with a unique slug.
+            node: A ModelRuntimeNodeInstance with a unique slug.
 
         Raises:
             ModelOnexError: If the router is frozen (INVALID_STATE).
@@ -584,7 +587,7 @@ class EnvelopeRouter(ProtocolNodeRuntime):
         # Validate node outside lock - no state mutation here
         if node is None:
             raise ModelOnexError(
-                message="Cannot register None node. RuntimeNodeInstance is required.",
+                message="Cannot register None node. ModelRuntimeNodeInstance is required.",
                 error_code=EnumCoreErrorCode.INVALID_PARAMETER,
             )
 
@@ -798,7 +801,7 @@ class EnvelopeRouter(ProtocolNodeRuntime):
     async def execute_with_handler(
         self,
         envelope: ModelOnexEnvelope,
-        instance: RuntimeNodeInstance,
+        instance: ModelRuntimeNodeInstance,
     ) -> ModelOnexEnvelope:
         """
         Execute the handler for the given envelope and instance.
@@ -842,7 +845,7 @@ class EnvelopeRouter(ProtocolNodeRuntime):
 
         Args:
             envelope: The input envelope to process. Must have handler_type set.
-            instance: The RuntimeNodeInstance receiving this envelope.
+            instance: The ModelRuntimeNodeInstance receiving this envelope.
                 Provides context for execution (slug, contract, etc.).
 
         Returns:
@@ -908,7 +911,7 @@ class EnvelopeRouter(ProtocolNodeRuntime):
 
         if instance is None:
             raise ModelOnexError(
-                message="Cannot execute with None instance. RuntimeNodeInstance is required.",
+                message="Cannot execute with None instance. ModelRuntimeNodeInstance is required.",
                 error_code=EnumCoreErrorCode.INVALID_PARAMETER,
             )
 

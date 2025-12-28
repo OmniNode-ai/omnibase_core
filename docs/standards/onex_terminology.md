@@ -545,7 +545,7 @@ if projection is None:
 | Component | Description | Location |
 |-----------|-------------|----------|
 | `EnvelopeRouter` | Transport-agnostic orchestrator | `src/omnibase_core/runtime/envelope_router.py` |
-| `RuntimeNodeInstance` | Node instance wrapper | `src/omnibase_core/runtime/` |
+| `ModelRuntimeNodeInstance` | Node instance wrapper | `src/omnibase_core/models/runtime/model_runtime_node_instance.py` |
 | `ModelONEXContainer` | DI container for services | `src/omnibase_core/models/container/model_onex_container.py` |
 
 **Disambiguation**:

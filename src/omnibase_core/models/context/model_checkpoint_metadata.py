@@ -130,19 +130,15 @@ class ModelCheckpointMetadata(BaseModel):
     def normalize_checkpoint_type(
         cls, v: EnumCheckpointType | str | None
     ) -> EnumCheckpointType | str | None:
-        """Normalize and validate checkpoint type to EnumCheckpointType.
-
-        Uses flexible normalization: accepts enum values directly or
-        string representations. Valid strings are converted to enum, unknown
-        strings are preserved as-is for flexible input handling.
+        """Normalize checkpoint type from string or enum input.
 
         Args:
             v: The checkpoint type value, either as EnumCheckpointType,
                string, or None.
 
         Returns:
-            The EnumCheckpointType value, None, or the original string
-            if no match found.
+            The normalized value - EnumCheckpointType if valid enum value,
+            otherwise the original string for extensibility.
         """
         return create_enum_normalizer(EnumCheckpointType)(v)
 
@@ -151,18 +147,14 @@ class ModelCheckpointMetadata(BaseModel):
     def normalize_trigger_event(
         cls, v: EnumTriggerEvent | str | None
     ) -> EnumTriggerEvent | str | None:
-        """Normalize and validate trigger event to EnumTriggerEvent.
-
-        Uses flexible normalization: accepts enum values directly or
-        string representations. Valid strings are converted to enum, unknown
-        strings are preserved as-is for flexible input handling.
+        """Normalize trigger event from string or enum input.
 
         Args:
             v: The trigger event value, either as EnumTriggerEvent,
                string, or None.
 
         Returns:
-            The EnumTriggerEvent value, None, or the original string
-            if no match found.
+            The normalized value - EnumTriggerEvent if valid enum value,
+            otherwise the original string for extensibility.
         """
         return create_enum_normalizer(EnumTriggerEvent)(v)

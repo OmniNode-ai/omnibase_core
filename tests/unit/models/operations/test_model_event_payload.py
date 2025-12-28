@@ -44,7 +44,6 @@ class TestModelEventPayload:
 
     def test_user_event_creation(self):
         """Test creating user event payload."""
-        from uuid import UUID
 
         from omnibase_core.models.context import ModelSessionContext
 
@@ -52,7 +51,9 @@ class TestModelEventPayload:
         event_data = ModelUserEventData(
             event_type=EnumEventType.USER,
             user_action="login",
-            session_context=ModelSessionContext(session_id=session_uuid),
+            session_context=ModelSessionContext(
+                session_id="550e8400-e29b-41d4-a716-446655440000"
+            ),
         )
 
         payload = ModelEventPayload(
@@ -62,7 +63,10 @@ class TestModelEventPayload:
 
         assert payload.event_type == EnumEventType.USER
         assert payload.event_data.user_action == "login"
-        assert payload.event_data.session_context.session_id == UUID(session_uuid)
+        assert (
+            str(payload.event_data.session_context.session_id)
+            == "550e8400-e29b-41d4-a716-446655440000"
+        )
 
     def test_workflow_event_creation(self):
         """Test creating workflow event payload."""
@@ -226,7 +230,6 @@ class TestModelEventPayloadSerialization:
 
     def test_user_event_serialization(self):
         """Test JSON serialization of user event."""
-        from uuid import UUID
 
         from omnibase_core.models.common.model_request_metadata import (
             ModelRequestMetadata,
@@ -237,7 +240,9 @@ class TestModelEventPayloadSerialization:
         event_data = ModelUserEventData(
             event_type=EnumEventType.USER,
             user_action="password_reset",
-            session_context=ModelSessionContext(session_id=session_uuid),
+            session_context=ModelSessionContext(
+                session_id="550e8400-e29b-41d4-a716-446655440001"
+            ),
             request_metadata=ModelRequestMetadata(ip_address="192.168.1.1"),
         )
 
@@ -250,8 +255,9 @@ class TestModelEventPayloadSerialization:
 
         assert serialized["event_type"] == EnumEventType.USER
         assert serialized["event_data"]["user_action"] == "password_reset"
-        assert serialized["event_data"]["session_context"]["session_id"] == UUID(
-            session_uuid
+        assert (
+            str(serialized["event_data"]["session_context"]["session_id"])
+            == "550e8400-e29b-41d4-a716-446655440001"
         )
 
     def test_workflow_event_deserialization(self):
@@ -503,7 +509,7 @@ class TestModelEventPayloadUsagePatterns:
             event_type=EnumEventType.USER,
             user_action="authentication",
             session_context=ModelSessionContext(
-                session_id=session_uuid,
+                session_id="550e8400-e29b-41d4-a716-446655440002",
                 authentication_method="oauth2",
             ),
             request_metadata=ModelRequestMetadata(

@@ -16,14 +16,14 @@ from pydantic import ValidationError
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.structured import emit_log_event_sync
-from omnibase_core.mixins.mixin_node_introspection_data import (
-    MixinNodeIntrospectionData,
-)
 from omnibase_core.models.core.model_log_context import ModelLogContext
 from omnibase_core.models.discovery.model_node_introspection_event import (
     ModelNodeCapabilities,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.mixins.model_node_introspection_data import (
+    ModelNodeIntrospectionData,
+)
 
 _COMPONENT_NAME = Path(__file__).stem
 DEFAULT_AUTHOR = "ONEX"
@@ -119,12 +119,12 @@ class MixinIntrospectionPublisher:
             )
             raise
 
-    def _gather_introspection_data(self) -> MixinNodeIntrospectionData:
+    def _gather_introspection_data(self) -> ModelNodeIntrospectionData:
         """
         Gather introspection data for this node from various sources.
 
         Returns:
-            MixinNodeIntrospectionData: Strongly typed introspection data
+            ModelNodeIntrospectionData: Strongly typed introspection data
         """
         try:
             node_name = self._extract_node_name()
@@ -132,7 +132,7 @@ class MixinIntrospectionPublisher:
             capabilities = self._extract_node_capabilities()
             tags = self._generate_discovery_tags()
             health_endpoint = self._detect_health_endpoint()
-            return MixinNodeIntrospectionData(
+            return ModelNodeIntrospectionData(
                 node_name=node_name,
                 version=version,
                 capabilities=capabilities,
@@ -160,7 +160,7 @@ class MixinIntrospectionPublisher:
                 ModelNodeCapabilitiesMetadata,
             )
 
-            return MixinNodeIntrospectionData(
+            return ModelNodeIntrospectionData(
                 node_name=self.__class__.__name__.lower(),
                 version=ModelSemVer(major=1, minor=0, patch=0),
                 capabilities=ModelNodeCapabilities(

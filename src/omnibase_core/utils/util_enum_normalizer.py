@@ -7,7 +7,7 @@ This module provides a factory function to create enum normalizers that can be
 used with Pydantic's @field_validator decorator. The normalizer enables:
 1. Accepting both enum values and string representations
 2. Case-insensitive string matching
-3. Strict validation that rejects invalid enum values
+3. Graceful passthrough of unknown string values for extensibility
 
 This module is intentionally kept minimal with no omnibase_core dependencies
 to avoid circular imports when used in models.
@@ -22,17 +22,17 @@ from enum import Enum
 def create_enum_normalizer[E: Enum](
     enum_class: type[E],
 ) -> Callable[[E | str | None], E | str | None]:
-    """Create a Pydantic field validator for flexible enum normalization.
+    """Create a Pydantic field validator for enum normalization with flexible validation.
 
     This factory creates a validator function that can be used with Pydantic's
-    @field_validator decorator to normalize string values to enum members with
-    flexible string handling for unknown values.
+    @field_validator decorator to normalize string values to enum members while
+    allowing unknown values to pass through for extensibility.
 
     The created validator:
     1. Returns None if input is None
     2. Returns the enum member if input is already an enum instance
-    3. Converts string to enum (case-insensitive via .lower())
-    4. Returns the original string as-is if no match found (flexible handling)
+    3. Attempts to convert string to enum (case-insensitive via .lower())
+    4. Returns the original string if conversion fails (graceful passthrough)
 
     Args:
         enum_class: The enum class to normalize values to
@@ -62,10 +62,10 @@ def create_enum_normalizer[E: Enum](
         >>> m.status == Status.ACTIVE
         True
         >>>
-        >>> # Unknown string kept as-is (flexible handling)
-        >>> m2 = MyModel(status="unknown_status")
-        >>> m2.status == "unknown_status"
-        True
+        >>> # Unknown string passes through for extensibility
+        >>> m2 = MyModel(status="custom_status")
+        >>> m2.status
+        'custom_status'
 
     Ticket: OMN-1054
     """
@@ -85,7 +85,7 @@ def create_enum_normalizer[E: Enum](
         try:
             return enum_class(v.lower())
         except ValueError:
-            # Flexible handling: return the original string as-is
+            # Pass through unknown values for schema extensibility
             return v
 
     return normalize
