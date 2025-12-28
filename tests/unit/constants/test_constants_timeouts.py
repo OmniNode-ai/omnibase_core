@@ -565,7 +565,7 @@ class TestWebSocketTimeoutValues:
         )
 
         ten_seconds = 10.0
-        assert WEBSOCKET_PING_TIMEOUT_SECONDS == ten_seconds
+        assert ten_seconds == WEBSOCKET_PING_TIMEOUT_SECONDS
 
 
 @pytest.mark.unit
@@ -624,7 +624,7 @@ class TestDatabaseTimeoutValues:
         )
 
         thirty_seconds = 30.0
-        assert DATABASE_QUERY_TIMEOUT_SECONDS == thirty_seconds
+        assert thirty_seconds == DATABASE_QUERY_TIMEOUT_SECONDS
 
     def test_database_query_timeout_matches_http_timeout(self) -> None:
         """DATABASE_QUERY_TIMEOUT_SECONDS should equal HTTP_REQUEST_TIMEOUT_SECONDS.
@@ -698,14 +698,14 @@ class TestFileIOTimeoutValues:
         from omnibase_core.constants.constants_timeouts import FILE_IO_TIMEOUT_SECONDS
 
         sixty_seconds = 60.0
-        assert FILE_IO_TIMEOUT_SECONDS == sixty_seconds
+        assert sixty_seconds == FILE_IO_TIMEOUT_SECONDS
 
     def test_file_io_timeout_is_one_minute(self) -> None:
         """FILE_IO_TIMEOUT_SECONDS should represent 1 minute."""
         from omnibase_core.constants.constants_timeouts import FILE_IO_TIMEOUT_SECONDS
 
         one_minute_in_seconds = 1 * 60.0
-        assert FILE_IO_TIMEOUT_SECONDS == one_minute_in_seconds
+        assert one_minute_in_seconds == FILE_IO_TIMEOUT_SECONDS
 
     def test_file_io_timeout_greater_than_http_timeout(self) -> None:
         """FILE_IO_TIMEOUT_SECONDS should be greater than HTTP_REQUEST_TIMEOUT_SECONDS.
@@ -1004,7 +1004,7 @@ class TestTimeoutBoundaryConditions:
         )
 
         long_timeout_seconds = TIMEOUT_LONG_MS / 1000
-        assert FILE_IO_TIMEOUT_SECONDS < long_timeout_seconds
+        assert long_timeout_seconds > FILE_IO_TIMEOUT_SECONDS
 
     def test_thread_join_is_half_process_shutdown(self) -> None:
         """THREAD_JOIN_TIMEOUT_SECONDS should be half of PROCESS_SHUTDOWN_TIMEOUT_SECONDS.
