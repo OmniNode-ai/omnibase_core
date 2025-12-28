@@ -156,6 +156,83 @@ def test_workflow_processing():
 - [ ] Run tests to verify `pydantic.ValidationError` is not raised unexpectedly
 - [ ] Verify thread safety requirements are met (frozen models are now safe to share)
 
+#### Model Relocations and Naming Conventions [OMN-1067]
+
+Several model classes have been relocated from `mixins/` and `runtime/` to `models/` to follow ONEX file location conventions. Classes have been renamed from `Mixin*` to `Model*` prefix to reflect that they are Pydantic data models, not behavioral mixins.
+
+**Model Relocations**:
+
+| Old Location | New Location |
+|--------------|--------------|
+| `mixins/mixin_log_data.py` | `models/mixins/model_log_data.py` |
+| `mixins/mixin_node_introspection_data.py` | `models/mixins/model_node_introspection_data.py` |
+| `mixins/mixin_completion_data.py` | `models/mixins/model_completion_data.py` |
+| `runtime/runtime_node_instance.py` | `models/runtime/model_runtime_node_instance.py` |
+| `models/context/model_error_context.py` | `models/context/model_error_metadata.py` |
+
+**Class Renames**:
+
+| Old Name | New Name |
+|----------|----------|
+| `MixinLogData` | `ModelLogData` |
+| `MixinNodeIntrospectionData` | `ModelNodeIntrospectionData` |
+| `MixinCompletionData` | `ModelCompletionData` |
+| `RuntimeNodeInstance` | `ModelRuntimeNodeInstance` |
+| `ModelErrorContext` | `ModelErrorMetadata` |
+
+**Migration Guide**:
+
+```python
+# Before (v0.3.x)
+from omnibase_core.mixins import MixinLogData, MixinCompletionData
+from omnibase_core.runtime import RuntimeNodeInstance
+from omnibase_core.models.context import ModelErrorContext
+
+log_data = MixinLogData(...)
+completion = MixinCompletionData(...)
+node = RuntimeNodeInstance(...)
+error = ModelErrorContext(...)
+
+# After (v0.4.0+)
+from omnibase_core.models.mixins import ModelLogData, ModelCompletionData
+from omnibase_core.models.runtime import ModelRuntimeNodeInstance
+from omnibase_core.models.context import ModelErrorMetadata
+
+log_data = ModelLogData(...)
+completion = ModelCompletionData(...)
+node = ModelRuntimeNodeInstance(...)
+error = ModelErrorMetadata(...)
+```
+
+#### UUID Type Strengthening [OMN-1067]
+
+Several ID fields that were previously typed as `str` are now typed as `UUID`. Pydantic 2.11+ automatically coerces UUID strings to `UUID` objects, so string inputs are still accepted.
+
+**Affected Fields**:
+
+| Model | Field | Old Type | New Type |
+|-------|-------|----------|----------|
+| `ModelErrorMetadata` | `stack_trace_id` | `str \| None` | `UUID \| None` |
+| `ModelCheckpointMetadata` | `parent_checkpoint_id` | `str \| None` | `UUID \| None` |
+| `ModelSessionContext` | `session_id` | `str \| None` | `UUID \| None` |
+
+**Migration Guide**:
+
+```python
+# Both of these work - Pydantic auto-converts strings:
+metadata = ModelErrorMetadata(stack_trace_id="12345678-1234-5678-1234-567812345678")
+metadata = ModelErrorMetadata(stack_trace_id=UUID("12345678-1234-5678-1234-567812345678"))
+
+# Reading the field returns a UUID object:
+assert isinstance(metadata.stack_trace_id, UUID)  # True
+
+# For string comparisons, convert explicitly:
+if str(metadata.stack_trace_id) == expected_uuid_string:
+    ...
+```
+
+**Note**: Invalid UUID strings will now raise `ValidationError` during model construction rather than being accepted as arbitrary strings.
+
 #### Security: Deprecated MD5/SHA-1 Hash Algorithms [OMN-699]
 
 `ModelSessionAffinity` now deprecates MD5 and SHA-1 hash algorithms due to known cryptographic weaknesses. These algorithms are auto-converted to SHA-256 with a `DeprecationWarning`. **Support will be fully removed in v0.6.0.**

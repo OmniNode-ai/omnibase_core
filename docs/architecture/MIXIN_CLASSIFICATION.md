@@ -9,7 +9,9 @@
 
 **Quick Reference**: R = Runtime, H = Handler, D = Domain
 
-All 40 mixins in omnibase_core are classified into three categories based on their responsibilities:
+All mixins in omnibase_core are classified into three categories based on their responsibilities.
+
+> **Note**: The tables below include both behavioral mixins and supporting data models. Data models (prefixed with `Model` rather than `Mixin`) are Pydantic classes used by mixins but are not behavioral mixins themselves. They are included for completeness as they reside in `models/mixins/`.
 
 ### Runtime (R) - Infrastructure Concerns
 
@@ -51,12 +53,14 @@ Pure computation with no side effects or runtime dependencies.
 
 ## Classification Summary
 
-| Classification | Count | Percentage |
-|----------------|-------|------------|
-| **Runtime (R)** | 21 | 52.5% |
-| **Handler (H)** | 3 | 7.5% |
-| **Domain (D)** | 16 | 40% |
-| **Total** | 40 | 100% |
+| Classification | Mixins | Data Models | Total |
+|----------------|--------|-------------|-------|
+| **Runtime (R)** | 20 | 1 | 21 |
+| **Handler (H)** | 3 | 0 | 3 |
+| **Domain (D)** | 14 | 2 | 16 |
+| **Total** | **37** | **3** | **40** |
+
+> **Data Models in `models/mixins/`**: `ModelCompletionData` (R), `ModelLogData` (D), `ModelNodeIntrospectionData` (D)
 
 ---
 
@@ -65,7 +69,7 @@ Pure computation with no side effects or runtime dependencies.
 | # | Mixin Name | Purpose | Class | Target Location |
 |---|------------|---------|-------|-----------------|
 | 1 | `MixinCaching` | In-memory caching for node operations | R | `NodeRuntime.cache_service` |
-| 2 | `ModelCompletionData` | Tracks completion status/progress | R | `NodeRuntime.completion_tracker` |
+| 2 | `ModelCompletionData` | Tracks completion status/progress *(Data Model)* | R | `models/mixins/model_completion_data.py` |
 | 3 | `MixinLazyValue` | Lazy evaluation wrapper class | D | `utils/lazy.py` |
 | 4 | `MixinMetrics` | Prometheus-style metrics collection | R | `NodeRuntime.metrics_service` |
 | 5 | `MixinNodeSetup` | Standard node initialization | R | `NodeRuntime.__init__()` |
@@ -91,10 +95,10 @@ Pure computation with no side effects or runtime dependencies.
 | 25 | `MixinIntrospection` | Node introspection response | R | `NodeRuntime.introspection_service` |
 | 26 | `MixinIntrospectionPublisher` | Publish introspection events | R | `NodeRuntime.introspection_publisher` |
 | 27 | `MixinLazyEvaluation` | Lazy evaluation patterns | D | `utils/lazy.py` |
-| 28 | `ModelLogData` | Structured log data model | D | `models/mixins/model_log_data.py` |
+| 28 | `ModelLogData` | Structured log data model *(Data Model)* | D | `models/mixins/model_log_data.py` |
 | 29 | `MixinNodeExecutor` | Persistent executor mode | R | `NodeRuntime.executor_service` |
 | 30 | `MixinNodeIdFromContract` | Load node ID from contract | D | `utils/node_id.py` |
-| 31 | `ModelNodeIntrospectionData` | Introspection data container | D | `models/mixins/model_node_introspection_data.py` |
+| 31 | `ModelNodeIntrospectionData` | Introspection data container *(Data Model)* | D | `models/mixins/model_node_introspection_data.py` |
 | 32 | `MixinNodeLifecycle` | Node lifecycle events | R | `NodeRuntime.lifecycle_manager` |
 | 33 | `MixinNodeService` | Service interface for nodes | R | `NodeRuntime.service_interface` |
 | 34 | `MixinRedaction` | Sensitive field redaction | D | `utils/redaction.py` |
@@ -109,12 +113,12 @@ Pure computation with no side effects or runtime dependencies.
 
 ## Mixins by Classification
 
-### Runtime (R) - 21 Mixins
+### Runtime (R) - 20 Mixins + 1 Data Model
 
 | Mixin | Target |
 |-------|--------|
 | `MixinCaching` | `NodeRuntime.cache_service` |
-| `ModelCompletionData` | `NodeRuntime.completion_tracker` |
+| `ModelCompletionData` *(Data Model)* | `models/mixins/model_completion_data.py` |
 | `MixinMetrics` | `NodeRuntime.metrics_service` |
 | `MixinNodeSetup` | `NodeRuntime.__init__()` |
 | `MixinIntentPublisher` | `NodeRuntime.intent_emitter` |
@@ -143,7 +147,7 @@ Pure computation with no side effects or runtime dependencies.
 | `MixinCLIHandler` | `omnibase_infra/handlers/cli_handler.py` |
 | `MixinServiceRegistry` | `omnibase_infra/handlers/service_registry_handler.py` |
 
-### Domain (D) - 16 Mixins
+### Domain (D) - 14 Mixins + 2 Data Models
 
 | Mixin | Target |
 |-------|--------|
@@ -161,8 +165,8 @@ Pure computation with no side effects or runtime dependencies.
 | `MixinUtils` | `utils/canonical.py` |
 | `MixinFSMExecution` | `domain/fsm/executor.py` |
 | `MixinContractStateReducer` | `domain/fsm/contract_reducer.py` |
-| `ModelLogData` | `models/mixins/model_log_data.py` |
-| `ModelNodeIntrospectionData` | `models/mixins/model_node_introspection_data.py` |
+| `ModelLogData` *(Data Model)* | `models/mixins/model_log_data.py` |
+| `ModelNodeIntrospectionData` *(Data Model)* | `models/mixins/model_node_introspection_data.py` |
 
 ---
 

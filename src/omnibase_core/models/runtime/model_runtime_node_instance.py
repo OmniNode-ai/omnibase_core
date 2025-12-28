@@ -252,7 +252,7 @@ class ModelRuntimeNodeInstance(BaseModel):
                 "Cannot replace runtime during execution.",
                 error_code=EnumCoreErrorCode.INVALID_STATE,
                 node_slug=self.slug,
-                node_type=str(self.node_type),
+                node_type=self.node_type,
             )
         self._runtime = runtime
 
@@ -288,7 +288,7 @@ class ModelRuntimeNodeInstance(BaseModel):
                 "Call set_runtime() before accessing runtime.",
                 error_code=EnumCoreErrorCode.INVALID_STATE,
                 node_slug=self.slug,
-                node_type=str(self.node_type),
+                node_type=self.node_type,
             )
         return self._runtime
 
@@ -324,7 +324,7 @@ class ModelRuntimeNodeInstance(BaseModel):
                 "Call set_runtime() before initialize().",
                 error_code=EnumCoreErrorCode.INVALID_STATE,
                 node_slug=self.slug,
-                node_type=str(self.node_type),
+                node_type=self.node_type,
             )
 
         if self._initialized:
@@ -333,7 +333,7 @@ class ModelRuntimeNodeInstance(BaseModel):
                 "Cannot initialize twice.",
                 error_code=EnumCoreErrorCode.INVALID_STATE,
                 node_slug=self.slug,
-                node_type=str(self.node_type),
+                node_type=self.node_type,
             )
 
         self._initialized = True
@@ -376,7 +376,7 @@ class ModelRuntimeNodeInstance(BaseModel):
                 message=f"Cannot shutdown ModelRuntimeNodeInstance '{self.slug}' that is not initialized.",
                 error_code=EnumCoreErrorCode.INVALID_STATE,
                 node_slug=self.slug,
-                node_type=str(self.node_type),
+                node_type=self.node_type,
             )
 
         self._initialized = False
@@ -446,7 +446,7 @@ class ModelRuntimeNodeInstance(BaseModel):
                 "Call initialize() before handling envelopes.",
                 error_code=EnumCoreErrorCode.INVALID_STATE,
                 node_slug=self.slug,
-                node_type=str(self.node_type),
+                node_type=self.node_type,
                 envelope_operation=envelope_operation,
             )
 
