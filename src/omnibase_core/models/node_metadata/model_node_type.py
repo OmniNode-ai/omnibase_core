@@ -779,11 +779,9 @@ class ModelNodeType(BaseModel):
             return True
         except (
             AttributeError,
-            ValueError,
             TypeError,
-            KeyError,
-            RuntimeError,
             ValidationError,
+            ValueError,
         ):
             # fallback-ok: Metadata update failures should not break the system
             return False
