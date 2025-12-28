@@ -368,7 +368,10 @@ class TestOrchestratorIntegration:
 
         # Verify error details
         error = exc_info.value
-        assert error.error_code == EnumCoreErrorCode.ORCHESTRATOR_STRUCT_WORKFLOW_NOT_LOADED
+        assert (
+            error.error_code
+            == EnumCoreErrorCode.ORCHESTRATOR_STRUCT_WORKFLOW_NOT_LOADED
+        )
         assert "not loaded" in error.message.lower()
 
     def test_multi_step_workflow_with_dependencies(
