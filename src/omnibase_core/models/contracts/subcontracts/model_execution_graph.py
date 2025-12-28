@@ -12,7 +12,12 @@ from .model_workflow_node import ModelWorkflowNode
 
 
 class ModelExecutionGraph(BaseModel):
-    """Execution graph for a workflow."""
+    """Execution graph for a workflow.
+
+    v1.0.5 Reserved Fields Governance:
+        Extra fields are allowed ("extra": "ignore") to support reserved fields
+        for forward compatibility.
+    """
 
     # Model version for instance tracking
     version: ModelSemVer = Field(
@@ -26,7 +31,8 @@ class ModelExecutionGraph(BaseModel):
     )
 
     model_config = {
-        "extra": "forbid",
+        # v1.0.5 Fix 54: Reserved Fields Governance
+        "extra": "ignore",
         "use_enum_values": False,
         "validate_assignment": True,
         "frozen": True,

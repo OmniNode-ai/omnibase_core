@@ -5,11 +5,14 @@ Type-safe container for parsed CLI arguments that provides both positional
 and named argument access with type conversion capabilities.
 """
 
-from typing import Any, TypeVar, cast, overload
+from typing import TypeVar, cast, overload
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.models.core.model_argument_value import ModelArgumentValue
+from omnibase_core.models.core.model_argument_value import (
+    ArgumentValueType,
+    ModelArgumentValue,
+)
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 T = TypeVar("T")
@@ -290,7 +293,7 @@ class ModelArgumentMap(BaseModel):
     def add_named_argument(
         self,
         name: str,
-        value: Any,
+        value: ArgumentValueType,
         arg_type: str = "string",
     ) -> None:
         """Add a named argument to the map."""
@@ -301,7 +304,9 @@ class ModelArgumentMap(BaseModel):
         )
         self.named_args[name] = arg_value
 
-    def add_positional_argument(self, value: Any, arg_type: str = "string") -> None:
+    def add_positional_argument(
+        self, value: ArgumentValueType, arg_type: str = "string"
+    ) -> None:
         """Add a positional argument to the map."""
         arg_value = ModelArgumentValue(
             value=value,

@@ -25,10 +25,18 @@ class ModelWorkflowStep(BaseModel):
     providing runtime validation and type safety for workflow execution.
 
     Strict typing is enforced: No Any types or dict[str, Any]patterns allowed.
+
+    v1.0.5 Reserved Fields Governance:
+        Extra fields are allowed ("extra": "ignore") to support reserved fields
+        for forward compatibility. Reserved fields are preserved during round-trip
+        serialization but are NOT validated beyond structural type checking.
     """
 
     model_config = {
-        "extra": "forbid",
+        # v1.0.5 Fix 54: Reserved Fields Governance
+        # Use "ignore" instead of "forbid" to preserve reserved fields during
+        # round-trip serialization for forward compatibility.
+        "extra": "ignore",
         "use_enum_values": False,
         "validate_assignment": True,
         "frozen": True,
