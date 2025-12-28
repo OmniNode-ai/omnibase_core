@@ -40,7 +40,7 @@ from .util_hash import (
 __all__ = [
     "UtilConflictResolver",
     "UtilContractLoader",
-    "ProtocolContractLoader",  # DEPRECATED: Use UtilContractLoader
+    "ProtocolContractLoader",  # DEPRECATED: Use UtilContractLoader instead
     "allow_any_type",
     "allow_dict_str_any",
     "create_enum_normalizer",

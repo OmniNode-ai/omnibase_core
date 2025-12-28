@@ -326,10 +326,10 @@ __all__ = [
     "ServiceProtocolMigrator",
     "ServiceValidationSuite",
     # OMN-1071: Deprecated aliases (will be removed in future version)
-    "ProtocolContractValidator",  # Alias for ServiceContractValidator
-    "ModelProtocolAuditor",  # Alias for ServiceProtocolAuditor
-    "ProtocolMigrator",  # Alias for ServiceProtocolMigrator
-    "ModelValidationSuite",  # Alias for ServiceValidationSuite
+    "ProtocolContractValidator",  # DEPRECATED: Use ServiceContractValidator instead
+    "ModelProtocolAuditor",  # DEPRECATED: Use ServiceProtocolAuditor instead
+    "ProtocolMigrator",  # DEPRECATED: Use ServiceProtocolMigrator instead
+    "ModelValidationSuite",  # DEPRECATED: Use ServiceValidationSuite instead
     # Other exports
     "ExceptionInputValidationError",
     "ModelProtocolInfo",

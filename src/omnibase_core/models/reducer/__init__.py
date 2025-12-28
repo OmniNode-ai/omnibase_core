@@ -39,13 +39,13 @@ from omnibase_core.utils.util_conflict_resolver import UtilConflictResolver
 from omnibase_core.utils.util_streaming_window import UtilStreamingWindow
 
 __all__ = [
-    "ModelConflictResolver",  # DEPRECATED alias, use UtilConflictResolver
+    "ModelConflictResolver",  # DEPRECATED: Use UtilConflictResolver instead
     "ModelIntent",
     "ModelIntentPublishResult",
     "ModelReducerContext",
     "ModelReducerInput",
     "ModelReducerOutput",
-    "ModelStreamingWindow",  # DEPRECATED alias, use UtilStreamingWindow
+    "ModelStreamingWindow",  # DEPRECATED: Use UtilStreamingWindow instead
     "UtilConflictResolver",
     "UtilStreamingWindow",
 ]
