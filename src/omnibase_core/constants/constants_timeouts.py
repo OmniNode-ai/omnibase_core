@@ -81,6 +81,35 @@ HTTP_REQUEST_TIMEOUT_SECONDS: float = 30.0
 # default request.timeout.ms configuration.
 KAFKA_REQUEST_TIMEOUT_MS: int = 5000
 
+# WebSocket ping timeout: 10 seconds
+# Rationale: Timeout for WebSocket ping/pong health checks. A 10-second window
+# provides sufficient time for network latency while maintaining responsive
+# connection liveness detection. Shorter than HTTP timeout since WebSocket
+# connections expect lower latency for real-time communication.
+WEBSOCKET_PING_TIMEOUT_SECONDS: float = 10.0
+
+# =============================================================================
+# Database Timeouts (seconds)
+# =============================================================================
+
+# Database query timeout: 30 seconds
+# Rationale: Default timeout for database query operations. Matches the
+# standard HTTP request timeout, providing adequate time for typical queries
+# including joins and aggregations while preventing runaway queries from
+# blocking connections indefinitely.
+DATABASE_QUERY_TIMEOUT_SECONDS: float = 30.0
+
+# =============================================================================
+# File I/O Timeouts (seconds)
+# =============================================================================
+
+# File I/O timeout: 60 seconds
+# Rationale: Timeout for file read/write operations. Allows sufficient time
+# for larger file operations (multi-MB files, network-mounted filesystems)
+# while preventing indefinite hangs on unresponsive storage. Longer than
+# network timeouts to accommodate disk I/O variability.
+FILE_IO_TIMEOUT_SECONDS: float = 60.0
+
 # =============================================================================
 # Cache Timeouts (seconds)
 # =============================================================================
@@ -104,6 +133,11 @@ __all__ = [
     # Network timeouts
     "HTTP_REQUEST_TIMEOUT_SECONDS",
     "KAFKA_REQUEST_TIMEOUT_MS",
+    "WEBSOCKET_PING_TIMEOUT_SECONDS",
+    # Database timeouts
+    "DATABASE_QUERY_TIMEOUT_SECONDS",
+    # File I/O timeouts
+    "FILE_IO_TIMEOUT_SECONDS",
     # Cache timeouts
     "DEFAULT_CACHE_TTL_SECONDS",
 ]
