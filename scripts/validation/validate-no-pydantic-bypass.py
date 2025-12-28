@@ -29,7 +29,6 @@ import sys
 import tokenize
 from io import StringIO
 from pathlib import Path
-from typing import Optional
 
 # Patterns that indicate Pydantic validation bypass
 BYPASS_PATTERNS = [
