@@ -121,8 +121,8 @@ class ModelDetectionMetadata(BaseModel):
             The coerced ModelSemVer value, or None if input is None.
 
         Raises:
-            ValueError: If string format is invalid or dict is malformed.
-            TypeError: If value is not ModelSemVer, str, dict, or None.
+            ValueError: If string format is invalid, dict is malformed, or value
+                is not ModelSemVer, str, dict, or None.
 
         Example:
             >>> metadata = ModelDetectionMetadata(rule_version="2.1.0")
@@ -157,9 +157,7 @@ class ModelDetectionMetadata(BaseModel):
                     f"Invalid rule_version dict format: expected {{'major': int, "
                     f"'minor': int, 'patch': int}}, got {v}"
                 ) from e
-        raise TypeError(  # error-ok: Pydantic validator requires TypeError
-            f"Expected ModelSemVer, str, or dict, got {type(v).__name__}"
-        )
+        raise ValueError(f"Expected ModelSemVer, str, or dict, got {type(v).__name__}")
 
     @field_validator("false_positive_likelihood", mode="before")
     @classmethod

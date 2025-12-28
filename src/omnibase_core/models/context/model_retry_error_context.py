@@ -22,11 +22,17 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 # Pattern for error codes: CATEGORY_NNN format (e.g., AUTH_001, VALIDATION_123)
 #
-# IMPORTANT: This pattern is defined here AND in model_operational_error_context.py.
-# Both patterns MUST be kept in sync. See that module for detailed documentation
-# on the pattern format and rationale.
+# NOTE: This pattern is intentionally duplicated in:
+#   1. omnibase_core.models.context.model_operational_error_context.ERROR_CODE_PATTERN
+#   2. omnibase_core.validation.validators.common_validators.ERROR_CODE_PATTERN
 #
-# The pattern supports multi-character category prefixes with underscores:
+# The duplication is required to avoid circular imports. The import chain is:
+#   models.context -> validation -> models.contracts -> mixins -> models.operations -> models.context
+#
+# Both patterns MUST be kept in sync. For direct validation outside Pydantic models,
+# prefer using validate_error_code() from common_validators.
+#
+# Pattern format: ^[A-Z][A-Z0-9_]*_\d{1,4}$
 # - Valid: AUTH_001, VALIDATION_123, NETWORK_TIMEOUT_001, SYSTEM_01
 # - Invalid: E001 (lint-style, no underscore), auth_001 (lowercase)
 ERROR_CODE_PATTERN = re.compile(r"^[A-Z][A-Z0-9_]*_\d{1,4}$")

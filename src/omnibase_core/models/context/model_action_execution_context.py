@@ -147,13 +147,10 @@ class ModelActionExecutionContext(BaseModel):
             The validated environment as a Literal type (lowercase).
 
         Raises:
-            TypeError: If the value is not a string.
-            ValueError: If the value is not a valid environment.
+            ValueError: If the value is not a string or not a valid environment.
         """
         if not isinstance(v, str):
-            raise TypeError(  # error-ok: Pydantic validator requires TypeError for type checks
-                f"environment must be a string, got {type(v).__name__}"
-            )
+            raise ValueError(f"environment must be a string, got {type(v).__name__}")
         normalized = v.lower().strip()
         allowed = {"development", "staging", "production"}
         if normalized not in allowed:

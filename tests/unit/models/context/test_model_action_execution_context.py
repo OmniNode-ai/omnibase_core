@@ -246,7 +246,7 @@ class TestModelActionExecutionContextValidation:
 
     def test_environment_rejects_non_string_integer(self) -> None:
         """Test that environment rejects integer with clear error."""
-        with pytest.raises(TypeError) as exc_info:
+        with pytest.raises(ValidationError) as exc_info:
             ModelActionExecutionContext(environment=123)  # type: ignore[arg-type]
         # Should mention environment field and the invalid type
         error_str = str(exc_info.value).lower()
@@ -255,7 +255,7 @@ class TestModelActionExecutionContextValidation:
 
     def test_environment_rejects_non_string_list(self) -> None:
         """Test that environment rejects list with clear error."""
-        with pytest.raises(TypeError) as exc_info:
+        with pytest.raises(ValidationError) as exc_info:
             ModelActionExecutionContext(environment=["production"])  # type: ignore[arg-type]
         error_str = str(exc_info.value).lower()
         assert "environment" in error_str
@@ -263,7 +263,7 @@ class TestModelActionExecutionContextValidation:
 
     def test_environment_rejects_non_string_dict(self) -> None:
         """Test that environment rejects dict with clear error."""
-        with pytest.raises(TypeError) as exc_info:
+        with pytest.raises(ValidationError) as exc_info:
             ModelActionExecutionContext(environment={"env": "production"})  # type: ignore[arg-type]
         error_str = str(exc_info.value).lower()
         assert "environment" in error_str
@@ -271,7 +271,7 @@ class TestModelActionExecutionContextValidation:
 
     def test_environment_rejects_none_explicitly(self) -> None:
         """Test that environment rejects None value explicitly passed."""
-        with pytest.raises(TypeError) as exc_info:
+        with pytest.raises(ValidationError) as exc_info:
             ModelActionExecutionContext(environment=None)  # type: ignore[arg-type]
         error_str = str(exc_info.value).lower()
         assert "environment" in error_str
