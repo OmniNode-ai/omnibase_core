@@ -5,6 +5,10 @@ Cryptographically signed event envelope with enterprise security features.
 
 from __future__ import annotations
 
+import base64
+import hashlib
+import json
+import os
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
@@ -247,8 +251,6 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
 
     def _update_content_hash(self) -> None:
         """Update content hash for tamper detection."""
-        import hashlib
-
         # Create hash input from critical envelope fields
         hash_input = {
             "envelope_id": self.envelope_id,
@@ -609,10 +611,6 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
             decrypt_payload: To decrypt an encrypted payload.
             create_secure_encrypted: Factory method that creates and encrypts in one step.
         """
-        import base64
-        import json
-        import os
-
         from cryptography.hazmat.primitives import hashes
         from cryptography.hazmat.primitives.ciphers.aead import AESGCM
         from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -680,8 +678,6 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
         self.encrypted_payload = base64.b64encode(ciphertext_with_tag).decode("utf-8")
 
         # Create encryption metadata with AAD hash for verification
-        import hashlib
-
         aad_hash = hashlib.sha256(aad).hexdigest()
         self.encryption_metadata = ModelEncryptionMetadata(
             algorithm=algorithm,
@@ -753,9 +749,6 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
             encrypt_payload: To encrypt a payload.
             _create_encryption_aad: For AAD binding details.
         """
-        import base64
-        import json
-
         from cryptography.exceptions import InvalidTag
         from cryptography.hazmat.primitives import hashes
         from cryptography.hazmat.primitives.ciphers.aead import AESGCM
@@ -827,8 +820,6 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
 
         # Verify AAD hash matches stored hash (if available) for extra validation
         if self.encryption_metadata.aad_hash:
-            import hashlib
-
             current_aad_hash = hashlib.sha256(aad).hexdigest()
             if current_aad_hash != self.encryption_metadata.aad_hash:
                 raise ModelOnexError(

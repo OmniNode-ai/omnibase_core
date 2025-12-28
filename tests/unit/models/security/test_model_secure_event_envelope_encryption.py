@@ -122,10 +122,14 @@ class TestEncryptPayloadSuccess:
         assert sample_envelope.encryption_metadata is not None
         assert sample_envelope.encryption_metadata.algorithm == "AES-256-GCM"
 
-    def test_encrypt_payload_with_complex_payload(
+    def test_encrypt_payload_with_complex_payload_succeeds_and_sets_metadata(
         self, complex_envelope, encryption_key
     ):
-        """Test encryption with a complex payload containing multiple fields."""
+        """Test that encryption with a complex payload containing multiple fields succeeds.
+
+        Verifies that payloads with correlation_id and other optional fields
+        are encrypted successfully with proper metadata.
+        """
         complex_envelope.encrypt_payload(encryption_key)
 
         assert complex_envelope.is_encrypted is True
@@ -246,8 +250,14 @@ class TestDecryptPayloadErrors:
 class TestRoundTripEncryption:
     """Test round-trip encryption and decryption scenarios."""
 
-    def test_round_trip_encrypt_decrypt(self, complex_envelope, encryption_key):
-        """Test that encrypt->decrypt preserves data integrity."""
+    def test_round_trip_encrypt_decrypt_preserves_all_payload_fields(
+        self, complex_envelope, encryption_key
+    ):
+        """Test that encrypt->decrypt preserves data integrity for all payload fields.
+
+        Verifies that event_type, node_id, and correlation_id are all preserved
+        after a full encryption/decryption round trip.
+        """
         # Store original payload for comparison
         original_event_type = complex_envelope.payload.event_type
         original_node_id = complex_envelope.payload.node_id
@@ -281,10 +291,15 @@ class TestRoundTripEncryption:
 class TestDecryptWrongKey:
     """Test decryption with wrong key scenarios."""
 
-    def test_decrypt_wrong_key_fails(
+    def test_decrypt_with_wrong_key_raises_security_violation_error(
         self, sample_envelope, encryption_key, different_encryption_key
     ):
-        """Test that decryption with wrong key fails with security violation error."""
+        """Test that decryption with wrong key raises SECURITY_VIOLATION error.
+
+        AES-256-GCM uses authenticated encryption, so a wrong key will cause
+        the authentication tag verification to fail, which is detected as a
+        potential security violation (tampering or wrong key).
+        """
         # Encrypt with key1
         sample_envelope.encrypt_payload(encryption_key)
         assert sample_envelope.is_encrypted is True
@@ -305,8 +320,10 @@ class TestDecryptWrongKey:
 class TestEncryptionMetadataPopulated:
     """Test that encryption metadata is correctly populated."""
 
-    def test_encryption_metadata_algorithm(self, sample_envelope, encryption_key):
-        """Test that encryption metadata has correct algorithm."""
+    def test_encryption_metadata_algorithm_is_aes_256_gcm(
+        self, sample_envelope, encryption_key
+    ):
+        """Test that encryption metadata algorithm field is set to AES-256-GCM."""
         sample_envelope.encrypt_payload(encryption_key)
 
         assert sample_envelope.encryption_metadata is not None
@@ -360,8 +377,14 @@ class TestEncryptionMetadataPopulated:
         # Verify it's not a nil UUID
         assert key_id != UUID("00000000-0000-0000-0000-000000000000")
 
-    def test_encryption_metadata_complete(self, sample_envelope, encryption_key):
-        """Test that all encryption metadata fields are populated."""
+    def test_encryption_metadata_has_all_required_fields_populated(
+        self, sample_envelope, encryption_key
+    ):
+        """Test that all required encryption metadata fields are populated after encryption.
+
+        Required fields: algorithm, key_id, iv, auth_tag.
+        Optional fields: encrypted_key (None for symmetric), recipient_keys (empty dict).
+        """
         sample_envelope.encrypt_payload(encryption_key)
 
         metadata = sample_envelope.encryption_metadata
@@ -382,10 +405,16 @@ class TestEncryptionMetadataPopulated:
 class TestEncryptionDeterminism:
     """Test encryption randomness and security properties."""
 
-    def test_encryption_produces_different_ciphertext(
+    def test_encryption_of_same_payload_produces_different_ciphertext_each_time(
         self, sample_payload, sample_node_id, encryption_key
     ):
-        """Test that encrypting the same payload twice produces different ciphertext."""
+        """Test that encrypting the same payload twice produces different ciphertext.
+
+        This is a critical security property: identical plaintexts should not produce
+        identical ciphertexts. This is achieved through:
+        - Random IV (nonce) generated for each encryption
+        - Random key_id used as salt for PBKDF2 key derivation
+        """
         route_spec = ModelRouteSpec.create_direct_route(f"node://{uuid4()}")
 
         # Create two identical envelopes
@@ -450,10 +479,14 @@ class TestEncryptionDeterminism:
 class TestCreateSecureEncrypted:
     """Test the create_secure_encrypted class method."""
 
-    def test_create_secure_encrypted(
+    def test_create_secure_encrypted_returns_encrypted_envelope_with_valid_routing(
         self, sample_payload, sample_node_id, encryption_key
     ):
-        """Test creating an encrypted envelope using the factory method."""
+        """Test that the factory method creates an already-encrypted envelope with routing.
+
+        The create_secure_encrypted factory method combines envelope creation and
+        encryption in a single operation for convenience and atomicity.
+        """
         destination = f"node://{uuid4()}"
 
         envelope = ModelSecureEventEnvelope.create_secure_encrypted(
@@ -474,10 +507,14 @@ class TestCreateSecureEncrypted:
         assert envelope.route_spec.final_destination == destination
         assert envelope.source_node_id == sample_node_id
 
-    def test_create_secure_encrypted_with_options(
+    def test_create_secure_encrypted_with_authorized_roles_sets_access_control(
         self, sample_payload, sample_node_id, encryption_key
     ):
-        """Test creating an encrypted envelope with additional options."""
+        """Test that the factory method preserves authorized_roles for access control.
+
+        The authorized_roles field controls which roles can access the decrypted
+        payload, providing an additional layer of authorization beyond encryption.
+        """
         destination = f"node://{uuid4()}"
 
         envelope = ModelSecureEventEnvelope.create_secure_encrypted(

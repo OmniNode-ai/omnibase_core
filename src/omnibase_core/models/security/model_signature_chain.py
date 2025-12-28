@@ -14,7 +14,7 @@ import json
 import logging
 from datetime import UTC, datetime, timedelta
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_node_operation import EnumNodeOperation
@@ -32,7 +32,13 @@ class ModelSignatureChain(BaseModel):
     Manages an ordered collection of cryptographic signatures from nodes
     that have processed an envelope, providing comprehensive audit trails
     and tamper detection capabilities.
+
+    Note:
+        This model uses from_attributes=True to support pytest-xdist parallel
+        execution where class identity may differ between workers.
     """
+
+    model_config = ConfigDict(from_attributes=True)
 
     chain_id: UUID = Field(
         default=...,

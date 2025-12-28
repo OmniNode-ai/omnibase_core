@@ -30,7 +30,9 @@ class ModelNodeSignature(BaseModel):
     through PKI-based digital signatures.
     """
 
-    model_config = ConfigDict(validate_assignment=True, extra="forbid")
+    model_config = ConfigDict(
+        validate_assignment=True, extra="forbid", from_attributes=True
+    )
     MAX_HOP_INDEX: ClassVar[int] = 1000
     MAX_PROCESSING_TIME_MS: ClassVar[int] = 300000
     MAX_SIGNATURE_TIME_MS: ClassVar[int] = 60000
