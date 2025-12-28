@@ -20,7 +20,9 @@ import pytest
 
 from omnibase_core.models.validation.model_duplication_info import ModelDuplicationInfo
 from omnibase_core.models.validation.model_audit_result import ModelAuditResult
-from omnibase_core.models.validation.model_duplication_report import ModelDuplicationReport
+from omnibase_core.models.validation.model_duplication_report import (
+    ModelDuplicationReport,
+)
 from omnibase_core.services.service_protocol_auditor import ServiceProtocolAuditor
 from omnibase_core.validation.validation_utils import ModelProtocolInfo
 

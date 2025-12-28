@@ -101,6 +101,8 @@ def __getattr__(name: str) -> type:
         return ServiceContractValidator
     msg = f"module {__name__!r} has no attribute {name!r}"
     raise AttributeError(msg)
+
+
 from .contracts import (
     validate_contracts_directory,
     validate_no_manual_yaml,

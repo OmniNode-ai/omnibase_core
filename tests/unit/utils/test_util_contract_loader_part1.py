@@ -581,9 +581,7 @@ class TestParseContractContent:
 class TestConvertContractContentToDict:
     """Test UtilContractLoader._convert_contract_content_to_dict method."""
 
-    def test_convert_basic_contract(
-        self, contract_loader: UtilContractLoader
-    ) -> None:
+    def test_convert_basic_contract(self, contract_loader: UtilContractLoader) -> None:
         """Test converting basic contract content to dict."""
         content = ModelContractContent(
             contract_version=ModelSemVer(major=1, minor=2, patch=3),

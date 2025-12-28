@@ -204,7 +204,9 @@ class {protocol_name}(Protocol):
             assert not result.success  # Should fail due to duplicates
             assert len(result.violations) > 0
 
-    @patch("omnibase_core.services.service_protocol_auditor.extract_protocols_from_directory")
+    @patch(
+        "omnibase_core.services.service_protocol_auditor.extract_protocols_from_directory"
+    )
     def test_audit_handles_extraction_errors(self, mock_extract):
         """Test auditing handles protocol extraction errors gracefully."""
         mock_extract.side_effect = Exception("Extraction failed")
