@@ -5,6 +5,33 @@ Validates that reserved enum values are not used in v1.0.
 Per CONTRACT_DRIVEN_NODEORCHESTRATOR_V1_0.md:
 - CONDITIONAL and STREAMING execution modes MUST raise ModelOnexError
 - PAUSED workflow state is reserved for v1.1+ (documented but not enforced)
+
+Repository Boundaries (v1.0.5 Informative):
+    This module is part of omnibase_core (Core layer) and follows the ONEX
+    repository boundary rules:
+
+    SPI -> Core -> Infra (dependency direction)
+
+    - **SPI (Service Provider Interface)**: Parses YAML contracts and generates
+      typed Pydantic models. Reserved fields are parsed and preserved during
+      contract codegen.
+
+    - **Core (this module)**: Receives fully typed models from SPI/Infra.
+      Reserved fields are preserved in typed models. Validation functions
+      reject reserved execution modes with ModelOnexError.
+
+    - **Infra (Infrastructure)**: Executes workflows using Core utilities.
+      Reserved fields are ignored deterministically by the executor.
+
+    This module provides validation that Core uses to reject reserved modes
+    before execution reaches the Infra layer.
+
+Reserved Fields Global Rule (v1.0.4 Normative):
+    Any field marked as reserved for v1.1 or later:
+    - MUST be parsed by SPI during contract codegen
+    - MUST be preserved by Core in typed models
+    - MUST be ignored by executor deterministically
+    - MUST NOT alter runtime behavior in v1.0 even if set
 """
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -87,10 +114,22 @@ def validate_execution_mode(mode: EnumExecutionMode) -> None:
 # - It will NOT cause validation errors
 # - Executor behavior is undefined (treat as informational only)
 #
-# This aligns with Reserved Semantics Rule (v1.0.4):
-# - MUST be parsed and preserved
-# - MUST NOT influence validation in v1.0
-# - MUST be ignored deterministically by executor
+# Reserved Fields Global Rule (v1.0.4 Normative) - Applied to PAUSED:
+# =====================================================================
+# Per the global normative rule for reserved fields:
+#
+# 1. MUST be parsed by SPI: The enum value exists and is parseable from YAML/JSON.
+#    SPI parses "paused" string into EnumWorkflowState.PAUSED during contract codegen.
+#
+# 2. MUST be preserved by Core: Typed models preserve the PAUSED value in their fields.
+#    Core does not strip or convert reserved values - they flow through unchanged.
+#
+# 3. MUST be ignored by executor deterministically: Workflow executor treats PAUSED
+#    as informational metadata only. It does NOT trigger pause/resume behavior in v1.0.
+#    The executor continues execution normally regardless of this state value.
+#
+# 4. MUST NOT alter runtime behavior in v1.0: Even if set, PAUSED has zero effect
+#    on workflow execution, step ordering, or action emission in v1.0.
 #
 # Decision: Accept with warning vs reject is deferred to future ticket if needed.
 # Current implementation: No active validation (parse-only, no runtime enforcement).

@@ -648,11 +648,16 @@ class TestLinterDoesNotRaise:
         Test that linter never raises exceptions, only returns warnings.
 
         Linter should be defensive and handle all inputs gracefully.
+        Empty workflows should produce zero warnings.
         """
         # Empty workflow should not raise
         try:
             warnings = linter.lint(empty_workflow)
             assert isinstance(warnings, list)
+            # Empty workflow should have zero warnings
+            assert warnings == [], (
+                f"Empty workflow should have zero warnings, got: {warnings}"
+            )
         except Exception as e:
             pytest.fail(f"Linter raised exception: {e}")
 
@@ -661,6 +666,7 @@ class TestLinterDoesNotRaise:
         Test that linter handles empty step lists gracefully.
 
         Should return empty warnings list, not raise exceptions.
+        Empty step lists should produce zero warnings.
         """
         empty_steps: list[ModelWorkflowStep] = []
 
@@ -674,6 +680,20 @@ class TestLinterDoesNotRaise:
             assert isinstance(warnings_unreach, list)
             assert isinstance(warnings_priority, list)
             assert isinstance(warnings_isolated, list)
+
+            # Empty step lists should produce zero warnings
+            assert warnings_dup == [], (
+                f"Empty steps should have zero duplicate warnings, got: {warnings_dup}"
+            )
+            assert warnings_unreach == [], (
+                f"Empty steps should have zero unreachable warnings, got: {warnings_unreach}"
+            )
+            assert warnings_priority == [], (
+                f"Empty steps should have zero priority warnings, got: {warnings_priority}"
+            )
+            assert warnings_isolated == [], (
+                f"Empty steps should have zero isolated warnings, got: {warnings_isolated}"
+            )
         except Exception as e:
             pytest.fail(f"Linter raised exception on empty input: {e}")
 
@@ -795,7 +815,9 @@ class TestLintIntegration:
         # Should return list of warnings
         assert isinstance(warnings, list)
         # Empty workflow with no steps should have no warnings
-        assert len(warnings) == 0
+        assert warnings == [], (
+            f"Empty workflow should have zero warnings, got: {warnings}"
+        )
         # Verify list type (all elements would be ModelLintWarning if present)
         for warning in warnings:
             assert isinstance(warning, ModelLintWarning)
@@ -861,7 +883,9 @@ class TestLintIntegration:
         """
         warnings = linter.lint(empty_workflow)
 
-        assert len(warnings) == 0
+        assert warnings == [], (
+            f"Empty workflow should have zero warnings, got: {warnings}"
+        )
 
     def test_lint_aggregates_warnings_from_all_checks(
         self,

@@ -5,12 +5,48 @@ This module provides standardized field length limits used across all Pydantic
 models in the omnibase_core package. Using these constants ensures consistency
 and makes it easy to adjust limits globally.
 
+SINGLE SOURCE OF TRUTH (SSOT)
+=============================
+
+This module is the CANONICAL SOURCE for:
+- MAX_DFS_ITERATIONS: Algorithm iteration limit for DFS cycle detection
+- MAX_BFS_ITERATIONS: Algorithm iteration limit for BFS traversal
+- MAX_TIMEOUT_MS: Maximum timeout value (24 hours)
+- Field length limits (MAX_IDENTIFIER_LENGTH, MAX_NAME_LENGTH, etc.)
+
+Other modules (workflow_constants.py, constants/__init__.py) re-export these
+constants for convenience but DO NOT define them. All definitions are here.
+
+Security Architecture
+---------------------
+
+All iteration limits in this module exist to prevent denial-of-service (DoS)
+attacks. Without these limits, malicious inputs could cause:
+
+1. **Infinite Loops**: Cyclic graphs or pathological inputs causing unbounded
+   iteration in DFS/BFS algorithms
+2. **CPU Exhaustion**: Worst-case algorithm complexity consuming all CPU time
+3. **Memory Exhaustion**: Extremely long strings or collections causing OOM
+
+Each limit is calibrated to support legitimate workloads while providing
+effective protection:
+
+- MAX_DFS_ITERATIONS (10,000): Supports ~5,000 node graphs (worst case: 2x visits)
+- MAX_BFS_ITERATIONS (10,000): Same rationale as DFS
+- MAX_TIMEOUT_MS (24 hours): Absolute maximum, prevents indefinite waits
+
 These constants are used by:
 - Model fields requiring max_length validation
 - Identifier and name fields across all ONEX models
 - Path and URL fields in configuration models
 - Content fields such as descriptions, messages, reasons, errors, and logs
 - Collection fields with size constraints
+- Cycle detection in workflow_validator.py, workflow_executor.py, model_dependency_graph.py
+
+See Also:
+    - workflow_constants.py: Constants Map documentation explaining the relationship
+      between constants files
+    - workflow_executor.py: Compression bomb mitigation documentation
 """
 
 # =============================================================================
@@ -73,8 +109,29 @@ MAX_LABEL_LENGTH: int = 100
 # =============================================================================
 
 # Maximum iterations for DFS cycle detection in workflow validation.
-# This protects against denial-of-service attacks from maliciously crafted
-# workflow graphs or extremely complex dependency structures.
+# SINGLE SOURCE OF TRUTH (SSOT) for this constant.
+#
+# This constant is CRITICAL for security - it prevents denial-of-service attacks
+# from maliciously crafted workflow graphs that could cause infinite loops or
+# excessive CPU consumption during cycle detection.
+#
+# Value of 10,000 iterations is calibrated to support legitimate workflows with
+# up to ~5,000 steps (worst case: each step visited twice during DFS traversal)
+# while providing protection against resource exhaustion attacks.
+#
+# If cycle detection exceeds MAX_DFS_ITERATIONS, a ModelOnexError is raised
+# with detailed context including step_count, max_iterations, and last_node
+# for debugging and audit logging.
+#
+# Used by:
+# - workflow_validator.py: WorkflowValidator.detect_cycles()
+# - workflow_executor.py: _has_dependency_cycles()
+# - model_dependency_graph.py: ModelDependencyGraph.has_cycles()
+#
+# NOTE: workflow_constants.py re-imports this constant for workflow-specific
+# exports. Both import paths are valid:
+# - from omnibase_core.constants import MAX_DFS_ITERATIONS (recommended)
+# - from omnibase_core.validation.workflow_constants import MAX_DFS_ITERATIONS
 MAX_DFS_ITERATIONS: int = 10_000
 
 # Maximum iterations for BFS traversal in workflow linting.

@@ -149,21 +149,76 @@ class EnumCoreErrorCode(EnumOnexErrorCode):
     WORKFLOW_PAYLOAD_SIZE_EXCEEDED = "ONEX_CORE_282_WORKFLOW_PAYLOAD_SIZE_EXCEEDED"
     WORKFLOW_TOTAL_PAYLOAD_EXCEEDED = "ONEX_CORE_283_WORKFLOW_TOTAL_PAYLOAD_EXCEEDED"
 
-    # Orchestrator structural and workflow validation errors (291-300)
+    # =========================================================================
+    # Orchestrator Error Hierarchy (v1.0.1 Compliance)
+    # =========================================================================
+    # Three levels of errors as specified in CONTRACT_DRIVEN_NODEORCHESTRATOR_V1_0.md:
+    #
+    # Level 1 - Structural Validation Errors (291-300)
+    #   - Malformed contracts, missing required fields, invalid syntax
+    #   - Detected at contract parse time BEFORE any execution
+    #   - These should never reach the orchestrator if SPI/Infra contract loading is correct
+    #
+    # Level 2 - Semantic Validation Errors (301-310)
+    #   - Valid structure but invalid semantics (cycles, invalid dependencies, duplicate IDs)
+    #   - Detected during validation BEFORE workflow execution begins
+    #   - Prevents execution of logically invalid workflows
+    #
+    # Level 3 - Execution-Time Errors (311-320)
+    #   - Runtime failures during workflow/action execution
+    #   - Timeouts, step failures, resource unavailability
+    #   - Occur AFTER validation passes, during actual execution
+    # =========================================================================
+
+    # Level 1: Structural validation errors (291-300)
+    ORCHESTRATOR_STRUCT_MISSING_FIELD = (
+        "ONEX_CORE_291_ORCHESTRATOR_STRUCT_MISSING_FIELD"
+    )
+    ORCHESTRATOR_STRUCT_INVALID_FIELD_TYPE = (
+        "ONEX_CORE_292_ORCHESTRATOR_STRUCT_INVALID_FIELD_TYPE"
+    )
+    ORCHESTRATOR_STRUCT_MALFORMED_CONTRACT = (
+        "ONEX_CORE_293_ORCHESTRATOR_STRUCT_MALFORMED_CONTRACT"
+    )
     ORCHESTRATOR_STRUCT_INVALID_STEP_TYPE = (
-        "ONEX_CORE_291_ORCHESTRATOR_STRUCT_INVALID_STEP_TYPE"
+        "ONEX_CORE_294_ORCHESTRATOR_STRUCT_INVALID_STEP_TYPE"
     )
     ORCHESTRATOR_STRUCT_WORKFLOW_NOT_LOADED = (
-        "ONEX_CORE_292_ORCHESTRATOR_STRUCT_WORKFLOW_NOT_LOADED"
+        "ONEX_CORE_295_ORCHESTRATOR_STRUCT_WORKFLOW_NOT_LOADED"
     )
-    ORCHESTRATOR_WORKFLOW_CYCLE_DETECTED = (
-        "ONEX_CORE_293_ORCHESTRATOR_WORKFLOW_CYCLE_DETECTED"
+
+    # Level 2: Semantic validation errors (301-310)
+    ORCHESTRATOR_SEMANTIC_CYCLE_DETECTED = (
+        "ONEX_CORE_301_ORCHESTRATOR_SEMANTIC_CYCLE_DETECTED"
     )
-    ORCHESTRATOR_WORKFLOW_ITERATION_LIMIT_EXCEEDED = (
-        "ONEX_CORE_294_ORCHESTRATOR_WORKFLOW_ITERATION_LIMIT_EXCEEDED"
+    ORCHESTRATOR_SEMANTIC_INVALID_DEPENDENCY = (
+        "ONEX_CORE_302_ORCHESTRATOR_SEMANTIC_INVALID_DEPENDENCY"
     )
-    ORCHESTRATOR_WORKFLOW_INVALID_EXECUTION_MODE = (
-        "ONEX_CORE_295_ORCHESTRATOR_WORKFLOW_INVALID_EXECUTION_MODE"
+    ORCHESTRATOR_SEMANTIC_DUPLICATE_STEP_ID = (
+        "ONEX_CORE_303_ORCHESTRATOR_SEMANTIC_DUPLICATE_STEP_ID"
+    )
+    ORCHESTRATOR_SEMANTIC_MISSING_DEPENDENCY = (
+        "ONEX_CORE_304_ORCHESTRATOR_SEMANTIC_MISSING_DEPENDENCY"
+    )
+    ORCHESTRATOR_SEMANTIC_INVALID_EXECUTION_MODE = (
+        "ONEX_CORE_305_ORCHESTRATOR_SEMANTIC_INVALID_EXECUTION_MODE"
+    )
+
+    # Level 3: Execution-time errors (311-320)
+    ORCHESTRATOR_EXEC_STEP_TIMEOUT = "ONEX_CORE_311_ORCHESTRATOR_EXEC_STEP_TIMEOUT"
+    ORCHESTRATOR_EXEC_STEP_FAILED = "ONEX_CORE_312_ORCHESTRATOR_EXEC_STEP_FAILED"
+    ORCHESTRATOR_EXEC_ACTION_REJECTED = (
+        "ONEX_CORE_313_ORCHESTRATOR_EXEC_ACTION_REJECTED"
+    )
+    ORCHESTRATOR_EXEC_WORKFLOW_TIMEOUT = (
+        "ONEX_CORE_314_ORCHESTRATOR_EXEC_WORKFLOW_TIMEOUT"
+    )
+    ORCHESTRATOR_EXEC_LEASE_EXPIRED = "ONEX_CORE_315_ORCHESTRATOR_EXEC_LEASE_EXPIRED"
+    ORCHESTRATOR_EXEC_WORKFLOW_FAILED = (
+        "ONEX_CORE_316_ORCHESTRATOR_EXEC_WORKFLOW_FAILED"
+    )
+    ORCHESTRATOR_EXEC_ITERATION_LIMIT_EXCEEDED = (
+        "ONEX_CORE_317_ORCHESTRATOR_EXEC_ITERATION_LIMIT_EXCEEDED"
     )
 
     def get_component(self) -> str:
@@ -284,12 +339,26 @@ CORE_ERROR_CODE_TO_EXIT_CODE: dict[EnumCoreErrorCode, EnumCLIExitCode] = {
     EnumCoreErrorCode.WORKFLOW_STEP_LIMIT_EXCEEDED: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.WORKFLOW_PAYLOAD_SIZE_EXCEEDED: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.WORKFLOW_TOTAL_PAYLOAD_EXCEEDED: EnumCLIExitCode.ERROR,
-    # Orchestrator structural and workflow validation errors -> ERROR
+    # Orchestrator Level 1 (Structural) errors -> ERROR
+    EnumCoreErrorCode.ORCHESTRATOR_STRUCT_MISSING_FIELD: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.ORCHESTRATOR_STRUCT_INVALID_FIELD_TYPE: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.ORCHESTRATOR_STRUCT_MALFORMED_CONTRACT: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.ORCHESTRATOR_STRUCT_INVALID_STEP_TYPE: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.ORCHESTRATOR_STRUCT_WORKFLOW_NOT_LOADED: EnumCLIExitCode.ERROR,
-    EnumCoreErrorCode.ORCHESTRATOR_WORKFLOW_CYCLE_DETECTED: EnumCLIExitCode.ERROR,
-    EnumCoreErrorCode.ORCHESTRATOR_WORKFLOW_ITERATION_LIMIT_EXCEEDED: EnumCLIExitCode.ERROR,
-    EnumCoreErrorCode.ORCHESTRATOR_WORKFLOW_INVALID_EXECUTION_MODE: EnumCLIExitCode.ERROR,
+    # Orchestrator Level 2 (Semantic) errors -> ERROR
+    EnumCoreErrorCode.ORCHESTRATOR_SEMANTIC_CYCLE_DETECTED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.ORCHESTRATOR_SEMANTIC_INVALID_DEPENDENCY: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.ORCHESTRATOR_SEMANTIC_DUPLICATE_STEP_ID: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.ORCHESTRATOR_SEMANTIC_MISSING_DEPENDENCY: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.ORCHESTRATOR_SEMANTIC_INVALID_EXECUTION_MODE: EnumCLIExitCode.ERROR,
+    # Orchestrator Level 3 (Execution) errors -> ERROR
+    EnumCoreErrorCode.ORCHESTRATOR_EXEC_STEP_TIMEOUT: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.ORCHESTRATOR_EXEC_STEP_FAILED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.ORCHESTRATOR_EXEC_ACTION_REJECTED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.ORCHESTRATOR_EXEC_WORKFLOW_TIMEOUT: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.ORCHESTRATOR_EXEC_LEASE_EXPIRED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.ORCHESTRATOR_EXEC_WORKFLOW_FAILED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.ORCHESTRATOR_EXEC_ITERATION_LIMIT_EXCEEDED: EnumCLIExitCode.ERROR,
 }
 
 
@@ -410,10 +479,25 @@ def get_core_error_description(error_code: EnumCoreErrorCode) -> str:
         EnumCoreErrorCode.WORKFLOW_STEP_LIMIT_EXCEEDED: "Workflow step count exceeds maximum limit",
         EnumCoreErrorCode.WORKFLOW_PAYLOAD_SIZE_EXCEEDED: "Workflow step payload size exceeds maximum limit",
         EnumCoreErrorCode.WORKFLOW_TOTAL_PAYLOAD_EXCEEDED: "Workflow total payload size exceeds maximum limit",
-        EnumCoreErrorCode.ORCHESTRATOR_STRUCT_INVALID_STEP_TYPE: "Invalid workflow step type",
-        EnumCoreErrorCode.ORCHESTRATOR_STRUCT_WORKFLOW_NOT_LOADED: "Workflow definition not loaded",
-        EnumCoreErrorCode.ORCHESTRATOR_WORKFLOW_CYCLE_DETECTED: "Workflow dependency cycle detected",
-        EnumCoreErrorCode.ORCHESTRATOR_WORKFLOW_ITERATION_LIMIT_EXCEEDED: "Workflow iteration limit exceeded (DoS protection)",
-        EnumCoreErrorCode.ORCHESTRATOR_WORKFLOW_INVALID_EXECUTION_MODE: "Invalid workflow execution mode",
+        # Orchestrator Level 1 (Structural) - detected at contract parse time
+        EnumCoreErrorCode.ORCHESTRATOR_STRUCT_MISSING_FIELD: "Orchestrator: required field missing in contract",
+        EnumCoreErrorCode.ORCHESTRATOR_STRUCT_INVALID_FIELD_TYPE: "Orchestrator: field has invalid type in contract",
+        EnumCoreErrorCode.ORCHESTRATOR_STRUCT_MALFORMED_CONTRACT: "Orchestrator: malformed contract structure",
+        EnumCoreErrorCode.ORCHESTRATOR_STRUCT_INVALID_STEP_TYPE: "Orchestrator: invalid step_type value",
+        EnumCoreErrorCode.ORCHESTRATOR_STRUCT_WORKFLOW_NOT_LOADED: "Orchestrator: workflow definition not loaded",
+        # Orchestrator Level 2 (Semantic) - detected during validation before execution
+        EnumCoreErrorCode.ORCHESTRATOR_SEMANTIC_CYCLE_DETECTED: "Orchestrator: dependency cycle detected in workflow",
+        EnumCoreErrorCode.ORCHESTRATOR_SEMANTIC_INVALID_DEPENDENCY: "Orchestrator: invalid dependency reference",
+        EnumCoreErrorCode.ORCHESTRATOR_SEMANTIC_DUPLICATE_STEP_ID: "Orchestrator: duplicate step_id in workflow",
+        EnumCoreErrorCode.ORCHESTRATOR_SEMANTIC_MISSING_DEPENDENCY: "Orchestrator: referenced dependency step not found",
+        EnumCoreErrorCode.ORCHESTRATOR_SEMANTIC_INVALID_EXECUTION_MODE: "Orchestrator: invalid execution mode for v1.0",
+        # Orchestrator Level 3 (Execution) - detected during workflow execution
+        EnumCoreErrorCode.ORCHESTRATOR_EXEC_STEP_TIMEOUT: "Orchestrator: step execution timed out",
+        EnumCoreErrorCode.ORCHESTRATOR_EXEC_STEP_FAILED: "Orchestrator: step execution failed",
+        EnumCoreErrorCode.ORCHESTRATOR_EXEC_ACTION_REJECTED: "Orchestrator: action was rejected by target node",
+        EnumCoreErrorCode.ORCHESTRATOR_EXEC_WORKFLOW_TIMEOUT: "Orchestrator: workflow execution timed out",
+        EnumCoreErrorCode.ORCHESTRATOR_EXEC_LEASE_EXPIRED: "Orchestrator: action lease expired during execution",
+        EnumCoreErrorCode.ORCHESTRATOR_EXEC_WORKFLOW_FAILED: "Orchestrator: workflow execution failed",
+        EnumCoreErrorCode.ORCHESTRATOR_EXEC_ITERATION_LIMIT_EXCEEDED: "Orchestrator: workflow iteration limit exceeded (DoS protection)",
     }
     return descriptions.get(error_code, "Unknown error")

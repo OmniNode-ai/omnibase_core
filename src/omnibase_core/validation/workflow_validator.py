@@ -9,6 +9,7 @@ Validates workflow DAGs using Kahn's algorithm for topological sorting with:
 - Full workflow definition validation
 - Reserved execution mode validation
 - Disabled step handling in DAG validation
+- DAG invariant validation for disabled steps
 
 This module provides comprehensive workflow validation utilities following
 the patterns established in fsm_analysis.py and dag_validator.py.
@@ -17,6 +18,27 @@ ONEX Compliance:
     This module follows ONEX v1.0 workflow validation patterns as defined in
     CONTRACT_DRIVEN_NODEORCHESTRATOR_V1_0.md. Reserved execution modes
     (CONDITIONAL, STREAMING) are validated and rejected per the v1.0 contract.
+
+Repository Boundaries (v1.0.5 Informative):
+    This module is part of omnibase_core (Core layer) and follows the ONEX
+    repository boundary rules:
+
+    SPI -> Core -> Infra (dependency direction)
+
+    - **SPI (Service Provider Interface)**: Parses YAML contracts and generates
+      typed Pydantic models (ModelWorkflowDefinition, ModelWorkflowStep). SPI
+      parses and preserves reserved fields during contract codegen.
+
+    - **Core (this module)**: Receives fully typed Pydantic models from SPI/Infra.
+      Provides validation functions that reject invalid configurations including
+      reserved execution modes. Reserved fields are preserved in typed models
+      but do not affect validation logic in v1.0.
+
+    - **Infra (Infrastructure)**: Executes workflows using Core utilities.
+      Reserved fields are ignored deterministically by the executor.
+
+    Core does NOT parse YAML. Core does NOT coerce dicts into models.
+    All models must be fully typed Pydantic instances when passed to validation.
 
 Thread Safety:
     All functions and the WorkflowValidator class in this module are stateless
@@ -68,6 +90,10 @@ from omnibase_core.models.validation.model_workflow_validation_result import (
     ModelWorkflowValidationResult,
 )
 from omnibase_core.validation.reserved_enum_validator import validate_execution_mode
+from omnibase_core.validation.workflow_constants import (
+    MIN_TIMEOUT_MS,
+    RESERVED_STEP_TYPES,
+)
 
 # Type aliases for clarity (Python 3.12+ syntax)
 type StepIdToName = Mapping[UUID, str]
@@ -78,8 +104,11 @@ type InDegreeMap = dict[UUID, int]
 # Module-Level Constants
 # =============================================================================
 
-# MAX_DFS_ITERATIONS is imported from omnibase_core.constants.constants_field_limits
-# Re-exported here for backwards compatibility.
+# MAX_DFS_ITERATIONS: Resource exhaustion protection constant for DFS cycle detection.
+# Imported from omnibase_core.constants.constants_field_limits (canonical source).
+# Re-exported from workflow_constants.py for import path flexibility.
+# Prevents malicious or malformed inputs from causing infinite loops in DFS.
+# Value of 10,000 supports workflows with up to ~5,000 steps.
 # See module docstring "Security Considerations" for full documentation.
 
 # Reserved execution modes that are not yet implemented per ONEX v1.0 contract.
@@ -90,6 +119,18 @@ RESERVED_EXECUTION_MODES: frozenset[str] = frozenset({"conditional", "streaming"
 # Accepted execution modes that are currently supported.
 # Using tuple for immutability and ordered iteration (for consistent error messages).
 ACCEPTED_EXECUTION_MODES: tuple[str, ...] = ("sequential", "parallel", "batch")
+
+# Accepted step types that are currently supported in v1.0.
+# Using tuple for immutability and ordered iteration.
+# NOTE: RESERVED_STEP_TYPES and MIN_TIMEOUT_MS are imported from workflow_constants.
+ACCEPTED_STEP_TYPES: tuple[str, ...] = (
+    "compute",
+    "effect",
+    "reducer",
+    "orchestrator",
+    "parallel",
+    "custom",
+)
 
 __all__ = [
     "WorkflowValidator",
@@ -104,10 +145,16 @@ __all__ = [
     "validate_unique_step_ids",
     "validate_dag_with_disabled_steps",
     "validate_execution_mode_string",
-    # Constants
-    "MAX_DFS_ITERATIONS",
+    "validate_step_type",
+    "validate_step_timeout",
+    # Constants (defined in this module)
     "RESERVED_EXECUTION_MODES",
     "ACCEPTED_EXECUTION_MODES",
+    "ACCEPTED_STEP_TYPES",
+    # Re-exported from workflow_constants (canonical source)
+    "MAX_DFS_ITERATIONS",
+    "RESERVED_STEP_TYPES",
+    "MIN_TIMEOUT_MS",
 ]
 
 
@@ -236,7 +283,7 @@ class WorkflowValidator:
             step_id_to_name = self._build_step_id_to_name_map(steps)
             unsorted_names = [step_id_to_name[sid] for sid in unsorted_ids]
             raise ModelOnexError(
-                error_code=EnumCoreErrorCode.ORCHESTRATOR_WORKFLOW_CYCLE_DETECTED,
+                error_code=EnumCoreErrorCode.ORCHESTRATOR_SEMANTIC_CYCLE_DETECTED,
                 message=(
                     f"Workflow contains cycles - cannot perform topological sort. "
                     f"Steps involved in cycles: {', '.join(sorted(unsorted_names))}"
@@ -309,7 +356,7 @@ class WorkflowValidator:
             # Resource exhaustion protection - prevent malicious/malformed inputs
             if iterations > MAX_DFS_ITERATIONS:
                 raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.ORCHESTRATOR_WORKFLOW_ITERATION_LIMIT_EXCEEDED,
+                    error_code=EnumCoreErrorCode.ORCHESTRATOR_EXEC_ITERATION_LIMIT_EXCEEDED,
                     message=(
                         f"Cycle detection exceeded {MAX_DFS_ITERATIONS} iterations - "
                         "possible malicious input or malformed workflow"
@@ -503,16 +550,16 @@ class WorkflowValidator:
         """
         Perform complete workflow validation.
 
-        Runs all validation checks in deterministic priority order:
-        1. Structural errors (unique name validation) - catches basic data issues
+        v1.0.4 Normative (Fix 44): Errors MUST be in deterministic priority order:
+        1. Structural errors (step-structural) - catches basic data issues
         2. Dependency errors (missing step references) - catches reference issues
         3. Graph errors (cycle detection) - catches circular dependencies
         4. Warnings (isolated step detection) - non-blocking issues
         5. Topological sort (if no cycles) - compute execution order
 
-        IMPORTANT: Errors are returned in the order they are detected. This allows
-        callers to address the most fundamental issues first (structural), then
-        reference issues (dependencies), then graph issues (cycles).
+        v1.0.4 Normative (Fix 48): Duplicate step_name values are ALLOWED.
+        Only step_id must be unique. step_name duplicates are reported as
+        WARNINGS, not errors.
 
         Note: Unlike validate_workflow_definition(), this method does NOT validate
         execution mode (reserved mode check). Use validate_workflow_definition()
@@ -525,7 +572,7 @@ class WorkflowValidator:
             ModelWorkflowValidationResult with complete validation results including:
             - is_valid: True if no errors (warnings don't affect validity)
             - errors: Ordered list of error messages
-            - warnings: Non-critical issues (isolated steps)
+            - warnings: Non-critical issues (isolated steps, duplicate names)
             - has_cycles: True if circular dependencies detected
             - topological_order: Valid execution order (empty if cycles)
 
@@ -536,14 +583,16 @@ class WorkflowValidator:
         errors: list[str] = []
         warnings: list[str] = []
 
-        # 1. Unique name validation
+        # v1.0.4 Fix 48: Duplicate step_name is ALLOWED (only step_id must be unique).
+        # Duplicate names are now reported as WARNINGS, not errors.
         unique_result = self.validate_unique_names(steps)
         if not unique_result.is_valid:
-            errors.append(
-                f"Duplicate step names: {', '.join(unique_result.duplicate_names)}"
+            warnings.append(
+                f"Duplicate step names (allowed per v1.0.4 Fix 48): "
+                f"{', '.join(unique_result.duplicate_names)}"
             )
 
-        # 2. Dependency validation
+        # v1.0.4 Fix 44: Dependency errors come second in priority order
         dep_result = self.validate_dependencies(steps)
         if not dep_result.is_valid:
             errors.append(dep_result.error_message)
@@ -571,13 +620,10 @@ class WorkflowValidator:
                 errors.append(f"Unexpected topological sort error: {e.message}")
 
         # Determine overall validity
-        # Valid = no cycles, no missing dependencies, no duplicate names
-        # Isolated steps are warnings, not errors
-        is_valid = (
-            not cycle_result.has_cycle
-            and dep_result.is_valid
-            and unique_result.is_valid
-        )
+        # v1.0.4 Fix 48: Duplicate step_name is ALLOWED (only step_id must be unique).
+        # Valid = no cycles, no missing dependencies
+        # Isolated steps and duplicate names are warnings, not errors
+        is_valid = not cycle_result.has_cycle and dep_result.is_valid
 
         return ModelWorkflowValidationResult(
             is_valid=is_valid,
@@ -948,8 +994,23 @@ def validate_dag_with_disabled_steps(steps: list[ModelWorkflowStep]) -> list[str
     if cycle_result.has_cycle:
         errors.append(cycle_result.cycle_description)
 
-    # Return errors in priority order (NOT alphabetically sorted)
-    # Priority ordering is maintained by the append order above:
+    # v1.0.1 Fix 20: DAG Invariant for Disabled Steps (Normative)
+    # Disabled steps MUST NOT create hidden cycles. The full graph (including
+    # disabled steps) MUST remain acyclic. This ensures:
+    # - No cycles are revealed when steps are re-enabled
+    # - The graph structure is always valid regardless of enabled/disabled state
+    # - Workflow definitions are portable and predictable
+    full_graph_cycle_result = validator.detect_cycles(steps)
+    if full_graph_cycle_result.has_cycle and not cycle_result.has_cycle:
+        # Hidden cycle: only visible when including disabled steps
+        errors.append(
+            f"Hidden cycle involving disabled steps: {full_graph_cycle_result.cycle_description}"
+        )
+
+    # Return errors in validation priority order (NOT alphabetically sorted)
+    # NOTE: "Priority order" here refers to ERROR CATEGORIES, not step execution
+    # priority. Step execution uses declaration order per v1.0.2 Fix 5.
+    # Error validation priority ordering is maintained by the append order above:
     # 1. Duplicate step IDs (structural)
     # 2. Dependencies on disabled steps
     # 3. Missing dependencies
@@ -1070,7 +1131,7 @@ def validate_execution_mode_string(mode: str) -> None:
         # at all. This is different from "reserved" modes which are valid enum values
         # but not accepted in v1.0.
         raise ModelOnexError(
-            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.ORCHESTRATOR_SEMANTIC_INVALID_EXECUTION_MODE,
             message=(
                 f"Unrecognized execution mode '{mode}'. "
                 f"Accepted modes: {', '.join(ACCEPTED_EXECUTION_MODES)}. "
@@ -1084,3 +1145,121 @@ def validate_execution_mode_string(mode: str) -> None:
     # Step 2: Delegate to the enum-based validator for reserved mode validation
     # This follows DRY principle - single source of truth for reserved mode logic
     validate_execution_mode(mode_enum)
+
+
+def validate_step_type(step_type: str, step_name: str = "") -> None:
+    """
+    Validate step type and reject reserved types.
+
+    Fix 40 (v1.0.3): step_type="conditional" MUST raise ModelOnexError in v1.0.
+    Conditional nodes are reserved for v1.1.
+
+    Allowed step types: compute, effect, reducer, orchestrator, parallel, custom
+    Reserved step types: conditional
+
+    Thread Safety:
+        This function is stateless and thread-safe. It performs only read operations
+        on constant data (RESERVED_STEP_TYPES set) and has no shared mutable state.
+
+    Args:
+        step_type: The step type string to validate. Case-insensitive.
+        step_name: Optional step name for error context.
+
+    Raises:
+        ModelOnexError: If the step type is "conditional" (reserved for v1.1).
+            Error code: VALIDATION_ERROR with detailed message.
+            Error context includes:
+            - step_type: The reserved step type that was provided
+            - step_name: The step name (if provided)
+            - reserved_step_types: List of reserved step type names
+            - accepted_step_types: List of accepted step type names
+
+    Complexity:
+        Time: O(1) - set lookup
+        Space: O(1) - constant storage
+
+    Example:
+        Valid step types (v1.0.4: compute, effect, reducer, orchestrator, parallel, custom)::
+
+            validate_step_type("compute", "my_step")       # OK
+            validate_step_type("effect", "fetch_data")     # OK
+            validate_step_type("reducer", "aggregate")     # OK
+            validate_step_type("orchestrator", "workflow") # OK
+            validate_step_type("parallel", "batch")        # OK
+            validate_step_type("custom", "user_defined")   # OK
+
+        Reserved step types::
+
+            validate_step_type("conditional", "branch_step")
+            # Raises ModelOnexError: "step_type 'conditional' is reserved for v1.1"
+    """
+    step_type_lower = step_type.lower()
+
+    if step_type_lower in RESERVED_STEP_TYPES:
+        step_context = f" for step '{step_name}'" if step_name else ""
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.ORCHESTRATOR_STRUCT_INVALID_STEP_TYPE,
+            message=(
+                f"step_type '{step_type}' is reserved for v1.1{step_context}. "
+                f"Accepted step types in v1.0: {', '.join(ACCEPTED_STEP_TYPES)}. "
+                "Conditional nodes require expression evaluation infrastructure "
+                "not yet implemented."
+            ),
+            step_type=step_type,
+            step_name=step_name,
+            reserved_step_types=list(RESERVED_STEP_TYPES),
+            accepted_step_types=list(ACCEPTED_STEP_TYPES),
+        )
+
+
+def validate_step_timeout(timeout_ms: int, step_name: str = "") -> None:
+    """
+    Validate step timeout value.
+
+    Fix 38 (v1.0.3): timeout_ms MUST be >= 100 per schema.
+    Any value <100 MUST raise ModelOnexError (structural validation).
+
+    Thread Safety:
+        This function is stateless and thread-safe.
+
+    Args:
+        timeout_ms: The timeout value in milliseconds to validate.
+        step_name: Optional step name for error context.
+
+    Raises:
+        ModelOnexError: If timeout_ms < MIN_TIMEOUT_MS (100).
+            Error code: VALIDATION_ERROR with detailed message.
+            Error context includes:
+            - timeout_ms: The invalid timeout value
+            - step_name: The step name (if provided)
+            - minimum_timeout_ms: The minimum allowed value
+
+    Complexity:
+        Time: O(1)
+        Space: O(1)
+
+    Example:
+        Valid timeout values::
+
+            validate_step_timeout(100)    # OK - minimum valid
+            validate_step_timeout(30000)  # OK - default value
+            validate_step_timeout(300000) # OK - maximum value
+
+        Invalid timeout values::
+
+            validate_step_timeout(0)   # Raises ModelOnexError
+            validate_step_timeout(99)  # Raises ModelOnexError
+            validate_step_timeout(-1)  # Raises ModelOnexError
+    """
+    if timeout_ms < MIN_TIMEOUT_MS:
+        step_context = f" for step '{step_name}'" if step_name else ""
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.ORCHESTRATOR_STRUCT_INVALID_FIELD_TYPE,
+            message=(
+                f"timeout_ms value {timeout_ms} is below minimum{step_context}. "
+                f"timeout_ms MUST be >= {MIN_TIMEOUT_MS}ms per ONEX v1.0.3 schema."
+            ),
+            timeout_ms=timeout_ms,
+            step_name=step_name,
+            minimum_timeout_ms=MIN_TIMEOUT_MS,
+        )

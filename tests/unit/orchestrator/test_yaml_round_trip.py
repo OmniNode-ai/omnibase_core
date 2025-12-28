@@ -1066,13 +1066,16 @@ dependencies: []
             assert round_tripped_dict["node_type"] == node_type
 
     def test_step_type_literal_preserved(self) -> None:
-        """Test step_type literal values are preserved."""
+        """Test step_type literal values are preserved.
+
+        v1.0.4 Fix 41: step_type must be compute|effect|reducer|orchestrator|custom|parallel.
+        "conditional" is NOT a valid step_type and has been removed.
+        """
         step_types = [
             "compute",
             "effect",
             "reducer",
             "orchestrator",
-            "conditional",
             "parallel",
             "custom",
         ]

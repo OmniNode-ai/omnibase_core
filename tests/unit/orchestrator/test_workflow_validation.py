@@ -139,7 +139,6 @@ def create_step(
         "effect",
         "reducer",
         "orchestrator",
-        "conditional",
         "parallel",
         "custom",
     ] = "compute",
@@ -358,7 +357,9 @@ class TestCycleDetection:
         assert "cycle" in str(error).lower(), (
             f"Error message should mention cycle: {error}"
         )
-        assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert (
+            error.error_code == EnumCoreErrorCode.ORCHESTRATOR_SEMANTIC_CYCLE_DETECTED
+        )
 
     @pytest.mark.asyncio
     async def test_indirect_cycle_detection(
@@ -768,15 +769,21 @@ class TestInvariantEnforcement:
         ), f"Error should mention execution mode: {errors}"
 
     @pytest.mark.asyncio
-    async def test_empty_workflow_rejected(
+    async def test_empty_workflow_succeeds(
         self, base_workflow_definition: ModelWorkflowDefinition
     ) -> None:
-        """Test that empty workflow (no steps) is rejected."""
+        """Test that empty workflow (no steps) produces zero validation errors.
+
+        v1.0.3 Fix 29: Empty workflows SUCCEED immediately with COMPLETED state.
+        This is the correct behavior - an empty workflow has nothing to fail.
+        The validation should produce NO errors whatsoever, not just filter
+        out "no steps" errors.
+        """
         errors = await validate_workflow_definition(base_workflow_definition, [])
 
-        assert len(errors) > 0, "Should reject empty workflow"
-        assert any("no steps" in error.lower() for error in errors), (
-            f"Error should mention 'no steps': {errors}"
+        # v1.0.3 Fix 29: Empty workflows should pass validation with zero errors
+        assert errors == [], (
+            f"Empty workflow should succeed per v1.0.3 Fix 29, but got errors: {errors}"
         )
 
     @pytest.mark.asyncio
@@ -866,7 +873,7 @@ class TestErrorMessageQuality:
         )
 
     def test_cycle_error_uses_correct_error_code(self) -> None:
-        """Test that cycle detection uses VALIDATION_ERROR code."""
+        """Test that cycle detection uses ORCHESTRATOR_SEMANTIC_CYCLE_DETECTED code."""
         step_a_id = uuid4()
         step_b_id = uuid4()
 
@@ -878,7 +885,10 @@ class TestErrorMessageQuality:
         with pytest.raises(ModelOnexError) as exc_info:
             get_execution_order(steps)
 
-        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert (
+            exc_info.value.error_code
+            == EnumCoreErrorCode.ORCHESTRATOR_SEMANTIC_CYCLE_DETECTED
+        )
 
 
 # ============================================================================
@@ -966,39 +976,42 @@ class TestEdgeCases:
         cycle_errors = [e for e in errors if "cycle" in e.lower()]
         assert len(cycle_errors) == 0, f"Complex valid graph should pass: {errors}"
 
-    def test_execution_order_respects_priority(self) -> None:
-        """Test that execution order respects step priority for independent steps.
+    def test_execution_order_respects_declaration_order(self) -> None:
+        """Test that execution order respects declaration order for independent steps.
 
-        Note: Priority uses lower value = higher priority (executes first).
-        This follows heap/queue semantics where priority=1 executes before priority=100.
+        v1.0.2 Fix 5: Topological ordering uses declaration order as tiebreaker,
+        NOT priority. Priority is informational only.
         """
-        # Two independent steps with different priorities
-        step_high_priority = uuid4()
-        step_low_priority = uuid4()
+        # Two independent steps with different priorities but specific declaration order
+        step_first_declared = uuid4()
+        step_second_declared = uuid4()
 
         steps = [
             ModelWorkflowStep(
-                step_id=step_low_priority,
-                step_name="Low Priority",
+                step_id=step_first_declared,
+                step_name="First Declared",
                 step_type="compute",
-                priority=100,  # Lower urgency (higher number = executes later)
+                priority=100,  # Higher number (would be "lower priority" if used)
                 depends_on=[],
             ),
             ModelWorkflowStep(
-                step_id=step_high_priority,
-                step_name="High Priority",
+                step_id=step_second_declared,
+                step_name="Second Declared",
                 step_type="compute",
-                priority=1,  # Higher urgency (lower number = executes first)
+                priority=1,  # Lower number (would be "higher priority" if used)
                 depends_on=[],
             ),
         ]
 
         order = get_execution_order(steps)
 
-        # Lower priority number should execute first (priority=1 before priority=100)
-        high_idx = order.index(step_high_priority)
-        low_idx = order.index(step_low_priority)
-        assert high_idx < low_idx, "Lower priority number should execute first"
+        # v1.0.2 Fix 5: Declaration order is the tiebreaker, not priority
+        first_idx = order.index(step_first_declared)
+        second_idx = order.index(step_second_declared)
+        assert first_idx < second_idx, (
+            "First declared step should execute first per v1.0.2 Fix 5 "
+            "(declaration order, not priority)"
+        )
 
     @pytest.mark.asyncio
     async def test_disabled_steps_not_validated_for_cycles(
