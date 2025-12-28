@@ -50,6 +50,35 @@ class ProtocolOrchestrator(Protocol):
     - BATCH: Group steps into execution batches
     - CONDITIONAL: Execute based on branch conditions
 
+    Architecture Note: No Contract-Based Entry Point
+
+    Unlike ProtocolCompute (which has execute_compute()), orchestrators
+    intentionally do NOT have an execute_orchestration() method. This
+    asymmetry reflects a fundamental architectural difference:
+
+    - COMPUTE nodes are **invoked**: They execute a single unit of work
+      and return typed results. The execute_compute(contract) entry point
+      is natural for this pattern - you call it with a contract and get
+      back a result.
+
+    - ORCHESTRATOR nodes are **reactive**: They coordinate workflows by
+      responding to events, commands, and state transitions. Their behavior
+      emerges from message flow and workflow state, not from executing a
+      single contract. The process() method handles orchestration input
+      but orchestrators fundamentally react to external stimuli rather
+      than being invoked as callable operations.
+
+    Adding execute_orchestration() would incorrectly imply orchestrators
+    can be called like compute nodes to "execute an orchestration" as a
+    discrete operation. This would:
+    - Blur the architectural boundary between coordination and transformation
+    - Suggest orchestrators produce typed results (they emit events/intents)
+    - Encourage misuse as synchronous callable operations
+    - Obscure the reactive, event-driven nature of workflow coordination
+
+    The correct pattern for driving orchestration is to send events/commands
+    to the orchestrator via process(), not to "execute" it via contract.
+
     Example:
         class MyOrchestrator:
             async def process(

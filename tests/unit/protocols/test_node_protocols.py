@@ -9,6 +9,7 @@ Tests cover:
 - NodeCompute implements ProtocolCompute
 - NodeEffect implements ProtocolEffect
 - NodeOrchestrator implements ProtocolOrchestrator
+- Architectural invariants for ONEX four-node architecture
 
 Related:
     - PR #267: Node protocol definitions for ONEX Four-Node Architecture
@@ -17,10 +18,14 @@ Related:
 
 from typing import Any
 from unittest.mock import MagicMock
+from uuid import uuid4
 
 import pytest
 
+from omnibase_core.enums.enum_node_kind import EnumNodeKind
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.nodes import NodeCompute, NodeEffect, NodeOrchestrator
 from omnibase_core.protocols import (
     ProtocolCompute,
@@ -286,3 +291,186 @@ class TestAllNodesProtocolCompliance:
         assert not isinstance(orchestrator_node, ProtocolEffect), (
             "NodeOrchestrator should not satisfy ProtocolEffect"
         )
+
+
+@pytest.mark.unit
+class TestArchitecturalInvariants:
+    """Tests verifying ONEX architectural constraints on node types.
+
+    These tests ensure that the ONEX four-node architecture's fundamental
+    invariants are enforced at the model level. The constraints tested here
+    are critical for maintaining proper separation of concerns between
+    coordination (ORCHESTRATOR) and transformation (COMPUTE) nodes.
+
+    Related:
+        - ONEX Four-Node Architecture documentation
+        - OMN-941: Handler Output Model constraints
+    """
+
+    def test_orchestrator_cannot_return_typed_results(self) -> None:
+        """Verify ORCHESTRATOR nodes cannot return typed results.
+
+        CRITICAL CONSTRAINT: Orchestrators can only emit events and intents.
+        Only COMPUTE nodes return typed results. This enforces separation
+        between coordination (ORCHESTRATOR) and transformation (COMPUTE).
+
+        The ModelHandlerOutput validator raises ModelOnexError when an
+        ORCHESTRATOR node attempts to set a non-None result value.
+        """
+        input_envelope_id = uuid4()
+        correlation_id = uuid4()
+
+        # Attempt to create ORCHESTRATOR output with typed result
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelHandlerOutput(
+                input_envelope_id=input_envelope_id,
+                correlation_id=correlation_id,
+                handler_id="test-orchestrator",
+                node_kind=EnumNodeKind.ORCHESTRATOR,
+                result={
+                    "status": "done"
+                },  # VIOLATION: orchestrators cannot return results
+            )
+
+        # Verify error message explains the constraint
+        assert "ORCHESTRATOR cannot set result" in str(exc_info.value)
+        assert "Only COMPUTE nodes return typed results" in str(exc_info.value)
+
+    def test_orchestrator_can_emit_events_and_intents(self) -> None:
+        """Verify ORCHESTRATOR nodes can emit events and intents (positive case).
+
+        While orchestrators cannot return typed results, they CAN emit events
+        and intents for workflow coordination purposes.
+        """
+        input_envelope_id = uuid4()
+        correlation_id = uuid4()
+
+        # Create ORCHESTRATOR output with events and intents (valid)
+        output = ModelHandlerOutput.for_orchestrator(
+            input_envelope_id=input_envelope_id,
+            correlation_id=correlation_id,
+            handler_id="test-orchestrator",
+            events=("mock_event",),
+            intents=("mock_intent",),
+        )
+
+        # Verify output was created successfully
+        assert output.node_kind == EnumNodeKind.ORCHESTRATOR
+        assert output.result is None
+        assert len(output.events) == 1
+        assert len(output.intents) == 1
+
+    def test_compute_can_return_typed_results(self) -> None:
+        """Verify COMPUTE nodes can return typed results (positive case).
+
+        COMPUTE nodes are pure transformations that MUST return typed results.
+        This is the inverse of the ORCHESTRATOR constraint and demonstrates
+        proper architectural separation.
+        """
+        input_envelope_id = uuid4()
+        correlation_id = uuid4()
+
+        # Create COMPUTE output with typed result (valid)
+        result_data = {"transformed": True, "count": 42}
+        output = ModelHandlerOutput.for_compute(
+            input_envelope_id=input_envelope_id,
+            correlation_id=correlation_id,
+            handler_id="test-compute",
+            result=result_data,
+        )
+
+        # Verify result is preserved
+        assert output.node_kind == EnumNodeKind.COMPUTE
+        assert output.result == result_data
+        assert output.has_result() is True
+
+    def test_compute_cannot_emit_events(self) -> None:
+        """Verify COMPUTE nodes cannot emit events.
+
+        COMPUTE nodes are pure transformations - if you need to emit events,
+        use an EFFECT node instead. This maintains referential transparency.
+        """
+        input_envelope_id = uuid4()
+        correlation_id = uuid4()
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelHandlerOutput(
+                input_envelope_id=input_envelope_id,
+                correlation_id=correlation_id,
+                handler_id="test-compute",
+                node_kind=EnumNodeKind.COMPUTE,
+                result={"data": "value"},
+                events=("mock_event",),  # VIOLATION: compute cannot emit events
+            )
+
+        assert "COMPUTE cannot emit events" in str(exc_info.value)
+
+    def test_protocol_asymmetry_execute_compute_vs_orchestrator(self) -> None:
+        """Verify intentional asymmetry: Compute has execute_compute, Orchestrator doesn't.
+
+        This asymmetry is documented in ProtocolOrchestrator's docstring.
+        Orchestrators are reactive coordinators, not callable operations.
+
+        Design Rationale:
+        - COMPUTE nodes are INVOKED: They execute a single unit of work
+          and return typed results. execute_compute(contract) is natural.
+
+        - ORCHESTRATOR nodes are REACTIVE: They coordinate workflows by
+          responding to events, commands, and state transitions. They should
+          NOT have execute_orchestration() as it incorrectly implies they
+          can be called like compute nodes.
+        """
+        # ProtocolCompute MUST have execute_compute method
+        assert hasattr(ProtocolCompute, "execute_compute"), (
+            "ProtocolCompute must have execute_compute method - "
+            "COMPUTE nodes are invoked to perform single units of work"
+        )
+
+        # ProtocolOrchestrator intentionally does NOT have execute_orchestration
+        assert not hasattr(ProtocolOrchestrator, "execute_orchestration"), (
+            "ProtocolOrchestrator intentionally does NOT have execute_orchestration - "
+            "orchestrators are reactive coordinators, not callable operations. "
+            "See ProtocolOrchestrator docstring for design rationale."
+        )
+
+    def test_reducer_cannot_return_results(self) -> None:
+        """Verify REDUCER nodes cannot return typed results.
+
+        REDUCER nodes emit projections only (pure fold functions).
+        They update read-optimized state projections, not return results.
+        """
+        input_envelope_id = uuid4()
+        correlation_id = uuid4()
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelHandlerOutput(
+                input_envelope_id=input_envelope_id,
+                correlation_id=correlation_id,
+                handler_id="test-reducer",
+                node_kind=EnumNodeKind.REDUCER,
+                result={"state": "value"},  # VIOLATION: reducers cannot return results
+            )
+
+        assert "REDUCER cannot set result" in str(exc_info.value)
+
+    def test_effect_cannot_return_results(self) -> None:
+        """Verify EFFECT nodes cannot return typed results.
+
+        EFFECT nodes emit events only (I/O boundary).
+        They publish result events about external interactions, not return results.
+        """
+        input_envelope_id = uuid4()
+        correlation_id = uuid4()
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelHandlerOutput(
+                input_envelope_id=input_envelope_id,
+                correlation_id=correlation_id,
+                handler_id="test-effect",
+                node_kind=EnumNodeKind.EFFECT,
+                result={
+                    "response": "value"
+                },  # VIOLATION: effects cannot return results
+            )
+
+        assert "EFFECT cannot set result" in str(exc_info.value)
