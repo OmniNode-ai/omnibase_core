@@ -9,6 +9,7 @@ Strict typing is enforced: No Any types allowed in implementation.
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.constants import TIMEOUT_DEFAULT_MS, TIMEOUT_MIN_MS
 from omnibase_core.enums.enum_state_management import (
     EnumConflictResolution,
     EnumConsistencyLevel,
@@ -41,9 +42,9 @@ class ModelStateSynchronization(BaseModel):
     )
 
     sync_interval_ms: int = Field(
-        default=30000,
+        default=TIMEOUT_DEFAULT_MS,
         description="Synchronization interval",
-        ge=1000,
+        ge=TIMEOUT_MIN_MS,
     )
 
     conflict_resolution: EnumConflictResolution = Field(

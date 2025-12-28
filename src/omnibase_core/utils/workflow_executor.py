@@ -458,7 +458,7 @@ async def validate_workflow_definition(
                 workflow_metadata=ModelWorkflowMetadata(
                     workflow_name="etl_pipeline",
                     execution_mode="sequential",
-                    timeout_ms=30000,
+                    timeout_ms=TIMEOUT_DEFAULT_MS,
                 )
             )
 

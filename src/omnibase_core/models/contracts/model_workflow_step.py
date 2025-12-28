@@ -15,6 +15,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, field_validator
 
+from omnibase_core.constants import TIMEOUT_DEFAULT_MS, TIMEOUT_LONG_MS
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.validation.workflow_constants import VALID_STEP_TYPES
@@ -103,10 +104,10 @@ class ModelWorkflowStep(BaseModel):
 
     # Execution configuration
     timeout_ms: int = Field(
-        default=30000,
+        default=TIMEOUT_DEFAULT_MS,
         description="Step execution timeout in milliseconds",
         ge=100,
-        le=300000,  # Max 5 minutes
+        le=TIMEOUT_LONG_MS,  # Max 5 minutes (TIMEOUT_LONG_MS)
     )
 
     retry_count: int = Field(

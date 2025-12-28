@@ -390,7 +390,7 @@ class MixinEffectExecution:
                                 "url_template": "...",
                                 ...
                             },
-                            "operation_timeout_ms": 30000,
+                            "operation_timeout_ms": TIMEOUT_DEFAULT_MS,
                             "response_handling": {...},  # Optional
                             "retry_policy": {...},       # Optional
                             "circuit_breaker": {...}     # Optional
