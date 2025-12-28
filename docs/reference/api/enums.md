@@ -16,7 +16,7 @@ This document provides comprehensive API reference for all enumeration types in 
 
 **Purpose**: Standard error codes for ONEX framework.
 
-```
+```python
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 # Usage in error handling
@@ -125,6 +125,66 @@ if EnumHandlerCapability.CACHE in handler.capabilities:
 *Caution: EFFECT handlers with CACHE or RETRY should also declare IDEMPOTENT.
 
 **See Also**: [EnumHandlerTypeCategory](#enumhandlertypecategory), [EnumComputeCapability](#enumcomputecapability), [EnumEffectCapability](#enumeffectcapability)
+
+---
+
+#### EnumComputeCapability
+
+**Location**: `omnibase_core.enums.enum_compute_capability`
+
+**Purpose**: Capabilities specific to COMPUTE nodes in the four-node architecture.
+
+**Added**: v0.4.0 (OMN-1085)
+
+```python
+from omnibase_core.enums import EnumComputeCapability
+
+# Check if a compute handler supports transformation
+if EnumComputeCapability.TRANSFORM in handler.capabilities:
+    result = handler.transform(input_data)
+```
+
+**Available Capabilities**:
+
+- `TRANSFORM` - Data transformation operations
+- `VALIDATE` - Data validation operations
+
+**Helper Methods**:
+- `values()` - Get all capability values as strings
+- `assert_exhaustive(value)` - Ensure exhaustive match handling
+
+**See Also**: [EnumHandlerCapability](#enumhandlercapability), [EnumEffectCapability](#enumeffectcapability)
+
+---
+
+#### EnumEffectCapability
+
+**Location**: `omnibase_core.enums.enum_effect_capability`
+
+**Purpose**: Capabilities specific to EFFECT nodes in the four-node architecture.
+
+**Added**: v0.4.0 (OMN-1085)
+
+```python
+from omnibase_core.enums import EnumEffectCapability
+
+# Check if an effect handler supports HTTP operations
+if EnumEffectCapability.HTTP in handler.capabilities:
+    response = handler.http_request(url, method="GET")
+```
+
+**Available Capabilities**:
+
+- `HTTP` - HTTP/REST API interactions
+- `DB` - Database operations (SQL, NoSQL)
+- `KAFKA` - Apache Kafka message queue operations
+- `FILESYSTEM` - File system read/write operations
+
+**Helper Methods**:
+- `values()` - Get all capability values as strings
+- `assert_exhaustive(value)` - Ensure exhaustive match handling
+
+**See Also**: [EnumHandlerCapability](#enumhandlercapability), [EnumComputeCapability](#enumcomputecapability)
 
 ---
 
@@ -243,7 +303,7 @@ elif node_kind == EnumNodeKind.EFFECT:
 
 **Purpose**: Specific node implementation type classification.
 
-```
+```python
 from omnibase_core.enums.enum_node_type import EnumNodeType
 
 # Use the GENERIC variant for four-node architecture types
@@ -290,7 +350,7 @@ node_type = EnumNodeType.COMPUTE_GENERIC
 
 **Purpose**: Types of Actions for orchestrated execution.
 
-```
+```python
 from uuid import uuid4
 from omnibase_core.enums.enum_workflow_execution import EnumActionType
 from omnibase_core.models.orchestrator.model_action import ModelAction
@@ -322,7 +382,7 @@ action = ModelAction(
 
 **Purpose**: Circuit breaker state management.
 
-```
+```python
 from omnibase_core.enums.enum_circuit_breaker_state import EnumCircuitBreakerState
 
 state = circuit_breaker.get_state()
@@ -345,7 +405,7 @@ if state == EnumCircuitBreakerState.OPEN:
 
 **Purpose**: Health status indicators.
 
-```
+```python
 from omnibase_core.enums.enum_health_status import EnumHealthStatus
 
 health_status = EnumHealthStatus.HEALTHY
@@ -378,7 +438,7 @@ health_status = EnumHealthStatus.HEALTHY
 
 **Purpose**: Operation execution status.
 
-```
+```python
 from omnibase_core.enums.enum_operation_status import EnumOperationStatus
 
 status = EnumOperationStatus.SUCCESS
@@ -408,7 +468,7 @@ status = EnumOperationStatus.SUCCESS
 
 **Purpose**: Message roles in communication.
 
-```
+```python
 from omnibase_core.enums.enum_message_role import EnumMessageRole
 
 message_role = EnumMessageRole.REQUEST
@@ -430,7 +490,7 @@ message_role = EnumMessageRole.REQUEST
 
 **Purpose**: Supported LLM providers.
 
-```
+```python
 from omnibase_core.enums.enum_llm_provider import EnumLLMProvider
 
 provider = EnumLLMProvider.OPENAI
@@ -452,7 +512,7 @@ provider = EnumLLMProvider.OPENAI
 
 **Purpose**: Metric measurement types.
 
-```
+```python
 from omnibase_core.enums.enum_metric_type import EnumMetricType
 
 metric_type = EnumMetricType.COUNTER
@@ -470,7 +530,7 @@ metric_type = EnumMetricType.COUNTER
 
 ### Enum Validation
 
-```
+```python
 from pydantic import BaseModel, Field, field_validator
 from omnibase_core.enums.enum_node_type import EnumNodeType
 
@@ -491,7 +551,7 @@ class NodeConfig(BaseModel):
 
 ### Enum Comparison
 
-```
+```python
 from omnibase_core.enums.enum_health_status import EnumHealthStatus
 
 def check_health(health_status: EnumHealthStatus) -> bool:
@@ -505,7 +565,7 @@ if check_health(node.health_status):
 
 ### Enum Iteration
 
-```
+```python
 from omnibase_core.enums.enum_workflow_execution import EnumActionType
 
 def get_all_action_types() -> List[str]:
@@ -519,7 +579,7 @@ print(f"Available actions: {available_actions}")
 
 ### Enum Mapping
 
-```
+```python
 from omnibase_core.enums.enum_operation_status import EnumOperationStatus
 
 # Map status to HTTP status codes
@@ -539,7 +599,7 @@ def get_http_status(operation_status: EnumOperationStatus) -> int:
 
 ### Custom Enum Methods
 
-```
+```python
 from enum import Enum
 
 class EnumCustomStatus(str, Enum):
@@ -572,7 +632,7 @@ class EnumCustomStatus(str, Enum):
 
 ### Enum Error Conversion
 
-```
+```python
 from omnibase_core.enums.enum_operation_status import EnumOperationStatus
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
@@ -588,7 +648,7 @@ def convert_status_to_error_code(status: EnumOperationStatus) -> EnumCoreErrorCo
 
 ### Enum Validation in Error Handling
 
-```
+```python
 from omnibase_core.enums.enum_health_status import EnumHealthStatus
 
 def validate_health_status(status: str) -> EnumHealthStatus:
@@ -603,7 +663,7 @@ def validate_health_status(status: str) -> EnumHealthStatus:
 
 ### Enum Caching
 
-```
+```python
 from functools import lru_cache
 from omnibase_core.enums.enum_node_type import EnumNodeType
 
@@ -615,7 +675,7 @@ def is_compute_node(node_type: EnumNodeType) -> bool:
 
 ### Enum Lookup Optimization
 
-```
+```python
 from omnibase_core.enums.enum_workflow_execution import EnumActionType
 
 # Pre-compute lookup table for performance
@@ -639,7 +699,7 @@ def get_action_type(value: str) -> EnumActionType:
 
 The handler enums form a cohesive system for classifying and managing handlers:
 
-```
+```text
 EnumHandlerType          --> What external system? (HTTP, DATABASE, KAFKA...)
     |
     v
