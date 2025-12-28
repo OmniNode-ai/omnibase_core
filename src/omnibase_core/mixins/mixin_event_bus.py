@@ -225,7 +225,7 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         you want to gracefully skip rather than raise an error.
 
         For operations that require an event bus, prefer _require_event_bus()
-        which will raise RuntimeError with a descriptive message.
+        which will raise ModelOnexError with a descriptive message.
 
         Returns:
             True if an event bus is bound and available, False otherwise.
@@ -691,12 +691,20 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         return result
 
     def dispose_event_bus_resources(self) -> None:
-        """Clean up all event bus resources. Call on shutdown."""
+        """Clean up all event bus resources. Call on shutdown.
+
+        This method is idempotent and safe to call multiple times. It will not
+        raise exceptions for already-disposed resources.
+
+        Note:
+            Only AttributeError is caught during cleanup. Other exceptions
+            (e.g., RuntimeError, TypeError) will propagate up to the caller.
+        """
         handle = self._event_bus_listener_handle
         if handle is not None:
             handle.stop()
 
-        # Clear bindings
+        # Clear bindings - delete private instance attributes
         for attr in (
             "_bound_event_bus",
             "_bound_registry",
@@ -706,7 +714,13 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                 try:
                     object.__delattr__(self, attr)
                 except AttributeError:
-                    # Attribute already deleted - expected during cleanup
+                    # AttributeError is EXPECTED during cleanup for two reasons:
+                    # 1. Race condition: attribute deleted between hasattr() and delattr()
+                    # 2. Idempotent cleanup: dispose() called multiple times
+                    #
+                    # We log at DEBUG (not WARNING) because this is expected behavior,
+                    # not an error. Other exception types are NOT caught and will
+                    # propagate to surface unexpected errors.
                     emit_log_event(
                         LogLevel.DEBUG,
                         f"MIXIN_DISPOSE: Attribute {attr} already deleted during cleanup",

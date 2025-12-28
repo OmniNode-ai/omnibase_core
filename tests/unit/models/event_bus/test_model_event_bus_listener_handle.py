@@ -8,6 +8,7 @@ Comprehensive tests for event bus listener handle lifecycle management,
 including thread management, stop signals, and subscription tracking.
 """
 
+import copy
 import threading
 import time
 from unittest.mock import MagicMock, patch
@@ -567,3 +568,291 @@ class TestModelEventBusListenerHandleEdgeCases:
 
         assert len(original.subscriptions) == 2
         assert len(copied.subscriptions) == 3
+
+
+@pytest.mark.unit
+class TestModelEventBusListenerHandleDeepCopy:
+    """Test ModelEventBusListenerHandle.__deepcopy__() method."""
+
+    def test_deepcopy_sets_listener_thread_to_none(self) -> None:
+        """Test deepcopy sets listener_thread to None regardless of original."""
+        thread = threading.Thread(target=lambda: None, daemon=True)
+        original = ModelEventBusListenerHandle(
+            listener_thread=thread,
+            is_running=True,
+        )
+
+        copied = copy.deepcopy(original)
+
+        assert copied.listener_thread is None
+
+    def test_deepcopy_sets_listener_thread_to_none_when_originally_none(self) -> None:
+        """Test deepcopy keeps listener_thread as None when original is None."""
+        original = ModelEventBusListenerHandle(
+            listener_thread=None,
+        )
+
+        copied = copy.deepcopy(original)
+
+        assert copied.listener_thread is None
+
+    def test_deepcopy_creates_fresh_stop_event(self) -> None:
+        """Test deepcopy creates a fresh Event when original has one."""
+        original_event = threading.Event()
+        original_event.set()  # Set the original event
+        original = ModelEventBusListenerHandle(
+            stop_event=original_event,
+        )
+
+        copied = copy.deepcopy(original)
+
+        # Copied should have a new Event
+        assert copied.stop_event is not None
+        assert copied.stop_event is not original_event
+        assert isinstance(copied.stop_event, threading.Event)
+        # New Event should NOT be set (fresh state)
+        assert not copied.stop_event.is_set()
+
+    def test_deepcopy_preserves_none_stop_event(self) -> None:
+        """Test deepcopy keeps stop_event as None when original is None."""
+        original = ModelEventBusListenerHandle(
+            stop_event=None,
+        )
+
+        copied = copy.deepcopy(original)
+
+        assert copied.stop_event is None
+
+    def test_deepcopy_sets_is_running_to_false(self) -> None:
+        """Test deepcopy sets is_running to False regardless of original state."""
+        original = ModelEventBusListenerHandle(
+            is_running=True,
+        )
+
+        copied = copy.deepcopy(original)
+
+        assert copied.is_running is False
+
+    def test_deepcopy_sets_is_running_to_false_when_originally_false(self) -> None:
+        """Test deepcopy keeps is_running as False when original is False."""
+        original = ModelEventBusListenerHandle(
+            is_running=False,
+        )
+
+        copied = copy.deepcopy(original)
+
+        assert copied.is_running is False
+
+    def test_deepcopy_deep_copies_subscriptions(self) -> None:
+        """Test deepcopy creates an independent deep copy of subscriptions."""
+        nested_sub = {"topic": "test", "config": {"option": 1}}
+        original = ModelEventBusListenerHandle(
+            subscriptions=["sub1", nested_sub, ["nested", "list"]],
+        )
+
+        copied = copy.deepcopy(original)
+
+        # Subscriptions should be equal but independent
+        assert copied.subscriptions == original.subscriptions
+        assert copied.subscriptions is not original.subscriptions
+
+        # Nested objects should also be independent
+        assert copied.subscriptions[1] is not original.subscriptions[1]
+        assert copied.subscriptions[2] is not original.subscriptions[2]
+
+        # Modifying copied subscriptions should not affect original
+        copied.subscriptions.append("new_sub")
+        assert len(original.subscriptions) == 3
+        assert len(copied.subscriptions) == 4
+
+        # Modifying nested dict in copy should not affect original
+        copied.subscriptions[1]["topic"] = "modified"
+        assert original.subscriptions[1]["topic"] == "test"
+
+    def test_deepcopy_with_empty_subscriptions(self) -> None:
+        """Test deepcopy handles empty subscriptions list correctly."""
+        original = ModelEventBusListenerHandle(
+            subscriptions=[],
+        )
+
+        copied = copy.deepcopy(original)
+
+        assert copied.subscriptions == []
+        assert copied.subscriptions is not original.subscriptions
+
+    def test_deepcopy_with_running_thread(self) -> None:
+        """Test copying a handle with an active thread."""
+        stop_event = threading.Event()
+
+        def thread_target() -> None:
+            stop_event.wait()
+
+        thread = threading.Thread(target=thread_target, daemon=True)
+        thread.start()
+
+        original = ModelEventBusListenerHandle(
+            listener_thread=thread,
+            stop_event=stop_event,
+            subscriptions=["active_sub"],
+            is_running=True,
+        )
+
+        try:
+            # Verify original has running thread
+            assert original.is_active() is True
+
+            # Deep copy should create a "stopped" copy
+            copied = copy.deepcopy(original)
+
+            # Copied handle should NOT have the thread
+            assert copied.listener_thread is None
+            assert copied.is_running is False
+            assert copied.is_active() is False
+
+            # But subscriptions should be copied
+            assert copied.subscriptions == ["active_sub"]
+
+            # Original should still be running
+            assert original.is_active() is True
+            assert original.is_running is True
+        finally:
+            # Cleanup: stop the thread
+            stop_event.set()
+            thread.join(timeout=1.0)
+
+    def test_deepcopy_with_memo_parameter(self) -> None:
+        """Test deepcopy with explicit memo parameter for cycle detection."""
+        original = ModelEventBusListenerHandle(
+            subscriptions=["sub1", "sub2"],
+            is_running=True,
+        )
+
+        memo: dict[int, object] = {}
+        copied = copy.deepcopy(original, memo)
+
+        # The original should be in the memo dict
+        assert id(original) in memo
+        assert memo[id(original)] is copied
+
+        # Copied should have the expected values
+        assert copied.listener_thread is None
+        assert copied.is_running is False
+        assert copied.subscriptions == ["sub1", "sub2"]
+
+    def test_deepcopy_preserves_memo_from_caller(self) -> None:
+        """Test that deepcopy preserves memo entries passed by caller."""
+        original = ModelEventBusListenerHandle(
+            subscriptions=["sub1"],
+        )
+
+        # Pre-populate memo with existing entries
+        existing_obj = object()
+        memo: dict[int, object] = {12345: existing_obj}
+
+        copied = copy.deepcopy(original, memo)
+
+        # Existing memo entry should be preserved
+        assert 12345 in memo
+        assert memo[12345] is existing_obj
+
+        # New entry should be added
+        assert id(original) in memo
+
+    def test_deepcopy_creates_new_lock(self) -> None:
+        """Test deepcopy creates a new lock for thread safety."""
+        original = ModelEventBusListenerHandle(
+            subscriptions=["sub1"],
+            is_running=True,
+        )
+
+        copied = copy.deepcopy(original)
+
+        # Both should have functional locks (different instances)
+        # We verify by checking both can acquire their lock
+        assert original._lock.acquire(blocking=False)
+        original._lock.release()
+
+        assert copied._lock.acquire(blocking=False)
+        copied._lock.release()
+
+        # The locks should be different instances
+        assert original._lock is not copied._lock
+
+    def test_deepcopy_copy_is_fully_independent(self) -> None:
+        """Test that deep copied handle is fully independent from original."""
+        thread = threading.Thread(target=lambda: None, daemon=True)
+        stop_event = threading.Event()
+        stop_event.set()
+
+        original = ModelEventBusListenerHandle(
+            listener_thread=thread,
+            stop_event=stop_event,
+            subscriptions=["sub1", "sub2"],
+            is_running=True,
+        )
+
+        copied = copy.deepcopy(original)
+
+        # Modify copied
+        copied.subscriptions.append("sub3")
+        copied.is_running = True  # Try to set it back
+
+        # Original should be unchanged (except for is_running which is just a bool)
+        assert len(original.subscriptions) == 2
+        assert original.listener_thread is thread
+        assert original.stop_event is stop_event
+
+        # Modify original
+        original.subscriptions.append("sub4")
+
+        # Copied should be unchanged (still has 3 from our append)
+        assert len(copied.subscriptions) == 3
+        assert "sub4" not in copied.subscriptions
+
+    def test_deepcopy_multiple_times(self) -> None:
+        """Test multiple deep copies are all independent."""
+        original = ModelEventBusListenerHandle(
+            subscriptions=["original"],
+            is_running=True,
+        )
+
+        copy1 = copy.deepcopy(original)
+        copy2 = copy.deepcopy(original)
+        copy3 = copy.deepcopy(copy1)
+
+        # All should be independent
+        copy1.subscriptions.append("copy1")
+        copy2.subscriptions.append("copy2")
+        copy3.subscriptions.append("copy3")
+
+        assert original.subscriptions == ["original"]
+        assert copy1.subscriptions == ["original", "copy1"]
+        assert copy2.subscriptions == ["original", "copy2"]
+        assert copy3.subscriptions == ["original", "copy3"]
+
+    def test_deepcopy_with_default_values(self) -> None:
+        """Test deepcopy of handle with all default values."""
+        original = ModelEventBusListenerHandle()
+
+        copied = copy.deepcopy(original)
+
+        assert copied.listener_thread is None
+        assert copied.stop_event is None
+        assert copied.subscriptions == []
+        assert copied.is_running is False
+
+    def test_deepcopy_subscriptions_with_mock_objects(self) -> None:
+        """Test deepcopy handles subscriptions containing mock objects."""
+        mock_sub = MagicMock()
+        mock_sub.topic = "test_topic"
+
+        original = ModelEventBusListenerHandle(
+            subscriptions=[mock_sub, "string_sub"],
+        )
+
+        copied = copy.deepcopy(original)
+
+        # Subscriptions should be copied
+        assert len(copied.subscriptions) == 2
+        # Note: MagicMock deep copies may create new mocks
+        assert copied.subscriptions[1] == "string_sub"

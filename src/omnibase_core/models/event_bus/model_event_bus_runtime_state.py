@@ -84,14 +84,38 @@ class ModelEventBusRuntimeState(BaseModel):
         return self.contract_path is not None
 
     def reset(self) -> None:
-        """Reset state to unbound defaults.
+        """Perform a soft unbind, preserving identity and configuration.
 
-        This clears the binding status (is_bound=False) while preserving
-        node_name and contract_path. Use this for temporary unbinding where
-        you want to rebind with the same configuration.
+        This is a "soft unbind" operation that clears only the binding status
+        (is_bound=False) while preserving node_name and contract_path. The
+        instance retains its identity and can be rebound using bind() with
+        potentially different configuration.
 
-        For a full reset including clearing node_name, create a new instance
-        with create_unbound() instead.
+        Semantic Difference from bind():
+            - reset(): Soft unbind - marks as unbound but keeps node_name and
+              contract_path. Use when temporarily pausing operations or when
+              you need to rebind with new configuration.
+            - bind(): Full bind - sets node_name, contract_path, and is_bound=True.
+              Use after reset() to re-establish binding, or to change configuration.
+
+        When to Use:
+            - Use reset() when temporarily pausing event bus operations
+            - Use reset() before calling bind() with new configuration
+            - Use create_unbound() instead when you want a completely fresh
+              instance with all default values (empty node_name, None contract_path)
+
+        Example:
+            >>> state = ModelEventBusRuntimeState.create_bound("node1", "/path.yaml")
+            >>> state.is_ready()
+            True
+            >>> state.reset()  # Soft unbind - keeps node_name="node1"
+            >>> state.is_bound
+            False
+            >>> state.node_name  # Still preserved
+            'node1'
+            >>> state.bind("node2", "/new.yaml")  # Rebind with new config
+            >>> state.is_ready()
+            True
 
         See Also:
             bind(): Sets node_name, contract_path, and is_bound together.
@@ -100,11 +124,41 @@ class ModelEventBusRuntimeState(BaseModel):
         self.is_bound = False
 
     def bind(self, node_name: str, contract_path: str | None = None) -> None:
-        """Bind the event bus to a node.
+        """Bind the event bus to a node with full configuration.
+
+        This is a "full bind" operation that sets node_name, contract_path,
+        and is_bound=True together. Use this to establish or re-establish
+        a binding, potentially with new configuration.
+
+        Semantic Difference from reset():
+            - bind(): Full bind - sets all values and marks as bound. Use to
+              establish a new binding or rebind after reset() with new config.
+            - reset(): Soft unbind - only clears is_bound, preserving node_name
+              and contract_path. Use when temporarily pausing operations.
+
+        Common Patterns:
+            - Initial binding: create_unbound() then bind()
+            - Reconfiguration: reset() then bind() with new values
+            - Direct creation: create_bound() for one-step initialization
 
         Args:
-            node_name: Identifier for the node.
-            contract_path: Optional path to contract file.
+            node_name: Identifier for the node using this event bus binding.
+            contract_path: Optional path to contract YAML file. Pass None
+                to clear any existing contract_path.
+
+        Example:
+            >>> state = ModelEventBusRuntimeState.create_unbound()
+            >>> state.bind("my_node", "/path/to/contract.yaml")
+            >>> state.is_ready()
+            True
+            >>> state.reset()  # Temporarily unbind
+            >>> state.bind("different_node")  # Rebind with different config
+            >>> state.node_name
+            'different_node'
+
+        See Also:
+            reset(): Soft unbind that preserves node_name and contract_path.
+            create_bound(): One-step factory for creating a bound instance.
         """
         self.node_name = node_name
         self.contract_path = contract_path

@@ -84,28 +84,41 @@ class ModelEventBusListenerHandle(BaseModel):
         description="Whether the listener is currently running.",
     )
 
-    def __deepcopy__(self, memo: dict[int, Any] | None = None) -> "ModelEventBusListenerHandle":
+    def __deepcopy__(
+        self, memo: dict[int, Any] | None = None
+    ) -> "ModelEventBusListenerHandle":
         """
         Create a deep copy of this handle with a new lock instance.
 
         threading.Lock objects cannot be pickled or deep-copied, so we create
-        a new lock for the copied instance. Other fields are deep-copied normally.
+        a new lock for the copied instance. Thread and Event objects are also
+        reset since they cannot be meaningfully copied - a copied handle starts
+        in a stopped state with no active thread.
+
+        Note:
+            - listener_thread is set to None (a started Thread references an OS
+              thread and cannot be meaningfully duplicated)
+            - stop_event is replaced with a fresh Event if one existed (copying
+              an Event would create one that doesn't share state with the original)
+            - is_running is set to False (the copy has no active thread)
+            - subscriptions are deep-copied normally
 
         Args:
             memo: Dictionary of already copied objects (for cycle detection).
 
         Returns:
-            A new ModelEventBusListenerHandle with independent state and a new lock.
+            A new ModelEventBusListenerHandle with independent state and a new lock,
+            starting in a stopped state.
         """
         if memo is None:
             memo = {}
 
-        # Create a new instance with a fresh lock
+        # Don't copy active thread state - it cannot be meaningfully duplicated
         new_handle = ModelEventBusListenerHandle(
-            listener_thread=copy.deepcopy(self.listener_thread, memo),
-            stop_event=copy.deepcopy(self.stop_event, memo),
+            listener_thread=None,  # Thread cannot be copied
+            stop_event=threading.Event() if self.stop_event else None,
             subscriptions=copy.deepcopy(self.subscriptions, memo),
-            is_running=self.is_running,
+            is_running=False,  # Copy is not running
         )
         memo[id(self)] = new_handle
         return new_handle
