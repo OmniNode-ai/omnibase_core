@@ -77,7 +77,9 @@ class ModelTypedAccessor[T](ModelFieldAccessor):
                         result[key] = value
                     else:
                         result[key] = str(value)
-                except Exception:  # fallback-ok: skip non-serializable attributes gracefully
+                except (
+                    Exception
+                ):  # fallback-ok: skip non-serializable attributes gracefully
                     continue
 
         return result

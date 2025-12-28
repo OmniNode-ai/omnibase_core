@@ -27,7 +27,7 @@ import pytest
 # Module-level pytest marker for all tests in this file
 pytestmark = pytest.mark.unit
 
-from omnibase_core.enums.enum_effect_types import EnumEffectType, EnumTransactionState
+from omnibase_core.enums import EnumEffectType, EnumTransactionState
 from omnibase_core.mixins.mixin_effect_execution import MixinEffectExecution
 from omnibase_core.models.configuration.model_circuit_breaker import ModelCircuitBreaker
 from omnibase_core.models.contracts.subcontracts.model_effect_io_configs import (

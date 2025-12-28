@@ -1649,7 +1649,9 @@ class MixinEffectExecution:
             try:
                 self.container.get_service(protocol_name)
                 registration_status[protocol_name] = True
-            except Exception:  # fallback-ok: service not found indicates unregistered handler
+            except (
+                Exception
+            ):  # fallback-ok: service not found indicates unregistered handler
                 registration_status[protocol_name] = False
 
         return registration_status

@@ -404,7 +404,9 @@ class ProtocolMigrator:
                         references.append(str(py_file))
                         break  # Only add each file once
 
-            except Exception:  # fallback-ok: skip unreadable files during reference scanning
+            except (
+                Exception
+            ):  # fallback-ok: skip unreadable files during reference scanning
                 continue
 
         return references

@@ -413,7 +413,9 @@ class DictAnyCheckerPlugin(Plugin):
                     if result is not None:
                         return result
 
-        except Exception:  # fallback-ok: graceful handling of internal mypy API access issues
+        except (
+            Exception
+        ):  # fallback-ok: graceful handling of internal mypy API access issues
             pass
 
         return None

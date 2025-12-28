@@ -380,7 +380,9 @@ class NodeCoreBase(ABC):
             contract_service: Any = None
             try:
                 contract_service = self.container.get_service("contract_service")  # type: ignore[arg-type]
-            except Exception:  # fallback-ok: contract service is optional for node operation
+            except (
+                Exception
+            ):  # fallback-ok: contract service is optional for node operation
                 contract_service = None
 
             # Check contract service - use try/except to avoid hasattr() deadlock with Mock

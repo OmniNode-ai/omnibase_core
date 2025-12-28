@@ -152,5 +152,7 @@ async def _async_emit_via_logger(
     try:
         # Use the registry-resolved logger
         logger.emit(level, message, correlation_id)
-    except Exception:  # fallback-ok: logger failure is non-fatal in fire-and-forget logging
+    except (
+        Exception
+    ):  # fallback-ok: logger failure is non-fatal in fire-and-forget logging
         pass

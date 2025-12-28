@@ -54,13 +54,12 @@ class TestErrorCodePatternSync:
 
     def test_retry_error_context_uses_centralized_pattern(self) -> None:
         """Verify model_retry_error_context imports from centralized location."""
-        from omnibase_core.constants.constants_error import (
-            ERROR_CODE_PATTERN as SOURCE_PATTERN,
-        )
-
         # Import the ERROR_CODE_PATTERN used by model_retry_error_context
         # This is used internally by ModelErrorContext validation
         import omnibase_core.models.context.model_retry_error_context as retry_module
+        from omnibase_core.constants.constants_error import (
+            ERROR_CODE_PATTERN as SOURCE_PATTERN,
+        )
 
         # Access the pattern used by the module
         retry_pattern = retry_module.ERROR_CODE_PATTERN

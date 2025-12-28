@@ -10,7 +10,7 @@ from uuid import uuid4
 
 import pytest
 
-from omnibase_core.enums.enum_effect_types import EnumTransactionState
+from omnibase_core.enums import EnumTransactionState
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.infrastructure.model_effect_transaction import (
     ModelEffectTransaction,
