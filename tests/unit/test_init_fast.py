@@ -62,7 +62,7 @@ class TestLazyValidationLoading:
         )
 
     def test_get_validation_suite_returns_correct_types(self):
-        """Test that get_validation_suite returns ModelValidationResult, ModelValidationSuite, and validate_all."""
+        """Test that get_validation_suite returns ModelValidationResult, ServiceValidationSuite, and validate_all."""
         from omnibase_core.__init___fast import get_validation_suite
 
         result = get_validation_suite()
@@ -70,24 +70,24 @@ class TestLazyValidationLoading:
         assert isinstance(result, tuple)
         assert len(result) == 3
 
-        ModelValidationResult, ModelValidationSuite, validate_all = result
+        ModelValidationResult, ServiceValidationSuite, validate_all = result
 
         # Verify types
         assert isinstance(ModelValidationResult, type)
-        assert isinstance(ModelValidationSuite, type)
+        assert isinstance(ServiceValidationSuite, type)
         assert callable(validate_all)
 
     def test_get_validation_suite_types_are_correct(self):
         """Test that get_validation_suite returns the correct class types."""
         from omnibase_core.__init___fast import get_validation_suite
 
-        ModelValidationResult, ModelValidationSuite, validate_all = (
+        ModelValidationResult, ServiceValidationSuite, validate_all = (
             get_validation_suite()
         )
 
         # Verify class names
         assert ModelValidationResult.__name__ == "ModelValidationResult"
-        assert ModelValidationSuite.__name__ == "ModelValidationSuite"
+        assert ServiceValidationSuite.__name__ == "ServiceValidationSuite"
         assert validate_all.__name__ == "validate_all"
 
     def test_get_all_validation_returns_dictionary(self):
@@ -102,7 +102,7 @@ class TestLazyValidationLoading:
         # Verify expected keys
         expected_keys = {
             "ModelValidationResult",
-            "ModelValidationSuite",
+            "ServiceValidationSuite",
             "validate_all",
             "validate_architecture",
             "validate_contracts",
@@ -119,7 +119,7 @@ class TestLazyValidationLoading:
 
         # Classes should be types
         assert isinstance(all_validation["ModelValidationResult"], type)
-        assert isinstance(all_validation["ModelValidationSuite"], type)
+        assert isinstance(all_validation["ServiceValidationSuite"], type)
 
         # Functions should be callable
         assert callable(all_validation["validate_all"])
@@ -205,13 +205,13 @@ class TestLazyLoadingIntegration:
         assert callable(validate_architecture)
 
     def test_validation_suite_can_be_instantiated(self):
-        """Test that ModelValidationSuite can be instantiated after lazy loading."""
+        """Test that ServiceValidationSuite can be instantiated after lazy loading."""
         from omnibase_core.__init___fast import get_validation_suite
 
-        _, ModelValidationSuite, _ = get_validation_suite()
+        _, ServiceValidationSuite, _ = get_validation_suite()
 
         # Should be able to instantiate the class
-        suite = ModelValidationSuite()
+        suite = ServiceValidationSuite()
         assert suite is not None
 
     def test_all_validation_tools_accessible(self):

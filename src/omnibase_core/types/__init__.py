@@ -657,12 +657,22 @@ __all__ = [
 ]
 
 
+# =============================================================================
+# Lazy loading: Avoid circular imports during module initialization.
+# This is NOT for backwards compatibility aliases (see OMN-1071 for that pattern).
+# Instead, this defers imports that would cause circular dependency chains:
+#   error_codes -> types.__init__ -> constraints -> models -> error_codes
+# =============================================================================
 def __getattr__(name: str) -> object:
     """
     Lazy import for constraints module to avoid circular imports.
 
     All constraint imports are lazy-loaded to prevent circular dependency:
-    error_codes → types.__init__ → constraints → models → error_codes
+    error_codes -> types.__init__ -> constraints -> models -> error_codes
+
+    Note: This is NOT a backwards compatibility mechanism (see OMN-1071 for that
+    pattern in validation/__init__.py). This is purely for breaking circular
+    import chains that would otherwise occur at module load time.
     """
     # List of all constraint exports that should be lazy-loaded
     constraint_exports = {

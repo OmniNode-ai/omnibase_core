@@ -15,6 +15,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import yaml
+from pydantic import ValidationError as PydanticValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
@@ -33,7 +34,7 @@ from omnibase_core.models.core.model_yaml_schema_object import ModelYamlSchemaOb
 from omnibase_core.utils.util_safe_yaml_loader import load_and_validate_yaml_model
 
 
-class ProtocolContractLoader:
+class UtilContractLoader:
     """
     Unified contract loading and resolution for NodeBase implementation.
 
@@ -43,6 +44,28 @@ class ProtocolContractLoader:
     - Contract structure validation
     - Performance optimization through caching
     - Error handling with detailed context
+
+    Thread Safety:
+        This class is NOT thread-safe. It maintains mutable internal state
+        including contract_cache, loaded_contracts, and resolution_stack that
+        are modified during load_contract() and clear_cache() operations.
+        Concurrent access from multiple threads could corrupt the cache or
+        cause inconsistent results. Each thread should use its own instance,
+        or disable caching (cache_enabled=False) and wrap access with external
+        locks. See docs/guides/THREADING.md for more details.
+
+    Example:
+        >>> from omnibase_core.utils import UtilContractLoader
+        >>> from pathlib import Path
+        >>> loader = UtilContractLoader(base_path=Path("contracts/"))
+        >>> contract = loader.load_contract(Path("contracts/my_node.yaml"))
+        >>> print(contract.node_name)
+
+    .. note::
+        Previously named ``ProtocolContractLoader``. Renamed in v0.4.0
+        to follow ONEX naming conventions (OMN-1071). The ``Protocol``
+        prefix is reserved for typing.Protocol interfaces; ``Util``
+        prefix indicates a utility class.
     """
 
     def __init__(self, base_path: Path, cache_enabled: bool = True):
@@ -108,10 +131,18 @@ class ProtocolContractLoader:
 
         except ModelOnexError:
             raise
-        except Exception as e:
+        except OSError as e:
+            # File system errors (FileNotFoundError, PermissionError, etc.)
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
-                message=f"Failed to load contract: {e!s}",
+                message=f"File system error loading contract: {e!s}",
+                context={"contract_path": str(contract_path)},
+            ) from e
+        except (TypeError, ValueError, KeyError) as e:
+            # Data parsing/conversion errors
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Invalid contract data: {e!s}",
                 context={"contract_path": str(contract_path)},
             ) from e
 
@@ -175,10 +206,18 @@ class ProtocolContractLoader:
                 message=f"Invalid YAML in contract file: {e!s}",
                 context={"file_path": file_path_str},
             ) from e
-        except Exception as e:
+        except OSError as e:
+            # File system errors (FileNotFoundError, PermissionError, etc.)
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
-                message=f"Failed to read contract file: {e!s}",
+                message=f"Cannot access contract file: {e!s}",
+                context={"file_path": file_path_str},
+            ) from e
+        except UnicodeDecodeError as e:
+            # Encoding issues when reading the file
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Invalid encoding in contract file: {e!s}",
                 context={"file_path": file_path_str},
             ) from e
 
@@ -330,10 +369,18 @@ class ProtocolContractLoader:
                 original_dependencies=None,
             )
 
-        except Exception as e:
+        except PydanticValidationError as e:
+            # Pydantic model validation errors
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Failed to parse contract content: {e!s}",
+                message=f"Contract schema validation failed: {e!s}",
+                context={"contract_path": str(contract_path)},
+            ) from e
+        except (TypeError, ValueError) as e:
+            # Type conversion errors (e.g., int() on non-numeric values)
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Invalid value in contract: {e!s}",
                 context={"contract_path": str(contract_path)},
             ) from e
 
@@ -434,8 +481,8 @@ class ProtocolContractLoader:
         except ModelOnexError:
             # fallback-ok: Validation method should return bool status, not raise ModelOnexError
             return False
-        except Exception:
-            # fallback-ok: Validation method should return bool status for any contract resolution error
+        except (OSError, RuntimeError):
+            # fallback-ok: Validation method should return bool status for file system or runtime errors
             return False
 
     def _validate_yaml_content_security(self, content: str, file_path: Path) -> None:

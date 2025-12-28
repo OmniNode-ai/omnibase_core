@@ -306,7 +306,7 @@ These modules have **stable** signatures. Breaking changes require major version
 | `omnibase_core.models.contracts.*` | Stable |
 | `omnibase_core.errors` | Stable |
 | `omnibase_core.adapters` | Stable |
-| `omnibase_core.validation.contract_validator` | Stable |
+| `omnibase_core.services.service_contract_validator` | Stable |
 
 ### Semi-Public (Use with Caution)
 
@@ -1231,7 +1231,7 @@ Create adapter that transforms Orchestrator contracts for workflow coordination.
 **Description**:
 Create centralized validation layer that validates contracts at node load time.
 
-**Location**: `src/omnibase_core/validation/contract_validator.py`
+**Location**: `src/omnibase_core/services/service_contract_validator.py`
 
 **Validations Required**:
 - Input/output shape validation

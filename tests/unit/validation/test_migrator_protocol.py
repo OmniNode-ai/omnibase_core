@@ -2,7 +2,7 @@
 Comprehensive unit tests for Protocol Migrator.
 
 Tests cover:
-- ProtocolMigrator initialization
+- ServiceProtocolMigrator initialization
 - Migration plan creation
 - Conflict detection (name conflicts, duplicates)
 - Migration execution (dry run and actual)
@@ -25,13 +25,13 @@ from omnibase_core.models.validation.model_migration_conflict_union import (
 )
 from omnibase_core.models.validation.model_migration_plan import ModelMigrationPlan
 from omnibase_core.models.validation.model_migration_result import ModelMigrationResult
-from omnibase_core.validation.migrator_protocol import ProtocolMigrator
+from omnibase_core.services.service_protocol_migrator import ServiceProtocolMigrator
 from omnibase_core.validation.validation_utils import ModelProtocolInfo
 
 
 @pytest.mark.unit
-class TestProtocolMigratorInitialization:
-    """Test ProtocolMigrator initialization."""
+class TestServiceProtocolMigratorInitialization:
+    """Test ServiceProtocolMigrator initialization."""
 
     def test_migrator_initialization_defaults(self, tmp_path: Path) -> None:
         """Test migrator initializes with default paths."""
@@ -40,7 +40,7 @@ class TestProtocolMigratorInitialization:
         spi_path = tmp_path / "spi"
         spi_path.mkdir()
 
-        migrator = ProtocolMigrator(
+        migrator = ServiceProtocolMigrator(
             source_path=str(source_path),
             spi_path=str(spi_path),
         )
@@ -56,7 +56,7 @@ class TestProtocolMigratorInitialization:
         custom_spi = tmp_path / "custom_spi"
         custom_spi.mkdir()
 
-        migrator = ProtocolMigrator(
+        migrator = ServiceProtocolMigrator(
             source_path=str(custom_source),
             spi_path=str(custom_spi),
         )
@@ -78,7 +78,7 @@ class TestMigrationPlanCreation:
         spi_path = tmp_path / "spi"
         spi_path.mkdir()
 
-        migrator = ProtocolMigrator(
+        migrator = ServiceProtocolMigrator(
             source_path=str(source_path),
             spi_path=str(spi_path),
         )
@@ -97,7 +97,7 @@ class TestMigrationPlanCreation:
         spi_path = tmp_path / "spi"
         spi_path.mkdir()
 
-        migrator = ProtocolMigrator(
+        migrator = ServiceProtocolMigrator(
             source_path=str(source_path),
             spi_path=str(spi_path),
         )
@@ -127,7 +127,7 @@ class TestMigrationPlanCreation:
         spi_path = tmp_path / "spi"
         spi_path.mkdir()
 
-        migrator = ProtocolMigrator(
+        migrator = ServiceProtocolMigrator(
             source_path=str(source_path),
             spi_path=str(spi_path),
         )
@@ -157,7 +157,7 @@ class TestMigrationPlanCreation:
         spi_path = tmp_path / "spi"
         spi_path.mkdir()
 
-        migrator = ProtocolMigrator(
+        migrator = ServiceProtocolMigrator(
             source_path=str(source_path),
             spi_path=str(spi_path),
         )
@@ -210,7 +210,7 @@ class TestConflictDetection:
             ),
         ]
 
-        migrator = ProtocolMigrator()
+        migrator = ServiceProtocolMigrator()
         conflicts = migrator._detect_migration_conflicts(
             source_protocols, spi_protocols
         )
@@ -246,7 +246,7 @@ class TestConflictDetection:
             ),
         ]
 
-        migrator = ProtocolMigrator()
+        migrator = ServiceProtocolMigrator()
         conflicts = migrator._detect_migration_conflicts(
             source_protocols, spi_protocols
         )
@@ -281,7 +281,7 @@ class TestConflictDetection:
             ),
         ]
 
-        migrator = ProtocolMigrator()
+        migrator = ServiceProtocolMigrator()
         conflicts = migrator._detect_migration_conflicts(
             source_protocols, spi_protocols
         )
@@ -300,7 +300,7 @@ class TestMigrationExecution:
         spi_path = tmp_path / "spi"
         spi_path.mkdir()
 
-        migrator = ProtocolMigrator(
+        migrator = ServiceProtocolMigrator(
             source_path=str(source_path),
             spi_path=str(spi_path),
         )
@@ -332,7 +332,7 @@ class TestMigrationExecution:
         spi_path = tmp_path / "spi"
         spi_path.mkdir()
 
-        migrator = ProtocolMigrator(
+        migrator = ServiceProtocolMigrator(
             source_path=str(source_path),
             spi_path=str(spi_path),
         )
@@ -387,7 +387,7 @@ class TestProtocol(Protocol):
 """
         )
 
-        migrator = ProtocolMigrator(
+        migrator = ServiceProtocolMigrator(
             source_path=str(source_path),
             spi_path=str(spi_path),
         )
@@ -420,7 +420,7 @@ class TestMigrationSteps:
 
     def test_generate_migration_steps(self, tmp_path: Path) -> None:
         """Test migration steps are generated correctly."""
-        migrator = ProtocolMigrator()
+        migrator = ServiceProtocolMigrator()
 
         protocols = [
             ModelProtocolInfo(
@@ -452,7 +452,7 @@ class TestMigrationSteps:
 
     def test_migration_steps_include_time_estimates(self, tmp_path: Path) -> None:
         """Test migration steps include time estimates."""
-        migrator = ProtocolMigrator()
+        migrator = ServiceProtocolMigrator()
 
         protocols = [
             ModelProtocolInfo(
@@ -481,7 +481,7 @@ class TestImportUpdates:
 
     def test_update_spi_imports(self, tmp_path: Path) -> None:
         """Test SPI imports are updated correctly."""
-        migrator = ProtocolMigrator()
+        migrator = ServiceProtocolMigrator()
 
         # Create test file with imports
         test_file = tmp_path / "test_protocol.py"
@@ -503,7 +503,7 @@ import omnibase_core
 
     def test_update_spi_imports_nonexistent_file(self, tmp_path: Path) -> None:
         """Test updating imports handles nonexistent files gracefully."""
-        migrator = ProtocolMigrator()
+        migrator = ServiceProtocolMigrator()
 
         nonexistent = tmp_path / "nonexistent.py"
 
@@ -534,7 +534,7 @@ from .test_protocol import TestProtocol
 """
         )
 
-        migrator = ProtocolMigrator(source_path=str(source_path))
+        migrator = ServiceProtocolMigrator(source_path=str(source_path))
 
         protocol_info = ModelProtocolInfo(
             name="TestProtocol",
@@ -561,7 +561,7 @@ from .test_protocol import TestProtocol
         protocol_file = src_dir / "test_protocol.py"
         protocol_file.write_text("class TestProtocol: pass")
 
-        migrator = ProtocolMigrator(source_path=str(source_path))
+        migrator = ServiceProtocolMigrator(source_path=str(source_path))
 
         protocol_info = ModelProtocolInfo(
             name="TestProtocol",
@@ -585,7 +585,7 @@ class TestRollback:
 
     def test_rollback_dry_run(self, tmp_path: Path) -> None:
         """Test rollback fails for dry run migrations."""
-        migrator = ProtocolMigrator()
+        migrator = ServiceProtocolMigrator()
 
         result = ModelMigrationResult(
             success=True,
@@ -607,7 +607,7 @@ class TestRollback:
 
     def test_rollback_successful(self, tmp_path: Path) -> None:
         """Test successful rollback."""
-        migrator = ProtocolMigrator()
+        migrator = ServiceProtocolMigrator()
 
         # Create test file
         created_file = tmp_path / "created.py"
@@ -643,7 +643,7 @@ class TestEdgeCases:
         spi_path.mkdir()
 
         # Should not raise exception during initialization
-        migrator = ProtocolMigrator(
+        migrator = ServiceProtocolMigrator(
             source_path=str(nonexistent),
             spi_path=str(spi_path),
         )
@@ -652,7 +652,7 @@ class TestEdgeCases:
 
     def test_create_plan_filters_protocols(self, tmp_path: Path) -> None:
         """Test plan creation filters to requested protocols."""
-        migrator = ProtocolMigrator()
+        migrator = ServiceProtocolMigrator()
 
         all_protocols = [
             ModelProtocolInfo(
@@ -713,7 +713,7 @@ class TestValidationErrors:
 
     def test_create_plan_protocol_without_file_path(self, tmp_path: Path) -> None:
         """Test creating plan with protocol missing file_path returns error result."""
-        migrator = ProtocolMigrator()
+        migrator = ServiceProtocolMigrator()
 
         # Protocol without file_path
         invalid_protocols = [
@@ -736,7 +736,7 @@ class TestValidationErrors:
 
     def test_create_plan_protocol_without_name(self, tmp_path: Path) -> None:
         """Test creating plan with protocol missing name returns error result."""
-        migrator = ProtocolMigrator()
+        migrator = ServiceProtocolMigrator()
 
         # Protocol without name
         invalid_protocols = [
@@ -783,7 +783,7 @@ class TestProtocol(Protocol):
 """
         )
 
-        migrator = ProtocolMigrator(
+        migrator = ServiceProtocolMigrator(
             source_path=str(source_path),
             spi_path=str(spi_path),
         )
@@ -831,7 +831,7 @@ class TestProtocol(Protocol):
         if platform.system() != "Windows":
             Path(unreadable_file).chmod(0o000)
 
-        migrator = ProtocolMigrator(source_path=str(source_path))
+        migrator = ServiceProtocolMigrator(source_path=str(source_path))
 
         protocol_info = ModelProtocolInfo(
             name="TestProtocol",
@@ -857,7 +857,7 @@ class TestProtocol(Protocol):
         """Test rollback handling when file deletion fails."""
         import uuid
 
-        migrator = ProtocolMigrator()
+        migrator = ServiceProtocolMigrator()
 
         # Create a directory with unique name to avoid parallel test conflicts
         unique_id = str(uuid.uuid4())[:8]
