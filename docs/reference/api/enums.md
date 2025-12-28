@@ -39,13 +39,209 @@ error = ModelOnexError(
 - `CONFLICT_ERROR` - Resource conflict
 - `RATE_LIMIT_ERROR` - Rate limit exceeded
 
-### Node Types
+### Handler Enums
+
+Handler enums provide typed classifications for handler systems in the ONEX framework.
+
+#### EnumHandlerTypeCategory
+
+**Location**: `omnibase_core.enums.enum_handler_type_category`
+
+**Purpose**: Behavioral classification of handlers (pure vs impure, deterministic vs non-deterministic).
+
+**Added**: v0.4.0 (OMN-1085)
+
+```python
+from omnibase_core.enums import EnumHandlerTypeCategory
+
+# Classify handler behavior
+if category == EnumHandlerTypeCategory.COMPUTE:
+    # Pure, deterministic - safe to cache
+    result = cache.get_or_compute(key, handler.execute)
+elif category == EnumHandlerTypeCategory.EFFECT:
+    # Has side effects - needs idempotency checks
+    if not is_idempotent_request(request):
+        result = handler.execute(request)
+```
+
+**Available Categories**:
+
+| Category | Pure (no I/O) | Deterministic | Use Case |
+|----------|---------------|---------------|----------|
+| `COMPUTE` | Yes | Yes | Caching, parallel execution |
+| `EFFECT` | No | N/A | I/O operations, external systems |
+| `NONDETERMINISTIC_COMPUTE` | Yes | No | Random, time-based computations |
+
+**Helper Methods**:
+- `values()` - Get all category values as strings
+- `assert_exhaustive(value)` - Ensure exhaustive match handling
+
+**See Also**: [EnumNodeKind](#enumnodekind), [EnumHandlerType](#enumhandlertype)
+
+---
+
+#### EnumHandlerCapability
+
+**Location**: `omnibase_core.enums.enum_handler_capability`
+
+**Purpose**: Unified handler capabilities that span all node types.
+
+**Added**: v0.4.0 (OMN-1085)
+
+```python
+from omnibase_core.enums import EnumHandlerCapability
+
+# Declare handler capabilities
+capabilities = {
+    EnumHandlerCapability.CACHE,
+    EnumHandlerCapability.RETRY,
+    EnumHandlerCapability.IDEMPOTENT,
+}
+
+# Check capability before applying optimization
+if EnumHandlerCapability.CACHE in handler.capabilities:
+    result = cache.get_or_compute(key, handler.execute)
+```
+
+**Available Capabilities**:
+
+- `TRANSFORM` - Can transform data between formats
+- `VALIDATE` - Can validate input/output data
+- `CACHE` - Supports caching of results
+- `RETRY` - Supports automatic retry on transient failures
+- `BATCH` - Supports batch processing of multiple items
+- `STREAM` - Supports streaming data processing
+- `ASYNC` - Supports asynchronous execution
+- `IDEMPOTENT` - Operation is idempotent (safe to retry)
+
+**Capability Compatibility Matrix**:
+
+| Capability | COMPUTE | EFFECT | NONDETERMINISTIC |
+|------------|---------|--------|------------------|
+| CACHE | Yes | Caution* | No |
+| RETRY | Yes | Caution* | Yes |
+| IDEMPOTENT | Always | Must check | Always |
+
+*Caution: EFFECT handlers with CACHE or RETRY should also declare IDEMPOTENT.
+
+**See Also**: [EnumHandlerTypeCategory](#enumhandlertypecategory), [EnumComputeCapability](#enumcomputecapability), [EnumEffectCapability](#enumeffectcapability)
+
+---
+
+#### EnumHandlerCommandType
+
+**Location**: `omnibase_core.enums.enum_handler_command_type`
+
+**Purpose**: Typed command identifiers for handler operations.
+
+**Added**: v0.4.0 (OMN-1085)
+
+```python
+from omnibase_core.enums import EnumHandlerCommandType
+
+# Dispatch handler commands with type safety
+match command:
+    case EnumHandlerCommandType.EXECUTE:
+        result = handler.execute(input_data)
+    case EnumHandlerCommandType.VALIDATE:
+        errors = handler.validate(input_data)
+    case EnumHandlerCommandType.DRY_RUN:
+        preview = handler.dry_run(input_data)
+    case _:
+        EnumHandlerCommandType.assert_exhaustive(command)
+```
+
+**Execution Commands**:
+- `EXECUTE` - Run the handler's primary operation
+- `VALIDATE` - Validate input data without executing
+- `DRY_RUN` - Simulate execution without side effects
+- `ROLLBACK` - Undo a previous operation (EFFECT handlers only)
+
+**Introspection Commands**:
+- `DESCRIBE` - Return handler capabilities and metadata
+- `HEALTH_CHECK` - Verify handler is operational
+
+**Configuration Commands**:
+- `CONFIGURE` - Update handler settings
+- `RESET` - Restore handler to initial state
+
+**See Also**: [EnumHandlerType](#enumhandlertype), [EnumHandlerTypeCategory](#enumhandlertypecategory)
+
+---
+
+#### EnumHandlerType
+
+**Location**: `omnibase_core.enums.enum_handler_type`
+
+**Purpose**: Handler type classification by external system.
+
+```python
+from omnibase_core.enums import EnumHandlerType
+
+# Register handler by type
+registry.register(EnumHandlerType.HTTP, http_handler)
+registry.register(EnumHandlerType.DATABASE, db_handler)
+```
+
+**Available Types**:
+- `HTTP` - HTTP/REST API handlers
+- `DATABASE` - Relational database handlers
+- `KAFKA` - Apache Kafka message queue handlers
+- `FILESYSTEM` - File system handlers
+- `VAULT` - Secret management handlers
+- `VECTOR_STORE` - Vector database handlers
+- `GRAPH_DATABASE` - Graph database handlers
+- `REDIS` - Redis cache handlers
+- `EVENT_BUS` - Event bus handlers
+- `LOCAL` - Local echo handler (dev/test only)
+
+**See Also**: [EnumHandlerTypeCategory](#enumhandlertypecategory), [EnumHandlerCapability](#enumhandlercapability)
+
+---
+
+### Node Architecture Enums
+
+#### EnumNodeKind
+
+**Location**: `omnibase_core.enums.enum_node_kind`
+
+**Purpose**: High-level architectural classification for ONEX nodes.
+
+```python
+from omnibase_core.enums import EnumNodeKind
+
+# Route based on architectural role
+if node_kind == EnumNodeKind.COMPUTE:
+    route_to_compute_pipeline(node)
+elif node_kind == EnumNodeKind.EFFECT:
+    route_to_effect_pipeline(node)
+```
+
+**Core Four-Node Architecture Types**:
+
+| Kind | Purpose | Examples |
+|------|---------|----------|
+| `EFFECT` | External interactions (I/O) | API calls, database ops, file system |
+| `COMPUTE` | Data processing & transformation | Calculations, validations, data mapping |
+| `REDUCER` | State aggregation & management | State machines, accumulators |
+| `ORCHESTRATOR` | Workflow coordination | Multi-step workflows, parallel execution |
+
+**Infrastructure Types**:
+- `RUNTIME_HOST` - Runtime host nodes that manage node lifecycle
+
+**Helper Methods**:
+- `is_core_node_type(node_kind)` - Check if it's a core 4-node architecture type
+- `is_infrastructure_type(node_kind)` - Check if it's an infrastructure type
+
+**See Also**: [EnumNodeType](#enumnodetype), [EnumHandlerTypeCategory](#enumhandlertypecategory), [Migration Guide](../../guides/ENUM_NODE_KIND_MIGRATION.md)
+
+---
 
 #### EnumNodeType
 
 **Location**: `omnibase_core.enums.enum_node_type`
 
-**Purpose**: Node type classification.
+**Purpose**: Specific node implementation type classification.
 
 ```
 from omnibase_core.enums.enum_node_type import EnumNodeType
@@ -436,3 +632,28 @@ def get_action_type(value: str) -> EnumActionType:
 - [Models API](models.md) - Model class reference
 - [Error Handling](../../conventions/ERROR_HANDLING_BEST_PRACTICES.md) - Error handling patterns
 - [Node Building Guide](../../guides/node-building/README.md) - Usage examples
+- [EnumNodeKind Migration Guide](../../guides/ENUM_NODE_KIND_MIGRATION.md) - Migration from EnumNodeType to EnumNodeKind
+- [ONEX Four-Node Architecture](../../architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) - Architecture overview
+
+### Handler Enum Relationships
+
+The handler enums form a cohesive system for classifying and managing handlers:
+
+```
+EnumHandlerType          --> What external system? (HTTP, DATABASE, KAFKA...)
+    |
+    v
+EnumHandlerTypeCategory  --> What computational behavior? (COMPUTE, EFFECT)
+    |
+    v
+EnumHandlerCapability    --> What features? (CACHE, RETRY, IDEMPOTENT...)
+    |
+    v
+EnumHandlerCommandType   --> What operation? (EXECUTE, VALIDATE, DRY_RUN...)
+```
+
+This classification hierarchy enables:
+1. **Type-based routing**: Route to handlers by external system type
+2. **Behavior-based optimization**: Apply caching/retry based on category
+3. **Capability-based selection**: Choose handlers that support required features
+4. **Type-safe dispatching**: Use typed commands instead of magic strings

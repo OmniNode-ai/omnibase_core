@@ -42,9 +42,9 @@ class TestEnumHandlerTypeCategory:
         ]
 
         for value in expected_values:
-            assert hasattr(
-                EnumHandlerTypeCategory, value
-            ), f"Missing enum value: {value}"
+            assert hasattr(EnumHandlerTypeCategory, value), (
+                f"Missing enum value: {value}"
+            )
 
     def test_enum_string_values(self) -> None:
         """Test that enum values have correct string representations."""

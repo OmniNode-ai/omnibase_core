@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode Team <info@omninode.ai>
+#
+# SPDX-License-Identifier: Apache-2.0
 """
 Unit tests for EnumHandlerCapability.
 
@@ -12,7 +15,6 @@ Tests all aspects of the handler capability enum including:
 
 import json
 from enum import Enum
-from typing import Never
 
 import pytest
 import yaml
@@ -163,7 +165,9 @@ class TestEnumHandlerCapabilitySerialization:
 
         # Deserialize and compare
         loaded = json.loads(json_str)
-        assert EnumHandlerCapability(loaded["capability"]) == EnumHandlerCapability.CACHE
+        assert (
+            EnumHandlerCapability(loaded["capability"]) == EnumHandlerCapability.CACHE
+        )
 
     def test_json_serialization_with_str(self):
         """Test JSON serialization using str() method."""
@@ -180,7 +184,10 @@ class TestEnumHandlerCapabilitySerialization:
         # Deserialize and compare
         loaded = yaml.safe_load(yaml_str)
         assert loaded["handler_capability"] == "stream"
-        assert EnumHandlerCapability(loaded["handler_capability"]) == EnumHandlerCapability.STREAM
+        assert (
+            EnumHandlerCapability(loaded["handler_capability"])
+            == EnumHandlerCapability.STREAM
+        )
 
 
 @pytest.mark.unit
@@ -517,9 +524,27 @@ class TestEnumHandlerCapabilityUseCases:
     def test_capability_filtering(self):
         """Test filtering handlers by capability."""
         handlers = [
-            {"name": "http_handler", "capabilities": [EnumHandlerCapability.ASYNC, EnumHandlerCapability.RETRY]},
-            {"name": "db_handler", "capabilities": [EnumHandlerCapability.CACHE, EnumHandlerCapability.BATCH]},
-            {"name": "file_handler", "capabilities": [EnumHandlerCapability.STREAM, EnumHandlerCapability.IDEMPOTENT]},
+            {
+                "name": "http_handler",
+                "capabilities": [
+                    EnumHandlerCapability.ASYNC,
+                    EnumHandlerCapability.RETRY,
+                ],
+            },
+            {
+                "name": "db_handler",
+                "capabilities": [
+                    EnumHandlerCapability.CACHE,
+                    EnumHandlerCapability.BATCH,
+                ],
+            },
+            {
+                "name": "file_handler",
+                "capabilities": [
+                    EnumHandlerCapability.STREAM,
+                    EnumHandlerCapability.IDEMPOTENT,
+                ],
+            },
         ]
 
         # Find handlers with CACHE capability
@@ -537,7 +562,9 @@ class TestEnumHandlerCapabilityUseCases:
             EnumHandlerCapability.ASYNC: "Runs asynchronously",
         }
 
-        assert capability_descriptions[EnumHandlerCapability.CACHE] == "Supports caching"
+        assert (
+            capability_descriptions[EnumHandlerCapability.CACHE] == "Supports caching"
+        )
         assert EnumHandlerCapability.TRANSFORM in capability_descriptions
 
     def test_values_method_for_validation(self):
