@@ -781,18 +781,28 @@ class TestEdgeCasesAndSpecialScenarios:
         assert effect_input.operation_data["key_500"] == "value_500"
 
     def test_special_characters_in_string_fields(self) -> None:
-        """Test handling of special characters in string fields."""
+        """Test handling of special and Unicode characters in string fields.
+
+        Tests diverse Unicode from multiple scripts:
+        - Latin extended (accents)
+        - CJK (Chinese/Japanese/Korean)
+        - Arabic script
+        - Whitespace characters
+        """
         typed_data = ModelEffectInputData(
             effect_type=EnumEffectType.FILE_OPERATION,
-            resource_path="/data/file with spaces & special chars!.json",
-            target_system="fs-\u00e9\u00e0\u00f1",  # Unicode characters
+            resource_path="/data/file with spaces & special chars!/日本語/العربية.json",
+            target_system="fs-éàñ-中文-العربية",  # Unicode from multiple scripts
             operation_name="write-file\t\n",  # Whitespace characters
         )
 
         # Special characters preserved
         assert " " in typed_data.resource_path  # type: ignore[operator]
         assert "&" in typed_data.resource_path  # type: ignore[operator]
-        assert "\u00e9" in typed_data.target_system  # type: ignore[operator]
+        assert "日本語" in typed_data.resource_path  # type: ignore[operator]
+        assert "é" in typed_data.target_system  # type: ignore[operator]
+        assert "中文" in typed_data.target_system  # type: ignore[operator]
+        assert "العربية" in typed_data.target_system  # type: ignore[operator]
 
     def test_empty_string_vs_none_handling(self) -> None:
         """Test distinction between empty string and None."""

@@ -782,6 +782,5 @@ def _route_to_logger_node(
             # Fallback to simple output if protocol services unavailable
             pass
 
-    except Exception:
-        # Fallback to simple output if logger node routing fails
+    except Exception:  # fallback-ok: logger node routing failure is non-fatal
         pass

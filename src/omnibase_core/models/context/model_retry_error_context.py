@@ -16,26 +16,21 @@ See Also:
     - ModelErrorMetadata: For structured error metadata with retry support
 """
 
-import re
-
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from omnibase_core.constants.constants_error import ERROR_CODE_PATTERN
 
 # Pattern for error codes: CATEGORY_NNN format (e.g., AUTH_001, VALIDATION_123)
 #
-# NOTE: This pattern is intentionally duplicated in:
-#   1. omnibase_core.models.context.model_error_metadata.ERROR_CODE_PATTERN
-#   2. omnibase_core.validation.validators.common_validators.ERROR_CODE_PATTERN
-#
-# The duplication is required to avoid circular imports. The import chain is:
-#   models.context -> validation -> models.contracts -> mixins -> models.operations -> models.context
-#
-# Both patterns MUST be kept in sync. For direct validation outside Pydantic models,
-# prefer using validate_error_code() from common_validators.
+# The ERROR_CODE_PATTERN is now imported from omnibase_core.constants.constants_error
+# which provides the single source of truth for error code validation.
 #
 # Pattern format: ^[A-Z][A-Z0-9_]*_\d{1,4}$
 # - Valid: AUTH_001, VALIDATION_123, NETWORK_TIMEOUT_001, SYSTEM_01
 # - Invalid: E001 (lint-style, no underscore), auth_001 (lowercase)
-ERROR_CODE_PATTERN = re.compile(r"^[A-Z][A-Z0-9_]*_\d{1,4}$")
+#
+# For direct validation outside Pydantic models, prefer using:
+#   from omnibase_core.validation.validators import validate_error_code
 
 
 class ModelErrorContext(BaseModel):

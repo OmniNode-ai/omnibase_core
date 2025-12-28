@@ -32,14 +32,15 @@ See Also:
     - omnibase_core.models.common.model_error_context: Error location context
 """
 
-import re
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.constants.constants_error import ERROR_CODE_PATTERN
+
 __all__ = [
     "ModelErrorMetadata",
-    # Error code pattern (also defined in common_validators for direct use)
+    # Error code pattern re-exported from centralized location
     "ERROR_CODE_PATTERN",
     # Error category constants
     "CATEGORY_VALIDATION",
@@ -52,29 +53,17 @@ __all__ = [
 ]
 
 # -----------------------------------------------------------------------------
-# Error Code Pattern
+# Error Code Pattern (Centralized)
 # -----------------------------------------------------------------------------
-# Pattern for error codes: CATEGORY_NNN (e.g., AUTH_001, VALIDATION_123)
+# The ERROR_CODE_PATTERN is now imported from omnibase_core.constants.constants_error
+# which provides the single source of truth for error code validation.
 #
-# IMPORTANT: This pattern is defined here AND in common_validators.
-# - This module: For use in Pydantic model validation (avoids circular imports)
-# - common_validators: For direct validation via validate_error_code()
-#
-# The duplication is intentional to avoid circular imports. The validation module
-# imports from models, and importing from validation in model_error_metadata would
-# create a circular dependency chain. Both patterns MUST be kept in sync.
-#
-# The pattern supports multi-character category prefixes with underscores:
+# Pattern: ^[A-Z][A-Z0-9_]*_\d{1,4}$
 # - Valid: AUTH_001, VALIDATION_123, NETWORK_TIMEOUT_001, SYSTEM_01
 # - Invalid: E001 (lint-style, no underscore), auth_001 (lowercase)
 #
-# If you need to modify this pattern, update BOTH locations:
-# 1. omnibase_core.models.context.model_error_metadata.ERROR_CODE_PATTERN
-# 2. omnibase_core.validation.validators.common_validators.ERROR_CODE_PATTERN
-#
 # For direct validation (not in Pydantic models), prefer using:
 #   from omnibase_core.validation.validators import validate_error_code
-ERROR_CODE_PATTERN = re.compile(r"^[A-Z][A-Z0-9_]*_\d{1,4}$")
 
 # -----------------------------------------------------------------------------
 # Error Category Constants

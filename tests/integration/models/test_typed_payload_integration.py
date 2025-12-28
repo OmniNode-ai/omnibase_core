@@ -1198,20 +1198,27 @@ class TestUnicodeEdgeCases:
     """Tests for unicode handling in typed payloads."""
 
     def test_effect_input_data_with_unicode_resource_path(self) -> None:
-        """Test ModelEffectInputData with unicode characters in resource_path."""
+        """Test ModelEffectInputData with unicode characters in resource_path.
+
+        Tests Unicode from multiple scripts in file paths:
+        - Japanese (日本語)
+        - Chinese (文件)
+        - Russian (архив)
+        - Greek (αρχείο)
+        """
         import json
 
         model = ModelEffectInputData(
             effect_type=EnumEffectType.FILE_OPERATION,
-            resource_path="/data/\u65e5\u672c\u8a9e/\u6587\u4ef6/\u0430\u0440\u0445\u0438\u0432/\u03b1\u03c1\u03c7\u03b5\u03af\u03bf.json",
+            resource_path="/data/日本語/文件/архив/αρχείο.json",
             target_system="local-fs",
             operation_name="read_multilingual",
         )
 
-        assert "\u65e5\u672c\u8a9e" in model.resource_path  # Japanese
-        assert "\u6587\u4ef6" in model.resource_path  # Chinese
-        assert "\u0430\u0440\u0445\u0438\u0432" in model.resource_path  # Russian
-        assert "\u03b1\u03c1\u03c7\u03b5\u03af\u03bf" in model.resource_path  # Greek
+        assert "日本語" in model.resource_path  # Japanese
+        assert "文件" in model.resource_path  # Chinese
+        assert "архив" in model.resource_path  # Russian
+        assert "αρχείο" in model.resource_path  # Greek
 
         # Round-trip through JSON should preserve data
         json_str = model.model_dump_json()
@@ -1219,7 +1226,15 @@ class TestUnicodeEdgeCases:
         assert restored.resource_path == model.resource_path
 
     def test_reducer_intent_payload_with_unicode_data(self) -> None:
-        """Test ModelReducerIntentPayload with unicode in data field."""
+        """Test ModelReducerIntentPayload with unicode in data field.
+
+        Tests diverse Unicode including:
+        - Russian (Привет мир)
+        - Arabic (مرحبا بالعالم)
+        - Emoji symbols
+        - Mathematical symbols
+        - Currency symbols
+        """
         import json
 
         payload = ModelReducerIntentPayload(
@@ -1228,25 +1243,21 @@ class TestUnicodeEdgeCases:
             data=(
                 (
                     "message",
-                    "Hello, world! \u041f\u0440\u0438\u0432\u0435\u0442 \u043c\u0438\u0440! \u0645\u0631\u062d\u0628\u0627 \u0628\u0627\u0644\u0639\u0627\u0644\u0645!",
+                    "Hello, world! Привет мир! مرحبا بالعالم!",
                 ),
-                ("emoji", "\U0001f389\U0001f680\u2728\U0001f4af"),
-                ("mathematical", "\u2211\u220f\u222b\u2202\u221a\u221e"),
-                ("currency", "\u20ac\u00a3\u00a5\u20b9\u20bd"),
+                ("emoji", "🎉🚀✨💯"),
+                ("mathematical", "∑∏∫∂√∞"),
+                ("currency", "€£¥₹₽"),
             ),
         )
 
         data_dict = payload.get_data_as_dict()
         assert "Hello" in data_dict["message"]
-        assert (
-            "\u041f\u0440\u0438\u0432\u0435\u0442" in data_dict["message"]
-        )  # Russian "Privet"
-        assert (
-            "\u0645\u0631\u062d\u0628\u0627" in data_dict["message"]
-        )  # Arabic "Marhaba"
-        assert data_dict["emoji"] == "\U0001f389\U0001f680\u2728\U0001f4af"
-        assert data_dict["mathematical"] == "\u2211\u220f\u222b\u2202\u221a\u221e"
-        assert data_dict["currency"] == "\u20ac\u00a3\u00a5\u20b9\u20bd"
+        assert "Привет" in data_dict["message"]  # Russian "Privet"
+        assert "مرحبا" in data_dict["message"]  # Arabic "Marhaba"
+        assert data_dict["emoji"] == "🎉🚀✨💯"
+        assert data_dict["mathematical"] == "∑∏∫∂√∞"
+        assert data_dict["currency"] == "€£¥₹₽"
 
         # JSON round-trip should preserve all data
         json_str = payload.model_dump_json()
@@ -1255,77 +1266,85 @@ class TestUnicodeEdgeCases:
         assert restored_dict == data_dict
 
     def test_runtime_directive_with_unicode_handler_args(self) -> None:
-        """Test ModelRuntimeDirectivePayload with unicode in handler_args."""
+        """Test ModelRuntimeDirectivePayload with unicode in handler_args.
+
+        Tests Unicode in handler arguments:
+        - Japanese name (田中太郎)
+        - Russian greeting (Добро пожаловать)
+        - Greek greeting (Καλώς ήρθατε)
+        - Hebrew greeting (ברוכים הבאים)
+        """
         payload = ModelRuntimeDirectivePayload(
             handler_args={
-                "recipient_name": "\u7530\u4e2d\u592a\u90ce",
-                "message": "\u0414\u043e\u0431\u0440\u043e \u043f\u043e\u0436\u0430\u043b\u043e\u0432\u0430\u0442\u044c! \u039a\u03b1\u03bb\u03ce\u03c2 \u03ae\u03c1\u03b8\u03b1\u03c4\u03b5! \u05d1\u05e8\u05d5\u05db\u05d9\u05dd \u05d4\u05d1\u05d0\u05d9\u05dd!",
+                "recipient_name": "田中太郎",
+                "message": "Добро пожаловать! Καλώς ήρθατε! ברוכים הבאים!",
                 "locale": "ja-JP",
             },
             execution_mode="async",
         )
 
-        assert (
-            payload.handler_args["recipient_name"] == "\u7530\u4e2d\u592a\u90ce"
-        )  # Japanese name
-        assert (
-            "\u0414\u043e\u0431\u0440\u043e \u043f\u043e\u0436\u0430\u043b\u043e\u0432\u0430\u0442\u044c"
-            in payload.handler_args["message"]
-        )  # Russian
-        assert (
-            "\u039a\u03b1\u03bb\u03ce\u03c2 \u03ae\u03c1\u03b8\u03b1\u03c4\u03b5"
-            in payload.handler_args["message"]
-        )  # Greek
-        assert (
-            "\u05d1\u05e8\u05d5\u05db\u05d9\u05dd \u05d4\u05d1\u05d0\u05d9\u05dd"
-            in payload.handler_args["message"]
-        )  # Hebrew
+        assert payload.handler_args["recipient_name"] == "田中太郎"  # Japanese name
+        assert "Добро пожаловать" in payload.handler_args["message"]  # Russian
+        assert "Καλώς ήρθατε" in payload.handler_args["message"]  # Greek
+        assert "ברוכים הבאים" in payload.handler_args["message"]  # Hebrew
 
     def test_effect_input_data_with_unicode_operation_name(self) -> None:
-        """Test unicode in operation_name field."""
+        """Test unicode in operation_name field.
+
+        Tests Chinese characters in operation name (获取用户 = "get user").
+        """
         import json
 
         model = ModelEffectInputData(
             effect_type=EnumEffectType.API_CALL,
             resource_path="/api/users",
-            operation_name="\u83b7\u53d6\u7528\u6237",  # Chinese for "get user"
+            operation_name="获取用户",  # Chinese for "get user"
         )
 
-        assert model.operation_name == "\u83b7\u53d6\u7528\u6237"
+        assert model.operation_name == "获取用户"
 
         # Verify JSON serialization
         json_str = model.model_dump_json()
         data = json.loads(json_str)
-        assert data["operation_name"] == "\u83b7\u53d6\u7528\u6237"
+        assert data["operation_name"] == "获取用户"
 
     def test_unicode_in_validation_errors(self) -> None:
-        """Test unicode in validation_errors field."""
+        """Test unicode in validation_errors field.
+
+        Tests validation error messages in multiple languages:
+        - Japanese: メールフィールドは必須です (Email field is required)
+        - Russian: Поле возраст >= 0 (Field age >= 0)
+        - Spanish: El campo nombre es obligatorio (Name field is required)
+        """
         payload = ModelReducerIntentPayload(
             entity_type="validation",
             operation="report",
             validation_errors=(
-                "\u30e1\u30fc\u30eb\u30d5\u30a3\u30fc\u30eb\u30c9\u306f\u5fc5\u9808\u3067\u3059",  # Japanese: "Email field is required"
-                "\u041f\u043e\u043b\u0435 \u0432\u043e\u0437\u0440\u0430\u0441\u0442 >= 0",  # Russian: "Field age >= 0"
+                "メールフィールドは必須です",  # Japanese: "Email field is required"
+                "Поле возраст >= 0",  # Russian: "Field age >= 0"
                 "El campo nombre es obligatorio",  # Spanish: "Name field is required"
             ),
         )
 
         assert len(payload.validation_errors) == 3
-        assert "\u30e1\u30fc\u30eb" in payload.validation_errors[0]  # Japanese
-        assert "\u041f\u043e\u043b\u0435" in payload.validation_errors[1]  # Russian
+        assert "メール" in payload.validation_errors[0]  # Japanese
+        assert "Поле" in payload.validation_errors[1]  # Russian
         assert "obligatorio" in payload.validation_errors[2]  # Spanish
 
     def test_unicode_idempotency_key(self) -> None:
-        """Test unicode in idempotency_key field."""
+        """Test unicode in idempotency_key field.
+
+        Tests Japanese characters in idempotency key (注文 = "order").
+        """
         import json
 
         model = ModelEffectInputData(
             effect_type=EnumEffectType.API_CALL,
             resource_path="/api/orders",
-            idempotency_key="order_2024_001_\u6ce8\u6587",  # Japanese for "order"
+            idempotency_key="order_2024_001_注文",  # Japanese for "order"
         )
 
-        assert model.idempotency_key == "order_2024_001_\u6ce8\u6587"
+        assert model.idempotency_key == "order_2024_001_注文"
 
         # JSON round-trip
         restored = ModelEffectInputData.model_validate(

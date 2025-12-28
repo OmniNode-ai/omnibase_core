@@ -525,8 +525,8 @@ class ModelONEXContainer:
                 # Pre-resolve service to warm container cache
                 self.get_service(object, service_name)
                 warmed_count += 1
-            except Exception:
-                pass  # Expected for some services
+            except Exception:  # fallback-ok: service not found during cache warming is expected
+                pass
 
         emit_log_event(
             LogLevel.INFO,

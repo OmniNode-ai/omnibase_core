@@ -380,8 +380,7 @@ class NodeCoreBase(ABC):
             contract_service: Any = None
             try:
                 contract_service = self.container.get_service("contract_service")  # type: ignore[arg-type]
-            except Exception:
-                # Contract service not available - that's OK
+            except Exception:  # fallback-ok: contract service is optional for node operation
                 contract_service = None
 
             # Check contract service - use try/except to avoid hasattr() deadlock with Mock
@@ -497,8 +496,7 @@ class NodeCoreBase(ABC):
             event_bus: Any = None
             try:
                 event_bus = self.container.get_service("event_bus")  # type: ignore[arg-type]
-            except Exception:
-                # Event bus not available - that's OK
+            except Exception:  # fallback-ok: event bus is optional for node operation
                 event_bus = None
 
             # Check event bus - use try/except to avoid hasattr() deadlock with Mock
