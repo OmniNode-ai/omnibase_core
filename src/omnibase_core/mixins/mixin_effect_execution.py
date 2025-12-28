@@ -614,75 +614,19 @@ class MixinEffectExecution:
         self, operation_config: ModelEffectOperationConfig
     ) -> EffectIOConfig:
         """
-        Parse operation configuration into typed IO config.
+        Get typed IO config from operation configuration.
+
+        Since ModelEffectOperationConfig.io_config is a discriminated union
+        (EffectIOConfig), it's always already typed. This method simply returns it.
 
         Args:
             operation_config: Typed operation configuration.
 
         Returns:
             Typed EffectIOConfig (discriminated union).
-
-        Raises:
-            ModelOnexError: On invalid configuration.
         """
-        # Use the typed method from ModelEffectOperationConfig if io_config is already typed
-        if isinstance(
-            operation_config.io_config,
-            (
-                ModelHttpIOConfig,
-                ModelDbIOConfig,
-                ModelKafkaIOConfig,
-                ModelFilesystemIOConfig,
-            ),
-        ):
-            return operation_config.io_config
-
-        # Handle dict io_config - parse based on handler_type
-        io_config_data = operation_config.get_io_config_as_dict()
-        if not io_config_data:
-            raise ModelOnexError(
-                message="Missing io_config in operation",
-                error_code=EnumCoreErrorCode.INVALID_CONFIGURATION,
-                context={
-                    "operation_name": operation_config.operation_name,
-                },
-            )
-
-        handler_type = io_config_data.get("handler_type")
-
-        try:
-            if handler_type == "http":
-                return ModelHttpIOConfig(**io_config_data)
-            elif handler_type == "db":
-                return ModelDbIOConfig(**io_config_data)
-            elif handler_type == "kafka":
-                return ModelKafkaIOConfig(**io_config_data)
-            elif handler_type == "filesystem":
-                return ModelFilesystemIOConfig(**io_config_data)
-            else:
-                raise ModelOnexError(
-                    message=f"Unknown handler type: {handler_type}",
-                    error_code=EnumCoreErrorCode.INVALID_CONFIGURATION,
-                    context={
-                        "handler_type": handler_type,
-                        "supported_handlers": ["http", "db", "kafka", "filesystem"],
-                        "operation_name": operation_config.operation_name,
-                    },
-                )
-        except ModelOnexError:
-            raise
-        except Exception as e:
-            raise ModelOnexError(
-                message=f"Failed to parse io_config: {e!s}",
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                context={
-                    "handler_type": handler_type,
-                    "operation_name": operation_config.operation_name,
-                    "io_config_keys": (
-                        list(io_config_data.keys()) if io_config_data else []
-                    ),
-                },
-            ) from e
+        # io_config is always typed via discriminated union - just return it
+        return operation_config.io_config
 
     def _resolve_io_context(
         self,
@@ -1075,17 +1019,24 @@ class MixinEffectExecution:
     def _normalize_operation_data(
         self, operation_data: ModelEffectInputData | dict[str, Any]
     ) -> dict[str, Any]:
-        """Normalize operation_data to dict for key access.
+        """Convert operation_data to dict for template resolution.
 
-        This helper consolidates the repeated pattern of converting operation_data
-        (which can be either a ModelEffectInputData Pydantic model or a dict) into
-        a dict for uniform key access during template resolution and field extraction.
+        This method converts either form of operation_data to a dict for
+        template placeholder resolution (${input.field_name} syntax).
+
+        Design:
+            - ModelEffectInputData (contract): serialized via model_dump()
+            - dict (template context): used as-is, no coercion
+
+        The result is a dict suitable for field extraction, NOT a validated
+        contract. This is intentional - template contexts can have arbitrary keys.
 
         Args:
-            operation_data: Either a ModelEffectInputData model or a dict.
+            operation_data: Strict contract (ModelEffectInputData) or
+                template context (dict).
 
         Returns:
-            dict[str, Any]: The operation data as a dictionary.
+            Dict for template resolution and field extraction.
         """
         if isinstance(operation_data, dict):
             return operation_data

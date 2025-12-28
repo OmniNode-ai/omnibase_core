@@ -113,6 +113,7 @@ __all__ = [
     "SERVER_ERROR_CATEGORIES",
     # Effect context models
     "ModelEffectInputData",
+    "ModelEffectTemplateContext",
     # Intent context models
     "ModelReducerIntentPayload",
     # Metadata context models
@@ -151,6 +152,9 @@ from omnibase_core.models.context.model_detection_metadata import ModelDetection
 
 # Effect context models
 from omnibase_core.models.context.model_effect_input_data import ModelEffectInputData
+from omnibase_core.models.context.model_effect_template_context import (
+    ModelEffectTemplateContext,
+)
 from omnibase_core.models.context.model_error_metadata import (
     CATEGORY_AUTH,
     CATEGORY_NETWORK,

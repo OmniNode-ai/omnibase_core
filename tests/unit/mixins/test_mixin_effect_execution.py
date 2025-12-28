@@ -368,15 +368,20 @@ class TestParseIOConfig:
         assert "io_config" in str(exc_info.value)
 
     def test_parse_unknown_handler_type_raises_error(self, test_node: TestNode) -> None:
-        """Test that unknown handler type raises ModelOnexError."""
+        """Test that unknown handler type raises ValidationError during parsing.
+
+        Since io_config uses a discriminated union, unknown handler types are
+        rejected at model validation time (before reaching _parse_io_config).
+        """
+        from pydantic import ValidationError
+
         from omnibase_core.models.operations import ModelEffectOperationConfig
 
-        operation_config = ModelEffectOperationConfig.from_dict(
-            {"io_config": {"handler_type": "unknown"}}
-        )
-        with pytest.raises(ModelOnexError) as exc_info:
-            test_node._parse_io_config(operation_config)
-        assert "Unknown handler type" in str(exc_info.value)
+        with pytest.raises(ValidationError) as exc_info:
+            ModelEffectOperationConfig.from_dict(
+                {"io_config": {"handler_type": "unknown"}}
+            )
+        assert "union_tag_invalid" in str(exc_info.value)
 
 
 @pytest.mark.unit
@@ -2484,7 +2489,7 @@ class TestEffectContractYamlParsing:
                 "timeout_ms": 5000,
             },
             "retry_policy": {
-                "max_attempts": 3,
+                "max_retries": 3,
                 "backoff_strategy": "exponential",
                 "base_delay_ms": 100,
             },

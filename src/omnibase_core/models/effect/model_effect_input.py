@@ -17,43 +17,50 @@ Key Features:
     - Timeout configuration for external operations
     - Metadata for operation tracking and correlation
 
+Design: Contract vs Template Context
+    The operation_data field accepts two distinct types:
+
+    1. ModelEffectInputData (strict contract):
+       - Validated, audited, type-safe
+       - effect_type must match parent effect_type
+       - Use for production effect inputs
+
+    2. dict[str, Any] (template context):
+       - Flexible, untyped, for template resolution
+       - Allows arbitrary keys (user_id, operations, etc.)
+       - Use for template placeholders like ${input.user_id}
+
+    These are intentionally separate concepts - don't try to coerce one to the other.
+
 Example:
-    >>> from omnibase_core.models.effect import ModelEffectInput
-    >>> from omnibase_core.enums.enum_effect_types import EnumEffectType
-    >>>
-    >>> # Database operation with transaction and retry
-    >>> input_data = ModelEffectInput(
-    ...     effect_type=EnumEffectType.DATABASE_OPERATION,
-    ...     operation_data={"table": "users", "data": {"name": "Alice"}},
-    ...     transaction_enabled=True,
-    ...     retry_enabled=True,
-    ...     max_retries=3,
-    ... )
-    >>>
-    >>> # API call with circuit breaker
-    >>> api_input = ModelEffectInput(
-    ...     effect_type=EnumEffectType.API_CALL,
-    ...     operation_data={"url": "https://api.example.com", "method": "POST"},
-    ...     circuit_breaker_enabled=True,
-    ...     timeout_ms=5000,
-    ... )
-    >>>
-    >>> # Typed operation data using ModelEffectInputData (recommended for new code)
-    >>> from omnibase_core.models.context import ModelEffectInputData
-    >>> typed_input = ModelEffectInput(
-    ...     effect_type=EnumEffectType.API_CALL,
-    ...     operation_data=ModelEffectInputData(
-    ...         effect_type=EnumEffectType.API_CALL,
-    ...         resource_path="https://api.example.com/users",
-    ...         target_system="user-service",
-    ...         operation_name="create_user",
-    ...     ),
-    ... )
+    Strict contract (production)::
+
+        >>> from omnibase_core.models.effect import ModelEffectInput
+        >>> from omnibase_core.models.context import ModelEffectInputData
+        >>> from omnibase_core.enums.enum_effect_types import EnumEffectType
+        >>>
+        >>> input_data = ModelEffectInput(
+        ...     effect_type=EnumEffectType.API_CALL,
+        ...     operation_data=ModelEffectInputData(
+        ...         effect_type=EnumEffectType.API_CALL,
+        ...         resource_path="https://api.example.com/users",
+        ...         target_system="user-service",
+        ...         operation_name="create_user",
+        ...     ),
+        ...     timeout_ms=5000,
+        ... )
+
+    Template context (testing/dynamic)::
+
+        >>> input_data = ModelEffectInput(
+        ...     effect_type=EnumEffectType.API_CALL,
+        ...     operation_data={"user_id": "123", "action": "fetch"},
+        ... )
 
 See Also:
     - omnibase_core.models.effect.model_effect_output: Corresponding output model
+    - omnibase_core.models.context.ModelTemplateContext: Explicit template context
     - omnibase_core.nodes.node_effect: NodeEffect implementation
-    - docs/guides/node-building/04_EFFECT_NODE_TUTORIAL.md: Effect node tutorial
 """
 
 from datetime import UTC, datetime
@@ -63,18 +70,18 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field, model_validator
 
 from omnibase_core.constants import TIMEOUT_DEFAULT_MS
+from omnibase_core.decorators.allow_dict_any import allow_dict_any
 from omnibase_core.enums.enum_effect_types import EnumEffectType
 from omnibase_core.models.context import ModelEffectInputData
 from omnibase_core.models.effect.model_effect_metadata import ModelEffectMetadata
-from omnibase_core.utils.util_decorators import allow_dict_str_any
 
 __all__ = ["ModelEffectInput"]
 
 
-@allow_dict_str_any(
-    "Effect operations support typed operation_data (ModelEffectInputData) and "
-    "dict[str, Any] for flexible payloads with various external I/O types "
-    "(database queries, API payloads, file operations, message queue bodies)."
+@allow_dict_any(
+    reason="operation_data intentionally accepts both strict contracts "
+    "(ModelEffectInputData) and template contexts (dict) for different use cases. "
+    "See module docstring for the design rationale."
 )
 class ModelEffectInput(BaseModel):
     """
@@ -87,9 +94,8 @@ class ModelEffectInput(BaseModel):
     Attributes:
         effect_type: Type of side effect operation (DATABASE_OPERATION, API_CALL, etc.).
             Determines which handler processes the operation.
-        operation_data: Payload data for the operation. Accepts ModelEffectInputData
-            for typed effect operations or dict[str, Any] for flexible payloads.
-            Structure depends on effect_type (e.g., SQL query for database, URL for API).
+        operation_data: Either a strict ModelEffectInputData contract or a dict for
+            template context. See module docstring for the design rationale.
         operation_id: Unique identifier for tracking this operation. Auto-generated
             UUID by default. Used for correlation and idempotency.
         transaction_enabled: Whether to wrap the operation in a transaction.
@@ -110,45 +116,15 @@ class ModelEffectInput(BaseModel):
         metadata: Typed metadata for tracking, tracing, correlation, and operation context.
             Includes fields like trace_id, correlation_id, environment, tags, and priority.
         timestamp: When this input was created. Auto-generated to current UTC time.
-
-    Example:
-        Untyped usage (backwards compatible)::
-
-            input_data = ModelEffectInput(
-                effect_type=EnumEffectType.FILE_OPERATION,
-                operation_data={"path": "/data/output.json", "action": "write"},
-                timeout_ms=10000,
-                transaction_enabled=False,
-            )
-
-        Using ModelEffectInputData (recommended for new code)::
-
-            from omnibase_core.models.context import ModelEffectInputData
-
-            typed_input = ModelEffectInput(
-                effect_type=EnumEffectType.FILE_OPERATION,
-                operation_data=ModelEffectInputData(
-                    effect_type=EnumEffectType.FILE_OPERATION,
-                    resource_path="/data/output.json",
-                    target_system="local-fs",
-                    operation_name="write_output",
-                ),
-                timeout_ms=10000,
-            )
-
-    See Also:
-        - omnibase_core.models.effect.model_effect_output: Corresponding output model
-        - omnibase_core.nodes.node_effect: NodeEffect implementation
-        - docs/guides/node-building/04_EFFECT_NODE_TUTORIAL.md: Effect node tutorial
     """
 
     effect_type: EnumEffectType
     operation_data: ModelEffectInputData | dict[str, Any] = Field(
         default_factory=dict,
         description=(
-            "Operation payload data. Accepts ModelEffectInputData for typed effect "
-            "operations or dict[str, Any] for flexible payloads. Structure depends "
-            "on effect_type (e.g., SQL query for database, URL for API)."
+            "Operation payload. Either ModelEffectInputData (strict contract with "
+            "effect_type validation) or dict (template context for dynamic resolution). "
+            "Dicts are NOT coerced to ModelEffectInputData - they remain as template contexts."
         ),
     )
     operation_id: UUID = Field(
@@ -179,44 +155,24 @@ class ModelEffectInput(BaseModel):
 
     @model_validator(mode="after")
     def _validate_effect_type_consistency(self) -> Self:
-        """Validate effect_type consistency between parent and operation_data.
+        """Validate effect_type consistency when operation_data is a strict contract.
 
-        When operation_data is a typed ModelEffectInputData (not a dict), its
-        effect_type must match the parent effect_type. This prevents confusing
-        bugs where routing decisions (based on parent effect_type) conflict with
-        the actual data structure (based on nested effect_type).
+        Only validates when operation_data is a ModelEffectInputData (strict contract).
+        Dict operation_data (template context) is not validated - it's for dynamic use.
 
         Returns:
             Self for method chaining.
 
         Raises:
-            ValueError: If operation_data.effect_type differs from parent effect_type.
-
-        Example:
-            # Valid - both effect_types match:
-            ModelEffectInput(
-                effect_type=EnumEffectType.API_CALL,
-                operation_data=ModelEffectInputData(
-                    effect_type=EnumEffectType.API_CALL,  # Matches parent
-                    resource_path="https://api.example.com",
-                ),
-            )
-
-            # Invalid - mismatched effect_types raise ValueError:
-            ModelEffectInput(
-                effect_type=EnumEffectType.API_CALL,
-                operation_data=ModelEffectInputData(
-                    effect_type=EnumEffectType.DATABASE_OPERATION,  # Mismatch!
-                ),
-            )
+            ValueError: If operation_data is ModelEffectInputData and effect_type differs.
         """
+        # Only validate strict contracts, not template contexts
         if isinstance(self.operation_data, ModelEffectInputData):
             if self.operation_data.effect_type != self.effect_type:
                 raise ValueError(
                     f"effect_type mismatch: parent effect_type is "
                     f"{self.effect_type.value!r} but operation_data.effect_type is "
-                    f"{self.operation_data.effect_type.value!r}. When using typed "
-                    f"ModelEffectInputData, both effect_type fields must match to "
-                    f"ensure consistent routing and data handling."
+                    f"{self.operation_data.effect_type.value!r}. Both effect_type "
+                    f"fields must match to ensure consistent routing and data handling."
                 )
         return self

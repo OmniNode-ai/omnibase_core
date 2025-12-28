@@ -37,7 +37,6 @@ from omnibase_core.models.contracts.subcontracts.model_effect_response_handling 
 from omnibase_core.models.contracts.subcontracts.model_effect_retry_policy import (
     ModelEffectRetryPolicy,
 )
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.operations.model_effect_operation_config import (
     ModelEffectOperationConfig,
 )
@@ -307,19 +306,23 @@ class TestModelEffectOperationConfigDictIOConfig:
         assert config.io_config.handler_type == EnumEffectHandlerType.FILESYSTEM
         assert config.io_config.operation == "read"
 
-    def test_unknown_handler_type_keeps_as_dict(self) -> None:
-        """Test that unknown handler types may be kept as dict."""
-        # Note: Actual behavior depends on Pydantic's union parsing order.
-        # This tests that the model accepts data that doesn't match typed models.
+    def test_unknown_handler_type_raises_validation_error(self) -> None:
+        """Test that unknown handler types raise ValidationError at parse time.
+
+        With the discriminated union, unknown handler types are rejected during
+        model validation, not kept as dicts.
+        """
+        from pydantic import ValidationError
+
         unknown_dict = {
             "handler_type": "custom_unknown",
             "some_field": "value",
         }
-        config = ModelEffectOperationConfig(io_config=unknown_dict)
 
-        # With unknown handler_type, falls back to dict
-        assert isinstance(config.io_config, dict)
-        assert config.io_config["handler_type"] == "custom_unknown"
+        with pytest.raises(ValidationError) as exc_info:
+            ModelEffectOperationConfig(io_config=unknown_dict)
+
+        assert "union_tag_invalid" in str(exc_info.value)
 
 
 # =============================================================================
@@ -394,21 +397,25 @@ class TestGetIOConfigAsDict:
         # Default values are included
         assert "timeout_ms" in result
 
-    def test_unvalidated_dict_returns_same_dict(self) -> None:
-        """Test that truly unvalidated dict io_config returns same dict.
+    def test_typed_config_serializes_to_dict(self) -> None:
+        """Test that typed io_config serializes correctly via get_io_config_as_dict().
 
-        When io_config has an unknown handler_type, it remains as dict
-        and get_io_config_as_dict() returns it as-is.
+        Since io_config is now always a typed model (discriminated union),
+        get_io_config_as_dict() serializes it via model_dump().
         """
-        unknown_dict = {
-            "handler_type": "custom_unknown",
-            "custom_field": "custom_value",
-        }
-        config = ModelEffectOperationConfig(io_config=unknown_dict)
+        config = ModelEffectOperationConfig(
+            io_config={
+                "handler_type": "http",
+                "url_template": "https://example.com",
+                "method": "GET",
+            }
+        )
 
         result = config.get_io_config_as_dict()
 
-        assert result == unknown_dict
+        assert result["handler_type"] == "http"
+        assert result["url_template"] == "https://example.com"
+        assert result["method"] == "GET"
 
 
 # =============================================================================
@@ -570,34 +577,50 @@ class TestGetTypedIOConfig:
         assert result.handler_type == EnumEffectHandlerType.FILESYSTEM
         assert result.operation == "read"
 
-    def test_unknown_handler_type_raises_error(self) -> None:
-        """Test that unknown handler_type raises ModelOnexError when parsing to typed."""
-        # Unknown handler_type falls back to dict storage
-        config = ModelEffectOperationConfig(
-            io_config={"handler_type": "unknown", "some_field": "value"}
-        )
+    def test_unknown_handler_type_raises_validation_error(self) -> None:
+        """Test that unknown handler_type raises ValidationError at parse time.
 
-        # get_typed_io_config raises when handler_type is unknown
-        with pytest.raises(ModelOnexError, match="Unknown handler_type: unknown"):
-            config.get_typed_io_config()
-
-    def test_dict_without_handler_type_infers_type(self) -> None:
-        """Test that dict without handler_type can infer type from fields.
-
-        Pydantic tries each union member in order. If a dict has fields that
-        match a typed model (e.g., url_template and method match HTTP), it
-        gets validated into that typed model with the default handler_type.
+        With the discriminated union, unknown handler types are rejected during
+        model validation, before get_typed_io_config() is called.
         """
-        # Dict with HTTP-like fields but no explicit handler_type
+        from pydantic import ValidationError
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelEffectOperationConfig(
+                io_config={"handler_type": "unknown", "some_field": "value"}
+            )
+
+        assert "union_tag_invalid" in str(exc_info.value)
+
+    def test_dict_without_handler_type_raises_validation_error(self) -> None:
+        """Test that dict without handler_type raises ValidationError.
+
+        The discriminated union requires handler_type to select the correct model.
+        Without it, validation fails.
+        """
+        from pydantic import ValidationError
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelEffectOperationConfig(
+                io_config={"url_template": "https://example.com", "method": "GET"}
+            )
+
+        assert "union_tag_not_found" in str(exc_info.value)
+
+    def test_get_typed_io_config_returns_io_config(self) -> None:
+        """Test that get_typed_io_config returns the already-typed io_config.
+
+        Since io_config is now always typed via discriminated union,
+        get_typed_io_config simply returns it.
+        """
         config = ModelEffectOperationConfig(
-            io_config={"url_template": "https://example.com", "method": "GET"}
+            io_config={
+                "handler_type": "http",
+                "url_template": "https://example.com",
+                "method": "GET",
+            }
         )
 
-        # Pydantic infers this as HTTP config
-        assert isinstance(config.io_config, ModelHttpIOConfig)
-        assert config.io_config.handler_type == EnumEffectHandlerType.HTTP
-
-        # get_typed_io_config returns the already-typed model
         typed = config.get_typed_io_config()
         assert typed is config.io_config
 
