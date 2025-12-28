@@ -3,8 +3,6 @@
 Type-safe input state container for version parsing.
 """
 
-from typing import cast
-
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -59,28 +57,49 @@ class ModelInputState(BaseModel):
     # Protocol method implementations
 
     def get_metadata(self) -> TypedDictMetadataDict:
-        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata: dict[str, object] = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    # Preserve ModelSemVer type for version field (typed as ModelSemVer | None)
-                    # Preserve dict/list types for tags and metadata fields
-                    if field == "version" or isinstance(value, (dict, list)):
-                        metadata[field] = value
-                    else:
-                        metadata[field] = str(value)
-        return cast(TypedDictMetadataDict, metadata)
+        """Get metadata as dictionary (ProtocolMetadataProvider protocol).
+
+        Maps model fields to TypedDictMetadataDict structure:
+        - version -> version (ModelSemVer if present)
+        - additional_fields stored in metadata dict
+        """
+        result = TypedDictMetadataDict(
+            name="",  # Model doesn't have name field
+            description="",  # Model doesn't have description field
+            tags=[],  # Model doesn't have tags field
+            metadata=dict(self.additional_fields),  # Copy additional fields
+        )
+        # Only include version if present
+        if self.version is not None:
+            result["version"] = self.version
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
-                    setattr(self, key, value)
+                    # Convert version field to ModelSemVer if needed
+                    if key == "version" and value is not None:
+                        if isinstance(value, ModelSemVer):
+                            # Already a ModelSemVer, use as-is
+                            setattr(self, key, value)
+                        elif isinstance(value, str):
+                            # Parse string to ModelSemVer
+                            setattr(self, key, ModelSemVer.parse(value))
+                        elif isinstance(value, dict):
+                            # Create ModelSemVer from dict
+                            setattr(self, key, ModelSemVer(**value))
+                        else:
+                            raise ModelOnexError(
+                                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                                message=f"Version must be ModelSemVer, str, or dict, got {type(value).__name__}",
+                            )
+                    else:
+                        setattr(self, key, value)
             return True
+        except ModelOnexError:
+            raise
         except Exception as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,

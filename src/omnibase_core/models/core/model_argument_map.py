@@ -87,13 +87,44 @@ class ModelArgumentMap(BaseModel):
         """
         Type-safe argument retrieval with optional default.
 
+        This method provides type-safe access to named arguments with automatic
+        type conversion when possible. It uses function overloads to provide
+        precise return types for common primitive types (str, bool, int, float)
+        while also supporting generic types through a catch-all overload.
+
+        Overload Behavior:
+            - ``get_typed(name, str, default)`` -> ``str | None``
+            - ``get_typed(name, bool, default)`` -> ``bool | None``
+            - ``get_typed(name, int, default)`` -> ``int | None``
+            - ``get_typed(name, float, default)`` -> ``float | None``
+            - ``get_typed(name, T, default)`` -> ``T | None`` (generic fallback)
+
+        Type Conversion:
+            If the stored value doesn't match the expected type, the method
+            attempts conversion:
+
+            - ``str``: Converts any value using ``str(value)``
+            - ``bool``: Parses strings like "true", "1", "yes", "on" as True
+            - ``int``: Converts via ``int(str(value))``
+            - ``float``: Converts via ``float(str(value))``
+
         Args:
-            name: Argument name to retrieve
-            expected_type: Expected type for the argument value
-            default: Default value if argument not found or wrong type
+            name: Argument name to retrieve from named_args
+            expected_type: Expected type for the argument value (str, bool, int,
+                float, or any type T)
+            default: Default value if argument not found, wrong type, or
+                conversion fails. Defaults to None.
 
         Returns:
-            The argument value cast to expected_type, or default
+            The argument value cast to expected_type if found and convertible,
+            otherwise the default value.
+
+        Example:
+            >>> args = ModelArgumentMap()
+            >>> args.add_named_argument("count", "42", "string")
+            >>> args.get_typed("count", int)  # Returns 42 (int)
+            >>> args.get_typed("missing", str, "default")  # Returns "default"
+            >>> args.get_typed("count", bool)  # Returns True (non-zero)
         """
         if name in self.named_args:
             value = self.named_args[name].value
@@ -196,13 +227,45 @@ class ModelArgumentMap(BaseModel):
         """
         Get positional argument by index with type conversion.
 
+        This method provides type-safe access to positional arguments with
+        automatic type conversion when possible. Like ``get_typed()``, it uses
+        function overloads to provide precise return types for common primitive
+        types (str, bool, int, float) while also supporting generic types.
+
+        Overload Behavior:
+            - ``get_positional(index, str, default)`` -> ``str | None``
+            - ``get_positional(index, bool, default)`` -> ``bool | None``
+            - ``get_positional(index, int, default)`` -> ``int | None``
+            - ``get_positional(index, float, default)`` -> ``float | None``
+            - ``get_positional(index, T, default)`` -> ``T | None`` (generic fallback)
+
+        Type Conversion:
+            If the stored value doesn't match the expected type, the method
+            attempts conversion (same rules as ``get_typed()``):
+
+            - ``str``: Converts any value using ``str(value)``
+            - ``bool``: Parses strings like "true", "1", "yes", "on" as True
+            - ``int``: Converts via ``int(str(value))``
+            - ``float``: Converts via ``float(str(value))``
+
         Args:
-            index: Position index (0-based)
-            expected_type: Expected type for the argument value
-            default: Default value if argument not found or wrong type
+            index: Position index (0-based) into positional_args list
+            expected_type: Expected type for the argument value (str, bool, int,
+                float, or any type T)
+            default: Default value if index out of bounds, wrong type, or
+                conversion fails. Defaults to None.
 
         Returns:
-            The argument value cast to expected_type, or default
+            The argument value cast to expected_type if found and convertible,
+            otherwise the default value.
+
+        Example:
+            >>> args = ModelArgumentMap()
+            >>> args.add_positional_argument("hello", "string")
+            >>> args.add_positional_argument("42", "string")
+            >>> args.get_positional(0, str)  # Returns "hello"
+            >>> args.get_positional(1, int)  # Returns 42 (int)
+            >>> args.get_positional(99, str, "default")  # Returns "default"
         """
         if 0 <= index < len(self.positional_args):
             value = self.positional_args[index].value

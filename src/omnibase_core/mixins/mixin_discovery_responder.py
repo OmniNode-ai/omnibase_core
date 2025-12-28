@@ -11,6 +11,7 @@ from uuid import UUID
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
+from omnibase_core.types.type_serializable_value import SerializedDict
 from omnibase_core.models.core.model_discovery_request_response import (
     ModelDiscoveryRequestModelMetadata,
     ModelDiscoveryResponseModelMetadata,
@@ -26,9 +27,12 @@ from omnibase_core.protocols import ProtocolEventBus
 from omnibase_core.types.typed_dict_discovery_stats import TypedDictDiscoveryStats
 
 if TYPE_CHECKING:
+    from omnibase_core.models.core.model_event_data import ModelEventData
+    from omnibase_core.models.core.model_introspection_data import (
+        ModelIntrospectionData,
+    )
     from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
     from omnibase_core.protocols import ProtocolEventMessage
-    from omnibase_core.types.type_serializable_value import SerializedDict
     from omnibase_core.types.typed_dict_mixin_types import (
         TypedDictDiscoveryExtendedStats,
         TypedDictFilterCriteria,
@@ -276,28 +280,16 @@ class MixinDiscoveryResponder:
                 return  # Throttled
 
             # Extract request metadata from data field
-            # Discovery requests store metadata in data field (same as responses)
-            # Note: Senders may use model_dump() which produces a dict at runtime
+            # Discovery requests store metadata in the event data field
             request_data = onex_event.data
             if request_data is None:
                 return  # No request data
 
             # Parse data into ModelDiscoveryRequestModelMetadata
-            # Handle both typed ModelEventData and raw dict (from model_dump())
+            # ModelEventData is a Pydantic model, convert to dict for field extraction
             try:
-                # Get dict representation - works for Pydantic models and raw dicts
-                if hasattr(request_data, "model_dump"):
-                    data_dict = request_data.model_dump()
-                else:
-                    # Cast to handle runtime dict case - request_data comes from
-                    # onex_event.data which is ModelEventData (a TypedDict with
-                    # heterogeneous value types). Pydantic validates at construction.
-                    data_dict = cast(
-                        dict[
-                            str, str | list[str] | None
-                        ],  # @allow_dict_any: ModelDiscoveryRequestModelMetadata fields
-                        request_data,
-                    )
+                # ModelEventData always has model_dump() as a Pydantic BaseModel
+                data_dict = request_data.model_dump()
                 request_metadata = ModelDiscoveryRequestModelMetadata(**data_dict)
             except Exception:
                 # fallback-ok: Event handler must not crash on malformed discovery requests
@@ -441,13 +433,16 @@ class MixinDiscoveryResponder:
             response_metadata = ModelDiscoveryResponseModelMetadata(
                 request_id=request.request_id,
                 node_id=node_id_value,
-                introspection=introspection_data,  # type: ignore[arg-type]
+                # Cast dict to ModelIntrospectionData - Pydantic validates at runtime
+                introspection=cast("ModelIntrospectionData", introspection_data),
                 health_status=self.get_health_status(),
                 capabilities=self.get_discovery_capabilities(),
                 node_type=(
                     self.get_node_type()
                     if hasattr(self, "get_node_type")
-                    else introspection_data.get("node_type", self.__class__.__name__)
+                    else str(
+                        introspection_data.get("node_type", self.__class__.__name__)
+                    )
                 ),
                 version=version_semver,
                 event_channels=event_channels_list,
@@ -455,11 +450,13 @@ class MixinDiscoveryResponder:
             )
 
             # Use data field for discovery metadata instead of metadata field
+            # Note: model_dump() returns dict, but OnexEvent.data expects ModelEventData.
+            # Pydantic coerces the dict at runtime. Using cast to satisfy mypy.
             response_event = OnexEvent(
                 event_type=create_event_type_from_registry("DISCOVERY_RESPONSE"),
                 node_id=node_id_value,
                 correlation_id=original_event.correlation_id,
-                data=response_metadata.model_dump(),  # type: ignore[arg-type]
+                data=cast("ModelEventData", response_metadata.model_dump()),
             )
 
             # Publish response (assuming we have access to event bus)
@@ -513,20 +510,18 @@ class MixinDiscoveryResponder:
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
             ) from e
 
-    def _get_discovery_introspection(self) -> "SerializedDict":
+    def _get_discovery_introspection(self) -> SerializedDict:
         """
         Get introspection data for discovery response.
 
         STRICT: Node must implement get_introspection_response() method.
 
         Returns:
-            SerializedDict: Node introspection data (serialized model output)
+            SerializedDict: Node introspection data as serialized dict
 
         Raises:
             ModelOnexError: If get_introspection_response() method is missing
         """
-        from omnibase_core.types.type_serializable_value import SerializedDict
-
         if not hasattr(self, "get_introspection_response"):
             raise ModelOnexError(
                 message="Node must implement 'get_introspection_response()' method for discovery",
