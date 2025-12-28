@@ -363,6 +363,10 @@ class TestModuleImports:
             "MAX_TAGS_COUNT",
             "MAX_LABELS_COUNT",
             "MAX_LABEL_LENGTH",
+            # Algorithm iteration limits
+            "MAX_DFS_ITERATIONS",
+            "MAX_BFS_ITERATIONS",
+            "MAX_TIMEOUT_MS",
         ]
 
         for export in expected_exports:
@@ -374,8 +378,8 @@ class TestModuleImports:
         """Test __all__ contains exactly the expected number of exports."""
         from omnibase_core.constants import constants_field_limits
 
-        # Should have exactly 13 constants
-        assert len(constants_field_limits.__all__) == 13
+        # Should have exactly 16 constants (13 field limits + 3 algorithm limits)
+        assert len(constants_field_limits.__all__) == 16
 
 
 class TestModuleDocumentation:

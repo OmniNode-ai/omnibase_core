@@ -68,6 +68,23 @@ MAX_LABELS_COUNT: int = 100
 # Maximum length for individual label strings
 MAX_LABEL_LENGTH: int = 100
 
+# =============================================================================
+# Algorithm Iteration Limits
+# =============================================================================
+
+# Maximum iterations for DFS cycle detection in workflow validation.
+# This protects against denial-of-service attacks from maliciously crafted
+# workflow graphs or extremely complex dependency structures.
+MAX_DFS_ITERATIONS: int = 10_000
+
+# Maximum iterations for BFS traversal in workflow linting.
+# Prevents infinite loops in graph traversal operations.
+MAX_BFS_ITERATIONS: int = 10_000
+
+# Maximum timeout in milliseconds (24 hours) to prevent DoS attacks.
+# Ensures extremely long timeouts cannot tie up resources indefinitely.
+MAX_TIMEOUT_MS: int = 86_400_000
+
 __all__ = [
     # Identifier limits
     "MAX_IDENTIFIER_LENGTH",
@@ -86,4 +103,8 @@ __all__ = [
     "MAX_TAGS_COUNT",
     "MAX_LABELS_COUNT",
     "MAX_LABEL_LENGTH",
+    # Algorithm iteration limits
+    "MAX_DFS_ITERATIONS",
+    "MAX_BFS_ITERATIONS",
+    "MAX_TIMEOUT_MS",
 ]

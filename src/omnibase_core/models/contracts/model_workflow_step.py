@@ -124,9 +124,16 @@ class ModelWorkflowStep(BaseModel):
     # Priority and ordering
     # NOTE: Priority uses standard heap/queue semantics where lower values execute first.
     # This matches Python's heapq and typical task queue implementations.
+    # IMPORTANT: In v1.0, priority is INFORMATIONAL ONLY and does NOT affect execution
+    # order. Steps execute in declaration order. Priority-based scheduling is planned
+    # for v1.1+. This field exists for forward compatibility and documentation.
     priority: int = Field(
         default=100,
-        description="Step execution priority (lower = higher priority, executes first)",
+        description=(
+            "Step execution priority (lower = higher priority). "
+            "NOTE: Informational in v1.0; steps execute in declaration order. "
+            "Priority-based scheduling planned for v1.1+."
+        ),
         ge=1,
         le=1000,
     )
