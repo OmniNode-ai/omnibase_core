@@ -903,7 +903,10 @@ key: [unclosed
                 workflow_id=uuid4(),
             )
 
-        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert (
+            exc_info.value.error_code
+            == EnumCoreErrorCode.ORCHESTRATOR_EXEC_WORKFLOW_FAILED
+        )
         assert "cycle" in str(exc_info.value.message).lower()
 
     @pytest.mark.asyncio

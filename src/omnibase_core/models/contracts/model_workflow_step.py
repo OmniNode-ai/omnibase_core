@@ -125,7 +125,14 @@ class ModelWorkflowStep(BaseModel):
     # 2. Long-running operations (>5 min) should be async or broken into smaller steps
     # 3. This prevents single steps from blocking entire workflow pipelines
     # 4. MAX_TIMEOUT_MS (24 hours) is for aggregate workflow duration, not per-step
-    # See: constants_timeouts.py for timeout design rationale
+    #
+    # TIMEOUT HIERARCHY (cross-reference):
+    # - Step timeout: Capped at TIMEOUT_LONG_MS (5 min) - this field
+    #   See: omnibase_core/constants/constants_timeouts.py
+    # - Event timeout: Capped at MAX_TIMEOUT_MS (24 hours) - for longer operations
+    #   See: omnibase_core/models/core/model_event_input_state.py
+    # - Workflow global timeout: Configured in ModelWorkflowMetadata.timeout_ms
+    #   See: omnibase_core/validation/workflow_constants.py
     timeout_ms: int = Field(
         default=TIMEOUT_DEFAULT_MS,
         description=(

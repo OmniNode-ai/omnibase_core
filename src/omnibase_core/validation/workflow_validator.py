@@ -1007,8 +1007,10 @@ def validate_dag_with_disabled_steps(steps: list[ModelWorkflowStep]) -> list[str
             f"Hidden cycle involving disabled steps: {full_graph_cycle_result.cycle_description}"
         )
 
-    # Return errors in priority order (NOT alphabetically sorted)
-    # Priority ordering is maintained by the append order above:
+    # Return errors in validation priority order (NOT alphabetically sorted)
+    # NOTE: "Priority order" here refers to ERROR CATEGORIES, not step execution
+    # priority. Step execution uses declaration order per v1.0.2 Fix 5.
+    # Error validation priority ordering is maintained by the append order above:
     # 1. Duplicate step IDs (structural)
     # 2. Dependencies on disabled steps
     # 3. Missing dependencies

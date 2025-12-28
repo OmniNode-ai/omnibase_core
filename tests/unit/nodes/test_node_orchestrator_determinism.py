@@ -1221,10 +1221,10 @@ class TestNodeOrchestratorEdgeCases:
     ):
         """Test that empty steps list produces deterministic COMPLETED result.
 
-        Empty workflows are explicitly VALID by design. The workflow executor
-        returns a COMPLETED status with 0 actions and 0 completed steps when
-        no steps are defined. This is intentional behavior per workflow_executor.py
-        lines 349-368 and 522-524.
+        Empty workflows are explicitly VALID by design per v1.0.3 Fix 29.
+        The workflow executor returns a COMPLETED status with 0 actions and
+        0 completed steps when no steps are defined. This is intentional behavior
+        documented in execute_workflow() and validate_workflow_definition().
         """
         node = NodeOrchestrator(test_container)
         node.workflow_definition = simple_workflow_definition

@@ -138,6 +138,9 @@ from omnibase_core.validation.workflow_constants import (
 # are imported from workflow_constants.py (canonical source with memoized env var parsing).
 # See workflow_constants.py module docstring for configuration details.
 
+# Module logger for workflow executor operations
+logger = logging.getLogger(__name__)
+
 
 def _log_payload_metrics(
     workflow_id: UUID,
@@ -230,9 +233,17 @@ async def execute_workflow(
 
     Pure function: (workflow_def, steps) → (result, actions)
 
+    v1.0 Note:
+        This executor uses workflow_steps (with their depends_on declarations)
+        for execution ordering. The execution_graph field in workflow_definition
+        is INTENTIONALLY IGNORED in v1.0.
+
+        v1.1+ Roadmap: execution_graph will support explicit execution ordering
+        for advanced workflows. See model_execution_graph.py for details.
+
     Args:
         workflow_definition: Workflow definition from YAML contract
-        workflow_steps: List of workflow steps to execute
+        workflow_steps: List of workflow steps to execute (uses depends_on for ordering)
         workflow_id: Unique workflow execution ID
         execution_mode: Optional execution mode override
 
@@ -311,6 +322,12 @@ async def execute_workflow(
     # workflow_definition (metadata, config), not on workflow_steps. The hash provides
     # integrity verification for the definition itself, regardless of step count.
     if not workflow_steps:
+        logger.debug(
+            "Empty workflow executed successfully - no steps to process "
+            "(workflow_id=%s, workflow_name=%s)",
+            workflow_id,
+            workflow_definition.workflow_metadata.workflow_name,
+        )
         end_time = time.perf_counter()
         execution_time_ms = max(1, int((end_time - start_time) * 1000))
         workflow_hash = _compute_workflow_hash(workflow_definition)
@@ -680,10 +697,14 @@ async def _execute_sequential(
     total_payload_size = 0  # Track total payload size (OMN-670: Security hardening)
 
     # v1.0.3 Fix 35: Track timeout state
-    # TODO(v1.1): timeout_triggered is currently scaffolding for future observability.
-    # The variable tracks whether global timeout elapsed but is not yet consumed.
-    # Future work: Add timeout_triggered to ModelWorkflowResultMetadata or emit
-    # as a structured metric for timeout observability dashboards.
+    # v1.1 OBSERVABILITY HOOK: timeout_triggered is scaffolding for future observability.
+    # Currently: Tracks whether global timeout elapsed but is not yet consumed by runtime.
+    # Future (v1.1+): Will emit timeout events for monitoring dashboards, including:
+    #   - Timeout event with workflow_id, step_id, elapsed_time_ms
+    #   - Integration with ModelWorkflowResultMetadata.timeout_triggered field
+    #   - Structured metrics for alerting (e.g., timeout rate per workflow type)
+    # The variable is set when time.perf_counter() > timeout_deadline, indicating
+    # the workflow's global timeout_ms has elapsed mid-execution.
     # See: docs/architecture/CONTRACT_DRIVEN_NODEORCHESTRATOR_V1_0.md
     timeout_triggered = False
 
@@ -926,10 +947,14 @@ async def _execute_parallel(
     total_payload_size = 0  # Track total payload size (OMN-670: Security hardening)
 
     # v1.0.3 Fix 35: Track timeout state
-    # TODO(v1.1): timeout_triggered is currently scaffolding for future observability.
-    # The variable tracks whether global timeout elapsed but is not yet consumed.
-    # Future work: Add timeout_triggered to ModelWorkflowResultMetadata or emit
-    # as a structured metric for timeout observability dashboards.
+    # v1.1 OBSERVABILITY HOOK: timeout_triggered is scaffolding for future observability.
+    # Currently: Tracks whether global timeout elapsed but is not yet consumed by runtime.
+    # Future (v1.1+): Will emit timeout events for monitoring dashboards, including:
+    #   - Timeout event with workflow_id, step_id, elapsed_time_ms
+    #   - Integration with ModelWorkflowResultMetadata.timeout_triggered field
+    #   - Structured metrics for alerting (e.g., timeout rate per workflow type)
+    # The variable is set when time.perf_counter() > timeout_deadline, indicating
+    # the workflow's global timeout_ms has elapsed mid-execution.
     # See: docs/architecture/CONTRACT_DRIVEN_NODEORCHESTRATOR_V1_0.md
     timeout_triggered = False
 

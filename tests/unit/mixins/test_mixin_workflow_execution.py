@@ -269,9 +269,9 @@ class TestMixinWorkflowValidation:
 
         Empty workflows are explicitly VALID by design per v1.0.3 Fix 29.
         The workflow executor treats empty workflows as valid and returns
-        a COMPLETED status with 0 actions. This is intentional behavior per
-        workflow_executor.py lines 522-524 which explicitly does NOT add an
-        error for empty workflows.
+        a COMPLETED status with 0 actions. This is intentional behavior
+        documented in validate_workflow_definition() which explicitly does
+        NOT add an error for empty workflows.
         """
         node = MockNodeWithWorkflowMixin()
 
@@ -495,10 +495,10 @@ class TestMixinIntegration:
     ):
         """Test mixin handles empty workflows successfully (empty workflows are valid).
 
-        Empty workflows are explicitly VALID by design. The workflow executor
-        returns a COMPLETED status with 0 actions when no steps are defined.
-        This is intentional behavior per workflow_executor.py lines 349-368
-        and 522-524.
+        Empty workflows are explicitly VALID by design per v1.0.3 Fix 29.
+        The workflow executor returns a COMPLETED status with 0 actions when
+        no steps are defined. This is intentional behavior documented in
+        execute_workflow() and validate_workflow_definition().
         """
         node = MockNodeWithWorkflowMixin()
         workflow_id = uuid4()

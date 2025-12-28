@@ -5,6 +5,89 @@ and workflow_executor.py to avoid duplication and ensure consistency.
 
 These constants define normative constraints per ONEX v1.0.x specification.
 
+Constants Map - ONEX Constants Architecture
+===========================================
+
+The ONEX framework organizes constants across multiple files based on their
+domain and usage patterns. Understanding this architecture is critical for
+maintainability and avoiding duplication.
+
+**omnibase_core/constants/constants_field_limits.py** (Canonical Source):
+    Centralized field length and algorithm iteration limits. This is the
+    SINGLE SOURCE OF TRUTH (SSOT) for limits that protect against resource
+    exhaustion attacks:
+
+    - MAX_DFS_ITERATIONS (10,000): Protects cycle detection from DoS attacks
+    - MAX_BFS_ITERATIONS (10,000): Protects BFS traversal operations
+    - MAX_TIMEOUT_MS (86,400,000): Maximum timeout (24 hours) to prevent DoS
+    - MAX_IDENTIFIER_LENGTH, MAX_NAME_LENGTH, etc.: Field length limits
+
+    When to use: Import from here for general-purpose limits, especially
+    when writing new validators or algorithms that need iteration bounds.
+
+    Example: ``from omnibase_core.constants import MAX_DFS_ITERATIONS``
+
+**omnibase_core/validation/workflow_constants.py** (This Module):
+    Workflow-specific limits and configuration. Re-exports MAX_DFS_ITERATIONS
+    from constants_field_limits.py for workflow module convenience.
+
+    - MAX_WORKFLOW_STEPS: Maximum steps per workflow (env-configurable)
+    - MAX_STEP_PAYLOAD_SIZE_BYTES: Per-step payload limit (env-configurable)
+    - MAX_TOTAL_PAYLOAD_SIZE_BYTES: Total payload limit (env-configurable)
+    - MIN_TIMEOUT_MS (100ms): Minimum timeout per ONEX v1.0.3 schema
+    - MAX_TIMEOUT_MS (24h): Maximum timeout to prevent resource exhaustion
+    - VALID_STEP_TYPES: Allowed step types per ONEX v1.0.4
+    - RESERVED_STEP_TYPES: Reserved for future versions (e.g., "conditional")
+
+    When to use: Import from here when working with workflow validation,
+    execution, or orchestration code.
+
+    Example: ``from omnibase_core.validation.workflow_constants import MAX_WORKFLOW_STEPS``
+
+**omnibase_core/constants/constants_timeouts.py**:
+    General timeout values for I/O operations across the framework:
+
+    - TIMEOUT_DEFAULT_MS (30,000ms): Standard I/O timeout
+    - TIMEOUT_LONG_MS (300,000ms): Extended timeout for complex operations
+    - TIMEOUT_MIN_MS (1,000ms): Minimum realistic timeout
+    - TIMEOUT_MAX_MS (600,000ms): Maximum timeout (10 minutes)
+
+    When to use: Import from here for effect operations, HTTP/DB/Kafka I/O,
+    and general timeout configuration.
+
+    Example: ``from omnibase_core.constants import TIMEOUT_DEFAULT_MS``
+
+**Why Multiple Timeout Constants?**:
+    - constants_field_limits.MAX_TIMEOUT_MS (24h): Absolute maximum for any timeout
+    - constants_timeouts.TIMEOUT_MAX_MS (10min): Practical maximum for I/O operations
+    - workflow_constants.MAX_TIMEOUT_MS (24h): Workflow-specific re-export for validation
+
+    The 24-hour limit protects against DoS via extremely long timeouts.
+    The 10-minute limit is a practical bound for most I/O operations.
+
+Security Rationale
+------------------
+
+All iteration and size limits exist to prevent denial-of-service attacks:
+
+1. **Iteration Limits (MAX_DFS_ITERATIONS, MAX_BFS_ITERATIONS)**:
+   Prevent infinite loops from maliciously crafted cyclic graphs or pathological
+   inputs. An attacker could submit workflows designed to exhaust CPU by triggering
+   worst-case graph traversal behavior.
+
+2. **Timeout Bounds (MIN_TIMEOUT_MS, MAX_TIMEOUT_MS)**:
+   Prevent resource exhaustion from extremely long timeouts that could tie up
+   worker threads indefinitely. The minimum prevents ineffective sub-100ms timeouts.
+
+3. **Payload Size Limits (MAX_STEP_PAYLOAD_SIZE_BYTES, MAX_TOTAL_PAYLOAD_SIZE_BYTES)**:
+   Prevent memory exhaustion from oversized payloads. Validated on deserialized
+   data to protect against compression bomb attacks (see workflow_executor.py).
+
+4. **Environment Variable Bounds Clamping**:
+   Even when limits are configurable via environment variables, they are clamped
+   to safe bounds (e.g., MAX_WORKFLOW_STEPS clamped to 1-100,000). This prevents
+   operators from accidentally (or maliciously) setting dangerous values.
+
 Workflow Execution Limits (OMN-670: Security hardening):
     These limits prevent memory exhaustion and DoS attacks:
     - MAX_WORKFLOW_STEPS: Maximum number of steps in a workflow
@@ -138,12 +221,46 @@ MAX_TOTAL_PAYLOAD_SIZE_BYTES: int = _get_limit_from_env(
 # See Linear ticket OMN-656 for tracking.
 RESERVED_STEP_TYPES: frozenset[str] = frozenset({"conditional"})
 
+# =============================================================================
+# Workflow Timeout Constants
+# =============================================================================
+#
+# TIMEOUT HIERARCHY DOCUMENTATION:
+# The ONEX framework uses a tiered timeout system to prevent both busy-waiting
+# (timeouts too short) and resource exhaustion (timeouts too long).
+#
+# Tier 1: MIN_TIMEOUT_MS (100ms) - Absolute minimum for any timeout
+#   - Prevents busy-waiting and rapid retry loops
+#   - Applied to: step timeouts, event timeouts, all timeout fields
+#   - Why 100ms: Allows sub-second operations while preventing CPU-burning loops
+#
+# Tier 2: TIMEOUT_LONG_MS (5 minutes) - Step-level maximum
+#   - Individual workflow steps should complete quickly
+#   - Longer operations should be async or broken into smaller steps
+#   - Defined in: omnibase_core/constants/constants_timeouts.py
+#   - Used by: ModelWorkflowStep.timeout_ms (le=TIMEOUT_LONG_MS)
+#
+# Tier 3: MAX_TIMEOUT_MS (24 hours) - Event-level maximum
+#   - Allows long-running event processing (batch jobs, ETL, ML training)
+#   - Prevents DoS via extremely long timeouts that could exhaust resources
+#   - Used by: ModelEventInputState.timeout_ms (le=MAX_TIMEOUT_MS)
+#
+# Cross-References:
+#   - Step timeout bounds: omnibase_core/models/contracts/model_workflow_step.py
+#   - Event timeout bounds: omnibase_core/models/core/model_event_input_state.py
+#   - I/O timeout constants: omnibase_core/constants/constants_timeouts.py
+# =============================================================================
+
 # Minimum timeout value in milliseconds per v1.0.3 schema.
 # Fix 38 (v1.0.3): timeout_ms MUST be >= 100. Any value <100 MUST raise ModelOnexError.
+# Rationale: Prevents busy-waiting scenarios where extremely short timeouts would
+# cause rapid retry loops consuming excessive CPU resources.
 MIN_TIMEOUT_MS: int = 100
 
 # Maximum allowed timeout in milliseconds (24 hours).
 # This prevents DoS scenarios where extremely long timeouts could exhaust resources.
+# Used for event-level timeouts which may span long-running operations like ETL or ML training.
+# For step-level timeouts, see TIMEOUT_LONG_MS (5 min) in constants_timeouts.py.
 MAX_TIMEOUT_MS: int = 86400000
 
 # Resource exhaustion protection constant for DFS cycle detection.

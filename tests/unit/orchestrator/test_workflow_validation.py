@@ -357,7 +357,9 @@ class TestCycleDetection:
         assert "cycle" in str(error).lower(), (
             f"Error message should mention cycle: {error}"
         )
-        assert error.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert (
+            error.error_code == EnumCoreErrorCode.ORCHESTRATOR_SEMANTIC_CYCLE_DETECTED
+        )
 
     @pytest.mark.asyncio
     async def test_indirect_cycle_detection(
@@ -871,7 +873,7 @@ class TestErrorMessageQuality:
         )
 
     def test_cycle_error_uses_correct_error_code(self) -> None:
-        """Test that cycle detection uses VALIDATION_ERROR code."""
+        """Test that cycle detection uses ORCHESTRATOR_SEMANTIC_CYCLE_DETECTED code."""
         step_a_id = uuid4()
         step_b_id = uuid4()
 
@@ -883,7 +885,10 @@ class TestErrorMessageQuality:
         with pytest.raises(ModelOnexError) as exc_info:
             get_execution_order(steps)
 
-        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert (
+            exc_info.value.error_code
+            == EnumCoreErrorCode.ORCHESTRATOR_SEMANTIC_CYCLE_DETECTED
+        )
 
 
 # ============================================================================
