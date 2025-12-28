@@ -10,7 +10,6 @@ import importlib
 import subprocess
 import sys
 from pathlib import Path
-from typing import Optional
 
 
 class GenericDownstreamValidator:
@@ -129,7 +128,7 @@ class GenericDownstreamValidator:
         try:
             # Check if SPI is available and can be imported
             import omnibase_spi.protocols.core
-            import omnibase_spi.protocols.types
+            import omnibase_spi.protocols.types  # noqa: F401
 
             print("  ✅ SPI imports: PASS")
             return True

@@ -20,6 +20,7 @@ from typing import ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from omnibase_core.constants import KAFKA_REQUEST_TIMEOUT_MS
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
@@ -102,7 +103,7 @@ class ModelEventBusSubcontract(BaseModel):
     )
 
     batch_timeout_ms: int = Field(
-        default=5000,
+        default=KAFKA_REQUEST_TIMEOUT_MS,
         description="Maximum time to wait for batch completion",
         ge=100,
         le=60000,

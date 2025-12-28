@@ -21,7 +21,6 @@ Usage:
 """
 
 import ast
-import re
 import sys
 from pathlib import Path
 from typing import Any

@@ -19,13 +19,11 @@ Exit Codes:
 """
 
 import argparse
-import ast
 import logging
 import os
 import re
 import sys
 import threading
-import time
 from collections.abc import Iterator
 from pathlib import Path
 from typing import TypedDict
