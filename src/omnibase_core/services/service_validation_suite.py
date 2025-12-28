@@ -21,7 +21,40 @@ from omnibase_core.validation.validation_utils import ModelValidationResult
 
 
 class ServiceValidationSuite:
-    """Unified validation suite for ONEX compliance."""
+    """
+    Unified validation suite for ONEX compliance.
+
+    Provides a centralized registry of validation tools for checking
+    ONEX architectural patterns, type usage, contracts, and code
+    conventions. Supports running individual validations or all
+    validations at once on a directory.
+
+    Available Validators:
+        - architecture: Validate ONEX one-model-per-file architecture
+        - union-usage: Validate Union type usage patterns
+        - contracts: Validate YAML contract files
+        - patterns: Validate code patterns and conventions
+
+    Example:
+        >>> from omnibase_core.services import ServiceValidationSuite
+        >>> suite = ServiceValidationSuite()
+        >>> result = suite.run_validation("architecture", Path("src/"))
+        >>> print(result.is_valid)
+
+    Thread Safety:
+        This class is thread-safe for concurrent read operations. The internal
+        validators dictionary is populated once during __init__ and is never
+        modified thereafter. All validation methods create fresh result objects
+        and do not mutate instance state. Multiple threads can safely call
+        run_validation() and run_all_validations() concurrently on the same
+        instance. See docs/guides/THREADING.md for more details.
+
+    .. note::
+        Previously named ``ModelValidationSuite``. Renamed in v0.4.0
+        to follow ONEX naming conventions (OMN-1071). The ``Model``
+        prefix is reserved for Pydantic BaseModel classes; ``Service``
+        prefix indicates a stateful service class.
+    """
 
     def __init__(self) -> None:
         self.validators: dict[str, TypedDictValidatorInfo] = {
@@ -82,8 +115,28 @@ class ServiceValidationSuite:
             try:
                 result = self.run_validation(validation_type, directory, **kwargs)
                 results[validation_type] = result
-            except Exception as e:
-                # Create error result
+            except ModelOnexError as e:
+                # ONEX framework validation errors
+                results[validation_type] = ModelValidationResult(
+                    is_valid=False,
+                    errors=[f"Validation error: {e.message}"],
+                    metadata=ModelValidationMetadata(
+                        validation_type=validation_type,
+                        files_processed=0,
+                    ),
+                )
+            except OSError as e:
+                # File system errors (FileNotFoundError, PermissionError, etc.)
+                results[validation_type] = ModelValidationResult(
+                    is_valid=False,
+                    errors=[f"File system error: {e}"],
+                    metadata=ModelValidationMetadata(
+                        validation_type=validation_type,
+                        files_processed=0,
+                    ),
+                )
+            except (ValueError, TypeError) as e:
+                # Data validation errors
                 results[validation_type] = ModelValidationResult(
                     is_valid=False,
                     errors=[f"Validation failed: {e}"],

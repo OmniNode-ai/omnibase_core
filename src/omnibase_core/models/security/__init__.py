@@ -1,9 +1,19 @@
 """
 Security domain models for ONEX.
+
+Backwards Compatibility (OMN-1071)
+==================================
+This module provides backwards compatibility aliases for classes renamed
+in v0.4.0. The following aliases are deprecated and will be removed in
+a future version:
+
+- ``ModelSecurityUtils`` -> use ``UtilSecurity`` from ``omnibase_core.utils.util_security``
+
+The ``__getattr__`` function provides lazy loading with deprecation warnings
+to help users migrate to the new names.
 """
 
-# Backwards compatibility alias (DEPRECATED)
-from omnibase_core.utils.util_security import UtilSecurity
+from typing import Any
 
 from .model_approval_requirements import ModelApprovalRequirements
 from .model_audit_requirements import ModelAuditRequirements
@@ -36,10 +46,6 @@ from .model_security_level import ModelSecurityLevel
 from .model_security_policy import ModelSecurityPolicy
 from .model_security_rule import ModelSecurityRule
 from .model_session_policy import ModelSessionPolicy
-
-ModelSecurityUtils = (
-    UtilSecurity  # DEPRECATED: Use UtilSecurity from omnibase_core.utils
-)
 
 __all__ = [
     "ModelApprovalRequirements",
@@ -74,3 +80,32 @@ __all__ = [
     # DEPRECATED: Use UtilSecurity from omnibase_core.utils instead
     "ModelSecurityUtils",
 ]
+
+
+# =============================================================================
+# Backwards compatibility: Lazy-load deprecated aliases with warnings.
+# See OMN-1071 for the class renaming migration.
+# =============================================================================
+def __getattr__(name: str) -> Any:
+    """
+    Lazy loading for backwards compatibility aliases.
+
+    Backwards Compatibility Aliases (OMN-1071):
+    -------------------------------------------
+    All deprecated aliases emit DeprecationWarning when accessed:
+    - ModelSecurityUtils -> UtilSecurity
+    """
+    import warnings
+
+    if name == "ModelSecurityUtils":
+        warnings.warn(
+            "'ModelSecurityUtils' is deprecated, use 'UtilSecurity' "
+            "from 'omnibase_core.utils.util_security' instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        from omnibase_core.utils.util_security import UtilSecurity
+
+        return UtilSecurity
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

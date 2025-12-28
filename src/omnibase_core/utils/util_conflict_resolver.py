@@ -69,6 +69,12 @@ class UtilConflictResolver:
         - Lists: Values are concatenated
         - Dicts: Values are shallow-merged (new overwrites existing keys)
         - Other types: New value replaces existing
+
+    .. note::
+        Previously named ``ModelConflictResolver``. Renamed in v0.4.0
+        to follow ONEX naming conventions (OMN-1071). The ``Model``
+        prefix is reserved for Pydantic BaseModel classes; ``Util``
+        prefix indicates a utility class.
     """
 
     def __init__(
@@ -163,5 +169,24 @@ class UtilConflictResolver:
         return new
 
 
-# Backwards compatibility alias - DEPRECATED, will be removed in v0.5.0
-ModelConflictResolver = UtilConflictResolver
+def __getattr__(name: str) -> Any:
+    """
+    Lazy loading for backwards compatibility aliases.
+
+    Backwards Compatibility Aliases (OMN-1071):
+    -------------------------------------------
+    All deprecated aliases emit DeprecationWarning when accessed:
+    - ModelConflictResolver -> UtilConflictResolver (removed in v0.5.0)
+    """
+    import warnings
+
+    if name == "ModelConflictResolver":
+        warnings.warn(
+            "'ModelConflictResolver' is deprecated, use 'UtilConflictResolver' "
+            "from 'omnibase_core.utils.util_conflict_resolver' instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return UtilConflictResolver
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

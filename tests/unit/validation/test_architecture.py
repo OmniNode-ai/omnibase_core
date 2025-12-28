@@ -12,12 +12,12 @@ from omnibase_core.models.validation.model_duplication_report import (
     ModelDuplicationReport,
 )
 from omnibase_core.models.validation.model_protocol_info import ModelProtocolInfo
+from omnibase_core.services.service_protocol_auditor import ServiceProtocolAuditor
 from omnibase_core.validation.architecture import (
     ModelCounter,
     validate_architecture_directory,
     validate_one_model_per_file,
 )
-from omnibase_core.services.service_protocol_auditor import ServiceProtocolAuditor
 
 
 @pytest.mark.unit

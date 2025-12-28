@@ -68,6 +68,27 @@ class ServiceContractValidator:
     - Scores based on completeness and correctness
 
     Implements ProtocolComplianceValidator for SPI compatibility.
+
+    Thread Safety:
+        This class is NOT thread-safe. It maintains mutable instance state
+        including custom_rules list, onex_standards, and architecture_rules
+        that can be modified via add_custom_rule() and configure_onex_standards().
+        Concurrent modifications from multiple threads could cause data races.
+        For thread-safe usage, create separate instances per thread, or ensure
+        all configuration is complete before sharing an instance (read-only mode).
+        See docs/guides/THREADING.md for more details.
+
+    Example:
+        >>> from omnibase_core.services import ServiceContractValidator
+        >>> validator = ServiceContractValidator()
+        >>> result = validator.validate_contract_yaml(yaml_content, "compute")
+        >>> print(f"Valid: {result.is_valid}, Score: {result.score}")
+
+    .. note::
+        Previously named ``ProtocolContractValidator``. Renamed in v0.4.0
+        to follow ONEX naming conventions (OMN-1071). The ``Protocol``
+        prefix is reserved for typing.Protocol interfaces; ``Service``
+        prefix indicates a stateful service class.
     """
 
     # Contract type mapping to model classes

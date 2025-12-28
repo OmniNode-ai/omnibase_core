@@ -20,7 +20,6 @@ from omnibase_core.models.validation.model_audit_result import ModelAuditResult
 from omnibase_core.models.validation.model_duplication_report import (
     ModelDuplicationReport,
 )
-
 from omnibase_core.validation.validation_utils import (
     ModelDuplicationInfo,
     ModelProtocolInfo,
@@ -54,6 +53,20 @@ class ServiceProtocolAuditor:
     - Full ecosystem scan (comprehensive)
 
     Implements ProtocolQualityValidator for SPI compliance.
+
+    Thread Safety:
+        This class is NOT thread-safe. It maintains mutable instance state
+        including configuration options (standards, enable_* flags) that can
+        be modified via configure_standards(). Additionally, audit methods
+        perform filesystem I/O operations that are not atomic. Each thread
+        should use its own instance or wrap access with external locks.
+        See docs/guides/THREADING.md for more details.
+
+    .. note::
+        Previously named ``ModelProtocolAuditor``. Renamed in v0.4.0
+        to follow ONEX naming conventions (OMN-1071). The ``Model``
+        prefix is reserved for Pydantic BaseModel classes; ``Service``
+        prefix indicates a stateful service class.
     """
 
     def __init__(

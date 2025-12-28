@@ -2,6 +2,19 @@
 Omnibase Core - Utilities
 
 Utility functions and helpers for ONEX architecture.
+
+Backwards Compatibility (OMN-1071)
+==================================
+This module provides backwards compatibility aliases for classes renamed
+in v0.4.0. The following aliases are deprecated and will be removed in
+a future version:
+
+- ``ProtocolContractLoader`` -> use ``UtilContractLoader``
+
+The ``__getattr__`` function provides lazy loading with deprecation warnings
+to help users migrate to the new names. These utilities have heavy model
+dependencies and are lazy-loaded to avoid circular imports during initial
+module loading.
 """
 
 from .util_conflict_resolver import UtilConflictResolver
@@ -41,22 +54,39 @@ __all__ = [
 ]
 
 
+# =============================================================================
+# Backwards compatibility: Lazy-load deprecated aliases with warnings.
+# See OMN-1071 for the class renaming migration.
+# =============================================================================
 def __getattr__(name: str) -> type:
     """
     Lazy loading for utilities with heavy model dependencies.
 
     This avoids circular imports during module initialization while still
     allowing `from omnibase_core.utils import UtilContractLoader`.
+
+    Backwards Compatibility Aliases (OMN-1071):
+    -------------------------------------------
+    All deprecated aliases emit DeprecationWarning when accessed:
+    - ProtocolContractLoader -> UtilContractLoader
     """
-    if name == "UtilContractLoader":
-        from .util_contract_loader import UtilContractLoader
+    import warnings
 
-        return UtilContractLoader
-
-    if name == "ProtocolContractLoader":
-        # DEPRECATED: Use UtilContractLoader instead.
-        # This alias exists for backwards compatibility with code that used
-        # the old name prior to PR #261 rename.
+    # -------------------------------------------------------------------------
+    # Consolidated imports: UtilContractLoader and its deprecated alias
+    # ProtocolContractLoader is DEPRECATED - emits DeprecationWarning
+    # -------------------------------------------------------------------------
+    _contract_loader_names = {"UtilContractLoader", "ProtocolContractLoader"}
+    if name in _contract_loader_names:
+        # Emit deprecation warning only for deprecated alias
+        if name == "ProtocolContractLoader":
+            warnings.warn(
+                "'ProtocolContractLoader' is deprecated, use 'UtilContractLoader' "
+                "from 'omnibase_core.utils.util_contract_loader' instead",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        # Single import for all contract loader names
         from .util_contract_loader import UtilContractLoader
 
         return UtilContractLoader

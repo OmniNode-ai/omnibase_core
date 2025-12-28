@@ -72,6 +72,12 @@ class UtilStreamingWindow:
         state (buffer deque and window_start timestamp) that is modified during
         add_item() and advance_window() operations without synchronization.
         Use separate instances per thread or wrap access with external locks.
+
+    .. note::
+        Previously named ``ModelStreamingWindow``. Renamed in v0.4.0
+        to follow ONEX naming conventions (OMN-1071). The ``Model``
+        prefix is reserved for Pydantic BaseModel classes; ``Util``
+        prefix indicates a utility class.
     """
 
     def __init__(self, window_size_ms: int, overlap_ms: int = 0):
@@ -134,5 +140,24 @@ class UtilStreamingWindow:
         self.window_start = datetime.now()
 
 
-# Backwards compatibility alias
-ModelStreamingWindow = UtilStreamingWindow
+def __getattr__(name: str) -> Any:
+    """
+    Lazy loading for backwards compatibility aliases.
+
+    Backwards Compatibility Aliases (OMN-1071):
+    -------------------------------------------
+    All deprecated aliases emit DeprecationWarning when accessed:
+    - ModelStreamingWindow -> UtilStreamingWindow
+    """
+    import warnings
+
+    if name == "ModelStreamingWindow":
+        warnings.warn(
+            "'ModelStreamingWindow' is deprecated, use 'UtilStreamingWindow' "
+            "from 'omnibase_core.utils.util_streaming_window' instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return UtilStreamingWindow
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

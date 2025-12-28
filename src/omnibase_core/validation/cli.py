@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 Unified CLI interface for all omnibase_core validation tools.
 
@@ -18,10 +16,7 @@ Usage:
 import argparse
 import sys
 from pathlib import Path
-
-from omnibase_core.models.common.model_validation_metadata import (
-    ModelValidationMetadata,
-)
+from typing import Any
 
 # Import ServiceValidationSuite DIRECTLY from the module file (not from services/__init__.py)
 # to avoid circular imports. The services package imports from models which imports from
@@ -29,10 +24,30 @@ from omnibase_core.models.common.model_validation_metadata import (
 # (OMN-1071: Service-prefixed classes should be in services/)
 from omnibase_core.services.service_validation_suite import ServiceValidationSuite
 
-# Backwards compatibility alias - old code using ModelValidationSuite will continue to work
-ModelValidationSuite = ServiceValidationSuite
-
 from .validation_utils import ModelValidationResult
+
+
+def __getattr__(name: str) -> Any:
+    """
+    Lazy loading for backwards compatibility aliases.
+
+    Backwards Compatibility Aliases (OMN-1071):
+    -------------------------------------------
+    All deprecated aliases emit DeprecationWarning when accessed:
+    - ModelValidationSuite -> ServiceValidationSuite
+    """
+    import warnings
+
+    if name == "ModelValidationSuite":
+        warnings.warn(
+            "'ModelValidationSuite' is deprecated, use 'ServiceValidationSuite' "
+            "from 'omnibase_core.services.service_validation_suite' instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return ServiceValidationSuite
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -152,7 +167,7 @@ def run_validation_cli() -> int:
     parser = create_parser()
     args = parser.parse_args()
 
-    suite = ModelValidationSuite()
+    suite = ServiceValidationSuite()
 
     # Handle special commands
     if args.validation_type == "list":

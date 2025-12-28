@@ -65,8 +65,8 @@ from .circular_import_validator import CircularImportValidator
 
 # Import CLI for module execution (OMN-1071)
 # ServiceValidationSuite is the canonical class (lives in services/)
-# ModelValidationSuite is the backwards compatibility alias
-from .cli import ModelValidationSuite, ServiceValidationSuite
+# ModelValidationSuite is available via __getattr__ (emits deprecation warning)
+from .cli import ServiceValidationSuite
 
 # =============================================================================
 # BACKWARDS COMPATIBILITY STRATEGY: __getattr__ vs Direct Alias
@@ -128,51 +128,81 @@ def __getattr__(name: str) -> type:
     By using __getattr__, we defer the import until the class is actually
     accessed, breaking the cycle.
 
-    Backwards Compatibility Aliases:
-    --------------------------------
-    - ModelProtocolAuditor -> ServiceProtocolAuditor (OMN-1071)
-    - ProtocolContractValidator -> ServiceContractValidator (OMN-1071)
-    - ProtocolMigrator -> ServiceProtocolMigrator (OMN-1071)
+    Backwards Compatibility Aliases (OMN-1071):
+    -------------------------------------------
+    All deprecated aliases emit DeprecationWarning when accessed:
+    - ModelProtocolAuditor -> ServiceProtocolAuditor
+    - ProtocolContractValidator -> ServiceContractValidator
+    - ProtocolMigrator -> ServiceProtocolMigrator
+    - ModelValidationSuite -> ServiceValidationSuite
     """
-    if name == "ServiceProtocolAuditor":
+    import warnings
+
+    # -------------------------------------------------------------------------
+    # Consolidated imports: Map deprecated aliases to canonical service classes
+    # Each entry: deprecated_alias -> (module_path, canonical_name)
+    # -------------------------------------------------------------------------
+    _deprecated_aliases: dict[str, tuple[str, str]] = {
+        "ModelProtocolAuditor": (
+            "omnibase_core.services.service_protocol_auditor",
+            "ServiceProtocolAuditor",
+        ),
+        "ProtocolContractValidator": (
+            "omnibase_core.services.service_contract_validator",
+            "ServiceContractValidator",
+        ),
+        "ProtocolMigrator": (
+            "omnibase_core.services.service_protocol_migrator",
+            "ServiceProtocolMigrator",
+        ),
+        "ModelValidationSuite": (
+            "omnibase_core.services.service_validation_suite",
+            "ServiceValidationSuite",
+        ),
+    }
+
+    # Emit deprecation warning for deprecated aliases
+    if name in _deprecated_aliases:
+        module_path, new_name = _deprecated_aliases[name]
+        warnings.warn(
+            f"'{name}' is deprecated, use '{new_name}' from '{module_path}' instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+    # -------------------------------------------------------------------------
+    # Consolidated lazy imports: Canonical names and deprecated aliases
+    # grouped by source module to avoid duplicate import statements
+    # -------------------------------------------------------------------------
+
+    # ServiceProtocolAuditor and its alias ModelProtocolAuditor
+    if name in {"ServiceProtocolAuditor", "ModelProtocolAuditor"}:
         from omnibase_core.services.service_protocol_auditor import (
             ServiceProtocolAuditor,
         )
 
         return ServiceProtocolAuditor
-    if name == "ServiceContractValidator":
+
+    # ServiceContractValidator and its alias ProtocolContractValidator
+    if name in {"ServiceContractValidator", "ProtocolContractValidator"}:
         from omnibase_core.services.service_contract_validator import (
             ServiceContractValidator,
         )
 
         return ServiceContractValidator
-    if name == "ServiceProtocolMigrator":
+
+    # ServiceProtocolMigrator and its alias ProtocolMigrator
+    if name in {"ServiceProtocolMigrator", "ProtocolMigrator"}:
         from omnibase_core.services.service_protocol_migrator import (
             ServiceProtocolMigrator,
         )
 
         return ServiceProtocolMigrator
-    if name == "ModelProtocolAuditor":
-        # Backwards compatibility alias
-        from omnibase_core.services.service_protocol_auditor import (
-            ServiceProtocolAuditor,
-        )
 
-        return ServiceProtocolAuditor
-    if name == "ProtocolContractValidator":
-        # Backwards compatibility alias
-        from omnibase_core.services.service_contract_validator import (
-            ServiceContractValidator,
-        )
+    # ModelValidationSuite (alias) - ServiceValidationSuite already imported at top
+    if name == "ModelValidationSuite":
+        return ServiceValidationSuite
 
-        return ServiceContractValidator
-    if name == "ProtocolMigrator":
-        # Backwards compatibility alias
-        from omnibase_core.services.service_protocol_migrator import (
-            ServiceProtocolMigrator,
-        )
-
-        return ServiceProtocolMigrator
     msg = f"module {__name__!r} has no attribute {name!r}"
     raise AttributeError(msg)
 

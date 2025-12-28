@@ -12,7 +12,20 @@ This module provides models for FSM-driven state management:
 - UtilConflictResolver: Conflict resolution strategies (moved from ModelConflictResolver)
 - UtilStreamingWindow: Time-based windowing for streaming (moved from ModelStreamingWindow)
 
+Backwards Compatibility (OMN-1071)
+==================================
+This module provides backwards compatibility aliases for classes renamed
+in v0.4.0. The following aliases are deprecated and will be removed in
+a future version:
+
+- ``ModelConflictResolver`` -> use ``UtilConflictResolver``
+- ``ModelStreamingWindow`` -> use ``UtilStreamingWindow``
+
+The ``__getattr__`` function provides lazy loading with deprecation warnings
+to help users migrate to the new names.
 """
+
+from typing import Any
 
 from omnibase_core.models.reducer.model_intent import ModelIntent
 from omnibase_core.models.reducer.model_intent_publish_result import (
@@ -22,15 +35,9 @@ from omnibase_core.models.reducer.model_reducer_context import ModelReducerConte
 from omnibase_core.models.reducer.model_reducer_input import ModelReducerInput
 from omnibase_core.models.reducer.model_reducer_output import ModelReducerOutput
 
-# Utilities moved to utils/ - re-export for backwards compatibility
-from omnibase_core.utils.util_conflict_resolver import (
-    ModelConflictResolver,  # DEPRECATED alias, use UtilConflictResolver
-    UtilConflictResolver,
-)
-from omnibase_core.utils.util_streaming_window import (
-    ModelStreamingWindow,  # DEPRECATED alias, use UtilStreamingWindow
-    UtilStreamingWindow,
-)
+# Canonical utility classes (import directly, no deprecation warning)
+from omnibase_core.utils.util_conflict_resolver import UtilConflictResolver
+from omnibase_core.utils.util_streaming_window import UtilStreamingWindow
 
 __all__ = [
     "ModelConflictResolver",  # DEPRECATED alias, use UtilConflictResolver
@@ -43,3 +50,40 @@ __all__ = [
     "UtilConflictResolver",
     "UtilStreamingWindow",
 ]
+
+
+# =============================================================================
+# Backwards compatibility: Lazy-load deprecated aliases with warnings.
+# See OMN-1071 for the class renaming migration.
+# =============================================================================
+def __getattr__(name: str) -> Any:
+    """
+    Lazy loading for backwards compatibility aliases.
+
+    Backwards Compatibility Aliases (OMN-1071):
+    -------------------------------------------
+    All deprecated aliases emit DeprecationWarning when accessed:
+    - ModelConflictResolver -> UtilConflictResolver
+    - ModelStreamingWindow -> UtilStreamingWindow
+    """
+    import warnings
+
+    if name == "ModelConflictResolver":
+        warnings.warn(
+            "'ModelConflictResolver' is deprecated, use 'UtilConflictResolver' "
+            "from 'omnibase_core.utils.util_conflict_resolver' instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return UtilConflictResolver
+
+    if name == "ModelStreamingWindow":
+        warnings.warn(
+            "'ModelStreamingWindow' is deprecated, use 'UtilStreamingWindow' "
+            "from 'omnibase_core.utils.util_streaming_window' instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return UtilStreamingWindow
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

@@ -13,8 +13,8 @@ from unittest.mock import patch
 import pytest
 
 from omnibase_core.errors.exceptions import ExceptionConfigurationError
-from omnibase_core.services.service_protocol_auditor import ServiceProtocolAuditor
 from omnibase_core.models.validation.model_audit_result import ModelAuditResult
+from omnibase_core.services.service_protocol_auditor import ServiceProtocolAuditor
 
 
 @pytest.mark.unit

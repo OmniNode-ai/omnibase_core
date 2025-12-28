@@ -33,6 +33,17 @@ class UtilSecurity:
         modified at runtime. Methods that process collections (mask_dict_credentials,
         audit_credential_usage) create fresh output structures for each call,
         ensuring no shared mutable state exists between concurrent invocations.
+
+    Example:
+        >>> from omnibase_core.utils import UtilSecurity
+        >>> masked = UtilSecurity.mask_credential("my-secret-token")
+        >>> print(masked)  # "my********en"
+
+    .. note::
+        Previously named ``ModelSecurityUtils``. Renamed in v0.4.0
+        to follow ONEX naming conventions (OMN-1071). The ``Model``
+        prefix is reserved for Pydantic BaseModel classes; ``Util``
+        prefix indicates a utility class.
     """
 
     # Default sensitive field patterns
