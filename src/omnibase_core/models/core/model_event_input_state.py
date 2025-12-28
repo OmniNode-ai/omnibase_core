@@ -11,6 +11,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.validation.workflow_constants import MAX_TIMEOUT_MS
 
 
 class ModelEventInputState(BaseModel):
@@ -34,7 +35,12 @@ class ModelEventInputState(BaseModel):
         default=None,
         description="Correlation ID for tracing",
     )
-    timeout_ms: int | None = Field(default=None, description="Execution timeout", ge=0)
+    timeout_ms: int | None = Field(
+        default=None,
+        description="Execution timeout in milliseconds",
+        ge=0,
+        le=MAX_TIMEOUT_MS,  # Max 24 hours - prevents DoS via excessively long timeouts
+    )
 
     def get_parameter(self, key: str, default: Any = None) -> Any:
         """Get parameter value with default."""

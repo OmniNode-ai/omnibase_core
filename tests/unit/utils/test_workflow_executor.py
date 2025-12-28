@@ -297,14 +297,44 @@ class TestWorkflowValidation:
     async def test_empty_workflow(
         self, simple_workflow_definition: ModelWorkflowDefinition
     ):
-        """Test validation with no steps.
+        """Test validation and execution with no steps.
 
         v1.0.3 Fix 29: Empty workflows are VALID and succeed immediately with
         COMPLETED state. No actions are emitted. This is not an error condition.
+        Empty workflows should produce:
+        - Zero validation errors
+        - Empty skipped_steps (no steps to skip)
+        - COMPLETED status
         """
+        # Validation phase: empty workflows should have zero errors
         errors = await validate_workflow_definition(simple_workflow_definition, [])
         # v1.0.3 Fix 29: Empty workflows are valid, no errors expected
-        assert len(errors) == 0
+        assert len(errors) == 0, (
+            f"Empty workflow should have zero validation errors per v1.0.3 Fix 29, "
+            f"but got: {errors}"
+        )
+
+        # Execution phase: empty workflows should complete successfully
+        workflow_id = uuid4()
+        result = await execute_workflow(
+            simple_workflow_definition,
+            [],  # Empty steps list
+            workflow_id,
+            execution_mode=EnumExecutionMode.SEQUENTIAL,
+        )
+
+        # Empty workflow produces COMPLETED status with no steps or actions
+        assert result.execution_status == EnumWorkflowState.COMPLETED, (
+            "Empty workflow should complete successfully per v1.0.3 Fix 29"
+        )
+        assert len(result.completed_steps) == 0, (
+            "Empty workflow has no steps to complete"
+        )
+        assert len(result.failed_steps) == 0, "Empty workflow has no steps to fail"
+        assert result.skipped_steps == [], (
+            "Empty workflow should have empty skipped_steps (no disabled steps exist)"
+        )
+        assert len(result.actions_emitted) == 0, "Empty workflow emits no actions"
 
     @pytest.mark.asyncio
     async def test_invalid_dependency(
@@ -424,13 +454,25 @@ class TestExecutionOrder:
 
 @pytest.mark.unit
 class TestDisabledSteps:
-    """Test handling of disabled steps."""
+    """Test handling of disabled steps and skipped_steps tracking.
+
+    v1.0.2 Fix 10: Disabled steps are treated as automatically satisfied dependencies.
+    Steps depending on disabled steps proceed as if the dependency is met.
+    Disabled steps appear in skipped_steps, NOT in completed_steps or failed_steps.
+    """
 
     @pytest.mark.asyncio
     async def test_disabled_step_skipped(
         self, simple_workflow_definition: ModelWorkflowDefinition
     ):
-        """Test that disabled steps are skipped."""
+        """Test that disabled steps are tracked in skipped_steps with correct ordering.
+
+        v1.0.2 Fix 10: Disabled steps are treated as satisfied dependencies:
+        - Disabled steps appear ONLY in skipped_steps
+        - Disabled steps do NOT appear in completed_steps or failed_steps
+        - Steps depending on disabled steps proceed normally
+        - skipped_steps contains exactly the disabled step IDs (as strings)
+        """
         step1_id = uuid4()
         step2_id = uuid4()
         step3_id = uuid4()
@@ -468,6 +510,24 @@ class TestDisabledSteps:
         assert len(result.failed_steps) == 0  # No failures
         assert len(result.skipped_steps) == 1  # Step 2 is skipped
         assert str(step2_id) in result.skipped_steps  # Verify which step is skipped
+
+        # Explicit assertions: disabled step NOT in completed or failed
+        assert str(step2_id) not in result.completed_steps, (
+            "Disabled step must NOT appear in completed_steps"
+        )
+        assert str(step2_id) not in result.failed_steps, (
+            "Disabled step must NOT appear in failed_steps"
+        )
+
+        # Explicit assertions: enabled steps completed, not skipped
+        assert str(step1_id) in result.completed_steps, "Step 1 should be completed"
+        assert str(step3_id) in result.completed_steps, "Step 3 should be completed"
+        assert str(step1_id) not in result.skipped_steps, (
+            "Enabled step 1 must NOT appear in skipped_steps"
+        )
+        assert str(step3_id) not in result.skipped_steps, (
+            "Enabled step 3 must NOT appear in skipped_steps"
+        )
 
 
 @pytest.mark.unit
@@ -1239,7 +1299,10 @@ class TestComputeWorkflowHash:
 
 @pytest.mark.unit
 class TestDeclarationOrderIntegration:
-    """Integration tests for declaration-order semantics in workflow execution.
+    """Integration tests for declaration-order semantics per v1.0.2 Fix 5.
+
+    v1.0.2 Fix 5: Topological ordering uses declaration order as tiebreaker,
+    NOT priority. Priority values are informational and do not affect ordering.
 
     These tests verify that topological/execution order works end-to-end:
     - Dependencies are always respected first
@@ -1592,7 +1655,10 @@ class TestDeclarationOrderIntegration:
 
 @pytest.mark.unit
 class TestDeclarationOrderTopological:
-    """Tests for declaration-order semantics in _get_topological_order.
+    """Tests for declaration-order semantics in _get_topological_order per v1.0.2 Fix 5.
+
+    v1.0.2 Fix 5: Topological ordering uses declaration order as tiebreaker,
+    NOT priority. Priority values are informational and do not affect ordering.
 
     These tests verify:
     - Dependencies are respected first (topological ordering)
@@ -1602,7 +1668,10 @@ class TestDeclarationOrderTopological:
     """
 
     def test_equal_priority_ordered_by_declaration_order(self) -> None:
-        """Test steps with equal priority are ordered by declaration order."""
+        """Test steps with equal priority are ordered by declaration order.
+
+        v1.0.2 Fix 5: Declaration order is the tiebreaker for equal priorities.
+        """
         from omnibase_core.utils.workflow_executor import _get_topological_order
 
         step1_id = uuid4()

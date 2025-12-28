@@ -30,7 +30,18 @@ class ModelWorkflowStep(BaseModel):
     Replaces dict[str, str | int | bool] patterns with proper Pydantic model
     providing runtime validation and type safety for workflow execution.
 
-    Strict typing is enforced: No Any types or dict[str, Any]patterns allowed.
+    Strict typing is enforced: No Any types or dict[str, Any] patterns allowed.
+
+    Thread Safety:
+        This model is frozen (frozen=True), making it fully immutable and safe
+        to share across threads without synchronization. All fields are read-only
+        after construction. To "modify" a step, create a new instance using
+        `model_copy(update={...})`.
+
+    v1.0.4 Compliance:
+        step_type MUST be one of: compute, effect, reducer, orchestrator, custom,
+        parallel. The "conditional" type is reserved for v1.1+ and MUST NOT be
+        accepted in v1.0.x. See: workflow_constants.VALID_STEP_TYPES
     """
 
     model_config = {

@@ -29,6 +29,13 @@ Key Features:
     - Load balancing integration for distributed execution
     - Automatic dependency resolution between steps
 
+v1.0.x Note:
+    This model uses the `steps` list with `depends_on` for workflow execution.
+    The `execution_graph` field in ModelWorkflowDefinition is reserved for v1.1+
+    and MUST NOT be consulted by the v1.0 executor. See:
+    - models/contracts/subcontracts/model_execution_graph.py for v1.1+ roadmap
+    - docs/architecture/CONTRACT_DRIVEN_NODEORCHESTRATOR_V1_0.md for v1.0 spec
+
 Example:
     >>> from uuid import uuid4
     >>> from omnibase_core.models.orchestrator import ModelOrchestratorInput
@@ -82,6 +89,7 @@ from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.orchestrator.model_orchestrator_input_metadata import (
     ModelOrchestratorInputMetadata,
 )
+from omnibase_core.validation.workflow_constants import MAX_TIMEOUT_MS
 
 
 class ModelOrchestratorInput(BaseModel):
@@ -181,6 +189,7 @@ class ModelOrchestratorInput(BaseModel):
     global_timeout_ms: int = Field(
         default=TIMEOUT_LONG_MS,
         ge=100,  # v1.0.3: Minimum timeout validation for consistency with per-step timeouts
+        le=MAX_TIMEOUT_MS,  # Max 24 hours - prevents DoS via excessively long timeouts
         description="Global workflow timeout (5 minutes default)",
     )
     failure_strategy: str = Field(

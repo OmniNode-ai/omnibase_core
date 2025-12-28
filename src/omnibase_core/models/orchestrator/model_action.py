@@ -270,7 +270,7 @@ class ModelAction(BaseModel):
                     "cannot be in its own dependencies list. This would create a "
                     "circular dependency that can never be resolved."
                 ),
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.ORCHESTRATOR_SEMANTIC_CYCLE_DETECTED,
                 action_id=str(self.action_id),
                 dependencies=[str(d) for d in self.dependencies],
                 action_type=self.action_type.value,

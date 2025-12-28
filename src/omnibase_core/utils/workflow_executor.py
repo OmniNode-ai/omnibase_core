@@ -95,7 +95,6 @@ import asyncio
 import heapq
 import json
 import logging
-import os
 import time
 from datetime import datetime
 from typing import Literal, cast
@@ -128,54 +127,16 @@ from omnibase_core.types.typed_dict_workflow_context import TypedDictWorkflowCon
 from omnibase_core.validation.reserved_enum_validator import validate_execution_mode
 from omnibase_core.validation.workflow_constants import (
     MAX_DFS_ITERATIONS,
+    MAX_STEP_PAYLOAD_SIZE_BYTES,
+    MAX_TOTAL_PAYLOAD_SIZE_BYTES,
+    MAX_WORKFLOW_STEPS,
     MIN_TIMEOUT_MS,
     RESERVED_STEP_TYPES,
 )
 
-
-def _get_limit_from_env(env_var: str, default: int, min_val: int, max_val: int) -> int:
-    """Get limit from environment variable with bounds checking.
-
-    Args:
-        env_var: Environment variable name
-        default: Default value if env var not set
-        min_val: Minimum allowed value
-        max_val: Maximum allowed value
-
-    Returns:
-        Validated limit value
-    """
-    value = os.environ.get(env_var)
-    if value is None:
-        return default
-    try:
-        int_value = int(value)
-        return max(min_val, min(int_value, max_val))
-    except ValueError:
-        logging.warning(
-            f"Invalid value for {env_var}: {value}, using default {default}"
-        )
-        return default
-
-
-# Workflow execution limits (OMN-670: Security hardening)
-# Configurable via environment variables for extreme workloads
-# Bounds prevent both too-small (DoS via many small workflows) and too-large (memory exhaustion) values
-MAX_WORKFLOW_STEPS = _get_limit_from_env(
-    "ONEX_MAX_WORKFLOW_STEPS", default=1000, min_val=1, max_val=100000
-)
-MAX_STEP_PAYLOAD_SIZE_BYTES = _get_limit_from_env(
-    "ONEX_MAX_STEP_PAYLOAD_SIZE_BYTES",
-    default=64 * 1024,
-    min_val=1024,
-    max_val=10 * 1024 * 1024,
-)
-MAX_TOTAL_PAYLOAD_SIZE_BYTES = _get_limit_from_env(
-    "ONEX_MAX_TOTAL_PAYLOAD_SIZE_BYTES",
-    default=10 * 1024 * 1024,
-    min_val=1024,
-    max_val=1024 * 1024 * 1024,
-)
+# Note: MAX_WORKFLOW_STEPS, MAX_STEP_PAYLOAD_SIZE_BYTES, MAX_TOTAL_PAYLOAD_SIZE_BYTES
+# are imported from workflow_constants.py (canonical source with memoized env var parsing).
+# See workflow_constants.py module docstring for configuration details.
 
 
 def _log_payload_metrics(
@@ -346,6 +307,9 @@ async def execute_workflow(
 
     # v1.0.3 Fix 29: Empty workflow handling
     # Empty workflows succeed immediately with COMPLETED state. No actions emitted.
+    # Note: Workflow hash is STILL computed for empty workflows because it's based on
+    # workflow_definition (metadata, config), not on workflow_steps. The hash provides
+    # integrity verification for the definition itself, regardless of step count.
     if not workflow_steps:
         end_time = time.perf_counter()
         execution_time_ms = max(1, int((end_time - start_time) * 1000))
@@ -1357,11 +1321,18 @@ def _validate_json_payload(
     payload: dict[str, object], context: str = "", *, strict: bool = False
 ) -> None:
     """
-    Validate that payload is JSON-serializable.
+    Validate that payload is JSON-serializable (standalone utility function).
 
-    Ensures payloads can be safely transmitted over event systems and stored
-    in JSON-based persistence layers. Called during action creation to fail
-    fast if payload contains non-serializable objects.
+    This is a standalone pre-validation utility for validating payloads before
+    passing them to workflow functions. It can be used to fail fast if payload
+    contains non-serializable objects.
+
+    Note: Internal workflow execution (_create_action_for_step) performs inline
+    JSON validation combined with size checking in a single json.dumps() pass for
+    efficiency. This function is provided as a separate utility for:
+    - External callers who want to validate payloads before workflow execution
+    - Testing and debugging payload serialization issues
+    - Pre-flight validation in custom workflow builders
 
     Serialization Behavior:
         By default (strict=False), allows common workflow types (UUID, datetime)
@@ -1375,9 +1346,6 @@ def _validate_json_payload(
         Note: Other non-JSON types (lambdas, custom objects, etc.) will fail
         validation in both modes, which is the desired behavior to catch
         programming errors early.
-
-    Used by:
-        _create_action_for_step: Validates action payloads before ModelAction creation
 
     Args:
         payload: The payload dict to validate
