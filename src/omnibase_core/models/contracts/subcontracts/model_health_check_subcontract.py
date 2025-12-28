@@ -17,6 +17,11 @@ from typing import ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.constants import (
+    TIMEOUT_DEFAULT_MS,
+    TIMEOUT_LONG_MS,
+    TIMEOUT_MIN_MS,
+)
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
@@ -55,10 +60,10 @@ class ModelHealthCheckSubcontract(BaseModel):
 
     # Configuration
     check_interval_ms: int = Field(
-        default=30000,
+        default=TIMEOUT_DEFAULT_MS,
         description="Health check interval in milliseconds",
         ge=5000,
-        le=300000,
+        le=TIMEOUT_LONG_MS,  # Max 5 minutes (TIMEOUT_LONG_MS)
     )
 
     failure_threshold: int = Field(
@@ -78,8 +83,8 @@ class ModelHealthCheckSubcontract(BaseModel):
     timeout_ms: int = Field(
         default=5000,
         description="Timeout for individual health checks in milliseconds",
-        ge=1000,
-        le=30000,
+        ge=TIMEOUT_MIN_MS,
+        le=TIMEOUT_DEFAULT_MS,
     )
 
     include_dependency_checks: bool = Field(

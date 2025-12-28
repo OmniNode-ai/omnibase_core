@@ -7,7 +7,7 @@ performance monitoring, and operational insights for ONEX registry tools.
 
 import re
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -105,12 +105,12 @@ class ModelToolHealth(BaseModel):
         max_length=50,
     )
 
-    configuration: Optional["ModelGenericProperties"] = Field(
+    configuration: "ModelGenericProperties | None" = Field(
         default=None,
         description="Tool configuration summary",
     )
 
-    metrics: Optional["ModelMonitoringMetrics"] = Field(
+    metrics: "ModelMonitoringMetrics | None" = Field(
         default=None,
         description="Performance and operational metrics",
     )
@@ -278,8 +278,8 @@ class ModelToolHealth(BaseModel):
         *,
         error_message: str | None = None,
         error_code: str | None = None,
-        configuration: Optional["ModelGenericProperties"] = None,
-        metrics: Optional["ModelMonitoringMetrics"] = None,
+        configuration: "ModelGenericProperties | None" = None,
+        metrics: "ModelMonitoringMetrics | None" = None,
         uptime_seconds: int | None = None,
         version: ModelSemVer | None = None,
         dependencies: list[str] | None = None,
@@ -311,8 +311,8 @@ class ModelToolHealth(BaseModel):
         error_code: str | None = None,
         consecutive_failures: int = 1,
         *,
-        configuration: Optional["ModelGenericProperties"] = None,
-        metrics: Optional["ModelMonitoringMetrics"] = None,
+        configuration: "ModelGenericProperties | None" = None,
+        metrics: "ModelMonitoringMetrics | None" = None,
         uptime_seconds: int | None = None,
         version: ModelSemVer | None = None,
         dependencies: list[str] | None = None,
@@ -369,7 +369,7 @@ class ModelToolHealth(BaseModel):
 
     # === Error Analysis ===
 
-    def get_error_summary(self) -> Optional["ModelErrorSummary"]:
+    def get_error_summary(self) -> "ModelErrorSummary | None":
         """Get comprehensive error summary."""
         if not self.is_unhealthy() and not self.error_message:
             return None
@@ -521,8 +521,8 @@ class ModelToolHealth(BaseModel):
         warning_message: str = "Performance degraded",
         *,
         error_code: str | None = None,
-        configuration: Optional["ModelGenericProperties"] = None,
-        metrics: Optional["ModelMonitoringMetrics"] = None,
+        configuration: "ModelGenericProperties | None" = None,
+        metrics: "ModelMonitoringMetrics | None" = None,
         uptime_seconds: int | None = None,
         version: ModelSemVer | None = None,
         dependencies: list[str] | None = None,
@@ -553,8 +553,8 @@ class ModelToolHealth(BaseModel):
         reason: str = "Tool unavailable",
         *,
         error_code: str | None = None,
-        configuration: Optional["ModelGenericProperties"] = None,
-        metrics: Optional["ModelMonitoringMetrics"] = None,
+        configuration: "ModelGenericProperties | None" = None,
+        metrics: "ModelMonitoringMetrics | None" = None,
         uptime_seconds: int | None = None,
         version: ModelSemVer | None = None,
         dependencies: list[str] | None = None,
@@ -589,8 +589,8 @@ class ModelToolHealth(BaseModel):
         *,
         error_message: str | None = None,
         error_code: str | None = None,
-        configuration: Optional["ModelGenericProperties"] = None,
-        metrics: Optional["ModelMonitoringMetrics"] = None,
+        configuration: "ModelGenericProperties | None" = None,
+        metrics: "ModelMonitoringMetrics | None" = None,
         dependencies: list[str] | None = None,
     ) -> "ModelToolHealth":
         """Create tool health with comprehensive metrics."""

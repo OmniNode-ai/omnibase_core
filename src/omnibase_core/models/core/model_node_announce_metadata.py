@@ -1,7 +1,7 @@
 """Node announce metadata model for ONEX event-driven architecture."""
 
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -49,11 +49,11 @@ class ModelNodeAnnounceMetadata(BaseModel):
     )
 
     # Input/Output configuration
-    inputs: Optional["ModelIOBlock"] = Field(
+    inputs: "ModelIOBlock | None" = Field(
         default=None,
         description="Node input configuration",
     )
-    outputs: Optional["ModelIOBlock"] = Field(
+    outputs: "ModelIOBlock | None" = Field(
         default=None,
         description="Node output configuration",
     )
@@ -76,7 +76,7 @@ class ModelNodeAnnounceMetadata(BaseModel):
     schema_version: ModelSemVer | None = Field(
         default=None, description="Schema version"
     )
-    signature_block: Optional["ModelSignatureBlock"] = Field(
+    signature_block: "ModelSignatureBlock | None" = Field(
         default=None,
         description="Signature block for verification",
     )

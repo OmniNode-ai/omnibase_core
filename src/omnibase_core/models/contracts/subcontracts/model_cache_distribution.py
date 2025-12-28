@@ -6,6 +6,7 @@ Model for distributed caching configuration in the ONEX caching system.
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.constants import TIMEOUT_DEFAULT_MS
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
@@ -45,7 +46,7 @@ class ModelCacheDistribution(BaseModel):
     )
 
     sync_interval_ms: int = Field(
-        default=30000,
+        default=TIMEOUT_DEFAULT_MS,
         description="Synchronization interval",
         ge=1000,
     )

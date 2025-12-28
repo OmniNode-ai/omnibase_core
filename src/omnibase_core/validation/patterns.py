@@ -27,7 +27,7 @@ from .checker_pydantic_pattern import PydanticPatternChecker
 from .validation_utils import ModelValidationResult
 
 
-class PatternChecker(Protocol):
+class ProtocolPatternChecker(Protocol):
     """Protocol for pattern checkers with issues tracking."""
 
     issues: list[str]
@@ -48,7 +48,7 @@ def validate_patterns_file(file_path: Path) -> list[str]:
         tree = ast.parse(content, filename=str(file_path))
 
         # Run all pattern checkers
-        checkers: list[PatternChecker] = [
+        checkers: list[ProtocolPatternChecker] = [
             PydanticPatternChecker(str(file_path)),
             NamingConventionChecker(str(file_path)),
             GenericPatternChecker(str(file_path)),

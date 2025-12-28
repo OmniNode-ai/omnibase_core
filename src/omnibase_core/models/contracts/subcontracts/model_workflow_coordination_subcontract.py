@@ -33,6 +33,7 @@ from typing import ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.constants import TIMEOUT_DEFAULT_MS, TIMEOUT_LONG_MS
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 # Import all individual model components
@@ -59,7 +60,8 @@ class ModelWorkflowCoordinationSubcontract(BaseModel):
         applicable_node_types: Node types this subcontract applies to (default: ["ORCHESTRATOR"]).
         max_concurrent_workflows: Maximum concurrent workflows (1-100, default 10).
         default_workflow_timeout_ms: Default workflow timeout (60000-3600000 ms, default 600000).
-        node_coordination_timeout_ms: Node coordination timeout (5000-300000 ms, default 30000).
+        node_coordination_timeout_ms: Node coordination timeout (5000-TIMEOUT_LONG_MS ms,
+            default TIMEOUT_DEFAULT_MS). See omnibase_core.constants for values.
         checkpoint_interval_ms: Checkpoint interval (10000-600000 ms, default 60000).
         auto_retry_enabled: Whether automatic retry is enabled (default True).
         parallel_execution_enabled: Whether parallel execution is enabled (default True).
@@ -119,10 +121,10 @@ class ModelWorkflowCoordinationSubcontract(BaseModel):
     )
 
     node_coordination_timeout_ms: int = Field(
-        default=30000,
+        default=TIMEOUT_DEFAULT_MS,
         description="Node coordination timeout in milliseconds",
         ge=5000,
-        le=300000,
+        le=TIMEOUT_LONG_MS,  # Max 5 minutes (TIMEOUT_LONG_MS)
     )
 
     checkpoint_interval_ms: int = Field(

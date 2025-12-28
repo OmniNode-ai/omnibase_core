@@ -52,6 +52,7 @@ from collections import Counter, deque
 from typing import Literal
 from uuid import UUID
 
+from omnibase_core.constants import TIMEOUT_DEFAULT_MS
 from omnibase_core.constants.constants_field_limits import MAX_BFS_ITERATIONS
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
@@ -362,7 +363,7 @@ class WorkflowLinter:
                 priority=priority,
                 parallel_group=parallel_group,
                 correlation_id=node.node_id,
-                timeout_ms=30000,
+                timeout_ms=TIMEOUT_DEFAULT_MS,
                 retry_count=3,
                 enabled=True,
                 skip_on_failure=False,

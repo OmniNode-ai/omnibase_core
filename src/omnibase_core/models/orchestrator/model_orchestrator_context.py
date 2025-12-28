@@ -81,7 +81,8 @@ class ModelOrchestratorContext(BaseModel):
     Example:
         >>> # Calculate deadline based on injected time
         >>> from datetime import timedelta
-        >>> timeout_ms = 30000  # 30 seconds
+        >>> from omnibase_core.constants import TIMEOUT_DEFAULT_MS
+        >>> timeout_ms = TIMEOUT_DEFAULT_MS  # 30 seconds
         >>> deadline = context.now + timedelta(milliseconds=timeout_ms)
         >>> # Use context.now for consistent time injection (not datetime.now)
         >>> if context.now > deadline:

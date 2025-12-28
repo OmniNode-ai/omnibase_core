@@ -61,6 +61,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.constants import TIMEOUT_LONG_MS
 from omnibase_core.constants.constants_field_limits import MAX_TIMEOUT_MS
 from omnibase_core.enums.enum_workflow_execution import EnumExecutionMode
 from omnibase_core.models.orchestrator.model_orchestrator_input_metadata import (
@@ -99,7 +100,8 @@ class ModelOrchestratorInput(BaseModel):
         max_parallel_steps: Maximum number of steps to run concurrently when
             using PARALLEL execution mode. Defaults to 5.
         global_timeout_ms: Maximum time for entire workflow completion in
-            milliseconds. Defaults to 300000 (5 minutes).
+            milliseconds. Defaults to TIMEOUT_LONG_MS (5 minutes).
+            See omnibase_core.constants for timeout constant values.
         failure_strategy: How to handle step failures. Options: 'fail_fast'
             (stop immediately), 'continue_on_error', 'retry'. Defaults to 'fail_fast'.
         load_balancing_enabled: Whether to use load balancer for distributing
@@ -140,7 +142,7 @@ class ModelOrchestratorInput(BaseModel):
         default=5, description="Maximum number of parallel steps"
     )
     global_timeout_ms: int = Field(
-        default=300000,
+        default=TIMEOUT_LONG_MS,
         le=MAX_TIMEOUT_MS,
         description="Global workflow timeout (5 minutes default)",
     )

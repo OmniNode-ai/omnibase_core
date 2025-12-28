@@ -7,7 +7,7 @@ connection management, and operational insights for ONEX registry services.
 
 import re
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 from pydantic import BaseModel, Field, field_validator
@@ -131,12 +131,12 @@ class ModelServiceHealth(BaseModel):
         max_length=50,
     )
 
-    configuration: Optional["ModelGenericProperties"] = Field(
+    configuration: "ModelGenericProperties | None" = Field(
         default=None,
         description="Service configuration summary",
     )
 
-    metrics: Optional["ModelMonitoringMetrics"] = Field(
+    metrics: "ModelMonitoringMetrics | None" = Field(
         default=None,
         description="Performance and operational metrics",
     )

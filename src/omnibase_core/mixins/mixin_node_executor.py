@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from uuid import UUID
 
+from omnibase_core.constants import TIMEOUT_DEFAULT_MS
 from omnibase_core.constants.event_types import TOOL_INVOCATION
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
@@ -112,7 +113,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
                 self._health_task.cancel()
                 with contextlib.suppress(asyncio.CancelledError):
                     await self._health_task
-            await self._wait_for_active_invocations(timeout_ms=30000)
+            await self._wait_for_active_invocations(timeout_ms=TIMEOUT_DEFAULT_MS)
             for callback in self._shutdown_callbacks:
                 try:
                     callback()
@@ -411,7 +412,9 @@ class MixinNodeExecutor(MixinEventDrivenNode):
         except Exception as e:
             self._log_error(f"Failed to emit shutdown event: {e}")
 
-    async def _wait_for_active_invocations(self, timeout_ms: int = 30000) -> None:
+    async def _wait_for_active_invocations(
+        self, timeout_ms: int = TIMEOUT_DEFAULT_MS
+    ) -> None:
         """Wait for active invocations to complete."""
         if not self._active_invocations:
             return

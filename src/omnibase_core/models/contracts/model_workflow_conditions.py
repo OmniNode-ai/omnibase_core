@@ -11,6 +11,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field, field_validator
 
+from omnibase_core.constants import TIMEOUT_LONG_MS
 from omnibase_core.constants.constants_field_limits import MAX_IDENTIFIER_LENGTH
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -92,7 +93,7 @@ class ModelWorkflowConditions(BaseModel):
     )
 
     dependency_timeout_ms: int = Field(
-        default=300000,
+        default=TIMEOUT_LONG_MS,
         description="Timeout for dependency completion in milliseconds",
         ge=1000,
         le=3600000,  # Max 1 hour

@@ -5,8 +5,9 @@ This model replaces dictionary usage in schema definitions by providing
 a structured representation of schema dictionaries.
 """
 
+from __future__ import annotations
+
 from collections.abc import Mapping
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -60,7 +61,7 @@ class ModelSchemaDict(BaseModel):
     )
 
     # Array constraints
-    items: Optional["ModelSchemaDict"] = Field(
+    items: ModelSchemaDict | None = Field(
         default=None, description="Array items schema"
     )
     min_items: int | None = Field(
@@ -80,12 +81,12 @@ class ModelSchemaDict(BaseModel):
     )
 
     # Object constraints
-    properties: dict[str, "ModelSchemaDict"] | None = Field(
+    properties: dict[str, ModelSchemaDict] | None = Field(
         default=None,
         description="Object properties",
     )
     required: list[str] | None = Field(default=None, description="Required properties")
-    additional_properties: "bool | ModelSchemaDict | None" = Field(
+    additional_properties: bool | ModelSchemaDict | None = Field(
         default=None,
         alias="additionalProperties",
         description="Additional properties constraint",
@@ -106,21 +107,21 @@ class ModelSchemaDict(BaseModel):
     default: ModelSchemaValue | None = Field(default=None, description="Default value")
 
     # Schema composition
-    definitions: dict[str, "ModelSchemaDict"] | None = Field(
+    definitions: dict[str, ModelSchemaDict] | None = Field(
         default=None,
         description="Schema definitions",
     )
-    all_of: list["ModelSchemaDict"] | None = Field(
+    all_of: list[ModelSchemaDict] | None = Field(
         default=None,
         alias="allOf",
         description="All of composition",
     )
-    any_of: list["ModelSchemaDict"] | None = Field(
+    any_of: list[ModelSchemaDict] | None = Field(
         default=None,
         alias="anyOf",
         description="Any of composition",
     )
-    one_of: list["ModelSchemaDict"] | None = Field(
+    one_of: list[ModelSchemaDict] | None = Field(
         default=None,
         alias="oneOf",
         description="One of composition",
@@ -233,7 +234,7 @@ class ModelSchemaDict(BaseModel):
         return result
 
     @classmethod
-    def from_dict(cls, data: Mapping[str, object]) -> "ModelSchemaDict":
+    def from_dict(cls, data: Mapping[str, object]) -> ModelSchemaDict:
         """
         Create from dictionary.
 
