@@ -70,7 +70,10 @@ class ModelTransaction:
                     await rollback_func()
                 else:
                     rollback_func()
-            except (Exception, asyncio.CancelledError) as e:  # Broad catch: rollback cleanup must be resilient - attempt all operations even if some fail
+            except (
+                Exception,
+                asyncio.CancelledError,
+            ) as e:  # boundary-ok: rollback cleanup must be resilient - attempt all operations even if some fail
                 emit_log_event(
                     LogLevel.ERROR,
                     f"Rollback operation failed during cleanup: {e!s}",
