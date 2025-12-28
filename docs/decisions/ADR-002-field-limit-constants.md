@@ -2,7 +2,7 @@
 
 **Status**: Accepted
 
-**Date**: 2025-01-15
+**Date**: 2025-12-27
 
 **Decision Makers**: ONEX Core Team
 
@@ -234,4 +234,4 @@ Examples:
 
 | Date | Author | Change |
 |------|--------|--------|
-| 2025-01-15 | ONEX Core Team | Initial decision |
+| 2025-12-27 | ONEX Core Team | Initial decision |

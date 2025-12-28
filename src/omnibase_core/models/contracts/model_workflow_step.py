@@ -12,12 +12,11 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.constants import TIMEOUT_DEFAULT_MS, TIMEOUT_LONG_MS
 from omnibase_core.constants.constants_field_limits import (
     MAX_IDENTIFIER_LENGTH,
     MAX_NAME_LENGTH,
 )
-
-from omnibase_core.constants import TIMEOUT_DEFAULT_MS, TIMEOUT_LONG_MS
 
 __all__ = ["ModelWorkflowStep"]
 

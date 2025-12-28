@@ -4,8 +4,6 @@ Unit tests for constants_field_limits module.
 Tests the field length limit constants for ONEX model validation.
 These constants provide standardized limits for identifiers, names,
 paths, URLs, content fields, and collection sizes.
-
-VERSION: 1.0.0
 """
 
 import pytest
@@ -227,7 +225,7 @@ class TestContentLimitConstants:
     def test_content_limits_hierarchy(self) -> None:
         """Test content limits follow expected hierarchy.
 
-        Reason (shortest) < Description < Message < Error < Log (longest).
+        Reason (500) < Description (1000) < Message (1500) < ErrorMessage (2000) < LogMessage (4000).
         This allows for increasingly detailed content.
         """
         from omnibase_core.constants.constants_field_limits import (
