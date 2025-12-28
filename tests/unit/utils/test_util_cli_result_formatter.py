@@ -1,5 +1,5 @@
 """
-Comprehensive tests for ModelCliResultFormatter.
+Comprehensive tests for UtilCliResultFormatter.
 
 Tests output formatting, error formatting, summary formatting,
 and handling of various data types and edge cases.
@@ -11,17 +11,17 @@ import pytest
 
 from omnibase_core.enums.enum_cli_status import EnumCliStatus
 from omnibase_core.models.cli.model_cli_output_data import ModelCliOutputData
-from omnibase_core.models.cli.model_cli_result_formatter import ModelCliResultFormatter
+from omnibase_core.utils.util_cli_result_formatter import UtilCliResultFormatter
 
 
 @pytest.mark.unit
-class TestModelCliResultFormatterOutputFormatting:
+class TestUtilCliResultFormatterOutputFormatting:
     """Test output formatting functionality."""
 
     def test_format_output_with_text(self) -> None:
         """Test formatting output when text is available."""
         output_text = "Command executed successfully"
-        result = ModelCliResultFormatter.format_output(output_text, None)
+        result = UtilCliResultFormatter.format_output(output_text, None)
 
         assert result == output_text
 
@@ -30,7 +30,7 @@ class TestModelCliResultFormatterOutputFormatting:
         output_text = "Text output"
         output_data = ModelCliOutputData.create_simple(stdout="Data output")
 
-        result = ModelCliResultFormatter.format_output(output_text, output_data)
+        result = UtilCliResultFormatter.format_output(output_text, output_data)
 
         # Text should be returned, not data
         assert result == output_text
@@ -43,7 +43,7 @@ class TestModelCliResultFormatterOutputFormatting:
             status=EnumCliStatus.SUCCESS,
         )
 
-        result = ModelCliResultFormatter.format_output("", output_data)
+        result = UtilCliResultFormatter.format_output("", output_data)
 
         # Should format as JSON
         assert isinstance(result, str)
@@ -53,7 +53,7 @@ class TestModelCliResultFormatterOutputFormatting:
 
     def test_format_output_empty(self) -> None:
         """Test formatting with no output."""
-        result = ModelCliResultFormatter.format_output("", None)
+        result = UtilCliResultFormatter.format_output("", None)
 
         assert result == ""
 
@@ -61,7 +61,7 @@ class TestModelCliResultFormatterOutputFormatting:
         """Test formatting with empty text but data present."""
         output_data = ModelCliOutputData.create_simple()
 
-        result = ModelCliResultFormatter.format_output("", output_data)
+        result = UtilCliResultFormatter.format_output("", output_data)
 
         # Should format empty data as JSON
         assert isinstance(result, str)
@@ -75,7 +75,7 @@ class TestModelCliResultFormatterOutputFormatting:
             status=EnumCliStatus.SUCCESS,
         )
 
-        result = ModelCliResultFormatter.format_output("", output_data)
+        result = UtilCliResultFormatter.format_output("", output_data)
 
         # Should be formatted JSON
         assert isinstance(result, str)
@@ -85,7 +85,7 @@ class TestModelCliResultFormatterOutputFormatting:
     def test_format_output_multiline_text(self) -> None:
         """Test formatting multiline text output."""
         output_text = "Line 1\nLine 2\nLine 3"
-        result = ModelCliResultFormatter.format_output(output_text, None)
+        result = UtilCliResultFormatter.format_output(output_text, None)
 
         assert result == output_text
         assert result.count("\n") == 2
@@ -93,14 +93,14 @@ class TestModelCliResultFormatterOutputFormatting:
     def test_format_output_whitespace_text(self) -> None:
         """Test formatting text with various whitespace."""
         output_text = "  Leading spaces\n\tTabbed line\nTrailing spaces  "
-        result = ModelCliResultFormatter.format_output(output_text, None)
+        result = UtilCliResultFormatter.format_output(output_text, None)
 
         assert result == output_text
 
     def test_format_output_unicode_text(self) -> None:
         """Test formatting text with unicode characters."""
         output_text = "Unicode: ✓ ✗ → ← ⚠️"
-        result = ModelCliResultFormatter.format_output(output_text, None)
+        result = UtilCliResultFormatter.format_output(output_text, None)
 
         assert result == output_text
 
@@ -110,20 +110,20 @@ class TestModelCliResultFormatterOutputFormatting:
             results={"nested": "data"},
         )
 
-        result = ModelCliResultFormatter.format_output("", output_data)
+        result = UtilCliResultFormatter.format_output("", output_data)
 
         # Should have indentation (pretty-printed JSON)
         assert "  " in result or "\n" in result
 
 
 @pytest.mark.unit
-class TestModelCliResultFormatterErrorFormatting:
+class TestUtilCliResultFormatterErrorFormatting:
     """Test error formatting functionality."""
 
     def test_format_error_message_only(self) -> None:
         """Test formatting with only error message."""
         error_msg = "Command failed"
-        result = ModelCliResultFormatter.format_error(error_msg)
+        result = UtilCliResultFormatter.format_error(error_msg)
 
         assert "Error: Command failed" in result
         assert "Details:" not in result
@@ -134,7 +134,7 @@ class TestModelCliResultFormatterErrorFormatting:
         error_msg = "Command failed"
         error_details = "Exit code 1: Permission denied"
 
-        result = ModelCliResultFormatter.format_error(error_msg, error_details)
+        result = UtilCliResultFormatter.format_error(error_msg, error_details)
 
         assert "Error: Command failed" in result
         assert "Details: Exit code 1: Permission denied" in result
@@ -148,7 +148,7 @@ class TestModelCliResultFormatterErrorFormatting:
             "Field 'email' is invalid",
         ]
 
-        result = ModelCliResultFormatter.format_error(
+        result = UtilCliResultFormatter.format_error(
             error_msg,
             validation_errors=validation_errors,
         )
@@ -165,7 +165,7 @@ class TestModelCliResultFormatterErrorFormatting:
         error_details = "Database connection lost"
         validation_errors = ["Retry timeout exceeded"]
 
-        result = ModelCliResultFormatter.format_error(
+        result = UtilCliResultFormatter.format_error(
             error_msg,
             error_details,
             validation_errors,
@@ -178,14 +178,14 @@ class TestModelCliResultFormatterErrorFormatting:
 
     def test_format_error_none_message(self) -> None:
         """Test formatting with None error message."""
-        result = ModelCliResultFormatter.format_error(None)
+        result = UtilCliResultFormatter.format_error(None)
 
         assert result == ""
 
     def test_format_error_empty_validation_list(self) -> None:
         """Test formatting with empty validation errors list."""
         error_msg = "Error occurred"
-        result = ModelCliResultFormatter.format_error(
+        result = UtilCliResultFormatter.format_error(
             error_msg,
             validation_errors=[],
         )
@@ -196,14 +196,14 @@ class TestModelCliResultFormatterErrorFormatting:
     def test_format_error_multiline_message(self) -> None:
         """Test formatting error with multiline message."""
         error_msg = "Error on line 1\nContinued on line 2"
-        result = ModelCliResultFormatter.format_error(error_msg)
+        result = UtilCliResultFormatter.format_error(error_msg)
 
         assert "Error: Error on line 1\nContinued on line 2" in result
 
     def test_format_error_special_characters(self) -> None:
         """Test formatting error with special characters."""
         error_msg = "Error: <invalid> & 'quoted' \"text\""
-        result = ModelCliResultFormatter.format_error(error_msg)
+        result = UtilCliResultFormatter.format_error(error_msg)
 
         # Should preserve special characters
         assert "<invalid>" in result
@@ -212,12 +212,12 @@ class TestModelCliResultFormatterErrorFormatting:
 
 
 @pytest.mark.unit
-class TestModelCliResultFormatterSummaryFormatting:
+class TestUtilCliResultFormatterSummaryFormatting:
     """Test summary formatting functionality."""
 
     def test_format_summary_success(self) -> None:
         """Test formatting successful execution summary."""
-        result = ModelCliResultFormatter.format_summary(
+        result = UtilCliResultFormatter.format_summary(
             success=True,
             duration_ms=1500,
             exit_code=0,
@@ -230,7 +230,7 @@ class TestModelCliResultFormatterSummaryFormatting:
 
     def test_format_summary_failure(self) -> None:
         """Test formatting failed execution summary."""
-        result = ModelCliResultFormatter.format_summary(
+        result = UtilCliResultFormatter.format_summary(
             success=False,
             duration_ms=500,
             exit_code=1,
@@ -248,7 +248,7 @@ class TestModelCliResultFormatterSummaryFormatting:
             "Performance issue detected",
         ]
 
-        result = ModelCliResultFormatter.format_summary(
+        result = UtilCliResultFormatter.format_summary(
             success=True,
             duration_ms=2000,
             exit_code=0,
@@ -263,7 +263,7 @@ class TestModelCliResultFormatterSummaryFormatting:
 
     def test_format_summary_empty_warnings(self) -> None:
         """Test formatting summary with empty warnings list."""
-        result = ModelCliResultFormatter.format_summary(
+        result = UtilCliResultFormatter.format_summary(
             success=True,
             duration_ms=100,
             exit_code=0,
@@ -275,7 +275,7 @@ class TestModelCliResultFormatterSummaryFormatting:
 
     def test_format_summary_zero_duration(self) -> None:
         """Test formatting summary with zero duration."""
-        result = ModelCliResultFormatter.format_summary(
+        result = UtilCliResultFormatter.format_summary(
             success=True,
             duration_ms=0,
             exit_code=0,
@@ -285,7 +285,7 @@ class TestModelCliResultFormatterSummaryFormatting:
 
     def test_format_summary_large_duration(self) -> None:
         """Test formatting summary with large duration."""
-        result = ModelCliResultFormatter.format_summary(
+        result = UtilCliResultFormatter.format_summary(
             success=True,
             duration_ms=999999,
             exit_code=0,
@@ -296,7 +296,7 @@ class TestModelCliResultFormatterSummaryFormatting:
     def test_format_summary_non_zero_exit_code(self) -> None:
         """Test formatting summary with various exit codes."""
         # Exit code 2
-        result = ModelCliResultFormatter.format_summary(
+        result = UtilCliResultFormatter.format_summary(
             success=False,
             duration_ms=100,
             exit_code=2,
@@ -304,7 +304,7 @@ class TestModelCliResultFormatterSummaryFormatting:
         assert "Exit Code: 2" in result
 
         # Exit code 127
-        result = ModelCliResultFormatter.format_summary(
+        result = UtilCliResultFormatter.format_summary(
             success=False,
             duration_ms=100,
             exit_code=127,
@@ -313,7 +313,7 @@ class TestModelCliResultFormatterSummaryFormatting:
 
     def test_format_summary_multiline_output(self) -> None:
         """Test that summary output is multiline."""
-        result = ModelCliResultFormatter.format_summary(
+        result = UtilCliResultFormatter.format_summary(
             success=True,
             duration_ms=1000,
             exit_code=0,
@@ -324,26 +324,26 @@ class TestModelCliResultFormatterSummaryFormatting:
 
 
 @pytest.mark.unit
-class TestModelCliResultFormatterEdgeCases:
+class TestUtilCliResultFormatterEdgeCases:
     """Test edge cases and special scenarios."""
 
     def test_format_output_none_text_none_data(self) -> None:
         """Test both parameters are None."""
-        result = ModelCliResultFormatter.format_output(None, None)
+        result = UtilCliResultFormatter.format_output(None, None)
 
         assert result == ""
 
     def test_format_error_all_none(self) -> None:
         """Test all error parameters are None."""
-        result = ModelCliResultFormatter.format_error(None, None, None)
+        result = UtilCliResultFormatter.format_error(None, None, None)
 
         assert result == ""
 
     def test_static_methods_no_state(self) -> None:
         """Test that formatter is stateless (static methods)."""
         # Create multiple formatter instances
-        formatter1 = ModelCliResultFormatter()
-        formatter2 = ModelCliResultFormatter()
+        formatter1 = UtilCliResultFormatter()
+        formatter2 = UtilCliResultFormatter()
 
         # Both should work identically
         output1 = formatter1.format_output("test", None)
@@ -361,7 +361,7 @@ class TestModelCliResultFormatterEdgeCases:
             123,  # Even non-strings
         ]
 
-        result = ModelCliResultFormatter.format_error(
+        result = UtilCliResultFormatter.format_error(
             "Validation failed",
             validation_errors=validation_errors,
         )
@@ -377,13 +377,13 @@ class TestModelCliResultFormatterEdgeCases:
         output_data = ModelCliOutputData.create_simple(stdout="test")
 
         # Should handle gracefully
-        result = ModelCliResultFormatter.format_output("", output_data)
+        result = UtilCliResultFormatter.format_output("", output_data)
         assert isinstance(result, str)
         assert len(result) > 0
 
     def test_format_summary_single_warning(self) -> None:
         """Test summary formatting with single warning."""
-        result = ModelCliResultFormatter.format_summary(
+        result = UtilCliResultFormatter.format_summary(
             success=True,
             duration_ms=100,
             exit_code=0,
@@ -395,22 +395,22 @@ class TestModelCliResultFormatterEdgeCases:
 
     def test_all_methods_return_strings(self) -> None:
         """Test that all formatter methods return strings."""
-        output_result = ModelCliResultFormatter.format_output("test", None)
+        output_result = UtilCliResultFormatter.format_output("test", None)
         assert isinstance(output_result, str)
 
-        error_result = ModelCliResultFormatter.format_error("error")
+        error_result = UtilCliResultFormatter.format_error("error")
         assert isinstance(error_result, str)
 
-        summary_result = ModelCliResultFormatter.format_summary(True, 100, 0)
+        summary_result = UtilCliResultFormatter.format_summary(True, 100, 0)
         assert isinstance(summary_result, str)
 
     def test_formatter_is_utility_class(self) -> None:
         """Test that formatter behaves as utility class."""
         # Should be instantiable but methods are static
-        formatter = ModelCliResultFormatter()
+        formatter = UtilCliResultFormatter()
         assert formatter is not None
 
         # Static methods should work the same way
-        assert ModelCliResultFormatter.format_output(
+        assert UtilCliResultFormatter.format_output(
             "test", None
         ) == formatter.format_output("test", None)

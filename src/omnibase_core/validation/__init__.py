@@ -56,12 +56,51 @@ from omnibase_core.models.validation.model_module_import_result import (
 
 # Import validation functions for easy access
 from .architecture import validate_architecture_directory, validate_one_model_per_file
-from .auditor_protocol import ModelProtocolAuditor
 from .circular_import_validator import CircularImportValidator
 
-# Import CLI for module execution
-from .cli import ModelValidationSuite
-from .contract_validator import ModelContractValidationResult, ProtocolContractValidator
+# Import CLI for module execution (OMN-1071)
+# ServiceValidationSuite is the canonical class (lives in services/)
+# ModelValidationSuite is the backwards compatibility alias
+from .cli import ModelValidationSuite, ServiceValidationSuite
+
+# Import model from models/validation/
+from omnibase_core.models.validation.model_contract_validation_result import (
+    ModelContractValidationResult,
+)
+
+
+# OMN-1071: Lazy imports for service classes to avoid circular imports
+# Import these directly from omnibase_core.services.* when needed
+def __getattr__(name: str) -> type:
+    """Lazy import for service classes to avoid circular imports."""
+    if name == "ServiceProtocolAuditor":
+        from omnibase_core.services.service_protocol_auditor import (
+            ServiceProtocolAuditor,
+        )
+
+        return ServiceProtocolAuditor
+    if name == "ServiceContractValidator":
+        from omnibase_core.services.service_contract_validator import (
+            ServiceContractValidator,
+        )
+
+        return ServiceContractValidator
+    if name == "ModelProtocolAuditor":
+        # Backwards compatibility alias
+        from omnibase_core.services.service_protocol_auditor import (
+            ServiceProtocolAuditor,
+        )
+
+        return ServiceProtocolAuditor
+    if name == "ProtocolContractValidator":
+        # Backwards compatibility alias
+        from omnibase_core.services.service_contract_validator import (
+            ServiceContractValidator,
+        )
+
+        return ServiceContractValidator
+    msg = f"module {__name__!r} has no attribute {name!r}"
+    raise AttributeError(msg)
 from .contracts import (
     validate_contracts_directory,
     validate_no_manual_yaml,
@@ -153,7 +192,7 @@ def validate_all(
 ) -> dict[str, ModelValidationResult[None]]:
     """Run all validations and return results."""
 
-    suite = ModelValidationSuite()
+    suite = ServiceValidationSuite()
     return suite.run_all_validations(Path(directory_path), **kwargs)
 
 
@@ -166,12 +205,18 @@ __all__ = [
     "ModelContractValidationResult",
     "ModelModuleImportResult",
     "ModelValidationResult",
-    "ProtocolContractValidator",
+    # OMN-1071: Canonical service classes (in services/)
+    "ServiceContractValidator",
+    "ServiceProtocolAuditor",
+    "ServiceValidationSuite",
+    # OMN-1071: Backwards compatibility aliases
+    "ProtocolContractValidator",  # Alias for ServiceContractValidator
+    "ModelProtocolAuditor",  # Alias for ServiceProtocolAuditor
+    "ModelValidationSuite",  # Alias for ServiceValidationSuite
+    # Other exports
     "ExceptionInputValidationError",
-    "ModelProtocolAuditor",
     "ModelProtocolInfo",
     "ExceptionValidationFrameworkError",
-    "ModelValidationSuite",
     "validate_all",
     # Workflow linter (OMN-655)
     "ModelLintStatistics",

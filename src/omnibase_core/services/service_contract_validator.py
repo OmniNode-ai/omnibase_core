@@ -57,7 +57,7 @@ VIOLATION_PENALTY_MODEL_COMPLIANCE = 0.15  # Model compliance violation penalty
 WARNING_PENALTY_MODEL_COMPLIANCE = 0.05  # Model compliance warning penalty
 
 
-class ProtocolContractValidator:
+class ServiceContractValidator:
     """
     Programmatic contract validation API.
 
@@ -873,6 +873,6 @@ class ProtocolContractValidator:
 
 
 __all__ = [
-    "ProtocolContractValidator",
+    "ServiceContractValidator",
     "ModelContractValidationResult",
 ]

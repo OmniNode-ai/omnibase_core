@@ -8,10 +8,10 @@ formatting logic from ModelCliResult to maintain separation of concerns.
 import json
 from typing import Any
 
-from .model_cli_output_data import ModelCliOutputData
+from omnibase_core.models.cli.model_cli_output_data import ModelCliOutputData
 
 
-class ModelCliResultFormatter:
+class UtilCliResultFormatter:
     """
     Formatter for CLI result output.
 
@@ -114,4 +114,4 @@ class ModelCliResultFormatter:
         return "\n".join(parts)
 
 
-__all__ = ["ModelCliResultFormatter"]
+__all__ = ["UtilCliResultFormatter"]

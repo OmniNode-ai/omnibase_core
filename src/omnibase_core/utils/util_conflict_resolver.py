@@ -1,14 +1,14 @@
 # SPDX-FileCopyrightText: 2025 OmniNode Team
 # SPDX-License-Identifier: Apache-2.0
 """
-Conflict resolution model for data reduction operations.
+Conflict resolution utility for data reduction operations.
 
-This module provides the ModelConflictResolver class that handles conflicts
+This module provides the UtilConflictResolver class that handles conflicts
 during data reduction with configurable strategies including FIRST_WINS,
 LAST_WINS, MERGE, ERROR, and CUSTOM.
 
 Thread Safety:
-    ModelConflictResolver is NOT thread-safe. Each thread should use its
+    UtilConflictResolver is NOT thread-safe. Each thread should use its
     own instance. The conflicts_count attribute is mutated during resolution.
 
 Key Features:
@@ -18,11 +18,11 @@ Key Features:
     - Conflict counting for metrics and debugging
 
 Example:
-    >>> from omnibase_core.models.reducer import ModelConflictResolver
+    >>> from omnibase_core.utils.util_conflict_resolver import UtilConflictResolver
     >>> from omnibase_core.enums.enum_reducer_types import EnumConflictResolution
     >>>
     >>> # Use MERGE strategy for combining values
-    >>> resolver = ModelConflictResolver(strategy=EnumConflictResolution.MERGE)
+    >>> resolver = UtilConflictResolver(strategy=EnumConflictResolution.MERGE)
     >>> result = resolver.resolve(existing_value=10, new_value=5)
     >>> print(result)  # 15 (numeric values are summed)
     >>>
@@ -30,7 +30,7 @@ Example:
     >>> def priority_resolver(existing, new, key):
     ...     return new if new.get("priority", 0) > existing.get("priority", 0) else existing
     >>>
-    >>> custom_resolver = ModelConflictResolver(
+    >>> custom_resolver = UtilConflictResolver(
     ...     strategy=EnumConflictResolution.CUSTOM,
     ...     custom_resolver=priority_resolver,
     ... )
@@ -48,7 +48,7 @@ from omnibase_core.enums.enum_reducer_types import EnumConflictResolution
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
-class ModelConflictResolver:
+class UtilConflictResolver:
     """
     Handles conflict resolution during data reduction.
 
@@ -161,3 +161,7 @@ class ModelConflictResolver:
 
         # Default to new value if can't merge
         return new
+
+
+# Backwards compatibility alias - DEPRECATED, will be removed in v0.5.0
+ModelConflictResolver = UtilConflictResolver

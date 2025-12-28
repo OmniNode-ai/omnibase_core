@@ -1,14 +1,14 @@
 # SPDX-FileCopyrightText: 2025 OmniNode Team
 # SPDX-License-Identifier: Apache-2.0
 """
-Streaming window model for time-based data processing.
+Streaming window utility for time-based data processing.
 
-This module provides the ModelStreamingWindow class that implements
+This module provides the UtilStreamingWindow class that implements
 time-based windowing for streaming data reduction operations. Windows
 can optionally overlap for sliding window semantics.
 
 Thread Safety:
-    ModelStreamingWindow is NOT thread-safe. The internal buffer is
+    UtilStreamingWindow is NOT thread-safe. The internal buffer is
     mutated during add_item() and advance_window() operations. Each
     thread should use its own instance.
 
@@ -19,10 +19,10 @@ Key Features:
     - Efficient deque-based buffer implementation
 
 Example:
-    >>> from omnibase_core.models.reducer import ModelStreamingWindow
+    >>> from omnibase_core.utils.util_streaming_window import UtilStreamingWindow
     >>>
     >>> # 5-second tumbling window (no overlap)
-    >>> window = ModelStreamingWindow(window_size_ms=5000)
+    >>> window = UtilStreamingWindow(window_size_ms=5000)
     >>> for event in event_stream:
     ...     is_ready = window.add_item(event)
     ...     if is_ready:
@@ -31,7 +31,7 @@ Example:
     ...         window.advance_window()
     >>>
     >>> # 10-second sliding window with 2-second overlap
-    >>> sliding_window = ModelStreamingWindow(
+    >>> sliding_window = UtilStreamingWindow(
     ...     window_size_ms=10000,
     ...     overlap_ms=2000,
     ... )
@@ -46,7 +46,7 @@ from datetime import datetime, timedelta
 from typing import Any
 
 
-class ModelStreamingWindow:
+class UtilStreamingWindow:
     """
     Time-based window for streaming data processing.
 
@@ -126,3 +126,7 @@ class ModelStreamingWindow:
             self.buffer.clear()
 
         self.window_start = datetime.now()
+
+
+# Backwards compatibility alias
+ModelStreamingWindow = UtilStreamingWindow

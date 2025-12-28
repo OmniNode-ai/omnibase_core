@@ -12,8 +12,9 @@ from unittest.mock import patch
 
 import pytest
 
-from omnibase_core.validation import ExceptionConfigurationError, ModelProtocolAuditor
-from omnibase_core.validation.auditor_protocol import ModelAuditResult
+from omnibase_core.errors.exceptions import ExceptionConfigurationError
+from omnibase_core.services.service_protocol_auditor import ServiceProtocolAuditor
+from omnibase_core.models.validation.model_audit_result import ModelAuditResult
 
 
 @pytest.mark.unit
@@ -26,7 +27,7 @@ class TestProtocolAuditorInitialization:
             temp_path = Path(temp_dir)
 
             with caplog.at_level(logging.INFO):
-                auditor = ModelProtocolAuditor(str(temp_path))
+                auditor = ServiceProtocolAuditor(str(temp_path))
 
                 assert auditor.repository_path == temp_path.resolve()
                 assert auditor.repository_name is not None
@@ -46,7 +47,7 @@ class TestProtocolAuditorInitialization:
             ExceptionConfigurationError,
             match="Invalid repository configuration",
         ):
-            ModelProtocolAuditor(nonexistent_path)
+            ServiceProtocolAuditor(nonexistent_path)
 
     def test_init_with_file_instead_of_directory(self):
         """Test initialization fails when file is passed instead of directory."""
@@ -57,12 +58,12 @@ class TestProtocolAuditorInitialization:
                 ExceptionConfigurationError,
                 match="Invalid repository configuration",
             ):
-                ModelProtocolAuditor(temp_path)
+                ServiceProtocolAuditor(temp_path)
 
     def test_init_with_current_directory(self):
         """Test initialization with current directory (default)."""
         # This should work since we're running from a valid directory
-        auditor = ModelProtocolAuditor()
+        auditor = ServiceProtocolAuditor()
 
         assert auditor.repository_path.exists()
         assert auditor.repository_path.is_dir()
@@ -70,8 +71,8 @@ class TestProtocolAuditorInitialization:
     def test_init_with_relative_path(self):
         """Test initialization with relative path."""
         # Use current directory's parent as a relative path
-        with patch("omnibase_core.validation.auditor_protocol.logger"):
-            auditor = ModelProtocolAuditor(".")
+        with patch("omnibase_core.services.service_protocol_auditor.logger"):
+            auditor = ServiceProtocolAuditor(".")
 
             assert auditor.repository_path.is_absolute()
             assert auditor.repository_path.exists()
@@ -84,7 +85,7 @@ class TestProtocolAuditorValidation:
     def test_check_against_spi_with_invalid_path(self):
         """Test check_against_spi fails with invalid SPI path."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            auditor = ModelProtocolAuditor(temp_dir)
+            auditor = ServiceProtocolAuditor(temp_dir)
             invalid_spi_path = "/nonexistent/spi/path"
 
             with pytest.raises(
@@ -97,7 +98,7 @@ class TestProtocolAuditorValidation:
         """Test check_against_spi handles missing protocols directory gracefully."""
         with tempfile.TemporaryDirectory() as temp_dir:
             with tempfile.TemporaryDirectory() as spi_dir:
-                auditor = ModelProtocolAuditor(temp_dir)
+                auditor = ServiceProtocolAuditor(temp_dir)
 
                 with caplog.at_level(logging.WARNING):
                     # This should not raise an exception, just log a warning
@@ -144,7 +145,7 @@ class {protocol_name}(Protocol):
     def test_check_current_repository_empty(self):
         """Test auditing empty repository."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            auditor = ModelProtocolAuditor(temp_dir)
+            auditor = ServiceProtocolAuditor(temp_dir)
             result = auditor.check_current_repository()
 
             assert result is not None
@@ -166,7 +167,7 @@ class {protocol_name}(Protocol):
                 ["method_one", "method_two"],
             )
 
-            auditor = ModelProtocolAuditor(temp_dir)
+            auditor = ServiceProtocolAuditor(temp_dir)
             result = auditor.check_current_repository()
 
             assert result is not None
@@ -194,7 +195,7 @@ class {protocol_name}(Protocol):
                 ["identical_method"],
             )
 
-            auditor = ModelProtocolAuditor(temp_dir)
+            auditor = ServiceProtocolAuditor(temp_dir)
             result = auditor.check_current_repository()
 
             assert result is not None
@@ -203,7 +204,7 @@ class {protocol_name}(Protocol):
             assert not result.success  # Should fail due to duplicates
             assert len(result.violations) > 0
 
-    @patch("omnibase_core.validation.auditor_protocol.extract_protocols_from_directory")
+    @patch("omnibase_core.services.service_protocol_auditor.extract_protocols_from_directory")
     def test_audit_handles_extraction_errors(self, mock_extract):
         """Test auditing handles protocol extraction errors gracefully."""
         mock_extract.side_effect = Exception("Extraction failed")
@@ -213,7 +214,7 @@ class {protocol_name}(Protocol):
             src_dir = Path(temp_dir) / "src"
             src_dir.mkdir()
 
-            auditor = ModelProtocolAuditor(temp_dir)
+            auditor = ServiceProtocolAuditor(temp_dir)
 
             # Should raise the extraction exception - graceful handling not yet implemented
             # Note: This test may behave differently when run in isolation vs full suite
@@ -236,7 +237,7 @@ class TestProtocolAuditorLogging:
         """Test that auditor initialization is logged."""
         with tempfile.TemporaryDirectory() as temp_dir:
             with caplog.at_level(logging.INFO):
-                auditor = ModelProtocolAuditor(temp_dir)
+                auditor = ServiceProtocolAuditor(temp_dir)
 
                 assert len(caplog.records) == 1
                 assert caplog.records[0].levelname == "INFO"
@@ -249,7 +250,7 @@ class TestProtocolAuditorLogging:
         """Test that SPI path validation issues are logged."""
         with tempfile.TemporaryDirectory() as temp_dir:
             with tempfile.TemporaryDirectory() as spi_dir:
-                auditor = ModelProtocolAuditor(temp_dir)
+                auditor = ServiceProtocolAuditor(temp_dir)
 
                 with caplog.at_level(logging.WARNING):
                     auditor.check_against_spi(spi_dir)
@@ -274,11 +275,11 @@ class TestProtocolAuditorEdgeCases:
             src_dir = Path(temp_dir) / "src"
             src_dir.mkdir()
 
-            auditor = ModelProtocolAuditor(temp_dir)
+            auditor = ServiceProtocolAuditor(temp_dir)
 
             # Mock extract_protocols_from_directory to raise a permission error
             with patch(
-                "omnibase_core.validation.auditor_protocol.extract_protocols_from_directory",
+                "omnibase_core.services.service_protocol_auditor.extract_protocols_from_directory",
             ) as mock_extract:
                 mock_extract.side_effect = PermissionError("Permission denied")
 
@@ -298,7 +299,7 @@ class TestProtocolAuditorEdgeCases:
         """Test auditing repository with unusual structure."""
         with tempfile.TemporaryDirectory() as temp_dir:
             # Don't create src directory - unusual but valid
-            auditor = ModelProtocolAuditor(temp_dir)
+            auditor = ServiceProtocolAuditor(temp_dir)
             result = auditor.check_current_repository()
 
             # Should complete successfully with no protocols found
@@ -314,7 +315,7 @@ class TestProtocolAuditorEdgeCases:
             omni_repo = temp_path / "omnitest_repo"
             omni_repo.mkdir()
 
-            auditor = ModelProtocolAuditor(str(omni_repo))
+            auditor = ServiceProtocolAuditor(str(omni_repo))
 
             # Repository name should be determined from path
             assert (
@@ -330,7 +331,7 @@ class TestConfigurationErrorHandling:
     def test_configuration_error_chaining(self):
         """Test that configuration errors properly chain underlying exceptions."""
         with pytest.raises(ExceptionConfigurationError) as exc_info:
-            ModelProtocolAuditor("/definitely/nonexistent/path")
+            ServiceProtocolAuditor("/definitely/nonexistent/path")
 
         # Should contain information about the underlying validation error
         assert "Invalid repository configuration" in str(exc_info.value)
@@ -338,7 +339,7 @@ class TestConfigurationErrorHandling:
     def test_spi_configuration_error_chaining(self):
         """Test that SPI configuration errors properly chain underlying exceptions."""
         with tempfile.TemporaryDirectory() as temp_dir:
-            auditor = ModelProtocolAuditor(temp_dir)
+            auditor = ServiceProtocolAuditor(temp_dir)
 
             with pytest.raises(ExceptionConfigurationError) as exc_info:
                 auditor.check_against_spi("/definitely/nonexistent/spi/path")

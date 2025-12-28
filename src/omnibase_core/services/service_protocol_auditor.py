@@ -21,7 +21,7 @@ from omnibase_core.models.validation.model_duplication_report import (
     ModelDuplicationReport,
 )
 
-from .validation_utils import (
+from omnibase_core.validation.validation_utils import (
     ModelDuplicationInfo,
     ModelProtocolInfo,
     determine_repository_name,
@@ -44,7 +44,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class ModelProtocolAuditor:
+class ServiceProtocolAuditor:
     """
     Centralized protocol auditing for omni* ecosystem.
 
@@ -81,7 +81,7 @@ class ModelProtocolAuditor:
         self.enable_style_checking = enable_style_checking
 
         logger.info(
-            f"ModelProtocolAuditor initialized for repository '{self.repository_name}' "
+            f"ServiceProtocolAuditor initialized for repository '{self.repository_name}' "
             f"at {self.repository_path}"
         )
 
@@ -238,7 +238,7 @@ class ModelProtocolAuditor:
                 continue
 
             # Audit each repository
-            auditor = ModelProtocolAuditor(str(repo_path))
+            auditor = ServiceProtocolAuditor(str(repo_path))
             result = auditor.check_current_repository()
             results[repo_name] = result
 

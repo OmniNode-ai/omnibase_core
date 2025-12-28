@@ -32,7 +32,6 @@ from .model_security_context import ModelSecurityContext
 from .model_security_level import ModelSecurityLevel
 from .model_security_policy import ModelSecurityPolicy
 from .model_security_rule import ModelSecurityRule
-from .model_security_utils import ModelSecurityUtils
 from .model_session_policy import ModelSessionPolicy
 
 __all__ = [
@@ -58,7 +57,6 @@ __all__ = [
     "ModelSecurityLevel",
     "ModelSecurityPolicy",
     "ModelSecurityRule",
-    "ModelSecurityUtils",
     "ModelSessionPolicy",
     "create_secret_manager_for_environment",
     "get_secret_manager",

@@ -69,7 +69,7 @@ class NodeMetricsReducer(NodeReducer):
 
         # ❌ WRONG: Mutable state violates FSM purity
         self.metrics: dict[str, float] = {}
-        self.windows: dict[str, ModelStreamingWindow] = {}
+        self.windows: dict[str, UtilStreamingWindow] = {}
         self.reduction_count = 0
         self.last_result: Any = None
 ```
@@ -790,7 +790,7 @@ Replace instance variables with state passed through `metadata`.
 ```
 def __init__(self, container):
     super().__init__(container)
-    self.window = ModelStreamingWindow()  # ❌ Mutable state
+    self.window = UtilStreamingWindow()  # ❌ Mutable state
 
 async def process(self, input_data):
     self.window.add_items(input_data.data)  # ❌ Mutation
@@ -803,7 +803,7 @@ async def process(self, input_data):
 async def process(self, input_data):
     # Reconstruct window from input metadata
     window_data = input_data.metadata.get("window_state", {})
-    window = ModelStreamingWindow.from_dict(window_data)
+    window = UtilStreamingWindow.from_dict(window_data)
 
     # Pure transformation
     window_copy = window.add_items(input_data.data)  # Returns new window

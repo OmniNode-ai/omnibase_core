@@ -63,7 +63,7 @@ def __getattr__(name: str) -> object:
         return ModelOnexError
     if name in {
         "ModelValidationResult",
-        "ModelValidationSuite",
+        "ServiceValidationSuite",
         "validate_all",
         "validate_architecture",
         "validate_contracts",
@@ -72,7 +72,7 @@ def __getattr__(name: str) -> object:
     }:
         from .validation import (  # noqa: F401
             ModelValidationResult,
-            ModelValidationSuite,
+            ServiceValidationSuite,
             validate_all,
             validate_architecture,
             validate_contracts,
@@ -116,7 +116,7 @@ __all__ = [
     "EnumCoreErrorCode",
     "ModelOnexError",
     # Validation tools (main exports for other repositories)
-    "ModelValidationSuite",
+    "ServiceValidationSuite",
     "ModelValidationResult",
     "validate_all",
     "validate_architecture",

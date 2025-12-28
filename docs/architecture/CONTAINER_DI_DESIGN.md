@@ -459,8 +459,8 @@ service = container.get_service("contract_validator_registry")
 ```
 # Protocol-based resolution (preferred)
 # Note: Protocol definitions now in omnibase_core.protocols
-from omnibase_core.protocols import ProtocolContractValidator
-validator = await container.get_service_async(ProtocolContractValidator)
+from omnibase_core.protocols import ServiceContractValidator
+validator = await container.get_service_async(ServiceContractValidator)
 
 # String-based still works (deprecated)
 service = container.get_service("contract_validator_registry")  # Deprecation warning
@@ -470,9 +470,9 @@ service = container.get_service("contract_validator_registry")  # Deprecation wa
 ```
 # Direct registry access
 # Note: Protocol definitions now in omnibase_core.protocols
-from omnibase_core.protocols import ProtocolContractValidator
+from omnibase_core.protocols import ServiceContractValidator
 registry = container.service_registry
-validator = await registry.resolve_service(ProtocolContractValidator)
+validator = await registry.resolve_service(ServiceContractValidator)
 ```
 
 ## Testing Strategy

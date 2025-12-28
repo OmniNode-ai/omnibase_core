@@ -17,12 +17,12 @@ from omnibase_core.models.validation.model_migration_conflict_union import (
 from omnibase_core.models.validation.model_migration_plan import ModelMigrationPlan
 from omnibase_core.models.validation.model_migration_result import ModelMigrationResult
 
-from .migration_types import (
+from omnibase_core.validation.migration_types import (
     TypedDictMigrationDuplicateConflictDict,
     TypedDictMigrationNameConflictDict,
     TypedDictMigrationStepDict,
 )
-from .validation_utils import (
+from omnibase_core.validation.validation_utils import (
     ModelProtocolInfo,
     ModelValidationResult,
     determine_repository_name,
@@ -31,7 +31,7 @@ from .validation_utils import (
 )
 
 
-class ProtocolMigrator:
+class ServiceProtocolMigrator:
     """
     Safe migration of protocols to omnibase_spi with conflict detection.
 

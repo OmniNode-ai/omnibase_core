@@ -33,7 +33,7 @@ from omnibase_core.models.core.model_yaml_schema_object import ModelYamlSchemaOb
 from omnibase_core.utils.util_safe_yaml_loader import load_and_validate_yaml_model
 
 
-class ProtocolContractLoader:
+class UtilContractLoader:
     """
     Unified contract loading and resolution for NodeBase implementation.
 

@@ -51,7 +51,7 @@ from omnibase_core import (
     EnumCoreErrorCode,
     ModelOnexError,
     # Validation tools (main exports for other repositories)
-    ModelValidationSuite,
+    ServiceValidationSuite,
     ModelValidationResult,
     validate_all,
     validate_architecture,
@@ -65,7 +65,7 @@ from omnibase_core import (
 |--------|------|-----------|-------|
 | `EnumCoreErrorCode` | Enum | STABLE | Core error code enumeration |
 | `ModelOnexError` | Class | STABLE | Structured error model |
-| `ModelValidationSuite` | Class | STABLE | Validation suite runner |
+| `ServiceValidationSuite` | Class | STABLE | Validation suite runner |
 | `ModelValidationResult` | Class | STABLE | Validation result container |
 | `validate_all` | Function | STABLE | Run all validations |
 | `validate_architecture` | Function | STABLE | Architecture validation |
@@ -478,12 +478,12 @@ from omnibase_core.validation import (
     CircularImportValidator,
     CircularImportValidationResult,
     ModelValidationResult,
-    ModelValidationSuite,
+    ServiceValidationSuite,
     ModelContractValidationResult,
     ModelModuleImportResult,
-    ModelProtocolAuditor,
+    ServiceProtocolAuditor,
     ModelProtocolInfo,
-    ProtocolContractValidator,
+    ServiceContractValidator,
 
     # Enums
     EnumImportStatus,
