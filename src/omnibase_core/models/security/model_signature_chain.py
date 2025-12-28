@@ -96,7 +96,7 @@ class ModelSignatureChain(BaseModel):
         for i, signature in enumerate(v):
             if signature.hop_index != i:
                 raise ModelOnexError(
-                    message=f"Signature at position {i} has hop_index {signature.hop_index}",
+                    message=f"Signature hop_index mismatch: expected {i} at position {i}, but got {signature.hop_index}",
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     context={
                         "position": i,
