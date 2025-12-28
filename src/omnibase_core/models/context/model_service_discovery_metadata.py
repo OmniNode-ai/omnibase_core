@@ -220,3 +220,96 @@ class ModelServiceDiscoveryMetadata(BaseModel):
         if not parsed.netloc:
             raise ValueError(f"Invalid health check URL '{v}': missing host")
         return v
+
+    @field_validator("service_instance_id", mode="before")
+    @classmethod
+    def coerce_service_instance_id(cls, v: UUID | str | None) -> UUID | None:
+        """Coerce string UUID values to UUID type.
+
+        Accepts UUID objects directly or valid UUID string representations.
+
+        Args:
+            v: The service instance ID value, either as UUID, string, or None.
+
+        Returns:
+            The UUID value, or None if input is None.
+
+        Raises:
+            ValueError: If the string value is not a valid UUID format.
+        """
+        if v is None:
+            return None
+        if isinstance(v, UUID):
+            return v
+        if isinstance(v, str):
+            try:
+                return UUID(v)
+            except ValueError:
+                raise ValueError(
+                    f"Invalid UUID string for service_instance_id: '{v}'. "
+                    f"Must be a valid UUID format (e.g., '550e8400-e29b-41d4-a716-446655440000')"
+                ) from None
+        raise ValueError(
+            f"service_instance_id must be UUID or str, got {type(v).__name__}"
+        )
+
+    @field_validator("service_version", mode="before")
+    @classmethod
+    def coerce_service_version(
+        cls, v: ModelSemVer | str | dict[str, object] | None
+    ) -> ModelSemVer | None:
+        """Coerce string or dict values to ModelSemVer.
+
+        Provides flexible input handling for service_version field:
+        - String format "X.Y.Z" is parsed to ModelSemVer
+        - Dict format {"major": X, "minor": Y, "patch": Z} is converted
+        - ModelSemVer instances are passed through unchanged
+        - None values are passed through unchanged
+
+        Args:
+            v: The service version value as ModelSemVer, string, dict, or None.
+
+        Returns:
+            The coerced ModelSemVer value, or None if input is None.
+
+        Raises:
+            ValueError: If string format is invalid, dict is malformed, or value
+                is not ModelSemVer, str, dict, or None.
+
+        Example:
+            >>> metadata = ModelServiceDiscoveryMetadata(
+            ...     service_name="test",
+            ...     service_version="2.1.0"
+            ... )
+            >>> metadata.service_version
+            ModelSemVer(major=2, minor=1, patch=0)
+        """
+        if v is None:
+            return None
+        if isinstance(v, ModelSemVer):
+            return v
+        if isinstance(v, str):
+            # Use ModelSemVer.parse() for string parsing
+            return ModelSemVer.parse(v)
+        if isinstance(v, dict):
+            # Allow dict format like {"major": 1, "minor": 2, "patch": 3}
+            try:
+                # Extract and validate required fields explicitly
+                major = v.get("major")
+                minor = v.get("minor")
+                patch = v.get("patch")
+                if (
+                    not isinstance(major, int)
+                    or not isinstance(minor, int)
+                    or not isinstance(patch, int)
+                ):
+                    raise ValueError(
+                        "Invalid service_version dict: major, minor, patch must be integers"
+                    )
+                return ModelSemVer(major=major, minor=minor, patch=patch)
+            except (TypeError, KeyError, ValueError) as e:
+                raise ValueError(
+                    f"Invalid service_version dict format: expected {{'major': int, "
+                    f"'minor': int, 'patch': int}}, got {v}"
+                ) from e
+        raise ValueError(f"Expected ModelSemVer, str, or dict, got {type(v).__name__}")

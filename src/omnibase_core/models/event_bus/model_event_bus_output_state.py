@@ -1,13 +1,13 @@
 from __future__ import annotations
 
+import re
 from datetime import datetime, timedelta
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, ClassVar
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.constants import MAX_ERROR_MESSAGE_LENGTH, MAX_IDENTIFIER_LENGTH
-from omnibase_core.constants.constants_error import ERROR_CODE_PATTERN
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_onex_status import EnumOnexStatus
 from omnibase_core.models.core.model_error_summary import ModelErrorSummary
@@ -40,10 +40,17 @@ class ModelEventBusOutputState(BaseModel):
     - Factory methods for common scenarios
 
     Note:
-        Error codes are validated using the centralized ERROR_CODE_PATTERN from
-        omnibase_core.constants.constants_error, which enforces the CATEGORY_NNN
-        format (e.g., AUTH_001, VALIDATION_123).
+        Error codes are validated using a SIMPLER pattern (_ERROR_CODE_PATTERN)
+        than the standard ERROR_CODE_PATTERN. This pattern accepts simple codes
+        like "UNKNOWN", "TIMEOUT", etc. without requiring the CATEGORY_NNN suffix.
+        This is intentional for event bus status codes which have different
+        requirements than structured error codes.
     """
+
+    # Private pattern for event bus error codes - intentionally simpler than
+    # the centralized ERROR_CODE_PATTERN. Accepts codes like "UNKNOWN", "TIMEOUT"
+    # without requiring the underscore-digit suffix (e.g., AUTH_001).
+    _ERROR_CODE_PATTERN: ClassVar[re.Pattern[str]] = re.compile(r"^[A-Z0-9_]+$")
 
     model_config = ConfigDict(validate_assignment=True, extra="forbid")
     version: ModelSemVer = Field(
@@ -146,12 +153,13 @@ class ModelEventBusOutputState(BaseModel):
     @field_validator("error_code")
     @classmethod
     def validate_error_code(cls, v: str | None) -> str | None:
-        """Validate error code format using centralized ERROR_CODE_PATTERN.
+        """Validate error code format using the simpler event bus pattern.
 
-        Error codes must follow the CATEGORY_NNN format (e.g., AUTH_001,
-        VALIDATION_123, SYSTEM_01). The pattern is imported from
-        omnibase_core.constants.constants_error for consistency across
-        the codebase.
+        Event bus error codes use a MORE PERMISSIVE pattern than the standard
+        ERROR_CODE_PATTERN. This allows simple codes like "UNKNOWN", "TIMEOUT",
+        "ERROR", etc. without requiring the CATEGORY_NNN suffix.
+
+        The pattern accepts: uppercase letters, digits, and underscores.
 
         Args:
             v: The error code string to validate, or None.
@@ -160,7 +168,7 @@ class ModelEventBusOutputState(BaseModel):
             The validated error code (uppercase, stripped), or None.
 
         Raises:
-            ModelOnexError: If the error code doesn't match CATEGORY_NNN format.
+            ModelOnexError: If the error code contains invalid characters.
         """
         if v is None:
             return v
@@ -168,13 +176,12 @@ class ModelEventBusOutputState(BaseModel):
         if not v:
             return None
 
-        if not ERROR_CODE_PATTERN.match(v):
+        if not cls._ERROR_CODE_PATTERN.match(v):
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=(
-                    f"Invalid error_code format '{v}': expected CATEGORY_NNN pattern "
-                    f"(e.g., AUTH_001, VALIDATION_123). "
-                    f"For lint-style short codes (W001, E001), use workflow_linter module."
+                    f"Invalid error_code format '{v}': expected uppercase letters, "
+                    f"digits, and underscores only (e.g., UNKNOWN, TIMEOUT, AUTH_001)."
                 ),
             )
         return v
@@ -266,7 +273,7 @@ class ModelEventBusOutputState(BaseModel):
         if not self.is_failed():
             return None
         return ModelErrorSummary(
-            error_code=self.error_code or "UNKNOWN_000",
+            error_code=self.error_code or "UNKNOWN",
             error_type=self.status.value,
             error_message=self.message,
             component="event_bus",

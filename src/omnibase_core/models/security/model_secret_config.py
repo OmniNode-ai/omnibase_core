@@ -573,5 +573,7 @@ class ModelSecretConfig(BaseModel):
 # Fix forward references for Pydantic models
 try:
     ModelSecretConfig.model_rebuild()
-except Exception:
-    pass  # Ignore rebuild errors during import
+except (
+    Exception
+):  # error-ok: model_rebuild may fail during circular import resolution, safe to ignore
+    pass

@@ -79,7 +79,7 @@ type InDegreeMap = dict[UUID, int]
 # =============================================================================
 
 # MAX_DFS_ITERATIONS is imported from omnibase_core.constants.constants_field_limits
-# Re-exported here for backwards compatibility.
+# Re-exported here for public API surface.
 # See module docstring "Security Considerations" for full documentation.
 
 # Reserved execution modes that are not yet implemented per ONEX v1.0 contract.
