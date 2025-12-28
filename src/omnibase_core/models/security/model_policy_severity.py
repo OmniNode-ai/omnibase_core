@@ -4,14 +4,21 @@ ModelPolicySeverity: Policy violation severity configuration.
 This model represents policy violation severity levels and handling.
 """
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelPolicySeverity(BaseModel):
-    """Policy violation severity configuration."""
+    """Policy violation severity configuration.
+
+    Note:
+        This model uses from_attributes=True to support pytest-xdist parallel
+        execution where class identity may differ between workers.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
 
     level: str = Field(
         default="error",

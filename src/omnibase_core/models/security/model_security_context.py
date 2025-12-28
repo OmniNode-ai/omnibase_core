@@ -1,5 +1,7 @@
-"""
-Security context model for security-related operations.
+"""Security context model for security-related operations.
+
+Provides a type-safe security context for authentication, authorization,
+and session management in secure event processing.
 """
 
 from __future__ import annotations
@@ -12,9 +14,15 @@ from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 
 class ModelSecurityContext(BaseModel):
-    """
-    Security context with typed fields.
-    Replaces untyped dict[str, Any]ionaries for security_context fields with proper typing.
+    """Security context with typed fields for authentication and authorization.
+
+    Replaces untyped dictionaries for security_context fields with proper typing,
+    providing structured access to user identity, session information, roles,
+    permissions, and security labels.
+
+    Note:
+        This model uses from_attributes=True to support pytest-xdist parallel
+        execution where class identity may differ between workers.
     """
 
     user_id: UUID | None = Field(default=None, description="User identifier")
@@ -49,7 +57,8 @@ class ModelSecurityContext(BaseModel):
         default_factory=dict, description="Security labels"
     )
     trust_level: int | None = Field(default=None, description="Trust level (0-100)")
-    model_config = ConfigDict()
+
+    model_config = ConfigDict(from_attributes=True)
 
     @classmethod
     def from_dict(

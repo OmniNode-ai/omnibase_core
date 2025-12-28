@@ -9,6 +9,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.constants import TIMEOUT_LONG_MS
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_node_operation import EnumNodeOperation
 from omnibase_core.enums.enum_signature_algorithm import EnumSignatureAlgorithm
 from omnibase_core.errors import ModelOnexError
@@ -30,7 +31,9 @@ class ModelNodeSignature(BaseModel):
     through PKI-based digital signatures.
     """
 
-    model_config = ConfigDict(validate_assignment=True, extra="forbid")
+    model_config = ConfigDict(
+        validate_assignment=True, extra="forbid", from_attributes=True
+    )
     MAX_HOP_INDEX: ClassVar[int] = 1000
     MAX_PROCESSING_TIME_MS: ClassVar[int] = TIMEOUT_LONG_MS
     MAX_SIGNATURE_TIME_MS: ClassVar[int] = 60000
@@ -114,7 +117,8 @@ class ModelNodeSignature(BaseModel):
         if v > cls.MAX_HOP_INDEX:
             raise ModelOnexError(
                 message=f"Hop index too large - possible routing loop (max: {cls.MAX_HOP_INDEX})",
-                error_code="ONEX_NODE_SIGNATURE_VALIDATION_ERROR",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={"hop_index": v, "max_hop_index": cls.MAX_HOP_INDEX},
             )
         return v
 
@@ -124,11 +128,12 @@ class ModelNodeSignature(BaseModel):
         """Validate signature is properly base64 encoded."""
         try:
             base64.b64decode(v, validate=True)
-        except Exception as e:
+        except ValueError as e:
             raise ModelOnexError(
                 message=f"Signature must be valid base64 encoding: {e!s}",
-                error_code="ONEX_NODE_SIGNATURE_VALIDATION_ERROR",
-            )
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={"signature_preview": v[:20] + "..." if len(v) > 20 else v},
+            ) from e
         return v
 
     @field_validator("envelope_state_hash")
@@ -138,15 +143,17 @@ class ModelNodeSignature(BaseModel):
         if len(v) != 64:
             raise ModelOnexError(
                 message="Envelope state hash must be 64 characters (SHA-256)",
-                error_code="ONEX_NODE_SIGNATURE_VALIDATION_ERROR",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={"hash_length": len(v), "expected_length": 64},
             )
         try:
             int(v, 16)
-        except ValueError:
+        except ValueError as e:
             raise ModelOnexError(
                 message="Envelope state hash must be hexadecimal",
-                error_code="ONEX_NODE_SIGNATURE_VALIDATION_ERROR",
-            )
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={"hash_preview": v[:20] + "..." if len(v) > 20 else v},
+            ) from e
         return v
 
     @classmethod
@@ -187,7 +194,8 @@ class ModelNodeSignature(BaseModel):
         if hop_index <= 0:
             raise ModelOnexError(
                 message="Routing signature must have hop_index > 0",
-                error_code="ONEX_NODE_SIGNATURE_ERROR",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={"hop_index": hop_index, "operation": "routing"},
             )
         return cls(
             node_id=node_id,
@@ -217,7 +225,8 @@ class ModelNodeSignature(BaseModel):
         if hop_index <= 0:
             raise ModelOnexError(
                 message="Destination signature must have hop_index > 0",
-                error_code="ONEX_NODE_SIGNATURE_ERROR",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                context={"hop_index": hop_index, "operation": "destination"},
             )
         return cls(
             node_id=node_id,

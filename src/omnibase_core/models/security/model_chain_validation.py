@@ -5,11 +5,19 @@ Chain validation details for signature verification.
 
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelChainValidation(BaseModel):
-    """Chain validation details."""
+    """Chain validation details.
+
+    Note:
+        This model uses frozen=True for immutability and from_attributes=True
+        to support pytest-xdist parallel execution where class identity may
+        differ between workers.
+    """
+
+    model_config = ConfigDict(frozen=True, from_attributes=True)
 
     chain_id: UUID = Field(default=..., description="Chain identifier")
     envelope_id: UUID = Field(default=..., description="Envelope identifier")
