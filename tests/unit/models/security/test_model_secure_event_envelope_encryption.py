@@ -743,3 +743,200 @@ class TestAADFunctionality:
             envelope2.decrypt_payload(encryption_key)
 
         assert exc_info.value.error_code == EnumCoreErrorCode.SECURITY_VIOLATION
+
+
+@pytest.mark.unit
+class TestPlaintextClearing:
+    """Test plaintext clearing functionality for defense in depth."""
+
+    def test_plaintext_is_cleared_by_default_after_encryption(
+        self, sample_envelope, encryption_key
+    ):
+        """Test that plaintext is cleared by default after encryption.
+
+        Security: The default behavior should clear the plaintext payload
+        to prevent accidental leakage through serialization or logging.
+        """
+        sample_envelope.encrypt_payload(encryption_key)
+
+        assert sample_envelope.is_encrypted is True
+        assert sample_envelope.is_plaintext_cleared is True
+        assert sample_envelope.payload.event_type == "core.security.payload_redacted"
+
+    def test_plaintext_can_be_retained_when_explicitly_requested(
+        self, sample_envelope, encryption_key
+    ):
+        """Test that plaintext can be retained with clear_plaintext_after_encryption=False.
+
+        Some use cases may require access to both plaintext and ciphertext.
+        This tests the opt-out mechanism (not recommended for production).
+        """
+        original_event_type = sample_envelope.payload.event_type
+
+        sample_envelope.encrypt_payload(
+            encryption_key, clear_plaintext_after_encryption=False
+        )
+
+        assert sample_envelope.is_encrypted is True
+        assert sample_envelope.is_plaintext_cleared is False
+        assert sample_envelope.payload.event_type == original_event_type
+
+    def test_decryption_works_after_plaintext_is_cleared(
+        self, sample_envelope, encryption_key
+    ):
+        """Test that decryption returns original data even after plaintext is cleared.
+
+        Critical: The encrypted_payload must preserve the original data
+        regardless of whether the plaintext payload field was cleared.
+        """
+        original_event_type = sample_envelope.payload.event_type
+        original_node_id = sample_envelope.payload.node_id
+
+        sample_envelope.encrypt_payload(encryption_key)
+
+        # Plaintext is cleared
+        assert sample_envelope.is_plaintext_cleared is True
+
+        # But decryption still works
+        decrypted = sample_envelope.decrypt_payload(encryption_key)
+        assert decrypted.event_type == original_event_type
+        assert decrypted.node_id == original_node_id
+
+    def test_clear_plaintext_method_works_on_encrypted_envelope(
+        self, sample_envelope, encryption_key
+    ):
+        """Test that clear_plaintext() method can be called separately."""
+        # Encrypt without clearing
+        sample_envelope.encrypt_payload(
+            encryption_key, clear_plaintext_after_encryption=False
+        )
+        assert sample_envelope.is_plaintext_cleared is False
+
+        # Now clear explicitly
+        sample_envelope.clear_plaintext()
+        assert sample_envelope.is_plaintext_cleared is True
+        assert sample_envelope.payload.event_type == "core.security.payload_redacted"
+
+    def test_clear_plaintext_raises_error_when_not_encrypted(self, sample_envelope):
+        """Test that clear_plaintext() raises error if envelope is not encrypted.
+
+        Clearing plaintext only makes sense after encryption. Calling it
+        on an unencrypted envelope should raise INVALID_OPERATION.
+        """
+        assert sample_envelope.is_encrypted is False
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            sample_envelope.clear_plaintext()
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.INVALID_OPERATION
+        assert "not encrypted" in str(exc_info.value.message).lower()
+
+    def test_content_hash_remains_valid_after_plaintext_clearing(
+        self, sample_envelope, encryption_key
+    ):
+        """Test that content hash validation works after plaintext is cleared.
+
+        The content hash uses a sentinel value for encrypted payloads, so
+        it should remain consistent whether or not plaintext was cleared.
+        """
+        sample_envelope.encrypt_payload(encryption_key)
+        hash_after_encryption = sample_envelope.content_hash
+
+        # Verify integrity
+        assert sample_envelope.validate_content_integrity() is True
+
+        # Hash should not change even after accessing it again
+        assert sample_envelope.content_hash == hash_after_encryption
+
+    def test_content_hash_consistent_with_or_without_plaintext_clearing(
+        self, sample_payload, sample_node_id, encryption_key
+    ):
+        """Test that content hash is the same with or without plaintext clearing.
+
+        The hash should use a sentinel for the payload field when encrypted,
+        making it independent of whether plaintext was cleared.
+        """
+        route_spec = ModelRouteSpec.create_direct_route(f"node://{uuid4()}")
+
+        # Create two identical envelopes
+        envelope1 = ModelSecureEventEnvelope(
+            payload=sample_payload,
+            route_spec=route_spec,
+            source_node_id=sample_node_id,
+            content_hash="a" * 64,
+        )
+
+        # Need to create identical envelope with same identity for comparison
+        # Actually we can't compare directly because envelope_id will differ
+        # Instead, verify that clearing doesn't change the hash
+        envelope1.encrypt_payload(
+            encryption_key, clear_plaintext_after_encryption=False
+        )
+        hash_before_clear = envelope1.content_hash
+
+        # Now clear plaintext
+        envelope1.clear_plaintext()
+        hash_after_clear = envelope1.content_hash
+
+        # Hash should be unchanged
+        assert hash_after_clear == hash_before_clear
+
+    def test_is_plaintext_cleared_property_false_for_unencrypted_envelope(
+        self, sample_envelope
+    ):
+        """Test that is_plaintext_cleared is False for unencrypted envelopes."""
+        assert sample_envelope.is_encrypted is False
+        assert sample_envelope.is_plaintext_cleared is False
+
+    def test_security_event_logged_when_plaintext_cleared(
+        self, sample_envelope, encryption_key
+    ):
+        """Test that a security event is logged when plaintext is cleared."""
+        from omnibase_core.enums.enum_security_event_type import EnumSecurityEventType
+
+        initial_event_count = len(sample_envelope.security_events)
+
+        sample_envelope.encrypt_payload(encryption_key)
+
+        # Should have logged a security event for plaintext clearing
+        assert len(sample_envelope.security_events) > initial_event_count
+
+        # Find the TOOL_ACCESS event for plaintext clearing (reason="defense_in_depth")
+        plaintext_events = [
+            e
+            for e in sample_envelope.security_events
+            if e.event_type == EnumSecurityEventType.TOOL_ACCESS
+            and e.reason == "defense_in_depth"
+        ]
+        assert len(plaintext_events) == 1
+
+    def test_create_secure_encrypted_clears_plaintext_by_default(
+        self, sample_payload, sample_node_id, encryption_key
+    ):
+        """Test that create_secure_encrypted factory clears plaintext by default."""
+        envelope = ModelSecureEventEnvelope.create_secure_encrypted(
+            payload=sample_payload,
+            destination=f"node://{uuid4()}",
+            source_node_id=sample_node_id,
+            encryption_key=encryption_key,
+            content_hash="a" * 64,
+        )
+
+        assert envelope.is_encrypted is True
+        assert envelope.is_plaintext_cleared is True
+        assert envelope.payload.event_type == "core.security.payload_redacted"
+
+        # But decryption still works
+        decrypted = envelope.decrypt_payload(encryption_key)
+        assert decrypted.event_type == sample_payload.event_type
+
+    def test_redacted_payload_contains_envelope_identity(
+        self, sample_envelope, encryption_key
+    ):
+        """Test that the redacted placeholder contains envelope identity info."""
+        sample_envelope.encrypt_payload(encryption_key)
+
+        # The redacted payload should reference the envelope
+        assert sample_envelope.payload.event_type == "core.security.payload_redacted"
+        assert sample_envelope.payload.node_id == sample_envelope.source_node_id
+        assert sample_envelope.payload.event_id == sample_envelope.envelope_id
