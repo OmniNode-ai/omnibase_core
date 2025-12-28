@@ -167,9 +167,6 @@ def is_protocol_file(file_path: Path) -> bool:
     except OSError as e:
         logger.debug(f"Could not read file {file_path} for protocol check: {e}")
         return False
-    except (UnicodeDecodeError, ValueError) as e:
-        logger.debug(f"Unexpected error checking protocol file {file_path}: {e}")
-        return False
     except Exception as e:  # fallback-ok: protocol discovery should be fault-tolerant
         logger.debug(f"Unexpected error checking protocol file {file_path}: {e}")
         return False

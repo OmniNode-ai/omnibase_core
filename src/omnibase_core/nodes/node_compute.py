@@ -665,6 +665,7 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
             message=f"Unknown computation type: {computation_type}",
             context={
                 "node_id": str(self.node_id),
+                "computation_type": computation_type,
                 "available_types": list(self.computation_registry.keys()),
             },
         )
