@@ -3,11 +3,10 @@ Omnibase Core - Utilities
 
 Utility functions and helpers for ONEX architecture.
 
-Backwards Compatibility (OMN-1071)
-==================================
-This module provides backwards compatibility aliases for classes renamed
-in v0.4.0. The following aliases are deprecated and will be removed in
-a future version:
+Deprecated Aliases (OMN-1071)
+=============================
+This module provides deprecated aliases for classes renamed in v0.4.0.
+The following aliases will be removed in a future version:
 
 - ``ProtocolContractLoader`` -> use ``UtilContractLoader``
 
@@ -55,8 +54,7 @@ __all__ = [
 
 
 # =============================================================================
-# Backwards compatibility: Lazy-load deprecated aliases with warnings.
-# See OMN-1071 for the class renaming migration.
+# Deprecated aliases: Lazy-load with warnings per OMN-1071 renaming.
 # =============================================================================
 def __getattr__(name: str) -> type:
     """
@@ -65,8 +63,8 @@ def __getattr__(name: str) -> type:
     This avoids circular imports during module initialization while still
     allowing `from omnibase_core.utils import UtilContractLoader`.
 
-    Backwards Compatibility Aliases (OMN-1071):
-    -------------------------------------------
+    Deprecated Aliases (OMN-1071):
+    ------------------------------
     All deprecated aliases emit DeprecationWarning when accessed:
     - ProtocolContractLoader -> UtilContractLoader
     """
@@ -91,4 +89,6 @@ def __getattr__(name: str) -> type:
 
         return UtilContractLoader
 
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    raise AttributeError(  # error-ok: required for __getattr__ protocol
+        f"module {__name__!r} has no attribute {name!r}"
+    )

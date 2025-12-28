@@ -50,10 +50,8 @@ __version__ = "0.5.3"
 
 # =============================================================================
 # Lazy loading: Avoid circular imports during module initialization.
-# This is NOT for backwards compatibility aliases (see OMN-1071 for that pattern
-# in validation/__init__.py and utils/__init__.py). Instead, this defers imports
-# of error classes and validation functions that would cause circular dependency
-# chains if imported at module load time.
+# This defers imports of error classes and validation functions that would
+# cause circular dependency chains if imported at module load time.
 # =============================================================================
 def __getattr__(name: str) -> object:
     """
@@ -63,9 +61,6 @@ def __getattr__(name: str) -> object:
     are imported on first access rather than at module load time. This prevents
     circular imports that would occur if these heavily-imported modules were
     loaded eagerly.
-
-    Note: This is NOT a backwards compatibility mechanism (see OMN-1071 for that
-    pattern). This is purely for breaking circular import chains.
     """
     # Import error classes lazily to break circular dependency
     if name == "EnumCoreErrorCode":

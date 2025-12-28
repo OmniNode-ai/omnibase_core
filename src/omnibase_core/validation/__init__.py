@@ -69,10 +69,10 @@ from .circular_import_validator import CircularImportValidator
 from .cli import ServiceValidationSuite
 
 # =============================================================================
-# BACKWARDS COMPATIBILITY STRATEGY: __getattr__ vs Direct Alias
+# ALIAS LOADING STRATEGY: __getattr__ vs Direct Alias
 # =============================================================================
 #
-# This module uses TWO different strategies for backwards compatibility aliases:
+# This module uses TWO different strategies for deprecated aliases:
 #
 # 1. DIRECT ALIAS (used above for ModelValidationSuite):
 #    ```python
@@ -128,8 +128,8 @@ def __getattr__(name: str) -> type:
     By using __getattr__, we defer the import until the class is actually
     accessed, breaking the cycle.
 
-    Backwards Compatibility Aliases (OMN-1071):
-    -------------------------------------------
+    Deprecated Aliases (OMN-1071):
+    ------------------------------
     All deprecated aliases emit DeprecationWarning when accessed:
     - ModelProtocolAuditor -> ServiceProtocolAuditor
     - ProtocolContractValidator -> ServiceContractValidator
@@ -203,8 +203,9 @@ def __getattr__(name: str) -> type:
     if name == "ModelValidationSuite":
         return ServiceValidationSuite
 
-    msg = f"module {__name__!r} has no attribute {name!r}"
-    raise AttributeError(msg)
+    raise AttributeError(  # error-ok: required for __getattr__ protocol
+        f"module {__name__!r} has no attribute {name!r}"
+    )
 
 
 from .contracts import (
@@ -324,7 +325,7 @@ __all__ = [
     "ServiceProtocolAuditor",
     "ServiceProtocolMigrator",
     "ServiceValidationSuite",
-    # OMN-1071: Backwards compatibility aliases
+    # OMN-1071: Deprecated aliases (will be removed in future version)
     "ProtocolContractValidator",  # Alias for ServiceContractValidator
     "ModelProtocolAuditor",  # Alias for ServiceProtocolAuditor
     "ProtocolMigrator",  # Alias for ServiceProtocolMigrator

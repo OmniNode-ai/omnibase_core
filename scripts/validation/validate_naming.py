@@ -169,6 +169,15 @@ class NamingConventionValidator:
         "runtime/handlers/": [
             "Handler*",  # All Handler* classes in handlers/ directory
         ],
+        # UTILITY CLASSES: Utility/helper classes in utils/
+        # Location: utils/ - Utility functions and helper classes
+        # Rationale: Utility classes use Util* prefix (e.g., UtilContractLoader, UtilSecurity)
+        #            These are helper classes, not Protocols, even if they have "contract" in the name.
+        #            The heuristic flags "contract" as a Protocol indicator, but UtilContractLoader
+        #            is a utility that LOADS contracts, not a Protocol interface.
+        "utils/": [
+            "Util*",  # All Util* classes in utils/ directory
+        ],
     }
 
     @staticmethod

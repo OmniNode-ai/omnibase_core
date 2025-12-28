@@ -32,7 +32,7 @@ SECURE_EVENT_ENVELOPE_CONFIG: ConfigDict = ConfigDict(
 
 
 class ModelSecureEventEnvelopeConfig:
-    """Deprecated configuration class for backward compatibility.
+    """Deprecated configuration class - use SECURE_EVENT_ENVELOPE_CONFIG instead.
 
     .. deprecated::
         This class is deprecated. Use SECURE_EVENT_ENVELOPE_CONFIG constant
@@ -41,7 +41,7 @@ class ModelSecureEventEnvelopeConfig:
     Important:
         Non-Pydantic classes cannot provide inheritable ConfigDict settings
         to Pydantic models. Each Pydantic model must define its own
-        model_config. This class is retained only for backward compatibility.
+        model_config. This class is retained as a deprecated alias.
 
     Note:
         This model uses from_attributes=True to support pytest-xdist parallel
