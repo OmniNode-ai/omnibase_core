@@ -678,7 +678,14 @@ async def _execute_sequential(
     completed_step_ids: set[UUID] = set()
     step_outputs: dict[UUID, object] = {}
     total_payload_size = 0  # Track total payload size (OMN-670: Security hardening)
-    timeout_triggered = False  # v1.0.3 Fix 35: Track timeout state
+
+    # v1.0.3 Fix 35: Track timeout state
+    # TODO(v1.1): timeout_triggered is currently scaffolding for future observability.
+    # The variable tracks whether global timeout elapsed but is not yet consumed.
+    # Future work: Add timeout_triggered to ModelWorkflowResultMetadata or emit
+    # as a structured metric for timeout observability dashboards.
+    # See: docs/architecture/CONTRACT_DRIVEN_NODEORCHESTRATOR_V1_0.md
+    timeout_triggered = False
 
     # Log workflow execution start
     logging.info(
@@ -699,7 +706,7 @@ async def _execute_sequential(
         # v1.0.3 Fix 35: Check global timeout before processing each step
         # If timeout has elapsed, mark remaining steps as failed and exit loop
         if time.perf_counter() > timeout_deadline:
-            timeout_triggered = True
+            timeout_triggered = True  # v1.1 observability hook (see TODO above)
             failed_steps.append(str(step.step_id))
             logging.warning(
                 f"Workflow '{workflow_definition.workflow_metadata.workflow_name}' "
@@ -917,7 +924,14 @@ async def _execute_parallel(
     step_outputs: dict[UUID, object] = {}
     should_stop = False
     total_payload_size = 0  # Track total payload size (OMN-670: Security hardening)
-    timeout_triggered = False  # v1.0.3 Fix 35: Track timeout state
+
+    # v1.0.3 Fix 35: Track timeout state
+    # TODO(v1.1): timeout_triggered is currently scaffolding for future observability.
+    # The variable tracks whether global timeout elapsed but is not yet consumed.
+    # Future work: Add timeout_triggered to ModelWorkflowResultMetadata or emit
+    # as a structured metric for timeout observability dashboards.
+    # See: docs/architecture/CONTRACT_DRIVEN_NODEORCHESTRATOR_V1_0.md
+    timeout_triggered = False
 
     # Log workflow execution start
     logging.info(
@@ -997,7 +1011,7 @@ async def _execute_parallel(
         # v1.0.3 Fix 35: Check global timeout before processing each wave
         # If timeout has elapsed, mark remaining steps as failed and exit loop
         if time.perf_counter() > timeout_deadline:
-            timeout_triggered = True
+            timeout_triggered = True  # v1.1 observability hook (see TODO above)
             for step in remaining_steps:
                 failed_steps.append(str(step.step_id))
             logging.warning(

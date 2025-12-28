@@ -18,6 +18,23 @@ Workflow Execution Limits (OMN-670: Security hardening):
 
     Bounds are enforced to prevent both DoS attacks (too-small limits causing many
     small workflows) and memory exhaustion (too-large limits).
+
+Thread Safety:
+    The module-level ``_cached_limits`` dict is NOT thread-safe in the strict sense.
+    However, this is an intentional design choice for simplicity:
+
+    1. Python's GIL ensures that dict operations (``in``, ``[]``, ``[]=``) are atomic
+       at the bytecode level, preventing data corruption.
+    2. The worst-case race condition is duplicate computation: two threads may both
+       compute the same limit value before either caches it. This is benign because:
+       - Environment variables are immutable during process lifetime
+       - Both threads compute identical values
+       - The final cached value is correct regardless of which thread wins
+    3. Adding threading.Lock would add complexity and overhead with no practical
+       benefit for this read-heavy, write-once pattern.
+
+    For truly thread-safe requirements (e.g., dynamic reconfiguration), use
+    explicit synchronization at the application level.
 """
 
 import logging
@@ -43,6 +60,12 @@ def _get_limit_from_env(env_var: str, default: int, min_val: int, max_val: int) 
 
     Returns:
         Validated limit value (cached after first computation)
+
+    Thread Safety:
+        This function uses a module-level cache that is not strictly thread-safe.
+        However, Python's GIL ensures atomic dict operations, so the worst case
+        is benign duplicate computation (two threads compute the same value).
+        No data corruption can occur. See module docstring for full rationale.
     """
     # Check cache first (memoization for repeated access)
     if env_var in _cached_limits:

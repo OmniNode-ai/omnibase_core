@@ -1176,11 +1176,14 @@ def validate_step_type(step_type: str, step_name: str = "") -> None:
         Space: O(1) - constant storage
 
     Example:
-        Valid step types::
+        Valid step types (v1.0.4: compute, effect, reducer, orchestrator, parallel, custom)::
 
-            validate_step_type("compute", "my_step")  # OK
-            validate_step_type("effect", "fetch_data")  # OK
-            validate_step_type("reducer", "aggregate")  # OK
+            validate_step_type("compute", "my_step")       # OK
+            validate_step_type("effect", "fetch_data")     # OK
+            validate_step_type("reducer", "aggregate")     # OK
+            validate_step_type("orchestrator", "workflow") # OK
+            validate_step_type("parallel", "batch")        # OK
+            validate_step_type("custom", "user_defined")   # OK
 
         Reserved step types::
 

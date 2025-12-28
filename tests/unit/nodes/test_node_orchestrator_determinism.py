@@ -430,7 +430,12 @@ class TestNodeOrchestratorExecutionOrderDeterminism:
         self,
         test_container: ModelONEXContainer,
     ):
-        """Test that execution order respects declaration order for equal priority."""
+        """Test that execution order respects declaration order.
+
+        v1.0.2 Fix 5: Declaration order is the sole tiebreaker for topological ordering.
+        Priority values do NOT affect execution order - they are passed through to
+        emitted actions for downstream scheduling decisions only.
+        """
         node = NodeOrchestrator(test_container)
 
         # Steps with no dependencies (all can run first)
@@ -1287,7 +1292,11 @@ class TestNodeOrchestratorEdgeCases:
         test_container: ModelONEXContainer,
         simple_workflow_definition: ModelWorkflowDefinition,
     ):
-        """Test that disabled steps are handled deterministically."""
+        """Test that disabled steps are handled deterministically.
+
+        v1.0.2 Fix 10: Disabled steps appear in skipped_steps and are treated
+        as satisfied dependencies. Multiple runs produce identical skipped_steps.
+        """
         node = NodeOrchestrator(test_container)
         node.workflow_definition = simple_workflow_definition
 
@@ -1319,12 +1328,22 @@ class TestNodeOrchestratorEdgeCases:
 
         results = [await node.process(input_data) for _ in range(3)]
 
-        # Disabled step should not appear in completed steps
+        # v1.0.2 Fix 10: Disabled step tracked deterministically in skipped_steps
         for result in results:
             assert str(FIXED_STEP_2_ID) not in result.completed_steps
             # Disabled step should appear in skipped_steps
             assert str(FIXED_STEP_2_ID) in result.skipped_steps
             assert len(result.skipped_steps) == 1  # Only the disabled step
+            assert result.skipped_steps == [str(FIXED_STEP_2_ID)], (
+                "skipped_steps should contain exactly the disabled step ID"
+            )
             # Other steps should complete
             assert str(FIXED_STEP_1_ID) in result.completed_steps
             assert str(FIXED_STEP_3_ID) in result.completed_steps
+            # Enabled steps must NOT appear in skipped_steps
+            assert str(FIXED_STEP_1_ID) not in result.skipped_steps
+            assert str(FIXED_STEP_3_ID) not in result.skipped_steps
+
+        # All runs should produce identical skipped_steps (determinism)
+        for result in results[1:]:
+            assert result.skipped_steps == results[0].skipped_steps

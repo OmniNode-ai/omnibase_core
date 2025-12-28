@@ -11,7 +11,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.validation.workflow_constants import MAX_TIMEOUT_MS
+from omnibase_core.validation.workflow_constants import MAX_TIMEOUT_MS, MIN_TIMEOUT_MS
 
 
 class ModelEventInputState(BaseModel):
@@ -35,10 +35,12 @@ class ModelEventInputState(BaseModel):
         default=None,
         description="Correlation ID for tracing",
     )
+    # v1.0.3 Fix 38: timeout_ms MUST be >= MIN_TIMEOUT_MS (100ms) per normative rules.
+    # This prevents unrealistically short timeouts that would cause immediate failures.
     timeout_ms: int | None = Field(
         default=None,
-        description="Execution timeout in milliseconds",
-        ge=0,
+        description="Execution timeout in milliseconds (min: 100ms, max: 24 hours)",
+        ge=MIN_TIMEOUT_MS,  # Min 100ms per v1.0.3 Fix 38 normative constraint
         le=MAX_TIMEOUT_MS,  # Max 24 hours - prevents DoS via excessively long timeouts
     )
 

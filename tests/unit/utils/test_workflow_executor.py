@@ -1400,10 +1400,10 @@ class TestDeclarationOrderIntegration:
         """Verify parallel workflow execution passes priority to emitted actions.
 
         In parallel execution, steps are grouped into "waves" based on dependencies.
-        Within a single wave (all steps have their dependencies met), each step's
-        priority value is passed through to its emitted action. This allows
-        downstream nodes to schedule/process actions according to priority,
-        while the orchestrator itself does not reorder based on priority.
+        v1.0.2 Fix 5 / v1.0.4 Normative: Within a single wave, steps are emitted
+        in DECLARATION order (not priority order). Each step's priority value is
+        passed through to its emitted action for downstream scheduling, but the
+        orchestrator itself does NOT reorder based on priority.
         """
         workflow_id = uuid4()
 
@@ -1474,7 +1474,9 @@ class TestDeclarationOrderIntegration:
         )
 
         # Remaining actions are wave 2 (all children depend on parent)
-        # Within wave 2, they should be in priority order
+        # v1.0.2 Fix 5: Within wave 2, they should be in DECLARATION order
+        # (priority values are passed through to actions for downstream scheduling,
+        # but emission order follows declaration order, NOT priority)
         wave2_actions = result.actions_emitted[1:]
 
         # Verify action priorities are set correctly for the wave

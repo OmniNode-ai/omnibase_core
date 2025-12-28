@@ -1600,11 +1600,21 @@ class TestBatchExecutionE2E:
 
 @pytest.mark.unit
 class TestDisabledStepsE2E:
-    """Tests for workflows with disabled steps."""
+    """Tests for workflows with disabled steps.
+
+    v1.0.2 Fix 10: Disabled steps are treated as automatically satisfied dependencies.
+    - Disabled steps appear ONLY in skipped_steps (not completed/failed)
+    - Steps depending on disabled steps proceed as if the dependency is met
+    - skipped_steps tracks disabled steps in declaration order
+    """
 
     @pytest.mark.asyncio
     async def test_disabled_steps_skipped_in_execution(self) -> None:
-        """Test that disabled steps are skipped during execution."""
+        """Test that disabled steps are skipped during execution.
+
+        v1.0.2 Fix 10: Disabled steps appear in skipped_steps and are treated
+        as satisfied dependencies, allowing dependent steps to proceed.
+        """
         step1_id = uuid4()
         step2_id = uuid4()  # Will be disabled
         step3_id = uuid4()
@@ -1683,9 +1693,25 @@ class TestDisabledStepsE2E:
         assert str(step2_id) not in result.completed_steps
         assert len(result.actions_emitted) == 2
 
-        # Verify disabled step is tracked in skipped_steps
+        # v1.0.2 Fix 10: Disabled step tracked in skipped_steps
         assert str(step2_id) in result.skipped_steps
         assert len(result.skipped_steps) == 1  # Only the disabled step
+        assert result.skipped_steps == [str(step2_id)], (
+            "skipped_steps should contain exactly the disabled step ID"
+        )
+
+        # Enabled steps must NOT appear in skipped_steps
+        assert str(step1_id) not in result.skipped_steps, (
+            "Enabled step 1 must NOT appear in skipped_steps"
+        )
+        assert str(step3_id) not in result.skipped_steps, (
+            "Enabled step 3 must NOT appear in skipped_steps"
+        )
+
+        # Disabled step must NOT appear in failed_steps
+        assert str(step2_id) not in result.failed_steps, (
+            "Disabled step must NOT appear in failed_steps"
+        )
 
 
 # =============================================================================
