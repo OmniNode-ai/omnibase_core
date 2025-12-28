@@ -143,6 +143,9 @@ class ModelEventBusRuntimeState(BaseModel):
 
         Args:
             node_name: Identifier for the node using this event bus binding.
+                An empty string is accepted but will cause is_ready() to return
+                False, as empty node_name semantically means "unbound" even though
+                is_bound=True. Use a non-empty string for a fully ready binding.
             contract_path: Optional path to contract YAML file. Pass None
                 to clear any existing contract_path.
 
