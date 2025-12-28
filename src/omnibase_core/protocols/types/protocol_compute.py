@@ -68,6 +68,10 @@ class ProtocolCompute(Protocol):
 
         Returns:
             Computation output with result, metrics, and cache status.
+
+        Raises:
+            ModelOnexError: If input validation fails or computation encounters
+                an error condition (e.g., unsupported computation_type).
         """
         ...
 
@@ -86,6 +90,10 @@ class ProtocolCompute(Protocol):
 
         Returns:
             Computation output matching process() return type.
+
+        Raises:
+            ModelOnexError: If contract validation fails or the computation
+                encounters an error during execution.
         """
         ...
 

@@ -82,6 +82,11 @@ class ProtocolEffect(Protocol):
 
         Returns:
             Effect output with result, transaction state, and metrics.
+
+        Raises:
+            ModelOnexError: If circuit breaker is open, transaction rollback
+                fails, no handler is registered for the effect type, or
+                the effect operation fails after all retry attempts.
         """
         ...
 

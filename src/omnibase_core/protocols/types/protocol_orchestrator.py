@@ -115,6 +115,11 @@ class ProtocolOrchestrator(Protocol):
 
         Returns:
             Orchestrator output with step results and emitted actions.
+
+        Raises:
+            ModelOnexError: If workflow validation fails, dependency cycles
+                are detected, or step execution encounters an unrecoverable
+                error.
         """
         ...
 
