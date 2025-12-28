@@ -290,7 +290,13 @@ class ModelONEXContainer:
                 typed_service = cast(T, service_instance)
                 return typed_service
 
-            except (ModelOnexError, AttributeError, KeyError, ValueError, RuntimeError) as registry_error:
+            except (
+                ModelOnexError,
+                AttributeError,
+                KeyError,
+                ValueError,
+                RuntimeError,
+            ) as registry_error:
                 # Fail fast - ServiceRegistry is the only resolution mechanism when enabled
                 emit_log_event(
                     LogLevel.ERROR,

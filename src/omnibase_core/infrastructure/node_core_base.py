@@ -226,7 +226,13 @@ class NodeCoreBase(ABC):
                 },
             )
 
-        except (AttributeError, ValueError, TypeError, RuntimeError, ModelOnexError) as e:
+        except (
+            AttributeError,
+            ValueError,
+            TypeError,
+            RuntimeError,
+            ModelOnexError,
+        ) as e:
             self.state["status"] = "failed"
             self._increment_metric("error_count")
 
@@ -292,7 +298,9 @@ class NodeCoreBase(ABC):
                 },
             )
 
-        except BaseException as e:  # Catch-all: cleanup must not raise to prevent resource leaks
+        except (
+            BaseException
+        ) as e:  # Catch-all: cleanup must not raise to prevent resource leaks
             self.state["status"] = "cleanup_failed"
 
             emit_log_event(
@@ -523,7 +531,9 @@ class NodeCoreBase(ABC):
                     # Event bus doesn't have emit_event method - that's OK
                     pass
 
-        except BaseException as e:  # Catch-all: event emission failure is not fatal, graceful degradation
+        except (
+            BaseException
+        ) as e:  # Catch-all: event emission failure is not fatal, graceful degradation
             # Event emission failure is not fatal
             emit_log_event(
                 LogLevel.WARNING,

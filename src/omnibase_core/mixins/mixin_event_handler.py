@@ -420,7 +420,9 @@ class MixinEventHandler:
                     f"Event handlers cleaned up for node {node_id}",
                     context=context,
                 )
-            except BaseException as e:  # Catch-all: cleanup errors are logged but shouldn't crash
+            except (
+                BaseException
+            ) as e:  # Catch-all: cleanup errors are logged but shouldn't crash
                 node_id = getattr(self, "_node_id", None) or "<unset>"
                 context = ModelLogContext(
                     calling_module=_COMPONENT_NAME,

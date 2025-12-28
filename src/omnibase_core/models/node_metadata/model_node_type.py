@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pydantic import Field
+from pydantic import Field, ValidationError
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -777,7 +777,14 @@ class ModelNodeType(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except (AttributeError, ValueError, TypeError, KeyError, OSError, RuntimeError):
+        except (
+            AttributeError,
+            ValueError,
+            TypeError,
+            KeyError,
+            RuntimeError,
+            ValidationError,
+        ):
             # fallback-ok: Metadata update failures should not break the system
             return False
 
@@ -847,6 +854,6 @@ class ModelNodeType(BaseModel):
         """
         try:
             return True
-        except (AttributeError, ValueError, TypeError, KeyError, OSError, RuntimeError):
+        except (AttributeError, ValueError, TypeError, KeyError, RuntimeError):
             # fallback-ok: Validation failures should not raise exceptions
             return False

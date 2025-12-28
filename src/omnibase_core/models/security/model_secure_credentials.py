@@ -243,7 +243,7 @@ class ModelSecureCredentials(BaseModel, ABC):
                             setattr(self, field_name, SecretStr(env_value))
                         else:
                             setattr(self, field_name, env_value)
-                except (AttributeError, ValueError, TypeError, KeyError, RuntimeError) as e:
+                except (AttributeError, ValueError, TypeError) as e:
                     # Log the specific error for debugging while adding to issues
                     logger.warning(
                         f"Failed to load environment variable {env_var} for field {field_name}: {e!s}",

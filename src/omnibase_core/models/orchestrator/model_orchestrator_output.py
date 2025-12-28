@@ -9,7 +9,7 @@ in orchestrator results.
 
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.orchestrator.model_action import ModelAction
@@ -153,7 +153,13 @@ class ModelOrchestratorOutput(BaseModel):
         if isinstance(value, dict) and "value_type" in value:
             try:
                 return ModelSchemaValue.model_validate(value)
-            except (AttributeError, ValueError, TypeError, KeyError, OSError, RuntimeError):
+            except (
+                ValidationError,
+                AttributeError,
+                ValueError,
+                TypeError,
+                KeyError,
+            ):
                 # fallback-ok: If validation fails, treat as raw value
                 pass
         return ModelSchemaValue.from_value(value)

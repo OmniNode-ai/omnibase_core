@@ -463,7 +463,9 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
             )
             raise
 
-        except BaseException as e:  # Catch-all: top-level error boundary for node execution
+        except (
+            BaseException
+        ) as e:  # Catch-all: top-level error boundary for node execution
             # Convert generic exceptions to ONEX errors
             emit_log_event(
                 LogLevel.ERROR,
@@ -558,7 +560,9 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
         except ModelOnexError:
             # Re-raise ONEX errors (fail-fast)
             raise
-        except BaseException as e:  # Catch-all: top-level error boundary for tool processing
+        except (
+            BaseException
+        ) as e:  # Catch-all: top-level error boundary for tool processing
             # Convert generic exceptions to ONEX errors
             emit_log_event(
                 LogLevel.ERROR,
@@ -682,7 +686,9 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
                 state_delta={},
             )
 
-        except BaseException as e:  # Catch-all: top-level error boundary for state dispatch
+        except (
+            BaseException
+        ) as e:  # Catch-all: top-level error boundary for state dispatch
             # Log and convert to ONEX error
             emit_log_event(
                 LogLevel.ERROR,

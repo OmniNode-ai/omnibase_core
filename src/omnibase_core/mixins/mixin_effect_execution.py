@@ -766,7 +766,13 @@ class MixinEffectExecution:
                     return str(secret_value)
                 except ModelOnexError:
                     raise
-                except (ValueError, KeyError, RuntimeError, AttributeError, OSError) as e:
+                except (
+                    ValueError,
+                    KeyError,
+                    RuntimeError,
+                    AttributeError,
+                    OSError,
+                ) as e:
                     raise ModelOnexError(
                         message=f"Failed to resolve secret: {secret_key}",
                         error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
@@ -1368,7 +1374,13 @@ class MixinEffectExecution:
         # Attempt to resolve handler with explicit error for missing registration
         try:
             handler = self.container.get_service(handler_protocol)
-        except (ValueError, KeyError, LookupError, RuntimeError, AttributeError) as resolve_error:
+        except (
+            ValueError,
+            KeyError,
+            LookupError,
+            RuntimeError,
+            AttributeError,
+        ) as resolve_error:
             # Provide explicit guidance for handler registration
             raise ModelOnexError(
                 message=f"Effect handler not registered: {handler_protocol}. "
@@ -1387,7 +1399,9 @@ class MixinEffectExecution:
         # Execute handler with resolved context
         try:
             result = await handler.execute(resolved_context)
-        except BaseException as exec_error:  # Catch-all: handlers can raise any exception type
+        except (
+            BaseException
+        ) as exec_error:  # Catch-all: handlers can raise any exception type
             raise ModelOnexError(
                 message=f"Handler execution failed for {handler_protocol}: {exec_error!s}",
                 error_code=EnumCoreErrorCode.HANDLER_EXECUTION_ERROR,

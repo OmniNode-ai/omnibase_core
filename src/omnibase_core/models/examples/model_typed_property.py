@@ -17,6 +17,7 @@ from typing import cast
 from pydantic import BaseModel, model_validator
 
 from omnibase_core.enums.enum_property_type import EnumPropertyType
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 from .model_property_metadata import ModelPropertyMetadata
@@ -76,7 +77,7 @@ class ModelTypedProperty(BaseModel):
                 return cast("T", self.value.as_bool())
             if isinstance(self.value.value, expected_type):
                 return self.value.value
-        except (AttributeError, ValueError, TypeError):
+        except (AttributeError, ValueError, TypeError, ModelOnexError):
             # fallback-ok: type conversion failures return default value
             pass
         return default

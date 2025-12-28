@@ -104,8 +104,8 @@ def get_logging_service() -> Any:
             if logger_protocol:
                 # Return protocol directly (no wrapper needed)
                 return logger_protocol
-    except BaseException:  # fallback-ok: minimal logging service unavailable
-        # Uses BaseException to catch all exceptions during bootstrap
+    except Exception:  # fallback-ok: minimal logging service unavailable
+        # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
         pass
 
     # Return inline minimal logger for bootstrap

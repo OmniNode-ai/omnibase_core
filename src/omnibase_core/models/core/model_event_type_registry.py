@@ -248,6 +248,8 @@ def reset_event_type_registry() -> None:
         container = get_model_onex_container_sync()
         registry: ModelEventTypeRegistry = container.event_type_registry()
         registry.clear()
-    except Exception:  # fallback-ok: Reset is cleanup operation - silently ignore all errors
+    except (
+        Exception
+    ):  # fallback-ok: Reset is cleanup operation - silently ignore all errors
         # Container not initialized, nothing to reset
         pass

@@ -173,7 +173,13 @@ class ModelCliCommandRegistry(BaseModel):
                     if command:
                         self.register_command(command)
                         commands_discovered += 1
-                except (AttributeError, ValueError, TypeError, KeyError, RuntimeError) as e:
+                except (
+                    AttributeError,
+                    ValueError,
+                    TypeError,
+                    KeyError,
+                    RuntimeError,
+                ) as e:
                     # Log error but continue processing other commands
                     logger.debug(
                         "Failed to create command from contract for node '%s': %s",

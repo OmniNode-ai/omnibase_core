@@ -51,7 +51,14 @@ class ModelOperationParameters(BaseModel):
                 "validated": True,
             }
             return validation_results
-        except (AttributeError, ValueError, TypeError, KeyError, OSError, RuntimeError) as e:
+        except (
+            AttributeError,
+            ValueError,
+            TypeError,
+            KeyError,
+            OSError,
+            RuntimeError,
+        ) as e:
             raise ModelOnexError(
                 message=f"Parameter execution failed: {e}",
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,

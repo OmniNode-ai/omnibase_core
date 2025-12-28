@@ -413,7 +413,9 @@ class DictAnyCheckerPlugin(Plugin):
                     if result is not None:
                         return result
 
-        except BaseException:  # catch-all: Defensive - mypy plugin API varies across versions
+        except (
+            Exception
+        ):  # catch-all: Defensive - mypy plugin API varies across versions
             # Gracefully handle any API access issues
             pass
 
@@ -471,7 +473,9 @@ class DictAnyCheckerPlugin(Plugin):
                     if modules is not None:
                         return cast("dict[str, MypyFile]", modules)
 
-        except BaseException:  # catch-all: Defensive - accessing mypy internal API structure
+        except (
+            Exception
+        ):  # catch-all: Defensive - accessing mypy internal API structure
             pass
 
         return None
@@ -543,7 +547,9 @@ class DictAnyCheckerPlugin(Plugin):
             if isinstance(node, Decorator):
                 return node
 
-        except BaseException:  # catch-all: Defensive - module symbol traversal can fail in many ways
+        except (
+            Exception
+        ):  # catch-all: Defensive - module symbol traversal can fail in many ways
             pass
 
         return None

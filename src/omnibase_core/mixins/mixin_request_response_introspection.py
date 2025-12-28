@@ -458,7 +458,9 @@ class MixinRequestResponseIntrospection:
                         },
                     )
 
-            except BaseException as nested_e:  # Catch-all: error response sending is best-effort
+            except (
+                BaseException
+            ) as nested_e:  # Catch-all: error response sending is best-effort
                 if hasattr(self, "_logger") and self._logger:
                     self._logger.exception(f"Failed to send error response: {nested_e}")
 

@@ -192,7 +192,9 @@ class MixinNodeService:
             for callback in self._shutdown_callbacks:
                 try:
                     callback()
-                except BaseException as e:  # Catch-all: callbacks are user-provided, can raise anything
+                except (
+                    BaseException
+                ) as e:  # Catch-all: callbacks are user-provided, can raise anything
                     self._log_error(f"Shutdown callback failed: {e}")
 
             # Cleanup event handlers if available
@@ -659,7 +661,9 @@ class MixinNodeService:
         except asyncio.CancelledError:
             # Expected when cancelling - this is normal
             pass
-        except BaseException as e:  # Catch-all: cleanup code must handle any error during teardown
+        except (
+            BaseException
+        ) as e:  # Catch-all: cleanup code must handle any error during teardown
             # Log unexpected errors during cleanup
             self._log_error(f"Unexpected error during health task cleanup: {e}")
 

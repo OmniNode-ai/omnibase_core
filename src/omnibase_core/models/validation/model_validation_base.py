@@ -153,7 +153,9 @@ class ModelValidationBase(BaseModel):
                         field="model_integrity",
                         error_code=validation_error_code,
                     )
-            except Exception as serialize_error:  # fallback-ok: serialization can raise any exception
+            except (
+                Exception
+            ) as serialize_error:  # fallback-ok: serialization can raise any exception
                 self.add_validation_error(
                     message=f"Model serialization failed: {serialize_error!s}",
                     field="model_integrity",
@@ -166,7 +168,9 @@ class ModelValidationBase(BaseModel):
                 import json
 
                 json.dumps(self.model_dump(exclude={"validation"}), default=str)
-            except Exception as json_error:  # fallback-ok: model_dump/json can raise any exception
+            except (
+                Exception
+            ) as json_error:  # fallback-ok: model_dump/json can raise any exception
                 if "circular reference" in str(json_error).lower() or isinstance(
                     json_error,
                     RecursionError,
@@ -182,7 +186,12 @@ class ModelValidationBase(BaseModel):
                         f"Model may have serialization issues: {json_error!s}",
                     )
 
-        except (AttributeError, TypeError, ValueError, RuntimeError) as unexpected_error:
+        except (
+            AttributeError,
+            TypeError,
+            ValueError,
+            RuntimeError,
+        ) as unexpected_error:
             # For base validation, we'll add the error to the validation container
             # rather than raising ONEX errors to avoid circular import issues
             self.add_validation_error(

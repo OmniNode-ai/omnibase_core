@@ -70,7 +70,7 @@ class ModelTransaction:
                     await rollback_func()
                 else:
                     rollback_func()
-            except (RuntimeError, ValueError, AttributeError) as e:
+            except (RuntimeError, ValueError, TypeError, AttributeError, OSError) as e:
                 emit_log_event(
                     LogLevel.ERROR,
                     f"Rollback operation failed: {e!s}",

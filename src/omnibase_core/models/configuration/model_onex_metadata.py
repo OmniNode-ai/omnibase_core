@@ -193,7 +193,14 @@ class ModelOnexMetadata(BaseModel):
 
             try:
                 v = ast.literal_eval(v)
-            except (AttributeError, ValueError, TypeError, KeyError, OSError, RuntimeError):
+            except (
+                AttributeError,
+                ValueError,
+                TypeError,
+                KeyError,
+                OSError,
+                RuntimeError,
+            ):
                 msg = f"protocols_supported must be a list[Any], got: {v}"
                 raise ModelOnexError(
                     EnumCoreErrorCode.VALIDATION_ERROR,

@@ -117,7 +117,9 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             for callback in self._shutdown_callbacks:
                 try:
                     callback()
-                except BaseException as e:  # Catch-all: callbacks are user-provided, can raise anything
+                except (
+                    BaseException
+                ) as e:  # Catch-all: callbacks are user-provided, can raise anything
                     self._log_error(f"Shutdown callback failed: {e}")
             self.cleanup_event_handlers()
             self._executor_running = False

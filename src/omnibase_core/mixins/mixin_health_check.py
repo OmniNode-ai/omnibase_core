@@ -370,7 +370,9 @@ class MixinHealthCheck:
                     for issue in result.issues:
                         messages.append(f"{check_name}: {issue.message}")
 
-            except BaseException as e:  # Catch-all: async health checks can raise anything
+            except (
+                BaseException
+            ) as e:  # Catch-all: async health checks can raise anything
                 emit_log_event(
                     LogLevel.ERROR,
                     f"Async health check failed: {check_name}",

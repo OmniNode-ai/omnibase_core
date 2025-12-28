@@ -587,7 +587,14 @@ class ModelContractEffect(MixinNodeTypeValidator, ModelContractBase):
                     },
                 ),
             ) from e
-        except (AttributeError, ValueError, TypeError, KeyError, OSError, RuntimeError) as e:
+        except (
+            AttributeError,
+            ValueError,
+            TypeError,
+            KeyError,
+            OSError,
+            RuntimeError,
+        ) as e:
             raise ModelOnexError(
                 message=f"Failed to load contract YAML: {e}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
