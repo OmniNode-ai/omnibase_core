@@ -31,6 +31,7 @@ from uuid import UUID
 
 from pydantic import Field, model_validator
 
+from omnibase_core.constants import TIMEOUT_DEFAULT_MS
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.runtime.payloads.model_directive_payload_base import (
@@ -86,7 +87,7 @@ class ModelRetryWithBackoffPayload(ModelDirectivePayloadBase):
         description="Multiplier for exponential backoff (must be > 1.0)",
     )
     max_backoff_ms: int = Field(
-        default=30000,
+        default=TIMEOUT_DEFAULT_MS,
         ge=1000,
         le=3600000,
         description="Maximum backoff delay in milliseconds (1s to 1h)",

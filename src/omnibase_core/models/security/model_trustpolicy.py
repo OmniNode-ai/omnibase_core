@@ -7,6 +7,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from omnibase_core.constants import TIMEOUT_LONG_MS
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors import ModelOnexError
 from omnibase_core.models.core.model_trust_level import ModelTrustLevel
@@ -45,8 +46,8 @@ class ModelTrustPolicy(BaseModel):
     # Constants
     MAX_MINIMUM_SIGNATURES: ClassVar[int] = 100
     MAX_SIGNATURE_AGE_HOURS: ClassVar[int] = 8760  # 1 year
-    MAX_SIGNATURE_TIMEOUT_MS: ClassVar[int] = 300000  # 5 minutes
-    MAX_VERIFICATION_TIMEOUT_MS: ClassVar[int] = 300000  # 5 minutes
+    MAX_SIGNATURE_TIMEOUT_MS: ClassVar[int] = TIMEOUT_LONG_MS  # 5 minutes
+    MAX_VERIFICATION_TIMEOUT_MS: ClassVar[int] = TIMEOUT_LONG_MS  # 5 minutes
     MAX_CACHE_TTL_SECONDS: ClassVar[int] = 86400  # 24 hours
 
     # Policy identification

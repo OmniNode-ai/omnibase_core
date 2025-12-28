@@ -25,6 +25,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from omnibase_core.constants import TIMEOUT_DEFAULT_MS
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_error_context import ModelErrorContext
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
@@ -136,7 +137,7 @@ class ModelFSMSubcontract(BaseModel):
     )
 
     checkpoint_interval_ms: int = Field(
-        default=30000,
+        default=TIMEOUT_DEFAULT_MS,
         description="Interval for automatic checkpoints",
         ge=1000,
     )
