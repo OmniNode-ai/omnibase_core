@@ -4,6 +4,8 @@ Cache settings model.
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.constants import DEFAULT_CACHE_TTL_SECONDS
+
 
 class ModelCacheSettings(BaseModel):
     """
@@ -18,7 +20,9 @@ class ModelCacheSettings(BaseModel):
     )
 
     # TTL settings
-    default_ttl_seconds: int = Field(default=300, description="Default TTL in seconds")
+    default_ttl_seconds: int = Field(
+        default=DEFAULT_CACHE_TTL_SECONDS, description="Default TTL in seconds"
+    )
     max_ttl_seconds: int | None = Field(
         default=3600, description="Maximum TTL in seconds"
     )

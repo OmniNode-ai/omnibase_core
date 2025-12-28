@@ -7,10 +7,8 @@ that the package can be imported correctly.
 """
 
 import importlib
-import os
 import sys
 from pathlib import Path
-from typing import Optional
 
 
 class GenericImportValidator:
@@ -117,7 +115,7 @@ class GenericImportValidator:
         try:
             # Test basic SPI imports
             import omnibase_spi.protocols.core
-            import omnibase_spi.protocols.types
+            import omnibase_spi.protocols.types  # noqa: F401
 
             self.results.append(("SPI Protocol imports", True, "OK"))
             self.results.append(("SPI Types imports", True, "OK"))

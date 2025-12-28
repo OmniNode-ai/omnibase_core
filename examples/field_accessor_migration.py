@@ -8,7 +8,6 @@ Enhanced to show proper discriminated union usage with ModelPropertyValue
 instead of generic Union[str, int, bool, float] patterns.
 """
 
-from datetime import datetime
 from typing import Any
 
 from pydantic import Field
@@ -17,7 +16,6 @@ from pydantic import Field
 from omnibase_core.models.core import (
     ModelCustomFieldsAccessor,
     ModelEnvironmentAccessor,
-    ModelFieldAccessor,
     ModelResultAccessor,
 )
 

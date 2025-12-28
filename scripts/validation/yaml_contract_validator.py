@@ -57,7 +57,7 @@ Usage Example
 
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class MinimalNodeType:

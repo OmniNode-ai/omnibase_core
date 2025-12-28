@@ -14,7 +14,6 @@ This enforces proper ONEX framework naming conventions.
 
 import argparse
 import ast
-import re
 import sys
 from pathlib import Path
 

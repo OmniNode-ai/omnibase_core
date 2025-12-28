@@ -4,7 +4,6 @@ Cross-platform timeout compatibility test.
 Verifies timeout functionality works on both Windows and Unix systems.
 """
 
-import os
 import sys
 import threading
 import time

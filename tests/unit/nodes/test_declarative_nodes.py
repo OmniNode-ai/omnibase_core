@@ -379,6 +379,7 @@ class TestNodeOrchestrator:
         # Check workflow executed
         assert result.execution_status == "completed"
         assert len(result.completed_steps) == 2
+        assert result.skipped_steps == []  # No disabled steps
         assert len(result.actions_emitted) == 2
 
     @pytest.mark.asyncio
@@ -408,14 +409,18 @@ class TestNodeOrchestrator:
         test_container: ModelONEXContainer,
         simple_workflow_definition: ModelWorkflowDefinition,
     ):
-        """Test contract validation."""
+        """Test contract validation.
+
+        v1.0.3 Fix 29: Empty workflows are valid and should not produce errors.
+        Empty workflows succeed immediately with COMPLETED state.
+        """
         node = NodeOrchestrator(test_container)
         node.workflow_definition = simple_workflow_definition
 
         errors = await node.validate_contract()
 
-        # Empty workflow has validation error
-        assert len(errors) > 0
+        # v1.0.3 Fix 29: Empty workflows are valid (no steps = no errors)
+        assert len(errors) == 0
 
     @pytest.mark.asyncio
     async def test_validate_contract_without_definition(
@@ -588,4 +593,5 @@ class TestDeclarativeNodesIntegration:
 
         assert result.execution_status == "completed"
         assert len(result.completed_steps) == 4
+        assert result.skipped_steps == []  # No disabled steps
         assert len(result.actions_emitted) == 4
