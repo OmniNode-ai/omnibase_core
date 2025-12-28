@@ -12,7 +12,10 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.constants.constants_field_limits import MAX_IDENTIFIER_LENGTH
+from omnibase_core.constants.constants_field_limits import (
+    MAX_IDENTIFIER_LENGTH,
+    MAX_NAME_LENGTH,
+)
 
 __all__ = ["ModelWorkflowStep"]
 
@@ -49,7 +52,7 @@ class ModelWorkflowStep(BaseModel):
         default=...,
         description="Human-readable name for this step",
         min_length=1,
-        max_length=200,
+        max_length=MAX_NAME_LENGTH,
     )
 
     step_type: Literal[

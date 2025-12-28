@@ -2,7 +2,10 @@ from typing import Any
 
 from pydantic import BaseModel, Field, ValidationError, model_validator
 
-from omnibase_core.constants.constants_field_limits import MAX_IDENTIFIER_LENGTH
+from omnibase_core.constants.constants_field_limits import (
+    MAX_IDENTIFIER_LENGTH,
+    MAX_KEY_LENGTH,
+)
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.configuration.model_database_connection_config import (
     ModelDatabaseConnectionConfig,
@@ -46,7 +49,7 @@ class ModelExternalServiceConfig(BaseModel):
         default=...,
         description="Type of service (e.g., 'event_bus', 'database', 'rest_api')",
         pattern=r"^[a-zA-Z0-9_\-]+$",
-        max_length=50,
+        max_length=MAX_KEY_LENGTH,
     )
     connection_config: (
         ModelDatabaseConnectionConfig

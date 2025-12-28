@@ -31,6 +31,7 @@ from uuid import UUID
 
 from pydantic import AfterValidator, Field
 
+from omnibase_core.constants.constants_field_limits import MAX_REASON_LENGTH
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.runtime.payloads.model_directive_payload_base import (
@@ -100,5 +101,5 @@ class ModelDelayUntilPayload(ModelDirectivePayloadBase):
     reason: str | None = Field(
         default=None,
         description="Optional human-readable reason for the delay",
-        max_length=500,
+        max_length=MAX_REASON_LENGTH,
     )
