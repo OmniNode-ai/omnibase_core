@@ -6,6 +6,7 @@ Model for event persistence configuration in the ONEX event-driven architecture 
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.constants import TIMEOUT_LONG_MS
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
@@ -50,7 +51,7 @@ class ModelEventPersistence(BaseModel):
     )
 
     snapshot_interval_ms: int = Field(
-        default=300000,
+        default=TIMEOUT_LONG_MS,
         description="Interval for event snapshots",
         ge=1000,
     )

@@ -13,6 +13,8 @@ These constants are used by:
 - ModelResolvedHttpContext, ModelResolvedDbContext, etc.: timeout bounds
 """
 
+from omnibase_core.constants.constants_timeouts import TIMEOUT_DEFAULT_MS
+
 # =============================================================================
 # String Length Limits
 # =============================================================================
@@ -53,7 +55,8 @@ EFFECT_TIMEOUT_MAX_MS: int = 600000
 
 # Default timeout: 30 seconds (30000ms)
 # Rationale: Reasonable default for most I/O operations
-EFFECT_TIMEOUT_DEFAULT_MS: int = 30000
+# Uses centralized TIMEOUT_DEFAULT_MS constant.
+EFFECT_TIMEOUT_DEFAULT_MS: int = TIMEOUT_DEFAULT_MS
 
 __all__ = [
     # String length limits

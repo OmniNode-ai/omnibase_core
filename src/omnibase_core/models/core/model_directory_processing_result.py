@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pydantic import Field
 
 # === OmniNode:Metadata ===
@@ -77,7 +75,7 @@ class ModelDirectoryProcessingResult(BaseModel):
     directory: Path | None = Field(
         default=None, description="Directory that was processed"
     )
-    filter_config: Optional["ModelFileFilter"] = Field(
+    filter_config: "ModelFileFilter | None" = Field(
         default=None,
         description="Filter configuration used",
     )

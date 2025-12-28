@@ -1,11 +1,13 @@
 from pydantic import BaseModel, Field
 
+from omnibase_core.constants import TIMEOUT_DEFAULT_MS
+
 
 class ModelTimeoutConfig(BaseModel):
     """Timeout configuration model."""
 
     default_timeout_ms: int = Field(
-        default=30000, description="Default timeout in milliseconds"
+        default=TIMEOUT_DEFAULT_MS, description="Default timeout in milliseconds"
     )
     gateway_timeout_ms: int = Field(
         default=10000, description="Gateway routing timeout"

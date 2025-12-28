@@ -12,6 +12,11 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
+from omnibase_core.constants import (
+    TIMEOUT_DEFAULT_MS,
+    TIMEOUT_LONG_MS,
+    TIMEOUT_MIN_MS,
+)
 from omnibase_core.enums.enum_compensation_strategy import EnumCompensationStrategy
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_order import EnumExecutionOrder
@@ -72,17 +77,17 @@ class ModelCompensationPlan(BaseModel):
 
     # Timeout configuration
     total_timeout_ms: int = Field(
-        default=300000,
+        default=TIMEOUT_LONG_MS,
         description="Total timeout for all compensation actions",
-        ge=1000,
+        ge=TIMEOUT_MIN_MS,
         le=3600000,  # Max 1 hour
     )
 
     action_timeout_ms: int = Field(
-        default=30000,
+        default=TIMEOUT_DEFAULT_MS,
         description="Timeout per individual compensation action",
-        ge=1000,
-        le=300000,  # Max 5 minutes
+        ge=TIMEOUT_MIN_MS,
+        le=TIMEOUT_LONG_MS,  # Max 5 minutes (TIMEOUT_LONG_MS)
     )
 
     # Compensation actions

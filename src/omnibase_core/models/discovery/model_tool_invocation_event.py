@@ -5,6 +5,11 @@ from uuid import NAMESPACE_DNS, UUID, uuid4, uuid5
 
 from pydantic import Field
 
+from omnibase_core.constants import (
+    TIMEOUT_DEFAULT_MS,
+    TIMEOUT_LONG_MS,
+    TIMEOUT_MIN_MS,
+)
 from omnibase_core.constants.event_types import TOOL_INVOCATION
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.discovery.model_toolparameters import ModelToolParameters
@@ -45,10 +50,10 @@ class ModelToolInvocationEvent(ModelOnexEvent):
         description="Unique ID for matching responses to this invocation",
     )
     timeout_ms: int = Field(
-        default=30000,
+        default=TIMEOUT_DEFAULT_MS,
         description="Tool execution timeout in milliseconds",
-        ge=1000,
-        le=300000,
+        ge=TIMEOUT_MIN_MS,
+        le=TIMEOUT_LONG_MS,
     )
     priority: str = Field(
         default="normal", description="Execution priority (low, normal, high, urgent)"
@@ -77,7 +82,7 @@ class ModelToolInvocationEvent(ModelOnexEvent):
         requester_id: UUID,
         requester_node_id: UUID,
         parameters: ModelToolParameters | None = None,
-        timeout_ms: int = 30000,
+        timeout_ms: int = TIMEOUT_DEFAULT_MS,
         priority: str = "normal",
         **kwargs: Any,
     ) -> "ModelToolInvocationEvent":

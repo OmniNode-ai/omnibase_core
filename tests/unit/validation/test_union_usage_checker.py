@@ -538,6 +538,124 @@ value: Union[float, None]
 
 
 @pytest.mark.unit
+class TestProcessOptionalType:
+    """Test Optional[T] syntax detection and PEP 604 conversion suggestions.
+
+    Per ONEX conventions and PEP 604, Optional[T] should be replaced with T | None.
+    The _process_optional_type() method detects this legacy syntax and flags it
+    for conversion.
+    """
+
+    def test_detect_optional_syntax(self, checker: UnionUsageChecker):
+        """Test that Optional[T] syntax is detected and flagged for PEP 604 conversion."""
+        code = """
+from typing import Optional
+
+def foo() -> Optional[str]:
+    pass
+"""
+        tree = ast.parse(code)
+        checker.visit(tree)
+
+        # Verify Optional[str] is detected
+        assert checker.union_count >= 1
+        assert len(checker.issues) >= 1
+        assert any(
+            "Use str | None instead of Optional[str]" in issue
+            for issue in checker.issues
+        )
+
+    def test_optional_creates_union_pattern(self, checker: UnionUsageChecker):
+        """Test that Optional[T] creates a synthetic union pattern for tracking."""
+        code = """
+from typing import Optional
+
+x: Optional[int]
+"""
+        tree = ast.parse(code)
+        checker.visit(tree)
+
+        assert checker.union_count == 1
+        assert len(checker.union_patterns) == 1
+        # Should create synthetic [int, None] pattern
+        pattern = checker.union_patterns[0]
+        assert "int" in pattern.types
+        assert "None" in pattern.types
+
+    def test_optional_issue_message_format(self, checker: UnionUsageChecker):
+        """Test that Optional[T] issue message format is clear and actionable."""
+        code = """
+from typing import Optional
+
+value: Optional[float]
+"""
+        tree = ast.parse(code)
+        checker.visit(tree)
+
+        assert len(checker.issues) == 1
+        issue = checker.issues[0]
+
+        # Message should be actionable with clear location and suggestion
+        assert "Line" in issue, "Message should include line number"
+        assert "Optional[float]" in issue, "Message should show original pattern"
+        assert "float | None" in issue, "Message should show PEP 604 replacement"
+        assert "PEP 604" in issue, "Message should reference PEP 604"
+
+    def test_multiple_optional_annotations(self, checker: UnionUsageChecker):
+        """Test that multiple Optional[T] annotations each get flagged."""
+        code = """
+from typing import Optional
+
+class Config:
+    name: Optional[str]
+    count: Optional[int]
+    enabled: Optional[bool]
+"""
+        tree = ast.parse(code)
+        checker.visit(tree)
+
+        assert checker.union_count == 3
+        assert len(checker.issues) == 3
+        # Verify each suggestion contains PEP 604 syntax
+        assert any("str | None" in issue for issue in checker.issues)
+        assert any("int | None" in issue for issue in checker.issues)
+        assert any("bool | None" in issue for issue in checker.issues)
+
+    def test_optional_with_complex_type(self, checker: UnionUsageChecker):
+        """Test that Optional[ComplexType] suggests ComplexType | None."""
+        code = """
+from typing import Optional, List
+
+def get_items() -> Optional[List]:
+    return None
+"""
+        tree = ast.parse(code)
+        checker.visit(tree)
+
+        assert checker.union_count == 1
+        assert len(checker.issues) == 1
+        # Should suggest the PEP 604 syntax
+        assert "| None" in checker.issues[0]
+        assert "Optional[List]" in checker.issues[0]
+
+    def test_optional_in_function_parameter(self, checker: UnionUsageChecker):
+        """Test that Optional[T] in function parameters is detected."""
+        code = """
+from typing import Optional
+
+def process(value: Optional[str], count: Optional[int] = None) -> None:
+    pass
+"""
+        tree = ast.parse(code)
+        checker.visit(tree)
+
+        assert checker.union_count == 2
+        assert len(checker.issues) == 2
+        assert any("str | None" in issue for issue in checker.issues)
+        assert any("int | None" in issue for issue in checker.issues)
+
+
+@pytest.mark.unit
 class TestVisitBinOp:
     """Test visiting modern union syntax (|) nodes."""
 

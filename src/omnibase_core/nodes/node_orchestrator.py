@@ -177,7 +177,8 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
                   parallel_execution_allowed: true
                   failure_recovery_strategy: retry
                   max_retries: 3
-                  timeout_ms: 300000
+                  # Use TIMEOUT_LONG_MS (300000) for long-running workflows
+                  timeout_ms: 300000  # See omnibase_core.constants.TIMEOUT_LONG_MS
             ```
 
         Usage:

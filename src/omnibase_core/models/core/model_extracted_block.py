@@ -2,7 +2,7 @@
 Strongly typed models for extracted metadata blocks, decoupled from model_node_metadata.py to avoid circular imports.
 """
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field
 
@@ -15,7 +15,7 @@ class ModelExtractedBlock(BaseModel):
     Result model for extract_block protocol method.
     """
 
-    metadata: Optional["NodeMetadataBlock"] = Field(
+    metadata: "NodeMetadataBlock | None" = Field(
         default=None,
         description="Extracted metadata block (NodeMetadataBlock or None)",
     )

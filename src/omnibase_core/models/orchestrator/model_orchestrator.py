@@ -7,28 +7,20 @@ This module now imports from separated model files for better organization
 and compliance with one-model-per-file naming conventions.
 """
 
-# Import separated models
-from omnibase_core.models.graph import ModelGraph
-from omnibase_core.models.services.model_plan import ModelPlan
-
 from .model_orchestrator_graph import ModelOrchestratorGraph
 from .model_orchestrator_plan import ModelOrchestratorPlan
 from .model_orchestrator_result import ModelOrchestratorResult
 
 # Compatibility aliases
-GraphModel = ModelGraph
-PlanModel = ModelPlan
 OrchestratorGraphModel = ModelOrchestratorGraph
 OrchestratorPlanModel = ModelOrchestratorPlan
 OrchestratorResultModel = ModelOrchestratorResult
 
 # Re-export for current standards
 __all__ = [
-    "ModelGraph",
     "ModelOrchestratorGraph",
     "ModelOrchestratorPlan",
     "ModelOrchestratorResult",
-    "ModelPlan",
 ]
 
 # === OmniNode:Metadata ===

@@ -49,6 +49,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from omnibase_core.constants import TIMEOUT_DEFAULT_MS, TIMEOUT_LONG_MS
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_workflow_execution import EnumActionType
 from omnibase_core.models.core.model_action_metadata import ModelActionMetadata
@@ -82,7 +83,8 @@ class ModelAction(BaseModel):
         payload: Action payload implementing ProtocolActionPayload (required).
         dependencies: List of action IDs this action depends on (default empty list).
         priority: Execution priority (1-10, higher = more urgent, default 1).
-        timeout_ms: Execution timeout in ms (100-300000, default 30000). Raises TimeoutError on expiry.
+        timeout_ms: Execution timeout in ms (100-TIMEOUT_LONG_MS, default TIMEOUT_DEFAULT_MS).
+            Raises TimeoutError on expiry. See omnibase_core.constants for values.
         lease_id: Lease ID proving Orchestrator ownership (required).
         epoch: Monotonically increasing version number (>= 0, required).
         retry_count: Number of retry attempts on failure (0-10, default 0).
@@ -160,7 +162,7 @@ class ModelAction(BaseModel):
     )
 
     timeout_ms: int = Field(
-        default=30000,
+        default=TIMEOUT_DEFAULT_MS,
         description=(
             "Execution timeout in milliseconds. When exceeded, the action execution "
             "is cancelled and a TimeoutError is raised. The Orchestrator may retry "
@@ -177,7 +179,7 @@ class ModelAction(BaseModel):
             "which IS enforced in utils/compute_executor.py using ThreadPoolExecutor."
         ),
         ge=100,
-        le=300000,  # Max 5 minutes
+        le=TIMEOUT_LONG_MS,  # Max 5 minutes
     )
 
     # Lease management fields for single-writer semantics

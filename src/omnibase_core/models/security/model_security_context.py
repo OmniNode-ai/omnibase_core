@@ -2,8 +2,10 @@
 Security context model for security-related operations.
 """
 
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer
@@ -52,7 +54,7 @@ class ModelSecurityContext(BaseModel):
     @classmethod
     def from_dict(
         cls, data: dict[str, str | int | bool | list[str] | datetime | None] | None
-    ) -> Optional["ModelSecurityContext"]:
+    ) -> ModelSecurityContext | None:
         """Create from dictionary for easy migration."""
         if data is None:
             return None

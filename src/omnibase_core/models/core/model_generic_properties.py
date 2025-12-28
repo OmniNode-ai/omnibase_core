@@ -2,7 +2,7 @@
 Generic properties model to replace Dict[str, Any] usage for properties fields.
 """
 
-from typing import Optional
+from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -61,7 +61,7 @@ class ModelGenericProperties(BaseModel):
     @classmethod
     def from_flat_dict(
         cls, data: dict[str, PropertyValue] | None
-    ) -> Optional["ModelGenericProperties"]:
+    ) -> ModelGenericProperties | None:
         """
         Create ModelGenericProperties from flat dictionary with automatic type categorization.
 
