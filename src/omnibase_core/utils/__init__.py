@@ -23,8 +23,12 @@ from .util_hash import (
 # - util_field_converter
 # - util_security.UtilSecurity
 # - util_streaming_window.UtilStreamingWindow
+# - util_contract_loader.UtilContractLoader (also available via lazy import below)
+
 __all__ = [
     "UtilConflictResolver",
+    "UtilContractLoader",
+    "ProtocolContractLoader",  # DEPRECATED: Use UtilContractLoader
     "allow_any_type",
     "allow_dict_str_any",
     "create_enum_normalizer",
@@ -35,3 +39,26 @@ __all__ = [
     "deterministic_jitter",
     "string_to_uuid",
 ]
+
+
+def __getattr__(name: str) -> type:
+    """
+    Lazy loading for utilities with heavy model dependencies.
+
+    This avoids circular imports during module initialization while still
+    allowing `from omnibase_core.utils import UtilContractLoader`.
+    """
+    if name == "UtilContractLoader":
+        from .util_contract_loader import UtilContractLoader
+
+        return UtilContractLoader
+
+    if name == "ProtocolContractLoader":
+        # DEPRECATED: Use UtilContractLoader instead.
+        # This alias exists for backwards compatibility with code that used
+        # the old name prior to PR #261 rename.
+        from .util_contract_loader import UtilContractLoader
+
+        return UtilContractLoader
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

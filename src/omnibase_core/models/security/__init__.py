@@ -2,6 +2,9 @@
 Security domain models for ONEX.
 """
 
+# Backwards compatibility alias (DEPRECATED)
+from omnibase_core.utils.util_security import UtilSecurity
+
 from .model_approval_requirements import ModelApprovalRequirements
 from .model_audit_requirements import ModelAuditRequirements
 from .model_network_restrictions import ModelNetworkRestrictions
@@ -34,6 +37,10 @@ from .model_security_policy import ModelSecurityPolicy
 from .model_security_rule import ModelSecurityRule
 from .model_session_policy import ModelSessionPolicy
 
+ModelSecurityUtils = (
+    UtilSecurity  # DEPRECATED: Use UtilSecurity from omnibase_core.utils
+)
+
 __all__ = [
     "ModelApprovalRequirements",
     "ModelAuditRequirements",
@@ -64,4 +71,6 @@ __all__ = [
     "init_secret_manager",
     "init_secret_manager_from_manager",
     "validate_secret_configuration",
+    # DEPRECATED: Use UtilSecurity from omnibase_core.utils instead
+    "ModelSecurityUtils",
 ]

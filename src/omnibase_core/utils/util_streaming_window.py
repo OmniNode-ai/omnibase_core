@@ -66,6 +66,12 @@ class UtilStreamingWindow:
           and each item belongs to exactly one window.
         - Sliding Window: overlap_ms>0. Windows overlap and items may be
           processed in multiple consecutive windows.
+
+    Thread Safety:
+        UtilStreamingWindow is NOT thread-safe. It maintains mutable internal
+        state (buffer deque and window_start timestamp) that is modified during
+        add_item() and advance_window() operations without synchronization.
+        Use separate instances per thread or wrap access with external locks.
     """
 
     def __init__(self, window_size_ms: int, overlap_ms: int = 0):

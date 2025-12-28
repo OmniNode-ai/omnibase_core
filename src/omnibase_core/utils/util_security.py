@@ -25,6 +25,14 @@ class UtilSecurity:
     - Security pattern detection
     - Credential strength assessment
     - Audit trail support
+
+    Thread Safety:
+        UtilSecurity is fully thread-safe. All methods are static and stateless,
+        operating only on their input parameters and returning new data structures.
+        The class-level DEFAULT_SENSITIVE_PATTERNS set is read-only and never
+        modified at runtime. Methods that process collections (mask_dict_credentials,
+        audit_credential_usage) create fresh output structures for each call,
+        ensuring no shared mutable state exists between concurrent invocations.
     """
 
     # Default sensitive field patterns

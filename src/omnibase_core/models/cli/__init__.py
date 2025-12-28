@@ -11,6 +11,9 @@ from omnibase_core.types import (
     TypedDictTraceInfoData,
 )
 
+# Backwards compatibility alias (DEPRECATED)
+from omnibase_core.utils.util_cli_result_formatter import UtilCliResultFormatter
+
 from .model_cli_action import ModelCliAction
 from .model_cli_advanced_params import ModelCliAdvancedParams
 from .model_cli_command_option import ModelCliCommandOption
@@ -24,6 +27,9 @@ from .model_cli_node_execution_input import ModelCliNodeExecutionInput
 from .model_cli_output_data import ModelCliOutputData
 from .model_cli_result import ModelCliResult
 from .model_output_format_options import ModelOutputFormatOptions
+
+# DEPRECATED: Use UtilCliResultFormatter from omnibase_core.utils instead
+ModelCliResultFormatter = UtilCliResultFormatter
 
 __all__ = [
     "ModelCliAction",
@@ -43,4 +49,6 @@ __all__ = [
     "TypedDictDebugInfoData",
     "TypedDictPerformanceMetricData",
     "TypedDictTraceInfoData",
+    # DEPRECATED: Use UtilCliResultFormatter from omnibase_core.utils instead
+    "ModelCliResultFormatter",
 ]
