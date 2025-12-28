@@ -275,13 +275,36 @@ class MixinDiscoveryResponder:
                 self._discovery_stats["throttled_requests"] += 1
                 return  # Throttled
 
-            # Extract request metadata
-            request_metadata = onex_event.metadata
-            if not isinstance(request_metadata, ModelDiscoveryRequestModelMetadata):
-                return  # Invalid request format
+            # Extract request metadata from data field
+            # Discovery requests store metadata in data field (same as responses)
+            # Note: Senders may use model_dump() which produces a dict at runtime
+            request_data = onex_event.data
+            if request_data is None:
+                return  # No request data
+
+            # Parse data into ModelDiscoveryRequestModelMetadata
+            # Handle both typed ModelEventData and raw dict (from model_dump())
+            try:
+                # Get dict representation - works for Pydantic models and raw dicts
+                if hasattr(request_data, "model_dump"):
+                    data_dict = request_data.model_dump()
+                else:
+                    # Cast to handle runtime dict case - request_data comes from
+                    # onex_event.data which is ModelEventData (a TypedDict with
+                    # heterogeneous value types). Pydantic validates at construction.
+                    data_dict = cast(
+                        dict[
+                            str, str | list[str] | None
+                        ],  # @allow_dict_any: ModelDiscoveryRequestModelMetadata fields
+                        request_data,
+                    )
+                request_metadata = ModelDiscoveryRequestModelMetadata(**data_dict)
+            except Exception:
+                # fallback-ok: Event handler must not crash on malformed discovery requests
+                return  # Invalid request format - couldn't parse metadata
 
             # Check if we match filter criteria
-            if not self._matches_discovery_criteria(request_metadata):  # type: ignore[unreachable]
+            if not self._matches_discovery_criteria(request_metadata):
                 self._discovery_stats["filtered_requests"] += 1
                 return  # Doesn't match criteria
 
