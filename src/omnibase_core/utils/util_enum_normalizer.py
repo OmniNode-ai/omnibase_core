@@ -21,27 +21,24 @@ from enum import Enum
 
 def create_enum_normalizer[E: Enum](
     enum_class: type[E],
-) -> Callable[[E | str | None], E | None]:
-    """Create a Pydantic field validator for strict enum normalization.
+) -> Callable[[E | str | None], E | str | None]:
+    """Create a Pydantic field validator for flexible enum normalization.
 
     This factory creates a validator function that can be used with Pydantic's
     @field_validator decorator to normalize string values to enum members with
-    strict validation that rejects invalid values.
+    flexible string handling for unknown values.
 
     The created validator:
     1. Returns None if input is None
     2. Returns the enum member if input is already an enum instance
     3. Converts string to enum (case-insensitive via .lower())
-    4. Raises ValueError if string does not match any enum value
+    4. Returns the original string as-is if no match found (flexible handling)
 
     Args:
         enum_class: The enum class to normalize values to
 
     Returns:
         A validator function compatible with Pydantic's @field_validator
-
-    Raises:
-        ValueError: If the string value does not match any enum member
 
     Example:
         >>> from pydantic import BaseModel, field_validator
@@ -53,7 +50,7 @@ def create_enum_normalizer[E: Enum](
         ...     INACTIVE = "inactive"
         >>>
         >>> class MyModel(BaseModel):
-        ...     status: Status | None = None
+        ...     status: Status | str | None = None
         ...
         ...     @field_validator("status", mode="before")
         ...     @classmethod
@@ -65,17 +62,15 @@ def create_enum_normalizer[E: Enum](
         >>> m.status == Status.ACTIVE
         True
         >>>
-        >>> # Invalid string raises ValueError
-        >>> try:
-        ...     m2 = MyModel(status="invalid_status")
-        ... except Exception as e:
-        ...     print("Validation failed")
-        Validation failed
+        >>> # Unknown string kept as-is (flexible handling)
+        >>> m2 = MyModel(status="unknown_status")
+        >>> m2.status == "unknown_status"
+        True
 
     Ticket: OMN-1054
     """
 
-    def normalize(v: E | str | None) -> E | None:
+    def normalize(v: E | str | None) -> E | str | None:
         if v is None:
             return None
         if isinstance(v, enum_class):
@@ -86,14 +81,12 @@ def create_enum_normalizer[E: Enum](
             msg = f"Expected {enum_class.__name__} or str, got {type(v).__name__}"
             # error-ok: Pydantic validator requires ValueError
             raise ValueError(msg)  # pragma: no cover
-        # Convert string to enum (strict validation)
+        # Convert string to enum (flexible handling - keep as-is if no match)
         try:
             return enum_class(v.lower())
         except ValueError:
-            valid_values = [e.value for e in enum_class]
-            msg = f"Invalid value '{v}' for {enum_class.__name__}. Valid values: {valid_values}"
-            # error-ok: Pydantic validator requires ValueError
-            raise ValueError(msg) from None
+            # Flexible handling: return the original string as-is
+            return v
 
     return normalize
 

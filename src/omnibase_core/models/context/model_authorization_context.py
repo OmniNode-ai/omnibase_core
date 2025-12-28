@@ -21,6 +21,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums import EnumTokenType
+from omnibase_core.utils import create_enum_normalizer
 
 __all__ = ["ModelAuthorizationContext"]
 
@@ -76,47 +77,30 @@ class ModelAuthorizationContext(BaseModel):
         default_factory=list,
         description="OAuth scopes",
     )
-    token_type: EnumTokenType | None = Field(
+    token_type: EnumTokenType | str | None = Field(
         default=None,
-        description="Token type (e.g., Bearer, API, JWT). Must be a valid EnumTokenType value.",
+        description="Token type (e.g., Bearer, API, JWT). Accepts EnumTokenType values or strings.",
     )
 
     @field_validator("token_type", mode="before")
     @classmethod
     def normalize_token_type(
         cls, v: EnumTokenType | str | None
-    ) -> EnumTokenType | None:
+    ) -> EnumTokenType | str | None:
         """Validate and normalize token type to EnumTokenType.
 
-        Performs strict validation: accepts EnumTokenType values or string
-        representations that match valid enum values (case-insensitive).
-        Invalid values raise ValueError.
+        Uses flexible normalization: accepts EnumTokenType values or
+        string representations. Valid enum strings are converted to EnumTokenType,
+        unknown strings are preserved as-is for flexible input handling.
 
         Args:
             v: The token type value, either as EnumTokenType, string, or None.
 
         Returns:
-            The normalized EnumTokenType value, or None if input is None.
-
-        Raises:
-            ValueError: If the string value is not a valid EnumTokenType member.
-            TypeError: If the value is neither EnumTokenType, str, nor None.
+            The normalized EnumTokenType value, None, or the original string
+            if no match found.
         """
-        if v is None:
-            return None
-        if isinstance(v, EnumTokenType):
-            return v
-        if isinstance(v, str):
-            try:
-                return EnumTokenType(v.lower())
-            except ValueError:
-                valid_values = [e.value for e in EnumTokenType]
-                raise ValueError(
-                    f"Invalid token_type '{v}'. Must be one of: {valid_values}"
-                ) from None
-        raise TypeError(  # error-ok: Pydantic validator requires TypeError for type checks
-            f"token_type must be EnumTokenType or str, got {type(v).__name__}"
-        )
+        return create_enum_normalizer(EnumTokenType)(v)
 
     expiry: str | None = Field(
         default=None,

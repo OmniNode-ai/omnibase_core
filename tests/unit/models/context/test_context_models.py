@@ -1571,14 +1571,14 @@ class TestModelAuthorizationContextEnumSupport:
         )
         assert context.token_type == EnumTokenType.BEARER
 
-    def test_token_type_rejects_unknown_string(self) -> None:
-        """Test that unknown strings raise ValidationError (strict validation)."""
-        with pytest.raises(ValidationError) as exc_info:
-            ModelAuthorizationContext(
-                token_type="CustomToken",
-            )
-        # Unknown strings are rejected with a helpful error message
-        assert "Invalid token_type" in str(exc_info.value)
+    def test_token_type_keeps_unknown_string_for_backward_compat(self) -> None:
+        """Test that unknown strings are kept as-is for backward compatibility."""
+        context = ModelAuthorizationContext(
+            token_type="CustomToken",
+        )
+        # Unknown strings are kept as-is for backward compatibility
+        assert context.token_type == "CustomToken"
+        assert isinstance(context.token_type, str)
 
     def test_token_type_none_allowed(self) -> None:
         """Test that token_type accepts None."""
@@ -1623,14 +1623,16 @@ class TestModelSessionContextEnumSupport:
         )
         assert context.authentication_method == EnumAuthenticationMethod.SAML
 
-    def test_authentication_method_rejects_unknown_string(self) -> None:
-        """Test that unknown strings raise ValidationError (strict validation)."""
-        with pytest.raises(ValidationError) as exc_info:
-            ModelSessionContext(
-                authentication_method="custom_sso",
-            )
-        # Unknown strings are rejected with a helpful error message
-        assert "Invalid authentication method" in str(exc_info.value)
+    def test_authentication_method_keeps_unknown_string_for_backward_compat(
+        self,
+    ) -> None:
+        """Test that unknown strings are kept as-is for backward compatibility."""
+        context = ModelSessionContext(
+            authentication_method="custom_sso",
+        )
+        # Unknown strings are kept as-is for backward compatibility
+        assert context.authentication_method == "custom_sso"
+        assert isinstance(context.authentication_method, str)
 
     def test_authentication_method_none_allowed(self) -> None:
         """Test that authentication_method accepts None."""
@@ -1673,14 +1675,14 @@ class TestModelCheckpointMetadataEnumSupport:
         )
         assert metadata.checkpoint_type == EnumCheckpointType.MANUAL
 
-    def test_checkpoint_type_rejects_unknown_string(self) -> None:
-        """Test that unknown strings raise ValidationError (strict validation)."""
-        with pytest.raises(ValidationError) as exc_info:
-            ModelCheckpointMetadata(
-                checkpoint_type="custom_checkpoint",
-            )
-        # Unknown strings are rejected with a helpful error message
-        assert "Invalid checkpoint_type" in str(exc_info.value)
+    def test_checkpoint_type_keeps_unknown_string_for_backward_compat(self) -> None:
+        """Test that unknown strings are kept as-is for backward compatibility."""
+        metadata = ModelCheckpointMetadata(
+            checkpoint_type="custom_checkpoint",
+        )
+        # Unknown strings are kept as-is for backward compatibility
+        assert metadata.checkpoint_type == "custom_checkpoint"
+        assert isinstance(metadata.checkpoint_type, str)
 
     def test_trigger_event_accepts_enum_value(self) -> None:
         """Test that trigger_event accepts EnumTriggerEvent directly."""
@@ -1704,14 +1706,14 @@ class TestModelCheckpointMetadataEnumSupport:
         )
         assert metadata.trigger_event == EnumTriggerEvent.ERROR
 
-    def test_trigger_event_rejects_unknown_string(self) -> None:
-        """Test that unknown strings raise ValidationError (strict validation)."""
-        with pytest.raises(ValidationError) as exc_info:
-            ModelCheckpointMetadata(
-                trigger_event="custom_trigger",
-            )
-        # Unknown strings are rejected with a helpful error message
-        assert "Invalid trigger_event" in str(exc_info.value)
+    def test_trigger_event_keeps_unknown_string_for_backward_compat(self) -> None:
+        """Test that unknown strings are kept as-is for backward compatibility."""
+        metadata = ModelCheckpointMetadata(
+            trigger_event="custom_trigger",
+        )
+        # Unknown strings are kept as-is for backward compatibility
+        assert metadata.trigger_event == "custom_trigger"
+        assert isinstance(metadata.trigger_event, str)
 
     def test_both_fields_accept_none(self) -> None:
         """Test that both fields accept None."""
@@ -1774,13 +1776,16 @@ class TestModelDetectionMetadataEnumSupport:
         )
         assert metadata.false_positive_likelihood == EnumLikelihood.VERY_LOW
 
-    def test_false_positive_likelihood_rejects_invalid_string(self) -> None:
-        """Test that unknown strings raise ValueError for strict validation."""
-        with pytest.raises(ValidationError) as exc_info:
-            ModelDetectionMetadata(
-                false_positive_likelihood="negligible",
-            )
-        assert "is not a valid EnumLikelihood" in str(exc_info.value)
+    def test_false_positive_likelihood_keeps_unknown_string_for_backward_compat(
+        self,
+    ) -> None:
+        """Test that unknown strings are kept as-is for backward compatibility."""
+        metadata = ModelDetectionMetadata(
+            false_positive_likelihood="negligible",
+        )
+        # Unknown strings are kept as-is for backward compatibility
+        assert metadata.false_positive_likelihood == "negligible"
+        assert isinstance(metadata.false_positive_likelihood, str)
 
     def test_false_positive_likelihood_none_allowed(self) -> None:
         """Test that false_positive_likelihood accepts None."""

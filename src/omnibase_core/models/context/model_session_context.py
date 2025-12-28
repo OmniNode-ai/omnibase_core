@@ -22,6 +22,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums import EnumAuthenticationMethod
+from omnibase_core.utils import create_enum_normalizer
 
 __all__ = ["ModelSessionContext"]
 
@@ -91,51 +92,64 @@ class ModelSessionContext(BaseModel):
         default=None,
         description="User locale (e.g., en-US)",
     )
-    authentication_method: EnumAuthenticationMethod | None = Field(
+    authentication_method: EnumAuthenticationMethod | str | None = Field(
         default=None,
         description=(
             "Authentication method used (e.g., oauth2, saml, basic). "
-            "Must be a valid EnumAuthenticationMethod value."
+            "Accepts EnumAuthenticationMethod values or strings."
         ),
     )
+
+    @field_validator("session_id", mode="before")
+    @classmethod
+    def coerce_session_id(cls, v: UUID | str | None) -> UUID | None:
+        """Coerce string UUID values to UUID type.
+
+        Accepts UUID objects directly or valid UUID string representations.
+
+        Args:
+            v: The session ID value, either as UUID, string, or None.
+
+        Returns:
+            The UUID value, or None if input is None.
+
+        Raises:
+            ValueError: If the string value is not a valid UUID format.
+        """
+        if v is None:
+            return None
+        if isinstance(v, UUID):
+            return v
+        if isinstance(v, str):
+            try:
+                return UUID(v)
+            except ValueError:
+                raise ValueError(
+                    f"Invalid UUID string for session_id: '{v}'. "
+                    f"Must be a valid UUID format (e.g., '550e8400-e29b-41d4-a716-446655440000')"
+                ) from None
+        raise ValueError(f"session_id must be UUID or str, got {type(v).__name__}")
 
     @field_validator("authentication_method", mode="before")
     @classmethod
     def normalize_authentication_method(
         cls, v: EnumAuthenticationMethod | str | None
-    ) -> EnumAuthenticationMethod | None:
+    ) -> EnumAuthenticationMethod | str | None:
         """Validate and normalize authentication method to enum.
 
-        Accepts enum values directly or string representations (case-insensitive).
-        Invalid string values raise ValueError.
+        Uses flexible normalization: accepts enum values directly or
+        string representations. Valid strings are converted to enum, unknown
+        strings are preserved as-is for flexible input handling.
 
         Args:
             v: The authentication method value, either as EnumAuthenticationMethod,
                string, or None.
 
         Returns:
-            The normalized EnumAuthenticationMethod value, or None if input is None.
-
-        Raises:
-            ValueError: If the string value is not a valid EnumAuthenticationMethod.
+            The normalized EnumAuthenticationMethod value, None, or the original
+            string if no match found.
         """
-        if v is None:
-            return None
-        if isinstance(v, EnumAuthenticationMethod):
-            return v
-        if isinstance(v, str):
-            try:
-                return EnumAuthenticationMethod(v.lower())
-            except ValueError:
-                valid_values = [e.value for e in EnumAuthenticationMethod]
-                raise ValueError(
-                    f"Invalid authentication method '{v}'. "
-                    f"Must be one of: {valid_values}"
-                ) from None
-        raise ValueError(
-            f"authentication_method must be EnumAuthenticationMethod or str, "
-            f"got {type(v).__name__}"
-        )
+        return create_enum_normalizer(EnumAuthenticationMethod)(v)
 
     @field_validator("client_ip", mode="before")
     @classmethod

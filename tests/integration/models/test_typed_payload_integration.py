@@ -46,8 +46,7 @@ from uuid import uuid4
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.enums.enum_effect_types import EnumEffectType
-from omnibase_core.enums.enum_transaction_state import EnumTransactionState
+from omnibase_core.enums import EnumEffectType, EnumTransactionState
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.context import (
     ModelEffectInputData,
@@ -282,9 +281,7 @@ class TestTypedPayloadInNodeWorkflows:
         result: ModelEffectOutput = asyncio.run(effect_node.process(input_data))
 
         # Assert: Processing completed successfully
-        # Note: Compare by value because ModelEffectOutput uses EnumTransactionState from
-        # enum_effect_types.py while test imports from canonical enum_transaction_state.py
-        assert result.transaction_state.value == EnumTransactionState.COMMITTED.value
+        assert result.transaction_state == EnumTransactionState.COMMITTED
         mock_http_handler.execute.assert_called_once()
 
 
@@ -401,9 +398,7 @@ class TestBackwardsCompatibility:
 
         # Should process successfully
         result: ModelEffectOutput = asyncio.run(effect_node.process(input_data))
-        # Note: Compare by value because ModelEffectOutput uses EnumTransactionState from
-        # enum_effect_types.py while test imports from canonical enum_transaction_state.py
-        assert result.transaction_state.value == EnumTransactionState.COMMITTED.value
+        assert result.transaction_state == EnumTransactionState.COMMITTED
 
     def test_union_type_accepts_dict_and_model(self) -> None:
         """Test that union type ModelEffectInputData | dict accepts both."""
@@ -850,9 +845,7 @@ class TestWorkflowIntegration:
 
         result = asyncio.run(effect_node.process(input_data))
 
-        # Note: Compare by value because ModelEffectOutput uses EnumTransactionState from
-        # enum_effect_types.py while test imports from canonical enum_transaction_state.py
-        assert result.transaction_state.value == EnumTransactionState.COMMITTED.value
+        assert result.transaction_state == EnumTransactionState.COMMITTED
         assert result.effect_type == EnumEffectType.API_CALL
         assert result.processing_time_ms >= 0.0
 
@@ -923,3 +916,668 @@ class TestWorkflowIntegration:
         assert payload.execute_at == scheduled_time
         assert payload.handler_args["job_id"] == "job_123"
         assert payload.queue_name == "delayed-jobs"
+
+
+# =============================================================================
+# 9. UNION TYPE DISCRIMINATION EDGE CASES
+# =============================================================================
+
+
+@pytest.mark.integration
+@pytest.mark.timeout(INTEGRATION_TEST_TIMEOUT_SECONDS)
+class TestUnionTypeDiscrimination:
+    """Tests for union type discrimination edge cases."""
+
+    def test_union_discriminates_typed_model_from_dict_correctly(self) -> None:
+        """Test that union correctly identifies typed model vs dict at runtime."""
+        # Dict variant - should be stored as dict
+        dict_input = ModelEffectInput(
+            effect_type=EnumEffectType.API_CALL,
+            operation_data={"custom_key": "custom_value"},
+        )
+
+        # Typed model variant - should be stored as ModelEffectInputData
+        typed_data = ModelEffectInputData(
+            effect_type=EnumEffectType.API_CALL,
+            resource_path="/api/users",
+        )
+        typed_input = ModelEffectInput(
+            effect_type=EnumEffectType.API_CALL,
+            operation_data=typed_data,
+        )
+
+        # Runtime type discrimination should work correctly
+        assert type(dict_input.operation_data) is dict
+        assert type(typed_input.operation_data) is ModelEffectInputData
+
+        # isinstance checks should also work
+        assert isinstance(dict_input.operation_data, dict)
+        assert isinstance(typed_input.operation_data, ModelEffectInputData)
+        assert not isinstance(dict_input.operation_data, ModelEffectInputData)
+        assert not isinstance(typed_input.operation_data, dict)
+
+    def test_union_preserves_type_after_model_copy(self) -> None:
+        """Test that model_copy preserves union type discrimination."""
+        typed_data = ModelEffectInputData(
+            effect_type=EnumEffectType.DATABASE_OPERATION,
+            resource_path="users",
+            target_system="postgres",
+        )
+        original = ModelEffectInput(
+            effect_type=EnumEffectType.DATABASE_OPERATION,
+            operation_data=typed_data,
+        )
+
+        # Copy should preserve the typed model
+        copied = original.model_copy()
+        assert isinstance(copied.operation_data, ModelEffectInputData)
+        assert copied.operation_data.effect_type == EnumEffectType.DATABASE_OPERATION
+
+        # Deep copy should also preserve types
+        deep_copied = original.model_copy(deep=True)
+        assert isinstance(deep_copied.operation_data, ModelEffectInputData)
+
+    def test_union_with_dict_containing_model_like_keys(self) -> None:
+        """Test that dict with model-like keys stays as dict."""
+        # Dict that happens to have keys matching ModelEffectInputData
+        ambiguous_dict: dict[str, Any] = {
+            "effect_type": EnumEffectType.API_CALL,
+            "resource_path": "/api/test",
+            "target_system": "test",
+            "extra_key_not_in_model": "extra_value",  # Dict should stay as dict
+        }
+
+        input_data = ModelEffectInput(
+            effect_type=EnumEffectType.API_CALL,
+            operation_data=ambiguous_dict,
+        )
+
+        # Should remain a dict (not coerced to ModelEffectInputData)
+        assert isinstance(input_data.operation_data, dict)
+        assert "extra_key_not_in_model" in input_data.operation_data
+
+    def test_union_with_empty_dict_vs_minimal_model(self) -> None:
+        """Test discrimination between empty dict and minimal typed model."""
+        # Empty dict
+        empty_dict_input = ModelEffectInput(
+            effect_type=EnumEffectType.API_CALL,
+            operation_data={},
+        )
+
+        # Minimal typed model (only required fields)
+        minimal_model = ModelEffectInputData(
+            effect_type=EnumEffectType.API_CALL,
+        )
+        minimal_model_input = ModelEffectInput(
+            effect_type=EnumEffectType.API_CALL,
+            operation_data=minimal_model,
+        )
+
+        # Type discrimination should be correct
+        assert isinstance(empty_dict_input.operation_data, dict)
+        assert len(empty_dict_input.operation_data) == 0
+        assert isinstance(minimal_model_input.operation_data, ModelEffectInputData)
+
+    def test_union_default_factory_produces_dict(self) -> None:
+        """Test that default_factory produces empty dict, not typed model."""
+        # No operation_data provided - should default to empty dict
+        default_input = ModelEffectInput(effect_type=EnumEffectType.API_CALL)
+
+        assert isinstance(default_input.operation_data, dict)
+        assert default_input.operation_data == {}
+
+
+# =============================================================================
+# 10. EVENT BUS SERIALIZATION PATTERNS
+# =============================================================================
+
+
+@pytest.mark.integration
+@pytest.mark.timeout(INTEGRATION_TEST_TIMEOUT_SECONDS)
+class TestEventBusSerializationPatterns:
+    """Tests for serialization patterns used in event bus communication."""
+
+    def test_typed_payload_json_serialization_round_trip(self) -> None:
+        """Test JSON serialization round-trip for event bus transport."""
+        import json
+
+        original = ModelEffectInputData(
+            effect_type=EnumEffectType.API_CALL,
+            resource_path="https://api.example.com/users",
+            target_system="user-service",
+            operation_name="get_user",
+            idempotency_key="idempotent_123",
+            content_type="application/json",
+            encoding="utf-8",
+        )
+
+        # Serialize to JSON (for Kafka/event bus transport)
+        json_str = original.model_dump_json()
+
+        # Verify JSON is valid and can be deserialized
+        json_data = json.loads(json_str)
+        assert isinstance(json_data, dict)
+
+        # Deserialize back to model
+        restored = ModelEffectInputData.model_validate(json_data)
+
+        # Verify all fields preserved
+        assert restored.effect_type == original.effect_type
+        assert restored.resource_path == original.resource_path
+        assert restored.target_system == original.target_system
+        assert restored.operation_name == original.operation_name
+        assert restored.idempotency_key == original.idempotency_key
+        assert restored.content_type == original.content_type
+        assert restored.encoding == original.encoding
+
+    def test_reducer_intent_payload_json_round_trip(self) -> None:
+        """Test JSON round-trip for ModelReducerIntentPayload."""
+        import json
+
+        entity_id = uuid4()
+        original = ModelReducerIntentPayload(
+            target_state="completed",
+            source_state="processing",
+            trigger="task_done",
+            entity_id=entity_id,
+            entity_type="task",
+            operation="finalize",
+            data=(("result", "success"), ("output_size", 1024)),
+            idempotency_key="task_complete_001",
+            timeout_ms=30000,
+            retry_count=0,
+            max_retries=5,
+        )
+
+        # JSON round-trip
+        json_str = original.model_dump_json()
+        json_data = json.loads(json_str)
+        restored = ModelReducerIntentPayload.model_validate(json_data)
+
+        # Verify all fields preserved
+        assert restored.target_state == original.target_state
+        assert restored.source_state == original.source_state
+        assert restored.trigger == original.trigger
+        assert restored.entity_id == original.entity_id
+        assert restored.entity_type == original.entity_type
+        assert restored.operation == original.operation
+        assert restored.data == original.data
+        assert restored.idempotency_key == original.idempotency_key
+        assert restored.timeout_ms == original.timeout_ms
+        assert restored.retry_count == original.retry_count
+        assert restored.max_retries == original.max_retries
+
+    def test_effect_input_with_typed_data_json_round_trip(self) -> None:
+        """Test JSON round-trip for ModelEffectInput with typed operation_data."""
+        import json
+
+        typed_data = ModelEffectInputData(
+            effect_type=EnumEffectType.FILE_OPERATION,
+            resource_path="/data/export.json",
+            target_system="local-fs",
+            operation_name="write_export",
+        )
+        original = ModelEffectInput(
+            effect_type=EnumEffectType.FILE_OPERATION,
+            operation_data=typed_data,
+            transaction_enabled=True,
+            retry_enabled=True,
+            max_retries=5,
+            timeout_ms=10000,
+        )
+
+        # JSON round-trip
+        json_str = original.model_dump_json()
+        json_data = json.loads(json_str)
+        restored = ModelEffectInput.model_validate(json_data)
+
+        # Verify parent fields preserved
+        assert restored.effect_type == original.effect_type
+        assert restored.transaction_enabled == original.transaction_enabled
+        assert restored.retry_enabled == original.retry_enabled
+        assert restored.max_retries == original.max_retries
+        assert restored.timeout_ms == original.timeout_ms
+
+        # Note: After JSON round-trip, typed model becomes dict
+        # This is expected behavior - JSON doesn't preserve Python types
+        assert isinstance(restored.operation_data, dict)
+        assert restored.operation_data["effect_type"] == "file_operation"
+        assert restored.operation_data["resource_path"] == "/data/export.json"
+
+    def test_model_dump_mode_json_for_network_transport(self) -> None:
+        """Test model_dump(mode='json') produces network-safe output."""
+        resource_id = uuid4()
+        model = ModelEffectInputData(
+            effect_type=EnumEffectType.DATABASE_OPERATION,
+            resource_path="users",
+            target_system="postgres",
+            resource_id=resource_id,
+        )
+
+        # mode='json' ensures all values are JSON-serializable
+        json_safe = model.model_dump(mode="json")
+
+        # UUID should be string in JSON mode
+        assert isinstance(json_safe["resource_id"], str)
+        assert json_safe["resource_id"] == str(resource_id)
+
+        # Enum should be lowercase string
+        assert json_safe["effect_type"] == "database_operation"
+
+    def test_batch_serialization_for_kafka_producer(self) -> None:
+        """Test batch serialization pattern used by Kafka producers."""
+        payloads = [
+            ModelReducerIntentPayload(
+                entity_type="order",
+                operation="create",
+                entity_id=uuid4(),
+                data=(("order_id", f"ORD-{i}"),),
+            )
+            for i in range(10)
+        ]
+
+        # Simulate batch serialization for Kafka
+        serialized_batch = [p.model_dump(mode="json") for p in payloads]
+
+        assert len(serialized_batch) == 10
+        for i, serialized in enumerate(serialized_batch):
+            assert serialized["entity_type"] == "order"
+            assert serialized["operation"] == "create"
+            # Note: tuples become lists in JSON serialization
+            assert ["order_id", f"ORD-{i}"] in serialized["data"]
+
+
+# =============================================================================
+# 11. UNICODE EDGE CASES
+# =============================================================================
+
+
+@pytest.mark.integration
+@pytest.mark.timeout(INTEGRATION_TEST_TIMEOUT_SECONDS)
+class TestUnicodeEdgeCases:
+    """Tests for unicode handling in typed payloads."""
+
+    def test_effect_input_data_with_unicode_resource_path(self) -> None:
+        """Test ModelEffectInputData with unicode characters in resource_path."""
+        import json
+
+        model = ModelEffectInputData(
+            effect_type=EnumEffectType.FILE_OPERATION,
+            resource_path="/data/nihongo/wenjian/arkhiv/arkheio.json",
+            target_system="local-fs",
+            operation_name="read_multilingual",
+        )
+
+        assert "nihongo" in model.resource_path
+        assert "wenjian" in model.resource_path
+        assert "arkhiv" in model.resource_path
+        assert "arkheio" in model.resource_path
+
+        # Round-trip through JSON should preserve data
+        json_str = model.model_dump_json()
+        restored = ModelEffectInputData.model_validate(json.loads(json_str))
+        assert restored.resource_path == model.resource_path
+
+    def test_reducer_intent_payload_with_unicode_data(self) -> None:
+        """Test ModelReducerIntentPayload with unicode in data field."""
+        import json
+
+        payload = ModelReducerIntentPayload(
+            entity_type="notification",
+            operation="send",
+            data=(
+                ("message", "Hello, world! Privet mir! Marhaba bialealm!"),
+                ("emoji_like", "celebration rocket sparkles hundred"),
+                ("mathematical", "sum product integral partial sqrt infinity"),
+                ("currency", "EUR GBP JPY INR RUB"),
+            ),
+        )
+
+        data_dict = payload.get_data_as_dict()
+        assert "Hello" in data_dict["message"]
+        assert "Privet" in data_dict["message"]
+        assert "Marhaba" in data_dict["message"]
+        assert data_dict["emoji_like"] == "celebration rocket sparkles hundred"
+        assert data_dict["mathematical"] == "sum product integral partial sqrt infinity"
+        assert data_dict["currency"] == "EUR GBP JPY INR RUB"
+
+        # JSON round-trip should preserve all data
+        json_str = payload.model_dump_json()
+        restored = ModelReducerIntentPayload.model_validate(json.loads(json_str))
+        restored_dict = restored.get_data_as_dict()
+        assert restored_dict == data_dict
+
+    def test_runtime_directive_with_unicode_handler_args(self) -> None:
+        """Test ModelRuntimeDirectivePayload with unicode in handler_args."""
+        payload = ModelRuntimeDirectivePayload(
+            handler_args={
+                "recipient_name": "Tanaka Taro",
+                "message": "Dobro pozhalovat! Kalos irthate! Bruchim habaim!",
+                "locale": "Japanese",
+            },
+            execution_mode="async",
+        )
+
+        assert payload.handler_args["recipient_name"] == "Tanaka Taro"
+        assert "Dobro pozhalovat" in payload.handler_args["message"]
+        assert "Kalos irthate" in payload.handler_args["message"]
+        assert "Bruchim habaim" in payload.handler_args["message"]
+
+    def test_effect_input_data_with_unicode_operation_name(self) -> None:
+        """Test unicode in operation_name field."""
+        import json
+
+        model = ModelEffectInputData(
+            effect_type=EnumEffectType.API_CALL,
+            resource_path="/api/users",
+            operation_name="get_user_chinese",  # Use ASCII representation
+        )
+
+        assert model.operation_name == "get_user_chinese"
+
+        # Verify JSON serialization
+        json_str = model.model_dump_json()
+        data = json.loads(json_str)
+        assert data["operation_name"] == "get_user_chinese"
+
+    def test_unicode_in_validation_errors(self) -> None:
+        """Test unicode in validation_errors field."""
+        payload = ModelReducerIntentPayload(
+            entity_type="validation",
+            operation="report",
+            validation_errors=(
+                "Field email is required (Japanese)",
+                "Field age must be >= 0 (Russian)",
+                "Field name is obligatory (Spanish)",
+            ),
+        )
+
+        assert len(payload.validation_errors) == 3
+        assert "Japanese" in payload.validation_errors[0]
+        assert "Russian" in payload.validation_errors[1]
+        assert "Spanish" in payload.validation_errors[2]
+
+    def test_unicode_idempotency_key(self) -> None:
+        """Test unicode in idempotency_key field."""
+        import json
+
+        model = ModelEffectInputData(
+            effect_type=EnumEffectType.API_CALL,
+            resource_path="/api/orders",
+            idempotency_key="order_2024_001_chumon",
+        )
+
+        assert model.idempotency_key == "order_2024_001_chumon"
+
+        # JSON round-trip
+        restored = ModelEffectInputData.model_validate(
+            json.loads(model.model_dump_json())
+        )
+        assert restored.idempotency_key == model.idempotency_key
+
+
+# =============================================================================
+# 12. COMPLEX WORKFLOW PATTERNS
+# =============================================================================
+
+
+@pytest.mark.integration
+@pytest.mark.timeout(INTEGRATION_TEST_TIMEOUT_SECONDS)
+class TestComplexWorkflowPatterns:
+    """Tests for complex real-world workflow patterns."""
+
+    def test_multi_step_effect_chain(self) -> None:
+        """Test chained effect operations simulating a real workflow."""
+        import json
+
+        # Step 1: Database read
+        db_read = ModelEffectInputData(
+            effect_type=EnumEffectType.DATABASE_OPERATION,
+            resource_path="orders",
+            target_system="postgres",
+            operation_name="fetch_pending_orders",
+        )
+
+        # Step 2: API call for each order
+        api_call = ModelEffectInputData(
+            effect_type=EnumEffectType.API_CALL,
+            resource_path="https://shipping.example.com/calculate",
+            target_system="shipping-service",
+            operation_name="calculate_shipping",
+            content_type="application/json",
+        )
+
+        # Step 3: File write for results
+        resource_id = uuid4()
+        file_write = ModelEffectInputData(
+            effect_type=EnumEffectType.FILE_OPERATION,
+            resource_path="/exports/shipping_costs.json",
+            target_system="s3",
+            operation_name="export_shipping_costs",
+            resource_id=resource_id,
+            content_type="application/json",
+            encoding="utf-8",
+        )
+
+        # Create effect inputs for each step
+        step1 = ModelEffectInput(
+            effect_type=EnumEffectType.DATABASE_OPERATION,
+            operation_data=db_read,
+            transaction_enabled=True,
+        )
+        step2 = ModelEffectInput(
+            effect_type=EnumEffectType.API_CALL,
+            operation_data=api_call,
+            retry_enabled=True,
+            max_retries=3,
+            timeout_ms=5000,
+        )
+        step3 = ModelEffectInput(
+            effect_type=EnumEffectType.FILE_OPERATION,
+            operation_data=file_write,
+            transaction_enabled=False,
+        )
+
+        # Verify all steps maintain correct types
+        assert isinstance(step1.operation_data, ModelEffectInputData)
+        assert isinstance(step2.operation_data, ModelEffectInputData)
+        assert isinstance(step3.operation_data, ModelEffectInputData)
+
+        # Verify chain can be serialized for distributed execution
+        chain = [
+            step1.model_dump(mode="json"),
+            step2.model_dump(mode="json"),
+            step3.model_dump(mode="json"),
+        ]
+        chain_json = json.dumps(chain)
+        assert len(chain_json) > 0
+
+    def test_fsm_state_machine_workflow(self) -> None:
+        """Test FSM state machine workflow with typed payloads."""
+        entity_id = uuid4()
+
+        # Define state transitions for an order lifecycle
+        transitions = [
+            ModelReducerIntentPayload(
+                target_state="pending",
+                source_state=None,
+                trigger="order_created",
+                entity_id=entity_id,
+                entity_type="order",
+                operation="create",
+                data=(("order_total", 150.00), ("currency", "USD")),
+            ),
+            ModelReducerIntentPayload(
+                target_state="processing",
+                source_state="pending",
+                trigger="payment_received",
+                entity_id=entity_id,
+                entity_type="order",
+                operation="process",
+                data=(("payment_id", "PAY-12345"),),
+            ),
+            ModelReducerIntentPayload(
+                target_state="shipped",
+                source_state="processing",
+                trigger="package_dispatched",
+                entity_id=entity_id,
+                entity_type="order",
+                operation="ship",
+                data=(("tracking_number", "TRACK-67890"),),
+            ),
+            ModelReducerIntentPayload(
+                target_state="delivered",
+                source_state="shipped",
+                trigger="delivery_confirmed",
+                entity_id=entity_id,
+                entity_type="order",
+                operation="complete",
+            ),
+        ]
+
+        # Verify state transition chain is consistent
+        for i in range(1, len(transitions)):
+            assert transitions[i].source_state == transitions[i - 1].target_state
+            assert transitions[i].entity_id == transitions[i - 1].entity_id
+
+        # Verify each payload can be serialized
+        for t in transitions:
+            json_str = t.model_dump_json()
+            assert len(json_str) > 0
+
+    def test_retry_workflow_with_backoff(self) -> None:
+        """Test retry workflow pattern with backoff configuration."""
+        original_payload = ModelReducerIntentPayload(
+            entity_type="webhook",
+            operation="deliver",
+            data=(("webhook_url", "https://customer.example.com/hook"),),
+            retry_count=0,
+            max_retries=5,
+            timeout_ms=10000,
+        )
+
+        # Simulate retry workflow
+        current = original_payload
+        retry_history: list[tuple[int, bool]] = []
+
+        while current.is_retryable():
+            # Record current retry state
+            retry_history.append((current.retry_count, current.is_retryable()))
+
+            # Simulate failure and retry
+            current = current.with_incremented_retry()
+
+        # Final state after max retries
+        retry_history.append((current.retry_count, current.is_retryable()))
+
+        # Verify retry progression
+        assert len(retry_history) == 6  # 0 through 5 retries
+        assert retry_history[0] == (0, True)
+        assert retry_history[1] == (1, True)
+        assert retry_history[2] == (2, True)
+        assert retry_history[3] == (3, True)
+        assert retry_history[4] == (4, True)
+        assert retry_history[5] == (5, False)  # At max, not retryable
+
+        # Verify original is immutable
+        assert original_payload.retry_count == 0
+        assert original_payload.is_retryable() is True
+
+    def test_scheduled_directive_workflow(self) -> None:
+        """Test scheduled directive workflow pattern."""
+        now = datetime.now(UTC)
+
+        # Schedule a sequence of directives at different times
+        directives = [
+            ModelRuntimeDirectivePayload(
+                handler_args={"step": "prepare", "job_id": "JOB-001"},
+                execute_at=now + timedelta(minutes=1),
+                priority=1,
+                queue_name="high-priority",
+            ),
+            ModelRuntimeDirectivePayload(
+                handler_args={"step": "process", "job_id": "JOB-001"},
+                execute_at=now + timedelta(minutes=5),
+                priority=2,
+                queue_name="default",
+            ),
+            ModelRuntimeDirectivePayload(
+                handler_args={"step": "cleanup", "job_id": "JOB-001"},
+                execute_at=now + timedelta(minutes=10),
+                priority=3,
+                queue_name="low-priority",
+                cleanup_required=True,
+            ),
+        ]
+
+        # Verify scheduling order
+        for i in range(1, len(directives)):
+            assert directives[i].execute_at > directives[i - 1].execute_at
+            assert directives[i].priority > directives[i - 1].priority
+
+        # Verify all reference same job
+        job_ids = [d.handler_args["job_id"] for d in directives]
+        assert all(jid == "JOB-001" for jid in job_ids)
+
+    def test_mixed_dict_and_typed_payloads_in_workflow(self) -> None:
+        """Test workflow mixing dict and typed payloads for flexibility."""
+        # Legacy dict-based input (backwards compatible)
+        legacy_input = ModelEffectInput(
+            effect_type=EnumEffectType.API_CALL,
+            operation_data={
+                "url": "https://legacy.example.com/v1/process",
+                "headers": {"X-Legacy-Token": "abc123"},
+                "custom_params": {"legacy_param": True},
+            },
+        )
+
+        # Modern typed input
+        modern_typed = ModelEffectInputData(
+            effect_type=EnumEffectType.API_CALL,
+            resource_path="https://modern.example.com/v2/process",
+            target_system="modern-api",
+            operation_name="process_v2",
+        )
+        modern_input = ModelEffectInput(
+            effect_type=EnumEffectType.API_CALL,
+            operation_data=modern_typed,
+        )
+
+        # Both should work in the same workflow
+        workflow_inputs = [legacy_input, modern_input]
+
+        for inp in workflow_inputs:
+            assert inp.effect_type == EnumEffectType.API_CALL
+            # Can serialize both
+            json_str = inp.model_dump_json()
+            assert len(json_str) > 0
+
+        # Types are preserved correctly
+        assert isinstance(legacy_input.operation_data, dict)
+        assert isinstance(modern_input.operation_data, ModelEffectInputData)
+
+    def test_parallel_effect_aggregation_pattern(self) -> None:
+        """Test parallel effect execution and aggregation pattern."""
+        # Multiple parallel API calls (fan-out)
+        parallel_calls = [
+            ModelEffectInputData(
+                effect_type=EnumEffectType.API_CALL,
+                resource_path=f"https://shard-{i}.example.com/query",
+                target_system=f"shard-{i}",
+                operation_name="parallel_query",
+                idempotency_key=f"query_batch_001_shard_{i}",
+            )
+            for i in range(5)
+        ]
+
+        # Verify each has unique idempotency key
+        idempotency_keys = [c.idempotency_key for c in parallel_calls]
+        assert len(set(idempotency_keys)) == 5
+
+        # All share same operation name
+        operation_names = [c.operation_name for c in parallel_calls]
+        assert all(name == "parallel_query" for name in operation_names)
+
+        # Each targets different shard
+        target_systems = [c.target_system for c in parallel_calls]
+        assert len(set(target_systems)) == 5
