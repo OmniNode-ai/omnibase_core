@@ -62,6 +62,7 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.constants import TIMEOUT_LONG_MS
+from omnibase_core.constants.constants_field_limits import MAX_TIMEOUT_MS
 from omnibase_core.enums.enum_workflow_execution import EnumExecutionMode
 from omnibase_core.models.orchestrator.model_orchestrator_input_metadata import (
     ModelOrchestratorInputMetadata,
@@ -142,6 +143,7 @@ class ModelOrchestratorInput(BaseModel):
     )
     global_timeout_ms: int = Field(
         default=TIMEOUT_LONG_MS,
+        le=MAX_TIMEOUT_MS,
         description="Global workflow timeout (5 minutes default)",
     )
     failure_strategy: str = Field(

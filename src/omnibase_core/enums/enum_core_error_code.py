@@ -149,6 +149,23 @@ class EnumCoreErrorCode(EnumOnexErrorCode):
     WORKFLOW_PAYLOAD_SIZE_EXCEEDED = "ONEX_CORE_282_WORKFLOW_PAYLOAD_SIZE_EXCEEDED"
     WORKFLOW_TOTAL_PAYLOAD_EXCEEDED = "ONEX_CORE_283_WORKFLOW_TOTAL_PAYLOAD_EXCEEDED"
 
+    # Orchestrator structural and workflow validation errors (291-300)
+    ORCHESTRATOR_STRUCT_INVALID_STEP_TYPE = (
+        "ONEX_CORE_291_ORCHESTRATOR_STRUCT_INVALID_STEP_TYPE"
+    )
+    ORCHESTRATOR_STRUCT_WORKFLOW_NOT_LOADED = (
+        "ONEX_CORE_292_ORCHESTRATOR_STRUCT_WORKFLOW_NOT_LOADED"
+    )
+    ORCHESTRATOR_WORKFLOW_CYCLE_DETECTED = (
+        "ONEX_CORE_293_ORCHESTRATOR_WORKFLOW_CYCLE_DETECTED"
+    )
+    ORCHESTRATOR_WORKFLOW_ITERATION_LIMIT_EXCEEDED = (
+        "ONEX_CORE_294_ORCHESTRATOR_WORKFLOW_ITERATION_LIMIT_EXCEEDED"
+    )
+    ORCHESTRATOR_WORKFLOW_INVALID_EXECUTION_MODE = (
+        "ONEX_CORE_295_ORCHESTRATOR_WORKFLOW_INVALID_EXECUTION_MODE"
+    )
+
     def get_component(self) -> str:
         """Get the component identifier for this error code."""
         return "CORE"
@@ -267,6 +284,12 @@ CORE_ERROR_CODE_TO_EXIT_CODE: dict[EnumCoreErrorCode, EnumCLIExitCode] = {
     EnumCoreErrorCode.WORKFLOW_STEP_LIMIT_EXCEEDED: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.WORKFLOW_PAYLOAD_SIZE_EXCEEDED: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.WORKFLOW_TOTAL_PAYLOAD_EXCEEDED: EnumCLIExitCode.ERROR,
+    # Orchestrator structural and workflow validation errors -> ERROR
+    EnumCoreErrorCode.ORCHESTRATOR_STRUCT_INVALID_STEP_TYPE: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.ORCHESTRATOR_STRUCT_WORKFLOW_NOT_LOADED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.ORCHESTRATOR_WORKFLOW_CYCLE_DETECTED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.ORCHESTRATOR_WORKFLOW_ITERATION_LIMIT_EXCEEDED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.ORCHESTRATOR_WORKFLOW_INVALID_EXECUTION_MODE: EnumCLIExitCode.ERROR,
 }
 
 
@@ -387,5 +410,10 @@ def get_core_error_description(error_code: EnumCoreErrorCode) -> str:
         EnumCoreErrorCode.WORKFLOW_STEP_LIMIT_EXCEEDED: "Workflow step count exceeds maximum limit",
         EnumCoreErrorCode.WORKFLOW_PAYLOAD_SIZE_EXCEEDED: "Workflow step payload size exceeds maximum limit",
         EnumCoreErrorCode.WORKFLOW_TOTAL_PAYLOAD_EXCEEDED: "Workflow total payload size exceeds maximum limit",
+        EnumCoreErrorCode.ORCHESTRATOR_STRUCT_INVALID_STEP_TYPE: "Invalid workflow step type",
+        EnumCoreErrorCode.ORCHESTRATOR_STRUCT_WORKFLOW_NOT_LOADED: "Workflow definition not loaded",
+        EnumCoreErrorCode.ORCHESTRATOR_WORKFLOW_CYCLE_DETECTED: "Workflow dependency cycle detected",
+        EnumCoreErrorCode.ORCHESTRATOR_WORKFLOW_ITERATION_LIMIT_EXCEEDED: "Workflow iteration limit exceeded (DoS protection)",
+        EnumCoreErrorCode.ORCHESTRATOR_WORKFLOW_INVALID_EXECUTION_MODE: "Invalid workflow execution mode",
     }
     return descriptions.get(error_code, "Unknown error")

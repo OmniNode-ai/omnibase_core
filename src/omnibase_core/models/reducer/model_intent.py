@@ -100,6 +100,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from omnibase_core.constants import MAX_KEY_LENGTH
 from omnibase_core.models.reducer.payloads.model_protocol_intent_payload import (
     ProtocolIntentPayload,
 )
@@ -150,7 +151,7 @@ class ModelIntent(BaseModel):
         ...,
         description="Type of intent (log_event, emit_event, write, notify, etc.)",
         min_length=1,
-        max_length=100,
+        max_length=MAX_KEY_LENGTH,
     )
 
     target: str = Field(

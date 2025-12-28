@@ -8,6 +8,7 @@ in the pure reducer pattern. Implementations provide concrete storage backends
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.constants.constants_field_limits import MAX_NAME_LENGTH
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 
@@ -78,7 +79,7 @@ class ModelCanonicalStateBase(BaseModel):
         ...,
         description="Unique identifier for the state entity (workflow_key, entity_id, etc.)",
         min_length=1,
-        max_length=255,
+        max_length=MAX_NAME_LENGTH,
     )
 
     version: int = Field(

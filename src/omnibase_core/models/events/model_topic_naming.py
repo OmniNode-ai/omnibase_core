@@ -28,6 +28,7 @@ from typing import ClassVar
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.constants.constants_field_limits import MAX_IDENTIFIER_LENGTH
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -97,7 +98,7 @@ class ModelTopicNaming(BaseModel):
         ...,
         description="Business domain or service identifier (lowercase, hyphen-separated)",
         min_length=1,
-        max_length=100,
+        max_length=MAX_IDENTIFIER_LENGTH,
         examples=["user-service", "payment", "order-management", "omninode-bridge"],
     )
 

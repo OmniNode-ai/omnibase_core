@@ -987,7 +987,7 @@ class TestModelWorkflowStepFieldValidation:
             assert model.error_action == action
 
     def test_step_name_length_bounds(self) -> None:
-        """Test step_name length constraints (min=1, max=200)."""
+        """Test step_name length constraints (min=1, max=255)."""
         # Valid
         model = ModelWorkflowStep(
             step_name="x",
@@ -996,10 +996,10 @@ class TestModelWorkflowStepFieldValidation:
         assert model.step_name == "x"
 
         model = ModelWorkflowStep(
-            step_name="x" * 200,
+            step_name="x" * 255,
             step_type="compute",
         )
-        assert len(model.step_name) == 200
+        assert len(model.step_name) == 255
 
         # Empty string
         with pytest.raises(ValidationError):
@@ -1011,7 +1011,7 @@ class TestModelWorkflowStepFieldValidation:
         # Too long
         with pytest.raises(ValidationError):
             ModelWorkflowStep(
-                step_name="x" * 201,
+                step_name="x" * 256,
                 step_type="compute",
             )
 

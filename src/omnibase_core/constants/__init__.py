@@ -3,6 +3,7 @@
 from omnibase_core.constants import (
     constants_contract_fields,
     constants_effect,
+    constants_field_limits,
     constants_topic_taxonomy,
     handler_capabilities,
 )
@@ -43,6 +44,24 @@ from omnibase_core.constants.constants_effect_limits import (
     EFFECT_TIMEOUT_DEFAULT_MS,
     EFFECT_TIMEOUT_MAX_MS,
     EFFECT_TIMEOUT_MIN_MS,
+)
+from omnibase_core.constants.constants_field_limits import (
+    MAX_BFS_ITERATIONS,
+    MAX_DESCRIPTION_LENGTH,
+    MAX_DFS_ITERATIONS,
+    MAX_ERROR_MESSAGE_LENGTH,
+    MAX_IDENTIFIER_LENGTH,
+    MAX_KEY_LENGTH,
+    MAX_LABEL_LENGTH,
+    MAX_LABELS_COUNT,
+    MAX_LOG_MESSAGE_LENGTH,
+    MAX_MESSAGE_LENGTH,
+    MAX_NAME_LENGTH,
+    MAX_PATH_LENGTH,
+    MAX_REASON_LENGTH,
+    MAX_TAGS_COUNT,
+    MAX_TIMEOUT_MS,
+    MAX_URL_LENGTH,
 )
 from omnibase_core.constants.constants_timeouts import (
     TIMEOUT_DEFAULT_MS,
@@ -114,6 +133,7 @@ from omnibase_core.constants.handler_capabilities import (
 __all__ = [
     "constants_contract_fields",
     "constants_effect",
+    "constants_field_limits",
     "constants_topic_taxonomy",
     "handler_capabilities",
     "normalize_legacy_event_type",
@@ -166,6 +186,23 @@ __all__ = [
     "EFFECT_TIMEOUT_DEFAULT_MS",
     "EFFECT_TIMEOUT_MAX_MS",
     "EFFECT_TIMEOUT_MIN_MS",
+    # Field length limits
+    "MAX_BFS_ITERATIONS",
+    "MAX_DESCRIPTION_LENGTH",
+    "MAX_DFS_ITERATIONS",
+    "MAX_ERROR_MESSAGE_LENGTH",
+    "MAX_IDENTIFIER_LENGTH",
+    "MAX_KEY_LENGTH",
+    "MAX_LABEL_LENGTH",
+    "MAX_LABELS_COUNT",
+    "MAX_LOG_MESSAGE_LENGTH",
+    "MAX_MESSAGE_LENGTH",
+    "MAX_NAME_LENGTH",
+    "MAX_PATH_LENGTH",
+    "MAX_REASON_LENGTH",
+    "MAX_TAGS_COUNT",
+    "MAX_TIMEOUT_MS",
+    "MAX_URL_LENGTH",
     # Timeout constants (centralized)
     "TIMEOUT_DEFAULT_MS",
     "TIMEOUT_LONG_MS",

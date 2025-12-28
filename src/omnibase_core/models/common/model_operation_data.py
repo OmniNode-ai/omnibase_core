@@ -18,6 +18,7 @@ from typing import ClassVar, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from omnibase_core.constants import MAX_URL_LENGTH
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors import ModelOnexError
 from omnibase_core.models.common.model_envelope_payload import ModelEnvelopePayload
@@ -83,7 +84,7 @@ class ModelOperationData(BaseModel):
     url: str | None = Field(
         default=None,
         description="API endpoint URL",
-        max_length=2048,
+        max_length=MAX_URL_LENGTH,
     )
     method: str | None = Field(
         default=None,

@@ -8,6 +8,7 @@ from typing import Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.constants.constants_field_limits import MAX_IDENTIFIER_LENGTH
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.configuration.model_monitoring_thresholds import (
     ModelMonitoringThresholds,
@@ -41,7 +42,7 @@ class ModelPriorityMetadata(BaseModel):
     owner: str | None = Field(
         default=None,
         description="Owner or team responsible for this priority level",
-        max_length=100,
+        max_length=MAX_IDENTIFIER_LENGTH,
     )
 
     created_at: datetime = Field(
