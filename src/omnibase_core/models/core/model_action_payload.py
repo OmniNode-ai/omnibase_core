@@ -128,6 +128,7 @@ class ModelActionPayload(ModelOnexInputState):
         >>> from omnibase_core.enums import EnumActionType
         >>>
         >>> # Create an action payload for a transform operation
+        >>> from omnibase_core.constants import TIMEOUT_DEFAULT_MS
         >>> payload = ModelActionPayload(
         ...     version=ModelSemVer(major=1, minor=0, patch=0),
         ...     action=ModelNodeAction(
@@ -136,7 +137,7 @@ class ModelActionPayload(ModelOnexInputState):
         ...         payload={"input": "data"},
         ...     ),
         ...     parameters=ModelActionParameters(
-        ...         timeout_override_ms=30000,
+        ...         timeout_override_ms=TIMEOUT_DEFAULT_MS,
         ...         validate_input=True,
         ...     ),
         ...     target_service="data-transformer",

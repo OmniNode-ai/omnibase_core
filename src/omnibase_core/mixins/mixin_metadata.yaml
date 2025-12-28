@@ -2979,6 +2979,9 @@ mixin_workflow_execution:
       description: "ETL data pipeline orchestration"
       pattern: |
         # Execute ETL pipeline
+        # Import timeout constants for consistent configuration
+        from omnibase_core.constants import TIMEOUT_DEFAULT_MS
+
         steps = [
             ModelWorkflowStep(
                 step_name="Extract Data",
@@ -2989,7 +2992,7 @@ mixin_workflow_execution:
                 step_name="Transform Data",
                 step_type="compute",
                 depends_on=[extract_step_id],
-                timeout_ms=30000
+                timeout_ms=TIMEOUT_DEFAULT_MS  # 30 seconds
             ),
             ModelWorkflowStep(
                 step_name="Load Data",

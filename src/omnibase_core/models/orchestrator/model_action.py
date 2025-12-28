@@ -83,7 +83,8 @@ class ModelAction(BaseModel):
         payload: Action payload implementing ProtocolActionPayload (required).
         dependencies: List of action IDs this action depends on (default empty list).
         priority: Execution priority (1-10, higher = more urgent, default 1).
-        timeout_ms: Execution timeout in ms (100-300000, default 30000). Raises TimeoutError on expiry.
+        timeout_ms: Execution timeout in ms (100-TIMEOUT_LONG_MS, default TIMEOUT_DEFAULT_MS).
+            Raises TimeoutError on expiry. See omnibase_core.constants for values.
         lease_id: Lease ID proving Orchestrator ownership (required).
         epoch: Monotonically increasing version number (>= 0, required).
         retry_count: Number of retry attempts on failure (0-10, default 0).

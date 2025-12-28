@@ -9,6 +9,7 @@ Strict typing is enforced: No Any types allowed in implementation.
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.constants import TIMEOUT_DEFAULT_MS
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
@@ -42,7 +43,7 @@ class ModelLoadBalancing(BaseModel):
     )
 
     health_check_interval_ms: int = Field(
-        default=30000,
+        default=TIMEOUT_DEFAULT_MS,
         description="Health check interval",
         ge=1000,
     )

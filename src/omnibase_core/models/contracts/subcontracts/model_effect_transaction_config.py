@@ -9,7 +9,11 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.constants import TIMEOUT_DEFAULT_MS
+from omnibase_core.constants import (
+    TIMEOUT_DEFAULT_MS,
+    TIMEOUT_LONG_MS,
+    TIMEOUT_MIN_MS,
+)
 
 __all__ = ["ModelEffectTransactionConfig"]
 
@@ -49,15 +53,17 @@ class ModelEffectTransactionConfig(BaseModel):
             Default: "read_committed".
         rollback_on_error: Whether to rollback on any operation failure.
             Defaults to True for atomic semantics.
-        timeout_ms: Transaction timeout in milliseconds (1000-300000ms).
-            Default: 30000ms (30 seconds).
+        timeout_ms: Transaction timeout in milliseconds (TIMEOUT_MIN_MS-TIMEOUT_LONG_MS).
+            Default: TIMEOUT_DEFAULT_MS (30 seconds).
+            See omnibase_core.constants for timeout constant values.
 
     Example:
+        >>> from omnibase_core.constants import TIMEOUT_DEFAULT_MS
         >>> transaction = ModelEffectTransactionConfig(
         ...     enabled=True,
         ...     isolation_level="read_committed",
         ...     rollback_on_error=True,
-        ...     timeout_ms=30000,
+        ...     timeout_ms=TIMEOUT_DEFAULT_MS,
         ... )
 
     See Also:
@@ -73,4 +79,4 @@ class ModelEffectTransactionConfig(BaseModel):
         "read_uncommitted", "read_committed", "repeatable_read", "serializable"
     ] = Field(default="read_committed")
     rollback_on_error: bool = Field(default=True)
-    timeout_ms: int = Field(default=TIMEOUT_DEFAULT_MS, ge=1000, le=300000)
+    timeout_ms: int = Field(default=TIMEOUT_DEFAULT_MS, ge=TIMEOUT_MIN_MS, le=TIMEOUT_LONG_MS)

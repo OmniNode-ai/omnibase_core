@@ -201,7 +201,8 @@ class ModelEffectOperationConfig(BaseModel):
         default=None,
         ge=1,  # At least 1ms to be valid
         description="Overall operation timeout including retries. "
-        "Defaults to 30000ms via DEFAULT_OPERATION_TIMEOUT_MS.",
+        "Defaults to TIMEOUT_DEFAULT_MS (30 seconds). "
+        "See omnibase_core.constants for timeout constant values.",
     )
 
     # Response handling configuration

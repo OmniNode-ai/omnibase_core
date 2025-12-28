@@ -2,6 +2,7 @@ from typing import Literal
 
 from pydantic import Field
 
+from omnibase_core.constants import TIMEOUT_DEFAULT_MS
 from omnibase_core.enums.enum_message_type import EnumMessageType
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
 from omnibase_core.models.operations.model_message_content_base import (
@@ -26,7 +27,7 @@ class ModelCommandMessageContent(ModelMessageContentBase):
         description="Command execution mode",
     )
     timeout_ms: int = Field(
-        default=30000,
+        default=TIMEOUT_DEFAULT_MS,
         description="Command timeout in milliseconds",
     )
     retry_policy: dict[str, int] = Field(

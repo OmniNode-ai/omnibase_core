@@ -1,5 +1,7 @@
 from pydantic import Field
 
+from omnibase_core.constants import TIMEOUT_DEFAULT_MS, TIMEOUT_LONG_MS, TIMEOUT_MIN_MS
+
 from .model_eventrouting import ModelEventRouting
 
 __all__ = [
@@ -53,10 +55,10 @@ class ModelRetryPolicy(BaseModel):
     )
 
     max_delay_ms: int = Field(
-        default=30000,
+        default=TIMEOUT_DEFAULT_MS,
         description="Maximum delay between retries in milliseconds",
-        ge=1000,
-        le=300000,
+        ge=TIMEOUT_MIN_MS,
+        le=TIMEOUT_LONG_MS,  # Max 5 minutes (TIMEOUT_LONG_MS)
     )
 
     enabled: bool = Field(

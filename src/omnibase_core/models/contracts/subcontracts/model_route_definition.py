@@ -11,6 +11,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.constants import TIMEOUT_DEFAULT_MS
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
@@ -70,7 +71,7 @@ class ModelRouteDefinition(BaseModel):
     )
 
     timeout_ms: int = Field(
-        default=30000,
+        default=TIMEOUT_DEFAULT_MS,
         description="Timeout for route requests",
         ge=100,
     )
