@@ -1223,7 +1223,7 @@ class MixinEffectExecution:
 
                 return result, retry_count
 
-            except BaseException as e:  # Catch-all: retry loop must catch all operation failures including SystemExit/KeyboardInterrupt
+            except Exception as e:  # Catch-all: retry loop catches operation failures; KeyboardInterrupt/SystemExit propagate
                 # Increment retry_count to track failed attempts
                 # retry_count represents "number of failed attempts before success or final failure"
                 # - First attempt fails: retry_count becomes 1

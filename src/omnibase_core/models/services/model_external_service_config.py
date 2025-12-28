@@ -114,7 +114,7 @@ class ModelExternalServiceConfig(BaseModel):
                             msg,
                             error_code=EnumCoreErrorCode.VALIDATION_FAILED,
                         ) from e
-                    except (ValueError, KeyError, AttributeError, OSError) as e:
+                    except (KeyError, AttributeError, OSError) as e:
                         msg = f"Failed to create database connection config: {e!s}"
                         raise ModelOnexError(
                             msg,
@@ -131,7 +131,7 @@ class ModelExternalServiceConfig(BaseModel):
                             msg,
                             error_code=EnumCoreErrorCode.VALIDATION_FAILED,
                         ) from e
-                    except (ValueError, KeyError, AttributeError, OSError) as e:
+                    except (KeyError, AttributeError, OSError) as e:
                         msg = f"Failed to create REST API connection config: {e!s}"
                         raise ModelOnexError(
                             msg,

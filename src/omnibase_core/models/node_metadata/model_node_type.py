@@ -854,6 +854,6 @@ class ModelNodeType(BaseModel):
         """
         try:
             return True
-        except (AttributeError, ValueError, TypeError, KeyError, RuntimeError):
+        except (AttributeError, ValueError, TypeError, KeyError, RuntimeError, ValidationError):
             # fallback-ok: Validation failures should not raise exceptions
             return False

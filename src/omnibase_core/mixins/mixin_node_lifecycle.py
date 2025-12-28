@@ -194,8 +194,9 @@ class MixinNodeLifecycle:
             )
 
         except (
-            BaseException
+            Exception
         ) as e:  # Catch-all: event publishing is non-critical, log and continue
+            # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
                 calling_function="_register_node",
@@ -258,8 +259,9 @@ class MixinNodeLifecycle:
             )
 
         except (
-            BaseException
+            Exception
         ) as e:  # Catch-all: shutdown event is non-critical, log and continue
+            # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
                 calling_function="_publish_shutdown_event",
@@ -322,8 +324,9 @@ class MixinNodeLifecycle:
             event_bus.publish(envelope)
 
         except (
-            BaseException
+            Exception
         ) as e:  # Catch-all: lifecycle event emission is non-critical, log and continue
+            # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             emit_log_event_sync(
                 LogLevel.ERROR,
                 f"Failed to emit NODE_START event: {e}",
@@ -386,8 +389,9 @@ class MixinNodeLifecycle:
             event_bus.publish(envelope)
 
         except (
-            BaseException
+            Exception
         ) as e:  # Catch-all: lifecycle event emission is non-critical, log and continue
+            # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             emit_log_event_sync(
                 LogLevel.ERROR,
                 f"Failed to emit NODE_SUCCESS event: {e}",
@@ -450,8 +454,9 @@ class MixinNodeLifecycle:
             event_bus.publish(envelope)
 
         except (
-            BaseException
+            Exception
         ) as e:  # Catch-all: lifecycle event emission is non-critical, log and continue
+            # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             emit_log_event_sync(
                 LogLevel.ERROR,
                 f"Failed to emit NODE_FAILURE event: {e}",
@@ -475,8 +480,9 @@ class MixinNodeLifecycle:
             try:
                 self.cleanup_event_handlers()
             except (
-                BaseException
+                Exception
             ) as e:  # Catch-all: cleanup failure is non-critical, log and continue
+                # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
                 node_id = _get_node_id_as_uuid(self)
                 context = ModelLogContext(
                     calling_module=_COMPONENT_NAME,

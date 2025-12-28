@@ -78,7 +78,7 @@ class ModelSecretManager(BaseModel):
         try:
             if self.config.backend.backend_type == EnumBackendType.DOTENV:
                 self._load_dotenv_environment()
-        except (OSError, IOError) as e:
+        except OSError as e:
             logging.exception(f"Failed to initialize secret manager: {e}")
 
     def _load_dotenv_environment(self) -> None:
