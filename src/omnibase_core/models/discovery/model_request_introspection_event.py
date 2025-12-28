@@ -10,7 +10,7 @@ from uuid import UUID, uuid4
 
 from pydantic import Field
 
-from omnibase_core.constants.constants_timeouts import KAFKA_REQUEST_TIMEOUT_MS
+from omnibase_core.constants import KAFKA_REQUEST_TIMEOUT_MS
 from omnibase_core.constants.event_types import REQUEST_REAL_TIME_INTROSPECTION
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 

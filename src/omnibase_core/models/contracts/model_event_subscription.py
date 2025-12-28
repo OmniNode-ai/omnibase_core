@@ -9,7 +9,7 @@ Strict typing is enforced: No Any types allowed in implementation.
 
 from pydantic import BaseModel, Field
 
-from omnibase_core.constants.constants_timeouts import KAFKA_REQUEST_TIMEOUT_MS
+from omnibase_core.constants import KAFKA_REQUEST_TIMEOUT_MS
 from omnibase_core.types.constraints import PrimitiveValueType
 
 

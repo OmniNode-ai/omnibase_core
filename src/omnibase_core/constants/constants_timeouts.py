@@ -12,8 +12,6 @@ These constants are used by:
 - ModelHttpIOConfig, ModelDbIOConfig, ModelKafkaIOConfig: I/O timeouts
 - Any component requiring standardized timeout values
 
-VERSION: 1.0.0
-
 Author: ONEX Framework Team
 """
 
