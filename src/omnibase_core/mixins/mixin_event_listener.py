@@ -206,6 +206,14 @@ class MixinEventListener[InputStateT, OutputStateT]:
                     f"Failed to read event patterns from contract: {e}",
                     {"node_name": self.get_node_name()},
                 )
+            except (
+                Exception
+            ) as e:  # fallback-ok: YAML parsing errors should not crash event listener
+                emit_log_event(
+                    LogLevel.WARNING,
+                    f"Unexpected error reading event patterns from contract: {e}",
+                    {"node_name": self.get_node_name()},
+                )
 
         # Fallback: use node name
         return [f"*.{self.get_node_name()}"]

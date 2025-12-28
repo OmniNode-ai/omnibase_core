@@ -170,6 +170,9 @@ def is_protocol_file(file_path: Path) -> bool:
     except (UnicodeDecodeError, ValueError) as e:
         logger.debug(f"Unexpected error checking protocol file {file_path}: {e}")
         return False
+    except Exception as e:  # fallback-ok: protocol discovery should be fault-tolerant
+        logger.debug(f"Unexpected error checking protocol file {file_path}: {e}")
+        return False
 
 
 def find_protocol_files(directory: Path) -> list[Path]:

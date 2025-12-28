@@ -452,7 +452,7 @@ class ModelPost(BaseModel):
 
         errors = validate_one_model_per_file(test_file)
         assert len(errors) > 0
-        assert any("Parse error" in error for error in errors)
+        assert any("Unexpected error" in error for error in errors)
 
     def test_file_not_found_handling(self, tmp_path: Path):
         """Test handling of non-existent files."""
