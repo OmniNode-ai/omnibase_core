@@ -8,15 +8,42 @@ formatting logic from ModelCliResult to maintain separation of concerns.
 import json
 from typing import Any
 
-from .model_cli_output_data import ModelCliOutputData
+from omnibase_core.models.cli.model_cli_output_data import ModelCliOutputData
 
 
-class ModelCliResultFormatter:
+class UtilCliResultFormatter:
     """
     Formatter for CLI result output.
 
     Provides methods for formatting CLI execution results into
     human-readable output, handling both text and structured data.
+    Extracts formatting logic from ModelCliResult to maintain
+    separation of concerns.
+
+    Methods:
+        format_output: Format CLI result output for display
+        format_error: Format error information for display
+        format_summary: Format execution summary for display
+
+    Example:
+        >>> from omnibase_core.utils import UtilCliResultFormatter
+        >>> output = UtilCliResultFormatter.format_summary(
+        ...     success=True, duration_ms=150, exit_code=0
+        ... )
+        >>> print(output)
+
+    Thread Safety:
+        This class is fully thread-safe. All methods are static and stateless,
+        operating only on their input parameters and returning new strings.
+        No instance state exists, so the class can be safely used from multiple
+        threads without synchronization. See docs/guides/THREADING.md for more
+        details.
+
+    .. note::
+        Previously named ``ModelCliResultFormatter``. Renamed in v0.4.0
+        to follow ONEX naming conventions (OMN-1071). The ``Model``
+        prefix is reserved for Pydantic BaseModel classes; ``Util``
+        prefix indicates a utility class.
     """
 
     @staticmethod
@@ -114,4 +141,4 @@ class ModelCliResultFormatter:
         return "\n".join(parts)
 
 
-__all__ = ["ModelCliResultFormatter"]
+__all__ = ["UtilCliResultFormatter"]

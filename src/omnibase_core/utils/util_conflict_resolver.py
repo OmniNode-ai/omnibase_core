@@ -1,14 +1,14 @@
 # SPDX-FileCopyrightText: 2025 OmniNode Team
 # SPDX-License-Identifier: Apache-2.0
 """
-Conflict resolution model for data reduction operations.
+Conflict resolution utility for data reduction operations.
 
-This module provides the ModelConflictResolver class that handles conflicts
+This module provides the UtilConflictResolver class that handles conflicts
 during data reduction with configurable strategies including FIRST_WINS,
 LAST_WINS, MERGE, ERROR, and CUSTOM.
 
 Thread Safety:
-    ModelConflictResolver is NOT thread-safe. Each thread should use its
+    UtilConflictResolver is NOT thread-safe. Each thread should use its
     own instance. The conflicts_count attribute is mutated during resolution.
 
 Key Features:
@@ -18,11 +18,11 @@ Key Features:
     - Conflict counting for metrics and debugging
 
 Example:
-    >>> from omnibase_core.models.reducer import ModelConflictResolver
+    >>> from omnibase_core.utils.util_conflict_resolver import UtilConflictResolver
     >>> from omnibase_core.enums.enum_reducer_types import EnumConflictResolution
     >>>
     >>> # Use MERGE strategy for combining values
-    >>> resolver = ModelConflictResolver(strategy=EnumConflictResolution.MERGE)
+    >>> resolver = UtilConflictResolver(strategy=EnumConflictResolution.MERGE)
     >>> result = resolver.resolve(existing_value=10, new_value=5)
     >>> print(result)  # 15 (numeric values are summed)
     >>>
@@ -30,7 +30,7 @@ Example:
     >>> def priority_resolver(existing, new, key):
     ...     return new if new.get("priority", 0) > existing.get("priority", 0) else existing
     >>>
-    >>> custom_resolver = ModelConflictResolver(
+    >>> custom_resolver = UtilConflictResolver(
     ...     strategy=EnumConflictResolution.CUSTOM,
     ...     custom_resolver=priority_resolver,
     ... )
@@ -48,7 +48,7 @@ from omnibase_core.enums.enum_reducer_types import EnumConflictResolution
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
-class ModelConflictResolver:
+class UtilConflictResolver:
     """
     Handles conflict resolution during data reduction.
 
@@ -69,6 +69,12 @@ class ModelConflictResolver:
         - Lists: Values are concatenated
         - Dicts: Values are shallow-merged (new overwrites existing keys)
         - Other types: New value replaces existing
+
+    .. note::
+        Previously named ``ModelConflictResolver``. Renamed in v0.4.0
+        to follow ONEX naming conventions (OMN-1071). The ``Model``
+        prefix is reserved for Pydantic BaseModel classes; ``Util``
+        prefix indicates a utility class.
     """
 
     def __init__(
@@ -161,3 +167,26 @@ class ModelConflictResolver:
 
         # Default to new value if can't merge
         return new
+
+
+def __getattr__(name: str) -> Any:
+    """
+    Lazy loading for backwards compatibility aliases.
+
+    Backwards Compatibility Aliases (OMN-1071):
+    -------------------------------------------
+    All deprecated aliases emit DeprecationWarning when accessed:
+    - ModelConflictResolver -> UtilConflictResolver (removed in v0.5.0)
+    """
+    import warnings
+
+    if name == "ModelConflictResolver":
+        warnings.warn(
+            "'ModelConflictResolver' is deprecated, use 'UtilConflictResolver' "
+            "from 'omnibase_core.utils.util_conflict_resolver' instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return UtilConflictResolver
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

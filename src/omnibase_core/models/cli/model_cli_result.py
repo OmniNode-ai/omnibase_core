@@ -342,9 +342,9 @@ class ModelCliResult(BaseModel):
 
     def get_formatted_output(self) -> str:
         """Get formatted output for display."""
-        from .model_cli_result_formatter import ModelCliResultFormatter
+        from omnibase_core.utils.util_cli_result_formatter import UtilCliResultFormatter
 
-        return ModelCliResultFormatter.format_output(self.output_text, self.output_data)
+        return UtilCliResultFormatter.format_output(self.output_text, self.output_data)
 
     def get_summary(self) -> ModelResultSummary:
         """Get result summary for logging/monitoring."""

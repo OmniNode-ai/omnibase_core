@@ -1,5 +1,5 @@
 """
-Extended tests for auditor_protocol.py to improve coverage.
+Extended tests for ServiceProtocolAuditor to improve coverage.
 
 Tests cover:
 - print_audit_summary() method
@@ -18,12 +18,12 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from omnibase_core.models.validation.model_audit_result import ModelAuditResult
 from omnibase_core.models.validation.model_duplication_info import ModelDuplicationInfo
-from omnibase_core.validation.auditor_protocol import (
-    ModelAuditResult,
+from omnibase_core.models.validation.model_duplication_report import (
     ModelDuplicationReport,
-    ModelProtocolAuditor,
 )
+from omnibase_core.services.service_protocol_auditor import ServiceProtocolAuditor
 from omnibase_core.validation.validation_utils import ModelProtocolInfo
 
 if TYPE_CHECKING:
@@ -40,7 +40,7 @@ class TestPrintAuditSummary:
         capsys: CaptureFixture[str],
     ) -> None:
         """Test print_audit_summary with violations."""
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
 
         result = ModelAuditResult(
             success=False,
@@ -64,7 +64,7 @@ class TestPrintAuditSummary:
         capsys: CaptureFixture[str],
     ) -> None:
         """Test print_audit_summary without violations."""
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
 
         result = ModelAuditResult(
             success=True,
@@ -87,7 +87,7 @@ class TestPrintAuditSummary:
         capsys: CaptureFixture[str],
     ) -> None:
         """Test print_audit_summary with many violations."""
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
 
         violations = [f"Violation {i}" for i in range(20)]
         recommendations = [f"Recommendation {i}" for i in range(10)]
@@ -113,7 +113,7 @@ class TestPrintAuditSummary:
         capsys: CaptureFixture[str],
     ) -> None:
         """Test print_audit_summary with empty result."""
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
 
         result = ModelAuditResult(
             success=True,
@@ -141,7 +141,7 @@ class TestPrintDuplicationReport:
         capsys: CaptureFixture[str],
     ) -> None:
         """Test print_duplication_report with exact duplicates."""
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
 
         protocol1 = ModelProtocolInfo(
             name="TestProtocol",
@@ -191,7 +191,7 @@ class TestPrintDuplicationReport:
         capsys: CaptureFixture[str],
     ) -> None:
         """Test print_duplication_report with name conflicts."""
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
 
         protocol1 = ModelProtocolInfo(
             name="TestProtocol",
@@ -240,7 +240,7 @@ class TestPrintDuplicationReport:
         capsys: CaptureFixture[str],
     ) -> None:
         """Test print_duplication_report with migration candidates."""
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
 
         protocol1 = ModelProtocolInfo(
             name="MigrateMe",
@@ -282,7 +282,7 @@ class TestPrintDuplicationReport:
         capsys: CaptureFixture[str],
     ) -> None:
         """Test print_duplication_report with all types of issues."""
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
 
         protocol1 = ModelProtocolInfo(
             name="Protocol1",
@@ -349,7 +349,7 @@ class TestAuditEcosystem:
 
     def test_audit_ecosystem_empty_directory(self, tmp_path: Path) -> None:
         """Test audit_ecosystem with empty directory."""
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
 
         results = auditor.audit_ecosystem(tmp_path)
 
@@ -369,7 +369,7 @@ class TestAuditEcosystem:
         src2 = omni_repo2 / "src"
         src2.mkdir()
 
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
         results = auditor.audit_ecosystem(tmp_path)
 
         assert isinstance(results, dict)
@@ -381,7 +381,7 @@ class TestAuditEcosystem:
         other_repo = tmp_path / "other_project"
         other_repo.mkdir()
 
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
         results = auditor.audit_ecosystem(tmp_path)
 
         assert isinstance(results, dict)
@@ -393,7 +393,7 @@ class TestAuditEcosystem:
         test_file = tmp_path / "omnibase_test.txt"
         test_file.write_text("Not a directory")
 
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
         results = auditor.audit_ecosystem(tmp_path)
 
         assert isinstance(results, dict)
@@ -411,7 +411,7 @@ class TestAuditEcosystem:
 
         (tmp_path / "file.txt").write_text("File")
 
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
         results = auditor.audit_ecosystem(tmp_path)
 
         assert isinstance(results, dict)
@@ -425,7 +425,7 @@ class TestProtocolQualityChecking:
 
     def test_check_protocol_quality_empty_protocol(self, tmp_path: Path) -> None:
         """Test quality check for protocol with no methods."""
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
 
         protocol = ModelProtocolInfo(
             name="EmptyProtocol",
@@ -444,7 +444,7 @@ class TestProtocolQualityChecking:
 
     def test_check_protocol_quality_complex_protocol(self, tmp_path: Path) -> None:
         """Test quality check for overly complex protocol."""
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
 
         # Create protocol with many methods
         many_methods = [f"method_{i}" for i in range(25)]
@@ -465,7 +465,7 @@ class TestProtocolQualityChecking:
 
     def test_check_protocol_quality_good_protocol(self, tmp_path: Path) -> None:
         """Test quality check for well-designed protocol."""
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
 
         protocol = ModelProtocolInfo(
             name="GoodProtocol",
@@ -487,7 +487,7 @@ class TestProtocolQualityChecking:
         tmp_path: Path,
     ) -> None:
         """Test quality check with multiple protocols."""
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
 
         protocols = [
             ModelProtocolInfo(
@@ -531,7 +531,7 @@ class TestNamingConventionChecking:
 
     def test_check_naming_conventions_valid_protocol(self, tmp_path: Path) -> None:
         """Test naming check for properly named protocol."""
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
 
         # Create valid protocol file
         protocol_file = tmp_path / "protocol_test.py"
@@ -557,7 +557,7 @@ class TestNamingConventionChecking:
         tmp_path: Path,
     ) -> None:
         """Test naming check for improperly named protocol class."""
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
 
         protocol_file = tmp_path / "protocol_test.py"
         protocol_file.write_text("")
@@ -582,7 +582,7 @@ class TestNamingConventionChecking:
         tmp_path: Path,
     ) -> None:
         """Test naming check for improperly named protocol file."""
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
 
         # File doesn't follow protocol_*.py pattern
         protocol_file = tmp_path / "test_interface.py"
@@ -608,7 +608,7 @@ class TestNamingConventionChecking:
         tmp_path: Path,
     ) -> None:
         """Test naming check with multiple protocols."""
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
 
         protocols = [
             ModelProtocolInfo(

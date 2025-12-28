@@ -17,16 +17,16 @@ This document describes the validation domain's protocol compliance with Core-na
 
 The omnibase_core validation domain implements two key protocols (now Core-native):
 
-1. **ProtocolComplianceValidator** - Implemented by `ProtocolContractValidator`
-2. **ProtocolQualityValidator** - Implemented by `ModelProtocolAuditor`
+1. **ProtocolComplianceValidator** - Implemented by `ServiceContractValidator`
+2. **ProtocolQualityValidator** - Implemented by `ServiceProtocolAuditor`
 
 This provides standardized interfaces for validation operations across the ONEX ecosystem while maintaining backward compatibility with existing functionality.
 
 ## Protocol Implementations
 
-### ProtocolContractValidator
+### ServiceContractValidator
 
-**File**: `src/omnibase_core/validation/contract_validator.py`
+**File**: `src/omnibase_core/services/service_contract_validator.py`
 
 **Implements**: `ProtocolComplianceValidator` (Core-native in `omnibase_core.protocols`)
 
@@ -60,9 +60,9 @@ All existing methods remain unchanged and fully functional:
 - `validate_model_compliance()` - Validate model code compliance
 - `validate_contract_file()` - Validate contract from file
 
-### ModelProtocolAuditor
+### ServiceProtocolAuditor
 
-**File**: `src/omnibase_core/validation/auditor_protocol.py`
+**File**: `src/omnibase_core/services/service_protocol_auditor.py`
 
 **Implements**: `ProtocolQualityValidator` (Core-native in `omnibase_core.protocols`)
 
@@ -98,15 +98,15 @@ All existing methods remain unchanged and fully functional:
 
 ## Usage Examples
 
-### Using ProtocolContractValidator
+### Using ServiceContractValidator
 
 ```python
-from omnibase_core.validation.contract_validator import ProtocolContractValidator
+from omnibase_core.services.service_contract_validator import ServiceContractValidator
 # v0.3.6+: Core-native protocol imports
 from omnibase_core.protocols import ProtocolComplianceValidator
 
 # Create validator with protocol compliance
-validator = ProtocolContractValidator(strict_mode=True)
+validator = ServiceContractValidator(strict_mode=True)
 
 # Use as protocol type
 compliance_validator: ProtocolComplianceValidator = validator
@@ -122,15 +122,15 @@ print(f"Valid: {result.is_valid}, Score: {result.score}")
 # await validator.validate_file_compliance("path/to/file.py")
 ```
 
-### Using ModelProtocolAuditor
+### Using ServiceProtocolAuditor
 
 ```python
-from omnibase_core.validation.auditor_protocol import ModelProtocolAuditor
+from omnibase_core.services.service_protocol_auditor import ServiceProtocolAuditor
 # v0.3.6+: Core-native protocol imports
 from omnibase_core.protocols import ProtocolQualityValidator
 
 # Create auditor with protocol compliance
-auditor = ModelProtocolAuditor(
+auditor = ServiceProtocolAuditor(
     enable_complexity_analysis=True,
     enable_duplication_detection=True
 )
@@ -207,7 +207,7 @@ No changes required! All existing code continues to work:
 
 ```python
 # This still works exactly as before
-validator = ProtocolContractValidator()
+validator = ServiceContractValidator()
 result = validator.validate_contract_yaml(yaml_content)
 ```
 
@@ -273,8 +273,8 @@ This allows:
 
 ## See Also
 
-- [Contract Validator](../../src/omnibase_core/validation/contract_validator.py)
-- [Protocol Auditor](../../src/omnibase_core/validation/auditor_protocol.py)
+- [Contract Validator](../../src/omnibase_core/services/service_contract_validator.py)
+- [Protocol Auditor](../../src/omnibase_core/services/service_protocol_auditor.py)
 - [Import Compatibility Matrix](IMPORT_COMPATIBILITY_MATRIX.md) - Current import paths for protocols
 - [Protocol Architecture](PROTOCOL_ARCHITECTURE.md) - Comprehensive protocol documentation
 

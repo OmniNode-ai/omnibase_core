@@ -77,77 +77,102 @@ __all__ = [
 ]
 
 
-# Lazy import to avoid circular dependencies
+# =============================================================================
+# Lazy loading: Avoid circular imports during module initialization.
+# This is NOT for backwards compatibility aliases (see OMN-1071 for that pattern
+# in validation/__init__.py and utils/__init__.py). Instead, this defers imports
+# of error classes and model classes that would cause circular dependency chains
+# if imported at module load time.
+#
+# Classes loaded lazily:
+# - ModelOnexError, OnexError (alias) - from models.errors
+# - ModelOnexWarning, ModelRegistryError - from models.common
+# - ModelCLIAdapter - from models.core
+# - RuntimeHostError, HandlerExecutionError, etc. - from errors.runtime_errors
+# - AdapterBindingError, PurityViolationError, etc. - from errors.declarative_errors
+# =============================================================================
 def __getattr__(name: str) -> Any:
-    """Lazy import mechanism to avoid circular dependencies."""
-    if name == "ModelOnexError" or name == "OnexError":
+    """
+    Lazy import mechanism to avoid circular dependencies.
+
+    This function defers the import of error and model classes until they are
+    actually accessed, preventing circular import chains that would otherwise
+    occur at module load time.
+
+    Note: This is NOT a backwards compatibility mechanism (see OMN-1071 for that
+    pattern). The OnexError alias to ModelOnexError is for convenience, not
+    deprecation - both names are valid.
+    """
+    # -------------------------------------------------------------------------
+    # Consolidated imports: Group related classes by source module to avoid
+    # duplicate import statements. Each group imports from one module.
+    # -------------------------------------------------------------------------
+
+    # Model error classes from models.errors
+    if name in {"ModelOnexError", "OnexError"}:
         from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
         return ModelOnexError
-    if name == "ModelOnexWarning":
-        from omnibase_core.models.common.model_onex_warning import ModelOnexWarning
 
-        return ModelOnexWarning
-    if name == "ModelRegistryError":
-        from omnibase_core.models.common.model_registry_error import ModelRegistryError
+    # Model classes from models.common
+    _common_model_classes = {"ModelOnexWarning", "ModelRegistryError"}
+    if name in _common_model_classes:
+        from omnibase_core.models.common import model_onex_warning, model_registry_error
 
-        return ModelRegistryError
+        _common_exports = {
+            "ModelOnexWarning": model_onex_warning.ModelOnexWarning,
+            "ModelRegistryError": model_registry_error.ModelRegistryError,
+        }
+        return _common_exports[name]
+
+    # CLI adapter from models.core
     if name == "ModelCLIAdapter":
         from omnibase_core.models.core.model_cli_adapter import ModelCLIAdapter
 
         return ModelCLIAdapter
-    # Runtime host errors ()
-    if name == "RuntimeHostError":
-        from omnibase_core.errors.runtime_errors import RuntimeHostError
 
-        return RuntimeHostError
-    if name == "HandlerExecutionError":
-        from omnibase_core.errors.runtime_errors import HandlerExecutionError
+    # -------------------------------------------------------------------------
+    # Runtime host errors - consolidated import from runtime_errors module
+    # -------------------------------------------------------------------------
+    _runtime_error_classes = {
+        "RuntimeHostError",
+        "HandlerExecutionError",
+        "EventBusError",
+        "InvalidOperationError",
+        "ContractValidationError",
+    }
+    if name in _runtime_error_classes:
+        from omnibase_core.errors import runtime_errors
 
-        return HandlerExecutionError
-    if name == "EventBusError":
-        from omnibase_core.errors.runtime_errors import EventBusError
+        return getattr(runtime_errors, name)
 
-        return EventBusError
-    if name == "InvalidOperationError":
-        from omnibase_core.errors.runtime_errors import InvalidOperationError
-
-        return InvalidOperationError
-    if name == "ContractValidationError":
-        from omnibase_core.errors.runtime_errors import ContractValidationError
-
-        return ContractValidationError
-    # Compute pipeline errors ()
+    # Compute pipeline errors
     if name == "ComputePipelineError":
         from omnibase_core.errors.exception_compute_pipeline_error import (
             ComputePipelineError,
         )
 
         return ComputePipelineError
+
     # -------------------------------------------------------------------------
-    # Declarative node errors (OMN-177)
+    # Declarative node errors (OMN-177) - consolidated import
     # Canonical error classes for declarative node validation:
     # - AdapterBindingError: Adapter binding failures
     # - PurityViolationError: Pure function constraint violations
     # - NodeExecutionError: Node execution failures
     # - UnsupportedCapabilityError: Unsupported capability requests
     # -------------------------------------------------------------------------
-    if name == "AdapterBindingError":
-        from omnibase_core.errors.declarative_errors import AdapterBindingError
+    _declarative_error_classes = {
+        "AdapterBindingError",
+        "PurityViolationError",
+        "NodeExecutionError",
+        "UnsupportedCapabilityError",
+    }
+    if name in _declarative_error_classes:
+        from omnibase_core.errors import declarative_errors
 
-        return AdapterBindingError
-    if name == "PurityViolationError":
-        from omnibase_core.errors.declarative_errors import PurityViolationError
+        return getattr(declarative_errors, name)
 
-        return PurityViolationError
-    if name == "NodeExecutionError":
-        from omnibase_core.errors.declarative_errors import NodeExecutionError
-
-        return NodeExecutionError
-    if name == "UnsupportedCapabilityError":
-        from omnibase_core.errors.declarative_errors import UnsupportedCapabilityError
-
-        return UnsupportedCapabilityError
     # Raise standard AttributeError for unknown attributes
     # Cannot use ModelOnexError here as it would cause circular import
     raise AttributeError(  # error-ok: avoid circular import in lazy loader

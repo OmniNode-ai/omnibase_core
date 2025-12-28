@@ -11,7 +11,7 @@ CORE_SRC="$PROJECT_ROOT/src/omnibase_core"
 echo "Checking for omnibase_spi imports in omnibase_core..."
 
 # Files to exclude (migration tooling that legitimately references SPI)
-EXCLUDE_PATTERN="validation/migrator_protocol.py|validation/auditor_protocol.py"
+EXCLUDE_PATTERN="services/service_protocol_migrator.py|services/service_protocol_auditor.py"
 
 # Find violations
 VIOLATIONS=$(grep -RnE "^(from|import) omnibase_spi" "$CORE_SRC" --include="*.py" 2>/dev/null | grep -vE "$EXCLUDE_PATTERN" || true)

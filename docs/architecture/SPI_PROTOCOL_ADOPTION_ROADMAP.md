@@ -82,8 +82,8 @@ from omnibase_spi.protocols.validation import (
 - Standardized validation across ecosystem
 
 **Files to Update:**
-- `src/omnibase_core/validation/contract_validator.py` → implement `ProtocolComplianceValidator`
-- `src/omnibase_core/validation/auditor_protocol.py` → implement `ProtocolQualityValidator`
+- `src/omnibase_core/services/service_contract_validator.py` → implement `ProtocolComplianceValidator`
+- `src/omnibase_core/services/service_protocol_auditor.py` → implement `ProtocolQualityValidator`
 
 **Keep as-is:**
 - CLI tools (concrete implementations)

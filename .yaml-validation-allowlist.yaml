@@ -34,7 +34,7 @@ allowed_files:
     added: "2024-10-15"
     review: "2026-06-13"
 
-  - file: "src/omnibase_core/validation/contract_validator.py"
+  - file: "src/omnibase_core/services/service_contract_validator.py"
     reason: "Validation layer that requires inspection of raw YAML structure before type conversion -
       preprocesses YAML to ensure it meets contract schema requirements"
     added: "2024-10-15"

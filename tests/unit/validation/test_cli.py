@@ -2,7 +2,7 @@
 Comprehensive unit tests for validation CLI module.
 
 Tests cover:
-- ModelValidationSuite initialization and validation methods
+- ServiceValidationSuite initialization and validation methods
 - CLI argument parsing
 - Validation type routing
 - Result formatting
@@ -22,8 +22,8 @@ from omnibase_core.models.common.model_validation_metadata import (
 )
 from omnibase_core.models.common.model_validation_result import ModelValidationResult
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.services.service_validation_suite import ServiceValidationSuite
 from omnibase_core.validation.cli import (
-    ModelValidationSuite,
     create_parser,
     format_result,
 )
@@ -33,12 +33,12 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.unit
-class TestModelValidationSuite:
-    """Test ModelValidationSuite class."""
+class TestServiceValidationSuite:
+    """Test ServiceValidationSuite class."""
 
     def test_suite_initialization(self) -> None:
         """Test suite initializes with correct validators."""
-        suite = ModelValidationSuite()
+        suite = ServiceValidationSuite()
 
         assert "architecture" in suite.validators
         assert "union-usage" in suite.validators
@@ -54,14 +54,14 @@ class TestModelValidationSuite:
 
     def test_run_validation_unknown_type(self, tmp_path: Path) -> None:
         """Test run_validation raises error for unknown validation type."""
-        suite = ModelValidationSuite()
+        suite = ServiceValidationSuite()
 
         with pytest.raises(ModelOnexError, match="Unknown validation type"):
             suite.run_validation("nonexistent", tmp_path)
 
     def test_run_validation_filters_kwargs(self, tmp_path: Path) -> None:
         """Test run_validation filters kwargs to relevant parameters."""
-        suite = ModelValidationSuite()
+        suite = ServiceValidationSuite()
 
         # Create test directory with a Python file
         test_file = tmp_path / "test.py"
@@ -81,7 +81,7 @@ class TestModelValidationSuite:
 
     def test_run_all_validations_success(self, tmp_path: Path) -> None:
         """Test run_all_validations executes all validators."""
-        suite = ModelValidationSuite()
+        suite = ServiceValidationSuite()
 
         # Create test directory with a Python file
         test_file = tmp_path / "test.py"
@@ -101,7 +101,7 @@ class TestModelValidationSuite:
 
     def test_run_all_validations_handles_errors(self, tmp_path: Path) -> None:
         """Test run_all_validations handles validator errors gracefully."""
-        suite = ModelValidationSuite()
+        suite = ServiceValidationSuite()
 
         # Use nonexistent directory to trigger errors
         nonexistent = tmp_path / "nonexistent"
@@ -117,7 +117,7 @@ class TestModelValidationSuite:
 
     def test_list_validators(self, capsys: CaptureFixture[str]) -> None:
         """Test list_validators prints available validators."""
-        suite = ModelValidationSuite()
+        suite = ServiceValidationSuite()
 
         suite.list_validators()
 
@@ -345,7 +345,7 @@ class TestCLIIntegration:
 
     def test_validation_workflow_architecture(self, tmp_path: Path) -> None:
         """Test complete validation workflow for architecture."""
-        suite = ModelValidationSuite()
+        suite = ServiceValidationSuite()
 
         # Create test directory with Python file
         test_file = tmp_path / "test_model.py"
@@ -363,7 +363,7 @@ class ModelTest:
 
     def test_validation_workflow_union_usage(self, tmp_path: Path) -> None:
         """Test complete validation workflow for union-usage."""
-        suite = ModelValidationSuite()
+        suite = ServiceValidationSuite()
 
         # Create test directory with Python file containing unions
         test_file = tmp_path / "test_unions.py"
@@ -388,7 +388,7 @@ def func(x: Union[str, int]) -> None:
 
     def test_validation_workflow_contracts(self, tmp_path: Path) -> None:
         """Test complete validation workflow for contracts."""
-        suite = ModelValidationSuite()
+        suite = ServiceValidationSuite()
 
         # Create test directory structure
         contracts_dir = tmp_path / "contracts"
@@ -400,7 +400,7 @@ def func(x: Union[str, int]) -> None:
 
     def test_validation_workflow_patterns(self, tmp_path: Path) -> None:
         """Test complete validation workflow for patterns."""
-        suite = ModelValidationSuite()
+        suite = ServiceValidationSuite()
 
         # Create test directory with Python file
         test_file = tmp_path / "test_patterns.py"
@@ -418,7 +418,7 @@ def example_function():
 
     def test_empty_directory_handling(self, tmp_path: Path) -> None:
         """Test handling of empty directories."""
-        suite = ModelValidationSuite()
+        suite = ServiceValidationSuite()
 
         result = suite.run_validation("architecture", tmp_path)
 
@@ -427,7 +427,7 @@ def example_function():
 
     def test_kwargs_filtering_architecture(self, tmp_path: Path) -> None:
         """Test architecture validation only receives relevant kwargs."""
-        suite = ModelValidationSuite()
+        suite = ServiceValidationSuite()
 
         # Pass kwargs for all validation types
         result = suite.run_validation(
@@ -442,7 +442,7 @@ def example_function():
 
     def test_kwargs_filtering_union_usage(self, tmp_path: Path) -> None:
         """Test union-usage validation only receives relevant kwargs."""
-        suite = ModelValidationSuite()
+        suite = ServiceValidationSuite()
 
         test_file = tmp_path / "test.py"
         test_file.write_text("# Test\n")
@@ -464,7 +464,7 @@ class TestEdgeCases:
 
     def test_validation_with_nonexistent_directory(self, tmp_path: Path) -> None:
         """Test validation handles nonexistent directories gracefully."""
-        suite = ModelValidationSuite()
+        suite = ServiceValidationSuite()
 
         nonexistent = tmp_path / "does_not_exist"
 
@@ -475,7 +475,7 @@ class TestEdgeCases:
 
     def test_validation_with_file_instead_of_directory(self, tmp_path: Path) -> None:
         """Test validation handles file path instead of directory."""
-        suite = ModelValidationSuite()
+        suite = ServiceValidationSuite()
 
         # Create a file
         test_file = tmp_path / "test.py"
@@ -488,7 +488,7 @@ class TestEdgeCases:
 
     def test_all_validations_mixed_results(self, tmp_path: Path) -> None:
         """Test run_all_validations with mixed success/failure results."""
-        suite = ModelValidationSuite()
+        suite = ServiceValidationSuite()
 
         # Create test file
         test_file = tmp_path / "test.py"
@@ -514,8 +514,8 @@ def func(x: Union[str, int, bool, float]) -> None:  # Complex union
 
     def test_suite_validators_immutability(self) -> None:
         """Test that validator configuration is consistent across calls."""
-        suite1 = ModelValidationSuite()
-        suite2 = ModelValidationSuite()
+        suite1 = ServiceValidationSuite()
+        suite2 = ServiceValidationSuite()
 
         # Both suites should have same validators
         assert set(suite1.validators.keys()) == set(suite2.validators.keys())

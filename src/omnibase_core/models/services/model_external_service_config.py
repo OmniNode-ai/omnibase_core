@@ -20,8 +20,8 @@ from omnibase_core.models.configuration.model_rest_api_connection_config import 
 )
 from omnibase_core.models.core.model_retry_config import ModelRetryConfig
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.security.model_security_utils import ModelSecurityUtils
 from omnibase_core.models.services.model_masked_config import ModelMaskedConfig
+from omnibase_core.utils.util_security import UtilSecurity
 
 
 class ModelExternalServiceConfig(BaseModel):
@@ -148,7 +148,7 @@ class ModelExternalServiceConfig(BaseModel):
         else:
             connection_dict = {}
 
-        masked_connection = ModelSecurityUtils.mask_dict_credentials(connection_dict)
+        masked_connection = UtilSecurity.mask_dict_credentials(connection_dict)
 
         # Build masked config
         # Type note: masked_connection contains only simple types (str, int, bool) after masking
