@@ -168,6 +168,9 @@ class TestTimeoutConstantPublicAPI:
             "PROCESS_SHUTDOWN_TIMEOUT_SECONDS",
             "HTTP_REQUEST_TIMEOUT_SECONDS",
             "KAFKA_REQUEST_TIMEOUT_MS",
+            "WEBSOCKET_PING_TIMEOUT_SECONDS",
+            "DATABASE_QUERY_TIMEOUT_SECONDS",
+            "FILE_IO_TIMEOUT_SECONDS",
             "DEFAULT_CACHE_TTL_SECONDS",
         ]
         for const in expected_constants:
@@ -221,16 +224,19 @@ class TestTimeoutConstantModuleExports:
             "PROCESS_SHUTDOWN_TIMEOUT_SECONDS",
             "HTTP_REQUEST_TIMEOUT_SECONDS",
             "KAFKA_REQUEST_TIMEOUT_MS",
+            "WEBSOCKET_PING_TIMEOUT_SECONDS",
+            "DATABASE_QUERY_TIMEOUT_SECONDS",
+            "FILE_IO_TIMEOUT_SECONDS",
             "DEFAULT_CACHE_TTL_SECONDS",
         ]
         for export in expected_exports:
             assert export in __all__, f"{export} should be in __all__"
 
     def test_constants_timeouts_all_length(self) -> None:
-        """__all__ should contain exactly 9 exports."""
+        """__all__ should contain exactly 12 exports."""
         from omnibase_core.constants.constants_timeouts import __all__
 
-        assert len(__all__) == 9
+        assert len(__all__) == 12
 
 
 @pytest.mark.unit
