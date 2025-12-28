@@ -22,6 +22,7 @@ Example:
     True
 """
 
+import re
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
@@ -197,8 +198,6 @@ class ModelPolicyRule(BaseModel):
             ):
                 return False
             if self.conditions.operation_type_condition.regex:
-                import re
-
                 if not re.match(
                     self.conditions.operation_type_condition.regex,
                     context.operation_type or "",
@@ -218,8 +217,6 @@ class ModelPolicyRule(BaseModel):
             ):
                 return False
             if self.conditions.security_level_condition.regex:
-                import re
-
                 if not re.match(
                     self.conditions.security_level_condition.regex,
                     context.security_level or "",

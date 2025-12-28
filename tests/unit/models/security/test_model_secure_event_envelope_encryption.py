@@ -146,11 +146,12 @@ class TestEncryptPayloadErrors:
         sample_envelope.encrypt_payload(encryption_key)
         assert sample_envelope.is_encrypted is True
 
-        # Second encryption should raise ModelOnexError
+        # Second encryption should raise ModelOnexError with INVALID_OPERATION
+        # (encrypting already-encrypted payload is an invalid operation on the current state)
         with pytest.raises(ModelOnexError) as exc_info:
             sample_envelope.encrypt_payload(encryption_key)
 
-        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert exc_info.value.error_code == EnumCoreErrorCode.INVALID_OPERATION
         assert "already encrypted" in str(exc_info.value.message).lower()
 
     def test_encrypt_with_unsupported_algorithm_raises_error(
@@ -160,7 +161,8 @@ class TestEncryptPayloadErrors:
         with pytest.raises(ModelOnexError) as exc_info:
             sample_envelope.encrypt_payload(encryption_key, algorithm="AES-128-CBC")
 
-        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        # UNSUPPORTED_OPERATION is the correct code for unsupported algorithms
+        assert exc_info.value.error_code == EnumCoreErrorCode.UNSUPPORTED_OPERATION
         assert "unsupported" in str(exc_info.value.message).lower()
 
 
@@ -200,7 +202,9 @@ class TestDecryptPayloadErrors:
         with pytest.raises(ModelOnexError) as exc_info:
             sample_envelope.decrypt_payload(encryption_key)
 
-        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        # INVALID_OPERATION is the correct code for decrypting a non-encrypted envelope
+        # (decryption is not valid for the current state)
+        assert exc_info.value.error_code == EnumCoreErrorCode.INVALID_OPERATION
         assert "not encrypted" in str(exc_info.value.message).lower()
 
     def test_decrypt_missing_metadata_raises_error(
@@ -510,8 +514,9 @@ class TestEncryptionEdgeCases:
         Security Note:
         - While technically valid, empty keys should NOT be used in production as they
           provide minimal entropy before key derivation
-        - The key derivation function (PBKDF2 with 100,000 iterations) adds computational
-          cost but cannot compensate for zero-entropy input against targeted attacks
+        - The key derivation function (PBKDF2 with 600,000 iterations per OWASP 2023
+          guidelines) adds computational cost but cannot compensate for zero-entropy
+          input against targeted attacks
         - Production systems should enforce minimum key length policies at the application
           layer, not within the encryption primitive itself
         """

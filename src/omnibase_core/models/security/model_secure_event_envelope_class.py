@@ -326,13 +326,15 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
         # Ensure signature includes current content hash
         if signature.envelope_state_hash != self.content_hash:
             raise ModelOnexError(
-                message="Signature envelope state hash mismatch",
+                message="Cannot add signature: envelope state hash mismatch. "
+                "The signature was created for a different envelope state. "
+                "Regenerate the signature with the current envelope content.",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 context={
+                    "operation": "add_signature",
                     "envelope_id": str(self.envelope_id),
                     "expected_hash": self.content_hash[:16] + "...",
                     "signature_hash": signature.envelope_state_hash[:16] + "...",
-                    "operation": "add_signature",
                 },
             )
 
@@ -617,22 +619,24 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
 
         if self.is_encrypted:
             raise ModelOnexError(
-                message="Payload is already encrypted",
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="Cannot encrypt: payload is already encrypted. Decrypt first if re-encryption is needed.",
+                error_code=EnumCoreErrorCode.INVALID_OPERATION,
                 context={
-                    "envelope_id": str(self.envelope_id),
                     "operation": "encrypt_payload",
+                    "envelope_id": str(self.envelope_id),
+                    "is_encrypted": self.is_encrypted,
                 },
             )
 
         if algorithm != "AES-256-GCM":
             raise ModelOnexError(
-                message=f"Unsupported encryption algorithm: {algorithm}. Only AES-256-GCM is supported.",
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Cannot encrypt: unsupported algorithm '{algorithm}'. Use 'AES-256-GCM' instead.",
+                error_code=EnumCoreErrorCode.UNSUPPORTED_OPERATION,
                 context={
+                    "operation": "encrypt_payload",
+                    "envelope_id": str(self.envelope_id),
                     "requested_algorithm": algorithm,
                     "supported_algorithms": ["AES-256-GCM"],
-                    "envelope_id": str(self.envelope_id),
                 },
             )
 
@@ -759,35 +763,44 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
 
         if not self.is_encrypted:
             raise ModelOnexError(
-                message="Payload is not encrypted",
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message="Cannot decrypt: envelope payload is not encrypted.",
+                error_code=EnumCoreErrorCode.INVALID_OPERATION,
                 context={
-                    "envelope_id": str(self.envelope_id),
                     "operation": "decrypt_payload",
+                    "envelope_id": str(self.envelope_id),
+                    "is_encrypted": self.is_encrypted,
                 },
             )
 
         if not self.encrypted_payload or not self.encryption_metadata:
+            missing_fields = []
+            if not self.encrypted_payload:
+                missing_fields.append("encrypted_payload")
+            if not self.encryption_metadata:
+                missing_fields.append("encryption_metadata")
             raise ModelOnexError(
-                message="Missing encryption data",
+                message=f"Cannot decrypt: missing required encryption data ({', '.join(missing_fields)}). "
+                "The envelope may be corrupted or was not properly encrypted.",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 context={
+                    "operation": "decrypt_payload",
                     "envelope_id": str(self.envelope_id),
                     "has_encrypted_payload": bool(self.encrypted_payload),
                     "has_encryption_metadata": bool(self.encryption_metadata),
-                    "operation": "decrypt_payload",
+                    "missing_fields": missing_fields,
                 },
             )
 
         if self.encryption_metadata.algorithm != "AES-256-GCM":
             raise ModelOnexError(
-                message=f"Unsupported encryption algorithm: {self.encryption_metadata.algorithm}",
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Cannot decrypt: unsupported algorithm '{self.encryption_metadata.algorithm}'. "
+                "Only 'AES-256-GCM' is supported for decryption.",
+                error_code=EnumCoreErrorCode.UNSUPPORTED_OPERATION,
                 context={
+                    "operation": "decrypt_payload",
                     "envelope_id": str(self.envelope_id),
                     "algorithm": self.encryption_metadata.algorithm,
                     "supported_algorithms": ["AES-256-GCM"],
-                    "operation": "decrypt_payload",
                 },
             )
 
@@ -819,14 +832,15 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
             current_aad_hash = hashlib.sha256(aad).hexdigest()
             if current_aad_hash != self.encryption_metadata.aad_hash:
                 raise ModelOnexError(
-                    message="Decryption failed: envelope metadata has been modified (ciphertext transplantation detected)",
+                    message="Cannot decrypt: envelope metadata has been modified after encryption "
+                    "(AAD hash mismatch indicates possible ciphertext transplantation attack).",
                     error_code=EnumCoreErrorCode.SECURITY_VIOLATION,
                     context={
+                        "operation": "decrypt_payload",
                         "envelope_id": str(self.envelope_id),
                         "expected_aad_hash": self.encryption_metadata.aad_hash[:16]
                         + "...",
                         "actual_aad_hash": current_aad_hash[:16] + "...",
-                        "operation": "decrypt_payload",
                     },
                 )
 
@@ -836,12 +850,18 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
             plaintext = aesgcm.decrypt(iv, ciphertext_with_tag, aad)
         except InvalidTag as e:
             raise ModelOnexError(
-                message="Decryption failed: authentication tag verification failed (wrong key, tampered data, or envelope metadata modified)",
+                message="Cannot decrypt: authentication tag verification failed. "
+                "This indicates wrong decryption key, tampered ciphertext, or modified envelope metadata.",
                 error_code=EnumCoreErrorCode.SECURITY_VIOLATION,
                 context={
+                    "operation": "decrypt_payload",
                     "envelope_id": str(self.envelope_id),
                     "algorithm": self.encryption_metadata.algorithm,
-                    "operation": "decrypt_payload",
+                    "possible_causes": [
+                        "incorrect decryption key",
+                        "ciphertext has been tampered with",
+                        "envelope metadata was modified after encryption",
+                    ],
                 },
             ) from e
 
@@ -851,12 +871,14 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
             return ModelOnexEvent.model_validate(payload_dict)
         except (json.JSONDecodeError, ValueError) as e:
             raise ModelOnexError(
-                message=f"Failed to parse decrypted payload: {e}",
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Cannot decrypt: decrypted data is not valid JSON or does not match "
+                f"ModelOnexEvent schema ({type(e).__name__}: {e}).",
+                error_code=EnumCoreErrorCode.PARSING_ERROR,
                 context={
+                    "operation": "decrypt_payload",
                     "envelope_id": str(self.envelope_id),
                     "error_type": type(e).__name__,
-                    "operation": "decrypt_payload",
+                    "error_details": str(e),
                 },
             ) from e
 
