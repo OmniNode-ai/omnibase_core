@@ -771,7 +771,8 @@ class TestIsProtocolFile:
             assert result is False
             assert len(caplog.records) == 1
             assert caplog.records[0].levelname == "DEBUG"
-            assert "could not read file" in caplog.records[0].message.lower()
+            # OSError is now handled by the generic exception handler
+            assert "error checking protocol file" in caplog.records[0].message.lower()
 
     def test_generic_exception_handling(self, caplog, monkeypatch):
         """Test handling of unexpected exceptions."""

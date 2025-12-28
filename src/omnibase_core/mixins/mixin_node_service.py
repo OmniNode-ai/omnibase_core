@@ -151,7 +151,8 @@ class MixinNodeService:
             # Main service event loop
             await self._service_event_loop()
 
-        except BaseException as e:  # Catch-all for cleanup during service startup
+        except Exception as e:  # fallback-ok: service startup requires cleanup on any error
+            # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             self._log_error(f"Failed to start service: {e}")
             await self.stop_service_mode()
             raise
@@ -192,9 +193,8 @@ class MixinNodeService:
             for callback in self._shutdown_callbacks:
                 try:
                     callback()
-                except (
-                    BaseException
-                ) as e:  # Catch-all: callbacks are user-provided, can raise anything
+                except Exception as e:  # fallback-ok: user callbacks must not crash shutdown
+                    # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
                     self._log_error(f"Shutdown callback failed: {e}")
 
             # Cleanup event handlers if available
@@ -204,7 +204,8 @@ class MixinNodeService:
             self._service_running = False
             self._log_info("Service stopped successfully")
 
-        except BaseException as e:  # Catch-all for cleanup during service shutdown
+        except Exception as e:  # fallback-ok: shutdown must complete even if cleanup fails
+            # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             self._log_error(f"Error during service shutdown: {e}")
             self._service_running = False
 
@@ -685,10 +686,8 @@ class MixinNodeService:
         except asyncio.CancelledError:
             # Expected when cancelling - this is normal
             pass
-        except (
-            BaseException
-        ) as e:  # Catch-all: cleanup code must handle any error during teardown
-            # Log unexpected errors during cleanup
+        except Exception as e:  # fallback-ok: cleanup must complete even on error
+            # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             self._log_error(f"Unexpected error during health task cleanup: {e}")
 
         # DO NOT set _health_task to None here - keep the reference
