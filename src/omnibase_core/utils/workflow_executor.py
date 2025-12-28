@@ -830,7 +830,7 @@ async def _execute_parallel(
     async def execute_step(
         step: ModelWorkflowStep,
         wave_context: TypedDictWorkflowContext,
-    ) -> tuple[ModelWorkflowStep, ModelAction | None, int, Exception | None]:
+    ) -> tuple[ModelWorkflowStep, ModelAction | None, int, BaseException | None]:
         """
         Execute a single workflow step asynchronously.
 
