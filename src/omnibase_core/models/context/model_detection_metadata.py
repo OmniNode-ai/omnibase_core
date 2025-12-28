@@ -19,6 +19,7 @@ See Also:
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums import EnumLikelihood
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.utils.util_enum_normalizer import create_enum_normalizer
 
 __all__ = ["ModelDetectionMetadata"]
@@ -48,11 +49,12 @@ class ModelDetectionMetadata(BaseModel):
 
     Example:
         >>> from omnibase_core.models.context import ModelDetectionMetadata
+        >>> from omnibase_core.models.primitives.model_semver import ModelSemVer
         >>>
         >>> detection = ModelDetectionMetadata(
         ...     pattern_category="credential_exposure",
         ...     detection_source="regex_scanner",
-        ...     rule_version="2.1.0",
+        ...     rule_version=ModelSemVer(major=2, minor=1, patch=0),
         ...     false_positive_likelihood="low",
         ...     remediation_hint="Rotate exposed credentials immediately",
         ... )
@@ -70,7 +72,7 @@ class ModelDetectionMetadata(BaseModel):
         default=None,
         description="Source of detection",
     )
-    rule_version: str | None = Field(
+    rule_version: ModelSemVer | None = Field(
         default=None,
         description="Detection rule version",
     )
@@ -91,13 +93,13 @@ class ModelDetectionMetadata(BaseModel):
     def normalize_false_positive_likelihood(
         cls, v: EnumLikelihood | str | None
     ) -> EnumLikelihood | str | None:
-        """Accept both enum and string values for backward compatibility.
+        """Normalize likelihood value from string or enum input.
 
         Args:
             v: The likelihood value, either as EnumLikelihood, string, or None.
 
         Returns:
             The normalized value - EnumLikelihood if valid enum value,
-            else the original string for backward compatibility.
+            otherwise the original string for extensibility.
         """
         return create_enum_normalizer(EnumLikelihood)(v)

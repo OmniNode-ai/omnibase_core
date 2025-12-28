@@ -13,14 +13,14 @@ from pydantic import ValidationError
 from omnibase_core.mixins.mixin_introspection_publisher import (
     MixinIntrospectionPublisher,
 )
-from omnibase_core.mixins.mixin_node_introspection_data import (
-    MixinNodeIntrospectionData,
-)
 from omnibase_core.models.discovery.model_node_introspection_event import (
     ModelNodeCapabilities,
 )
 from omnibase_core.models.discovery.model_nodeintrospectionevent import (
     ModelNodeIntrospectionEvent,
+)
+from omnibase_core.models.mixins.model_node_introspection_data import (
+    ModelNodeIntrospectionData,
 )
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -343,7 +343,7 @@ class TestMixinIntrospectionPublisher:
 
         data = node._gather_introspection_data()
 
-        assert isinstance(data, MixinNodeIntrospectionData)
+        assert isinstance(data, ModelNodeIntrospectionData)
         assert isinstance(data.node_name, str)
         assert isinstance(data.version, ModelSemVer)
         assert isinstance(data.capabilities, ModelNodeCapabilities)
@@ -360,7 +360,7 @@ class TestMixinIntrospectionPublisher:
             data = node._gather_introspection_data()
 
         # Should return fallback data
-        assert isinstance(data, MixinNodeIntrospectionData)
+        assert isinstance(data, ModelNodeIntrospectionData)
         assert data.version.major == 1
 
     def test_publish_introspection_event_without_event_bus(self):
@@ -581,7 +581,7 @@ class TestMixinIntrospectionPublisher:
         # Should handle string node_id gracefully
         data = node._gather_introspection_data()
 
-        assert isinstance(data, MixinNodeIntrospectionData)
+        assert isinstance(data, ModelNodeIntrospectionData)
 
     def test_node_id_as_uuid(self):
         """Test handling node_id as UUID."""
@@ -591,7 +591,7 @@ class TestMixinIntrospectionPublisher:
         # Should handle UUID node_id
         data = node._gather_introspection_data()
 
-        assert isinstance(data, MixinNodeIntrospectionData)
+        assert isinstance(data, ModelNodeIntrospectionData)
 
     def test_generate_discovery_tags_uniqueness(self):
         """Test that discovery tags are unique."""

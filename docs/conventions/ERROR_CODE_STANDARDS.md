@@ -145,11 +145,11 @@ NODE_COMPUTE_001      # Node compute subcategory
 
 ## Implementation Reference
 
-### ModelErrorContext Validation
+### ModelErrorMetadata Validation
 
-The `CATEGORY_NNN` pattern is enforced by `ModelErrorContext` in the ONEX framework.
+The `CATEGORY_NNN` pattern is enforced by `ModelErrorMetadata` in the ONEX framework.
 
-**Location**: `src/omnibase_core/models/context/model_error_context.py`
+**Location**: `src/omnibase_core/models/context/model_error_metadata.py`
 
 **Pattern Definition**:
 ```python
@@ -176,10 +176,10 @@ def validate_error_code_format(cls, value: str | None) -> str | None:
 ### Usage Example
 
 ```python
-from omnibase_core.models.context import ModelErrorContext
+from omnibase_core.models.context import ModelErrorMetadata
 
 # Valid error context
-error_ctx = ModelErrorContext(
+error_ctx = ModelErrorMetadata(
     error_code="AUTH_001",
     error_category="auth",
     correlation_id="req_abc123",
@@ -189,7 +189,7 @@ error_ctx = ModelErrorContext(
 
 # Invalid - will raise ValueError
 try:
-    invalid_ctx = ModelErrorContext(
+    invalid_ctx = ModelErrorMetadata(
         error_code="auth_001",  # Lowercase not allowed
     )
 except ValueError as e:

@@ -36,8 +36,8 @@ from omnibase_core.models.events.model_topic_naming import (
 from omnibase_core.protocols import ProtocolEventEnvelope
 
 # Local imports from extracted classes
-from .mixin_completion_data import MixinCompletionData
-from .mixin_log_data import MixinLogData
+from omnibase_core.models.mixins.model_completion_data import ModelCompletionData
+from omnibase_core.models.mixins.model_log_data import ModelLogData
 
 
 class MixinEventBus[InputStateT, OutputStateT](BaseModel):
@@ -148,7 +148,7 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
         emit_log_event(
             LogLevel.DEBUG,
             "🏗️ MIXIN_INIT: Initializing unified MixinEventBus",
-            MixinLogData(node_name=self.node_name),
+            ModelLogData(node_name=self.node_name),
         )
 
         # Auto-start listener if event bus is available after full initialization
@@ -311,7 +311,7 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
     def publish_completion_event(
         self,
         event_type: str,
-        data: MixinCompletionData,
+        data: ModelCompletionData,
     ) -> None:
         """
         Publish completion event using synchronous event bus.
@@ -365,7 +365,7 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
     async def apublish_completion_event(
         self,
         event_type: str,
-        data: MixinCompletionData,
+        data: ModelCompletionData,
     ) -> None:
         """
         Publish completion event using asynchronous event bus.
@@ -421,7 +421,7 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
             )
 
     def _build_event(
-        self, event_type: str, data: MixinCompletionData
+        self, event_type: str, data: ModelCompletionData
     ) -> ModelOnexEvent:
         """Build ModelOnexEvent from completion data."""
         # Extract kwargs and handle correlation_id explicitly
@@ -688,7 +688,7 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
                 completion_event_type = self.get_completion_event_type(
                     str(event.event_type)
                 )
-                completion_data = MixinCompletionData(
+                completion_data = ModelCompletionData(
                     message=f"Processing completed for {event.event_type}",
                     success=True,
                     tags=["processed", "completed"],
@@ -709,7 +709,7 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
                     completion_event_type = self.get_completion_event_type(
                         str(event.event_type),
                     )
-                    error_data = MixinCompletionData(
+                    error_data = ModelCompletionData(
                         message=f"Processing failed: {e!s}",
                         success=False,
                         tags=["error", "failed"],

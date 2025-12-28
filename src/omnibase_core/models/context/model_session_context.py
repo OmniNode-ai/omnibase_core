@@ -17,6 +17,7 @@ See Also:
 """
 
 import ipaddress
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -67,7 +68,7 @@ class ModelSessionContext(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
-    session_id: str | None = Field(
+    session_id: UUID | None = Field(
         default=None,
         description="Session identifier",
     )
@@ -104,7 +105,7 @@ class ModelSessionContext(BaseModel):
     def normalize_authentication_method(
         cls, v: EnumAuthenticationMethod | str | None
     ) -> EnumAuthenticationMethod | str | None:
-        """Accept both enum and string values for backward compatibility.
+        """Normalize authentication method from string or enum input.
 
         Args:
             v: The authentication method value, either as EnumAuthenticationMethod,
@@ -112,7 +113,7 @@ class ModelSessionContext(BaseModel):
 
         Returns:
             The normalized value - EnumAuthenticationMethod if valid enum value,
-            else the original string for backward compatibility.
+            otherwise the original string for extensibility.
         """
         return create_enum_normalizer(EnumAuthenticationMethod)(v)
 
