@@ -610,12 +610,11 @@ class ModelContractReducer(MixinNodeTypeValidator, ModelContractBase):
                     },
                 ),
             ) from e
-        except (
+        except (  # fallback-ok: wraps unexpected parsing errors in ModelOnexError
             AttributeError,
             ValueError,
             TypeError,
             KeyError,
-            OSError,
             RuntimeError,
         ) as e:
             raise ModelOnexError(

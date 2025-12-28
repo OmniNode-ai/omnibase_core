@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pydantic import Field, field_validator
+from pydantic import Field, ValidationError, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -159,8 +159,7 @@ class ModelExecutionMetadata(BaseModel):
             ValueError,
             TypeError,
             KeyError,
-            OSError,
-            RuntimeError,
+            ValidationError,
         ) as e:
             raise ModelOnexError(
                 message=f"Failed to execute metadata update: {e}",

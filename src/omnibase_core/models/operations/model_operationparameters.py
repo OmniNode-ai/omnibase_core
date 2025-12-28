@@ -56,8 +56,6 @@ class ModelOperationParameters(BaseModel):
             ValueError,
             TypeError,
             KeyError,
-            OSError,
-            RuntimeError,
         ) as e:
             raise ModelOnexError(
                 message=f"Parameter execution failed: {e}",

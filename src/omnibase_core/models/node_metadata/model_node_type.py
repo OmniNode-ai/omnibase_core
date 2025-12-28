@@ -852,8 +852,6 @@ class ModelNodeType(BaseModel):
             requirements. Pydantic validation occurs automatically
             during instantiation and assignment.
         """
-        try:
-            return True
-        except (AttributeError, ValueError, TypeError, KeyError, RuntimeError, ValidationError):
-            # fallback-ok: Validation failures should not raise exceptions
-            return False
+        # Pydantic handles validation automatically during instantiation.
+        # This method exists to satisfy the ProtocolValidatable interface.
+        return True
