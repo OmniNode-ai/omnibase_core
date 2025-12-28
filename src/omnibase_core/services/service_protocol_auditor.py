@@ -20,8 +20,7 @@ from omnibase_core.models.validation.model_audit_result import ModelAuditResult
 from omnibase_core.models.validation.model_duplication_report import (
     ModelDuplicationReport,
 )
-
-from .validation_utils import (
+from omnibase_core.validation.validation_utils import (
     ModelDuplicationInfo,
     ModelProtocolInfo,
     determine_repository_name,
@@ -44,7 +43,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class ModelProtocolAuditor:
+class ServiceProtocolAuditor:
     """
     Centralized protocol auditing for omni* ecosystem.
 
@@ -54,6 +53,20 @@ class ModelProtocolAuditor:
     - Full ecosystem scan (comprehensive)
 
     Implements ProtocolQualityValidator for SPI compliance.
+
+    Thread Safety:
+        This class is NOT thread-safe. It maintains mutable instance state
+        including configuration options (standards, enable_* flags) that can
+        be modified via configure_standards(). Additionally, audit methods
+        perform filesystem I/O operations that are not atomic. Each thread
+        should use its own instance or wrap access with external locks.
+        See docs/guides/THREADING.md for more details.
+
+    .. note::
+        Previously named ``ModelProtocolAuditor``. Renamed in v0.4.0
+        to follow ONEX naming conventions (OMN-1071). The ``Model``
+        prefix is reserved for Pydantic BaseModel classes; ``Service``
+        prefix indicates a stateful service class.
     """
 
     def __init__(
@@ -81,7 +94,7 @@ class ModelProtocolAuditor:
         self.enable_style_checking = enable_style_checking
 
         logger.info(
-            f"ModelProtocolAuditor initialized for repository '{self.repository_name}' "
+            f"ServiceProtocolAuditor initialized for repository '{self.repository_name}' "
             f"at {self.repository_path}"
         )
 
@@ -238,7 +251,7 @@ class ModelProtocolAuditor:
                 continue
 
             # Audit each repository
-            auditor = ModelProtocolAuditor(str(repo_path))
+            auditor = ServiceProtocolAuditor(str(repo_path))
             result = auditor.check_current_repository()
             results[repo_name] = result
 

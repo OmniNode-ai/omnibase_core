@@ -113,9 +113,15 @@ class TestModelOrchestratorInputFrozenBehavior:
 
     def test_is_frozen(self) -> None:
         """Verify ModelOrchestratorInput is immutable after creation."""
+        # v1.0.1 Fix 1: steps must be typed ModelWorkflowStep instances
+        step = ModelWorkflowStep(
+            step_id=uuid4(),
+            step_name="test",
+            step_type="compute",
+        )
         model = ModelOrchestratorInput(
             workflow_id=uuid4(),
-            steps=[{"name": "test", "action": "test_action"}],
+            steps=[step],
         )
         with pytest.raises(ValidationError):
             model.failure_strategy = "continue_on_error"
@@ -135,9 +141,15 @@ class TestModelOrchestratorInputFrozenBehavior:
 
     def test_model_copy_for_modifications(self) -> None:
         """Verify model_copy can be used to create modified copies."""
+        # v1.0.1 Fix 1: steps must be typed ModelWorkflowStep instances
+        step = ModelWorkflowStep(
+            step_id=uuid4(),
+            step_name="test",
+            step_type="compute",
+        )
         original = ModelOrchestratorInput(
             workflow_id=uuid4(),
-            steps=[{"name": "test", "action": "run"}],
+            steps=[step],
             max_parallel_steps=5,
         )
         modified = original.model_copy(update={"max_parallel_steps": 10})
@@ -153,9 +165,15 @@ class TestModelOrchestratorInputSerialization:
     def test_json_serialization(self) -> None:
         """Test model serializes to valid JSON."""
         workflow_id = uuid4()
+        # v1.0.1 Fix 1: steps must be typed ModelWorkflowStep instances
+        step = ModelWorkflowStep(
+            step_id=uuid4(),
+            step_name="step1",
+            step_type="compute",
+        )
         model = ModelOrchestratorInput(
             workflow_id=workflow_id,
-            steps=[{"name": "step1", "action": "validate"}],
+            steps=[step],
             execution_mode=EnumExecutionMode.SEQUENTIAL,
             max_parallel_steps=5,
             global_timeout_ms=300000,
@@ -172,9 +190,15 @@ class TestModelOrchestratorInputSerialization:
     def test_json_deserialization(self) -> None:
         """Test model deserializes from valid JSON."""
         workflow_id = uuid4()
+        # v1.0.1 Fix 1: steps must be typed ModelWorkflowStep instances
+        step = ModelWorkflowStep(
+            step_id=uuid4(),
+            step_name="step1",
+            step_type="compute",
+        )
         model = ModelOrchestratorInput(
             workflow_id=workflow_id,
-            steps=[{"name": "step1", "action": "validate"}],
+            steps=[step],
         )
         json_str = model.model_dump_json()
         restored = ModelOrchestratorInput.model_validate_json(json_str)
@@ -185,9 +209,15 @@ class TestModelOrchestratorInputSerialization:
         """Test model -> JSON -> model produces equal result."""
         workflow_id = uuid4()
         operation_id = uuid4()
+        # v1.0.1 Fix 1: steps must be typed ModelWorkflowStep instances
+        step = ModelWorkflowStep(
+            step_id=uuid4(),
+            step_name="step1",
+            step_type="compute",
+        )
         model = ModelOrchestratorInput(
             workflow_id=workflow_id,
-            steps=[{"name": "step1", "action": "validate"}],
+            steps=[step],
             operation_id=operation_id,
             execution_mode=EnumExecutionMode.PARALLEL,
             max_parallel_steps=10,
@@ -958,13 +988,16 @@ class TestModelWorkflowStepFieldValidation:
         assert model.max_parallel_instances == 1
 
     def test_step_type_literal_values(self) -> None:
-        """Test all valid step_type literal values."""
+        """Test all valid step_type literal values.
+
+        v1.0.4 Fix 41: step_type must be compute|effect|reducer|orchestrator|custom|parallel only.
+        "conditional" is NOT a valid step_type and MUST be rejected.
+        """
         valid_types: list[str] = [
             "compute",
             "effect",
             "reducer",
             "orchestrator",
-            "conditional",
             "parallel",
             "custom",
         ]
@@ -974,6 +1007,19 @@ class TestModelWorkflowStepFieldValidation:
                 step_type=step_type,
             )
             assert model.step_type == step_type
+
+    def test_conditional_step_type_rejected(self) -> None:
+        """Test that 'conditional' step_type is rejected per v1.0.4 Fix 41.
+
+        v1.0.4 Fix 41: "conditional" is NOT a valid step_type.
+        This enforces that step_type must be one of:
+        compute|effect|reducer|orchestrator|custom|parallel
+        """
+        with pytest.raises(ValidationError):
+            ModelWorkflowStep(
+                step_name="test",
+                step_type="conditional",  # type: ignore[arg-type]
+            )
 
     def test_error_action_literal_values(self) -> None:
         """Test all valid error_action literal values."""
@@ -987,7 +1033,7 @@ class TestModelWorkflowStepFieldValidation:
             assert model.error_action == action
 
     def test_step_name_length_bounds(self) -> None:
-        """Test step_name length constraints (min=1, max=200)."""
+        """Test step_name length constraints (min=1, max=255)."""
         # Valid
         model = ModelWorkflowStep(
             step_name="x",
@@ -996,10 +1042,10 @@ class TestModelWorkflowStepFieldValidation:
         assert model.step_name == "x"
 
         model = ModelWorkflowStep(
-            step_name="x" * 200,
+            step_name="x" * 255,
             step_type="compute",
         )
-        assert len(model.step_name) == 200
+        assert len(model.step_name) == 255
 
         # Empty string
         with pytest.raises(ValidationError):
@@ -1011,7 +1057,7 @@ class TestModelWorkflowStepFieldValidation:
         # Too long
         with pytest.raises(ValidationError):
             ModelWorkflowStep(
-                step_name="x" * 201,
+                step_name="x" * 256,
                 step_type="compute",
             )
 
@@ -1702,7 +1748,17 @@ class TestOrchestratorModelsSerializationParametrized:
         [
             (
                 ModelOrchestratorInput,
-                {"workflow_id": uuid4(), "steps": [{"name": "test", "action": "run"}]},
+                {
+                    "workflow_id": uuid4(),
+                    # v1.0.1 Fix 1: steps must be typed ModelWorkflowStep instances
+                    "steps": [
+                        ModelWorkflowStep(
+                            step_id=uuid4(),
+                            step_name="test",
+                            step_type="compute",
+                        )
+                    ],
+                },
             ),
             (
                 ModelOrchestratorOutput,

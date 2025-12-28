@@ -430,7 +430,12 @@ class TestNodeOrchestratorExecutionOrderDeterminism:
         self,
         test_container: ModelONEXContainer,
     ):
-        """Test that execution order respects declaration order for equal priority."""
+        """Test that execution order respects declaration order.
+
+        v1.0.2 Fix 5: Declaration order is the sole tiebreaker for topological ordering.
+        Priority values do NOT affect execution order - they are passed through to
+        emitted actions for downstream scheduling decisions only.
+        """
         node = NodeOrchestrator(test_container)
 
         # Steps with no dependencies (all can run first)
@@ -459,45 +464,55 @@ class TestNodeOrchestratorExecutionOrderDeterminism:
         for order in orders:
             assert order == [FIXED_STEP_1_ID, FIXED_STEP_2_ID, FIXED_STEP_3_ID]
 
-    def test_get_execution_order_respects_priority(
+    def test_get_execution_order_uses_declaration_order_not_priority(
         self,
         test_container: ModelONEXContainer,
     ):
-        """Test that execution order respects priority for steps with no dependencies."""
+        """Test that execution order uses declaration order, not priority.
+
+        Per v1.0.4 Normative Spec (Action Emission Wave Ordering - Fix 11, Fix 18):
+        - Within a wave, actions MUST appear in YAML declaration order.
+        - Priority is passed to action.priority for TARGET NODE scheduling decisions,
+          but does NOT affect emission order within the orchestrator.
+        - This aligns with v1.0.2 Fix 5: declaration-order tiebreaker for determinism.
+        """
         node = NodeOrchestrator(test_container)
 
         # Steps with different priorities, no dependencies
+        # Despite different priority values, emission order follows declaration order
         steps = [
             ModelWorkflowStep(
                 step_id=FIXED_STEP_1_ID,
                 step_name="Low Priority",
                 step_type="effect",
-                priority=5,
+                priority=5,  # Priority is a scheduling hint for target nodes
             ),
             ModelWorkflowStep(
                 step_id=FIXED_STEP_2_ID,
                 step_name="High Priority",
                 step_type="compute",
-                priority=1,
+                priority=1,  # Not used for orchestrator emission order
             ),
             ModelWorkflowStep(
                 step_id=FIXED_STEP_3_ID,
                 step_name="Medium Priority",
                 step_type="compute",
-                priority=3,
+                priority=3,  # Passed through to action.priority
             ),
         ]
 
         orders = [node.get_execution_order_for_steps(steps) for _ in range(5)]
 
-        # All orders should be identical
+        # All orders should be identical (determinism)
         for order in orders[1:]:
             assert order == orders[0]
 
-        # Lower priority value = higher priority = comes first
-        assert orders[0][0] == FIXED_STEP_2_ID  # priority 1
-        assert orders[0][1] == FIXED_STEP_3_ID  # priority 3
-        assert orders[0][2] == FIXED_STEP_1_ID  # priority 5
+        # v1.0.4: Execution order follows DECLARATION order, NOT priority order
+        # Priority field is passed to emitted actions for target node scheduling,
+        # but the orchestrator emits in the order steps are declared.
+        assert orders[0][0] == FIXED_STEP_1_ID  # First declared
+        assert orders[0][1] == FIXED_STEP_2_ID  # Second declared
+        assert orders[0][2] == FIXED_STEP_3_ID  # Third declared
 
     @pytest.mark.asyncio
     async def test_sequential_execution_maintains_order(
@@ -1199,14 +1214,18 @@ class TestNodeOrchestratorEdgeCases:
     """Test edge cases for determinism."""
 
     @pytest.mark.asyncio
-    async def test_empty_steps_produces_deterministic_error(
+    async def test_empty_steps_produces_deterministic_completed_result(
         self,
         test_container: ModelONEXContainer,
         simple_workflow_definition: ModelWorkflowDefinition,
     ):
-        """Test that empty steps list produces deterministic validation error."""
-        from omnibase_core.models.errors.model_onex_error import ModelOnexError
+        """Test that empty steps list produces deterministic COMPLETED result.
 
+        Empty workflows are explicitly VALID by design per v1.0.3 Fix 29.
+        The workflow executor returns a COMPLETED status with 0 actions and
+        0 completed steps when no steps are defined. This is intentional behavior
+        documented in execute_workflow() and validate_workflow_definition().
+        """
         node = NodeOrchestrator(test_container)
         node.workflow_definition = simple_workflow_definition
 
@@ -1216,19 +1235,25 @@ class TestNodeOrchestratorEdgeCases:
             execution_mode=EnumExecutionMode.SEQUENTIAL,
         )
 
-        # Should consistently raise validation error
-        with pytest.raises(ModelOnexError) as exc_1:
-            await node.process(input_data)
+        # Empty workflow should consistently return COMPLETED status
+        result_1 = await node.process(input_data)
+        result_2 = await node.process(input_data)
 
-        with pytest.raises(ModelOnexError) as exc_2:
-            await node.process(input_data)
+        # Both results should be identical (deterministic)
+        assert result_1.execution_status == result_2.execution_status
+        assert result_1.execution_status == "completed"
 
-        # Both errors should have same message pattern
-        assert (
-            "no steps" in str(exc_1.value).lower()
-            or "validation" in str(exc_1.value).lower()
-        )
-        assert str(exc_1.value) == str(exc_2.value)
+        # Empty workflows have 0 actions and 0 completed steps
+        assert len(result_1.actions_emitted) == 0
+        assert len(result_1.completed_steps) == 0
+        assert result_1.skipped_steps == []  # No steps to skip
+        assert len(result_2.actions_emitted) == 0
+        assert len(result_2.completed_steps) == 0
+        assert result_2.skipped_steps == []  # No steps to skip
+
+        # Metrics should be consistent
+        assert result_1.metrics["actions_count"] == result_2.metrics["actions_count"]
+        assert result_1.metrics["actions_count"] == 0
 
     @pytest.mark.asyncio
     async def test_single_step_workflow_deterministic(
@@ -1267,7 +1292,11 @@ class TestNodeOrchestratorEdgeCases:
         test_container: ModelONEXContainer,
         simple_workflow_definition: ModelWorkflowDefinition,
     ):
-        """Test that disabled steps are handled deterministically."""
+        """Test that disabled steps are handled deterministically.
+
+        v1.0.2 Fix 10: Disabled steps appear in skipped_steps and are treated
+        as satisfied dependencies. Multiple runs produce identical skipped_steps.
+        """
         node = NodeOrchestrator(test_container)
         node.workflow_definition = simple_workflow_definition
 
@@ -1299,9 +1328,22 @@ class TestNodeOrchestratorEdgeCases:
 
         results = [await node.process(input_data) for _ in range(3)]
 
-        # Disabled step should not appear in completed steps
+        # v1.0.2 Fix 10: Disabled step tracked deterministically in skipped_steps
         for result in results:
             assert str(FIXED_STEP_2_ID) not in result.completed_steps
+            # Disabled step should appear in skipped_steps
+            assert str(FIXED_STEP_2_ID) in result.skipped_steps
+            assert len(result.skipped_steps) == 1  # Only the disabled step
+            assert result.skipped_steps == [str(FIXED_STEP_2_ID)], (
+                "skipped_steps should contain exactly the disabled step ID"
+            )
             # Other steps should complete
             assert str(FIXED_STEP_1_ID) in result.completed_steps
             assert str(FIXED_STEP_3_ID) in result.completed_steps
+            # Enabled steps must NOT appear in skipped_steps
+            assert str(FIXED_STEP_1_ID) not in result.skipped_steps
+            assert str(FIXED_STEP_3_ID) not in result.skipped_steps
+
+        # All runs should produce identical skipped_steps (determinism)
+        for result in results[1:]:
+            assert result.skipped_steps == results[0].skipped_steps

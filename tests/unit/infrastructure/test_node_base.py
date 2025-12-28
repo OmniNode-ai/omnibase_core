@@ -141,7 +141,7 @@ class TestNodeBaseInitialization:
             yaml.dump(contract_data, f)
 
         with patch(
-            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+            "omnibase_core.utils.util_contract_loader.UtilContractLoader"
         ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
@@ -186,7 +186,7 @@ class TestNodeBaseInitialization:
         provided_node_id = uuid4()
 
         with patch(
-            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+            "omnibase_core.utils.util_contract_loader.UtilContractLoader"
         ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
@@ -234,7 +234,7 @@ class TestNodeBaseInitialization:
         session_id = uuid4()
 
         with patch(
-            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+            "omnibase_core.utils.util_contract_loader.UtilContractLoader"
         ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
@@ -267,7 +267,7 @@ class TestNodeBaseInitialization:
         contract_path = tmp_path / "nonexistent.yaml"
 
         with patch(
-            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+            "omnibase_core.utils.util_contract_loader.UtilContractLoader"
         ) as mock_loader_class:
             mock_loader = Mock()
             mock_loader.load_contract.side_effect = FileNotFoundError(
@@ -306,7 +306,7 @@ class TestNodeBaseToolResolution:
             yaml.dump(contract_data, f)
 
         with patch(
-            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+            "omnibase_core.utils.util_contract_loader.UtilContractLoader"
         ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
@@ -335,7 +335,7 @@ class TestNodeBaseToolResolution:
         contract_path = tmp_path / "test_contract.yaml"
 
         with patch(
-            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+            "omnibase_core.utils.util_contract_loader.UtilContractLoader"
         ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
@@ -363,7 +363,7 @@ class TestNodeBaseToolResolution:
         contract_path = tmp_path / "test_contract.yaml"
 
         with patch(
-            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+            "omnibase_core.utils.util_contract_loader.UtilContractLoader"
         ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
@@ -390,7 +390,7 @@ class TestNodeBaseToolResolution:
         contract_path = tmp_path / "test_contract.yaml"
 
         with patch(
-            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+            "omnibase_core.utils.util_contract_loader.UtilContractLoader"
         ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
@@ -430,7 +430,7 @@ class TestNodeBaseAsyncExecution:
         contract_path = tmp_path / "test_contract.yaml"
 
         with patch(
-            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+            "omnibase_core.utils.util_contract_loader.UtilContractLoader"
         ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
@@ -465,7 +465,7 @@ class TestNodeBaseAsyncExecution:
         contract_path = tmp_path / "test_contract.yaml"
 
         with patch(
-            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+            "omnibase_core.utils.util_contract_loader.UtilContractLoader"
         ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
@@ -507,7 +507,7 @@ class TestNodeBaseAsyncExecution:
                 return {"result": "sync_only"}
 
         with patch(
-            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+            "omnibase_core.utils.util_contract_loader.UtilContractLoader"
         ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
@@ -541,7 +541,7 @@ class TestNodeBaseAsyncExecution:
         contract_path = tmp_path / "test_contract.yaml"
 
         with patch(
-            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+            "omnibase_core.utils.util_contract_loader.UtilContractLoader"
         ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
@@ -577,7 +577,7 @@ class TestNodeBaseAsyncExecution:
         contract_path = tmp_path / "test_contract.yaml"
 
         with patch(
-            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+            "omnibase_core.utils.util_contract_loader.UtilContractLoader"
         ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
@@ -615,7 +615,7 @@ class TestNodeBaseAsyncExecution:
         contract_path = tmp_path / "test_contract.yaml"
 
         with patch(
-            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+            "omnibase_core.utils.util_contract_loader.UtilContractLoader"
         ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
@@ -657,7 +657,7 @@ class TestNodeBaseSyncExecution:
         contract_path = tmp_path / "test_contract.yaml"
 
         with patch(
-            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+            "omnibase_core.utils.util_contract_loader.UtilContractLoader"
         ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
@@ -688,7 +688,7 @@ class TestNodeBaseSyncExecution:
         contract_path = tmp_path / "test_contract.yaml"
 
         with patch(
-            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+            "omnibase_core.utils.util_contract_loader.UtilContractLoader"
         ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
@@ -727,7 +727,7 @@ class TestNodeBaseReducerPattern:
         contract_path = tmp_path / "test_contract.yaml"
 
         with patch(
-            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+            "omnibase_core.utils.util_contract_loader.UtilContractLoader"
         ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
@@ -756,7 +756,7 @@ class TestNodeBaseReducerPattern:
         contract_path = tmp_path / "test_contract.yaml"
 
         with patch(
-            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+            "omnibase_core.utils.util_contract_loader.UtilContractLoader"
         ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
@@ -791,7 +791,7 @@ class TestNodeBaseReducerPattern:
         contract_path = tmp_path / "test_contract.yaml"
 
         with patch(
-            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+            "omnibase_core.utils.util_contract_loader.UtilContractLoader"
         ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
@@ -833,7 +833,7 @@ class TestNodeBaseProperties:
         contract_path = tmp_path / "test_contract.yaml"
 
         with patch(
-            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+            "omnibase_core.utils.util_contract_loader.UtilContractLoader"
         ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
@@ -863,7 +863,7 @@ class TestNodeBaseProperties:
         contract_path = tmp_path / "test_contract.yaml"
 
         with patch(
-            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+            "omnibase_core.utils.util_contract_loader.UtilContractLoader"
         ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
@@ -897,7 +897,7 @@ class TestNodeBaseProperties:
         contract_path = tmp_path / "test_contract.yaml"
 
         with patch(
-            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+            "omnibase_core.utils.util_contract_loader.UtilContractLoader"
         ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
@@ -927,7 +927,7 @@ class TestNodeBaseProperties:
         contract_path = tmp_path / "test_contract.yaml"
 
         with patch(
-            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+            "omnibase_core.utils.util_contract_loader.UtilContractLoader"
         ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
@@ -958,7 +958,7 @@ class TestNodeBaseProperties:
         contract_path = tmp_path / "test_contract.yaml"
 
         with patch(
-            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+            "omnibase_core.utils.util_contract_loader.UtilContractLoader"
         ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
@@ -992,7 +992,7 @@ class TestNodeBaseProperties:
         contract_path = tmp_path / "test_contract.yaml"
 
         with patch(
-            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+            "omnibase_core.utils.util_contract_loader.UtilContractLoader"
         ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
@@ -1030,7 +1030,7 @@ class TestNodeBaseWorkflow:
         contract_path = tmp_path / "test_contract.yaml"
 
         with patch(
-            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+            "omnibase_core.utils.util_contract_loader.UtilContractLoader"
         ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
@@ -1078,7 +1078,7 @@ class TestNodeBaseEdgeCases:
                 raise ValueError("Tool execution failed")
 
         with patch(
-            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+            "omnibase_core.utils.util_contract_loader.UtilContractLoader"
         ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
@@ -1125,7 +1125,7 @@ class TestNodeBaseEdgeCases:
                 )
 
         with patch(
-            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+            "omnibase_core.utils.util_contract_loader.UtilContractLoader"
         ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
@@ -1160,7 +1160,7 @@ class TestNodeBaseEdgeCases:
         contract_path = tmp_path / "test_contract.yaml"
 
         with patch(
-            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+            "omnibase_core.utils.util_contract_loader.UtilContractLoader"
         ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
@@ -1197,7 +1197,7 @@ class TestNodeBaseEdgeCases:
         contract_path = tmp_path / "test_contract.yaml"
 
         with patch(
-            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+            "omnibase_core.utils.util_contract_loader.UtilContractLoader"
         ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
@@ -1237,7 +1237,7 @@ class TestNodeBaseEdgeCases:
         contract_path = tmp_path / "test_contract.yaml"
 
         with patch(
-            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+            "omnibase_core.utils.util_contract_loader.UtilContractLoader"
         ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
@@ -1265,7 +1265,7 @@ class TestNodeBaseEdgeCases:
         contract_path = tmp_path / "test_contract.yaml"
 
         with patch(
-            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+            "omnibase_core.utils.util_contract_loader.UtilContractLoader"
         ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()
@@ -1296,7 +1296,7 @@ class TestNodeBaseEdgeCases:
         contract_path = tmp_path / "test_contract.yaml"
 
         with patch(
-            "omnibase_core.utils.util_contract_loader.ProtocolContractLoader"
+            "omnibase_core.utils.util_contract_loader.UtilContractLoader"
         ) as mock_loader_class:
             mock_loader = Mock()
             mock_contract = Mock()

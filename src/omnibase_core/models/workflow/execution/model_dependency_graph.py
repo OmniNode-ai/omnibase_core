@@ -4,13 +4,30 @@ Dependency Graph Model.
 Dependency graph for workflow step ordering and execution coordination.
 
 Extracted from node_orchestrator.py to eliminate embedded class anti-pattern.
+
+Security Considerations:
+    The MAX_DFS_ITERATIONS constant (10,000) protects against denial-of-service
+    attacks from maliciously crafted workflow graphs. Without this limit, an
+    attacker could submit workflows designed to cause infinite loops or excessive
+    CPU consumption during cycle detection.
+
+    If cycle detection exceeds MAX_DFS_ITERATIONS, a ModelOnexError is raised
+    with detailed context for debugging and audit logging.
 """
 
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_workflow_execution import EnumWorkflowState
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.validation.workflow_constants import MAX_DFS_ITERATIONS
+
+# MAX_DFS_ITERATIONS: Resource exhaustion protection constant for DFS cycle detection.
+# Imported from workflow_constants.py (canonical source).
+# Value of 10,000 iterations supports graphs with up to ~5,000 nodes
+# (worst case: each node visited twice during DFS traversal).
 
 
 class ModelDependencyGraph(BaseModel):
@@ -81,11 +98,42 @@ class ModelDependencyGraph(BaseModel):
                 self.in_degree[dependent_step] -= 1
 
     def has_cycles(self) -> bool:
-        """Check if dependency graph has cycles using DFS."""
+        """
+        Check if dependency graph has cycles using DFS.
+
+        Uses iteration bounds to prevent resource exhaustion from malicious
+        or malformed inputs.
+
+        Returns:
+            True if cycles detected, False otherwise
+
+        Raises:
+            ModelOnexError: If cycle detection exceeds MAX_DFS_ITERATIONS,
+                indicating possible malicious input or malformed graph.
+        """
         visited: set[str] = set()
         rec_stack: set[str] = set()
+        iterations = 0  # Track iterations for resource exhaustion protection
 
         def dfs(node: str) -> bool:
+            nonlocal iterations
+            iterations += 1
+
+            # Resource exhaustion protection - prevent malicious/malformed inputs
+            if iterations > MAX_DFS_ITERATIONS:
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    message=(
+                        f"Cycle detection exceeded {MAX_DFS_ITERATIONS} iterations - "
+                        "possible malicious input or malformed graph"
+                    ),
+                    context={
+                        "node_count": len(self.nodes),
+                        "max_iterations": MAX_DFS_ITERATIONS,
+                        "last_node": node,
+                    },
+                )
+
             if node in rec_stack:
                 return True  # Cycle detected
             if node in visited:
@@ -118,4 +166,6 @@ from omnibase_core.models.workflow.execution.model_workflow_step_execution impor
 # Update forward references
 ModelDependencyGraph.model_rebuild()
 
+# NOTE: MAX_DFS_ITERATIONS is imported from workflow_constants.py (canonical source).
+# Import directly from omnibase_core.validation.workflow_constants for this constant.
 __all__ = ["ModelDependencyGraph"]

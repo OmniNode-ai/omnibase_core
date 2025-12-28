@@ -64,6 +64,7 @@ class ModelDeclarativeWorkflowResult:
     execution_status: EnumWorkflowState
     completed_steps: list[str]
     failed_steps: list[str]
+    skipped_steps: list[str]
     actions_emitted: list[ModelAction]
     execution_time_ms: int
     metadata: ModelWorkflowResultMetadata | None
@@ -78,6 +79,7 @@ class ModelDeclarativeWorkflowResult:
         actions_emitted: list[ModelAction],
         execution_time_ms: int,
         metadata: ModelWorkflowResultMetadata | None = None,
+        skipped_steps: list[str] | None = None,
     ):
         """
         Initialize declarative workflow execution result.
@@ -90,11 +92,15 @@ class ModelDeclarativeWorkflowResult:
             actions_emitted: List of actions emitted during execution
             execution_time_ms: Execution time in milliseconds
             metadata: Optional typed execution metadata
+            skipped_steps: List of skipped step IDs (disabled steps).
+                Per v1.0.1 Fix 17, steps with enabled=False are tracked
+                in skipped_steps, not completed_steps or failed_steps.
         """
         self.workflow_id = workflow_id
         self.execution_status = execution_status
         self.completed_steps = completed_steps
         self.failed_steps = failed_steps
+        self.skipped_steps = skipped_steps if skipped_steps is not None else []
         self.actions_emitted = actions_emitted
         self.execution_time_ms = execution_time_ms
         self.metadata = metadata

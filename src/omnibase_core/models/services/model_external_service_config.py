@@ -2,6 +2,10 @@ from typing import Any
 
 from pydantic import BaseModel, Field, ValidationError, model_validator
 
+from omnibase_core.constants.constants_field_limits import (
+    MAX_IDENTIFIER_LENGTH,
+    MAX_KEY_LENGTH,
+)
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.configuration.model_database_connection_config import (
     ModelDatabaseConnectionConfig,
@@ -16,8 +20,8 @@ from omnibase_core.models.configuration.model_rest_api_connection_config import 
 )
 from omnibase_core.models.core.model_retry_config import ModelRetryConfig
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.security.model_security_utils import ModelSecurityUtils
 from omnibase_core.models.services.model_masked_config import ModelMaskedConfig
+from omnibase_core.utils.util_security import UtilSecurity
 
 
 class ModelExternalServiceConfig(BaseModel):
@@ -39,13 +43,13 @@ class ModelExternalServiceConfig(BaseModel):
         default="unnamed_service",
         description="Name of the external service (e.g., 'database', 'api', 'cache')",
         pattern=r"^[a-zA-Z0-9_\-]+$",
-        max_length=100,
+        max_length=MAX_IDENTIFIER_LENGTH,
     )
     service_type: str = Field(
         default=...,
         description="Type of service (e.g., 'event_bus', 'database', 'rest_api')",
         pattern=r"^[a-zA-Z0-9_\-]+$",
-        max_length=50,
+        max_length=MAX_KEY_LENGTH,
     )
     connection_config: (
         ModelDatabaseConnectionConfig
@@ -144,7 +148,7 @@ class ModelExternalServiceConfig(BaseModel):
         else:
             connection_dict = {}
 
-        masked_connection = ModelSecurityUtils.mask_dict_credentials(connection_dict)
+        masked_connection = UtilSecurity.mask_dict_credentials(connection_dict)
 
         # Build masked config
         # Type note: masked_connection contains only simple types (str, int, bool) after masking

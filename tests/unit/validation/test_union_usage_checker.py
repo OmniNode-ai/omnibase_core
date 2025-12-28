@@ -732,7 +732,7 @@ class TestPEP604UnionTypeDetection:
     Verifies that isinstance(annotation, types.UnionType) correctly
     identifies PEP 604 unions (str | None) as documented in CLAUDE.md.
 
-    This pattern is used in mixin_canonical_serialization.py (lines 221-225)
+    This pattern is used in mixin_canonical_serialization.py (_is_pep604_union)
     to detect PEP 604 union syntax at runtime, since PEP 604 unions do NOT
     have __origin__ accessible via getattr() like typing.Union does.
     """

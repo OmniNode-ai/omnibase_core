@@ -15,6 +15,7 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.constants import TIMEOUT_DEFAULT_MS, TIMEOUT_LONG_MS
+from omnibase_core.constants.constants_field_limits import MAX_NAME_LENGTH
 from omnibase_core.enums.enum_workflow_execution import (
     EnumBranchCondition,
     EnumExecutionMode,
@@ -58,7 +59,7 @@ class ModelWorkflowStepExecution(BaseModel):
         default=...,
         description="Human-readable name for this step",
         min_length=1,
-        max_length=200,
+        max_length=MAX_NAME_LENGTH,
     )
 
     execution_mode: EnumExecutionMode = Field(

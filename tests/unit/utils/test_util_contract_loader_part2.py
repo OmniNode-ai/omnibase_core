@@ -39,7 +39,7 @@ from omnibase_core.models.core.model_tool_specification import ModelToolSpecific
 from omnibase_core.models.core.model_yaml_schema_object import ModelYamlSchemaObject
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.utils.util_contract_loader import ProtocolContractLoader
+from omnibase_core.utils.util_contract_loader import UtilContractLoader
 
 # ===== Test Fixtures =====
 
@@ -112,15 +112,15 @@ tool_specification:
 
 
 @pytest.fixture
-def contract_loader(tmp_path: Path) -> ProtocolContractLoader:
-    """Create a ProtocolContractLoader instance for testing."""
-    return ProtocolContractLoader(base_path=tmp_path, cache_enabled=True)
+def contract_loader(tmp_path: Path) -> UtilContractLoader:
+    """Create a UtilContractLoader instance for testing."""
+    return UtilContractLoader(base_path=tmp_path, cache_enabled=True)
 
 
 @pytest.fixture
-def contract_loader_no_cache(tmp_path: Path) -> ProtocolContractLoader:
-    """Create a ProtocolContractLoader with caching disabled."""
-    return ProtocolContractLoader(base_path=tmp_path, cache_enabled=False)
+def contract_loader_no_cache(tmp_path: Path) -> UtilContractLoader:
+    """Create a UtilContractLoader with caching disabled."""
+    return UtilContractLoader(base_path=tmp_path, cache_enabled=False)
 
 
 # ===== _resolve_all_references Tests =====
@@ -128,10 +128,10 @@ def contract_loader_no_cache(tmp_path: Path) -> ProtocolContractLoader:
 
 @pytest.mark.unit
 class TestResolveAllReferences:
-    """Test ProtocolContractLoader._resolve_all_references method."""
+    """Test UtilContractLoader._resolve_all_references method."""
 
     def test_resolve_references_basic(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test basic reference resolution."""
         content = ModelContractContent(
@@ -154,7 +154,7 @@ class TestResolveAllReferences:
         assert result.node_name == "TestNode"
 
     def test_resolve_references_resets_stack(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test that resolution resets resolution stack."""
         # Set up a non-empty stack
@@ -180,7 +180,7 @@ class TestResolveAllReferences:
         assert len(contract_loader.state.resolution_stack) == 0
 
     def test_resolve_references_preserves_contract(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test that resolution preserves contract content."""
         content = ModelContractContent(
@@ -208,7 +208,7 @@ class TestResolveAllReferences:
         assert result.tool_specification.main_tool_class == "PreservedClass"
 
     def test_resolve_references_with_complex_contract(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test reference resolution with complex contract structure."""
         content = ModelContractContent(
@@ -230,7 +230,7 @@ class TestResolveAllReferences:
         assert result.node_type == EnumNodeType.ORCHESTRATOR_GENERIC
 
     def test_resolve_references_multiple_calls(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test multiple resolution calls work correctly."""
         content = ModelContractContent(
@@ -261,10 +261,10 @@ class TestResolveAllReferences:
 
 @pytest.mark.unit
 class TestClearCache:
-    """Test ProtocolContractLoader.clear_cache method."""
+    """Test UtilContractLoader.clear_cache method."""
 
     def test_clear_cache_empties_contract_cache(
-        self, contract_loader: ProtocolContractLoader, valid_contract_yaml: Path
+        self, contract_loader: UtilContractLoader, valid_contract_yaml: Path
     ) -> None:
         """Test that clear_cache empties the contract cache."""
         # Load a contract to populate cache
@@ -280,7 +280,7 @@ class TestClearCache:
         assert len(contract_loader.state.contract_cache) == 0
 
     def test_clear_cache_empties_loaded_contracts(
-        self, contract_loader: ProtocolContractLoader, valid_contract_yaml: Path
+        self, contract_loader: UtilContractLoader, valid_contract_yaml: Path
     ) -> None:
         """Test that clear_cache empties loaded contracts registry."""
         # Load a contract
@@ -297,7 +297,7 @@ class TestClearCache:
 
     def test_clear_cache_clears_both_caches(
         self,
-        contract_loader: ProtocolContractLoader,
+        contract_loader: UtilContractLoader,
         multiple_contracts: list[Path],
     ) -> None:
         """Test that clear_cache clears both cache types."""
@@ -317,7 +317,7 @@ class TestClearCache:
         assert len(contract_loader.state.loaded_contracts) == 0
 
     def test_clear_cache_allows_reload(
-        self, contract_loader: ProtocolContractLoader, valid_contract_yaml: Path
+        self, contract_loader: UtilContractLoader, valid_contract_yaml: Path
     ) -> None:
         """Test that contracts can be reloaded after cache clear."""
         # Load contract
@@ -334,7 +334,7 @@ class TestClearCache:
         assert result1.node_type == result2.node_type
 
     def test_clear_cache_on_empty_cache(
-        self, contract_loader: ProtocolContractLoader
+        self, contract_loader: UtilContractLoader
     ) -> None:
         """Test clear_cache on empty cache doesn't raise error."""
         # Clear cache when empty
@@ -345,7 +345,7 @@ class TestClearCache:
         assert len(contract_loader.state.loaded_contracts) == 0
 
     def test_clear_cache_multiple_times(
-        self, contract_loader: ProtocolContractLoader, valid_contract_yaml: Path
+        self, contract_loader: UtilContractLoader, valid_contract_yaml: Path
     ) -> None:
         """Test clearing cache multiple times."""
         # Load contract
@@ -361,7 +361,7 @@ class TestClearCache:
         assert len(contract_loader.state.loaded_contracts) == 0
 
     def test_clear_cache_preserves_loader_state(
-        self, contract_loader: ProtocolContractLoader, valid_contract_yaml: Path
+        self, contract_loader: UtilContractLoader, valid_contract_yaml: Path
     ) -> None:
         """Test that clear_cache preserves loader configuration."""
         # Store original configuration
@@ -382,10 +382,10 @@ class TestClearCache:
 
 @pytest.mark.unit
 class TestValidateContractCompatibility:
-    """Test ProtocolContractLoader.validate_contract_compatibility method."""
+    """Test UtilContractLoader.validate_contract_compatibility method."""
 
     def test_validate_compatible_contract(
-        self, contract_loader: ProtocolContractLoader, valid_contract_yaml: Path
+        self, contract_loader: UtilContractLoader, valid_contract_yaml: Path
     ) -> None:
         """Test validation of compatible contract."""
         result = contract_loader.validate_contract_compatibility(valid_contract_yaml)
@@ -393,7 +393,7 @@ class TestValidateContractCompatibility:
         assert result is True
 
     def test_validate_incompatible_contract_missing_file(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test validation of non-existent contract."""
         nonexistent = tmp_path / "nonexistent.yaml"
@@ -403,7 +403,7 @@ class TestValidateContractCompatibility:
         assert result is False
 
     def test_validate_incompatible_contract_malformed(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test validation of malformed contract."""
         malformed = tmp_path / "malformed.yaml"
@@ -414,7 +414,7 @@ class TestValidateContractCompatibility:
         assert result is False
 
     def test_validate_contract_missing_required_fields(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test validation of contract with missing required fields."""
         incomplete = tmp_path / "incomplete.yaml"
@@ -433,7 +433,7 @@ contract_version:
         assert result is False
 
     def test_validate_contract_caches_result(
-        self, contract_loader: ProtocolContractLoader, valid_contract_yaml: Path
+        self, contract_loader: UtilContractLoader, valid_contract_yaml: Path
     ) -> None:
         """Test that validation caches the loaded contract."""
         result = contract_loader.validate_contract_compatibility(valid_contract_yaml)
@@ -446,7 +446,7 @@ contract_version:
 
     def test_validate_multiple_contracts(
         self,
-        contract_loader: ProtocolContractLoader,
+        contract_loader: UtilContractLoader,
         multiple_contracts: list[Path],
     ) -> None:
         """Test validation of multiple contracts."""
@@ -461,7 +461,7 @@ contract_version:
         assert len(contract_loader.state.loaded_contracts) == len(multiple_contracts)
 
     def test_validate_contract_no_exception_propagation(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test that validation doesn't propagate exceptions."""
         # Create various problematic files
@@ -481,7 +481,7 @@ class TestCacheBehavior:
     """Test advanced cache behavior and edge cases."""
 
     def test_cache_hit_on_second_load(
-        self, contract_loader: ProtocolContractLoader, valid_contract_yaml: Path
+        self, contract_loader: UtilContractLoader, valid_contract_yaml: Path
     ) -> None:
         """Test that second load hits cache."""
         # First load - miss
@@ -501,7 +501,7 @@ class TestCacheBehavior:
 
     def test_cache_miss_with_disabled_cache(
         self,
-        contract_loader_no_cache: ProtocolContractLoader,
+        contract_loader_no_cache: UtilContractLoader,
         valid_contract_yaml: Path,
     ) -> None:
         """Test cache miss behavior when caching is disabled."""
@@ -514,7 +514,7 @@ class TestCacheBehavior:
         assert len(contract_loader_no_cache.state.contract_cache) == 0
 
     def test_cache_invalidation_on_file_modification(
-        self, contract_loader: ProtocolContractLoader, valid_contract_yaml: Path
+        self, contract_loader: UtilContractLoader, valid_contract_yaml: Path
     ) -> None:
         """Test cache invalidation when file is modified."""
         # First load
@@ -548,8 +548,8 @@ tool_specification:
         self, tmp_path: Path, valid_contract_yaml: Path
     ) -> None:
         """Test independent cache for multiple loader instances."""
-        loader1 = ProtocolContractLoader(base_path=tmp_path, cache_enabled=True)
-        loader2 = ProtocolContractLoader(base_path=tmp_path, cache_enabled=True)
+        loader1 = UtilContractLoader(base_path=tmp_path, cache_enabled=True)
+        loader2 = UtilContractLoader(base_path=tmp_path, cache_enabled=True)
 
         # Load with first loader
         loader1.load_contract(valid_contract_yaml)
@@ -566,7 +566,7 @@ tool_specification:
         assert len(loader2.state.loaded_contracts) == 1
 
     def test_cache_statistics_tracking(
-        self, contract_loader: ProtocolContractLoader, valid_contract_yaml: Path
+        self, contract_loader: UtilContractLoader, valid_contract_yaml: Path
     ) -> None:
         """Test that cache tracks access statistics."""
         # Load contract to populate cache
@@ -585,7 +585,7 @@ tool_specification:
 
     def test_cache_with_symlinks(
         self,
-        contract_loader: ProtocolContractLoader,
+        contract_loader: UtilContractLoader,
         valid_contract_yaml: Path,
         tmp_path: Path,
     ) -> None:
@@ -612,13 +612,13 @@ class TestResolutionStack:
     """Test resolution stack management."""
 
     def test_resolution_stack_initialized_empty(
-        self, contract_loader: ProtocolContractLoader
+        self, contract_loader: UtilContractLoader
     ) -> None:
         """Test that resolution stack is initialized empty."""
         assert len(contract_loader.state.resolution_stack) == 0
 
     def test_resolution_stack_reset_on_new_resolution(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test that resolution stack is reset for new resolution."""
         # Manually populate stack
@@ -644,7 +644,7 @@ class TestResolutionStack:
         assert len(contract_loader.state.resolution_stack) == 0
 
     def test_resolution_stack_independent_per_resolution(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test that each resolution has independent stack."""
         content = ModelContractContent(
@@ -678,7 +678,7 @@ class TestPerformance:
     """Test performance characteristics of contract loader."""
 
     def test_load_many_contracts_performance(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test loading many contracts in sequence."""
         # Create 20 contracts
@@ -711,7 +711,7 @@ tool_specification:
         assert len(contract_loader.state.loaded_contracts) == 20
 
     def test_cache_performance_benefit(
-        self, contract_loader: ProtocolContractLoader, valid_contract_yaml: Path
+        self, contract_loader: UtilContractLoader, valid_contract_yaml: Path
     ) -> None:
         """Test that caching provides performance benefit."""
         # First load (cold cache)
@@ -729,7 +729,7 @@ tool_specification:
         assert warm_time <= cold_time * 1.5
 
     def test_large_contract_handling(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test handling of large contract files."""
         # Create large contract with many fields
@@ -763,7 +763,7 @@ class TestAdvancedIntegration:
     """Advanced integration tests for complex scenarios."""
 
     def test_load_all_node_types(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test loading contracts with all node types."""
         # Use the _GENERIC variants that are valid EnumNodeType values
@@ -795,7 +795,7 @@ tool_specification:
 
     def test_concurrent_loads_different_contracts(
         self,
-        contract_loader: ProtocolContractLoader,
+        contract_loader: UtilContractLoader,
         multiple_contracts: list[Path],
     ) -> None:
         """Test loading multiple different contracts."""
@@ -812,7 +812,7 @@ tool_specification:
 
     def test_cache_clear_and_reload_workflow(
         self,
-        contract_loader: ProtocolContractLoader,
+        contract_loader: UtilContractLoader,
         multiple_contracts: list[Path],
     ) -> None:
         """Test complete workflow: load, clear, reload."""
@@ -831,7 +831,7 @@ tool_specification:
             assert r1.node_type == r2.node_type
 
     def test_mixed_valid_invalid_contracts(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test loading mix of valid and invalid contracts."""
         valid = tmp_path / "valid.yaml"
@@ -858,7 +858,7 @@ tool_specification:
         assert len(contract_loader.state.loaded_contracts) == 1
 
     def test_version_comparison_across_contracts(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test version handling across multiple contracts."""
         versions = [(1, 0, 0), (1, 2, 3), (2, 0, 0), (3, 5, 7)]
@@ -888,7 +888,7 @@ tool_specification:
             assert result.contract_version.patch == patch_ver
 
     def test_loader_state_consistency_after_errors(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test that loader state remains consistent after errors."""
         valid = tmp_path / "valid.yaml"
@@ -915,8 +915,8 @@ tool_specification:
         self, tmp_path: Path, valid_contract_yaml: Path
     ) -> None:
         """Test that contract loaders are properly isolated."""
-        loader1 = ProtocolContractLoader(base_path=tmp_path, cache_enabled=True)
-        loader2 = ProtocolContractLoader(base_path=tmp_path, cache_enabled=False)
+        loader1 = UtilContractLoader(base_path=tmp_path, cache_enabled=True)
+        loader2 = UtilContractLoader(base_path=tmp_path, cache_enabled=False)
 
         # Load with both loaders
         loader1.load_contract(valid_contract_yaml)

@@ -18,18 +18,82 @@ if TYPE_CHECKING:
     )
     from omnibase_core.types.typed_dict_mixin_types import TypedDictWorkflowStepConfig
 
+    # These imports are for type hints only - actual imports are done lazily in methods
+    # to avoid circular import with workflow_executor
+    from omnibase_core.utils.workflow_executor import (
+        WorkflowExecutionResult,
+    )
+
 from omnibase_core.enums.enum_workflow_execution import EnumExecutionMode
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.contracts.subcontracts.model_workflow_definition import (
     ModelWorkflowDefinition,
 )
 from omnibase_core.types.type_workflow_context import WorkflowContextType
-from omnibase_core.utils.workflow_executor import (
-    WorkflowExecutionResult,
-    execute_workflow,
-    get_execution_order,
-    validate_workflow_definition,
-)
+
+# Module-level cache for lazy imports to avoid repeated import overhead.
+# Populated on first access by _get_workflow_executor().
+_workflow_executor_cache: (
+    tuple[
+        type[WorkflowExecutionResult],
+        Any,  # execute_workflow function
+        Any,  # get_execution_order function
+        Any,  # validate_workflow_definition function
+    ]
+    | None
+) = None
+
+
+# Lazy import helper to avoid circular import with workflow_executor
+def _get_workflow_executor() -> tuple[
+    type[WorkflowExecutionResult],
+    Any,  # execute_workflow function
+    Any,  # get_execution_order function
+    Any,  # validate_workflow_definition function
+]:
+    """
+    Lazily import workflow_executor to avoid circular import.
+
+    Uses module-level cache (_workflow_executor_cache) to memoize imports
+    on first access, avoiding repeated import overhead on subsequent calls.
+    """
+    global _workflow_executor_cache
+
+    if _workflow_executor_cache is not None:
+        return _workflow_executor_cache
+
+    from omnibase_core.utils.workflow_executor import (
+        WorkflowExecutionResult,
+        execute_workflow,
+        get_execution_order,
+        validate_workflow_definition,
+    )
+
+    _workflow_executor_cache = (
+        WorkflowExecutionResult,
+        execute_workflow,
+        get_execution_order,
+        validate_workflow_definition,
+    )
+
+    return _workflow_executor_cache
+
+
+# Module-level cache for lazy-imported ModelWorkflowStateSnapshot class.
+# This avoids repeated import overhead when update_workflow_state() is called frequently.
+_workflow_state_snapshot_class: type | None = None
+
+
+def _get_workflow_state_snapshot_class() -> type:
+    """Get the ModelWorkflowStateSnapshot class, importing lazily and caching."""
+    global _workflow_state_snapshot_class
+    if _workflow_state_snapshot_class is None:
+        from omnibase_core.models.workflow.execution.model_workflow_state_snapshot import (
+            ModelWorkflowStateSnapshot,
+        )
+
+        _workflow_state_snapshot_class = ModelWorkflowStateSnapshot
+    return _workflow_state_snapshot_class
 
 
 class MixinWorkflowExecution:
@@ -120,13 +184,11 @@ class MixinWorkflowExecution:
             state is replaced, not merged. Step IDs are stored as tuples
             for immutability.
         """
-        # Lazy import to avoid circular import at module load time.
+        # Use memoized getter to avoid repeated import overhead.
         # The TYPE_CHECKING import provides type hints; this provides the runtime class.
-        from omnibase_core.models.workflow.execution.model_workflow_state_snapshot import (
-            ModelWorkflowStateSnapshot,
-        )
+        snapshot_class = _get_workflow_state_snapshot_class()
 
-        self._workflow_state = ModelWorkflowStateSnapshot(
+        self._workflow_state = snapshot_class(
             workflow_id=workflow_id,
             current_step_index=current_step_index,
             completed_step_ids=tuple(completed_step_ids) if completed_step_ids else (),
@@ -179,6 +241,8 @@ class MixinWorkflowExecution:
             if snapshot:
                 print(f"Completed steps: {len(snapshot.completed_step_ids)}")
         """
+        # Lazy import to avoid circular import with workflow_executor
+        _, execute_workflow, _, _ = _get_workflow_executor()
         result = await execute_workflow(
             workflow_definition,
             workflow_steps,
@@ -244,6 +308,8 @@ class MixinWorkflowExecution:
             else:
                 print("Workflow contract is valid!")
         """
+        # Lazy import to avoid circular import with workflow_executor
+        _, _, _, validate_workflow_definition = _get_workflow_executor()
         return await validate_workflow_definition(workflow_definition, workflow_steps)
 
     def get_workflow_execution_order(
@@ -267,6 +333,8 @@ class MixinWorkflowExecution:
             order = self.get_workflow_execution_order(steps)
             print(f"Execution order: {order}")
         """
+        # Lazy import to avoid circular import with workflow_executor
+        _, _, get_execution_order, _ = _get_workflow_executor()
         return get_execution_order(workflow_steps)
 
     def create_workflow_steps_from_config(

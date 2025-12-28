@@ -14,7 +14,7 @@ import time
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Optional, TypeVar
+from typing import Any, TypeVar
 
 # Error message constants for Ruff TRY003 compliance
 TIMEOUT_ERROR_MESSAGES = {

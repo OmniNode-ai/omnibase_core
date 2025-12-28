@@ -38,8 +38,8 @@ from omnibase_core.nodes.node_effect import NodeEffect
 from omnibase_core.nodes.node_orchestrator import NodeOrchestrator
 from omnibase_core.nodes.node_reducer import NodeReducer
 
-# NOTE: Internal models like ModelConflictResolver, ModelDependencyGraph, ModelLoadBalancer,
-# ModelStreamingWindow, ModelAction, ModelWorkflowStep are NOT exported - they are internal
+# NOTE: Internal utilities like UtilConflictResolver, ModelDependencyGraph, ModelLoadBalancer,
+# UtilStreamingWindow, ModelAction, ModelWorkflowStep are NOT exported - they are internal
 # implementation details used by the nodes themselves.
 
 __all__ = [

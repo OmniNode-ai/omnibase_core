@@ -4,9 +4,8 @@ Contract Validator Usage Examples.
 Demonstrates how to use the ContractValidator API for contract validation.
 """
 
-from omnibase_core.validation.contract_validator import (
-    ProtocolContractValidationResult,
-    ProtocolContractValidator,
+from omnibase_core.services.service_contract_validator import (
+    ServiceContractValidator,
 )
 
 
@@ -14,7 +13,7 @@ def example_1_validate_yaml_contract():
     """Example 1: Validate a YAML contract."""
     print("\n=== Example 1: Validate YAML Contract ===\n")
 
-    validator = ProtocolContractValidator()
+    validator = ServiceContractValidator()
 
     # Effect contract YAML
     contract_yaml = """
@@ -62,7 +61,7 @@ def example_2_validate_model_compliance():
     """Example 2: Validate model code against contract."""
     print("\n=== Example 2: Validate Model Compliance ===\n")
 
-    validator = ProtocolContractValidator()
+    validator = ServiceContractValidator()
 
     # Pydantic model code
     model_code = """
@@ -121,7 +120,7 @@ def example_3_validate_contract_file():
     """Example 3: Validate contract from file."""
     print("\n=== Example 3: Validate Contract File ===\n")
 
-    validator = ProtocolContractValidator()
+    validator = ServiceContractValidator()
 
     # Create a temporary contract file
     import tempfile
@@ -169,7 +168,7 @@ def example_4_handle_validation_errors():
     """Example 4: Handle validation errors gracefully."""
     print("\n=== Example 4: Handle Validation Errors ===\n")
 
-    validator = ProtocolContractValidator()
+    validator = ServiceContractValidator()
 
     # Invalid contract (missing required fields)
     invalid_yaml = """
@@ -199,7 +198,7 @@ def example_5_scoring_system():
     """Example 5: Understanding the scoring system."""
     print("\n=== Example 5: Scoring System ===\n")
 
-    validator = ProtocolContractValidator()
+    validator = ServiceContractValidator()
 
     test_cases = [
         (

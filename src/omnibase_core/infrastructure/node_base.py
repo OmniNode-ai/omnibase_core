@@ -84,7 +84,7 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
 
     **THREAD SAFETY AND STATE**:
     - All mutable state is instance-level (no global mutable state)
-    - Contract loading uses instance-level caching via ProtocolContractLoader
+    - Contract loading uses instance-level caching via UtilContractLoader
     - Each NodeBase instance maintains independent state (_container, _main_tool, etc.)
     - Node instances should NOT be shared across threads without synchronization
     - For concurrent execution, create separate NodeBase instances per thread
@@ -174,9 +174,9 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
     ) -> None:
         """Load contract and initialize core components using ONEX 2.0 patterns."""
         # ONEX 2.0: Use ContractLoader instead of ContractService
-        from omnibase_core.utils.util_contract_loader import ProtocolContractLoader
+        from omnibase_core.utils.util_contract_loader import UtilContractLoader
 
-        contract_loader = ProtocolContractLoader(
+        contract_loader = UtilContractLoader(
             base_path=contract_path.parent,
             cache_enabled=True,
         )

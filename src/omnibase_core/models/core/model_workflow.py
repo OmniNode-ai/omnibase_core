@@ -11,6 +11,12 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.constants import (
+    MAX_DESCRIPTION_LENGTH,
+    MAX_ERROR_MESSAGE_LENGTH,
+    MAX_IDENTIFIER_LENGTH,
+    MAX_NAME_LENGTH,
+)
 from omnibase_core.enums.enum_workflow_status import EnumWorkflowStatus
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
@@ -34,7 +40,7 @@ class ModelWorkflow(BaseModel):
         default=...,
         description="Human-readable workflow name",
         min_length=1,
-        max_length=200,
+        max_length=MAX_NAME_LENGTH,
     )
 
     version: ModelSemVer = Field(
@@ -45,13 +51,13 @@ class ModelWorkflow(BaseModel):
     description: str = Field(
         default="",
         description="Detailed description of workflow purpose and behavior",
-        max_length=2000,
+        max_length=MAX_DESCRIPTION_LENGTH,
     )
 
     category: str = Field(
         default="general",
         description="Workflow category for organization and filtering",
-        max_length=100,
+        max_length=MAX_IDENTIFIER_LENGTH,
     )
 
     status: EnumWorkflowStatus = Field(
@@ -107,7 +113,7 @@ class ModelWorkflow(BaseModel):
     error_message: str | None = Field(
         default=None,
         description="Error message if workflow failed",
-        max_length=1000,
+        max_length=MAX_ERROR_MESSAGE_LENGTH,
     )
 
     model_config = {

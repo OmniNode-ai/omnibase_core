@@ -5,16 +5,18 @@ from collections.abc import Mapping, Sequence
 from typing import Any
 
 from omnibase_core.enums.enum_credential_strength import EnumCredentialStrength
+from omnibase_core.models.security.model_credential_audit_report import (
+    ModelCredentialAuditReport,
+)
+from omnibase_core.models.security.model_credential_strength_assessment import (
+    ModelCredentialStrengthAssessment,
+)
+from omnibase_core.models.security.model_secure_mask_config import ModelSecureMaskConfig
 
-from .model_credential_audit_report import ModelCredentialAuditReport
-from .model_credential_strength_assessment import ModelCredentialStrengthAssessment
-from .model_secure_mask_config import ModelSecureMaskConfig
 
-
-class ModelSecurityUtils:
+class UtilSecurity:
     """
     Enterprise-grade security utilities for credential masking and security operations.
-    Converted from utility class to model for consistency and enhanced functionality.
 
     Features:
     - Comprehensive credential masking strategies
@@ -23,6 +25,25 @@ class ModelSecurityUtils:
     - Security pattern detection
     - Credential strength assessment
     - Audit trail support
+
+    Thread Safety:
+        UtilSecurity is fully thread-safe. All methods are static and stateless,
+        operating only on their input parameters and returning new data structures.
+        The class-level DEFAULT_SENSITIVE_PATTERNS set is read-only and never
+        modified at runtime. Methods that process collections (mask_dict_credentials,
+        audit_credential_usage) create fresh output structures for each call,
+        ensuring no shared mutable state exists between concurrent invocations.
+
+    Example:
+        >>> from omnibase_core.utils import UtilSecurity
+        >>> masked = UtilSecurity.mask_credential("my-secret-token")
+        >>> print(masked)  # "my********en"
+
+    .. note::
+        Previously named ``ModelSecurityUtils``. Renamed in v0.4.0
+        to follow ONEX naming conventions (OMN-1071). The ``Model``
+        prefix is reserved for Pydantic BaseModel classes; ``Util``
+        prefix indicates a utility class.
     """
 
     # Default sensitive field patterns
@@ -94,13 +115,13 @@ class ModelSecurityUtils:
             New dictionary with credentials masked
         """
         if sensitive_patterns is None:
-            sensitive_patterns = ModelSecurityUtils.DEFAULT_SENSITIVE_PATTERNS
+            sensitive_patterns = UtilSecurity.DEFAULT_SENSITIVE_PATTERNS
 
         masked_data: dict[str, object] = {}
         for key, value in data.items():
             if isinstance(value, Mapping) and recursive:
                 # Recursively mask nested dictionaries
-                masked_data[key] = ModelSecurityUtils.mask_dict_credentials(
+                masked_data[key] = UtilSecurity.mask_dict_credentials(
                     value,
                     sensitive_patterns,
                     recursive,
@@ -109,16 +130,16 @@ class ModelSecurityUtils:
                 isinstance(value, Sequence) and not isinstance(value, str) and recursive
             ):
                 # Recursively mask lists (but not strings, which are also Sequence)
-                masked_data[key] = ModelSecurityUtils._mask_list_credentials(
+                masked_data[key] = UtilSecurity._mask_list_credentials(
                     value,
                     sensitive_patterns,
                 )
-            elif isinstance(value, str) and ModelSecurityUtils._is_sensitive_field(
+            elif isinstance(value, str) and UtilSecurity._is_sensitive_field(
                 key,
                 sensitive_patterns,
             ):
                 # Mask sensitive string values
-                masked_data[key] = ModelSecurityUtils.mask_credential(value)
+                masked_data[key] = UtilSecurity.mask_credential(value)
             else:
                 # Copy non-sensitive values as-is
                 masked_data[key] = value
@@ -145,7 +166,7 @@ class ModelSecurityUtils:
             if isinstance(item, Mapping):
                 # Recursively mask dictionaries in the list
                 masked_list.append(
-                    ModelSecurityUtils.mask_dict_credentials(
+                    UtilSecurity.mask_dict_credentials(
                         item,
                         sensitive_patterns,
                         recursive=True,
@@ -154,7 +175,7 @@ class ModelSecurityUtils:
             elif isinstance(item, Sequence) and not isinstance(item, str):
                 # Recursively mask nested lists (but not strings)
                 masked_list.append(
-                    ModelSecurityUtils._mask_list_credentials(item, sensitive_patterns),
+                    UtilSecurity._mask_list_credentials(item, sensitive_patterns),
                 )
             else:
                 # Copy non-dictionary/list items as-is
@@ -283,7 +304,7 @@ class ModelSecurityUtils:
             length=len(value),
             character_variety=variety_score,
             issues=issues,
-            detected_patterns=ModelSecurityUtils.detect_credential_patterns(value),
+            detected_patterns=UtilSecurity.detect_credential_patterns(value),
         )
 
     @staticmethod
@@ -303,7 +324,7 @@ class ModelSecurityUtils:
         Returns:
             Masking configuration object
         """
-        patterns = ModelSecurityUtils.DEFAULT_SENSITIVE_PATTERNS.copy()
+        patterns = UtilSecurity.DEFAULT_SENSITIVE_PATTERNS.copy()
         if additional_patterns:
             patterns.update(additional_patterns)
 
@@ -331,10 +352,10 @@ class ModelSecurityUtils:
             Audit report with security findings
         """
         if config is None:
-            config = ModelSecurityUtils.create_secure_mask_config()
+            config = UtilSecurity.create_secure_mask_config()
 
         sensitive_patterns = (
-            config.sensitive_patterns or ModelSecurityUtils.DEFAULT_SENSITIVE_PATTERNS
+            config.sensitive_patterns or UtilSecurity.DEFAULT_SENSITIVE_PATTERNS
         )
 
         audit_report = ModelCredentialAuditReport()
@@ -346,12 +367,12 @@ class ModelSecurityUtils:
                     current_path = f"{path}.{key}" if path else key
                     audit_report.total_fields += 1
 
-                    if ModelSecurityUtils._is_sensitive_field(key, sensitive_patterns):
+                    if UtilSecurity._is_sensitive_field(key, sensitive_patterns):
                         audit_report.sensitive_fields += 1
                         audit_report.masked_fields.append(current_path)
 
                         if isinstance(value, str):
-                            patterns = ModelSecurityUtils.detect_credential_patterns(
+                            patterns = UtilSecurity.detect_credential_patterns(
                                 value,
                             )
                             if patterns:
@@ -359,7 +380,7 @@ class ModelSecurityUtils:
                                     patterns
                                 )
 
-                            strength = ModelSecurityUtils.assess_credential_strength(
+                            strength = UtilSecurity.assess_credential_strength(
                                 value,
                             )
                             if strength.strength in [

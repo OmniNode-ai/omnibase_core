@@ -3,6 +3,7 @@ from uuid import UUID
 
 from pydantic import Field
 
+from omnibase_core.constants import KAFKA_REQUEST_TIMEOUT_MS
 from omnibase_core.constants.event_types import TOOL_DISCOVERY_REQUEST
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.discovery.model_tool_discovery_request import (
@@ -44,7 +45,7 @@ class ModelToolDiscoveryRequest(ModelOnexEvent):
         description="Maximum number of results to return",
     )
     timeout_ms: int | None = Field(
-        default=5000,
+        default=KAFKA_REQUEST_TIMEOUT_MS,
         description="Timeout in milliseconds for the request",
     )
     include_metadata: bool = Field(

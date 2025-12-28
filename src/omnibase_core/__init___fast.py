@@ -87,9 +87,9 @@ def get_validation_suite() -> tuple[
     Returns:
         Complete validation functions
     """
-    from .validation import ModelValidationResult, ModelValidationSuite, validate_all
+    from .validation import ModelValidationResult, ServiceValidationSuite, validate_all
 
-    return ModelValidationResult, ModelValidationSuite, validate_all
+    return ModelValidationResult, ServiceValidationSuite, validate_all
 
 
 def get_all_validation() -> dict[str, object]:
@@ -101,7 +101,7 @@ def get_all_validation() -> dict[str, object]:
     """
     from omnibase_core.validation import (
         ModelValidationResult,
-        ModelValidationSuite,
+        ServiceValidationSuite,
         validate_all,
         validate_architecture,
         validate_contracts,
@@ -111,7 +111,7 @@ def get_all_validation() -> dict[str, object]:
 
     return {
         "ModelValidationResult": ModelValidationResult,
-        "ModelValidationSuite": ModelValidationSuite,
+        "ServiceValidationSuite": ServiceValidationSuite,
         "validate_all": validate_all,
         "validate_architecture": validate_architecture,
         "validate_contracts": validate_contracts,

@@ -197,6 +197,7 @@ class TestWorkflowExecutionSuccess:
         assert result.execution_status == EnumWorkflowState.COMPLETED
         assert len(result.completed_steps) == 3
         assert len(result.failed_steps) == 0
+        assert result.skipped_steps == []  # No disabled steps
         assert len(result.actions_emitted) == 3
 
     @pytest.mark.asyncio
@@ -219,6 +220,7 @@ class TestWorkflowExecutionSuccess:
         assert result.execution_status == EnumWorkflowState.COMPLETED
         assert len(result.completed_steps) == 4  # All steps should complete
         assert len(result.failed_steps) == 0
+        assert result.skipped_steps == []  # No disabled steps
 
     @pytest.mark.asyncio
     async def test_actions_emitted(
@@ -295,10 +297,44 @@ class TestWorkflowValidation:
     async def test_empty_workflow(
         self, simple_workflow_definition: ModelWorkflowDefinition
     ):
-        """Test validation with no steps."""
+        """Test validation and execution with no steps.
+
+        v1.0.3 Fix 29: Empty workflows are VALID and succeed immediately with
+        COMPLETED state. No actions are emitted. This is not an error condition.
+        Empty workflows should produce:
+        - Zero validation errors
+        - Empty skipped_steps (no steps to skip)
+        - COMPLETED status
+        """
+        # Validation phase: empty workflows should have zero errors
         errors = await validate_workflow_definition(simple_workflow_definition, [])
-        assert len(errors) > 0
-        assert any("no steps" in error.lower() for error in errors)
+        # v1.0.3 Fix 29: Empty workflows are valid, no errors expected
+        assert len(errors) == 0, (
+            f"Empty workflow should have zero validation errors per v1.0.3 Fix 29, "
+            f"but got: {errors}"
+        )
+
+        # Execution phase: empty workflows should complete successfully
+        workflow_id = uuid4()
+        result = await execute_workflow(
+            simple_workflow_definition,
+            [],  # Empty steps list
+            workflow_id,
+            execution_mode=EnumExecutionMode.SEQUENTIAL,
+        )
+
+        # Empty workflow produces COMPLETED status with no steps or actions
+        assert result.execution_status == EnumWorkflowState.COMPLETED, (
+            "Empty workflow should complete successfully per v1.0.3 Fix 29"
+        )
+        assert len(result.completed_steps) == 0, (
+            "Empty workflow has no steps to complete"
+        )
+        assert len(result.failed_steps) == 0, "Empty workflow has no steps to fail"
+        assert result.skipped_steps == [], (
+            "Empty workflow should have empty skipped_steps (no disabled steps exist)"
+        )
+        assert len(result.actions_emitted) == 0, "Empty workflow emits no actions"
 
     @pytest.mark.asyncio
     async def test_invalid_dependency(
@@ -418,13 +454,25 @@ class TestExecutionOrder:
 
 @pytest.mark.unit
 class TestDisabledSteps:
-    """Test handling of disabled steps."""
+    """Test handling of disabled steps and skipped_steps tracking.
+
+    v1.0.2 Fix 10: Disabled steps are treated as automatically satisfied dependencies.
+    Steps depending on disabled steps proceed as if the dependency is met.
+    Disabled steps appear in skipped_steps, NOT in completed_steps or failed_steps.
+    """
 
     @pytest.mark.asyncio
     async def test_disabled_step_skipped(
         self, simple_workflow_definition: ModelWorkflowDefinition
     ):
-        """Test that disabled steps are skipped."""
+        """Test that disabled steps are tracked in skipped_steps with correct ordering.
+
+        v1.0.2 Fix 10: Disabled steps are treated as satisfied dependencies:
+        - Disabled steps appear ONLY in skipped_steps
+        - Disabled steps do NOT appear in completed_steps or failed_steps
+        - Steps depending on disabled steps proceed normally
+        - skipped_steps contains exactly the disabled step IDs (as strings)
+        """
         step1_id = uuid4()
         step2_id = uuid4()
         step3_id = uuid4()
@@ -454,11 +502,32 @@ class TestDisabledSteps:
 
         result = await execute_workflow(simple_workflow_definition, steps, uuid4())
 
+        # v1.0.2 Fix 10: Disabled steps are treated as satisfied dependencies.
         # Step 1 should complete
-        # Step 2 should be skipped (disabled)
-        # Step 3 should fail (dependency not met)
-        assert len(result.completed_steps) == 1
-        assert len(result.failed_steps) == 1  # Step 3 fails
+        # Step 2 should be skipped (disabled, but satisfies dependency per Fix 10)
+        # Step 3 should complete (its dependency Step 2 is satisfied)
+        assert len(result.completed_steps) == 2  # Step 1 and Step 3
+        assert len(result.failed_steps) == 0  # No failures
+        assert len(result.skipped_steps) == 1  # Step 2 is skipped
+        assert str(step2_id) in result.skipped_steps  # Verify which step is skipped
+
+        # Explicit assertions: disabled step NOT in completed or failed
+        assert str(step2_id) not in result.completed_steps, (
+            "Disabled step must NOT appear in completed_steps"
+        )
+        assert str(step2_id) not in result.failed_steps, (
+            "Disabled step must NOT appear in failed_steps"
+        )
+
+        # Explicit assertions: enabled steps completed, not skipped
+        assert str(step1_id) in result.completed_steps, "Step 1 should be completed"
+        assert str(step3_id) in result.completed_steps, "Step 3 should be completed"
+        assert str(step1_id) not in result.skipped_steps, (
+            "Enabled step 1 must NOT appear in skipped_steps"
+        )
+        assert str(step3_id) not in result.skipped_steps, (
+            "Enabled step 3 must NOT appear in skipped_steps"
+        )
 
 
 @pytest.mark.unit
@@ -1140,7 +1209,11 @@ class TestVerifyWorkflowIntegrity:
     def test_mismatched_hash_raises_error(
         self, simple_workflow_definition: ModelWorkflowDefinition
     ) -> None:
-        """Test that mismatched hash raises ModelOnexError with proper context."""
+        """Test that mismatched hash raises ModelOnexError with proper context.
+
+        Hash mismatch is a SECURITY_VIOLATION (not just VALIDATION_ERROR) because
+        it indicates potential tampering with workflow definitions.
+        """
         from omnibase_core.utils.workflow_executor import verify_workflow_integrity
 
         wrong_hash = "invalid_hash_that_does_not_match"
@@ -1150,15 +1223,15 @@ class TestVerifyWorkflowIntegrity:
                 simple_workflow_definition, expected_hash=wrong_hash
             )
 
-        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        # Hash mismatch is a security concern, not just validation
+        assert exc_info.value.error_code == EnumCoreErrorCode.SECURITY_VIOLATION
         assert "hash mismatch" in exc_info.value.message.lower()
-        # Context is nested: additional_context -> context -> {expected_hash, actual_hash, ...}
-        # due to ModelOnexError's **context pattern
+        # Context contains workflow_name for audit logging
+        # Note: expected_hash and actual_hash are NOT included in context to avoid
+        # leaking hash values in error messages (security best practice)
         assert exc_info.value.context is not None
         additional_ctx = exc_info.value.context.get("additional_context", {})
         inner_ctx = additional_ctx.get("context", {})
-        assert inner_ctx.get("expected_hash") == wrong_hash
-        assert "actual_hash" in inner_ctx
         assert (
             inner_ctx.get("workflow_name")
             == simple_workflow_definition.workflow_metadata.workflow_name
@@ -1229,23 +1302,30 @@ class TestComputeWorkflowHash:
 
 
 @pytest.mark.unit
-class TestPriorityOrderingIntegration:
-    """Integration tests for priority ordering in real workflow execution.
+class TestDeclarationOrderIntegration:
+    """Integration tests for declaration-order semantics per v1.0.2 Fix 5.
 
-    These tests verify that priority ordering works end-to-end through actual
-    workflow execution, not just the internal _get_topological_order function.
+    v1.0.2 Fix 5: Topological ordering uses declaration order as tiebreaker,
+    NOT priority. Priority values are informational and do not affect ordering.
+
+    These tests verify that topological/execution order works end-to-end:
+    - Dependencies are always respected first
+    - For steps at the same dependency level, declaration order is the tiebreaker
+    - Priority is passed through to actions for downstream scheduling, NOT used
+      for orchestrator-side ordering
     """
 
     @pytest.mark.asyncio
-    async def test_sequential_workflow_respects_priority_ordering(
+    async def test_sequential_workflow_respects_declaration_order(
         self,
         simple_workflow_definition: ModelWorkflowDefinition,
     ) -> None:
-        """Verify sequential workflow execution emits actions in priority order.
+        """Verify sequential workflow execution emits actions in declaration order.
 
         When executing a sequential workflow with independent steps (no dependencies),
-        higher priority steps (lower priority value) should be executed first,
-        and their actions should be emitted in priority order.
+        steps are emitted in declaration order (order they appear in the workflow).
+        Priority values are passed through to the emitted actions for downstream
+        scheduling, but do NOT affect orchestrator-side emission order.
         """
         workflow_id = uuid4()
 
@@ -1297,33 +1377,37 @@ class TestPriorityOrderingIntegration:
             for action in result.actions_emitted
         ]
 
-        # Verify priority order: high (1), medium (5), low (10)
-        assert emitted_step_ids[0] == high_priority_id, (
-            f"Expected high priority step first, got {emitted_step_ids[0]}"
+        # v1.0.2-v1.0.4 Normative: Emission order follows declaration order, NOT priority.
+        # Priority is passed to action.priority for target node scheduling.
+        # Steps are emitted in declaration order: low, medium, high
+        assert emitted_step_ids[0] == low_priority_id, (
+            f"Expected low priority step first (declared first), got {emitted_step_ids[0]}"
         )
         assert emitted_step_ids[1] == medium_priority_id, (
-            f"Expected medium priority step second, got {emitted_step_ids[1]}"
+            f"Expected medium priority step second (declared second), got {emitted_step_ids[1]}"
         )
-        assert emitted_step_ids[2] == low_priority_id, (
-            f"Expected low priority step third, got {emitted_step_ids[2]}"
+        assert emitted_step_ids[2] == high_priority_id, (
+            f"Expected high priority step third (declared third), got {emitted_step_ids[2]}"
         )
 
-        # Also verify action priorities are set correctly
-        assert result.actions_emitted[0].priority == 1
+        # Verify action priorities are set correctly (priority IS passed to action)
+        # Order by declaration: low (10), medium (5), high (1)
+        assert result.actions_emitted[0].priority == 10
         assert result.actions_emitted[1].priority == 5
-        assert result.actions_emitted[2].priority == 10
+        assert result.actions_emitted[2].priority == 1
 
     @pytest.mark.asyncio
-    async def test_parallel_workflow_respects_priority_in_wave(
+    async def test_parallel_workflow_passes_priority_to_actions(
         self,
         simple_workflow_definition: ModelWorkflowDefinition,
     ) -> None:
-        """Verify parallel workflow execution respects priority within a wave.
+        """Verify parallel workflow execution passes priority to emitted actions.
 
         In parallel execution, steps are grouped into "waves" based on dependencies.
-        Within a single wave (all steps have their dependencies met), the actions
-        should be processed/emitted in priority order, with higher priority steps
-        (lower priority value) coming first.
+        v1.0.2 Fix 5 / v1.0.4 Normative: Within a single wave, steps are emitted
+        in DECLARATION order (not priority order). Each step's priority value is
+        passed through to its emitted action for downstream scheduling, but the
+        orchestrator itself does NOT reorder based on priority.
         """
         workflow_id = uuid4()
 
@@ -1394,7 +1478,9 @@ class TestPriorityOrderingIntegration:
         )
 
         # Remaining actions are wave 2 (all children depend on parent)
-        # Within wave 2, they should be in priority order
+        # v1.0.2 Fix 5: Within wave 2, they should be in DECLARATION order
+        # (priority values are passed through to actions for downstream scheduling,
+        # but emission order follows declaration order, NOT priority)
         wave2_actions = result.actions_emitted[1:]
 
         # Verify action priorities are set correctly for the wave
@@ -1411,14 +1497,16 @@ class TestPriorityOrderingIntegration:
         assert priority_by_step[low_priority_child_id] == 10
 
     @pytest.mark.asyncio
-    async def test_sequential_workflow_priority_with_dependencies(
+    async def test_sequential_workflow_declaration_order_with_dependencies(
         self,
         simple_workflow_definition: ModelWorkflowDefinition,
     ) -> None:
-        """Verify dependencies take precedence over priority in sequential execution.
+        """Verify dependencies take precedence, then declaration order is tiebreaker.
 
-        When steps have dependencies, the topological order is respected first,
-        then priority is used to order steps at the same dependency level.
+        When steps have dependencies, topological order is respected first.
+        For steps at the same dependency level, declaration order (position in
+        workflow definition) is the tiebreaker, NOT priority. Priority is passed
+        to actions for downstream scheduling.
         """
         workflow_id = uuid4()
 
@@ -1492,13 +1580,15 @@ class TestPriorityOrderingIntegration:
         # Step D must be last (depends on B and C)
         assert emitted_step_ids[3] == step_d_id, "Step D (final) must execute last"
 
-        # Steps B and C can be in either order based on priority
-        # B has priority 1, C has priority 10, so B should come before C
+        # v1.0.2-v1.0.4 Normative: Emission order follows declaration order, NOT priority.
+        # Steps B and C are ordered by their declaration position:
+        # - Step C is declared at index 0, Step B is declared at index 3
+        # - So C should come before B in emission order
         b_index = emitted_step_ids.index(step_b_id)
         c_index = emitted_step_ids.index(step_c_id)
-        assert b_index < c_index, (
-            f"Step B (priority 1) should execute before Step C (priority 10). "
-            f"B index: {b_index}, C index: {c_index}"
+        assert c_index < b_index, (
+            f"Step C (declared first) should execute before Step B (declared last). "
+            f"C index: {c_index}, B index: {b_index}"
         )
 
     @pytest.mark.asyncio
@@ -1570,11 +1660,24 @@ class TestPriorityOrderingIntegration:
 
 
 @pytest.mark.unit
-class TestPriorityOrdering:
-    """Tests for priority-aware topological ordering in _get_topological_order."""
+class TestDeclarationOrderTopological:
+    """Tests for declaration-order semantics in _get_topological_order per v1.0.2 Fix 5.
+
+    v1.0.2 Fix 5: Topological ordering uses declaration order as tiebreaker,
+    NOT priority. Priority values are informational and do not affect ordering.
+
+    These tests verify:
+    - Dependencies are respected first (topological ordering)
+    - For steps at the same dependency level, declaration order is the tiebreaker
+    - Priority values do NOT affect ordering (they are passed to actions for
+      downstream scheduling only)
+    """
 
     def test_equal_priority_ordered_by_declaration_order(self) -> None:
-        """Test steps with equal priority are ordered by declaration order."""
+        """Test steps with equal priority are ordered by declaration order.
+
+        v1.0.2 Fix 5: Declaration order is the tiebreaker for equal priorities.
+        """
         from omnibase_core.utils.workflow_executor import _get_topological_order
 
         step1_id = uuid4()
@@ -1611,8 +1714,13 @@ class TestPriorityOrdering:
         assert order[1] == step2_id
         assert order[2] == step3_id
 
-    def test_different_priorities_ordered_by_priority(self) -> None:
-        """Test steps with different priorities are ordered by priority (lower first)."""
+    def test_different_priorities_uses_declaration_order(self) -> None:
+        """Test steps with different priorities are ordered by declaration order.
+
+        v1.0.2-v1.0.4 Normative: Priority does NOT affect emission order.
+        Emission order follows declaration order. Priority is passed to
+        action.priority for target node scheduling.
+        """
         from omnibase_core.utils.workflow_executor import _get_topological_order
 
         low_priority_id = uuid4()
@@ -1620,7 +1728,7 @@ class TestPriorityOrdering:
         high_priority_id = uuid4()
 
         # Different priorities, no dependencies
-        # Lower priority value = higher importance, should be first
+        # Declaration order determines emission order, NOT priority values
         steps = [
             ModelWorkflowStep(
                 step_id=low_priority_id,
@@ -1644,10 +1752,12 @@ class TestPriorityOrdering:
 
         order = _get_topological_order(steps)
 
-        # Should be ordered: high (1), medium (5), low (10)
-        assert order[0] == high_priority_id
+        # v1.0.2-v1.0.4 Normative: Emission order follows declaration order, NOT priority.
+        # Priority is passed to action.priority for target node scheduling.
+        # Steps are ordered by their position in the list: low (0), medium (1), high (2)
+        assert order[0] == low_priority_id
         assert order[1] == medium_priority_id
-        assert order[2] == low_priority_id
+        assert order[2] == high_priority_id
 
     def test_priority_clamped_to_10(self) -> None:
         """Test that priority values over 10 are clamped to 10."""
@@ -1709,10 +1819,14 @@ class TestPriorityOrdering:
         # first_step must come before second_step due to dependency
         assert order.index(first_step_id) < order.index(second_step_id)
 
-    def test_priority_ordering_among_independent_steps_with_shared_dependency(
+    def test_declaration_order_among_independent_steps_with_shared_dependency(
         self,
     ) -> None:
-        """Test priority ordering for independent steps that share a dependency."""
+        """Test declaration order for independent steps that share a dependency.
+
+        For steps at the same dependency level (children of the same parent),
+        declaration order is the tiebreaker, NOT priority.
+        """
         from omnibase_core.utils.workflow_executor import _get_topological_order
 
         parent_id = uuid4()
@@ -1746,24 +1860,31 @@ class TestPriorityOrdering:
 
         # Parent first (due to dependency)
         assert order[0] == parent_id
-        # High priority child (1) before low priority child (10)
-        assert order.index(high_priority_child_id) < order.index(low_priority_child_id)
+        # v1.0.2-v1.0.4 Normative: Children ordered by declaration order, NOT priority.
+        # Low priority child is declared before high priority child, so it comes first.
+        assert order.index(low_priority_child_id) < order.index(high_priority_child_id)
 
-    def test_default_priority_uses_model_default(self) -> None:
-        """Test that default priority (100) is clamped to 10 in topological order."""
+    def test_default_priority_clamped_uses_declaration_order(self) -> None:
+        """Test that default priority (100) is clamped and declaration order applies.
+
+        v1.0.2-v1.0.4 Normative: Priority does NOT affect emission order.
+        Emission order follows declaration order. Priority values (including
+        the default of 100, clamped to 10) are passed to action.priority
+        for target node scheduling.
+        """
         from omnibase_core.utils.workflow_executor import _get_topological_order
 
         default_priority_id = uuid4()
         high_priority_id = uuid4()
 
         # Create steps where one uses default priority (100) and another has explicit high priority (1)
-        # Default priority (100) should be clamped to 10
+        # Declaration order determines emission order, NOT priority values
         steps = [
             ModelWorkflowStep(
                 step_id=default_priority_id,
                 step_name="Default Priority Step",
                 step_type="compute",
-                # priority defaults to 100, clamped to 10
+                # priority defaults to 100, clamped to 10 in action
             ),
             ModelWorkflowStep(
                 step_id=high_priority_id,
@@ -1775,8 +1896,9 @@ class TestPriorityOrdering:
 
         order = _get_topological_order(steps)
 
-        # High priority (1) should come before default priority (100 clamped to 10)
-        assert order.index(high_priority_id) < order.index(default_priority_id)
+        # v1.0.2-v1.0.4: Declaration order determines emission order, NOT priority
+        # Default priority step is declared first, so it comes first
+        assert order.index(default_priority_id) < order.index(high_priority_id)
 
     def test_default_priority_in_create_action_for_step(self) -> None:
         """Test that _create_action_for_step clamps default priority (100) to 10."""
@@ -3051,7 +3173,9 @@ class TestWorkflowSizeLimits:
             for i in range(num_steps)
         ]
 
-        # Should raise validation error, not hang
+        # Should raise workflow execution failure, not hang
+        # ORCHESTRATOR_EXEC_WORKFLOW_FAILED is used for workflow validation failures
+        # during execution setup (more specific than generic VALIDATION_ERROR)
         with pytest.raises(ModelOnexError) as exc_info:
             await execute_workflow(
                 workflow_definition=simple_workflow_definition,
@@ -3059,7 +3183,10 @@ class TestWorkflowSizeLimits:
                 workflow_id=uuid4(),
             )
 
-        assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_ERROR
+        assert (
+            exc_info.value.error_code
+            == EnumCoreErrorCode.ORCHESTRATOR_EXEC_WORKFLOW_FAILED
+        )
         assert "non-existent" in exc_info.value.message.lower()
 
     @pytest.mark.asyncio
@@ -3193,7 +3320,7 @@ class TestWorkflowSizeLimitEnforcement:
     def test_step_payload_size_exceeds_limit(self) -> None:
         """Test step payload exceeding MAX_STEP_PAYLOAD_SIZE_BYTES raises error.
 
-        Note: ModelWorkflowStep.step_name has a max length of 200 characters,
+        Note: ModelWorkflowStep.step_name has a max length of 255 characters,
         so we cannot exceed 64KB with a real step. We test the _create_action_for_step
         function directly using a mock step to verify the limit enforcement logic.
         """
@@ -3232,7 +3359,7 @@ class TestWorkflowSizeLimitEnforcement:
     ) -> None:
         """Test total payload exceeding limit in sequential execution is handled gracefully.
 
-        Note: With ModelWorkflowStep.step_name limited to 200 chars and
+        Note: With ModelWorkflowStep.step_name limited to 255 chars and
         MAX_WORKFLOW_STEPS limited to 1000, the maximum possible total payload
         is ~300KB (well under 10MB). We mock _create_action_for_step to return
         actions with large payloads to trigger the limit.

@@ -17,7 +17,6 @@ with documented justification.
 
 import argparse
 import ast
-import re
 import sys
 from pathlib import Path
 

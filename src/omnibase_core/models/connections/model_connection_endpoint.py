@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.constants import MAX_NAME_LENGTH, MAX_URL_LENGTH
 from omnibase_core.enums.enum_connection_type import EnumConnectionType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -42,14 +43,14 @@ class ModelConnectionEndpoint(BaseModel):
         default=...,
         description="Host address (IP or hostname)",
         min_length=1,
-        max_length=255,
+        max_length=MAX_NAME_LENGTH,
         pattern=r"^[a-zA-Z0-9.-]+$",
     )
     port: int = Field(default=..., description="Port number", ge=1, le=65535)
     path: str | None = Field(
         default=None,
         description="Connection path/endpoint",
-        max_length=2048,
+        max_length=MAX_URL_LENGTH,
         pattern=r"^/.*$",
     )
 

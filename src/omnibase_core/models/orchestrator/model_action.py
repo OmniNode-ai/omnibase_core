@@ -49,7 +49,11 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-from omnibase_core.constants import TIMEOUT_DEFAULT_MS, TIMEOUT_LONG_MS
+from omnibase_core.constants import (
+    MAX_IDENTIFIER_LENGTH,
+    TIMEOUT_DEFAULT_MS,
+    TIMEOUT_LONG_MS,
+)
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_workflow_execution import EnumActionType
 from omnibase_core.models.core.model_action_metadata import ModelActionMetadata
@@ -137,7 +141,7 @@ class ModelAction(BaseModel):
         default=...,
         description="Target node type for action execution",
         min_length=1,
-        max_length=100,
+        max_length=MAX_IDENTIFIER_LENGTH,
     )
 
     payload: ProtocolActionPayload = Field(
@@ -270,7 +274,7 @@ class ModelAction(BaseModel):
                     "cannot be in its own dependencies list. This would create a "
                     "circular dependency that can never be resolved."
                 ),
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.ORCHESTRATOR_SEMANTIC_CYCLE_DETECTED,
                 action_id=str(self.action_id),
                 dependencies=[str(d) for d in self.dependencies],
                 action_type=self.action_type.value,

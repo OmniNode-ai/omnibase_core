@@ -85,6 +85,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.constants.constants_field_limits import MAX_IDENTIFIER_LENGTH
 from omnibase_core.models.intents import ModelRegistrationRecordBase
 
 
@@ -152,7 +153,7 @@ class ModelRegistrationPayload(BaseModel):
         ...,
         description="Deployment environment (e.g., 'production', 'staging').",
         min_length=1,
-        max_length=100,
+        max_length=MAX_IDENTIFIER_LENGTH,
     )
     network_id: str = Field(
         ...,
@@ -175,7 +176,7 @@ class ModelRegistrationPayload(BaseModel):
         ...,
         description="Service name for Consul (e.g., 'onex-compute').",
         min_length=1,
-        max_length=100,
+        max_length=MAX_IDENTIFIER_LENGTH,
     )
     consul_tags: list[str] = Field(
         default_factory=list,
