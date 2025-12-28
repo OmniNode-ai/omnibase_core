@@ -80,8 +80,13 @@ class ModelWorkflowStep(BaseModel):
         Fix 41: step_type MUST be one of: compute, effect, reducer, orchestrator,
         custom, parallel. Any other value MUST raise ModelOnexError.
 
-        Note: Pydantic's Literal type already enforces this at the type level,
-        but this validator provides explicit error messaging for v1.0.4 compliance.
+        INTENTIONAL REDUNDANCY NOTE (v1.0.4 Compliance):
+        While Pydantic's Literal type already enforces valid values at the type level,
+        this validator is intentionally retained to provide:
+        1. Explicit ONEX-specific error codes (ORCHESTRATOR_STRUCT_INVALID_STEP_TYPE)
+        2. User-friendly error messages referencing v1.0.4 normative spec
+        3. Clear guidance that 'conditional' is reserved for v1.1+
+        This redundancy is by design for improved developer experience.
         """
         if v not in VALID_STEP_TYPES:
             raise ModelOnexError(

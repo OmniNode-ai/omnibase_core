@@ -1683,6 +1683,10 @@ class TestDisabledStepsE2E:
         assert str(step2_id) not in result.completed_steps
         assert len(result.actions_emitted) == 2
 
+        # Verify disabled step is tracked in skipped_steps
+        assert str(step2_id) in result.skipped_steps
+        assert len(result.skipped_steps) == 1  # Only the disabled step
+
 
 # =============================================================================
 # Metadata Verification Tests

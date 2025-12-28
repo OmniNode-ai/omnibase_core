@@ -147,11 +147,11 @@ __all__ = [
     "validate_step_type",
     "validate_step_timeout",
     # Constants (defined in this module)
-    "MAX_DFS_ITERATIONS",
     "RESERVED_EXECUTION_MODES",
     "ACCEPTED_EXECUTION_MODES",
     "ACCEPTED_STEP_TYPES",
     # Re-exported from workflow_constants (canonical source)
+    "MAX_DFS_ITERATIONS",
     "RESERVED_STEP_TYPES",
     "MIN_TIMEOUT_MS",
 ]

@@ -1117,7 +1117,11 @@ class TestFSMAnalysisAmbiguousTransitions:
         ]
 
         # FSM construction should fail with duplicate structural transitions
-        with pytest.raises(ModelOnexError) as exc_info:
+        # Use match parameter to avoid pytest-xdist class identity issues
+        with pytest.raises(
+            ModelOnexError,
+            match=r"Duplicate structural transitions.*from_state='\*'.*trigger='error'",
+        ):
             ModelFSMSubcontract(
                 version=base_version,
                 state_machine_name="WildcardAmbiguous",
@@ -1129,12 +1133,6 @@ class TestFSMAnalysisAmbiguousTransitions:
                 error_states=["error_state_a", "error_state_b"],
                 transitions=transitions,
             )
-
-        error_message = str(exc_info.value)
-        assert "Duplicate structural transitions" in error_message
-        # Wildcard from_state should be mentioned
-        assert "*" in error_message or "wildcard" in error_message.lower()
-        assert "error" in error_message
 
     def test_wildcard_different_priority_not_ambiguous(
         self, base_version: ModelSemVer
@@ -1789,7 +1787,11 @@ class TestFSMAnalysisEdgeCases:
         ]
 
         # FSM construction should fail with duplicate structural transitions
-        with pytest.raises(ModelOnexError) as exc_info:
+        # Use match parameter to avoid pytest-xdist class identity issues
+        with pytest.raises(
+            ModelOnexError,
+            match=r"Duplicate structural transitions.*from_state='\*'.*trigger='error'",
+        ):
             ModelFSMSubcontract(
                 version=base_version,
                 state_machine_name="WildcardAmbiguity",
@@ -1801,11 +1803,6 @@ class TestFSMAnalysisEdgeCases:
                 error_states=["error_a", "error_b"],
                 transitions=transitions,
             )
-
-        error_message = str(exc_info.value)
-        assert "Duplicate structural transitions" in error_message
-        assert "*" in error_message or "wildcard" in error_message.lower()
-        assert "error" in error_message
 
 
 @pytest.mark.unit

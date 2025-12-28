@@ -674,6 +674,10 @@ class TestOrchestratorIntegrationEdgeCases:
         assert str(enabled_step_id) in result.completed_steps
         assert str(disabled_step_id) not in result.completed_steps
 
+        # Assert: Disabled step should appear in skipped_steps
+        assert str(disabled_step_id) in result.skipped_steps
+        assert len(result.skipped_steps) == 1  # Only the disabled step
+
     def test_batch_execution_mode(
         self, orchestrator_with_contract_factory: OrchestratorWithContractFactory
     ) -> None:

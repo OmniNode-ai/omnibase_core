@@ -166,4 +166,6 @@ from omnibase_core.models.workflow.execution.model_workflow_step_execution impor
 # Update forward references
 ModelDependencyGraph.model_rebuild()
 
-__all__ = ["MAX_DFS_ITERATIONS", "ModelDependencyGraph"]
+# NOTE: MAX_DFS_ITERATIONS is imported from workflow_constants.py (canonical source).
+# Import directly from omnibase_core.validation.workflow_constants for this constant.
+__all__ = ["ModelDependencyGraph"]

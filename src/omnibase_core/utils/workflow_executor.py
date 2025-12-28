@@ -1833,8 +1833,9 @@ def verify_workflow_integrity(
 
 
 # Public API
+# NOTE: MAX_DFS_ITERATIONS is imported from workflow_constants.py (canonical source).
+# Import directly from omnibase_core.validation.workflow_constants for this constant.
 __all__ = [
-    "MAX_DFS_ITERATIONS",
     "MAX_STEP_PAYLOAD_SIZE_BYTES",
     "MAX_TOTAL_PAYLOAD_SIZE_BYTES",
     "MAX_WORKFLOW_STEPS",
