@@ -42,6 +42,7 @@ from .enum_computation_type import EnumComputationType
 
 # Capability enums (handler capabilities)
 from .enum_compute_capability import EnumComputeCapability
+from .enum_handler_capability import EnumHandlerCapability
 
 # Compute step type enums (contract-driven NodeCompute v1.0)
 from .enum_compute_step_type import EnumComputeStepType
@@ -92,8 +93,12 @@ from .enum_github_runner_os import EnumGithubRunnerOs
 # Group and organization enums
 from .enum_group_status import EnumGroupStatus
 
+# Handler command type enums (OMN-1085)
+from .enum_handler_command_type import EnumHandlerCommandType
+
 # Handler type enums (runtime handler registry)
 from .enum_handler_type import EnumHandlerType
+from .enum_handler_type_category import EnumHandlerTypeCategory
 
 # Header and query parameter transformation enums
 from .enum_header_transformation_type import EnumHeaderTransformationType
@@ -364,8 +369,11 @@ __all__ = [
     "EnumMessageType",
     # Group and organization domain
     "EnumGroupStatus",
+    # Handler command type domain (OMN-1085)
+    "EnumHandlerCommandType",
     # Handler type domain (runtime handler registry)
     "EnumHandlerType",
+    "EnumHandlerTypeCategory",
     # Version and contract domain
     "EnumVersionStatus",
     "EnumContractCompliance",
@@ -379,6 +387,7 @@ __all__ = [
     # Capability enums (handler capabilities)
     "EnumComputeCapability",
     "EnumEffectCapability",
+    "EnumHandlerCapability",
     "EnumNodeRequirement",
     "EnumOrchestratorCapability",
     "EnumReducerCapability",
