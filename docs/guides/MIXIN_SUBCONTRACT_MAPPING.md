@@ -630,7 +630,7 @@ class EventDrivenNode(NodeEffect, MixinEventHandler):
 
 ---
 
-## Imperative Mixins (33 Total)
+## Imperative Mixins (30 Total)
 
 These mixins provide runtime behavior **without** dedicated subcontracts:
 
@@ -661,9 +661,6 @@ Imperative mixins typically:
 | `MixinSerializable` | Serialization helpers | ALL | JSON/YAML serialization |
 | `MixinCanonicalSerialization` | Canonical form serialization | ALL | Deterministic serialization |
 | `MixinLazyValue` | Lazy evaluation | ALL | Deferred computation |
-| `ModelNodeIntrospectionData` | Introspection data structures | ALL | Data models |
-| `ModelLogData` | Structured logging data | ALL | Log formatting |
-| `ModelCompletionData` | Completion tracking data | ALL | Status tracking |
 | `MixinCLIHandler` | CLI command handling | ALL | Command-line interface |
 | `MixinValidation` | Input validation | ALL | Data validation |
 | `MixinSecurity` | Security utilities | ALL | Auth/authz helpers |
@@ -1068,7 +1065,7 @@ class MyNode(NodeCompute, MixinCaching):
 
 | Total Count | Declarative (Subcontracts) | Imperative (No Subcontract) |
 |-------------|----------------------------|------------------------------|
-| **41 Mixins** | **8 Mixins** | **33 Mixins** |
+| **38 Mixins** | **8 Mixins** | **30 Mixins** |
 
 **Declarative Mixins** (8):
 1. MixinFSMExecution → ModelFSMSubcontract
@@ -1082,7 +1079,7 @@ class MyNode(NodeCompute, MixinCaching):
 
 **Key Takeaways**:
 - **Subcontracts** = Declarative YAML configuration (8 mixins)
-- **Mixins** = Runtime behavior (all 41 mixins)
+- **Mixins** = Runtime behavior (all 38 mixins)
 - Use subcontracts for **complex, reusable, validated** configuration
 - Use imperative mixins for **simple utilities** and **context-dependent** behavior
 - The three-layer architecture (YAML → Pydantic → Python) ensures type safety and validation
