@@ -10,7 +10,7 @@ Strict typing is enforced: No Any types or dict[str, Any]patterns allowed.
 from typing import Literal
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.constants.constants_field_limits import (
     MAX_IDENTIFIER_LENGTH,
@@ -30,12 +30,13 @@ class ModelWorkflowStep(BaseModel):
     Strict typing is enforced: No Any types or dict[str, Any]patterns allowed.
     """
 
-    model_config = {
-        "extra": "forbid",
-        "use_enum_values": False,
-        "validate_assignment": True,
-        "frozen": True,
-    }
+    model_config = ConfigDict(
+        extra="forbid",
+        from_attributes=True,
+        frozen=True,
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # ONEX correlation tracking
     correlation_id: UUID = Field(

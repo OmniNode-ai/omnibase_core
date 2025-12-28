@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 from omnibase_core.constants import (
     MAX_DESCRIPTION_LENGTH,
     MAX_ERROR_MESSAGE_LENGTH,
-    MAX_KEY_LENGTH,
+    MAX_IDENTIFIER_LENGTH,
     MAX_NAME_LENGTH,
 )
 from omnibase_core.enums.enum_workflow_status import EnumWorkflowStatus
@@ -57,7 +57,7 @@ class ModelWorkflow(BaseModel):
     category: str = Field(
         default="general",
         description="Workflow category for organization and filtering",
-        max_length=MAX_KEY_LENGTH,
+        max_length=MAX_IDENTIFIER_LENGTH,
     )
 
     status: EnumWorkflowStatus = Field(
