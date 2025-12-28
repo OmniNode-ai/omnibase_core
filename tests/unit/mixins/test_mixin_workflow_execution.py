@@ -486,6 +486,7 @@ class TestMixinIntegration:
         assert result.workflow_id == workflow_id
         assert result.execution_status == EnumWorkflowState.COMPLETED
         assert len(result.completed_steps) == len(simple_steps)
+        assert result.skipped_steps == []  # No disabled steps
         assert len(result.actions_emitted) == len(simple_steps)
 
     @pytest.mark.asyncio
@@ -512,4 +513,5 @@ class TestMixinIntegration:
         assert result.execution_status == EnumWorkflowState.COMPLETED
         assert len(result.completed_steps) == 0
         assert len(result.failed_steps) == 0
+        assert result.skipped_steps == []  # No steps to skip
         assert len(result.actions_emitted) == 0

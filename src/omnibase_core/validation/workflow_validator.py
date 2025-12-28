@@ -90,6 +90,7 @@ from omnibase_core.models.validation.model_workflow_validation_result import (
 )
 from omnibase_core.validation.reserved_enum_validator import validate_execution_mode
 from omnibase_core.validation.workflow_constants import (
+    MAX_DFS_ITERATIONS,
     MIN_TIMEOUT_MS,
     RESERVED_STEP_TYPES,
 )
@@ -103,12 +104,11 @@ type InDegreeMap = dict[UUID, int]
 # Module-Level Constants
 # =============================================================================
 
-# Resource exhaustion protection constant
-# Prevents malicious or malformed inputs from causing infinite loops in DFS
-# Value of 10,000 is sufficient for workflows with up to ~5,000 steps
-# (worst case: each step visited twice during DFS traversal)
+# MAX_DFS_ITERATIONS: Resource exhaustion protection constant for DFS cycle detection.
+# Imported from workflow_constants.py (canonical source).
+# Prevents malicious or malformed inputs from causing infinite loops in DFS.
+# Value of 10,000 supports workflows with up to ~5,000 steps.
 # See module docstring "Security Considerations" for full documentation.
-MAX_DFS_ITERATIONS = 10_000
 
 # Reserved execution modes that are not yet implemented per ONEX v1.0 contract.
 # These modes will raise ModelOnexError when used in validate_execution_mode_string.

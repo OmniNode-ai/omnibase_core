@@ -197,6 +197,7 @@ class TestWorkflowExecutionSuccess:
         assert result.execution_status == EnumWorkflowState.COMPLETED
         assert len(result.completed_steps) == 3
         assert len(result.failed_steps) == 0
+        assert result.skipped_steps == []  # No disabled steps
         assert len(result.actions_emitted) == 3
 
     @pytest.mark.asyncio
@@ -219,6 +220,7 @@ class TestWorkflowExecutionSuccess:
         assert result.execution_status == EnumWorkflowState.COMPLETED
         assert len(result.completed_steps) == 4  # All steps should complete
         assert len(result.failed_steps) == 0
+        assert result.skipped_steps == []  # No disabled steps
 
     @pytest.mark.asyncio
     async def test_actions_emitted(
@@ -465,6 +467,7 @@ class TestDisabledSteps:
         assert len(result.completed_steps) == 2  # Step 1 and Step 3
         assert len(result.failed_steps) == 0  # No failures
         assert len(result.skipped_steps) == 1  # Step 2 is skipped
+        assert str(step2_id) in result.skipped_steps  # Verify which step is skipped
 
 
 @pytest.mark.unit

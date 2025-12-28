@@ -127,6 +127,7 @@ from omnibase_core.models.workflow.execution.model_workflow_result_metadata impo
 from omnibase_core.types.typed_dict_workflow_context import TypedDictWorkflowContext
 from omnibase_core.validation.reserved_enum_validator import validate_execution_mode
 from omnibase_core.validation.workflow_constants import (
+    MAX_DFS_ITERATIONS,
     MIN_TIMEOUT_MS,
     RESERVED_STEP_TYPES,
 )
@@ -1669,12 +1670,11 @@ def _get_topological_order(
     return result
 
 
-# Resource exhaustion protection constant for DFS cycle detection
-# Must be kept in sync with workflow_validator.py
+# MAX_DFS_ITERATIONS: Resource exhaustion protection constant for DFS cycle detection.
+# Imported from workflow_constants.py (canonical source).
 # Value of 10,000 iterations supports workflows with up to ~5,000 steps
-# (worst case: each step visited twice during DFS traversal)
+# (worst case: each step visited twice during DFS traversal).
 # See workflow_validator.py module docstring "Security Considerations" for full documentation.
-MAX_DFS_ITERATIONS = 10_000
 
 
 def _has_dependency_cycles(

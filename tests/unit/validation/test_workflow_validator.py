@@ -401,7 +401,7 @@ class TestWorkflowValidatorDependencyValidation:
         result = validator.validate_dependencies(steps)
 
         assert result.is_valid
-        assert len(result.missing_dependencies) == 0
+        assert result.missing_dependencies == []
 
     def test_missing_dependency_reports_step_name(self) -> None:
         """Test that missing dependency error includes the step name that has the issue."""
@@ -531,7 +531,7 @@ class TestWorkflowValidatorIsolatedSteps:
 
         result = validator.detect_isolated_steps(steps)
 
-        assert len(result.isolated_steps) == 0
+        assert result.isolated_steps == []
 
     def test_isolated_step_reports_step_name(self) -> None:
         """Test that isolated step detection includes step names."""
@@ -598,7 +598,7 @@ class TestWorkflowValidatorUniqueNames:
         result = validator.validate_unique_names(steps)
 
         assert result.is_valid
-        assert len(result.duplicate_names) == 0
+        assert result.duplicate_names == []
 
     def test_multiple_duplicate_names_all_reported(self) -> None:
         """Test that multiple sets of duplicates are all reported."""

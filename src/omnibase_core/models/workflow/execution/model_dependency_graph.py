@@ -22,11 +22,12 @@ from pydantic import BaseModel, Field
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_workflow_execution import EnumWorkflowState
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.validation.workflow_constants import MAX_DFS_ITERATIONS
 
-# Resource exhaustion protection constant for DFS cycle detection
+# MAX_DFS_ITERATIONS: Resource exhaustion protection constant for DFS cycle detection.
+# Imported from workflow_constants.py (canonical source).
 # Value of 10,000 iterations supports graphs with up to ~5,000 nodes
-# (worst case: each node visited twice during DFS traversal)
-MAX_DFS_ITERATIONS = 10_000
+# (worst case: each node visited twice during DFS traversal).
 
 
 class ModelDependencyGraph(BaseModel):

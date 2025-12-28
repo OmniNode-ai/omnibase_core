@@ -379,6 +379,7 @@ class TestNodeOrchestrator:
         # Check workflow executed
         assert result.execution_status == "completed"
         assert len(result.completed_steps) == 2
+        assert result.skipped_steps == []  # No disabled steps
         assert len(result.actions_emitted) == 2
 
     @pytest.mark.asyncio
@@ -592,4 +593,5 @@ class TestDeclarativeNodesIntegration:
 
         assert result.execution_status == "completed"
         assert len(result.completed_steps) == 4
+        assert result.skipped_steps == []  # No disabled steps
         assert len(result.actions_emitted) == 4

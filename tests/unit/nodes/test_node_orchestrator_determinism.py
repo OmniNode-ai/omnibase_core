@@ -1241,8 +1241,10 @@ class TestNodeOrchestratorEdgeCases:
         # Empty workflows have 0 actions and 0 completed steps
         assert len(result_1.actions_emitted) == 0
         assert len(result_1.completed_steps) == 0
+        assert result_1.skipped_steps == []  # No steps to skip
         assert len(result_2.actions_emitted) == 0
         assert len(result_2.completed_steps) == 0
+        assert result_2.skipped_steps == []  # No steps to skip
 
         # Metrics should be consistent
         assert result_1.metrics["actions_count"] == result_2.metrics["actions_count"]
@@ -1320,6 +1322,9 @@ class TestNodeOrchestratorEdgeCases:
         # Disabled step should not appear in completed steps
         for result in results:
             assert str(FIXED_STEP_2_ID) not in result.completed_steps
+            # Disabled step should appear in skipped_steps
+            assert str(FIXED_STEP_2_ID) in result.skipped_steps
+            assert len(result.skipped_steps) == 1  # Only the disabled step
             # Other steps should complete
             assert str(FIXED_STEP_1_ID) in result.completed_steps
             assert str(FIXED_STEP_3_ID) in result.completed_steps
