@@ -470,7 +470,7 @@ class TestCacheTimeoutValues:
         from omnibase_core.constants.constants_timeouts import DEFAULT_CACHE_TTL_SECONDS
 
         five_minutes_in_seconds = 5 * 60
-        assert DEFAULT_CACHE_TTL_SECONDS == five_minutes_in_seconds
+        assert five_minutes_in_seconds == DEFAULT_CACHE_TTL_SECONDS
 
 
 @pytest.mark.unit
@@ -517,11 +517,11 @@ class TestNewTimeoutConstantSemantics:
         from omnibase_core.constants.constants_timeouts import KAFKA_REQUEST_TIMEOUT_MS
 
         five_seconds_in_ms = 5 * 1000
-        assert KAFKA_REQUEST_TIMEOUT_MS == five_seconds_in_ms
+        assert five_seconds_in_ms == KAFKA_REQUEST_TIMEOUT_MS
 
     def test_cache_ttl_is_five_minutes(self) -> None:
         """DEFAULT_CACHE_TTL_SECONDS should represent 5 minutes in seconds."""
         from omnibase_core.constants.constants_timeouts import DEFAULT_CACHE_TTL_SECONDS
 
         five_minutes_in_seconds = 5 * 60
-        assert DEFAULT_CACHE_TTL_SECONDS == five_minutes_in_seconds
+        assert five_minutes_in_seconds == DEFAULT_CACHE_TTL_SECONDS
