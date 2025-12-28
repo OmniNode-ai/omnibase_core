@@ -15,7 +15,6 @@ from collections.abc import Callable
 import pytest
 from pydantic import BaseModel, ValidationError
 
-from omnibase_core.errors import OnexError
 from omnibase_core.validation.validators import (
     BCP47Locale,
     Duration,
@@ -85,8 +84,8 @@ class TestValidateDuration:
         ],
     )
     def test_invalid_durations(self, duration: str, error_fragment: str) -> None:
-        """Test that invalid duration strings raise OnexError."""
-        with pytest.raises(OnexError, match=error_fragment):
+        """Test that invalid duration strings raise ValueError."""
+        with pytest.raises(ValueError, match=error_fragment):
             validate_duration(duration)
 
     @pytest.mark.parametrize(
@@ -106,7 +105,7 @@ class TestValidateDuration:
     )
     def test_weeks_cannot_be_combined(self, duration: str) -> None:
         """Test that weeks cannot be combined with other components per ISO 8601."""
-        with pytest.raises(OnexError) as exc_info:
+        with pytest.raises(ValueError) as exc_info:
             validate_duration(duration)
         assert "weeks (W) cannot be combined" in str(exc_info.value)
 
@@ -125,12 +124,12 @@ class TestDurationAnnotatedType:
         assert config.timeout == "PT1H30M"
 
     def test_invalid_duration_in_model(self) -> None:
-        """Test that invalid durations raise OnexError."""
+        """Test that invalid durations raise ValueError."""
 
         class Config(BaseModel):
             timeout: Duration
 
-        with pytest.raises(OnexError):
+        with pytest.raises(ValueError):
             Config(timeout="invalid")
 
 
@@ -199,8 +198,8 @@ class TestValidateBCP47Locale:
         ],
     )
     def test_invalid_locales(self, locale: str, error_fragment: str) -> None:
-        """Test that invalid locale strings raise OnexError."""
-        with pytest.raises(OnexError, match=error_fragment):
+        """Test that invalid locale strings raise ValueError."""
+        with pytest.raises(ValueError, match=error_fragment):
             validate_bcp47_locale(locale)
 
 
@@ -218,12 +217,12 @@ class TestBCP47LocaleAnnotatedType:
         assert prefs.locale == "en-US"
 
     def test_invalid_locale_in_model(self) -> None:
-        """Test that invalid locales raise OnexError."""
+        """Test that invalid locales raise ValueError."""
 
         class UserPreferences(BaseModel):
             locale: BCP47Locale
 
-        with pytest.raises(OnexError):
+        with pytest.raises(ValueError):
             UserPreferences(locale="invalid_locale")
 
 
@@ -313,8 +312,8 @@ class TestValidateUUID:
         ],
     )
     def test_invalid_uuids(self, uuid_str: str, error_fragment: str) -> None:
-        """Test that invalid UUID strings raise OnexError."""
-        with pytest.raises(OnexError, match=error_fragment):
+        """Test that invalid UUID strings raise ValueError."""
+        with pytest.raises(ValueError, match=error_fragment):
             validate_uuid(uuid_str)
 
     def test_uuid_normalization(self) -> None:
@@ -354,12 +353,12 @@ class TestUUIDStringAnnotatedType:
         assert entity.id == "550e8400-e29b-41d4-a716-446655440000"
 
     def test_invalid_uuid_in_model(self) -> None:
-        """Test that invalid UUIDs raise OnexError."""
+        """Test that invalid UUIDs raise ValueError."""
 
         class Entity(BaseModel):
             id: UUIDString
 
-        with pytest.raises(OnexError):
+        with pytest.raises(ValueError):
             Entity(id="invalid-uuid")
 
 
@@ -436,8 +435,8 @@ class TestValidateSemanticVersion:
         ],
     )
     def test_invalid_versions(self, version: str, error_fragment: str) -> None:
-        """Test that invalid version strings raise OnexError."""
-        with pytest.raises(OnexError, match=error_fragment):
+        """Test that invalid version strings raise ValueError."""
+        with pytest.raises(ValueError, match=error_fragment):
             validate_semantic_version(version)
 
 
@@ -464,12 +463,12 @@ class TestSemanticVersionAnnotatedType:
         assert package.version == "2.1.3-beta.1+build.123"
 
     def test_invalid_version_in_model(self) -> None:
-        """Test that invalid versions raise OnexError."""
+        """Test that invalid versions raise ValueError."""
 
         class Package(BaseModel):
             version: SemanticVersion
 
-        with pytest.raises(OnexError):
+        with pytest.raises(ValueError):
             Package(version="1.0")
 
 
@@ -544,8 +543,8 @@ class TestValidateErrorCode:
         ],
     )
     def test_invalid_error_codes(self, error_code: str, error_fragment: str) -> None:
-        """Test that invalid error code strings raise OnexError."""
-        with pytest.raises(OnexError, match=error_fragment):
+        """Test that invalid error code strings raise ValueError."""
+        with pytest.raises(ValueError, match=error_fragment):
             validate_error_code(error_code)
 
 
@@ -572,12 +571,12 @@ class TestErrorCodeAnnotatedType:
         assert report.code == "NETWORK_TIMEOUT_001"
 
     def test_invalid_error_code_in_model(self) -> None:
-        """Test that invalid error codes raise OnexError."""
+        """Test that invalid error codes raise ValueError."""
 
         class ErrorReport(BaseModel):
             code: ErrorCode
 
-        with pytest.raises(OnexError):
+        with pytest.raises(ValueError):
             ErrorReport(code="invalid")
 
     def test_lint_style_code_rejected_in_model(self) -> None:
@@ -586,7 +585,7 @@ class TestErrorCodeAnnotatedType:
         class ErrorReport(BaseModel):
             code: ErrorCode
 
-        with pytest.raises(OnexError):
+        with pytest.raises(ValueError):
             ErrorReport(code="E001")
 
     def test_optional_error_code_in_model(self) -> None:
@@ -1049,7 +1048,7 @@ class TestValidatorEdgeCases:
         self, validator_func: Callable[[str], str], valid_input: str
     ) -> None:
         """Test that validators reject inputs with leading whitespace."""
-        with pytest.raises(OnexError):
+        with pytest.raises(ValueError):
             validator_func(f" {valid_input}")
 
     @pytest.mark.parametrize(
@@ -1066,7 +1065,7 @@ class TestValidatorEdgeCases:
         self, validator_func: Callable[[str], str], valid_input: str
     ) -> None:
         """Test that validators reject inputs with trailing whitespace."""
-        with pytest.raises(OnexError):
+        with pytest.raises(ValueError):
             validator_func(f"{valid_input} ")
 
     @pytest.mark.parametrize(
@@ -1083,7 +1082,7 @@ class TestValidatorEdgeCases:
         self, validator_func: Callable[[str], str], valid_input: str
     ) -> None:
         """Test that validators reject inputs with surrounding whitespace."""
-        with pytest.raises(OnexError):
+        with pytest.raises(ValueError):
             validator_func(f"  {valid_input}  ")
 
     @pytest.mark.parametrize(
@@ -1100,11 +1099,11 @@ class TestValidatorEdgeCases:
         self, validator_func: Callable[[str], str]
     ) -> None:
         """Test that validators reject whitespace-only inputs."""
-        with pytest.raises(OnexError):
+        with pytest.raises(ValueError):
             validator_func("   ")
-        with pytest.raises(OnexError):
+        with pytest.raises(ValueError):
             validator_func("\t")
-        with pytest.raises(OnexError):
+        with pytest.raises(ValueError):
             validator_func("\n")
 
     # =========================================================================
@@ -1125,7 +1124,7 @@ class TestValidatorEdgeCases:
         self, validator_func: Callable[[str], str]
     ) -> None:
         """Test that all validators reject empty strings with clear message."""
-        with pytest.raises(OnexError, match="cannot be empty"):
+        with pytest.raises(ValueError, match="cannot be empty"):
             validator_func("")
 
     # =========================================================================
@@ -1135,13 +1134,13 @@ class TestValidatorEdgeCases:
     def test_uuid_validator_handles_braces(self) -> None:
         """Test that UUID validator rejects Microsoft-style braced UUIDs."""
         # Some systems use braced UUIDs like {uuid}
-        with pytest.raises(OnexError, match="Invalid UUID format"):
+        with pytest.raises(ValueError, match="Invalid UUID format"):
             validate_uuid("{550e8400-e29b-41d4-a716-446655440000}")
 
     def test_uuid_validator_handles_urn(self) -> None:
         """Test that UUID validator rejects URN-formatted UUIDs."""
         # URN format: urn:uuid:xxx
-        with pytest.raises(OnexError, match="Invalid UUID format"):
+        with pytest.raises(ValueError, match="Invalid UUID format"):
             validate_uuid("urn:uuid:550e8400-e29b-41d4-a716-446655440000")
 
     def test_uuid_validator_all_zeros(self) -> None:
@@ -1180,9 +1179,9 @@ class TestValidatorEdgeCases:
     def test_duration_validator_case_sensitivity(self) -> None:
         """Test that duration validators are case-sensitive (uppercase only)."""
         # ISO 8601 durations use uppercase letters
-        with pytest.raises(OnexError):
+        with pytest.raises(ValueError):
             validate_duration("pt1h")  # lowercase not valid
-        with pytest.raises(OnexError):
+        with pytest.raises(ValueError):
             validate_duration("p1d")  # lowercase not valid
 
     # =========================================================================
@@ -1213,7 +1212,7 @@ class TestValidatorEdgeCases:
         # Just ensure they don't crash unexpectedly
         try:
             validate_bcp47_locale("i-default")
-        except OnexError:
+        except ValueError:
             pass  # Expected if not supported
 
     def test_locale_validator_private_use(self) -> None:
@@ -1221,7 +1220,7 @@ class TestValidatorEdgeCases:
         # Private use subtags start with 'x-'
         try:
             validate_bcp47_locale("x-custom")
-        except OnexError:
+        except ValueError:
             pass  # May not be supported
 
     # =========================================================================
@@ -1357,7 +1356,7 @@ class TestValidatorNoneHandlingInModels:
 
         Note: Pydantic catches None at the type level (since Duration is
         Annotated[str, ...] which doesn't accept None) before our custom
-        validator runs, so this raises ValidationError not OnexError.
+        validator runs, so this raises ValidationError not ValueError.
         """
 
         class Config(BaseModel):
@@ -1385,29 +1384,29 @@ class TestValidatorsNoneHandlingDirect:
     """
 
     def test_validate_duration_none_raises_onex_error(self) -> None:
-        """Test that None raises OnexError (treated as empty)."""
+        """Test that None raises ValueError (treated as empty)."""
         # None triggers the `if not value:` check
-        with pytest.raises(OnexError, match="cannot be empty"):
+        with pytest.raises(ValueError, match="cannot be empty"):
             validate_duration(None)  # type: ignore[arg-type]
 
     def test_validate_bcp47_locale_none_raises_onex_error(self) -> None:
-        """Test that None raises OnexError (treated as empty)."""
-        with pytest.raises(OnexError, match="cannot be empty"):
+        """Test that None raises ValueError (treated as empty)."""
+        with pytest.raises(ValueError, match="cannot be empty"):
             validate_bcp47_locale(None)  # type: ignore[arg-type]
 
     def test_validate_uuid_none_raises_onex_error(self) -> None:
-        """Test that None raises OnexError (treated as empty)."""
-        with pytest.raises(OnexError, match="cannot be empty"):
+        """Test that None raises ValueError (treated as empty)."""
+        with pytest.raises(ValueError, match="cannot be empty"):
             validate_uuid(None)  # type: ignore[arg-type]
 
     def test_validate_semantic_version_none_raises_onex_error(self) -> None:
-        """Test that None raises OnexError (treated as empty)."""
-        with pytest.raises(OnexError, match="cannot be empty"):
+        """Test that None raises ValueError (treated as empty)."""
+        with pytest.raises(ValueError, match="cannot be empty"):
             validate_semantic_version(None)  # type: ignore[arg-type]
 
     def test_validate_error_code_none_raises_onex_error(self) -> None:
-        """Test that None raises OnexError (treated as empty)."""
-        with pytest.raises(OnexError, match="cannot be empty"):
+        """Test that None raises ValueError (treated as empty)."""
+        with pytest.raises(ValueError, match="cannot be empty"):
             validate_error_code(None)  # type: ignore[arg-type]
 
 
