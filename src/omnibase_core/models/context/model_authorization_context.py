@@ -87,14 +87,14 @@ class ModelAuthorizationContext(BaseModel):
     def normalize_token_type(
         cls, v: EnumTokenType | str | None
     ) -> EnumTokenType | str | None:
-        """Accept both enum and string values for backward compatibility.
+        """Normalize token type from string or enum input.
 
         Args:
             v: The token type value, either as EnumTokenType, string, or None.
 
         Returns:
-            The normalized value - EnumTokenType if valid enum value, else the
-            original string for backward compatibility.
+            The normalized value - EnumTokenType if valid enum value,
+            otherwise the original string for extensibility.
         """
         return create_enum_normalizer(EnumTokenType)(v)
 

@@ -5,8 +5,8 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 if TYPE_CHECKING:
-    from omnibase_core.mixins.mixin_node_introspection_data import (
-        MixinNodeIntrospectionData,
+    from omnibase_core.models.mixins.model_node_introspection_data import (
+        ModelNodeIntrospectionData,
     )
 
 # === OmniNode:Metadata ===
@@ -363,14 +363,14 @@ class MixinEventHandler:
 
     @staticmethod
     def _filter_introspection_data(
-        introspection_data: "MixinNodeIntrospectionData | dict[str, object]",
+        introspection_data: "ModelNodeIntrospectionData | dict[str, object]",
         requested_types: list[str],
     ) -> dict[str, object]:
         """
         Filter introspection data based on requested types.
 
         Args:
-            introspection_data: Full introspection data (MixinNodeIntrospectionData or dict)
+            introspection_data: Full introspection data (ModelNodeIntrospectionData or dict)
             requested_types: List of requested data types
 
         Returns:

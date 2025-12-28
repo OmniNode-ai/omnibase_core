@@ -381,7 +381,7 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
         if not self.workflow_definition:
             raise ModelOnexError(
                 message=_ERR_WORKFLOW_DEFINITION_NOT_LOADED,
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.ORCHESTRATOR_STRUCT_WORKFLOW_NOT_LOADED,
             )
 
         # v1.0.2: Steps are already typed ModelWorkflowStep instances - no coercion needed

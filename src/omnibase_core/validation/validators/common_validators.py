@@ -49,7 +49,6 @@ from typing import Annotated
 
 from pydantic import AfterValidator
 
-# Re-export from utils to maintain backward compatibility
 from omnibase_core.utils.util_enum_normalizer import create_enum_normalizer
 
 # =============================================================================
@@ -114,19 +113,21 @@ def validate_duration(value: str) -> str:
         >>> validate_duration("P1WT1H")  # Raises ValueError (weeks cannot combine)
     """
     if not value:
-        msg = "Duration cannot be empty"
-        raise ValueError(msg)
+        # error-ok: Pydantic validators require ValueError for proper error aggregation
+        raise ValueError("Duration cannot be empty")
 
     match = _ISO8601_DURATION_PATTERN.match(value)
     if not match:
-        msg = f"Invalid ISO 8601 duration format: '{value}'"
-        raise ValueError(msg)
+        # error-ok: Pydantic validators require ValueError for proper error aggregation
+        raise ValueError(f"Invalid ISO 8601 duration format: '{value}'")
 
     # Check that at least one component is present (not just "P" or "PT")
     groups = match.groups()
     if not any(groups):
-        msg = f"Duration must specify at least one time component: '{value}'"
-        raise ValueError(msg)
+        # error-ok: Pydantic validators require ValueError for proper error aggregation
+        raise ValueError(
+            f"Duration must specify at least one time component: '{value}'"
+        )
 
     # Per ISO 8601, weeks cannot be combined with other date/time components
     # groups: (years, months, weeks, days, hours, minutes, seconds)
@@ -135,8 +136,10 @@ def validate_duration(value: str) -> str:
     has_time = any(groups[4:7])  # hours, minutes, seconds
 
     if weeks and (has_other_date or has_time):
-        msg = f"Invalid ISO 8601 duration '{value}': weeks (W) cannot be combined with other components"
-        raise ValueError(msg)
+        # error-ok: Pydantic validators require ValueError for proper error aggregation
+        raise ValueError(
+            f"Invalid ISO 8601 duration '{value}': weeks (W) cannot be combined with other components"
+        )
 
     return value
 
@@ -200,13 +203,13 @@ def validate_bcp47_locale(value: str) -> str:
         >>> validate_bcp47_locale("invalid_locale")  # Raises ValueError
     """
     if not value:
-        msg = "Locale cannot be empty"
-        raise ValueError(msg)
+        # error-ok: Pydantic validators require ValueError for proper error aggregation
+        raise ValueError("Locale cannot be empty")
 
     match = _BCP47_LOCALE_PATTERN.match(value)
     if not match:
-        msg = f"Invalid BCP 47 locale format: '{value}'"
-        raise ValueError(msg)
+        # error-ok: Pydantic validators require ValueError for proper error aggregation
+        raise ValueError(f"Invalid BCP 47 locale format: '{value}'")
 
     return value
 
@@ -253,13 +256,13 @@ def validate_uuid(value: str) -> str:
         >>> validate_uuid("invalid-uuid")  # Raises ValueError
     """
     if not value:
-        msg = "UUID cannot be empty"
-        raise ValueError(msg)
+        # error-ok: Pydantic validators require ValueError for proper error aggregation
+        raise ValueError("UUID cannot be empty")
 
     match = _UUID_PATTERN.match(value)
     if not match:
-        msg = f"Invalid UUID format: '{value}'"
-        raise ValueError(msg)
+        # error-ok: Pydantic validators require ValueError for proper error aggregation
+        raise ValueError(f"Invalid UUID format: '{value}'")
 
     # Normalize to lowercase with hyphens
     groups = match.groups()
@@ -318,13 +321,13 @@ def validate_semantic_version(value: str) -> str:
         >>> validate_semantic_version("01.0.0")  # Raises ValueError (leading zero)
     """
     if not value:
-        msg = "Version cannot be empty"
-        raise ValueError(msg)
+        # error-ok: Pydantic validators require ValueError for proper error aggregation
+        raise ValueError("Version cannot be empty")
 
     match = _SEMVER_PATTERN.match(value)
     if not match:
-        msg = f"Invalid semantic version format: '{value}'"
-        raise ValueError(msg)
+        # error-ok: Pydantic validators require ValueError for proper error aggregation
+        raise ValueError(f"Invalid semantic version format: '{value}'")
 
     return value
 
@@ -399,16 +402,16 @@ def validate_error_code(value: str) -> str:
         >>> validate_error_code("auth_001")  # Raises ValueError (must be uppercase)
     """
     if not value:
-        msg = "Error code cannot be empty"
-        raise ValueError(msg)
+        # error-ok: Pydantic validators require ValueError for proper error aggregation
+        raise ValueError("Error code cannot be empty")
 
     if not ERROR_CODE_PATTERN.match(value):
-        msg = (
+        # error-ok: Pydantic validators require ValueError for proper error aggregation
+        raise ValueError(
             f"Invalid error code format: '{value}'. "
             "Expected CATEGORY_NNN pattern (e.g., AUTH_001, VALIDATION_123). "
             "For lint-style short codes (W001, E001), use workflow_linter module."
         )
-        raise ValueError(msg)
 
     return value
 

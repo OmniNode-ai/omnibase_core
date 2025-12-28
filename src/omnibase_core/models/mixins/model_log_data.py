@@ -5,11 +5,16 @@ Log data model for structured logging in event bus operations.
 """
 
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
-class MixinLogData(BaseModel):
+class ModelLogData(BaseModel):
     """Log data model for structured logging in event bus operations."""
+
+    model_config = ConfigDict(
+        extra="forbid",  # Catch typos early
+        frozen=True,  # Immutable instances for safer passing
+    )
 
     error: str | None = None
     pattern: str | None = None

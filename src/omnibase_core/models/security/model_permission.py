@@ -12,6 +12,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.constants import MAX_DESCRIPTION_LENGTH, MAX_IDENTIFIER_LENGTH
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
@@ -49,7 +50,7 @@ class ModelPermission(BaseModel):
         default=...,
         description="Human-readable permission name",
         min_length=1,
-        max_length=100,
+        max_length=MAX_IDENTIFIER_LENGTH,
         pattern="^[a-zA-Z][a-zA-Z0-9_\\-\\s]*$",
     )
 
@@ -259,7 +260,7 @@ class ModelPermission(BaseModel):
     description: str | None = Field(
         default=None,
         description="Human-readable description",
-        max_length=1000,
+        max_length=MAX_DESCRIPTION_LENGTH,
     )
 
     tags: list[str] = Field(
@@ -286,7 +287,7 @@ class ModelPermission(BaseModel):
     created_by: str | None = Field(
         default=None,
         description="Creator identifier",
-        max_length=100,
+        max_length=MAX_IDENTIFIER_LENGTH,
     )
 
     updated_at: datetime | None = Field(
@@ -297,7 +298,7 @@ class ModelPermission(BaseModel):
     updated_by: str | None = Field(
         default=None,
         description="Last updater identifier",
-        max_length=100,
+        max_length=MAX_IDENTIFIER_LENGTH,
     )
 
     metadata: ModelPermissionMetadata = Field(

@@ -53,6 +53,7 @@ from typing import Literal
 from uuid import UUID
 
 from omnibase_core.constants import TIMEOUT_DEFAULT_MS
+from omnibase_core.constants.constants_field_limits import MAX_BFS_ITERATIONS
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.contracts.subcontracts.model_workflow_definition import (
@@ -83,13 +84,10 @@ __all__ = [
 # Default maximum warnings per code before aggregation
 DEFAULT_MAX_WARNINGS_PER_CODE = 10
 
-# Maximum BFS iterations for reachability analysis
-# Prevents malicious or malformed inputs from causing infinite loops in BFS
-# Value of 10,000 is sufficient for workflows with up to ~5,000 steps
-# (worst case: each step visited once plus queue operations)
-MAX_BFS_ITERATIONS = 10_000
+# MAX_BFS_ITERATIONS is imported from omnibase_core.constants.constants_field_limits
+# Re-exported here for backwards compatibility.
 
-# Step type mapping from EnumNodeType values to workflow step type literals
+# Step type mapping from EnumNodeType values to StepTypeLiteral values
 # Extracted to module level to avoid recreating dict for each node during extraction
 # Maps node_type.value.lower() strings to valid StepTypeLiteral values
 STEP_TYPE_MAPPING: dict[str, StepTypeLiteral] = {

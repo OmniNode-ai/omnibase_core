@@ -16,6 +16,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from omnibase_core.constants import MAX_DESCRIPTION_LENGTH, MAX_NAME_LENGTH
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_validation_severity import EnumValidationSeverity
 from omnibase_core.types.typed_dict_validation_error_serialized import (
@@ -36,7 +37,7 @@ class ModelValidationError(BaseModel):
         default=...,
         description="Error message",
         min_length=1,
-        max_length=1000,
+        max_length=MAX_DESCRIPTION_LENGTH,
     )
     severity: EnumValidationSeverity = Field(
         default=EnumValidationSeverity.ERROR,
@@ -50,7 +51,7 @@ class ModelValidationError(BaseModel):
         default=None,
         description="Human-readable field name that caused the error",
         min_length=1,
-        max_length=255,
+        max_length=MAX_NAME_LENGTH,
         pattern=r"^[a-zA-Z_][a-zA-Z0-9_]*$",
     )
     error_code: str | None = Field(

@@ -13,9 +13,13 @@ orchestrator, custom, parallel. Any other value raises ModelOnexError at validat
 from typing import Literal
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.constants import TIMEOUT_DEFAULT_MS, TIMEOUT_LONG_MS
+from omnibase_core.constants.constants_field_limits import (
+    MAX_IDENTIFIER_LENGTH,
+    MAX_NAME_LENGTH,
+)
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.validation.workflow_constants import VALID_STEP_TYPES
@@ -44,12 +48,13 @@ class ModelWorkflowStep(BaseModel):
         accepted in v1.0.x. See: workflow_constants.VALID_STEP_TYPES
     """
 
-    model_config = {
-        "extra": "forbid",
-        "use_enum_values": False,
-        "validate_assignment": True,
-        "frozen": True,
-    }
+    model_config = ConfigDict(
+        extra="forbid",
+        from_attributes=True,
+        frozen=True,
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # ONEX correlation tracking
     correlation_id: UUID = Field(
@@ -66,7 +71,7 @@ class ModelWorkflowStep(BaseModel):
         default=...,
         description="Human-readable name for this step",
         min_length=1,
-        max_length=200,
+        max_length=MAX_NAME_LENGTH,
     )
 
     # v1.0.4 Normative (Fix 41): step_type MUST be one of the valid types.
@@ -177,6 +182,9 @@ class ModelWorkflowStep(BaseModel):
     # Priority and ordering
     # NOTE: Priority uses standard heap/queue semantics where lower values execute first.
     # This matches Python's heapq and typical task queue implementations.
+    # IMPORTANT: In v1.0, priority is INFORMATIONAL ONLY and does NOT affect execution
+    # order. Steps execute in declaration order. Priority-based scheduling is planned
+    # for v1.1+. This field exists for forward compatibility and documentation.
     priority: int = Field(
         default=100,
         description=(
@@ -211,7 +219,7 @@ class ModelWorkflowStep(BaseModel):
             "opaque label - no pattern interpretation is performed. Only strict "
             "string equality is used for comparison."
         ),
-        max_length=100,
+        max_length=MAX_IDENTIFIER_LENGTH,
     )
 
     max_parallel_instances: int = Field(

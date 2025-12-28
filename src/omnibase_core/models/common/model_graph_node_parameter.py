@@ -27,6 +27,7 @@ See Also:
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.constants.constants_field_limits import MAX_NAME_LENGTH
 from omnibase_core.types.json_types import ToolParameterValue
 
 
@@ -87,7 +88,7 @@ class ModelGraphNodeParameter(BaseModel):
         default=...,
         description="Parameter name (must be a valid identifier)",
         min_length=1,
-        max_length=255,
+        max_length=MAX_NAME_LENGTH,
     )
     value: ToolParameterValue = Field(
         default=...,

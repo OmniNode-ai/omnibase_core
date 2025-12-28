@@ -8,6 +8,7 @@ an abstract interface rather than a concrete implementation.
 Related:
     - OMN-227: NodeInstance execution wrapper
     - OMN-228: EnvelopeRouter implementation
+    - OMN-1067: Move RuntimeNodeInstance to models/runtime/
 """
 
 from __future__ import annotations
@@ -16,7 +17,9 @@ from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 if TYPE_CHECKING:
     from omnibase_core.models.core.model_onex_envelope import ModelOnexEnvelope
-    from omnibase_core.runtime.runtime_node_instance import RuntimeNodeInstance
+    from omnibase_core.models.runtime.model_runtime_node_instance import (
+        ModelRuntimeNodeInstance,
+    )
 
 
 @runtime_checkable
@@ -24,13 +27,13 @@ class ProtocolNodeRuntime(Protocol):
     """
     Protocol defining the interface for node runtime implementations.
 
-    This protocol enables dependency inversion - RuntimeNodeInstance depends on
+    This protocol enables dependency inversion - ModelRuntimeNodeInstance depends on
     the abstract ProtocolNodeRuntime interface rather than a concrete
     EnvelopeRouter implementation. This allows:
 
     - Different runtime implementations (sync, async, distributed)
     - Easy mocking in tests
-    - Future extensibility without changing RuntimeNodeInstance
+    - Future extensibility without changing ModelRuntimeNodeInstance
 
     The runtime is responsible for all actual execution, including:
     - Handler dispatch and invocation
@@ -40,10 +43,10 @@ class ProtocolNodeRuntime(Protocol):
 
     Note:
         This protocol is implemented by EnvelopeRouter (OMN-228).
-        It defines the contract that RuntimeNodeInstance depends on.
+        It defines the contract that ModelRuntimeNodeInstance depends on.
 
     Design Decision (Type Variance):
-        The `instance` parameter uses the concrete `RuntimeNodeInstance` type rather
+        The `instance` parameter uses the concrete `ModelRuntimeNodeInstance` type rather
         than a generic TypeVar or Protocol. This is intentional per YAGNI - we only
         have one NodeInstance implementation. If multiple instance types are needed
         in the future, this can be generalized to a TypeVar or NodeInstanceProtocol.
@@ -53,12 +56,12 @@ class ProtocolNodeRuntime(Protocol):
     async def execute_with_handler(
         self,
         envelope: ModelOnexEnvelope,
-        instance: RuntimeNodeInstance,
+        instance: ModelRuntimeNodeInstance,
     ) -> ModelOnexEnvelope:
         """
         Execute the node's handler for the given envelope.
 
-        This method is called by RuntimeNodeInstance.handle() to delegate
+        This method is called by ModelRuntimeNodeInstance.handle() to delegate
         actual execution to the runtime. The runtime is responsible for:
 
         1. Resolving the appropriate handler based on envelope operation
@@ -70,7 +73,7 @@ class ProtocolNodeRuntime(Protocol):
         Args:
             envelope: The input envelope to process. Contains the operation
                 type, payload, and metadata for routing and execution.
-            instance: The RuntimeNodeInstance that received this envelope.
+            instance: The ModelRuntimeNodeInstance that received this envelope.
                 Provides access to the node's contract and configuration.
 
         Returns:

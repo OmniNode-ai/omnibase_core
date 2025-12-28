@@ -4,6 +4,10 @@ from urllib.parse import urlparse
 
 from pydantic import BaseModel, Field, SecretStr, field_validator, model_validator
 
+from omnibase_core.constants.constants_field_limits import (
+    MAX_IDENTIFIER_LENGTH,
+    MAX_NAME_LENGTH,
+)
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.configuration.model_connection_parse_result import (
     LatencyProfile,
@@ -99,7 +103,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
     host: str = Field(
         default=...,
         description="Database host",
-        max_length=255,
+        max_length=MAX_NAME_LENGTH,
     )
 
     port: int = Field(default=..., description="Database port")
@@ -110,7 +114,9 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         max_length=500,  # Increased to accommodate file paths
     )
 
-    username: str = Field(default=..., description="Database username", max_length=100)
+    username: str = Field(
+        default=..., description="Database username", max_length=MAX_IDENTIFIER_LENGTH
+    )
 
     password: SecretStr = Field(default=..., description="Database password (secured)")
 
@@ -122,7 +128,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
     db_schema: str | None = Field(
         default=None,
         description="Default database schema",
-        max_length=100,
+        max_length=MAX_IDENTIFIER_LENGTH,
     )
 
     ssl_enabled: bool = Field(
@@ -192,7 +198,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
     application_name: str | None = Field(
         default="ONEX",
         description="Application name for connection identification",
-        max_length=100,
+        max_length=MAX_IDENTIFIER_LENGTH,
     )
 
     @field_validator("host")

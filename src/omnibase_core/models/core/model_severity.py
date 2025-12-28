@@ -10,6 +10,7 @@ from typing import Any
 from pydantic import BaseModel, Field, field_validator
 from pydantic_core.core_schema import ValidationInfo
 
+from omnibase_core.constants.constants_field_limits import MAX_IDENTIFIER_LENGTH
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -61,7 +62,7 @@ class ModelSeverity(BaseModel):
     description: str = Field(
         default="",
         description="Human-readable severity description",
-        max_length=100,
+        max_length=MAX_IDENTIFIER_LENGTH,
     )
 
     color_code: str = Field(

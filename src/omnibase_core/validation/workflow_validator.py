@@ -66,6 +66,7 @@ from collections.abc import Mapping
 from collections.abc import Set as AbstractSet
 from uuid import UUID
 
+from omnibase_core.constants.constants_field_limits import MAX_DFS_ITERATIONS
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_workflow_execution import EnumExecutionMode
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
@@ -105,7 +106,8 @@ type InDegreeMap = dict[UUID, int]
 # =============================================================================
 
 # MAX_DFS_ITERATIONS: Resource exhaustion protection constant for DFS cycle detection.
-# Imported from workflow_constants.py (canonical source).
+# Imported from omnibase_core.constants.constants_field_limits (canonical source).
+# Also available from workflow_constants.py for backwards compatibility.
 # Prevents malicious or malformed inputs from causing infinite loops in DFS.
 # Value of 10,000 supports workflows with up to ~5,000 steps.
 # See module docstring "Security Considerations" for full documentation.
@@ -282,7 +284,7 @@ class WorkflowValidator:
             step_id_to_name = self._build_step_id_to_name_map(steps)
             unsorted_names = [step_id_to_name[sid] for sid in unsorted_ids]
             raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.ORCHESTRATOR_SEMANTIC_CYCLE_DETECTED,
                 message=(
                     f"Workflow contains cycles - cannot perform topological sort. "
                     f"Steps involved in cycles: {', '.join(sorted(unsorted_names))}"
@@ -355,7 +357,7 @@ class WorkflowValidator:
             # Resource exhaustion protection - prevent malicious/malformed inputs
             if iterations > MAX_DFS_ITERATIONS:
                 raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.ORCHESTRATOR_EXEC_ITERATION_LIMIT_EXCEEDED,
                     message=(
                         f"Cycle detection exceeded {MAX_DFS_ITERATIONS} iterations - "
                         "possible malicious input or malformed workflow"

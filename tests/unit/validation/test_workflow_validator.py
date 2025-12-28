@@ -61,6 +61,7 @@ class TestWorkflowValidatorTopologicalSort:
         result = validator.topological_sort(steps)
 
         assert result == []
+        assert len(result) == 0  # Explicit zero-count assertion
 
     def test_single_step_workflow_returns_single_step(self) -> None:
         """Test that a single step workflow returns that step."""
@@ -394,7 +395,7 @@ class TestWorkflowValidatorDependencyValidation:
         assert len(result.missing_dependencies) == 0
 
     def test_empty_workflow_dependencies_valid(self) -> None:
-        """Test that empty workflow has valid dependencies."""
+        """Test that empty workflow has valid dependencies (zero errors expected)."""
         validator = WorkflowValidator()
         steps: list[ModelWorkflowStep] = []
 
@@ -402,6 +403,8 @@ class TestWorkflowValidatorDependencyValidation:
 
         assert result.is_valid
         assert result.missing_dependencies == []
+        assert len(result.missing_dependencies) == 0
+        assert result.error_message == ""  # Explicit empty error assertion
 
     def test_missing_dependency_reports_step_name(self) -> None:
         """Test that missing dependency error includes the step name that has the issue."""
@@ -525,13 +528,15 @@ class TestWorkflowValidatorIsolatedSteps:
         assert isolated_2.step_id in result.isolated_steps
 
     def test_empty_workflow_no_isolated_steps(self) -> None:
-        """Test that empty workflow has no isolated steps."""
+        """Test that empty workflow has no isolated steps (zero errors expected)."""
         validator = WorkflowValidator()
         steps: list[ModelWorkflowStep] = []
 
         result = validator.detect_isolated_steps(steps)
 
         assert result.isolated_steps == []
+        assert len(result.isolated_steps) == 0
+        assert result.isolated_step_names == ""  # Explicit empty assertion
 
     def test_isolated_step_reports_step_name(self) -> None:
         """Test that isolated step detection includes step names."""
@@ -591,7 +596,7 @@ class TestWorkflowValidatorUniqueNames:
         assert len(result.duplicate_names) == 0
 
     def test_empty_workflow_unique_names_valid(self) -> None:
-        """Test that empty workflow has valid unique names."""
+        """Test that empty workflow has valid unique names (zero errors expected)."""
         validator = WorkflowValidator()
         steps: list[ModelWorkflowStep] = []
 
@@ -599,6 +604,7 @@ class TestWorkflowValidatorUniqueNames:
 
         assert result.is_valid
         assert result.duplicate_names == []
+        assert len(result.duplicate_names) == 0  # Explicit empty list assertion
 
     def test_multiple_duplicate_names_all_reported(self) -> None:
         """Test that multiple sets of duplicates are all reported."""

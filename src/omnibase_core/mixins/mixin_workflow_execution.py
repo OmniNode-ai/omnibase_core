@@ -78,6 +78,22 @@ def _get_workflow_executor() -> tuple[
 
     return _workflow_executor_cache
 
+# Module-level cache for lazy-imported ModelWorkflowStateSnapshot class.
+# This avoids repeated import overhead when update_workflow_state() is called frequently.
+_workflow_state_snapshot_class: type | None = None
+
+
+def _get_workflow_state_snapshot_class() -> type:
+    """Get the ModelWorkflowStateSnapshot class, importing lazily and caching."""
+    global _workflow_state_snapshot_class
+    if _workflow_state_snapshot_class is None:
+        from omnibase_core.models.workflow.execution.model_workflow_state_snapshot import (
+            ModelWorkflowStateSnapshot,
+        )
+
+        _workflow_state_snapshot_class = ModelWorkflowStateSnapshot
+    return _workflow_state_snapshot_class
+
 
 class MixinWorkflowExecution:
     """
@@ -167,13 +183,11 @@ class MixinWorkflowExecution:
             state is replaced, not merged. Step IDs are stored as tuples
             for immutability.
         """
-        # Lazy import to avoid circular import at module load time.
+        # Use memoized getter to avoid repeated import overhead.
         # The TYPE_CHECKING import provides type hints; this provides the runtime class.
-        from omnibase_core.models.workflow.execution.model_workflow_state_snapshot import (
-            ModelWorkflowStateSnapshot,
-        )
+        snapshot_class = _get_workflow_state_snapshot_class()
 
-        self._workflow_state = ModelWorkflowStateSnapshot(
+        self._workflow_state = snapshot_class(
             workflow_id=workflow_id,
             current_step_index=current_step_index,
             completed_step_ids=tuple(completed_step_ids) if completed_step_ids else (),

@@ -764,7 +764,7 @@ class TestEdgeCases:
 
     def test_long_step_name(self) -> None:
         """Test action creation with maximum length step name."""
-        long_name = "a" * 200  # Max length for step_name
+        long_name = "a" * 255  # Max length for step_name (MAX_NAME_LENGTH)
         step = ModelWorkflowStep(
             step_id=uuid4(),
             step_name=long_name,

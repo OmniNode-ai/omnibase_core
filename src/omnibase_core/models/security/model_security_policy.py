@@ -1,10 +1,13 @@
-from pydantic import Field
+"""Security policy model with structured data fields.
 
-"\nSecurity policy model with structured data fields.\n"
+Provides comprehensive security policy management with typed fields for
+access control, authentication requirements, IP restrictions, and compliance.
+"""
+
 from datetime import UTC, datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, field_serializer
+from pydantic import BaseModel, ConfigDict, Field, field_serializer
 
 from omnibase_core.models.common.model_typed_mapping import ModelTypedMapping
 from omnibase_core.models.primitives.model_semver import ModelSemVer
@@ -19,8 +22,14 @@ SecurityContext = ModelSecurityContext
 
 
 class ModelSecurityPolicy(BaseModel):
-    """
-    Security policy model with structured typed fields for comprehensive policy management.
+    """Security policy model with structured typed fields for comprehensive policy management.
+
+    Defines access control rules, authentication requirements, IP restrictions,
+    time-based access controls, and compliance framework associations.
+
+    Note:
+        This model uses from_attributes=True to support pytest-xdist parallel
+        execution where class identity may differ between workers.
     """
 
     policy_id: UUID = Field(default=..., description="Unique policy identifier")
@@ -78,7 +87,8 @@ class ModelSecurityPolicy(BaseModel):
     data_classification: str | None = Field(
         default=None, description="Data classification level"
     )
-    model_config = ConfigDict()
+
+    model_config = ConfigDict(from_attributes=True)
 
     def to_dict(self) -> ModelSecurityPolicyData:
         """Convert to data container for current standards."""

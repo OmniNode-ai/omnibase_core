@@ -418,7 +418,7 @@ from omnibase_core.mixins import (
 | `MixinIntrospectFromContract` | STABLE | Contract introspection |
 | `MixinIntrospectionPublisher` | STABLE | Introspection publishing |
 | `MixinLazyEvaluation` | STABLE | Lazy evaluation |
-| `MixinLogData` | STABLE | Log data handling |
+| `ModelLogData` | STABLE | Log data handling |
 | `MixinNodeExecutor` | STABLE | Node execution |
 | `MixinNodeIdFromContract` | STABLE | Node ID from contract |
 | `MixinNodeIntrospection` | STABLE | Node introspection |

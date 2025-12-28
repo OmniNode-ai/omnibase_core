@@ -3311,7 +3311,7 @@ class TestWorkflowSizeLimitEnforcement:
     def test_step_payload_size_exceeds_limit(self) -> None:
         """Test step payload exceeding MAX_STEP_PAYLOAD_SIZE_BYTES raises error.
 
-        Note: ModelWorkflowStep.step_name has a max length of 200 characters,
+        Note: ModelWorkflowStep.step_name has a max length of 255 characters,
         so we cannot exceed 64KB with a real step. We test the _create_action_for_step
         function directly using a mock step to verify the limit enforcement logic.
         """
@@ -3350,7 +3350,7 @@ class TestWorkflowSizeLimitEnforcement:
     ) -> None:
         """Test total payload exceeding limit in sequential execution is handled gracefully.
 
-        Note: With ModelWorkflowStep.step_name limited to 200 chars and
+        Note: With ModelWorkflowStep.step_name limited to 255 chars and
         MAX_WORKFLOW_STEPS limited to 1000, the maximum possible total payload
         is ~300KB (well under 10MB). We mock _create_action_for_step to return
         actions with large payloads to trigger the limit.

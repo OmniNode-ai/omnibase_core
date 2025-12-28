@@ -832,8 +832,16 @@ class TestTopologicalOrder:
             "Second declared step should execute second per v1.0.2 Fix 5"
         )
 
-    def test_declaration_order_as_tiebreaker(self) -> None:
-        """Test that declaration order is used as tiebreaker for equal priorities."""
+    def test_declaration_order_as_tiebreaker_for_equal_priorities(self) -> None:
+        """
+        Test that declaration order determines execution when priorities are equal.
+
+        This is the PRIMARY execution order semantic in v1.0. When steps have
+        equal priority (or priority is not explicitly set), declaration order
+        in the workflow definition determines execution sequence.
+
+        See model_workflow_step.py for v1.0 priority semantics documentation.
+        """
         step_first = ModelWorkflowStep(
             step_id=uuid4(),
             step_name="first",

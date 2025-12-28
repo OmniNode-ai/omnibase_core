@@ -3,11 +3,19 @@
 Compliance and regulatory metadata for secure event envelopes.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelComplianceMetadata(BaseModel):
-    """Compliance and regulatory metadata."""
+    """Compliance and regulatory metadata.
+
+    Note:
+        This model uses frozen=True for immutability and from_attributes=True
+        to support pytest-xdist parallel execution where class identity may
+        differ between workers.
+    """
+
+    model_config = ConfigDict(frozen=True, from_attributes=True)
 
     frameworks: list[str] = Field(
         default_factory=list,

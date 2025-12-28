@@ -84,12 +84,12 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.constants import TIMEOUT_LONG_MS
+from omnibase_core.constants.constants_field_limits import MAX_TIMEOUT_MS
 from omnibase_core.enums.enum_workflow_execution import EnumExecutionMode
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 from omnibase_core.models.orchestrator.model_orchestrator_input_metadata import (
     ModelOrchestratorInputMetadata,
 )
-from omnibase_core.validation.workflow_constants import MAX_TIMEOUT_MS
 
 
 class ModelOrchestratorInput(BaseModel):

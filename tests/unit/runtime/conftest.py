@@ -44,7 +44,7 @@ Note:
 Related:
     - tests/unit/runtime/test_node_instance.py: NodeInstance test consumers
     - tests/unit/runtime/test_node_runtime.py: NodeRuntime test consumers
-    - src/omnibase_core/runtime/runtime_node_instance.py: RuntimeNodeInstance impl
+    - src/omnibase_core/models/runtime/model_runtime_node_instance.py: ModelRuntimeNodeInstance impl
     - src/omnibase_core/runtime/node_runtime.py: NodeRuntime implementation (TBD)
 """
 

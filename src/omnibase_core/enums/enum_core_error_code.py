@@ -183,6 +183,9 @@ class EnumCoreErrorCode(EnumOnexErrorCode):
     ORCHESTRATOR_STRUCT_INVALID_STEP_TYPE = (
         "ONEX_CORE_294_ORCHESTRATOR_STRUCT_INVALID_STEP_TYPE"
     )
+    ORCHESTRATOR_STRUCT_WORKFLOW_NOT_LOADED = (
+        "ONEX_CORE_295_ORCHESTRATOR_STRUCT_WORKFLOW_NOT_LOADED"
+    )
 
     # Level 2: Semantic validation errors (301-310)
     ORCHESTRATOR_SEMANTIC_CYCLE_DETECTED = (
@@ -213,6 +216,9 @@ class EnumCoreErrorCode(EnumOnexErrorCode):
     ORCHESTRATOR_EXEC_LEASE_EXPIRED = "ONEX_CORE_315_ORCHESTRATOR_EXEC_LEASE_EXPIRED"
     ORCHESTRATOR_EXEC_WORKFLOW_FAILED = (
         "ONEX_CORE_316_ORCHESTRATOR_EXEC_WORKFLOW_FAILED"
+    )
+    ORCHESTRATOR_EXEC_ITERATION_LIMIT_EXCEEDED = (
+        "ONEX_CORE_317_ORCHESTRATOR_EXEC_ITERATION_LIMIT_EXCEEDED"
     )
 
     def get_component(self) -> str:
@@ -338,6 +344,7 @@ CORE_ERROR_CODE_TO_EXIT_CODE: dict[EnumCoreErrorCode, EnumCLIExitCode] = {
     EnumCoreErrorCode.ORCHESTRATOR_STRUCT_INVALID_FIELD_TYPE: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.ORCHESTRATOR_STRUCT_MALFORMED_CONTRACT: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.ORCHESTRATOR_STRUCT_INVALID_STEP_TYPE: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.ORCHESTRATOR_STRUCT_WORKFLOW_NOT_LOADED: EnumCLIExitCode.ERROR,
     # Orchestrator Level 2 (Semantic) errors -> ERROR
     EnumCoreErrorCode.ORCHESTRATOR_SEMANTIC_CYCLE_DETECTED: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.ORCHESTRATOR_SEMANTIC_INVALID_DEPENDENCY: EnumCLIExitCode.ERROR,
@@ -351,6 +358,7 @@ CORE_ERROR_CODE_TO_EXIT_CODE: dict[EnumCoreErrorCode, EnumCLIExitCode] = {
     EnumCoreErrorCode.ORCHESTRATOR_EXEC_WORKFLOW_TIMEOUT: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.ORCHESTRATOR_EXEC_LEASE_EXPIRED: EnumCLIExitCode.ERROR,
     EnumCoreErrorCode.ORCHESTRATOR_EXEC_WORKFLOW_FAILED: EnumCLIExitCode.ERROR,
+    EnumCoreErrorCode.ORCHESTRATOR_EXEC_ITERATION_LIMIT_EXCEEDED: EnumCLIExitCode.ERROR,
 }
 
 
@@ -476,6 +484,7 @@ def get_core_error_description(error_code: EnumCoreErrorCode) -> str:
         EnumCoreErrorCode.ORCHESTRATOR_STRUCT_INVALID_FIELD_TYPE: "Orchestrator: field has invalid type in contract",
         EnumCoreErrorCode.ORCHESTRATOR_STRUCT_MALFORMED_CONTRACT: "Orchestrator: malformed contract structure",
         EnumCoreErrorCode.ORCHESTRATOR_STRUCT_INVALID_STEP_TYPE: "Orchestrator: invalid step_type value",
+        EnumCoreErrorCode.ORCHESTRATOR_STRUCT_WORKFLOW_NOT_LOADED: "Orchestrator: workflow definition not loaded",
         # Orchestrator Level 2 (Semantic) - detected during validation before execution
         EnumCoreErrorCode.ORCHESTRATOR_SEMANTIC_CYCLE_DETECTED: "Orchestrator: dependency cycle detected in workflow",
         EnumCoreErrorCode.ORCHESTRATOR_SEMANTIC_INVALID_DEPENDENCY: "Orchestrator: invalid dependency reference",
@@ -489,5 +498,6 @@ def get_core_error_description(error_code: EnumCoreErrorCode) -> str:
         EnumCoreErrorCode.ORCHESTRATOR_EXEC_WORKFLOW_TIMEOUT: "Orchestrator: workflow execution timed out",
         EnumCoreErrorCode.ORCHESTRATOR_EXEC_LEASE_EXPIRED: "Orchestrator: action lease expired during execution",
         EnumCoreErrorCode.ORCHESTRATOR_EXEC_WORKFLOW_FAILED: "Orchestrator: workflow execution failed",
+        EnumCoreErrorCode.ORCHESTRATOR_EXEC_ITERATION_LIMIT_EXCEEDED: "Orchestrator: workflow iteration limit exceeded (DoS protection)",
     }
     return descriptions.get(error_code, "Unknown error")

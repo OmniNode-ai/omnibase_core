@@ -30,6 +30,7 @@ from uuid import UUID
 
 from pydantic import Field
 
+from omnibase_core.constants.constants_field_limits import MAX_REASON_LENGTH
 from omnibase_core.models.runtime.payloads.model_directive_payload_base import (
     ModelDirectivePayloadBase,
 )
@@ -71,7 +72,7 @@ class ModelCancelExecutionPayload(ModelDirectivePayloadBase):
     reason: str | None = Field(
         default=None,
         description="Optional human-readable reason for cancellation",
-        max_length=500,
+        max_length=MAX_REASON_LENGTH,
     )
     force: bool = Field(
         default=False,

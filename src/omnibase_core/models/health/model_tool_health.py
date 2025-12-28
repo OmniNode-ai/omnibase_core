@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field, field_validator
 
+from omnibase_core.constants import MAX_DESCRIPTION_LENGTH, MAX_IDENTIFIER_LENGTH
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_tool_health_status import EnumToolHealthStatus
 from omnibase_core.enums.enum_tool_type import EnumToolType
@@ -46,7 +47,7 @@ class ModelToolHealth(BaseModel):
         default=...,
         description="Name of the tool",
         min_length=1,
-        max_length=100,
+        max_length=MAX_IDENTIFIER_LENGTH,
     )
 
     status: EnumToolHealthStatus = Field(
@@ -66,7 +67,7 @@ class ModelToolHealth(BaseModel):
     error_message: str | None = Field(
         default=None,
         description="Detailed error message if tool is unhealthy",
-        max_length=1000,
+        max_length=MAX_DESCRIPTION_LENGTH,
     )
 
     error_code: str | None = Field(

@@ -54,6 +54,7 @@ from typing import Any, Literal
 
 from pydantic import Field
 
+from omnibase_core.constants.constants_field_limits import MAX_IDENTIFIER_LENGTH
 from omnibase_core.models.intents.model_core_intent_base import ModelCoreIntent
 from omnibase_core.utils.util_decorators import allow_string_id
 
@@ -163,7 +164,7 @@ class ModelConsulRegisterIntent(ModelCoreIntent):
             "share the same name for load balancing. Example: 'onex-compute'."
         ),
         min_length=1,
-        max_length=100,
+        max_length=MAX_IDENTIFIER_LENGTH,
     )
     tags: list[str] = Field(
         default_factory=list,
