@@ -9,10 +9,11 @@ thread management, stop signals, and subscription tracking. All fields are
 excluded from serialization as this is purely a runtime management object.
 """
 
+import copy
 import threading
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
@@ -30,6 +31,11 @@ class ModelEventBusListenerHandle(BaseModel):
 
     All fields are excluded from serialization as this is a runtime-only object
     that should not be persisted or transmitted.
+
+    Thread Safety:
+        The stop() and is_active() methods are thread-safe and can be called
+        from multiple threads simultaneously. Internal state is protected by
+        a lock to prevent race conditions.
 
     Example:
         >>> handle = ModelEventBusListenerHandle()
@@ -50,6 +56,9 @@ class ModelEventBusListenerHandle(BaseModel):
         extra="forbid",
         arbitrary_types_allowed=True,
     )
+
+    # Private lock for thread-safe state access (not serialized)
+    _lock: threading.Lock = PrivateAttr(default_factory=threading.Lock)
 
     listener_thread: threading.Thread | None = Field(
         default=None,
@@ -75,12 +84,39 @@ class ModelEventBusListenerHandle(BaseModel):
         description="Whether the listener is currently running.",
     )
 
+    def __deepcopy__(self, memo: dict[int, Any] | None = None) -> "ModelEventBusListenerHandle":
+        """
+        Create a deep copy of this handle with a new lock instance.
+
+        threading.Lock objects cannot be pickled or deep-copied, so we create
+        a new lock for the copied instance. Other fields are deep-copied normally.
+
+        Args:
+            memo: Dictionary of already copied objects (for cycle detection).
+
+        Returns:
+            A new ModelEventBusListenerHandle with independent state and a new lock.
+        """
+        if memo is None:
+            memo = {}
+
+        # Create a new instance with a fresh lock
+        new_handle = ModelEventBusListenerHandle(
+            listener_thread=copy.deepcopy(self.listener_thread, memo),
+            stop_event=copy.deepcopy(self.stop_event, memo),
+            subscriptions=copy.deepcopy(self.subscriptions, memo),
+            is_running=self.is_running,
+        )
+        memo[id(self)] = new_handle
+        return new_handle
+
     def stop(self, timeout: float = 5.0) -> bool:
         """
         Stop the listener with a bounded timeout.
 
-        This method is idempotent - calling it multiple times is safe and will
-        return True if the listener is already stopped.
+        This method is idempotent and thread-safe - calling it multiple times
+        from multiple threads is safe and will return True if the listener is
+        already stopped.
 
         Args:
             timeout: Maximum time in seconds to wait for the listener thread
@@ -96,37 +132,48 @@ class ModelEventBusListenerHandle(BaseModel):
             - Logs a warning if the thread does not stop within the timeout
             - Clears subscriptions and resets is_running state regardless of
               whether the thread stopped
+
+        Thread Safety:
+            This method is protected by a lock to prevent race conditions when
+            multiple threads call stop() simultaneously.
         """
-        # Already stopped - idempotent behavior
-        if not self.is_running and (
-            self.listener_thread is None or not self.listener_thread.is_alive()
-        ):
-            return True
+        with self._lock:
+            # Already stopped - idempotent behavior
+            if not self.is_running and (
+                self.listener_thread is None or not self.listener_thread.is_alive()
+            ):
+                return True
 
-        # Signal the listener to stop
-        if self.stop_event is not None:
-            self.stop_event.set()
+            # Capture references under lock before potentially blocking operations
+            stop_event = self.stop_event
+            listener_thread = self.listener_thread
 
-        # Wait for thread to finish with bounded timeout
+            # Signal the listener to stop (while holding lock)
+            if stop_event is not None:
+                stop_event.set()
+
+        # Wait for thread to finish OUTSIDE the lock to avoid blocking other
+        # callers during the potentially long join operation
         thread_stopped = True
-        if self.listener_thread is not None and self.listener_thread.is_alive():
-            self.listener_thread.join(timeout=timeout)
+        if listener_thread is not None and listener_thread.is_alive():
+            listener_thread.join(timeout=timeout)
 
-            if self.listener_thread.is_alive():
+            if listener_thread.is_alive():
                 # Thread did not stop within timeout
                 thread_stopped = False
                 emit_log_event(
                     LogLevel.WARNING,
                     f"Listener thread did not stop within {timeout}s timeout",
                     context={
-                        "thread_name": self.listener_thread.name,
+                        "thread_name": listener_thread.name,
                         "timeout_seconds": timeout,
                     },
                 )
 
-        # Clear state regardless of thread stop success
-        self.subscriptions.clear()
-        self.is_running = False
+        # Clear state under lock
+        with self._lock:
+            self.subscriptions.clear()
+            self.is_running = False
 
         return thread_stopped
 
@@ -141,5 +188,13 @@ class ModelEventBusListenerHandle(BaseModel):
             This checks the actual thread state, not just the is_running flag.
             A listener may have is_running=True but is_active()=False if the
             thread terminated unexpectedly.
+
+        Thread Safety:
+            This method is protected by a lock to ensure consistent reads of
+            the listener_thread reference.
         """
-        return self.listener_thread is not None and self.listener_thread.is_alive()
+        with self._lock:
+            listener_thread = self.listener_thread
+        # Check is_alive() outside lock since it's a read-only operation on
+        # the thread object itself (which is thread-safe)
+        return listener_thread is not None and listener_thread.is_alive()

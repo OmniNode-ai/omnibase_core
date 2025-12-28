@@ -86,7 +86,16 @@ class ModelEventBusRuntimeState(BaseModel):
     def reset(self) -> None:
         """Reset state to unbound defaults.
 
-        This clears the binding status while preserving configuration.
+        This clears the binding status (is_bound=False) while preserving
+        node_name and contract_path. Use this for temporary unbinding where
+        you want to rebind with the same configuration.
+
+        For a full reset including clearing node_name, create a new instance
+        with create_unbound() instead.
+
+        See Also:
+            bind(): Sets node_name, contract_path, and is_bound together.
+            create_unbound(): Creates a fresh instance with all defaults.
         """
         self.is_bound = False
 

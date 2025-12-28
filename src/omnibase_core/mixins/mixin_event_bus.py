@@ -98,6 +98,9 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         from omnibase_core.models.event_bus import ModelEventBusRuntimeState
 
         attr_name = "_mixin_event_bus_state"
+        # TODO(OMN-1081): hasattr fallback can be removed after all consumers
+        # migrate to explicit bind_*() calls. This handles legacy cases where
+        # state may not be initialized.
         if not hasattr(self, attr_name):
             state = ModelEventBusRuntimeState.create_unbound()
             object.__setattr__(self, attr_name, state)
@@ -109,6 +112,9 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         from omnibase_core.models.event_bus import ModelEventBusListenerHandle
 
         attr_name = "_mixin_event_bus_listener"
+        # TODO(OMN-1081): hasattr fallback can be removed after all consumers
+        # migrate to explicit bind_*() calls. This handles legacy cases where
+        # state may not be initialized.
         if not hasattr(self, attr_name):
             return None
         return cast(
@@ -167,54 +173,69 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
 
     # --- Fail-Fast Event Bus Access ---
 
-    def _require_event_bus(self) -> Any:
-        """Get event bus or raise RuntimeError if not bound.
-
-        Note:
-            Returns Any because event bus implementations use duck-typing.
-            The protocol types (ProtocolEventBus, etc.) are used for binding,
-            but runtime behavior relies on hasattr checks for method availability.
+    def _require_event_bus(self) -> ProtocolEventBus:
+        """Get event bus or raise ModelOnexError if not bound.
 
         Returns:
             The bound event bus instance.
 
         Raises:
-            RuntimeError: If no event bus is bound.
+            ModelOnexError: If no event bus is bound.
         """
         bus = self._get_event_bus()
         if bus is None:
-            raise RuntimeError(
-                f"Event bus not bound on {self.__class__.__name__}. "
-                "Call bind_event_bus() or bind_registry() before publishing."
+            raise ModelOnexError(
+                message=f"Event bus not bound on {self.__class__.__name__}. "
+                "Call bind_event_bus() or bind_registry() before publishing.",
+                error_code=EnumCoreErrorCode.INVALID_STATE,
+                context={"class_name": self.__class__.__name__},
             )
         return bus
 
-    def _get_event_bus(self) -> Any:
+    def _get_event_bus(self) -> ProtocolEventBus | None:
         """
-        Resolve event bus using duck-typed polymorphism.
-
-        Note: Returns Any because event bus implementations use duck-typing
-        and don't conform to a single protocol interface.
+        Resolve event bus using protocol-based polymorphism.
 
         Returns:
             The event bus instance or None if not bound.
         """
+        # TODO(OMN-1081): hasattr checks can be simplified after migration
+        # when we can assume bind_*() was called during initialization.
         # Try direct event_bus binding first
         if hasattr(self, "_bound_event_bus"):
             bus = object.__getattribute__(self, "_bound_event_bus")
             if bus is not None:
-                return bus
+                return cast(ProtocolEventBus, bus)
 
         # Try registry binding
         if hasattr(self, "_bound_registry"):
             registry = object.__getattribute__(self, "_bound_registry")
             if hasattr(registry, "event_bus"):
-                return getattr(registry, "event_bus", None)
+                event_bus = getattr(registry, "event_bus", None)
+                if event_bus is not None:
+                    return cast(ProtocolEventBus, event_bus)
 
         return None
 
     def _has_event_bus(self) -> bool:
-        """Check if event bus is available."""
+        """Check if an event bus is currently available for publishing.
+
+        Use this method to check availability before attempting operations that
+        require an event bus. This is useful for optional event publishing where
+        you want to gracefully skip rather than raise an error.
+
+        For operations that require an event bus, prefer _require_event_bus()
+        which will raise RuntimeError with a descriptive message.
+
+        Returns:
+            True if an event bus is bound and available, False otherwise.
+
+        Example:
+            >>> if self._has_event_bus():
+            ...     self.publish_completion_event("done", data)
+            ... else:
+            ...     self._log_warn("Skipping event - no bus", "publish")
+        """
         return self._get_event_bus() is not None
 
     # --- Node Interface Methods (to be overridden by subclasses) ---
@@ -316,7 +337,7 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             correlation_id: Optional correlation ID for tracking
 
         Raises:
-            RuntimeError: If event bus is not bound.
+            ModelOnexError: If event bus is not bound.
         """
         bus = self._require_event_bus()
 
@@ -329,6 +350,8 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             )
 
             # Publish via event bus - fail fast if no publish method
+            # Note: hasattr checks support legacy event bus implementations with
+            # non-standard interfaces. Cast to Any for duck-typed method calls.
             if hasattr(bus, "publish_async"):
                 # Wrap in envelope for async publishing
                 from omnibase_core.models.events.model_event_envelope import (
@@ -341,9 +364,9 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                 # TODO: Add topic validation when topic-based publishing is implemented
                 # When the event bus supports explicit topic routing, validate here:
                 # self._validate_topic_alignment(topic, envelope)
-                await bus.publish_async(envelope)
+                await cast(Any, bus).publish_async(envelope)
             elif hasattr(bus, "publish"):
-                bus.publish(event)  # Synchronous method - no await
+                cast(Any, bus).publish(event)  # Synchronous method - no await
             else:
                 raise OnexError(
                     message="Event bus does not support publishing (missing 'publish_async' and 'publish' methods)",
@@ -353,8 +376,8 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
 
             self._log_info(f"Published event: {event_type}", event_type)
 
-        except RuntimeError:
-            raise  # Re-raise RuntimeError from _require_event_bus
+        except ModelOnexError:
+            raise  # Re-raise binding errors from _require_event_bus
         except Exception as e:
             self._log_error(
                 f"Failed to publish event: {e!r}",
@@ -375,7 +398,7 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             data: Completion data model
 
         Raises:
-            RuntimeError: If event bus is not bound.
+            ModelOnexError: If event bus is not bound.
         """
         bus = self._require_event_bus()
 
@@ -397,8 +420,9 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             # Sync publish doesn't use envelope, so validation would need to wrap event first:
             # envelope = ModelEventEnvelope(payload=event)
             # self._validate_topic_alignment(topic, envelope)
+            # Note: hasattr check supports legacy event bus with non-standard interface
             if hasattr(bus, "publish"):
-                bus.publish(event)
+                cast(Any, bus).publish(event)
             else:
                 raise OnexError(
                     message="Event bus has no synchronous 'publish' method",
@@ -406,8 +430,8 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                     context={"bus_type": type(bus).__name__, "event_type": event_type},
                 )
             self._log_info(f"Published completion event: {event_type}", event_type)
-        except RuntimeError:
-            raise  # Re-raise RuntimeError from _require_event_bus
+        except ModelOnexError:
+            raise  # Re-raise binding errors from _require_event_bus
         except Exception as e:
             self._log_error(
                 f"Failed to publish completion event: {e!r}",
@@ -430,7 +454,7 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             data: Completion data model
 
         Raises:
-            RuntimeError: If event bus is not bound.
+            ModelOnexError: If event bus is not bound.
         """
         bus = self._require_event_bus()
 
@@ -438,6 +462,8 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             event = self._build_event(event_type, data)
 
             # Prefer async publishing if available - fail fast if no publish method
+            # Note: hasattr checks support legacy event bus implementations with
+            # non-standard interfaces. Cast to Any for duck-typed method calls.
             if hasattr(bus, "publish_async"):
                 # Wrap event in envelope for async publishing
                 from omnibase_core.models.events.model_event_envelope import (
@@ -450,10 +476,10 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                 # TODO: Add topic validation when topic-based publishing is implemented
                 # When the event bus supports explicit topic routing, validate here:
                 # self._validate_topic_alignment(topic, envelope)
-                await bus.publish_async(envelope)
+                await cast(Any, bus).publish_async(envelope)
             # Fallback to sync method
             elif hasattr(bus, "publish"):
-                bus.publish(event)  # Synchronous method - no await
+                cast(Any, bus).publish(event)  # Synchronous method - no await
             else:
                 raise OnexError(
                     message="Event bus has no publish method (missing 'publish_async' and 'publish')",
@@ -463,8 +489,8 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
 
             self._log_info(f"Published completion event: {event_type}", event_type)
 
-        except RuntimeError:
-            raise  # Re-raise RuntimeError from _require_event_bus
+        except ModelOnexError:
+            raise  # Re-raise binding errors from _require_event_bus
         except Exception as e:
             self._log_error(
                 f"Failed to publish completion event: {e!r}",
@@ -585,7 +611,7 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             Handle for managing the listener lifecycle.
 
         Raises:
-            RuntimeError: If no event bus is available.
+            ModelOnexError: If no event bus is available.
         """
         from omnibase_core.models.event_bus import ModelEventBusListenerHandle
 
@@ -596,9 +622,11 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             return existing
 
         if not self._has_event_bus():
-            raise RuntimeError(
-                f"Cannot start event listener on {self.__class__.__name__}: "
-                "no event bus available. Call bind_event_bus() or bind_registry() first."
+            raise ModelOnexError(
+                message=f"Cannot start event listener on {self.__class__.__name__}: "
+                "no event bus available. Call bind_event_bus() or bind_registry() first.",
+                error_code=EnumCoreErrorCode.INVALID_STATE,
+                context={"class_name": self.__class__.__name__},
             )
 
         # Create new handle
@@ -649,7 +677,8 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
 
             for subscription in target.subscriptions:
                 try:
-                    bus.unsubscribe(subscription)
+                    # Cast to Any for legacy event bus interface
+                    cast(Any, bus).unsubscribe(subscription)
                 except Exception as e:
                     self._log_error(
                         f"Failed to unsubscribe: {e!r}",
@@ -677,7 +706,12 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                 try:
                     object.__delattr__(self, attr)
                 except AttributeError:
-                    pass  # Already deleted
+                    # Attribute already deleted - expected during cleanup
+                    emit_log_event(
+                        LogLevel.DEBUG,
+                        f"MIXIN_DISPOSE: Attribute {attr} already deleted during cleanup",
+                        ModelLogData(node_name=self.get_node_name()),
+                    )
 
         self._event_bus_runtime_state.reset()
 
@@ -718,10 +752,13 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                 )
 
             # Subscribe to all patterns
+            # Note: Cast to Any for legacy event bus interface
             for pattern in patterns:
                 try:
                     event_handler = self._create_event_handler(pattern)
-                    subscription = bus.subscribe(event_handler, event_type=pattern)
+                    subscription = cast(Any, bus).subscribe(
+                        event_handler, event_type=pattern
+                    )
                     handle.subscriptions.append(subscription)
                     self._log_info(f"Subscribed to pattern: {pattern}", pattern)
                 except Exception as e:
@@ -889,7 +926,13 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
     # --- Logging Helpers ---
 
     def _log_info(self, msg: str, pattern: str) -> None:
-        """Log info message with pattern."""
+        """Emit a structured INFO log with event pattern context.
+
+        Args:
+            msg: The log message to emit.
+            pattern: Event pattern or operation identifier for context
+                (e.g., "event_listener", "publish_completion", topic name).
+        """
         emit_log_event(
             LogLevel.INFO,
             msg,
@@ -897,7 +940,12 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         )
 
     def _log_warn(self, msg: str, pattern: str) -> None:
-        """Log warning message with pattern."""
+        """Emit a structured WARNING log with event pattern context.
+
+        Args:
+            msg: The warning message to emit.
+            pattern: Event pattern or operation identifier for context.
+        """
         emit_log_event(
             LogLevel.WARNING,
             msg,
@@ -910,7 +958,14 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         pattern: str,
         error: BaseException | None = None,
     ) -> None:
-        """Log error message with pattern and optional error details."""
+        """Emit a structured ERROR log with event pattern and exception context.
+
+        Args:
+            msg: The error message to emit.
+            pattern: Event pattern or operation identifier for context.
+            error: Optional exception that caused the error. If provided,
+                its repr() is included in the log context for debugging.
+        """
         emit_log_event(
             LogLevel.ERROR,
             msg,
