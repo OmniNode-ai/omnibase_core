@@ -48,7 +48,7 @@ from uuid import uuid4
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.enums.enum_effect_types import EnumEffectType
+from omnibase_core.enums import EnumEffectType
 from omnibase_core.models.context import ModelEffectInputData, ModelReducerIntentPayload
 from omnibase_core.models.context.model_runtime_directive_payload import (
     ModelRuntimeDirectivePayload,
