@@ -20,6 +20,7 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Core-native protocol imports (no SPI dependency)
 from omnibase_core.protocols import (
+    ContextValue,
     ProtocolAction,
     ProtocolNodeResult,
     ProtocolState,
@@ -222,41 +223,27 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
                     },
                 )
 
-                # Process each dependency
+                # Process each dependency (always ModelContractDependency type)
                 for dependency in contract_content.dependencies:
-                    # Handle both string and ModelContractDependency types
-                    if isinstance(dependency, str):  # type: ignore[unreachable]
-                        emit_log_event(  # type: ignore[unreachable]
-                            LogLevel.DEBUG,
-                            f"Dependency registered: {dependency}",
-                            {
-                                "dependency_name": dependency,
-                                "dependency_module": "N/A",
-                                "dependency_type": "unknown",
-                                "required": True,
-                                "node_name": contract_content.node_name,
-                            },
-                        )
+                    # Use type instead of dependency_type for ModelContractDependency
+                    dep_type = getattr(dependency, "type", "unknown")
+                    # Handle enum or string type
+                    if hasattr(dep_type, "value"):
+                        dep_type_value = dep_type.value
                     else:
-                        # Use type instead of dependency_type for ModelContractDependency
-                        dep_type = getattr(dependency, "type", "unknown")
-                        # Handle enum or string type
-                        if hasattr(dep_type, "value"):
-                            dep_type_value = dep_type.value
-                        else:
-                            dep_type_value = str(dep_type)
+                        dep_type_value = str(dep_type)
 
-                        emit_log_event(
-                            LogLevel.DEBUG,
-                            f"Dependency registered: {dependency.name}",
-                            {
-                                "dependency_name": dependency.name,
-                                "dependency_module": dependency.module or "N/A",
-                                "dependency_type": dep_type_value,
-                                "required": getattr(dependency, "required", True),
-                                "node_name": contract_content.node_name,
-                            },
-                        )
+                    emit_log_event(
+                        LogLevel.DEBUG,
+                        f"Dependency registered: {dependency.name}",
+                        {
+                            "dependency_name": dependency.name,
+                            "dependency_module": dependency.module or "N/A",
+                            "dependency_type": dep_type_value,
+                            "required": getattr(dependency, "required", True),
+                            "node_name": contract_content.node_name,
+                        },
+                    )
 
                     # Note: Actual service registration with container will be implemented
                     # when omnibase-spi protocol service resolver is fully integrated.
@@ -669,8 +656,9 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
             )
 
             # Wrap the new state in a result object
+            # Cast ProtocolState to ContextValue - semantically compatible at runtime
             return ModelNodeWorkflowResult(
-                value=new_state,  # type: ignore[arg-type]
+                value=cast(ContextValue, new_state),
                 is_success=True,
                 is_failure=False,
                 error=None,
