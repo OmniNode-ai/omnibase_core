@@ -281,7 +281,7 @@ class MixinDiscoveryResponder:
                 return  # Invalid request format
 
             # Check if we match filter criteria
-            if not self._matches_discovery_criteria(request_metadata):  # type: ignore[unreachable]
+            if not self._matches_discovery_criteria(request_metadata):
                 self._discovery_stats["filtered_requests"] += 1
                 return  # Doesn't match criteria
 

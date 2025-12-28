@@ -3,6 +3,8 @@
 Type-safe input state container for version parsing.
 """
 
+from typing import cast
+
 from pydantic import BaseModel, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -67,7 +69,7 @@ class ModelInputState(BaseModel):
                     metadata[field] = (
                         str(value) if not isinstance(value, (dict, list)) else value
                     )
-        return metadata  # type: ignore[return-value]
+        return cast(TypedDictMetadataDict, metadata)
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""

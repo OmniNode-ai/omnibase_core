@@ -334,7 +334,7 @@ class MixinHealthCheck:
 
                 # Validate result type (handle invalid return types)
                 if not isinstance(result, ModelHealthStatus):
-                    emit_log_event(  # type: ignore[unreachable]
+                    emit_log_event(
                         LogLevel.ERROR,
                         f"Async health check returned invalid type: {check_name}",
                         {"check_name": check_name, "type": str(type(result))},

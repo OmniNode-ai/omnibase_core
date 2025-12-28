@@ -5,7 +5,7 @@ Type-safe container for parsed CLI arguments that provides both positional
 and named argument access with type conversion capabilities.
 """
 
-from typing import Any, TypeVar
+from typing import Any, TypeVar, cast, overload
 
 from pydantic import BaseModel, Field
 
@@ -38,6 +38,46 @@ class ModelArgumentMap(BaseModel):
         description="Original raw argument strings",
     )
 
+    @overload
+    def get_typed(
+        self,
+        name: str,
+        expected_type: type[str],
+        default: str | None = None,
+    ) -> str | None: ...
+
+    @overload
+    def get_typed(
+        self,
+        name: str,
+        expected_type: type[bool],
+        default: bool | None = None,
+    ) -> bool | None: ...
+
+    @overload
+    def get_typed(
+        self,
+        name: str,
+        expected_type: type[int],
+        default: int | None = None,
+    ) -> int | None: ...
+
+    @overload
+    def get_typed(
+        self,
+        name: str,
+        expected_type: type[float],
+        default: float | None = None,
+    ) -> float | None: ...
+
+    @overload
+    def get_typed(
+        self,
+        name: str,
+        expected_type: type[T],
+        default: T | None = None,
+    ) -> T | None: ...
+
     def get_typed(
         self,
         name: str,
@@ -62,15 +102,15 @@ class ModelArgumentMap(BaseModel):
             # Try to convert if possible
             try:
                 if expected_type == str:
-                    return str(value)  # type: ignore[return-value]
-                if expected_type == int:
-                    return int(value)  # type: ignore[return-value,arg-type]
-                if expected_type == float:
-                    return float(value)  # type: ignore[return-value,arg-type]
+                    return cast(T, str(value))
                 if expected_type == bool:
                     if isinstance(value, str):
-                        return value.lower() in ("true", "1", "yes", "on")  # type: ignore[return-value]
-                    return bool(value)  # type: ignore[return-value]
+                        return cast(T, value.lower() in ("true", "1", "yes", "on"))
+                    return cast(T, bool(value))
+                if expected_type == int:
+                    return cast(T, int(str(value)))
+                if expected_type == float:
+                    return cast(T, float(str(value)))
             except (ValueError, TypeError):
                 pass
         return default
@@ -106,6 +146,46 @@ class ModelArgumentMap(BaseModel):
         """Check if named argument exists."""
         return name in self.named_args
 
+    @overload
+    def get_positional(
+        self,
+        index: int,
+        expected_type: type[str],
+        default: str | None = None,
+    ) -> str | None: ...
+
+    @overload
+    def get_positional(
+        self,
+        index: int,
+        expected_type: type[bool],
+        default: bool | None = None,
+    ) -> bool | None: ...
+
+    @overload
+    def get_positional(
+        self,
+        index: int,
+        expected_type: type[int],
+        default: int | None = None,
+    ) -> int | None: ...
+
+    @overload
+    def get_positional(
+        self,
+        index: int,
+        expected_type: type[float],
+        default: float | None = None,
+    ) -> float | None: ...
+
+    @overload
+    def get_positional(
+        self,
+        index: int,
+        expected_type: type[T],
+        default: T | None = None,
+    ) -> T | None: ...
+
     def get_positional(
         self,
         index: int,
@@ -130,15 +210,15 @@ class ModelArgumentMap(BaseModel):
             # Try to convert if possible
             try:
                 if expected_type == str:
-                    return str(value)  # type: ignore[return-value]
-                if expected_type == int:
-                    return int(value)  # type: ignore[return-value,arg-type]
-                if expected_type == float:
-                    return float(value)  # type: ignore[return-value,arg-type]
+                    return cast(T, str(value))
                 if expected_type == bool:
                     if isinstance(value, str):
-                        return value.lower() in ("true", "1", "yes", "on")  # type: ignore[return-value]
-                    return bool(value)  # type: ignore[return-value]
+                        return cast(T, value.lower() in ("true", "1", "yes", "on"))
+                    return cast(T, bool(value))
+                if expected_type == int:
+                    return cast(T, int(str(value)))
+                if expected_type == float:
+                    return cast(T, float(str(value)))
             except (ValueError, TypeError):
                 pass
         return default

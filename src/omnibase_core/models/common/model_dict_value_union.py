@@ -418,7 +418,8 @@ class ModelDictValueUnion(BaseModel):
                 message=f"Value is not bool, is {self.value_type}",
                 context={"value_type": self.value_type},
             )
-        return self.value  # type: ignore[return-value]
+        assert isinstance(self.value, bool)
+        return self.value
 
     def get_as_dict(self) -> dict[str, object]:
         """
@@ -446,7 +447,8 @@ class ModelDictValueUnion(BaseModel):
             >>> assert value.get_as_dict() == {}  # Safe fallback, not an error
         """
         if self.is_dict():
-            return self.value  # type: ignore[return-value]
+            assert isinstance(self.value, dict)
+            return self.value
         return {}
 
     def get_as_float(self) -> float:
@@ -469,7 +471,8 @@ class ModelDictValueUnion(BaseModel):
                 message=f"Value is not float, is {self.value_type}",
                 context={"value_type": self.value_type},
             )
-        return self.value  # type: ignore[return-value]
+        assert isinstance(self.value, float)
+        return self.value
 
     def get_as_int(self) -> int:
         """
@@ -491,7 +494,8 @@ class ModelDictValueUnion(BaseModel):
                 message=f"Value is not int, is {self.value_type}",
                 context={"value_type": self.value_type},
             )
-        return self.value  # type: ignore[return-value]
+        assert isinstance(self.value, int)
+        return self.value
 
     def get_as_list(self) -> list[object]:
         """
@@ -513,7 +517,8 @@ class ModelDictValueUnion(BaseModel):
                 message=f"Value is not list, is {self.value_type}",
                 context={"value_type": self.value_type},
             )
-        return self.value  # type: ignore[return-value]
+        assert isinstance(self.value, list)
+        return self.value
 
     def get_as_str(self) -> str:
         """
@@ -535,7 +540,8 @@ class ModelDictValueUnion(BaseModel):
                 message=f"Value is not str, is {self.value_type}",
                 context={"value_type": self.value_type},
             )
-        return self.value  # type: ignore[return-value]
+        assert isinstance(self.value, str)
+        return self.value
 
     # === Dict-Specific Helper Methods ===
 
@@ -561,7 +567,8 @@ class ModelDictValueUnion(BaseModel):
         if not self.is_dict():
             return False
         # Direct access to self.value since we already verified is_dict()
-        return key in self.value  # type: ignore[operator]
+        assert isinstance(self.value, dict)
+        return key in self.value
 
     def get_dict_value(self, key: str, default: object = None) -> object:
         """
@@ -586,7 +593,8 @@ class ModelDictValueUnion(BaseModel):
         if not self.is_dict():
             return default
         # Direct access since we verified is_dict()
-        return self.value.get(key, default)  # type: ignore[union-attr]
+        assert isinstance(self.value, dict)
+        return self.value.get(key, default)
 
     # === Collection Helpers ===
 

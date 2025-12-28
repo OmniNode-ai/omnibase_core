@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import cast
 
 from pydantic import BaseModel, Field
 
@@ -203,7 +204,7 @@ class ModelNodeTimestamps(BaseModel):
                     except (TypeError, AttributeError):
                         # Fallback to string conversion
                         metadata[field] = str(value)
-        return metadata  # type: ignore[return-value]
+        return cast(TypedDictMetadataDict, metadata)
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol).

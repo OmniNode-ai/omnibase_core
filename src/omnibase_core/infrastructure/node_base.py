@@ -39,6 +39,9 @@ from omnibase_core.logging.structured import emit_log_event_sync as emit_log_eve
 if TYPE_CHECKING:
     from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
+from omnibase_core.models.infrastructure.model_initialization_metadata import (
+    ModelInitializationMetadata,
+)
 from omnibase_core.models.infrastructure.model_node_state import ModelNodeState
 from omnibase_core.models.infrastructure.model_node_workflow_result import (
     ModelNodeWorkflowResult,
@@ -286,13 +289,15 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
             node_tier=1,
             node_classification=pattern_value,
             event_bus=event_bus,
-            initialization_metadata={  # type: ignore[arg-type]
-                "main_tool_class": contract_content.tool_specification.main_tool_class,
-                "contract_path": str(contract_path),
-                "initialization_time": str(time.time()),
-                "workflow_id": str(self.workflow_id),
-                "session_id": str(self.session_id),
-            },
+            initialization_metadata=ModelInitializationMetadata.from_dict(
+                {
+                    "main_tool_class": contract_content.tool_specification.main_tool_class,
+                    "contract_path": str(contract_path),
+                    "initialization_time": str(time.time()),
+                    "workflow_id": str(self.workflow_id),
+                    "session_id": str(self.session_id),
+                }
+            ),
         )
 
         # Resolve main tool
@@ -309,7 +314,7 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
 
         try:
             main_tool_class = (
-                self.state.contract_content.tool_specification.main_tool_class  # type: ignore[union-attr]
+                self.state.contract_content.tool_specification.main_tool_class
             )
 
             # Parse module and class name
@@ -352,7 +357,7 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Failed to import main tool class: {e!s}",
                 context={
-                    "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,  # type: ignore[union-attr]
+                    "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,
                     "node_id": str(self.state.node_id),
                     "error": str(e),
                 },
@@ -363,7 +368,7 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Class not found in module: {e!s}",
                 context={
-                    "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,  # type: ignore[union-attr]
+                    "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,
                     "node_id": str(self.state.node_id),
                 },
                 correlation_id=self.correlation_id,
@@ -373,7 +378,7 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Failed to resolve main tool: {e!s}",
                 context={
-                    "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,  # type: ignore[union-attr]
+                    "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,
                     "node_id": str(self.state.node_id),
                 },
                 correlation_id=self.correlation_id,
@@ -498,7 +503,7 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
                 f"Processing with NodeBase: {self.state.node_name}",
                 {
                     "node_name": self.state.node_name,
-                    "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,  # type: ignore[union-attr]
+                    "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,
                     "business_logic_pattern": self.state.node_classification,
                     "workflow_id": str(self.workflow_id),
                 },
@@ -541,7 +546,7 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message="Main tool does not implement process_async(), process(), or run() method",
                 context={
-                    "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,  # type: ignore[union-attr]
+                    "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,
                     "node_name": self.state.node_name,
                     "workflow_id": str(self.workflow_id),
                 },
@@ -558,7 +563,7 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
                 f"Error in NodeBase processing: {e!s}",
                 {
                     "node_name": self.state.node_name,
-                    "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,  # type: ignore[union-attr]
+                    "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,
                     "error": str(e),
                     "workflow_id": str(self.workflow_id),
                 },
@@ -569,7 +574,7 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
                 context={
                     "node_name": self.state.node_name,
                     "node_tier": self.state.node_tier,
-                    "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,  # type: ignore[union-attr]
+                    "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,
                     "workflow_id": str(self.workflow_id),
                 },
                 correlation_id=self.correlation_id,
@@ -716,7 +721,7 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
                 "node_id": str(self.node_id),
                 "node_name": self.state.node_name,
                 "contract_path": str(self._contract_path),
-                "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,  # type: ignore[union-attr]
+                "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,
                 "correlation_id": str(self.correlation_id),
                 "workflow_id": str(self.workflow_id),
             },
