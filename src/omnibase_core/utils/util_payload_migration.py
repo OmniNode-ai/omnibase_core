@@ -230,7 +230,8 @@ def convert_dict_to_typed_payload(
     # Attempt the conversion
     try:
         return payload_class.model_validate(converted_data)
-    except Exception as e:
+    except (AttributeError, TypeError, KeyError, ValueError) as e:
+        # Catch Pydantic validation errors, dict access errors, or type conversion issues
         raise ModelOnexError(
             message=(
                 f"Failed to convert dict to {payload_class.__name__}: {e}\n\n"

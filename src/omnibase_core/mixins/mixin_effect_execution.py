@@ -586,7 +586,7 @@ class MixinEffectExecution:
         except ModelOnexError:
             transaction_state = EnumTransactionState.ROLLED_BACK
             raise
-        except Exception as e:
+        except BaseException as e:  # Catch-all: top-level error boundary wraps all non-ModelOnexError into structured error
             transaction_state = EnumTransactionState.ROLLED_BACK
             raise ModelOnexError(
                 message=f"Effect execution failed: {e!s}",
@@ -667,7 +667,7 @@ class MixinEffectExecution:
                 )
         except ModelOnexError:
             raise
-        except Exception as e:
+        except (ValueError, TypeError, KeyError, AttributeError) as e:
             raise ModelOnexError(
                 message=f"Failed to parse io_config: {e!s}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -766,7 +766,7 @@ class MixinEffectExecution:
                     return str(secret_value)
                 except ModelOnexError:
                     raise
-                except Exception as e:
+                except (ValueError, KeyError, RuntimeError, AttributeError, OSError) as e:
                     raise ModelOnexError(
                         message=f"Failed to resolve secret: {secret_key}",
                         error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
@@ -1217,7 +1217,7 @@ class MixinEffectExecution:
 
                 return result, retry_count
 
-            except Exception as e:
+            except BaseException as e:  # Catch-all: retry loop must catch all operation failures including SystemExit/KeyboardInterrupt
                 # Increment retry_count to track failed attempts
                 # retry_count represents "number of failed attempts before success or final failure"
                 # - First attempt fails: retry_count becomes 1
@@ -1368,7 +1368,7 @@ class MixinEffectExecution:
         # Attempt to resolve handler with explicit error for missing registration
         try:
             handler = self.container.get_service(handler_protocol)
-        except Exception as resolve_error:
+        except (ValueError, KeyError, LookupError, RuntimeError, AttributeError) as resolve_error:
             # Provide explicit guidance for handler registration
             raise ModelOnexError(
                 message=f"Effect handler not registered: {handler_protocol}. "
@@ -1387,7 +1387,7 @@ class MixinEffectExecution:
         # Execute handler with resolved context
         try:
             result = await handler.execute(resolved_context)
-        except Exception as exec_error:
+        except BaseException as exec_error:  # Catch-all: handlers can raise any exception type
             raise ModelOnexError(
                 message=f"Handler execution failed for {handler_protocol}: {exec_error!s}",
                 error_code=EnumCoreErrorCode.HANDLER_EXECUTION_ERROR,
@@ -1565,7 +1565,7 @@ class MixinEffectExecution:
 
             except ModelOnexError:
                 raise
-            except Exception as e:
+            except (ValueError, KeyError, TypeError, AttributeError, IndexError) as e:
                 raise ModelOnexError(
                     message=f"Field extraction failed for {output_name}: {e!s}",
                     error_code=EnumCoreErrorCode.OPERATION_FAILED,
@@ -1625,7 +1625,7 @@ class MixinEffectExecution:
             try:
                 self.container.get_service(protocol_name)
                 registration_status[protocol_name] = True
-            except Exception:
+            except BaseException:  # Catch-all: probe for handler registration status, any failure means not registered
                 registration_status[protocol_name] = False
 
         return registration_status

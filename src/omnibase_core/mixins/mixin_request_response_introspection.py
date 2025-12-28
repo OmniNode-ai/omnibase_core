@@ -98,7 +98,7 @@ class MixinRequestResponseIntrospection:
                 },
             )
 
-        except Exception as e:
+        except (ValueError, RuntimeError, KeyError, AttributeError) as e:
             emit_log_event_sync(
                 LogLevel.ERROR,
                 f"🔍 INTROSPECTION DEBUG: Failed to set up request-response introspection: {e}",
@@ -118,7 +118,7 @@ class MixinRequestResponseIntrospection:
         try:
             if hasattr(self, "_event_bus") and self._event_bus:
                 self._event_bus.unsubscribe(self._handle_introspection_request)
-        except Exception as e:
+        except (ValueError, RuntimeError, KeyError, AttributeError) as e:
             if hasattr(self, "_logger") and self._logger:
                 self._logger.exception(
                     f"Failed to teardown request-response introspection: {e}",
@@ -203,7 +203,7 @@ class MixinRequestResponseIntrospection:
                     },
                 )
                 return
-        except Exception as e:  # fallback-ok: event handler returns early with logging, malformed events shouldn't crash node
+        except BaseException as e:  # Catch-all: event handler returns early with logging, malformed events shouldn't crash node
             emit_log_event_sync(
                 LogLevel.WARNING,
                 "🔍 INTROSPECTION: Failed to reconstruct ModelRequestIntrospectionEvent",
@@ -390,7 +390,7 @@ class MixinRequestResponseIntrospection:
                     {"node_name": getattr(self, "node_name", "unknown")},
                 )
 
-        except Exception as e:
+        except BaseException as e:  # Catch-all: request handling errors should be caught and reported via error response
             emit_log_event_sync(
                 LogLevel.ERROR,
                 f"❌ INTROSPECTION: Error handling request: {e!s}",
@@ -458,7 +458,7 @@ class MixinRequestResponseIntrospection:
                         },
                     )
 
-            except Exception as nested_e:
+            except BaseException as nested_e:  # Catch-all: error response sending is best-effort
                 if hasattr(self, "_logger") and self._logger:
                     self._logger.exception(f"Failed to send error response: {nested_e}")
 
@@ -543,7 +543,7 @@ class MixinRequestResponseIntrospection:
                 and hasattr(self._event_bus, "is_connected")
             ) and not self._event_bus.is_connected():
                 return EnumNodeCurrentStatus.DEGRADED
-        except Exception:  # fallback-ok: catches non-fatal exceptions, returns DEGRADED for health reporting
+        except BaseException:  # Catch-all: catches non-fatal exceptions, returns DEGRADED for health reporting
             return EnumNodeCurrentStatus.DEGRADED
 
         return EnumNodeCurrentStatus.READY

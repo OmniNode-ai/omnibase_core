@@ -231,7 +231,7 @@ class ModelServiceHealth(BaseModel):
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                     message=msg,
                 )
-        except Exception:
+        except (AttributeError, ValueError, TypeError, KeyError, OSError, RuntimeError):
             msg = "endpoint_url must be a valid URL"
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,

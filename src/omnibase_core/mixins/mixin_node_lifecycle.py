@@ -117,7 +117,7 @@ class MixinNodeLifecycle:
                     description="Event-driven ONEX node",
                     author="ONEX",
                 )
-        except Exception as e:  # fallback-ok: registration failure returns early with logging, node registration is non-critical
+        except BaseException as e:  # Catch-all: registration failure returns early with logging, node registration is non-critical
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
                 calling_function="_register_node",
@@ -192,7 +192,7 @@ class MixinNodeLifecycle:
                 context=context,
             )
 
-        except Exception as e:
+        except BaseException as e:  # Catch-all: event publishing is non-critical, log and continue
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
                 calling_function="_register_node",
@@ -254,7 +254,7 @@ class MixinNodeLifecycle:
                 context=context,
             )
 
-        except Exception as e:
+        except BaseException as e:  # Catch-all: shutdown event is non-critical, log and continue
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
                 calling_function="_publish_shutdown_event",
@@ -316,7 +316,7 @@ class MixinNodeLifecycle:
             )
             event_bus.publish(envelope)
 
-        except Exception as e:
+        except BaseException as e:  # Catch-all: lifecycle event emission is non-critical, log and continue
             emit_log_event_sync(
                 LogLevel.ERROR,
                 f"Failed to emit NODE_START event: {e}",
@@ -378,7 +378,7 @@ class MixinNodeLifecycle:
             )
             event_bus.publish(envelope)
 
-        except Exception as e:
+        except BaseException as e:  # Catch-all: lifecycle event emission is non-critical, log and continue
             emit_log_event_sync(
                 LogLevel.ERROR,
                 f"Failed to emit NODE_SUCCESS event: {e}",
@@ -440,7 +440,7 @@ class MixinNodeLifecycle:
             )
             event_bus.publish(envelope)
 
-        except Exception as e:
+        except BaseException as e:  # Catch-all: lifecycle event emission is non-critical, log and continue
             emit_log_event_sync(
                 LogLevel.ERROR,
                 f"Failed to emit NODE_FAILURE event: {e}",
@@ -463,7 +463,7 @@ class MixinNodeLifecycle:
         if hasattr(self, "cleanup_event_handlers"):
             try:
                 self.cleanup_event_handlers()
-            except Exception as e:
+            except BaseException as e:  # Catch-all: cleanup failure is non-critical, log and continue
                 node_id = _get_node_id_as_uuid(self)
                 context = ModelLogContext(
                     calling_module=_COMPONENT_NAME,

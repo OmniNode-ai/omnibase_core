@@ -104,7 +104,7 @@ class MixinIntrospectionPublisher:
                 context=context,
             )
             raise
-        except Exception as e:
+        except (RuntimeError, ModelOnexError) as e:
             context = ModelLogContext(
                 calling_module=_COMPONENT_NAME,
                 calling_function="_publish_introspection_event",
@@ -139,7 +139,7 @@ class MixinIntrospectionPublisher:
                 tags=tags,
                 health_endpoint=health_endpoint,
             )
-        except Exception as e:
+        except (ValueError, AttributeError, TypeError) as e:
             # fallback-ok: Introspection failures use fallback data with logging
             node_id_raw = getattr(self, "_node_id", None)
             node_id = node_id_raw if node_id_raw is not None else "<unset>"
@@ -194,7 +194,7 @@ class MixinIntrospectionPublisher:
                     parts = str(metadata.namespace).split(".")
                     if len(parts) >= 3 and parts[-1].startswith("node_"):
                         return parts[-1]
-        except Exception:
+        except (AttributeError, ValueError, IndexError):
             pass
         class_name = self.__class__.__name__
         if class_name.startswith("Node"):
@@ -220,7 +220,7 @@ class MixinIntrospectionPublisher:
                             minor=int(parts[1]),
                             patch=int(parts[2]),
                         )
-        except Exception:
+        except (AttributeError, ValueError, IndexError):
             pass
         return ModelSemVer(major=1, minor=0, patch=0)
 
@@ -249,7 +249,7 @@ class MixinIntrospectionPublisher:
                     ):
                         # Map copyright to license field in the typed model
                         license_str = str(loader_metadata.copyright)
-        except Exception:
+        except (AttributeError, ValueError):
             pass
 
         # Create typed metadata model with extracted values
@@ -295,7 +295,7 @@ class MixinIntrospectionPublisher:
                         "configure",
                     ]:
                         actions.append(method_name)
-        except Exception:
+        except (AttributeError, ValueError):
             pass
         if not actions:
             actions = ["health_check"]
@@ -313,7 +313,7 @@ class MixinIntrospectionPublisher:
                 protocols.append("graphql")
             if hasattr(self, "http_server") or hasattr(self, "supports_http"):
                 protocols.append("http")
-        except Exception:
+        except AttributeError:
             pass
         return protocols
 
@@ -340,7 +340,7 @@ class MixinIntrospectionPublisher:
                 self, "supports_graphql", False
             ):
                 tags.append("graphql")
-        except Exception:
+        except AttributeError:
             pass
         return list(set(tags))
 
@@ -350,7 +350,7 @@ class MixinIntrospectionPublisher:
             if hasattr(self, "health_check"):
                 node_id = getattr(self, "_node_id", None) or "<unset>"
                 return f"/health/{node_id}"
-        except Exception:
+        except AttributeError:
             pass
         return None
 
@@ -374,7 +374,7 @@ class MixinIntrospectionPublisher:
             try:
                 event_bus.publish(envelope)
                 return
-            except Exception as e:
+            except (ValueError, RuntimeError, ModelOnexError) as e:
                 if attempt == max_retries - 1:
                     context = ModelLogContext(
                         calling_module=_COMPONENT_NAME,

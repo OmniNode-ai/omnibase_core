@@ -359,7 +359,7 @@ class ModelContractCompute(MixinNodeTypeValidator, ModelContractBase):
         if isinstance(v, dict):
             try:
                 return ModelAlgorithmConfig.model_validate(v)
-            except Exception as e:
+            except (AttributeError, ValueError, TypeError, KeyError, OSError, RuntimeError) as e:
                 raise ModelOnexError(
                     message=f"Invalid algorithm configuration: {e}",
                     error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -480,7 +480,7 @@ class ModelContractCompute(MixinNodeTypeValidator, ModelContractBase):
                     },
                 ),
             ) from e
-        except Exception as e:
+        except (AttributeError, ValueError, TypeError, KeyError, OSError, RuntimeError) as e:
             raise ModelOnexError(
                 message=f"Failed to load contract YAML: {e}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,

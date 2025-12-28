@@ -737,8 +737,8 @@ def _get_default_event_bus() -> Any | None:
             return event_bus_factory.get_event_bus()
 
         return None
-    except Exception:
-        # fallback-ok: logger unavailable during bootstrap
+    except Exception:  # fallback-ok: logger unavailable during bootstrap
+        # Fallback when event bus unavailable
         return None
 
 
@@ -782,6 +782,6 @@ def _route_to_logger_node(
             # Fallback to simple output if protocol services unavailable
             pass
 
-    except Exception:
+    except Exception:  # fallback-ok: logger routing must never fail
         # Fallback to simple output if logger node routing fails
         pass

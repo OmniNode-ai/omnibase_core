@@ -615,5 +615,5 @@ class ModelToolHealth(BaseModel):
 # Fix forward references for Pydantic models
 try:
     ModelToolHealth.model_rebuild()
-except Exception:
+except Exception:  # fallback-ok: model_rebuild() can raise various Pydantic errors
     pass  # Ignore rebuild errors during import

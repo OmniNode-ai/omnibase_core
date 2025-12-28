@@ -142,7 +142,7 @@ class MixinDiscoveryResponder:
                 },
             )
 
-        except Exception as e:
+        except (ValueError, RuntimeError, ModelOnexError) as e:
             emit_log_event(
                 LogLevel.ERROR,
                 f"Failed to start discovery responder: {e!s}",
@@ -166,7 +166,7 @@ class MixinDiscoveryResponder:
         if self._discovery_unsubscribe:
             try:
                 await self._discovery_unsubscribe()
-            except Exception:
+            except BaseException:  # Catch-all: ignore all errors during cleanup
                 pass  # Ignore errors during cleanup
 
         emit_log_event(
@@ -198,7 +198,7 @@ class MixinDiscoveryResponder:
             # Acknowledge message receipt only after successful handling
             await message.ack()
 
-        except Exception as e:
+        except (ValueError, RuntimeError, ModelOnexError) as e:
             # Log non-fatal discovery errors for observability
             from omnibase_core.logging.structured import (
                 emit_log_event_sync as emit_log_event,
@@ -220,7 +220,7 @@ class MixinDiscoveryResponder:
             # Discovery failures are non-fatal and should not block the system
             try:
                 await message.ack()
-            except Exception as ack_error:
+            except (RuntimeError, ValueError) as ack_error:
                 emit_log_event(
                     LogLevel.ERROR,
                     "Failed to acknowledge discovery message after error",
@@ -288,7 +288,7 @@ class MixinDiscoveryResponder:
             # Generate discovery response (updates metrics on success)
             await self._send_discovery_response(onex_event, request_metadata)
 
-        except Exception as e:
+        except (ValueError, RuntimeError, ModelOnexError) as e:
             # Log non-fatal discovery errors for observability
             emit_log_event(
                 LogLevel.WARNING,
@@ -470,7 +470,7 @@ class MixinDiscoveryResponder:
                 )  # Use actual publish time, not request time
                 self._discovery_stats["responses_sent"] += 1
 
-        except Exception as e:
+        except (ValueError, RuntimeError, ModelOnexError) as e:
             # Log discovery errors for observability
             emit_log_event(
                 LogLevel.WARNING,

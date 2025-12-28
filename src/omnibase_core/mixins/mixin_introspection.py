@@ -38,6 +38,7 @@ from pydantic import BaseModel
 
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.enums.enum_node_capability import EnumNodeCapability
+from omnibase_core.errors import ModelOnexError
 from omnibase_core.logging.structured import emit_log_event_sync
 from omnibase_core.models.core.model_cli_argument import ModelCLIArgument
 from omnibase_core.models.core.model_cli_interface import ModelCLIInterface
@@ -513,7 +514,7 @@ class MixinNodeIntrospection(ABC):
                 },
             )
             sys.exit(0)
-        except Exception as e:
+        except (ValueError, RuntimeError, ModelOnexError) as e:
             error_response = {
                 "error": "Introspection failed",
                 "message": str(e),

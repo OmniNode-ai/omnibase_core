@@ -200,7 +200,7 @@ class MixinEventListener[InputStateT, OutputStateT]:
                     {"node_name": self.get_node_name()},
                 )
                 raise  # Re-raise to crash the service
-            except Exception as e:
+            except (OSError, RuntimeError, KeyError, AttributeError) as e:
                 emit_log_event(
                     LogLevel.WARNING,
                     f"Failed to read event patterns from contract: {e}",
@@ -307,7 +307,7 @@ class MixinEventListener[InputStateT, OutputStateT]:
                 try:
                     if self.event_bus is not None:
                         self.event_bus.unsubscribe(subscription)
-                except Exception as e:
+                except (ValueError, RuntimeError, KeyError, AttributeError) as e:
                     emit_log_event(
                         LogLevel.WARNING,
                         f"Failed to unsubscribe from {pattern}: {e}",
@@ -422,7 +422,7 @@ class MixinEventListener[InputStateT, OutputStateT]:
                 {"node_name": self.get_node_name(), "total_loops": loop_count},
             )
 
-        except Exception as e:
+        except BaseException as e:  # Catch-all: top-level event loop error boundary
             emit_log_event(
                 LogLevel.ERROR,
                 f"❌ EVENT_LISTENER_LOOP: Critical error in event listener: {e}",
@@ -506,7 +506,7 @@ class MixinEventListener[InputStateT, OutputStateT]:
                         {"node_name": self.get_node_name(), "event_type": event_type},
                     )
                     return
-                except Exception as e:
+                except BaseException as e:  # Catch-all: specific handler failures should be logged but allow fallthrough
                     emit_log_event(
                         LogLevel.ERROR,
                         f"❌ EVENT_ROUTING: Specific handler {specific_handler_name} failed: {e}",
@@ -590,7 +590,7 @@ class MixinEventListener[InputStateT, OutputStateT]:
                     },
                 )
 
-            except Exception as e:
+            except BaseException as e:  # Catch-all: event processing errors should be logged and reported via error event
                 emit_log_event(
                     LogLevel.ERROR,
                     "❌ EVENT_PROCESSING: Failed to process event",
@@ -728,7 +728,7 @@ class MixinEventListener[InputStateT, OutputStateT]:
                     {"node_name": self.get_node_name()},
                 )
                 return cast("InputStateT", result)
-            except Exception as e:
+            except (ValueError, TypeError, KeyError, AttributeError) as e:
                 emit_log_event(
                     LogLevel.ERROR,
                     "❌ EVENT_TO_INPUT_STATE: Failed to create input state from event",
@@ -741,7 +741,7 @@ class MixinEventListener[InputStateT, OutputStateT]:
                     },
                 )
                 msg = f"Failed to convert event data to input state: {e}"
-                raise ModelOnexError(msg, EnumCoreErrorCode.VALIDATION_ERROR)
+                raise ModelOnexError(msg, EnumCoreErrorCode.VALIDATION_ERROR) from e
         else:
             # No input state class found - this is a critical error
             emit_log_event(
@@ -815,7 +815,7 @@ class MixinEventListener[InputStateT, OutputStateT]:
                         cls: type | None = getattr(module, attr_name)
                         return cls
 
-            except Exception as e:
+            except (ImportError, ModuleNotFoundError, AttributeError, TypeError) as e:
                 emit_log_event(
                     LogLevel.WARNING,
                     f"Failed to import input state module: {e}",

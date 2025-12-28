@@ -115,7 +115,7 @@ def validate_yaml_file(file_path: Path) -> list[str]:
         except ModelOnexError as e:
             # Collect structured validation errors
             errors.append(f"Contract validation failed: {e.message}")
-        except Exception as e:
+        except (ValueError, TypeError, KeyError, AttributeError) as e:
             # Fallback for unexpected errors - log full traceback for debugging
             logging.exception(f"Unexpected error during contract validation: {e}")
             errors.append(f"Contract validation failed: {e}")

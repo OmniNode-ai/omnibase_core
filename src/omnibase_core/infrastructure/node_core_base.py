@@ -226,7 +226,7 @@ class NodeCoreBase(ABC):
                 },
             )
 
-        except Exception as e:
+        except (AttributeError, ValueError, TypeError, RuntimeError, ModelOnexError) as e:
             self.state["status"] = "failed"
             self._increment_metric("error_count")
 
@@ -292,7 +292,7 @@ class NodeCoreBase(ABC):
                 },
             )
 
-        except Exception as e:
+        except BaseException as e:  # Catch-all: cleanup must not raise to prevent resource leaks
             self.state["status"] = "cleanup_failed"
 
             emit_log_event(
@@ -380,7 +380,7 @@ class NodeCoreBase(ABC):
             contract_service: Any = None
             try:
                 contract_service = self.container.get_service("contract_service")  # type: ignore[arg-type]
-            except Exception:
+            except (KeyError, AttributeError):
                 # Contract service not available - that's OK
                 contract_service = None
 
@@ -456,7 +456,7 @@ class NodeCoreBase(ABC):
                     # Contract service doesn't have get_node_contract method - that's OK
                     pass
 
-        except Exception as e:
+        except BaseException as e:  # Catch-all: contract loading failure is not fatal, graceful degradation
             # Contract loading failure is not fatal
             emit_log_event(
                 LogLevel.WARNING,
@@ -497,7 +497,7 @@ class NodeCoreBase(ABC):
             event_bus: Any = None
             try:
                 event_bus = self.container.get_service("event_bus")  # type: ignore[arg-type]
-            except Exception:
+            except (KeyError, AttributeError):
                 # Event bus not available - that's OK
                 event_bus = None
 
@@ -523,7 +523,7 @@ class NodeCoreBase(ABC):
                     # Event bus doesn't have emit_event method - that's OK
                     pass
 
-        except Exception as e:
+        except BaseException as e:  # Catch-all: event emission failure is not fatal, graceful degradation
             # Event emission failure is not fatal
             emit_log_event(
                 LogLevel.WARNING,
@@ -653,7 +653,7 @@ class NodeCoreBase(ABC):
                 },
             )
 
-        except Exception as e:
+        except (AttributeError, OSError, ValueError, RuntimeError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=f"Error finding contract path: {e!s}",

@@ -190,7 +190,7 @@ class MixinHealthCheck:
                     {"check_name": check_func.__name__, "status": result.status},
                 )
 
-            except Exception as e:
+            except BaseException as e:  # Catch-all: health checks can raise anything
                 emit_log_event(
                     LogLevel.ERROR,
                     f"❌ Health check failed: {check_func.__name__}",
@@ -316,7 +316,7 @@ class MixinHealthCheck:
 
                 check_tasks.append((check_func.__name__, task))
 
-            except Exception as e:
+            except (RuntimeError, ValueError) as e:
                 emit_log_event(
                     LogLevel.ERROR,
                     f"Failed to create health check task: {check_func.__name__}",
@@ -370,7 +370,7 @@ class MixinHealthCheck:
                     for issue in result.issues:
                         messages.append(f"{check_name}: {issue.message}")
 
-            except Exception as e:
+            except BaseException as e:  # Catch-all: async health checks can raise anything
                 emit_log_event(
                     LogLevel.ERROR,
                     f"Async health check failed: {check_name}",

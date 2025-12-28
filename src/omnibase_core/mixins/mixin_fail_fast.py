@@ -80,7 +80,7 @@ class MixinFailFast:
             except ExceptionFailFastError:
                 # Re-raise our own fail fast errors
                 raise
-            except Exception as e:
+            except BaseException as e:  # Catch-all: convert all exceptions to fail-fast errors
                 # Convert other exceptions to fail fast
                 self._handle_critical_error(
                     f"Critical error in {func.__name__}: {e!s}",
@@ -268,7 +268,7 @@ class MixinFailFast:
                     message=msg,
                     error_code=EnumCoreErrorCode.DEPENDENCY_FAILED,
                 )
-        except Exception as e:
+        except (ValueError, RuntimeError, KeyError) as e:
             msg = f"Failed to check dependency '{dependency_name}': {e!s}"
             raise ModelOnexError(
                 message=msg,

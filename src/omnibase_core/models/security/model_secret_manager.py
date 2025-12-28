@@ -78,7 +78,7 @@ class ModelSecretManager(BaseModel):
         try:
             if self.config.backend.backend_type == EnumBackendType.DOTENV:
                 self._load_dotenv_environment()
-        except Exception as e:
+        except (OSError, IOError) as e:
             logging.exception(f"Failed to initialize secret manager: {e}")
 
     def _load_dotenv_environment(self) -> None:
@@ -117,22 +117,18 @@ class ModelSecretManager(BaseModel):
             ModelDatabaseSecureConfig,
         )
 
-        try:
-            config = self._load_with_fallback(ModelDatabaseSecureConfig, env_prefix)
+        config = self._load_with_fallback(ModelDatabaseSecureConfig, env_prefix)
 
-            # Validate configuration
-            validation = config.validate_credentials()
-            if not validation.is_valid:
-                msg = f"Invalid database configuration: {validation.errors}"
-                raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                    message=msg,
-                )
+        # Validate configuration
+        validation = config.validate_credentials()
+        if not validation.is_valid:
+            msg = f"Invalid database configuration: {validation.errors}"
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=msg,
+            )
 
-            return config
-
-        except Exception:
-            raise
+        return config
 
     def _load_with_fallback(self, config_class: type[T], env_prefix: str) -> T:
         """Load configuration with fallback support."""
@@ -140,7 +136,7 @@ class ModelSecretManager(BaseModel):
             # Try primary backend
             return config_class.load_from_env(env_prefix)
 
-        except Exception:
+        except (KeyError, ValueError, ModelOnexError, OSError):
             if not self.fallback_enabled or not self.config.fallback_backends:
                 raise
 
@@ -158,7 +154,7 @@ class ModelSecretManager(BaseModel):
 
                     return config
 
-                except Exception:
+                except (KeyError, ValueError, ModelOnexError, OSError):
                     continue
 
                 finally:
@@ -294,7 +290,7 @@ class ModelSecretManager(BaseModel):
                 status = "unhealthy"
                 warnings.extend(backend_health.issues)
 
-        except Exception as e:
+        except (ModelOnexError, RuntimeError, AttributeError) as e:
             status = "unhealthy"
             components.append(
                 HealthCheckComponent(
@@ -397,7 +393,7 @@ def get_secret_manager() -> ModelSecretManager:
     try:
         container = get_model_onex_container_sync()
         return cast("ModelSecretManager", container.secret_manager())
-    except Exception as e:
+    except (ModelOnexError, AttributeError, RuntimeError) as e:
         raise ModelOnexError(
             message="DI container not initialized - cannot get secret manager. "
             "Call init_secret_manager() first.",
@@ -427,7 +423,7 @@ def init_secret_manager(config: ModelSecretConfig) -> ModelSecretManager:
     try:
         container = get_model_onex_container_sync()
         return cast("ModelSecretManager", container.secret_manager())
-    except Exception as e:
+    except (ModelOnexError, AttributeError, RuntimeError) as e:
         raise ModelOnexError(
             message="DI container not initialized - cannot initialize secret manager.",
             error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
@@ -459,7 +455,7 @@ def init_secret_manager_from_manager(manager: ModelSecretManager) -> ModelSecret
     try:
         container = get_model_onex_container_sync()
         return cast("ModelSecretManager", container.secret_manager())
-    except Exception as e:
+    except (ModelOnexError, AttributeError, RuntimeError) as e:
         raise ModelOnexError(
             message="DI container not initialized - cannot initialize secret manager.",
             error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,

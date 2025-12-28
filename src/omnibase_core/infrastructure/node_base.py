@@ -149,7 +149,14 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
             # Emit initialization event
             self._emit_initialization_event()
 
-        except Exception as e:
+        except (
+            ValueError,
+            TypeError,
+            AttributeError,
+            RuntimeError,
+            OSError,
+            ModelOnexError,
+        ) as e:
             self._emit_initialization_failure(e)
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
@@ -368,7 +375,7 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
                 },
                 correlation_id=self.correlation_id,
             ) from e
-        except Exception as e:
+        except (TypeError, ValueError, RuntimeError, ModelOnexError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Failed to resolve main tool: {e!s}",
@@ -456,7 +463,7 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
             )
             raise
 
-        except Exception as e:
+        except BaseException as e:  # Catch-all: top-level error boundary for node execution
             # Convert generic exceptions to ONEX errors
             emit_log_event(
                 LogLevel.ERROR,
@@ -551,7 +558,7 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
         except ModelOnexError:
             # Re-raise ONEX errors (fail-fast)
             raise
-        except Exception as e:
+        except BaseException as e:  # Catch-all: top-level error boundary for tool processing
             # Convert generic exceptions to ONEX errors
             emit_log_event(
                 LogLevel.ERROR,
@@ -675,7 +682,7 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
                 state_delta={},
             )
 
-        except Exception as e:
+        except BaseException as e:  # Catch-all: top-level error boundary for state dispatch
             # Log and convert to ONEX error
             emit_log_event(
                 LogLevel.ERROR,

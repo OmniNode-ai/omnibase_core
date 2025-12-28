@@ -154,7 +154,7 @@ class ModelExecutionMetadata(BaseModel):
                 if isinstance(cpu_value, (int, float)):
                     self.cpu_usage_percent = float(cpu_value)
             return True
-        except Exception as e:
+        except (AttributeError, ValueError, TypeError, KeyError, OSError, RuntimeError) as e:
             raise ModelOnexError(
                 message=f"Failed to execute metadata update: {e}",
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,

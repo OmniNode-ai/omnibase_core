@@ -38,7 +38,7 @@ Usage:
                 result = operation()
                 circuit_breaker.record_success()
                 return result
-            except Exception:
+            except Exception:  # Example: Recording failures before re-raising
                 circuit_breaker.record_failure()
                 raise
 
@@ -287,7 +287,7 @@ class ProtocolAsyncCircuitBreaker(Protocol):
                     result = await external_service_call()
                     await cb.record_success()
                     return result
-                except Exception:
+                except Exception:  # Example: Recording failures before re-raising
                     await cb.record_failure()
                     raise
 

@@ -151,7 +151,7 @@ class MixinNodeService:
             # Main service event loop
             await self._service_event_loop()
 
-        except Exception as e:
+        except BaseException as e:  # Catch-all for cleanup during service startup
             self._log_error(f"Failed to start service: {e}")
             await self.stop_service_mode()
             raise
@@ -192,7 +192,7 @@ class MixinNodeService:
             for callback in self._shutdown_callbacks:
                 try:
                     callback()
-                except Exception as e:
+                except BaseException as e:  # Catch-all: callbacks are user-provided, can raise anything
                     self._log_error(f"Shutdown callback failed: {e}")
 
             # Cleanup event handlers if available
@@ -202,7 +202,7 @@ class MixinNodeService:
             self._service_running = False
             self._log_info("Service stopped successfully")
 
-        except Exception as e:
+        except BaseException as e:  # Catch-all for cleanup during service shutdown
             self._log_error(f"Error during service shutdown: {e}")
             self._service_running = False
 
@@ -288,7 +288,7 @@ class MixinNodeService:
                 f"Tool invocation completed successfully in {execution_time_ms}ms",
             )
 
-        except Exception as e:
+        except (ValueError, TypeError, RuntimeError, ModelOnexError) as e:
             # Create error response
             execution_time_ms = int((time.time() - start_time) * 1000)
             response_event = ModelToolResponseEvent.create_error_response(
@@ -378,7 +378,7 @@ class MixinNodeService:
                 container = self.container
                 if hasattr(container, "get_service"):
                     event_bus = container.get_service("event_bus")
-            except Exception:
+            except (KeyError, AttributeError, ValueError):
                 pass
 
         # Raise error if no event bus found
@@ -414,7 +414,7 @@ class MixinNodeService:
             # CRITICAL: Do not log here - file handles may be closed during teardown
             # Re-raise immediately without any I/O operations
             raise
-        except Exception as e:
+        except (RuntimeError, ValueError, OSError) as e:
             self._log_error(f"Service event loop error: {e}")
             raise
 
@@ -451,7 +451,7 @@ class MixinNodeService:
                 # CRITICAL: Do not log here - file handles may be closed during teardown
                 # Re-raise immediately without any I/O operations
                 raise
-            except Exception as e:
+            except (RuntimeError, ValueError, OSError) as e:
                 self._log_error(f"Health monitor error: {e}")
                 break  # Exit loop on exception
 
@@ -581,7 +581,7 @@ class MixinNodeService:
                 container = self.container
                 if hasattr(container, "get_service"):
                     event_bus = container.get_service("event_bus")
-            except Exception:
+            except (KeyError, AttributeError, ValueError):
                 pass
 
         # Emit event if bus available
@@ -615,13 +615,13 @@ class MixinNodeService:
                     container = self.container
                     if hasattr(container, "get_service"):
                         event_bus = container.get_service("event_bus")
-                except Exception:
+                except (KeyError, AttributeError, ValueError):
                     pass
 
             if event_bus:
                 await event_bus.publish(shutdown_event)
 
-        except Exception as e:
+        except (ValueError, RuntimeError, ModelOnexError) as e:
             self._log_error(f"Failed to emit shutdown event: {e}")
 
     async def _cleanup_health_task(self) -> None:
@@ -659,7 +659,7 @@ class MixinNodeService:
         except asyncio.CancelledError:
             # Expected when cancelling - this is normal
             pass
-        except Exception as e:
+        except BaseException as e:  # Catch-all: cleanup code must handle any error during teardown
             # Log unexpected errors during cleanup
             self._log_error(f"Unexpected error during health task cleanup: {e}")
 
@@ -711,7 +711,7 @@ class MixinNodeService:
             signal.signal(signal.SIGTERM, signal_handler)
             signal.signal(signal.SIGINT, signal_handler)
 
-        except Exception as e:
+        except (RuntimeError, ValueError, OSError) as e:
             self._log_warning(f"Could not register signal handlers: {e}")
 
     def _extract_node_name(self) -> str:

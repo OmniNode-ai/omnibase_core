@@ -27,6 +27,7 @@ If infrastructure protocols are not provided, NodeCompute operates in pure mode:
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 from collections.abc import Callable
 from typing import Any
@@ -279,7 +280,17 @@ class NodeCompute[T_Input, T_Output](NodeCoreBase):
                 },
             )
 
+        except (SystemExit, KeyboardInterrupt, GeneratorExit):
+            # Never catch cancellation/exit signals
+            raise
+        except asyncio.CancelledError:
+            # Never suppress async cancellation
+            raise
+        except ModelOnexError:
+            # Re-raise ONEX errors as-is to preserve error context
+            raise
         except Exception as e:
+            # Catch all other exceptions from user computation logic
             # Calculate processing time for error reporting
             processing_time = 0.0
             if self._timing_service is not None and start_time is not None:

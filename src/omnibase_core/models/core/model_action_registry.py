@@ -82,7 +82,7 @@ class ModelActionRegistry:
         for contract_file in contract_files:
             try:
                 actions_discovered += self._discover_from_contract(contract_file)
-            except Exception as e:
+            except (AttributeError, ValueError, TypeError, KeyError) as e:
                 # fallback-ok: resilient discovery - skip invalid contracts with debug logging
                 logger.debug("Failed to discover actions from %s: %s", contract_file, e)
                 continue
@@ -175,7 +175,7 @@ class ModelActionRegistry:
                     self.register_action(action)
                     actions_discovered += 1
 
-        except Exception as e:
+        except (AttributeError, ValueError, TypeError, KeyError) as e:
             from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
             from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -264,7 +264,7 @@ def get_action_registry() -> ModelActionRegistry:
             registry.bootstrap_core_actions()
 
         return registry
-    except Exception as e:
+    except (AttributeError, ValueError, TypeError, KeyError) as e:
         raise ModelOnexError(
             message="DI container not initialized - cannot get action registry. "
             "Initialize the container first.",
@@ -286,6 +286,6 @@ def reset_action_registry() -> None:
         container = get_model_onex_container_sync()
         registry = cast("ModelActionRegistry", container.action_registry())
         registry.clear()
-    except Exception:
+    except (AttributeError, ValueError, TypeError, KeyError):
         # If container is not initialized, nothing to reset
         pass

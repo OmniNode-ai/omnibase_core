@@ -88,7 +88,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             self._register_signal_handlers()
             self._log_info("Executor started successfully")
             await self._executor_event_loop()
-        except Exception as e:
+        except BaseException as e:  # Catch-all for cleanup during executor startup
             self._log_error(f"Failed to start executor: {e}")
             await self.stop_executor_mode()
             raise
@@ -117,12 +117,12 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             for callback in self._shutdown_callbacks:
                 try:
                     callback()
-                except Exception as e:
+                except BaseException as e:  # Catch-all: callbacks are user-provided, can raise anything
                     self._log_error(f"Shutdown callback failed: {e}")
             self.cleanup_event_handlers()
             self._executor_running = False
             self._log_info("Executor stopped successfully")
-        except Exception as e:
+        except BaseException as e:  # Catch-all for cleanup during executor shutdown
             self._log_error(f"Error during executor shutdown: {e}")
             self._executor_running = False
 
@@ -189,7 +189,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             self._log_info(
                 f"Tool invocation completed successfully in {execution_time_ms}ms"
             )
-        except Exception as e:
+        except (ValueError, TypeError, RuntimeError, ModelOnexError) as e:
             execution_time_ms = int((time.time() - start_time) * 1000)
             response_event = ModelToolResponseEvent.create_error_response(
                 correlation_id=correlation_id,
@@ -274,7 +274,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
                 await asyncio.sleep(0.1)
         except asyncio.CancelledError:
             self._log_info("Executor event loop cancelled")
-        except Exception as e:
+        except (RuntimeError, ValueError, OSError) as e:
             self._log_error(f"Executor event loop error: {e}")
             raise
 
@@ -290,7 +290,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
                 await asyncio.sleep(30)
         except asyncio.CancelledError:
             self._log_info("Health monitor cancelled")
-        except Exception as e:
+        except (RuntimeError, ValueError, OSError) as e:
             self._log_error(f"Health monitor error: {e}")
 
     def _is_target_node(self, event: ModelToolInvocationEvent) -> bool:
@@ -409,7 +409,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
                     correlation_id=shutdown_event.correlation_id,
                 )
                 await event_bus.publish(envelope)
-        except Exception as e:
+        except (ValueError, RuntimeError, ModelOnexError) as e:
             self._log_error(f"Failed to emit shutdown event: {e}")
 
     async def _wait_for_active_invocations(
@@ -442,7 +442,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
 
             signal.signal(signal.SIGTERM, signal_handler)
             signal.signal(signal.SIGINT, signal_handler)
-        except Exception as e:
+        except (RuntimeError, ValueError, OSError) as e:
             self._log_warning(f"Could not register signal handlers: {e}")
 
     def _log_info(self, message: str) -> None:

@@ -375,7 +375,7 @@ class ModelSecretConfig(BaseModel):
                     config_updates["kubernetes_namespace"] = (
                         namespace_file.read_text().strip()
                     )
-                except Exception as e:
+                except (OSError, ValueError, KeyError, AttributeError) as e:
                     msg = f"Failed to read Kubernetes namespace file: {e}"
                     raise ModelOnexError(
                         msg,
@@ -498,7 +498,7 @@ class ModelSecretConfig(BaseModel):
                     backend_available = False
                     issues.append("File path not configured")
 
-        except Exception as e:
+        except (OSError, ValueError, KeyError, AttributeError) as e:
             config_valid = False
             backend_available = False
             issues.append(f"Health check failed: {e}")
@@ -573,5 +573,5 @@ class ModelSecretConfig(BaseModel):
 # Fix forward references for Pydantic models
 try:
     ModelSecretConfig.model_rebuild()
-except Exception:
+except Exception:  # fallback-ok: model_rebuild() can raise various Pydantic errors
     pass  # Ignore rebuild errors during import

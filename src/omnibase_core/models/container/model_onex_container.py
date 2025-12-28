@@ -290,7 +290,7 @@ class ModelONEXContainer:
                 typed_service = cast(T, service_instance)
                 return typed_service
 
-            except Exception as registry_error:
+            except (ModelOnexError, AttributeError, KeyError, ValueError, RuntimeError) as registry_error:
                 # Fail fast - ServiceRegistry is the only resolution mechanism when enabled
                 emit_log_event(
                     LogLevel.ERROR,
@@ -385,7 +385,7 @@ class ModelONEXContainer:
 
             return service_instance
 
-        except Exception as e:
+        except (ModelOnexError, AttributeError, KeyError, RuntimeError) as e:
             end_time = time.perf_counter()
             resolution_time_ms = (end_time - start_time) * 1000
 
@@ -525,7 +525,7 @@ class ModelONEXContainer:
                 # Pre-resolve service to warm container cache
                 self.get_service(object, service_name)
                 warmed_count += 1
-            except Exception:
+            except (AttributeError, ValueError, TypeError, KeyError, RuntimeError):
                 pass  # Expected for some services
 
         emit_log_event(

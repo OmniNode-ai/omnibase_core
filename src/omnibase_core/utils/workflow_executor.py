@@ -724,12 +724,13 @@ async def _execute_sequential(
                 continue
             # For other error actions, continue for now
 
-        except Exception as e:
+        except BaseException as e:
             # Broad exception catch justified for workflow orchestration:
             # - Workflow steps execute external code with unknown exception types
             # - Production workflows require resilient error handling
             # - All failures logged with full traceback for debugging
             # - Failed steps tracked; execution continues per error_action config
+            # Uses BaseException to catch system-level exceptions (KeyboardInterrupt, etc.)
             failed_steps.append(str(step.step_id))
             logging.exception(
                 f"Workflow '{workflow_definition.workflow_metadata.workflow_name}' step '{step.step_name}' ({step.step_id}) failed with unexpected error: {e}"
@@ -882,7 +883,8 @@ async def _execute_parallel(
             # redundant JSON serialization - OMN-670: Performance optimization)
             action, payload_size = _create_action_for_step(step, workflow_id)
             return (step, action, payload_size, None)
-        except Exception as e:  # fallback-ok: parallel execution returns error in tuple for caller handling
+        except BaseException as e:  # fallback-ok: parallel execution returns error in tuple for caller handling
+            # Uses BaseException to catch all exceptions in parallel execution context
             return (step, None, 0, e)
 
     # For parallel execution, we execute in waves based on dependencies

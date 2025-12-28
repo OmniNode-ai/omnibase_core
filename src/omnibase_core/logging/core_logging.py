@@ -152,6 +152,6 @@ async def _async_emit_via_logger(
     try:
         # Use the registry-resolved logger
         logger.emit(level, message, correlation_id)
-    except Exception:
+    except Exception:  # fallback-ok: logger must never fail
         # Fallback to simple print if logger fails
         pass

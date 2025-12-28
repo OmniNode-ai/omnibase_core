@@ -126,7 +126,7 @@ def validate_one_model_per_file(file_path: Path) -> list[str]:
 
     except SyntaxError as e:
         errors.append(f"❌ Syntax error: {e}")
-    except Exception as e:
+    except (ValueError, UnicodeDecodeError, OSError) as e:
         errors.append(f"❌ Parse error: {e}")
 
     return errors

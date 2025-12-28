@@ -777,7 +777,7 @@ class ModelNodeType(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except Exception:
+        except (AttributeError, ValueError, TypeError, KeyError, OSError, RuntimeError):
             # fallback-ok: Metadata update failures should not break the system
             return False
 
@@ -847,6 +847,6 @@ class ModelNodeType(BaseModel):
         """
         try:
             return True
-        except Exception:
+        except (AttributeError, ValueError, TypeError, KeyError, OSError, RuntimeError):
             # fallback-ok: Validation failures should not raise exceptions
             return False

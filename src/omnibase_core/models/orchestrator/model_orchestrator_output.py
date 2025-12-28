@@ -153,7 +153,7 @@ class ModelOrchestratorOutput(BaseModel):
         if isinstance(value, dict) and "value_type" in value:
             try:
                 return ModelSchemaValue.model_validate(value)
-            except Exception:
+            except (AttributeError, ValueError, TypeError, KeyError, OSError, RuntimeError):
                 # fallback-ok: If validation fails, treat as raw value
                 pass
         return ModelSchemaValue.from_value(value)

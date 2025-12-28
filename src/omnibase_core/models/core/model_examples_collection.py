@@ -342,6 +342,6 @@ class ModelExamplesCollection(BaseModel):
                 ):
                     return False
             return True
-        except Exception:
+        except (AttributeError, ValueError, TypeError, KeyError):
             # fallback-ok: validation failure defaults to invalid state
             return False
