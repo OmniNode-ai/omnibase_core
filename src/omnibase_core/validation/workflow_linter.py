@@ -64,8 +64,15 @@ from omnibase_core.models.validation.model_lint_statistics import ModelLintStati
 from omnibase_core.models.validation.model_lint_warning import ModelLintWarning
 
 # Type alias for valid step types (placed after imports per PEP 8)
+# v1.0.4 Fix 41: "conditional" is NOT a valid step type in v1.0. Removed.
+#
+# Canonical source: workflow_constants.VALID_STEP_TYPES
+# Valid values: compute, effect, reducer, orchestrator, parallel, custom
+#
+# v1.1+ Roadmap: "conditional" step type will be added in v1.1 to support
+# conditional workflow execution. See LINEAR ticket OMN-656 for tracking.
 StepTypeLiteral = Literal[
-    "compute", "effect", "reducer", "orchestrator", "conditional", "parallel", "custom"
+    "compute", "effect", "reducer", "orchestrator", "parallel", "custom"
 ]
 
 __all__ = [
@@ -331,8 +338,8 @@ class WorkflowLinter:
 
         for node in workflow.execution_graph.nodes:
             # Map node_type to step_type using module-level constant
-            # Valid step_types: compute, effect, reducer, orchestrator,
-            #                   conditional, parallel, custom
+            # Valid step_types per v1.0.4: compute, effect, reducer, orchestrator,
+            # parallel, custom. Note: "conditional" is reserved for v1.1+.
             # Handle None node_type gracefully - defaults to "custom" step type
             node_type_value = (
                 node.node_type.value.lower() if node.node_type else "custom"

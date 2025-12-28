@@ -40,6 +40,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
 
+from omnibase_core.constants import DEFAULT_CACHE_TTL_SECONDS
 from omnibase_core.enums.enum_backend_type import EnumBackendType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_latency_level import EnumLatencyLevel
@@ -432,7 +433,7 @@ class ModelSecretConfig(BaseModel):
             EnumLatencyLevel.HIGH,
         ]:
             cache_enabled = True
-            cache_ttl_seconds = 300  # 5 minutes
+            cache_ttl_seconds = DEFAULT_CACHE_TTL_SECONDS  # 5 minutes
         else:
             cache_enabled = self.cache_enabled
             cache_ttl_seconds = self.cache_ttl_seconds

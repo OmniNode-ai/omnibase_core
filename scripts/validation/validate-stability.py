@@ -9,7 +9,6 @@ development by running all validation checks based on discovered structure.
 import subprocess
 import sys
 from pathlib import Path
-from typing import Optional
 
 
 class GenericStabilityValidator:

@@ -19,6 +19,8 @@ import threading
 import time
 from typing import Any
 
+from omnibase_core.constants import DEFAULT_CACHE_TTL_SECONDS
+
 
 class _ProtocolCacheHolder:
     """
@@ -38,7 +40,7 @@ class _ProtocolCacheHolder:
     _formatter: Any = None
     _output_handler: Any = None
     _timestamp: float = 0.0
-    _ttl: float = 300.0  # 5 minutes TTL
+    _ttl: float = float(DEFAULT_CACHE_TTL_SECONDS)  # 5 minutes TTL
     _lock: threading.Lock = threading.Lock()
 
     @classmethod

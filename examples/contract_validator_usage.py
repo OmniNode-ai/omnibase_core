@@ -5,7 +5,6 @@ Demonstrates how to use the ContractValidator API for contract validation.
 """
 
 from omnibase_core.services.service_contract_validator import (
-    ModelContractValidationResult,
     ServiceContractValidator,
 )
 

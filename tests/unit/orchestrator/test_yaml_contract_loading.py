@@ -379,10 +379,20 @@ step_type: compute
 
 @pytest.mark.unit
 class TestDeclarationOrderTiebreaker:
-    """Tests for declaration order as tiebreaker for equal-priority steps."""
+    """Tests for declaration-order semantics per v1.0.2 Fix 5.
+
+    v1.0.2 Fix 5: Topological ordering uses declaration order as tiebreaker,
+    NOT priority. Priority values are informational and do not affect ordering.
+    For steps without dependencies (or at the same dependency level), their
+    position in the workflow definition (declaration order) determines
+    execution order.
+    """
 
     def test_equal_priority_steps_use_declaration_order(self) -> None:
-        """Test that steps with equal priority use YAML declaration order."""
+        """Test that steps with equal priority use YAML declaration order.
+
+        v1.0.2 Fix 5: Declaration order is the tiebreaker for equal priorities.
+        """
         step1_id = uuid4()
         step2_id = uuid4()
         step3_id = uuid4()
@@ -420,38 +430,53 @@ class TestDeclarationOrderTiebreaker:
         assert execution_order[1] == step2_id
         assert execution_order[2] == step3_id
 
-    def test_first_declared_step_executes_first_when_priorities_equal(self) -> None:
-        """Test that the first declared step executes first when all priorities equal."""
+    def test_declaration_order_determines_execution_for_equal_priority_steps(
+        self,
+    ) -> None:
+        """Test that declaration order determines execution order for equal-priority steps.
+
+        v1.0.2 Fix 5: Topological ordering uses declaration order as tiebreaker,
+        NOT priority. When steps have equal priority values, their position in
+        the workflow definition (declaration order) determines execution order.
+        """
         first_id = uuid4()
         second_id = uuid4()
         third_id = uuid4()
 
-        # Create steps with identical priority
+        # Create steps with identical priority - declaration order is the tiebreaker
         steps = [
             ModelWorkflowStep(
                 step_id=first_id,
                 step_name="Alpha",
                 step_type="effect",
-                priority=50,
+                priority=50,  # Same priority as others
             ),
             ModelWorkflowStep(
                 step_id=second_id,
                 step_name="Beta",
                 step_type="effect",
-                priority=50,
+                priority=50,  # Same priority as others
             ),
             ModelWorkflowStep(
                 step_id=third_id,
                 step_name="Gamma",
                 step_type="effect",
-                priority=50,
+                priority=50,  # Same priority as others
             ),
         ]
 
         execution_order = get_execution_order(steps)
 
-        # Declaration order should be the tiebreaker
-        assert execution_order[0] == first_id, "First declared should execute first"
+        # v1.0.2 Fix 5: Declaration order is the tiebreaker for equal priorities
+        assert execution_order[0] == first_id, (
+            "First declared step should execute first per v1.0.2 Fix 5"
+        )
+        assert execution_order[1] == second_id, (
+            "Second declared step should execute second per v1.0.2 Fix 5"
+        )
+        assert execution_order[2] == third_id, (
+            "Third declared step should execute third per v1.0.2 Fix 5"
+        )
 
     def test_yaml_position_determines_tiebreaker(self) -> None:
         """Test that YAML position (declaration order) determines tiebreaker."""
@@ -487,81 +512,89 @@ steps:
             matching_step = next(s for s in steps if s.step_id == step_id)
             assert matching_step.order_index == idx
 
-    def test_higher_priority_overrides_declaration_order(self) -> None:
-        """Test that higher priority (lower number) overrides declaration order."""
-        low_priority_id = uuid4()
-        high_priority_id = uuid4()
+    def test_declaration_order_is_tiebreaker_not_priority(self) -> None:
+        """Test that declaration order is the tiebreaker, not priority.
 
-        steps = [
-            ModelWorkflowStep(
-                step_id=low_priority_id,
-                step_name="Low Priority First Declared",
-                step_type="compute",
-                priority=100,  # Lower priority (higher number)
-            ),
-            ModelWorkflowStep(
-                step_id=high_priority_id,
-                step_name="High Priority Second Declared",
-                step_type="compute",
-                priority=1,  # Higher priority (lower number)
-            ),
-        ]
-
-        execution_order = get_execution_order(steps)
-
-        # High priority should execute first despite being declared second
-        assert execution_order[0] == high_priority_id
-        assert execution_order[1] == low_priority_id
-
-    def test_declaration_order_only_affects_equal_priority(self) -> None:
-        """Test that declaration order only affects steps with equal priority.
-
-        Note: Priorities > 10 are clamped to 10, so we use values in 1-10 range.
+        v1.0.2 Fix 5: Topological ordering uses declaration order as tiebreaker,
+        NOT priority. Priority is informational only and does not affect ordering.
         """
-        id_priority_1 = uuid4()
-        id_priority_5_first = uuid4()
-        id_priority_5_second = uuid4()
-        id_priority_10 = uuid4()
+        first_declared_id = uuid4()
+        second_declared_id = uuid4()
 
         steps = [
             ModelWorkflowStep(
-                step_id=id_priority_10,
-                step_name="Priority 10",
+                step_id=first_declared_id,
+                step_name="First Declared (Low Priority Number)",
                 step_type="compute",
-                priority=10,  # Lowest priority (highest number in 1-10 range)
+                priority=100,  # Higher number (would be "lower priority" if used)
             ),
             ModelWorkflowStep(
-                step_id=id_priority_5_first,
-                step_name="Priority 5 First",
+                step_id=second_declared_id,
+                step_name="Second Declared (High Priority Number)",
                 step_type="compute",
-                priority=5,  # Medium priority
-            ),
-            ModelWorkflowStep(
-                step_id=id_priority_1,
-                step_name="Priority 1",
-                step_type="compute",
-                priority=1,  # Highest priority
-            ),
-            ModelWorkflowStep(
-                step_id=id_priority_5_second,
-                step_name="Priority 5 Second",
-                step_type="compute",
-                priority=5,  # Same medium priority - uses declaration order
+                priority=1,  # Lower number (would be "higher priority" if used)
             ),
         ]
 
         execution_order = get_execution_order(steps)
 
-        # Priority 1 (highest priority) first
-        assert execution_order[0] == id_priority_1
-        # Priority 5 steps use declaration order (index 1 before index 3)
-        first_5_idx = execution_order.index(id_priority_5_first)
-        second_5_idx = execution_order.index(id_priority_5_second)
-        assert first_5_idx < second_5_idx, (
-            "First declared priority-5 step should execute before second"
+        # v1.0.2 Fix 5: Declaration order determines execution, not priority
+        # First declared should execute first regardless of priority
+        assert execution_order[0] == first_declared_id, (
+            "First declared should execute first per v1.0.2 Fix 5"
         )
-        # Priority 10 (lowest priority) last
-        assert execution_order[-1] == id_priority_10
+        assert execution_order[1] == second_declared_id, (
+            "Second declared should execute second per v1.0.2 Fix 5"
+        )
+
+    def test_declaration_order_always_used_as_tiebreaker(self) -> None:
+        """Test that declaration order is ALWAYS used as tiebreaker.
+
+        v1.0.2 Fix 5: Declaration order determines execution order for all steps
+        without dependencies. Priority is informational only and does not affect
+        the execution order.
+        """
+        id_first = uuid4()
+        id_second = uuid4()
+        id_third = uuid4()
+        id_fourth = uuid4()
+
+        # Steps declared in specific order with varying priorities
+        steps = [
+            ModelWorkflowStep(
+                step_id=id_first,
+                step_name="First Declared",
+                step_type="compute",
+                priority=10,  # Different priorities should not matter
+            ),
+            ModelWorkflowStep(
+                step_id=id_second,
+                step_name="Second Declared",
+                step_type="compute",
+                priority=5,
+            ),
+            ModelWorkflowStep(
+                step_id=id_third,
+                step_name="Third Declared",
+                step_type="compute",
+                priority=1,  # Would be "highest priority" if priority mattered
+            ),
+            ModelWorkflowStep(
+                step_id=id_fourth,
+                step_name="Fourth Declared",
+                step_type="compute",
+                priority=5,
+            ),
+        ]
+
+        execution_order = get_execution_order(steps)
+
+        # v1.0.2 Fix 5: Declaration order is the ONLY tiebreaker
+        # Execution order should exactly match declaration order
+        assert execution_order[0] == id_first, "First declared should execute first"
+        assert execution_order[1] == id_second, "Second declared should execute second"
+        assert execution_order[2] == id_third, "Third declared should execute third"
+        assert execution_order[3] == id_fourth, "Fourth declared should execute fourth"
 
 
 @pytest.mark.unit

@@ -129,6 +129,35 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
             with external state stores and lease-based coordination. See
             docs/architecture/MUTABLE_STATE_STRATEGY.md for the production improvement roadmap.
 
+        Side Effect Prohibition (v1.0.1 Fix 15 Normative):
+            **CRITICAL**: NodeOrchestrator MUST NOT write to external systems directly.
+
+            The orchestrator is a pure coordination layer that:
+            - Emits ModelAction objects for deferred execution by target nodes
+            - Tracks workflow step completion status
+            - Maintains internal execution state
+
+            **Forbidden Operations** (MUST NOT occur during process()):
+            - Direct database writes
+            - HTTP/gRPC calls to external services
+            - File system writes to external paths
+            - Message queue publishing (direct)
+            - Cache writes to external stores
+
+            **Allowed Operations**:
+            - Emitting ModelAction objects via actions_emitted list
+            - Internal state management (workflow tracking)
+            - Logging (informational only, not business data persistence)
+
+            This separation ensures:
+            - Orchestrator execution is deterministic and replayable
+            - Side effects are explicit via action emission
+            - Target nodes (EFFECT nodes) handle actual external I/O
+            - Workflow coordination remains pure and testable
+
+            Subclasses that violate this rule will produce non-deterministic
+            behavior and break workflow replay capabilities.
+
         Pattern:
             class NodeMyOrchestrator(NodeOrchestrator):
                 # No custom code needed - driven entirely by YAML contract
@@ -212,27 +241,32 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
                 ),
             )
 
-            # Define workflow steps as dicts (converted internally to ModelWorkflowStep)
-            steps_config = [
-                {
-                    "step_id": uuid4(),
-                    "step_name": "Fetch Data",
-                    "step_type": "effect",
-                    "timeout_ms": 10000,
-                },
-                {
-                    "step_id": uuid4(),
-                    "step_name": "Process Data",
-                    "step_type": "compute",
-                    "depends_on": [fetch_step_id],
-                    "timeout_ms": 15000,
-                },
+            # Define typed workflow steps (v1.0.2: steps MUST be ModelWorkflowStep)
+            from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
+
+            fetch_step_id = uuid4()
+            process_step_id = uuid4()
+
+            workflow_steps = [
+                ModelWorkflowStep(
+                    step_id=fetch_step_id,
+                    step_name="Fetch Data",
+                    step_type="effect",
+                    timeout_ms=10000,
+                ),
+                ModelWorkflowStep(
+                    step_id=process_step_id,
+                    step_name="Process Data",
+                    step_type="compute",
+                    depends_on=[fetch_step_id],
+                    timeout_ms=15000,
+                ),
             ]
 
-            # Execute workflow via process method
+            # Execute workflow via process method (v1.0.2: no dict coercion)
             input_data = ModelOrchestratorInput(
                 workflow_id=uuid4(),
-                steps=steps_config,
+                steps=workflow_steps,
                 execution_mode=EnumExecutionMode.PARALLEL,
             )
 
@@ -261,6 +295,16 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
         """
         Initialize orchestrator node.
 
+        v1.0.2 Normative (Contract Loading Responsibility):
+            NodeOrchestrator MUST NOT load workflow_definition from self.contract.
+            Contract resolution occurs at container build time, not inside orchestrator.
+            workflow_definition MUST be injected by container or dispatcher layer
+            prior to calling process(). NodeOrchestrator receives fully-resolved
+            typed models, not raw contracts.
+
+            Rationale: Separation of concerns - contract loading is infrastructure
+            (SPI/Infra), execution is core logic (Core).
+
         Args:
             container: ONEX container for dependency injection
 
@@ -269,23 +313,12 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
         """
         super().__init__(container)
 
-        # Load workflow definition from node contract
-        # This assumes the node contract has a workflow_coordination field
-        # If not present, workflow capabilities are not active
+        # Initialize workflow_definition to None - MUST be injected externally
+        # v1.0.2: NodeOrchestrator does NOT load from self.contract
+        # v1.0.2: workflow_definition MUST be treated as immutable once injected
         # Use object.__setattr__() to bypass Pydantic validation when mixins with
         # Pydantic BaseModel are in the MRO (e.g., MixinEventBus in ModelServiceOrchestrator)
         object.__setattr__(self, "workflow_definition", None)
-
-        # Try to load workflow definition if available in node contract
-        if hasattr(self, "contract") and hasattr(
-            self.contract, "workflow_coordination"
-        ):
-            if hasattr(self.contract.workflow_coordination, "workflow_definition"):
-                object.__setattr__(
-                    self,
-                    "workflow_definition",
-                    self.contract.workflow_coordination.workflow_definition,
-                )
 
     async def process(
         self,
@@ -309,28 +342,32 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
             ```python
             import logging
             from uuid import uuid4
+            from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
 
             logger = logging.getLogger(__name__)
 
-            # Define workflow steps
-            steps_config = [
-                {
-                    "step_name": "Fetch Data",
-                    "step_type": "effect",
-                    "timeout_ms": 10000
-                },
-                {
-                    "step_name": "Process Data",
-                    "step_type": "compute",
-                    "depends_on": [fetch_step_id],
-                    "timeout_ms": 15000
-                },
+            # Define step IDs for dependency tracking
+            fetch_step_id = uuid4()
+            process_step_id = uuid4()
+
+            # Define typed workflow steps (v1.0.2 compliant - no dict coercion)
+            workflow_steps = [
+                ModelWorkflowStep(
+                    step_id=fetch_step_id,
+                    step_name="Fetch Data",
+                    step_type="effect",
+                    timeout_ms=10000,
+                ),
+                ModelWorkflowStep(
+                    step_id=process_step_id,
+                    step_name="Process Data",
+                    step_type="compute",
+                    depends_on=[fetch_step_id],
+                    timeout_ms=15000,
+                ),
             ]
 
-            # Create workflow steps from config
-            workflow_steps = node.create_workflow_steps_from_config(steps_config)
-
-            # Execute workflow
+            # Create action for each step via orchestrator
             result = await node.execute_workflow_from_contract(
                 node.workflow_definition,
                 workflow_steps,
@@ -338,7 +375,7 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
             )
 
             logger.debug("Status: %s", result.execution_status)
-            logger.debug("Actions: %d", len(result.actions_emitted))
+            logger.debug("Actions created: %d", len(result.actions_emitted))
             ```
         """
         if not self.workflow_definition:
@@ -347,8 +384,10 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
                 error_code=EnumCoreErrorCode.ORCHESTRATOR_STRUCT_WORKFLOW_NOT_LOADED,
             )
 
-        # Convert dict steps to ModelWorkflowStep instances
-        workflow_steps = self.create_workflow_steps_from_config(input_data.steps)  # type: ignore[arg-type]
+        # v1.0.2: Steps are already typed ModelWorkflowStep instances - no coercion needed
+        # Steps MUST arrive as typed instances. Orchestrator does NOT coerce dicts.
+        # Core does NOT parse YAML. Core does NOT coerce dicts into models.
+        workflow_steps = input_data.steps
 
         # Extract workflow ID
         workflow_id = input_data.workflow_id
@@ -455,11 +494,31 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
         """
         Convert WorkflowExecutionResult to ModelOrchestratorOutput.
 
+        This transformation follows the v1.0.1 Fix 14 normative rule:
+        **OrchestratorOutput MUST contain only data derivable from the pure result.**
+
+        The mapping is deterministic and one-to-one:
+
+        +----------------------------+----------------------------------+
+        | WorkflowExecutionResult    | ModelOrchestratorOutput          |
+        +============================+==================================+
+        | execution_status.value     | execution_status                 |
+        | execution_time_ms          | execution_time_ms                |
+        | timestamp                  | start_time, end_time             |
+        | completed_steps            | completed_steps                  |
+        | failed_steps               | failed_steps                     |
+        | skipped_steps              | skipped_steps                    |
+        | actions_emitted            | actions_emitted                  |
+        | (derived)                  | metrics (computed counts)        |
+        | (not set)                  | final_result = None              |
+        +----------------------------+----------------------------------+
+
         Args:
-            workflow_result: Result from workflow execution
+            workflow_result: Result from workflow execution (pure data structure)
 
         Returns:
-            ModelOrchestratorOutput with execution details
+            ModelOrchestratorOutput with execution details derived only from
+            the workflow result - no external state or side effects consulted.
 
         Note:
             The start_time and end_time fields currently both contain the workflow
@@ -469,6 +528,12 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
 
             This behavior is intentional to avoid breaking changes. Future versions
             may track actual start/end times separately.
+
+        Transformation Guarantees (v1.0.1 Normative):
+            - Output contains ONLY data derivable from workflow_result
+            - No container services consulted during transformation
+            - No external I/O performed during transformation
+            - Transformation is deterministic (same input -> same output)
         """
         # NOTE: Both start_time and end_time are set to the completion timestamp.
         # workflow_result.timestamp represents when the result was created (completion time),
@@ -480,12 +545,16 @@ class NodeOrchestrator(NodeCoreBase, MixinWorkflowExecution):
             end_time=workflow_result.timestamp,  # Completion timestamp (same as start_time)
             completed_steps=workflow_result.completed_steps,
             failed_steps=workflow_result.failed_steps,
+            skipped_steps=workflow_result.skipped_steps,  # v1.0.1 Fix 17
             final_result=None,  # No aggregate result for workflow-driven orchestration
             actions_emitted=workflow_result.actions_emitted,
             metrics={
                 "actions_count": float(len(workflow_result.actions_emitted)),
                 "completed_count": float(len(workflow_result.completed_steps)),
                 "failed_count": float(len(workflow_result.failed_steps)),
+                "skipped_count": float(
+                    len(workflow_result.skipped_steps)
+                ),  # v1.0.1 Fix 17
             },
         )
 

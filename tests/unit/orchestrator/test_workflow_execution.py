@@ -797,41 +797,40 @@ class TestTopologicalOrder:
         assert a_idx < b_idx < d_idx
         assert a_idx < c_idx < d_idx
 
-    def test_execution_order_respects_priority_hint(self) -> None:
-        """
-        Test that priority hint affects ordering when no dependencies exist.
+    def test_declaration_order_determines_execution_order(self) -> None:
+        """Test that declaration order determines execution order when no dependencies.
 
-        NOTE: In v1.0, priority is INFORMATIONAL and steps execute in declaration
-        order by default. However, the execution order algorithm MAY use priority
-        as a secondary sort key when no dependencies exist. This test verifies
-        the current implementation behavior.
-
-        v1.1+ will formalize priority-based scheduling. See model_workflow_step.py
-        for the priority field's informational-only status in v1.0.
+        v1.0.2 Fix 5: Topological ordering uses declaration order as tiebreaker,
+        NOT priority. Priority is informational only and does not affect ordering.
         """
-        step_low_priority = ModelWorkflowStep(
+        step_first = ModelWorkflowStep(
             step_id=uuid4(),
-            step_name="low_priority",
+            step_name="first_declared",
             step_type="compute",
             enabled=True,
-            priority=10,  # Lower priority (higher number)
+            priority=10,  # Higher priority number (would be "lower priority" if used)
         )
-        step_high_priority = ModelWorkflowStep(
+        step_second = ModelWorkflowStep(
             step_id=uuid4(),
-            step_name="high_priority",
+            step_name="second_declared",
             step_type="compute",
             enabled=True,
-            priority=1,  # Higher priority (lower number)
+            priority=1,  # Lower priority number (would be "higher priority" if used)
         )
 
-        # Put low priority first in list (tests priority overrides declaration order)
-        steps = [step_low_priority, step_high_priority]
+        # Declaration order: first, then second
+        steps = [step_first, step_second]
 
         order = get_execution_order(steps)
 
-        # High priority should come first (lower priority number = higher priority)
-        assert order[0] == step_high_priority.step_id
-        assert order[1] == step_low_priority.step_id
+        # Declaration order should be respected regardless of priority
+        # First declared should come first, second declared should come second
+        assert order[0] == step_first.step_id, (
+            "First declared step should execute first per v1.0.2 Fix 5"
+        )
+        assert order[1] == step_second.step_id, (
+            "Second declared step should execute second per v1.0.2 Fix 5"
+        )
 
     def test_declaration_order_as_tiebreaker_for_equal_priorities(self) -> None:
         """
@@ -1196,7 +1195,11 @@ class TestComplexWorkflows:
         self,
         workflow_definition: ModelWorkflowDefinition,
     ) -> None:
-        """Test workflow where a middle step is disabled."""
+        """Test workflow where a middle step is disabled.
+
+        v1.0.2 Fix 10: Disabled steps are treated as automatically satisfied.
+        Steps depending on disabled steps should proceed as if the dependency is met.
+        """
         step_a = uuid4()
         step_b = uuid4()
         step_c = uuid4()
@@ -1213,13 +1216,13 @@ class TestComplexWorkflows:
                 step_name="B_disabled",
                 step_type="compute",
                 depends_on=[step_a],
-                enabled=False,  # DISABLED
+                enabled=False,  # DISABLED - treated as automatically satisfied
             ),
             ModelWorkflowStep(
                 step_id=step_c,
                 step_name="C",
                 step_type="reducer",
-                depends_on=[step_b],  # Depends on disabled step
+                depends_on=[step_b],  # Depends on disabled step - should proceed
                 enabled=True,
             ),
         ]
@@ -1231,10 +1234,17 @@ class TestComplexWorkflows:
             execution_mode=EnumExecutionMode.SEQUENTIAL,
         )
 
-        # A completes, B skipped, C fails due to unmet dependency
+        # v1.0.2 Fix 10: Disabled steps are auto-satisfied
+        # A completes normally
         assert str(step_a) in result.completed_steps
-        assert str(step_b) not in result.completed_steps  # Skipped (disabled)
-        assert str(step_c) in result.failed_steps  # Dependency not met
+        # B is skipped (disabled) - must be in skipped_steps, not completed or failed
+        assert str(step_b) in result.skipped_steps
+        assert str(step_b) not in result.completed_steps
+        assert str(step_b) not in result.failed_steps
+        # C should complete because B (disabled) is treated as auto-satisfied
+        assert str(step_c) in result.completed_steps, (
+            "Step C should complete because disabled step B is auto-satisfied per v1.0.2 Fix 10"
+        )
 
     @pytest.mark.asyncio
     async def test_parallel_branches_with_different_lengths(

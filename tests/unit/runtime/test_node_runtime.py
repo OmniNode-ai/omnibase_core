@@ -3345,7 +3345,7 @@ class TestEnvelopeRouterConcurrencyStress:
             handler registration with replace=True may have last-write-wins
             semantics. The key invariant is that no corruption occurs.
 
-        Validates docstring claim in envelope_router.py line 156:
+        Validates EnvelopeRouter docstring claim:
             "Safe concurrent registration from multiple threads (if needed)"
         """
         import threading
