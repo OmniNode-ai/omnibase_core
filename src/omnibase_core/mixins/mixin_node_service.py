@@ -314,6 +314,30 @@ class MixinNodeService:
             self._failed_invocations += 1
             self._log_error(f"Tool invocation failed: {e}")
 
+        except Exception as e:  # fallback-ok: service must handle all errors gracefully
+            # Create error response for unexpected exceptions
+            execution_time_ms = int((time.time() - start_time) * 1000)
+            response_event = ModelToolResponseEvent.create_error_response(
+                correlation_id=correlation_id,
+                source_node_id=getattr(
+                    self, "node_id", getattr(self, "_node_id", uuid4())
+                ),
+                source_node_name=self._extract_node_name(),
+                tool_name=event.tool_name,
+                action=event.action,
+                error=str(e),
+                error_code="UNEXPECTED_ERROR",
+                execution_time_ms=execution_time_ms,
+                target_node_id=event.requester_node_id,
+                requester_id=event.requester_id,
+                execution_priority=event.priority,
+            )
+
+            await self._emit_tool_response(response_event)
+
+            self._failed_invocations += 1
+            self._log_error(f"Unexpected error during tool invocation: {e}")
+
         finally:
             # Remove from active invocations
             self._active_invocations.discard(correlation_id)
