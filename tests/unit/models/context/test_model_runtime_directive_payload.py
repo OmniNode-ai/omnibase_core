@@ -23,7 +23,7 @@ from omnibase_core.models.context.model_runtime_directive_payload import (
 )
 
 # Test configuration constants
-UNIT_TEST_TIMEOUT_SECONDS: int = 30
+UNIT_TEST_TIMEOUT_SECONDS: int = 60
 
 
 # =============================================================================

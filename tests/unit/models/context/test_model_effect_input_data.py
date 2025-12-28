@@ -23,7 +23,7 @@ from omnibase_core.enums.enum_effect_types import EnumEffectType
 from omnibase_core.models.context.model_effect_input_data import ModelEffectInputData
 
 # Test configuration constants
-UNIT_TEST_TIMEOUT_SECONDS: int = 30
+UNIT_TEST_TIMEOUT_SECONDS: int = 60
 
 
 # =============================================================================

@@ -52,9 +52,11 @@ class ModelEventBusOutputState(BaseModel):
     # Private pattern for event bus error codes - intentionally simpler than
     # the centralized ERROR_CODE_PATTERN. Accepts codes like "UNKNOWN", "TIMEOUT"
     # without requiring the underscore-digit suffix (e.g., AUTH_001).
-    _ERROR_CODE_PATTERN: ClassVar[re.Pattern[str]] = re.compile(r"^[A-Z0-9_]+$")
+    _ERROR_CODE_PATTERN: ClassVar[re.Pattern[str]] = re.compile(r"^[A-Z][A-Z0-9_]*$")
 
-    model_config = ConfigDict(validate_assignment=True, extra="forbid")
+    model_config = ConfigDict(
+        validate_assignment=True, extra="forbid", from_attributes=True
+    )
     version: ModelSemVer = Field(
         default_factory=default_model_version,
         description="Schema version for output state (matches input)",

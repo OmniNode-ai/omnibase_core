@@ -41,10 +41,6 @@ from omnibase_core.models.contracts.subcontracts.model_effect_circuit_breaker im
 )
 from omnibase_core.models.contracts.subcontracts.model_effect_io_configs import (
     EffectIOConfig,
-    ModelDbIOConfig,
-    ModelFilesystemIOConfig,
-    ModelHttpIOConfig,
-    ModelKafkaIOConfig,
 )
 from omnibase_core.models.contracts.subcontracts.model_effect_response_handling import (
     ModelEffectResponseHandling,
@@ -57,12 +53,6 @@ from omnibase_core.models.contracts.subcontracts.model_effect_transaction_config
 )
 
 __all__ = ["ModelEffectOperationConfig"]
-
-
-# Type alias for the union of all typed IO config models
-IOConfigUnion = (
-    ModelHttpIOConfig | ModelDbIOConfig | ModelKafkaIOConfig | ModelFilesystemIOConfig
-)
 
 
 class ModelEffectOperationConfig(BaseModel):
@@ -254,7 +244,7 @@ class ModelEffectOperationConfig(BaseModel):
             return {}
         return self.response_handling.model_dump()
 
-    def get_typed_io_config(self) -> IOConfigUnion:
+    def get_typed_io_config(self) -> EffectIOConfig:
         """Get io_config as a typed EffectIOConfig.
 
         Returns:

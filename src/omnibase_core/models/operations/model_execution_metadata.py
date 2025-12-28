@@ -1,14 +1,3 @@
-from __future__ import annotations
-
-from pydantic import Field, field_validator
-
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import (
-    ModelSemVer,
-    default_model_version,
-)
-
 """
 Strongly-typed execution metadata structure.
 
@@ -16,15 +5,24 @@ Replaces dict[str, Any] usage in execution metadata with structured typing.
 Follows ONEX strong typing principles and one-model-per-file architecture.
 """
 
+from __future__ import annotations
 
 from datetime import datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_environment import EnumEnvironment
 from omnibase_core.enums.enum_execution_status_v2 import EnumExecutionStatusV2
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import (
+    ModelSemVer,
+    default_model_version,
+)
+
+__all__ = ["ModelExecutionMetadata"]
 
 
 class ModelExecutionMetadata(BaseModel):
@@ -154,7 +152,9 @@ class ModelExecutionMetadata(BaseModel):
                 if isinstance(cpu_value, (int, float)):
                     self.cpu_usage_percent = float(cpu_value)
             return True
-        except Exception as e:
+        except (
+            Exception
+        ) as e:  # error-ok: Converts any exception to structured ModelOnexError
             raise ModelOnexError(
                 message=f"Failed to execute metadata update: {e}",
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
@@ -204,7 +204,3 @@ class ModelExecutionMetadata(BaseModel):
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
         return True
-
-
-# Export for use
-__all__ = ["ModelExecutionMetadata"]

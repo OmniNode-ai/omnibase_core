@@ -203,12 +203,15 @@ class TestEventBusErrorCodePatternDocumentation:
     """Document the intentional difference in ModelEventBusOutputState error pattern.
 
     ModelEventBusOutputState uses a DIFFERENT, simpler pattern for error_code:
-    Pattern: ^[A-Z0-9_]+$
+    Pattern: ^[A-Z][A-Z0-9_]*$
 
     This is MORE PERMISSIVE than the standard ERROR_CODE_PATTERN because:
     1. It accepts error codes without the required underscore-digit suffix
     2. It allows codes like "UNKNOWN", "TIMEOUT", etc.
     3. It serves a different use case (event bus status codes vs structured errors)
+
+    However, it enforces that codes must start with an uppercase letter (not a digit
+    or underscore), which is consistent with standard error code conventions.
 
     This test documents and verifies this intentional difference.
     """
@@ -221,7 +224,7 @@ class TestEventBusErrorCodePatternDocumentation:
 
         # Access the class-level pattern
         event_bus_pattern = ModelEventBusOutputState._ERROR_CODE_PATTERN.pattern
-        expected_pattern = r"^[A-Z0-9_]+$"
+        expected_pattern = r"^[A-Z][A-Z0-9_]*$"
 
         assert event_bus_pattern == expected_pattern, (
             f"ModelEventBusOutputState._ERROR_CODE_PATTERN changed unexpectedly!\n"

@@ -365,7 +365,8 @@ class TestParseIOConfig:
 
         with pytest.raises(ValidationError) as exc_info:
             ModelEffectOperationConfig.from_dict({})
-        assert "io_config" in str(exc_info.value)
+        errors = exc_info.value.errors()
+        assert any("io_config" in error.get("msg", "") for error in errors)
 
     def test_parse_unknown_handler_type_raises_error(self, test_node: TestNode) -> None:
         """Test that unknown handler type raises ValidationError during parsing.
@@ -381,7 +382,8 @@ class TestParseIOConfig:
             ModelEffectOperationConfig.from_dict(
                 {"io_config": {"handler_type": "unknown"}}
             )
-        assert "union_tag_invalid" in str(exc_info.value)
+        errors = exc_info.value.errors()
+        assert any(error["type"] == "union_tag_invalid" for error in errors)
 
 
 @pytest.mark.unit

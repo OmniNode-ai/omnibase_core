@@ -76,7 +76,7 @@ class ModelEffectTemplateContext(BaseModel):
         - MixinEffectExecution._resolve_io_config: Template resolution
     """
 
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, from_attributes=True)
 
     data: dict[str, Any] = Field(  # ONEX_EXCLUDE: dict_str_any - intentional grab bag
         default_factory=dict,

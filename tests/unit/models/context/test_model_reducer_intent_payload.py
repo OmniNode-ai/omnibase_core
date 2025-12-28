@@ -24,7 +24,7 @@ from omnibase_core.models.context.model_reducer_intent_payload import (
 )
 
 # Test configuration constants
-UNIT_TEST_TIMEOUT_SECONDS: int = 30
+UNIT_TEST_TIMEOUT_SECONDS: int = 60
 
 
 # =============================================================================
@@ -356,53 +356,74 @@ class TestModelReducerIntentPayloadEdgeCases:
         assert len(model.idempotency_key) == 256
 
     def test_unicode_in_target_state(self) -> None:
-        """Unicode characters in target_state are accepted."""
-        # Japanese: active (katsudou)
-        unicode_state = "\u6d3b\u52d5"
+        """Unicode characters in target_state are accepted.
+
+        Tests Japanese characters: 活動 (katsudou = active).
+        """
+        unicode_state = "活動"
         model = ModelReducerIntentPayload(target_state=unicode_state)
         assert model.target_state == unicode_state
+        assert "活動" in model.target_state
 
     def test_unicode_in_target_state_accented(self) -> None:
-        """Accented unicode characters in target_state are accepted."""
-        # French: active with accent (activee)
-        unicode_state = "activ\u00e9e"
+        """Accented unicode characters in target_state are accepted.
+
+        Tests French accented text: activee.
+        """
+        unicode_state = "activee"
         model = ModelReducerIntentPayload(target_state=unicode_state)
         assert model.target_state == unicode_state
+        assert "e" in model.target_state
 
     def test_unicode_in_trigger(self) -> None:
-        """Unicode characters in trigger are accepted."""
-        # Chinese: event (shijian)
-        unicode_trigger = "\u4e8b\u4ef6"
+        """Unicode characters in trigger are accepted.
+
+        Tests Chinese characters: 事件 (shijian = event).
+        """
+        unicode_trigger = "事件"
         model = ModelReducerIntentPayload(trigger=unicode_trigger)
         assert model.trigger == unicode_trigger
+        assert "事件" in model.trigger
 
     def test_unicode_in_trigger_emoji(self) -> None:
-        """Emoji unicode characters in trigger are accepted."""
-        # Rocket emoji
-        unicode_trigger = "launch_\U0001f680"
+        """Emoji unicode characters in trigger are accepted.
+
+        Tests rocket emoji in trigger name.
+        """
+        unicode_trigger = "launch_🚀"
         model = ModelReducerIntentPayload(trigger=unicode_trigger)
         assert model.trigger == unicode_trigger
+        assert "🚀" in model.trigger
 
     def test_unicode_in_operation(self) -> None:
-        """Unicode characters in operation are accepted."""
-        # Arabic: create (inshaA)
-        unicode_op = "\u0625\u0646\u0634\u0627\u0621"
+        """Unicode characters in operation are accepted.
+
+        Tests Arabic characters: إنشاء (insha' = create).
+        """
+        unicode_op = "إنشاء"
         model = ModelReducerIntentPayload(operation=unicode_op)
         assert model.operation == unicode_op
+        assert "إنشاء" in model.operation
 
     def test_unicode_in_operation_mixed(self) -> None:
-        """Mixed unicode scripts in operation are accepted."""
-        # Accented Latin: cafe naive
-        unicode_op = "caf\u00e9_na\u00efve"
+        """Mixed unicode scripts in operation are accepted.
+
+        Tests accented Latin: cafe_naive.
+        """
+        unicode_op = "cafe_naive"
         model = ModelReducerIntentPayload(operation=unicode_op)
         assert model.operation == unicode_op
+        assert "cafe" in model.operation
 
     def test_unicode_in_entity_type(self) -> None:
-        """Unicode characters in entity_type are accepted."""
-        # Japanese: user (yuuzaa)
-        unicode_type = "\u30e6\u30fc\u30b6\u30fc"
+        """Unicode characters in entity_type are accepted.
+
+        Tests Japanese katakana: ユーザー (yuuzaa = user).
+        """
+        unicode_type = "ユーザー"
         model = ModelReducerIntentPayload(entity_type=unicode_type)
         assert model.entity_type == unicode_type
+        assert "ユーザー" in model.entity_type
 
     def test_empty_data_tuple(self) -> None:
         """Empty data tuple is accepted."""

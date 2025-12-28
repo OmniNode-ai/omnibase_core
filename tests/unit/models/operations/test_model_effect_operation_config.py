@@ -312,8 +312,6 @@ class TestModelEffectOperationConfigDictIOConfig:
         With the discriminated union, unknown handler types are rejected during
         model validation, not kept as dicts.
         """
-        from pydantic import ValidationError
-
         unknown_dict = {
             "handler_type": "custom_unknown",
             "some_field": "value",
@@ -322,7 +320,8 @@ class TestModelEffectOperationConfigDictIOConfig:
         with pytest.raises(ValidationError) as exc_info:
             ModelEffectOperationConfig(io_config=unknown_dict)
 
-        assert "union_tag_invalid" in str(exc_info.value)
+        errors = exc_info.value.errors()
+        assert any(error["type"] == "union_tag_invalid" for error in errors)
 
 
 # =============================================================================
@@ -583,14 +582,13 @@ class TestGetTypedIOConfig:
         With the discriminated union, unknown handler types are rejected during
         model validation, before get_typed_io_config() is called.
         """
-        from pydantic import ValidationError
-
         with pytest.raises(ValidationError) as exc_info:
             ModelEffectOperationConfig(
                 io_config={"handler_type": "unknown", "some_field": "value"}
             )
 
-        assert "union_tag_invalid" in str(exc_info.value)
+        errors = exc_info.value.errors()
+        assert any(error["type"] == "union_tag_invalid" for error in errors)
 
     def test_dict_without_handler_type_raises_validation_error(self) -> None:
         """Test that dict without handler_type raises ValidationError.
@@ -598,14 +596,13 @@ class TestGetTypedIOConfig:
         The discriminated union requires handler_type to select the correct model.
         Without it, validation fails.
         """
-        from pydantic import ValidationError
-
         with pytest.raises(ValidationError) as exc_info:
             ModelEffectOperationConfig(
                 io_config={"url_template": "https://example.com", "method": "GET"}
             )
 
-        assert "union_tag_not_found" in str(exc_info.value)
+        errors = exc_info.value.errors()
+        assert any(error["type"] == "union_tag_not_found" for error in errors)
 
     def test_get_typed_io_config_returns_io_config(self) -> None:
         """Test that get_typed_io_config returns the already-typed io_config.
