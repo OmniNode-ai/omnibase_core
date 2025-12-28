@@ -4,7 +4,50 @@
 """
 Handler Type Category Enumeration.
 
-Classifies handlers by computational behavior.
+This module defines the behavioral classification of handlers in the ONEX framework.
+While :class:`~omnibase_core.enums.enum_handler_type.EnumHandlerType` classifies handlers
+by the external system they interact with (HTTP, DATABASE, etc.), EnumHandlerTypeCategory
+classifies them by their computational behavior (pure vs impure, deterministic vs non-deterministic).
+
+This distinction is critical for:
+    - **Caching decisions**: COMPUTE handlers can be safely cached; EFFECT handlers cannot
+    - **Retry policies**: EFFECT handlers may need idempotency checks; COMPUTE handlers can retry freely
+    - **Testing strategies**: COMPUTE handlers need no mocking; EFFECT handlers require stubs
+    - **Parallelization**: COMPUTE handlers can run in parallel without coordination
+
+Location:
+    ``omnibase_core.enums.enum_handler_type_category.EnumHandlerTypeCategory``
+
+Import Example:
+    .. code-block:: python
+
+        from omnibase_core.enums.enum_handler_type_category import EnumHandlerTypeCategory
+
+        # Or via the enums package
+        from omnibase_core.enums import EnumHandlerTypeCategory
+
+        # Classify a handler
+        category = EnumHandlerTypeCategory.COMPUTE
+        if category == EnumHandlerTypeCategory.EFFECT:
+            # Apply retry policy with idempotency check
+            pass
+
+See Also:
+    - :class:`~omnibase_core.enums.enum_handler_type.EnumHandlerType`:
+      Classifies handlers by external system type (HTTP, DATABASE, etc.)
+    - :class:`~omnibase_core.enums.enum_handler_capability.EnumHandlerCapability`:
+      Defines capabilities a handler can declare (CACHE, RETRY, etc.)
+    - :class:`~omnibase_core.enums.enum_node_kind.EnumNodeKind`:
+      Architectural classification of nodes (EFFECT, COMPUTE, REDUCER, ORCHESTRATOR)
+    - :class:`~omnibase_core.enums.enum_handler_command_type.EnumHandlerCommandType`:
+      Command types for handler operations (EXECUTE, VALIDATE, etc.)
+
+Note:
+    ADAPTER is NOT a category--it's a policy tag applied at the descriptor level.
+    See ``ModelHandlerDescriptor`` for adapter configuration.
+
+.. versionadded:: 0.4.0
+    Initial implementation as part of OMN-1085 handler enum additions.
 """
 
 from __future__ import annotations
@@ -16,23 +59,52 @@ from typing import Never, NoReturn
 @unique
 class EnumHandlerTypeCategory(str, Enum):
     """
-    Enumeration of handler type categories.
+    Behavioral classification of handlers in the ONEX framework.
 
-    SINGLE SOURCE OF TRUTH for handler behavioral classification.
-    Classifies handlers by computational behavior (pure/impure, deterministic/non-deterministic).
+    **SINGLE SOURCE OF TRUTH** for handler behavioral classification.
 
-    Note: ADAPTER is NOT a category—it's a policy tag (see ModelHandlerDescriptor).
+    This enum classifies handlers by their computational behavior:
 
-    Categories:
-        COMPUTE: Pure, deterministic computation
-        EFFECT: Side-effecting I/O operations
-        NONDETERMINISTIC_COMPUTE: Pure but non-deterministic
+    - **Pure vs Impure**: Does the handler have side effects?
+    - **Deterministic vs Non-deterministic**: Does the same input always produce the same output?
+
+    The three categories form a decision matrix:
+
+    +---------------------------+---------------+-------------------+
+    | Category                  | Pure (no I/O) | Deterministic     |
+    +===========================+===============+===================+
+    | COMPUTE                   | Yes           | Yes               |
+    +---------------------------+---------------+-------------------+
+    | NONDETERMINISTIC_COMPUTE  | Yes           | No                |
+    +---------------------------+---------------+-------------------+
+    | EFFECT                    | No            | N/A (has I/O)     |
+    +---------------------------+---------------+-------------------+
+
+    Relationship to EnumNodeKind
+    ----------------------------
+    EnumHandlerTypeCategory aligns with :class:`~omnibase_core.enums.enum_node_kind.EnumNodeKind`:
+
+    - ``COMPUTE`` category -> ``EnumNodeKind.COMPUTE`` nodes
+    - ``NONDETERMINISTIC_COMPUTE`` category -> ``EnumNodeKind.COMPUTE`` nodes (with caching disabled)
+    - ``EFFECT`` category -> ``EnumNodeKind.EFFECT`` nodes
+
+    Note: ADAPTER is NOT a category--it's a policy tag. See ``ModelHandlerDescriptor``.
 
     Example:
         >>> from omnibase_core.enums import EnumHandlerTypeCategory
         >>> cat = EnumHandlerTypeCategory.COMPUTE
         >>> str(cat)
         'compute'
+
+        >>> # Check if handler can be cached
+        >>> def can_cache(category: EnumHandlerTypeCategory) -> bool:
+        ...     return category == EnumHandlerTypeCategory.COMPUTE
+        >>> can_cache(EnumHandlerTypeCategory.COMPUTE)
+        True
+        >>> can_cache(EnumHandlerTypeCategory.EFFECT)
+        False
+
+    .. versionadded:: 0.4.0
     """
 
     COMPUTE = "compute"

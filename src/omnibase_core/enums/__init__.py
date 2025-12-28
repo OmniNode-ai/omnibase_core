@@ -42,7 +42,6 @@ from .enum_computation_type import EnumComputationType
 
 # Capability enums (handler capabilities)
 from .enum_compute_capability import EnumComputeCapability
-from .enum_handler_capability import EnumHandlerCapability
 
 # Compute step type enums (contract-driven NodeCompute v1.0)
 from .enum_compute_step_type import EnumComputeStepType
@@ -92,6 +91,7 @@ from .enum_github_runner_os import EnumGithubRunnerOs
 
 # Group and organization enums
 from .enum_group_status import EnumGroupStatus
+from .enum_handler_capability import EnumHandlerCapability
 
 # Handler command type enums (OMN-1085)
 from .enum_handler_command_type import EnumHandlerCommandType
