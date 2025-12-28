@@ -5,7 +5,7 @@ from pydantic import Field
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 "\nNode Type Model\n\nReplaces EnumNodeType with a proper model that includes metadata,\ndescriptions, and categorization for each node type.\n"
-from typing import Any
+from typing import Any, cast
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel
@@ -733,7 +733,7 @@ class ModelNodeType(BaseModel):
                     metadata[field] = (
                         str(value) if not isinstance(value, (dict, list)) else value
                     )
-        return metadata  # type: ignore[return-value]
+        return cast(TypedDictMetadataDict, metadata)
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """

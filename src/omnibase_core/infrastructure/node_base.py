@@ -1,9 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-
-from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
 """
 NodeBase for ONEX ModelArchitecture.
 
@@ -17,8 +13,10 @@ import asyncio
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 from uuid import UUID, uuid4
+
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # Core-native protocol imports (no SPI dependency)
 from omnibase_core.protocols import (

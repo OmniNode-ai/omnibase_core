@@ -136,11 +136,12 @@ class ModelArgumentMap(BaseModel):
         return result if result is not None else default
 
     def get_list(self, name: str, default: list[str] | None = None) -> list[str]:
-        """Get list[Any]argument value."""
+        """Get list argument value, converting all elements to strings."""
         if default is None:
             default = []
-        result = self.get_typed(name, list[Any], default)
-        return result if result is not None else default
+        if name in self.named_args:
+            return self.named_args[name].get_as_list()
+        return default
 
     def has_argument(self, name: str) -> bool:
         """Check if named argument exists."""
@@ -266,5 +267,5 @@ class ModelArgumentMap(BaseModel):
         return len(self.positional_args) + len(self.named_args)
 
     def get_argument_names(self) -> list[str]:
-        """Get list[Any]of all named argument names."""
+        """Get list of all named argument names."""
         return list(self.named_args.keys())

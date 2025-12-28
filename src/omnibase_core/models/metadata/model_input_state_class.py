@@ -66,10 +66,9 @@ class ModelInputState(BaseModel):
             if hasattr(self, field):
                 value = getattr(self, field)
                 if value is not None:
-                    # Preserve ModelSemVer type for version field
-                    if (
-                        field == "version" and isinstance(value, ModelSemVer)
-                    ) or isinstance(value, (dict, list)):
+                    # Preserve ModelSemVer type for version field (typed as ModelSemVer | None)
+                    # Preserve dict/list types for tags and metadata fields
+                    if field == "version" or isinstance(value, (dict, list)):
                         metadata[field] = value
                     else:
                         metadata[field] = str(value)
