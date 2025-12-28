@@ -79,4 +79,6 @@ class ModelEffectTransactionConfig(BaseModel):
         "read_uncommitted", "read_committed", "repeatable_read", "serializable"
     ] = Field(default="read_committed")
     rollback_on_error: bool = Field(default=True)
-    timeout_ms: int = Field(default=TIMEOUT_DEFAULT_MS, ge=TIMEOUT_MIN_MS, le=TIMEOUT_LONG_MS)
+    timeout_ms: int = Field(
+        default=TIMEOUT_DEFAULT_MS, ge=TIMEOUT_MIN_MS, le=TIMEOUT_LONG_MS
+    )

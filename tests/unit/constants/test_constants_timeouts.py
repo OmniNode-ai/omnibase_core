@@ -203,7 +203,9 @@ class TestBackwardsCompatibilityAliases:
         This ensures backwards compatibility for code using the legacy
         DEFAULT_OPERATION_TIMEOUT_MS constant from constants_effect.py.
         """
-        from omnibase_core.constants.constants_effect import DEFAULT_OPERATION_TIMEOUT_MS
+        from omnibase_core.constants.constants_effect import (
+            DEFAULT_OPERATION_TIMEOUT_MS,
+        )
         from omnibase_core.constants.constants_timeouts import TIMEOUT_DEFAULT_MS
 
         assert DEFAULT_OPERATION_TIMEOUT_MS == TIMEOUT_DEFAULT_MS
@@ -226,7 +228,9 @@ class TestBackwardsCompatibilityAliases:
 
         Both constants represent the minimum timeout bound (1 second).
         """
-        from omnibase_core.constants.constants_effect_limits import EFFECT_TIMEOUT_MIN_MS
+        from omnibase_core.constants.constants_effect_limits import (
+            EFFECT_TIMEOUT_MIN_MS,
+        )
         from omnibase_core.constants.constants_timeouts import TIMEOUT_MIN_MS
 
         assert EFFECT_TIMEOUT_MIN_MS == TIMEOUT_MIN_MS
@@ -236,7 +240,9 @@ class TestBackwardsCompatibilityAliases:
 
         Both constants represent the maximum timeout bound (10 minutes).
         """
-        from omnibase_core.constants.constants_effect_limits import EFFECT_TIMEOUT_MAX_MS
+        from omnibase_core.constants.constants_effect_limits import (
+            EFFECT_TIMEOUT_MAX_MS,
+        )
         from omnibase_core.constants.constants_timeouts import TIMEOUT_MAX_MS
 
         assert EFFECT_TIMEOUT_MAX_MS == TIMEOUT_MAX_MS
@@ -251,25 +257,25 @@ class TestTimeoutConstantSemantics:
         from omnibase_core.constants.constants_timeouts import TIMEOUT_MIN_MS
 
         one_second_in_ms = 1 * 1000
-        assert TIMEOUT_MIN_MS == one_second_in_ms
+        assert one_second_in_ms == TIMEOUT_MIN_MS
 
     def test_timeout_default_is_thirty_seconds(self) -> None:
         """TIMEOUT_DEFAULT_MS should represent 30 seconds in milliseconds."""
         from omnibase_core.constants.constants_timeouts import TIMEOUT_DEFAULT_MS
 
         thirty_seconds_in_ms = 30 * 1000
-        assert TIMEOUT_DEFAULT_MS == thirty_seconds_in_ms
+        assert thirty_seconds_in_ms == TIMEOUT_DEFAULT_MS
 
     def test_timeout_long_is_five_minutes(self) -> None:
         """TIMEOUT_LONG_MS should represent 5 minutes in milliseconds."""
         from omnibase_core.constants.constants_timeouts import TIMEOUT_LONG_MS
 
         five_minutes_in_ms = 5 * 60 * 1000
-        assert TIMEOUT_LONG_MS == five_minutes_in_ms
+        assert five_minutes_in_ms == TIMEOUT_LONG_MS
 
     def test_timeout_max_is_ten_minutes(self) -> None:
         """TIMEOUT_MAX_MS should represent 10 minutes in milliseconds."""
         from omnibase_core.constants.constants_timeouts import TIMEOUT_MAX_MS
 
         ten_minutes_in_ms = 10 * 60 * 1000
-        assert TIMEOUT_MAX_MS == ten_minutes_in_ms
+        assert ten_minutes_in_ms == TIMEOUT_MAX_MS

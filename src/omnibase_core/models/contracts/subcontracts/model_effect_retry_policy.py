@@ -69,7 +69,9 @@ class ModelEffectRetryPolicy(BaseModel):
         default="exponential"
     )
     base_delay_ms: int = Field(default=1000, ge=100, le=60000)
-    max_delay_ms: int = Field(default=TIMEOUT_DEFAULT_MS, ge=TIMEOUT_MIN_MS, le=TIMEOUT_LONG_MS)
+    max_delay_ms: int = Field(
+        default=TIMEOUT_DEFAULT_MS, ge=TIMEOUT_MIN_MS, le=TIMEOUT_LONG_MS
+    )
     jitter_factor: float = Field(
         default=0.1, ge=0.0, le=0.5, description="Jitter as fraction of delay"
     )
