@@ -80,6 +80,10 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
 
+from cryptography.exceptions import InvalidTag
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from pydantic import ConfigDict, Field, field_serializer, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -831,10 +835,6 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
             clear_plaintext: To manually clear plaintext after encryption.
             create_secure_encrypted: Factory method that creates and encrypts in one step.
         """
-        from cryptography.hazmat.primitives import hashes
-        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-        from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-
         if self.is_encrypted:
             raise ModelOnexError(
                 message="Cannot encrypt: payload is already encrypted. Decrypt first if re-encryption is needed.",
@@ -973,11 +973,6 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
             encrypt_payload: To encrypt a payload.
             _create_encryption_aad: For AAD binding details.
         """
-        from cryptography.exceptions import InvalidTag
-        from cryptography.hazmat.primitives import hashes
-        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-        from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-
         if not self.is_encrypted:
             raise ModelOnexError(
                 message="Cannot decrypt: envelope payload is not encrypted.",
@@ -1045,7 +1040,9 @@ class ModelSecureEventEnvelope(ModelEventEnvelope[ModelOnexEvent]):
         # Verify AAD hash matches stored hash (if available) for extra validation
         if self.encryption_metadata.aad_hash:
             current_aad_hash = hashlib.sha256(aad).hexdigest()
-            if not hmac.compare_digest(current_aad_hash, self.encryption_metadata.aad_hash):
+            if not hmac.compare_digest(
+                current_aad_hash, self.encryption_metadata.aad_hash
+            ):
                 raise ModelOnexError(
                     message="Cannot decrypt: envelope metadata has been modified after encryption "
                     "(AAD hash mismatch indicates possible ciphertext transplantation attack).",

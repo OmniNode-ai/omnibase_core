@@ -261,13 +261,20 @@ class ModelTrustPolicy(BaseModel):
         """Validate minimum signature count."""
         if v < 0:
             raise ModelOnexError(
-                message="Minimum signatures cannot be negative",
-                error_code="ONEX_TRUST_POLICY_VALIDATION_ERROR",
+                message=(
+                    f"global_minimum_signatures must be non-negative, got {v}. "
+                    "Signature requirements cannot be negative values."
+                ),
+                error_code=EnumCoreErrorCode.PARAMETER_OUT_OF_RANGE,
             )
         if v > cls.MAX_MINIMUM_SIGNATURES:
             raise ModelOnexError(
-                message=f"Minimum signatures cannot exceed {cls.MAX_MINIMUM_SIGNATURES}",
-                error_code="ONEX_TRUST_POLICY_VALIDATION_ERROR",
+                message=(
+                    f"global_minimum_signatures value {v} exceeds maximum allowed "
+                    f"value of {cls.MAX_MINIMUM_SIGNATURES}. Reduce the signature "
+                    "requirement or adjust MAX_MINIMUM_SIGNATURES if needed."
+                ),
+                error_code=EnumCoreErrorCode.PARAMETER_OUT_OF_RANGE,
             )
         return v
 
@@ -278,8 +285,13 @@ class ModelTrustPolicy(BaseModel):
         valid_modes = ["strict", "permissive", "monitor"]
         if v not in valid_modes:
             raise ModelOnexError(
-                message=f"Invalid enforcement mode. Must be one of: {valid_modes}",
-                error_code="ONEX_TRUST_POLICY_VALIDATION_ERROR",
+                message=(
+                    f"enforcement_mode '{v}' is not valid. "
+                    f"Must be one of: {valid_modes}. "
+                    "'strict' blocks violations, 'permissive' logs warnings, "
+                    "'monitor' only records for analysis."
+                ),
+                error_code=EnumCoreErrorCode.INVALID_PARAMETER,
             )
         return v
 
@@ -289,8 +301,12 @@ class ModelTrustPolicy(BaseModel):
         if self.expires_at is not None:
             if self.expires_at <= self.effective_from:
                 raise ModelOnexError(
-                    message="Expiration date must be after effective date",
-                    error_code="ONEX_TRUST_POLICY_VALIDATION_ERROR",
+                    message=(
+                        f"expires_at ({self.expires_at.isoformat()}) must be after "
+                        f"effective_from ({self.effective_from.isoformat()}). "
+                        "A policy cannot expire before or at the same time it becomes effective."
+                    ),
+                    error_code=EnumCoreErrorCode.VALIDATION_FAILED,
                 )
         return self
 
@@ -347,8 +363,17 @@ class ModelTrustPolicy(BaseModel):
         """
         if not self.is_active():
             raise ModelOnexError(
-                message="Cannot add rules to inactive policy",
-                error_code="ONEX_TRUST_POLICY_VALIDATION_ERROR",
+                message=(
+                    f"Cannot add rules to policy '{self.name}' because it is not active. "
+                    f"Policy is effective from {self.effective_from.isoformat()}"
+                    + (
+                        f" and expires at {self.expires_at.isoformat()}"
+                        if self.expires_at
+                        else ""
+                    )
+                    + ". Ensure the current time falls within the policy's active window."
+                ),
+                error_code=EnumCoreErrorCode.INVALID_STATE,
             )
         self.rules.append(rule)
 
@@ -510,8 +535,18 @@ class ModelTrustPolicy(BaseModel):
         """
         if not self.is_active():
             raise ModelOnexError(
-                message="Cannot validate with inactive policy",
-                error_code="ONEX_TRUST_POLICY_VALIDATION_ERROR",
+                message=(
+                    f"Cannot validate signature chain with policy '{self.name}' because "
+                    f"the policy is not active. Policy is effective from "
+                    f"{self.effective_from.isoformat()}"
+                    + (
+                        f" and expires at {self.expires_at.isoformat()}"
+                        if self.expires_at
+                        else ""
+                    )
+                    + ". Use an active policy for validation."
+                ),
+                error_code=EnumCoreErrorCode.INVALID_STATE,
             )
 
         if context is None:

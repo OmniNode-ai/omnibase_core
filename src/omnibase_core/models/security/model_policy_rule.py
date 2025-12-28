@@ -85,7 +85,7 @@ class ModelPolicyRule(BaseModel):
         execution where class identity may differ between workers.
     """
 
-    model_config = ConfigDict(extra="ignore", from_attributes=True)
+    model_config = ConfigDict(frozen=True, extra="ignore", from_attributes=True)
 
     rule_id: UUID = Field(default_factory=uuid4, description="Unique rule identifier")
     name: str = Field(default=..., description="Human-readable rule name")
