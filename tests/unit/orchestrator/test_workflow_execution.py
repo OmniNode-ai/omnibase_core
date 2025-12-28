@@ -797,8 +797,18 @@ class TestTopologicalOrder:
         assert a_idx < b_idx < d_idx
         assert a_idx < c_idx < d_idx
 
-    def test_priority_ordering_when_no_dependencies(self) -> None:
-        """Test that priority affects ordering when there are no dependencies."""
+    def test_execution_order_respects_priority_hint(self) -> None:
+        """
+        Test that priority hint affects ordering when no dependencies exist.
+
+        NOTE: In v1.0, priority is INFORMATIONAL and steps execute in declaration
+        order by default. However, the execution order algorithm MAY use priority
+        as a secondary sort key when no dependencies exist. This test verifies
+        the current implementation behavior.
+
+        v1.1+ will formalize priority-based scheduling. See model_workflow_step.py
+        for the priority field's informational-only status in v1.0.
+        """
         step_low_priority = ModelWorkflowStep(
             step_id=uuid4(),
             step_name="low_priority",
@@ -814,7 +824,7 @@ class TestTopologicalOrder:
             priority=1,  # Higher priority (lower number)
         )
 
-        # Put low priority first in list
+        # Put low priority first in list (tests priority overrides declaration order)
         steps = [step_low_priority, step_high_priority]
 
         order = get_execution_order(steps)
@@ -823,8 +833,16 @@ class TestTopologicalOrder:
         assert order[0] == step_high_priority.step_id
         assert order[1] == step_low_priority.step_id
 
-    def test_declaration_order_as_tiebreaker(self) -> None:
-        """Test that declaration order is used as tiebreaker for equal priorities."""
+    def test_declaration_order_as_tiebreaker_for_equal_priorities(self) -> None:
+        """
+        Test that declaration order determines execution when priorities are equal.
+
+        This is the PRIMARY execution order semantic in v1.0. When steps have
+        equal priority (or priority is not explicitly set), declaration order
+        in the workflow definition determines execution sequence.
+
+        See model_workflow_step.py for v1.0 priority semantics documentation.
+        """
         step_first = ModelWorkflowStep(
             step_id=uuid4(),
             step_name="first",

@@ -12,6 +12,7 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, Field, field_validator
 
 from omnibase_core.constants import TIMEOUT_LONG_MS
+from omnibase_core.constants.constants_field_limits import MAX_IDENTIFIER_LENGTH
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -70,7 +71,7 @@ class ModelWorkflowConditions(BaseModel):
     schedule_expression: str | None = Field(
         default=None,
         description="Cron-like schedule expression for time-based execution",
-        max_length=100,
+        max_length=MAX_IDENTIFIER_LENGTH,
     )
 
     timeout_before_ms: int | None = Field(
@@ -102,13 +103,13 @@ class ModelWorkflowConditions(BaseModel):
     required_state: str | None = Field(
         default=None,
         description="Required workflow state for execution",
-        max_length=100,
+        max_length=MAX_IDENTIFIER_LENGTH,
     )
 
     forbidden_state: str | None = Field(
         default=None,
         description="Forbidden workflow state that prevents execution",
-        max_length=100,
+        max_length=MAX_IDENTIFIER_LENGTH,
     )
 
     # Environment conditions
@@ -132,7 +133,7 @@ class ModelWorkflowConditions(BaseModel):
     required_role: str | None = Field(
         default=None,
         description="Required user role for execution",
-        max_length=100,
+        max_length=MAX_IDENTIFIER_LENGTH,
     )
 
     required_permissions: list[str] = Field(

@@ -237,19 +237,19 @@ class TestEdgeCases:
     # -------------------------------------------------------------------------
 
     def test_step_name_at_max_length(self) -> None:
-        """step_name at exactly max_length (200) should be accepted."""
-        max_name = "x" * 200
+        """step_name at exactly max_length (255) should be accepted."""
+        max_name = "x" * 255
         step = ModelWorkflowStep(
             step_name=max_name,
             step_type="compute",
         )
-        assert len(step.step_name) == 200
+        assert len(step.step_name) == 255
 
     def test_step_name_exceeds_max_length(self) -> None:
-        """step_name exceeding max_length (200) should be rejected."""
+        """step_name exceeding max_length (255) should be rejected."""
         with pytest.raises(ValidationError):
             ModelWorkflowStep(
-                step_name="x" * 201,
+                step_name="x" * 256,
                 step_type="compute",
             )
 
@@ -879,7 +879,7 @@ class TestModelWorkflowStepHardening:
         assert "unknown_field" in errors[0]["loc"]
 
     def test_step_name_length_bounds(self) -> None:
-        """Verify step_name length constraints (min=1, max=200)."""
+        """Verify step_name length constraints (min=1, max=255)."""
         # Valid step_name
         valid = ModelWorkflowStep(
             step_name="valid-name",
@@ -894,10 +894,10 @@ class TestModelWorkflowStepHardening:
                 step_type="compute",
             )
 
-        # Too long (must be <= 200)
+        # Too long (must be <= 255)
         with pytest.raises(ValidationError):
             ModelWorkflowStep(
-                step_name="x" * 201,
+                step_name="x" * 256,
                 step_type="compute",
             )
 

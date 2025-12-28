@@ -10,9 +10,13 @@ Strict typing is enforced: No Any types or dict[str, Any]patterns allowed.
 from typing import Literal
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.constants import TIMEOUT_DEFAULT_MS, TIMEOUT_LONG_MS
+from omnibase_core.constants.constants_field_limits import (
+    MAX_IDENTIFIER_LENGTH,
+    MAX_NAME_LENGTH,
+)
 
 __all__ = ["ModelWorkflowStep"]
 
@@ -27,12 +31,13 @@ class ModelWorkflowStep(BaseModel):
     Strict typing is enforced: No Any types or dict[str, Any]patterns allowed.
     """
 
-    model_config = {
-        "extra": "forbid",
-        "use_enum_values": False,
-        "validate_assignment": True,
-        "frozen": True,
-    }
+    model_config = ConfigDict(
+        extra="forbid",
+        from_attributes=True,
+        frozen=True,
+        use_enum_values=False,
+        validate_assignment=True,
+    )
 
     # ONEX correlation tracking
     correlation_id: UUID = Field(
@@ -49,7 +54,7 @@ class ModelWorkflowStep(BaseModel):
         default=...,
         description="Human-readable name for this step",
         min_length=1,
-        max_length=200,
+        max_length=MAX_NAME_LENGTH,
     )
 
     step_type: Literal[
@@ -120,9 +125,16 @@ class ModelWorkflowStep(BaseModel):
     # Priority and ordering
     # NOTE: Priority uses standard heap/queue semantics where lower values execute first.
     # This matches Python's heapq and typical task queue implementations.
+    # IMPORTANT: In v1.0, priority is INFORMATIONAL ONLY and does NOT affect execution
+    # order. Steps execute in declaration order. Priority-based scheduling is planned
+    # for v1.1+. This field exists for forward compatibility and documentation.
     priority: int = Field(
         default=100,
-        description="Step execution priority (lower = higher priority, executes first)",
+        description=(
+            "Step execution priority (lower = higher priority). "
+            "NOTE: Informational in v1.0; steps execute in declaration order. "
+            "Priority-based scheduling planned for v1.1+."
+        ),
         ge=1,
         le=1000,
     )
@@ -143,7 +155,7 @@ class ModelWorkflowStep(BaseModel):
     parallel_group: str | None = Field(
         default=None,
         description="Group identifier for parallel execution",
-        max_length=100,
+        max_length=MAX_IDENTIFIER_LENGTH,
     )
 
     max_parallel_instances: int = Field(

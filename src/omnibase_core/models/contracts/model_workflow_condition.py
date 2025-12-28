@@ -11,6 +11,7 @@ from typing import cast
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
 
+from omnibase_core.constants.constants_field_limits import MAX_IDENTIFIER_LENGTH
 from omnibase_core.enums.enum_condition_operator import EnumConditionOperator
 from omnibase_core.enums.enum_condition_type import EnumConditionType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -49,7 +50,7 @@ class ModelWorkflowCondition(BaseModel):
         default=...,
         description="Name of the field or property to evaluate",
         min_length=1,
-        max_length=100,
+        max_length=MAX_IDENTIFIER_LENGTH,
     )
 
     operator: EnumConditionOperator = Field(

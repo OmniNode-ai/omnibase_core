@@ -35,6 +35,8 @@ See Also:
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.constants.constants_field_limits import MAX_NAME_LENGTH
+
 
 class ModelOutputReference(BaseModel):
     """
@@ -73,7 +75,7 @@ class ModelOutputReference(BaseModel):
         default=...,
         description="Local name to bind the output value to",
         min_length=1,
-        max_length=255,
+        max_length=MAX_NAME_LENGTH,
     )
     description: str | None = Field(
         default=None,

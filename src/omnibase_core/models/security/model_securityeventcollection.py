@@ -8,6 +8,7 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_security_event_type import EnumSecurityEventType
 from omnibase_core.errors import ModelOnexError
 from omnibase_core.models.security.model_security_summaries import (
@@ -68,8 +69,12 @@ class ModelSecurityEventCollection(BaseModel):
         """Validate events list."""
         if len(v) > cls.MAX_EVENTS:
             raise ModelOnexError(
-                message=f"Events list cannot exceed {cls.MAX_EVENTS} events",
-                error_code="ONEX_SECURITY_EVENT_COLLECTION_VALIDATION_ERROR",
+                message=(
+                    f"Events list contains {len(v)} events, which exceeds the maximum "
+                    f"allowed limit of {cls.MAX_EVENTS}. Consider using auto_prune=True "
+                    "or manually removing old events before adding more."
+                ),
+                error_code=EnumCoreErrorCode.PARAMETER_OUT_OF_RANGE,
             )
         return v
 
@@ -79,8 +84,12 @@ class ModelSecurityEventCollection(BaseModel):
         """Validate retention days."""
         if v is not None and v < 1:
             raise ModelOnexError(
-                message="Retention days must be at least 1",
-                error_code="ONEX_SECURITY_EVENT_COLLECTION_VALIDATION_ERROR",
+                message=(
+                    f"retention_days must be at least 1, got {v}. "
+                    "Set to None to retain events indefinitely, or specify a positive "
+                    "number of days for automatic event expiration."
+                ),
+                error_code=EnumCoreErrorCode.PARAMETER_OUT_OF_RANGE,
             )
         return v
 
@@ -91,8 +100,13 @@ class ModelSecurityEventCollection(BaseModel):
                 self._prune_oldest_events()
             else:
                 raise ModelOnexError(
-                    message=f"Cannot add event: collection has reached maximum size of {self.max_events}",
-                    error_code="ONEX_SECURITY_EVENT_COLLECTION_VALIDATION_ERROR",
+                    message=(
+                        f"Cannot add event: collection has reached its maximum capacity "
+                        f"of {self.max_events} events and auto_prune is disabled. "
+                        "Enable auto_prune=True to automatically remove old events, "
+                        "or manually call remove_old_events() or clear_events() first."
+                    ),
+                    error_code=EnumCoreErrorCode.INVALID_STATE,
                 )
         self.events.append(event)
         self.updated_at = datetime.now(UTC)
@@ -101,13 +115,20 @@ class ModelSecurityEventCollection(BaseModel):
         """Get the most recent security events."""
         if limit <= 0:
             raise ModelOnexError(
-                message="Limit must be greater than 0",
-                error_code="ONEX_SECURITY_EVENT_COLLECTION_VALIDATION_ERROR",
+                message=(
+                    f"limit must be a positive integer, got {limit}. "
+                    "Specify how many recent events to retrieve (e.g., limit=10)."
+                ),
+                error_code=EnumCoreErrorCode.PARAMETER_OUT_OF_RANGE,
             )
         if limit > self.MAX_RECENT_EVENTS:
             raise ModelOnexError(
-                message=f"Limit cannot exceed {self.MAX_RECENT_EVENTS}",
-                error_code="ONEX_SECURITY_EVENT_COLLECTION_VALIDATION_ERROR",
+                message=(
+                    f"limit value {limit} exceeds maximum allowed value of "
+                    f"{self.MAX_RECENT_EVENTS}. Reduce the limit or use pagination "
+                    "for retrieving large numbers of events."
+                ),
+                error_code=EnumCoreErrorCode.PARAMETER_OUT_OF_RANGE,
             )
         sorted_events = sorted(self.events, key=lambda e: e.timestamp, reverse=True)
         return sorted_events[:limit]
@@ -126,8 +147,11 @@ class ModelSecurityEventCollection(BaseModel):
         """Get events for a specific user."""
         if not user_id:
             raise ModelOnexError(
-                message="User ID cannot be empty",
-                error_code="ONEX_SECURITY_EVENT_COLLECTION_VALIDATION_ERROR",
+                message=(
+                    "user_id parameter is required and cannot be empty. "
+                    "Provide a valid UUID to filter events by user."
+                ),
+                error_code=EnumCoreErrorCode.INVALID_PARAMETER,
             )
         return [event for event in self.events if event.user_id == user_id]
 
@@ -137,8 +161,12 @@ class ModelSecurityEventCollection(BaseModel):
         """Get events within a specific time range."""
         if start_time and end_time and (start_time >= end_time):
             raise ModelOnexError(
-                message="Start time must be before end time",
-                error_code="ONEX_SECURITY_EVENT_COLLECTION_VALIDATION_ERROR",
+                message=(
+                    f"start_time ({start_time.isoformat()}) must be before "
+                    f"end_time ({end_time.isoformat()}). Swap the values or adjust "
+                    "the time range to ensure start_time < end_time."
+                ),
+                error_code=EnumCoreErrorCode.VALIDATION_FAILED,
             )
         filtered_events = self.events
         if start_time:
@@ -153,8 +181,11 @@ class ModelSecurityEventCollection(BaseModel):
         """Get events with specific status levels (severity proxy)."""
         if not severity_levels:
             raise ModelOnexError(
-                message="Severity levels cannot be empty",
-                error_code="ONEX_SECURITY_EVENT_COLLECTION_VALIDATION_ERROR",
+                message=(
+                    "severity_levels list cannot be empty. Provide at least one "
+                    "severity level to filter by (e.g., ['critical', 'high', 'medium'])."
+                ),
+                error_code=EnumCoreErrorCode.INVALID_PARAMETER,
             )
         return [event for event in self.events if event.status.value in severity_levels]
 
@@ -162,8 +193,11 @@ class ModelSecurityEventCollection(BaseModel):
         """Get events for a specific node."""
         if not node_id:
             raise ModelOnexError(
-                message="Node ID cannot be empty",
-                error_code="ONEX_SECURITY_EVENT_COLLECTION_VALIDATION_ERROR",
+                message=(
+                    "node_id parameter is required and cannot be empty. "
+                    "Provide a valid UUID to filter events by node."
+                ),
+                error_code=EnumCoreErrorCode.INVALID_PARAMETER,
             )
         return [
             event for event in self.events if getattr(event, "node_id", None) == node_id
@@ -173,8 +207,11 @@ class ModelSecurityEventCollection(BaseModel):
         """Search events by content (case-insensitive)."""
         if not query:
             raise ModelOnexError(
-                message="Search query cannot be empty",
-                error_code="ONEX_SECURITY_EVENT_COLLECTION_VALIDATION_ERROR",
+                message=(
+                    "query parameter is required and cannot be empty. "
+                    "Provide a search term to find matching events."
+                ),
+                error_code=EnumCoreErrorCode.INVALID_PARAMETER,
             )
         query_lower = query.lower()
         matching_events = []
@@ -270,8 +307,12 @@ class ModelSecurityEventCollection(BaseModel):
         """Export events in specified format."""
         if format_type not in ["dict", "json"]:
             raise ModelOnexError(
-                message="Format must be 'dict' or 'json'",
-                error_code="ONEX_SECURITY_EVENT_COLLECTION_VALIDATION_ERROR",
+                message=(
+                    f"format_type '{format_type}' is not supported. "
+                    "Must be one of: 'dict' (Python dictionaries) or 'json' "
+                    "(JSON-serializable format with ISO datetime strings)."
+                ),
+                error_code=EnumCoreErrorCode.INVALID_PARAMETER,
             )
         event_data: list[SerializedDict] = []
         for event in self.events:

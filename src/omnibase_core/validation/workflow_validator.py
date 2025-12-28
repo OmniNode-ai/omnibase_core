@@ -44,6 +44,7 @@ from collections.abc import Mapping
 from collections.abc import Set as AbstractSet
 from uuid import UUID
 
+from omnibase_core.constants.constants_field_limits import MAX_DFS_ITERATIONS
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_workflow_execution import EnumExecutionMode
 from omnibase_core.models.contracts.model_workflow_step import ModelWorkflowStep
@@ -77,12 +78,9 @@ type InDegreeMap = dict[UUID, int]
 # Module-Level Constants
 # =============================================================================
 
-# Resource exhaustion protection constant
-# Prevents malicious or malformed inputs from causing infinite loops in DFS
-# Value of 10,000 is sufficient for workflows with up to ~5,000 steps
-# (worst case: each step visited twice during DFS traversal)
+# MAX_DFS_ITERATIONS is imported from omnibase_core.constants.constants_field_limits
+# Re-exported here for backwards compatibility.
 # See module docstring "Security Considerations" for full documentation.
-MAX_DFS_ITERATIONS = 10_000
 
 # Reserved execution modes that are not yet implemented per ONEX v1.0 contract.
 # These modes will raise ModelOnexError when used in validate_execution_mode_string.
@@ -238,7 +236,7 @@ class WorkflowValidator:
             step_id_to_name = self._build_step_id_to_name_map(steps)
             unsorted_names = [step_id_to_name[sid] for sid in unsorted_ids]
             raise ModelOnexError(
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                error_code=EnumCoreErrorCode.ORCHESTRATOR_WORKFLOW_CYCLE_DETECTED,
                 message=(
                     f"Workflow contains cycles - cannot perform topological sort. "
                     f"Steps involved in cycles: {', '.join(sorted(unsorted_names))}"
@@ -311,7 +309,7 @@ class WorkflowValidator:
             # Resource exhaustion protection - prevent malicious/malformed inputs
             if iterations > MAX_DFS_ITERATIONS:
                 raise ModelOnexError(
-                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                    error_code=EnumCoreErrorCode.ORCHESTRATOR_WORKFLOW_ITERATION_LIMIT_EXCEEDED,
                     message=(
                         f"Cycle detection exceeded {MAX_DFS_ITERATIONS} iterations - "
                         "possible malicious input or malformed workflow"

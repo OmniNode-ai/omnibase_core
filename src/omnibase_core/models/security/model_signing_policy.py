@@ -5,11 +5,18 @@ This model defines the policy requirements for cryptographic signatures
 in the envelope routing chain with strongly typed configurations.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelSigningPolicy(BaseModel):
-    """Signing policy configuration."""
+    """Signing policy configuration.
+
+    Note:
+        This model uses from_attributes=True to support pytest-xdist parallel
+        execution where class identity may differ between workers.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
 
     minimum_signatures: int = Field(
         default=1,

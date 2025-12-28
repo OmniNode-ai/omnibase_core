@@ -10,6 +10,8 @@ Thread Safety:
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.constants.constants_field_limits import MAX_NAME_LENGTH
+
 
 class ModelProducerMessage(BaseModel):
     """
@@ -32,7 +34,7 @@ class ModelProducerMessage(BaseModel):
         ...,
         description="Target topic name for message publishing",
         min_length=1,
-        max_length=255,
+        max_length=MAX_NAME_LENGTH,
     )
     value: bytes = Field(
         ...,

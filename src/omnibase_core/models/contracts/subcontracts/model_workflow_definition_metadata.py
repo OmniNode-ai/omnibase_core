@@ -6,6 +6,7 @@ Model for workflow metadata in the ONEX workflow coordination system.
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.constants.constants_field_limits import MAX_TIMEOUT_MS
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
@@ -36,6 +37,7 @@ class ModelWorkflowDefinitionMetadata(BaseModel):
         default=600000,
         description="Workflow timeout in milliseconds",
         ge=1000,
+        le=MAX_TIMEOUT_MS,
     )
 
     workflow_hash: str | None = Field(
