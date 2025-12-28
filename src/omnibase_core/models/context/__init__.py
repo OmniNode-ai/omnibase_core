@@ -93,47 +93,6 @@ Example:
         )
 """
 
-# Action/Routing context models (OMN-1049)
-from omnibase_core.models.context.model_action_execution_context import (
-    ModelActionExecutionContext,
-)
-from omnibase_core.models.context.model_action_parameters import ModelActionParameters
-
-# Metadata context models
-from omnibase_core.models.context.model_audit_metadata import ModelAuditMetadata
-from omnibase_core.models.context.model_authorization_context import (
-    ModelAuthorizationContext,
-)
-from omnibase_core.models.context.model_checkpoint_metadata import (
-    ModelCheckpointMetadata,
-)
-from omnibase_core.models.context.model_detection_metadata import ModelDetectionMetadata
-from omnibase_core.models.context.model_error_metadata import ModelErrorMetadata
-from omnibase_core.models.context.model_http_request_metadata import (
-    ModelHttpRequestMetadata,
-)
-from omnibase_core.models.context.model_metrics_context import ModelMetricsContext
-from omnibase_core.models.context.model_node_init_metadata import ModelNodeInitMetadata
-
-# Error/Retry context models
-from omnibase_core.models.context.model_operational_context import (
-    ModelOperationalContext,
-)
-from omnibase_core.models.context.model_resource_context import ModelResourceContext
-from omnibase_core.models.context.model_retry_context import ModelRetryContext
-from omnibase_core.models.context.model_routing_metadata import (
-    VALID_LOAD_BALANCE_STRATEGIES,
-    LoadBalanceStrategy,
-    ModelRoutingMetadata,
-)
-from omnibase_core.models.context.model_service_discovery_metadata import (
-    ModelServiceDiscoveryMetadata,
-)
-from omnibase_core.models.context.model_session_context import ModelSessionContext
-from omnibase_core.models.context.model_trace_context import ModelTraceContext
-from omnibase_core.models.context.model_user_context import ModelUserContext
-from omnibase_core.models.context.model_validation_context import ModelValidationContext
-
 __all__ = [
     # Error/Retry context models
     "ModelErrorContext",
@@ -145,6 +104,13 @@ __all__ = [
     "ModelTraceContext",
     "ModelUserContext",
     "ModelValidationContext",
+    # Error category constants (re-exported from model_error_metadata)
+    "CATEGORY_AUTH",
+    "CATEGORY_NETWORK",
+    "CATEGORY_SYSTEM",
+    "CATEGORY_VALIDATION",
+    "CLIENT_ERROR_CATEGORIES",
+    "SERVER_ERROR_CATEGORIES",
     # Effect context models
     "ModelEffectInputData",
     # Intent context models
@@ -167,16 +133,65 @@ __all__ = [
     "VALID_LOAD_BALANCE_STRATEGIES",
 ]
 
+# Action/Routing context models (OMN-1049)
+from omnibase_core.models.context.model_action_execution_context import (
+    ModelActionExecutionContext,
+)
+from omnibase_core.models.context.model_action_parameters import ModelActionParameters
+
+# Metadata context models
+from omnibase_core.models.context.model_audit_metadata import ModelAuditMetadata
+from omnibase_core.models.context.model_authorization_context import (
+    ModelAuthorizationContext,
+)
+from omnibase_core.models.context.model_checkpoint_metadata import (
+    ModelCheckpointMetadata,
+)
+from omnibase_core.models.context.model_detection_metadata import ModelDetectionMetadata
+
 # Effect context models
 from omnibase_core.models.context.model_effect_input_data import ModelEffectInputData
+from omnibase_core.models.context.model_error_metadata import (
+    CATEGORY_AUTH,
+    CATEGORY_NETWORK,
+    CATEGORY_SYSTEM,
+    CATEGORY_VALIDATION,
+    CLIENT_ERROR_CATEGORIES,
+    SERVER_ERROR_CATEGORIES,
+    ModelErrorMetadata,
+)
+from omnibase_core.models.context.model_http_request_metadata import (
+    ModelHttpRequestMetadata,
+)
+from omnibase_core.models.context.model_metrics_context import ModelMetricsContext
+from omnibase_core.models.context.model_node_init_metadata import ModelNodeInitMetadata
+
+# Error/Retry context models
+from omnibase_core.models.context.model_operational_context import (
+    ModelOperationalContext,
+)
 
 # Intent context models
 from omnibase_core.models.context.model_reducer_intent_payload import (
     ModelReducerIntentPayload,
 )
+from omnibase_core.models.context.model_resource_context import ModelResourceContext
+from omnibase_core.models.context.model_retry_context import ModelRetryContext
 
 # Runtime context models
 from omnibase_core.models.context.model_retry_error_context import ModelErrorContext
+from omnibase_core.models.context.model_routing_metadata import (
+    VALID_LOAD_BALANCE_STRATEGIES,
+    LoadBalanceStrategy,
+    ModelRoutingMetadata,
+)
 from omnibase_core.models.context.model_runtime_directive_payload import (
     ModelRuntimeDirectivePayload,
 )
+from omnibase_core.models.context.model_service_discovery_metadata import (
+    ModelServiceDiscoveryMetadata,
+)
+from omnibase_core.models.context.model_session_context import ModelSessionContext
+from omnibase_core.models.context.model_trace_context import ModelTraceContext
+from omnibase_core.models.context.model_user_context import ModelUserContext
+from omnibase_core.models.context.model_validation_context import ModelValidationContext
