@@ -7,7 +7,8 @@ error handling, and metadata validation.
 """
 
 import base64
-from datetime import UTC, datetime
+import hashlib
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import pytest
@@ -614,8 +615,6 @@ class TestAADFunctionality:
         aad_hash = sample_envelope.encryption_metadata.aad_hash
 
         # Create the AAD manually and verify hash matches
-        import hashlib
-
         aad = sample_envelope._create_encryption_aad()
         expected_hash = hashlib.sha256(aad).hexdigest()
 
@@ -673,8 +672,6 @@ class TestAADFunctionality:
 
     def test_modified_timestamp_fails_decryption(self, sample_envelope, encryption_key):
         """Test that modifying envelope_timestamp after encryption causes decryption to fail."""
-        from datetime import timedelta
-
         # Encrypt the payload
         sample_envelope.encrypt_payload(encryption_key)
         assert sample_envelope.is_encrypted is True
