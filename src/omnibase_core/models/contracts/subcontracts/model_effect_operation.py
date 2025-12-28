@@ -84,8 +84,9 @@ class ModelEffectOperation(BaseModel):
         ge=EFFECT_TIMEOUT_MIN_MS,
         le=EFFECT_TIMEOUT_MAX_MS,
         description="Overall operation timeout including all retries. "
-        "If None, defaults to 30000ms (30s) via DEFAULT_OPERATION_TIMEOUT_MS. "
-        "Prevents retry stacking from exceeding intended limits.",
+        "If None, defaults to TIMEOUT_DEFAULT_MS (30s). "
+        "Prevents retry stacking from exceeding intended limits. "
+        "See omnibase_core.constants for timeout constant values.",
     )
 
     @property

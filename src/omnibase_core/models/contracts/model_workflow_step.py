@@ -12,6 +12,8 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.constants import TIMEOUT_DEFAULT_MS, TIMEOUT_LONG_MS
+
 __all__ = ["ModelWorkflowStep"]
 
 
@@ -65,10 +67,10 @@ class ModelWorkflowStep(BaseModel):
 
     # Execution configuration
     timeout_ms: int = Field(
-        default=30000,
+        default=TIMEOUT_DEFAULT_MS,
         description="Step execution timeout in milliseconds",
         ge=100,
-        le=300000,  # Max 5 minutes
+        le=TIMEOUT_LONG_MS,  # Max 5 minutes (TIMEOUT_LONG_MS)
     )
 
     retry_count: int = Field(

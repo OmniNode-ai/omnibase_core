@@ -34,6 +34,7 @@ from pathlib import Path
 from typing import Any
 from uuid import UUID, uuid4
 
+from omnibase_core.constants import TIMEOUT_DEFAULT_MS
 from omnibase_core.constants.event_types import TOOL_INVOCATION
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
@@ -185,7 +186,7 @@ class MixinNodeService:
             await self._cleanup_health_task()
 
             # Wait for active invocations to complete (with timeout)
-            await self._wait_for_active_invocations(timeout_ms=30000)
+            await self._wait_for_active_invocations(timeout_ms=TIMEOUT_DEFAULT_MS)
 
             # Run shutdown callbacks
             for callback in self._shutdown_callbacks:
@@ -665,7 +666,9 @@ class MixinNodeService:
         # DO NOT set _health_task to None here - keep the reference
         # so tests can verify the task was cancelled
 
-    async def _wait_for_active_invocations(self, timeout_ms: int = 30000) -> None:
+    async def _wait_for_active_invocations(
+        self, timeout_ms: int = TIMEOUT_DEFAULT_MS
+    ) -> None:
         """Wait for active invocations to complete."""
         if not self._active_invocations:
             return

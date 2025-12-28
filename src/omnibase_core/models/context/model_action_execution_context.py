@@ -27,6 +27,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.constants import TIMEOUT_DEFAULT_MS
+
 __all__ = ["ModelActionExecutionContext"]
 
 
@@ -98,12 +100,13 @@ class ModelActionExecutionContext(BaseModel):
         ),
     )
     timeout_ms: int = Field(
-        default=30000,
+        default=TIMEOUT_DEFAULT_MS,
         ge=1,
         description=(
             "Execution timeout in milliseconds. Minimum 1 millisecond. "
-            "Default is 30000ms (30 seconds). Uses milliseconds for "
-            "consistency with ONEX timeout conventions."
+            "Default is TIMEOUT_DEFAULT_MS (30 seconds). Uses milliseconds for "
+            "consistency with ONEX timeout conventions. "
+            "See omnibase_core.constants for timeout constant values."
         ),
     )
     retry_count: int = Field(

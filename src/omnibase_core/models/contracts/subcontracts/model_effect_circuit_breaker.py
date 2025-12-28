@@ -59,11 +59,12 @@ class ModelEffectCircuitBreaker(BaseModel):
         Circuit state is process-local only in v1.0, keyed by operation_id.
 
     Example:
+        >>> from omnibase_core.constants import TIMEOUT_DEFAULT_MS
         >>> circuit_breaker = ModelEffectCircuitBreaker(
         ...     enabled=True,
         ...     failure_threshold=3,
         ...     success_threshold=2,
-        ...     timeout_ms=30000,
+        ...     timeout_ms=TIMEOUT_DEFAULT_MS,  # 30 seconds
         ...     half_open_requests=1,
         ... )
 

@@ -12,6 +12,8 @@ Author: ONEX Framework Team
 import os
 import re
 
+from omnibase_core.constants.constants_timeouts import TIMEOUT_DEFAULT_MS
+
 # ==============================================================================
 # Debug Mode Configuration
 # ==============================================================================
@@ -35,7 +37,8 @@ DEBUG_THREAD_SAFETY: bool = os.environ.get("ONEX_DEBUG_THREAD_SAFETY", "0") == "
 #
 # This matches the resolved context timeout defaults for consistency.
 # For production use, always set explicit timeouts in operation definitions.
-DEFAULT_OPERATION_TIMEOUT_MS: int = 30000
+# Alias to centralized TIMEOUT_DEFAULT_MS for backwards compatibility.
+DEFAULT_OPERATION_TIMEOUT_MS: int = TIMEOUT_DEFAULT_MS
 
 # ==============================================================================
 # Field Extraction Constants

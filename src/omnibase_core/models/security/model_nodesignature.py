@@ -8,6 +8,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.constants import TIMEOUT_LONG_MS
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_node_operation import EnumNodeOperation
 from omnibase_core.enums.enum_signature_algorithm import EnumSignatureAlgorithm
@@ -34,7 +35,7 @@ class ModelNodeSignature(BaseModel):
         validate_assignment=True, extra="forbid", from_attributes=True
     )
     MAX_HOP_INDEX: ClassVar[int] = 1000
-    MAX_PROCESSING_TIME_MS: ClassVar[int] = 300000
+    MAX_PROCESSING_TIME_MS: ClassVar[int] = TIMEOUT_LONG_MS
     MAX_SIGNATURE_TIME_MS: ClassVar[int] = 60000
     node_id: UUID = Field(
         default=..., description="Unique identifier of the signing node"

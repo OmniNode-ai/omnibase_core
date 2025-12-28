@@ -10,6 +10,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.constants import TIMEOUT_DEFAULT_MS, TIMEOUT_LONG_MS, TIMEOUT_MIN_MS
+
 __all__ = ["ModelEffectRetryPolicy"]
 
 
@@ -35,8 +37,9 @@ class ModelEffectRetryPolicy(BaseModel):
             Options: "fixed", "exponential", "linear". Default: "exponential".
         base_delay_ms: Initial delay between retries in milliseconds (100-60000ms).
             Default: 1000ms.
-        max_delay_ms: Maximum delay cap for exponential/linear backoff (1000-300000ms).
-            Default: 30000ms.
+        max_delay_ms: Maximum delay cap for exponential/linear backoff
+            (TIMEOUT_MIN_MS-TIMEOUT_LONG_MS). Default: TIMEOUT_DEFAULT_MS.
+            See omnibase_core.constants for timeout constant values.
         jitter_factor: Randomization factor as fraction of delay (0.0-0.5).
             Default: 0.1 (10% jitter).
         retryable_status_codes: HTTP status codes that trigger retry.
@@ -66,7 +69,9 @@ class ModelEffectRetryPolicy(BaseModel):
         default="exponential"
     )
     base_delay_ms: int = Field(default=1000, ge=100, le=60000)
-    max_delay_ms: int = Field(default=30000, ge=1000, le=300000)
+    max_delay_ms: int = Field(
+        default=TIMEOUT_DEFAULT_MS, ge=TIMEOUT_MIN_MS, le=TIMEOUT_LONG_MS
+    )
     jitter_factor: float = Field(
         default=0.1, ge=0.0, le=0.5, description="Jitter as fraction of delay"
     )

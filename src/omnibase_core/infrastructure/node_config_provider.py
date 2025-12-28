@@ -9,6 +9,7 @@ Domain: Infrastructure configuration management
 
 import os
 
+from omnibase_core.constants import TIMEOUT_DEFAULT_MS
 from omnibase_core.models.configuration.model_node_config_value import (
     ConfigValue,
     ModelNodeConfigSchema,
@@ -60,7 +61,7 @@ class NodeConfigProvider:
         )
 
         # Get timeout configuration
-        timeout = await config.get_timeout_ms("effect.default_timeout", 30000)
+        timeout = await config.get_timeout_ms("effect.default_timeout", TIMEOUT_DEFAULT_MS)
 
         # Get general configuration
         cache_ttl = await config.get_config_value("compute.cache_ttl_minutes", 30)
@@ -74,7 +75,7 @@ class NodeConfigProvider:
         "compute.cache_ttl_minutes": 30,
         "compute.performance_threshold_ms": 100.0,
         # Effect node defaults
-        "effect.default_timeout_ms": 30000,
+        "effect.default_timeout_ms": TIMEOUT_DEFAULT_MS,
         "effect.default_retry_delay_ms": 1000,
         "effect.max_concurrent_effects": 10,
         # Reducer node defaults
@@ -83,7 +84,7 @@ class NodeConfigProvider:
         "reducer.streaming_buffer_size": 10000,
         # Orchestrator node defaults
         "orchestrator.max_concurrent_workflows": 5,
-        "orchestrator.default_step_timeout_ms": 30000,
+        "orchestrator.default_step_timeout_ms": TIMEOUT_DEFAULT_MS,
         "orchestrator.action_emission_enabled": True,
     }
 
@@ -164,7 +165,7 @@ class NodeConfigProvider:
             return int(value)
         if default_ms is not None:
             return default_ms
-        return 30000  # Default 30 seconds
+        return TIMEOUT_DEFAULT_MS  # Default 30 seconds
 
     async def get_security_config(
         self, key: str, default: ConfigValue | None = None

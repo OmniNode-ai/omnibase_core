@@ -6,12 +6,14 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.constants import TIMEOUT_DEFAULT_MS
+
 
 class ModelOperationParametersBase(BaseModel):
     """Structured base operation parameters."""
 
     execution_timeout: int = Field(
-        default=30000,
+        default=TIMEOUT_DEFAULT_MS,
         description="Execution timeout in milliseconds",
     )
     retry_attempts: int = Field(default=3, description="Number of retry attempts")
