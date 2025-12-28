@@ -11,9 +11,9 @@ Tests programmatic contract validation for autonomous code generation:
 import pytest
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.validation.contract_validator import (
+from omnibase_core.services.service_contract_validator import (
     ModelContractValidationResult,
-    ProtocolContractValidator,
+    ServiceContractValidator,
 )
 
 
@@ -23,14 +23,14 @@ class TestContractValidator:
 
     def test_validator_initialization(self) -> None:
         """Test validator initializes correctly."""
-        validator = ProtocolContractValidator()
+        validator = ServiceContractValidator()
         assert validator.interface_version.major == 1
         assert validator.interface_version.minor == 0
         assert validator.interface_version.patch == 0
 
     def test_validate_valid_effect_contract(self) -> None:
         """Test validation of a valid effect contract."""
-        validator = ProtocolContractValidator()
+        validator = ServiceContractValidator()
 
         contract_yaml = """
 name: DatabaseWriterEffect
@@ -63,7 +63,7 @@ io_operations:
 
     def test_validate_invalid_yaml(self) -> None:
         """Test validation fails for invalid YAML."""
-        validator = ProtocolContractValidator()
+        validator = ServiceContractValidator()
 
         invalid_yaml = """
 name: test
@@ -79,7 +79,7 @@ version: [invalid yaml structure
 
     def test_validate_missing_required_fields(self) -> None:
         """Test validation fails when required fields are missing."""
-        validator = ProtocolContractValidator()
+        validator = ServiceContractValidator()
 
         # Missing io_operations (required for effect contracts)
         incomplete_yaml = """
@@ -102,7 +102,7 @@ output_model: ModelOutput
 
     def test_validate_contract_with_warnings(self) -> None:
         """Test validation produces warnings for non-critical issues."""
-        validator = ProtocolContractValidator()
+        validator = ServiceContractValidator()
 
         # Valid but with warnings (short description)
         contract_yaml = """
@@ -131,7 +131,7 @@ io_operations:
 
     def test_validate_model_compliance_valid(self) -> None:
         """Test model compliance validation with valid model code."""
-        validator = ProtocolContractValidator()
+        validator = ServiceContractValidator()
 
         model_code = """
 from pydantic import BaseModel, Field
@@ -171,7 +171,7 @@ io_operations:
 
     def test_validate_model_compliance_missing_models(self) -> None:
         """Test model compliance fails when models are missing."""
-        validator = ProtocolContractValidator()
+        validator = ServiceContractValidator()
 
         model_code = """
 from pydantic import BaseModel
@@ -207,7 +207,7 @@ io_operations:
 
     def test_validate_model_naming_conventions(self) -> None:
         """Test ONEX naming convention validation."""
-        validator = ProtocolContractValidator()
+        validator = ServiceContractValidator()
 
         # Model without proper naming
         model_code = """
@@ -248,7 +248,7 @@ io_operations:
         Pydantic validation. This test verifies the validator handles the contract
         type correctly even when validation fails.
         """
-        validator = ProtocolContractValidator()
+        validator = ServiceContractValidator()
 
         compute_yaml = """
 name: DataTransformerCompute
@@ -279,7 +279,7 @@ algorithm:
 
     def test_score_calculation(self) -> None:
         """Test score calculation with various violations and warnings."""
-        validator = ProtocolContractValidator()
+        validator = ServiceContractValidator()
 
         # Contract with multiple issues
         problematic_yaml = """
@@ -310,7 +310,7 @@ io_operations:
 
     def test_validate_empty_yaml(self) -> None:
         """Test validation of empty YAML content."""
-        validator = ProtocolContractValidator()
+        validator = ServiceContractValidator()
 
         result = validator.validate_contract_yaml("", "effect")
 
@@ -320,7 +320,7 @@ io_operations:
 
     def test_validate_syntax_error_in_model(self) -> None:
         """Test validation handles Python syntax errors in model code."""
-        validator = ProtocolContractValidator()
+        validator = ServiceContractValidator()
 
         invalid_python = """
 class InvalidClass
@@ -353,7 +353,7 @@ io_operations:
 
     def test_validate_contract_file(self, tmp_path) -> None:
         """Test validation of contract from file path."""
-        validator = ProtocolContractValidator()
+        validator = ServiceContractValidator()
 
         # Create temporary contract file
         contract_file = tmp_path / "test_contract.yaml"
@@ -384,7 +384,7 @@ io_operations:
 
     def test_validate_nonexistent_file(self) -> None:
         """Test validation fails for nonexistent file."""
-        validator = ProtocolContractValidator()
+        validator = ServiceContractValidator()
 
         result = validator.validate_contract_file(
             "/nonexistent/path/contract.yaml", "effect"
@@ -396,7 +396,7 @@ io_operations:
 
     def test_suggestions_provided(self) -> None:
         """Test that validation provides helpful suggestions."""
-        validator = ProtocolContractValidator()
+        validator = ServiceContractValidator()
 
         # Use a contract name without the Effect suffix to trigger naming suggestions
         contract_yaml = """
@@ -425,7 +425,7 @@ io_operations:
 
     def test_model_with_any_type_warning(self) -> None:
         """Test that using Any type generates warnings."""
-        validator = ProtocolContractValidator()
+        validator = ServiceContractValidator()
 
         model_code = """
 from typing import Any

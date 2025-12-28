@@ -353,18 +353,18 @@ class TestNodesInternalNotExposed:
         """Verify internal models are NOT in __all__.
 
         Per nodes/__init__.py comment, these are internal:
-        - ModelConflictResolver
+        - UtilConflictResolver
         - ModelDependencyGraph
         - ModelLoadBalancer
-        - ModelStreamingWindow
+        - UtilStreamingWindow
         - ModelAction
         - ModelWorkflowStep
         """
         internal_models = {
-            "ModelConflictResolver",
+            "UtilConflictResolver",
             "ModelDependencyGraph",
             "ModelLoadBalancer",
-            "ModelStreamingWindow",
+            "UtilStreamingWindow",
             "ModelAction",
             "ModelWorkflowStep",
         }

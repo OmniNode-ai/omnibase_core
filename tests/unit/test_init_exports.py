@@ -27,7 +27,7 @@ class TestInitExports:
         expected_exports = {
             "EnumCoreErrorCode",
             "ModelOnexError",
-            "ModelValidationSuite",
+            "ServiceValidationSuite",
             "ModelValidationResult",
             "validate_all",
             "validate_architecture",
@@ -162,12 +162,12 @@ class TestInitValidationExports:
         assert ModelValidationResult is not None
         assert isinstance(ModelValidationResult, type)
 
-    def test_init_model_validation_suite_export(self):
-        """Test that ModelValidationSuite is properly exported."""
-        from omnibase_core import ModelValidationSuite
+    def test_init_service_validation_suite_export(self):
+        """Test that ServiceValidationSuite is properly exported."""
+        from omnibase_core import ServiceValidationSuite
 
-        assert ModelValidationSuite is not None
-        assert isinstance(ModelValidationSuite, type)
+        assert ServiceValidationSuite is not None
+        assert isinstance(ServiceValidationSuite, type)
 
     def test_init_validate_all_export(self):
         """Test that validate_all function is properly exported."""

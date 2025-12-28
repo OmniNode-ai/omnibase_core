@@ -650,9 +650,9 @@ class TestCliEdgeCases:
         runner = CliRunner()
 
         # Mock the validation suite to raise a ModelOnexError
-        # Note: ModelValidationSuite is imported lazily inside the validate function
+        # Note: ServiceValidationSuite is imported lazily inside the validate function
         with patch(
-            "omnibase_core.validation.cli.ModelValidationSuite"
+            "omnibase_core.services.service_validation_suite.ServiceValidationSuite"
         ) as mock_suite_class:
             mock_suite = MagicMock()
             mock_suite.run_all_validations.side_effect = ModelOnexError(
@@ -675,9 +675,9 @@ class TestCliEdgeCases:
         runner = CliRunner()
 
         # Mock the validation suite to raise an unexpected error
-        # Note: ModelValidationSuite is imported lazily inside the validate function
+        # Note: ServiceValidationSuite is imported lazily inside the validate function
         with patch(
-            "omnibase_core.validation.cli.ModelValidationSuite"
+            "omnibase_core.services.service_validation_suite.ServiceValidationSuite"
         ) as mock_suite_class:
             mock_suite = MagicMock()
             mock_suite.run_all_validations.side_effect = RuntimeError(

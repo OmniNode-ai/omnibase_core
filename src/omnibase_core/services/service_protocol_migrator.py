@@ -16,13 +16,12 @@ from omnibase_core.models.validation.model_migration_conflict_union import (
 )
 from omnibase_core.models.validation.model_migration_plan import ModelMigrationPlan
 from omnibase_core.models.validation.model_migration_result import ModelMigrationResult
-
-from .migration_types import (
+from omnibase_core.validation.migration_types import (
     TypedDictMigrationDuplicateConflictDict,
     TypedDictMigrationNameConflictDict,
     TypedDictMigrationStepDict,
 )
-from .validation_utils import (
+from omnibase_core.validation.validation_utils import (
     ModelProtocolInfo,
     ModelValidationResult,
     determine_repository_name,
@@ -31,7 +30,7 @@ from .validation_utils import (
 )
 
 
-class ProtocolMigrator:
+class ServiceProtocolMigrator:
     """
     Safe migration of protocols to omnibase_spi with conflict detection.
 
@@ -40,6 +39,31 @@ class ProtocolMigrator:
     - Conflict detection and resolution
     - Automatic import updates
     - Rollback capabilities
+
+    Thread Safety:
+        This class is conditionally thread-safe. Instance attributes (source_path,
+        spi_path, source_repository) are set once during __init__ and never
+        modified. Methods like create_migration_plan() are safe for concurrent
+        read operations. However, execute_migration() performs filesystem write
+        operations (file copy, delete) that are not atomic and could conflict
+        if multiple threads attempt to migrate the same protocols simultaneously.
+        For migration execution, use a single thread or external coordination.
+        See docs/guides/THREADING.md for more details.
+
+    Example:
+        >>> from omnibase_core.services import ServiceProtocolMigrator
+        >>> migrator = ServiceProtocolMigrator(
+        ...     source_path=".", spi_path="../omnibase_spi"
+        ... )
+        >>> plan = migrator.create_migration_plan()
+        >>> if plan.can_proceed():
+        ...     result = migrator.execute_migration(plan, dry_run=True)
+
+    .. note::
+        Previously named ``ProtocolMigrator``. Renamed in v0.4.0
+        to follow ONEX naming conventions (OMN-1071). The ``Protocol``
+        prefix is reserved for typing.Protocol interfaces; ``Service``
+        prefix indicates a stateful service class.
     """
 
     def __init__(self, source_path: str = ".", spi_path: str = "../omnibase_spi"):
@@ -404,9 +428,8 @@ class ProtocolMigrator:
                         references.append(str(py_file))
                         break  # Only add each file once
 
-            except (
-                Exception
-            ):  # fallback-ok: skip unreadable files during reference scanning
+            except (OSError, UnicodeDecodeError):
+                # Skip files that can't be read (permission denied, encoding errors, etc.)
                 continue
 
         return references

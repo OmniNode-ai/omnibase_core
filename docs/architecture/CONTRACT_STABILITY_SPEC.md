@@ -305,7 +305,7 @@ CONTRACT_UNSUPPORTED_CAPABILITY: Capability not available (capabilities[0])
 
 > **Note (v0.3.6+)**: Protocol definitions are now Core-native in `omnibase_core.protocols`.
 
-- Defines `ProtocolContractValidator` interface (Core-native)
+- Defines `ServiceContractValidator` interface (Core-native)
 - Implements validation logic
 
 ### omnibase_spi

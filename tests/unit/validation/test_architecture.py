@@ -12,12 +12,12 @@ from omnibase_core.models.validation.model_duplication_report import (
     ModelDuplicationReport,
 )
 from omnibase_core.models.validation.model_protocol_info import ModelProtocolInfo
+from omnibase_core.services.service_protocol_auditor import ServiceProtocolAuditor
 from omnibase_core.validation.architecture import (
     ModelCounter,
     validate_architecture_directory,
     validate_one_model_per_file,
 )
-from omnibase_core.validation.auditor_protocol import ModelProtocolAuditor
 
 
 @pytest.mark.unit
@@ -710,34 +710,34 @@ class ModelPost(BaseModel):
 
 
 # =============================================================================
-# ModelProtocolAuditor Tests
+# ServiceProtocolAuditor Tests
 # =============================================================================
 
 
 @pytest.mark.unit
-class TestModelProtocolAuditor:
-    """Test ModelProtocolAuditor class."""
+class TestServiceProtocolAuditor:
+    """Test ServiceProtocolAuditor class."""
 
     def test_init_with_valid_path(self, tmp_path: Path):
         """Test initialization with valid repository path."""
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
         assert auditor.repository_path == tmp_path
         assert auditor.repository_name is not None
 
     def test_init_with_invalid_path(self):
         """Test initialization with invalid path raises ExceptionConfigurationError."""
         with pytest.raises(ExceptionConfigurationError):
-            ModelProtocolAuditor("/nonexistent/path/that/does/not/exist")
+            ServiceProtocolAuditor("/nonexistent/path/that/does/not/exist")
 
     def test_init_with_current_directory(self):
         """Test initialization with current directory."""
-        auditor = ModelProtocolAuditor(".")
+        auditor = ServiceProtocolAuditor(".")
         assert auditor.repository_path.exists()
         assert isinstance(auditor.repository_name, str)
 
     def test_check_current_repository_no_src(self, tmp_path: Path):
         """Test check_current_repository when no src/ directory exists."""
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
         result = auditor.check_current_repository()
 
         assert isinstance(result, ModelAuditResult)
@@ -764,7 +764,7 @@ class ProtocolExample(Protocol):
 """
         )
 
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
         result = auditor.check_current_repository()
 
         assert isinstance(result, ModelAuditResult)
@@ -789,7 +789,7 @@ class ProtocolDuplicate(Protocol):
 """
             )
 
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
         result = auditor.check_current_repository()
 
         assert isinstance(result, ModelAuditResult)
@@ -797,7 +797,7 @@ class ProtocolDuplicate(Protocol):
 
     def test_find_local_duplicates(self, tmp_path: Path):
         """Test _find_local_duplicates method."""
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
 
         # Create protocol infos with same signature
         protocol1 = ModelProtocolInfo(
@@ -828,7 +828,7 @@ class ProtocolDuplicate(Protocol):
 
     def test_find_local_duplicates_no_duplicates(self, tmp_path: Path):
         """Test _find_local_duplicates with no duplicates."""
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
 
         protocol1 = ModelProtocolInfo(
             name="Protocol1",
@@ -854,7 +854,7 @@ class ProtocolDuplicate(Protocol):
 
     def test_check_naming_conventions(self, tmp_path: Path):
         """Test _check_naming_conventions method."""
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
 
         # Protocol with correct naming
         good_protocol = ModelProtocolInfo(
@@ -887,7 +887,7 @@ class ProtocolDuplicate(Protocol):
 
     def test_check_naming_conventions_all_valid(self, tmp_path: Path):
         """Test _check_naming_conventions with all valid protocols."""
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
 
         protocol = ModelProtocolInfo(
             name="ProtocolExample",
@@ -905,7 +905,7 @@ class ProtocolDuplicate(Protocol):
 
     def test_check_protocol_quality_empty_protocol(self, tmp_path: Path):
         """Test _check_protocol_quality with empty protocol."""
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
 
         empty_protocol = ModelProtocolInfo(
             name="ProtocolEmpty",
@@ -924,7 +924,7 @@ class ProtocolDuplicate(Protocol):
 
     def test_check_protocol_quality_too_many_methods(self, tmp_path: Path):
         """Test _check_protocol_quality with overly complex protocol."""
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
 
         # Create protocol with 25 methods
         complex_protocol = ModelProtocolInfo(
@@ -945,7 +945,7 @@ class ProtocolDuplicate(Protocol):
 
     def test_check_protocol_quality_good_protocol(self, tmp_path: Path):
         """Test _check_protocol_quality with well-designed protocol."""
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
 
         good_protocol = ModelProtocolInfo(
             name="ProtocolGood",
@@ -962,7 +962,7 @@ class ProtocolDuplicate(Protocol):
 
     def test_check_against_spi_invalid_path(self, tmp_path: Path):
         """Test check_against_spi with invalid SPI path."""
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
 
         with pytest.raises(ExceptionConfigurationError):
             auditor.check_against_spi("/nonexistent/spi/path")
@@ -977,7 +977,7 @@ class ProtocolDuplicate(Protocol):
         repo_dir = tmp_path / "repo"
         repo_dir.mkdir()
 
-        auditor = ModelProtocolAuditor(str(repo_dir))
+        auditor = ServiceProtocolAuditor(str(repo_dir))
         report = auditor.check_against_spi(str(spi_dir))
 
         assert isinstance(report, ModelDuplicationReport)
@@ -1017,7 +1017,7 @@ class ProtocolExample(Protocol):
 """
         )
 
-        auditor = ModelProtocolAuditor(str(repo_dir))
+        auditor = ServiceProtocolAuditor(str(repo_dir))
         report = auditor.check_against_spi(str(spi_dir))
 
         assert isinstance(report, ModelDuplicationReport)
@@ -1026,7 +1026,7 @@ class ProtocolExample(Protocol):
 
     def test_analyze_cross_repo_duplicates_exact(self, tmp_path: Path):
         """Test _analyze_cross_repo_duplicates with exact duplicates."""
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
 
         source_protocol = ModelProtocolInfo(
             name="ProtocolA",
@@ -1058,7 +1058,7 @@ class ProtocolExample(Protocol):
 
     def test_analyze_cross_repo_duplicates_name_conflict(self, tmp_path: Path):
         """Test _analyze_cross_repo_duplicates with name conflicts."""
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
 
         source_protocol = ModelProtocolInfo(
             name="ProtocolA",
@@ -1090,7 +1090,7 @@ class ProtocolExample(Protocol):
 
     def test_analyze_cross_repo_duplicates_no_conflicts(self, tmp_path: Path):
         """Test _analyze_cross_repo_duplicates with no conflicts."""
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
 
         source_protocol = ModelProtocolInfo(
             name="ProtocolA",
@@ -1121,7 +1121,7 @@ class ProtocolExample(Protocol):
 
     def test_has_duplicate_in_spi_exact_match(self, tmp_path: Path):
         """Test _has_duplicate_in_spi with exact signature match."""
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
 
         protocol = ModelProtocolInfo(
             name="ProtocolA",
@@ -1147,7 +1147,7 @@ class ProtocolExample(Protocol):
 
     def test_has_duplicate_in_spi_name_match(self, tmp_path: Path):
         """Test _has_duplicate_in_spi with name match."""
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
 
         protocol = ModelProtocolInfo(
             name="ProtocolA",
@@ -1173,7 +1173,7 @@ class ProtocolExample(Protocol):
 
     def test_has_duplicate_in_spi_no_match(self, tmp_path: Path):
         """Test _has_duplicate_in_spi with no match."""
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
 
         protocol = ModelProtocolInfo(
             name="ProtocolA",
@@ -1199,7 +1199,7 @@ class ProtocolExample(Protocol):
 
     def test_print_audit_summary(self, tmp_path: Path):
         """Test print_audit_summary method."""
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
 
         result = ModelAuditResult(
             success=False,
@@ -1216,7 +1216,7 @@ class ProtocolExample(Protocol):
 
     def test_print_duplication_report(self, tmp_path: Path):
         """Test print_duplication_report method."""
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
 
         protocol = ModelProtocolInfo(
             name="ProtocolA",
@@ -1269,7 +1269,7 @@ class ProtocolExample(Protocol):
         # Add a file (should be skipped)
         (omni_root / "readme.txt").write_text("test")
 
-        auditor = ModelProtocolAuditor(str(repo1))
+        auditor = ServiceProtocolAuditor(str(repo1))
         results = auditor.audit_ecosystem(omni_root)
 
         assert isinstance(results, dict)
@@ -1282,7 +1282,7 @@ class ProtocolExample(Protocol):
         empty_root = tmp_path / "empty_root"
         empty_root.mkdir()
 
-        auditor = ModelProtocolAuditor(str(tmp_path))
+        auditor = ServiceProtocolAuditor(str(tmp_path))
         results = auditor.audit_ecosystem(empty_root)
 
         assert isinstance(results, dict)

@@ -38,7 +38,7 @@ from omnibase_core.models.core.model_tool_specification import ModelToolSpecific
 from omnibase_core.models.core.model_yaml_schema_object import ModelYamlSchemaObject
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.utils.util_contract_loader import ProtocolContractLoader
+from omnibase_core.utils.util_contract_loader import UtilContractLoader
 
 # ===== Test Fixtures =====
 
@@ -143,27 +143,27 @@ def empty_contract_yaml(tmp_path: Path) -> Path:
 
 
 @pytest.fixture
-def contract_loader(tmp_path: Path) -> ProtocolContractLoader:
-    """Create a ProtocolContractLoader instance for testing."""
-    return ProtocolContractLoader(base_path=tmp_path, cache_enabled=True)
+def contract_loader(tmp_path: Path) -> UtilContractLoader:
+    """Create a UtilContractLoader instance for testing."""
+    return UtilContractLoader(base_path=tmp_path, cache_enabled=True)
 
 
 @pytest.fixture
-def contract_loader_no_cache(tmp_path: Path) -> ProtocolContractLoader:
-    """Create a ProtocolContractLoader with caching disabled."""
-    return ProtocolContractLoader(base_path=tmp_path, cache_enabled=False)
+def contract_loader_no_cache(tmp_path: Path) -> UtilContractLoader:
+    """Create a UtilContractLoader with caching disabled."""
+    return UtilContractLoader(base_path=tmp_path, cache_enabled=False)
 
 
 # ===== Constructor Tests =====
 
 
 @pytest.mark.unit
-class TestProtocolContractLoaderInit:
-    """Test ProtocolContractLoader.__init__ constructor."""
+class TestUtilContractLoaderInit:
+    """Test UtilContractLoader.__init__ constructor."""
 
     def test_init_with_cache_enabled(self, tmp_path: Path) -> None:
         """Test initialization with caching enabled."""
-        loader = ProtocolContractLoader(base_path=tmp_path, cache_enabled=True)
+        loader = UtilContractLoader(base_path=tmp_path, cache_enabled=True)
 
         assert loader.state.cache_enabled is True
         assert loader.state.base_path == tmp_path
@@ -172,14 +172,14 @@ class TestProtocolContractLoaderInit:
 
     def test_init_with_cache_disabled(self, tmp_path: Path) -> None:
         """Test initialization with caching disabled."""
-        loader = ProtocolContractLoader(base_path=tmp_path, cache_enabled=False)
+        loader = UtilContractLoader(base_path=tmp_path, cache_enabled=False)
 
         assert loader.state.cache_enabled is False
         assert loader.state.base_path == tmp_path
 
     def test_init_with_absolute_path(self, tmp_path: Path) -> None:
         """Test initialization with absolute path."""
-        loader = ProtocolContractLoader(base_path=tmp_path)
+        loader = UtilContractLoader(base_path=tmp_path)
 
         assert loader.state.base_path.is_absolute()
         assert loader.state.base_path == tmp_path
@@ -187,14 +187,14 @@ class TestProtocolContractLoaderInit:
     def test_init_with_relative_path(self) -> None:
         """Test initialization with relative path."""
         relative_path = Path("relative/path")
-        loader = ProtocolContractLoader(base_path=relative_path)
+        loader = UtilContractLoader(base_path=relative_path)
 
         # Should store the path as-is, resolution happens later
         assert loader.state.base_path == relative_path
 
     def test_init_default_cache_enabled(self, tmp_path: Path) -> None:
         """Test that cache is enabled by default."""
-        loader = ProtocolContractLoader(base_path=tmp_path)
+        loader = UtilContractLoader(base_path=tmp_path)
 
         assert loader.state.cache_enabled is True
 
@@ -204,10 +204,10 @@ class TestProtocolContractLoaderInit:
 
 @pytest.mark.unit
 class TestLoadContract:
-    """Test ProtocolContractLoader.load_contract method."""
+    """Test UtilContractLoader.load_contract method."""
 
     def test_load_valid_contract(
-        self, contract_loader: ProtocolContractLoader, valid_contract_yaml: Path
+        self, contract_loader: UtilContractLoader, valid_contract_yaml: Path
     ) -> None:
         """Test loading a valid contract file."""
         result = contract_loader.load_contract(valid_contract_yaml)
@@ -221,7 +221,7 @@ class TestLoadContract:
         assert result.contract_version.patch == 0
 
     def test_load_minimal_contract(
-        self, contract_loader: ProtocolContractLoader, minimal_contract_yaml: Path
+        self, contract_loader: UtilContractLoader, minimal_contract_yaml: Path
     ) -> None:
         """Test loading minimal contract with defaults."""
         result = contract_loader.load_contract(minimal_contract_yaml)
@@ -235,7 +235,7 @@ class TestLoadContract:
         assert result.node_type == EnumNodeType.COMPUTE_GENERIC  # Default
 
     def test_load_complex_contract(
-        self, contract_loader: ProtocolContractLoader, complex_contract_yaml: Path
+        self, contract_loader: UtilContractLoader, complex_contract_yaml: Path
     ) -> None:
         """Test loading complex contract with many fields."""
         result = contract_loader.load_contract(complex_contract_yaml)
@@ -249,7 +249,7 @@ class TestLoadContract:
         assert len(result.dependencies) == 2
 
     def test_load_nonexistent_file(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test loading non-existent contract file."""
         nonexistent = tmp_path / "nonexistent.yaml"
@@ -261,7 +261,7 @@ class TestLoadContract:
         assert "Contract file not found" in exc_info.value.message
 
     def test_load_contract_caching(
-        self, contract_loader: ProtocolContractLoader, valid_contract_yaml: Path
+        self, contract_loader: UtilContractLoader, valid_contract_yaml: Path
     ) -> None:
         """Test that contracts are cached after first load."""
         # First load
@@ -273,7 +273,7 @@ class TestLoadContract:
         assert str(valid_contract_yaml) in contract_loader.state.loaded_contracts
 
     def test_load_contract_resolves_path(
-        self, contract_loader: ProtocolContractLoader, valid_contract_yaml: Path
+        self, contract_loader: UtilContractLoader, valid_contract_yaml: Path
     ) -> None:
         """Test that contract path is resolved to absolute."""
         # Even if we pass a relative-ish path, it should be resolved
@@ -285,7 +285,7 @@ class TestLoadContract:
         assert resolved_path in contract_loader.state.loaded_contracts
 
     def test_load_malformed_yaml_raises_error(
-        self, contract_loader: ProtocolContractLoader, malformed_yaml: Path
+        self, contract_loader: UtilContractLoader, malformed_yaml: Path
     ) -> None:
         """Test loading malformed YAML raises appropriate error."""
         with pytest.raises(ModelOnexError) as exc_info:
@@ -298,7 +298,7 @@ class TestLoadContract:
         ]
 
     def test_load_empty_contract_raises_error(
-        self, contract_loader: ProtocolContractLoader, empty_contract_yaml: Path
+        self, contract_loader: UtilContractLoader, empty_contract_yaml: Path
     ) -> None:
         """Test loading empty contract file raises error."""
         with pytest.raises(ModelOnexError) as exc_info:
@@ -315,10 +315,10 @@ class TestLoadContract:
 
 @pytest.mark.unit
 class TestLoadContractFile:
-    """Test ProtocolContractLoader._load_contract_file method."""
+    """Test UtilContractLoader._load_contract_file method."""
 
     def test_load_contract_file_basic(
-        self, contract_loader: ProtocolContractLoader, valid_contract_yaml: Path
+        self, contract_loader: UtilContractLoader, valid_contract_yaml: Path
     ) -> None:
         """Test basic file loading."""
         result = contract_loader._load_contract_file(valid_contract_yaml)
@@ -328,7 +328,7 @@ class TestLoadContractFile:
         assert result["node_name"] == "TestNode"
 
     def test_load_contract_file_caching(
-        self, contract_loader: ProtocolContractLoader, valid_contract_yaml: Path
+        self, contract_loader: UtilContractLoader, valid_contract_yaml: Path
     ) -> None:
         """Test that file loading uses cache when enabled."""
         # First load - should cache
@@ -347,7 +347,7 @@ class TestLoadContractFile:
 
     def test_load_contract_file_no_cache(
         self,
-        contract_loader_no_cache: ProtocolContractLoader,
+        contract_loader_no_cache: UtilContractLoader,
         valid_contract_yaml: Path,
     ) -> None:
         """Test file loading with caching disabled."""
@@ -358,7 +358,7 @@ class TestLoadContractFile:
         assert len(contract_loader_no_cache.state.contract_cache) == 0
 
     def test_load_contract_file_updates_on_modification(
-        self, contract_loader: ProtocolContractLoader, valid_contract_yaml: Path
+        self, contract_loader: UtilContractLoader, valid_contract_yaml: Path
     ) -> None:
         """Test that cache is invalidated when file is modified."""
         # First load
@@ -382,7 +382,7 @@ tool_specification:
         assert result2["node_name"] == "ModifiedNode"
 
     def test_load_contract_file_yaml_error(
-        self, contract_loader: ProtocolContractLoader, malformed_yaml: Path
+        self, contract_loader: UtilContractLoader, malformed_yaml: Path
     ) -> None:
         """Test YAML parsing error handling."""
         with pytest.raises(ModelOnexError) as exc_info:
@@ -395,7 +395,7 @@ tool_specification:
         ]
 
     def test_load_contract_file_io_error(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test I/O error handling."""
         nonexistent = tmp_path / "nonexistent.yaml"
@@ -409,7 +409,7 @@ tool_specification:
         ]
 
     def test_load_contract_file_unicode_content(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test loading file with Unicode content."""
         unicode_file = tmp_path / "unicode.yaml"
@@ -432,10 +432,10 @@ tool_specification:
 
 @pytest.mark.unit
 class TestParseContractContent:
-    """Test ProtocolContractLoader._parse_contract_content method."""
+    """Test UtilContractLoader._parse_contract_content method."""
 
     def test_parse_minimal_contract(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test parsing minimal contract content."""
         raw_content = {
@@ -454,7 +454,7 @@ class TestParseContractContent:
         assert result.contract_version.patch == 0
 
     def test_parse_contract_with_version(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test parsing contract with explicit version."""
         raw_content = {
@@ -470,7 +470,7 @@ class TestParseContractContent:
         assert result.contract_version.patch == 4
 
     def test_parse_contract_with_node_type(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test parsing contract with node type."""
         raw_content = {
@@ -484,7 +484,7 @@ class TestParseContractContent:
         assert result.node_type == EnumNodeType.EFFECT_GENERIC
 
     def test_parse_contract_node_type_case_insensitive(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test parsing contract with lowercase node type."""
         raw_content = {
@@ -499,7 +499,7 @@ class TestParseContractContent:
         assert result.node_type == EnumNodeType.REDUCER_GENERIC
 
     def test_parse_contract_with_dependencies(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test parsing contract with dependencies."""
         raw_content = {
@@ -517,7 +517,7 @@ class TestParseContractContent:
         assert len(result.dependencies) == 2
 
     def test_parse_contract_invalid_version_type(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test parsing contract with invalid version type."""
         raw_content = {
@@ -532,7 +532,7 @@ class TestParseContractContent:
         assert result.contract_version.major == 1
 
     def test_parse_contract_missing_node_name(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test parsing contract without node_name."""
         raw_content = {
@@ -545,7 +545,7 @@ class TestParseContractContent:
         assert result.node_name == ""
 
     def test_parse_contract_invalid_tool_spec_type(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test parsing contract with invalid tool specification type."""
         raw_content = {
@@ -559,7 +559,7 @@ class TestParseContractContent:
         assert result.tool_specification.main_tool_class == "DefaultToolNode"
 
     def test_parse_contract_with_non_dict_dependencies(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test parsing contract with string dependencies list."""
         raw_content = {
@@ -579,11 +579,9 @@ class TestParseContractContent:
 
 @pytest.mark.unit
 class TestConvertContractContentToDict:
-    """Test ProtocolContractLoader._convert_contract_content_to_dict method."""
+    """Test UtilContractLoader._convert_contract_content_to_dict method."""
 
-    def test_convert_basic_contract(
-        self, contract_loader: ProtocolContractLoader
-    ) -> None:
+    def test_convert_basic_contract(self, contract_loader: UtilContractLoader) -> None:
         """Test converting basic contract content to dict."""
         content = ModelContractContent(
             contract_version=ModelSemVer(major=1, minor=2, patch=3),
@@ -609,7 +607,7 @@ class TestConvertContractContentToDict:
         assert result["tool_specification"]["main_tool_class"] == "TestClass"
 
     def test_convert_preserves_version_numbers(
-        self, contract_loader: ProtocolContractLoader
+        self, contract_loader: UtilContractLoader
     ) -> None:
         """Test that version numbers are preserved accurately."""
         content = ModelContractContent(
@@ -638,10 +636,10 @@ class TestConvertContractContentToDict:
 
 @pytest.mark.unit
 class TestValidateContractStructure:
-    """Test ProtocolContractLoader._validate_contract_structure method."""
+    """Test UtilContractLoader._validate_contract_structure method."""
 
     def test_validate_valid_contract(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test validation of valid contract structure."""
         content = ModelContractContent(
@@ -662,7 +660,7 @@ class TestValidateContractStructure:
         contract_loader._validate_contract_structure(content, tmp_path)
 
     def test_validate_missing_node_name(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test validation fails for missing node_name."""
         content = ModelContractContent(
@@ -686,7 +684,7 @@ class TestValidateContractStructure:
         assert "node_name" in exc_info.value.message
 
     def test_validate_missing_tool_class(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test validation fails for missing main_tool_class."""
         content = ModelContractContent(
@@ -715,10 +713,10 @@ class TestValidateContractStructure:
 
 @pytest.mark.unit
 class TestValidateYamlContentSecurity:
-    """Test ProtocolContractLoader._validate_yaml_content_security method."""
+    """Test UtilContractLoader._validate_yaml_content_security method."""
 
     def test_validate_safe_yaml_content(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test validation of safe YAML content."""
         safe_content = """
@@ -730,7 +728,7 @@ tool_specification:
         contract_loader._validate_yaml_content_security(safe_content, tmp_path)
 
     def test_validate_yaml_size_limit(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test validation rejects excessively large YAML."""
         # Create content larger than 10MB limit
@@ -743,7 +741,7 @@ tool_specification:
         assert "too large" in exc_info.value.message
 
     def test_validate_detects_python_object_instantiation(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test detection of !!python constructor."""
         suspicious_content = """
@@ -755,7 +753,7 @@ malicious: !!python/object/apply:os.system
         contract_loader._validate_yaml_content_security(suspicious_content, tmp_path)
 
     def test_validate_detects_eval(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test detection of eval() function."""
         suspicious_content = """
@@ -766,7 +764,7 @@ code: eval('malicious code')
         contract_loader._validate_yaml_content_security(suspicious_content, tmp_path)
 
     def test_validate_detects_exec(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test detection of exec() function."""
         suspicious_content = """
@@ -777,7 +775,7 @@ code: exec('malicious code')
         contract_loader._validate_yaml_content_security(suspicious_content, tmp_path)
 
     def test_validate_detects_import(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test detection of __import__ function."""
         suspicious_content = """
@@ -788,7 +786,7 @@ code: __import__('os')
         contract_loader._validate_yaml_content_security(suspicious_content, tmp_path)
 
     def test_validate_nesting_depth_safe(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test validation allows reasonable nesting depth."""
         # Create nested structure within limits (< 50 levels)
@@ -798,7 +796,7 @@ code: __import__('os')
         contract_loader._validate_yaml_content_security(nested_content, tmp_path)
 
     def test_validate_nesting_depth_excessive(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test validation rejects excessive nesting depth."""
         # Create deeply nested structure (> 50 levels)
@@ -811,7 +809,7 @@ code: __import__('os')
         assert "nesting too deep" in exc_info.value.message
 
     def test_validate_nesting_depth_brackets(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test nesting depth validation with square brackets."""
         # Test with array nesting
@@ -823,7 +821,7 @@ code: __import__('os')
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_FAILED
 
     def test_validate_mixed_nesting(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test nesting depth with mixed brackets and braces."""
         # Mix of [ and { to test nesting counter
@@ -835,7 +833,7 @@ code: __import__('os')
         assert exc_info.value.error_code == EnumCoreErrorCode.VALIDATION_FAILED
 
     def test_validate_unicode_content(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test validation allows Unicode content."""
         unicode_content = """
@@ -848,7 +846,7 @@ tool_specification:
         contract_loader._validate_yaml_content_security(unicode_content, tmp_path)
 
     def test_validate_binary_tag_detection(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test detection of !!binary tag."""
         suspicious_content = """
@@ -860,7 +858,7 @@ data: !!binary |
         contract_loader._validate_yaml_content_security(suspicious_content, tmp_path)
 
     def test_validate_map_constructor(
-        self, contract_loader: ProtocolContractLoader, tmp_path: Path
+        self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test detection of !!map constructor."""
         suspicious_content = """
@@ -880,7 +878,7 @@ class TestContractLoaderIntegration:
     """Integration tests for complete contract loading workflow."""
 
     def test_full_workflow_valid_contract(
-        self, contract_loader: ProtocolContractLoader, valid_contract_yaml: Path
+        self, contract_loader: UtilContractLoader, valid_contract_yaml: Path
     ) -> None:
         """Test complete workflow for valid contract."""
         result = contract_loader.load_contract(valid_contract_yaml)
@@ -896,7 +894,7 @@ class TestContractLoaderIntegration:
 
     def test_multiple_contracts_loaded(
         self,
-        contract_loader: ProtocolContractLoader,
+        contract_loader: UtilContractLoader,
         valid_contract_yaml: Path,
         complex_contract_yaml: Path,
     ) -> None:
@@ -909,7 +907,7 @@ class TestContractLoaderIntegration:
         assert len(contract_loader.state.loaded_contracts) == 2
 
     def test_error_handling_preserves_state(
-        self, contract_loader: ProtocolContractLoader, malformed_yaml: Path
+        self, contract_loader: UtilContractLoader, malformed_yaml: Path
     ) -> None:
         """Test that errors don't corrupt loader state."""
         initial_cache_size = len(contract_loader.state.contract_cache)

@@ -164,6 +164,13 @@ poetry run python scripts/validation/check_stub_implementations.py
 # Validate protocol exports
 poetry run python scripts/check_protocol_exports.py
 
+# Validate class naming conventions (OMN-1071)
+poetry run python scripts/validate_class_naming.py
+# With fix suggestions:
+poetry run python scripts/validate_class_naming.py --fix-suggestions
+# JSON output for CI:
+poetry run python scripts/validate_class_naming.py --json
+
 # Check for circular imports
 poetry run python scripts/validation/test_circular_imports.py
 
@@ -212,6 +219,9 @@ poetry run python scripts/check_node_purity.py
 
 # Check transport imports
 poetry run python scripts/check_transport_imports.py
+
+# Check class naming conventions
+poetry run python scripts/validate_class_naming.py
 ```
 
 ---
