@@ -148,13 +148,35 @@ class ServiceValidationSuite:
 
         return results
 
+    def get_validators(self) -> dict[str, str]:
+        """Return available validators and their descriptions.
+
+        Returns a dictionary mapping validator names to their descriptions.
+        This method is preferable for programmatic usage as it returns
+        structured data that can be formatted as needed.
+
+        Returns:
+            dict[str, str]: Mapping of validator names to descriptions.
+
+        Example:
+            >>> suite = ServiceValidationSuite()
+            >>> validators = suite.get_validators()
+            >>> for name, desc in validators.items():
+            ...     print(f"{name}: {desc}")
+        """
+        return {name: info["description"] for name, info in self.validators.items()}
+
     def list_validators(self) -> None:
-        """List all available validators."""
+        """List all available validators (CLI output).
+
+        Prints formatted output suitable for CLI usage. For programmatic
+        access, use :meth:`get_validators` instead which returns a dict.
+        """
         print("Available Validation Tools:")
         print("=" * 40)
 
-        for name, info in self.validators.items():
-            print(f"  {name:<15} - {info['description']}")
+        for name, description in self.get_validators().items():
+            print(f"  {name:<15} - {description}")
 
         print("\nUsage Examples:")
         print("  python -m omnibase_core.validation.cli architecture")
