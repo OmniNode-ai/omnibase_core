@@ -121,13 +121,13 @@ class ModelTypedProperty(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
+        except ModelOnexError:
+            raise  # Re-raise without double-wrapping
         except (
             AttributeError,
             ValueError,
             TypeError,
-            KeyError,
             ValidationError,
-            ModelOnexError,
         ) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,

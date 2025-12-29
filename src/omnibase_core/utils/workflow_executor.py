@@ -1112,7 +1112,7 @@ async def _execute_parallel(
         # The wave structure ensures correct dependency ordering while keeping
         # v1.0 execution simple and deterministic.
         results: list[
-            tuple[ModelWorkflowStep, ModelAction | None, int, Exception | None]
+            tuple[ModelWorkflowStep, ModelAction | None, int, BaseException | None]
         ] = []
         for step in ready_steps:
             result = await execute_step(step, wave_context)

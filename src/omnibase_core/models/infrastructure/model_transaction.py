@@ -70,19 +70,10 @@ class ModelTransaction:
                     await rollback_func()
                 else:
                     rollback_func()
-            except asyncio.CancelledError as e:
-                # Re-raise to honor task cancellation
-                emit_log_event(
-                    LogLevel.WARNING,
-                    f"Rollback operation cancelled: {e!s}",
-                    {
-                        "transaction_id": str(self.transaction_id),
-                        "error": str(e),
-                        "error_type": type(e).__name__,
-                    },
-                )
-                raise
-            except Exception as e:  # boundary-ok: rollback cleanup must be resilient - attempt all operations even if some fail
+            except BaseException as e:
+                if isinstance(e, (asyncio.CancelledError, KeyboardInterrupt, SystemExit)):
+                    raise  # Re-raise system signals and cancellation
+                # cleanup-ok: must not propagate exceptions during cleanup - attempt all operations even if some fail
                 emit_log_event(
                     LogLevel.ERROR,
                     f"Rollback operation failed during cleanup: {e!s}",
