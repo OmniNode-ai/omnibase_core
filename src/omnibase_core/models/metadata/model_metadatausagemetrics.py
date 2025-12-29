@@ -93,19 +93,22 @@ class ModelMetadataUsageMetrics(BaseModel):
 
     def get_metadata(self) -> TypedDictUsageMetadata:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata: TypedDictUsageMetadata = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    if (field == "tags" and isinstance(value, list)) or (
-                        field == "metadata" and isinstance(value, dict)
-                    ):
-                        metadata[field] = value  # type: ignore[literal-required]
-                    else:
-                        metadata[field] = str(value)  # type: ignore[literal-required]
-        return metadata
+        result: TypedDictUsageMetadata = {
+            "metadata": {
+                "total_invocations": str(self.total_invocations),
+                "success_count": str(self.success_count),
+                "failure_count": str(self.failure_count),
+                "average_execution_time_ms": str(self.average_execution_time_ms),
+                "peak_memory_usage_mb": str(self.peak_memory_usage_mb),
+                "success_rate": str(self.get_success_rate()),
+                "last_invocation": (
+                    self.last_invocation.isoformat()
+                    if self.last_invocation is not None
+                    else ""
+                ),
+            },
+        }
+        return result
 
     def set_metadata(self, metadata: TypedDictUsageMetadata) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""

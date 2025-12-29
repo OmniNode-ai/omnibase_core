@@ -155,16 +155,19 @@ class ModelNodeConnectionSettings(BaseModel):
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return metadata  # type: ignore[return-value]
+        result: TypedDictMetadataDict = {}
+        # Pack connection settings into metadata dict
+        result["metadata"] = {
+            "endpoint": self.endpoint,
+            "port": self.port,
+            "protocol": self.protocol.value if self.protocol else None,
+            "has_endpoint": self.has_endpoint(),
+            "has_port": self.has_port(),
+            "is_fully_configured": self.is_fully_configured(),
+            "is_secure_protocol": self.is_secure_protocol(),
+            "connection_url": self.get_connection_url(),
+        }
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""

@@ -348,19 +348,17 @@ class ModelMetadataNodeAnalytics(BaseModel):
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata: TypedDictMetadataDict = TypedDictMetadataDict()
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    if (field == "tags" and isinstance(value, list)) or (
-                        field == "metadata" and isinstance(value, dict)
-                    ):
-                        metadata[field] = value  # type: ignore[literal-required]
-                    else:
-                        metadata[field] = str(value)  # type: ignore[literal-required]
-        return metadata
+        result: TypedDictMetadataDict = {}
+        if self.collection_display_name:
+            result["name"] = self.collection_display_name
+        result["metadata"] = {
+            "collection_id": str(self.collection_id),
+            "collection_purpose": self.collection_purpose.value,
+            "total_nodes": self.total_nodes,
+            "health_score": self.health_score,
+            "documentation_coverage": self.documentation_coverage,
+        }
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""

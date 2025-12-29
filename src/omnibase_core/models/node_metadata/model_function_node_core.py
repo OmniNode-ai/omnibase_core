@@ -211,16 +211,28 @@ class ModelFunctionNodeCore(BaseModel):
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return metadata  # type: ignore[return-value]
+        result: TypedDictMetadataDict = {}
+        # Map actual fields to TypedDictMetadataDict structure
+        if self.name:
+            result["name"] = self.name
+        if self.description:
+            result["description"] = self.description
+        if self.version:
+            result["version"] = self.version
+        # Pack additional fields into metadata
+        result["metadata"] = {
+            "function_id": str(self.function_id),
+            "function_type": self.function_type.value,
+            "status": self.status.value,
+            "parameters": self.parameters,
+            "return_type": self.return_type.value if self.return_type else None,
+            "module": self.module,
+            "file_path": str(self.file_path) if self.file_path else None,
+            "line_number": self.line_number,
+            "is_active": self.is_active(),
+            "has_type_annotations": self.has_type_annotations(),
+        }
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""

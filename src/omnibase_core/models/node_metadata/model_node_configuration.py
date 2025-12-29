@@ -256,16 +256,18 @@ class ModelNodeConfiguration(BaseModel):
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return metadata  # type: ignore[return-value]
+        result: TypedDictMetadataDict = {}
+        # Pack configuration data into metadata dict
+        result["metadata"] = {
+            "execution_summary": self.execution.get_execution_summary(),
+            "resources_summary": self.resources.get_resource_summary(),
+            "features_summary": self.features.get_feature_summary(),
+            "connection_summary": self.connection.get_connection_summary(),
+            "is_production_ready": self.is_production_ready(),
+            "is_performance_optimized": self.is_performance_optimized(),
+            "has_custom_settings": self.has_custom_settings(),
+        }
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""

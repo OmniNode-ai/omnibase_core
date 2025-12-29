@@ -242,16 +242,25 @@ class ModelFunctionNodePerformance(BaseModel):
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return metadata  # type: ignore[return-value]
+        result: TypedDictMetadataDict = {}
+        # Pack performance data into metadata dict
+        result["metadata"] = {
+            "complexity": self.complexity.value,
+            "estimated_runtime": (
+                self.estimated_runtime.value if self.estimated_runtime else None
+            ),
+            "memory_usage": self.memory_usage.value if self.memory_usage else None,
+            "cyclomatic_complexity": self.cyclomatic_complexity,
+            "lines_of_code": self.lines_of_code,
+            "execution_count": self.execution_count,
+            "success_rate": self.success_rate,
+            "average_execution_time_ms": self.average_execution_time_ms,
+            "memory_usage_mb": self.memory_usage_mb,
+            "is_high_performance": self.is_high_performance(),
+            "is_complex_function": self.is_complex_function(),
+            "performance_score": self.get_performance_score(),
+        }
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""

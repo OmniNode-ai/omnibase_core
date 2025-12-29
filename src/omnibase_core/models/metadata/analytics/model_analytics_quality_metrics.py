@@ -170,16 +170,17 @@ class ModelAnalyticsQualityMetrics(BaseModel):
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return metadata  # type: ignore[return-value]
+        result: TypedDictMetadataDict = {}
+        # Analytics models don't have standard name/description/version fields
+        # Pack all quality metrics into metadata
+        result["metadata"] = {
+            "health_score": self.health_score,
+            "success_rate": self.success_rate,
+            "documentation_coverage": self.documentation_coverage,
+            "health_level": self.get_health_level(),
+            "composite_quality_score": self.calculate_composite_quality_score(),
+        }
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""

@@ -140,16 +140,18 @@ class ModelTypedMetrics[SimpleValueType](BaseModel):
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata = {}
-        # Include common metadata fields
-        for field in ["name", "description", "version", "tags", "metadata"]:
-            if hasattr(self, field):
-                value = getattr(self, field)
-                if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return metadata  # type: ignore[return-value]
+        result: TypedDictMetadataDict = {}
+        if self.metric_display_name:
+            result["name"] = self.metric_display_name
+        if self.description:
+            result["description"] = self.description
+        if self.unit or self.value is not None:
+            result["metadata"] = {
+                "metric_id": str(self.metric_id),
+                "value": self.value,
+                "unit": self.unit,
+            }
+        return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
