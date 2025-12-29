@@ -164,7 +164,7 @@ def is_protocol_file(file_path: Path) -> bool:
         content_sample = file_path.read_text(encoding="utf-8", errors="ignore")[:1000]
         return "class Protocol" in content_sample
 
-    except Exception as e:  # fallback-ok: protocol discovery should be fault-tolerant
+    except (OSError, ValueError) as e:
         logger.debug(f"Error checking protocol file {file_path}: {e}")
         return False
 

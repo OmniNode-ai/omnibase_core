@@ -845,13 +845,13 @@ async def _execute_sequential(
                 continue
             # For other error actions (retry, compensate), continue for now
 
-        except BaseException as e:
+        except Exception as e:
+            # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             # Broad exception catch justified for workflow orchestration:
             # - Workflow steps execute external code with unknown exception types
             # - Production workflows require resilient error handling
             # - All failures logged with full traceback for debugging
             # - Failed steps tracked; execution continues per error_action config
-            # Uses BaseException to catch system-level exceptions (KeyboardInterrupt, etc.)
             failed_steps.append(str(step.step_id))
             logging.exception(
                 f"Workflow '{workflow_definition.workflow_metadata.workflow_name}' step '{step.step_name}' ({step.step_id}) failed with unexpected error: {e}"
@@ -985,7 +985,7 @@ async def _execute_parallel(
     async def execute_step(
         step: ModelWorkflowStep,
         wave_context: TypedDictWorkflowContext,
-    ) -> tuple[ModelWorkflowStep, ModelAction | None, int, BaseException | None]:
+    ) -> tuple[ModelWorkflowStep, ModelAction | None, int, Exception | None]:
         """
         Execute a single workflow step asynchronously.
 
@@ -1041,8 +1041,8 @@ async def _execute_parallel(
             # redundant JSON serialization - OMN-670: Performance optimization)
             action, payload_size = _create_action_for_step(step, workflow_id)
             return (step, action, payload_size, None)
-        except BaseException as e:  # fallback-ok: parallel execution returns error in tuple for caller handling
-            # Uses BaseException to catch all exceptions in parallel execution context
+        except Exception as e:  # fallback-ok: parallel execution returns error in tuple for caller handling
+            # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             return (step, None, 0, e)
 
     # For parallel execution, we execute in waves based on dependencies
@@ -1112,7 +1112,7 @@ async def _execute_parallel(
         # The wave structure ensures correct dependency ordering while keeping
         # v1.0 execution simple and deterministic.
         results: list[
-            tuple[ModelWorkflowStep, ModelAction | None, int, BaseException | None]
+            tuple[ModelWorkflowStep, ModelAction | None, int, Exception | None]
         ] = []
         for step in ready_steps:
             result = await execute_step(step, wave_context)

@@ -102,7 +102,7 @@ class MixinServiceRegistry:
                     "🔔 Service registry event handlers registered successfully!",
                 )
 
-            except (ValueError, RuntimeError, AttributeError) as e:
+            except (AttributeError, RuntimeError, ValueError) as e:
                 logger.exception(f"❌ Failed to setup registry event handlers: {e}")
                 import traceback
 
@@ -221,7 +221,7 @@ class MixinServiceRegistry:
                 {"correlation_id": correlation_id},
             )
 
-        except (ValueError, RuntimeError, ModelOnexError) as e:
+        except (RuntimeError, ValueError, ModelOnexError) as e:
             logger.exception(f"❌ Failed to send discovery request: {e}")
 
             traceback.print_exc()
@@ -282,13 +282,13 @@ class MixinServiceRegistry:
                 for callback in self.discovery_callbacks:
                     try:
                         callback("tool_discovered", entry)
-                    except BaseException as e:  # Catch-all: callbacks are user-provided, can raise anything
+                    except BaseException as e:  # catch-all-ok: callbacks are user-provided, can raise anything
                         logger.exception(f"Discovery callback error: {e}")
             else:
                 # Update existing entry
                 self.service_registry[node_id_str].update_last_seen()
 
-        except (ValueError, TypeError, AttributeError, KeyError) as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             logger.exception(f"❌ Error handling node start event: {e}")
 
     def _handle_node_stop(self, envelope: "ModelEventEnvelope[Any]") -> None:
@@ -313,10 +313,10 @@ class MixinServiceRegistry:
                     for callback in self.discovery_callbacks:
                         try:
                             callback("tool_offline", self.service_registry[node_id_str])
-                        except BaseException as e:  # Catch-all: callbacks are user-provided, can raise anything
+                        except BaseException as e:  # catch-all-ok: callbacks are user-provided, can raise anything
                             logger.exception(f"Discovery callback error: {e}")
 
-        except (ValueError, TypeError, AttributeError, KeyError) as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             logger.exception(f"❌ Error handling node stop event: {e}")
 
     def _handle_node_failure(self, envelope: "ModelEventEnvelope[Any]") -> None:
@@ -384,7 +384,7 @@ class MixinServiceRegistry:
                 {"target_node_id": node_id, "correlation_id": correlation_id},
             )
 
-        except (ValueError, RuntimeError, ModelOnexError) as e:
+        except (RuntimeError, ValueError, ModelOnexError) as e:
             logger.exception(
                 f"❌ Failed to send introspection request to {node_id}: {e}",
             )
@@ -425,7 +425,7 @@ class MixinServiceRegistry:
                         },
                     )
 
-        except (ValueError, TypeError, AttributeError, KeyError) as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             logger.exception(f"❌ Error handling introspection response: {e}")
 
     def _handle_discovery_request(self, envelope: "ModelEventEnvelope[Any]") -> None:
@@ -510,7 +510,7 @@ class MixinServiceRegistry:
                         "⚠️ Cannot send discovery response - no event bus available",
                     )
 
-        except (ValueError, RuntimeError, ModelOnexError) as e:
+        except (RuntimeError, ValueError, ModelOnexError) as e:
             logger.exception(f"❌ Error handling discovery request: {e}")
 
     def get_registered_tools(
@@ -594,7 +594,7 @@ class MixinServiceRegistry:
         """Cleanup and reschedule next cleanup."""
         try:
             self.cleanup_stale_entries()
-        except (ValueError, RuntimeError) as e:
+        except (RuntimeError, ValueError) as e:
             logger.exception(f"❌ Error during cleanup: {e}")
         finally:
             if self.registry_started:

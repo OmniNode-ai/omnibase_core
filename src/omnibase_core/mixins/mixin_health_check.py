@@ -190,7 +190,7 @@ class MixinHealthCheck:
                     {"check_name": check_func.__name__, "status": result.status},
                 )
 
-            except BaseException as e:  # Catch-all: health checks can raise anything
+            except BaseException as e:  # catch-all-ok: health checks can raise anything
                 emit_log_event(
                     LogLevel.ERROR,
                     f"❌ Health check failed: {check_func.__name__}",
@@ -372,7 +372,7 @@ class MixinHealthCheck:
 
             except (
                 BaseException
-            ) as e:  # Catch-all: async health checks can raise anything
+            ) as e:  # catch-all-ok: async health checks can raise anything
                 emit_log_event(
                     LogLevel.ERROR,
                     f"Async health check failed: {check_name}",

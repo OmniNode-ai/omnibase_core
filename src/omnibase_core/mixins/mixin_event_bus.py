@@ -302,7 +302,7 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
 
             self._log_info(f"Published event: {event_type}", event_type)
 
-        except (ValueError, RuntimeError, ModelOnexError) as e:
+        except (RuntimeError, ValueError, ModelOnexError) as e:
             self._log_error(
                 f"Failed to publish event: {e!r}",
                 "publish_event",
@@ -356,7 +356,7 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
                     context={"bus_type": type(bus).__name__, "event_type": event_type},
                 )
             self._log_info(f"Published completion event: {event_type}", event_type)
-        except (ValueError, RuntimeError, ModelOnexError) as e:
+        except (RuntimeError, ValueError, ModelOnexError) as e:
             self._log_error(
                 f"Failed to publish completion event: {e!r}",
                 "publish_completion",
@@ -414,7 +414,7 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
 
             self._log_info(f"Published completion event: {event_type}", event_type)
 
-        except (ValueError, RuntimeError, ModelOnexError) as e:
+        except (RuntimeError, ValueError, ModelOnexError) as e:
             self._log_error(
                 f"Failed to publish completion event: {e!r}",
                 "publish_completion",
@@ -465,7 +465,7 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
                 f"coordination.{node_name}.execute",
             ]
 
-        except (ValueError, RuntimeError, KeyError, AttributeError, OSError) as e:
+        except (AttributeError, KeyError, OSError, RuntimeError, ValueError) as e:
             self._log_error(
                 f"Failed to get event patterns: {e!r}",
                 "event_patterns",
@@ -514,7 +514,7 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
             parts[-1] = "complete"
             return ".".join(parts)
 
-        except (ValueError, TypeError, IndexError) as e:
+        except (IndexError, TypeError, ValueError) as e:
             self._log_error(
                 f"Failed to determine completion event type: {e!r}",
                 "completion_event_type",
@@ -570,7 +570,7 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
             for subscription in self.event_subscriptions:
                 try:
                     bus.unsubscribe(subscription)
-                except (ValueError, RuntimeError, KeyError) as e:
+                except (KeyError, RuntimeError, ValueError) as e:
                     self._log_error(
                         f"Failed to unsubscribe: {e!r}",
                         "event_listener",
@@ -589,7 +589,7 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
         try:
             if self._has_event_bus():
                 self.start_event_listener()
-        except (ValueError, RuntimeError) as e:
+        except (RuntimeError, ValueError) as e:
             self._log_error(
                 f"Failed to auto-start listener: {e!r}",
                 "auto_start",
@@ -629,7 +629,7 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
                     subscription = bus.subscribe(handler, event_type=pattern)
                     self.event_subscriptions.append(subscription)
                     self._log_info(f"Subscribed to pattern: {pattern}", pattern)
-                except (ValueError, RuntimeError, TypeError) as e:
+                except (RuntimeError, TypeError, ValueError) as e:
                     self._log_error(
                         f"Failed to subscribe to {pattern}: {e!r}",
                         "subscribe",
@@ -640,7 +640,7 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
             while self.stop_event is not None and not self.stop_event.wait(1.0):
                 pass
 
-        except (ValueError, RuntimeError) as e:
+        except (RuntimeError, ValueError) as e:
             self._log_error(
                 f"Event listener loop failed: {e!r}",
                 "event_listener",
@@ -702,7 +702,7 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
                     str(event.event_type),
                 )
 
-            except BaseException as e:  # Catch-all: process() can raise anything
+            except Exception as e:  # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
                 self._log_error(f"Event processing failed: {e!r}", pattern, error=e)
 
                 # Publish error completion event
@@ -716,7 +716,7 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
                         tags=["error", "failed"],
                     )
                     self.publish_completion_event(completion_event_type, error_data)
-                except (ValueError, RuntimeError, ModelOnexError) as publish_error:
+                except (RuntimeError, ValueError, ModelOnexError) as publish_error:
                     self._log_error(
                         f"Failed to publish error event: {publish_error!r}",
                         "publish_error",
@@ -753,7 +753,7 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
             result = input_state_class(**event_data)
             return cast("InputStateT", result)
 
-        except (ValueError, TypeError, KeyError) as e:
+        except (KeyError, TypeError, ValueError) as e:
             self._log_error(
                 f"Failed to convert event to input state: {e!r}",
                 "event_conversion",

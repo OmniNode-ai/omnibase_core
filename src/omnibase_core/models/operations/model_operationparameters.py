@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 
+from omnibase_core.decorators.error_handling import standard_error_handling
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.operations.model_operation_parameters_base import (
@@ -33,6 +34,7 @@ class ModelOperationParameters(BaseModel):
 
     # Utility methods (NOT protocol implementations)
 
+    @standard_error_handling("Operation parameters execution")
     async def execute(self) -> object:
         """
         Execute or validate operation parameters.
@@ -40,8 +42,6 @@ class ModelOperationParameters(BaseModel):
         Returns:
             Dictionary containing execution results and parameter validation status.
         """
-        # Simple dict creation - no exception handling needed as these operations
-        # cannot raise the exceptions that were previously caught
         validation_results = {
             "success": True,
             "parameters": self.parameters,

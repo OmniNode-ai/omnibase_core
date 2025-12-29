@@ -63,6 +63,9 @@ class ModelTransaction:
         """Rollback transaction - execute all rollback operations."""
         self.state = EnumTransactionState.ROLLED_BACK
 
+        # Track cancellation to re-raise after completing all rollback operations
+        cancelled = False
+
         # Execute rollback operations in reverse order
         for rollback_func in reversed(self.rollback_operations):
             try:
@@ -71,13 +74,21 @@ class ModelTransaction:
                 else:
                     rollback_func()
             except asyncio.CancelledError:
-                # Always honor task cancellation - must propagate to respect async semantics
-                raise
+                # Note cancellation but continue with remaining rollback operations
+                # to maintain transaction consistency. Re-raise after all operations.
+                cancelled = True
+                emit_log_event(
+                    LogLevel.WARNING,
+                    "Rollback operation cancelled - continuing with remaining operations",
+                    {
+                        "transaction_id": str(self.transaction_id),
+                    },
+                )
             except (KeyboardInterrupt, SystemExit, GeneratorExit):
                 # Re-raise system signals - these must not be suppressed
                 raise
-            except Exception as e:
-                # cleanup-ok: must not propagate exceptions during cleanup - attempt all operations even if some fail
+            except Exception as e:  # catch-all-ok: cleanup must not fail
+                # Must not propagate exceptions during cleanup - attempt all operations
                 emit_log_event(
                     LogLevel.ERROR,
                     f"Rollback operation failed during cleanup: {e!s}",
@@ -87,3 +98,7 @@ class ModelTransaction:
                         "error_type": type(e).__name__,
                     },
                 )
+
+        # After all rollback operations complete, honor any pending cancellation
+        if cancelled:
+            raise asyncio.CancelledError

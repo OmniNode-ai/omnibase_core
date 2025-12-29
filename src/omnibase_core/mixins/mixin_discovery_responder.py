@@ -230,7 +230,7 @@ class MixinDiscoveryResponder:
             # Acknowledge message receipt only after successful handling
             await message.ack()
 
-        except (ValueError, RuntimeError, ModelOnexError) as e:
+        except (RuntimeError, ValueError, ModelOnexError) as e:
             # Log non-fatal discovery errors for observability
             from omnibase_core.logging.structured import (
                 emit_log_event_sync as emit_log_event,
@@ -331,7 +331,7 @@ class MixinDiscoveryResponder:
             # Generate discovery response (updates metrics on success)
             await self._send_discovery_response(onex_event, request_metadata)
 
-        except (ValueError, RuntimeError, ModelOnexError) as e:
+        except (RuntimeError, ValueError, ModelOnexError) as e:
             # Log non-fatal discovery errors for observability
             emit_log_event(
                 LogLevel.WARNING,
@@ -564,7 +564,7 @@ class MixinDiscoveryResponder:
                 )  # Use actual publish time, not request time
                 self._discovery_stats["responses_sent"] += 1
 
-        except (ValueError, RuntimeError, ModelOnexError) as e:
+        except (RuntimeError, ValueError, ModelOnexError) as e:
             # Log discovery errors for observability
             emit_log_event(
                 LogLevel.WARNING,

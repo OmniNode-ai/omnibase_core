@@ -550,7 +550,7 @@ class ModelCustomConnectionProperties(BaseModel):
                 if hasattr(self, key):
                     setattr(self, key, value)
             return True
-        except (AttributeError, ValueError, TypeError, KeyError, OSError) as e:
+        except (AttributeError, ValueError, TypeError, KeyError) as e:
             raise ModelOnexError(
                 message=f"Operation failed: {e}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -562,7 +562,7 @@ class ModelCustomConnectionProperties(BaseModel):
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation
             return True
-        except (AttributeError, ValueError, TypeError, KeyError, OSError) as e:
+        except (AttributeError, ValueError, TypeError, KeyError) as e:
             raise ModelOnexError(
                 message=f"Operation failed: {e}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,

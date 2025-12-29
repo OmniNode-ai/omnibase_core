@@ -586,7 +586,7 @@ class MixinEffectExecution:
         except ModelOnexError:
             transaction_state = EnumTransactionState.ROLLED_BACK
             raise
-        except BaseException as e:  # Catch-all: top-level error boundary wraps all non-ModelOnexError into structured error
+        except BaseException as e:  # catch-all-ok: top-level error boundary wraps all non-ModelOnexError into structured error
             transaction_state = EnumTransactionState.ROLLED_BACK
             raise ModelOnexError(
                 message=f"Effect execution failed: {e!s}",
@@ -667,7 +667,7 @@ class MixinEffectExecution:
                 )
         except ModelOnexError:
             raise
-        except (ValueError, TypeError, KeyError, AttributeError) as e:
+        except (AttributeError, KeyError, TypeError, ValueError) as e:
             raise ModelOnexError(
                 message=f"Failed to parse io_config: {e!s}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
@@ -1223,7 +1223,7 @@ class MixinEffectExecution:
 
                 return result, retry_count
 
-            except Exception as e:  # Catch-all: retry loop catches operation failures; KeyboardInterrupt/SystemExit propagate
+            except Exception as e:  # catch-all-ok: retry loop catches operation failures; KeyboardInterrupt/SystemExit propagate
                 # Increment retry_count to track failed attempts
                 # retry_count represents "number of failed attempts before success or final failure"
                 # - First attempt fails: retry_count becomes 1
@@ -1401,7 +1401,7 @@ class MixinEffectExecution:
             result = await handler.execute(resolved_context)
         except (
             BaseException
-        ) as exec_error:  # Catch-all: handlers can raise any exception type
+        ) as exec_error:  # catch-all-ok: handlers can raise any exception type
             raise ModelOnexError(
                 message=f"Handler execution failed for {handler_protocol}: {exec_error!s}",
                 error_code=EnumCoreErrorCode.HANDLER_EXECUTION_ERROR,
@@ -1579,7 +1579,7 @@ class MixinEffectExecution:
 
             except ModelOnexError:
                 raise
-            except (ValueError, KeyError, TypeError, AttributeError, IndexError) as e:
+            except (AttributeError, IndexError, KeyError, TypeError, ValueError) as e:
                 raise ModelOnexError(
                     message=f"Field extraction failed for {output_name}: {e!s}",
                     error_code=EnumCoreErrorCode.OPERATION_FAILED,
@@ -1639,7 +1639,7 @@ class MixinEffectExecution:
             try:
                 self.container.get_service(protocol_name)
                 registration_status[protocol_name] = True
-            except BaseException:  # Catch-all: probe for handler registration status, any failure means not registered
+            except BaseException:  # catch-all-ok: probe for handler registration status, any failure means not registered
                 registration_status[protocol_name] = False
 
         return registration_status

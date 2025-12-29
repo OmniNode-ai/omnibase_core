@@ -139,7 +139,7 @@ class MixinIntrospectionPublisher:
                 tags=tags,
                 health_endpoint=health_endpoint,
             )
-        except (ValueError, AttributeError, TypeError) as e:
+        except (AttributeError, TypeError, ValueError) as e:
             # fallback-ok: Introspection failures use fallback data with logging
             return self._create_fallback_introspection_data(e)
         except (
@@ -384,7 +384,7 @@ class MixinIntrospectionPublisher:
             try:
                 event_bus.publish(envelope)
                 return
-            except (ValueError, RuntimeError, ModelOnexError) as e:
+            except (RuntimeError, ValueError, ModelOnexError) as e:
                 if attempt == max_retries - 1:
                     context = ModelLogContext(
                         calling_module=_COMPONENT_NAME,

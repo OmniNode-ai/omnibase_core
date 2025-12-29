@@ -88,7 +88,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             self._register_signal_handlers()
             self._log_info("Executor started successfully")
             await self._executor_event_loop()
-        except BaseException as e:  # Catch-all for cleanup during executor startup
+        except BaseException as e:  # catch-all-ok: cleanup during executor startup
             self._log_error(f"Failed to start executor: {e}")
             await self.stop_executor_mode()
             raise
@@ -119,12 +119,12 @@ class MixinNodeExecutor(MixinEventDrivenNode):
                     callback()
                 except (
                     BaseException
-                ) as e:  # Catch-all: callbacks are user-provided, can raise anything
+                ) as e:  # catch-all-ok: callbacks are user-provided, can raise anything
                     self._log_error(f"Shutdown callback failed: {e}")
             self.cleanup_event_handlers()
             self._executor_running = False
             self._log_info("Executor stopped successfully")
-        except BaseException as e:  # Catch-all for cleanup during executor shutdown
+        except BaseException as e:  # catch-all-ok: cleanup during executor shutdown
             self._log_error(f"Error during executor shutdown: {e}")
             self._executor_running = False
 
@@ -191,7 +191,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             self._log_info(
                 f"Tool invocation completed successfully in {execution_time_ms}ms"
             )
-        except (ValueError, TypeError, RuntimeError, ModelOnexError) as e:
+        except (RuntimeError, TypeError, ValueError, ModelOnexError) as e:
             execution_time_ms = int((time.time() - start_time) * 1000)
             response_event = ModelToolResponseEvent.create_error_response(
                 correlation_id=correlation_id,

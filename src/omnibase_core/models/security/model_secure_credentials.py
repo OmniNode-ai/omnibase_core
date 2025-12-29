@@ -243,7 +243,7 @@ class ModelSecureCredentials(BaseModel, ABC):
                             setattr(self, field_name, SecretStr(env_value))
                         else:
                             setattr(self, field_name, env_value)
-                except (AttributeError, ValueError, TypeError) as e:
+                except (ValueError, TypeError, ValidationError) as e:
                     # Log the specific error for debugging while adding to issues
                     logger.warning(
                         f"Failed to load environment variable {env_var} for field {field_name}: {e!s}",
@@ -437,7 +437,7 @@ class ModelSecureCredentials(BaseModel, ABC):
         if has_env_vars(env_prefix):
             try:
                 return cls.load_from_env(env_prefix)
-            except (ValidationError, ValueError, KeyError, AttributeError) as e:
+            except (ValidationError, ValueError, KeyError) as e:
                 logger.debug(
                     f"Failed to load credentials with primary prefix {env_prefix}: {e!s}",
                     extra={"env_prefix": env_prefix, "error": str(e)},
@@ -448,7 +448,7 @@ class ModelSecureCredentials(BaseModel, ABC):
             if has_env_vars(fallback_prefix):
                 try:
                     return cls.load_from_env(fallback_prefix)
-                except (ValidationError, ValueError, KeyError, AttributeError) as e:
+                except (ValidationError, ValueError, KeyError) as e:
                     logger.debug(
                         f"Failed to load credentials with fallback prefix {fallback_prefix}: {e!s}",
                         extra={"fallback_prefix": fallback_prefix, "error": str(e)},

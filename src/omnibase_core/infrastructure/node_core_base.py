@@ -300,7 +300,7 @@ class NodeCoreBase(ABC):
 
         except (
             BaseException
-        ) as e:  # Catch-all: cleanup must not raise to prevent resource leaks
+        ) as e:  # catch-all-ok: cleanup must not raise to prevent resource leaks
             self.state["status"] = "cleanup_failed"
 
             emit_log_event(
@@ -464,7 +464,7 @@ class NodeCoreBase(ABC):
                     # Contract service doesn't have get_node_contract method - that's OK
                     pass
 
-        except BaseException as e:  # Catch-all: contract loading failure is not fatal, graceful degradation
+        except BaseException as e:  # catch-all-ok: contract loading failure is not fatal, graceful degradation
             # Contract loading failure is not fatal
             emit_log_event(
                 LogLevel.WARNING,
@@ -531,9 +531,7 @@ class NodeCoreBase(ABC):
                     # Event bus doesn't have emit_event method - that's OK
                     pass
 
-        except (
-            BaseException
-        ) as e:  # Catch-all: event emission failure is not fatal, graceful degradation
+        except BaseException as e:  # catch-all-ok: event emission failure is not fatal, graceful degradation
             # Event emission failure is not fatal
             emit_log_event(
                 LogLevel.WARNING,
