@@ -261,7 +261,7 @@ affinity = ModelSessionAffinity(hash_algorithm="sha512")  # ✅ Strongest
 
 `MixinEventBus` has been refactored to use composition with dedicated data models, separating state management from behavior. This change improves thread safety, eliminates MRO conflicts, and enables proper serialization of runtime state.
 
-**Architectural Changes**:
+##### Architectural Changes
 
 | Aspect | Before (v0.4.x) | After (v0.5.x) |
 |--------|-----------------|----------------|
@@ -271,14 +271,14 @@ affinity = ModelSessionAffinity(hash_algorithm="sha512")  # ✅ Strongest
 | **Binding** | Implicit attribute assignment | Explicit binding methods required |
 | **Thread Safety** | Not guaranteed | Lock-protected operations in `ModelEventBusListenerHandle` |
 
-**New Data Models**:
+##### New Data Models
 
 | Model | Purpose | Thread Safety |
 |-------|---------|---------------|
 | `ModelEventBusRuntimeState` | Serializable binding state (node_name, contract_path, is_bound) | NOT thread-safe (mutable) |
 | `ModelEventBusListenerHandle` | Listener lifecycle management (thread, stop_event, subscriptions) | Thread-safe (lock-protected) |
 
-**Breaking Changes**:
+##### Breaking Changes
 
 1. **Explicit Binding Required**: You must call binding methods before publishing events:
    - `bind_event_bus(event_bus)` - Bind an event bus instance
@@ -290,7 +290,7 @@ affinity = ModelSessionAffinity(hash_algorithm="sha512")  # ✅ Strongest
 
 3. **Fail-Fast Semantics**: Publishing without binding raises `ModelOnexError` immediately.
 
-**Deprecation Timeline**:
+##### Deprecation Timeline
 
 | Version | Status | Changes |
 |---------|--------|---------|
@@ -300,9 +300,9 @@ affinity = ModelSessionAffinity(hash_algorithm="sha512")  # ✅ Strongest
 
 All legacy patterns marked with `TODO(v1.0)` comments in the source code will be cleaned up in v1.0.
 
-**Migration Guide**:
+##### Migration Guide
 
-#### 1. Update Initialization Pattern
+###### 1. Update Initialization Pattern
 
 ```python
 # Before (v0.4.x) - Implicit initialization
@@ -323,7 +323,7 @@ class MyNode(NodeCompute, MixinEventBus[MyInputState, MyOutputState]):
         self.bind_contract_path("/path/to/contract.yaml")
 ```
 
-#### 2. Update Event Bus Access
+###### 2. Update Event Bus Access
 
 ```python
 # Before (v0.4.x) - Direct attribute access
@@ -337,7 +337,7 @@ if self._has_event_bus():
 bus = self._require_event_bus()  # Raises ModelOnexError if not bound
 ```
 
-#### 3. Update Listener Management
+###### 3. Update Listener Management
 
 ```python
 # Before (v0.4.x) - Manual thread management
@@ -364,7 +364,7 @@ class MyNode(MixinEventBus[MyInputState, MyOutputState]):
             self.logger.warning("Listener did not stop within timeout")
 ```
 
-#### 4. Update State Access
+###### 4. Update State Access
 
 ```python
 # Before (v0.4.x) - Direct attribute access
@@ -376,7 +376,7 @@ node_name = self.get_node_name()  # Falls back to class name if not bound
 # Contract path is accessed internally by get_event_patterns()
 ```
 
-**Thread Safety Notes**:
+##### Thread Safety Notes
 
 | Method/Operation | Thread-Safe? | Notes |
 |-----------------|--------------|-------|
@@ -398,14 +398,14 @@ node_name = self.get_node_name()  # Falls back to class name if not bound
 - Default stop timeout is 5.0 seconds (configurable)
 - Listener threads are daemon threads (auto-terminate on main exit)
 
-**Resource Cleanup**:
+##### Resource Cleanup
 
 ```python
 # Call on shutdown to clean up all event bus resources
 self.dispose_event_bus_resources()
 ```
 
-**Quick Migration Checklist**:
+##### Quick Migration Checklist
 
 - [ ] Replace direct `self.event_bus = ...` with `self.bind_event_bus(...)`
 - [ ] Replace direct `self.node_name = ...` with `self.bind_node_name(...)`

@@ -104,18 +104,19 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         to avoid __init__ requirements in the mixin.
 
         Thread Safety:
-            The lock creation itself uses object.__setattr__ which is atomic
-            in CPython. If two threads race to create the lock, one will win
-            and the other will use the existing lock (checked via hasattr).
+            Uses __dict__.setdefault() for thread-safe lazy initialization.
+            This is atomic in CPython due to the GIL - only one lock will
+            ever be created even if multiple threads access this property
+            simultaneously.
 
         Returns:
             A threading.Lock instance unique to this mixin instance.
         """
         attr_name = "_mixin_event_bus_lock"
-        if not hasattr(self, attr_name):
-            lock = threading.Lock()
-            object.__setattr__(self, attr_name, lock)
-        return cast(threading.Lock, object.__getattribute__(self, attr_name))
+        # Use __dict__.setdefault() for thread-safe lazy initialization
+        # This is atomic in CPython due to the GIL
+        lock = self.__dict__.setdefault(attr_name, threading.Lock())
+        return lock
 
     @property
     def _event_bus_runtime_state(self) -> "ModelEventBusRuntimeState":
@@ -254,6 +255,14 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
 
         Note:
             This affects get_node_name() return value and all log output.
+
+        Empty String Handling:
+            Passing an empty string ("") is semantically equivalent to not
+            binding a node name at all. The get_node_name() method uses
+            `if state.node_name:` to check truthiness, so empty string
+            evaluates to False and triggers the class name fallback. If you
+            want to explicitly clear a previously bound node name, pass an
+            empty string.
         """
         self._event_bus_runtime_state.node_name = node_name
 
@@ -1253,6 +1262,13 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             if hasattr(input_state_class, "from_event"):
                 result: InputStateT = input_state_class.from_event(event)
                 return result
+            # Verify class is callable before invoking
+            if not callable(input_state_class):
+                raise ModelOnexError(
+                    message=f"Input state class {input_state_class} is not callable",
+                    error_code=EnumCoreErrorCode.VALIDATION_FAILED,
+                    context={"input_state_class": str(input_state_class)},
+                )
             # Create from event data directly
             return cast(InputStateT, input_state_class(**event_data))
 
