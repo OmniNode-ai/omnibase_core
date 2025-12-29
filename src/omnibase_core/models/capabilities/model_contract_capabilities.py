@@ -52,7 +52,7 @@ class ModelContractCapabilities(BaseModel):
     # attributes even when class identity differs (e.g., in pytest-xdist
     # parallel execution where model classes are imported in separate workers).
     # See CLAUDE.md section "Pydantic from_attributes=True for Value Objects".
-    model_config = ConfigDict(extra="forbid", from_attributes=True)
+    model_config = ConfigDict(extra="forbid", frozen=True, from_attributes=True)
 
     # ==========================================================================
     # Required Fields
