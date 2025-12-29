@@ -12,9 +12,7 @@ Thread Safety:
     synchronization.
 """
 
-import warnings
-
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.constants.constants_field_limits import (
     MAX_NAME_LENGTH,
@@ -100,58 +98,6 @@ class ModelEventBusRuntimeState(BaseModel):
         default=False,
         description="Whether the event bus is bound and ready for operations",
     )
-
-    @field_validator("node_name", mode="after")
-    @classmethod
-    def warn_empty_node_name(cls, v: str) -> str:
-        """Warn if node_name is empty string.
-
-        Empty string is semantically valid (means "use class name fallback"),
-        but may indicate unintentional misconfiguration. Issues a debug-level
-        warning for visibility without breaking functionality.
-
-        Args:
-            v: The node_name value to validate.
-
-        Returns:
-            The unmodified node_name value.
-        """
-        if v == "":
-            warnings.warn(
-                "ModelEventBusRuntimeState: node_name is empty string. "
-                "This is semantically valid (fallback to class name will be used), "
-                "but may indicate unintentional misconfiguration. "
-                "Consider binding a non-empty node_name for explicit identification.",
-                UserWarning,
-                stacklevel=2,
-            )
-        return v
-
-    @field_validator("contract_path", mode="after")
-    @classmethod
-    def warn_empty_contract_path(cls, v: str | None) -> str | None:
-        """Warn if contract_path is empty string.
-
-        Empty string is semantically treated as "no contract" (same as None),
-        but using an empty string may indicate unintentional misconfiguration.
-        Prefer using None explicitly when no contract is intended.
-
-        Args:
-            v: The contract_path value to validate.
-
-        Returns:
-            The unmodified contract_path value.
-        """
-        if v == "":
-            warnings.warn(
-                "ModelEventBusRuntimeState: contract_path is empty string. "
-                "Empty string is treated as 'no contract' (same as None), "
-                "but may indicate unintentional misconfiguration. "
-                "Consider using None explicitly when no contract is intended.",
-                UserWarning,
-                stacklevel=2,
-            )
-        return v
 
     def is_ready(self) -> bool:
         """Check if the event bus is bound and has a valid node name.

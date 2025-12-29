@@ -180,37 +180,39 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
     @property
     def _event_bus_runtime_state(self) -> "ModelEventBusRuntimeState":
         """Lazy accessor for runtime state - creates on first access."""
-        from omnibase_core.models.event_bus import ModelEventBusRuntimeState
-
-        attr_name = "_mixin_event_bus_state"
-        # TODO(v1.0): Remove hasattr fallback after migration stabilizes.
+        # TODO(v1.0): Remove lazy initialization fallback after migration stabilizes.
         # This fallback handles lazy initialization for mixins that don't call
         # bind_*() in __init__. It supports composition patterns where the mixin
         # is mixed into classes that may not initialize state immediately. Once
         # all consumers have migrated to explicit binding in __init__, this
         # fallback can be removed in favor of requiring bind_*() calls.
-        if not hasattr(self, attr_name):
+        try:
+            return cast(
+                "ModelEventBusRuntimeState",
+                object.__getattribute__(self, "_mixin_event_bus_state"),
+            )
+        except AttributeError:
+            from omnibase_core.models.event_bus import ModelEventBusRuntimeState
+
             state = ModelEventBusRuntimeState.create_unbound()
-            object.__setattr__(self, attr_name, state)
-        return cast(ModelEventBusRuntimeState, object.__getattribute__(self, attr_name))
+            object.__setattr__(self, "_mixin_event_bus_state", state)
+            return state
 
     @property
     def _event_bus_listener_handle(self) -> "ModelEventBusListenerHandle | None":
         """Lazy accessor for listener handle - may be None if never started."""
-        from omnibase_core.models.event_bus import ModelEventBusListenerHandle
-
-        attr_name = "_mixin_event_bus_listener"
-        # TODO(v1.0): Remove hasattr fallback after migration stabilizes.
+        # TODO(v1.0): Remove lazy initialization fallback after migration stabilizes.
         # This fallback returns None for uninitialized listener handle. The
         # listener handle is only created when start_event_listener() is called,
         # not during bind. Once all consumers have migrated to explicit lifecycle
         # management, this fallback can be removed.
-        if not hasattr(self, attr_name):
+        try:
+            return cast(
+                "ModelEventBusListenerHandle | None",
+                object.__getattribute__(self, "_mixin_event_bus_listener"),
+            )
+        except AttributeError:
             return None
-        return cast(
-            ModelEventBusListenerHandle | None,
-            object.__getattribute__(self, attr_name),
-        )
 
     # --- Binding Lock for Thread Safety Detection ---
 
@@ -252,6 +254,15 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         Note:
             The warning includes the method name and node name for easy
             identification of problematic code paths in logs.
+
+            This is a best-effort detection mechanism for debugging. It is NOT a
+            hard guarantee and may miss concurrent bind-after-publish scenarios
+            due to race conditions between the check and bind operations. The
+            _is_binding_locked() check and subsequent bind_*() operations are not
+            atomic, so Thread A could check the lock, Thread B could publish
+            (setting the lock), and then Thread A continues binding without
+            warning. Always call bind_*() in __init__ before sharing the instance
+            across threads.
         """
         if self._is_binding_locked():
             emit_log_event(
