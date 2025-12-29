@@ -154,13 +154,16 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
             # Emit initialization event
             self._emit_initialization_event()
 
+        except ModelOnexError as e:
+            # Re-raise ONEX errors without wrapping to preserve original error code/context
+            self._emit_initialization_failure(e)
+            raise
         except (
             ValueError,
             TypeError,
             AttributeError,
             RuntimeError,
-            OSError,
-            ModelOnexError,
+            OSError,  # FileNotFoundError/PermissionError are OSError subclasses
         ) as e:
             self._emit_initialization_failure(e)
             raise ModelOnexError(
@@ -363,7 +366,10 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
                 },
                 correlation_id=self.correlation_id,
             ) from e
-        except (TypeError, ValueError, RuntimeError, ModelOnexError) as e:
+        except ModelOnexError:
+            # Re-raise ONEX errors without wrapping to preserve original error code/context
+            raise
+        except (TypeError, ValueError, RuntimeError) as e:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Failed to resolve main tool: {e!s}",

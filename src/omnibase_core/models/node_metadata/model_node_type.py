@@ -778,12 +778,18 @@ class ModelNodeType(BaseModel):
                     setattr(self, key, value)
             return True
         except (
+            # AttributeError: setattr on read-only/frozen attributes
             AttributeError,
+            # TypeError: value type incompatible with attribute type
             TypeError,
+            # ValidationError: Pydantic validation failure (validate_assignment=True)
             ValidationError,
+            # ValueError: Pydantic validator rejects the value
             ValueError,
         ):
-            # fallback-ok: Metadata update failures should not break the system
+            # fallback-ok: Metadata update failures should not break the system.
+            # Each exception type is documented inline above - only catching
+            # exceptions that can actually be raised by setattr with Pydantic.
             return False
 
     def serialize(self) -> TypedDictSerializedModel:
