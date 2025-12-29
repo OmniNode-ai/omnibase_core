@@ -474,3 +474,195 @@ class TestArchitecturalInvariants:
             )
 
         assert "EFFECT cannot set result" in str(exc_info.value)
+
+    def test_effect_can_emit_events(self) -> None:
+        """Verify EFFECT nodes can emit events (positive case).
+
+        EFFECT nodes execute side effects and publish facts about those
+        interactions via events.
+        """
+        input_envelope_id = uuid4()
+        correlation_id = uuid4()
+
+        # Create EFFECT output with events (valid)
+        output = ModelHandlerOutput.for_effect(
+            input_envelope_id=input_envelope_id,
+            correlation_id=correlation_id,
+            handler_id="test-effect",
+            events=("mock_event",),
+        )
+
+        # Verify output was created successfully
+        assert output.node_kind == EnumNodeKind.EFFECT
+        assert output.result is None
+        assert len(output.events) == 1
+
+    def test_effect_cannot_emit_intents(self) -> None:
+        """Verify EFFECT nodes cannot emit intents.
+
+        Only ORCHESTRATOR nodes can emit intents. Effects are I/O boundaries
+        that emit events about external interactions.
+        """
+        input_envelope_id = uuid4()
+        correlation_id = uuid4()
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelHandlerOutput(
+                input_envelope_id=input_envelope_id,
+                correlation_id=correlation_id,
+                handler_id="test-effect",
+                node_kind=EnumNodeKind.EFFECT,
+                intents=("mock_intent",),  # VIOLATION: effects cannot emit intents
+            )
+
+        assert "EFFECT cannot emit intents" in str(exc_info.value)
+
+    def test_effect_cannot_emit_projections(self) -> None:
+        """Verify EFFECT nodes cannot emit projections.
+
+        Only REDUCER nodes can emit projections. Effects are I/O boundaries
+        that emit events about external interactions.
+        """
+        input_envelope_id = uuid4()
+        correlation_id = uuid4()
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelHandlerOutput(
+                input_envelope_id=input_envelope_id,
+                correlation_id=correlation_id,
+                handler_id="test-effect",
+                node_kind=EnumNodeKind.EFFECT,
+                projections=(
+                    "mock_projection",
+                ),  # VIOLATION: effects cannot emit projections
+            )
+
+        assert "EFFECT cannot emit projections" in str(exc_info.value)
+
+    def test_reducer_can_emit_projections(self) -> None:
+        """Verify REDUCER nodes can emit projections (positive case).
+
+        REDUCER nodes are pure fold functions that update read-optimized
+        state projections.
+        """
+        input_envelope_id = uuid4()
+        correlation_id = uuid4()
+
+        # Create REDUCER output with projections (valid)
+        output = ModelHandlerOutput.for_reducer(
+            input_envelope_id=input_envelope_id,
+            correlation_id=correlation_id,
+            handler_id="test-reducer",
+            projections=("mock_projection",),
+        )
+
+        # Verify output was created successfully
+        assert output.node_kind == EnumNodeKind.REDUCER
+        assert output.result is None
+        assert len(output.projections) == 1
+
+    def test_reducer_cannot_emit_events(self) -> None:
+        """Verify REDUCER nodes cannot emit events.
+
+        REDUCER nodes are pure fold functions. They cannot emit events -
+        only projections for read-optimized state.
+        """
+        input_envelope_id = uuid4()
+        correlation_id = uuid4()
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelHandlerOutput(
+                input_envelope_id=input_envelope_id,
+                correlation_id=correlation_id,
+                handler_id="test-reducer",
+                node_kind=EnumNodeKind.REDUCER,
+                events=("mock_event",),  # VIOLATION: reducers cannot emit events
+            )
+
+        assert "REDUCER cannot emit events" in str(exc_info.value)
+
+    def test_reducer_cannot_emit_intents(self) -> None:
+        """Verify REDUCER nodes cannot emit intents.
+
+        REDUCER nodes are pure fold functions. They cannot emit intents -
+        only projections for read-optimized state.
+        """
+        input_envelope_id = uuid4()
+        correlation_id = uuid4()
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelHandlerOutput(
+                input_envelope_id=input_envelope_id,
+                correlation_id=correlation_id,
+                handler_id="test-reducer",
+                node_kind=EnumNodeKind.REDUCER,
+                intents=("mock_intent",),  # VIOLATION: reducers cannot emit intents
+            )
+
+        assert "REDUCER cannot emit intents" in str(exc_info.value)
+
+    def test_orchestrator_cannot_emit_projections(self) -> None:
+        """Verify ORCHESTRATOR nodes cannot emit projections.
+
+        ORCHESTRATOR nodes coordinate workflows via events and intents.
+        Only REDUCER nodes can emit projections.
+        """
+        input_envelope_id = uuid4()
+        correlation_id = uuid4()
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelHandlerOutput(
+                input_envelope_id=input_envelope_id,
+                correlation_id=correlation_id,
+                handler_id="test-orchestrator",
+                node_kind=EnumNodeKind.ORCHESTRATOR,
+                projections=(
+                    "mock_projection",
+                ),  # VIOLATION: orchestrators cannot emit projections
+            )
+
+        assert "ORCHESTRATOR cannot emit projections" in str(exc_info.value)
+
+    def test_compute_cannot_emit_intents(self) -> None:
+        """Verify COMPUTE nodes cannot emit intents.
+
+        COMPUTE nodes are pure transformations that return results only.
+        They cannot emit intents - use ORCHESTRATOR for workflow coordination.
+        """
+        input_envelope_id = uuid4()
+        correlation_id = uuid4()
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelHandlerOutput(
+                input_envelope_id=input_envelope_id,
+                correlation_id=correlation_id,
+                handler_id="test-compute",
+                node_kind=EnumNodeKind.COMPUTE,
+                result={"data": "value"},
+                intents=("mock_intent",),  # VIOLATION: compute cannot emit intents
+            )
+
+        assert "COMPUTE cannot emit intents" in str(exc_info.value)
+
+    def test_compute_cannot_emit_projections(self) -> None:
+        """Verify COMPUTE nodes cannot emit projections.
+
+        COMPUTE nodes are pure transformations that return results only.
+        They cannot emit projections - use REDUCER for state management.
+        """
+        input_envelope_id = uuid4()
+        correlation_id = uuid4()
+
+        with pytest.raises(ModelOnexError) as exc_info:
+            ModelHandlerOutput(
+                input_envelope_id=input_envelope_id,
+                correlation_id=correlation_id,
+                handler_id="test-compute",
+                node_kind=EnumNodeKind.COMPUTE,
+                result={"data": "value"},
+                projections=(
+                    "mock_projection",
+                ),  # VIOLATION: compute cannot emit projections
+            )
+
+        assert "COMPUTE cannot emit projections" in str(exc_info.value)
