@@ -131,7 +131,9 @@ class ModelSecretManager(BaseModel):
 
             return config
 
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: re-raise to preserve original exception context
             raise
 
     def _load_with_fallback(self, config_class: type[T], env_prefix: str) -> T:
@@ -140,7 +142,9 @@ class ModelSecretManager(BaseModel):
             # Try primary backend
             return config_class.load_from_env(env_prefix)
 
-        except Exception:
+        except (
+            Exception
+        ):  # fallback-ok: primary backend failure triggers fallback chain
             if not self.fallback_enabled or not self.config.fallback_backends:
                 raise
 
@@ -158,7 +162,7 @@ class ModelSecretManager(BaseModel):
 
                     return config
 
-                except Exception:
+                except Exception:  # fallback-ok: try next backend in chain
                     continue
 
                 finally:

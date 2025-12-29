@@ -44,8 +44,10 @@ class TestModelEventPayload:
 
     def test_user_event_creation(self):
         """Test creating user event payload."""
+
         from omnibase_core.models.context import ModelSessionContext
 
+        session_uuid = "550e8400-e29b-41d4-a716-446655440000"
         event_data = ModelUserEventData(
             event_type=EnumEventType.USER,
             user_action="login",
@@ -228,11 +230,13 @@ class TestModelEventPayloadSerialization:
 
     def test_user_event_serialization(self):
         """Test JSON serialization of user event."""
+
         from omnibase_core.models.common.model_request_metadata import (
             ModelRequestMetadata,
         )
         from omnibase_core.models.context import ModelSessionContext
 
+        session_uuid = "a1b2c3d4-e5f6-4a5b-8c7d-9e0f1a2b3c4d"
         event_data = ModelUserEventData(
             event_type=EnumEventType.USER,
             user_action="password_reset",
@@ -500,6 +504,7 @@ class TestModelEventPayloadUsagePatterns:
             ModelSessionContext,
         )
 
+        session_uuid = "12345678-abcd-4def-8901-234567890abc"
         event_data = ModelUserEventData(
             event_type=EnumEventType.USER,
             user_action="authentication",

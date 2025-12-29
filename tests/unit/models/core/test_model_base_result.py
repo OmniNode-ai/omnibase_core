@@ -110,40 +110,40 @@ class TestModelBaseResult:
         assert isinstance(dict_result, dict)
         assert "metadata" in dict_result
 
-    def test_parse_obj_without_metadata(self):
-        """Test parse_obj without metadata."""
+    def test_model_validate_without_metadata(self):
+        """Test model_validate without metadata."""
         obj = {"exit_code": 0, "success": True, "errors": []}
 
-        result = ModelBaseResult.parse_obj(obj)
+        result = ModelBaseResult.model_validate(obj)
 
         assert result.exit_code == 0
         assert result.success is True
         assert result.metadata is None
 
-    def test_parse_obj_with_metadata_dict(self):
-        """Test parse_obj converts metadata dict to ModelGenericMetadata."""
+    def test_model_validate_with_metadata_dict(self):
+        """Test model_validate converts metadata dict to ModelGenericMetadata."""
         obj = {"exit_code": 0, "success": True, "errors": [], "metadata": {}}
 
-        result = ModelBaseResult.parse_obj(obj)
+        result = ModelBaseResult.model_validate(obj)
 
         assert result.exit_code == 0
         assert result.metadata is not None
         assert isinstance(result.metadata, ModelGenericMetadata)
 
-    def test_parse_obj_with_metadata_model(self):
-        """Test parse_obj with metadata already as model."""
+    def test_model_validate_with_metadata_model(self):
+        """Test model_validate with metadata already as model."""
         metadata = ModelGenericMetadata()
         obj = {"exit_code": 0, "success": True, "errors": [], "metadata": metadata}
 
-        result = ModelBaseResult.parse_obj(obj)
+        result = ModelBaseResult.model_validate(obj)
 
         assert result.metadata == metadata
 
-    def test_parse_obj_with_none_metadata(self):
-        """Test parse_obj with None metadata."""
+    def test_model_validate_with_none_metadata(self):
+        """Test model_validate with None metadata."""
         obj = {"exit_code": 0, "success": True, "errors": [], "metadata": None}
 
-        result = ModelBaseResult.parse_obj(obj)
+        result = ModelBaseResult.model_validate(obj)
 
         assert result.metadata is None
 
@@ -249,7 +249,7 @@ class TestModelBaseResultEdgeCases:
         data = original.model_dump()
 
         # Deserialize
-        restored = ModelBaseResult.parse_obj(data)
+        restored = ModelBaseResult.model_validate(data)
 
         assert restored.exit_code == original.exit_code
         assert restored.success == original.success
@@ -312,20 +312,20 @@ class TestModelBaseResultBranchCoverage:
         # The first condition (self.metadata) should be False
         assert dumped["metadata"] is None
 
-    def test_parse_obj_not_dict_branch(self):
-        """Test parse_obj when obj is not a dict (False branch of isinstance check)."""
-        # When parse_obj receives a non-dict, the conditional should take False branch
+    def test_model_validate_not_dict_branch(self):
+        """Test model_validate when obj is not a dict (False branch of isinstance check)."""
+        # When model_validate receives a non-dict, the conditional should take False branch
         # Pydantic will handle this through its normal parsing
         result_obj = ModelBaseResult(exit_code=0, success=True)
 
         # Parsing the object itself should work
-        parsed = ModelBaseResult.parse_obj(result_obj)
+        parsed = ModelBaseResult.model_validate(result_obj)
 
         assert parsed.exit_code == 0
         assert parsed.success is True
 
-    def test_parse_obj_dict_without_metadata_key(self):
-        """Test parse_obj when dict doesn't have 'metadata' key (False branch)."""
+    def test_model_validate_dict_without_metadata_key(self):
+        """Test model_validate when dict doesn't have 'metadata' key (False branch)."""
         obj = {
             "exit_code": 0,
             "success": True,
@@ -333,33 +333,33 @@ class TestModelBaseResultBranchCoverage:
             # No metadata key
         }
 
-        result = ModelBaseResult.parse_obj(obj)
+        result = ModelBaseResult.model_validate(obj)
 
         # Should not attempt metadata conversion when key is missing
         assert result.metadata is None
 
-    def test_parse_obj_dict_with_metadata_key_none_value(self):
-        """Test parse_obj when dict has 'metadata' key but value is None (False branch)."""
+    def test_model_validate_dict_with_metadata_key_none_value(self):
+        """Test model_validate when dict has 'metadata' key but value is None (False branch)."""
         obj = {"exit_code": 0, "success": True, "errors": [], "metadata": None}
 
-        result = ModelBaseResult.parse_obj(obj)
+        result = ModelBaseResult.model_validate(obj)
 
         # Should not convert None metadata
         assert result.metadata is None
 
-    def test_parse_obj_dict_with_metadata_already_model(self):
-        """Test parse_obj when metadata is already ModelGenericMetadata (False branch of inner if)."""
+    def test_model_validate_dict_with_metadata_already_model(self):
+        """Test model_validate when metadata is already ModelGenericMetadata (False branch of inner if)."""
         metadata = ModelGenericMetadata()
         obj = {"exit_code": 0, "success": True, "errors": [], "metadata": metadata}
 
-        result = ModelBaseResult.parse_obj(obj)
+        result = ModelBaseResult.model_validate(obj)
 
         # Should not re-convert when already ModelGenericMetadata
         assert result.metadata is metadata
         assert isinstance(result.metadata, ModelGenericMetadata)
 
-    def test_parse_obj_dict_with_metadata_dict_needs_conversion(self):
-        """Test parse_obj when metadata is dict and needs conversion (True branch of inner if)."""
+    def test_model_validate_dict_with_metadata_dict_needs_conversion(self):
+        """Test model_validate when metadata is dict and needs conversion (True branch of inner if)."""
         obj = {
             "exit_code": 0,
             "success": True,
@@ -367,7 +367,7 @@ class TestModelBaseResultBranchCoverage:
             "metadata": {"some_field": "some_value"},
         }
 
-        result = ModelBaseResult.parse_obj(obj)
+        result = ModelBaseResult.model_validate(obj)
 
         # Should convert dict to ModelGenericMetadata
         assert result.metadata is not None

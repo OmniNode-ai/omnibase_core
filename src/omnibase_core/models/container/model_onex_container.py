@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING, Any, TypeVar, cast
 
+from omnibase_core.decorators.allow_dict_any import allow_dict_any
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
 from omnibase_core.types.typed_dict_performance_checkpoint_result import (
@@ -84,6 +85,9 @@ class ModelONEXContainer:
     - Performance monitoring and caching
     """
 
+    @allow_dict_any(
+        reason="DI container requires generic service cache for protocol resolution"
+    )
     def __init__(
         self,
         enable_performance_cache: bool = False,
@@ -525,8 +529,10 @@ class ModelONEXContainer:
                 # Pre-resolve service to warm container cache
                 self.get_service(object, service_name)
                 warmed_count += 1
-            except Exception:
-                pass  # Expected for some services
+            except (
+                Exception
+            ):  # fallback-ok: service not found during cache warming is expected
+                pass
 
         emit_log_event(
             LogLevel.INFO,

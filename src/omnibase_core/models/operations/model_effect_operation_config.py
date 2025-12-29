@@ -30,20 +30,17 @@ from typing import Annotated, Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-from typing_extensions import TypeIs
 
 from omnibase_core.constants.constants_effect_limits import (
     EFFECT_OPERATION_DESCRIPTION_MAX_LENGTH,
     EFFECT_OPERATION_NAME_MAX_LENGTH,
 )
+from omnibase_core.decorators.allow_dict_any import allow_dict_any
 from omnibase_core.models.contracts.subcontracts.model_effect_circuit_breaker import (
     ModelEffectCircuitBreaker,
 )
 from omnibase_core.models.contracts.subcontracts.model_effect_io_configs import (
-    ModelDbIOConfig,
-    ModelFilesystemIOConfig,
-    ModelHttpIOConfig,
-    ModelKafkaIOConfig,
+    EffectIOConfig,
 )
 from omnibase_core.models.contracts.subcontracts.model_effect_response_handling import (
     ModelEffectResponseHandling,
@@ -56,46 +53,6 @@ from omnibase_core.models.contracts.subcontracts.model_effect_transaction_config
 )
 
 __all__ = ["ModelEffectOperationConfig"]
-
-
-# Type alias for the union of all typed IO config models
-_TypedIOConfigUnion = (
-    ModelHttpIOConfig | ModelDbIOConfig | ModelKafkaIOConfig | ModelFilesystemIOConfig
-)
-
-
-def _is_typed_io_config(
-    config: (
-        _TypedIOConfigUnion
-        | dict[str, Any]  # ONEX_EXCLUDE: dict_str_any - TypeIs narrowing
-    ),
-) -> TypeIs[_TypedIOConfigUnion]:
-    """TypeIs predicate to check if io_config is already a typed EffectIOConfig model.
-
-    Uses TypeIs (PEP 742) for bidirectional type narrowing. Unlike TypeGuard,
-    TypeIs narrows the type in both branches:
-    - Positive branch: config is _TypedIOConfigUnion
-    - Negative branch: config is dict[str, Any]
-
-    This enables mypy to understand type narrowing when checking if io_config
-    is already parsed into a typed model vs. a raw dictionary.
-
-    Args:
-        config: The io_config value, either typed or dict.
-
-    Returns:
-        True if config is one of the typed IO config models, False if dict.
-
-    """
-    return isinstance(
-        config,
-        (
-            ModelHttpIOConfig,
-            ModelDbIOConfig,
-            ModelKafkaIOConfig,
-            ModelFilesystemIOConfig,
-        ),
-    )
 
 
 class ModelEffectOperationConfig(BaseModel):
@@ -166,16 +123,12 @@ class ModelEffectOperationConfig(BaseModel):
     )
 
     # Core configuration - io_config is required
-    # ONEX_EXCLUDE: dict_str_any - accepts both typed models and dicts for parsing flexibility
+    # Uses discriminated union based on handler_type field
     io_config: Annotated[
-        ModelHttpIOConfig
-        | ModelDbIOConfig
-        | ModelKafkaIOConfig
-        | ModelFilesystemIOConfig
-        | dict[str, Any],  # ONEX_EXCLUDE: dict_str_any - typed model union
+        EffectIOConfig,
         Field(
-            description="Handler-specific IO configuration. Can be a typed model "
-            "or a dict that will be parsed based on handler_type."
+            description="Handler-specific IO configuration. Uses discriminated union "
+            "based on handler_type field (http, db, kafka, filesystem)."
         ),
     ]
 
@@ -206,25 +159,21 @@ class ModelEffectOperationConfig(BaseModel):
     )
 
     # Response handling configuration
-    # ONEX_EXCLUDE: dict_str_any - typed model union for flexibility
-    response_handling: ModelEffectResponseHandling | dict[str, Any] | None = Field(
+    response_handling: ModelEffectResponseHandling | None = Field(
         default=None,
         description="Configuration for response interpretation and field extraction",
     )
 
     # Resilience configurations (per-operation overrides)
-    # ONEX_EXCLUDE: dict_str_any - typed model union for flexibility
-    retry_policy: ModelEffectRetryPolicy | dict[str, Any] | None = Field(
+    retry_policy: ModelEffectRetryPolicy | None = Field(
         default=None,
         description="Per-operation retry policy configuration",
     )
-    # ONEX_EXCLUDE: dict_str_any - typed model union for flexibility
-    circuit_breaker: ModelEffectCircuitBreaker | dict[str, Any] | None = Field(
+    circuit_breaker: ModelEffectCircuitBreaker | None = Field(
         default=None,
         description="Per-operation circuit breaker configuration",
     )
-    # ONEX_EXCLUDE: dict_str_any - typed model union for flexibility
-    transaction_config: ModelEffectTransactionConfig | dict[str, Any] | None = Field(
+    transaction_config: ModelEffectTransactionConfig | None = Field(
         default=None,
         description="Transaction configuration for DB operations",
     )
@@ -273,118 +222,36 @@ class ModelEffectOperationConfig(BaseModel):
                 raise ValueError("io_config is required")
         return data
 
-    # ONEX_EXCLUDE: dict_str_any - serialization output
+    @allow_dict_any(reason="Serialization method for io_config")
     def get_io_config_as_dict(self) -> dict[str, Any]:
         """Get io_config as a dictionary.
 
-        Useful when the mixin needs to pass io_config to _parse_io_config
-        which expects a dict structure.
-
-        Performance Note:
-            This method uses an early-return pattern to avoid unnecessary
-            serialization. If io_config is already a dict, it returns directly.
-            The model_dump() path is only hit when io_config is a typed model.
-
-            In practice, callers (like MixinEffectExecution._parse_io_config)
-            check isinstance() before calling this method, so the model_dump()
-            path is rarely executed. When it is, Pydantic v2's Rust-based
-            model_dump() is highly optimized.
-
-            Caching via @cached_property is not used because frozen=True
-            prevents attribute assignment on the instance.
+        Useful for serialization or when dict representation is needed.
 
         Returns:
             Dict representation of io_config.
-
         """
-        if isinstance(self.io_config, dict):
-            return self.io_config
         return self.io_config.model_dump()
 
-    # ONEX_EXCLUDE: dict_str_any - serialization output
+    @allow_dict_any(reason="Serialization method for response_handling")
     def get_response_handling_as_dict(self) -> dict[str, Any]:
         """Get response_handling as a dictionary.
 
-        Performance Note:
-            Similar to get_io_config_as_dict(), this method uses early returns
-            to avoid unnecessary serialization:
-            - Returns {} immediately if response_handling is None
-            - Returns the dict directly if already a dict
-            - Only calls model_dump() when response_handling is a typed model
-
-            This method returns dict format for callers that require it.
-            Production code typically uses the typed ModelEffectResponseHandling
-            directly via the response_handling attribute.
-
-            Caching is not implemented because:
-            1. The model is frozen (prevents @cached_property)
-            2. The method is not called repeatedly on the same instance
-            3. Pydantic v2's model_dump() is Rust-optimized
-
         Returns:
             Dict representation of response_handling, or empty dict if None.
-
         """
         if self.response_handling is None:
             return {}
-        if isinstance(self.response_handling, dict):
-            return self.response_handling
         return self.response_handling.model_dump()
 
-    def get_typed_io_config(self) -> _TypedIOConfigUnion:
+    def get_typed_io_config(self) -> EffectIOConfig:
         """Get io_config as a typed EffectIOConfig.
-
-        Uses TypeIs-based type narrowing (PEP 742) to properly narrow the return
-        type. Unlike TypeGuard, TypeIs provides bidirectional narrowing:
-        - Positive branch: config is _TypedIOConfigUnion
-        - Negative branch: config is dict[str, Any]
-
-        Parses dict io_config into the appropriate typed model based on
-        handler_type discriminator.
 
         Returns:
             Typed IO config (ModelHttpIOConfig, ModelDbIOConfig,
-            ModelKafkaIOConfig, or ModelFilesystemIOConfig). The return type
-            is properly narrowed by the TypeIs predicate, enabling mypy to
-            understand that the result is always a typed model, never a dict.
-
-        Raises:
-            ModelOnexError: If handler_type is unknown or io_config is invalid.
-
-        Example:
-            >>> config = ModelEffectOperationConfig(
-            ...     io_config={"handler_type": "http", "url_template": "...", "method": "GET"}
-            ... )
-            >>> typed = config.get_typed_io_config()
-            >>> # mypy knows typed is _TypedIOConfigUnion, not dict
-            >>> assert hasattr(typed, "handler_type")
-
+            ModelKafkaIOConfig, or ModelFilesystemIOConfig).
         """
-        # TypeIs narrows self.io_config to _TypedIOConfigUnion in positive branch
-        # and to dict[str, Any] in negative branch
-        if _is_typed_io_config(self.io_config):
-            return self.io_config
-
-        # At this point, mypy knows self.io_config is dict[str, Any]
-        # Parse dict to typed model using match statement for cleaner type handling
-        handler_type = self.io_config.get("handler_type")
-        match handler_type:
-            case "http":
-                return ModelHttpIOConfig.model_validate(self.io_config)
-            case "db":
-                return ModelDbIOConfig.model_validate(self.io_config)
-            case "kafka":
-                return ModelKafkaIOConfig.model_validate(self.io_config)
-            case "filesystem":
-                return ModelFilesystemIOConfig.model_validate(self.io_config)
-            case _:
-                from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-                from omnibase_core.models.errors.model_onex_error import ModelOnexError
-
-                raise ModelOnexError(
-                    f"Unknown handler_type: {handler_type}",
-                    error_code=EnumCoreErrorCode.INVALID_CONFIGURATION,
-                )
+        return self.io_config
 
     # ONEX_EXCLUDE: dict_str_any - factory input
     @classmethod
