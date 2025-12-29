@@ -304,7 +304,7 @@ class MixinNodeService:
             AttributeError,
             KeyError,
             OSError,
-            asyncio.TimeoutError,
+            TimeoutError,
             ModelOnexError,
         ) as e:
             # Specific expected exceptions from tool invocation:
@@ -312,7 +312,7 @@ class MixinNodeService:
             # - RuntimeError: execution environment errors
             # - AttributeError/KeyError: state/parameter access errors
             # - OSError: I/O and connection errors (includes ConnectionError)
-            # - asyncio.TimeoutError: async operation timeouts
+            # - TimeoutError: async operation timeouts
             # - ModelOnexError: ONEX framework errors
             execution_time_ms = int((time.time() - start_time) * 1000)
             response_event = ModelToolResponseEvent.create_error_response(
