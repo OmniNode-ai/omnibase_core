@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+
 
 """
 NodeBase for ONEX ModelArchitecture.
@@ -17,11 +18,12 @@ import asyncio
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import cast
 from uuid import UUID, uuid4
 
 # Core-native protocol imports (no SPI dependency)
 from omnibase_core.protocols import (
+    ContextValue,
     ProtocolAction,
     ProtocolNodeResult,
     ProtocolState,
@@ -39,6 +41,9 @@ from omnibase_core.logging.structured import emit_log_event_sync as emit_log_eve
 if TYPE_CHECKING:
     from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 
+from omnibase_core.models.infrastructure.model_initialization_metadata import (
+    ModelInitializationMetadata,
+)
 from omnibase_core.models.infrastructure.model_node_state import ModelNodeState
 from omnibase_core.models.infrastructure.model_node_workflow_result import (
     ModelNodeWorkflowResult,
@@ -220,41 +225,24 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
                     },
                 )
 
-                # Process each dependency
+                # Process each dependency (always ModelContractDependency objects)
                 for dependency in contract_content.dependencies:
-                    # Handle both string and ModelContractDependency types
-                    if isinstance(dependency, str):  # type: ignore[unreachable]
-                        emit_log_event(  # type: ignore[unreachable]
-                            LogLevel.DEBUG,
-                            f"Dependency registered: {dependency}",
-                            {
-                                "dependency_name": dependency,
-                                "dependency_module": "N/A",
-                                "dependency_type": "unknown",
-                                "required": True,
-                                "node_name": contract_content.node_name,
-                            },
-                        )
-                    else:
-                        # Use type instead of dependency_type for ModelContractDependency
-                        dep_type = getattr(dependency, "type", "unknown")
-                        # Handle enum or string type
-                        if hasattr(dep_type, "value"):
-                            dep_type_value = dep_type.value
-                        else:
-                            dep_type_value = str(dep_type)
+                    # Use type instead of dependency_type for ModelContractDependency
+                    dep_type = getattr(dependency, "type", "unknown")
+                    # Extract enum value if available, otherwise use string representation
+                    dep_type_value = getattr(dep_type, "value", str(dep_type))
 
-                        emit_log_event(
-                            LogLevel.DEBUG,
-                            f"Dependency registered: {dependency.name}",
-                            {
-                                "dependency_name": dependency.name,
-                                "dependency_module": dependency.module or "N/A",
-                                "dependency_type": dep_type_value,
-                                "required": getattr(dependency, "required", True),
-                                "node_name": contract_content.node_name,
-                            },
-                        )
+                    emit_log_event(
+                        LogLevel.DEBUG,
+                        f"Dependency registered: {dependency.name}",
+                        {
+                            "dependency_name": dependency.name,
+                            "dependency_module": dependency.module or "N/A",
+                            "dependency_type": dep_type_value,
+                            "required": getattr(dependency, "required", True),
+                            "node_name": contract_content.node_name,
+                        },
+                    )
 
                     # Note: Actual service registration with container will be implemented
                     # when omnibase-spi protocol service resolver is fully integrated.
@@ -286,13 +274,15 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
             node_tier=1,
             node_classification=pattern_value,
             event_bus=event_bus,
-            initialization_metadata={  # type: ignore[arg-type]
-                "main_tool_class": contract_content.tool_specification.main_tool_class,
-                "contract_path": str(contract_path),
-                "initialization_time": str(time.time()),
-                "workflow_id": str(self.workflow_id),
-                "session_id": str(self.session_id),
-            },
+            initialization_metadata=ModelInitializationMetadata.from_dict(
+                {
+                    "main_tool_class": contract_content.tool_specification.main_tool_class,
+                    "contract_path": str(contract_path),
+                    "initialization_time": str(time.time()),
+                    "workflow_id": str(self.workflow_id),
+                    "session_id": str(self.session_id),
+                }
+            ),
         )
 
         # Resolve main tool
@@ -308,9 +298,7 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
         import importlib
 
         try:
-            main_tool_class = (
-                self.state.contract_content.tool_specification.main_tool_class  # type: ignore[union-attr]
-            )
+            main_tool_class = self._get_main_tool_class()
 
             # Parse module and class name
             # Expected format: "module.path.ClassName"
@@ -352,7 +340,7 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Failed to import main tool class: {e!s}",
                 context={
-                    "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,  # type: ignore[union-attr]
+                    "main_tool_class": main_tool_class,
                     "node_id": str(self.state.node_id),
                     "error": str(e),
                 },
@@ -363,7 +351,7 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Class not found in module: {e!s}",
                 context={
-                    "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,  # type: ignore[union-attr]
+                    "main_tool_class": main_tool_class,
                     "node_id": str(self.state.node_id),
                 },
                 correlation_id=self.correlation_id,
@@ -373,7 +361,7 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message=f"Failed to resolve main tool: {e!s}",
                 context={
-                    "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,  # type: ignore[union-attr]
+                    "main_tool_class": main_tool_class,
                     "node_id": str(self.state.node_id),
                 },
                 correlation_id=self.correlation_id,
@@ -493,12 +481,13 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
             U: Tool-specific output state
         """
         try:
+            main_tool_class = self._get_main_tool_class()
             emit_log_event(
                 LogLevel.INFO,
                 f"Processing with NodeBase: {self.state.node_name}",
                 {
                     "node_name": self.state.node_name,
-                    "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,  # type: ignore[union-attr]
+                    "main_tool_class": main_tool_class,
                     "business_logic_pattern": self.state.node_classification,
                     "workflow_id": str(self.workflow_id),
                 },
@@ -541,7 +530,7 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
                 error_code=EnumCoreErrorCode.OPERATION_FAILED,
                 message="Main tool does not implement process_async(), process(), or run() method",
                 context={
-                    "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,  # type: ignore[union-attr]
+                    "main_tool_class": main_tool_class,
                     "node_name": self.state.node_name,
                     "workflow_id": str(self.workflow_id),
                 },
@@ -558,7 +547,7 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
                 f"Error in NodeBase processing: {e!s}",
                 {
                     "node_name": self.state.node_name,
-                    "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,  # type: ignore[union-attr]
+                    "main_tool_class": main_tool_class,
                     "error": str(e),
                     "workflow_id": str(self.workflow_id),
                 },
@@ -569,7 +558,7 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
                 context={
                     "node_name": self.state.node_name,
                     "node_tier": self.state.node_tier,
-                    "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,  # type: ignore[union-attr]
+                    "main_tool_class": main_tool_class,
                     "workflow_id": str(self.workflow_id),
                 },
                 correlation_id=self.correlation_id,
@@ -663,8 +652,12 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
             )
 
             # Wrap the new state in a result object
+            # Note: ProtocolState is cast to ContextValue for the result value.
+            # While these protocols differ, both represent state containers passed
+            # between workflow components. The ModelNodeWorkflowResult serves as
+            # a transport wrapper for any state-like object returned from dispatch.
             return ModelNodeWorkflowResult(
-                value=new_state,  # type: ignore[arg-type]
+                value=cast("ContextValue | None", new_state),
                 is_success=True,
                 is_failure=False,
                 error=None,
@@ -707,6 +700,51 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
 
     # ===== HELPER METHODS =====
 
+    def _get_main_tool_class(self) -> str:
+        """
+        Safely get the main_tool_class from contract_content with proper type narrowing.
+
+        Returns:
+            str: The main tool class name from the contract.
+
+        Raises:
+            ModelOnexError: If contract_content or tool_specification is missing.
+        """
+        from omnibase_core.models.core.model_contract_content import (
+            ModelContractContent,
+        )
+
+        contract_content = self.state.contract_content
+        if contract_content is None:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
+                message="Contract content is not initialized",
+                context={"node_id": str(self.node_id)},
+                correlation_id=self.correlation_id,
+            )
+
+        # Check if it's a ModelContractContent with tool_specification
+        if isinstance(contract_content, ModelContractContent):
+            return contract_content.tool_specification.main_tool_class
+
+        # For other types, try attribute access with type safety
+        if hasattr(contract_content, "tool_specification"):
+            tool_spec = contract_content.tool_specification
+            if tool_spec is not None and hasattr(tool_spec, "main_tool_class"):
+                main_tool_class = tool_spec.main_tool_class
+                if isinstance(main_tool_class, str):
+                    return main_tool_class
+
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.OPERATION_FAILED,
+            message="Contract content does not have valid tool_specification.main_tool_class",
+            context={
+                "node_id": str(self.node_id),
+                "contract_content_type": type(contract_content).__name__,
+            },
+            correlation_id=self.correlation_id,
+        )
+
     def _emit_initialization_event(self) -> None:
         """Emit initialization success event."""
         emit_log_event(
@@ -716,7 +754,7 @@ class NodeBase[T_INPUT_STATE, T_OUTPUT_STATE](
                 "node_id": str(self.node_id),
                 "node_name": self.state.node_name,
                 "contract_path": str(self._contract_path),
-                "main_tool_class": self.state.contract_content.tool_specification.main_tool_class,  # type: ignore[union-attr]
+                "main_tool_class": self._get_main_tool_class(),
                 "correlation_id": str(self.correlation_id),
                 "workflow_id": str(self.workflow_id),
             },
