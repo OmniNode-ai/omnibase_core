@@ -402,6 +402,7 @@ class TestWorkflowValidatorDependencyValidation:
         result = validator.validate_dependencies(steps)
 
         assert result.is_valid
+        assert result.missing_dependencies == []
         assert len(result.missing_dependencies) == 0
         assert result.error_message == ""  # Explicit empty error assertion
 
@@ -533,6 +534,7 @@ class TestWorkflowValidatorIsolatedSteps:
 
         result = validator.detect_isolated_steps(steps)
 
+        assert result.isolated_steps == []
         assert len(result.isolated_steps) == 0
         assert result.isolated_step_names == ""  # Explicit empty assertion
 
@@ -601,8 +603,8 @@ class TestWorkflowValidatorUniqueNames:
         result = validator.validate_unique_names(steps)
 
         assert result.is_valid
-        assert len(result.duplicate_names) == 0
-        assert result.duplicate_names == []  # Explicit empty list assertion
+        assert result.duplicate_names == []
+        assert len(result.duplicate_names) == 0  # Explicit empty list assertion
 
     def test_multiple_duplicate_names_all_reported(self) -> None:
         """Test that multiple sets of duplicates are all reported."""
@@ -735,8 +737,12 @@ class TestWorkflowValidatorIntegration:
         assert len(result.missing_dependencies) > 0
         assert len(result.errors) > 0
 
-    def test_workflow_with_duplicate_names_fails(self) -> None:
-        """Test that workflow with duplicate names fails validation."""
+    def test_workflow_with_duplicate_names_warns(self) -> None:
+        """Test that workflow with duplicate names produces warning, not error.
+
+        v1.0.4 Fix 48: Duplicate step names are allowed but generate warnings.
+        The workflow remains valid as long as step_ids are unique.
+        """
         validator = WorkflowValidator()
 
         step_a = create_step("duplicate_name")
@@ -745,9 +751,12 @@ class TestWorkflowValidatorIntegration:
 
         result = validator.validate_workflow(steps)
 
-        assert not result.is_valid
-        assert len(result.duplicate_names) > 0
-        assert len(result.errors) > 0
+        # v1.0.4 Fix 48: Duplicate names are warnings, not errors
+        assert result.is_valid  # Workflow is valid (names are not unique identifiers)
+        assert len(result.duplicate_names) > 0  # Duplicates are tracked
+        assert len(result.warnings) > 0  # Warning is issued
+        # Errors should NOT include duplicate name issues
+        assert not any("duplicate" in err.lower() for err in result.errors)
 
     def test_malformed_workflow_reports_all_validation_issues(self) -> None:
         """
@@ -795,8 +804,9 @@ class TestWorkflowValidatorIntegration:
         assert result.has_cycles is True
         assert len(result.duplicate_names) > 0
         assert len(result.missing_dependencies) > 0
-        # Should have at least 3 errors: duplicate names, missing dep, cycle
-        expected_min_errors = 3
+        # Should have at least 2 errors: missing dep, cycle
+        # v1.0.4 Fix 48: Duplicate names are warnings, not errors
+        expected_min_errors = 2
         assert len(result.errors) >= expected_min_errors
         # Isolated step should be reported as warning, not error
         assert len(result.isolated_steps) > 0

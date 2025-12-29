@@ -9,6 +9,7 @@ Strict typing is enforced: No Any types allowed in implementation.
 
 from pydantic import BaseModel, Field
 
+from omnibase_core.constants import KAFKA_REQUEST_TIMEOUT_MS
 from omnibase_core.types.constraints import PrimitiveValueType
 
 
@@ -49,7 +50,7 @@ class ModelEventSubscription(BaseModel):
     )
 
     timeout_ms: int = Field(
-        default=5000,
+        default=KAFKA_REQUEST_TIMEOUT_MS,
         description="Event processing timeout in milliseconds",
         ge=1,
     )

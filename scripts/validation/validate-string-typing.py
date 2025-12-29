@@ -24,11 +24,9 @@ from __future__ import annotations
 import ast
 import json
 import os
-import signal
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional, Union
 
 # Constants
 MAX_PYTHON_FILE_SIZE = 10 * 1024 * 1024  # 10MB - prevent DoS attacks

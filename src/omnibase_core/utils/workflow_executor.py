@@ -26,6 +26,27 @@ Priority Clamping (Step Priority vs Action Priority):
         - Architecture rationale: docs/architecture/CONTRACT_DRIVEN_NODEORCHESTRATOR_V1_0.md
           (Section: "Step Priority vs Action Priority")
 
+v1.0.2-v1.0.4 Normative Compliance (OMN-659):
+    - Fix 11: Action Emission Wave Ordering - Actions appear in YAML declaration order within waves.
+    - Fix 12: Action Creation Exception Handling - Only ModelOnexError raised intentionally;
+              all other exceptions caught and converted to FAILED steps.
+    - Fix 13: start_time/end_time set to identical completion timestamp (v1.1 may add real timing).
+    - Fix 14: Metadata Isolation - WorkflowExecutionResult.metadata contains no internal fields.
+    - Fix 15: UUID Stability - step_id values preserved from contract load, not generated.
+    - Fix 16: Expression Evaluation Prohibition - v1.0 MUST NOT parse/evaluate conditional expressions.
+    - Fix 17: Step Metadata Immutability - NodeOrchestrator MUST NOT modify ModelWorkflowStep metadata.
+    - Fix 18: Wave Boundary Guarantee - All wave N actions emitted before wave N+1.
+    - Fix 19: Load Balancing Prohibition - load_balancing_enabled field is ignored entirely.
+    - Fix 20: Validation Phase Separation - Validation happens BEFORE execution; executor does not re-validate.
+
+v1.0.4 Additional Fixes (OMN-661):
+    - Fix 50: Cross-Step Mutation Prohibition - Executor MUST NOT mutate nested objects in
+              ModelWorkflowStep, ModelWorkflowDefinition, or ModelCoordinationRules.
+    - Fix 51: Wave Boundary Internal Only - Wave boundaries MUST NOT appear in actions_emitted
+              metadata, step_outputs, or error structures.
+    - Fix 52: order_index Action Creation Prohibition - order_index MUST NOT influence action_id
+              generation, priority, dependencies, or creation order.
+
 Size Limits:
     To prevent memory exhaustion, this module enforces the following limits:
     - MAX_WORKFLOW_STEPS (default 1000): Maximum number of steps in a workflow.
@@ -70,13 +91,12 @@ Security Considerations:
         (https://owasp.org/www-community/attacks/Denial_of_Service)
 """
 
-import asyncio
 import heapq
 import json
 import logging
-import os
 import time
 from datetime import datetime
+from typing import Literal, cast
 from uuid import UUID, uuid4
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -104,51 +124,21 @@ from omnibase_core.models.workflow.execution.model_workflow_result_metadata impo
 )
 from omnibase_core.types.typed_dict_workflow_context import TypedDictWorkflowContext
 from omnibase_core.validation.reserved_enum_validator import validate_execution_mode
-
-
-def _get_limit_from_env(env_var: str, default: int, min_val: int, max_val: int) -> int:
-    """Get limit from environment variable with bounds checking.
-
-    Args:
-        env_var: Environment variable name
-        default: Default value if env var not set
-        min_val: Minimum allowed value
-        max_val: Maximum allowed value
-
-    Returns:
-        Validated limit value
-    """
-    value = os.environ.get(env_var)
-    if value is None:
-        return default
-    try:
-        int_value = int(value)
-        return max(min_val, min(int_value, max_val))
-    except ValueError:
-        logging.warning(
-            f"Invalid value for {env_var}: {value}, using default {default}"
-        )
-        return default
-
-
-# Workflow execution limits (OMN-670: Security hardening)
-# Configurable via environment variables for extreme workloads
-# Bounds prevent both too-small (DoS via many small workflows) and too-large (memory exhaustion) values
-MAX_WORKFLOW_STEPS = _get_limit_from_env(
-    "ONEX_MAX_WORKFLOW_STEPS", default=1000, min_val=1, max_val=100000
+from omnibase_core.validation.workflow_constants import (
+    MAX_DFS_ITERATIONS,
+    MAX_STEP_PAYLOAD_SIZE_BYTES,
+    MAX_TOTAL_PAYLOAD_SIZE_BYTES,
+    MAX_WORKFLOW_STEPS,
+    MIN_TIMEOUT_MS,
+    RESERVED_STEP_TYPES,
 )
-MAX_STEP_PAYLOAD_SIZE_BYTES = _get_limit_from_env(
-    "ONEX_MAX_STEP_PAYLOAD_SIZE_BYTES",
-    default=64 * 1024,
-    min_val=1024,
-    max_val=10 * 1024 * 1024,
-)
-MAX_TOTAL_PAYLOAD_SIZE_BYTES = _get_limit_from_env(
-    "ONEX_MAX_TOTAL_PAYLOAD_SIZE_BYTES",
-    default=10 * 1024 * 1024,
-    min_val=1024,
-    max_val=1024 * 1024 * 1024,
-)
+
+# Note: MAX_WORKFLOW_STEPS, MAX_STEP_PAYLOAD_SIZE_BYTES, MAX_TOTAL_PAYLOAD_SIZE_BYTES
+# are imported from workflow_constants.py (canonical source with memoized env var parsing).
+# See workflow_constants.py module docstring for configuration details.
+
+# Module logger for workflow executor operations
+logger = logging.getLogger(__name__)
 
 
 def _log_payload_metrics(
@@ -242,9 +232,17 @@ async def execute_workflow(
 
     Pure function: (workflow_def, steps) → (result, actions)
 
+    v1.0 Note:
+        This executor uses workflow_steps (with their depends_on declarations)
+        for execution ordering. The execution_graph field in workflow_definition
+        is INTENTIONALLY IGNORED in v1.0.
+
+        v1.1+ Roadmap: execution_graph will support explicit execution ordering
+        for advanced workflows. See model_execution_graph.py for details.
+
     Args:
         workflow_definition: Workflow definition from YAML contract
-        workflow_steps: List of workflow steps to execute
+        workflow_steps: List of workflow steps to execute (uses depends_on for ordering)
         workflow_id: Unique workflow execution ID
         execution_mode: Optional execution mode override
 
@@ -312,35 +310,79 @@ async def execute_workflow(
     )
     if validation_errors:
         raise ModelOnexError(
-            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.ORCHESTRATOR_EXEC_WORKFLOW_FAILED,
             message=f"Workflow validation failed: {', '.join(validation_errors)}",
             context={"workflow_id": str(workflow_id), "errors": validation_errors},
+        )
+
+    # v1.0.3 Fix 29: Empty workflow handling
+    # Empty workflows succeed immediately with COMPLETED state. No actions emitted.
+    # Note: Workflow hash is STILL computed for empty workflows because it's based on
+    # workflow_definition (metadata, config), not on workflow_steps. The hash provides
+    # integrity verification for the definition itself, regardless of step count.
+    if not workflow_steps:
+        logger.debug(
+            "Empty workflow executed successfully - no steps to process "
+            "(workflow_id=%s, workflow_name=%s)",
+            workflow_id,
+            workflow_definition.workflow_metadata.workflow_name,
+        )
+        end_time = time.perf_counter()
+        execution_time_ms = max(1, int((end_time - start_time) * 1000))
+        workflow_hash = _compute_workflow_hash(workflow_definition)
+        return WorkflowExecutionResult(
+            workflow_id=workflow_id,
+            execution_status=EnumWorkflowState.COMPLETED,
+            completed_steps=[],
+            failed_steps=[],
+            actions_emitted=[],
+            execution_time_ms=execution_time_ms,
+            metadata=ModelWorkflowResultMetadata(
+                execution_mode=cast(
+                    Literal["sequential", "parallel", "batch"],
+                    workflow_definition.workflow_metadata.execution_mode,
+                ),
+                workflow_name=workflow_definition.workflow_metadata.workflow_name,
+                workflow_hash=workflow_hash,
+            ),
         )
 
     # Compute workflow hash for integrity verification after validation passes
     workflow_hash = _compute_workflow_hash(workflow_definition)
 
+    # v1.0.3 Fix 35: Global Timeout Mid-Wave Behavior
+    # Calculate global timeout deadline. If workflow_metadata.timeout_ms elapses,
+    # unprocessed steps MUST be marked failed, in-progress assumed failed,
+    # workflow ends with FAILED state.
+    # v1.0.4 Fix 46: global_timeout_ms bounds TOTAL duration ONLY - not step timeouts.
+    global_timeout_ms = workflow_definition.workflow_metadata.timeout_ms
+    timeout_deadline = start_time + (global_timeout_ms / 1000.0)
+
     # Determine execution mode
+    # v1.0.3 Fix 39, v1.0.4 Fix 45: execution_mode parameter overrides workflow_metadata
+    # This is already implemented via the execution_mode parameter
     mode = execution_mode or _get_execution_mode(workflow_definition)
 
     # Validate execution mode (reject reserved modes per v1.0 contract)
     validate_execution_mode(mode)
 
-    # Execute based on mode
+    # Execute based on mode (pass timeout_deadline for Fix 35)
     if mode == EnumExecutionMode.SEQUENTIAL:
         result = await _execute_sequential(
-            workflow_definition, workflow_steps, workflow_id
+            workflow_definition, workflow_steps, workflow_id, timeout_deadline
         )
     elif mode == EnumExecutionMode.PARALLEL:
         result = await _execute_parallel(
-            workflow_definition, workflow_steps, workflow_id
+            workflow_definition, workflow_steps, workflow_id, timeout_deadline
         )
     elif mode == EnumExecutionMode.BATCH:
-        result = await _execute_batch(workflow_definition, workflow_steps, workflow_id)
+        result = await _execute_batch(
+            workflow_definition, workflow_steps, workflow_id, timeout_deadline
+        )
     else:
         # Default to sequential
         result = await _execute_sequential(
-            workflow_definition, workflow_steps, workflow_id
+            workflow_definition, workflow_steps, workflow_id, timeout_deadline
         )
 
     # Calculate execution time with high precision
@@ -454,10 +496,12 @@ async def validate_workflow_definition(
             f"Workflow timeout must be positive, got: {workflow_definition.workflow_metadata.timeout_ms}"
         )
 
-    # Check workflow has steps
+    # v1.0.3 Fix 29: Empty workflow handling
+    # Empty workflows (steps=[]) are VALID and succeed immediately with COMPLETED state.
+    # No actions are emitted. This is not an error condition.
+    # Do NOT add "Workflow has no steps defined" error for empty workflows.
     if not workflow_steps:
-        errors.append("Workflow has no steps defined")
-        return errors
+        return errors  # Empty workflow is valid, return without step-related errors
 
     # Check for duplicate step IDs
     step_id_list = [step.step_id for step in workflow_steps]
@@ -482,6 +526,31 @@ async def validate_workflow_definition(
         # Check step name
         if not step.step_name:
             errors.append(f"Step {step.step_id} missing name")
+
+        # v1.0.5 Fix 58: Reject conditional step_type with ModelOnexError
+        # step_type="conditional" is reserved for v1.1+ and MUST NOT be used in v1.0
+        # This is raised as an exception, not appended to errors, per v1.0.5 spec
+        if step.step_type in RESERVED_STEP_TYPES:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Step '{step.step_name}' uses reserved step_type '{step.step_type}'. "
+                "Conditional execution is not supported in v1.0. Use step.enabled or "
+                "step.skip_on_failure for conditional behavior.",
+                context={
+                    "step_id": str(step.step_id),
+                    "step_name": step.step_name,
+                    "step_type": step.step_type,
+                },
+            )
+
+        # v1.0.3 Fix 38: Validate timeout_ms >= 100
+        # Note: Pydantic already validates ge=100, but we add explicit check
+        # for any steps constructed with validation disabled
+        if step.timeout_ms < MIN_TIMEOUT_MS:
+            errors.append(
+                f"Step '{step.step_name}' has invalid timeout_ms={step.timeout_ms}. "
+                f"Minimum value is {MIN_TIMEOUT_MS}ms."
+            )
 
         # Check dependencies reference valid steps
         for dep_id in step.depends_on:
@@ -563,7 +632,7 @@ def get_execution_order(
     """
     if _has_dependency_cycles(workflow_steps):
         raise ModelOnexError(
-            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.ORCHESTRATOR_SEMANTIC_CYCLE_DETECTED,
             message="Cannot compute execution order: workflow contains cycles",
             context={},
         )
@@ -591,6 +660,7 @@ async def _execute_sequential(
     workflow_definition: ModelWorkflowDefinition,
     workflow_steps: list[ModelWorkflowStep],
     workflow_id: UUID,
+    timeout_deadline: float,
 ) -> WorkflowExecutionResult:
     """
     Execute workflow steps sequentially.
@@ -602,6 +672,7 @@ async def _execute_sequential(
         workflow_definition: Workflow definition from YAML contract.
         workflow_steps: List of workflow steps to execute.
         workflow_id: Unique workflow execution ID.
+        timeout_deadline: Unix timestamp (perf_counter) when global timeout elapses.
 
     Returns:
         WorkflowExecutionResult with completed/failed steps and emitted actions.
@@ -618,13 +689,31 @@ async def _execute_sequential(
 
         Individual step payload limit violations (MAX_STEP_PAYLOAD_SIZE_BYTES) are
         also caught and treated as step failures in the same manner.
+
+        v1.0.3 Fix 35: If global timeout elapses mid-wave, unprocessed steps are
+        marked as failed, in-progress steps are assumed failed, and workflow ends
+        with FAILED state.
     """
     completed_steps: list[str] = []
     failed_steps: list[str] = []
+    # v1.0.4 Fix 49: skipped_steps MUST appear in original contract declaration order
+    skipped_steps: list[str] = []  # v1.0.1 Fix 17: Track disabled steps
     all_actions: list[ModelAction] = []
     completed_step_ids: set[UUID] = set()
     step_outputs: dict[UUID, object] = {}
     total_payload_size = 0  # Track total payload size (OMN-670: Security hardening)
+
+    # v1.0.3 Fix 35: Track timeout state
+    # v1.1 OBSERVABILITY HOOK: timeout_triggered is scaffolding for future observability.
+    # Currently: Tracks whether global timeout elapsed but is not yet consumed by runtime.
+    # Future (v1.1+): Will emit timeout events for monitoring dashboards, including:
+    #   - Timeout event with workflow_id, step_id, elapsed_time_ms
+    #   - Integration with ModelWorkflowResultMetadata.timeout_triggered field
+    #   - Structured metrics for alerting (e.g., timeout rate per workflow type)
+    # The variable is set when time.perf_counter() > timeout_deadline, indicating
+    # the workflow's global timeout_ms has elapsed mid-execution.
+    # See: docs/architecture/CONTRACT_DRIVEN_NODEORCHESTRATOR_V1_0.md
+    timeout_triggered = False
 
     # Log workflow execution start
     logging.info(
@@ -642,13 +731,42 @@ async def _execute_sequential(
         if not step:
             continue
 
-        # Check if step should be skipped
+        # v1.0.3 Fix 35: Check global timeout before processing each step
+        # If timeout has elapsed, mark remaining steps as failed and exit loop
+        if time.perf_counter() > timeout_deadline:
+            timeout_triggered = True  # v1.1 observability hook (see TODO above)
+            failed_steps.append(str(step.step_id))
+            logging.warning(
+                f"Workflow '{workflow_definition.workflow_metadata.workflow_name}' "
+                f"global timeout elapsed. Step '{step.step_name}' marked as failed."
+            )
+            continue  # Continue to mark remaining steps as failed
+
+        # Check if step should be skipped (disabled step handling per v1.0.4 Normative)
+        # v1.0.1 Fix 17: Disabled steps are tracked in skipped_steps, not completed/failed
         if not step.enabled:
+            skipped_steps.append(str(step.step_id))
+            completed_step_ids.add(step.step_id)  # v1.0.2 Fix 10: Satisfy dependencies
             continue
 
-        # Check dependencies are met
+        # v1.0.1 Fix 19: Dependency Failure Semantics (Normative)
+        # Workflow MUST fail deterministically if cannot progress.
+        # If step's dependencies are not met (dependency step failed or skipped without
+        # being satisfied), this step MUST fail. This ensures:
+        # - Workflow execution is deterministic and predictable
+        # - No silent step drops or indefinite hangs
+        # - Failure propagation is explicit and traceable
         if not _dependencies_met(step, completed_step_ids):
             failed_steps.append(str(step.step_id))
+            continue
+
+        # v1.0.2 Fix 7: Skip on Failure Semantics
+        # skip_on_failure applies ONLY to failures of earlier steps.
+        # It does NOT override unmet dependency constraints (checked above).
+        # If earlier steps failed AND skip_on_failure is True, skip this step.
+        if step.skip_on_failure and failed_steps:
+            skipped_steps.append(str(step.step_id))
+            completed_step_ids.add(step.step_id)  # Mark as satisfied for downstream
             continue
 
         try:
@@ -698,6 +816,7 @@ async def _execute_sequential(
             completed_step_ids.add(step.step_id)
 
             # Store step output for subsequent steps (action payload serves as output)
+            # v1.0.4 Fix 47: step_outputs MUST be JSON-serializable (validated in _create_action_for_step)
             step_outputs[step.step_id] = action.payload
 
         except ModelOnexError as e:
@@ -718,11 +837,13 @@ async def _execute_sequential(
             )
 
             # Handle based on error action
+            # v1.0.4 Fix 43: error_action controls exclusively. continue_on_error
+            # is advisory only and MUST NOT override error_action behavior.
             if step.error_action == "stop":
                 break
             if step.error_action == "continue":
                 continue
-            # For other error actions, continue for now
+            # For other error actions (retry, compensate), continue for now
 
         except BaseException as e:
             # Broad exception catch justified for workflow orchestration:
@@ -737,11 +858,13 @@ async def _execute_sequential(
             )
 
             # Handle based on error action
+            # v1.0.4 Fix 43: error_action controls exclusively. continue_on_error
+            # is advisory only and MUST NOT override error_action behavior.
             if step.error_action == "stop":
                 break
             if step.error_action == "continue":
                 continue
-            # For other error actions, continue for now
+            # For other error actions (retry, compensate), continue for now
 
     # Determine final status
     status = (
@@ -769,6 +892,7 @@ async def _execute_sequential(
             workflow_name=workflow_definition.workflow_metadata.workflow_name,
             workflow_hash="",  # Will be set by execute_workflow after return
         ),
+        skipped_steps=skipped_steps,  # v1.0.1 Fix 17: Include skipped steps in result
     )
 
 
@@ -776,19 +900,32 @@ async def _execute_parallel(
     workflow_definition: ModelWorkflowDefinition,
     workflow_steps: list[ModelWorkflowStep],
     workflow_id: UUID,
+    timeout_deadline: float,
 ) -> WorkflowExecutionResult:
     """
-    Execute workflow steps in parallel (respecting dependencies).
+    Execute workflow steps in parallel mode (wave-based ordering).
 
-    Steps are executed in waves based on dependency order. Within each wave,
-    all steps with met dependencies run concurrently via asyncio.gather.
-    Steps in the same wave cannot see each other's outputs (they run in parallel),
-    but can access outputs from prior waves via workflow context.
+    v1.0.5 Fix 57 - Synchronous Execution in v1.0:
+        While this function uses async signature for API compatibility, v1.0
+        execution is SYNCHRONOUS within the async context. Steps are organized
+        into waves based on dependencies, but within each wave they execute
+        SEQUENTIALLY (not concurrently). Actual parallel concurrency is deferred
+        to omnibase_infra in future versions.
+
+        The "parallel" in this function name refers to the LOGICAL wave structure
+        (steps in the same wave COULD run in parallel), not actual concurrent
+        execution. This design allows seamless upgrade to true parallelism in
+        v1.1+ without API changes.
+
+    Steps are executed in waves based on dependency order. Steps in the same wave
+    cannot see each other's outputs, but can access outputs from prior waves via
+    workflow context.
 
     Args:
         workflow_definition: Workflow definition from YAML contract.
         workflow_steps: List of workflow steps to execute.
         workflow_id: Unique workflow execution ID.
+        timeout_deadline: Unix timestamp (perf_counter) when global timeout elapses.
 
     Returns:
         WorkflowExecutionResult with completed/failed steps and emitted actions.
@@ -813,14 +950,32 @@ async def _execute_parallel(
 
         Individual step errors (including MAX_STEP_PAYLOAD_SIZE_BYTES violations)
         are still handled per-step and respect the error_action configuration.
+
+        v1.0.3 Fix 35: If global timeout elapses mid-wave, unprocessed steps are
+        marked as failed, in-progress steps are assumed failed, and workflow ends
+        with FAILED state.
     """
     completed_steps: list[str] = []
     failed_steps: list[str] = []
+    # v1.0.4 Fix 49: skipped_steps MUST appear in original contract declaration order
+    skipped_steps: list[str] = []  # v1.0.1 Fix 17: Track disabled steps
     all_actions: list[ModelAction] = []
     completed_step_ids: set[UUID] = set()
     step_outputs: dict[UUID, object] = {}
     should_stop = False
     total_payload_size = 0  # Track total payload size (OMN-670: Security hardening)
+
+    # v1.0.3 Fix 35: Track timeout state
+    # v1.1 OBSERVABILITY HOOK: timeout_triggered is scaffolding for future observability.
+    # Currently: Tracks whether global timeout elapsed but is not yet consumed by runtime.
+    # Future (v1.1+): Will emit timeout events for monitoring dashboards, including:
+    #   - Timeout event with workflow_id, step_id, elapsed_time_ms
+    #   - Integration with ModelWorkflowResultMetadata.timeout_triggered field
+    #   - Structured metrics for alerting (e.g., timeout rate per workflow type)
+    # The variable is set when time.perf_counter() > timeout_deadline, indicating
+    # the workflow's global timeout_ms has elapsed mid-execution.
+    # See: docs/architecture/CONTRACT_DRIVEN_NODEORCHESTRATOR_V1_0.md
+    timeout_triggered = False
 
     # Log workflow execution start
     logging.info(
@@ -834,9 +989,14 @@ async def _execute_parallel(
         """
         Execute a single workflow step asynchronously.
 
-        Inner async function designed for parallel execution via asyncio.gather.
-        Returns a tuple pattern that enables safe error handling in concurrent
-        contexts without raising exceptions that would cancel sibling tasks.
+        Inner async function that executes a step and returns a result tuple.
+        Returns a tuple pattern that enables safe error handling without raising
+        exceptions, allowing the caller to process results uniformly.
+
+        v1.0.5 Note:
+            Steps are executed sequentially within each wave (not concurrently).
+            The tuple return pattern is maintained for API stability and future
+            compatibility when true parallelism is introduced in v1.1+.
 
         Args:
             step: The workflow step to execute, containing step metadata,
@@ -852,17 +1012,15 @@ async def _execute_parallel(
             - error: Exception if execution failed, None if succeeded
 
             Exactly one of action/error will be None (mutually exclusive).
-            This tuple pattern allows the caller to process results from
-            asyncio.gather without individual try/except blocks per task.
+            This tuple pattern allows the caller to process results uniformly.
 
             The payload_size is returned to avoid redundant JSON serialization
             in the caller (OMN-670: Performance optimization).
 
         Note:
             This function catches all exceptions and returns them in the tuple
-            rather than re-raising. This is intentional for parallel execution:
-            - Prevents one failing step from canceling other parallel steps
-            - Allows batch processing of all results after gather completes
+            rather than re-raising. This is intentional for uniform error handling:
+            - Allows batch processing of all results after wave execution completes
             - Caller is responsible for logging and handling returned errors
             - wave_context provides read-only access to prior wave outputs
         """
@@ -888,38 +1046,96 @@ async def _execute_parallel(
             return (step, None, 0, e)
 
     # For parallel execution, we execute in waves based on dependencies
-    # Filter out disabled steps entirely - they are skipped, not failed
-    remaining_steps = [step for step in workflow_steps if step.enabled]
+    # v1.0.1 Fix 17: Track disabled steps in skipped_steps, not failed_steps
+    remaining_steps = []
+    for step in workflow_steps:
+        if step.enabled:
+            remaining_steps.append(step)
+        else:
+            skipped_steps.append(str(step.step_id))
+            completed_step_ids.add(step.step_id)  # v1.0.2 Fix 10: Satisfy dependencies
 
     while remaining_steps and not should_stop:
+        # v1.0.3 Fix 35: Check global timeout before processing each wave
+        # If timeout has elapsed, mark remaining steps as failed and exit loop
+        if time.perf_counter() > timeout_deadline:
+            timeout_triggered = True  # v1.1 observability hook (see TODO above)
+            for step in remaining_steps:
+                failed_steps.append(str(step.step_id))
+            logging.warning(
+                f"Workflow '{workflow_definition.workflow_metadata.workflow_name}' "
+                f"global timeout elapsed. {len(remaining_steps)} remaining steps marked as failed."
+            )
+            break  # Exit the wave processing loop
+
         # Find steps with met dependencies
+        # v1.0.2 Fix 7: Filter out steps with skip_on_failure when earlier steps failed
         ready_steps = [
             step
             for step in remaining_steps
             if _dependencies_met(step, completed_step_ids)
+            and not (step.skip_on_failure and failed_steps)
         ]
 
+        # v1.0.2 Fix 7: Handle skip_on_failure for steps with met dependencies
+        skip_on_failure_steps = [
+            step
+            for step in remaining_steps
+            if _dependencies_met(step, completed_step_ids)
+            and step.skip_on_failure
+            and failed_steps
+        ]
+        for step in skip_on_failure_steps:
+            skipped_steps.append(str(step.step_id))
+            completed_step_ids.add(step.step_id)  # Mark as satisfied for downstream
+            remaining_steps.remove(step)
         if not ready_steps:
+            # v1.0.1 Fix 19: Dependency Failure Semantics (Normative)
+            # Workflow MUST fail deterministically if cannot progress.
             # No progress can be made - remaining steps have unmet dependencies
+            # (dependency steps failed or skipped without being satisfied).
+            # All remaining steps are marked as failed to ensure deterministic failure.
             for step in remaining_steps:
                 failed_steps.append(str(step.step_id))
             break
 
         # Build workflow context for this wave from prior wave outputs
-        # Steps in the same wave cannot see each other's outputs (they run in parallel)
+        # Steps in the same wave cannot see each other's outputs (logically parallel,
+        # executed sequentially in v1.0 per Fix 57)
         wave_context = _build_workflow_context(
             workflow_id, completed_step_ids, step_outputs
         )
 
-        # Execute all ready steps in parallel using asyncio.gather
-        tasks = [
-            asyncio.create_task(execute_step(step, wave_context))
-            for step in ready_steps
-        ]
-        results = await asyncio.gather(*tasks)
+        # v1.0.5 Fix 57: Execute steps SEQUENTIALLY within each wave
+        # Parallel waves are represented logically as metadata only.
+        # Actual concurrency is deferred to omnibase_infra in future versions.
+        # The wave structure ensures correct dependency ordering while keeping
+        # v1.0 execution simple and deterministic.
+        results: list[
+            tuple[ModelWorkflowStep, ModelAction | None, int, Exception | None]
+        ] = []
+        for step in ready_steps:
+            result = await execute_step(step, wave_context)
+            results.append(result)
 
-        # Process results from parallel execution
+        # v1.0.3 Fix 22: Partial Parallel-Wave Failure
+        # Track if a "stop" was triggered within this wave. When triggered, remaining
+        # steps in the wave are skipped (not added to completed/failed).
+        wave_stop_triggered = False
+
+        # Process results from sequential wave execution (Fix 57)
         for step, action, action_payload_size, error in results:
+            # v1.0.3 Fix 22: Skip remaining steps in wave if "stop" was triggered
+            if wave_stop_triggered:
+                # This step's result is ignored - it's effectively skipped
+                # Note: The step already executed, but we don't add it to
+                # completed/failed lists. This is the "skip" behavior.
+                logging.debug(
+                    f"Workflow '{workflow_definition.workflow_metadata.workflow_name}' "
+                    f"step '{step.step_name}' ({step.step_id}) skipped due to wave stop"
+                )
+                continue
+
             if error is None and action is not None:
                 # Step succeeded - check payload size BEFORE marking completed
                 # Track total payload size (OMN-670: Security hardening)
@@ -952,6 +1168,7 @@ async def _execute_parallel(
                 completed_steps.append(str(step.step_id))
                 completed_step_ids.add(step.step_id)
                 # Store step output for subsequent waves (action payload serves as output)
+                # v1.0.4 Fix 47: step_outputs MUST be JSON-serializable
                 step_outputs[step.step_id] = action.payload
             else:
                 # Step failed
@@ -984,7 +1201,11 @@ async def _execute_parallel(
                         f"Workflow '{workflow_definition.workflow_metadata.workflow_name}' step '{step.step_name}' ({step.step_id}) failed with unexpected error: {error}"
                     )
 
+                # v1.0.3 Fix 21 & Fix 22: Step-level error_action takes precedence.
+                # If error_action="stop", trigger wave stop and set workflow stop.
                 if step.error_action == "stop":
+                    # v1.0.3 Fix 22: Trigger wave stop - remaining steps in wave are skipped
+                    wave_stop_triggered = True
                     # Stop entire workflow after processing current wave
                     should_stop = True
 
@@ -1016,6 +1237,7 @@ async def _execute_parallel(
             workflow_name=workflow_definition.workflow_metadata.workflow_name,
             workflow_hash="",  # Will be set by execute_workflow after return
         ),
+        skipped_steps=skipped_steps,  # v1.0.1 Fix 17: Include skipped steps in result
     )
 
 
@@ -1023,6 +1245,7 @@ async def _execute_batch(
     workflow_definition: ModelWorkflowDefinition,
     workflow_steps: list[ModelWorkflowStep],
     workflow_id: UUID,
+    timeout_deadline: float,
 ) -> WorkflowExecutionResult:
     """
     Execute workflow with batching.
@@ -1034,6 +1257,7 @@ async def _execute_batch(
         workflow_definition: Workflow definition from YAML contract.
         workflow_steps: List of workflow steps to execute.
         workflow_id: Unique workflow execution ID.
+        timeout_deadline: Unix timestamp (perf_counter) when global timeout elapses.
 
     Returns:
         WorkflowExecutionResult with batch metadata (execution_mode='batch', batch_size).
@@ -1048,7 +1272,10 @@ async def _execute_batch(
         See _execute_sequential for detailed error handling semantics.
     """
     # For batch mode, use sequential execution with batching metadata
-    result = await _execute_sequential(workflow_definition, workflow_steps, workflow_id)
+    # Pass timeout_deadline for v1.0.3 Fix 35 global timeout support
+    result = await _execute_sequential(
+        workflow_definition, workflow_steps, workflow_id, timeout_deadline
+    )
     # Since ModelWorkflowResultMetadata is frozen, use model_copy() to create new instance
     if result.metadata is not None:
         result.metadata = result.metadata.model_copy(
@@ -1162,11 +1389,18 @@ def _validate_json_payload(
     payload: dict[str, object], context: str = "", *, strict: bool = False
 ) -> None:
     """
-    Validate that payload is JSON-serializable.
+    Validate that payload is JSON-serializable (standalone utility function).
 
-    Ensures payloads can be safely transmitted over event systems and stored
-    in JSON-based persistence layers. Called during action creation to fail
-    fast if payload contains non-serializable objects.
+    This is a standalone pre-validation utility for validating payloads before
+    passing them to workflow functions. It can be used to fail fast if payload
+    contains non-serializable objects.
+
+    Note: Internal workflow execution (_create_action_for_step) performs inline
+    JSON validation combined with size checking in a single json.dumps() pass for
+    efficiency. This function is provided as a separate utility for:
+    - External callers who want to validate payloads before workflow execution
+    - Testing and debugging payload serialization issues
+    - Pre-flight validation in custom workflow builders
 
     Serialization Behavior:
         By default (strict=False), allows common workflow types (UUID, datetime)
@@ -1180,9 +1414,6 @@ def _validate_json_payload(
         Note: Other non-JSON types (lambdas, custom objects, etc.) will fail
         validation in both modes, which is the desired behavior to catch
         programming errors early.
-
-    Used by:
-        _create_action_for_step: Validates action payloads before ModelAction creation
 
     Args:
         payload: The payload dict to validate
@@ -1236,6 +1467,7 @@ def _validate_json_payload(
 def _create_action_for_step(
     step: ModelWorkflowStep,
     workflow_id: UUID,
+    step_id_to_action_id: dict[UUID, UUID] | None = None,
 ) -> tuple[ModelAction, int]:
     """
     Create action for workflow step.
@@ -1243,9 +1475,29 @@ def _create_action_for_step(
     Enforces payload size limit (OMN-670: Security hardening):
     - MAX_STEP_PAYLOAD_SIZE_BYTES: Maximum size of individual step payload
 
+    v1.0.1 Normative Compliance (OMN-658):
+        - Fix 16: Action.dependencies uses action_ids, NOT step_ids. When
+          step_id_to_action_id mapping is provided, step.depends_on (step IDs)
+          are converted to action IDs. Steps without pre-mapped action IDs
+          are excluded from dependencies with a warning.
+
+    v1.0.2-v1.0.4 Normative Compliance (OMN-659):
+        - Fix 12: Only ModelOnexError is raised intentionally. All other exceptions
+          (TypeError, ValueError from JSON serialization) are caught and converted
+          to ModelOnexError. Callers catch and convert to FAILED steps.
+        - Fix 15: step_id is preserved from contract load (step.step_id), not generated.
+          This function does NOT create new step_id values.
+        - Fix 17: Step metadata is read-only. This function reads step fields but MUST NOT
+        - Fix 52: order_index is NOT used for action_id, priority, or dependencies.
+          modify step.metadata, step.correlation_id, or any other step attributes.
+
     Args:
-        step: Workflow step to create action for
+        step: Workflow step to create action for (read-only, not modified)
         workflow_id: Parent workflow ID
+        step_id_to_action_id: Optional mapping from step IDs to action IDs.
+            Per v1.0.1 Fix 16, this mapping is used to convert step.depends_on
+            (step IDs) to action dependencies (action IDs). If not provided,
+            step.depends_on is used directly as dependencies.
 
     Returns:
         Tuple of (ModelAction, payload_size_bytes) where payload_size_bytes is
@@ -1325,19 +1577,42 @@ def _create_action_for_step(
             },
         )
 
-    # Create typed metadata with step context
-    action_metadata = ModelActionMetadata()
-    action_metadata.parameters = {
-        "step_name": step.step_name,
-        "correlation_id": str(step.correlation_id),
-    }
+    # v1.0.3 Fix 25: Action Metadata Immutability
+    # Metadata MUST be immutable after creation. Create with all fields at once.
+    # Fix 31 (v1.0.3): correlation_id MUST be preserved exactly as in step
+    # The correlation_id is set on both the typed field AND in parameters for consistency
+    action_metadata = ModelActionMetadata(
+        correlation_id=step.correlation_id,  # Preserve UUID exactly from step
+        parameters={
+            "step_name": step.step_name,
+            "correlation_id": str(step.correlation_id),
+        },
+    )
+
+    # v1.0.1 Fix 16: Convert step.depends_on (step IDs) to action IDs using mapping
+    # Per ModelAction.dependencies docstring: "List of action IDs this action depends on"
+    if step_id_to_action_id is not None:
+        action_dependencies: list[UUID] = []
+        for dep_step_id in step.depends_on:
+            if dep_step_id in step_id_to_action_id:
+                action_dependencies.append(step_id_to_action_id[dep_step_id])
+            else:
+                # Dependency step not in mapping - log warning but don't fail
+                # This can happen if dependency step was skipped (disabled)
+                logging.warning(
+                    f"Step '{step.step_name}' ({step.step_id}) depends on step "
+                    f"'{dep_step_id}' which has no mapped action_id (may be skipped)"
+                )
+    else:
+        # No mapping provided: use step IDs directly as dependencies
+        action_dependencies = list(step.depends_on)
 
     action = ModelAction(
         action_id=uuid4(),
         action_type=action_type,
         target_node_type=target_node_type,
         payload=typed_payload,
-        dependencies=step.depends_on,
+        dependencies=action_dependencies,  # v1.0.1 Fix 16: Use action_ids, not step_ids
         priority=action_priority,
         timeout_ms=step.timeout_ms,
         lease_id=uuid4(),
@@ -1364,27 +1639,36 @@ def _get_topological_order(
     """
     Get topological ordering of steps based on dependencies.
 
-    Uses Kahn's algorithm for topological sorting with priority-aware ordering.
-    When multiple steps have zero in-degree (ready to execute), they are ordered by:
-    1. Clamped priority (min(priority, 10)) - lower value = higher priority
-    2. Declaration order (index in workflow_steps list) - earlier = first
+    Uses Kahn's algorithm for topological sorting with YAML declaration order.
+    When multiple steps have zero in-degree (ready to execute), they are ordered
+    by their declaration order (index in workflow_steps list) - earlier = first.
+
+    v1.0.4 Normative (Action Emission Wave Ordering - Fix 11, Fix 18):
+        Within a wave, actions MUST appear in YAML declaration order.
+        Across waves, actions in wave N are emitted before any in wave N+1.
+        Step priority is passed to action.priority for target node scheduling,
+        but does NOT affect emission order within the orchestrator.
+        See: docs/architecture/CONTRACT_DRIVEN_NODEORCHESTRATOR_V1_0.md
 
     Args:
         workflow_steps: Workflow steps to order
 
     Returns:
-        List of step IDs in topological order, respecting both dependencies
-        and priority/declaration order for steps with equal dependencies.
+        List of step IDs in topological order, respecting dependencies
+        and YAML declaration order for steps within the same wave.
     """
-    # Build step_id to (clamped_priority, declaration_index) mapping for heap ordering.
-    # Lower values = higher priority in heap, so we use priority directly.
-    # Priority clamping: step priority (1-1000, authoring-time hint) -> clamped (1-10) for consistent
-    # ordering with action priority (1-10, execution-time constraint). Default to 1 if None.
-    # See: docs/architecture/CONTRACT_DRIVEN_NODEORCHESTRATOR_V1_0.md (Section: "Step Priority vs Action Priority")
-    step_order_key: dict[UUID, tuple[int, int]] = {}
+    # Build step_id to declaration_index mapping for heap ordering.
+    # v1.0.4 Normative (Fix 11): Within a wave, actions MUST appear in YAML declaration order.
+    # Priority is NOT used for emission ordering - it's passed to action.priority
+    # for target node scheduling decisions, not orchestrator emission order.
+    #
+    # v1.0.3 Fix 37: Step Iteration Order Stability
+    # All iteration over workflow_steps MUST preserve original step order exactly as loaded.
+    # The step_order_key dict maps step_id to declaration index to ensure deterministic
+    # ordering in the heap-based topological sort.
+    step_order_key: dict[UUID, int] = {}
     for idx, step in enumerate(workflow_steps):
-        clamped_priority = min(step.priority, 10) if step.priority is not None else 1
-        step_order_key[step.step_id] = (clamped_priority, idx)
+        step_order_key[step.step_id] = idx
 
     # Build adjacency list and in-degree map
     step_ids = {step.step_id for step in workflow_steps}
@@ -1397,28 +1681,36 @@ def _get_topological_order(
                 edges[dep_id].append(step.step_id)
                 in_degree[step.step_id] += 1
 
-    # Kahn's algorithm with priority queue for ordering
-    # Heap entries: (clamped_priority, declaration_index, step_id)
-    # Using tuple comparison: lower priority value first, then lower index first
-    heap: list[tuple[int, int, UUID]] = []
+    # Kahn's algorithm with priority queue for YAML declaration ordering
+    # Heap entries: (declaration_index, step_id)
+    # Using tuple comparison: lower index first (earlier YAML position)
+    # v1.0.4 Normative (Fix 18): All actions in wave N emitted before any in wave N+1.
+    heap: list[tuple[int, UUID]] = []
     for step_id, degree in in_degree.items():
         if degree == 0:
-            priority, idx = step_order_key[step_id]
-            heapq.heappush(heap, (priority, idx, step_id))
+            idx = step_order_key[step_id]
+            heapq.heappush(heap, (idx, step_id))
 
     result: list[UUID] = []
 
     while heap:
-        _, _, node = heapq.heappop(heap)
+        _, node = heapq.heappop(heap)
         result.append(node)
 
         for neighbor in edges.get(node, []):
             in_degree[neighbor] -= 1
             if in_degree[neighbor] == 0:
-                priority, idx = step_order_key[neighbor]
-                heapq.heappush(heap, (priority, idx, neighbor))
+                idx = step_order_key[neighbor]
+                heapq.heappush(heap, (idx, neighbor))
 
     return result
+
+
+# MAX_DFS_ITERATIONS: Resource exhaustion protection constant for DFS cycle detection.
+# Imported from workflow_constants.py (canonical source).
+# Value of 10,000 iterations supports workflows with up to ~5,000 steps
+# (worst case: each step visited twice during DFS traversal).
+# See workflow_validator.py module docstring "Security Considerations" for full documentation.
 
 
 def _has_dependency_cycles(
@@ -1427,13 +1719,27 @@ def _has_dependency_cycles(
     """
     Check if workflow contains dependency cycles.
 
-    Uses DFS-based cycle detection.
+    Uses DFS-based cycle detection with iteration bounds to prevent
+    resource exhaustion from malicious or malformed inputs.
+
+    Security Considerations:
+        The MAX_DFS_ITERATIONS constant (10,000) protects against denial-of-service
+        attacks from maliciously crafted workflow graphs. Without this limit, an
+        attacker could submit workflows designed to cause infinite loops or excessive
+        CPU consumption during cycle detection.
+
+        If cycle detection exceeds MAX_DFS_ITERATIONS, a ModelOnexError is raised
+        with detailed context for debugging and audit logging.
 
     Args:
         workflow_steps: Workflow steps to check
 
     Returns:
         True if cycles detected, False otherwise
+
+    Raises:
+        ModelOnexError: If cycle detection exceeds MAX_DFS_ITERATIONS,
+            indicating possible malicious input or malformed workflow.
     """
     # Build adjacency list
     step_ids = {step.step_id for step in workflow_steps}
@@ -1445,11 +1751,30 @@ def _has_dependency_cycles(
                 # Note: dependency is reversed - we go FROM dependent TO dependency
                 edges[step.step_id].append(dep_id)
 
-    # DFS-based cycle detection
+    # DFS-based cycle detection with iteration tracking
     visited: set[UUID] = set()
     rec_stack: set[UUID] = set()
+    iterations = 0  # Track iterations for resource exhaustion protection
 
     def has_cycle_dfs(node: UUID) -> bool:
+        nonlocal iterations
+        iterations += 1
+
+        # Resource exhaustion protection - prevent malicious/malformed inputs
+        if iterations > MAX_DFS_ITERATIONS:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.ORCHESTRATOR_EXEC_ITERATION_LIMIT_EXCEEDED,
+                message=(
+                    f"Cycle detection exceeded {MAX_DFS_ITERATIONS} iterations - "
+                    "possible malicious input or malformed workflow"
+                ),
+                context={
+                    "step_count": len(workflow_steps),
+                    "max_iterations": MAX_DFS_ITERATIONS,
+                    "last_node": str(node),
+                },
+            )
+
         visited.add(node)
         rec_stack.add(node)
 
@@ -1533,17 +1858,17 @@ def verify_workflow_integrity(
     # Compare hashes
     if actual_hash != expected_hash:
         raise ModelOnexError(
-            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            error_code=EnumCoreErrorCode.SECURITY_VIOLATION,
             message="Workflow integrity check failed: hash mismatch detected",
             context={
-                "expected_hash": expected_hash,
-                "actual_hash": actual_hash,
                 "workflow_name": workflow_definition.workflow_metadata.workflow_name,
             },
         )
 
 
 # Public API
+# NOTE: MAX_DFS_ITERATIONS is imported from workflow_constants.py (canonical source).
+# Import directly from omnibase_core.validation.workflow_constants for this constant.
 __all__ = [
     "MAX_STEP_PAYLOAD_SIZE_BYTES",
     "MAX_TOTAL_PAYLOAD_SIZE_BYTES",

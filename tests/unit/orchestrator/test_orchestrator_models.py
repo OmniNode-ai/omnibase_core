@@ -113,9 +113,15 @@ class TestModelOrchestratorInputFrozenBehavior:
 
     def test_is_frozen(self) -> None:
         """Verify ModelOrchestratorInput is immutable after creation."""
+        # v1.0.1 Fix 1: steps must be typed ModelWorkflowStep instances
+        step = ModelWorkflowStep(
+            step_id=uuid4(),
+            step_name="test",
+            step_type="compute",
+        )
         model = ModelOrchestratorInput(
             workflow_id=uuid4(),
-            steps=[{"name": "test", "action": "test_action"}],
+            steps=[step],
         )
         with pytest.raises(ValidationError):
             model.failure_strategy = "continue_on_error"
@@ -135,9 +141,15 @@ class TestModelOrchestratorInputFrozenBehavior:
 
     def test_model_copy_for_modifications(self) -> None:
         """Verify model_copy can be used to create modified copies."""
+        # v1.0.1 Fix 1: steps must be typed ModelWorkflowStep instances
+        step = ModelWorkflowStep(
+            step_id=uuid4(),
+            step_name="test",
+            step_type="compute",
+        )
         original = ModelOrchestratorInput(
             workflow_id=uuid4(),
-            steps=[{"name": "test", "action": "run"}],
+            steps=[step],
             max_parallel_steps=5,
         )
         modified = original.model_copy(update={"max_parallel_steps": 10})
@@ -153,9 +165,15 @@ class TestModelOrchestratorInputSerialization:
     def test_json_serialization(self) -> None:
         """Test model serializes to valid JSON."""
         workflow_id = uuid4()
+        # v1.0.1 Fix 1: steps must be typed ModelWorkflowStep instances
+        step = ModelWorkflowStep(
+            step_id=uuid4(),
+            step_name="step1",
+            step_type="compute",
+        )
         model = ModelOrchestratorInput(
             workflow_id=workflow_id,
-            steps=[{"name": "step1", "action": "validate"}],
+            steps=[step],
             execution_mode=EnumExecutionMode.SEQUENTIAL,
             max_parallel_steps=5,
             global_timeout_ms=300000,
@@ -172,9 +190,15 @@ class TestModelOrchestratorInputSerialization:
     def test_json_deserialization(self) -> None:
         """Test model deserializes from valid JSON."""
         workflow_id = uuid4()
+        # v1.0.1 Fix 1: steps must be typed ModelWorkflowStep instances
+        step = ModelWorkflowStep(
+            step_id=uuid4(),
+            step_name="step1",
+            step_type="compute",
+        )
         model = ModelOrchestratorInput(
             workflow_id=workflow_id,
-            steps=[{"name": "step1", "action": "validate"}],
+            steps=[step],
         )
         json_str = model.model_dump_json()
         restored = ModelOrchestratorInput.model_validate_json(json_str)
@@ -185,9 +209,15 @@ class TestModelOrchestratorInputSerialization:
         """Test model -> JSON -> model produces equal result."""
         workflow_id = uuid4()
         operation_id = uuid4()
+        # v1.0.1 Fix 1: steps must be typed ModelWorkflowStep instances
+        step = ModelWorkflowStep(
+            step_id=uuid4(),
+            step_name="step1",
+            step_type="compute",
+        )
         model = ModelOrchestratorInput(
             workflow_id=workflow_id,
-            steps=[{"name": "step1", "action": "validate"}],
+            steps=[step],
             operation_id=operation_id,
             execution_mode=EnumExecutionMode.PARALLEL,
             max_parallel_steps=10,
@@ -958,13 +988,16 @@ class TestModelWorkflowStepFieldValidation:
         assert model.max_parallel_instances == 1
 
     def test_step_type_literal_values(self) -> None:
-        """Test all valid step_type literal values."""
+        """Test all valid step_type literal values.
+
+        v1.0.4 Fix 41: step_type must be compute|effect|reducer|orchestrator|custom|parallel only.
+        "conditional" is NOT a valid step_type and MUST be rejected.
+        """
         valid_types: list[str] = [
             "compute",
             "effect",
             "reducer",
             "orchestrator",
-            "conditional",
             "parallel",
             "custom",
         ]
@@ -974,6 +1007,19 @@ class TestModelWorkflowStepFieldValidation:
                 step_type=step_type,
             )
             assert model.step_type == step_type
+
+    def test_conditional_step_type_rejected(self) -> None:
+        """Test that 'conditional' step_type is rejected per v1.0.4 Fix 41.
+
+        v1.0.4 Fix 41: "conditional" is NOT a valid step_type.
+        This enforces that step_type must be one of:
+        compute|effect|reducer|orchestrator|custom|parallel
+        """
+        with pytest.raises(ValidationError):
+            ModelWorkflowStep(
+                step_name="test",
+                step_type="conditional",  # type: ignore[arg-type]
+            )
 
     def test_error_action_literal_values(self) -> None:
         """Test all valid error_action literal values."""
@@ -1226,17 +1272,17 @@ class TestModelWorkflowDefinitionMetadataFieldValidation:
 @pytest.mark.timeout(30)
 @pytest.mark.unit
 class TestModelCoordinationRulesFrozenBehavior:
-    """Tests for ModelCoordinationRules frozen and extra=forbid."""
+    """Tests for ModelCoordinationRules frozen and extra=ignore (v1.0.5 Fix 54)."""
 
     def test_model_config_frozen(self) -> None:
         """Verify model_config has frozen=True."""
         config = ModelCoordinationRules.model_config
         assert config.get("frozen") is True
 
-    def test_model_config_extra_forbid(self) -> None:
-        """Verify model_config has extra='forbid'."""
+    def test_model_config_extra_ignore(self) -> None:
+        """Verify model_config has extra='ignore' (v1.0.5 Fix 54: Reserved Fields)."""
         config = ModelCoordinationRules.model_config
-        assert config.get("extra") == "forbid"
+        assert config.get("extra") == "ignore"
 
     def test_is_frozen(self) -> None:
         """Verify ModelCoordinationRules is immutable after creation."""
@@ -1244,17 +1290,16 @@ class TestModelCoordinationRulesFrozenBehavior:
         with pytest.raises(ValidationError):
             model.parallel_execution_allowed = False
 
-    def test_extra_fields_rejected(self) -> None:
-        """Verify extra fields are rejected."""
-        with pytest.raises(ValidationError) as exc_info:
-            ModelCoordinationRules(
-                version=DEFAULT_VERSION,
-                unknown_field="should_fail",
-            )
-        assert (
-            "extra" in str(exc_info.value).lower()
-            or "unexpected" in str(exc_info.value).lower()
+    def test_extra_fields_ignored(self) -> None:
+        """Verify extra fields are silently ignored (v1.0.5 Fix 54: Reserved Fields)."""
+        # Should NOT raise - extra fields are ignored for forward compatibility
+        model = ModelCoordinationRules(
+            version=DEFAULT_VERSION,
+            unknown_field="should_be_ignored",  # type: ignore[call-arg]
         )
+        assert model.version == DEFAULT_VERSION
+        # Extra field should not be accessible as an attribute
+        assert not hasattr(model, "unknown_field")
 
 
 @pytest.mark.timeout(30)
@@ -1335,17 +1380,17 @@ class TestModelCoordinationRulesFieldValidation:
 @pytest.mark.timeout(30)
 @pytest.mark.unit
 class TestModelWorkflowDefinitionFrozenBehavior:
-    """Tests for ModelWorkflowDefinition frozen and extra=forbid."""
+    """Tests for ModelWorkflowDefinition frozen and extra=ignore (v1.0.5 Fix 54)."""
 
     def test_model_config_frozen(self) -> None:
         """Verify model_config has frozen=True."""
         config = ModelWorkflowDefinition.model_config
         assert config.get("frozen") is True
 
-    def test_model_config_extra_forbid(self) -> None:
-        """Verify model_config has extra='forbid'."""
+    def test_model_config_extra_ignore(self) -> None:
+        """Verify model_config has extra='ignore' (v1.0.5 Fix 54: Reserved Fields)."""
         config = ModelWorkflowDefinition.model_config
-        assert config.get("extra") == "forbid"
+        assert config.get("extra") == "ignore"
 
     def test_is_frozen(self) -> None:
         """Verify ModelWorkflowDefinition is immutable after creation."""
@@ -1367,8 +1412,8 @@ class TestModelWorkflowDefinitionFrozenBehavior:
         with pytest.raises(ValidationError):
             model.version = ModelSemVer(major=2, minor=0, patch=0)
 
-    def test_extra_fields_rejected(self) -> None:
-        """Verify extra fields are rejected."""
+    def test_extra_fields_ignored(self) -> None:
+        """Verify extra fields are silently ignored (v1.0.5 Fix 54: Reserved Fields)."""
         metadata = ModelWorkflowDefinitionMetadata(
             version=DEFAULT_VERSION,
             workflow_name="test",
@@ -1379,17 +1424,16 @@ class TestModelWorkflowDefinitionFrozenBehavior:
             version=DEFAULT_VERSION,
             nodes=[],
         )
-        with pytest.raises(ValidationError) as exc_info:
-            ModelWorkflowDefinition(
-                version=DEFAULT_VERSION,
-                workflow_metadata=metadata,
-                execution_graph=execution_graph,
-                unknown_field="should_fail",
-            )
-        assert (
-            "extra" in str(exc_info.value).lower()
-            or "unexpected" in str(exc_info.value).lower()
+        # Should NOT raise - extra fields are ignored for forward compatibility
+        model = ModelWorkflowDefinition(
+            version=DEFAULT_VERSION,
+            workflow_metadata=metadata,
+            execution_graph=execution_graph,
+            unknown_field="should_be_ignored",  # type: ignore[call-arg]
         )
+        assert model.version == DEFAULT_VERSION
+        # Extra field should not be accessible as an attribute
+        assert not hasattr(model, "unknown_field")
 
 
 @pytest.mark.timeout(30)
@@ -1654,10 +1698,7 @@ class TestOrchestratorModelsFrozenBehaviorParametrized:
                 ModelWorkflowStep,
                 {"step_name": "test", "step_type": "compute"},
             ),
-            (
-                ModelCoordinationRules,
-                {"version": DEFAULT_VERSION},
-            ),
+            # NOTE: ModelCoordinationRules excluded - uses extra='ignore' per v1.0.5 Fix 54
             (
                 ModelWorkflowDefinitionMetadata,
                 {
@@ -1673,14 +1714,17 @@ class TestOrchestratorModelsFrozenBehaviorParametrized:
             "OrchestratorOutput",
             "Action",
             "WorkflowStep",
-            "CoordinationRules",
             "WorkflowDefinitionMetadata",
         ],
     )
     def test_model_config_extra_forbid(
         self, model_class: type[Any], kwargs: dict[str, Any]
     ) -> None:
-        """Verify model_config has extra='forbid' for all models."""
+        """Verify model_config has extra='forbid' for models that reject extra fields.
+
+        Note: Some models (CoordinationRules, ExecutionGraph, WorkflowNode, WorkflowDefinition)
+        use extra='ignore' per v1.0.5 Fix 54 (Reserved Fields Governance) and are tested separately.
+        """
         config = model_class.model_config
         assert config.get("extra") == "forbid", (
             f"{model_class.__name__} should have extra='forbid'"
@@ -1702,7 +1746,17 @@ class TestOrchestratorModelsSerializationParametrized:
         [
             (
                 ModelOrchestratorInput,
-                {"workflow_id": uuid4(), "steps": [{"name": "test", "action": "run"}]},
+                {
+                    "workflow_id": uuid4(),
+                    # v1.0.1 Fix 1: steps must be typed ModelWorkflowStep instances
+                    "steps": [
+                        ModelWorkflowStep(
+                            step_id=uuid4(),
+                            step_name="test",
+                            step_type="compute",
+                        )
+                    ],
+                },
             ),
             (
                 ModelOrchestratorOutput,
@@ -1916,17 +1970,17 @@ class TestOrchestratorModelsEdgeCases:
 @pytest.mark.timeout(30)
 @pytest.mark.unit
 class TestModelExecutionGraphFrozenBehavior:
-    """Tests for ModelExecutionGraph frozen and extra=forbid."""
+    """Tests for ModelExecutionGraph frozen and extra=ignore (v1.0.5 Fix 54)."""
 
     def test_model_config_frozen(self) -> None:
         """Verify model_config has frozen=True."""
         config = ModelExecutionGraph.model_config
         assert config.get("frozen") is True
 
-    def test_model_config_extra_forbid(self) -> None:
-        """Verify model_config has extra='forbid'."""
+    def test_model_config_extra_ignore(self) -> None:
+        """Verify model_config has extra='ignore' (v1.0.5 Fix 54: Reserved Fields)."""
         config = ModelExecutionGraph.model_config
-        assert config.get("extra") == "forbid"
+        assert config.get("extra") == "ignore"
 
     def test_is_frozen(self) -> None:
         """Verify ModelExecutionGraph is immutable after creation."""
@@ -1937,18 +1991,17 @@ class TestModelExecutionGraphFrozenBehavior:
         with pytest.raises(ValidationError):
             model.nodes = []
 
-    def test_extra_fields_rejected(self) -> None:
-        """Verify extra fields are rejected."""
-        with pytest.raises(ValidationError) as exc_info:
-            ModelExecutionGraph(
-                version=DEFAULT_VERSION,
-                nodes=[],
-                unknown_field="should_fail",
-            )
-        assert (
-            "extra" in str(exc_info.value).lower()
-            or "unexpected" in str(exc_info.value).lower()
+    def test_extra_fields_ignored(self) -> None:
+        """Verify extra fields are silently ignored (v1.0.5 Fix 54: Reserved Fields)."""
+        # Should NOT raise - extra fields are ignored for forward compatibility
+        model = ModelExecutionGraph(
+            version=DEFAULT_VERSION,
+            nodes=[],
+            unknown_field="should_be_ignored",  # type: ignore[call-arg]
         )
+        assert model.version == DEFAULT_VERSION
+        # Extra field should not be accessible as an attribute
+        assert not hasattr(model, "unknown_field")
 
 
 @pytest.mark.timeout(30)
@@ -1977,17 +2030,17 @@ class TestModelExecutionGraphSerialization:
 @pytest.mark.timeout(30)
 @pytest.mark.unit
 class TestModelWorkflowNodeFrozenBehavior:
-    """Tests for ModelWorkflowNode frozen and extra=forbid."""
+    """Tests for ModelWorkflowNode frozen and extra=ignore (v1.0.5 Fix 54)."""
 
     def test_model_config_frozen(self) -> None:
         """Verify model_config has frozen=True."""
         config = ModelWorkflowNode.model_config
         assert config.get("frozen") is True
 
-    def test_model_config_extra_forbid(self) -> None:
-        """Verify model_config has extra='forbid'."""
+    def test_model_config_extra_ignore(self) -> None:
+        """Verify model_config has extra='ignore' (v1.0.5 Fix 54: Reserved Fields)."""
         config = ModelWorkflowNode.model_config
-        assert config.get("extra") == "forbid"
+        assert config.get("extra") == "ignore"
 
     def test_is_frozen(self) -> None:
         """Verify ModelWorkflowNode is immutable after creation."""
@@ -1998,18 +2051,17 @@ class TestModelWorkflowNodeFrozenBehavior:
         with pytest.raises(ValidationError):
             model.node_type = EnumNodeType.TRANSFORMER
 
-    def test_extra_fields_rejected(self) -> None:
-        """Verify extra fields are rejected."""
-        with pytest.raises(ValidationError) as exc_info:
-            ModelWorkflowNode(
-                version=DEFAULT_VERSION,
-                node_type=EnumNodeType.COMPUTE_GENERIC,
-                unknown_field="should_fail",
-            )
-        assert (
-            "extra" in str(exc_info.value).lower()
-            or "unexpected" in str(exc_info.value).lower()
+    def test_extra_fields_ignored(self) -> None:
+        """Verify extra fields are silently ignored (v1.0.5 Fix 54: Reserved Fields)."""
+        # Should NOT raise - extra fields are ignored for forward compatibility
+        model = ModelWorkflowNode(
+            version=DEFAULT_VERSION,
+            node_type=EnumNodeType.COMPUTE_GENERIC,
+            unknown_field="should_be_ignored",  # type: ignore[call-arg]
         )
+        assert model.version == DEFAULT_VERSION
+        # Extra field should not be accessible as an attribute
+        assert not hasattr(model, "unknown_field")
 
 
 @pytest.mark.timeout(30)

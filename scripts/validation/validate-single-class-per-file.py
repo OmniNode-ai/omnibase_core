@@ -15,7 +15,6 @@ architecture principles.
 import argparse
 import ast
 import sys
-from enum import Enum
 from pathlib import Path
 from typing import Any
 

@@ -3,6 +3,7 @@ from typing import Any, cast
 
 from pydantic import Field
 
+from omnibase_core.constants import THREAD_JOIN_TIMEOUT_SECONDS
 from omnibase_core.errors import OnexError
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -579,7 +580,7 @@ class MixinEventBus[InputStateT, OutputStateT](BaseModel):
         self.event_subscriptions.clear()
 
         if self.event_listener_thread.is_alive():
-            self.event_listener_thread.join(timeout=5.0)
+            self.event_listener_thread.join(timeout=THREAD_JOIN_TIMEOUT_SECONDS)
 
         self._log_info("Event listener stopped", "event_listener")
 

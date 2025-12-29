@@ -20,6 +20,7 @@ from uuid import UUID
 
 from pydantic import ValidationError
 
+from omnibase_core.constants import THREAD_JOIN_TIMEOUT_SECONDS
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
 from omnibase_core.logging.structured import emit_log_event_sync as emit_log_event
@@ -325,7 +326,7 @@ class MixinEventListener[InputStateT, OutputStateT]:
             self._event_subscriptions.clear()
 
             # Wait for thread to finish
-            self._event_listener_thread.join(timeout=5)
+            self._event_listener_thread.join(timeout=THREAD_JOIN_TIMEOUT_SECONDS)
 
             emit_log_event(
                 LogLevel.INFO,

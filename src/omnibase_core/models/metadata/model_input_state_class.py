@@ -58,16 +58,24 @@ class ModelInputState(BaseModel):
 
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        metadata = {}
+        metadata: TypedDictMetadataDict = {}
         # Include common metadata fields
         for field in ["name", "description", "version", "tags", "metadata"]:
             if hasattr(self, field):
                 value = getattr(self, field)
                 if value is not None:
-                    metadata[field] = (
-                        str(value) if not isinstance(value, (dict, list)) else value
-                    )
-        return metadata  # type: ignore[return-value]
+                    # Preserve ModelSemVer and complex types, only stringify primitives
+                    if field == "version":
+                        # Keep ModelSemVer as-is per TypedDictMetadataDict spec
+                        metadata["version"] = value
+                    elif isinstance(value, (dict, list)):
+                        metadata[field] = value  # type: ignore[literal-required]
+                    elif field in ("name", "description"):
+                        # These fields should be strings per TypedDictMetadataDict
+                        metadata[field] = str(value)  # type: ignore[literal-required]
+                    else:
+                        metadata[field] = value  # type: ignore[literal-required]
+        return metadata
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
