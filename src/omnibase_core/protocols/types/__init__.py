@@ -15,7 +15,11 @@ Design Principles:
 from __future__ import annotations
 
 from omnibase_core.protocols.types.protocol_action import ProtocolAction
+
+# Node Protocols (OMN-662)
+from omnibase_core.protocols.types.protocol_compute import ProtocolCompute
 from omnibase_core.protocols.types.protocol_configurable import ProtocolConfigurable
+from omnibase_core.protocols.types.protocol_effect import ProtocolEffect
 from omnibase_core.protocols.types.protocol_executable import ProtocolExecutable
 from omnibase_core.protocols.types.protocol_identifiable import ProtocolIdentifiable
 from omnibase_core.protocols.types.protocol_log_emitter import ProtocolLogEmitter
@@ -29,6 +33,7 @@ from omnibase_core.protocols.types.protocol_node_metadata_block import (
     ProtocolNodeMetadataBlock,
 )
 from omnibase_core.protocols.types.protocol_node_result import ProtocolNodeResult
+from omnibase_core.protocols.types.protocol_orchestrator import ProtocolOrchestrator
 from omnibase_core.protocols.types.protocol_schema_value import ProtocolSchemaValue
 from omnibase_core.protocols.types.protocol_serializable import ProtocolSerializable
 from omnibase_core.protocols.types.protocol_service_instance import (
@@ -67,6 +72,10 @@ __all__ = [
     "ProtocolNodeResult",
     # Workflow Reducer
     "ProtocolWorkflowReducer",
+    # Node Protocols (ONEX Four-Node Architecture)
+    "ProtocolCompute",
+    "ProtocolEffect",
+    "ProtocolOrchestrator",
     # State
     "ProtocolState",
     "ProtocolMetadata",
