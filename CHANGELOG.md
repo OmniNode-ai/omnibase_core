@@ -378,6 +378,17 @@ node_name = self.get_node_name()  # Falls back to class name if not bound
 
 **Thread Safety Notes**:
 
+| Method/Operation | Thread-Safe? | Notes |
+|-----------------|--------------|-------|
+| `bind_event_bus()` | **NO** | Must be called during `__init__` |
+| `bind_registry()` | **NO** | Must be called during `__init__` |
+| `bind_contract_path()` | **NO** | Must be called during `__init__` |
+| `bind_node_name()` | **NO** | Must be called during `__init__` |
+| `stop_event_listener()` | **YES** | Lock-protected, idempotent |
+| `dispose_event_bus_resources()` | **YES** | Lock-protected, idempotent |
+
+**Important**: All `bind_*()` methods are **NOT thread-safe** and must be called during object initialization (`__init__`), before the object is shared across threads. Once bound, the event bus can be safely used from multiple threads.
+
 - `ModelEventBusListenerHandle.stop()` uses a three-phase lock pattern:
   1. **Phase 1 (lock held)**: Capture references, set stop signal
   2. **Phase 2 (lock released)**: Wait for thread with timeout
