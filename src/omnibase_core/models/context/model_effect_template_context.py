@@ -17,11 +17,15 @@ Design Rationale:
 
 Thread Safety:
     ModelEffectTemplateContext instances are frozen (frozen=True) after creation,
-    meaning the `data` attribute cannot be reassigned. However, the underlying dict
-    is mutable - if external code retains a reference to the input dict, it could
-    mutate the contents. The `from_dict()` factory method deep-copies input to
-    prevent this issue. For thread safety, prefer using `from_dict()` over direct
-    construction, or ensure no external references to the input dict are retained.
+    meaning the `data` attribute cannot be reassigned. To prevent external mutations:
+
+    - Use `from_dict()` factory: Deep-copies input dict on construction
+    - Use `to_dict()` for export: Returns a deep copy of internal data
+
+    Note: The `get()` and `__getitem__()` accessor methods return direct references
+    to nested values for performance. If you retrieve mutable nested objects (dicts,
+    lists), external code could mutate them. For safety-critical scenarios, deep-copy
+    the returned values or use `to_dict()` and access from the copy.
 
 Note:
     This is different from ModelTemplateContext in models/core/, which is for
@@ -145,9 +149,12 @@ class ModelEffectTemplateContext(BaseModel):
 
     @allow_dict_any(reason="Serialization method returning template context data")
     def to_dict(self) -> dict[str, Any]:
-        """Get the underlying data dictionary.
+        """Get a deep copy of the underlying data dictionary.
+
+        Returns a deep copy to prevent external mutations from affecting
+        the internal state of this context.
 
         Returns:
-            The data dictionary.
+            A deep copy of the data dictionary.
         """
-        return self.data
+        return copy.deepcopy(self.data)

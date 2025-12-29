@@ -54,16 +54,18 @@ class ModelSessionContext(BaseModel):
         Safe for concurrent read access across threads.
 
     Example:
+        >>> from uuid import UUID
         >>> from omnibase_core.models.context import ModelSessionContext
         >>>
+        >>> # Both string and UUID session_id values are accepted (backward compatible)
         >>> context = ModelSessionContext(
-        ...     session_id="sess_abc123",
+        ...     session_id="550e8400-e29b-41d4-a716-446655440000",
         ...     client_ip="192.168.1.100",
         ...     user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
         ...     locale="en-US",
         ... )
-        >>> context.session_id
-        'sess_abc123'
+        >>> isinstance(context.session_id, UUID)
+        True
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
@@ -103,7 +105,11 @@ class ModelSessionContext(BaseModel):
     @field_validator("session_id", mode="before")
     @classmethod
     def coerce_session_id(cls, v: UUID | str | None) -> UUID | None:
-        """Coerce string UUID values to UUID type.
+        """Coerce string UUID values to UUID type for backward compatibility.
+
+        This validator provides backward compatibility after the session_id field
+        type was changed from str | None to UUID | None. Existing code that passes
+        string session IDs will continue to work, with automatic conversion to UUID.
 
         Accepts UUID objects directly or valid UUID string representations.
 
