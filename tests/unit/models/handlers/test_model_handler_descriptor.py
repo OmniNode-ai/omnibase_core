@@ -592,3 +592,154 @@ class TestModelHandlerDescriptorUseCases:
         assert validator.is_adapter is False
         assert validator.handler_role == EnumHandlerRole.COMPUTE_HANDLER
         assert validator.handler_type_category == EnumHandlerTypeCategory.COMPUTE
+
+
+@pytest.mark.unit
+class TestModelHandlerDescriptorInstantiationMethods:
+    """Tests for instantiation helper methods."""
+
+    def test_has_instantiation_method_with_import_path(self) -> None:
+        """Test has_instantiation_method returns True when import_path is set."""
+        descriptor = ModelHandlerDescriptor(
+            handler_name=ModelIdentifier(namespace="onex", name="handler"),
+            handler_version=ModelSemVer(major=1, minor=0, patch=0),
+            handler_role=EnumHandlerRole.COMPUTE_HANDLER,
+            handler_type=EnumHandlerType.NAMED,
+            handler_type_category=EnumHandlerTypeCategory.COMPUTE,
+            import_path="mypackage.handlers.MyHandler",
+        )
+        assert descriptor.has_instantiation_method is True
+
+    def test_has_instantiation_method_with_artifact_ref(self) -> None:
+        """Test has_instantiation_method returns True when artifact_ref is set."""
+        descriptor = ModelHandlerDescriptor(
+            handler_name=ModelIdentifier(namespace="onex", name="handler"),
+            handler_version=ModelSemVer(major=1, minor=0, patch=0),
+            handler_role=EnumHandlerRole.COMPUTE_HANDLER,
+            handler_type=EnumHandlerType.NAMED,
+            handler_type_category=EnumHandlerTypeCategory.COMPUTE,
+            artifact_ref=ModelArtifactRef(ref="artifact://handler-v1"),
+        )
+        assert descriptor.has_instantiation_method is True
+
+    def test_has_instantiation_method_with_both(self) -> None:
+        """Test has_instantiation_method returns True when both are set."""
+        descriptor = ModelHandlerDescriptor(
+            handler_name=ModelIdentifier(namespace="onex", name="handler"),
+            handler_version=ModelSemVer(major=1, minor=0, patch=0),
+            handler_role=EnumHandlerRole.COMPUTE_HANDLER,
+            handler_type=EnumHandlerType.NAMED,
+            handler_type_category=EnumHandlerTypeCategory.COMPUTE,
+            import_path="mypackage.handlers.MyHandler",
+            artifact_ref=ModelArtifactRef(ref="artifact://handler-v1"),
+        )
+        assert descriptor.has_instantiation_method is True
+
+    def test_has_instantiation_method_metadata_only(self) -> None:
+        """Test has_instantiation_method returns False for metadata-only descriptors."""
+        descriptor = ModelHandlerDescriptor(
+            handler_name=ModelIdentifier(namespace="onex", name="handler"),
+            handler_version=ModelSemVer(major=1, minor=0, patch=0),
+            handler_role=EnumHandlerRole.COMPUTE_HANDLER,
+            handler_type=EnumHandlerType.NAMED,
+            handler_type_category=EnumHandlerTypeCategory.COMPUTE,
+        )
+        assert descriptor.has_instantiation_method is False
+
+    def test_can_instantiate_via_import_true(self) -> None:
+        """Test can_instantiate_via_import returns True when import_path is set."""
+        descriptor = ModelHandlerDescriptor(
+            handler_name=ModelIdentifier(namespace="onex", name="handler"),
+            handler_version=ModelSemVer(major=1, minor=0, patch=0),
+            handler_role=EnumHandlerRole.COMPUTE_HANDLER,
+            handler_type=EnumHandlerType.NAMED,
+            handler_type_category=EnumHandlerTypeCategory.COMPUTE,
+            import_path="mypackage.handlers.MyHandler",
+        )
+        assert descriptor.can_instantiate_via_import() is True
+
+    def test_can_instantiate_via_import_false(self) -> None:
+        """Test can_instantiate_via_import returns False when import_path is None."""
+        descriptor = ModelHandlerDescriptor(
+            handler_name=ModelIdentifier(namespace="onex", name="handler"),
+            handler_version=ModelSemVer(major=1, minor=0, patch=0),
+            handler_role=EnumHandlerRole.COMPUTE_HANDLER,
+            handler_type=EnumHandlerType.NAMED,
+            handler_type_category=EnumHandlerTypeCategory.COMPUTE,
+        )
+        assert descriptor.can_instantiate_via_import() is False
+
+    def test_can_instantiate_via_import_with_only_artifact_ref(self) -> None:
+        """Test can_instantiate_via_import returns False when only artifact_ref is set."""
+        descriptor = ModelHandlerDescriptor(
+            handler_name=ModelIdentifier(namespace="onex", name="handler"),
+            handler_version=ModelSemVer(major=1, minor=0, patch=0),
+            handler_role=EnumHandlerRole.COMPUTE_HANDLER,
+            handler_type=EnumHandlerType.NAMED,
+            handler_type_category=EnumHandlerTypeCategory.COMPUTE,
+            artifact_ref=ModelArtifactRef(ref="artifact://handler-v1"),
+        )
+        assert descriptor.can_instantiate_via_import() is False
+
+    def test_can_instantiate_via_artifact_true(self) -> None:
+        """Test can_instantiate_via_artifact returns True when artifact_ref is set."""
+        descriptor = ModelHandlerDescriptor(
+            handler_name=ModelIdentifier(namespace="onex", name="handler"),
+            handler_version=ModelSemVer(major=1, minor=0, patch=0),
+            handler_role=EnumHandlerRole.COMPUTE_HANDLER,
+            handler_type=EnumHandlerType.NAMED,
+            handler_type_category=EnumHandlerTypeCategory.COMPUTE,
+            artifact_ref=ModelArtifactRef(ref="artifact://handler-v1"),
+        )
+        assert descriptor.can_instantiate_via_artifact() is True
+
+    def test_can_instantiate_via_artifact_false(self) -> None:
+        """Test can_instantiate_via_artifact returns False when artifact_ref is None."""
+        descriptor = ModelHandlerDescriptor(
+            handler_name=ModelIdentifier(namespace="onex", name="handler"),
+            handler_version=ModelSemVer(major=1, minor=0, patch=0),
+            handler_role=EnumHandlerRole.COMPUTE_HANDLER,
+            handler_type=EnumHandlerType.NAMED,
+            handler_type_category=EnumHandlerTypeCategory.COMPUTE,
+        )
+        assert descriptor.can_instantiate_via_artifact() is False
+
+    def test_can_instantiate_via_artifact_with_only_import_path(self) -> None:
+        """Test can_instantiate_via_artifact returns False when only import_path is set."""
+        descriptor = ModelHandlerDescriptor(
+            handler_name=ModelIdentifier(namespace="onex", name="handler"),
+            handler_version=ModelSemVer(major=1, minor=0, patch=0),
+            handler_role=EnumHandlerRole.COMPUTE_HANDLER,
+            handler_type=EnumHandlerType.NAMED,
+            handler_type_category=EnumHandlerTypeCategory.COMPUTE,
+            import_path="mypackage.handlers.MyHandler",
+        )
+        assert descriptor.can_instantiate_via_artifact() is False
+
+    def test_both_instantiation_methods_set(self) -> None:
+        """Test both methods return True when both are set."""
+        descriptor = ModelHandlerDescriptor(
+            handler_name=ModelIdentifier(namespace="onex", name="handler"),
+            handler_version=ModelSemVer(major=1, minor=0, patch=0),
+            handler_role=EnumHandlerRole.COMPUTE_HANDLER,
+            handler_type=EnumHandlerType.NAMED,
+            handler_type_category=EnumHandlerTypeCategory.COMPUTE,
+            import_path="mypackage.handlers.MyHandler",
+            artifact_ref=ModelArtifactRef(ref="artifact://handler-v1"),
+        )
+        assert descriptor.can_instantiate_via_import() is True
+        assert descriptor.can_instantiate_via_artifact() is True
+        assert descriptor.has_instantiation_method is True
+
+    def test_metadata_only_descriptor_all_methods_false(self) -> None:
+        """Test all instantiation methods return False for metadata-only descriptors."""
+        descriptor = ModelHandlerDescriptor(
+            handler_name=ModelIdentifier(namespace="onex", name="metadata-only"),
+            handler_version=ModelSemVer(major=1, minor=0, patch=0),
+            handler_role=EnumHandlerRole.COMPUTE_HANDLER,
+            handler_type=EnumHandlerType.NAMED,
+            handler_type_category=EnumHandlerTypeCategory.COMPUTE,
+        )
+        assert descriptor.can_instantiate_via_import() is False
+        assert descriptor.can_instantiate_via_artifact() is False
+        assert descriptor.has_instantiation_method is False

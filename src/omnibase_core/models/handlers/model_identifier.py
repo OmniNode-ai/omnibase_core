@@ -439,6 +439,13 @@ class ModelIdentifier(BaseModel):
         Note:
             **Asymmetric Semantics**: ``A.matches(B)`` may differ from ``B.matches(A)``.
 
+            **Quick Reference** (given base=onex:compute, v2=onex:compute@v2)::
+
+                base.matches(v2)  -> True   # Pattern matches any variant
+                v2.matches(base)  -> False  # Specific requires exact match
+                v2.matches(v2)    -> True   # Same variant matches
+                v2.matches(v3)    -> False  # Different variants don't match
+
             This is intentional for lookup scenarios:
 
             - **Query without variant** (pattern): Matches any variant of that name.

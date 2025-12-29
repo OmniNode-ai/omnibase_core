@@ -126,8 +126,6 @@ See Also:
     Initial implementation as part of OMN-1086 handler descriptor model.
 """
 
-from __future__ import annotations
-
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -259,6 +257,50 @@ class ModelHandlerDescriptor(BaseModel):
 
     If instantiation is required, callers should check ``has_instantiation_method``
     or verify that ``import_path`` or ``artifact_ref`` is set.
+
+    Instantiation Precedence (import_path vs artifact_ref)
+    ------------------------------------------------------
+    When **both** ``import_path`` and ``artifact_ref`` are set, the runtime
+    follows a defined precedence order:
+
+    1. **import_path takes precedence** - Direct Python import is attempted first
+    2. **artifact_ref is fallback** - Only used if import_path is None or import fails
+
+    This design enables several practical patterns:
+
+    **Pattern 1: Development Override**::
+
+        # Production: Uses container image from artifact registry
+        # Development: Uses local Python class via import_path
+        descriptor = ModelHandlerDescriptor(
+            handler_name=ModelIdentifier(namespace="onex", name="my-handler"),
+            handler_version=ModelSemVer(major=1, minor=0, patch=0),
+            handler_role=EnumHandlerRole.COMPUTE_HANDLER,
+            handler_type=EnumHandlerType.NAMED,
+            handler_type_category=EnumHandlerTypeCategory.COMPUTE,
+            import_path="myproject.handlers.MyHandler",  # Dev: used first
+            artifact_ref=ModelArtifactRef(              # Prod: fallback
+                registry="ghcr.io",
+                repository="myorg/my-handler",
+                tag="v1.0.0",
+            ),
+        )
+
+    **Pattern 2: Hybrid Deployment**::
+
+        # Some handlers run in-process (Python), others as containers
+        # import_path set = in-process Python instantiation
+        # Only artifact_ref set = container/external instantiation
+
+    **Pattern 3: Graceful Degradation**::
+
+        # Try local import first (faster, no network)
+        # Fall back to artifact registry if local unavailable
+        # Useful for edge deployments with intermittent connectivity
+
+    **Best Practice**: For most use cases, set only ONE instantiation method
+    to avoid ambiguity. Use both only when you explicitly need the fallback
+    behavior described above.
 
     Attributes:
         handler_name: Structured identifier following the namespace:name pattern.
@@ -409,11 +451,18 @@ class ModelHandlerDescriptor(BaseModel):
         default_factory=list,
         description=(
             "List of capabilities the handler supports. Used for capability-based "
-            "routing and runtime optimization. Common patterns: "
-            "[CACHE, IDEMPOTENT] for pure compute; "
-            "[STREAM, ASYNC, BATCH] for event handlers; "
-            "[RETRY, CIRCUIT_BREAKER, TIMEOUT] for resilient I/O. "
-            "See class docstring 'Capability Patterns' section for routing examples. "
+            "routing and runtime optimization. "
+            "COMMON PATTERNS: "
+            "[CACHE, IDEMPOTENT, VALIDATE] for pure compute (safe to memoize/retry); "
+            "[STREAM, ASYNC, BATCH] for event handlers (high-throughput, non-blocking); "
+            "[RETRY, CIRCUIT_BREAKER, TIMEOUT] for resilient I/O (fault-tolerant). "
+            "FILTERING: Use set operations for matching - "
+            "ALL required: required.issubset(set(h.capabilities)); "
+            "ANY desired: desired.intersection(set(h.capabilities)). "
+            "RUNTIME IMPLICATIONS: CACHE enables memoization; IDEMPOTENT enables "
+            "auto-retry; CIRCUIT_BREAKER enables fail-fast; ASYNC indicates "
+            "non-blocking execution. "
+            "See class docstring 'Capability Patterns' section for detailed examples. "
             "Values: CACHE, RETRY, BATCH, STREAM, ASYNC, IDEMPOTENT, VALIDATE, "
             "CIRCUIT_BREAKER, TIMEOUT, etc."
         ),
@@ -447,8 +496,12 @@ class ModelHandlerDescriptor(BaseModel):
         description=(
             "Python import path for direct instantiation. "
             "Format: 'package.module.ClassName' (e.g., 'mypackage.handlers.MyHandler'). "
-            "When set, this is the preferred instantiation method over artifact_ref. "
-            "Both fields may be None for metadata-only descriptors (see class docstring)."
+            "PRECEDENCE: When BOTH import_path and artifact_ref are set, import_path "
+            "takes precedence and is attempted first. artifact_ref serves as fallback. "
+            "This enables dev-override patterns (local class in dev, container in prod). "
+            "Both fields may be None for metadata-only descriptors (see class docstring "
+            "'Metadata-Only Descriptors' section). See 'Instantiation Precedence' "
+            "section for detailed patterns and best practices."
         ),
     )
 
@@ -458,7 +511,11 @@ class ModelHandlerDescriptor(BaseModel):
             "Artifact reference for registry-resolved instantiation. "
             "Used for containerized handlers or external artifacts that are "
             "resolved at runtime through the artifact registry. "
-            "Both fields may be None for metadata-only descriptors (see class docstring)."
+            "PRECEDENCE: When BOTH import_path and artifact_ref are set, this field "
+            "serves as FALLBACK - only used if import_path is None or import fails. "
+            "This enables graceful degradation (try local first, then container). "
+            "Both fields may be None for metadata-only descriptors (see class docstring "
+            "'Metadata-Only Descriptors' and 'Instantiation Precedence' sections)."
         ),
     )
 
@@ -512,12 +569,65 @@ class ModelHandlerDescriptor(BaseModel):
         """
         return self.import_path is not None or self.artifact_ref is not None
 
+    def can_instantiate_via_import(self) -> bool:
+        """
+        Check if handler can be instantiated via Python import path.
+
+        This method returns True if ``import_path`` is set, indicating that
+        the handler class can be loaded directly via Python's import machinery.
+
+        Use this when you need to determine the instantiation strategy:
+            - ``can_instantiate_via_import()`` -> Use ``importlib.import_module()``
+            - ``can_instantiate_via_artifact()`` -> Use artifact registry resolution
+
+        Returns:
+            True if import_path is set and can be used for instantiation.
+
+        Example:
+            >>> if descriptor.can_instantiate_via_import():
+            ...     module_path, class_name = descriptor.import_path.rsplit(".", 1)
+            ...     module = importlib.import_module(module_path)
+            ...     handler_class = getattr(module, class_name)
+            ...     handler = handler_class()
+
+        See Also:
+            - :meth:`can_instantiate_via_artifact`: For registry-resolved instantiation
+            - :attr:`has_instantiation_method`: To check if any method is available
+        """
+        return self.import_path is not None
+
+    def can_instantiate_via_artifact(self) -> bool:
+        """
+        Check if handler can be instantiated via artifact registry resolution.
+
+        This method returns True if ``artifact_ref`` is set, indicating that
+        the handler is loaded through an artifact registry (e.g., container
+        registry, package registry, or external artifact store).
+
+        Use this when you need to determine the instantiation strategy:
+            - ``can_instantiate_via_import()`` -> Use ``importlib.import_module()``
+            - ``can_instantiate_via_artifact()`` -> Use artifact registry resolution
+
+        Returns:
+            True if artifact_ref is set and can be used for instantiation.
+
+        Example:
+            >>> if descriptor.can_instantiate_via_artifact():
+            ...     artifact = artifact_registry.resolve(descriptor.artifact_ref)
+            ...     handler = artifact.instantiate()
+
+        See Also:
+            - :meth:`can_instantiate_via_import`: For direct Python import
+            - :attr:`has_instantiation_method`: To check if any method is available
+        """
+        return self.artifact_ref is not None
+
     # =========================================================================
     # Validators
     # =========================================================================
 
     @model_validator(mode="after")
-    def validate_adapter_requires_effect_category(self) -> ModelHandlerDescriptor:
+    def validate_adapter_requires_effect_category(self) -> "ModelHandlerDescriptor":
         """
         Validate that adapters have EFFECT handler_type_category.
 
@@ -549,5 +659,9 @@ class ModelHandlerDescriptor(BaseModel):
             )
         return self
 
+
+# Rebuild model to resolve forward references (required after removing
+# `from __future__ import annotations` per project guidelines in CLAUDE.md)
+ModelHandlerDescriptor.model_rebuild()
 
 __all__ = ["ModelHandlerDescriptor"]
