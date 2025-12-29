@@ -13,9 +13,11 @@ from omnibase_core.enums import EnumNodeType
 from omnibase_core.models.contracts import (
     ModelBackupConfig,
     ModelContractEffect,
+    ModelDescriptorRetryPolicy,
     ModelEffectRetryConfig,
     ModelExecutionOrderingPolicy,
     ModelExecutionProfile,
+    ModelHandlerDescriptor,
     ModelIOOperationConfig,
     ModelPerformanceRequirements,
     ModelTransactionConfig,
@@ -129,6 +131,23 @@ def get_effect_idempotent_profile(version: str = "1.0.0") -> ModelContractEffect
                 strategy="topological_sort",
                 deterministic_seed=True,
             ),
+        ),
+        # Handler behavior descriptor for contract-driven execution
+        descriptor=ModelHandlerDescriptor(
+            handler_kind="effect",
+            purity="side_effecting",  # Effects interact with external systems
+            idempotent=True,  # This is the idempotent profile
+            timeout_ms=30000,  # 30 second timeout for external operations
+            concurrency_policy="parallel_ok",  # Idempotent effects can run in parallel
+            isolation_policy="none",
+            observability_level="standard",
+            retry_policy=ModelDescriptorRetryPolicy(
+                enabled=True,
+                max_retries=3,
+                backoff_strategy="exponential",
+                base_delay_ms=1000,
+            ),
+            capability_outputs=["external_system"],  # Effects produce external outputs
         ),
     )
 

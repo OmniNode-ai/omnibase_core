@@ -16,10 +16,13 @@ from omnibase_core.models.contracts import (
     ModelActionEmissionConfig,
     ModelBranchingConfig,
     ModelContractOrchestrator,
+    ModelDescriptorCircuitBreaker,
+    ModelDescriptorRetryPolicy,
     ModelEventCoordinationConfig,
     ModelEventRegistryConfig,
     ModelExecutionOrderingPolicy,
     ModelExecutionProfile,
+    ModelHandlerDescriptor,
     ModelPerformanceRequirements,
     ModelWorkflowConfig,
 )
@@ -98,6 +101,15 @@ def get_orchestrator_safe_profile(version: str = "1.0.0") -> ModelContractOrches
                 deterministic_seed=True,
             ),
         ),
+        # Handler descriptor - conservative, serial execution
+        descriptor=ModelHandlerDescriptor(
+            handler_kind="orchestrator",
+            purity="side_effecting",
+            idempotent=False,
+            concurrency_policy="serialized",
+            isolation_policy="none",
+            observability_level="standard",
+        ),
     )
 
 
@@ -163,6 +175,15 @@ def get_orchestrator_parallel_profile(
                 strategy="topological_sort",
                 deterministic_seed=True,
             ),
+        ),
+        # Handler descriptor - parallel execution allowed
+        descriptor=ModelHandlerDescriptor(
+            handler_kind="orchestrator",
+            purity="side_effecting",
+            idempotent=False,
+            concurrency_policy="parallel_ok",
+            isolation_policy="none",
+            observability_level="standard",
         ),
     )
 
@@ -232,6 +253,24 @@ def get_orchestrator_resilient_profile(
             ordering_policy=ModelExecutionOrderingPolicy(
                 strategy="topological_sort",
                 deterministic_seed=True,
+            ),
+        ),
+        # Handler descriptor - resilient with retries and circuit breaker
+        descriptor=ModelHandlerDescriptor(
+            handler_kind="orchestrator",
+            purity="side_effecting",
+            idempotent=True,  # Resilient implies idempotent for safe retries
+            concurrency_policy="serialized",
+            isolation_policy="none",
+            observability_level="verbose",  # More observability for resilient workflows
+            retry_policy=ModelDescriptorRetryPolicy(
+                enabled=True,
+                max_retries=3,
+                backoff_strategy="exponential",
+            ),
+            circuit_breaker=ModelDescriptorCircuitBreaker(
+                enabled=True,
+                failure_threshold=5,
             ),
         ),
     )

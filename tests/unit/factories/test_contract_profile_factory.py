@@ -17,6 +17,7 @@ from omnibase_core.models.contracts import (
     ModelContractReducer,
     ModelExecutionOrderingPolicy,
     ModelExecutionProfile,
+    ModelHandlerDescriptor,
 )
 
 
@@ -308,3 +309,87 @@ class TestProtocolContractProfileFactory:
         profiles = factory.available_profiles(EnumNodeType.ORCHESTRATOR_GENERIC)
         assert isinstance(profiles, list)
         assert len(profiles) > 0
+
+
+class TestDescriptorEmbedding:
+    """Tests for ModelHandlerDescriptor embedding in profiles."""
+
+    def test_orchestrator_safe_has_descriptor(self) -> None:
+        """Test orchestrator_safe profile includes descriptor."""
+        from omnibase_core.factories import get_default_orchestrator_profile
+
+        contract = get_default_orchestrator_profile(
+            profile="orchestrator_safe",
+            version="1.0.0",
+        )
+        assert contract.descriptor is not None
+        assert isinstance(contract.descriptor, ModelHandlerDescriptor)
+        assert contract.descriptor.handler_kind == "orchestrator"
+        assert contract.descriptor.concurrency_policy == "serialized"
+
+    def test_orchestrator_parallel_has_parallel_policy(self) -> None:
+        """Test orchestrator_parallel allows parallel execution."""
+        from omnibase_core.factories import get_default_orchestrator_profile
+
+        contract = get_default_orchestrator_profile(
+            profile="orchestrator_parallel",
+            version="1.0.0",
+        )
+        assert contract.descriptor is not None
+        assert contract.descriptor.concurrency_policy == "parallel_ok"
+
+    def test_orchestrator_resilient_has_retry_policy(self) -> None:
+        """Test orchestrator_resilient has retry and circuit breaker."""
+        from omnibase_core.factories import get_default_orchestrator_profile
+
+        contract = get_default_orchestrator_profile(
+            profile="orchestrator_resilient",
+            version="1.0.0",
+        )
+        assert contract.descriptor is not None
+        assert contract.descriptor.idempotent is True
+        assert contract.descriptor.retry_policy is not None
+        assert contract.descriptor.retry_policy.enabled is True
+        assert contract.descriptor.circuit_breaker is not None
+        assert contract.descriptor.circuit_breaker.enabled is True
+
+    def test_reducer_fsm_has_singleflight_policy(self) -> None:
+        """Test reducer_fsm_basic uses singleflight for state protection."""
+        from omnibase_core.factories import get_default_reducer_profile
+
+        contract = get_default_reducer_profile(
+            profile="reducer_fsm_basic",
+            version="1.0.0",
+        )
+        assert contract.descriptor is not None
+        assert contract.descriptor.handler_kind == "reducer"
+        assert contract.descriptor.concurrency_policy == "singleflight"
+        assert contract.descriptor.idempotent is True
+
+    def test_effect_idempotent_has_retry_and_timeout(self) -> None:
+        """Test effect_idempotent has retry policy and timeout."""
+        from omnibase_core.factories import get_default_effect_profile
+
+        contract = get_default_effect_profile(
+            profile="effect_idempotent",
+            version="1.0.0",
+        )
+        assert contract.descriptor is not None
+        assert contract.descriptor.handler_kind == "effect"
+        assert contract.descriptor.idempotent is True
+        assert contract.descriptor.timeout_ms == 30000
+        assert contract.descriptor.retry_policy is not None
+
+    def test_compute_pure_has_pure_purity(self) -> None:
+        """Test compute_pure profile has pure purity setting."""
+        from omnibase_core.factories import get_default_compute_profile
+
+        contract = get_default_compute_profile(
+            profile="compute_pure",
+            version="1.0.0",
+        )
+        assert contract.descriptor is not None
+        assert contract.descriptor.handler_kind == "compute"
+        assert contract.descriptor.purity == "pure"
+        assert contract.descriptor.idempotent is True
+        assert contract.descriptor.concurrency_policy == "parallel_ok"

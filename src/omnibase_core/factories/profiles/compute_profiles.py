@@ -16,6 +16,7 @@ from omnibase_core.models.contracts import (
     ModelContractCompute,
     ModelExecutionOrderingPolicy,
     ModelExecutionProfile,
+    ModelHandlerDescriptor,
     ModelInputValidationConfig,
     ModelOutputTransformationConfig,
     ModelParallelConfig,
@@ -126,6 +127,15 @@ def get_compute_pure_profile(version: str = "1.0.0") -> ModelContractCompute:
                 strategy="topological_sort",
                 deterministic_seed=True,
             ),
+        ),
+        # Handler behavior descriptor for pure computation
+        descriptor=ModelHandlerDescriptor(
+            handler_kind="compute",
+            purity="pure",  # Pure compute - no side effects
+            idempotent=True,  # Pure functions are always idempotent
+            concurrency_policy="parallel_ok",  # Pure functions safe to parallelize
+            isolation_policy="none",  # No isolation needed for pure compute
+            observability_level="minimal",  # Minimal overhead for pure compute
         ),
     )
 
