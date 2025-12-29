@@ -306,7 +306,7 @@ class ModelHandlerDescriptor(BaseModel):
         handler_name: Structured identifier following the namespace:name pattern.
             Used as the primary key for registry lookup.
         handler_version: Semantic version of the handler implementation.
-            Used for version matching and version-pinned instantiation.
+            Used for version validation and version-pinned instantiation.
         handler_role: Architectural role classification. Determines routing
             semantics, DI services available, and lifecycle management.
         handler_type: Transport/integration type. Identifies the external
@@ -539,6 +539,16 @@ class ModelHandlerDescriptor(BaseModel):
             "provides dependencies, entry points, extras, and distribution metadata."
         ),
     )
+
+    def __repr__(self) -> str:
+        """Return a concise representation for debugging."""
+        return (
+            f"ModelHandlerDescriptor("
+            f"name={self.handler_name}, "
+            f"role={self.handler_role.value}, "
+            f"type={self.handler_type.value}, "
+            f"category={self.handler_type_category.value})"
+        )
 
     # =========================================================================
     # Computed Properties

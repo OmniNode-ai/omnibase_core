@@ -219,9 +219,6 @@ from omnibase_core.models.handlers.model_packaging_metadata_ref import (
 from omnibase_core.models.handlers.model_security_metadata_ref import (
     ModelSecurityMetadataRef,
 )
-from omnibase_core.protocols.handlers.protocol_handler_type_resolver import (
-    ProtocolHandlerTypeResolver,
-)
 
 __all__ = [
     "ModelArtifactRef",
@@ -230,6 +227,5 @@ __all__ = [
     "ModelIdentifier",
     "ModelPackagingMetadataRef",
     "ModelSecurityMetadataRef",
-    "ProtocolHandlerTypeResolver",
     "get_handler_type_metadata",
 ]

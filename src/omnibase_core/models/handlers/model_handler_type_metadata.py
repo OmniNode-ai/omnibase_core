@@ -101,7 +101,7 @@ class ModelHandlerTypeMetadata(BaseModel):
         for a category rather than constructing instances manually.
     """
 
-    model_config = ConfigDict(frozen=True, extra="forbid")
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     category: EnumHandlerTypeCategory
     is_replay_safe: bool
@@ -109,6 +109,15 @@ class ModelHandlerTypeMetadata(BaseModel):
     is_deterministic: bool
     allows_caching: bool
     requires_idempotency_key: bool
+
+    def __repr__(self) -> str:
+        """Return a concise representation for debugging."""
+        return (
+            f"ModelHandlerTypeMetadata("
+            f"category={self.category.value}, "
+            f"replay_safe={self.is_replay_safe}, "
+            f"deterministic={self.is_deterministic})"
+        )
 
 
 # Pre-defined metadata for each category

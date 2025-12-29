@@ -29,9 +29,9 @@ from pydantic import ValidationError
 from omnibase_core.enums.enum_handler_type_category import EnumHandlerTypeCategory
 from omnibase_core.models.handlers import (
     ModelHandlerTypeMetadata,
-    ProtocolHandlerTypeResolver,
     get_handler_type_metadata,
 )
+from omnibase_core.protocols.handlers import ProtocolHandlerTypeResolver
 
 # ---- Test ModelHandlerTypeMetadata Model ----
 
