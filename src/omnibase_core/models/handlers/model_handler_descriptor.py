@@ -187,6 +187,51 @@ class ModelHandlerDescriptor(BaseModel):
         - Normal permissions apply (may access secrets if authorized)
         - Any ``handler_type_category`` is valid
 
+    Capability Patterns
+    -------------------
+    The ``capabilities`` field enables capability-based routing and runtime optimization.
+    Common capability combinations and their implications:
+
+    **Stateless Compute Handlers** (pure transformations)::
+
+        capabilities=[CACHE, IDEMPOTENT, VALIDATE]
+
+        - CACHE: Results can be memoized based on input hash
+        - IDEMPOTENT: Safe to retry without side effects
+        - VALIDATE: Can validate inputs before processing
+
+    **Streaming/Event Handlers** (high-throughput)::
+
+        capabilities=[STREAM, ASYNC, BATCH]
+
+        - STREAM: Supports streaming input/output
+        - ASYNC: Non-blocking execution model
+        - BATCH: Can process multiple items efficiently
+
+    **Resilient I/O Handlers** (external system integration)::
+
+        capabilities=[RETRY, CIRCUIT_BREAKER, TIMEOUT]
+
+        - RETRY: Automatic retry with backoff
+        - CIRCUIT_BREAKER: Fail-fast when downstream is unhealthy
+        - TIMEOUT: Enforces maximum execution time
+
+    **Capability-Based Routing Example**::
+
+        # Find handlers with ALL required capabilities
+        required = {EnumHandlerCapability.CACHE, EnumHandlerCapability.IDEMPOTENT}
+        matching = [
+            h for h in registry
+            if required.issubset(set(h.capabilities))
+        ]
+
+        # Find handlers with ANY of the desired capabilities
+        desired = {EnumHandlerCapability.STREAM, EnumHandlerCapability.BATCH}
+        matching = [
+            h for h in registry
+            if desired.intersection(set(h.capabilities))
+        ]
+
     Attributes:
         handler_name: Structured identifier following the namespace:name pattern.
             Used as the primary key for registry lookup.
@@ -397,7 +442,7 @@ class ModelHandlerDescriptor(BaseModel):
     # =========================================================================
 
     @model_validator(mode="after")
-    def validate_adapter_requires_effect_category(self) -> "ModelHandlerDescriptor":
+    def validate_adapter_requires_effect_category(self) -> ModelHandlerDescriptor:
         """
         Validate that adapters have EFFECT handler_type_category.
 
@@ -413,7 +458,10 @@ class ModelHandlerDescriptor(BaseModel):
         Raises:
             ModelOnexError: If is_adapter=True but handler_type_category is not EFFECT.
         """
-        if self.is_adapter and self.handler_type_category != EnumHandlerTypeCategory.EFFECT:
+        if (
+            self.is_adapter
+            and self.handler_type_category != EnumHandlerTypeCategory.EFFECT
+        ):
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=(

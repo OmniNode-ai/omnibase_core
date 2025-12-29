@@ -33,9 +33,7 @@ class TestModelIdentifierInstantiation:
     def test_instantiation_with_version(self) -> None:
         """Test creating identifier with optional semantic version."""
         version = ModelSemVer(major=1, minor=2, patch=3)
-        identifier = ModelIdentifier(
-            namespace="onex", name="compute", version=version
-        )
+        identifier = ModelIdentifier(namespace="onex", name="compute", version=version)
         assert identifier.namespace == "onex"
         assert identifier.name == "compute"
         assert identifier.version == version

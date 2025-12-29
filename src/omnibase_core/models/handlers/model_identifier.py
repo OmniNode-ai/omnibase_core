@@ -43,6 +43,11 @@ _CANONICAL_PATTERN = re.compile(
     r"^(?P<namespace>[a-zA-Z][a-zA-Z0-9_-]*):(?P<name>[a-zA-Z][a-zA-Z0-9_-]*)(?:@(?P<variant>[a-zA-Z0-9][a-zA-Z0-9_-]*))?$"
 )
 
+# Regex pattern for valid variant components
+# More permissive than namespace/name: can start with letter OR number (e.g., "v2", "2024")
+# Precompiled for performance since variant validation runs on every identifier creation
+_VARIANT_PATTERN = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_-]*$")
+
 
 class ModelIdentifier(BaseModel):
     """
@@ -181,7 +186,8 @@ class ModelIdentifier(BaseModel):
                 message="Variant cannot be empty string (use None instead)",
             )
         # Variant can start with a number (e.g., "v2", "2024")
-        if not re.match(r"^[a-zA-Z0-9][a-zA-Z0-9_-]*$", v):
+        # Uses precompiled _VARIANT_PATTERN for performance
+        if not _VARIANT_PATTERN.match(v):
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
                 message=(
@@ -330,24 +336,61 @@ class ModelIdentifier(BaseModel):
 
     def matches(self, other: "ModelIdentifier") -> bool:
         """
-        Check if this identifier matches another.
+        Check if this identifier matches another for lookup/routing purposes.
 
         Matching considers namespace and name. If this identifier has a
-        variant, it must match; otherwise, any variant is accepted.
+        variant, it must match exactly; otherwise, any variant is accepted.
+
+        Note:
+            **Asymmetric Semantics**: ``A.matches(B)`` may differ from ``B.matches(A)``.
+
+            This is intentional for lookup scenarios:
+
+            - **Query without variant** (pattern): Matches any variant of that name.
+              Think of it as "I want any version of this handler."
+            - **Query with variant** (specific): Only matches that exact variant.
+              Think of it as "I want exactly this version, nothing else."
+
+            The asymmetry enables flexible routing:
+
+            - Use variant-less identifier to find all variants of a handler
+            - Use variant-specific identifier to pin to an exact implementation
 
         Args:
             other: Identifier to compare against.
 
         Returns:
-            True if identifiers match.
+            True if this identifier matches the other according to the rules above.
 
         Examples:
+            Variant-less (pattern) matches any variant:
+
             >>> base = ModelIdentifier(namespace="onex", name="compute")
-            >>> specific = ModelIdentifier(namespace="onex", name="compute", variant="v2")
-            >>> base.matches(specific)  # Base matches any variant
+            >>> v2 = ModelIdentifier(namespace="onex", name="compute", variant="v2")
+            >>> v3 = ModelIdentifier(namespace="onex", name="compute", variant="v3")
+            >>> base.matches(v2)  # Pattern matches specific
             True
-            >>> specific.matches(base)  # Specific requires matching variant
+            >>> base.matches(v3)  # Pattern matches any variant
+            True
+
+            Variant-specific requires exact match:
+
+            >>> v2.matches(base)  # Specific does NOT match variant-less
             False
+            >>> v2.matches(v3)    # Different variants don't match
+            False
+            >>> v2.matches(v2)    # Same variant matches
+            True
+
+            Practical usage - finding handlers:
+
+            >>> # Registry lookup: "give me any compute handler"
+            >>> query = ModelIdentifier(namespace="onex", name="compute")
+            >>> handlers = [h for h in registry if query.matches(h.identifier)]
+            >>>
+            >>> # Pinned lookup: "give me exactly the v2 handler"
+            >>> pinned = ModelIdentifier(namespace="onex", name="compute", variant="v2")
+            >>> handler = next(h for h in registry if pinned.matches(h.identifier))
         """
         if self.namespace != other.namespace or self.name != other.name:
             return False

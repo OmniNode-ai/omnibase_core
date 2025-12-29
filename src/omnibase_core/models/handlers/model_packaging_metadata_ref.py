@@ -125,3 +125,6 @@ class ModelPackagingMetadataRef(BaseModel):
             "can be resolved."
         ),
     )
+
+
+__all__ = ["ModelPackagingMetadataRef"]
