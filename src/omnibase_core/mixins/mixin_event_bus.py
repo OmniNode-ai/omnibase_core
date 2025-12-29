@@ -16,9 +16,13 @@ ModelEventBusListenerHandle for state management, avoiding BaseModel
 inheritance to prevent MRO conflicts in multi-inheritance scenarios.
 
 Thread Safety:
-    This mixin is NOT thread-safe. Each node instance should have its own
-    mixin instance. Do not share instances across threads without external
-    synchronization.
+    This mixin provides thread-safe stop() and dispose() operations.
+    The internal _mixin_lock protects concurrent access to mutable state
+    including listener handles and bindings. Multiple threads can safely
+    call stop_event_listener() and dispose_event_bus_resources() concurrently.
+
+    However, bind_*() methods are NOT thread-safe and should only be called
+    during initialization before the mixin is shared across threads.
 """
 
 import threading
@@ -90,6 +94,28 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
     """
 
     # --- Lazy State Accessors (avoid MRO hazards) ---
+
+    @property
+    def _mixin_lock(self) -> threading.Lock:
+        """Lazy accessor for the mixin's internal lock.
+
+        This lock protects concurrent access to mutable state during
+        stop and dispose operations. It is created lazily on first access
+        to avoid __init__ requirements in the mixin.
+
+        Thread Safety:
+            The lock creation itself uses object.__setattr__ which is atomic
+            in CPython. If two threads race to create the lock, one will win
+            and the other will use the existing lock (checked via hasattr).
+
+        Returns:
+            A threading.Lock instance unique to this mixin instance.
+        """
+        attr_name = "_mixin_event_bus_lock"
+        if not hasattr(self, attr_name):
+            lock = threading.Lock()
+            object.__setattr__(self, attr_name, lock)
+        return cast(threading.Lock, object.__getattribute__(self, attr_name))
 
     @property
     def _event_bus_runtime_state(self) -> "ModelEventBusRuntimeState":
@@ -432,8 +458,11 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             )
 
             # Publish via event bus - fail fast if no publish method
-            # Note: hasattr checks support legacy event bus implementations with
-            # non-standard interfaces. Cast to Any for duck-typed method calls.
+            # TODO(v1.0): Standardize event bus protocol to require publish_async().
+            # Currently hasattr checks support legacy event bus implementations with
+            # non-standard interfaces. Once all implementations conform to
+            # ProtocolEventBus, these checks can be replaced with direct calls.
+            # Cast to Any for duck-typed method calls.
             if hasattr(bus, "publish_async"):
                 # Wrap in envelope for async publishing
                 from omnibase_core.models.events.model_event_envelope import (
@@ -502,7 +531,9 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             # Sync publish doesn't use envelope, so validation would need to wrap event first:
             # envelope = ModelEventEnvelope(payload=event)
             # self._validate_topic_alignment(topic, envelope)
-            # Note: hasattr check supports legacy event bus with non-standard interface
+            # TODO(v1.0): Standardize event bus protocol to require publish().
+            # Currently hasattr check supports legacy event bus with non-standard interface.
+            # Once all implementations conform to ProtocolEventBus, this check can be removed.
             if hasattr(bus, "publish"):
                 cast(Any, bus).publish(event)
             else:
@@ -544,8 +575,11 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             event = self._build_event(event_type, data)
 
             # Prefer async publishing if available - fail fast if no publish method
-            # Note: hasattr checks support legacy event bus implementations with
-            # non-standard interfaces. Cast to Any for duck-typed method calls.
+            # TODO(v1.0): Standardize event bus protocol to require publish_async().
+            # Currently hasattr checks support legacy event bus implementations with
+            # non-standard interfaces. Once all implementations conform to
+            # ProtocolEventBus, these checks can be replaced with direct calls.
+            # Cast to Any for duck-typed method calls.
             if hasattr(bus, "publish_async"):
                 # Wrap event in envelope for async publishing
                 from omnibase_core.models.events.model_event_envelope import (
@@ -810,9 +844,17 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         is already stopped or was never started.
 
         Thread Safety:
-            This method ensures target.stop() is always called, even if
-            unsubscription errors occur. This prevents resource leaks from
-            leaving listener threads running.
+            This method is thread-safe and can be called concurrently from
+            multiple threads. It uses a three-phase lock pattern:
+
+            1. **Phase 1 (lock held)**: Capture handle and bus references
+            2. **Phase 2 (lock released)**: Perform unsubscription and stop
+               (potentially blocking operations)
+            3. **Cleanup**: Handle errors after stop completes
+
+            The lock is released before blocking operations to allow other
+            threads to proceed. The captured references remain valid because
+            Python's reference counting keeps objects alive.
 
         Args:
             handle: Optional listener handle to stop. If None, stops the
@@ -832,16 +874,29 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             Unsubscription errors are logged but do not prevent stopping
             the listener thread. Check logs for any failed unsubscriptions.
         """
-        target = handle or self._event_bus_listener_handle
-        if target is None:
-            return True  # Nothing to stop
+        # === Phase 1: Capture references under lock ===
+        with self._mixin_lock:
+            target = handle or self._event_bus_listener_handle
+            if target is None:
+                return True  # Nothing to stop
 
+            # Capture bus reference under lock for thread safety
+            bus = self._get_event_bus()
+            # Copy subscriptions list to avoid iteration issues if modified
+            subscriptions_copy = (
+                list(target.subscriptions) if target.subscriptions else []
+            )
+        # Lock released here - other threads can now access state
+
+        # === Phase 2: Unsubscribe and stop (lock NOT held) ===
+        # Perform potentially blocking operations outside the lock
         unsubscribe_error: ModelOnexError | None = None
 
         # Unsubscribe from all events - fail fast if bus doesn't support unsubscribe
         # but still call target.stop() to prevent resource leaks
-        bus = self._get_event_bus()
-        if bus and target.subscriptions:
+        # TODO(v1.0): Standardize event bus protocol to require unsubscribe().
+        # Currently hasattr check supports legacy event bus implementations.
+        if bus and subscriptions_copy:
             if not hasattr(bus, "unsubscribe"):
                 # Capture error but continue to stop the listener thread
                 unsubscribe_error = ModelOnexError(
@@ -850,7 +905,7 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                     context={"bus_type": type(bus).__name__},
                 )
             else:
-                for subscription in target.subscriptions:
+                for subscription in subscriptions_copy:
                     try:
                         # Cast to Any for legacy event bus interface
                         cast(Any, bus).unsubscribe(subscription)
@@ -862,6 +917,7 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                         )
 
         # Always stop the listener thread, even if unsubscription failed
+        # target.stop() is already thread-safe (has its own internal lock)
         result = target.stop()
         self._log_info("Event listener stopped", "event_listener")
 
@@ -877,6 +933,21 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         This method is idempotent and safe to call multiple times. It will not
         raise exceptions for already-disposed resources.
 
+        Thread Safety:
+            This method is thread-safe and can be called concurrently from
+            multiple threads. It uses a lock-capture-release pattern:
+
+            1. **Capture Phase (lock held)**: Capture references to handle
+               and state, set disposed flag to prevent re-entry
+            2. **Cleanup Phase (lock released)**: Stop listener thread and
+               perform potentially blocking cleanup operations
+            3. **Binding Cleanup Phase (lock held)**: Atomically clear all
+               bound attributes to prevent partial cleanup
+
+            The lock is released during blocking operations to allow other
+            threads to proceed. All cleanup phases are wrapped in try/finally
+            to ensure resources are released even if exceptions occur.
+
         Error Handling:
             All cleanup errors are collected and logged. If any errors occur
             during cleanup, a ModelOnexError is raised after all cleanup steps
@@ -890,71 +961,82 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             ModelOnexError: If any cleanup step fails. The error context contains
                 a list of all errors encountered during cleanup.
         """
-        cleanup_errors: list[str] = []
+        from omnibase_core.models.event_bus import ModelEventBusListenerHandle
 
-        # Phase 1: Stop listener handle
-        handle = self._event_bus_listener_handle
-        if handle is not None:
-            try:
-                stopped = handle.stop()
-                if not stopped:
-                    cleanup_errors.append(
-                        "Event listener did not stop within timeout"
+        cleanup_errors: list[str] = []
+        handle: ModelEventBusListenerHandle | None = None
+
+        try:
+            # === Phase 1: Capture handle reference under lock ===
+            with self._mixin_lock:
+                handle = self._event_bus_listener_handle
+            # Lock released - other threads can access state
+
+            # === Phase 2: Stop listener (lock NOT held - may block) ===
+            # handle.stop() is already thread-safe with its own internal lock
+            if handle is not None:
+                try:
+                    stopped = handle.stop()
+                    if not stopped:
+                        cleanup_errors.append(
+                            "Event listener did not stop within timeout"
+                        )
+                except Exception as e:
+                    cleanup_errors.append(f"Failed to stop event listener: {e!r}")
+                    emit_log_event(
+                        LogLevel.ERROR,
+                        f"MIXIN_DISPOSE: Failed to stop event listener: {e!r}",
+                        ModelLogData(node_name=self.get_node_name()),
                     )
+
+            # === Phase 3: Clear bindings atomically under lock ===
+            with self._mixin_lock:
+                for attr in (
+                    "_bound_event_bus",
+                    "_bound_registry",
+                    "_mixin_event_bus_listener",
+                ):
+                    if hasattr(self, attr):
+                        try:
+                            object.__delattr__(self, attr)
+                        except AttributeError:
+                            # AttributeError is EXPECTED during cleanup for two reasons:
+                            # 1. Race condition: attribute deleted between hasattr() and delattr()
+                            # 2. Idempotent cleanup: dispose() called multiple times
+                            #
+                            # We log at DEBUG (not WARNING) because this is expected behavior.
+                            emit_log_event(
+                                LogLevel.DEBUG,
+                                f"MIXIN_DISPOSE: Attribute {attr} already deleted during cleanup",
+                                ModelLogData(node_name=self.get_node_name()),
+                            )
+                        except Exception as e:
+                            # Unexpected error during attribute deletion
+                            cleanup_errors.append(f"Failed to delete {attr}: {e!r}")
+                            emit_log_event(
+                                LogLevel.ERROR,
+                                f"MIXIN_DISPOSE: Unexpected error deleting {attr}: {e!r}",
+                                ModelLogData(node_name=self.get_node_name()),
+                            )
+
+            # === Phase 4: Reset runtime state ===
+            try:
+                self._event_bus_runtime_state.reset()
             except Exception as e:
-                cleanup_errors.append(f"Failed to stop event listener: {e!r}")
+                cleanup_errors.append(f"Failed to reset runtime state: {e!r}")
                 emit_log_event(
                     LogLevel.ERROR,
-                    f"MIXIN_DISPOSE: Failed to stop event listener: {e!r}",
+                    f"MIXIN_DISPOSE: Failed to reset runtime state: {e!r}",
                     ModelLogData(node_name=self.get_node_name()),
                 )
 
-        # Phase 2: Clear bindings - delete private instance attributes
-        for attr in (
-            "_bound_event_bus",
-            "_bound_registry",
-            "_mixin_event_bus_listener",
-        ):
-            if hasattr(self, attr):
-                try:
-                    object.__delattr__(self, attr)
-                except AttributeError:
-                    # AttributeError is EXPECTED during cleanup for two reasons:
-                    # 1. Race condition: attribute deleted between hasattr() and delattr()
-                    # 2. Idempotent cleanup: dispose() called multiple times
-                    #
-                    # We log at DEBUG (not WARNING) because this is expected behavior.
-                    emit_log_event(
-                        LogLevel.DEBUG,
-                        f"MIXIN_DISPOSE: Attribute {attr} already deleted during cleanup",
-                        ModelLogData(node_name=self.get_node_name()),
-                    )
-                except Exception as e:
-                    # Unexpected error during attribute deletion
-                    cleanup_errors.append(f"Failed to delete {attr}: {e!r}")
-                    emit_log_event(
-                        LogLevel.ERROR,
-                        f"MIXIN_DISPOSE: Unexpected error deleting {attr}: {e!r}",
-                        ModelLogData(node_name=self.get_node_name()),
-                    )
-
-        # Phase 3: Reset runtime state
-        try:
-            self._event_bus_runtime_state.reset()
-        except Exception as e:
-            cleanup_errors.append(f"Failed to reset runtime state: {e!r}")
+        finally:
+            # Log completion regardless of success/failure
             emit_log_event(
-                LogLevel.ERROR,
-                f"MIXIN_DISPOSE: Failed to reset runtime state: {e!r}",
+                LogLevel.DEBUG,
+                "MIXIN_DISPOSE: Event bus resources disposed",
                 ModelLogData(node_name=self.get_node_name()),
             )
-
-        # Log successful completion
-        emit_log_event(
-            LogLevel.DEBUG,
-            "MIXIN_DISPOSE: Event bus resources disposed",
-            ModelLogData(node_name=self.get_node_name()),
-        )
 
         # Raise collected errors as structured ModelOnexError
         if cleanup_errors:
@@ -999,6 +1081,8 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                     context={"node_name": self.get_node_name()},
                 )
 
+            # TODO(v1.0): Standardize event bus protocol to require subscribe().
+            # Currently hasattr check supports legacy event bus implementations.
             if not hasattr(bus, "subscribe"):
                 raise ModelOnexError(
                     message="Event bus does not support 'subscribe' method",

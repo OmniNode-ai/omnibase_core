@@ -74,10 +74,16 @@ class ModelEventBusListenerHandle(BaseModel):
         ...     print("Warning: listener did not stop within timeout")
     """
 
+    # Note on from_attributes=True: Required for pytest-xdist parallel execution
+    # where worker processes may import this class independently, causing class
+    # identity differences. The from_attributes=True setting allows Pydantic to
+    # accept instances based on attribute matching rather than strict isinstance.
+    # See CLAUDE.md "Pydantic from_attributes=True for Value Objects" section.
     model_config = ConfigDict(
         frozen=False,
         extra="forbid",
         arbitrary_types_allowed=True,
+        from_attributes=True,
     )
 
     # Private lock for thread-safe state access (not serialized)

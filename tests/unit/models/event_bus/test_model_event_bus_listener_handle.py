@@ -856,3 +856,247 @@ class TestModelEventBusListenerHandleDeepCopy:
         assert len(copied.subscriptions) == 2
         # Note: MagicMock deep copies may create new mocks
         assert copied.subscriptions[1] == "string_sub"
+
+    def test_deepcopy_subscriptions_with_uncopyable_threading_objects(self) -> None:
+        """Test deepcopy handles subscriptions containing uncopyable threading objects.
+
+        This tests the fallback behavior documented in __deepcopy__:
+        When subscriptions contain objects that cannot be deep copied (like callbacks
+        referencing threading.Lock objects), the copy falls back to an empty list
+        rather than raising an exception.
+
+        This is a critical test for thread safety - it ensures the deep copy
+        mechanism gracefully handles the case where event listeners have been
+        registered with callbacks that capture threading primitives.
+        """
+
+        class CallbackWithLock:
+            """Callback class that contains a threading lock (uncopyable)."""
+
+            def __init__(self) -> None:
+                self.lock = threading.Lock()
+                self.call_count = 0
+
+            def __call__(self) -> None:
+                with self.lock:
+                    self.call_count += 1
+
+        callback = CallbackWithLock()
+        original = ModelEventBusListenerHandle(
+            subscriptions=[callback, "string_sub"],
+            is_running=True,
+        )
+
+        # Deep copy should NOT raise - it should fall back to empty subscriptions
+        copied = copy.deepcopy(original)
+
+        # Subscriptions should be empty because CallbackWithLock has a Lock
+        # that cannot be pickled/deep copied
+        assert copied.subscriptions == []
+
+        # Other fields should still be correctly handled
+        assert copied.listener_thread is None
+        assert copied.is_running is False
+        assert copied.stop_event is None
+
+    def test_deepcopy_subscriptions_with_mixed_copyable_and_uncopyable(self) -> None:
+        """Test deepcopy with mix of copyable and uncopyable objects in subscriptions.
+
+        When ANY object in subscriptions cannot be deep copied, the entire
+        subscriptions list falls back to empty (not partial copy).
+        """
+
+        class UncopyableCallback:
+            """Callback that contains a threading lock (uncopyable)."""
+
+            def __init__(self) -> None:
+                self.lock = threading.Lock()
+
+        uncopyable = UncopyableCallback()
+        copyable_dict = {"key": "value"}
+        copyable_string = "simple_string"
+
+        original = ModelEventBusListenerHandle(
+            subscriptions=[copyable_string, copyable_dict, uncopyable],
+            is_running=True,
+        )
+
+        # Deep copy should NOT raise
+        copied = copy.deepcopy(original)
+
+        # Subscriptions should be empty because UncopyableCallback has a Lock
+        # The entire list fails to copy, not just the uncopyable item
+        assert copied.subscriptions == []
+
+    def test_deepcopy_subscriptions_functions_are_copied_by_reference(self) -> None:
+        """Test that function objects in subscriptions are copied by reference.
+
+        Python's deepcopy returns the same function object (not a copy),
+        so functions with locks in their closures don't cause copy failures.
+        """
+        shared_lock = threading.Lock()
+
+        def event_handler() -> None:
+            with shared_lock:
+                pass
+
+        original = ModelEventBusListenerHandle(
+            subscriptions=[event_handler, "string_sub"],
+            is_running=True,
+        )
+
+        copied = copy.deepcopy(original)
+
+        # Functions are copied by reference, so copy succeeds
+        assert len(copied.subscriptions) == 2
+        # The function should be the SAME object (not a copy)
+        assert copied.subscriptions[0] is event_handler
+        assert copied.subscriptions[1] == "string_sub"
+
+
+@pytest.mark.unit
+class TestModelEventBusListenerHandleThreadSafety:
+    """Test ModelEventBusListenerHandle thread safety guarantees."""
+
+    def test_concurrent_stop_calls_are_safe(self) -> None:
+        """Test that multiple threads calling stop() concurrently is safe."""
+        stop_event = threading.Event()
+
+        def thread_target() -> None:
+            stop_event.wait()
+
+        thread = threading.Thread(target=thread_target, daemon=True)
+        thread.start()
+
+        handle = ModelEventBusListenerHandle(
+            listener_thread=thread,
+            stop_event=stop_event,
+            subscriptions=["sub1", "sub2", "sub3"],
+            is_running=True,
+        )
+
+        errors: list[Exception] = []
+        results: list[bool] = []
+
+        def call_stop() -> None:
+            try:
+                result = handle.stop(timeout=2.0)
+                results.append(result)
+            except Exception as e:
+                errors.append(e)
+
+        # Start multiple threads all calling stop
+        stop_threads = [threading.Thread(target=call_stop) for _ in range(5)]
+        for t in stop_threads:
+            t.start()
+        for t in stop_threads:
+            t.join(timeout=10.0)
+
+        # No errors should occur
+        assert len(errors) == 0
+
+        # All stop calls should have returned True (idempotent)
+        assert len(results) == 5
+        assert all(r is True for r in results)
+
+        # Final state should be consistent
+        assert handle.is_running is False
+        assert handle.subscriptions == []
+
+    def test_concurrent_is_active_calls_are_safe(self) -> None:
+        """Test that multiple threads calling is_active() concurrently is safe."""
+        stop_event = threading.Event()
+
+        def thread_target() -> None:
+            stop_event.wait()
+
+        thread = threading.Thread(target=thread_target, daemon=True)
+        thread.start()
+
+        handle = ModelEventBusListenerHandle(
+            listener_thread=thread,
+            stop_event=stop_event,
+            is_running=True,
+        )
+
+        errors: list[Exception] = []
+        results: list[bool] = []
+
+        def check_active() -> None:
+            try:
+                for _ in range(100):
+                    result = handle.is_active()
+                    results.append(result)
+            except Exception as e:
+                errors.append(e)
+
+        try:
+            # Start multiple threads all checking is_active
+            check_threads = [threading.Thread(target=check_active) for _ in range(5)]
+            for t in check_threads:
+                t.start()
+            for t in check_threads:
+                t.join(timeout=5.0)
+
+            # No errors should occur
+            assert len(errors) == 0
+
+            # All results should be True (thread is running)
+            assert all(r is True for r in results)
+
+        finally:
+            # Cleanup
+            stop_event.set()
+            thread.join(timeout=1.0)
+
+    def test_stop_while_is_active_checks_running(self) -> None:
+        """Test stopping while other threads check is_active - no deadlock."""
+        stop_event = threading.Event()
+        stop_checking = threading.Event()
+
+        def thread_target() -> None:
+            stop_event.wait()
+
+        thread = threading.Thread(target=thread_target, daemon=True)
+        thread.start()
+
+        handle = ModelEventBusListenerHandle(
+            listener_thread=thread,
+            stop_event=stop_event,
+            subscriptions=["sub1"],
+            is_running=True,
+        )
+
+        errors: list[Exception] = []
+
+        def keep_checking_active() -> None:
+            try:
+                while not stop_checking.is_set():
+                    handle.is_active()
+            except Exception as e:
+                errors.append(e)
+
+        # Start threads that continuously check is_active
+        check_threads = [
+            threading.Thread(target=keep_checking_active) for _ in range(3)
+        ]
+        for t in check_threads:
+            t.start()
+
+        # Give them a moment to start
+        time.sleep(0.05)
+
+        # Now stop the handle while checks are happening
+        result = handle.stop(timeout=2.0)
+
+        # Signal checking threads to stop
+        stop_checking.set()
+
+        # Wait for checking threads
+        for t in check_threads:
+            t.join(timeout=2.0)
+
+        # No errors and stop should have succeeded
+        assert len(errors) == 0
+        assert result is True
+        assert handle.is_running is False

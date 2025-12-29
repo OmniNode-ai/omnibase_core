@@ -58,7 +58,7 @@ class ModelEventBusInputOutputState(BaseModel):
         input_version: ModelSemVer | str,
         output_version: ModelSemVer | str,
         input_field: str,
-        status: str,
+        status: EnumOnexStatus | str,
         message: str,
     ) -> "ModelEventBusInputOutputState":
         """Create a composite state from basic parameters."""
@@ -82,9 +82,11 @@ class ModelEventBusInputOutputState(BaseModel):
         input_state = ModelEventBusInputState(
             version=parse_semver_from_string(input_version_str), input_field=input_field
         )
+        # Normalize status to EnumOnexStatus
+        status_enum = status if isinstance(status, OnexStatus) else OnexStatus(status)
         output_state = ModelEventBusOutputState(
             version=parse_semver_from_string(output_version_str),
-            status=OnexStatus(status),
+            status=status_enum,
             message=message,
         )
         return cls(input_state=input_state, output_state=output_state)

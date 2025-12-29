@@ -576,20 +576,25 @@ class ModelEventBusOutputState(BaseModel):
     def create_with_tracking(
         cls,
         version: ModelSemVer | str,
-        status: str,
+        status: EnumOnexStatus | str,
         message: str,
         correlation_id: UUID,
         event_id: UUID,
         processing_time_ms: int | None = None,
     ) -> ModelEventBusOutputState:
         """Create output state with full tracking information."""
+        # Normalize status to EnumOnexStatus
+        status_enum = (
+            status if isinstance(status, EnumOnexStatus) else EnumOnexStatus(status)
+        )
+        is_success = status_enum == EnumOnexStatus.SUCCESS
         return cls(
             version=(
                 parse_semver_from_string(str(version))
                 if not isinstance(version, ModelSemVer)
                 else version
             ),
-            status=EnumOnexStatus(status),
+            status=status_enum,
             message=message,
             correlation_id=correlation_id,
             event_id=event_id,
@@ -598,8 +603,8 @@ class ModelEventBusOutputState(BaseModel):
                 response_time_ms=(
                     float(processing_time_ms) if processing_time_ms else None
                 ),
-                success_rate=100.0 if status == "success" else 0.0,
-                error_rate=0.0 if status == "success" else 100.0,
-                health_score=100.0 if status == "success" else 0.0,
+                success_rate=100.0 if is_success else 0.0,
+                error_rate=0.0 if is_success else 100.0,
+                health_score=100.0 if is_success else 0.0,
             ),
         )

@@ -50,7 +50,9 @@ class ModelEventBusRuntimeState(BaseModel):
         True
     """
 
-    model_config = ConfigDict(frozen=False, extra="forbid")
+    # Note on from_attributes=True: Added for pytest-xdist parallel execution
+    # compatibility. See CLAUDE.md "Pydantic from_attributes=True for Value Objects".
+    model_config = ConfigDict(frozen=False, extra="forbid", from_attributes=True)
 
     node_name: str = Field(
         default="",

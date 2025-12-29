@@ -290,6 +290,16 @@ affinity = ModelSessionAffinity(hash_algorithm="sha512")  # ✅ Strongest
 
 3. **Fail-Fast Semantics**: Publishing without binding raises `ModelOnexError` immediately.
 
+**Deprecation Timeline**:
+
+| Version | Status | Changes |
+|---------|--------|---------|
+| **v0.5.x** | Current | Backwards compatibility via `hasattr` fallbacks for lazy initialization |
+| **v1.0** | Planned | Remove `hasattr` fallbacks; require explicit `bind_*()` calls in `__init__` |
+| **v1.0** | Planned | Standardize `ProtocolEventBus` to require `publish_async()`, `subscribe()`, `unsubscribe()` |
+
+All legacy patterns marked with `TODO(v1.0)` comments in the source code will be cleaned up in v1.0.
+
 **Migration Guide**:
 
 **1. Update Initialization Pattern**
