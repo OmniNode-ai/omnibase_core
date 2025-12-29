@@ -213,8 +213,8 @@ class ModelFunctionNodeCore(BaseModel):
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         result: TypedDictMetadataDict = {}
         # Map actual fields to TypedDictMetadataDict structure
-        if self.name:
-            result["name"] = self.name
+        # name property always returns non-empty (has UUID fallback)
+        result["name"] = self.name
         if self.description:
             result["description"] = self.description
         result["version"] = self.version
@@ -224,7 +224,10 @@ class ModelFunctionNodeCore(BaseModel):
             "function_type": self.function_type.value,
             "status": self.status.value,
             "parameters": self.parameters,
-            "return_type": self.return_type.value if self.return_type else None,
+            # return_type is optional, use explicit None check
+            "return_type": self.return_type.value
+            if self.return_type is not None
+            else None,
             "module": self.module,
             "file_path": str(self.file_path) if self.file_path else None,
             "line_number": self.line_number,

@@ -63,7 +63,7 @@ class ModelNodeConnectionSettings(BaseModel):
 
     def is_secure_protocol(self) -> bool:
         """Check if using secure protocol."""
-        if not self.protocol:
+        if self.protocol is None:
             return False
         return self.protocol in [
             EnumProtocolType.HTTPS,
@@ -86,7 +86,8 @@ class ModelNodeConnectionSettings(BaseModel):
         return {
             "endpoint": self.endpoint,
             "port": self.port,
-            "protocol": self.protocol.value if self.protocol else None,
+            # protocol is optional, use explicit None check
+            "protocol": self.protocol.value if self.protocol is not None else None,
             "has_endpoint": self.has_endpoint(),
             "has_port": self.has_port(),
             "has_protocol": self.has_protocol(),
@@ -154,10 +155,48 @@ class ModelNodeConnectionSettings(BaseModel):
         )
 
     def get_metadata(self) -> TypedDictMetadataDict:
-        """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
-        result: TypedDictMetadataDict = {}
-        result["metadata"] = dict(self.get_connection_summary())
-        return result
+        """
+        Get metadata as dictionary for ProtocolMetadataProvider protocol.
+
+        Returns a TypedDictMetadataDict containing complete connection settings
+        information. This model represents network configuration, so it does not
+        map to top-level name/version/description keys. All connection details
+        are provided in the nested metadata dict via get_connection_summary().
+
+        Returns:
+            TypedDictMetadataDict with the following structure:
+            - "metadata": Dict containing (from get_connection_summary()):
+                - "endpoint": Service endpoint string or None if not configured
+                - "port": Port number (1-65535) or None if not configured
+                - "protocol": EnumProtocolType value string
+                  (e.g., "HTTP", "HTTPS", "GRPC") or None
+                - "has_endpoint": Boolean indicating if endpoint is set
+                - "has_port": Boolean indicating if port is set
+                - "has_protocol": Boolean indicating if protocol is set
+                - "is_fully_configured": Boolean, True only if endpoint,
+                  port, and protocol are all set
+                - "is_secure": Boolean indicating if using secure protocol
+                  (HTTPS or GRPC)
+                - "connection_url": Full URL string (e.g., "https://api:443")
+                  or None if not fully configured
+
+        Example:
+            >>> settings = ModelNodeConnectionSettings.create_http(
+            ...     endpoint="api.example.com",
+            ...     port=443,
+            ...     secure=True
+            ... )
+            >>> metadata = settings.get_metadata()
+            >>> metadata["metadata"]["endpoint"]
+            'api.example.com'
+            >>> metadata["metadata"]["is_secure"]
+            True
+            >>> metadata["metadata"]["connection_url"]
+            'https://api.example.com:443'
+        """
+        # Delegate to get_connection_summary() to avoid field mapping duplication.
+        # The dict() cast converts TypedDict to dict[str, SerializableValue].
+        return {"metadata": dict(self.get_connection_summary())}
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
         """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""

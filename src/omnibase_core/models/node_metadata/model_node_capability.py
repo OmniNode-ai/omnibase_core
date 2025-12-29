@@ -335,12 +335,12 @@ class ModelNodeCapability(BaseModel):
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         result: TypedDictMetadataDict = {}
         # Map actual fields to TypedDictMetadataDict structure
-        if self.capability_name:
-            result["name"] = self.capability_name
-        if self.description:
-            result["description"] = self.description
-        if self.version_introduced:
-            result["version"] = self.version_introduced
+        # capability_name property always returns non-empty (has UUID fallback)
+        result["name"] = self.capability_name
+        # description is required (no default), always access directly
+        result["description"] = self.description
+        # version_introduced is required, always access directly
+        result["version"] = self.version_introduced
         # Pack additional fields into metadata
         result["metadata"] = {
             "capability_id": str(self.capability_id),

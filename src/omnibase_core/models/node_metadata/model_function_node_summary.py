@@ -241,26 +241,32 @@ class ModelFunctionNodeSummary(BaseModel):
         """Get metadata as a dictionary (ProtocolMetadataProvider protocol)."""
         result: TypedDictMetadataDict = {}
         # Map actual fields to TypedDictMetadataDict structure
-        if self.function_name:
-            result["name"] = self.function_name
+        # function_name property always returns non-empty (has UUID fallback)
+        result["name"] = self.function_name
         if self.description:
             result["description"] = self.description
-        if self.version:
-            result["version"] = self.version
+        # version is required field, always present
+        result["version"] = self.version
         # Pack additional fields into metadata
         result["metadata"] = {
             "function_id": str(self.function_id),
             "status": self.status.value,
             "complexity": self.complexity.value,
             "parameter_count": self.parameter_count,
-            "return_type": self.return_type.value if self.return_type else None,
+            # return_type is optional, use explicit None check
+            "return_type": self.return_type.value
+            if self.return_type is not None
+            else None,
             "quality_score": self.quality_score,
             "has_documentation": self.has_documentation,
             "has_tests": self.has_tests,
             "performance_score": self.performance_score,
             "execution_count": self.execution_count,
+            # primary_category is optional, use explicit None check
             "primary_category": (
-                self.primary_category.value if self.primary_category else None
+                self.primary_category.value
+                if self.primary_category is not None
+                else None
             ),
             "tag_count": self.tag_count,
         }

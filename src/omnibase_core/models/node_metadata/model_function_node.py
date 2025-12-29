@@ -363,8 +363,8 @@ class ModelFunctionNode(BaseModel):
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         result: TypedDictMetadataDict = {}
         # Map actual fields to TypedDictMetadataDict structure via delegated properties
-        if self.name:
-            result["name"] = self.name
+        # name property always returns non-empty (has UUID fallback via core.name)
+        result["name"] = self.name
         if self.description:
             result["description"] = self.description
         if self.tags:

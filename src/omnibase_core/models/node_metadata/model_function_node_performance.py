@@ -246,10 +246,16 @@ class ModelFunctionNodePerformance(BaseModel):
         # Pack performance data into metadata dict
         result["metadata"] = {
             "complexity": self.complexity.value,
+            # estimated_runtime is optional, use explicit None check
             "estimated_runtime": (
-                self.estimated_runtime.value if self.estimated_runtime else None
+                self.estimated_runtime.value
+                if self.estimated_runtime is not None
+                else None
             ),
-            "memory_usage": self.memory_usage.value if self.memory_usage else None,
+            # memory_usage is optional, use explicit None check
+            "memory_usage": self.memory_usage.value
+            if self.memory_usage is not None
+            else None,
             "cyclomatic_complexity": self.cyclomatic_complexity,
             "lines_of_code": self.lines_of_code,
             "execution_count": self.execution_count,

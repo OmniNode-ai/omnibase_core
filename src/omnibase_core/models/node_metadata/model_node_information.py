@@ -340,8 +340,8 @@ class ModelNodeInformation(BaseModel):
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         result: TypedDictMetadataDict = {}
         # Map actual fields to TypedDictMetadataDict structure via delegated properties
-        if self.node_name:
-            result["name"] = self.node_name
+        # node_name property always returns non-empty (has UUID fallback)
+        result["name"] = self.node_name
         if self.description:
             result["description"] = self.description
         result["version"] = self.node_version

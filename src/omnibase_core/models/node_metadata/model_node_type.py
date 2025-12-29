@@ -727,20 +727,24 @@ class ModelNodeType(BaseModel):
         """
         result: TypedDictMetadataDict = {}
         # Map actual fields to TypedDictMetadataDict structure
-        if self.type_name:
-            result["name"] = self.type_name.value
-        if self.description:
-            result["description"] = self.description
+        # type_name is required (no default), always access directly
+        result["name"] = self.type_name.value
+        # description is required (no default), always access directly
+        result["description"] = self.description
         result["version"] = self.version_compatibility
         # Pack additional fields into metadata
         result["metadata"] = {
-            "category": self.category.value if self.category else None,
+            # category is required (no default), always access directly
+            "category": self.category.value,
             "dependencies": self.dependencies,
             "execution_priority": self.execution_priority,
             "is_generator": self.is_generator,
             "is_validator": self.is_validator,
             "requires_contract": self.requires_contract,
-            "output_type": self.output_type.value if self.output_type else None,
+            # output_type is optional, use explicit None check
+            "output_type": self.output_type.value
+            if self.output_type is not None
+            else None,
         }
         return result
 
