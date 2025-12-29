@@ -116,9 +116,17 @@ def validate_yaml_file(file_path: Path) -> list[str]:
             # Collect structured validation errors
             errors.append(f"Contract validation failed: {e.message}")
         except (ValueError, TypeError, KeyError, AttributeError) as e:
-            # Specific exceptions from YAML/Pydantic processing - log full traceback
-            logging.exception(f"Unexpected error during contract validation: {e}")
-            errors.append(f"Contract validation failed: {e}")
+            # Wrap in ModelOnexError for consistent error handling
+            wrapped_error = ModelOnexError(
+                error_code=EnumCoreErrorCode.CONTRACT_VALIDATION_ERROR,
+                message=f"Contract validation failed: {e}",
+                context={
+                    "file_path": str(file_path),
+                    "exception_type": type(e).__name__,
+                },
+            )
+            logging.exception(f"Contract validation error: {wrapped_error.message}")
+            errors.append(wrapped_error.message)
 
         # All validation is now handled by Pydantic model
         # Manual validation removed for ONEX compliance

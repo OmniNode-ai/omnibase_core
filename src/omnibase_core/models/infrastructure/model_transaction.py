@@ -70,9 +70,13 @@ class ModelTransaction:
                     await rollback_func()
                 else:
                     rollback_func()
-            except BaseException as e:
-                if isinstance(e, (asyncio.CancelledError, KeyboardInterrupt, SystemExit)):
-                    raise  # Re-raise system signals and cancellation
+            except asyncio.CancelledError:
+                # Always honor task cancellation - must propagate to respect async semantics
+                raise
+            except (KeyboardInterrupt, SystemExit, GeneratorExit):
+                # Re-raise system signals - these must not be suppressed
+                raise
+            except Exception as e:
                 # cleanup-ok: must not propagate exceptions during cleanup - attempt all operations even if some fail
                 emit_log_event(
                     LogLevel.ERROR,
