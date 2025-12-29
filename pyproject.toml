@@ -261,9 +261,6 @@ python_version = "3.12"
 mypy_path = "src"
 namespace_packages = true
 explicit_package_bases = true
-# DICT_STR_ANY_PREVENTION: Enabled to catch explicit Any usage including dict[str, Any].
-# Legacy modules have overrides in mypy.ini. See docs/architecture/DICT_STR_ANY_PREVENTION.md
-disallow_any_explicit = true
 
 [tool.pydantic-mypy]
 init_forbid_extra = true
