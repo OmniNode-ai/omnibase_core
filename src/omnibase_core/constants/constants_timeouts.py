@@ -427,7 +427,7 @@ WEBSOCKET_PING_TIMEOUT_SECONDS: float = 10.0
 #   - Consider connection pool exhaustion if timeouts increase
 #   - For PostgreSQL: Also configure idle_in_transaction_session_timeout
 #
-# Units: Seconds (float type required by database drivers)
+# Units: Seconds (float as expected by database drivers)
 DATABASE_QUERY_TIMEOUT_SECONDS: float = 30.0  # env-var-ok: constant definition
 
 # =============================================================================
@@ -474,7 +474,7 @@ DATABASE_QUERY_TIMEOUT_SECONDS: float = 30.0  # env-var-ok: constant definition
 #   - NFS/Cloud: Highly variable, consider explicit timeouts
 #   - Container volumes: Performance depends on driver
 #
-# Units: Seconds (float type required by file operation APIs)
+# Units: Seconds (float as expected by file operation APIs)
 FILE_IO_TIMEOUT_SECONDS: float = 60.0
 
 # =============================================================================
