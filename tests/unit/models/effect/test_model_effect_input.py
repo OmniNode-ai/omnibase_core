@@ -17,7 +17,7 @@ Test Coverage:
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.enums.enum_effect_types import EnumEffectType
+from omnibase_core.enums import EnumEffectType
 from omnibase_core.models.context import ModelEffectInputData
 from omnibase_core.models.effect.model_effect_input import ModelEffectInput
 

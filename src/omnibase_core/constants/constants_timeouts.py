@@ -354,7 +354,7 @@ HTTP_REQUEST_TIMEOUT_SECONDS: float = 30.0
 #   - Consumer poll() has separate max.poll.interval.ms
 #
 # Units: Milliseconds (Kafka client convention)
-KAFKA_REQUEST_TIMEOUT_MS: int = 5000
+KAFKA_REQUEST_TIMEOUT_MS: int = 5000  # env-var-ok: constant definition
 
 # WebSocket ping timeout: 10 seconds
 #
@@ -428,7 +428,7 @@ WEBSOCKET_PING_TIMEOUT_SECONDS: float = 10.0
 #   - For PostgreSQL: Also configure idle_in_transaction_session_timeout
 #
 # Units: Seconds (float for database driver compatibility)
-DATABASE_QUERY_TIMEOUT_SECONDS: float = 30.0
+DATABASE_QUERY_TIMEOUT_SECONDS: float = 30.0  # env-var-ok: constant definition
 
 # =============================================================================
 # File I/O Timeouts (seconds)
@@ -474,7 +474,7 @@ DATABASE_QUERY_TIMEOUT_SECONDS: float = 30.0
 #   - NFS/Cloud: Highly variable, consider explicit timeouts
 #   - Container volumes: Performance depends on driver
 #
-# Units: Seconds (float for compatibility with file operation APIs)
+# Units: Seconds (float type matches file operation API signatures)
 FILE_IO_TIMEOUT_SECONDS: float = 60.0
 
 # =============================================================================

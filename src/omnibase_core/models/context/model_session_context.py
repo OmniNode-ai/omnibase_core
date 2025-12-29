@@ -105,11 +105,11 @@ class ModelSessionContext(BaseModel):
     @field_validator("session_id", mode="before")
     @classmethod
     def coerce_session_id(cls, v: UUID | str | None) -> UUID | None:
-        """Coerce string UUID values to UUID type for backward compatibility.
+        """Coerce string UUID values to UUID type.
 
-        This validator provides backward compatibility after the session_id field
-        type was changed from str | None to UUID | None. Existing code that passes
-        string session IDs will continue to work, with automatic conversion to UUID.
+        This validator ensures flexible input handling by accepting both UUID objects
+        and valid UUID strings. String inputs are automatically converted to UUID,
+        enabling seamless interoperability with APIs that return string representations.
 
         Accepts UUID objects directly or valid UUID string representations.
 

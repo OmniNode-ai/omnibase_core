@@ -69,5 +69,9 @@ class ModelBaseResult(BaseModel):
             if not isinstance(obj["metadata"], ModelGenericMetadata):
                 obj["metadata"] = ModelGenericMetadata.from_dict(obj["metadata"])
         return super().model_validate(
-            obj, strict=strict, from_attributes=from_attributes, context=context, **kwargs
+            obj,
+            strict=strict,
+            from_attributes=from_attributes,
+            context=context,
+            **kwargs,
         )

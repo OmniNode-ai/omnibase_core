@@ -19,7 +19,7 @@ from uuid import UUID, uuid4
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.enums.enum_effect_types import EnumEffectType
+from omnibase_core.enums import EnumEffectType
 from omnibase_core.models.context.model_effect_input_data import ModelEffectInputData
 
 # Test configuration constants

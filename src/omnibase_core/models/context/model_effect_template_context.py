@@ -17,10 +17,14 @@ Design Rationale:
 
 Thread Safety:
     ModelEffectTemplateContext instances are frozen (frozen=True) after creation,
-    meaning the `data` attribute cannot be reassigned. To prevent external mutations:
+    meaning the `data` attribute cannot be reassigned. The input dictionary is
+    deep-copied during construction (via field validator), ensuring that external
+    code holding a reference to the original dict cannot mutate the model's internal
+    state.
 
-    - Use `from_dict()` factory: Deep-copies input dict on construction
-    - Use `to_dict()` for export: Returns a deep copy of internal data
+    - Direct construction: Deep-copies input dict via field validator
+    - `from_dict()` factory: Also deep-copies (for explicit intent)
+    - `to_dict()` for export: Returns a deep copy of internal data
 
     Note: The `get()` and `__getitem__()` accessor methods return direct references
     to nested values for performance. If you retrieve mutable nested objects (dicts,
@@ -39,7 +43,7 @@ See Also:
 import copy
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.decorators.allow_dict_any import allow_dict_any
 
@@ -91,6 +95,27 @@ class ModelEffectTemplateContext(BaseModel):
         default_factory=dict,
         description="Arbitrary key-value pairs for template resolution",
     )
+
+    @field_validator("data", mode="before")
+    @classmethod
+    def _deep_copy_data(cls, v: Any) -> Any:
+        """Deep-copy input dict to prevent external mutations.
+
+        This validator ensures thread safety by creating an independent copy
+        of the input dictionary during construction. Without this, external
+        code holding a reference to the original dict could mutate nested
+        values, violating the frozen model's immutability guarantee.
+
+        Args:
+            v: Input value (expected to be a dict, but could be any type
+               in mode="before" validators).
+
+        Returns:
+            A deep copy of the input if it's a dict, otherwise unchanged.
+        """
+        if isinstance(v, dict):
+            return copy.deepcopy(v)
+        return v
 
     def get(self, key: str, default: Any = None) -> Any:
         """Get a value from the context data.
