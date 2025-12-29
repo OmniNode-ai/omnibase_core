@@ -481,9 +481,9 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                 envelope: ModelEventEnvelope[ModelOnexEvent] = ModelEventEnvelope(
                     payload=event
                 )
-                # TODO: Add topic validation when topic-based publishing is implemented
-                # When the event bus supports explicit topic routing, validate here:
-                # self._validate_topic_alignment(topic, envelope)
+                # TODO(v1.0): Add topic validation when topic-based publishing is implemented.
+                # When the event bus supports explicit topic routing, validate alignment
+                # between message category and topic name using _validate_topic_alignment().
                 await cast(Any, bus).publish_async(envelope)
             elif hasattr(bus, "publish"):
                 cast(Any, bus).publish(event)  # Synchronous method - no await
@@ -536,10 +536,9 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
         try:
             event = self._build_event(event_type, data)
             # Use synchronous publish method only (this is a sync method) - fail fast if missing
-            # TODO: Add topic validation when topic-based publishing is implemented
-            # Sync publish doesn't use envelope, so validation would need to wrap event first:
-            # envelope = ModelEventEnvelope(payload=event)
-            # self._validate_topic_alignment(topic, envelope)
+            # TODO(v1.0): Add topic validation when topic-based publishing is implemented.
+            # Sync publish doesn't use envelope, so validation would need to wrap the event
+            # in ModelEventEnvelope first before calling _validate_topic_alignment().
             # TODO(v1.0): Standardize event bus protocol to require publish().
             # Currently hasattr check supports legacy event bus with non-standard interface.
             # Once all implementations conform to ProtocolEventBus, this check can be removed.
@@ -598,9 +597,9 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
                 envelope: ModelEventEnvelope[ModelOnexEvent] = ModelEventEnvelope(
                     payload=event
                 )
-                # TODO: Add topic validation when topic-based publishing is implemented
-                # When the event bus supports explicit topic routing, validate here:
-                # self._validate_topic_alignment(topic, envelope)
+                # TODO(v1.0): Add topic validation when topic-based publishing is implemented.
+                # When the event bus supports explicit topic routing, validate alignment
+                # between message category and topic name using _validate_topic_alignment().
                 await cast(Any, bus).publish_async(envelope)
             # Fallback to sync method
             elif hasattr(bus, "publish"):
