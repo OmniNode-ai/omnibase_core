@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
@@ -30,6 +30,10 @@ class ModelEventBusInputState(BaseModel):
     - Operational metadata and tracking
     - Factory methods for common use cases
     """
+
+    # Note on from_attributes=True: Added for pytest-xdist parallel execution
+    # compatibility. See CLAUDE.md "Pydantic from_attributes=True for Value Objects".
+    model_config = ConfigDict(from_attributes=True)
 
     version: ModelSemVer = Field(
         default_factory=default_model_version,

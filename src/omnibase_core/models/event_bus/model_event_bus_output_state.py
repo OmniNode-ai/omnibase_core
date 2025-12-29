@@ -43,7 +43,11 @@ class ModelEventBusOutputState(BaseModel):
     # Pre-compiled regex pattern for error code validation
     _ERROR_CODE_PATTERN: ClassVar[re.Pattern[str]] = re.compile(r"^[A-Z0-9_]+$")
 
-    model_config = ConfigDict(validate_assignment=True, extra="forbid")
+    # Note on from_attributes=True: Added for pytest-xdist parallel execution
+    # compatibility. See CLAUDE.md "Pydantic from_attributes=True for Value Objects".
+    model_config = ConfigDict(
+        validate_assignment=True, extra="forbid", from_attributes=True
+    )
     version: ModelSemVer = Field(
         default_factory=default_model_version,
         description="Schema version for output state (matches input)",
