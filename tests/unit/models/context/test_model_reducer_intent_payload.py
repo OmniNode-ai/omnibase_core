@@ -866,3 +866,147 @@ class TestModelReducerIntentPayloadHashEquality:
         )
         test_dict = {model: "value"}
         assert test_dict[model] == "value"
+
+
+# =============================================================================
+# CACHING TESTS
+# =============================================================================
+
+
+@pytest.mark.unit
+@pytest.mark.timeout(UNIT_TEST_TIMEOUT_SECONDS)
+class TestModelReducerIntentPayloadCaching:
+    """Tests for caching behavior of get_data_as_dict and data_as_dict."""
+
+    def test_get_data_as_dict_caches_internally(self) -> None:
+        """get_data_as_dict() caches the dict conversion internally."""
+        model = ModelReducerIntentPayload(
+            data=(("key1", "value1"), ("key2", "value2")),
+        )
+        # First call populates cache
+        _ = model.get_data_as_dict()
+        # Verify internal cache is populated
+        assert model._cached_data_dict is not None
+        assert model._cached_data_dict == {"key1": "value1", "key2": "value2"}
+
+    def test_get_data_as_dict_returns_copy_not_cache(self) -> None:
+        """get_data_as_dict() returns a copy, not the cached dict."""
+        model = ModelReducerIntentPayload(data=(("key", "value"),))
+        result1 = model.get_data_as_dict()
+        result2 = model.get_data_as_dict()
+        # Results should be equal but not the same object
+        assert result1 == result2
+        assert result1 is not result2
+
+    def test_get_data_as_dict_cache_reused_across_calls(self) -> None:
+        """The internal cache is reused across multiple get_data_as_dict() calls."""
+        model = ModelReducerIntentPayload(
+            data=(("key", "value"),),
+        )
+        # First call
+        _ = model.get_data_as_dict()
+        cached_id = id(model._cached_data_dict)
+        # Second call
+        _ = model.get_data_as_dict()
+        # Same cache object should be reused
+        assert id(model._cached_data_dict) == cached_id
+
+    def test_data_as_dict_property_returns_read_only_view(self) -> None:
+        """data_as_dict property returns a MappingProxyType (read-only)."""
+        from types import MappingProxyType
+
+        model = ModelReducerIntentPayload(data=(("key", "value"),))
+        result = model.data_as_dict
+        assert isinstance(result, MappingProxyType)
+        assert result["key"] == "value"
+
+    def test_data_as_dict_property_prevents_mutation(self) -> None:
+        """data_as_dict property raises TypeError on mutation attempt."""
+        model = ModelReducerIntentPayload(data=(("key", "value"),))
+        with pytest.raises(TypeError):
+            model.data_as_dict["key"] = "new_value"  # type: ignore[index]
+
+    def test_data_as_dict_property_prevents_deletion(self) -> None:
+        """data_as_dict property raises TypeError on deletion attempt."""
+        model = ModelReducerIntentPayload(data=(("key", "value"),))
+        with pytest.raises(TypeError):
+            del model.data_as_dict["key"]  # type: ignore[attr-defined]
+
+    def test_data_as_dict_property_prevents_new_key(self) -> None:
+        """data_as_dict property raises TypeError on adding new key."""
+        model = ModelReducerIntentPayload(data=(("key", "value"),))
+        with pytest.raises(TypeError):
+            model.data_as_dict["new_key"] = "new_value"  # type: ignore[index]
+
+    def test_data_as_dict_property_caches_internally(self) -> None:
+        """data_as_dict property populates the internal cache."""
+        model = ModelReducerIntentPayload(data=(("key", "value"),))
+        assert model._cached_data_dict is None
+        _ = model.data_as_dict
+        assert model._cached_data_dict is not None
+        assert model._cached_data_dict == {"key": "value"}
+
+    def test_data_as_dict_and_get_data_as_dict_share_cache(self) -> None:
+        """data_as_dict property and get_data_as_dict() share the same cache."""
+        model = ModelReducerIntentPayload(data=(("key", "value"),))
+        # Access via property first
+        _ = model.data_as_dict
+        cached_id = id(model._cached_data_dict)
+        # Access via method
+        _ = model.get_data_as_dict()
+        # Should still be the same cache object
+        assert id(model._cached_data_dict) == cached_id
+
+    def test_mutation_of_get_data_as_dict_does_not_affect_cache(self) -> None:
+        """Mutating get_data_as_dict() result does not affect the internal cache."""
+        model = ModelReducerIntentPayload(data=(("key", "value"),))
+        result = model.get_data_as_dict()
+        result["new_key"] = "new_value"
+        # Cache should not be affected
+        assert "new_key" not in model._cached_data_dict  # type: ignore[operator]
+        # Subsequent calls should not include the mutation
+        assert "new_key" not in model.get_data_as_dict()
+
+    def test_data_as_dict_empty_data(self) -> None:
+        """data_as_dict works correctly with empty data."""
+        from types import MappingProxyType
+
+        model = ModelReducerIntentPayload(data=())
+        result = model.data_as_dict
+        assert isinstance(result, MappingProxyType)
+        assert len(result) == 0
+        assert dict(result) == {}
+
+    def test_data_as_dict_various_value_types(self) -> None:
+        """data_as_dict correctly handles various serializable value types."""
+        model = ModelReducerIntentPayload(
+            data=(
+                ("string", "value"),
+                ("int", 42),
+                ("float", 3.14),
+                ("bool", True),
+                ("null", None),
+                ("list", [1, 2, 3]),
+                ("dict", {"nested": "value"}),
+            )
+        )
+        result = model.data_as_dict
+        assert result["string"] == "value"
+        assert result["int"] == 42
+        assert result["float"] == 3.14
+        assert result["bool"] is True
+        assert result["null"] is None
+        assert result["list"] == [1, 2, 3]
+        assert result["dict"] == {"nested": "value"}
+
+    def test_cache_isolation_between_instances(self) -> None:
+        """Different model instances have independent caches."""
+        model1 = ModelReducerIntentPayload(data=(("key1", "value1"),))
+        model2 = ModelReducerIntentPayload(data=(("key2", "value2"),))
+        # Populate caches
+        _ = model1.get_data_as_dict()
+        _ = model2.get_data_as_dict()
+        # Caches should be different objects
+        assert model1._cached_data_dict is not model2._cached_data_dict
+        assert model1._cached_data_dict == {"key1": "value1"}
+        assert model2._cached_data_dict == {"key2": "value2"}

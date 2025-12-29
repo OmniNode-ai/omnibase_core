@@ -26,7 +26,11 @@ Thread Safety:
     thread-safe for concurrent read access from multiple threads or async tasks.
 
 See Also:
+    - omnibase_core.constants.constants_error: Centralized error code pattern
+      (ERROR_CODE_PATTERN). This is the single source of truth for the
+      CATEGORY_NNN format validation.
     - docs/conventions/ERROR_CODE_STANDARDS.md: Complete error code format specification
+    - docs/conventions/ERROR_HANDLING_BEST_PRACTICES.md: Error handling patterns
     - omnibase_core.models.context.model_session_context: Session context
     - omnibase_core.models.context.model_audit_metadata: Audit trail metadata
     - omnibase_core.models.common.model_error_context: Error location context
@@ -135,6 +139,15 @@ class ModelErrorMetadata(BaseModel):
         True
         >>> error_meta.is_client_error()
         True
+
+    See Also:
+        - :mod:`omnibase_core.constants.constants_error`: Centralized error code
+          pattern (ERROR_CODE_PATTERN) used for validation. This is the single
+          source of truth for the CATEGORY_NNN format.
+        - :doc:`docs/conventions/ERROR_CODE_STANDARDS.md`: Complete error code
+          format specification, valid/invalid examples, and best practices.
+        - :doc:`docs/conventions/ERROR_HANDLING_BEST_PRACTICES.md`: Comprehensive
+          error handling patterns and recovery strategies.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)

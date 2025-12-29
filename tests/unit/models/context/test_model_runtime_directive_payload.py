@@ -731,3 +731,302 @@ class TestModelRuntimeDirectivePayloadUseCases:
         assert model.queue_name == "batch-processing-queue"
         assert model.priority == 0
         assert model.handler_args["items_count"] == 100
+
+
+# =============================================================================
+# SECURITY VALIDATION TESTS
+# =============================================================================
+
+
+@pytest.mark.unit
+@pytest.mark.timeout(UNIT_TEST_TIMEOUT_SECONDS)
+class TestModelRuntimeDirectivePayloadSecurityValidation:
+    """Tests for security validation of handler_args field."""
+
+    # -------------------------------------------------------------------------
+    # Reserved Keys Tests
+    # -------------------------------------------------------------------------
+
+    def test_reserved_key_proto_rejected(self) -> None:
+        """handler_args with __proto__ key is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelRuntimeDirectivePayload(
+                handler_args={"__proto__": {"polluted": True}},
+            )
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert errors[0]["loc"] == ("handler_args",)
+        assert "__proto__" in str(errors[0]["msg"])
+        assert "reserved" in str(errors[0]["msg"]).lower()
+
+    def test_reserved_key_constructor_rejected(self) -> None:
+        """handler_args with constructor key is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelRuntimeDirectivePayload(
+                handler_args={"constructor": {"polluted": True}},
+            )
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert errors[0]["loc"] == ("handler_args",)
+        assert "constructor" in str(errors[0]["msg"])
+        assert "reserved" in str(errors[0]["msg"]).lower()
+
+    def test_reserved_key_class_rejected(self) -> None:
+        """handler_args with __class__ key is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelRuntimeDirectivePayload(
+                handler_args={"__class__": {"polluted": True}},
+            )
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert errors[0]["loc"] == ("handler_args",)
+        assert "__class__" in str(errors[0]["msg"])
+        assert "reserved" in str(errors[0]["msg"]).lower()
+
+    def test_multiple_reserved_keys_rejected(self) -> None:
+        """handler_args with multiple reserved keys is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelRuntimeDirectivePayload(
+                handler_args={
+                    "__proto__": {},
+                    "constructor": {},
+                    "__class__": {},
+                },
+            )
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert errors[0]["loc"] == ("handler_args",)
+        # All reserved keys should be mentioned
+        msg = str(errors[0]["msg"])
+        assert "__class__" in msg
+        assert "__proto__" in msg
+        assert "constructor" in msg
+
+    def test_reserved_key_mixed_with_valid_keys_rejected(self) -> None:
+        """handler_args with reserved key mixed with valid keys is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelRuntimeDirectivePayload(
+                handler_args={
+                    "valid_key": "value",
+                    "__proto__": {"malicious": True},
+                    "another_valid": 42,
+                },
+            )
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert "__proto__" in str(errors[0]["msg"])
+
+    def test_similar_but_valid_keys_accepted(self) -> None:
+        """Keys similar to reserved but not exact match are accepted."""
+        # These should NOT be rejected
+        model = ModelRuntimeDirectivePayload(
+            handler_args={
+                "proto": "not reserved",
+                "__proto": "not reserved (missing trailing underscore)",
+                "proto__": "not reserved",
+                "_class_": "not reserved",
+                "class": "not reserved",
+                "Constructor": "not reserved (case sensitive)",
+            },
+        )
+        assert model.handler_args["proto"] == "not reserved"
+        assert model.handler_args["Constructor"] == "not reserved (case sensitive)"
+
+    # -------------------------------------------------------------------------
+    # Nesting Depth Tests
+    # -------------------------------------------------------------------------
+
+    def test_shallow_nesting_accepted(self) -> None:
+        """Shallow nesting (depth 1) is accepted."""
+        model = ModelRuntimeDirectivePayload(
+            handler_args={"level1": "value"},
+        )
+        assert model.handler_args["level1"] == "value"
+
+    def test_moderate_nesting_accepted(self) -> None:
+        """Moderate nesting (depth 5) is accepted."""
+        model = ModelRuntimeDirectivePayload(
+            handler_args={
+                "l1": {
+                    "l2": {
+                        "l3": {
+                            "l4": {
+                                "l5": "deep_value",
+                            },
+                        },
+                    },
+                },
+            },
+        )
+        assert model.handler_args["l1"]["l2"]["l3"]["l4"]["l5"] == "deep_value"
+
+    def test_max_depth_exactly_10_accepted(self) -> None:
+        """Nesting at exactly max depth (10) is accepted."""
+        # Build a structure with exactly 10 levels of nesting
+        nested: dict[str, object] = {"value": "at_depth_10"}
+        for i in range(9):
+            nested = {f"level_{9 - i}": nested}
+
+        model = ModelRuntimeDirectivePayload(handler_args=nested)
+        # Navigate down to verify
+        current: object = model.handler_args
+        for i in range(9):
+            assert isinstance(current, dict)
+            current = current[f"level_{i + 1}"]
+        assert isinstance(current, dict)
+        assert current["value"] == "at_depth_10"
+
+    def test_depth_exceeding_10_rejected(self) -> None:
+        """Nesting exceeding max depth (11 levels) is rejected."""
+        # Build a structure with 11 levels of nesting
+        nested: dict[str, object] = {"too_deep": "value"}
+        for i in range(10):
+            nested = {f"level_{10 - i}": nested}
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelRuntimeDirectivePayload(handler_args=nested)
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert errors[0]["loc"] == ("handler_args",)
+        assert "depth" in str(errors[0]["msg"]).lower()
+        assert "10" in str(errors[0]["msg"])
+
+    def test_deeply_nested_list_rejected(self) -> None:
+        """Deeply nested lists (exceeding max depth) are rejected."""
+        # Build a structure with 11 levels via lists
+        nested: list[object] | dict[str, object] = [{"too_deep": "value"}]
+        for _ in range(10):
+            nested = {"level": nested}
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelRuntimeDirectivePayload(handler_args=nested)
+        errors = exc_info.value.errors()
+        assert len(errors) == 1
+        assert "depth" in str(errors[0]["msg"]).lower()
+
+    def test_mixed_dict_list_nesting_at_limit_accepted(self) -> None:
+        """Mixed dict/list nesting at exactly max depth is accepted."""
+        # Build alternating dict/list structure
+        # Start with depth 1 ({"final": "value"}), add 8 more levels = depth 9
+        # Then wrap with {"root": ...} = depth 10 (exactly at limit)
+        nested: dict[str, object] | list[object] = {"final": "value"}
+        for i in range(8):
+            if i % 2 == 0:
+                nested = [nested]
+            else:
+                nested = {"level": nested}
+
+        # Wrap in outer dict (this adds one more level)
+        model = ModelRuntimeDirectivePayload(handler_args={"root": nested})
+        assert model.handler_args["root"] is not None
+
+    def test_wide_but_shallow_structure_accepted(self) -> None:
+        """Wide but shallow structures are accepted."""
+        # Many keys at depth 1 is fine
+        wide_dict = {f"key_{i}": f"value_{i}" for i in range(1000)}
+        model = ModelRuntimeDirectivePayload(handler_args=wide_dict)
+        assert len(model.handler_args) == 1000
+
+    def test_empty_nested_dicts_accepted(self) -> None:
+        """Empty nested dicts don't contribute to depth issues."""
+        model = ModelRuntimeDirectivePayload(
+            handler_args={
+                "empty1": {},
+                "empty2": {"also_empty": {}},
+                "with_value": {"nested": {"value": "here"}},
+            },
+        )
+        assert model.handler_args["empty1"] == {}
+        assert model.handler_args["empty2"]["also_empty"] == {}
+
+    def test_empty_nested_lists_accepted(self) -> None:
+        """Empty nested lists don't contribute to depth issues."""
+        model = ModelRuntimeDirectivePayload(
+            handler_args={
+                "empty_list": [],
+                "nested_empty": {"inner": []},
+            },
+        )
+        assert model.handler_args["empty_list"] == []
+
+    # -------------------------------------------------------------------------
+    # Error Message Quality Tests
+    # -------------------------------------------------------------------------
+
+    def test_reserved_key_error_message_is_actionable(self) -> None:
+        """Error message for reserved keys is clear and actionable."""
+        with pytest.raises(ValidationError) as exc_info:
+            ModelRuntimeDirectivePayload(
+                handler_args={"__proto__": "malicious"},
+            )
+        error_msg = str(exc_info.value.errors()[0]["msg"])
+        # Message should explain the issue
+        assert "reserved" in error_msg.lower()
+        # Message should mention which key(s)
+        assert "__proto__" in error_msg
+        # Message should mention security concern
+        assert "prototype pollution" in error_msg.lower()
+
+    def test_depth_error_message_is_actionable(self) -> None:
+        """Error message for depth violation is clear and actionable."""
+        # Create structure with depth 12
+        nested: dict[str, object] = {"too_deep": "value"}
+        for i in range(11):
+            nested = {f"l{i}": nested}
+
+        with pytest.raises(ValidationError) as exc_info:
+            ModelRuntimeDirectivePayload(handler_args=nested)
+        error_msg = str(exc_info.value.errors()[0]["msg"])
+        # Message should mention depth
+        assert "depth" in error_msg.lower()
+        # Message should mention the limit
+        assert "10" in error_msg
+        # Message should mention security concern
+        assert "denial-of-service" in error_msg.lower() or "dos" in error_msg.lower()
+
+    # -------------------------------------------------------------------------
+    # Valid Complex Structures Tests
+    # -------------------------------------------------------------------------
+
+    def test_complex_valid_structure_accepted(self) -> None:
+        """Complex but valid structure is accepted."""
+        model = ModelRuntimeDirectivePayload(
+            handler_args={
+                "user": {
+                    "id": "user-123",
+                    "profile": {
+                        "name": "Test User",
+                        "settings": {
+                            "theme": "dark",
+                            "notifications": {
+                                "email": True,
+                                "push": False,
+                            },
+                        },
+                    },
+                },
+                "items": [
+                    {"id": 1, "name": "Item 1"},
+                    {"id": 2, "name": "Item 2"},
+                ],
+                "metadata": {
+                    "version": "1.0",
+                    "tags": ["important", "urgent"],
+                },
+            },
+        )
+        assert model.handler_args["user"]["id"] == "user-123"
+        assert model.handler_args["items"][0]["name"] == "Item 1"
+        assert model.handler_args["metadata"]["tags"] == ["important", "urgent"]
+
+    def test_tuple_in_structure_handled(self) -> None:
+        """Tuples in structure are handled for depth checking."""
+        model = ModelRuntimeDirectivePayload(
+            handler_args={
+                "coordinates": (1, 2, 3),
+                "nested_tuple": {"point": (4, 5)},
+            },
+        )
+        # Tuples are preserved as-is in dict[str, Any]
+        assert model.handler_args["coordinates"] == (1, 2, 3)
+        assert model.handler_args["nested_tuple"]["point"] == (4, 5)

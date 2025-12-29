@@ -26,6 +26,38 @@ This document establishes comprehensive error handling standards for the ONEX Fo
 
 ## ONEX Error Framework
 
+### Centralized Error Code Pattern
+
+ONEX uses a centralized error code pattern to ensure consistency across all error handling code. The pattern is defined once and imported wherever validation is needed.
+
+**Single Source of Truth**: `src/omnibase_core/constants/constants_error.py`
+
+```python
+from omnibase_core.constants import ERROR_CODE_PATTERN, ERROR_CODE_PATTERN_STRING
+
+# Validate error codes
+if ERROR_CODE_PATTERN.match("AUTH_001"):
+    print("Valid error code")
+
+# Use raw pattern string for JSON schemas
+schema = {"pattern": ERROR_CODE_PATTERN_STRING}
+```
+
+**Pattern Format**: `CATEGORY_NNN` (e.g., `AUTH_001`, `VALIDATION_123`, `SYSTEM_01`)
+
+**Benefits of Centralization**:
+- **No Pattern Drift**: All modules use the same pattern definition
+- **Single Maintenance Point**: Pattern changes propagate automatically
+- **Thread-Safe**: Compiled regex patterns are immutable
+- **Consistent Validation**: Same behavior across Pydantic models, validators, and utilities
+
+**Modules Using This Pattern**:
+- `omnibase_core.models.context.model_error_metadata` - Error metadata model
+- `omnibase_core.models.context.model_retry_error_context` - Retry context model
+- `omnibase_core.validation.validators.common_validators` - Standalone validators
+
+For complete error code standards including valid/invalid examples and best practices, see [Error Code Standards](ERROR_CODE_STANDARDS.md).
+
 ### ModelOnexError Base Class
 
 All ONEX errors inherit from the `ModelOnexError` base class which provides structured error context and correlation tracking:
@@ -1670,6 +1702,8 @@ All error handling follows ONEX principles with:
 
 ### Related Documentation
 
+- [Error Code Standards](ERROR_CODE_STANDARDS.md) - Complete error code format specification
+- [Centralized Error Pattern](../../src/omnibase_core/constants/constants_error.py) - Single source of truth for error code validation
 - [ADR-012: Validator Error Handling](../architecture/adr/ADR-012-VALIDATOR-ERROR-HANDLING.md) - Decision rationale and Pydantic compatibility
 - [Node Building Guide](../guides/node-building/README.md) - Node validation patterns
 - [Reducer Output Model](../../src/omnibase_core/models/reducer/model_reducer_output.py) - Reference implementation

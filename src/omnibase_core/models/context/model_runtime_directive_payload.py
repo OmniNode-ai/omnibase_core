@@ -27,9 +27,43 @@ See Also:
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.utils.util_decorators import allow_dict_str_any
+
+# Maximum nesting depth for handler_args to prevent DoS via deeply nested structures
+_MAX_HANDLER_ARGS_DEPTH = 10
+
+# Reserved keys that could cause security issues (prototype pollution prevention)
+_RESERVED_KEYS = frozenset({"__proto__", "constructor", "__class__"})
+
+
+def _check_depth(obj: Any, current_depth: int = 0) -> int:
+    """Recursively check the depth of a nested structure.
+
+    Args:
+        obj: The object to check depth for.
+        current_depth: The current depth level (0 for root).
+
+    Returns:
+        The maximum depth found in the structure.
+
+    Note:
+        Returns early if current_depth exceeds _MAX_HANDLER_ARGS_DEPTH
+        to avoid unnecessary traversal of deeply nested structures.
+    """
+    if current_depth > _MAX_HANDLER_ARGS_DEPTH:
+        return current_depth
+    if isinstance(obj, dict):
+        if not obj:
+            return current_depth
+        return max(_check_depth(v, current_depth + 1) for v in obj.values())
+    if isinstance(obj, (list, tuple)):
+        if not obj:
+            return current_depth
+        return max(_check_depth(item, current_depth + 1) for item in obj)
+    return current_depth
+
 
 __all__ = ["ModelRuntimeDirectivePayload"]
 
@@ -123,6 +157,44 @@ class ModelRuntimeDirectivePayload(BaseModel):
         default_factory=dict,
         description="Keyword arguments to pass to the target handler",
     )
+
+    @field_validator("handler_args")
+    @classmethod
+    def validate_handler_args(cls, v: dict[str, Any]) -> dict[str, Any]:
+        """Validate handler_args for security concerns.
+
+        This validator enforces defensive boundary validation:
+        1. Rejects reserved keys that could cause prototype pollution
+        2. Limits nesting depth to prevent DoS attacks
+
+        Args:
+            v: The handler_args dictionary to validate.
+
+        Returns:
+            The validated dictionary if all checks pass.
+
+        Raises:
+            ValueError: If reserved keys are found or depth exceeds limit.
+        """
+        # Check for reserved keys (prototype pollution prevention)
+        found_reserved = _RESERVED_KEYS & set(v.keys())
+        if found_reserved:
+            raise ValueError(
+                f"handler_args cannot contain reserved keys: {sorted(found_reserved)}. "
+                "These keys are reserved to prevent prototype pollution attacks."
+            )
+
+        # Check max depth to prevent deeply nested structures
+        depth = _check_depth(v)
+        if depth > _MAX_HANDLER_ARGS_DEPTH:
+            raise ValueError(
+                f"handler_args exceeds maximum nesting depth of {_MAX_HANDLER_ARGS_DEPTH}. "
+                f"Found depth: {depth}. Deeply nested structures are rejected to prevent "
+                "denial-of-service attacks."
+            )
+
+        return v
+
     execution_mode: str | None = Field(
         default=None,
         description="Execution mode for handler invocation ('sync' or 'async')",

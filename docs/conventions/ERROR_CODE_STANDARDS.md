@@ -145,16 +145,39 @@ NODE_COMPUTE_001      # Node compute subcategory
 
 ## Implementation Reference
 
+### Centralized Error Code Pattern
+
+The `CATEGORY_NNN` pattern is defined in a centralized location and imported by all modules that need error code validation.
+
+**Centralized Pattern Location**: `src/omnibase_core/constants/constants_error.py`
+
+This module provides the **single source of truth** for error code validation patterns:
+
+```python
+from omnibase_core.constants import ERROR_CODE_PATTERN, ERROR_CODE_PATTERN_STRING
+
+# Compiled pattern for validation
+ERROR_CODE_PATTERN.match("AUTH_001")  # Returns Match object
+
+# Raw string for JSON schema or documentation
+ERROR_CODE_PATTERN_STRING  # "^[A-Z][A-Z0-9_]*_\\d{1,4}$"
+```
+
+**Why Centralized?**
+- Avoids pattern drift across multiple modules
+- Ensures consistent validation behavior
+- Single point of maintenance for pattern updates
+- Thread-safe (compiled regex patterns are immutable)
+
 ### ModelErrorMetadata Validation
 
-The `CATEGORY_NNN` pattern is enforced by `ModelErrorMetadata` in the ONEX framework.
+The `ModelErrorMetadata` class imports the pattern from the centralized location.
 
 **Location**: `src/omnibase_core/models/context/model_error_metadata.py`
 
-**Pattern Definition**:
+**Pattern Import**:
 ```python
-# Pattern for error codes: CATEGORY_NNN (e.g., AUTH_001, VALIDATION_123)
-ERROR_CODE_PATTERN = re.compile(r"^[A-Z][A-Z0-9_]*_\d{1,4}$")
+from omnibase_core.constants.constants_error import ERROR_CODE_PATTERN
 ```
 
 **Validation**:
@@ -267,7 +290,9 @@ Reserve specific numbers for standard error types:
 
 ## Related Documentation
 
-- **Error Handling Best Practices**: `docs/conventions/ERROR_HANDLING_BEST_PRACTICES.md`
+- **Centralized Error Pattern**: `src/omnibase_core/constants/constants_error.py` - Single source of truth for error code validation
+- **Error Handling Best Practices**: `docs/conventions/ERROR_HANDLING_BEST_PRACTICES.md` - Comprehensive error handling patterns
+- **ModelErrorMetadata**: `src/omnibase_core/models/context/model_error_metadata.py` - Error metadata model with validation
 - **ModelOnexError**: Error base class and structured error context
 - **Naming Conventions**: `docs/conventions/NAMING_CONVENTIONS.md`
 - **Pydantic Best Practices**: `docs/conventions/PYDANTIC_BEST_PRACTICES.md`

@@ -30,9 +30,11 @@ See Also:
     - omnibase_core.models.context.model_validation_context: Validation context
 """
 
+from collections.abc import Mapping
+from types import MappingProxyType
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
 from omnibase_core.types.type_serializable_value import SerializableValue
 
@@ -145,6 +147,11 @@ class ModelReducerIntentPayload(BaseModel):
 
     model_config = ConfigDict(frozen=True, from_attributes=True, extra="forbid")
 
+    # Private cache for dict conversion - PrivateAttr allows mutation on frozen models.
+    # Caching is safe because the model is frozen (immutable after creation) -
+    # the data field never changes, so the dict representation is stable.
+    _cached_data_dict: dict[str, SerializableValue] | None = PrivateAttr(default=None)
+
     # FSM transition fields
     target_state: str | None = Field(
         default=None,
@@ -220,18 +227,66 @@ class ModelReducerIntentPayload(BaseModel):
         ge=0,
     )
 
+    def _get_cached_data_dict(self) -> dict[str, SerializableValue]:
+        """Get or create the cached dict conversion of the data field.
+
+        This internal method manages the cache for dict conversions. Caching is
+        safe because the model is frozen (immutable) - the data field never
+        changes after construction, so the dict representation is stable.
+
+        Returns:
+            dict[str, SerializableValue]: The cached dict (do not mutate directly).
+        """
+        if self._cached_data_dict is None:
+            self._cached_data_dict = dict(self.data)
+        return self._cached_data_dict
+
+    @property
+    def data_as_dict(self) -> Mapping[str, SerializableValue]:
+        """Cached read-only view of data as a dict.
+
+        Returns a read-only mapping view of the cached dict conversion.
+        For high-performance read-only access in tight loops where mutation
+        is not needed. The returned MappingProxyType prevents accidental
+        mutation of the cached data.
+
+        Caching is safe because the model is frozen (immutable after creation).
+
+        Returns:
+            Mapping[str, SerializableValue]: Read-only view of the data dict.
+
+        See Also:
+            get_data_as_dict: Returns a mutable copy if mutation is needed.
+
+        Example:
+            >>> payload = ModelReducerIntentPayload(data=(("key", "value"),))
+            >>> payload.data_as_dict["key"]
+            'value'
+            >>> payload.data_as_dict["key"] = "new"  # Raises TypeError
+        """
+        return MappingProxyType(self._get_cached_data_dict())
+
     def get_data_as_dict(self) -> dict[str, SerializableValue]:
         """Convert the immutable data field to a dictionary for convenience.
 
+        Returns a new dict copy each call to allow safe mutation by the caller.
+        Internally caches the dict conversion for performance on repeated calls.
+
+        Performance Note:
+            The dict conversion is cached internally. Subsequent calls return
+            a shallow copy of the cached dict, which is faster than rebuilding
+            from the tuple each time. For read-only access without copying,
+            use the data_as_dict property instead.
+
         Returns:
-            dict[str, SerializableValue]: The data as a mutable dictionary.
+            dict[str, SerializableValue]: The data as a mutable dictionary (copy).
 
         Example:
             >>> payload = ModelReducerIntentPayload(data=(("key", "value"),))
             >>> payload.get_data_as_dict()
             {'key': 'value'}
         """
-        return dict(self.data)
+        return self._get_cached_data_dict().copy()
 
     def is_retryable(self) -> bool:
         """Check if this intent can be retried based on retry configuration.
