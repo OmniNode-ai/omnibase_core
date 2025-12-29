@@ -130,7 +130,7 @@ class ModelEventBusListenerHandle(BaseModel):
                closures referencing threading objects, etc.)
             2. If deep copy fails, we fall back to an empty list rather than
                raising an exception
-            3. A WARNING is logged when subscriptions cannot be copied - this is
+            3. A DEBUG log is emitted when subscriptions cannot be copied - this is
                expected behavior when callbacks contain locks, closures, or other
                non-copyable objects and does not indicate a bug
 
@@ -161,7 +161,7 @@ class ModelEventBusListenerHandle(BaseModel):
             # TypeError: Can't pickle lock objects
             # RuntimeError: Can't deep copy threading objects
             emit_log_event(
-                LogLevel.WARNING,
+                LogLevel.DEBUG,
                 f"DEEPCOPY: Cannot deep copy subscriptions (callbacks may contain locks or closures), "
                 f"copied handle will have empty subscriptions: {e!r}",
                 context={

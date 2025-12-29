@@ -12,6 +12,8 @@ Thread Safety:
     synchronization.
 """
 
+import warnings
+
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.constants.constants_field_limits import (
@@ -164,6 +166,12 @@ class ModelEventBusRuntimeState(BaseModel):
             True if contract_path is not None, False otherwise.
             Note: Returns True for empty string, which may not be intended.
         """
+        warnings.warn(
+            "has_contract() is deprecated, use has_contract_path() instead "
+            "for consistent empty-string semantics",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return self.contract_path is not None
 
     def reset(self) -> None:
@@ -226,11 +234,13 @@ class ModelEventBusRuntimeState(BaseModel):
 
         Args:
             node_name: Identifier for the node using this event bus binding.
-                An empty string is accepted but will cause is_ready() to return
-                False, as empty node_name semantically means "unbound" even though
-                is_bound=True. Use a non-empty string for a fully ready binding.
+                Must be a non-empty string. Use a non-empty string for a
+                fully ready binding.
             contract_path: Optional path to contract YAML file. Pass None
                 to clear any existing contract_path.
+
+        Raises:
+            ValueError: If node_name is empty or whitespace-only.
 
         Example:
             >>> state = ModelEventBusRuntimeState.create_unbound()
@@ -246,6 +256,11 @@ class ModelEventBusRuntimeState(BaseModel):
             reset(): Soft unbind that preserves node_name and contract_path.
             create_bound(): One-step factory for creating a bound instance.
         """
+        if not node_name or not node_name.strip():
+            raise ValueError(
+                "node_name must be a non-empty string for binding; "
+                "use reset() to unbind without clearing configuration"
+            )
         self.node_name = node_name
         self.contract_path = contract_path
         self.is_bound = True

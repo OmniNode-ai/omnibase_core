@@ -141,9 +141,16 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             - The setdefault operation completes atomically before another thread
               can access the dict
 
-            The GIL ensures that between checking if the key exists and inserting
-            the new value, no other thread can interleave. This guarantees exactly
-            one Lock instance is created even with concurrent first access.
+            **Important clarification**: Due to Python's evaluation order,
+            ``threading.Lock()`` is evaluated **before** ``setdefault()`` is called.
+            This means multiple Lock instances may be **created** during concurrent
+            first access, but only one is **stored and used**. The extra instances
+            are immediately discarded and garbage collected. This is functionally
+            correct - all threads will use the same Lock - but slightly wasteful
+            if many threads race on first access.
+
+            To minimize unnecessary allocations, we check if the key exists before
+            calling setdefault with a new Lock instance.
 
             **CPython Implementation Detail**: This pattern is safe in CPython but
             may NOT be safe in other Python implementations:
@@ -172,10 +179,15 @@ class MixinEventBus(Generic[InputStateT, OutputStateT]):
             A threading.Lock instance unique to this mixin instance.
         """
         attr_name = "_mixin_event_bus_lock"
-        # Use __dict__.setdefault() for thread-safe lazy initialization
-        # This is atomic in CPython due to the GIL
-        lock = self.__dict__.setdefault(attr_name, threading.Lock())
-        return lock
+        # Check first to avoid creating unnecessary Lock instances.
+        # Without this check, threading.Lock() would be evaluated before
+        # setdefault(), potentially creating multiple discarded Lock instances.
+        if attr_name not in self.__dict__:
+            # Use __dict__.setdefault() for thread-safe lazy initialization.
+            # This is atomic in CPython due to the GIL. If another thread
+            # beat us here, setdefault returns the existing lock.
+            self.__dict__.setdefault(attr_name, threading.Lock())
+        return cast(threading.Lock, self.__dict__[attr_name])
 
     @property
     def _event_bus_runtime_state(self) -> "ModelEventBusRuntimeState":
