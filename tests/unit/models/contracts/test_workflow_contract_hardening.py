@@ -6,14 +6,24 @@ import pytest
 """
 Unit tests for workflow contract model hardening (OMN-654).
 
-Tests verify frozen=True and extra="forbid" behavior per OMN-490 patterns.
+Tests verify frozen=True behavior and extra field handling per OMN-490 patterns.
 
 These tests ensure:
 - Models are immutable after creation (frozen=True)
-- Extra fields are rejected at instantiation (extra="forbid")
+- Extra fields are handled appropriately:
+  - extra="forbid" for most models (extra fields rejected at instantiation)
+  - extra="ignore" for reserved field models (v1.0.5 Fix 54: Reserved Fields Governance)
+    Models with extra="ignore": ModelWorkflowDefinition, ModelCoordinationRules,
+    ModelExecutionGraph, ModelWorkflowNode
 - Valid instantiation works with required fields
 - Field constraints are properly enforced
 - Edge cases are handled (empty strings, boundary values, unicode, etc.)
+
+v1.0.5 Reserved Fields Governance:
+    Some workflow contract models use extra="ignore" instead of extra="forbid" to support
+    reserved fields for forward compatibility. Reserved fields (execution_graph, saga fields,
+    compensation fields, etc.) are preserved during round-trip serialization but are NOT
+    validated beyond structural type checking and MUST NOT influence any runtime decision in v1.0.
 """
 
 from typing import Any
@@ -143,6 +153,19 @@ def assert_model_config_hardening(model_class: type[BaseModel]) -> None:
     )
 
 
+def assert_model_config_hardening_with_ignore(model_class: type[BaseModel]) -> None:
+    """Assert that model_config has frozen=True and extra='ignore'.
+
+    v1.0.5 Fix 54: Some models use extra='ignore' for Reserved Fields Governance.
+    Reserved fields are preserved during round-trip serialization for forward compatibility.
+    """
+    config = model_class.model_config
+    assert config.get("frozen") is True, f"{model_class.__name__} should be frozen"
+    assert config.get("extra") == "ignore", (
+        f"{model_class.__name__} should ignore extra fields (v1.0.5 Reserved Fields)"
+    )
+
+
 # =============================================================================
 # Parametrized Tests - DRY refactor for testing multiple models with same pattern
 # =============================================================================
@@ -156,19 +179,34 @@ class TestModelConfigHardening:
     @pytest.mark.parametrize(
         "model_class",
         [
-            ModelWorkflowDefinition,
             ModelWorkflowDefinitionMetadata,
             ModelWorkflowStep,
-            ModelCoordinationRules,
-            ModelExecutionGraph,
-            ModelWorkflowNode,
         ],
     )
     def test_model_config_has_frozen_and_extra_forbid(
         self, model_class: type[BaseModel]
     ) -> None:
-        """Verify all workflow models have frozen=True and extra='forbid'."""
+        """Verify workflow models have frozen=True and extra='forbid'."""
         assert_model_config_hardening(model_class)
+
+    @pytest.mark.parametrize(
+        "model_class",
+        [
+            ModelWorkflowDefinition,
+            ModelCoordinationRules,
+            ModelExecutionGraph,
+            ModelWorkflowNode,
+        ],
+    )
+    def test_model_config_has_frozen_and_extra_ignore(
+        self, model_class: type[BaseModel]
+    ) -> None:
+        """Verify workflow models have frozen=True and extra='ignore'.
+
+        v1.0.5 Fix 54: These models use extra='ignore' for Reserved Fields Governance.
+        Reserved fields are preserved during round-trip serialization for forward compatibility.
+        """
+        assert_model_config_hardening_with_ignore(model_class)
 
 
 # =============================================================================
@@ -678,24 +716,27 @@ class TestModelWorkflowDefinitionHardening:
         with pytest.raises(ValidationError):
             definition.version = ModelSemVer(major=2, minor=0, patch=0)  # type: ignore[misc]
 
-    def test_extra_fields_forbidden(
+    def test_extra_fields_ignored(
         self,
         default_version: ModelSemVer,
         default_metadata: ModelWorkflowDefinitionMetadata,
         default_execution_graph: ModelExecutionGraph,
     ) -> None:
-        """Verify extra fields are rejected."""
-        with pytest.raises(ValidationError) as exc_info:
-            ModelWorkflowDefinition(
-                version=default_version,
-                workflow_metadata=default_metadata,
-                execution_graph=default_execution_graph,
-                unknown_field="should_fail",  # type: ignore[call-arg]
-            )
-        errors = exc_info.value.errors()
-        assert len(errors) == 1
-        assert errors[0]["type"] == "extra_forbidden"
-        assert "unknown_field" in errors[0]["loc"]
+        """Verify extra fields are silently ignored (v1.0.5 Fix 54: Reserved Fields).
+
+        v1.0.5 Reserved Fields Governance: Extra fields are allowed for forward compatibility.
+        Reserved fields are preserved during round-trip serialization but are NOT validated.
+        """
+        # Should NOT raise - extra fields are ignored for forward compatibility
+        definition = ModelWorkflowDefinition(
+            version=default_version,
+            workflow_metadata=default_metadata,
+            execution_graph=default_execution_graph,
+            unknown_field="should_be_ignored",  # type: ignore[call-arg]
+        )
+        assert definition.version == default_version
+        # Extra field should not be accessible as an attribute
+        assert not hasattr(definition, "unknown_field")
 
     def test_model_copy_for_modifications(
         self,
@@ -1053,17 +1094,20 @@ class TestModelCoordinationRulesHardening:
         with pytest.raises(ValidationError):
             default_coordination_rules.parallel_execution_allowed = False  # type: ignore[misc]
 
-    def test_extra_fields_forbidden(self, default_version: ModelSemVer) -> None:
-        """Verify extra fields are rejected."""
-        with pytest.raises(ValidationError) as exc_info:
-            ModelCoordinationRules(
-                version=default_version,
-                unknown_field="should_fail",  # type: ignore[call-arg]
-            )
-        errors = exc_info.value.errors()
-        assert len(errors) == 1
-        assert errors[0]["type"] == "extra_forbidden"
-        assert "unknown_field" in errors[0]["loc"]
+    def test_extra_fields_ignored(self, default_version: ModelSemVer) -> None:
+        """Verify extra fields are silently ignored (v1.0.5 Fix 54: Reserved Fields).
+
+        v1.0.5 Reserved Fields Governance: Extra fields are allowed for forward compatibility.
+        Reserved fields are preserved during round-trip serialization but are NOT validated.
+        """
+        # Should NOT raise - extra fields are ignored for forward compatibility
+        rules = ModelCoordinationRules(
+            version=default_version,
+            unknown_field="should_be_ignored",  # type: ignore[call-arg]
+        )
+        assert rules.version == default_version
+        # Extra field should not be accessible as an attribute
+        assert not hasattr(rules, "unknown_field")
 
     def test_model_copy_for_modifications(
         self, default_coordination_rules: ModelCoordinationRules
@@ -1133,17 +1177,20 @@ class TestModelExecutionGraphHardening:
         with pytest.raises(ValidationError):
             default_execution_graph.version = ModelSemVer(major=2, minor=0, patch=0)  # type: ignore[misc]
 
-    def test_extra_fields_forbidden(self, default_version: ModelSemVer) -> None:
-        """Verify extra fields are rejected."""
-        with pytest.raises(ValidationError) as exc_info:
-            ModelExecutionGraph(
-                version=default_version,
-                unknown_field="should_fail",  # type: ignore[call-arg]
-            )
-        errors = exc_info.value.errors()
-        assert len(errors) == 1
-        assert errors[0]["type"] == "extra_forbidden"
-        assert "unknown_field" in errors[0]["loc"]
+    def test_extra_fields_ignored(self, default_version: ModelSemVer) -> None:
+        """Verify extra fields are silently ignored (v1.0.5 Fix 54: Reserved Fields).
+
+        v1.0.5 Reserved Fields Governance: Extra fields are allowed for forward compatibility.
+        Reserved fields are preserved during round-trip serialization but are NOT validated.
+        """
+        # Should NOT raise - extra fields are ignored for forward compatibility
+        graph = ModelExecutionGraph(
+            version=default_version,
+            unknown_field="should_be_ignored",  # type: ignore[call-arg]
+        )
+        assert graph.version == default_version
+        # Extra field should not be accessible as an attribute
+        assert not hasattr(graph, "unknown_field")
 
     def test_model_copy_for_modifications(
         self, default_version: ModelSemVer, default_execution_graph: ModelExecutionGraph
@@ -1199,18 +1246,21 @@ class TestModelWorkflowNodeHardening:
         with pytest.raises(ValidationError):
             default_workflow_node.node_type = EnumNodeType.TRANSFORMER  # type: ignore[misc]
 
-    def test_extra_fields_forbidden(self, default_version: ModelSemVer) -> None:
-        """Verify extra fields are rejected."""
-        with pytest.raises(ValidationError) as exc_info:
-            ModelWorkflowNode(
-                version=default_version,
-                node_type=EnumNodeType.COMPUTE_GENERIC,
-                unknown_field="should_fail",  # type: ignore[call-arg]
-            )
-        errors = exc_info.value.errors()
-        assert len(errors) == 1
-        assert errors[0]["type"] == "extra_forbidden"
-        assert "unknown_field" in errors[0]["loc"]
+    def test_extra_fields_ignored(self, default_version: ModelSemVer) -> None:
+        """Verify extra fields are silently ignored (v1.0.5 Fix 54: Reserved Fields).
+
+        v1.0.5 Reserved Fields Governance: Extra fields are allowed for forward compatibility.
+        Reserved fields are preserved during round-trip serialization but are NOT validated.
+        """
+        # Should NOT raise - extra fields are ignored for forward compatibility
+        node = ModelWorkflowNode(
+            version=default_version,
+            node_type=EnumNodeType.COMPUTE_GENERIC,
+            unknown_field="should_be_ignored",  # type: ignore[call-arg]
+        )
+        assert node.version == default_version
+        # Extra field should not be accessible as an attribute
+        assert not hasattr(node, "unknown_field")
 
     def test_model_copy_for_modifications(
         self, default_workflow_node: ModelWorkflowNode

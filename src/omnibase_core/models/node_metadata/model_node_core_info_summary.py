@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import cast
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -21,12 +22,22 @@ Follows ONEX one-model-per-file naming conventions.
 
 
 class ModelNodeCoreInfoSummary(BaseModel):
-    """Core node information summary with specific types.
+    """
+    Core node information summary with strongly-typed fields.
+
+    This model provides a clean, type-safe alternative to dict[str, Any] return
+    types for node core information. It captures essential node metadata including
+    identification, versioning, status, and health information.
+
     Implements Core protocols:
-    - Identifiable: UUID-based identification
-    - ProtocolMetadataProvider: Metadata management capabilities
-    - Serializable: Data serialization/deserialization
-    - Validatable: Validation and verification
+        - Identifiable: UUID-based identification via get_id()
+        - ProtocolMetadataProvider: Metadata management via get_metadata()/set_metadata()
+        - Serializable: Data serialization via serialize()
+        - Validatable: Instance validation via validate_instance()
+
+    Thread Safety:
+        This model is a Pydantic BaseModel with validate_assignment=True, making
+        it safe for concurrent reads. Modifications should be synchronized externally.
     """
 
     node_id: UUID = Field(description="Node identifier")
@@ -81,8 +92,8 @@ class ModelNodeCoreInfoSummary(BaseModel):
         # Map actual fields to TypedDictMetadataDict structure
         if self.node_name:
             result["name"] = self.node_name
-        if self.node_version:
-            result["version"] = self.node_version
+        # node_version is required (has default_factory), include directly
+        result["version"] = self.node_version
         # Pack additional fields into metadata
         result["metadata"] = {
             "node_id": str(self.node_id),
@@ -97,7 +108,23 @@ class ModelNodeCoreInfoSummary(BaseModel):
         return result
 
     def set_metadata(self, metadata: TypedDictMetadataDict) -> bool:
-        """Set metadata from dictionary (ProtocolMetadataProvider protocol)."""
+        """
+        Set metadata from dictionary (ProtocolMetadataProvider protocol).
+
+        Updates model fields from the provided metadata dictionary. Only fields
+        that exist on the model are updated; unknown keys are silently ignored.
+
+        Args:
+            metadata: Dictionary containing metadata key-value pairs
+
+        Returns:
+            True if metadata was set successfully, False on any error
+
+        Note:
+            The broad exception handler is intentional for protocol compliance.
+            This method should never raise exceptions per ProtocolMetadataProvider
+            contract - failures are indicated by returning False.
+        """
         try:
             for key, value in metadata.items():
                 if hasattr(self, key):
@@ -108,10 +135,28 @@ class ModelNodeCoreInfoSummary(BaseModel):
 
     def serialize(self) -> TypedDictSerializedModel:
         """Serialize to dictionary (Serializable protocol)."""
-        return self.model_dump(exclude_none=False, by_alias=True)
+        return cast(
+            TypedDictSerializedModel,
+            self.model_dump(exclude_none=False, by_alias=True),
+        )
 
     def validate_instance(self) -> bool:
-        """Validate instance integrity (ProtocolValidatable protocol)."""
+        """
+        Validate instance integrity (ProtocolValidatable protocol).
+
+        Performs basic validation to ensure the instance is in a valid state.
+        For ModelNodeCoreInfoSummary, Pydantic's model validation handles field
+        constraints, so this method returns True for well-constructed instances.
+
+        Returns:
+            True if the instance is valid, False otherwise
+
+        Note:
+            The broad exception handler is intentional for protocol compliance.
+            This method should never raise exceptions per ProtocolValidatable
+            contract - validation failures are indicated by returning False.
+            Override in subclasses for custom validation logic.
+        """
         try:
             # Basic validation - ensure required fields exist
             # Override in specific models for custom validation

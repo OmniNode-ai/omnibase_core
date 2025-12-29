@@ -59,6 +59,7 @@ class ModelInputState(BaseModel):
     def get_metadata(self) -> TypedDictMetadataDict:
         """Get metadata as dictionary (ProtocolMetadataProvider protocol)."""
         result: TypedDictMetadataDict = {}
+        # version is Optional (ModelSemVer | None), so None check is correct
         if self.version is not None:
             result["version"] = self.version
         if self.additional_fields:
