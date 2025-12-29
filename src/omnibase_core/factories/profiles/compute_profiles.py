@@ -141,6 +141,8 @@ def get_compute_pure_profile(version: str = "1.0.0") -> ModelContractCompute:
 
 
 # Profile registry mapping profile names to factory functions
+# Thread Safety: This registry is immutable after module load.
+# Factory functions create new instances on each call.
 COMPUTE_PROFILES: dict[str, Callable[[str], ModelContractCompute]] = {
     "compute_pure": get_compute_pure_profile,
 }

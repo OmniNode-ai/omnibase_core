@@ -18,7 +18,7 @@ Usage:
     ... )
 """
 
-from omnibase_core.enums import EnumNodeType
+from omnibase_core.enums import EnumNodeKind, EnumNodeType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors import OnexError
 from omnibase_core.models.contracts import (
@@ -28,6 +28,38 @@ from omnibase_core.models.contracts import (
     ModelContractOrchestrator,
     ModelContractReducer,
 )
+
+
+def _get_node_kind(node_type: EnumNodeType) -> EnumNodeKind | None:
+    """
+    Map EnumNodeType to EnumNodeKind for profile lookup.
+
+    Args:
+        node_type: The node type to classify.
+
+    Returns:
+        The corresponding EnumNodeKind, or None if unknown.
+    """
+    node_type_str = node_type.value.lower()
+    if "orchestrator" in node_type_str:
+        return EnumNodeKind.ORCHESTRATOR
+    elif "reducer" in node_type_str:
+        return EnumNodeKind.REDUCER
+    elif "effect" in node_type_str:
+        return EnumNodeKind.EFFECT
+    elif "compute" in node_type_str:
+        return EnumNodeKind.COMPUTE
+    return None
+
+
+# Node kind to kind name mapping
+# Thread Safety: This mapping is immutable after module load.
+_NODE_KIND_NAMES: dict[EnumNodeKind, str] = {
+    EnumNodeKind.ORCHESTRATOR: "orchestrator",
+    EnumNodeKind.REDUCER: "reducer",
+    EnumNodeKind.EFFECT: "effect",
+    EnumNodeKind.COMPUTE: "compute",
+}
 
 
 def get_default_contract_profile(
@@ -66,55 +98,57 @@ def get_default_contract_profile(
         REDUCER_PROFILES,
     )
 
-    # Map node types to profile registries and factory functions
-    node_type_str = node_type.value.lower()
-
-    if "orchestrator" in node_type_str:
-        if profile not in ORCHESTRATOR_PROFILES:
-            available = ", ".join(ORCHESTRATOR_PROFILES.keys())
-            raise OnexError(
-                message=f"Unknown profile '{profile}' for orchestrator. "
-                f"Available profiles: {available}",
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-            )
-        return ORCHESTRATOR_PROFILES[profile](version)
-
-    elif "reducer" in node_type_str:
-        if profile not in REDUCER_PROFILES:
-            available = ", ".join(REDUCER_PROFILES.keys())
-            raise OnexError(
-                message=f"Unknown profile '{profile}' for reducer. "
-                f"Available profiles: {available}",
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-            )
-        return REDUCER_PROFILES[profile](version)
-
-    elif "effect" in node_type_str:
-        if profile not in EFFECT_PROFILES:
-            available = ", ".join(EFFECT_PROFILES.keys())
-            raise OnexError(
-                message=f"Unknown profile '{profile}' for effect. "
-                f"Available profiles: {available}",
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-            )
-        return EFFECT_PROFILES[profile](version)
-
-    elif "compute" in node_type_str:
-        if profile not in COMPUTE_PROFILES:
-            available = ", ".join(COMPUTE_PROFILES.keys())
-            raise OnexError(
-                message=f"Unknown profile '{profile}' for compute. "
-                f"Available profiles: {available}",
-                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-            )
-        return COMPUTE_PROFILES[profile](version)
-
-    else:
+    node_kind = _get_node_kind(node_type)
+    if node_kind is None:
         raise OnexError(
             message=f"Unknown node type '{node_type}'. "
             "Expected orchestrator, reducer, effect, or compute.",
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
         )
+
+    # Get the appropriate registry based on node kind
+    # Thread Safety: Registries are immutable after module load.
+    kind_name = _NODE_KIND_NAMES[node_kind]
+
+    if node_kind == EnumNodeKind.ORCHESTRATOR:
+        if profile not in ORCHESTRATOR_PROFILES:
+            available = ", ".join(ORCHESTRATOR_PROFILES.keys())
+            raise OnexError(
+                message=f"Unknown profile '{profile}' for {kind_name}. "
+                f"Available profiles: {available}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
+        return ORCHESTRATOR_PROFILES[profile](version)
+
+    if node_kind == EnumNodeKind.REDUCER:
+        if profile not in REDUCER_PROFILES:
+            available = ", ".join(REDUCER_PROFILES.keys())
+            raise OnexError(
+                message=f"Unknown profile '{profile}' for {kind_name}. "
+                f"Available profiles: {available}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
+        return REDUCER_PROFILES[profile](version)
+
+    if node_kind == EnumNodeKind.EFFECT:
+        if profile not in EFFECT_PROFILES:
+            available = ", ".join(EFFECT_PROFILES.keys())
+            raise OnexError(
+                message=f"Unknown profile '{profile}' for {kind_name}. "
+                f"Available profiles: {available}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
+        return EFFECT_PROFILES[profile](version)
+
+    # Must be COMPUTE at this point
+    if profile not in COMPUTE_PROFILES:
+        available = ", ".join(COMPUTE_PROFILES.keys())
+        raise OnexError(
+            message=f"Unknown profile '{profile}' for {kind_name}. "
+            f"Available profiles: {available}",
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+        )
+    return COMPUTE_PROFILES[profile](version)
 
 
 def get_default_orchestrator_profile(
@@ -275,18 +309,20 @@ def available_profiles(node_type: EnumNodeType) -> list[str]:
         REDUCER_PROFILES,
     )
 
-    node_type_str = node_type.value.lower()
-
-    if "orchestrator" in node_type_str:
-        return list(ORCHESTRATOR_PROFILES.keys())
-    elif "reducer" in node_type_str:
-        return list(REDUCER_PROFILES.keys())
-    elif "effect" in node_type_str:
-        return list(EFFECT_PROFILES.keys())
-    elif "compute" in node_type_str:
-        return list(COMPUTE_PROFILES.keys())
-    else:
+    node_kind = _get_node_kind(node_type)
+    if node_kind is None:
         return []
+
+    # Get the appropriate registry based on node kind
+    # Thread Safety: Registries are immutable after module load.
+    if node_kind == EnumNodeKind.ORCHESTRATOR:
+        return list(ORCHESTRATOR_PROFILES.keys())
+    elif node_kind == EnumNodeKind.REDUCER:
+        return list(REDUCER_PROFILES.keys())
+    elif node_kind == EnumNodeKind.EFFECT:
+        return list(EFFECT_PROFILES.keys())
+    else:
+        return list(COMPUTE_PROFILES.keys())
 
 
 class ContractProfileFactory:

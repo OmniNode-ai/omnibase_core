@@ -222,6 +222,8 @@ def get_reducer_fsm_basic_profile(version: str = "1.0.0") -> ModelContractReduce
 
 
 # Profile registry mapping profile names to factory functions
+# Thread Safety: This registry is immutable after module load.
+# Factory functions create new instances on each call.
 REDUCER_PROFILES: dict[str, Callable[[str], ModelContractReducer]] = {
     "reducer_fsm_basic": get_reducer_fsm_basic_profile,
 }

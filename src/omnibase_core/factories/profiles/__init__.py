@@ -19,6 +19,12 @@ Profile Types:
 
     Compute:
         - compute_pure: Pure computation, no I/O
+
+Thread Safety:
+    Profile registries (ORCHESTRATOR_PROFILES, REDUCER_PROFILES, etc.) are
+    module-level dictionaries that are immutable after module initialization.
+    Factory functions create new contract instances on each call, making them
+    safe to use from multiple threads without synchronization.
 """
 
 from omnibase_core.factories.profiles.compute_profiles import (

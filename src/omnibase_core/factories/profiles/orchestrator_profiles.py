@@ -277,6 +277,8 @@ def get_orchestrator_resilient_profile(
 
 
 # Profile registry mapping profile names to factory functions
+# Thread Safety: This registry is immutable after module load.
+# Factory functions create new instances on each call.
 ORCHESTRATOR_PROFILES: dict[str, Callable[[str], ModelContractOrchestrator]] = {
     "orchestrator_safe": get_orchestrator_safe_profile,
     "orchestrator_parallel": get_orchestrator_parallel_profile,

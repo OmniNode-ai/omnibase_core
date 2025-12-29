@@ -153,6 +153,8 @@ def get_effect_idempotent_profile(version: str = "1.0.0") -> ModelContractEffect
 
 
 # Profile registry mapping profile names to factory functions
+# Thread Safety: This registry is immutable after module load.
+# Factory functions create new instances on each call.
 EFFECT_PROFILES: dict[str, Callable[[str], ModelContractEffect]] = {
     "effect_idempotent": get_effect_idempotent_profile,
 }
