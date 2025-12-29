@@ -151,7 +151,9 @@ class MixinNodeService:
             # Main service event loop
             await self._service_event_loop()
 
-        except Exception as e:  # fallback-ok: service startup requires cleanup on any error
+        except (
+            Exception
+        ) as e:  # fallback-ok: service startup requires cleanup on any error
             # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             self._log_error(f"Failed to start service: {e}")
             await self.stop_service_mode()
@@ -193,7 +195,9 @@ class MixinNodeService:
             for callback in self._shutdown_callbacks:
                 try:
                     callback()
-                except Exception as e:  # fallback-ok: user callbacks must not crash shutdown
+                except (
+                    Exception
+                ) as e:  # fallback-ok: user callbacks must not crash shutdown
                     # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
                     self._log_error(f"Shutdown callback failed: {e}")
 
@@ -204,7 +208,9 @@ class MixinNodeService:
             self._service_running = False
             self._log_info("Service stopped successfully")
 
-        except Exception as e:  # fallback-ok: shutdown must complete even if cleanup fails
+        except (
+            Exception
+        ) as e:  # fallback-ok: shutdown must complete even if cleanup fails
             # Uses Exception (not BaseException) to allow KeyboardInterrupt/SystemExit to propagate
             self._log_error(f"Error during service shutdown: {e}")
             self._service_running = False

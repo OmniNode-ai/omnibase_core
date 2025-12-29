@@ -14,8 +14,9 @@ typed property with validation in the environment property system.
 
 from typing import cast
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, ValidationError, model_validator
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_property_type import EnumPropertyType
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
@@ -113,13 +114,25 @@ class ModelTypedProperty(BaseModel):
         """Configure instance with provided parameters (Configurable protocol).
 
         Raises:
-            AttributeError: If setting an attribute fails
-            Exception: If configuration logic fails
+            ModelOnexError: If setting an attribute fails or validation error occurs
         """
-        for key, value in kwargs.items():
-            if hasattr(self, key):
-                setattr(self, key, value)
-        return True
+        try:
+            for key, value in kwargs.items():
+                if hasattr(self, key):
+                    setattr(self, key, value)
+            return True
+        except (
+            AttributeError,
+            ValueError,
+            TypeError,
+            KeyError,
+            ValidationError,
+            ModelOnexError,
+        ) as e:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                message=f"Configuration failed: {e}",
+            ) from e
 
     def serialize(self) -> SerializedDict:
         """Serialize to dictionary (Serializable protocol)."""
