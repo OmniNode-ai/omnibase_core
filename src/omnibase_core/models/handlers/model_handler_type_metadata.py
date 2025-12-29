@@ -58,7 +58,9 @@ See Also:
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_handler_type_category import EnumHandlerTypeCategory
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 
 class ModelHandlerTypeMetadata(BaseModel):
@@ -210,8 +212,9 @@ def get_handler_type_metadata(
         Metadata describing the handler type's behavior
 
     Raises:
-        KeyError: If the category is not recognized (should not happen with
-            valid EnumHandlerTypeCategory values)
+        ModelOnexError: If the category is not recognized. This should not happen
+            with valid EnumHandlerTypeCategory values, but provides a clear
+            error message if the metadata registry is out of sync with the enum.
 
     Example:
         >>> from omnibase_core.enums import EnumHandlerTypeCategory
@@ -232,7 +235,19 @@ def get_handler_type_metadata(
         The returned metadata instances are pre-defined and immutable.
         Multiple calls with the same category return the same instance.
     """
-    return _HANDLER_TYPE_METADATA[category]
+    try:
+        return _HANDLER_TYPE_METADATA[category]
+    except KeyError:
+        valid_categories = [cat.value for cat in _HANDLER_TYPE_METADATA]
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            message=(
+                f"Unknown handler type category: {category!r}. "
+                f"Valid categories: {valid_categories}. "
+                f"This may indicate the metadata registry is out of sync with "
+                f"EnumHandlerTypeCategory."
+            ),
+        ) from None
 
 
 __all__ = [

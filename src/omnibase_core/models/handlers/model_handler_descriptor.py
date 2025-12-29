@@ -486,7 +486,8 @@ class ModelHandlerDescriptor(BaseModel):
     #   - import_path only: Direct Python instantiation
     #   - artifact_ref only: Registry-resolved instantiation (containers, external)
     #   - Neither: Metadata-only descriptor (discovery, routing, documentation)
-    #   - Both: Not recommended (import_path takes precedence by convention)
+    #   - Both: import_path takes precedence; artifact_ref is fallback
+    #           (useful for dev-override, hybrid deployment, graceful degradation)
     #
     # Use has_instantiation_method property to check if instantiation is possible.
     # =========================================================================
