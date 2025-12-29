@@ -75,6 +75,101 @@ Working with identifiers:
     >>> id1 in cache
     True
 
+End-to-End Runtime Example
+--------------------------
+This example shows the complete flow from YAML contract to runtime descriptor
+to handler instantiation.
+
+**Step 1: Define a handler contract (YAML)**
+
+.. code-block:: yaml
+
+    # handler_contract.yaml
+    handler_name: "onex:my-validator"
+    handler_version: "1.0.0"
+    handler_role: COMPUTE_HANDLER
+    handler_type: NAMED
+    handler_type_category: COMPUTE
+    capabilities:
+      - VALIDATE
+      - CACHE
+      - IDEMPOTENT
+    import_path: "mypackage.handlers.MyValidator"
+
+**Step 2: Parse contract into descriptor**
+
+.. code-block:: python
+
+    import yaml
+    from omnibase_core.models.handlers import ModelHandlerDescriptor, ModelIdentifier
+    from omnibase_core.enums import (
+        EnumHandlerRole, EnumHandlerType, EnumHandlerTypeCategory, EnumHandlerCapability
+    )
+    from omnibase_core.models.primitives.model_semver import ModelSemVer
+
+    def load_descriptor_from_yaml(path: str) -> ModelHandlerDescriptor:
+        with open(path, "r") as f:
+            contract = yaml.safe_load(f)
+
+        handler_name = ModelIdentifier.parse(contract["handler_name"])
+        version_parts = contract["handler_version"].split(".")
+        handler_version = ModelSemVer(
+            major=int(version_parts[0]),
+            minor=int(version_parts[1]),
+            patch=int(version_parts[2]),
+        )
+
+        return ModelHandlerDescriptor(
+            handler_name=handler_name,
+            handler_version=handler_version,
+            handler_role=EnumHandlerRole[contract["handler_role"]],
+            handler_type=EnumHandlerType[contract["handler_type"]],
+            handler_type_category=EnumHandlerTypeCategory[contract["handler_type_category"]],
+            capabilities=[EnumHandlerCapability[cap] for cap in contract.get("capabilities", [])],
+            import_path=contract.get("import_path"),
+        )
+
+    descriptor = load_descriptor_from_yaml("handler_contract.yaml")
+
+**Step 3: Instantiate handler from descriptor**
+
+.. code-block:: python
+
+    import importlib
+
+    def instantiate_handler(descriptor: ModelHandlerDescriptor):
+        if not descriptor.has_instantiation_method:
+            raise ValueError(f"Descriptor {descriptor.handler_name} has no instantiation method")
+
+        if descriptor.import_path:
+            module_path, class_name = descriptor.import_path.rsplit(".", 1)
+            module = importlib.import_module(module_path)
+            handler_class = getattr(module, class_name)
+            return handler_class()
+
+        elif descriptor.artifact_ref:
+            raise NotImplementedError("Artifact registry resolution not shown")
+
+        raise ValueError("No instantiation method available")
+
+    handler = instantiate_handler(descriptor)
+
+**Step 4: Use descriptor for routing decisions**
+
+.. code-block:: python
+
+    def find_handlers_by_capability(
+        registry: list[ModelHandlerDescriptor],
+        required: set[EnumHandlerCapability],
+    ) -> list[ModelHandlerDescriptor]:
+        return [h for h in registry if required.issubset(set(h.capabilities))]
+
+    # Find all cacheable, idempotent handlers
+    cacheable = find_handlers_by_capability(
+        registry=[descriptor],
+        required={EnumHandlerCapability.CACHE, EnumHandlerCapability.IDEMPOTENT},
+    )
+
 Thread Safety
 -------------
 All models in this module are immutable (frozen=True) after creation,
