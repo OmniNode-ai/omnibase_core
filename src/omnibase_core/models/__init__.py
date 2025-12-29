@@ -28,6 +28,7 @@ __all__ = [
     "infrastructure",
     "metadata",
     "nodes",
+    "notifications",
     "projection",
     "registration",
     "results",
