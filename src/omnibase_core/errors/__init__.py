@@ -79,10 +79,8 @@ __all__ = [
 
 # =============================================================================
 # Lazy loading: Avoid circular imports during module initialization.
-# This is NOT for backwards compatibility aliases (see OMN-1071 for that pattern
-# in validation/__init__.py and utils/__init__.py). Instead, this defers imports
-# of error classes and model classes that would cause circular dependency chains
-# if imported at module load time.
+# This defers imports of error classes and model classes that would cause
+# circular dependency chains if imported at module load time.
 #
 # Classes loaded lazily:
 # - ModelOnexError, OnexError (alias) - from models.errors
@@ -99,8 +97,7 @@ def __getattr__(name: str) -> Any:
     actually accessed, preventing circular import chains that would otherwise
     occur at module load time.
 
-    Note: This is NOT a backwards compatibility mechanism (see OMN-1071 for that
-    pattern). The OnexError alias to ModelOnexError is for convenience, not
+    Note: The OnexError alias to ModelOnexError is for convenience, not
     deprecation - both names are valid.
     """
     # -------------------------------------------------------------------------

@@ -171,10 +171,10 @@ class UtilConflictResolver:
 
 def __getattr__(name: str) -> Any:
     """
-    Lazy loading for backwards compatibility aliases.
+    Lazy loading for deprecated aliases per OMN-1071 renaming.
 
-    Backwards Compatibility Aliases (OMN-1071):
-    -------------------------------------------
+    Deprecated Aliases:
+    -------------------
     All deprecated aliases emit DeprecationWarning when accessed:
     - ModelConflictResolver -> UtilConflictResolver (removed in v0.5.0)
     """
@@ -189,4 +189,6 @@ def __getattr__(name: str) -> Any:
         )
         return UtilConflictResolver
 
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    raise AttributeError(  # error-ok: required for __getattr__ protocol
+        f"module {__name__!r} has no attribute {name!r}"
+    )

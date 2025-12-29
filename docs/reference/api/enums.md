@@ -16,7 +16,7 @@ This document provides comprehensive API reference for all enumeration types in 
 
 **Purpose**: Standard error codes for ONEX framework.
 
-```
+```python
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
 # Usage in error handling
@@ -39,15 +39,271 @@ error = ModelOnexError(
 - `CONFLICT_ERROR` - Resource conflict
 - `RATE_LIMIT_ERROR` - Rate limit exceeded
 
-### Node Types
+### Handler Enums
+
+Handler enums provide typed classifications for handler systems in the ONEX framework.
+
+#### EnumHandlerTypeCategory
+
+**Location**: `omnibase_core.enums.enum_handler_type_category`
+
+**Purpose**: Behavioral classification of handlers (pure vs impure, deterministic vs non-deterministic).
+
+**Added**: v0.4.0 (OMN-1085)
+
+```python
+from omnibase_core.enums import EnumHandlerTypeCategory
+
+# Classify handler behavior
+if category == EnumHandlerTypeCategory.COMPUTE:
+    # Pure, deterministic - safe to cache
+    result = cache.get_or_compute(key, handler.execute)
+elif category == EnumHandlerTypeCategory.EFFECT:
+    # Has side effects - needs idempotency checks
+    if not is_idempotent_request(request):
+        result = handler.execute(request)
+```
+
+**Available Categories**:
+
+| Category | Pure (no I/O) | Deterministic | Use Case |
+|----------|---------------|---------------|----------|
+| `COMPUTE` | Yes | Yes | Caching, parallel execution |
+| `EFFECT` | No | N/A | I/O operations, external systems |
+| `NONDETERMINISTIC_COMPUTE` | Yes | No | Random, time-based computations |
+
+**Helper Methods**:
+- `values()` - Get all category values as strings
+- `assert_exhaustive(value)` - Ensure exhaustive match handling
+
+**See Also**: [EnumNodeKind](#enumnodekind), [EnumHandlerType](#enumhandlertype)
+
+---
+
+#### EnumHandlerCapability
+
+**Location**: `omnibase_core.enums.enum_handler_capability`
+
+**Purpose**: Unified handler capabilities that span all node types.
+
+**Added**: v0.4.0 (OMN-1085)
+
+```python
+from omnibase_core.enums import EnumHandlerCapability
+
+# Declare handler capabilities
+capabilities = {
+    EnumHandlerCapability.CACHE,
+    EnumHandlerCapability.RETRY,
+    EnumHandlerCapability.IDEMPOTENT,
+}
+
+# Check capability before applying optimization
+if EnumHandlerCapability.CACHE in handler.capabilities:
+    result = cache.get_or_compute(key, handler.execute)
+```
+
+**Available Capabilities**:
+
+- `TRANSFORM` - Can transform data between formats
+- `VALIDATE` - Can validate input/output data
+- `CACHE` - Supports caching of results
+- `RETRY` - Supports automatic retry on transient failures
+- `BATCH` - Supports batch processing of multiple items
+- `STREAM` - Supports streaming data processing
+- `ASYNC` - Supports asynchronous execution
+- `IDEMPOTENT` - Operation is idempotent (safe to retry)
+
+**Capability Compatibility Matrix**:
+
+| Capability | COMPUTE | EFFECT | NONDETERMINISTIC |
+|------------|---------|--------|------------------|
+| CACHE | Yes | Caution* | No |
+| RETRY | Yes | Caution* | Yes |
+| IDEMPOTENT | Always | Must check | Always |
+
+*Caution: EFFECT handlers with CACHE or RETRY should also declare IDEMPOTENT.
+
+**See Also**: [EnumHandlerTypeCategory](#enumhandlertypecategory), [EnumComputeCapability](#enumcomputecapability), [EnumEffectCapability](#enumeffectcapability)
+
+---
+
+#### EnumComputeCapability
+
+**Location**: `omnibase_core.enums.enum_compute_capability`
+
+**Purpose**: Capabilities specific to COMPUTE nodes in the four-node architecture.
+
+**Added**: v0.4.0 (OMN-1085)
+
+```python
+from omnibase_core.enums import EnumComputeCapability
+
+# Check if a compute handler supports transformation
+if EnumComputeCapability.TRANSFORM in handler.capabilities:
+    result = handler.transform(input_data)
+```
+
+**Available Capabilities**:
+
+- `TRANSFORM` - Data transformation operations
+- `VALIDATE` - Data validation operations
+
+**Helper Methods**:
+- `values()` - Get all capability values as strings
+- `assert_exhaustive(value)` - Ensure exhaustive match handling
+
+**See Also**: [EnumHandlerCapability](#enumhandlercapability), [EnumEffectCapability](#enumeffectcapability)
+
+---
+
+#### EnumEffectCapability
+
+**Location**: `omnibase_core.enums.enum_effect_capability`
+
+**Purpose**: Capabilities specific to EFFECT nodes in the four-node architecture.
+
+**Added**: v0.4.0 (OMN-1085)
+
+```python
+from omnibase_core.enums import EnumEffectCapability
+
+# Check if an effect handler supports HTTP operations
+if EnumEffectCapability.HTTP in handler.capabilities:
+    response = handler.http_request(url, method="GET")
+```
+
+**Available Capabilities**:
+
+- `HTTP` - HTTP/REST API interactions
+- `DB` - Database operations (SQL, NoSQL)
+- `KAFKA` - Apache Kafka message queue operations
+- `FILESYSTEM` - File system read/write operations
+
+**Helper Methods**:
+- `values()` - Get all capability values as strings
+- `assert_exhaustive(value)` - Ensure exhaustive match handling
+
+**See Also**: [EnumHandlerCapability](#enumhandlercapability), [EnumComputeCapability](#enumcomputecapability)
+
+---
+
+#### EnumHandlerCommandType
+
+**Location**: `omnibase_core.enums.enum_handler_command_type`
+
+**Purpose**: Typed command identifiers for handler operations.
+
+**Added**: v0.4.0 (OMN-1085)
+
+```python
+from omnibase_core.enums import EnumHandlerCommandType
+
+# Dispatch handler commands with type safety
+match command:
+    case EnumHandlerCommandType.EXECUTE:
+        result = handler.execute(input_data)
+    case EnumHandlerCommandType.VALIDATE:
+        errors = handler.validate(input_data)
+    case EnumHandlerCommandType.DRY_RUN:
+        preview = handler.dry_run(input_data)
+    case _:
+        EnumHandlerCommandType.assert_exhaustive(command)
+```
+
+**Execution Commands**:
+- `EXECUTE` - Run the handler's primary operation
+- `VALIDATE` - Validate input data without executing
+- `DRY_RUN` - Simulate execution without side effects
+- `ROLLBACK` - Undo a previous operation (EFFECT handlers only)
+
+**Introspection Commands**:
+- `DESCRIBE` - Return handler capabilities and metadata
+- `HEALTH_CHECK` - Verify handler is operational
+
+**Configuration Commands**:
+- `CONFIGURE` - Update handler settings
+- `RESET` - Restore handler to initial state
+
+**See Also**: [EnumHandlerType](#enumhandlertype), [EnumHandlerTypeCategory](#enumhandlertypecategory)
+
+---
+
+#### EnumHandlerType
+
+**Location**: `omnibase_core.enums.enum_handler_type`
+
+**Purpose**: Handler type classification by external system.
+
+```python
+from omnibase_core.enums import EnumHandlerType
+
+# Register handler by type
+registry.register(EnumHandlerType.HTTP, http_handler)
+registry.register(EnumHandlerType.DATABASE, db_handler)
+```
+
+**Available Types**:
+- `HTTP` - HTTP/REST API handlers
+- `DATABASE` - Relational database handlers
+- `KAFKA` - Apache Kafka message queue handlers
+- `FILESYSTEM` - File system handlers
+- `VAULT` - Secret management handlers
+- `VECTOR_STORE` - Vector database handlers
+- `GRAPH_DATABASE` - Graph database handlers
+- `REDIS` - Redis cache handlers
+- `EVENT_BUS` - Event bus handlers
+- `LOCAL` - Local echo handler (dev/test only)
+
+**See Also**: [EnumHandlerTypeCategory](#enumhandlertypecategory), [EnumHandlerCapability](#enumhandlercapability)
+
+---
+
+### Node Architecture Enums
+
+#### EnumNodeKind
+
+**Location**: `omnibase_core.enums.enum_node_kind`
+
+**Purpose**: High-level architectural classification for ONEX nodes.
+
+```python
+from omnibase_core.enums import EnumNodeKind
+
+# Route based on architectural role
+if node_kind == EnumNodeKind.COMPUTE:
+    route_to_compute_pipeline(node)
+elif node_kind == EnumNodeKind.EFFECT:
+    route_to_effect_pipeline(node)
+```
+
+**Core Four-Node Architecture Types**:
+
+| Kind | Purpose | Examples |
+|------|---------|----------|
+| `EFFECT` | External interactions (I/O) | API calls, database ops, file system |
+| `COMPUTE` | Data processing & transformation | Calculations, validations, data mapping |
+| `REDUCER` | State aggregation & management | State machines, accumulators |
+| `ORCHESTRATOR` | Workflow coordination | Multi-step workflows, parallel execution |
+
+**Infrastructure Types**:
+- `RUNTIME_HOST` - Runtime host nodes that manage node lifecycle
+
+**Helper Methods**:
+- `is_core_node_type(node_kind)` - Check if it's a core 4-node architecture type
+- `is_infrastructure_type(node_kind)` - Check if it's an infrastructure type
+
+**See Also**: [EnumNodeType](#enumnodetype), [EnumHandlerTypeCategory](#enumhandlertypecategory), [Migration Guide](../../guides/ENUM_NODE_KIND_MIGRATION.md)
+
+---
 
 #### EnumNodeType
 
 **Location**: `omnibase_core.enums.enum_node_type`
 
-**Purpose**: Node type classification.
+**Purpose**: Specific node implementation type classification.
 
-```
+```python
 from omnibase_core.enums.enum_node_type import EnumNodeType
 
 # Use the GENERIC variant for four-node architecture types
@@ -94,7 +350,7 @@ node_type = EnumNodeType.COMPUTE_GENERIC
 
 **Purpose**: Types of Actions for orchestrated execution.
 
-```
+```python
 from uuid import uuid4
 from omnibase_core.enums.enum_workflow_execution import EnumActionType
 from omnibase_core.models.orchestrator.model_action import ModelAction
@@ -126,7 +382,7 @@ action = ModelAction(
 
 **Purpose**: Circuit breaker state management.
 
-```
+```python
 from omnibase_core.enums.enum_circuit_breaker_state import EnumCircuitBreakerState
 
 state = circuit_breaker.get_state()
@@ -149,7 +405,7 @@ if state == EnumCircuitBreakerState.OPEN:
 
 **Purpose**: Health status indicators.
 
-```
+```python
 from omnibase_core.enums.enum_health_status import EnumHealthStatus
 
 health_status = EnumHealthStatus.HEALTHY
@@ -182,7 +438,7 @@ health_status = EnumHealthStatus.HEALTHY
 
 **Purpose**: Operation execution status.
 
-```
+```python
 from omnibase_core.enums.enum_operation_status import EnumOperationStatus
 
 status = EnumOperationStatus.SUCCESS
@@ -212,7 +468,7 @@ status = EnumOperationStatus.SUCCESS
 
 **Purpose**: Message roles in communication.
 
-```
+```python
 from omnibase_core.enums.enum_message_role import EnumMessageRole
 
 message_role = EnumMessageRole.REQUEST
@@ -234,7 +490,7 @@ message_role = EnumMessageRole.REQUEST
 
 **Purpose**: Supported LLM providers.
 
-```
+```python
 from omnibase_core.enums.enum_llm_provider import EnumLLMProvider
 
 provider = EnumLLMProvider.OPENAI
@@ -256,7 +512,7 @@ provider = EnumLLMProvider.OPENAI
 
 **Purpose**: Metric measurement types.
 
-```
+```python
 from omnibase_core.enums.enum_metric_type import EnumMetricType
 
 metric_type = EnumMetricType.COUNTER
@@ -274,7 +530,7 @@ metric_type = EnumMetricType.COUNTER
 
 ### Enum Validation
 
-```
+```python
 from pydantic import BaseModel, Field, field_validator
 from omnibase_core.enums.enum_node_type import EnumNodeType
 
@@ -295,7 +551,7 @@ class NodeConfig(BaseModel):
 
 ### Enum Comparison
 
-```
+```python
 from omnibase_core.enums.enum_health_status import EnumHealthStatus
 
 def check_health(health_status: EnumHealthStatus) -> bool:
@@ -309,7 +565,7 @@ if check_health(node.health_status):
 
 ### Enum Iteration
 
-```
+```python
 from omnibase_core.enums.enum_workflow_execution import EnumActionType
 
 def get_all_action_types() -> List[str]:
@@ -323,7 +579,7 @@ print(f"Available actions: {available_actions}")
 
 ### Enum Mapping
 
-```
+```python
 from omnibase_core.enums.enum_operation_status import EnumOperationStatus
 
 # Map status to HTTP status codes
@@ -343,7 +599,7 @@ def get_http_status(operation_status: EnumOperationStatus) -> int:
 
 ### Custom Enum Methods
 
-```
+```python
 from enum import Enum
 
 class EnumCustomStatus(str, Enum):
@@ -376,7 +632,7 @@ class EnumCustomStatus(str, Enum):
 
 ### Enum Error Conversion
 
-```
+```python
 from omnibase_core.enums.enum_operation_status import EnumOperationStatus
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 
@@ -392,7 +648,7 @@ def convert_status_to_error_code(status: EnumOperationStatus) -> EnumCoreErrorCo
 
 ### Enum Validation in Error Handling
 
-```
+```python
 from omnibase_core.enums.enum_health_status import EnumHealthStatus
 
 def validate_health_status(status: str) -> EnumHealthStatus:
@@ -407,7 +663,7 @@ def validate_health_status(status: str) -> EnumHealthStatus:
 
 ### Enum Caching
 
-```
+```python
 from functools import lru_cache
 from omnibase_core.enums.enum_node_type import EnumNodeType
 
@@ -419,7 +675,7 @@ def is_compute_node(node_type: EnumNodeType) -> bool:
 
 ### Enum Lookup Optimization
 
-```
+```python
 from omnibase_core.enums.enum_workflow_execution import EnumActionType
 
 # Pre-compute lookup table for performance
@@ -436,3 +692,28 @@ def get_action_type(value: str) -> EnumActionType:
 - [Models API](models.md) - Model class reference
 - [Error Handling](../../conventions/ERROR_HANDLING_BEST_PRACTICES.md) - Error handling patterns
 - [Node Building Guide](../../guides/node-building/README.md) - Usage examples
+- [EnumNodeKind Migration Guide](../../guides/ENUM_NODE_KIND_MIGRATION.md) - Migration from EnumNodeType to EnumNodeKind
+- [ONEX Four-Node Architecture](../../architecture/ONEX_FOUR_NODE_ARCHITECTURE.md) - Architecture overview
+
+### Handler Enum Relationships
+
+The handler enums form a cohesive system for classifying and managing handlers:
+
+```text
+EnumHandlerType          --> What external system? (HTTP, DATABASE, KAFKA...)
+    |
+    v
+EnumHandlerTypeCategory  --> What computational behavior? (COMPUTE, EFFECT)
+    |
+    v
+EnumHandlerCapability    --> What features? (CACHE, RETRY, IDEMPOTENT...)
+    |
+    v
+EnumHandlerCommandType   --> What operation? (EXECUTE, VALIDATE, DRY_RUN...)
+```
+
+This classification hierarchy enables:
+1. **Type-based routing**: Route to handlers by external system type
+2. **Behavior-based optimization**: Apply caching/retry based on category
+3. **Capability-based selection**: Choose handlers that support required features
+4. **Type-safe dispatching**: Use typed commands instead of magic strings

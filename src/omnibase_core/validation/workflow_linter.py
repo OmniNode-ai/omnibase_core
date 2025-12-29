@@ -85,7 +85,7 @@ __all__ = [
 DEFAULT_MAX_WARNINGS_PER_CODE = 10
 
 # MAX_BFS_ITERATIONS is imported from omnibase_core.constants.constants_field_limits
-# Re-exported here for public API surface.
+# Re-exported here for API consistency.
 
 # Step type mapping from EnumNodeType values to StepTypeLiteral values
 # Extracted to module level to avoid recreating dict for each node during extraction

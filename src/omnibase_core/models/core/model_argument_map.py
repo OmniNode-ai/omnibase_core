@@ -47,29 +47,55 @@ class ModelArgumentMap(BaseModel):
         """
         Type-safe argument retrieval with optional default.
 
+        This method provides runtime type conversion for common types. When the
+        stored value doesn't match expected_type, automatic conversion is attempted
+        for str, int, float, and bool types.
+
+        Type Conversion Behavior:
+            - str: Any value converted via str()
+            - int: Numeric strings/values converted via int()
+            - float: Numeric strings/values converted via float()
+            - bool: String values "true", "1", "yes", "on" (case-insensitive) → True;
+                    other values converted via bool()
+
+        Note:
+            The type: ignore comments in this method are necessary because TypeVar T
+            cannot be narrowed at runtime after the expected_type comparison. The
+            conversions are type-safe by construction (e.g., str() always returns str).
+
         Args:
             name: Argument name to retrieve
-            expected_type: Expected type for the argument value
-            default: Default value if argument not found or wrong type
+            expected_type: Expected type for the argument value (supports str, int,
+                float, bool with automatic conversion)
+            default: Default value if argument not found or conversion fails
 
         Returns:
-            The argument value cast to expected_type, or default
+            The argument value cast to expected_type, or default if not found
+            or conversion fails
         """
         if name in self.named_args:
             value = self.named_args[name].value
             if isinstance(value, expected_type):
                 return value
             # Try to convert if possible
+            # Note: type: ignore comments below are required because mypy cannot narrow
+            # TypeVar T based on runtime expected_type comparison. Each conversion is
+            # guarded by an if-check ensuring the return type matches T.
             try:
                 if expected_type == str:
+                    # safe: str() always returns str when expected_type == str
                     return str(value)  # type: ignore[return-value]
                 if expected_type == int:
+                    # safe: int() returns int; arg-type ignored for Any input
                     return int(value)  # type: ignore[return-value,arg-type]
                 if expected_type == float:
+                    # safe: float() returns float; arg-type ignored for Any input
                     return float(value)  # type: ignore[return-value,arg-type]
                 if expected_type == bool:
                     if isinstance(value, str):
+                        # safe: bool comparison returns bool when expected_type == bool
                         return value.lower() in ("true", "1", "yes", "on")  # type: ignore[return-value]
+                    # safe: bool() always returns bool when expected_type == bool
                     return bool(value)  # type: ignore[return-value]
             except (ValueError, TypeError):
                 pass
@@ -96,11 +122,16 @@ class ModelArgumentMap(BaseModel):
         return result if result is not None else default
 
     def get_list(self, name: str, default: list[str] | None = None) -> list[str]:
-        """Get list[Any]argument value."""
+        """Get list argument value."""
         if default is None:
             default = []
-        result = self.get_typed(name, list[Any], default)
-        return result if result is not None else default
+        # Use bare 'list' for isinstance check at runtime (generic list[str] not valid).
+        # arg-type ignore: list != type[T] bound to list[str]
+        result = self.get_typed(name, list, default)  # type: ignore[arg-type]
+        # Ensure we return list[str] by converting items
+        if result is not None and isinstance(result, list):
+            return [str(item) for item in result]
+        return default
 
     def has_argument(self, name: str) -> bool:
         """Check if named argument exists."""
@@ -115,29 +146,55 @@ class ModelArgumentMap(BaseModel):
         """
         Get positional argument by index with type conversion.
 
+        This method provides runtime type conversion for common types, identical
+        to get_typed(). When the stored value doesn't match expected_type,
+        automatic conversion is attempted for str, int, float, and bool types.
+
+        Type Conversion Behavior:
+            - str: Any value converted via str()
+            - int: Numeric strings/values converted via int()
+            - float: Numeric strings/values converted via float()
+            - bool: String values "true", "1", "yes", "on" (case-insensitive) -> True;
+                    other values converted via bool()
+
+        Note:
+            The type: ignore comments in this method are necessary because TypeVar T
+            cannot be narrowed at runtime after the expected_type comparison. The
+            conversions are type-safe by construction (e.g., str() always returns str).
+
         Args:
             index: Position index (0-based)
-            expected_type: Expected type for the argument value
-            default: Default value if argument not found or wrong type
+            expected_type: Expected type for the argument value (supports str, int,
+                float, bool with automatic conversion)
+            default: Default value if argument not found or conversion fails
 
         Returns:
-            The argument value cast to expected_type, or default
+            The argument value cast to expected_type, or default if not found,
+            index out of bounds, or conversion fails
         """
         if 0 <= index < len(self.positional_args):
             value = self.positional_args[index].value
             if isinstance(value, expected_type):
                 return value
             # Try to convert if possible
+            # Note: type: ignore comments below are required because mypy cannot narrow
+            # TypeVar T based on runtime expected_type comparison. Each conversion is
+            # guarded by an if-check ensuring the return type matches T.
             try:
                 if expected_type == str:
+                    # safe: str() always returns str when expected_type == str
                     return str(value)  # type: ignore[return-value]
                 if expected_type == int:
+                    # safe: int() returns int; arg-type ignored for Any input
                     return int(value)  # type: ignore[return-value,arg-type]
                 if expected_type == float:
+                    # safe: float() returns float; arg-type ignored for Any input
                     return float(value)  # type: ignore[return-value,arg-type]
                 if expected_type == bool:
                     if isinstance(value, str):
+                        # safe: bool comparison returns bool when expected_type == bool
                         return value.lower() in ("true", "1", "yes", "on")  # type: ignore[return-value]
+                    # safe: bool() always returns bool when expected_type == bool
                     return bool(value)  # type: ignore[return-value]
             except (ValueError, TypeError):
                 pass
@@ -186,5 +243,5 @@ class ModelArgumentMap(BaseModel):
         return len(self.positional_args) + len(self.named_args)
 
     def get_argument_names(self) -> list[str]:
-        """Get list[Any]of all named argument names."""
+        """Get list of all named argument names."""
         return list(self.named_args.keys())

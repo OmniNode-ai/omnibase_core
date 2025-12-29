@@ -55,7 +55,7 @@ EFFECT_TIMEOUT_MAX_MS: int = 600000
 
 # Default timeout: 30 seconds (30000ms)
 # Rationale: Reasonable default for most I/O operations
-# Uses centralized TIMEOUT_DEFAULT_MS constant.
+# Alias to centralized TIMEOUT_DEFAULT_MS (canonical source: constants_timeouts.py).
 EFFECT_TIMEOUT_DEFAULT_MS: int = TIMEOUT_DEFAULT_MS
 
 __all__ = [

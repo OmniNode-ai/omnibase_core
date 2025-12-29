@@ -258,11 +258,26 @@ def get_node_kind(cls, node_type: EnumNodeType) -> EnumNodeKind:
 
 ---
 
+## Related Handler Enums (v0.4.0+)
+
+The handler system uses a parallel classification that aligns with `EnumNodeKind`:
+
+| Handler Enum | Purpose | Relationship to EnumNodeKind |
+|--------------|---------|------------------------------|
+| `EnumHandlerTypeCategory` | Behavioral classification | COMPUTE/EFFECT categories align with EnumNodeKind.COMPUTE/EFFECT |
+| `EnumHandlerCapability` | Handler feature flags | Cross-cutting capabilities for all node kinds |
+| `EnumHandlerCommandType` | Typed command dispatch | ROLLBACK only applies to EFFECT handlers |
+
+**See**: [Enums API Reference](../reference/api/enums.md#handler-enums)
+
+---
+
 ## Support
 
 - **Questions**: See [CLAUDE.md](../../CLAUDE.md) for quick reference
 - **Architecture**: See [ONEX Four-Node Architecture](../architecture/ONEX_FOUR_NODE_ARCHITECTURE.md)
 - **Node Building**: See [Node Building Guide](node-building/README.md)
+- **Enums Reference**: See [Enums API Reference](../reference/api/enums.md)
 
 ---
 

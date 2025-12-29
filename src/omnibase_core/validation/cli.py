@@ -29,10 +29,10 @@ from .validation_utils import ModelValidationResult
 
 def __getattr__(name: str) -> Any:
     """
-    Lazy loading for backwards compatibility aliases.
+    Lazy loading for deprecated aliases per OMN-1071 renaming.
 
-    Backwards Compatibility Aliases (OMN-1071):
-    -------------------------------------------
+    Deprecated Aliases:
+    -------------------
     All deprecated aliases emit DeprecationWarning when accessed:
     - ModelValidationSuite -> ServiceValidationSuite
     """
@@ -47,7 +47,9 @@ def __getattr__(name: str) -> Any:
         )
         return ServiceValidationSuite
 
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    raise AttributeError(  # error-ok: required for __getattr__ protocol
+        f"module {__name__!r} has no attribute {name!r}"
+    )
 
 
 def create_parser() -> argparse.ArgumentParser:
